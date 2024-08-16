@@ -3,9 +3,15 @@
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
+    "@biomejs/biome": "^1.8.3",
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@tscircuit/props": "^0.0.33",
+    "@tscircuit/soup": "^0.0.50",
+    "@tscircuit/soup-util": "^0.0.15"
   }
 }
