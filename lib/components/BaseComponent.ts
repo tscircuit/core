@@ -12,6 +12,11 @@ export class BaseComponent<Props = any> {
 
   componentName = ""
 
+  source_group_id: string | null = null
+  source_component_id: string | null = null
+  schematic_component_id: string | null = null
+  pcb_component_id: string | null = null
+
   constructor(public props: Props) {
     this.children = []
     this.props = props
@@ -31,14 +36,10 @@ export class BaseComponent<Props = any> {
       newProps,
       changedProps: Object.keys(props),
     })
+    this.parent?.onChildChanged(this)
   }
 
   afterCreate() {}
-
-  /**
-   * Called when it's time to add this component to the soup
-   */
-  doMount() {}
 
   onAddToParent(parent: BaseComponent) {
     this.parent = parent
@@ -46,27 +47,93 @@ export class BaseComponent<Props = any> {
   }
 
   /**
-   * Called when it's time to remove this component from the soup
+   * Called whenever the props change
    */
-  doUnmount() {}
-
   onPropsChange(params: {
     oldProps: Props
     newProps: Props
     changedProps: string[]
   }) {}
 
-  preSchematicRender() {}
-  doSchematicRender() {}
-  postSchematicRender() {}
+  doInitialSourceRender() {
+    for (const child of this.children) {
+      child.updateSchematicRender()
+    }
+  }
 
-  prePcbComponentRender() {}
-  doPcbComponentRender() {}
-  postPcbComponentRender() {}
+  doInitialSchematicRender() {
+    for (const child of this.children) {
+      child.updateSchematicRender()
+    }
+  }
 
-  prePcbTraceRender() {}
-  doPcbTraceRender() {}
-  postPcbTraceRender() {}
+  doInitialPcbComponentRender() {
+    for (const child of this.children) {
+      child.updateSchematicRender()
+    }
+  }
+
+  doInitialPcbTraceRender() {
+    for (const child of this.children) {
+      child.updateSchematicRender()
+    }
+  }
+
+  updateSourceRender() {
+    for (const child of this.children) {
+      child.updateSchematicRender()
+    }
+  }
+
+  /**
+   * Called whenever a component is stale and needs to be rendered
+   */
+  updateSchematicRender() {
+    for (const child of this.children) {
+      child.updateSchematicRender()
+    }
+  }
+
+  updatePcbComponentRender() {
+    for (const child of this.children) {
+      child.updatePcbComponentRender()
+    }
+  }
+
+  updatePcbTraceRender() {
+    for (const child of this.children) {
+      child.updatePcbTraceRender()
+    }
+  }
+
+  removeSourceRender() {
+    for (const child of this.children) {
+      child.removeSourceRender()
+    }
+  }
+
+  removeSchematicRender() {
+    for (const child of this.children) {
+      child.updatePcbTraceRender()
+    }
+  }
+
+  removePcbComponentRender() {
+    for (const child of this.children) {
+      child.removePcbComponentRender()
+    }
+  }
+
+  removePcbTraceRender() {
+    for (const child of this.children) {
+      child.removePcbTraceRender()
+    }
+  }
+
+  onChildChanged(child: BaseComponent) {
+    this.stale = true
+    this.parent?.onChildChanged(child)
+  }
 
   add(component: BaseComponent) {
     if (!this.canHaveChildren) {
@@ -75,20 +142,5 @@ export class BaseComponent<Props = any> {
     component.onAddToParent(this)
     this.children.push(component)
     this.stale = true
-  }
-
-  render() {
-    if (!this.stale) return
-    if (!this.parent)
-      throw new Error(
-        `${this.componentName} parent not set, but was asked to render`,
-      )
-    this.project = this.parent.project
-
-    for (const child of this.children) {
-      child.render()
-    }
-
-    this.stale = false
   }
 }
