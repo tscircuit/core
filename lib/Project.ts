@@ -1,12 +1,12 @@
 import type { AnySoupElement } from "@tscircuit/soup"
 import type { BaseComponent } from "./components/BaseComponent"
-import type { SoupUtilObject } from "@tscircuit/soup-util"
+import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import { su } from "@tscircuit/soup-util"
 
 export class Project {
   rootComponent: BaseComponent | null = null
   children: BaseComponent[]
-  db: SoupUtilObject
+  db: SoupUtilObjects
 
   constructor() {
     this.children = []
@@ -44,7 +44,10 @@ export class Project {
   }
 
   render() {
-    if (!this.rootComponent) this._guessRootComponent()
+    if (!this.rootComponent) {
+      this._guessRootComponent()
+    }
+    const { rootComponent, db } = this
 
     return this.db
   }

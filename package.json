@@ -12,6 +12,6 @@
   "dependencies": {
     "@tscircuit/props": "^0.0.33",
     "@tscircuit/soup": "^0.0.50",
-    "@tscircuit/soup-util": "^0.0.15"
+    "@tscircuit/soup-util": "^0.0.17"
   }
 }

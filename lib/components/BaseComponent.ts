@@ -1,14 +1,24 @@
 import type { AnySoupElement } from "@tscircuit/soup"
 import type { Project } from "../Project"
+import type { AnyZodObject } from "zod"
+import { z } from "zod"
 
-export class BaseComponent<Props = any> {
+export class BaseComponent<ZodProps extends AnyZodObject = any> {
   parent: BaseComponent | null = null
   children: BaseComponent[]
+  childrenPendingRemoval: BaseComponent[]
 
+  propsZod: AnyZodObject = z.object({}).passthrough()
   project: Project | null = null
+  props: z.infer<ZodProps>
 
   canHaveChildren = false
-  stale = true
+  isStale = true
+
+  isSourceRendered = false
+  isSchematicRendered = false
+  isPcbComponentRendered = false
+  isPcbTraceRendered = false
 
   componentName = ""
 
@@ -17,19 +27,24 @@ export class BaseComponent<Props = any> {
   schematic_component_id: string | null = null
   pcb_component_id: string | null = null
 
-  constructor(public props: Props) {
+  constructor(props: z.input<ZodProps>) {
     this.children = []
-    this.props = props
+    this.childrenPendingRemoval = []
+    this.props = this.propsZod.parse(props) as z.infer<ZodProps>
+    this.setProps(props)
     if (!this.componentName) {
       this.componentName = this.constructor.name
     }
     this.afterCreate()
   }
 
-  setProps(props: Partial<Props>) {
-    const newProps = { ...this.props, ...props }
+  setProps(props: Partial<z.input<ZodProps>>) {
+    const newProps = this.propsZod.parse({
+      ...this.props,
+      ...props,
+    }) as z.infer<ZodProps>
     const oldProps = this.props
-    this.stale = true
+    this.isStale = true
     this.props = newProps
     this.onPropsChange({
       oldProps,
@@ -50,88 +65,138 @@ export class BaseComponent<Props = any> {
    * Called whenever the props change
    */
   onPropsChange(params: {
-    oldProps: Props
-    newProps: Props
+    oldProps: z.infer<ZodProps>
+    newProps: z.infer<ZodProps>
     changedProps: string[]
   }) {}
 
-  doInitialSourceRender() {
-    for (const child of this.children) {
-      child.updateSchematicRender()
+  /**
+   * Renders all children source elements.
+   */
+  doChildrenSourceRender() {
+    for (const child of this.childrenPendingRemoval) {
+      if (child.isSourceRendered) {
+        child.removeSourceRender()
+        child.isSourceRendered = false
+      }
     }
+    for (const child of this.children) {
+      if (!child.isSourceRendered) {
+        child.doInitialSourceRender()
+        child.isSourceRendered = true
+      } else {
+        child.updateSourceRender()
+      }
+    }
+  }
+
+  /**
+   * Renders all children schematic elements.
+   */
+  doChildrenSchematicRender() {
+    for (const child of this.childrenPendingRemoval) {
+      if (child.isSchematicRendered) {
+        child.removeSchematicRender()
+        child.isSchematicRendered = false
+      }
+    }
+    for (const child of this.children) {
+      if (!child.isSchematicRendered) {
+        child.doInitialSchematicRender()
+        child.isSchematicRendered = true
+      } else {
+        child.updateSchematicRender()
+      }
+    }
+  }
+
+  doChildrenPcbComponentRender() {
+    for (const child of this.childrenPendingRemoval) {
+      if (child.isPcbComponentRendered) {
+        child.removePcbComponentRender()
+        child.isPcbComponentRendered = false
+      }
+    }
+    for (const child of this.children) {
+      if (!child.isPcbComponentRendered) {
+        child.doInitialPcbComponentRender()
+        child.isPcbComponentRendered = true
+      } else {
+        child.updatePcbComponentRender()
+      }
+    }
+  }
+
+  doChildrenPcbTraceRender() {
+    for (const child of this.childrenPendingRemoval) {
+      if (child.isPcbTraceRendered) {
+        child.removePcbTraceRender()
+        child.isPcbTraceRendered = false
+      }
+    }
+    for (const child of this.children) {
+      if (!child.isPcbTraceRendered) {
+        child.doInitialPcbTraceRender()
+        child.isPcbTraceRendered = true
+      } else {
+        child.updatePcbTraceRender()
+      }
+    }
+  }
+
+  doInitialSourceRender() {
+    this.doChildrenSourceRender()
   }
 
   doInitialSchematicRender() {
-    for (const child of this.children) {
-      child.updateSchematicRender()
-    }
+    this.doChildrenSchematicRender()
   }
 
   doInitialPcbComponentRender() {
-    for (const child of this.children) {
-      child.updateSchematicRender()
-    }
+    this.doChildrenPcbComponentRender()
   }
 
   doInitialPcbTraceRender() {
-    for (const child of this.children) {
-      child.updateSchematicRender()
-    }
+    this.doChildrenPcbTraceRender()
   }
 
   updateSourceRender() {
-    for (const child of this.children) {
-      child.updateSchematicRender()
-    }
+    this.doChildrenSourceRender()
   }
 
   /**
    * Called whenever a component is stale and needs to be rendered
    */
   updateSchematicRender() {
-    for (const child of this.children) {
-      child.updateSchematicRender()
-    }
+    this.doChildrenSchematicRender()
   }
 
   updatePcbComponentRender() {
-    for (const child of this.children) {
-      child.updatePcbComponentRender()
-    }
+    this.doChildrenPcbComponentRender()
   }
 
   updatePcbTraceRender() {
-    for (const child of this.children) {
-      child.updatePcbTraceRender()
-    }
+    this.doChildrenPcbTraceRender()
   }
 
   removeSourceRender() {
-    for (const child of this.children) {
-      child.removeSourceRender()
-    }
+    this.doChildrenSourceRender()
   }
 
   removeSchematicRender() {
-    for (const child of this.children) {
-      child.updatePcbTraceRender()
-    }
+    this.doChildrenSchematicRender()
   }
 
   removePcbComponentRender() {
-    for (const child of this.children) {
-      child.removePcbComponentRender()
-    }
+    this.doChildrenPcbComponentRender()
   }
 
   removePcbTraceRender() {
-    for (const child of this.children) {
-      child.removePcbTraceRender()
-    }
+    this.doChildrenPcbTraceRender()
   }
 
   onChildChanged(child: BaseComponent) {
-    this.stale = true
+    this.isStale = true
     this.parent?.onChildChanged(child)
   }
 
@@ -141,6 +206,12 @@ export class BaseComponent<Props = any> {
     }
     component.onAddToParent(this)
     this.children.push(component)
-    this.stale = true
+    this.isStale = true
+  }
+
+  remove(component: BaseComponent) {
+    this.children = this.children.filter((c) => c !== component)
+    this.childrenPendingRemoval.push(component)
+    this.isStale = true
   }
 }
