@@ -49,7 +49,21 @@ export class Project {
     }
     const { rootComponent, db } = this
 
-    return this.db
+    if (!rootComponent) throw new Error("Project has no root component")
+
+    rootComponent.setProject(this)
+
+    if (!rootComponent.isSourceRendered) {
+      rootComponent.doInitialSourceRender()
+      rootComponent.doInitialSchematicRender()
+      rootComponent.doInitialPcbComponentRender()
+      rootComponent.doInitialPcbTraceRender()
+    } else {
+      rootComponent.updateSourceRender()
+      rootComponent.updateSchematicRender()
+      rootComponent.updatePcbComponentRender()
+      rootComponent.updatePcbTraceRender()
+    }
   }
 
   getSoup(): AnySoupElement[] {

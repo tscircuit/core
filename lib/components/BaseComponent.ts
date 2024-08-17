@@ -38,6 +38,13 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
     this.afterCreate()
   }
 
+  setProject(project: Project) {
+    this.project = project
+    for (const c of this.children) {
+      c.setProject(project)
+    }
+  }
+
   setProps(props: Partial<z.input<ZodProps>>) {
     const newProps = this.propsZod.parse({
       ...this.props,
