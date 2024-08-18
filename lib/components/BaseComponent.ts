@@ -1,6 +1,6 @@
 import type { AnySoupElement, AnySourceComponent } from "@tscircuit/soup"
 import type { Project } from "../Project"
-import type { AnyZodObject } from "zod"
+import type { ZodType } from "zod"
 import { z } from "zod"
 import { symbols, type SchSymbol, type BaseSymbolName } from "schematic-symbols"
 import { isValidElement as isReactElement } from "react"
@@ -10,12 +10,12 @@ import { createComponentsFromSoup } from "../utils/createComponentsFromSoup"
 
 export interface BaseComponentConfig {
   schematicSymbolName?: BaseSymbolName | null
-  zodProps: AnyZodObject
+  zodProps: ZodType
 
   sourceFtype?: AnySourceComponent["ftype"] | null
 }
 
-export class BaseComponent<ZodProps extends AnyZodObject = any> {
+export class BaseComponent<ZodProps extends ZodType = any> {
   parent: BaseComponent | null = null
   children: BaseComponent[]
   childrenPendingRemoval: BaseComponent[]
