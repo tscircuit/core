@@ -6,6 +6,7 @@ import { symbols, type SchSymbol } from "schematic-symbols"
 import { isValidElement as isReactElement } from "react"
 import type { Footprint } from "./Footprint"
 import { fp } from "footprinter"
+import { createComponentsFromSoup } from "../utils/createComponentsFromSoup"
 
 type SymbolName = keyof typeof symbols extends `${infer T}_${infer U}`
   ? T
@@ -197,7 +198,11 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
     const { footprint } = this.props
     if (footprint) {
       if (typeof footprint === "string") {
-        // TODO use footprinter to convert to pcb_component
+        const fpSoup = fp.string(footprint).soup()
+        // TODO save some kind of state to prevent re-creating the same components
+        // and knowing when the string has changed
+        const fpComponents = createComponentsFromSoup(fpSoup)
+        this.children.push(...fpComponents)
       } else if (footprint.componentName === "Footprint") {
         const fp = footprint as Footprint
         if (!this.children.includes(fp)) {
