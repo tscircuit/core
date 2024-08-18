@@ -1,29 +1,32 @@
-import type { AnySoupElement } from "@tscircuit/soup"
+import type { AnySoupElement, AnySourceComponent } from "@tscircuit/soup"
 import type { Project } from "../Project"
 import type { AnyZodObject } from "zod"
 import { z } from "zod"
-import { symbols, type SchSymbol } from "schematic-symbols"
+import { symbols, type SchSymbol, type BaseSymbolName } from "schematic-symbols"
 import { isValidElement as isReactElement } from "react"
 import type { Footprint } from "./Footprint"
 import { fp } from "footprinter"
 import { createComponentsFromSoup } from "../utils/createComponentsFromSoup"
 
-type SymbolName = keyof typeof symbols extends `${infer T}_${infer U}`
-  ? T
-  : never
+export interface BaseComponentConfig {
+  schematicSymbolName?: BaseSymbolName | null
+  propsZod: AnyZodObject
+
+  sourceFtype?: AnySourceComponent["ftype"] | null
+}
 
 export class BaseComponent<ZodProps extends AnyZodObject = any> {
   parent: BaseComponent | null = null
   children: BaseComponent[]
   childrenPendingRemoval: BaseComponent[]
 
-  get propsZod(): AnyZodObject {
-    return z.object({}).passthrough()
+  get config(): BaseComponentConfig {
+    return {
+      propsZod: z.object({}).passthrough(),
+    }
   }
   project: Project | null = null
   props: z.infer<ZodProps>
-
-  schematicSymbolName: SymbolName | null = null
 
   canHaveChildren = false
   isStale = true
@@ -45,7 +48,7 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
   constructor(props: z.input<ZodProps>) {
     this.children = []
     this.childrenPendingRemoval = []
-    this.props = this.propsZod.parse(props) as z.infer<ZodProps>
+    this.props = this.config.propsZod.parse(props) as z.infer<ZodProps>
     if (!this.componentName) {
       this.componentName = this.constructor.name
     }
@@ -60,7 +63,7 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
   }
 
   setProps(props: Partial<z.input<ZodProps>>) {
-    const newProps = this.propsZod.parse({
+    const newProps = this.config.propsZod.parse({
       ...this.props,
       ...props,
     }) as z.infer<ZodProps>
@@ -165,15 +168,37 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
     }
   }
 
+  doSimpleInitialSourceRender({
+    ftype,
+  }: { ftype: AnySourceComponent["ftype"] }) {
+    const { db } = this.project!
+    const { props } = this
+    const source_component = db.source_component.insert({
+      ftype,
+      name: props.name,
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      supplier_part_numbers: props.supplierPartNumbers,
+    })
+    this.source_component_id = source_component.source_component_id
+  }
+
+  /**
+   * Render the source_* elements for this component.
+   *
+   * Make sure to set this.source_component_id if you override this method!
+   */
   doInitialSourceRender() {
+    if (this.config.sourceFtype) {
+      this.doSimpleInitialSourceRender({ ftype: this.config.sourceFtype })
+    }
     this.doChildrenSourceRender()
   }
 
   doInitialSchematicRender() {
     const { db } = this.project!
-    if (this.schematicSymbolName) {
+    if (this.config.schematicSymbolName) {
       // TODO switch between horizontal and vertical based on schRotation
-      const symbol_name = `${this.schematicSymbolName}_horz`
+      const symbol_name = `${this.config.schematicSymbolName}_horz`
 
       const symbol = (symbols as any)[symbol_name] as SchSymbol | undefined
 
