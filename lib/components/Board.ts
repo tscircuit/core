@@ -1,9 +1,14 @@
 import { boardProps } from "@tscircuit/props"
+import type { z } from "zod"
 import { BaseComponent } from "./BaseComponent"
 
 export class Board extends BaseComponent<typeof boardProps> {
   pcb_board_id: string | null = null
-  propsZod = boardProps
+  get propsZod() {
+    return boardProps
+  }
+
+  canHaveChildren = true
 
   doInitialPcbComponentRender(): void {
     const { db } = this.project!
@@ -14,12 +19,9 @@ export class Board extends BaseComponent<typeof boardProps> {
       height: this.props.height,
     })
 
-    this.doChildrenPcbComponentRender()
-  }
+    this.pcb_board_id = pcb_board.pcb_board_id
 
-  updatePcbComponentRender(): void {
-    const { db } = this.project!
-    // TODO
+    this.doChildrenPcbComponentRender()
   }
 
   removePcbComponentRender(): void {

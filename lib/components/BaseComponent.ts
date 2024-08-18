@@ -17,7 +17,9 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
   children: BaseComponent[]
   childrenPendingRemoval: BaseComponent[]
 
-  propsZod: AnyZodObject = z.object({}).passthrough()
+  get propsZod(): AnyZodObject {
+    return z.object({}).passthrough()
+  }
   project: Project | null = null
   props: z.infer<ZodProps>
 
@@ -44,7 +46,6 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
     this.children = []
     this.childrenPendingRemoval = []
     this.props = this.propsZod.parse(props) as z.infer<ZodProps>
-    this.setProps(props)
     if (!this.componentName) {
       this.componentName = this.constructor.name
     }

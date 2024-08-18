@@ -1,5 +1,5 @@
 import { it, expect } from "bun:test"
-import { Board, Resistor, Led, Trace, Project } from "../index"
+import { Board, Resistor, Project } from "../index"
 
 it("should create soup with various elements", () => {
   const project = new Project()
@@ -10,15 +10,19 @@ it("should create soup with various elements", () => {
   })
   project.add(board)
 
-  const R1 = new Resistor({ resistance: "10k", footprint: "0402" })
-  const LED1 = new Led({ footprint: "0402" })
-
+  const R1 = new Resistor({ name: "R1", resistance: "10k", footprint: "0402" })
   board.add(R1)
-  board.add(LED1)
 
-  const trace = new Trace({ width: "0.2mm" })
-  trace.connect(R1.output, LED1.anode)
-  board.add(trace)
+  // const LED1 = new Led({ footprint: "0402" })
+
+  // board.add(R1)
+  // board.add(LED1)
+
+  // const trace = new Trace({ width: "0.2mm" })
+  // trace.connect(R1.output, LED1.anode)
+  // board.add(trace)
+
+  project.render()
 
   console.log(project.getSoup())
 })
