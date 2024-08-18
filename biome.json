@@ -26,7 +26,8 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noUnsafeDeclarationMerging": "off"
       },
       "style": {
         "noNonNullAssertion": "off",

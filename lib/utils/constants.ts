@@ -17,3 +17,11 @@ const typeProxy = new Proxy(
 export const FTYPE: {
   [T in AnySourceComponent["ftype"]]: T
 } = typeProxy
+
+export type PassivePorts = "1" | "2" | "pin1" | "pin2" | "left" | "right"
+export type PolarizedPassivePorts =
+  | PassivePorts
+  | "anode"
+  | "cathode"
+  | "pos"
+  | "neg"

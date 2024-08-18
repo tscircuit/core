@@ -7,15 +7,22 @@ import { isValidElement as isReactElement } from "react"
 import type { Footprint } from "./Footprint"
 import { fp } from "footprinter"
 import { createComponentsFromSoup } from "../utils/createComponentsFromSoup"
+import type { Port } from "./Port"
 
 export interface BaseComponentConfig {
   schematicSymbolName?: BaseSymbolName | null
   zodProps: ZodType
-
   sourceFtype?: AnySourceComponent["ftype"] | null
 }
 
-export class BaseComponent<ZodProps extends ZodType = any> {
+type PortMap<T extends string> = {
+  [K in T]: Port
+}
+
+export abstract class BaseComponent<
+  ZodProps extends ZodType = any,
+  PortNames extends string = never,
+> {
   parent: BaseComponent | null = null
   children: BaseComponent[]
   childrenPendingRemoval: BaseComponent[]
@@ -25,10 +32,31 @@ export class BaseComponent<ZodProps extends ZodType = any> {
       zodProps: z.object({}).passthrough(),
     }
   }
+
+  get portMap(): PortMap<PortNames> {
+    return new Proxy(
+      {},
+      {
+        get: (target, prop): Port => {
+          const port = this.children.find(
+            (c) =>
+              c.componentName === "Port" &&
+              (c as Port).doesMatchName(prop as string),
+          )
+          if (!port) {
+            throw new Error(
+              `There was an issue finding the port "${prop.toString()}" inside of a ${this.componentName} component with name: "${this.props.name}". This is a bug in @tscircuit/core`,
+            )
+          }
+          return port as Port
+        },
+      },
+    ) as any
+  }
+
   project: Project | null = null
   props: z.infer<ZodProps>
 
-  canHaveChildren = false
   isStale = true
 
   isSourceRendered = false
@@ -53,6 +81,7 @@ export class BaseComponent<ZodProps extends ZodType = any> {
       this.componentName = this.constructor.name
     }
     this.afterCreate()
+    this.initPorts()
   }
 
   setProject(project: Project) {
@@ -79,6 +108,8 @@ export class BaseComponent<ZodProps extends ZodType = any> {
   }
 
   afterCreate() {}
+
+  initPorts() {}
 
   onAddToParent(parent: BaseComponent) {
     this.parent = parent
@@ -292,9 +323,6 @@ export class BaseComponent<ZodProps extends ZodType = any> {
   }
 
   add(component: BaseComponent) {
-    if (!this.canHaveChildren) {
-      throw new Error(`${this.componentName} cannot have children`)
-    }
     component.onAddToParent(this)
     this.children.push(component)
     this.isStale = true
@@ -375,5 +403,16 @@ export class BaseComponent<ZodProps extends ZodType = any> {
       descendants.push(...child.getDescendants())
     }
     return descendants
+  }
+
+  getString(): string {
+    const { componentName, props, parent } = this
+    return `${componentName}(.${parent?.props.name} > .${props.name})`
+  }
+  get [Symbol.toStringTag](): string {
+    return this.getString()
+  }
+  [Symbol.for("nodejs.util.inspect.custom")]() {
+    return this.getString()
   }
 }
