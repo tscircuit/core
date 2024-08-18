@@ -8,9 +8,30 @@ export class Trace extends BaseComponent<typeof traceProps> {
     }
   }
 
+  getTracePortPathSelectors(): string[] {
+    if ("from" in this.props && "to" in this.props) {
+      return [
+        typeof this.props.from === "string"
+          ? this.props.from
+          : this.props.from.getPortSelector(),
+        typeof this.props.to === "string"
+          ? this.props.to
+          : this.props.to.getPortSelector(),
+      ]
+    }
+    if ("path" in this.props) {
+      return this.props.path.map((p) =>
+        typeof p === "string" ? p : p.getPortSelector(),
+      )
+    }
+    return []
+  }
+
   doInitialPcbTraceRender(): void {
     const { db } = this.project!
     const { props } = this
+
+    const portSelectors = this.getTracePortPathSelectors()
 
     // db.pcb_port.getUsing({ source_port_id:
 
