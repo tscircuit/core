@@ -18,7 +18,8 @@ export const FTYPE: {
   [T in AnySourceComponent["ftype"]]: T
 } = typeProxy
 
-export type PassivePorts = "1" | "2" | "pin1" | "pin2" | "left" | "right"
+export type TwoPinPorts = "pin1" | "pin2"
+export type PassivePorts = TwoPinPorts
 export type PolarizedPassivePorts =
   | PassivePorts
   | "anode"

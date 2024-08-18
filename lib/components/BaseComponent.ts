@@ -15,7 +15,7 @@ export interface BaseComponentConfig {
   sourceFtype?: AnySourceComponent["ftype"] | null
 }
 
-type PortMap<T extends string> = {
+export type PortMap<T extends string> = {
   [K in T]: Port
 }
 

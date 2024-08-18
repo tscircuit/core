@@ -2,6 +2,7 @@ import { it, expect } from "bun:test"
 import { Board, Resistor, Project } from "../index"
 import { Led } from "lib/components/Led"
 import { Trace } from "lib/components/Trace"
+import { Net } from "lib/components/Net"
 
 it("should create soup with various elements", () => {
   const project = new Project()
@@ -20,12 +21,29 @@ it("should create soup with various elements", () => {
 
   const trace = new Trace({
     from: R1.pin1,
-    to: LED1.anode,
+    to: LED1.pos,
     thickness: "0.2mm",
   })
   board.add(trace)
 
+  // const gnd = new Net({ name: "GND" })
+  // board.add(gnd)
+
+  // const gndTrace = new Trace({
+  //   from: LED1.neg,
+  //   to: gnd,
+  //   thickness: "0.2mm",
+  // })
+  // board.add(gndTrace)
+
   project.render()
 
-  console.log(project.getSoup())
+  // Let's check the db to make sure everything we expect is there
+
+  expect(project.db.source_component.select(".R1")?.name).toBe("R1")
+  expect(project.db.source_component.select(".LED1")?.name).toBe("LED1")
+
+  console.log(project.db.pcb_trace.list())
+
+  // console.log(project.getSoup())
 })
