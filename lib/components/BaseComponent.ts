@@ -2,6 +2,14 @@ import type { AnySoupElement } from "@tscircuit/soup"
 import type { Project } from "../Project"
 import type { AnyZodObject } from "zod"
 import { z } from "zod"
+import { symbols, type SchSymbol } from "schematic-symbols"
+import { isValidElement as isReactElement } from "react"
+import type { Footprint } from "./Footprint"
+import { fp } from "footprinter"
+
+type SymbolName = keyof typeof symbols extends `${infer T}_${infer U}`
+  ? T
+  : never
 
 export class BaseComponent<ZodProps extends AnyZodObject = any> {
   parent: BaseComponent | null = null
@@ -11,6 +19,8 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
   propsZod: AnyZodObject = z.object({}).passthrough()
   project: Project | null = null
   props: z.infer<ZodProps>
+
+  schematicSymbolName: SymbolName | null = null
 
   canHaveChildren = false
   isStale = true
@@ -158,10 +168,45 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
   }
 
   doInitialSchematicRender() {
+    const { db } = this.project!
+    if (this.schematicSymbolName) {
+      // TODO switch between horizontal and vertical based on schRotation
+      const symbol_name = `${this.schematicSymbolName}_horz`
+
+      const symbol = (symbols as any)[symbol_name] as SchSymbol | undefined
+
+      if (!symbol) {
+        throw new Error(`Could not find schematic-symbol "${symbol_name}"`)
+      }
+
+      const schematic_component = db.schematic_component.insert({
+        center: { x: this.props.schX ?? 0, y: this.props.schY ?? 0 },
+        rotation: this.props.schRotation ?? 0,
+        size: symbol.size,
+        source_component_id: this.source_component_id!,
+
+        // @ts-ignore
+        symbol_name,
+      })
+      this.schematic_component_id = schematic_component.schematic_component_id
+    }
     this.doChildrenSchematicRender()
   }
 
   doInitialPcbComponentRender() {
+    const { footprint } = this.props
+    if (footprint) {
+      if (typeof footprint === "string") {
+        // TODO use footprinter to convert to pcb_component
+      } else if (footprint.componentName === "Footprint") {
+        const fp = footprint as Footprint
+        if (!this.children.includes(fp)) {
+          this.children.push(fp)
+        }
+      } else if (isReactElement(footprint)) {
+        // TODO, maybe call .add() with the footprint?
+      }
+    }
     this.doChildrenPcbComponentRender()
   }
 

@@ -8,7 +8,7 @@ A rewrite of [tscircuit builder](https://github.com/tscircuit/builder) with a Th
 
 ## Usage
 
-```ts
+```tsx
 import { Board, Resistor, Led, Trace, Project } from "@tscircuit/core"
 
 const project = new Project()
@@ -20,10 +20,10 @@ const board = new Board({
 project.add(board)
 
 const R1 = new Resistor({ resistance: "10k", footprint: "0402" })
-const LED1 = new Led({ footprint: "0402" })
-
 board.add(R1)
-board.add(LED1)
+
+// You can also add elements with React
+board.add(<Led footprint="0402" />)
 
 const trace = new Trace({ width: "0.2mm" })
 trace.connect(R1.output, LED1.anode)
@@ -39,9 +39,9 @@ project.getJson() // [{ type: "board", ...}, { type: "resistor", ...}, ...]
 - After Creation
 - Premount
 - Postmount
-- \[pre|post\]schematic render
-- \[pre|post\]pcb component render
-- \[pre|post\]pcb trace render
+- schematic render
+- pcb component render
+- pcb trace render
 
 ### Element Lifecycle
 
