@@ -10,7 +10,7 @@ import { createComponentsFromSoup } from "../utils/createComponentsFromSoup"
 
 export interface BaseComponentConfig {
   schematicSymbolName?: BaseSymbolName | null
-  propsZod: AnyZodObject
+  zodProps: AnyZodObject
 
   sourceFtype?: AnySourceComponent["ftype"] | null
 }
@@ -22,7 +22,7 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
 
   get config(): BaseComponentConfig {
     return {
-      propsZod: z.object({}).passthrough(),
+      zodProps: z.object({}).passthrough(),
     }
   }
   project: Project | null = null
@@ -48,7 +48,7 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
   constructor(props: z.input<ZodProps>) {
     this.children = []
     this.childrenPendingRemoval = []
-    this.props = this.config.propsZod.parse(props) as z.infer<ZodProps>
+    this.props = this.config.zodProps.parse(props) as z.infer<ZodProps>
     if (!this.componentName) {
       this.componentName = this.constructor.name
     }
@@ -63,7 +63,7 @@ export class BaseComponent<ZodProps extends AnyZodObject = any> {
   }
 
   setProps(props: Partial<z.input<ZodProps>>) {
-    const newProps = this.config.propsZod.parse({
+    const newProps = this.config.zodProps.parse({
       ...this.props,
       ...props,
     }) as z.infer<ZodProps>

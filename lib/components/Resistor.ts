@@ -1,15 +1,13 @@
 import { resistorProps } from "@tscircuit/props"
-import { BaseComponent, type BaseComponentConfig } from "./BaseComponent"
-
-const resistorConfig: BaseComponentConfig = {
-  schematicSymbolName: "boxresistor",
-  propsZod: resistorProps,
-
-  sourceFtype: "simple_resistor",
-}
+import { BaseComponent } from "./BaseComponent"
 
 export class Resistor extends BaseComponent<typeof resistorProps> {
   get config() {
-    return resistorConfig
+    return {
+      schematicSymbolName: "boxresistor",
+      zodProps: resistorProps,
+
+      sourceFtype: "simple_resistor",
+    } as const
   }
 }

@@ -1,14 +1,17 @@
 import { boardProps } from "@tscircuit/props"
 import type { z } from "zod"
-import { BaseComponent } from "./BaseComponent"
+import { BaseComponent, type BaseComponentConfig } from "./BaseComponent"
 
 export class Board extends BaseComponent<typeof boardProps> {
   pcb_board_id: string | null = null
-  get propsZod() {
-    return boardProps
-  }
 
   canHaveChildren = true
+
+  get config() {
+    return {
+      zodProps: boardProps,
+    }
+  }
 
   doInitialPcbComponentRender(): void {
     const { db } = this.project!
