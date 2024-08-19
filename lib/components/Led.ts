@@ -24,7 +24,7 @@ export class Led extends BaseComponent<typeof ledProps, PolarizedPassivePorts> {
   cathode = this.portMap.pin2
 
   initPorts() {
-    this.add(new Port({ name: "pos", aliases: ["1", "pin1", "anode"] }))
-    this.add(new Port({ name: "neg", aliases: ["2", "pin2", "cathode"] }))
+    this.add(new Port({ name: "pos", pinNumber: 1, aliases: ["anode"] }))
+    this.add(new Port({ name: "neg", pinNumber: 2, aliases: ["cathode"] }))
   }
 }

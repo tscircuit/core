@@ -19,10 +19,29 @@ export type PortMap<T extends string> = {
   [K in T]: Port
 }
 
+type RenderPhase =
+  | "SourceRender"
+  | "PortMatching"
+  | "SchematicComponentRender"
+  | "SchematicTraceRender"
+  | "PcbComponentRender"
+  | "PcbTraceRender"
+  | "CadModelRender"
+
+type RenderPhaseStates = Record<RenderPhase, { initialized: boolean }>
+
+type RenderPhaseFunctions = {
+  [K in RenderPhase as
+    | `doInitial${K}`
+    | `update${K}`
+    | `remove${K}`]: () => void
+}
+
 export abstract class BaseComponent<
   ZodProps extends ZodType = any,
   PortNames extends string = never,
-> {
+> implements RenderPhaseFunctions
+{
   parent: BaseComponent | null = null
   children: BaseComponent[]
   childrenPendingRemoval: BaseComponent[]
@@ -58,8 +77,11 @@ export abstract class BaseComponent<
   props: z.infer<ZodProps>
 
   isStale = true
+  shouldBeRemoved = false
 
+  renderPhaseStates: RenderPhaseStates
   isSourceRendered = false
+  arePortsMatched = false
   isSchematicComponentRendered = false
   isSchematicTraceRendered = false
   isPcbComponentRendered = false
@@ -78,11 +100,32 @@ export abstract class BaseComponent<
     this.children = []
     this.childrenPendingRemoval = []
     this.props = this.config.zodProps.parse(props) as z.infer<ZodProps>
+    this.renderPhaseStates = {
+      SourceRender: { initialized: false },
+      PortMatching: { initialized: false },
+      SchematicComponentRender: { initialized: false },
+      SchematicTraceRender: { initialized: false },
+      PcbComponentRender: { initialized: false },
+      PcbTraceRender: { initialized: false },
+      CadModelRender: { initialized: false },
+    }
     if (!this.componentName) {
       this.componentName = this.constructor.name
     }
     this.afterCreate()
     this.initPorts()
+  }
+
+  updatePortMatching() {}
+  removePortMatching() {}
+  updateCadModelRender() {}
+  removeCadModelRender() {}
+
+  doInitialPortMatching() {
+    this.runRenderPhaseForChildren("PortMatching")
+  }
+  doInitialCadModelRender() {
+    this.runRenderPhaseForChildren("CadModelRender")
   }
 
   setProject(project: Project) {
@@ -217,6 +260,15 @@ export abstract class BaseComponent<
     }
   }
 
+  doChildrenPortMatching() {
+    for (const child of this.children) {
+      if (!child.arePortsMatched) {
+        child.doPortMatching()
+        this.arePortsMatched = true
+      }
+    }
+  }
+
   doSimpleInitialSourceRender({
     ftype,
   }: { ftype: AnySourceComponent["ftype"] }) {
@@ -241,6 +293,10 @@ export abstract class BaseComponent<
       this.doSimpleInitialSourceRender({ ftype: this.config.sourceFtype })
     }
     this.doChildrenSourceRender()
+  }
+
+  doPortMatching() {
+    this.doChildrenPortMatching()
   }
 
   doInitialSchematicComponentRender() {
@@ -290,12 +346,41 @@ export abstract class BaseComponent<
     this.doChildrenPcbComponentRender()
   }
 
+  /**
+   * This runs all the render methods for a given phase, calling one of:
+   * - doInitial*
+   * - update*
+   *  -remove*
+   *  ...depending on the current state of the component.
+   */
+  runRenderPhase(phase: RenderPhase) {
+    const isInitialized = this.renderPhaseStates[phase].initialized
+    if (!isInitialized && this.shouldBeRemoved) return
+    if (this.shouldBeRemoved && isInitialized) {
+      ;(this as any)[`remove${phase}`]()
+      this.renderPhaseStates[phase].initialized = false
+      return
+    }
+    if (isInitialized) {
+      ;(this as any)[`update${phase}`]()
+      this.renderPhaseStates[phase].initialized = true
+      return
+    }
+    ;(this as any)[`doInitial${phase}`]()
+  }
+
+  runRenderPhaseForChildren(phase: RenderPhase) {
+    for (const child of this.children) {
+      child.runRenderPhase(phase)
+    }
+  }
+
   doInitialSchematicTraceRender() {
-    this.doChildrenSchematicTraceRender()
+    this.runRenderPhaseForChildren("SchematicTraceRender")
   }
 
   doInitialPcbTraceRender() {
-    this.doChildrenPcbTraceRender()
+    this.runRenderPhaseForChildren("PcbTraceRender")
   }
 
   doInitialCadRender() {
@@ -361,6 +446,7 @@ export abstract class BaseComponent<
   remove(component: BaseComponent) {
     this.children = this.children.filter((c) => c !== component)
     this.childrenPendingRemoval.push(component)
+    component.shouldBeRemoved = true
     this.isStale = true
   }
 

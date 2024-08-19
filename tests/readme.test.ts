@@ -38,7 +38,6 @@ it("should create soup with various elements", () => {
 
   project.render()
 
-  console.log("source ports", project.db.source_port.list())
   console.log("pcb ports", project.db.pcb_port.list())
 
   // Let's check the db to make sure everything we expect is there

@@ -19,7 +19,7 @@ export class Resistor extends BaseComponent<
   }
 
   initPorts() {
-    this.add(new Port({ name: "pin1", aliases: ["1", "pin1", "left"] }))
-    this.add(new Port({ name: "pin2", aliases: ["2", "pin2", "right"] }))
+    this.add(new Port({ name: "pin1", pinNumber: 1 }))
+    this.add(new Port({ name: "pin2", pinNumber: 2 }))
   }
 }

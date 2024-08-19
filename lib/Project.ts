@@ -54,6 +54,7 @@ export class Project {
     rootComponent.setProject(this)
 
     if (!rootComponent.isSourceRendered) {
+      rootComponent.doPortMatching()
       rootComponent.doInitialSourceRender()
       rootComponent.doInitialSchematicComponentRender()
       rootComponent.doInitialPcbComponentRender()

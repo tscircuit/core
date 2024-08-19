@@ -14,8 +14,20 @@ export class Port extends BaseComponent<typeof portProps> {
   pcb_port_id: string | null = null
   schematic_port_id: string | null = null
 
+  getAllPortAliases() {
+    const { props } = this
+    return Array.from(
+      new Set([
+        ...(props.aliases ?? []),
+        props.name,
+        ...(typeof props.pinNumber === "number"
+          ? [`pin${props.pinNumber}`, props.pinNumber.toString()]
+          : []),
+      ]),
+    )
+  }
   doesMatchName(name: string) {
-    return this.props.name === name || this.props.aliases.includes(name)
+    return this.getAllPortAliases().includes(name)
   }
   getPortSelector() {
     return `.${this.parent?.props.name} > port.${this.props.name}`
@@ -30,11 +42,7 @@ export class Port extends BaseComponent<typeof portProps> {
       throw new Error(`${this.getString()} has no parent source component`)
     }
 
-    const port_hints = [
-      ...(props.aliases ?? []),
-      props.name,
-      ...(typeof props.pinNumber === "number" ? [`pin${props.pinNumber}`] : []),
-    ]
+    const port_hints = this.getAllPortAliases()
 
     const source_port = db.source_port.insert({
       name: props.name,
@@ -48,13 +56,25 @@ export class Port extends BaseComponent<typeof portProps> {
 
   doInitialPcbComponentRender(): void {
     const { db } = this.project!
+    if (!this.parent?.pcb_component_id) {
+      db.pcb_error.insert({
+        // @ts-ignore
+        error_type: "pcb_component_missing_for_port",
+        message: `${this.getString()} has no parent pcb component`,
+      })
+      return
+    }
     const { props } = this
-    // const pcb_port = db.pcb_port.insert({
-    //   name: props.name,
-    //   layers: ["top"],
-    //   aliases: props.aliases,
-    //   source_port_id: this.source_component_id!,
-    // })
-    // this.pcb_port_id = pcb_port.pcb_port_id
+    const pcb_port = db.pcb_port.insert({
+      pcb_component_id: this.parent?.pcb_component_id!,
+      layers: ["top"],
+
+      // The position of a port is set by the parent, we just set to 0 initially
+      x: 0,
+      y: 0,
+
+      source_port_id: this.source_component_id!,
+    })
+    this.pcb_port_id = pcb_port.pcb_port_id
   }
 }

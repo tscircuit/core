@@ -5,7 +5,7 @@ import type { BaseComponent } from "../components/BaseComponent"
 export const createComponentsFromSoup = (
   soup: AnySoupElement[],
 ): BaseComponent[] => {
-  return []
+  return [new PcbSmtPad()]
   // for (const elm of soup) {
   //   if (elm.type === "pcb_smtpad") {
   //     this.add("smtpad", (pb) => pb.setProps(elm))
