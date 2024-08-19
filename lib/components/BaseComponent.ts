@@ -27,6 +27,7 @@ type RenderPhase =
   | "PcbComponentRender"
   | "PcbTraceRender"
   | "CadModelRender"
+  | "PcbAnalysis"
 
 type RenderPhaseStates = Record<RenderPhase, { initialized: boolean }>
 
@@ -80,13 +81,6 @@ export abstract class BaseComponent<
   shouldBeRemoved = false
 
   renderPhaseStates: RenderPhaseStates
-  isSourceRendered = false
-  arePortsMatched = false
-  isSchematicComponentRendered = false
-  isSchematicTraceRendered = false
-  isPcbComponentRendered = false
-  isPcbTraceRendered = false
-  isCadRendered = false
 
   componentName = ""
 
@@ -108,6 +102,7 @@ export abstract class BaseComponent<
       PcbComponentRender: { initialized: false },
       PcbTraceRender: { initialized: false },
       CadModelRender: { initialized: false },
+      PcbAnalysis: { initialized: false },
     }
     if (!this.componentName) {
       this.componentName = this.constructor.name
@@ -115,6 +110,9 @@ export abstract class BaseComponent<
     this.afterCreate()
     this.initPorts()
   }
+  updatePcbAnalysis() {}
+  removePcbAnalysis() {}
+  doInitialPcbAnalysis() {}
 
   updatePortMatching() {}
   removePortMatching() {}
@@ -169,106 +167,6 @@ export abstract class BaseComponent<
     changedProps: string[]
   }) {}
 
-  /**
-   * Renders all children source elements.
-   */
-  doChildrenSourceRender() {
-    for (const child of this.childrenPendingRemoval) {
-      if (child.isSourceRendered) {
-        child.removeSourceRender()
-        child.isSourceRendered = false
-      }
-    }
-    for (const child of this.children) {
-      if (!child.isSourceRendered) {
-        child.doInitialSourceRender()
-        child.isSourceRendered = true
-      } else {
-        child.updateSourceRender()
-      }
-    }
-  }
-
-  /**
-   * Renders all children schematic elements.
-   */
-  doChildrenSchematicComponentRender() {
-    for (const child of this.childrenPendingRemoval) {
-      if (child.isSchematicComponentRendered) {
-        child.removeSchematicComponentRender()
-        child.isSchematicComponentRendered = false
-      }
-    }
-    for (const child of this.children) {
-      if (!child.isSchematicComponentRendered) {
-        child.doInitialSchematicComponentRender()
-        child.isSchematicComponentRendered = true
-      } else {
-        child.updateSchematicComponentRender()
-      }
-    }
-  }
-
-  doChildrenPcbComponentRender() {
-    for (const child of this.childrenPendingRemoval) {
-      if (child.isPcbComponentRendered) {
-        child.removePcbComponentRender()
-        child.isPcbComponentRendered = false
-      }
-    }
-    for (const child of this.children) {
-      if (!child.isPcbComponentRendered) {
-        child.doInitialPcbComponentRender()
-        child.isPcbComponentRendered = true
-      } else {
-        child.updatePcbComponentRender()
-      }
-    }
-  }
-
-  doChildrenSchematicTraceRender() {
-    for (const child of this.childrenPendingRemoval) {
-      if (child.isSchematicTraceRendered) {
-        child.removeSchematicTraceRender()
-        child.isSchematicTraceRendered = false
-      }
-    }
-    for (const child of this.children) {
-      if (!child.isSchematicTraceRendered) {
-        child.doInitialSchematicTraceRender()
-        child.isSchematicTraceRendered = true
-      } else {
-        child.updateSchematicTraceRender()
-      }
-    }
-  }
-
-  doChildrenPcbTraceRender() {
-    for (const child of this.childrenPendingRemoval) {
-      if (child.isPcbTraceRendered) {
-        child.removePcbTraceRender()
-        child.isPcbTraceRendered = false
-      }
-    }
-    for (const child of this.children) {
-      if (!child.isPcbTraceRendered) {
-        child.doInitialPcbTraceRender()
-        child.isPcbTraceRendered = true
-      } else {
-        child.updatePcbTraceRender()
-      }
-    }
-  }
-
-  doChildrenPortMatching() {
-    for (const child of this.children) {
-      if (!child.arePortsMatched) {
-        child.doPortMatching()
-        this.arePortsMatched = true
-      }
-    }
-  }
-
   doSimpleInitialSourceRender({
     ftype,
   }: { ftype: AnySourceComponent["ftype"] }) {
@@ -292,11 +190,11 @@ export abstract class BaseComponent<
     if (this.config.sourceFtype) {
       this.doSimpleInitialSourceRender({ ftype: this.config.sourceFtype })
     }
-    this.doChildrenSourceRender()
+    this.runRenderPhaseForChildren("SourceRender")
   }
 
   doPortMatching() {
-    this.doChildrenPortMatching()
+    this.runRenderPhaseForChildren("PortMatching")
   }
 
   doInitialSchematicComponentRender() {
@@ -322,7 +220,7 @@ export abstract class BaseComponent<
       })
       this.schematic_component_id = schematic_component.schematic_component_id
     }
-    this.doChildrenSchematicComponentRender()
+    this.runRenderPhaseForChildren("SchematicComponentRender")
   }
 
   doInitialPcbComponentRender() {
@@ -343,7 +241,7 @@ export abstract class BaseComponent<
         // TODO, maybe call .add() with the footprint?
       }
     }
-    this.doChildrenPcbComponentRender()
+    this.runRenderPhaseForChildren("PcbComponentRender")
   }
 
   /**
@@ -390,46 +288,46 @@ export abstract class BaseComponent<
   }
 
   updateSourceRender() {
-    this.doChildrenSourceRender()
+    this.runRenderPhaseForChildren("SourceRender")
   }
 
   /**
    * Called whenever a component is stale and needs to be rendered
    */
   updateSchematicComponentRender() {
-    this.doChildrenSchematicComponentRender()
+    this.runRenderPhaseForChildren("SchematicComponentRender")
   }
 
   updateSchematicTraceRender() {
-    this.doChildrenSchematicComponentRender()
+    this.runRenderPhaseForChildren("SchematicTraceRender")
   }
 
   updatePcbComponentRender() {
-    this.doChildrenPcbComponentRender()
+    this.runRenderPhaseForChildren("PcbComponentRender")
   }
 
   updatePcbTraceRender() {
-    this.doChildrenPcbTraceRender()
+    this.runRenderPhaseForChildren("PcbTraceRender")
   }
 
   removeSourceRender() {
-    this.doChildrenSourceRender()
+    this.runRenderPhaseForChildren("SourceRender")
   }
 
   removeSchematicComponentRender() {
-    this.doChildrenSchematicComponentRender()
+    this.runRenderPhaseForChildren("SchematicComponentRender")
   }
 
   removeSchematicTraceRender() {
-    this.doChildrenSchematicTraceRender()
+    this.runRenderPhaseForChildren("SchematicTraceRender")
   }
 
   removePcbComponentRender() {
-    this.doChildrenPcbComponentRender()
+    this.runRenderPhaseForChildren("PcbComponentRender")
   }
 
   removePcbTraceRender() {
-    this.doChildrenPcbTraceRender()
+    this.runRenderPhaseForChildren("PcbTraceRender")
   }
 
   onChildChanged(child: BaseComponent) {
