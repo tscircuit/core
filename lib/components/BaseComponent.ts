@@ -60,7 +60,8 @@ export abstract class BaseComponent<
   isStale = true
 
   isSourceRendered = false
-  isSchematicRendered = false
+  isSchematicComponentRendered = false
+  isSchematicTraceRendered = false
   isPcbComponentRendered = false
   isPcbTraceRendered = false
   isCadRendered = false
@@ -148,19 +149,19 @@ export abstract class BaseComponent<
   /**
    * Renders all children schematic elements.
    */
-  doChildrenSchematicRender() {
+  doChildrenSchematicComponentRender() {
     for (const child of this.childrenPendingRemoval) {
-      if (child.isSchematicRendered) {
-        child.removeSchematicRender()
-        child.isSchematicRendered = false
+      if (child.isSchematicComponentRendered) {
+        child.removeSchematicComponentRender()
+        child.isSchematicComponentRendered = false
       }
     }
     for (const child of this.children) {
-      if (!child.isSchematicRendered) {
-        child.doInitialSchematicRender()
-        child.isSchematicRendered = true
+      if (!child.isSchematicComponentRendered) {
+        child.doInitialSchematicComponentRender()
+        child.isSchematicComponentRendered = true
       } else {
-        child.updateSchematicRender()
+        child.updateSchematicComponentRender()
       }
     }
   }
@@ -178,6 +179,23 @@ export abstract class BaseComponent<
         child.isPcbComponentRendered = true
       } else {
         child.updatePcbComponentRender()
+      }
+    }
+  }
+
+  doChildrenSchematicTraceRender() {
+    for (const child of this.childrenPendingRemoval) {
+      if (child.isSchematicTraceRendered) {
+        child.removeSchematicTraceRender()
+        child.isSchematicTraceRendered = false
+      }
+    }
+    for (const child of this.children) {
+      if (!child.isSchematicTraceRendered) {
+        child.doInitialSchematicTraceRender()
+        child.isSchematicTraceRendered = true
+      } else {
+        child.updateSchematicTraceRender()
       }
     }
   }
@@ -225,7 +243,7 @@ export abstract class BaseComponent<
     this.doChildrenSourceRender()
   }
 
-  doInitialSchematicRender() {
+  doInitialSchematicComponentRender() {
     const { db } = this.project!
     if (this.config.schematicSymbolName) {
       // TODO switch between horizontal and vertical based on schRotation
@@ -248,7 +266,7 @@ export abstract class BaseComponent<
       })
       this.schematic_component_id = schematic_component.schematic_component_id
     }
-    this.doChildrenSchematicRender()
+    this.doChildrenSchematicComponentRender()
   }
 
   doInitialPcbComponentRender() {
@@ -272,6 +290,10 @@ export abstract class BaseComponent<
     this.doChildrenPcbComponentRender()
   }
 
+  doInitialSchematicTraceRender() {
+    this.doChildrenSchematicTraceRender()
+  }
+
   doInitialPcbTraceRender() {
     this.doChildrenPcbTraceRender()
   }
@@ -289,8 +311,12 @@ export abstract class BaseComponent<
   /**
    * Called whenever a component is stale and needs to be rendered
    */
-  updateSchematicRender() {
-    this.doChildrenSchematicRender()
+  updateSchematicComponentRender() {
+    this.doChildrenSchematicComponentRender()
+  }
+
+  updateSchematicTraceRender() {
+    this.doChildrenSchematicComponentRender()
   }
 
   updatePcbComponentRender() {
@@ -305,8 +331,12 @@ export abstract class BaseComponent<
     this.doChildrenSourceRender()
   }
 
-  removeSchematicRender() {
-    this.doChildrenSchematicRender()
+  removeSchematicComponentRender() {
+    this.doChildrenSchematicComponentRender()
+  }
+
+  removeSchematicTraceRender() {
+    this.doChildrenSchematicTraceRender()
   }
 
   removePcbComponentRender() {

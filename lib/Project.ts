@@ -55,14 +55,16 @@ export class Project {
 
     if (!rootComponent.isSourceRendered) {
       rootComponent.doInitialSourceRender()
-      rootComponent.doInitialSchematicRender()
+      rootComponent.doInitialSchematicComponentRender()
       rootComponent.doInitialPcbComponentRender()
+      rootComponent.doInitialSchematicTraceRender()
       rootComponent.doInitialPcbTraceRender()
     } else {
       rootComponent.updateSourceRender()
-      rootComponent.updateSchematicRender()
+      rootComponent.updateSchematicComponentRender()
       rootComponent.updatePcbComponentRender()
       rootComponent.updatePcbTraceRender()
+      rootComponent.updateSchematicTraceRender()
     }
   }
 
