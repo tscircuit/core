@@ -10,7 +10,6 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react"
-import type { PCBSMTPad } from "@tscircuit/soup"
 import {
   createInstanceFromReactElement,
   type ReactSubtree,
@@ -203,7 +202,6 @@ export class NormalComponent<
     }
 
     // Explore children for possible smtpads etc.
-    console.log("Exploring children for possible smtpads etc.", this.children)
     const newPorts: Port[] = []
     if (!footprint) {
       for (const child of this.children) {

@@ -32,7 +32,6 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     const { _parsedProps: props } = this
 
     const portSelectors = this.getTracePortPathSelectors()
-    console.log(portSelectors)
 
     // db.pcb_port.getUsing({ source_port_id:
 

@@ -50,7 +50,6 @@ export abstract class PrimitiveComponent<
     ) as z.infer<ZodProps>
     if (!this.componentName) {
       this.componentName = this.constructor.name
-      console.log(`${this.toString()} created`)
     }
   }
 
@@ -96,11 +95,9 @@ export abstract class PrimitiveComponent<
   }
 
   add(component: PrimitiveComponent) {
-    console.log(`${this}.add(${component})`)
     component.onAddToParent(this)
     component.parent = this
     this.children.push(component)
-    console.log(`${this}.children`, this.children)
   }
 
   addAll(components: PrimitiveComponent[]) {

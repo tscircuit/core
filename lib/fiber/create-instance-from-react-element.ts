@@ -74,7 +74,7 @@ const hostConfig: HostConfig<
       )
     }
 
-    const instance = prepare(new target(props), {})
+    const instance = prepare(new target(props) as any, {})
 
     return instance
   },
@@ -83,15 +83,12 @@ const hostConfig: HostConfig<
     return {}
   },
   appendInitialChild(parentInstance: any, child: any) {
-    console.log("appendInitialChild", parentInstance, child)
     parentInstance.add(child)
   },
   appendChild(parentInstance: any, child: any) {
-    console.log("appendChild", parentInstance, child)
     parentInstance.add(child)
   },
   appendChildToContainer(container: any, child: any) {
-    console.log("appendChildToContainer", container, child)
     container.add(child)
   },
   finalizeInitialChildren() {
