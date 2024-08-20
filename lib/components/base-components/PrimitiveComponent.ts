@@ -29,7 +29,8 @@ export abstract class PrimitiveComponent<
   }
 
   project: Project | null = null
-  props: z.infer<ZodProps>
+  props: z.input<ZodProps>
+  _parsedProps: z.infer<ZodProps>
 
   componentName = ""
 
@@ -40,10 +41,10 @@ export abstract class PrimitiveComponent<
   cad_component_id: string | null = null
 
   constructor(props: z.input<ZodProps>) {
-    super()
+    super(props)
     this.children = []
     this.childrenPendingRemoval = []
-    this.props = this.config.zodProps.parse(props) as z.infer<ZodProps>
+    this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>
     if (!this.componentName) {
       this.componentName = this.constructor.name
     }
@@ -63,6 +64,7 @@ export abstract class PrimitiveComponent<
     }) as z.infer<ZodProps>
     const oldProps = this.props
     this.props = newProps
+    this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>
     this.onPropsChange({
       oldProps,
       newProps,
@@ -91,6 +93,7 @@ export abstract class PrimitiveComponent<
 
   add(component: PrimitiveComponent) {
     component.onAddToParent(this)
+    component.parent = this
     this.children.push(component)
   }
 
@@ -108,7 +111,7 @@ export abstract class PrimitiveComponent<
 
   doesSelectorMatch(selector: string): boolean {
     const myTypeNames = [this.componentName, this.componentName.toLowerCase()]
-    const myClassNames = [this.props.name].filter(Boolean)
+    const myClassNames = [this._parsedProps.name].filter(Boolean)
 
     const parts = selector.trim().split(/\> /)[0]
     const firstPart = parts[0]

@@ -29,7 +29,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
   doInitialPcbTraceRender(): void {
     const { db } = this.project!
-    const { props } = this
+    const { _parsedProps: props } = this
 
     const portSelectors = this.getTracePortPathSelectors()
     console.log(portSelectors)

@@ -1,12 +1,10 @@
 import { resistorProps } from "@tscircuit/props"
-import {
-  PrimitiveComponent,
-  type PortMap,
-} from "../base-components/PrimitiveComponent"
 import { BASE_SYMBOLS, FTYPE, type PassivePorts } from "lib/utils/constants"
 import { Port } from "../primitive-components/Port"
+import { NormalComponent } from "../base-components/NormalComponent"
+import { z } from "zod"
 
-export class Resistor extends PrimitiveComponent<
+export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
 > {

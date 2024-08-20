@@ -23,7 +23,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   getAllPortAliases() {
-    const { props } = this
+    const { _parsedProps: props } = this
     return Array.from(
       new Set([
         ...(props.aliases ?? []),
@@ -52,7 +52,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   doInitialSourceRender(): void {
     const { db } = this.project!
-    const { props } = this
+    const { _parsedProps: props } = this
 
     if (!this.parent?.source_component_id) {
       throw new Error(`${this.getString()} has no parent source component`)
@@ -80,7 +80,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       })
       return
     }
-    const { props } = this
     const pcb_port = db.pcb_port.insert({
       pcb_component_id: this.parent?.pcb_component_id!,
       layers: ["top"],

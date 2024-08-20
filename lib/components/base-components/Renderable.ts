@@ -1,4 +1,4 @@
-import type { ReactElement } from "react"
+import { Component, createElement, type ReactElement } from "react"
 
 export const orderedRenderPhases = [
   "ReactSubtreesRender",
@@ -31,10 +31,10 @@ export type IRenderable = RenderPhaseFunctions & {
   runRenderPhaseForChildren(phase: RenderPhase): void
   shouldBeRemoved: boolean
   children: IRenderable[]
-  render(): void
+  runRenderCycle(): void
 }
 
-export abstract class Renderable implements IRenderable {
+export abstract class Renderable extends Component implements IRenderable {
   renderPhaseStates: RenderPhaseStates
   shouldBeRemoved = false
   children: IRenderable[]
@@ -44,7 +44,8 @@ export abstract class Renderable implements IRenderable {
   /** Schematic-only, lines, boxes, indicators etc. */
   isSchematicPrimitive = false
 
-  constructor() {
+  constructor(props: any) {
+    super(props)
     this.children = []
     this.renderPhaseStates = {
       ReactSubtreesRender: { initialized: false },
@@ -95,10 +96,8 @@ export abstract class Renderable implements IRenderable {
     for (const child of this.children) child.runRenderPhase(phase)
   }
 
-  // If you call this class like a function, it will return a ReactElement
-  static [Symbol.hasInstance](...args): ReactElement {
-    console.log({ args })
-    return instance.value
+  render(): ReactElement {
+    return createElement(this.constructor.name, this.props)
   }
 
   // METHODS TO OVERRIDE

@@ -1,5 +1,5 @@
 import { Footprint } from "../primitive-components/Footprint"
-import { ZodType } from "zod"
+import { ZodType, z } from "zod"
 import { PrimitiveComponent } from "./PrimitiveComponent"
 import { Port } from "../primitive-components/Port"
 import { symbols, type SchSymbol } from "schematic-symbols"
@@ -11,9 +11,9 @@ import {
 } from "react"
 import type { PCBSMTPad } from "@tscircuit/soup"
 import {
-  createReactSubtree,
+  createInstanceFromReactElement,
   type ReactSubtree,
-} from "lib/fiber/create-react-subtree"
+} from "lib/fiber/create-instance-from-react-element"
 
 export type PortMap<T extends string> = {
   [K in T]: Port
@@ -42,7 +42,7 @@ export class NormalComponent<
 > extends PrimitiveComponent<ZodProps> {
   reactSubtrees: Array<ReactSubtree> = []
 
-  constructor(props: ZodProps) {
+  constructor(props: z.input<ZodProps>) {
     super(props)
     this.initPorts()
   }
@@ -71,9 +71,9 @@ export class NormalComponent<
     ) as any
   }
 
-  getInstanceForReactElement(node: ReactElement): NormalComponent | null {
-    for (const { node: n, component } of this.reactSubtrees) {
-      if (n === node) return component
+  getInstanceForReactElement(element: ReactElement): NormalComponent | null {
+    for (const subtree of this.reactSubtrees) {
+      if (subtree.element === element) return subtree.component
     }
     return null
   }
@@ -82,7 +82,7 @@ export class NormalComponent<
     const ftype = this.config.sourceFtype
     if (!ftype) return
     const { db } = this.project!
-    const { props } = this
+    const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype,
       name: props.name,
@@ -146,7 +146,7 @@ export class NormalComponent<
   _renderReactSubtree(element: ReactElement): ReactSubtree {
     return {
       element,
-      component: createReactSubtree(element),
+      component: createInstanceFromReactElement(element),
     }
   }
 
@@ -229,9 +229,5 @@ export class NormalComponent<
     // TODO dedupe
 
     this.addAll(newPorts)
-  }
-
-  render(...args: any[]) {
-    console.log("render", args)
   }
 }

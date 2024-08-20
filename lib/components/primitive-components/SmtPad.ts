@@ -34,7 +34,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
 
   doInitialPcbComponentRender(): void {
     const { db } = this.project!
-    const { props } = this
+    const { _parsedProps: props } = this
     if (!props.portHints) return
     const pcb_smt_pad = db.pcb_smtpad.insert({
       pcb_component_id: this.parent?.pcb_component_id!,
