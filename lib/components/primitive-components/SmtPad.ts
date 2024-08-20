@@ -7,6 +7,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
 
   matchedPort: Port | null = null
 
+  isPcbPrimitive = true
+
   get config() {
     return {
       zodProps: smtPadProps,

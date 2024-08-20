@@ -1,9 +1,12 @@
+import type { ReactElement } from "react"
+
 export const orderedRenderPhases = [
+  "ReactSubtreesRender",
   "SourceRender",
-  "DiscoverPorts",
+  "PortDiscovery",
   "PortMatching",
   "SchematicComponentRender",
-  "LayoutSchematic",
+  "SchematicLayout",
   "SchematicTraceRender",
   "PcbComponentRender",
   "PcbTraceRender",
@@ -36,14 +39,20 @@ export abstract class Renderable implements IRenderable {
   shouldBeRemoved = false
   children: IRenderable[]
 
+  /** PCB-only SMTPads, PlatedHoles, Holes, Silkscreen elements etc. */
+  isPcbPrimitive = false
+  /** Schematic-only, lines, boxes, indicators etc. */
+  isSchematicPrimitive = false
+
   constructor() {
     this.children = []
     this.renderPhaseStates = {
-      DiscoverPorts: { initialized: false },
+      ReactSubtreesRender: { initialized: false },
+      PortDiscovery: { initialized: false },
       SourceRender: { initialized: false },
       PortMatching: { initialized: false },
       SchematicComponentRender: { initialized: false },
-      LayoutSchematic: { initialized: false },
+      SchematicLayout: { initialized: false },
       SchematicTraceRender: { initialized: false },
       PcbComponentRender: { initialized: false },
       PcbTraceRender: { initialized: false },
@@ -52,7 +61,7 @@ export abstract class Renderable implements IRenderable {
     }
   }
 
-  render() {
+  runRenderCycle() {
     for (const renderPhase of orderedRenderPhases) {
       this.runRenderPhaseForChildren(renderPhase)
       this.runRenderPhase(renderPhase)
@@ -86,22 +95,31 @@ export abstract class Renderable implements IRenderable {
     for (const child of this.children) child.runRenderPhase(phase)
   }
 
+  // If you call this class like a function, it will return a ReactElement
+  static [Symbol.hasInstance](...args): ReactElement {
+    console.log({ args })
+    return instance.value
+  }
+
   // METHODS TO OVERRIDE
+  doInitialReactSubtreesRender() {}
+  updateReactSubtreesRender() {}
+  removeReactSubtreesRender() {}
   doInitialSourceRender() {}
   updateSourceRender() {}
   removeSourceRender() {}
-  doInitialDiscoverPorts() {}
-  updateDiscoverPorts() {}
-  removeDiscoverPorts() {}
+  doInitialPortDiscovery() {}
+  updatePortDiscovery() {}
+  removePortDiscovery() {}
   doInitialPortMatching() {}
   updatePortMatching() {}
   removePortMatching() {}
   doInitialSchematicComponentRender() {}
   updateSchematicComponentRender() {}
   removeSchematicComponentRender() {}
-  doInitialLayoutSchematic() {}
-  updateLayoutSchematic() {}
-  removeLayoutSchematic() {}
+  doInitialSchematicLayout() {}
+  updateSchematicLayout() {}
+  removeSchematicLayout() {}
   doInitialSchematicTraceRender() {}
   updateSchematicTraceRender() {}
   removeSchematicTraceRender() {}

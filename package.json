@@ -5,7 +5,8 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@types/bun": "latest",
-    "@types/react": "^18.3.3"
+    "@types/react": "^18.3.3",
+    "@types/react-reconciler": "^0.28.8"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

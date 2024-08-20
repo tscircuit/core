@@ -4,8 +4,16 @@ import { PrimitiveComponent } from "./PrimitiveComponent"
 import { Port } from "../primitive-components/Port"
 import { symbols, type SchSymbol } from "schematic-symbols"
 import { fp } from "footprinter"
-import { isValidElement as isReactElement } from "react"
+import {
+  isValidElement as isReactElement,
+  type ReactElement,
+  type ReactNode,
+} from "react"
 import type { PCBSMTPad } from "@tscircuit/soup"
+import {
+  createReactSubtree,
+  type ReactSubtree,
+} from "lib/fiber/create-react-subtree"
 
 export type PortMap<T extends string> = {
   [K in T]: Port
@@ -32,6 +40,8 @@ export class NormalComponent<
   ZodProps extends ZodType = any,
   PortNames extends string = never,
 > extends PrimitiveComponent<ZodProps> {
+  reactSubtrees: Array<ReactSubtree> = []
+
   constructor(props: ZodProps) {
     super(props)
     this.initPorts()
@@ -59,6 +69,13 @@ export class NormalComponent<
         },
       },
     ) as any
+  }
+
+  getInstanceForReactElement(node: ReactElement): NormalComponent | null {
+    for (const { node: n, component } of this.reactSubtrees) {
+      if (n === node) return component
+    }
+    return null
   }
 
   doInitialSourceRender() {
@@ -126,8 +143,29 @@ export class NormalComponent<
     }
   }
 
+  _renderReactSubtree(element: ReactElement): ReactSubtree {
+    return {
+      element,
+      component: createReactSubtree(element),
+    }
+  }
+
+  doInitialReactSubtreesRender(): void {
+    if (isReactElement(this.props.footprint)) {
+      this.reactSubtrees.push(this._renderReactSubtree(this.props.footprint))
+    }
+    for (const child of this.children) {
+    }
+  }
+
   getPortsFromFootprint(): Port[] {
-    const { footprint } = this.props
+    let { footprint } = this.props
+
+    // If footprint is a react element, map it to a normal component
+    if (isReactElement(footprint)) {
+      footprint = this.getInstanceForReactElement(footprint)
+      if (!footprint) return []
+    }
 
     function getPortFromHints(hints: string[]) {
       const pinNumber = hints.find((p) => /^(pin)?\d+$/.test(p))
@@ -165,12 +203,18 @@ export class NormalComponent<
 
       return newPorts
     }
-    if (isReactElement(footprint)) {
-      // Create React subtree and render into footprint component
-      // console.log(footprint.)
-      throw new Error("react footprint getPortsFromFootprint Not Implemented")
+
+    // Explore children for possible smtpads etc.
+    const newPorts: Port[] = []
+    if (!footprint) {
+      for (const child of this.children) {
+        if (child.props.portHints && child.isPcbPrimitive) {
+          const port = getPortFromHints(child.props.portHints)
+          if (port) newPorts.push(port)
+        }
+      }
     }
-    return []
+    return newPorts
   }
 
   /**
@@ -185,5 +229,9 @@ export class NormalComponent<
     // TODO dedupe
 
     this.addAll(newPorts)
+  }
+
+  render(...args: any[]) {
+    console.log("render", args)
   }
 }
