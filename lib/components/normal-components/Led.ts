@@ -1,13 +1,16 @@
 import { ledProps } from "@tscircuit/props"
-import { BaseComponent } from "./BaseComponent"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import {
   FTYPE,
   BASE_SYMBOLS,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
-import { Port } from "./Port"
+import { Port } from "../primitive-components/Port"
 
-export class Led extends BaseComponent<typeof ledProps, PolarizedPassivePorts> {
+export class Led extends PrimitiveComponent<
+  typeof ledProps,
+  PolarizedPassivePorts
+> {
   get config() {
     return {
       schematicSymbolName: BASE_SYMBOLS.led,

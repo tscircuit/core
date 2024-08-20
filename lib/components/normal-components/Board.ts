@@ -1,8 +1,11 @@
 import { boardProps } from "@tscircuit/props"
 import type { z } from "zod"
-import { BaseComponent, type BaseComponentConfig } from "./BaseComponent"
+import {
+  PrimitiveComponent,
+  type BaseComponentConfig,
+} from "../base-components/PrimitiveComponent"
 
-export class Board extends BaseComponent<typeof boardProps> {
+export class Board extends PrimitiveComponent<typeof boardProps> {
   pcb_board_id: string | null = null
 
   canHaveChildren = true
@@ -24,7 +27,7 @@ export class Board extends BaseComponent<typeof boardProps> {
 
     this.pcb_board_id = pcb_board.pcb_board_id
 
-    this.doChildrenPcbComponentRender()
+    this.runRenderPhaseForChildren("PcbComponentRender")
   }
 
   removePcbComponentRender(): void {

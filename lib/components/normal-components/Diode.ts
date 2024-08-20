@@ -1,9 +1,12 @@
 import { diodeProps } from "@tscircuit/props"
-import { BaseComponent, type PortMap } from "./BaseComponent"
+import {
+  PrimitiveComponent,
+  type PortMap,
+} from "../base-components/PrimitiveComponent"
 import { FTYPE, BASE_SYMBOLS, type TwoPinPorts } from "lib/utils/constants"
-import { Port } from "./Port"
+import { Port } from "../primitive-components/Port"
 
-export class Diode extends BaseComponent<typeof diodeProps, TwoPinPorts> {
+export class Diode extends PrimitiveComponent<typeof diodeProps, TwoPinPorts> {
   pin1 = this.portMap.pin1
   pin2 = this.portMap.pin2
 

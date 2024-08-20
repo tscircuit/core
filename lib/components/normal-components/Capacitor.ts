@@ -1,5 +1,5 @@
 import { ledProps } from "@tscircuit/props"
-import { BaseComponent } from "./BaseComponent"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { FTYPE, BASE_SYMBOLS } from "lib/utils/constants"
 
 type PortNames =
@@ -12,7 +12,7 @@ type PortNames =
   | "anode"
   | "cathode"
 
-export class Capacitor extends BaseComponent<typeof ledProps, PortNames> {
+export class Capacitor extends PrimitiveComponent<typeof ledProps, PortNames> {
   get config() {
     return {
       // schematicSymbolName: BASE_SYMBOLS.capacitor,

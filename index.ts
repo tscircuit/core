@@ -1,3 +1,3 @@
-export { Board } from "./lib/components/Board"
+export { Board } from "./lib/components/normal-components/Board"
 export { Project } from "./lib/Project"
-export { Resistor } from "./lib/components/Resistor"
+export { Resistor } from "./lib/components/normal-components/Resistor"

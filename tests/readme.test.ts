@@ -1,8 +1,8 @@
 import { it, expect } from "bun:test"
 import { Board, Resistor, Project } from "../index"
-import { Led } from "lib/components/Led"
-import { Trace } from "lib/components/Trace"
-import { Net } from "lib/components/Net"
+import { Led } from "lib/components/normal-components/Led"
+import { Trace } from "lib/components/normal-components/Trace"
+import { Net } from "lib/components/normal-components/Net"
 
 it("should create soup with various elements", () => {
   const project = new Project()
@@ -47,5 +47,5 @@ it("should create soup with various elements", () => {
 
   // console.log("pcb_trace", project.db.pcb_trace.list())
 
-  // console.log(project.getSoup())
+  console.log(project.getSoup())
 })

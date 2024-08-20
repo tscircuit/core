@@ -1,18 +1,27 @@
-import { BaseComponent } from "./BaseComponent"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { z } from "zod"
 
 export const portProps = z.object({
-  name: z.string(),
+  name: z.string().optional(),
   pinNumber: z.number().optional(),
   aliases: z.array(z.string()).optional(),
 })
 
 export type PortProps = z.infer<typeof portProps>
 
-export class Port extends BaseComponent<typeof portProps> {
+export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
   pcb_port_id: string | null = null
   schematic_port_id: string | null = null
+
+  constructor(props: z.input<typeof portProps>) {
+    if (!props.name && props.pinNumber) props.name = `pin${props.pinNumber}`
+    if (!props.name) {
+      throw new Error("Port must have a name or a pinNumber")
+    }
+    super(props)
+    this.initPorts()
+  }
 
   getAllPortAliases() {
     const { props } = this
@@ -24,10 +33,15 @@ export class Port extends BaseComponent<typeof portProps> {
           ? [`pin${props.pinNumber}`, props.pinNumber.toString()]
           : []),
       ]),
-    )
+    ) as string[]
   }
   doesMatchName(name: string) {
     return this.getAllPortAliases().includes(name)
+  }
+  doesMatchAnyAlias(aliases: Array<string | number>) {
+    return this.getAllPortAliases().some((a) =>
+      aliases.map((a) => a.toString()).includes(a),
+    )
   }
   getPortSelector() {
     return `.${this.parent?.props.name} > port.${this.props.name}`
@@ -45,7 +59,7 @@ export class Port extends BaseComponent<typeof portProps> {
     const port_hints = this.getAllPortAliases()
 
     const source_port = db.source_port.insert({
-      name: props.name,
+      name: props.name!,
       pin_number: props.pinNumber,
       port_hints,
       source_component_id: this.parent?.source_component_id!,

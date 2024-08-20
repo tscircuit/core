@@ -1,11 +1,11 @@
 import type { AnySoupElement } from "@tscircuit/soup"
-import type { BaseComponent } from "./components/BaseComponent"
+import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
 import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import { su } from "@tscircuit/soup-util"
 
 export class Project {
-  rootComponent: BaseComponent | null = null
-  children: BaseComponent[]
+  rootComponent: PrimitiveComponent | null = null
+  children: PrimitiveComponent[]
   db: SoupUtilObjects
 
   constructor() {
@@ -13,7 +13,7 @@ export class Project {
     this.db = su([])
   }
 
-  add(component: BaseComponent) {
+  add(component: PrimitiveComponent) {
     this.children.push(component)
   }
 
@@ -53,20 +53,7 @@ export class Project {
 
     rootComponent.setProject(this)
 
-    if (!rootComponent.isSourceRendered) {
-      rootComponent.doPortMatching()
-      rootComponent.doInitialSourceRender()
-      rootComponent.doInitialSchematicComponentRender()
-      rootComponent.doInitialPcbComponentRender()
-      rootComponent.doInitialSchematicTraceRender()
-      rootComponent.doInitialPcbTraceRender()
-    } else {
-      rootComponent.updateSourceRender()
-      rootComponent.updateSchematicComponentRender()
-      rootComponent.updatePcbComponentRender()
-      rootComponent.updatePcbTraceRender()
-      rootComponent.updateSchematicTraceRender()
-    }
+    rootComponent.render()
   }
 
   getSoup(): AnySoupElement[] {

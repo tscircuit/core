@@ -1,7 +1,7 @@
 import { traceProps } from "@tscircuit/props"
-import { BaseComponent } from "./BaseComponent"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
-export class Trace extends BaseComponent<typeof traceProps> {
+export class Trace extends PrimitiveComponent<typeof traceProps> {
   get config() {
     return {
       zodProps: traceProps,

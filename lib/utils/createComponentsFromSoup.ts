@@ -1,12 +1,25 @@
 import type { AnySoupElement } from "@tscircuit/soup"
-import type { BaseComponent } from "../components/BaseComponent"
+import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
+// import { SmtPad } from "lib/components/SmtPad"
 // import { } from "../components/
 
 export const createComponentsFromSoup = (
   soup: AnySoupElement[],
-): BaseComponent[] => {
-  return [new PcbSmtPad()]
-  // for (const elm of soup) {
+): PrimitiveComponent[] => {
+  const components: PrimitiveComponent[] = []
+  for (const elm of soup) {
+    if (elm.type === "pcb_smtpad") {
+      // components.push(
+      //   new SmtPad({
+      //     pcbX: elm.x,
+      //     pcbY: elm.y,
+      //     layer: elm.layer,
+      //     shape: elm.shape,
+      //   }),
+      // )
+    }
+  }
+  return components
   //   if (elm.type === "pcb_smtpad") {
   //     this.add("smtpad", (pb) => pb.setProps(elm))
   //   } else if (elm.type === "pcb_plated_hole") {

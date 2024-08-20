@@ -1,0 +1,184 @@
+import type { AnySoupElement, AnySourceComponent } from "@tscircuit/soup"
+import type { Project } from "../../Project"
+import type { ZodType } from "zod"
+import { z } from "zod"
+import { symbols, type SchSymbol, type BaseSymbolName } from "schematic-symbols"
+import { isValidElement as isReactElement } from "react"
+import type { Footprint } from "../primitive-components/Footprint"
+import { fp } from "footprinter"
+import type { Port } from "../primitive-components/Port"
+import { Renderable, type RenderPhase } from "./Renderable"
+
+export interface BaseComponentConfig {
+  schematicSymbolName?: BaseSymbolName | null
+  zodProps: ZodType
+  sourceFtype?: AnySourceComponent["ftype"] | null
+}
+
+export abstract class PrimitiveComponent<
+  ZodProps extends ZodType = any,
+> extends Renderable {
+  parent: PrimitiveComponent | null = null
+  children: PrimitiveComponent[]
+  childrenPendingRemoval: PrimitiveComponent[]
+
+  get config(): BaseComponentConfig {
+    return {
+      zodProps: z.object({}).passthrough(),
+    }
+  }
+
+  project: Project | null = null
+  props: z.infer<ZodProps>
+
+  componentName = ""
+
+  source_group_id: string | null = null
+  source_component_id: string | null = null
+  schematic_component_id: string | null = null
+  pcb_component_id: string | null = null
+  cad_component_id: string | null = null
+
+  constructor(props: z.input<ZodProps>) {
+    super()
+    this.children = []
+    this.childrenPendingRemoval = []
+    this.props = this.config.zodProps.parse(props) as z.infer<ZodProps>
+    if (!this.componentName) {
+      this.componentName = this.constructor.name
+    }
+  }
+
+  setProject(project: Project) {
+    this.project = project
+    for (const c of this.children) {
+      c.setProject(project)
+    }
+  }
+
+  setProps(props: Partial<z.input<ZodProps>>) {
+    const newProps = this.config.zodProps.parse({
+      ...this.props,
+      ...props,
+    }) as z.infer<ZodProps>
+    const oldProps = this.props
+    this.props = newProps
+    this.onPropsChange({
+      oldProps,
+      newProps,
+      changedProps: Object.keys(props),
+    })
+    this.parent?.onChildChanged(this)
+  }
+
+  onAddToParent(parent: PrimitiveComponent) {
+    this.parent = parent
+    this.project = parent.project
+  }
+
+  /**
+   * Called whenever the props change
+   */
+  onPropsChange(params: {
+    oldProps: z.infer<ZodProps>
+    newProps: z.infer<ZodProps>
+    changedProps: string[]
+  }) {}
+
+  onChildChanged(child: PrimitiveComponent) {
+    this.parent?.onChildChanged(child)
+  }
+
+  add(component: PrimitiveComponent) {
+    component.onAddToParent(this)
+    this.children.push(component)
+  }
+
+  remove(component: PrimitiveComponent) {
+    this.children = this.children.filter((c) => c !== component)
+    this.childrenPendingRemoval.push(component)
+    component.shouldBeRemoved = true
+  }
+
+  doesSelectorMatch(selector: string): boolean {
+    const myTypeNames = [this.componentName, this.componentName.toLowerCase()]
+    const myClassNames = [this.props.name].filter(Boolean)
+
+    const parts = selector.trim().split(/\> /)[0]
+    const firstPart = parts[0]
+
+    if (parts.length > 1) return false
+    if (selector === "*") return true
+    if (selector[0] === "#" && selector.slice(1) === this.props.id) return true
+    if (selector[0] === "." && myClassNames.includes(selector.slice(1)))
+      return true
+    if (/^[a-zA-Z0-9_]/.test(firstPart) && myTypeNames.includes(firstPart))
+      return true
+
+    return false
+  }
+
+  selectAll(selector: string): PrimitiveComponent[] {
+    const parts = selector.split(/\> /)[0]
+    const firstPart = parts[0]
+    const otherParts = selector.replace(firstPart, "")
+    const myTypeNames = [this.componentName, this.componentName.toLowerCase()]
+    const myClassNames = [this.props.name].filter(Boolean)
+
+    if (selector === "*") {
+      return this.getDescendants()
+    }
+    if (firstPart.startsWith("#") && parts.length === 1) {
+      const id = firstPart.slice(1)
+      return this.getDescendants().filter((c) => c.props.id === id)
+    }
+
+    // e.g. group > .AnotherGroup > led.anode
+    if (firstPart.startsWith(".") || /^[a-zA-Z0-9_]/.test(firstPart)) {
+      const isMatchingMe = this.doesSelectorMatch(firstPart)
+      if (isMatchingMe && parts.length === 1) {
+        // TODO: technically, descendants could contain sub-classes with the
+        // same name, but that edge case seems like bad practice anyway...
+        return [this]
+      }
+      if (isMatchingMe) {
+        return this.children.flatMap((c) => c.selectAll(otherParts))
+      }
+
+      if (otherParts.trim().startsWith(">")) {
+        const childrenSelector = otherParts.trim().slice(1)
+        const childrenSelectorFirstPart = childrenSelector.split(/\> /)[0]
+        return this.children
+          .filter((c) => c.doesSelectorMatch(childrenSelectorFirstPart))
+          .flatMap((c) => c.selectAll(childrenSelector))
+      }
+      return this.children.flatMap((c) => c.selectAll(otherParts))
+    }
+
+    throw new Error(`Could not handle selector "${selector}"`)
+  }
+
+  selectOne(selector: string): PrimitiveComponent | null {
+    return this.selectAll(selector)[0] ?? null
+  }
+
+  getDescendants(): PrimitiveComponent[] {
+    const descendants: PrimitiveComponent[] = []
+    for (const child of this.children) {
+      descendants.push(child)
+      descendants.push(...child.getDescendants())
+    }
+    return descendants
+  }
+
+  getString(): string {
+    const { componentName, props, parent } = this
+    return `${componentName}(.${parent?.props.name} > .${props.name})`
+  }
+  get [Symbol.toStringTag](): string {
+    return this.getString()
+  }
+  [Symbol.for("nodejs.util.inspect.custom")]() {
+    return this.getString()
+  }
+}
