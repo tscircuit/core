@@ -15,25 +15,7 @@ it("should create soup with various elements", () => {
   const R1 = new Resistor({ name: "R1", resistance: "10k", footprint: "0402" })
   board.add(R1)
 
-  // const LED1 = new Led({ name: "LED1", footprint: "0402" })
   board.add(<led name="LED1" footprint="0402" />)
-
-  // const trace = new Trace({
-  //   from: R1.pin1,
-  //   to: LED1.pos,
-  //   thickness: "0.2mm",
-  // })
-  // board.add(trace)
-
-  // const gnd = new Net({ name: "GND" })
-  // board.add(gnd)
-
-  // const gndTrace = new Trace({
-  //   from: LED1.neg,
-  //   to: gnd,
-  //   thickness: "0.2mm",
-  // })
-  // board.add(gndTrace)
 
   project.render()
 

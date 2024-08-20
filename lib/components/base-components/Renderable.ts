@@ -1,9 +1,9 @@
 import { Component, createElement, type ReactElement } from "react"
 
 export const orderedRenderPhases = [
-  "ReactSubtreesRender",
+  "ReactSubtreesRender", // probably going to be removed b/c subtrees should render instantly
   "SourceRender",
-  "PortDiscovery",
+  "PortDiscovery", // probably going to be removed b/c port discovery can always be done on prop change
   "PortMatching",
   "SchematicComponentRender",
   "SchematicLayout",

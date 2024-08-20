@@ -13,6 +13,8 @@ const stringProxy = new Proxy(
   },
 ) as any
 
+export type Ftype = AnySourceComponent["ftype"]
+
 export const FTYPE: {
   [T in AnySourceComponent["ftype"]]: T
 } = stringProxy
@@ -29,3 +31,5 @@ export type PolarizedPassivePorts =
   | "cathode"
   | "pos"
   | "neg"
+
+export type { BaseSymbolName }

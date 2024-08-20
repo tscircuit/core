@@ -1,26 +1,19 @@
 import { resistorProps } from "@tscircuit/props"
-import { SYMBOL, FTYPE, type PassivePorts } from "lib/utils/constants"
-import { Port } from "../primitive-components/Port"
+import type { PassivePorts, Ftype, BaseSymbolName } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
-import { z } from "zod"
 
 export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
 > {
-  pin1: Port = this.portMap.pin1
-  pin2: Port = this.portMap.pin2
-
   get config() {
     return {
-      schematicSymbolName: SYMBOL.boxresistor,
+      schematicSymbolName: "boxresistor" as BaseSymbolName,
       zodProps: resistorProps,
-      sourceFtype: FTYPE.simple_resistor,
+      sourceFtype: "simple_resistor" as Ftype,
     }
   }
 
-  initPorts() {
-    this.add(new Port({ name: "pin1", pinNumber: 1 }))
-    this.add(new Port({ name: "pin2", pinNumber: 2 }))
-  }
+  pin1 = this.portMap.pin1
+  pin2 = this.portMap.pin2
 }

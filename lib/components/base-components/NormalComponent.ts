@@ -2,7 +2,7 @@ import { Footprint } from "../primitive-components/Footprint"
 import { ZodType, z } from "zod"
 import { PrimitiveComponent } from "./PrimitiveComponent"
 import { Port } from "../primitive-components/Port"
-import { symbols, type SchSymbol } from "schematic-symbols"
+import { symbols, type BaseSymbolName, type SchSymbol } from "schematic-symbols"
 import { fp } from "footprinter"
 import {
   isValidElement as isReactElement,
@@ -14,6 +14,7 @@ import {
   createInstanceFromReactElement,
   type ReactSubtree,
 } from "lib/fiber/create-instance-from-react-element"
+import { getPortFromHints } from "lib/utils/getPortFromHints"
 
 export type PortMap<T extends string> = {
   [K in T]: Port
@@ -47,8 +48,40 @@ export class NormalComponent<
     this.initPorts()
   }
 
-  // METHODS TO OVERRIDE
-  initPorts() {}
+  /**
+   * Override this method for better control over the auto-discovery of ports.
+   *
+   * If you override this method just do something like:
+   * initPorts() {
+   *   this.add(new Port({ pinNumber: 1, aliases: ["anode", "pos"] }))
+   *   this.add(new Port({ pinNumber: 2, aliases: ["cathode", "neg"] }))
+   * }
+   *
+   * By default, we'll pull the ports from the first place we find them:
+   * 1. `config.schematicSymbolName`
+   * 2. `props.footprint`
+   *
+   */
+  initPorts() {
+    const { config } = this
+    if (config.schematicSymbolName) {
+      const symbol = symbols[
+        `${config.schematicSymbolName}_horz` as keyof typeof symbols
+      ] as SchSymbol | undefined
+      if (!symbol) return
+
+      for (const { labels } of symbol.ports) {
+        const port = getPortFromHints(labels)
+        if (port) this.add(port)
+      }
+
+      return
+    }
+
+    const portsFromFootprint = this.getPortsFromFootprint()
+
+    this.addAll(portsFromFootprint)
+  }
 
   get portMap(): PortMap<PortNames> {
     return new Proxy(
@@ -178,15 +211,6 @@ export class NormalComponent<
       footprint = this.children.find((c) => c.componentName === "Footprint")
     }
 
-    function getPortFromHints(hints: string[]) {
-      const pinNumber = hints.find((p) => /^(pin)?\d+$/.test(p))
-      if (!pinNumber) return null
-      return new Port({
-        pinNumber: Number.parseInt(pinNumber.replace(/^pin/, "")),
-        aliases: hints.filter((p) => p !== pinNumber),
-      })
-    }
-
     if (typeof footprint === "string") {
       const fpSoup = fp.string(footprint).soup()
 
@@ -236,12 +260,13 @@ export class NormalComponent<
    *
    * Generally, this is done by looking at the schematic and the footprint,
    * reading the pins, making sure there aren't duplicates.
+   *
+   * TODO remove in favor of initPorts()
+   *
    */
   doInitialPortDiscovery(): void {
-    const newPorts = [...this.getPortsFromFootprint()]
-
+    // const newPorts = [...this.getPortsFromFootprint()]
     // TODO dedupe
-
-    this.addAll(newPorts)
+    // this.addAll(newPorts)
   }
 }
