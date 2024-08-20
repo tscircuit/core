@@ -1,6 +1,7 @@
 export { NormalComponent } from "./base-components/NormalComponent"
 export { PrimitiveComponent } from "./base-components/PrimitiveComponent"
 export { Renderable, type IRenderable } from "./base-components/Renderable"
+export { Board } from "./normal-components/Board"
 export { Footprint } from "./primitive-components/Footprint"
 export { SmtPad } from "./primitive-components/SmtPad"
 export { Port } from "./primitive-components/Port"

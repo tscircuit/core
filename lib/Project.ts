@@ -2,6 +2,8 @@ import type { AnySoupElement } from "@tscircuit/soup"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
 import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import { su } from "@tscircuit/soup-util"
+import { isValidElement, type ReactElement } from "react"
+import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 
 export class Project {
   rootComponent: PrimitiveComponent | null = null
@@ -13,7 +15,14 @@ export class Project {
     this.db = su([])
   }
 
-  add(component: PrimitiveComponent) {
+  add(componentOrElm: PrimitiveComponent | ReactElement) {
+    let component: PrimitiveComponent
+    if (isValidElement(componentOrElm)) {
+      // TODO store subtree
+      component = createInstanceFromReactElement(componentOrElm)
+    } else {
+      component = componentOrElm as PrimitiveComponent
+    }
     this.children.push(component)
   }
 
@@ -58,5 +67,9 @@ export class Project {
 
   getSoup(): AnySoupElement[] {
     return this.db.toArray()
+  }
+
+  getJson(): AnySoupElement[] {
+    return this.getSoup()
   }
 }
