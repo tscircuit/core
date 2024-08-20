@@ -44,7 +44,10 @@ export abstract class PrimitiveComponent<
     super(props)
     this.children = []
     this.childrenPendingRemoval = []
-    this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>
+    this.props = props ?? {}
+    this._parsedProps = this.config.zodProps.parse(
+      props ?? {},
+    ) as z.infer<ZodProps>
     if (!this.componentName) {
       this.componentName = this.constructor.name
     }
@@ -92,9 +95,11 @@ export abstract class PrimitiveComponent<
   }
 
   add(component: PrimitiveComponent) {
+    console.log(`${this}.add(${component})`)
     component.onAddToParent(this)
     component.parent = this
     this.children.push(component)
+    console.log(`${this}.children`, this.children)
   }
 
   addAll(components: PrimitiveComponent[]) {
@@ -181,8 +186,17 @@ export abstract class PrimitiveComponent<
   }
 
   getString(): string {
-    const { componentName, props, parent } = this
-    return `${componentName}(.${parent?.props.name} > .${props.name})`
+    const { componentName, _parsedProps: props, parent } = this
+    if (parent?.props?.name && props?.name) {
+      return `[${componentName}#${this._renderId} ".${parent?.props.name} > .${props?.name}"]`
+    }
+    if (props?.name) {
+      return `[${componentName}#${this._renderId} ".${props?.name}"]`
+    }
+    if (props?.portHints) {
+      return `[${componentName}#${this._renderId} "${props.portHints.map((ph: string) => `.${ph}`).join(", ")}"]`
+    }
+    return `[${componentName}#${this._renderId}]`
   }
   get [Symbol.toStringTag](): string {
     return this.getString()

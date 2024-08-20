@@ -34,6 +34,7 @@ export type IRenderable = RenderPhaseFunctions & {
   runRenderCycle(): void
 }
 
+let globalRenderCounter = 0
 export abstract class Renderable extends Component implements IRenderable {
   renderPhaseStates: RenderPhaseStates
   shouldBeRemoved = false
@@ -44,8 +45,11 @@ export abstract class Renderable extends Component implements IRenderable {
   /** Schematic-only, lines, boxes, indicators etc. */
   isSchematicPrimitive = false
 
+  _renderId: string
+
   constructor(props: any) {
     super(props)
+    this._renderId = `${globalRenderCounter++}`
     this.children = []
     this.renderPhaseStates = {
       ReactSubtreesRender: { initialized: false },
@@ -96,7 +100,8 @@ export abstract class Renderable extends Component implements IRenderable {
     for (const child of this.children) child.runRenderPhase(phase)
   }
 
-  render(): ReactElement {
+  render(...args): ReactElement {
+    console.log("Rendering", this.getString(), args)
     return createElement(this.constructor.name, this.props)
   }
 

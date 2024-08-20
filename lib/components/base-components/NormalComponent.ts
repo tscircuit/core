@@ -6,6 +6,7 @@ import { symbols, type SchSymbol } from "schematic-symbols"
 import { fp } from "footprinter"
 import {
   isValidElement as isReactElement,
+  isValidElement,
   type ReactElement,
   type ReactNode,
 } from "react"
@@ -152,19 +153,17 @@ export class NormalComponent<
 
   doInitialReactSubtreesRender(): void {
     if (isReactElement(this.props.footprint)) {
-      this.reactSubtrees.push(this._renderReactSubtree(this.props.footprint))
-    }
-    for (const child of this.children) {
+      const subtree = this._renderReactSubtree(this.props.footprint)
+      this.reactSubtrees.push(subtree)
+      this.add(subtree.component)
     }
   }
 
   getPortsFromFootprint(): Port[] {
     let { footprint } = this.props
 
-    // If footprint is a react element, map it to a normal component
-    if (isReactElement(footprint)) {
-      footprint = this.getInstanceForReactElement(footprint)
-      if (!footprint) return []
+    if (!footprint || isValidElement(footprint)) {
+      footprint = this.children.find((c) => c.componentName === "Footprint")
     }
 
     function getPortFromHints(hints: string[]) {
@@ -190,8 +189,11 @@ export class NormalComponent<
 
       return newPorts
     }
-    if (footprint.componentName === "Footprint") {
+    if (!isValidElement(footprint) && footprint.componentName === "Footprint") {
+      console.log("Using footprint element")
       const fp = footprint as Footprint
+
+      console.log("fp.children", fp.children)
 
       const newPorts: Port[] = []
       for (const fpChild of fp.children) {
@@ -205,6 +207,7 @@ export class NormalComponent<
     }
 
     // Explore children for possible smtpads etc.
+    console.log("Exploring children for possible smtpads etc.", this.children)
     const newPorts: Port[] = []
     if (!footprint) {
       for (const child of this.children) {
@@ -223,7 +226,7 @@ export class NormalComponent<
    * Generally, this is done by looking at the schematic and the footprint,
    * reading the pins, making sure there aren't duplicates.
    */
-  doInitialDiscoverPorts(): void {
+  doInitialPortDiscovery(): void {
     const newPorts = [...this.getPortsFromFootprint()]
 
     // TODO dedupe
