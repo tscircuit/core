@@ -6,7 +6,7 @@ import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-r
 
 it("should be able to get ports from react footprint definition", () => {
   const subtree = createInstanceFromReactElement(
-    <Resistor resistance="10k" name="R1" />,
+    <resistor resistance="10k" name="R1" />,
   )
 
   expect(subtree).toBeInstanceOf(Resistor)

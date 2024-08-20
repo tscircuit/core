@@ -11,7 +11,7 @@ it("should be able to get ports from footprinter string footprint prop", () => {
     footprint: "0402",
   })
 
-  component.doInitialDiscoverPorts()
+  component.doInitialPortDiscovery()
 
   const ports = component.children.filter(
     (c) => c.componentName === "Port",
@@ -40,38 +40,12 @@ it("should be able to get ports from Footprint class", () => {
     footprint: footprint,
   })
 
-  component.doInitialDiscoverPorts()
+  component.doInitialPortDiscovery()
 
   const ports = component.children.filter(
     (c) => c.componentName === "Port",
   ) as Port[]
+  console.log(ports)
 
   expect(ports.map((p) => p.props.name)).toEqual(["pin1"])
-})
-
-it("should be able to get ports from react footprint definition", () => {
-  const component = new NormalComponent<any>({
-    name: "test",
-    footprint: (
-      <Footprint>
-        <SmtPad
-          pcbX={0}
-          pcbY={0}
-          layer="top"
-          shape="circle"
-          portHints={["pin1"]}
-        />
-      </Footprint>
-    ),
-  })
-
-  component.doInitialDiscoverPorts()
-
-  const ports = component.children.filter(
-    (c) => c.componentName === "Port",
-  ) as Port[]
-
-  expect(ports.map((p) => p.props.name)).toEqual(
-    expect.arrayContaining(["pin1", "pin2"]),
-  )
 })

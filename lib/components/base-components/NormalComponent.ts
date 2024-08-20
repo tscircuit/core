@@ -265,8 +265,22 @@ export class NormalComponent<
    *
    */
   doInitialPortDiscovery(): void {
-    // const newPorts = [...this.getPortsFromFootprint()]
-    // TODO dedupe
-    // this.addAll(newPorts)
+    const newPorts = [...this.getPortsFromFootprint()]
+
+    const existingPorts = this.children.filter(
+      (c) => c.componentName === "Port",
+    ) as Port[]
+
+    for (const newPort of newPorts) {
+      if (
+        existingPorts.find((p) =>
+          p.doesMatchAnyAlias(newPort.getAllPortAliases()),
+        )
+      ) {
+        continue
+      }
+      existingPorts.push(newPort)
+      this.add(newPort)
+    }
   }
 }
