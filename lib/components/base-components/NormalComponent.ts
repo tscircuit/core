@@ -128,29 +128,46 @@ export class NormalComponent<
 
   getPortsFromFootprint(): Port[] {
     const { footprint } = this.props
+
+    function getPortFromHints(hints: string[]) {
+      const pinNumber = hints.find((p) => /^(pin)?\d+$/.test(p))
+      if (!pinNumber) return null
+      return new Port({
+        pinNumber: Number.parseInt(pinNumber.replace(/^pin/, "")),
+        aliases: hints.filter((p) => p !== pinNumber),
+      })
+    }
+
     if (typeof footprint === "string") {
       const fpSoup = fp.string(footprint).soup()
 
-      // TODO handle plated holes
-      return fpSoup
-        .filter((elm) => elm.type === "pcb_smtpad")
-        .map((elm: PCBSMTPad): Port | null => {
-          const pinNumber = elm.port_hints?.find((p) => /^\d+$/.test(p))
-          if (!pinNumber) return null
-          return new Port({
-            pinNumber: Number.parseInt(pinNumber),
-            aliases: elm.port_hints?.filter((p) => p !== pinNumber),
-          })
-        })
-        .filter(Boolean) as Port[]
+      const newPorts: Port[] = []
+      for (const elm of fpSoup) {
+        if ("port_hints" in elm && elm.port_hints) {
+          const newPort = getPortFromHints(elm.port_hints)
+          if (!newPort) continue
+          newPorts.push(newPort)
+        }
+      }
+
+      return newPorts
     }
     if (footprint.componentName === "Footprint") {
       const fp = footprint as Footprint
-      throw new Error(
-        "getPortsFromFootprint with Footprint class Not Implemented",
-      )
+
+      const newPorts: Port[] = []
+      for (const fpChild of fp.children) {
+        const newPort = getPortFromHints(fpChild.props.portHints ?? [])
+        console.log(newPort)
+        if (!newPort) continue
+        newPorts.push(newPort)
+      }
+
+      return newPorts
     }
     if (isReactElement(footprint)) {
+      // Create React subtree and render into footprint component
+      // console.log(footprint.)
       throw new Error("react footprint getPortsFromFootprint Not Implemented")
     }
     return []
@@ -164,5 +181,9 @@ export class NormalComponent<
    */
   doInitialDiscoverPorts(): void {
     const newPorts = [...this.getPortsFromFootprint()]
+
+    // TODO dedupe
+
+    this.addAll(newPorts)
   }
 }

@@ -94,6 +94,12 @@ export abstract class PrimitiveComponent<
     this.children.push(component)
   }
 
+  addAll(components: PrimitiveComponent[]) {
+    for (const component of components) {
+      this.add(component)
+    }
+  }
+
   remove(component: PrimitiveComponent) {
     this.children = this.children.filter((c) => c !== component)
     this.childrenPendingRemoval.push(component)
