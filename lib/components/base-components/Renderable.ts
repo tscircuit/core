@@ -100,11 +100,6 @@ export abstract class Renderable extends Component implements IRenderable {
     for (const child of this.children) child.runRenderPhase(phase)
   }
 
-  render(...args): ReactElement {
-    console.log("Rendering", this.getString(), args)
-    return createElement(this.constructor.name, this.props)
-  }
-
   // METHODS TO OVERRIDE
   doInitialReactSubtreesRender() {}
   updateReactSubtreesRender() {}

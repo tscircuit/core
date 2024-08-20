@@ -190,15 +190,11 @@ export class NormalComponent<
       return newPorts
     }
     if (!isValidElement(footprint) && footprint.componentName === "Footprint") {
-      console.log("Using footprint element")
       const fp = footprint as Footprint
-
-      console.log("fp.children", fp.children)
 
       const newPorts: Port[] = []
       for (const fpChild of fp.children) {
         const newPort = getPortFromHints(fpChild.props.portHints ?? [])
-        console.log(newPort)
         if (!newPort) continue
         newPorts.push(newPort)
       }

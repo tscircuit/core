@@ -50,6 +50,7 @@ export abstract class PrimitiveComponent<
     ) as z.infer<ZodProps>
     if (!this.componentName) {
       this.componentName = this.constructor.name
+      console.log(`${this.toString()} created`)
     }
   }
 

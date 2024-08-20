@@ -1,6 +1,7 @@
 import type React from "react"
 import ReactReconciler, { type HostConfig } from "react-reconciler"
-import { type NormalComponent } from "lib/components"
+import { type Renderable } from "lib/components/base-components/Renderable"
+import { type NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { ReactElement, ReactNode } from "react"
 
 export type ReactSubtree = {
@@ -19,8 +20,28 @@ export interface Catalogue {
 }
 
 export const catalogue: Catalogue = {}
-export const extendCatalogue = (objects: object): void =>
-  void Object.assign(catalogue, objects)
+export const extendCatalogue = (objects: object): void => {
+  const altKeys = Object.fromEntries(
+    Object.entries(objects).map(([key, v]) => [key.toLowerCase(), v]),
+  )
+  Object.assign(catalogue, objects)
+  Object.assign(catalogue, altKeys)
+}
+
+// biome-ignore lint/suspicious/noEmptyInterface: TODO when we have local state
+interface LocalState {}
+
+export function prepare<T extends Renderable>(
+  object: T,
+  state?: Partial<LocalState>,
+): Instance {
+  const instance = object as unknown as Instance
+  instance.__tsci = {
+    ...state,
+  }
+
+  return object
+}
 
 // Define the host config
 const hostConfig: HostConfig<
@@ -40,9 +61,9 @@ const hostConfig: HostConfig<
 > = {
   supportsMutation: true,
   createInstance(type: string, props: any) {
-    const classDef = catalogue[type]
+    const target = catalogue[type]
 
-    if (!classDef) {
+    if (!target) {
       if (Object.keys(catalogue).length === 0) {
         throw new Error(
           "No components registered in catalogue, did you forget to import lib/register-catalogue in your test file?",
@@ -53,7 +74,7 @@ const hostConfig: HostConfig<
       )
     }
 
-    const instance = new classDef(props)
+    const instance = prepare(new target(props), {})
 
     return instance
   },
@@ -98,7 +119,7 @@ const hostConfig: HostConfig<
   clearContainer() {},
   supportsPersistence: false,
   getPublicInstance(instance: any) {
-    throw new Error("Function not implemented.")
+    return instance
   },
   preparePortalMount(containerInfo: any): void {
     throw new Error("Function not implemented.")
