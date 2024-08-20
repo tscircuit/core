@@ -4,5 +4,5 @@ import { Project } from "lib/Project"
 export class ReactSubtree {}
 
 export const createReactSubtree = (reactNode: React.ReactNode) => {
-  new Project()
+  // new Project()
 }
