@@ -1,6 +1,6 @@
 export const orderedRenderPhases = [
-  "DiscoverPorts",
   "SourceRender",
+  "DiscoverPorts",
   "PortMatching",
   "SchematicComponentRender",
   "LayoutSchematic",
@@ -19,7 +19,7 @@ export type RenderPhaseFunctions = {
   [K in RenderPhase as
     | `doInitial${K}`
     | `update${K}`
-    | `remove${K}`]?: () => void
+    | `remove${K}`]: () => void
 }
 
 export type IRenderable = RenderPhaseFunctions & {
@@ -31,7 +31,7 @@ export type IRenderable = RenderPhaseFunctions & {
   render(): void
 }
 
-export class Renderable implements IRenderable {
+export abstract class Renderable implements IRenderable {
   renderPhaseStates: RenderPhaseStates
   shouldBeRemoved = false
   children: IRenderable[]
@@ -85,4 +85,36 @@ export class Renderable implements IRenderable {
   runRenderPhaseForChildren(phase: RenderPhase): void {
     for (const child of this.children) child.runRenderPhase(phase)
   }
+
+  // METHODS TO OVERRIDE
+  doInitialSourceRender() {}
+  updateSourceRender() {}
+  removeSourceRender() {}
+  doInitialDiscoverPorts() {}
+  updateDiscoverPorts() {}
+  removeDiscoverPorts() {}
+  doInitialPortMatching() {}
+  updatePortMatching() {}
+  removePortMatching() {}
+  doInitialSchematicComponentRender() {}
+  updateSchematicComponentRender() {}
+  removeSchematicComponentRender() {}
+  doInitialLayoutSchematic() {}
+  updateLayoutSchematic() {}
+  removeLayoutSchematic() {}
+  doInitialSchematicTraceRender() {}
+  updateSchematicTraceRender() {}
+  removeSchematicTraceRender() {}
+  doInitialPcbComponentRender() {}
+  updatePcbComponentRender() {}
+  removePcbComponentRender() {}
+  doInitialPcbTraceRender() {}
+  updatePcbTraceRender() {}
+  removePcbTraceRender() {}
+  doInitialCadModelRender() {}
+  updateCadModelRender() {}
+  removeCadModelRender() {}
+  doInitialPcbAnalysis() {}
+  updatePcbAnalysis() {}
+  removePcbAnalysis() {}
 }

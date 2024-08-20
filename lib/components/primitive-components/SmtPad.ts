@@ -1,6 +1,6 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { smtPadProps } from "@tscircuit/props"
-import type { Port } from "../primitive-components/Port"
+import type { Port } from "./Port"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null

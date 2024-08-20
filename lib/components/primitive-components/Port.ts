@@ -20,7 +20,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       throw new Error("Port must have a name or a pinNumber")
     }
     super(props)
-    this.initPorts()
   }
 
   getAllPortAliases() {
@@ -42,6 +41,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     return this.getAllPortAliases().some((a) =>
       aliases.map((a) => a.toString()).includes(a),
     )
+  }
+  isMatchingPort(port: Port) {
+    return this.doesMatchAnyAlias(port.getAllPortAliases())
   }
   getPortSelector() {
     return `.${this.parent?.props.name} > port.${this.props.name}`

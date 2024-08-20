@@ -1,10 +1,11 @@
 import { Footprint } from "../primitive-components/Footprint"
 import { ZodType } from "zod"
 import { PrimitiveComponent } from "./PrimitiveComponent"
-import type { Port } from "../primitive-components/Port"
+import { Port } from "../primitive-components/Port"
 import { symbols, type SchSymbol } from "schematic-symbols"
 import { fp } from "footprinter"
 import { isValidElement as isReactElement } from "react"
+import type { PCBSMTPad } from "@tscircuit/soup"
 
 export type PortMap<T extends string> = {
   [K in T]: Port
@@ -27,17 +28,17 @@ export type PortMap<T extends string> = {
  *   }
  * }
  */
-export abstract class NormalComponent<
+export class NormalComponent<
   ZodProps extends ZodType = any,
   PortNames extends string = never,
 > extends PrimitiveComponent<ZodProps> {
   constructor(props: ZodProps) {
     super(props)
-    this.initPorts?.()
+    this.initPorts()
   }
 
   // METHODS TO OVERRIDE
-  abstract initPorts(): void
+  initPorts() {}
 
   get portMap(): PortMap<PortNames> {
     return new Proxy(
@@ -123,5 +124,45 @@ export abstract class NormalComponent<
         // TODO, maybe call .add() with the footprint?
       }
     }
+  }
+
+  getPortsFromFootprint(): Port[] {
+    const { footprint } = this.props
+    if (typeof footprint === "string") {
+      const fpSoup = fp.string(footprint).soup()
+
+      // TODO handle plated holes
+      return fpSoup
+        .filter((elm) => elm.type === "pcb_smtpad")
+        .map((elm: PCBSMTPad): Port | null => {
+          const pinNumber = elm.port_hints?.find((p) => /^\d+$/.test(p))
+          if (!pinNumber) return null
+          return new Port({
+            pinNumber: Number.parseInt(pinNumber),
+            aliases: elm.port_hints?.filter((p) => p !== pinNumber),
+          })
+        })
+        .filter(Boolean) as Port[]
+    }
+    if (footprint.componentName === "Footprint") {
+      const fp = footprint as Footprint
+      throw new Error(
+        "getPortsFromFootprint with Footprint class Not Implemented",
+      )
+    }
+    if (isReactElement(footprint)) {
+      throw new Error("react footprint getPortsFromFootprint Not Implemented")
+    }
+    return []
+  }
+
+  /**
+   * Use data from our props to create ports for this component.
+   *
+   * Generally, this is done by looking at the schematic and the footprint,
+   * reading the pins, making sure there aren't duplicates.
+   */
+  doInitialDiscoverPorts(): void {
+    const newPorts = [...this.getPortsFromFootprint()]
   }
 }
