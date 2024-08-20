@@ -35,7 +35,7 @@ export type IRenderable = RenderPhaseFunctions & {
 }
 
 let globalRenderCounter = 0
-export abstract class Renderable extends Component implements IRenderable {
+export abstract class Renderable implements IRenderable {
   renderPhaseStates: RenderPhaseStates
   shouldBeRemoved = false
   children: IRenderable[]
@@ -48,7 +48,6 @@ export abstract class Renderable extends Component implements IRenderable {
   _renderId: string
 
   constructor(props: any) {
-    super(props)
     this._renderId = `${globalRenderCounter++}`
     this.children = []
     this.renderPhaseStates = {

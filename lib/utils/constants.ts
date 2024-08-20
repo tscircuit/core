@@ -1,13 +1,12 @@
 import type { AnySourceComponent } from "@tscircuit/soup"
-
-export { BASE_SYMBOLS } from "schematic-symbols"
+import type { BaseSymbolName } from "schematic-symbols"
 
 /**
  * This is just a proxy to make autocomplete easier, it just returns whatever
  * key you pass in. It's helpful when you want to make it a bit more obvious
  * how to select the key you want to use without obscuring the actual key.
  */
-const typeProxy = new Proxy(
+const stringProxy = new Proxy(
   {},
   {
     get: (target, prop) => prop,
@@ -16,7 +15,11 @@ const typeProxy = new Proxy(
 
 export const FTYPE: {
   [T in AnySourceComponent["ftype"]]: T
-} = typeProxy
+} = stringProxy
+
+export const SYMBOL: {
+  [T in BaseSymbolName]: T
+} = stringProxy
 
 export type TwoPinPorts = "pin1" | "pin2"
 export type PassivePorts = TwoPinPorts

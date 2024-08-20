@@ -1,6 +1,6 @@
 import { ledProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { FTYPE, BASE_SYMBOLS } from "lib/utils/constants"
+import { FTYPE, SYMBOL } from "lib/utils/constants"
 
 type PortNames =
   | "1"

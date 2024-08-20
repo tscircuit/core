@@ -53,7 +53,7 @@ export class Project {
 
     rootComponent.setProject(this)
 
-    rootComponent.render()
+    rootComponent.runRenderCycle()
   }
 
   getSoup(): AnySoupElement[] {

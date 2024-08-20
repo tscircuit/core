@@ -1,8 +1,7 @@
 import { it, expect } from "bun:test"
 import { Board, Resistor, Project } from "../index"
 import { Led } from "lib/components/normal-components/Led"
-import { Trace } from "lib/components/normal-components/Trace"
-import { Net } from "lib/components/normal-components/Net"
+import "lib/register-catalogue"
 
 it("should create soup with various elements", () => {
   const project = new Project()
@@ -16,8 +15,8 @@ it("should create soup with various elements", () => {
   const R1 = new Resistor({ name: "R1", resistance: "10k", footprint: "0402" })
   board.add(R1)
 
-  const LED1 = new Led({ name: "LED1", footprint: "0402" })
-  board.add(LED1)
+  // const LED1 = new Led({ name: "LED1", footprint: "0402" })
+  board.add(<led name="LED1" footprint="0402" />)
 
   // const trace = new Trace({
   //   from: R1.pin1,
@@ -37,8 +36,6 @@ it("should create soup with various elements", () => {
   // board.add(gndTrace)
 
   project.render()
-
-  console.log("pcb ports", project.db.pcb_port.list())
 
   // Let's check the db to make sure everything we expect is there
 

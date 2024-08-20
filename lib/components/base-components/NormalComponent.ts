@@ -100,27 +100,27 @@ export class NormalComponent<
    */
   doInitialSchematicComponentRender() {
     const { db } = this.project!
-    if (this.config.schematicSymbolName) {
-      // TODO switch between horizontal and vertical based on schRotation
-      const symbol_name = `${this.config.schematicSymbolName}_horz`
+    const { schematicSymbolName } = this.config
+    if (!schematicSymbolName) return
+    // TODO switch between horizontal and vertical based on schRotation
+    const symbol_name = `${this.config.schematicSymbolName}_horz`
 
-      const symbol = (symbols as any)[symbol_name] as SchSymbol | undefined
+    const symbol = (symbols as any)[symbol_name] as SchSymbol | undefined
 
-      if (!symbol) {
-        throw new Error(`Could not find schematic-symbol "${symbol_name}"`)
-      }
-
-      const schematic_component = db.schematic_component.insert({
-        center: { x: this.props.schX ?? 0, y: this.props.schY ?? 0 },
-        rotation: this.props.schRotation ?? 0,
-        size: symbol.size,
-        source_component_id: this.source_component_id!,
-
-        // @ts-ignore
-        symbol_name,
-      })
-      this.schematic_component_id = schematic_component.schematic_component_id
+    if (!symbol) {
+      throw new Error(`Could not find schematic-symbol "${symbol_name}"`)
     }
+
+    const schematic_component = db.schematic_component.insert({
+      center: { x: this.props.schX ?? 0, y: this.props.schY ?? 0 },
+      rotation: this.props.schRotation ?? 0,
+      size: symbol.size,
+      source_component_id: this.source_component_id!,
+
+      // @ts-ignore
+      symbol_name,
+    })
+    this.schematic_component_id = schematic_component.schematic_component_id
   }
 
   doInitialPcbComponentRender() {
@@ -158,6 +158,19 @@ export class NormalComponent<
     }
   }
 
+  add(componentOrElm: PrimitiveComponent | ReactElement) {
+    let component: PrimitiveComponent
+    if (isReactElement(componentOrElm)) {
+      const subtree = this._renderReactSubtree(componentOrElm)
+      this.reactSubtrees.push(subtree)
+      component = subtree.component
+    } else {
+      component = componentOrElm as PrimitiveComponent
+    }
+
+    super.add(component)
+  }
+
   getPortsFromFootprint(): Port[] {
     let { footprint } = this.props
 
@@ -188,7 +201,11 @@ export class NormalComponent<
 
       return newPorts
     }
-    if (!isValidElement(footprint) && footprint.componentName === "Footprint") {
+    if (
+      !isValidElement(footprint) &&
+      footprint &&
+      footprint.componentName === "Footprint"
+    ) {
       const fp = footprint as Footprint
 
       const newPorts: Port[] = []
