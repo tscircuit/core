@@ -1,7 +1,9 @@
 import { ledProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { FTYPE, SYMBOL, type PolarizedPassivePorts } from "lib/utils/constants"
-import { Port } from "../primitive-components/Port"
+import type {
+  BaseSymbolName,
+  Ftype,
+  PolarizedPassivePorts,
+} from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 
 export class Led extends NormalComponent<
@@ -10,9 +12,9 @@ export class Led extends NormalComponent<
 > {
   get config() {
     return {
-      schematicSymbolName: SYMBOL.led,
+      schematicSymbolName: "led" as BaseSymbolName,
       zodProps: ledProps,
-      sourceFtype: FTYPE.simple_diode,
+      sourceFtype: "simple_diode" as Ftype,
     }
   }
 
@@ -22,9 +24,4 @@ export class Led extends NormalComponent<
   neg = this.portMap.pin2
   pin2 = this.portMap.pin2
   cathode = this.portMap.pin2
-
-  initPorts() {
-    this.add(new Port({ name: "pos", pinNumber: 1, aliases: ["anode"] }))
-    this.add(new Port({ name: "neg", pinNumber: 2, aliases: ["cathode"] }))
-  }
 }
