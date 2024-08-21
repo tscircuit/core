@@ -4,8 +4,6 @@ import type { ZodType } from "zod"
 import { z } from "zod"
 import { symbols, type SchSymbol, type BaseSymbolName } from "schematic-symbols"
 import { isValidElement as isReactElement, type ReactElement } from "react"
-import type { Footprint } from "../primitive-components/Footprint"
-import { fp } from "footprinter"
 import type { Port } from "../primitive-components/Port"
 import { Renderable, type RenderPhase } from "./Renderable"
 
@@ -15,6 +13,11 @@ export interface BaseComponentConfig {
   sourceFtype?: AnySourceComponent["ftype"] | null
 }
 
+/**
+ * A PrimitiveComponent (SmtPad, Port etc.) doesn't have the ability to contain
+ * React subtrees or explicit handling of the "footprint" prop. But otherwise
+ * has most of the features of a NormalComponent.
+ */
 export abstract class PrimitiveComponent<
   ZodProps extends ZodType = any,
 > extends Renderable {

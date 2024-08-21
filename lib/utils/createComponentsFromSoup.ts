@@ -1,7 +1,6 @@
 import type { AnySoupElement } from "@tscircuit/soup"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
-// import { SmtPad } from "lib/components/SmtPad"
-// import { } from "../components/
+import { SmtPad } from "lib/components/primitive-components/SmtPad"
 
 export const createComponentsFromSoup = (
   soup: AnySoupElement[],
@@ -9,14 +8,15 @@ export const createComponentsFromSoup = (
   const components: PrimitiveComponent[] = []
   for (const elm of soup) {
     if (elm.type === "pcb_smtpad") {
-      // components.push(
-      //   new SmtPad({
-      //     pcbX: elm.x,
-      //     pcbY: elm.y,
-      //     layer: elm.layer,
-      //     shape: elm.shape,
-      //   }),
-      // )
+      components.push(
+        new SmtPad({
+          pcbX: elm.x,
+          pcbY: elm.y,
+          layer: elm.layer,
+          shape: elm.shape,
+          portHints: elm.port_hints,
+        }),
+      )
     }
   }
   return components

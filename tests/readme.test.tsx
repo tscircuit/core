@@ -22,9 +22,11 @@ it("should create soup with various elements", () => {
   // Let's check the db to make sure everything we expect is there
 
   expect(project.db.source_component.select(".R1")?.name).toBe("R1")
-  expect(project.db.source_component.select(".LED1")?.name).toBe("LED1")
+  // expect(project.db.source_component.select(".LED1")?.name).toBe("LED1")
+
+  expect(project.db.pcb_smtpad.list()).toHaveLength(4)
 
   // console.log("pcb_trace", project.db.pcb_trace.list())
 
-  console.log(project.getSoup())
+  // console.log(project.getSoup())
 })

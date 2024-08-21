@@ -1,3 +1,3 @@
 import * as Components from "./components"
-import { extendCatalogue } from "./fiber/create-instance-from-react-element"
+import { extendCatalogue } from "./fiber/catalogue"
 extendCatalogue(Components)

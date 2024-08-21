@@ -15,6 +15,7 @@ import {
   type ReactSubtree,
 } from "lib/fiber/create-instance-from-react-element"
 import { getPortFromHints } from "lib/utils/getPortFromHints"
+import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
 
 export type PortMap<T extends string> = {
   [K in T]: Port
@@ -45,6 +46,7 @@ export class NormalComponent<
 
   constructor(props: z.input<ZodProps>) {
     super(props)
+    this._addChildrenFromStringFootprint()
     this.initPorts()
   }
 
@@ -81,6 +83,16 @@ export class NormalComponent<
     const portsFromFootprint = this.getPortsFromFootprint()
 
     this.addAll(portsFromFootprint)
+  }
+
+  _addChildrenFromStringFootprint() {
+    const { footprint } = this.props
+    if (!footprint) return
+    if (typeof footprint === "string") {
+      const fpSoup = fp.string(footprint).soup()
+      const fpComponents = createComponentsFromSoup(fpSoup)
+      this.addAll(fpComponents)
+    }
   }
 
   get portMap(): PortMap<PortNames> {
@@ -157,23 +169,25 @@ export class NormalComponent<
   }
 
   doInitialPcbComponentRender() {
-    const { footprint } = this.props
-    if (footprint) {
-      if (typeof footprint === "string") {
-        const fpSoup = fp.string(footprint).soup()
-        // TODO save some kind of state to prevent re-creating the same components
-        // and knowing when the string has changed
-        // const fpComponents = createComponentsFromSoup(fpSoup)
-        // this.children.push(...fpComponents)
-      } else if (footprint.componentName === "Footprint") {
-        const fp = footprint as Footprint
-        if (!this.children.includes(fp)) {
-          this.children.push(fp)
-        }
-      } else if (isReactElement(footprint)) {
-        // TODO, maybe call .add() with the footprint?
-      }
-    }
+    const { db } = this.project!
+    const { _parsedProps: props } = this
+    const pcb_component = db.pcb_component.insert({
+      center: { x: this.props.pcbX, y: this.props.pcbY },
+      // width/height are computed in the PcbAnalysis phase
+      width: 0,
+      height: 0,
+      layer: props.layer ?? "top",
+      rotation: props.rotation ?? 0,
+      source_component_id: this.source_component_id!,
+    })
+    this.pcb_component_id = pcb_component.pcb_component_id
+  }
+
+  doInitialPcbAnalysis(): void {
+    const { db } = this.project!
+    const { _parsedProps: props } = this
+
+    // TODO Examine children to compute width/height and pcbX/pcbY
   }
 
   _renderReactSubtree(element: ReactElement): ReactSubtree {
@@ -185,6 +199,8 @@ export class NormalComponent<
 
   doInitialReactSubtreesRender(): void {
     if (isReactElement(this.props.footprint)) {
+      if (this.reactSubtrees.some((rs) => rs.element === this.props.footprint))
+        return
       const subtree = this._renderReactSubtree(this.props.footprint)
       this.reactSubtrees.push(subtree)
       this.add(subtree.component)

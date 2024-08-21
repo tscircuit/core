@@ -45,7 +45,6 @@ it("should be able to get ports from Footprint class", () => {
   const ports = component.children.filter(
     (c) => c.componentName === "Port",
   ) as Port[]
-  console.log(ports)
 
   expect(ports.map((p) => p.props.name)).toEqual(["pin1"])
 })

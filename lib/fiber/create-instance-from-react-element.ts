@@ -3,29 +3,11 @@ import ReactReconciler, { type HostConfig } from "react-reconciler"
 import { type Renderable } from "lib/components/base-components/Renderable"
 import { type NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { ReactElement, ReactNode } from "react"
+import { catalogue, type Instance } from "./catalogue"
 
 export type ReactSubtree = {
-  element: ReactElement
+  element: ReactElement // TODO rename to "reactElement"
   component: NormalComponent
-}
-
-export type Instance = {
-  // Add any universal methods for classes, e.g. ".add"
-} & { [key: string]: any }
-
-export interface Catalogue {
-  [name: string]: {
-    new (...args: any): Instance
-  }
-}
-
-export const catalogue: Catalogue = {}
-export const extendCatalogue = (objects: object): void => {
-  const altKeys = Object.fromEntries(
-    Object.entries(objects).map(([key, v]) => [key.toLowerCase(), v]),
-  )
-  Object.assign(catalogue, objects)
-  Object.assign(catalogue, altKeys)
 }
 
 // biome-ignore lint/suspicious/noEmptyInterface: TODO when we have local state

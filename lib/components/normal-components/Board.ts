@@ -24,8 +24,6 @@ export class Board extends NormalComponent<typeof boardProps> {
     })
 
     this.pcb_board_id = pcb_board.pcb_board_id
-
-    this.runRenderPhaseForChildren("PcbComponentRender")
   }
 
   removePcbComponentRender(): void {
