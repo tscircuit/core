@@ -1,0 +1,29 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">
+      <style>
+        .pcb-board { fill: #000; }
+        .pcb-trace { stroke: #FF0000; stroke-width: 0.3; fill: none; }
+        .pcb-hole { fill: #FF00FF; }
+        .pcb-pad { fill: #FF0000; }
+        .pcb-boundary { fill: none; stroke: #FFFFFF; stroke-width: 0.5; }
+      </style>
+      <rect class="pcb-board" x="0" y="0" width="800" height="600" />
+      
+    <g transform="translate(NaN, NaN) rotate(0) scale(1, -1)">
+      <rect class="pcb-component" x="NaN" y="NaN" width="NaN" height="NaN" />
+      <rect class="pcb-component-outline" x="NaN" y="NaN" width="NaN" height="NaN" />
+    </g>
+  
+
+    <g transform="translate(NaN, NaN) rotate(0) scale(1, -1)">
+      <rect class="pcb-component" x="NaN" y="NaN" width="NaN" height="NaN" />
+      <rect class="pcb-component-outline" x="NaN" y="NaN" width="NaN" height="NaN" />
+    </g>
+  
+<rect class="pcb-pad" x="NaN" y="NaN" width="NaN" height="NaN" />
+<rect class="pcb-pad" x="NaN" y="NaN" width="NaN" height="NaN" />
+<rect class="pcb-pad" x="NaN" y="NaN" width="NaN" height="NaN" />
+<rect class="pcb-pad" x="NaN" y="NaN" width="NaN" height="NaN" />
+      <rect class="pcb-boundary" x="NaN" y="NaN" width="NaN" height="NaN" />
+    </svg>
+  

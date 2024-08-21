@@ -172,7 +172,7 @@ export class NormalComponent<
     const { db } = this.project!
     const { _parsedProps: props } = this
     const pcb_component = db.pcb_component.insert({
-      center: { x: this.props.pcbX, y: this.props.pcbY },
+      center: { x: this.props.pcbX ?? 0, y: this.props.pcbY ?? 0 },
       // width/height are computed in the PcbAnalysis phase
       width: 0,
       height: 0,

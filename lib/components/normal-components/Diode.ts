@@ -1,5 +1,10 @@
 import { diodeProps } from "@tscircuit/props"
-import { FTYPE, SYMBOL, type TwoPinPorts } from "lib/utils/constants"
+import {
+  FTYPE,
+  SYMBOL,
+  type Ftype,
+  type TwoPinPorts,
+} from "lib/utils/constants"
 import { Port } from "../primitive-components/Port"
 import { NormalComponent } from "../base-components/NormalComponent"
 
@@ -9,9 +14,9 @@ export class Diode extends NormalComponent<typeof diodeProps, TwoPinPorts> {
 
   get config() {
     return {
-      // schematicSymbolName: SYMBOL.diode,
+      // schematicSymbolName: "diode" as BaseSymbolName,
       zodProps: diodeProps,
-      sourceFtype: FTYPE.simple_diode,
+      sourceFtype: "simple_diode" as Ftype,
     }
   }
 
