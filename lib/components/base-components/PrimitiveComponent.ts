@@ -6,6 +6,13 @@ import { symbols, type SchSymbol, type BaseSymbolName } from "schematic-symbols"
 import { isValidElement as isReactElement, type ReactElement } from "react"
 import type { Port } from "../primitive-components/Port"
 import { Renderable, type RenderPhase } from "./Renderable"
+import {
+  applyToPoint,
+  compose,
+  identity,
+  translate,
+  type Matrix,
+} from "transformation-matrix"
 
 export interface BaseComponentConfig {
   schematicSymbolName?: BaseSymbolName | null
@@ -77,6 +84,53 @@ export abstract class PrimitiveComponent<
       changedProps: Object.keys(props),
     })
     this.parent?.onChildChanged(this)
+  }
+
+  /**
+   * Computes a transformation matrix from the props of this component for PCB
+   * components
+   */
+  computePcbPropsTransform(): Matrix {
+    // TODO rotations
+    return compose(translate(this.props.pcbX, this.props.pcbY))
+  }
+
+  /**
+   * Compute a transformation matrix combining all parent transforms for PCB
+   * components
+   */
+  computePcbGlobalTransform(): Matrix {
+    return compose(
+      this.parent?.computePcbGlobalTransform() ?? identity(),
+      this.computePcbPropsTransform(),
+    )
+  }
+
+  /**
+   * Computes a transformation matrix from the props of this component for
+   * schematic components
+   */
+  computeSchematicPropsTransform(): Matrix {
+    return compose(translate(this.props.schX, this.props.schY))
+  }
+
+  /**
+   * Compute a transformation matrix combining all parent transforms for this
+   * component
+   */
+  computeSchematicGlobalTransform(): Matrix {
+    return compose(
+      this.parent?.computeSchematicGlobalTransform() ?? identity(),
+      this.computeSchematicPropsTransform(),
+    )
+  }
+
+  getGlobalPcbPosition(): { x: number; y: number } {
+    return applyToPoint(this.computePcbGlobalTransform(), { x: 0, y: 0 })
+  }
+
+  getGlobalSchematicPosition(): { x: number; y: number } {
+    return applyToPoint(this.computeSchematicGlobalTransform(), { x: 0, y: 0 })
   }
 
   onAddToParent(parent: PrimitiveComponent) {
