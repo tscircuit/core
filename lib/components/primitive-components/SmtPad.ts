@@ -26,7 +26,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     }
 
     for (const port of parentPorts) {
-      if (port.doesMatchAnyAlias(this.props.portHints)) {
+      if (port.isMatchingAnyOf(this.props.portHints)) {
         this.matchedPort = port
         port.registerMatch(this)
         return

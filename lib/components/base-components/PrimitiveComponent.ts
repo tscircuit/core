@@ -13,6 +13,7 @@ import {
   translate,
   type Matrix,
 } from "transformation-matrix"
+import { matchSelector } from "lib/utils/selector-matching"
 
 export interface BaseComponentConfig {
   schematicSymbolName?: BaseSymbolName | null
@@ -43,6 +44,7 @@ export abstract class PrimitiveComponent<
   _parsedProps: z.infer<ZodProps>
 
   componentName = ""
+  lowercaseComponentName = ""
 
   source_group_id: string | null = null
   source_component_id: string | null = null
@@ -60,6 +62,7 @@ export abstract class PrimitiveComponent<
     ) as z.infer<ZodProps>
     if (!this.componentName) {
       this.componentName = this.constructor.name
+      this.lowercaseComponentName = this.componentName.toLowerCase()
     }
   }
 
@@ -169,8 +172,20 @@ export abstract class PrimitiveComponent<
     component.shouldBeRemoved = true
   }
 
+  getNameAndAliases(): string[] {
+    return [this._parsedProps.name].filter(Boolean)
+  }
+  isMatchingNameOrAlias(name: string) {
+    return this.getNameAndAliases().includes(name)
+  }
+  isMatchingAnyOf(aliases: Array<string | number>) {
+    return this.getNameAndAliases().some((a) =>
+      aliases.map((a) => a.toString()).includes(a),
+    )
+  }
+
   doesSelectorMatch(selector: string): boolean {
-    const myTypeNames = [this.componentName, this.componentName.toLowerCase()]
+    const myTypeNames = [this.componentName, this.lowercaseComponentName]
     const myClassNames = [this._parsedProps.name].filter(Boolean)
 
     const parts = selector.trim().split(/\> /)[0]
@@ -187,44 +202,61 @@ export abstract class PrimitiveComponent<
     return false
   }
 
+  // selectAll(selector: string): PrimitiveComponent[] {
+  //   const parts = selector.split(/\> /)[0]
+  //   const firstPart = parts[0]
+  //   const otherParts = selector.replace(firstPart, "")
+  //   const myTypeNames = [this.componentName, this.componentName.toLowerCase()]
+  //   const myClassNames = [this.props.name].filter(Boolean)
+
+  //   if (selector === "*") {
+  //     return this.getDescendants()
+  //   }
+  //   if (firstPart.startsWith("#") && parts.length === 1) {
+  //     const id = firstPart.slice(1)
+  //     return this.getDescendants().filter((c) => c.props.id === id)
+  //   }
+
+  //   // e.g. group > .AnotherGroup > led.anode
+  //   if (firstPart.startsWith(".") || /^[a-zA-Z0-9_]/.test(firstPart)) {
+  //     const isMatchingMe = this.doesSelectorMatch(firstPart)
+  //     if (isMatchingMe && parts.length === 1) {
+  //       // TODO: technically, descendants could contain sub-classes with the
+  //       // same name, but that edge case seems like bad practice anyway...
+  //       return [this]
+  //     }
+  //     if (isMatchingMe) {
+  //       return this.children.flatMap((c) => c.selectAll(otherParts))
+  //     }
+
+  //     if (otherParts.trim().startsWith(">")) {
+  //       const childrenSelector = otherParts.trim().slice(1)
+  //       const childrenSelectorFirstPart = childrenSelector.split(/\> /)[0]
+  //       return this.children
+  //         .filter((c) => c.doesSelectorMatch(childrenSelectorFirstPart))
+  //         .flatMap((c) => c.selectAll(childrenSelector))
+  //     }
+  //     return this.children.flatMap((c) => c.selectAll(otherParts))
+  //   }
+
+  //   throw new Error(`Could not handle selector "${selector}"`)
+  // }
+
   selectAll(selector: string): PrimitiveComponent[] {
-    const parts = selector.split(/\> /)[0]
-    const firstPart = parts[0]
-    const otherParts = selector.replace(firstPart, "")
-    const myTypeNames = [this.componentName, this.componentName.toLowerCase()]
-    const myClassNames = [this.props.name].filter(Boolean)
+    const parts = selector.split(/\s+/)
+    let results: PrimitiveComponent[] = [this]
 
-    if (selector === "*") {
-      return this.getDescendants()
-    }
-    if (firstPart.startsWith("#") && parts.length === 1) {
-      const id = firstPart.slice(1)
-      return this.getDescendants().filter((c) => c.props.id === id)
-    }
+    for (const part of parts) {
+      results = results.flatMap((component) => {
+        if (part === ">") {
+          return component.children
+        }
 
-    // e.g. group > .AnotherGroup > led.anode
-    if (firstPart.startsWith(".") || /^[a-zA-Z0-9_]/.test(firstPart)) {
-      const isMatchingMe = this.doesSelectorMatch(firstPart)
-      if (isMatchingMe && parts.length === 1) {
-        // TODO: technically, descendants could contain sub-classes with the
-        // same name, but that edge case seems like bad practice anyway...
-        return [this]
-      }
-      if (isMatchingMe) {
-        return this.children.flatMap((c) => c.selectAll(otherParts))
-      }
-
-      if (otherParts.trim().startsWith(">")) {
-        const childrenSelector = otherParts.trim().slice(1)
-        const childrenSelectorFirstPart = childrenSelector.split(/\> /)[0]
-        return this.children
-          .filter((c) => c.doesSelectorMatch(childrenSelectorFirstPart))
-          .flatMap((c) => c.selectAll(childrenSelector))
-      }
-      return this.children.flatMap((c) => c.selectAll(otherParts))
+        return component.children.filter((child) => matchSelector(child, part))
+      })
     }
 
-    throw new Error(`Could not handle selector "${selector}"`)
+    return results
   }
 
   selectOne(selector: string): PrimitiveComponent | null {
