@@ -16,7 +16,7 @@ import type { Primitive } from "schematic-symbols/drawing/types"
  * @param selector - The selector string to match against.
  * @returns True if the component matches the selector, false otherwise.
  */
-export function matchSelector(
+export function isMatchingSelector(
   component: PrimitiveComponent,
   selector: string,
 ): boolean {

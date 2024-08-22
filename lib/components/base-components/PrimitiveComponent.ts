@@ -13,7 +13,7 @@ import {
   translate,
   type Matrix,
 } from "transformation-matrix"
-import { matchSelector } from "lib/utils/selector-matching"
+import { isMatchingSelector } from "lib/utils/selector-matching"
 
 export interface BaseComponentConfig {
   schematicSymbolName?: BaseSymbolName | null
@@ -252,7 +252,9 @@ export abstract class PrimitiveComponent<
           return component.children
         }
 
-        return component.children.filter((child) => matchSelector(child, part))
+        return component.children.filter((child) =>
+          isMatchingSelector(child, part),
+        )
       })
     }
 
