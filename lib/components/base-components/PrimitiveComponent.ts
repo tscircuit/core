@@ -242,26 +242,21 @@ export abstract class PrimitiveComponent<
   //   throw new Error(`Could not handle selector "${selector}"`)
   // }
 
-  selectAll(selector: string, nestCount = 0): PrimitiveComponent[] {
+  selectAll(selector: string): PrimitiveComponent[] {
     const parts = selector.split(/\s+/)
     let results: PrimitiveComponent[] = [this]
 
-    console.log(Array(nestCount).fill(" ").join(""), this, parts)
+    let onlyDirectChildren = false
     for (const part of parts) {
       if (part === ">") {
-        results = results.flatMap((component) => component.children)
+        onlyDirectChildren = true
       } else {
         results = results.flatMap((component) => {
-          const matchingChildren = component.children.filter((child) =>
-            isMatchingSelector(child, part),
-          )
-          return [
-            ...matchingChildren,
-            ...component.children.flatMap((child) =>
-              child.selectAll(part, nestCount + 1),
-            ),
-          ]
+          return (
+            onlyDirectChildren ? component.children : component.getDescendants()
+          ).filter((descendant) => isMatchingSelector(descendant, part))
         })
+        onlyDirectChildren = false
       }
     }
 
@@ -282,17 +277,17 @@ export abstract class PrimitiveComponent<
   }
 
   getString(): string {
-    const { componentName, _parsedProps: props, parent } = this
+    const { lowercaseComponentName: cname, _parsedProps: props, parent } = this
     if (parent?.props?.name && props?.name) {
-      return `[${componentName}#${this._renderId} ".${parent?.props.name} > .${props?.name}"]`
+      return `<${cname}#${this._renderId}(.${parent?.props.name}>.${props?.name}) />`
     }
     if (props?.name) {
-      return `[${componentName}#${this._renderId} ".${props?.name}"]`
+      return `<${cname}#${this._renderId} name=".${props?.name}" />`
     }
     if (props?.portHints) {
-      return `[${componentName}#${this._renderId} "${props.portHints.map((ph: string) => `.${ph}`).join(", ")}"]`
+      return `<${cname}#${this._renderId} (${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
     }
-    return `[${componentName}#${this._renderId}]`
+    return `<${cname}#${this._renderId} />`
   }
   get [Symbol.toStringTag](): string {
     return this.getString()
