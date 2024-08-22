@@ -33,7 +33,7 @@ export function isMatchingSelector(
   }
 
   // Split the selector into type and conditions
-  const [type, ...conditions] = selector.split(/(?=[#.[\]])/)
+  const [type, ...conditions] = selector.split(/(?=[#.[])/)
 
   // Check if the component type matches
   if (
