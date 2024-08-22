@@ -246,13 +246,14 @@ export abstract class PrimitiveComponent<
     const parts = selector.split(/\s+/)
     let results: PrimitiveComponent[] = [this]
 
+    console.log(this, parts)
     for (const part of parts) {
       if (part === ">") {
         results = results.flatMap((component) => component.children)
       } else {
         results = results.flatMap((component) => {
           const matchingChildren = component.children.filter((child) =>
-            isMatchingSelector(child, part)
+            isMatchingSelector(child, part),
           )
           return [
             ...matchingChildren,
