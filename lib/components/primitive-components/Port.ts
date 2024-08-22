@@ -26,6 +26,32 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     this.matchedComponents = []
   }
 
+  getGlobalPcbPosition(): { x: number; y: number } {
+    const matchedPcbElm = this.matchedComponents.find((c) => c.isPcbPrimitive)
+
+    if (!matchedPcbElm) {
+      throw new Error(
+        `Port ${this} has no matched pcb component, can't get global schematic position`,
+      )
+    }
+
+    return matchedPcbElm?.getGlobalPcbPosition() ?? { x: 0, y: 0 }
+  }
+
+  getGlobalSchematicPosition(): { x: number; y: number } {
+    const matchedSchElm = this.matchedComponents.find(
+      (c) => c.isSchematicPrimitive,
+    )
+
+    if (!matchedSchElm) {
+      throw new Error(
+        `Port ${this} has no matched schematic component, can't get global schematic position`,
+      )
+    }
+
+    return matchedSchElm?.getGlobalPcbPosition() ?? { x: 0, y: 0 }
+  }
+
   /**
    * Smtpads and platedholes call this method to register themselves as a match
    * for this port. All the matching is done by primitives other than the Port,

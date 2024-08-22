@@ -29,10 +29,15 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
   doInitialPcbTraceRender(): void {
     const { db } = this.project!
-    const { _parsedProps: props } = this
+    const { _parsedProps: props, parent } = this
+
+    if (!parent) throw new Error("Trace has no parent")
 
     const portSelectors = this.getTracePortPathSelectors()
-    console.log("portSelectors", portSelectors)
+
+    const ports = portSelectors.map((ps) => parent.selectOne(ps))
+
+    console.log("ports", ports)
 
     // db.pcb_port.getUsing({ source_port_id:
 

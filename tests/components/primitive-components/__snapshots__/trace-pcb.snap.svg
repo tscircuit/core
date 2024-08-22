@@ -9,21 +9,21 @@
       </style>
       <rect class="pcb-board" x="0" y="0" width="800" height="600" />
       
-    <g transform="translate(NaN, NaN) rotate(0) scale(1, -1)">
-      <rect class="pcb-component" x="NaN" y="NaN" width="NaN" height="NaN" />
-      <rect class="pcb-component-outline" x="NaN" y="NaN" width="NaN" height="NaN" />
+    <g transform="translate(300, 300) rotate(0) scale(1, -1)">
+      <rect class="pcb-component" x="0" y="0" width="0" height="0" />
+      <rect class="pcb-component-outline" x="0" y="0" width="0" height="0" />
     </g>
   
 
-    <g transform="translate(NaN, NaN) rotate(0) scale(1, -1)">
-      <rect class="pcb-component" x="NaN" y="NaN" width="NaN" height="NaN" />
-      <rect class="pcb-component-outline" x="NaN" y="NaN" width="NaN" height="NaN" />
+    <g transform="translate(500, 300) rotate(0) scale(1, -1)">
+      <rect class="pcb-component" x="0" y="0" width="0" height="0" />
+      <rect class="pcb-component-outline" x="0" y="0" width="0" height="0" />
     </g>
   
 <rect class="pcb-pad" x="NaN" y="NaN" width="NaN" height="NaN" />
 <rect class="pcb-pad" x="NaN" y="NaN" width="NaN" height="NaN" />
 <rect class="pcb-pad" x="NaN" y="NaN" width="NaN" height="NaN" />
 <rect class="pcb-pad" x="NaN" y="NaN" width="NaN" height="NaN" />
-      <rect class="pcb-boundary" x="NaN" y="NaN" width="NaN" height="NaN" />
+      <rect class="pcb-boundary" x="150" y="50" width="500" height="500" />
     </svg>
   
