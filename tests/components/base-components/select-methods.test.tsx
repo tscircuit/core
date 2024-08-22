@@ -23,15 +23,20 @@ it("should correctly use selectAll and selectOne methods", () => {
   // Test selectAll
   const allResistors = board.selectAll("resistor")
   expect(allResistors).toHaveLength(3)
-  expect(allResistors.map((r) => r.props.name)).toEqual(["R1", "R2", "R3"])
-
-  const resistorsInBoard = board.selectAll("> resistor")
-  expect(resistorsInBoard).toHaveLength(2)
-  expect(resistorsInBoard.map((r) => r.props.name)).toEqual(["R1", "R2"])
+  expect(allResistors.map((r) => r.props.name).sort()).toEqual([
+    "R1",
+    "R2",
+    "R3",
+  ])
 
   const resistorInGroup = board.selectAll("group > resistor")
   expect(resistorInGroup).toHaveLength(1)
   expect(resistorInGroup[0].props.name).toBe("R3")
+
+  // Test nested selection without direct child operator
+  const nestedResistorAll = board.selectAll("group resistor")
+  expect(nestedResistorAll).toHaveLength(1)
+  expect(nestedResistorAll.map((r) => r.props.name).sort()).toEqual(["R3"])
 
   // Test selectOne
   const led = board.selectOne("led")

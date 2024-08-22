@@ -103,7 +103,7 @@ export class NormalComponent<
           const port = this.children.find(
             (c) =>
               c.componentName === "Port" &&
-              (c as Port).doesMatchName(prop as string),
+              (c as Port).isMatchingNameOrAlias(prop as string),
           )
           if (!port) {
             throw new Error(
@@ -290,7 +290,7 @@ export class NormalComponent<
     for (const newPort of newPorts) {
       if (
         existingPorts.find((p) =>
-          p.doesMatchAnyAlias(newPort.getAllPortAliases()),
+          p.isMatchingAnyOf(newPort.getNameAndAliases()),
         )
       ) {
         continue

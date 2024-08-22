@@ -60,7 +60,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   registerMatch(component: PrimitiveComponent) {
     this.matchedComponents.push(component)
   }
-  getAllPortAliases() {
+  getNameAndAliases() {
     const { _parsedProps: props } = this
     return Array.from(
       new Set([
@@ -72,16 +72,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       ]),
     ) as string[]
   }
-  doesMatchName(name: string) {
-    return this.getAllPortAliases().includes(name)
-  }
-  doesMatchAnyAlias(aliases: Array<string | number>) {
-    return this.getAllPortAliases().some((a) =>
-      aliases.map((a) => a.toString()).includes(a),
-    )
-  }
   isMatchingPort(port: Port) {
-    return this.doesMatchAnyAlias(port.getAllPortAliases())
+    return this.isMatchingAnyOf(port.getNameAndAliases())
   }
   getPortSelector() {
     return `.${this.parent?.props.name} > port.${this.props.name}`
@@ -92,7 +84,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { db } = this.project!
     const { _parsedProps: props } = this
 
-    const port_hints = this.getAllPortAliases()
+    const port_hints = this.getNameAndAliases()
 
     const source_port = db.source_port.insert({
       name: props.name!,
