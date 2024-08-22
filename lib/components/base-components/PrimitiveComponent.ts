@@ -247,18 +247,22 @@ export abstract class PrimitiveComponent<
     let results: PrimitiveComponent[] = [this]
 
     for (const part of parts) {
-      results = results.flatMap((component) => {
-        if (part === ">") {
-          return component.children
-        }
-
-        return component.children.filter((child) =>
-          isMatchingSelector(child, part),
-        )
-      })
+      if (part === ">") {
+        results = results.flatMap((component) => component.children)
+      } else {
+        results = results.flatMap((component) => {
+          const matchingChildren = component.children.filter((child) =>
+            isMatchingSelector(child, part)
+          )
+          return [
+            ...matchingChildren,
+            ...component.children.flatMap((child) => child.selectAll(part)),
+          ]
+        })
+      }
     }
 
-    return results
+    return results.filter((component) => component !== this)
   }
 
   selectOne(selector: string): PrimitiveComponent | null {

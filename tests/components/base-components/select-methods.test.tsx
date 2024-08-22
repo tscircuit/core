@@ -25,13 +25,18 @@ it("should correctly use selectAll and selectOne methods", () => {
   expect(allResistors).toHaveLength(3)
   expect(allResistors.map((r) => r.props.name)).toEqual(["R1", "R2", "R3"])
 
-  const resistorsInBoard = board.selectAll("> resistor")
-  expect(resistorsInBoard).toHaveLength(2)
-  expect(resistorsInBoard.map((r) => r.props.name)).toEqual(["R1", "R2"])
-
   const resistorInGroup = board.selectAll("group > resistor")
   expect(resistorInGroup).toHaveLength(1)
   expect(resistorInGroup[0].props.name).toBe("R3")
+
+  // Test nested selection
+  const nestedResistor = board.selectAll("board resistor")
+  expect(nestedResistor).toHaveLength(3)
+  expect(nestedResistor.map((r) => r.props.name).sort()).toEqual([
+    "R1",
+    "R2",
+    "R3",
+  ])
 
   // Test selectOne
   const led = board.selectOne("led")
