@@ -242,11 +242,11 @@ export abstract class PrimitiveComponent<
   //   throw new Error(`Could not handle selector "${selector}"`)
   // }
 
-  selectAll(selector: string): PrimitiveComponent[] {
+  selectAll(selector: string, nestCount = 0): PrimitiveComponent[] {
     const parts = selector.split(/\s+/)
     let results: PrimitiveComponent[] = [this]
 
-    console.log(this, parts)
+    console.log(Array(nestCount).fill(" ").join(""), this, parts)
     for (const part of parts) {
       if (part === ">") {
         results = results.flatMap((component) => component.children)
@@ -257,7 +257,9 @@ export abstract class PrimitiveComponent<
           )
           return [
             ...matchingChildren,
-            ...component.children.flatMap((child) => child.selectAll(part)),
+            ...component.children.flatMap((child) =>
+              child.selectAll(part, nestCount + 1),
+            ),
           ]
         })
       }
