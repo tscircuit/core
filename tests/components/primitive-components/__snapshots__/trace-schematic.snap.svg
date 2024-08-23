@@ -1,0 +1,61 @@
+
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="-3.5 -1.275 7.0260786 2.55" width="1200" height="600">
+      <style>
+      .component { fill: none; stroke: red; stroke-width: 0.05; }
+      .component-pin { fill: none; stroke: blue; stroke-width: 0.05; }
+      .trace { stroke: green; stroke-width: 0.05; fill: none; }
+      .text { font-family: Arial, sans-serif; font-size: 0.2px; }
+      .net-label { font-family: Arial, sans-serif; font-size: 0.2px; fill: gray; }
+    </style>
+        
+      <g transform="translate(-2, 0) rotate(0)">
+        <rect 
+          class="component" 
+          x="-0.5" 
+          y="-0.275" 
+          width="1" 
+          height="0.55" 
+        />
+        <rect 
+        class="component-pin"
+          x="-0.6" 
+          y="-0.1" 
+          width="0.2" 
+          height="0.2" 
+        />
+        <rect 
+          class="component-pin"
+          x="0.4" 
+          y="-0.1" 
+          width="0.2" 
+          height="0.2" 
+        />
+      </g>
+    
+
+      <g transform="translate(2, 0) rotate(0)">
+        <rect 
+          class="component" 
+          x="-0.5260786000000002" 
+          y="-0.22972835000000025" 
+          width="1.0521572000000003" 
+          height="0.4594567000000005" 
+        />
+        <rect 
+        class="component-pin"
+          x="-0.6260786000000002" 
+          y="-0.1" 
+          width="0.2" 
+          height="0.2" 
+        />
+        <rect 
+          class="component-pin"
+          x="0.4260786000000002" 
+          y="-0.1" 
+          width="0.2" 
+          height="0.2" 
+        />
+      </g>
+    
+      </svg>
+    

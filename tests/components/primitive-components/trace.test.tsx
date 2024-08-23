@@ -7,8 +7,14 @@ it("simple trace test", async () => {
 
   project.add(
     <board width="10mm" height="10mm">
-      <resistor name="R1" resistance="10k" footprint="0402" pcbX={-2} />
-      <led name="LED1" footprint="0402" pcbX={2} />
+      <resistor
+        name="R1"
+        resistance="10k"
+        footprint="0402"
+        pcbX={-2}
+        schX={-2}
+      />
+      <led name="LED1" footprint="0402" pcbX={2} schX={2} />
       <trace from=".R1 > .pin1" to=".LED1 > .anode" />
     </board>,
   )
@@ -16,4 +22,5 @@ it("simple trace test", async () => {
   project.render()
 
   expect(project).toMatchPcbSnapshot(import.meta.path)
+  expect(project).toMatchSchematicSnapshot(import.meta.path)
 })

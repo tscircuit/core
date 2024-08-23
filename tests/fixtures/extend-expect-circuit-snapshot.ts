@@ -1,4 +1,4 @@
-import { pcbSoupToSvg } from "circuit-to-svg"
+import { pcbSoupToSvg, soupToSvg as schematicSoupToSvg } from "circuit-to-svg"
 import { it, expect, type CustomMatcher, type MatcherResult } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
@@ -22,7 +22,7 @@ async function saveSnapshotOfSoup({
   const snapshotName = `${path.basename(testPath || "")}-${mode}.snap.svg`
   const filePath = path.join(snapshotDir, snapshotName)
 
-  const svg = pcbSoupToSvg(soup)
+  const svg = mode === "pcb" ? pcbSoupToSvg(soup) : schematicSoupToSvg(soup)
 
   if (!fs.existsSync(snapshotDir)) {
     fs.mkdirSync(snapshotDir, { recursive: true })
