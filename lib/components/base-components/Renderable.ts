@@ -1,3 +1,4 @@
+import type { PCBPlacementError, PCBTraceError } from "@tscircuit/soup"
 import { Component, createElement, type ReactElement } from "react"
 
 export const orderedRenderPhases = [
@@ -6,6 +7,7 @@ export const orderedRenderPhases = [
   "SourceParentAttachment",
   "PortDiscovery", // probably going to be removed b/c port discovery can always be done on prop change
   "PortMatching",
+  "SourceTraceRender",
   "SchematicComponentRender",
   "SchematicLayout",
   "SchematicTraceRender",
@@ -87,16 +89,24 @@ export abstract class Renderable implements IRenderable {
     }
     if (isInitialized) {
       ;(this as any)?.[`update${phase}`]?.()
-      this.renderPhaseStates[phase].initialized = true
       return
     }
     ;(this as any)?.[`doInitial${phase}`]?.()
+    this.renderPhaseStates[phase].initialized = true
   }
 
   runRenderPhaseForChildren(phase: RenderPhase): void {
     for (const child of this.children) {
       child.runRenderPhaseForChildren(phase)
       child.runRenderPhase(phase)
+    }
+  }
+
+  renderError(message: string | PCBTraceError | PCBPlacementError) {
+    // TODO add to render phase error list and try to add position or
+    // relationships etc.
+    if (typeof message === "string") {
+      throw new Error(message)
     }
   }
 }

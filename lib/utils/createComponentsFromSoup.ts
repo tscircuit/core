@@ -7,13 +7,26 @@ export const createComponentsFromSoup = (
 ): PrimitiveComponent[] => {
   const components: PrimitiveComponent[] = []
   for (const elm of soup) {
-    if (elm.type === "pcb_smtpad") {
+    if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
       components.push(
         new SmtPad({
           pcbX: elm.x,
           pcbY: elm.y,
           layer: elm.layer,
-          shape: elm.shape,
+          shape: "rect",
+          height: elm.height,
+          width: elm.width,
+          portHints: elm.port_hints,
+        }),
+      )
+    } else if (elm.type === "pcb_smtpad" && elm.shape === "circle") {
+      components.push(
+        new SmtPad({
+          pcbX: elm.x,
+          pcbY: elm.y,
+          layer: elm.layer,
+          shape: "circle",
+          radius: elm.radius,
           portHints: elm.port_hints,
         }),
       )

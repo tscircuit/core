@@ -2,6 +2,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { smtPadProps } from "@tscircuit/props"
 import type { Port } from "./Port"
 import type { RenderPhaseFn } from "../base-components/Renderable"
+import type { PCBSMTPad } from "@tscircuit/soup"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -38,24 +39,42 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const { db } = this.project!
     const { _parsedProps: props } = this
     if (!props.portHints) return
-    const pcb_smt_pad = db.pcb_smtpad.insert({
-      pcb_component_id: this.parent?.pcb_component_id!,
-      pcb_port_id: this.matchedPort?.pcb_port_id!,
-      layer: props.layer ?? "top",
-      shape: props.shape,
-      port_hints: props.portHints.map((ph) => ph.toString()),
+    const position = this.getGlobalPcbPosition()
+    let pcb_smtpad: PCBSMTPad | null = null
+    if (props.shape === "circle") {
+      pcb_smtpad = db.pcb_smtpad.insert({
+        pcb_component_id: this.parent?.pcb_component_id!,
+        pcb_port_id: this.matchedPort?.pcb_port_id!,
+        layer: props.layer ?? "top",
+        shape: "circle",
 
-      x: props.pcbX ?? 0,
-      y: props.pcbY ?? 0,
-    })
-    this.pcb_smtpad_id = pcb_smt_pad.pcb_smtpad_id
-  }
+        // @ts-ignore: no idea why this is triggering
+        radius: props.radius!,
 
-  getPortPosition(): { x: number; y: number } {
-    const { _parsedProps: props } = this
-    return {
-      x: props.pcbX ?? 0,
-      y: props.pcbY ?? 0,
+        port_hints: props.portHints.map((ph) => ph.toString()),
+
+        x: position.x,
+        y: position.y,
+      })
+    } else if (props.shape === "rect") {
+      pcb_smtpad = db.pcb_smtpad.insert({
+        pcb_component_id: this.parent?.pcb_component_id!,
+        pcb_port_id: this.matchedPort?.pcb_port_id!,
+        layer: props.layer ?? "top",
+        shape: "rect",
+
+        // @ts-ignore: no idea why this is triggering
+        width: props.width,
+        height: props.height,
+
+        port_hints: props.portHints.map((ph) => ph.toString()),
+
+        x: position.x,
+        y: position.y,
+      })
+    }
+    if (pcb_smtpad) {
+      this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
     }
   }
 }

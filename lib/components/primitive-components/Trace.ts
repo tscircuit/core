@@ -1,7 +1,13 @@
 import { traceProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Port } from "./Port"
+import { IJumpAutorouter, autoroute } from "@tscircuit/infgrid-ijump-astar"
+import type { AnySoupElement } from "@tscircuit/soup"
 
 export class Trace extends PrimitiveComponent<typeof traceProps> {
+  source_trace_id: string | null = null
+  pcb_trace_id: string | null = null
+
   get config() {
     return {
       zodProps: traceProps,
@@ -27,7 +33,9 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     return []
   }
 
-  doInitialPcbTraceRender(): void {
+  _findConnectedPorts():
+    | { allPortsFound: true; ports: Array<{ selector: string; port: Port }> }
+    | { allPortsFound: false; ports?: undefined } {
     const { db } = this.project!
     const { _parsedProps: props, parent } = this
 
@@ -35,17 +43,87 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const portSelectors = this.getTracePortPathSelectors()
 
-    const ports = portSelectors.map((ps) => parent.selectOne(ps))
+    const ports = portSelectors.map((selector) => ({
+      selector,
+      port: parent.selectOne(selector, { type: "port" }) as Port,
+    }))
 
-    console.log("ports", ports)
+    for (const { selector, port } of ports) {
+      if (!port) {
+        const parentSelector = selector.replace(/\>.*$/, "")
+        const targetComponent = parent.selectOne(parentSelector)
+        if (!targetComponent) {
+          this.renderError(`Could not find port for selector "${selector}"`)
+        } else {
+          this.renderError(
+            `Could not find port for selector "${selector}"\nsearched component ${targetComponent.getString()}, which has ports:${targetComponent.children
+              .filter((c) => c.componentName === "Port")
+              .map((c) => `  ${c.getString()}`)
+              .join("\n")}`,
+          )
+        }
+      }
+    }
 
-    // db.pcb_port.getUsing({ source_port_id:
+    if (ports.some((p) => !p.port)) {
+      return { allPortsFound: false }
+    }
 
-    // const pcb_trace = db.pcb_trace.insert({
-    //   from: props.from.pcb_component_id,
-    //   to: props.to.pcb_component_id,
-    //   width: props.width,
-    //   color: props.color,
-    // })
+    return { allPortsFound: true, ports }
+  }
+
+  doInitialSourceTraceRender(): void {
+    const { db } = this.project!
+    const { _parsedProps: props, parent } = this
+
+    if (!parent) {
+      this.renderError("Trace has no parent")
+      return
+    }
+
+    const { allPortsFound, ports } = this._findConnectedPorts()
+    if (!allPortsFound) return
+
+    const trace = db.source_trace.insert({
+      connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
+      connected_source_net_ids: [],
+    })
+
+    this.source_trace_id = trace.source_trace_id
+  }
+
+  doInitialPcbTraceRender(): void {
+    const { db } = this.project!
+    const { _parsedProps: props, parent } = this
+
+    if (!parent) throw new Error("Trace has no parent")
+
+    const { allPortsFound, ports } = this._findConnectedPorts()
+
+    if (!allPortsFound) return
+
+    const pcbElements: AnySoupElement[] = db
+      .toArray()
+      .filter(
+        (elm) =>
+          elm.type === "pcb_smtpad" ||
+          elm.type === "pcb_trace" ||
+          elm.type === "pcb_plated_hole" ||
+          elm.type === "pcb_hole" ||
+          elm.type === "source_port" ||
+          elm.type === "pcb_port",
+      )
+
+    const source_trace = db.source_trace.get(this.source_trace_id!)!
+
+    const { solution } = autoroute(pcbElements.concat([source_trace]))
+
+    // TODO for some reason, the solution gets duplicated. Seems to be an issue
+    // with the ijump-astar function
+    const pcb_trace = solution[0]
+
+    db.pcb_trace.insert(pcb_trace)
+
+    this.pcb_trace_id = pcb_trace.pcb_trace_id
   }
 }

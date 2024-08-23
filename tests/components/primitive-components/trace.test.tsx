@@ -1,10 +1,9 @@
 import { it, expect } from "bun:test"
-import { Board, Resistor, Project } from "lib/index"
 import "lib/register-catalogue"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("should create soup with various elements", () => {
-  const { project } = getTestFixture()
+it("simple trace test", async () => {
+  const { project, logSoup } = getTestFixture()
 
   project.add(
     <board width="10mm" height="10mm">

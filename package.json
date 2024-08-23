@@ -4,6 +4,7 @@
   "type": "module",
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
+    "@tscircuit/log-soup": "^1.0.2",
     "@types/bun": "latest",
     "@types/react": "^18.3.3",
     "@types/react-reconciler": "^0.28.8",
@@ -14,13 +15,14 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@tscircuit/infgrid-ijump-astar": "0.0.2",
     "@tscircuit/props": "^0.0.36",
     "@tscircuit/soup": "^0.0.52",
     "@tscircuit/soup-util": "0.0.18",
     "footprinter": "^0.0.44",
     "react": "^18.3.1",
     "react-reconciler": "^0.29.2",
-    "schematic-symbols": "0.0.8",
+    "schematic-symbols": "0.0.10",
     "transformation-matrix": "^2.16.1"
   }
 }

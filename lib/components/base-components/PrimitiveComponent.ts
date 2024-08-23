@@ -173,7 +173,10 @@ export abstract class PrimitiveComponent<
   }
 
   getNameAndAliases(): string[] {
-    return [this._parsedProps.name].filter(Boolean)
+    return [
+      this._parsedProps.name,
+      ...(this._parsedProps.portHints ?? []),
+    ].filter(Boolean)
   }
   isMatchingNameOrAlias(name: string) {
     return this.getNameAndAliases().includes(name)
@@ -203,7 +206,7 @@ export abstract class PrimitiveComponent<
   }
 
   selectAll(selector: string): PrimitiveComponent[] {
-    const parts = selector.split(/\s+/)
+    const parts = selector.trim().split(/\s+/)
     let results: PrimitiveComponent[] = [this]
 
     let onlyDirectChildren = false
@@ -223,7 +226,32 @@ export abstract class PrimitiveComponent<
     return results.filter((component) => component !== this)
   }
 
-  selectOne(selector: string): PrimitiveComponent | null {
+  selectOne(
+    selector: string,
+    options?: {
+      type?: string
+      port?: boolean
+      pcbPrimitive?: boolean
+      schematicPrimitive?: boolean
+    },
+  ): PrimitiveComponent | null {
+    let type = options?.type?.toLowerCase()
+    if (options?.port) type = "port"
+    if (type) {
+      return (
+        this.selectAll(selector).find(
+          (c) => c.lowercaseComponentName === type,
+        ) ?? null
+      )
+    }
+    if (options?.pcbPrimitive) {
+      return this.selectAll(selector).find((c) => c.isPcbPrimitive) ?? null
+    }
+    if (options?.schematicPrimitive) {
+      return (
+        this.selectAll(selector).find((c) => c.isSchematicPrimitive) ?? null
+      )
+    }
     return this.selectAll(selector)[0] ?? null
   }
 
@@ -245,7 +273,7 @@ export abstract class PrimitiveComponent<
       return `<${cname}#${this._renderId} name=".${props?.name}" />`
     }
     if (props?.portHints) {
-      return `<${cname}#${this._renderId} (${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
+      return `<${cname}#${this._renderId}(${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
     }
     return `<${cname}#${this._renderId} />`
   }
