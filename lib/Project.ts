@@ -4,6 +4,7 @@ import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import { su } from "@tscircuit/soup-util"
 import { isValidElement, type ReactElement } from "react"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
+import { identity, type Matrix } from "transformation-matrix"
 
 export class Project {
   rootComponent: PrimitiveComponent | null = null
@@ -71,5 +72,13 @@ export class Project {
 
   getCircuitJson(): AnySoupElement[] {
     return this.getSoup()
+  }
+
+  computeGlobalSchematicTransform(): Matrix {
+    return identity()
+  }
+
+  computeGlobalPcbTransform(): Matrix {
+    return identity()
   }
 }

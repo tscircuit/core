@@ -67,14 +67,18 @@ export class NormalComponent<
   initPorts() {
     const { config } = this
     if (config.schematicSymbolName) {
-      const symbol = symbols[
+      const sym = symbols[
         `${config.schematicSymbolName}_horz` as keyof typeof symbols
       ] as SchSymbol | undefined
-      if (!symbol) return
+      if (!sym) return
 
-      for (const { labels } of symbol.ports) {
-        const port = getPortFromHints(labels)
-        if (port) this.add(port)
+      for (const symPort of sym.ports) {
+        const port = getPortFromHints(symPort.labels)
+
+        if (port) {
+          port.schematicSymbolPortDef = symPort
+          this.add(port)
+        }
       }
 
       return
@@ -271,28 +275,52 @@ export class NormalComponent<
     return newPorts
   }
 
+  getPortsFromSchematicSymbol(): Port[] {
+    const { config } = this
+    if (!config.schematicSymbolName) return []
+    const symbol: SchSymbol = (symbols as any)[config.schematicSymbolName]
+    if (!symbol) return []
+    const newPorts: Port[] = []
+    for (const symbolPort of symbol.ports) {
+      const port = getPortFromHints(symbolPort.labels)
+      if (port) {
+        port.schematicSymbolPortDef = symbolPort
+        newPorts.push(port)
+      }
+    }
+    return newPorts
+  }
+
   /**
    * Use data from our props to create ports for this component.
    *
    * Generally, this is done by looking at the schematic and the footprint,
    * reading the pins, making sure there aren't duplicates.
    *
-   * TODO remove in favor of initPorts()
+   * Can probably be removed in favor of initPorts()
    *
    */
   doInitialPortDiscovery(): void {
-    const newPorts = [...this.getPortsFromFootprint()]
+    const newPorts = [
+      ...this.getPortsFromFootprint(),
+      ...this.getPortsFromSchematicSymbol(),
+    ]
 
     const existingPorts = this.children.filter(
       (c) => c.componentName === "Port",
     ) as Port[]
 
     for (const newPort of newPorts) {
-      if (
-        existingPorts.find((p) =>
-          p.isMatchingAnyOf(newPort.getNameAndAliases()),
-        )
-      ) {
+      const existingPort = existingPorts.find((p) =>
+        p.isMatchingAnyOf(newPort.getNameAndAliases()),
+      )
+      if (existingPort) {
+        if (
+          !existingPort.schematicSymbolPortDef &&
+          newPort.schematicSymbolPortDef
+        ) {
+          existingPort.schematicSymbolPortDef = newPort.schematicSymbolPortDef
+        }
         continue
       }
       existingPorts.push(newPort)

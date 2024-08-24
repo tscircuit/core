@@ -2,6 +2,8 @@ import type { PCBSMTPad } from "@tscircuit/soup"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { z } from "zod"
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
+import { symbols, type SchSymbol } from "schematic-symbols"
+import { applyToPoint, compose, translate } from "transformation-matrix"
 
 export const portProps = z.object({
   name: z.string().optional(),
@@ -16,6 +18,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   pcb_port_id: string | null = null
   schematic_port_id: string | null = null
 
+  schematicSymbolPortDef: SchSymbol["ports"][number] | null = null
   matchedComponents: PrimitiveComponent[]
 
   constructor(props: z.input<typeof portProps>) {
@@ -40,17 +43,16 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   getGlobalSchematicPosition(): { x: number; y: number } {
-    const matchedSchElm = this.matchedComponents.find(
-      (c) => c.isSchematicPrimitive,
-    )
-
-    if (!matchedSchElm) {
+    if (!this.schematicSymbolPortDef) {
       throw new Error(
-        `Port ${this} has no matched schematic component, can't get global schematic position`,
+        `Could not find schematic symbol port for port ${this} so couldn't determine port position`,
       )
     }
 
-    return matchedSchElm?.getGlobalPcbPosition() ?? { x: 0, y: 0 }
+    return applyToPoint(
+      this.parent!.computeSchematicGlobalTransform(),
+      this.schematicSymbolPortDef,
+    )
   }
 
   /**

@@ -123,7 +123,7 @@ export abstract class PrimitiveComponent<
    */
   computeSchematicGlobalTransform(): Matrix {
     return compose(
-      this.parent?.computeSchematicGlobalTransform() ?? identity(),
+      this.parent?.computeSchematicGlobalTransform?.() ?? identity(),
       this.computeSchematicPropsTransform(),
     )
   }
