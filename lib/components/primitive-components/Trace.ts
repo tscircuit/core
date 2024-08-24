@@ -3,6 +3,10 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { IJumpAutorouter, autoroute } from "@tscircuit/infgrid-ijump-astar"
 import type { AnySoupElement } from "@tscircuit/soup"
+import type {
+  Obstacle,
+  SimpleRouteJson,
+} from "lib/utils/autorouting/SimpleRouteJson"
 
 export class Trace extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null = null
@@ -148,6 +152,23 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     //       elm.type === "schematic_text" ||
     //       elm.type === "schematic_port",
     //   )
+
+    const obstacles: Obstacle[] = []
+
+    const simpleRouteJsonInput: SimpleRouteJson = {
+      obstacles,
+      connections: [],
+      bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 },
+      layerCount: 1,
+    }
+
+    const autorouter = new IJumpAutorouter({
+      input: simpleRouteJsonInput,
+    })
+    const results = autorouter.solve()
+
+    for (const elm of db.toArray()) {
+    }
 
     // const trace = db.schematic_trace.insert({
     //   source_trace_id: this.source_trace_id!,
