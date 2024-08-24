@@ -2,7 +2,7 @@ import { traceProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { IJumpAutorouter, autoroute } from "@tscircuit/infgrid-ijump-astar"
-import type { AnySoupElement, SchematicTrace } from "@tscircuit/soup"
+import type { AnySoupElement, PCBTrace, SchematicTrace } from "@tscircuit/soup"
 import type {
   Obstacle,
   SimpleRouteConnection,
@@ -10,6 +10,8 @@ import type {
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
 import { projectPointInDirection } from "lib/utils/projectPointInDirection"
+import type { TraceHint } from "./TraceHint"
+import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 
 export class Trace extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null = null
@@ -124,15 +126,41 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const source_trace = db.source_trace.get(this.source_trace_id!)!
 
-    const { solution } = autoroute(pcbElements.concat([source_trace]))
+    const hints = ports.flatMap(({ port }) =>
+      port.matchedComponents.filter((c) => c.componentName === "TraceHint"),
+    ) as TraceHint[]
 
-    // TODO for some reason, the solution gets duplicated. Seems to be an issue
-    // with the ijump-astar function
-    const pcb_trace = solution[0]
+    if (hints.length === 0) {
+      const { solution } = autoroute(pcbElements.concat([source_trace]))
+      // TODO for some reason, the solution gets duplicated inside ijump-astar
+      const pcb_trace = solution[0]
+      db.pcb_trace.insert(pcb_trace)
+      this.pcb_trace_id = pcb_trace.pcb_trace_id
+      return
+    }
 
-    db.pcb_trace.insert(pcb_trace)
+    if (ports.length > 2) {
+      this.renderError(
+        `Trace has more than two ports (${ports
+          .map((p) => p.port.getString())
+          .join(
+            ", ",
+          )}), routing between more than two ports for a single trace is not implemented`,
+      )
+      return
+    }
 
-    this.pcb_trace_id = pcb_trace.pcb_trace_id
+    // When we have hints, we have to order the hints then route between each
+    // terminal of the trace and the hints
+    // TODO order based on proximity to ports
+    const orderedHintsAndPorts: Array<TraceHint | Port> = [
+      ports[0].port,
+      ...hints,
+      ports[1].port,
+    ]
+
+    const candidateLayerCombinations =
+      findPossibleTraceLayerCombinations(orderedHintsAndPorts)
   }
 
   doInitialSchematicTraceRender(): void {
