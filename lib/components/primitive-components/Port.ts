@@ -20,6 +20,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   schematicSymbolPortDef: SchSymbol["ports"][number] | null = null
   matchedComponents: PrimitiveComponent[]
+  facingDirection: "up" | "down" | "left" | "right" | null = null
 
   constructor(props: z.input<typeof portProps>) {
     if (!props.name && props.pinNumber) props.name = `pin${props.pinNumber}`
@@ -172,11 +173,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const center = this.getGlobalSchematicPosition()
     const parentCenter = this.parent?.getGlobalSchematicPosition()
 
+    this.facingDirection = getRelativeDirection(parentCenter, center)
+
     const schematic_port = db.schematic_port.insert({
       schematic_component_id: this.parent?.schematic_component_id!,
       center,
       source_port_id: this.source_port_id!,
-      facing_direction: getRelativeDirection(parentCenter, center),
+      facing_direction: this.facingDirection,
     })
 
     this.schematic_port_id = schematic_port.schematic_port_id

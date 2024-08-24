@@ -1,7 +1,18 @@
 {
-  "name": "core",
+  "name": "@tscircuit/core",
   "module": "index.ts",
   "type": "module",
+  "types": "index.ts",
+  "version": "0.0.1",
+  "main": "dist/index.cjs",
+  "files": [
+    "index.ts",
+    "lib",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup index.ts"
+  },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@tscircuit/log-soup": "^1.0.2",
@@ -9,7 +20,8 @@
     "@types/react": "^18.3.3",
     "@types/react-reconciler": "^0.28.8",
     "circuit-to-svg": "^0.0.3",
-    "looks-same": "^9.0.1"
+    "looks-same": "^9.0.1",
+    "tsup": "^8.2.4"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

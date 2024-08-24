@@ -14,8 +14,8 @@
       <rect class="pcb-component-outline" x="0" y="0" width="0" height="0" />
     </g>
   
-<rect class="pcb-pad" x="NaN" y="NaN" width="NaN" height="NaN" />
-<rect class="pcb-pad" x="NaN" y="NaN" width="NaN" height="NaN" />
+<rect class="pcb-pad" x="360" y="285" width="30.000000000000004" height="30.000000000000004" />
+<rect class="pcb-pad" x="410" y="285" width="30.000000000000004" height="30.000000000000004" />
       <rect class="pcb-boundary" x="150" y="50" width="500" height="500" />
     </svg>
   

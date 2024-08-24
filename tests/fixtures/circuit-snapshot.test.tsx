@@ -12,5 +12,9 @@ it("should be able to snapshot a circuit", async () => {
 
   project.render()
 
+  const pcb_smtpads = project.db.pcb_smtpad.list()
+  expect(pcb_smtpads.every((smt) => !Number.isNaN(smt.x))).toBe(true)
+  expect(pcb_smtpads.every((smt) => !Number.isNaN(smt.y))).toBe(true)
+
   await expect(project.getSoup()).toMatchPcbSnapshot(import.meta.path)
 })

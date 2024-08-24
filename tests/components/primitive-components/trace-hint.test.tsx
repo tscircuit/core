@@ -21,7 +21,6 @@ it("simple trace with trace hint test", async () => {
 
   project.render()
 
-  await logSoup("simple trace with trace hint test")
   expect(project).toMatchPcbSnapshot(import.meta.path)
   expect(project).toMatchSchematicSnapshot(import.meta.path)
 })

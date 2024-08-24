@@ -1,5 +1,5 @@
 
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="-3.5 -1.275 7.0260786 2.55" width="1200" height="600">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="-3.6501 -1.275 7.1761786 2.7" width="1200" height="600">
       <style>
       .component { fill: none; stroke: red; stroke-width: 0.05; }
       .component-pin { fill: none; stroke: blue; stroke-width: 0.05; }
@@ -57,5 +57,6 @@
         />
       </g>
     
+<path class="trace" d="M -2.6501 0 L -2.65 0 L -2.65 0.42500000000000004 L 1.3132128999999995 0.42500000000000004 L 1.3132128999999995 -0.0018268500000008236" />
       </svg>
     
