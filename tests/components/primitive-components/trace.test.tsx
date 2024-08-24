@@ -20,7 +20,6 @@ it("simple trace test", async () => {
 
   project.render()
 
-  await logSoup("simple trace test")
   expect(project).toMatchPcbSnapshot(import.meta.path)
   expect(project).toMatchSchematicSnapshot(import.meta.path)
 })
