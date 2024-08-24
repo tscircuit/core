@@ -81,4 +81,12 @@ export class Project {
   computeGlobalPcbTransform(): Matrix {
     return identity()
   }
+
+  selectAll(selector: string): PrimitiveComponent[] {
+    return this.rootComponent?.selectAll(selector) ?? []
+  }
+
+  selectOne(selector: string): PrimitiveComponent | null {
+    return this.rootComponent?.selectOne(selector) ?? null
+  }
 }
