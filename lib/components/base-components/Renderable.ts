@@ -10,6 +10,7 @@ export const orderedRenderPhases = [
   "SourceTraceRender",
   "SchematicComponentRender",
   "SchematicLayout",
+  "SchematicPortRender",
   "SchematicTraceRender",
   "PcbComponentRender",
   "PcbPortRender",
