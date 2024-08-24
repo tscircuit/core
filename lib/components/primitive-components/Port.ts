@@ -49,10 +49,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       )
     }
 
-    return applyToPoint(
+    const symbol = this.parent?.getSchematicSymbol()
+    if (!symbol) throw new Error(`Could not find parent symbol for ${this}`)
+
+    const transform = compose(
       this.parent!.computeSchematicGlobalTransform(),
-      this.schematicSymbolPortDef,
+      translate(-symbol.center.x, -symbol.center.y),
     )
+
+    return applyToPoint(transform, this.schematicSymbolPortDef)
   }
 
   /**

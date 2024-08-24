@@ -114,7 +114,7 @@ export abstract class PrimitiveComponent<
    * schematic components
    */
   computeSchematicPropsTransform(): Matrix {
-    return compose(translate(this.props.schX, this.props.schY))
+    return compose(translate(this.props.schX ?? 0, this.props.schY ?? 0))
   }
 
   /**
@@ -126,6 +126,19 @@ export abstract class PrimitiveComponent<
       this.parent?.computeSchematicGlobalTransform?.() ?? identity(),
       this.computeSchematicPropsTransform(),
     )
+  }
+
+  getSchematicSymbol(variant: "horz" | "vert" | null = null): SchSymbol | null {
+    if (variant === null) {
+      return this.getSchematicSymbol(
+        this.props.schRotation % 90 === 0 ? "vert" : "horz",
+      )
+    }
+    const { config } = this
+    if (!config.schematicSymbolName) return null
+    return symbols[
+      `${config.schematicSymbolName}_${variant}` as keyof typeof symbols
+    ]
   }
 
   getGlobalPcbPosition(): { x: number; y: number } {
