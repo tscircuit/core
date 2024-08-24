@@ -2,11 +2,14 @@ import { traceProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { IJumpAutorouter, autoroute } from "@tscircuit/infgrid-ijump-astar"
-import type { AnySoupElement } from "@tscircuit/soup"
+import type { AnySoupElement, SchematicTrace } from "@tscircuit/soup"
 import type {
   Obstacle,
+  SimpleRouteConnection,
   SimpleRouteJson,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
+import { projectPointInDirection } from "lib/utils/projectPointInDirection"
 
 export class Trace extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null = null
@@ -142,23 +145,40 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     if (!allPortsFound) return
 
-    // const schematicElements: AnySoupElement[] = db
-    //   .toArray()
-    //   .filter(
-    //     (elm) =>
-    //       elm.type === "schematic_component" ||
-    //       elm.type === "schematic_line" ||
-    //       elm.type === "schematic_path" ||
-    //       elm.type === "schematic_text" ||
-    //       elm.type === "schematic_port",
-    //   )
-
     const obstacles: Obstacle[] = []
+    const connection: SimpleRouteConnection = {
+      name: this.source_trace_id!,
+      pointsToConnect: [],
+    }
+
+    for (const elm of db.toArray()) {
+      if (elm.type === "schematic_component") {
+        obstacles.push({
+          type: "rect",
+          center: elm.center,
+          width: elm.size.width,
+          height: elm.size.height,
+          connectedTo: [],
+        })
+      }
+    }
+
+    for (const { port } of ports) {
+      connection.pointsToConnect.push(
+        projectPointInDirection(
+          port.getGlobalSchematicPosition(),
+          port.facingDirection!,
+          0.1501,
+        ),
+      )
+    }
+
+    const bounds = computeObstacleBounds(obstacles)
 
     const simpleRouteJsonInput: SimpleRouteJson = {
       obstacles,
-      connections: [],
-      bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 },
+      connections: [connection],
+      bounds,
       layerCount: 1,
     }
 
@@ -167,15 +187,33 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     })
     const results = autorouter.solve()
 
-    for (const elm of db.toArray()) {
+    if (results.length === 0) return
+
+    const [result] = results
+
+    if (!result.solved) return
+
+    const { route } = result
+
+    const edges: SchematicTrace["edges"] = []
+
+    for (let i = 0; i < route.length - 1; i++) {
+      const from = route[i]
+      const to = route[i + 1]
+
+      edges.push({
+        from,
+        to,
+        // TODO to_schematic_port_id and from_schematic_port_id
+      })
     }
 
-    // const trace = db.schematic_trace.insert({
-    //   source_trace_id: this.source_trace_id!,
+    const trace = db.schematic_trace.insert({
+      source_trace_id: this.source_trace_id!,
 
-    //   // edges:
-    // })
+      edges,
+    })
 
-    // this.schematic_trace_id = trace.schematic_trace_id
+    this.schematic_trace_id = trace.schematic_trace_id
   }
 }
