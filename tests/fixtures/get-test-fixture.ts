@@ -9,12 +9,11 @@ export const getTestFixture = () => {
   return {
     project,
     logSoup: async (lgn: string) => {
+      if (process.env.CI) return
       if (!project.rootComponent?.renderPhaseStates.SourceRender.initialized) {
         project.render()
       }
-      const result = await logSoup(`core: ${lgn}`, project.getSoup())
-
-      console.log(result)
+      await logSoup(`core_${lgn}`, project.getSoup())
     },
   }
 }

@@ -7,6 +7,7 @@ import type { AnySoupElement } from "@tscircuit/soup"
 export class Trace extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
+  schematic_trace_id: string | null = null
 
   get config() {
     return {
@@ -125,5 +126,35 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     db.pcb_trace.insert(pcb_trace)
 
     this.pcb_trace_id = pcb_trace.pcb_trace_id
+  }
+
+  doInitialSchematicTraceRender(): void {
+    const { db } = this.project!
+    const { _parsedProps: props, parent } = this
+
+    if (!parent) throw new Error("Trace has no parent")
+
+    const { allPortsFound, ports } = this._findConnectedPorts()
+
+    if (!allPortsFound) return
+
+    // const schematicElements: AnySoupElement[] = db
+    //   .toArray()
+    //   .filter(
+    //     (elm) =>
+    //       elm.type === "schematic_component" ||
+    //       elm.type === "schematic_line" ||
+    //       elm.type === "schematic_path" ||
+    //       elm.type === "schematic_text" ||
+    //       elm.type === "schematic_port",
+    //   )
+
+    // const trace = db.schematic_trace.insert({
+    //   source_trace_id: this.source_trace_id!,
+
+    //   // edges:
+    // })
+
+    // this.schematic_trace_id = trace.schematic_trace_id
   }
 }

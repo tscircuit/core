@@ -1,6 +1,7 @@
 import type { PCBSMTPad } from "@tscircuit/soup"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { z } from "zod"
+import { getRelativeDirection } from "lib/utils/get-relative-direction"
 
 export const portProps = z.object({
   name: z.string().optional(),
@@ -153,5 +154,24 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         `${pcbMatch.getString()} does not have a getGlobalPcbPosition method (needed for pcb_port placement)`,
       )
     }
+  }
+
+  doInitialSchematicPortRender(): void {
+    const { db } = this.project!
+    const { _parsedProps: props } = this
+
+    if (!this.parent) return
+
+    const center = this.getGlobalSchematicPosition()
+    const parentCenter = this.parent?.getGlobalSchematicPosition()
+
+    const schematic_port = db.schematic_port.insert({
+      schematic_component_id: this.parent?.schematic_component_id!,
+      center,
+      source_port_id: this.source_port_id!,
+      facing_direction: getRelativeDirection(parentCenter, center),
+    })
+
+    this.schematic_port_id = schematic_port.schematic_port_id
   }
 }
