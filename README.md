@@ -1,5 +1,7 @@
 # @tscircuit/core
 
+[tscircuit](https://github.com/tscircuit/tscircuit) &middot; [Development Guide](./docs/DEVELOPMENT.md)
+
 > [!WARNING]
 > You should use [@tscircuit/builder](https://github.com/tscircuit/builder) instead, this package is
 > going to be in alpha for a while.

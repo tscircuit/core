@@ -69,7 +69,7 @@ export class Project {
     return this.db.toArray()
   }
 
-  getJson(): AnySoupElement[] {
+  getCircuitJson(): AnySoupElement[] {
     return this.getSoup()
   }
 }
