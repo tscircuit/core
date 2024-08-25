@@ -24,7 +24,7 @@
 <rect class="pcb-pad" x="310" y="285" width="30.000000000000004" height="30.000000000000004" />
 <rect class="pcb-pad" x="460" y="285" width="30.000000000000004" height="30.000000000000004" />
 <rect class="pcb-pad" x="510" y="285" width="30.000000000000004" height="30.000000000000004" />
-<path class="pcb-trace" d="M 275 300 L 302.5 300 L 302.5 277.5 L 475 277.5 L 475 300" />
+<path class="pcb-trace" d="M 275 300 L 275 250 L 400 250 L 400 250 L 475 250 L 475 300" />
       <rect class="pcb-boundary" x="150" y="50" width="500" height="500" />
     </svg>
   

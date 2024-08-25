@@ -88,6 +88,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     return `.${this.parent?.props.name} > port.${this.props.name}`
     // return `#${this.props.id}`
   }
+  getAvailablePcbLayers(): string[] {
+    return Array.from(
+      new Set(this.matchedComponents.flatMap((c) => c.getAvailablePcbLayers())),
+    )
+  }
 
   doInitialSourceRender(): void {
     const { db } = this.project!

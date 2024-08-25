@@ -1,8 +1,18 @@
 import { traceProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
-import { IJumpAutorouter, autoroute } from "@tscircuit/infgrid-ijump-astar"
-import type { AnySoupElement, SchematicTrace } from "@tscircuit/soup"
+import {
+  IJumpAutorouter,
+  autoroute,
+  getObstaclesFromSoup,
+  markObstaclesAsConnected,
+} from "@tscircuit/infgrid-ijump-astar"
+import type {
+  AnySoupElement,
+  PCBTrace,
+  RouteHintPoint,
+  SchematicTrace,
+} from "@tscircuit/soup"
 import type {
   Obstacle,
   SimpleRouteConnection,
@@ -10,6 +20,22 @@ import type {
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
 import { projectPointInDirection } from "lib/utils/projectPointInDirection"
+import type { TraceHint } from "./TraceHint"
+import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
+import { pairs } from "lib/utils/pairs"
+import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
+
+type PcbRouteObjective =
+  | RouteHintPoint
+  | { layers: string[]; x: number; y: number; via?: boolean }
+
+const portToObjective = (port: Port): PcbRouteObjective => {
+  const portPosition = port.getGlobalPcbPosition()
+  return {
+    ...portPosition,
+    layers: port.getAvailablePcbLayers(),
+  }
+}
 
 export class Trace extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null = null
@@ -124,14 +150,119 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const source_trace = db.source_trace.get(this.source_trace_id!)!
 
-    const { solution } = autoroute(pcbElements.concat([source_trace]))
+    const hints = ports.flatMap(({ port }) =>
+      port.matchedComponents.filter((c) => c.componentName === "TraceHint"),
+    ) as TraceHint[]
 
-    // TODO for some reason, the solution gets duplicated. Seems to be an issue
-    // with the ijump-astar function
-    const pcb_trace = solution[0]
+    const pcbRouteHints = (this._parsedProps.pcbRouteHints ?? []).concat(
+      hints.flatMap((h) => h.getPcbRouteHints()),
+    )
 
-    db.pcb_trace.insert(pcb_trace)
+    if (ports.length > 2) {
+      this.renderError(
+        `Trace has more than two ports (${ports
+          .map((p) => p.port.getString())
+          .join(
+            ", ",
+          )}), routing between more than two ports for a single trace is not implemented`,
+      )
+      return
+    }
 
+    if (pcbRouteHints.length === 0) {
+      const { solution } = autoroute(pcbElements.concat([source_trace]))
+      // TODO for some reason, the solution gets duplicated inside ijump-astar
+      const pcb_trace = solution[0]
+      db.pcb_trace.insert(pcb_trace)
+      this.pcb_trace_id = pcb_trace.pcb_trace_id
+      return
+    }
+
+    // When we have hints, we have to order the hints then route between each
+    // terminal of the trace and the hints
+    // TODO order based on proximity to ports
+    const orderedRouteObjectives: PcbRouteObjective[] = [
+      portToObjective(ports[0].port),
+      ...pcbRouteHints,
+      portToObjective(ports[1].port),
+    ]
+
+    // Hints can indicate where there should be a via, but the layer is allowed
+    // to be unspecified, therefore we need to find possible layer combinations
+    // to go to each hint and still route to the start and end points
+    const candidateLayerCombinations = findPossibleTraceLayerCombinations(
+      orderedRouteObjectives,
+    )
+
+    if (candidateLayerCombinations.length === 0) {
+      this.renderError(
+        `Could not find a common layer (using hints) for trace ${this.getString()}`,
+      )
+    }
+
+    // Cache the PCB obstacles, they'll be needed for each segment between
+    // ports/hints
+    const obstacles = getObstaclesFromSoup(this.project!.db.toArray())
+    markObstaclesAsConnected(
+      obstacles,
+      orderedRouteObjectives,
+      this.source_trace_id!,
+    )
+
+    // TODO explore all candidate layer combinations if one fails
+    const candidateLayerSelections = candidateLayerCombinations[0].layer_path
+
+    /**
+     * Apply the candidate layer selections to the route objectives, now we
+     * have a set of points that have definite layers
+     */
+    const orderedRoutePoints = orderedRouteObjectives.map((t, idx) => {
+      if (t.via) {
+        return {
+          ...t,
+          via_to_layer: candidateLayerSelections[idx],
+        }
+      }
+      return { ...t, layers: [candidateLayerSelections[idx]] }
+    })
+
+    const routes: PCBTrace["route"][] = []
+    for (const [a, b] of pairs(orderedRoutePoints)) {
+      const BOUNDS_MARGIN = 2 //mm
+      const ijump = new IJumpAutorouter({
+        input: {
+          obstacles,
+          connections: [
+            {
+              name: this.source_trace_id!,
+              pointsToConnect: [a, b],
+            },
+          ],
+          layerCount: 1,
+          bounds: {
+            minX: Math.min(a.x, b.x) - BOUNDS_MARGIN,
+            maxX: Math.max(a.x, b.x) + BOUNDS_MARGIN,
+            minY: Math.min(a.y, b.y) - BOUNDS_MARGIN,
+            maxY: Math.max(a.y, b.y) + BOUNDS_MARGIN,
+          },
+        },
+      })
+      const traces = ijump.solveAndMapToTraces()
+      if (traces.length === 0) {
+        this.renderError(
+          `Could not find a route between ${a.x}, ${a.y} and ${b.x}, ${b.y}`,
+        )
+        return
+      }
+      // TODO ijump returns multiple traces for some reason
+      const [trace] = traces as PCBTrace[]
+      routes.push(trace.route)
+    }
+
+    const pcb_trace = db.pcb_trace.insert({
+      route: mergeRoutes(routes),
+      source_trace_id: this.source_trace_id!,
+    })
     this.pcb_trace_id = pcb_trace.pcb_trace_id
   }
 

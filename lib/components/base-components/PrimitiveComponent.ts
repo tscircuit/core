@@ -268,6 +268,17 @@ export abstract class PrimitiveComponent<
     return this.selectAll(selector)[0] ?? null
   }
 
+  getAvailablePcbLayers(): string[] {
+    if (this.isPcbPrimitive) {
+      if (this.props.layer) return [this.props.layer]
+      if (this.componentName === "PlatedHole") {
+        return ["top", "bottom"] // TODO derive layers from parent
+      }
+      return []
+    }
+    return []
+  }
+
   getDescendants(): PrimitiveComponent[] {
     const descendants: PrimitiveComponent[] = []
     for (const child of this.children) {
