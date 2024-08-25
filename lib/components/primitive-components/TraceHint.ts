@@ -1,6 +1,8 @@
 import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { traceHintProps } from "@tscircuit/props"
 import type { Port } from "./Port"
+import type { RouteHintPoint } from "@tscircuit/soup"
+import { applyToPoint } from "transformation-matrix"
 
 export class TraceHint extends PrimitiveComponent<typeof traceHintProps> {
   matchedPort: Port | null = null
@@ -35,5 +37,24 @@ export class TraceHint extends PrimitiveComponent<typeof traceHintProps> {
 
     this.matchedPort = port
     port.registerMatch(this)
+  }
+
+  getPcbRouteHints(): Array<RouteHintPoint> {
+    const { _parsedProps: props } = this
+
+    const offsets = props.offset ? [props.offset] : props.offsets
+
+    if (!offsets) return []
+
+    const globalTransform = this.computePcbGlobalTransform()
+
+    return offsets.map(
+      (offset): RouteHintPoint => ({
+        ...applyToPoint(globalTransform, offset),
+        via: offset.via,
+        to_layer: offset.to_layer,
+        trace_width: offset.trace_width,
+      }),
+    )
   }
 }

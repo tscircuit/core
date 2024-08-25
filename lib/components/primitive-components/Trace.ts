@@ -2,7 +2,12 @@ import { traceProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { IJumpAutorouter, autoroute } from "@tscircuit/infgrid-ijump-astar"
-import type { AnySoupElement, PCBTrace, SchematicTrace } from "@tscircuit/soup"
+import type {
+  AnySoupElement,
+  PCBTrace,
+  RouteHintPoint,
+  SchematicTrace,
+} from "@tscircuit/soup"
 import type {
   Obstacle,
   SimpleRouteConnection,
@@ -130,14 +135,9 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       port.matchedComponents.filter((c) => c.componentName === "TraceHint"),
     ) as TraceHint[]
 
-    if (hints.length === 0) {
-      const { solution } = autoroute(pcbElements.concat([source_trace]))
-      // TODO for some reason, the solution gets duplicated inside ijump-astar
-      const pcb_trace = solution[0]
-      db.pcb_trace.insert(pcb_trace)
-      this.pcb_trace_id = pcb_trace.pcb_trace_id
-      return
-    }
+    const pcbRouteHints = (this._parsedProps.pcbRouteHints ?? []).concat(
+      hints.flatMap((h) => h.getPcbRouteHints()),
+    )
 
     if (ports.length > 2) {
       this.renderError(
@@ -150,17 +150,28 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       return
     }
 
+    if (pcbRouteHints.length === 0) {
+      const { solution } = autoroute(pcbElements.concat([source_trace]))
+      // TODO for some reason, the solution gets duplicated inside ijump-astar
+      const pcb_trace = solution[0]
+      db.pcb_trace.insert(pcb_trace)
+      this.pcb_trace_id = pcb_trace.pcb_trace_id
+      return
+    }
+
     // When we have hints, we have to order the hints then route between each
     // terminal of the trace and the hints
     // TODO order based on proximity to ports
-    const orderedHintsAndPorts: Array<TraceHint | Port> = [
-      ports[0].port,
-      ...hints,
-      ports[1].port,
+    const orderedHintsAndPorts: Array<RouteHintPoint | { layers: string[] }> = [
+      { layers: ports[0].port.getAvailablePcbLayers() },
+      ...pcbRouteHints,
+      { layers: ports[1].port.getAvailablePcbLayers() },
     ]
 
     const candidateLayerCombinations =
       findPossibleTraceLayerCombinations(orderedHintsAndPorts)
+
+    console.log({ candidateLayerCombinations })
   }
 
   doInitialSchematicTraceRender(): void {
