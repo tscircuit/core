@@ -57,6 +57,6 @@ export function isMatchingSelector(
     const match = condition.match(/\[(\w+)=['"]?(.+?)['"]?\]/)
     if (!match) return true
     const [, prop, value] = match
-    return component.props[prop] === value
+    return component.props[prop].toString() === value
   })
 }

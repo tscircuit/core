@@ -45,6 +45,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   getGlobalSchematicPosition(): { x: number; y: number } {
     if (!this.schematicSymbolPortDef) {
+      return applyToPoint(this.parent!.computeSchematicGlobalTransform(), {
+        x: 0,
+        y: 0,
+      })
       throw new Error(
         `Could not find schematic symbol port for port ${this} so couldn't determine port position`,
       )
