@@ -28,6 +28,7 @@ export type PortArrangement = SideSizes | ExplicitPinMappingArrangement
 interface Params {
   schWidth?: number
   schHeight?: number
+  portDistanceFromEdge?: number
   schPinSpacing: number
   schPinStyle?: Record<
     `pin${number}` | number | `${number}`,
@@ -78,7 +79,7 @@ interface SchematicBoxDimensions {
 export const getAllDimensionsForSchematicBox = (
   params: Params,
 ): SchematicBoxDimensions => {
-  const parsedParams: ParsedParams = { ...params } as any
+  const portDistanceFromEdge = params.portDistanceFromEdge ?? 0.2
 
   let sideSizes = params.schPortArrangement
     ? getSizeOfSidesFromPortArrangement(params.schPortArrangement)
@@ -247,13 +248,6 @@ export const getAllDimensionsForSchematicBox = (
     truePinIndex++
   }
 
-  console.log(orderedTruePorts, {
-    leftTotalLength,
-    rightTotalLength,
-    topTotalLength,
-    bottomTotalLength,
-  })
-
   // Use lengths to determine schWidth and schHeight
   let schWidth = params.schWidth
   if (!schWidth) {
@@ -264,22 +258,62 @@ export const getAllDimensionsForSchematicBox = (
     schHeight = Math.max(leftTotalLength + 0.2, rightTotalLength + 0.2, 1)
   }
 
+  const trueEdgePositions = {
+    // Top left corner
+    left: {
+      x: -schWidth / 2 - portDistanceFromEdge,
+      y: leftTotalLength / 2,
+    },
+    // bottom left corner
+    bottom: {
+      x: -leftTotalLength / 2,
+      y: -schHeight / 2 - portDistanceFromEdge,
+    },
+    // bottom right corner
+    right: {
+      x: schWidth / 2 + portDistanceFromEdge,
+      y: -leftTotalLength / 2,
+    },
+    // top right corner
+    top: {
+      x: leftTotalLength / 2,
+      y: schHeight / 2 + portDistanceFromEdge,
+    },
+  }
+
+  const trueEdgeTraversalDirections = {
+    left: { x: 0, y: -1 },
+    right: { x: 0, y: 1 },
+    top: { x: -1, y: 0 },
+    bottom: { x: 1, y: 0 },
+  }
+
   const truePortsWithPositions = orderedTruePorts.map((p) => {
-    const { distanceFromEdge, trueIndex, pinNumber, side } = p
-    let x: number
-    let y: number
+    const { distanceFromEdge, side } = p
+    const edgePos = trueEdgePositions[side]
+    const edgeDir = trueEdgeTraversalDirections[side]
 
     return {
+      x: edgePos.x + distanceFromEdge * edgeDir.x,
+      y: edgePos.y + distanceFromEdge * edgeDir.y,
       ...p,
     }
   })
 
   return {
     getPortPositionByPinNumber(pinNumber: number): { x: number; y: number } {
-      return { x: 0, y: 0 }
+      const port = truePortsWithPositions.find(
+        (p) => p.pinNumber.toString() === pinNumber.toString(),
+      )
+      if (!port) {
+        throw new Error(
+          `Could not find port for pin number ${pinNumber}, available pins: ${truePortsWithPositions.map((tp) => tp.pinNumber).join(", ")}`,
+        )
+      }
+      return port
     },
     getSize(): { width: number; height: number } {
-      return { width: 10, height: 10 }
+      return { width: schWidth, height: schHeight }
     },
   }
 }
