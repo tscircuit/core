@@ -19,7 +19,7 @@ test("getAllDimensionsForSchematicBox 1", () => {
   )
 })
 
-test("getAllDimensionsForSchematicBox 2 - pinStyle", () => {
+test("getAllDimensionsForSchematicBox 2 (pinStyle)", () => {
   const params: Parameters<typeof getAllDimensionsForSchematicBox>[0] = {
     schWidth: 1,
     schPinSpacing: 0.2,
@@ -38,7 +38,7 @@ test("getAllDimensionsForSchematicBox 2 - pinStyle", () => {
   )
 })
 
-test("getAllDimensionsForSchematicBox 3 - ", () => {
+test("getAllDimensionsForSchematicBox 3 (4 sided with margins)", () => {
   const params: Parameters<typeof getAllDimensionsForSchematicBox>[0] = {
     schPinSpacing: 0.2,
     schPinStyle: {
