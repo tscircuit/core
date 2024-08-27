@@ -43,27 +43,10 @@ interface Params {
   schPortArrangement?: PortArrangement
 }
 
-interface ParsedParams extends Required<Params> {
-  leftSide: {
-    numPins: number
-    pinsFromTopToBottom: Array<{ pinNumber: number }>
-  }
-  topSide: {
-    numPins: number
-    pinsFromRightToLeft: Array<{ pinNumber: number }>
-  }
-  rightSide: {
-    numPins: number
-    pinsFromBottomToTop: Array<{ pinNumber: number }>
-  }
-  bottomSide: {
-    numPins: number
-    pinsFromLeftToRight: Array<{ pinNumber: number }>
-  }
-  portPositions: Record<`pin${number}`, { x: number; y: number }>
-}
+type Side = "left" | "right" | "top" | "bottom"
 
 interface SchematicBoxDimensions {
+  pinCount: number
   getPortPositionByPinNumber(pinNumber: number): { x: number; y: number }
   getSize(): { width: number; height: number }
 }
@@ -75,29 +58,43 @@ interface SchematicBoxDimensions {
  *
  * The user can customize the position of the pins and the spacing between them,
  * this makes computing the box fairly complicated.
+ *
+ * A note on the internals:
+ * * A "true port" refers to a pin/port before it's remapped by the user to a
+ *   different position. True Pin 1 is guaranteed to be in the top-left corner
+ * * We basically iterate over each side and compute how far we are from the
+ *   edge for that side by adding margins together
  */
 export const getAllDimensionsForSchematicBox = (
   params: Params,
 ): SchematicBoxDimensions => {
   const portDistanceFromEdge = params.portDistanceFromEdge ?? 0.2
 
-  let sideSizes = params.schPortArrangement
+  let sidePinCounts = params.schPortArrangement
     ? getSizeOfSidesFromPortArrangement(params.schPortArrangement)
     : null
+
+  const sideLengths: Record<Side, number> = {
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  }
 
   let pinCount: number | null = params.pinCount ?? null
 
   if (pinCount === null) {
-    if (sideSizes) {
-      pinCount = sideSizes.leftSize + sideSizes.rightSize + sideSizes.topSize
+    if (sidePinCounts) {
+      pinCount =
+        sidePinCounts.leftSize + sidePinCounts.rightSize + sidePinCounts.topSize
     }
 
     throw new Error("Could not determine pin count for the schematic box")
   }
 
-  if (pinCount && !sideSizes) {
+  if (pinCount && !sidePinCounts) {
     const rightSize = Math.floor(pinCount / 2)
-    sideSizes = {
+    sidePinCounts = {
       leftSize: pinCount - rightSize,
       rightSize: rightSize,
       topSize: 0,
@@ -105,7 +102,7 @@ export const getAllDimensionsForSchematicBox = (
     }
   }
 
-  if (!sideSizes) {
+  if (!sidePinCounts) {
     throw new Error("Could not determine side sizes for the schematic box")
   }
 
@@ -119,12 +116,10 @@ export const getAllDimensionsForSchematicBox = (
   let currentDistanceFromEdge = 0
   let truePinIndex = 0
   // moving downward from the top-left corner
-  let leftTotalLength = 0
-  for (let sideIndex = 0; sideIndex < sideSizes.leftSize; sideIndex++) {
+  for (let sideIndex = 0; sideIndex < sidePinCounts.leftSize; sideIndex++) {
     const pinNumber = truePinIndex + 1 // TODO check mapping from schPortArrangement
     const pinStyle =
-      params.schPinStyle?.[`pin${sideIndex + 1}`] ??
-      params.schPinStyle?.[sideIndex]
+      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
     if (pinStyle?.topMargin) {
       currentDistanceFromEdge += pinStyle.topMargin
@@ -141,23 +136,21 @@ export const getAllDimensionsForSchematicBox = (
       currentDistanceFromEdge += pinStyle.bottomMargin
     }
 
-    const isLastPinOnSide = sideIndex === sideSizes.leftSize - 1
+    const isLastPinOnSide = sideIndex === sidePinCounts.leftSize - 1
     if (!isLastPinOnSide) {
       currentDistanceFromEdge += params.schPinSpacing
     } else {
-      leftTotalLength = currentDistanceFromEdge
+      sideLengths.left = currentDistanceFromEdge
     }
     truePinIndex++
   }
 
   currentDistanceFromEdge = 0
   // moving rightward from the left-bottom corner
-  let bottomTotalLength = 0
-  for (let sideIndex = 0; sideIndex < sideSizes.bottomSize; sideIndex++) {
+  for (let sideIndex = 0; sideIndex < sidePinCounts.bottomSize; sideIndex++) {
     const pinNumber = truePinIndex + 1 // TODO check mapping from schPortArrangement
     const pinStyle =
-      params.schPinStyle?.[`pin${sideIndex + 1}`] ??
-      params.schPinStyle?.[sideIndex]
+      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
     if (pinStyle?.leftMargin) {
       currentDistanceFromEdge += pinStyle.leftMargin
@@ -174,23 +167,21 @@ export const getAllDimensionsForSchematicBox = (
       currentDistanceFromEdge += pinStyle.rightMargin
     }
 
-    const isLastPinOnSide = sideIndex === sideSizes.bottomSize - 1
+    const isLastPinOnSide = sideIndex === sidePinCounts.bottomSize - 1
     if (!isLastPinOnSide) {
       currentDistanceFromEdge += params.schPinSpacing
     } else {
-      bottomTotalLength = currentDistanceFromEdge
+      sideLengths.bottom = currentDistanceFromEdge
     }
     truePinIndex++
   }
 
   currentDistanceFromEdge = 0
   // moving upward from the bottom-right corner
-  let rightTotalLength = 0
-  for (let sideIndex = 0; sideIndex < sideSizes.rightSize; sideIndex++) {
+  for (let sideIndex = 0; sideIndex < sidePinCounts.rightSize; sideIndex++) {
     const pinNumber = truePinIndex + 1 // TODO check mapping from schPortArrangement
     const pinStyle =
-      params.schPinStyle?.[`pin${sideIndex + 1}`] ??
-      params.schPinStyle?.[sideIndex]
+      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
     if (pinStyle?.bottomMargin) {
       currentDistanceFromEdge += pinStyle.bottomMargin
@@ -207,22 +198,21 @@ export const getAllDimensionsForSchematicBox = (
       currentDistanceFromEdge += pinStyle.topMargin
     }
 
-    const isLastPinOnSide = sideIndex === sideSizes.rightSize - 1
+    const isLastPinOnSide = sideIndex === sidePinCounts.rightSize - 1
     if (!isLastPinOnSide) {
       currentDistanceFromEdge += params.schPinSpacing
     } else {
-      rightTotalLength = currentDistanceFromEdge
+      sideLengths.right = currentDistanceFromEdge
     }
     truePinIndex++
   }
 
+  currentDistanceFromEdge = 0
   // moving leftward from the top-right corner
-  let topTotalLength = 0
-  for (let sideIndex = 0; sideIndex < sideSizes.topSize; sideIndex++) {
+  for (let sideIndex = 0; sideIndex < sidePinCounts.topSize; sideIndex++) {
     const pinNumber = truePinIndex + 1 // TODO check mapping from schPortArrangement
     const pinStyle =
-      params.schPinStyle?.[`pin${sideIndex + 1}`] ??
-      params.schPinStyle?.[sideIndex]
+      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
     if (pinStyle?.rightMargin) {
       currentDistanceFromEdge += pinStyle.rightMargin
@@ -239,11 +229,11 @@ export const getAllDimensionsForSchematicBox = (
       currentDistanceFromEdge += pinStyle.leftMargin
     }
 
-    const isLastPinOnSide = sideIndex === sideSizes.topSize - 1
+    const isLastPinOnSide = sideIndex === sidePinCounts.topSize - 1
     if (!isLastPinOnSide) {
       currentDistanceFromEdge += params.schPinSpacing
     } else {
-      topTotalLength = currentDistanceFromEdge
+      sideLengths.top = currentDistanceFromEdge
     }
     truePinIndex++
   }
@@ -251,32 +241,38 @@ export const getAllDimensionsForSchematicBox = (
   // Use lengths to determine schWidth and schHeight
   let schWidth = params.schWidth
   if (!schWidth) {
-    schWidth = Math.max(topTotalLength + 0.2, bottomTotalLength + 0.2, 1)
+    schWidth = Math.max(
+      sideLengths.top + params.schPinSpacing * 2,
+      sideLengths.bottom + params.schPinSpacing * 2,
+    )
   }
   let schHeight = params.schHeight
   if (!schHeight) {
-    schHeight = Math.max(leftTotalLength + 0.2, rightTotalLength + 0.2, 1)
+    schHeight = Math.max(
+      sideLengths.left + params.schPinSpacing * 2,
+      sideLengths.right + params.schPinSpacing * 2,
+    )
   }
 
   const trueEdgePositions = {
     // Top left corner
     left: {
       x: -schWidth / 2 - portDistanceFromEdge,
-      y: leftTotalLength / 2,
+      y: sideLengths.left / 2,
     },
     // bottom left corner
     bottom: {
-      x: -leftTotalLength / 2,
+      x: -sideLengths.bottom / 2,
       y: -schHeight / 2 - portDistanceFromEdge,
     },
     // bottom right corner
     right: {
       x: schWidth / 2 + portDistanceFromEdge,
-      y: -leftTotalLength / 2,
+      y: -sideLengths.right / 2,
     },
     // top right corner
     top: {
-      x: leftTotalLength / 2,
+      x: sideLengths.top / 2,
       y: schHeight / 2 + portDistanceFromEdge,
     },
   }
@@ -315,5 +311,6 @@ export const getAllDimensionsForSchematicBox = (
     getSize(): { width: number; height: number } {
       return { width: schWidth, height: schHeight }
     },
+    pinCount,
   }
 }

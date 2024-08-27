@@ -26,6 +26,7 @@ async function toMatchSvgSnapshot(
     Boolean(process.env.BUN_UPDATE_SNAPSHOTS)
 
   if (!fs.existsSync(filePath) || updateSnapshot) {
+    console.log("Writing snapshot to", filePath)
     fs.writeFileSync(filePath, received)
     return {
       message: () => `Snapshot created at ${filePath}`,
