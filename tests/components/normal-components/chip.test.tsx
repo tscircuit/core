@@ -13,6 +13,7 @@ it("should create a Chip component with correct properties", () => {
         footprint="soic8"
         pinLabels={{
           "1": "VCC",
+          "8": "GND",
         }}
         schPortArrangement={{
           leftSize: 4,
@@ -40,7 +41,7 @@ it("should create a Chip component with correct properties", () => {
 
   const gndPort = chip.selectOne("port[name='GND']")
   expect(gndPort).not.toBeNull()
-  expect(gndPort!.props.pinNumber).toBe(2)
+  expect(gndPort!.props.pinNumber).toBe(8)
 
   // Test schematic rendering
   expect(chip.schematic_component_id).not.toBeNull()

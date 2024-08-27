@@ -3,7 +3,10 @@ import { chipProps } from "@tscircuit/props"
 import { Port } from "../primitive-components/Port"
 import type { BaseSymbolName } from "lib/utils/constants"
 
-export class Chip extends NormalComponent<typeof chipProps> {
+export class Chip<PinLabels extends string = never> extends NormalComponent<
+  typeof chipProps,
+  PinLabels
+> {
   get config() {
     return {
       zodProps: chipProps,
@@ -17,9 +20,7 @@ export class Chip extends NormalComponent<typeof chipProps> {
 
     if (props.pinLabels) {
       for (const [pinNumber, label] of Object.entries(props.pinLabels)) {
-        console.log(this.children)
         const port = this.selectOne(`port[pinNumber='${pinNumber}']`)
-        const ports = this.selectAll("port")
         if (!port) {
           throw new Error(
             `Could not find port for pin number ${pinNumber} in chip ${this.getString()}`,
@@ -49,12 +50,14 @@ export class Chip extends NormalComponent<typeof chipProps> {
     const { db } = this.project!
     const { _parsedProps: props } = this
 
+    // getAllDimensionsForSchematicBox({})
+
     const schematic_component = db.schematic_component.insert({
       center: { x: props.schX ?? 0, y: props.schY ?? 0 },
       rotation: props.schRotation ?? 0,
-      size: { width: 3, height: 4 }, // Default size, adjust as needed
+      size: props,
+
       source_component_id: this.source_component_id!,
-      symbol_name: "chip",
     })
 
     this.schematic_component_id = schematic_component.schematic_component_id
@@ -69,7 +72,7 @@ export class Chip extends NormalComponent<typeof chipProps> {
       width: 2, // Default width, adjust as needed
       height: 3, // Default height, adjust as needed
       layer: props.layer ?? "top",
-      rotation: props.rotation ?? 0,
+      rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
     })
 
