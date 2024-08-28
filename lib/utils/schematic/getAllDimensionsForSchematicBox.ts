@@ -81,7 +81,6 @@ export interface SchematicBoxDimensions {
 export const getAllDimensionsForSchematicBox = (
   params: Params,
 ): SchematicBoxDimensions => {
-  console.log(params)
   const portDistanceFromEdge =
     params.portDistanceFromEdge ?? params.schPinSpacing * 2
 

@@ -73,8 +73,6 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     })
     this.schematicDimensions = dimensions
 
-    console.log(dimensions)
-
     const schematic_component = db.schematic_component.insert({
       center: { x: props.schX ?? 0, y: props.schY ?? 0 },
       rotation: props.schRotation ?? 0,
