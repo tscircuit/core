@@ -48,4 +48,12 @@ it("should create a Chip component with correct properties", () => {
 
   // Test PCB rendering
   expect(chip.pcb_component_id).not.toBeNull()
+
+  const schematic_component = project.db.schematic_component.get(
+    chip.schematic_component_id!,
+  )
+
+  console.log(schematic_component)
+  expect(schematic_component?.port_labels).toBeTruthy()
+  expect(schematic_component?.port_arrangement).toBeTruthy()
 })

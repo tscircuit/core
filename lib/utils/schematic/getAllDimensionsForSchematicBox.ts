@@ -1,5 +1,7 @@
 import { current } from "@tscircuit/soup"
 import { getSizeOfSidesFromPortArrangement } from "./getSizeOfSidesFromPortArrangement"
+import { schematicPortArrangement } from "@tscircuit/props"
+import { z } from "zod"
 
 export type VerticalPortSideConfiguration = {
   direction?: "top-to-bottom" | "bottom-to-top"
@@ -16,6 +18,7 @@ export type ExplicitPinMappingArrangement = {
   topSide?: HorizontalPortSideConfiguration
   bottomSide?: HorizontalPortSideConfiguration
 }
+/** @deprecated prefer SidePinCounts */
 export interface SideSizes {
   leftSize?: number
   rightSize?: number
@@ -23,7 +26,17 @@ export interface SideSizes {
   bottomSize?: number
 }
 
-export type PortArrangement = SideSizes | ExplicitPinMappingArrangement
+export interface SidePinCounts {
+  leftPinCount?: number
+  rightPinCount?: number
+  topPinCount?: number
+  bottomPinCount?: number
+}
+
+export type PortArrangement =
+  | SideSizes
+  | SidePinCounts
+  | ExplicitPinMappingArrangement
 
 interface Params {
   schWidth?: number
@@ -45,7 +58,7 @@ interface Params {
 
 type Side = "left" | "right" | "top" | "bottom"
 
-interface SchematicBoxDimensions {
+export interface SchematicBoxDimensions {
   pinCount: number
   getPortPositionByPinNumber(pinNumber: number): { x: number; y: number }
   getSize(): { width: number; height: number }
@@ -68,7 +81,9 @@ interface SchematicBoxDimensions {
 export const getAllDimensionsForSchematicBox = (
   params: Params,
 ): SchematicBoxDimensions => {
-  const portDistanceFromEdge = params.portDistanceFromEdge ?? 0.2
+  console.log(params)
+  const portDistanceFromEdge =
+    params.portDistanceFromEdge ?? params.schPinSpacing * 2
 
   let sidePinCounts = params.schPortArrangement
     ? getSizeOfSidesFromPortArrangement(params.schPortArrangement)
@@ -87,9 +102,9 @@ export const getAllDimensionsForSchematicBox = (
     if (sidePinCounts) {
       pinCount =
         sidePinCounts.leftSize + sidePinCounts.rightSize + sidePinCounts.topSize
+    } else {
+      throw new Error("Could not determine pin count for the schematic box")
     }
-
-    throw new Error("Could not determine pin count for the schematic box")
   }
 
   if (pinCount && !sidePinCounts) {
