@@ -176,3 +176,5 @@ dist
 .vscode
 *.diff.png
 .aider*
+
+*.old.ts
