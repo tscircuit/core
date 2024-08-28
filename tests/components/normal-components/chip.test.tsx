@@ -2,9 +2,10 @@ import { it, expect } from "bun:test"
 import { Project } from "lib/Project"
 import { Chip } from "lib/components/normal-components/Chip"
 import "lib/register-catalogue"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("should create a Chip component with correct properties", () => {
-  const project = new Project()
+it("should create a Chip component with correct properties", async () => {
+  const { project } = getTestFixture()
 
   project.add(
     <board width="10mm" height="10mm">
