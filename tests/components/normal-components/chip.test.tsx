@@ -53,7 +53,6 @@ it("should create a Chip component with correct properties", () => {
     chip.schematic_component_id!,
   )
 
-  console.log(schematic_component)
   expect(schematic_component?.port_labels).toBeTruthy()
   expect(schematic_component?.port_arrangement).toBeTruthy()
 })
