@@ -27,14 +27,14 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@tscircuit/infgrid-ijump-astar": "0.0.4",
+    "@tscircuit/infgrid-ijump-astar": "0.0.5",
     "@tscircuit/props": "^0.0.46",
     "@tscircuit/soup": "^0.0.58",
     "@tscircuit/soup-util": "0.0.18",
     "footprinter": "^0.0.44",
     "react": "^18.3.1",
     "react-reconciler": "^0.29.2",
-    "schematic-symbols": "0.0.10",
+    "schematic-symbols": "0.0.15",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.23.8"
   }
