@@ -33,7 +33,9 @@ export function isMatchingSelector(
   }
 
   // Split the selector into type and conditions
-  const [type, ...conditions] = selector.split(/(?=[#.[])/)
+  let [type, ...conditions] = selector.split(/(?=[#.[])/)
+
+  if (type === "pin") type = "port"
 
   // Check if the component type matches
   if (
