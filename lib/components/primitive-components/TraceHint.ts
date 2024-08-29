@@ -52,8 +52,8 @@ export class TraceHint extends PrimitiveComponent<typeof traceHintProps> {
       (offset): RouteHintPoint => ({
         ...applyToPoint(globalTransform, offset),
         via: offset.via,
-        to_layer: offset.to_layer,
-        trace_width: offset.trace_width,
+        to_layer: (offset as any).to_layer,
+        trace_width: (offset as any).trace_width,
       }),
     )
   }

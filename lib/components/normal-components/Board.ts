@@ -16,13 +16,18 @@ export class Board extends NormalComponent<typeof boardProps> {
     const { db } = this.project!
     const { _parsedProps: props } = this
 
+    if (!props.width || !props.height) {
+      throw new Error("Board width and height or an outline are required")
+    }
+
     const pcb_board = db.pcb_board.insert({
       center: { x: props.pcbX, y: props.pcbY },
+
       width: props.width,
       height: props.height,
     })
 
-    this.pcb_board_id = pcb_board.pcb_board_id
+    this.pcb_board_id = pcb_board.pcb_board_id!
   }
 
   removePcbComponentRender(): void {
