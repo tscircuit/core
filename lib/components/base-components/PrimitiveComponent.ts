@@ -136,9 +136,11 @@ export abstract class PrimitiveComponent<
     }
     const { config } = this
     if (!config.schematicSymbolName) return null
-    return symbols[
-      `${config.schematicSymbolName}_${variant}` as keyof typeof symbols
-    ]
+    return (
+      symbols[
+        `${config.schematicSymbolName}_${variant}` as keyof typeof symbols
+      ] ?? null
+    )
   }
 
   getGlobalPcbPosition(): { x: number; y: number } {

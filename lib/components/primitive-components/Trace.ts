@@ -172,8 +172,9 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     if (pcbRouteHints.length === 0) {
       const { solution } = autoroute(pcbElements.concat([source_trace]))
       // TODO for some reason, the solution gets duplicated inside ijump-astar
-      const pcb_trace = solution[0]
-      db.pcb_trace.insert(pcb_trace)
+      const inputPcbTrace = solution[0]
+      const pcb_trace = db.pcb_trace.insert(inputPcbTrace as any)
+
       this.pcb_trace_id = pcb_trace.pcb_trace_id
       return
     }
