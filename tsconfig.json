@@ -10,6 +10,10 @@
 
     "baseUrl": ".",
 
+    "paths": {
+      "lib/*": ["lib/*"]
+    },
+
     // Bundler mode
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

@@ -4,14 +4,14 @@
   "type": "module",
   "types": "index.ts",
   "version": "0.0.6",
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "files": [
     "index.ts",
     "lib",
     "dist"
   ],
   "scripts": {
-    "build": "tsup-node index.ts"
+    "build": "tsup-node index.ts --format esm"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
