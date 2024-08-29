@@ -4,6 +4,7 @@ import { type Renderable } from "lib/components/base-components/Renderable"
 import { type NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { ReactElement, ReactNode } from "react"
 import { catalogue, type Instance } from "./catalogue"
+import { identity } from "transformation-matrix"
 
 export type ReactSubtree = {
   element: ReactElement // TODO rename to "reactElement"
@@ -140,18 +141,24 @@ const reconciler = ReactReconciler(hostConfig as any)
 export const createInstanceFromReactElement = (
   reactElm: React.ReactElement,
 ): NormalComponent => {
+  const rootContainer = {
+    children: [] as any[],
+    props: {
+      name: "$root",
+    },
+    add(instance: any) {
+      instance.parent = this
+      this.children.push(instance)
+    },
+    computePcbGlobalTransform() {
+      return identity()
+    },
+  }
   const container = reconciler.createContainer(
     // TODO Replace with store like react-three-fiber
     // https://github.com/pmndrs/react-three-fiber/blob/a457290856f57741bf8beef4f6ff9dbf4879c0a5/packages/fiber/src/core/index.tsx#L172
     // https://github.com/pmndrs/react-three-fiber/blob/master/packages/fiber/src/core/store.ts#L168
-    {
-      props: {
-        name: "$root",
-      },
-      add(instance: any) {
-        instance.parent = this
-      },
-    },
+    rootContainer,
     0,
     null,
     false,
@@ -164,5 +171,9 @@ export const createInstanceFromReactElement = (
     null,
   )
   reconciler.updateContainer(reactElm, container, null, () => {})
-  return reconciler.getPublicRootInstance(container) as NormalComponent
+  const rootInstance = reconciler.getPublicRootInstance(
+    container,
+  ) as NormalComponent
+  if (rootInstance) return rootInstance
+  return rootContainer.children[0] as NormalComponent
 }

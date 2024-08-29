@@ -95,7 +95,7 @@ export abstract class PrimitiveComponent<
    */
   computePcbPropsTransform(): Matrix {
     // TODO rotations
-    return compose(translate(this.props.pcbX ?? 0, this.props.pcbY ?? 0))
+    return translate(this.props.pcbX ?? 0, this.props.pcbY ?? 0)
   }
 
   /**
