@@ -11,7 +11,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup-node index.ts --format esm --dts"
+    "build": "tsup-node index.ts --format esm --dts",
+    "measure-bundle": "howfat -r table ."
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
@@ -20,6 +21,7 @@
     "@types/react": "^18.3.3",
     "@types/react-reconciler": "^0.28.8",
     "circuit-to-svg": "^0.0.3",
+    "howfat": "^0.3.8",
     "looks-same": "^9.0.1",
     "tsup": "^8.2.4"
   },
