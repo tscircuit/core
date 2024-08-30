@@ -1,0 +1,70 @@
+name: Size
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  size:
+    name: Report bundle size
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (base)
+        run: bun install
+
+      - name: Build (base)
+        run: bun run build
+
+      - name: Get base bundle size
+        id: base-size
+        run: |
+          echo "base=$(du -sh dist | cut -f1)" >> $GITHUB_OUTPUT
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+
+      - name: Install dependencies (PR)
+        run: bun install
+
+      - name: Build (PR)
+        run: bun run build
+
+      - name: Get PR bundle size
+        id: pr-size
+        run: |
+          echo "pr=$(du -sh dist | cut -f1)" >> $GITHUB_OUTPUT
+
+      - name: Calculate size difference
+        id: size-diff
+        run: |
+          base_size=$(echo ${{ steps.base-size.outputs.base }} | sed 's/[^0-9.]*//g')
+          pr_size=$(echo ${{ steps.pr-size.outputs.pr }} | sed 's/[^0-9.]*//g')
+          diff=$(echo "$pr_size - $base_size" | bc)
+          if (( $(echo "$diff > 0" | bc -l) )); then
+            echo "diff=+$diff" >> $GITHUB_OUTPUT
+          else
+            echo "diff=$diff" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+          header: Bundle Size
+          message: |
+            ## Bundle Size Report
+            - Base branch size: ${{ steps.base-size.outputs.base }}
+            - PR branch size: ${{ steps.pr-size.outputs.pr }}
+            - Difference: ${{ steps.size-diff.outputs.diff }}MB
