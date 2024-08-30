@@ -7,7 +7,7 @@ on:
 
 jobs:
   size:
-    name: Report bundle size
+    name: Report bundle and install size
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -28,9 +28,14 @@ jobs:
         run: bun run build
 
       - name: Get base bundle size
-        id: base-size
+        id: base-bundle-size
         run: |
           echo "base=$(du -sh dist | cut -f1)" >> $GITHUB_OUTPUT
+
+      - name: Get base install size
+        id: base-install-size
+        run: |
+          echo "base=$(bunx howfat -r table . | head -n 1 | awk '{print $5}')" >> $GITHUB_OUTPUT
 
       - name: Checkout PR branch
         uses: actions/checkout@v3
@@ -42,15 +47,35 @@ jobs:
         run: bun run build
 
       - name: Get PR bundle size
-        id: pr-size
+        id: pr-bundle-size
         run: |
           echo "pr=$(du -sh dist | cut -f1)" >> $GITHUB_OUTPUT
 
-      - name: Calculate size difference
-        id: size-diff
+      - name: Get PR install size and full howfat output
+        id: pr-install-size
         run: |
-          base_size=$(echo ${{ steps.base-size.outputs.base }} | sed 's/[^0-9.]*//g')
-          pr_size=$(echo ${{ steps.pr-size.outputs.pr }} | sed 's/[^0-9.]*//g')
+          echo "pr=$(bunx howfat -r table . | head -n 1 | awk '{print $5}')" >> $GITHUB_OUTPUT
+          echo "full_output<<EOF" >> $GITHUB_OUTPUT
+          bunx howfat -r table . >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Calculate bundle size difference
+        id: bundle-size-diff
+        run: |
+          base_size=$(echo ${{ steps.base-bundle-size.outputs.base }} | sed 's/[^0-9.]*//g')
+          pr_size=$(echo ${{ steps.pr-bundle-size.outputs.pr }} | sed 's/[^0-9.]*//g')
+          diff=$(echo "$pr_size - $base_size" | bc)
+          if (( $(echo "$diff > 0" | bc -l) )); then
+            echo "diff=+$diff" >> $GITHUB_OUTPUT
+          else
+            echo "diff=$diff" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Calculate install size difference
+        id: install-size-diff
+        run: |
+          base_size=$(echo ${{ steps.base-install-size.outputs.base }} | sed 's/[^0-9.]*//g')
+          pr_size=$(echo ${{ steps.pr-install-size.outputs.pr }} | sed 's/[^0-9.]*//g')
           diff=$(echo "$pr_size - $base_size" | bc)
           if (( $(echo "$diff > 0" | bc -l) )); then
             echo "diff=+$diff" >> $GITHUB_OUTPUT
@@ -62,9 +87,20 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
-          header: Bundle Size
+          header: Size Report
           message: |
-            ## Bundle Size Report
-            - Base branch size: ${{ steps.base-size.outputs.base }}
-            - PR branch size: ${{ steps.pr-size.outputs.pr }}
-            - Difference: ${{ steps.size-diff.outputs.diff }}MB
+            ## Size Report
+            ### Bundle Size
+            - Base branch size: ${{ steps.base-bundle-size.outputs.base }}
+            - PR branch size: ${{ steps.pr-bundle-size.outputs.pr }}
+            - Difference: ${{ steps.bundle-size-diff.outputs.diff }}MB
+
+            ### Install Size
+            - Base branch size: ${{ steps.base-install-size.outputs.base }}
+            - PR branch size: ${{ steps.pr-install-size.outputs.pr }}
+            - Difference: ${{ steps.install-size-diff.outputs.diff }}MB
+
+            ### Full Howfat Output (PR Branch)
+            ```
+            ${{ steps.pr-install-size.outputs.full_output }}
+            ```
