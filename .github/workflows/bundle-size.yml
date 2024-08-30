@@ -68,7 +68,3 @@ jobs:
             - Base branch size: ${{ steps.base-size.outputs.base }}
             - PR branch size: ${{ steps.pr-size.outputs.pr }}
             - Difference: ${{ steps.size-diff.outputs.diff }}MB
-
-            ${[ '${{ steps.size-diff.outputs.diff }}' == '0' ] && 'No change in bundle size.' || ''}
-            ${[ '${{ steps.size-diff.outputs.diff }}' > '0' ] && '⚠️ Bundle size increased' || ''}
-            ${[ '${{ steps.size-diff.outputs.diff }}' < '0' ] && '✅ Bundle size decreased' || ''}
