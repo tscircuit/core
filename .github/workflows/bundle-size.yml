@@ -35,7 +35,7 @@ jobs:
       - name: Get base install size
         id: base-install-size
         run: |
-          echo "base=$(bunx howfat -r table . | head -n 1 | awk '{print $5}')" >> $GITHUB_OUTPUT
+          echo "base=$(bunx howfat -r simple . | grep 'Size:' | awk '{print $2}')" >> $GITHUB_OUTPUT
 
       - name: Checkout PR branch
         uses: actions/checkout@v3
@@ -54,7 +54,7 @@ jobs:
       - name: Get PR install size and full howfat output
         id: pr-install-size
         run: |
-          echo "pr=$(bunx howfat -r table . | head -n 1 | awk '{print $5}')" >> $GITHUB_OUTPUT
+          echo "pr=$(bunx howfat -r simple . | grep 'Size:' | awk '{print $2}')" >> $GITHUB_OUTPUT
           echo "full_output<<EOF" >> $GITHUB_OUTPUT
           bunx howfat -r table . >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
