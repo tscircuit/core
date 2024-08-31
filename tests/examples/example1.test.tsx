@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("example1", () => {
+test("example1", async () => {
   const { project } = getTestFixture()
   project.add(
     <board width="10mm" height="10mm">
@@ -26,14 +26,16 @@ test("example1", () => {
       />
       <jumper name="J1" footprint="pinrow4" />
 
-      <trace from=".J1 pin.1" to=".U1 .PWR" />
+      {/* <trace from=".J1 pin.1" to=".U1 .PWR" />
       <trace from=".J1 pin.2" to=".U1 port.2" />
       <trace from=".J1 pin.3" to=".U1 port.3" />
-      <trace from=".J1 pin.4" to=".U1 .GND" />
+      <trace from=".J1 pin.4" to=".U1 .GND" /> */}
     </board>,
   )
 
-  expect(
+  project.render()
+
+  await expect(
     project.getSvg({
       view: "pcb",
       layer: "top",

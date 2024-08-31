@@ -21,8 +21,8 @@
     "@types/bun": "latest",
     "@types/react": "^18.3.3",
     "@types/react-reconciler": "^0.28.8",
-    "bun-match-svg": "^0.0.1",
-    "circuit-to-svg": "^0.0.3",
+    "bun-match-svg": "0.0.2",
+    "circuit-to-svg": "^0.0.13",
     "howfat": "^0.3.8",
     "looks-same": "^9.0.1",
     "tsup": "^8.2.4"

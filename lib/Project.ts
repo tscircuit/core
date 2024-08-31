@@ -85,7 +85,7 @@ export class Project {
       )
     })
 
-    return circuitToSvg.pcbSoupToSvg(this.getSoup())
+    return circuitToSvg.circuitJsonToPcbSvg(this.getSoup())
   }
 
   async preview(
