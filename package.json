@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
+    "@tscircuit/layout": "^0.0.27",
     "@tscircuit/log-soup": "^1.0.2",
     "@types/bun": "latest",
     "@types/react": "^18.3.3",
@@ -30,7 +31,7 @@
   },
   "dependencies": {
     "@tscircuit/infgrid-ijump-astar": "0.0.5",
-    "@tscircuit/props": "^0.0.46",
+    "@tscircuit/props": "^0.0.48",
     "@tscircuit/soup": "^0.0.58",
     "@tscircuit/soup-util": "0.0.18",
     "footprinter": "^0.0.44",
