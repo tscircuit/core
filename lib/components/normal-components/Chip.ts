@@ -21,26 +21,6 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     }
   }
 
-  initPorts() {
-    super.initPorts()
-
-    const { _parsedProps: props } = this
-
-    if (props.pinLabels) {
-      for (let [pinNumber, label] of Object.entries(props.pinLabels)) {
-        pinNumber = pinNumber.replace("pin", "")
-        const port = this.selectOne(`port[pinNumber='${pinNumber}']`)
-        if (!port) {
-          throw new Error(
-            `Could not find port for pin number ${pinNumber} in chip ${this.getString()}`,
-          )
-        }
-        port.externallyAddedAliases.push(label)
-        port.props.name = label
-      }
-    }
-  }
-
   doInitialSourceRender(): void {
     const { db } = this.project!
     const { _parsedProps: props } = this
