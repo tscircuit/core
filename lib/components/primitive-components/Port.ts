@@ -82,6 +82,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         ...(typeof props.pinNumber === "number"
           ? [`pin${props.pinNumber}`, props.pinNumber.toString()]
           : []),
+        ...this.externallyAddedAliases,
       ]),
     ) as string[]
   }

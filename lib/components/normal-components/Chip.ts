@@ -35,7 +35,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
             `Could not find port for pin number ${pinNumber} in chip ${this.getString()}`,
           )
         }
-        port.props.aliases.push(port.props.name)
+        port.externallyAddedAliases.push(label)
         port.props.name = label
       }
     }
