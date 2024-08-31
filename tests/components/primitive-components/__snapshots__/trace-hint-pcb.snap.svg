@@ -1,30 +1,7 @@
-
-    <svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">
-      <style>
-        .pcb-board { fill: #000; }
-        .pcb-trace { stroke: #FF0000; stroke-width: 0.3; fill: none; }
-        .pcb-hole { fill: #FF00FF; }
-        .pcb-pad { fill: #FF0000; }
-        .pcb-boundary { fill: none; stroke: #FFFFFF; stroke-width: 0.5; }
-      </style>
-      <rect class="pcb-board" x="0" y="0" width="800" height="600" />
-      
-    <g transform="translate(300, 300) rotate(0) scale(1, -1)">
-      <rect class="pcb-component" x="0" y="0" width="0" height="0" />
-      <rect class="pcb-component-outline" x="0" y="0" width="0" height="0" />
-    </g>
-  
-
-    <g transform="translate(500, 300) rotate(0) scale(1, -1)">
-      <rect class="pcb-component" x="0" y="0" width="0" height="0" />
-      <rect class="pcb-component-outline" x="0" y="0" width="0" height="0" />
-    </g>
-  
-<rect class="pcb-pad" x="260" y="285" width="30.000000000000004" height="30.000000000000004" />
-<rect class="pcb-pad" x="310" y="285" width="30.000000000000004" height="30.000000000000004" />
-<rect class="pcb-pad" x="460" y="285" width="30.000000000000004" height="30.000000000000004" />
-<rect class="pcb-pad" x="510" y="285" width="30.000000000000004" height="30.000000000000004" />
-<path class="pcb-trace" d="M 275 300 L 275 250 L 400 250 L 400 250 L 475 250 L 475 300" />
-      <rect class="pcb-boundary" x="150" y="50" width="500" height="500" />
-    </svg>
-  
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><style>
+              .pcb-board { fill: #000; }
+              .pcb-trace { stroke: #FF0000; stroke-width: 0.3; fill: none; }
+              .pcb-hole { fill: #FF00FF; }
+              .pcb-pad { fill: #FF0000; }
+              .pcb-boundary { fill: none; stroke: #f2eda1; stroke-width: 2.5; }
+            </style><rect class="pcb-board" x="0" y="0" width="800" height="600"/><g transform="translate(300, 300) rotate(0) scale(1, -1)"><rect class="pcb-component" x="0" y="0" width="0" height="0"/><rect class="pcb-component-outline" x="0" y="0" width="0" height="0"/></g><g transform="translate(500, 300) rotate(0) scale(1, -1)"><rect class="pcb-component" x="0" y="0" width="0" height="0"/><rect class="pcb-component-outline" x="0" y="0" width="0" height="0"/></g><rect class="pcb-pad" x="260" y="285" width="30.000000000000004" height="30.000000000000004"/><rect class="pcb-pad" x="310" y="285" width="30.000000000000004" height="30.000000000000004"/><rect class="pcb-pad" x="460" y="285" width="30.000000000000004" height="30.000000000000004"/><rect class="pcb-pad" x="510" y="285" width="30.000000000000004" height="30.000000000000004"/><path class="pcb-trace" d="M 275 300 L 275 250 L 400 250 L 400 250 L 475 250 L 475 300"/><path class="pcb-boundary" d="M 275 300 L 275 250 L 400 250 L 400 250 L 475 250 L 475 300"/></svg>
