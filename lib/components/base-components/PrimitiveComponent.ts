@@ -229,24 +229,9 @@ export abstract class PrimitiveComponent<
 
     let onlyDirectChildren = false
     for (const part of parts) {
-      // console.log({ part, results })
       if (part === ">") {
         onlyDirectChildren = true
       } else {
-        // console.log(
-        //   "descendants",
-        //   results
-        //     .flatMap((component) => {
-        //       return onlyDirectChildren
-        //         ? component.children
-        //         : component.getDescendants()
-        //     })
-        //     .map((c) => ({
-        //       component: c.toString(),
-
-        //       isMatching: isMatchingSelector(c, part),
-        //     })),
-        // )
         results = results.flatMap((component) => {
           return (
             onlyDirectChildren ? component.children : component.getDescendants()
@@ -254,7 +239,6 @@ export abstract class PrimitiveComponent<
         })
         onlyDirectChildren = false
       }
-      // console.log({ results })
     }
 
     return results.filter((component) => component !== this)
