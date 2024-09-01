@@ -46,6 +46,8 @@ export abstract class PrimitiveComponent<
   componentName = ""
   lowercaseComponentName = ""
 
+  externallyAddedAliases: string[]
+
   source_group_id: string | null = null
   source_component_id: string | null = null
   schematic_component_id: string | null = null
@@ -57,6 +59,7 @@ export abstract class PrimitiveComponent<
     this.children = []
     this.childrenPendingRemoval = []
     this.props = props ?? {}
+    this.externallyAddedAliases = []
     this._parsedProps = this.config.zodProps.parse(
       props ?? {},
     ) as z.infer<ZodProps>

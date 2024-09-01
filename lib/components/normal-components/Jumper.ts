@@ -1,5 +1,5 @@
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { chipProps } from "@tscircuit/props"
+import { jumperProps } from "@tscircuit/props"
 import { Port } from "../primitive-components/Port"
 import type { BaseSymbolName } from "lib/utils/constants"
 import {
@@ -9,15 +9,15 @@ import {
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 
-export class Chip<PinLabels extends string = never> extends NormalComponent<
-  typeof chipProps,
+export class Jumper<PinLabels extends string = never> extends NormalComponent<
+  typeof jumperProps,
   PinLabels
 > {
   schematicDimensions: SchematicBoxDimensions | null = null
 
   get config() {
     return {
-      zodProps: chipProps,
+      zodProps: jumperProps,
     }
   }
 
@@ -26,7 +26,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { _parsedProps: props } = this
 
     const source_component = db.source_component.insert({
-      ftype: "simple_chip",
+      ftype: "simple_chip", // TODO unknown or jumper
       name: props.name,
       manufacturer_part_number: props.manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
@@ -54,7 +54,10 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       // @ts-ignore there's a subtley in the definition difference with
       // leftSide/rightSide/topSide/bottomSide in how the direction is defined
       // that doesn't really matter
-      schPortArrangement: props.schPortArrangement,
+      schPortArrangement: {
+        // TODO use schematic direction or schPortArrangement
+        rightSize: ports.length,
+      },
     })
     this.schematicDimensions = dimensions
 

@@ -11,6 +11,8 @@ export class Project {
   children: PrimitiveComponent[]
   db: SoupUtilObjects
 
+  _hasRenderedAtleastOnce = false
+
   constructor() {
     this.children = []
     this.db = su([])
@@ -64,14 +66,41 @@ export class Project {
     rootComponent.setProject(this)
 
     rootComponent.runRenderCycle()
+    this._hasRenderedAtleastOnce = true
   }
 
   getSoup(): AnySoupElement[] {
+    if (!this._hasRenderedAtleastOnce) this.render()
     return this.db.toArray()
   }
 
   getCircuitJson(): AnySoupElement[] {
     return this.getSoup()
+  }
+
+  async getSvg(options: { view: "pcb"; layer?: string }): Promise<string> {
+    const circuitToSvg = await import("circuit-to-svg").catch((e) => {
+      throw new Error(
+        `To use project.getSvg, you must install the "circuit-to-svg" package.\n\n"${e.message}"`,
+      )
+    })
+
+    return circuitToSvg.circuitJsonToPcbSvg(this.getSoup())
+  }
+
+  async preview(
+    previewNameOrOpts:
+      | string
+      | {
+          previewName: string
+          tscircuitApiKey?: string
+        },
+  ) {
+    const previewOpts =
+      typeof previewNameOrOpts === "object"
+        ? previewNameOrOpts
+        : { previewName: previewNameOrOpts }
+    throw new Error("project.preview is not yet implemented")
   }
 
   computeGlobalSchematicTransform(): Matrix {

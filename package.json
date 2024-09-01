@@ -16,11 +16,13 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
+    "@tscircuit/layout": "^0.0.27",
     "@tscircuit/log-soup": "^1.0.2",
     "@types/bun": "latest",
     "@types/react": "^18.3.3",
     "@types/react-reconciler": "^0.28.8",
-    "circuit-to-svg": "^0.0.3",
+    "bun-match-svg": "0.0.2",
+    "circuit-to-svg": "^0.0.13",
     "howfat": "^0.3.8",
     "looks-same": "^9.0.1",
     "tsup": "^8.2.4"
@@ -30,7 +32,7 @@
   },
   "dependencies": {
     "@tscircuit/infgrid-ijump-astar": "0.0.5",
-    "@tscircuit/props": "^0.0.46",
+    "@tscircuit/props": "^0.0.49",
     "@tscircuit/soup": "^0.0.58",
     "@tscircuit/soup-util": "0.0.18",
     "footprinter": "^0.0.44",

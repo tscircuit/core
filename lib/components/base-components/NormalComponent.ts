@@ -87,6 +87,22 @@ export class NormalComponent<
     const portsFromFootprint = this.getPortsFromFootprint()
 
     this.addAll(portsFromFootprint)
+
+    const pinLabels: Record<string, string> | undefined =
+      this._parsedProps.pinLabels
+    if (pinLabels) {
+      for (let [pinNumber, label] of Object.entries(pinLabels)) {
+        pinNumber = pinNumber.replace("pin", "")
+        const port = this.selectOne(`port[pinNumber='${pinNumber}']`)
+        if (!port) {
+          throw new Error(
+            `Could not find port for pin number ${pinNumber} in chip ${this.getString()}`,
+          )
+        }
+        port.externallyAddedAliases.push(label)
+        port.props.name = label
+      }
+    }
   }
 
   _addChildrenFromStringFootprint() {

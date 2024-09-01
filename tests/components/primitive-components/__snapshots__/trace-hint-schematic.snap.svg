@@ -1,62 +1,7 @@
-
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="-3.6501 -1.275 7.1761786 2.7" width="1200" height="600">
-      <style>
-      .component { fill: none; stroke: red; stroke-width: 0.05; }
-      .component-pin { fill: none; stroke: blue; stroke-width: 0.05; }
-      .trace { stroke: green; stroke-width: 0.05; fill: none; }
-      .text { font-family: Arial, sans-serif; font-size: 0.2px; }
-      .net-label { font-family: Arial, sans-serif; font-size: 0.2px; fill: gray; }
-    </style>
-        
-      <g transform="translate(-2, 0) rotate(0)">
-        <rect 
-          class="component" 
-          x="-0.5" 
-          y="-0.275" 
-          width="1" 
-          height="0.55" 
-        />
-        <rect 
-        class="component-pin"
-          x="-0.6" 
-          y="-0.1" 
-          width="0.2" 
-          height="0.2" 
-        />
-        <rect 
-          class="component-pin"
-          x="0.4" 
-          y="-0.1" 
-          width="0.2" 
-          height="0.2" 
-        />
-      </g>
-    
-
-      <g transform="translate(2, 0) rotate(0)">
-        <rect 
-          class="component" 
-          x="-0.5260786000000002" 
-          y="-0.22972835000000025" 
-          width="1.0521572000000003" 
-          height="0.4594567000000005" 
-        />
-        <rect 
-        class="component-pin"
-          x="-0.6260786000000002" 
-          y="-0.1" 
-          width="0.2" 
-          height="0.2" 
-        />
-        <rect 
-          class="component-pin"
-          x="0.4260786000000002" 
-          y="-0.1" 
-          width="0.2" 
-          height="0.2" 
-        />
-      </g>
-    
-<path class="trace" d="M -2.6501 0 L -2.65 0 L -2.65 0.42500000000000004 L 1.3132128999999995 0.42500000000000004 L 1.3132128999999995 -0.0018268500000008236" />
-      </svg>
-    
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3.6 -1.275 7.2357315 2.55" width="1200" height="600" style="background-color: #fff;"><style>
+              .component { fill: none; stroke: red; stroke-width: 0.03; }
+              .component-pin { fill: none; stroke: red; stroke-width: 0.03; }
+              .trace { stroke: green; stroke-width: 0.03; fill: none; }
+              .text { font-family: Arial, sans-serif; font-size: 0.2px; }
+              .port { fill: none; stroke: blue; stroke-width: 0.03; }
+            </style><g transform="translate(-2, 0) rotate(0) scale(0.9090909090909091) translate(-0.5, 0)"><path d="M0,0 L0.2,0 L0.2,-0.12 L0.8,-0.12 L0.8,0.12 L0.2,0.12 L0.2,0" fill="none" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.8,0 L1,0" fill="none" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/></g><g transform="translate(2, 0) rotate(0) scale(0.9090909090909091) translate(2.220446049250313e-16, -0.09999999999999823)"><path d="M0.13537969999999966,0.09743664999999524 L-0.1292036000000003,0.22972834999999847" fill="none" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.12715889999999996,0.09766044999999579 L0.5260786,0.09766044999999579" fill="none" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M-0.1292036000000003,-0.03485505000000444 L0.13537969999999966,0.09743664999999524" fill="none" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M-0.1292036000000003,0.22972834999999847 L-0.1292036000000003,-0.03485505000000444" fill="none" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.13537969999999966,-0.03485505000000444 L0.13537969999999966,0.22972834999999847" fill="none" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M-0.13124740000000035,0.09743664999999524 L-0.5260786000000004,0.09743664999999524" fill="none" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M-0.15622170000000057,-0.19171255000000187 L-0.25356400000000034,-0.20859175000000363 L-0.2192612000000005,-0.11582895000000448 L-0.15622170000000057,-0.19171255000000187" fill="black" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M-0.08048230000000034,-0.07216775000000197 L-0.09250580000000008,-0.0811007500000045 L-0.21426230000000057,-0.17155655000000536 L-0.21489230000000026,-0.17250655000000492" fill="none" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.021244599999999725,-0.21284915000000026 L-0.07609770000000049,-0.22972835000000202 L-0.04179490000000019,-0.13696555000000288 L0.021244599999999725,-0.21284915000000026" fill="black" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.09698399999999996,-0.09330435000000037 L0.08496049999999977,-0.10223735000000289 L-0.03679600000000027,-0.19269315000000375 L-0.0374260000000004,-0.19364315000000332" fill="none" stroke="red" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/></g><rect class="port" x="-2.6" y="-0.1" width="0.2" height="0.2"/><line class="component-pin" x1="-2.5" y1="0" x2="-2.5" y2="0"/><rect class="port" x="-1.6" y="-0.1" width="0.2" height="0.2"/><line class="component-pin" x1="-1.5" y1="0" x2="-1.5" y2="0"/><rect class="port" x="1.3633128999999993" y="-0.09817314999999918" width="0.2" height="0.2"/><line class="component-pin" x1="1.4633128999999994" y1="0.0018268500000008236" x2="1.4739213999999998" y2="0.0018268500000008236"/><rect class="port" x="2.4357314999999993" y="-0.09862665000000173" width="0.2" height="0.2"/><line class="component-pin" x1="2.5357314999999994" y1="0.0013733499999982746" x2="2.5260786" y2="0.0013733499999982746"/><path class="trace" d="M -2.6501 0 L -2.65 0 L -2.65 -0.42500000000000004 L 1.3132128999999995 -0.42500000000000004 L 1.3132128999999995 0.0018268500000008236"/></svg>
