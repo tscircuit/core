@@ -32,13 +32,7 @@ test("example1", async () => {
         pcbY={0}
         pcbRotation={90}
       />
-      <jumper
-        pcbRotation={90}
-        pcbX={0}
-        pcbY={-4}
-        name="J1"
-        footprint="pinrow4"
-      />
+      <jumper pcbX={0} pcbY={-4} name="J1" footprint="pinrow4" />
 
       <trace from=".J1 pin.1" to=".U1 .PWR" />
       <trace from=".J1 pin.2" to=".U1 port.2" />
@@ -51,7 +45,7 @@ test("example1", async () => {
 
   // console.log(project.db.pcb_component.list())
 
-  console.log(project.selectOne(".R1").children)
+  // console.log(project.selectOne(".R1").children)
 
   // await logSoup("example1")
 
