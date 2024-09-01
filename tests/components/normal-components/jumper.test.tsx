@@ -19,8 +19,6 @@ it("should render a jumper with pinrow4 footprint", async () => {
 
   project.render()
 
-  console.log(project.selectOne(".J1").children)
-
   expect(project).toMatchPcbSnapshot(import.meta.path)
   expect(project).toMatchSchematicSnapshot(import.meta.path)
 })
