@@ -197,7 +197,7 @@ export class NormalComponent<
       width: 0,
       height: 0,
       layer: props.layer ?? "top",
-      rotation: props.rotation ?? 0,
+      rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
     })
     this.pcb_component_id = pcb_component.pcb_component_id

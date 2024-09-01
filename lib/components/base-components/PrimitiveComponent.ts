@@ -10,6 +10,7 @@ import {
   applyToPoint,
   compose,
   identity,
+  rotate,
   translate,
   type Matrix,
 } from "transformation-matrix"
@@ -97,8 +98,14 @@ export abstract class PrimitiveComponent<
    * components
    */
   computePcbPropsTransform(): Matrix {
-    // TODO rotations
-    return translate(this.props.pcbX ?? 0, this.props.pcbY ?? 0)
+    const { _parsedProps: props } = this
+
+    const matrix = compose(
+      translate(props.pcbX ?? 0, props.pcbY ?? 0),
+      rotate(((props.pcbRotation ?? 0) * Math.PI) / 180),
+    )
+
+    return matrix
   }
 
   /**

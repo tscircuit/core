@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("example1", async () => {
-  const { project } = getTestFixture()
+  const { project, logSoup } = getTestFixture()
   project.add(
     <board width="10mm" height="10mm">
       <chip
@@ -48,6 +48,12 @@ test("example1", async () => {
   )
 
   project.render()
+
+  // console.log(project.db.pcb_component.list())
+
+  console.log(project.selectOne(".R1").children)
+
+  // await logSoup("example1")
 
   await expect(
     project.getSvg({
