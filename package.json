@@ -31,7 +31,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@tscircuit/infgrid-ijump-astar": "0.0.5",
+    "@tscircuit/infgrid-ijump-astar": "^0.0.6",
     "@tscircuit/props": "^0.0.49",
     "@tscircuit/soup": "^0.0.58",
     "@tscircuit/soup-util": "0.0.18",
