@@ -43,12 +43,6 @@ test("example1", async () => {
 
   project.render()
 
-  // console.log(project.db.pcb_component.list())
-
-  // console.log(project.selectOne(".R1").children)
-
-  // await logSoup("example1")
-
   await expect(
     project.getSvg({
       view: "pcb",
