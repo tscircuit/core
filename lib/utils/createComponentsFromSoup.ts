@@ -2,6 +2,7 @@ import type { AnySoupElement } from "@tscircuit/soup"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
+import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 
 export const createComponentsFromSoup = (
   soup: AnySoupElement[],
@@ -39,6 +40,19 @@ export const createComponentsFromSoup = (
           strokeWidth: elm.stroke_width,
         }),
       )
+    } else if (elm.type === "pcb_plated_hole" && elm.shape === "circle") {
+      if (elm.shape === "circle") {
+        components.push(
+          new PlatedHole({
+            pcbX: elm.x,
+            pcbY: elm.y,
+            shape: "circle",
+            holeDiameter: elm.hole_diameter,
+            outerDiameter: elm.outer_diameter,
+            portHints: elm.port_hints,
+          }),
+        )
+      }
     }
   }
   return components

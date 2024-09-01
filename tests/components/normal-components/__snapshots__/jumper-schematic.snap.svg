@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.2 -1.5 2.4 3" width="1200" height="600" style="background-color: #fff;"><style>
+              .component { fill: none; stroke: red; stroke-width: 0.03; }
+              .component-pin { fill: none; stroke: red; stroke-width: 0.03; }
+              .trace { stroke: green; stroke-width: 0.03; fill: none; }
+              .text { font-family: Arial, sans-serif; font-size: 0.2px; }
+              .port { fill: none; stroke: blue; stroke-width: 0.03; }
+            </style><g transform="translate(0, 0) rotate(0)"><rect class="component" x="-0.2" y="-0.5" width="0.4" height="1"/></g><rect class="port" x="-0.1" y="-0.1" width="0.2" height="0.2"/><line class="component-pin" x1="0" y1="0" x2="0" y2="-0.5"/><rect class="port" x="-0.1" y="-0.1" width="0.2" height="0.2"/><line class="component-pin" x1="0" y1="0" x2="0" y2="-0.5"/><rect class="port" x="-0.1" y="-0.1" width="0.2" height="0.2"/><line class="component-pin" x1="0" y1="0" x2="0" y2="-0.5"/><rect class="port" x="-0.1" y="-0.1" width="0.2" height="0.2"/><line class="component-pin" x1="0" y1="0" x2="0" y2="-0.5"/></svg>
