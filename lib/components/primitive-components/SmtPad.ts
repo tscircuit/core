@@ -3,6 +3,7 @@ import { smtPadProps } from "@tscircuit/props"
 import type { Port } from "./Port"
 import type { RenderPhaseFn } from "../base-components/Renderable"
 import type { PCBSMTPad } from "@tscircuit/soup"
+import { decomposeTSR } from "transformation-matrix"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -40,6 +41,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const { _parsedProps: props } = this
     if (!props.portHints) return
     const position = this.getGlobalPcbPosition()
+    const decomposedMat = decomposeTSR(this.computePcbGlobalTransform())
+    const isRotated90 =
+      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) < 0.01
     let pcb_smtpad: PCBSMTPad | null = null
     if (props.shape === "circle") {
       pcb_smtpad = db.pcb_smtpad.insert({
@@ -63,9 +67,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         layer: props.layer ?? "top",
         shape: "rect",
 
-        // @ts-ignore: no idea why this is triggering
-        width: props.width,
-        height: props.height,
+        ...(isRotated90
+          ? { width: props.height, height: props.width }
+          : { width: props.width, height: props.height }),
 
         port_hints: props.portHints.map((ph) => ph.toString()),
 

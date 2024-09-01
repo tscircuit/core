@@ -1,5 +1,6 @@
 import { silkscreenPathProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { applyToPoint } from "transformation-matrix"
 
 export class SilkscreenPath extends PrimitiveComponent<
   typeof silkscreenPathProps
@@ -23,10 +24,22 @@ export class SilkscreenPath extends PrimitiveComponent<
       )
     }
 
+    const transform = this.computePcbGlobalTransform()
+
     const pcb_silkscreen_path = db.pcb_silkscreen_path.insert({
       pcb_component_id: this.parent?.pcb_component_id!,
       layer,
-      route: props.route,
+      route: props.route.map((p) => {
+        const transformedPosition = applyToPoint(transform, {
+          x: p.x,
+          y: p.y,
+        })
+        return {
+          ...p,
+          x: transformedPosition.x,
+          y: transformedPosition.y,
+        }
+      }),
       stroke_width: props.strokeWidth ?? 0.1,
     })
 
