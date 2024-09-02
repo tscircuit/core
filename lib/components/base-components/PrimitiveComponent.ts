@@ -49,6 +49,18 @@ export abstract class PrimitiveComponent<
 
   externallyAddedAliases: string[]
 
+  getPropNetReferences(): { [key: string]: string } {
+    return {}
+  }
+
+  doInitialCreateNetsFromProps() {
+    const netReferences = this.getPropNetReferences()
+    for (const [propName, netName] of Object.entries(netReferences)) {
+      const net = new Net({ name: netName })
+      this.add(net)
+    }
+  }
+
   /**
    * An opaque group is a self-contained subcircuit. All the selectors inside
    * an opaque group are relative to the group. You can have multiple opaque
