@@ -79,21 +79,25 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const ports = portSelectors.map((selector) => ({
       selector,
-      port: parent.selectOne(selector, { type: "port" }) as Port,
+      port:
+        (this.getOpaqueGroup().selectOne(selector, { type: "port" }) as Port) ??
+        null,
     }))
 
     for (const { selector, port } of ports) {
       if (!port) {
         const parentSelector = selector.replace(/\>.*$/, "")
-        const targetComponent = parent.selectOne(parentSelector)
+        const targetComponent = this.getOpaqueGroup().selectOne(parentSelector)
         if (!targetComponent) {
           this.renderError(`Could not find port for selector "${selector}"`)
         } else {
           this.renderError(
-            `Could not find port for selector "${selector}"\nsearched component ${targetComponent.getString()}, which has ports:${targetComponent.children
+            `Could not find port for selector "${selector}"\nsearched component ${targetComponent.getString()}, which has ports: ${targetComponent.children
               .filter((c) => c.componentName === "Port")
-              .map((c) => `  ${c.getString()}`)
-              .join("\n")}`,
+              .map(
+                (c) => `${c.getString()}(${c.getNameAndAliases().join(",")})`,
+              )
+              .join(" & ")}`,
           )
         }
       }
@@ -173,6 +177,14 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       const { solution } = autoroute(pcbElements.concat([source_trace]))
       // TODO for some reason, the solution gets duplicated inside ijump-astar
       const inputPcbTrace = solution[0]
+
+      if (!inputPcbTrace) {
+        // TODO render error indicating we could not find a route
+        console.log(
+          `Failed to find route ffrom ${ports[0].port} to ${ports[1].port} render error!`,
+        )
+        return
+      }
       const pcb_trace = db.pcb_trace.insert(inputPcbTrace as any)
 
       this.pcb_trace_id = pcb_trace.pcb_trace_id

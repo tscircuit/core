@@ -1,7 +1,8 @@
-import { ledProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { capacitorProps, ledProps } from "@tscircuit/props"
 import { FTYPE, SYMBOL } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
+import type { capacitance, SourceSimpleCapacitorInput } from "@tscircuit/soup"
+import { Trace } from "../primitive-components/Trace"
 
 type PortNames =
   | "1"
@@ -13,12 +14,50 @@ type PortNames =
   | "anode"
   | "cathode"
 
-export class Capacitor extends NormalComponent<typeof ledProps, PortNames> {
+export class Capacitor extends NormalComponent<
+  typeof capacitorProps,
+  PortNames
+> {
   get config() {
     return {
       // schematicSymbolName: BASE_SYMBOLS.capacitor,
       zodProps: ledProps,
       sourceFtype: FTYPE.simple_capacitor,
     }
+  }
+
+  pin1 = this.portMap.pin1
+  pin2 = this.portMap.pin2
+
+  doInitialCreateTracesFromProps() {
+    if (this.props.decouplingFor && this.props.decouplingTo) {
+      this.add(
+        new Trace({
+          from: `${this.getOpaqueGroupSelector()} > port.1`,
+          to: this.props.decouplingFor,
+        }),
+      )
+      this.add(
+        new Trace({
+          from: `${this.getOpaqueGroupSelector()} > port.2`,
+          to: this.props.decouplingTo,
+        }),
+      )
+    }
+  }
+
+  doInitialSourceRender() {
+    const { db } = this.project!
+    const { _parsedProps: props } = this
+    const source_component = db.source_component.insert({
+      ftype: "simple_capacitor",
+      name: props.name,
+      // @ts-ignore
+      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      supplier_part_numbers: props.supplierPartNumbers,
+
+      capacitance: props.capacitance,
+    } as SourceSimpleCapacitorInput)
+    this.source_component_id = source_component.source_component_id
   }
 }

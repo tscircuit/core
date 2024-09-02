@@ -4,7 +4,7 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 import looksSame from "looks-same"
 import type { AnySoupElement } from "@tscircuit/soup"
-import { Project } from "lib/Project"
+import { Circuit } from "lib/Project"
 
 async function saveSnapshotOfSoup({
   soup,
@@ -77,7 +77,7 @@ expect.extend({
   ): Promise<MatcherResult> {
     return saveSnapshotOfSoup({
       soup:
-        received instanceof Project
+        received instanceof Circuit
           ? received.getSoup()
           : (received as AnySoupElement[]),
       testPath: args[0],
@@ -95,7 +95,7 @@ expect.extend({
   ): Promise<MatcherResult> {
     return saveSnapshotOfSoup({
       soup:
-        received instanceof Project
+        received instanceof Circuit
           ? received.getSoup()
           : (received as AnySoupElement[]),
       testPath: args[0],

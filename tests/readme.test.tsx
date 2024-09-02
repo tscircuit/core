@@ -1,10 +1,10 @@
 import { it, expect } from "bun:test"
-import { Board, Resistor, Project } from "../index"
+import { Board, Resistor, Circuit } from "../index"
 import { Led } from "lib/components/normal-components/Led"
 import "lib/register-catalogue"
 
 it("should create soup with various elements", () => {
-  const project = new Project()
+  const project = new Circuit()
 
   const board = new Board({
     width: "10mm",
