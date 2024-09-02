@@ -180,6 +180,9 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
       if (!inputPcbTrace) {
         // TODO render error indicating we could not find a route
+        console.log(
+          `Failed to find route ffrom ${ports[0].port} to ${ports[1].port} render error!`,
+        )
         return
       }
       const pcb_trace = db.pcb_trace.insert(inputPcbTrace as any)

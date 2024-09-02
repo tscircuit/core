@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("example1", async () => {
   const { circuit, logSoup } = getTestFixture()
   circuit.add(
-    <board width="10mm" height="10mm">
+    <board width="12mm" height="10mm">
       <chip
         name="U1"
         footprint="soic8"
@@ -28,10 +28,11 @@ test("example1", async () => {
         capacitance="10uF"
         footprint="0603"
         decouplingFor=".U1 port.PWR"
-        decouplingTo="net.GND"
+        // decouplingTo="net.GND"
+        decouplingTo=".J1 pin.4"
         pcbX={4}
         pcbY={0}
-        pcbRotation={90}
+        pcbRotation={-90}
       />
       <jumper pcbX={0} pcbY={-4} name="J1" footprint="pinrow4" />
 
