@@ -93,12 +93,12 @@ jobs:
             ### Bundle Size
             - Base branch size: ${{ steps.base-bundle-size.outputs.base }}
             - PR branch size: ${{ steps.pr-bundle-size.outputs.pr }}
-            - Difference: ${{ steps.bundle-size-diff.outputs.diff }}MB
+            - Difference: ${{ steps.bundle-size-diff.outputs.diff }}
 
             ### Install Size
             - Base branch size: ${{ steps.base-install-size.outputs.base }}
             - PR branch size: ${{ steps.pr-install-size.outputs.pr }}
-            - Difference: ${{ steps.install-size-diff.outputs.diff }}MB
+            - Difference: ${{ steps.install-size-diff.outputs.diff }}
 
             ### Full Howfat Output (PR Branch)
             ```
