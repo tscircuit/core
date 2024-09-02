@@ -2,8 +2,8 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("example1", async () => {
-  const { project, logSoup } = getTestFixture()
-  project.add(
+  const { circuit, logSoup } = getTestFixture()
+  circuit.add(
     <board width="10mm" height="10mm">
       <chip
         name="U1"
@@ -17,10 +17,11 @@ test("example1", async () => {
         footprint="0402"
         resistance="10k"
         pullupFor=".U1 port.2"
-        pullupTo="net.5v"
-        pcbX={4}
+        // pullupTo="net.5v"
+        pullupTo=".J1 pin.1"
+        pcbX={-4}
         pcbY={0}
-        pcbRotation={90}
+        pcbRotation={-90}
       />
       <capacitor
         name="C1"
@@ -28,7 +29,7 @@ test("example1", async () => {
         footprint="0603"
         decouplingFor=".U1 port.PWR"
         decouplingTo="net.GND"
-        pcbX={-5}
+        pcbX={4}
         pcbY={0}
         pcbRotation={90}
       />
@@ -41,10 +42,12 @@ test("example1", async () => {
     </board>,
   )
 
-  project.render()
+  circuit.render()
+
+  await logSoup("example1")
 
   await expect(
-    project.getSvg({
+    circuit.getSvg({
       view: "pcb",
       layer: "top",
     }),

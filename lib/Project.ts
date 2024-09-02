@@ -6,7 +6,7 @@ import { isValidElement, type ReactElement } from "react"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 import { identity, type Matrix } from "transformation-matrix"
 
-export class Project {
+export class Circuit {
   rootComponent: PrimitiveComponent | null = null
   children: PrimitiveComponent[]
   db: SoupUtilObjects
@@ -115,7 +115,12 @@ export class Project {
     return this.rootComponent?.selectAll(selector) ?? []
   }
 
-  selectOne(selector: string): PrimitiveComponent | null {
-    return this.rootComponent?.selectOne(selector) ?? null
+  selectOne(
+    selector: string,
+    opts: { type?: "component" | "port" },
+  ): PrimitiveComponent | null {
+    return this.rootComponent?.selectOne(selector, opts) ?? null
   }
 }
+
+export const Project = Circuit

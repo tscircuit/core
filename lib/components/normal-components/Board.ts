@@ -6,6 +6,10 @@ import { identity, type Matrix } from "transformation-matrix"
 export class Board extends NormalComponent<typeof boardProps> {
   pcb_board_id: string | null = null
 
+  get isOpaqueGroup() {
+    return true
+  }
+
   get config() {
     return {
       zodProps: boardProps,

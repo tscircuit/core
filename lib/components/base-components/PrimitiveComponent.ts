@@ -1,5 +1,5 @@
 import type { AnySoupElement, AnySourceComponent } from "@tscircuit/soup"
-import type { Project } from "../../Project"
+import type { Circuit } from "../../Project"
 import type { ZodType } from "zod"
 import { z } from "zod"
 import { symbols, type SchSymbol, type BaseSymbolName } from "schematic-symbols"
@@ -40,7 +40,7 @@ export abstract class PrimitiveComponent<
     }
   }
 
-  project: Project | null = null
+  project: Circuit | null = null
   props: z.input<ZodProps>
   _parsedProps: z.infer<ZodProps>
 
@@ -48,6 +48,21 @@ export abstract class PrimitiveComponent<
   lowercaseComponentName = ""
 
   externallyAddedAliases: string[]
+
+  /**
+   * An opaque group is a self-contained subcircuit. All the selectors inside
+   * an opaque group are relative to the group. You can have multiple opaque
+   * groups and their selectors will not interact with each other (even if the
+   * components share the same names) unless you explicitly break out some ports
+   */
+  get isOpaqueGroup() {
+    return (
+      Boolean(this.props.opaque) ||
+      // Implied opaque group for top-level group
+      (this.lowercaseComponentName === "group" &&
+        this?.parent?.props?.name === "$root")
+    )
+  }
 
   source_group_id: string | null = null
   source_component_id: string | null = null
@@ -70,7 +85,7 @@ export abstract class PrimitiveComponent<
     }
   }
 
-  setProject(project: Project) {
+  setProject(project: Circuit) {
     this.project = project
     for (const c of this.children) {
       c.setProject(project)
@@ -197,6 +212,27 @@ export abstract class PrimitiveComponent<
     component.shouldBeRemoved = true
   }
 
+  getOpaqueGroupSelector(): string {
+    const name = this._parsedProps.name
+    const endPart = name
+      ? `${this.lowercaseComponentName}.${name}`
+      : this.lowercaseComponentName
+
+    if (!this.parent) return endPart
+    if (this.parent.isOpaqueGroup) return endPart
+    return `${this.parent.getOpaqueGroupSelector()} > ${endPart}`
+  }
+
+  getFullPathSelector(): string {
+    const name = this._parsedProps.name
+    const endPart = name
+      ? `${this.lowercaseComponentName}.${name}`
+      : this.lowercaseComponentName
+    const parentSelector = this.parent?.getFullPathSelector?.()
+    if (!parentSelector) return endPart
+    return `${parentSelector} > ${endPart}`
+  }
+
   getNameAndAliases(): string[] {
     return [
       this._parsedProps.name,
@@ -228,6 +264,14 @@ export abstract class PrimitiveComponent<
       return true
 
     return false
+  }
+
+  getOpaqueGroup(): PrimitiveComponent {
+    if (this.isOpaqueGroup) return this
+    const group = this.parent?.getOpaqueGroup()
+    if (!group)
+      throw new Error("Component is not inside an opaque group (no board?)")
+    return group
   }
 
   selectAll(selector: string): PrimitiveComponent[] {
