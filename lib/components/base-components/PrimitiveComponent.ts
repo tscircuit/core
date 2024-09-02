@@ -49,15 +49,21 @@ export abstract class PrimitiveComponent<
 
   externallyAddedAliases: string[]
 
-  getPropNetReferences(): { [key: string]: string } {
-    return {}
+  getPropNetReferences(): string[] {
+    return []
+  }
+
+  checkHasNet(netName: string): boolean {
+    return this.getOpaqueGroup().selectAll(`net.${netName}`).length > 0
   }
 
   doInitialCreateNetsFromProps() {
     const netReferences = this.getPropNetReferences()
-    for (const [propName, netName] of Object.entries(netReferences)) {
-      const net = new Net({ name: netName })
-      this.add(net)
+    for (const netName of netReferences) {
+      if (!this.checkHasNet(netName)) {
+        const net = new Net({ name: netName })
+        this.getOpaqueGroup().add(net)
+      }
     }
   }
 
