@@ -16,6 +16,7 @@ import {
 } from "lib/fiber/create-instance-from-react-element"
 import { getPortFromHints } from "lib/utils/getPortFromHints"
 import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
+import { Net } from "../primitive-components/Net"
 
 export type PortMap<T extends string> = {
   [K in T]: Port
@@ -305,6 +306,20 @@ export class NormalComponent<
       }
     }
     return newPorts
+  }
+
+  _createNetsFromProps(propsWithConnections: (string | undefined | null)[]) {
+    for (const prop of propsWithConnections) {
+      if (typeof prop === "string" && prop.startsWith("net.")) {
+        if (!this.getSubcircuit().selectOne(prop)) {
+          this.getSubcircuit().add(
+            new Net({
+              name: prop.split(".")[1],
+            }),
+          )
+        }
+      }
+    }
   }
 
   /**

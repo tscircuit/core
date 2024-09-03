@@ -29,6 +29,13 @@ export class Capacitor extends NormalComponent<
   pin1 = this.portMap.pin1
   pin2 = this.portMap.pin2
 
+  doInitialCreateNetsFromProps() {
+    this._createNetsFromProps([
+      this.props.decouplingFor,
+      this.props.decouplingTo,
+    ])
+  }
+
   doInitialCreateTracesFromProps() {
     if (this.props.decouplingFor && this.props.decouplingTo) {
       this.add(

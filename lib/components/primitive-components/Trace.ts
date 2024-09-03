@@ -145,10 +145,19 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
   }
 
   _findConnectedNets(): Array<{ selector: string; net: Net }> {
-    return this.getTracePathNetSelectors().map((selector) => ({
+    const nets = this.getTracePathNetSelectors().map((selector) => ({
       selector,
       net: this.getSubcircuit().selectOne(selector, { type: "net" }) as Net,
     }))
+
+    const undefinedNets = nets.filter((n) => !n.net)
+    if (undefinedNets.length > 0) {
+      this.renderError(
+        `Could not find net for selector "${undefinedNets[0].selector}" inside ${this}`,
+      )
+    }
+
+    return nets
   }
 
   /**

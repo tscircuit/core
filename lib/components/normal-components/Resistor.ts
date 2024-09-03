@@ -21,18 +21,9 @@ export class Resistor extends NormalComponent<
   pin1 = this.portMap.pin1
   pin2 = this.portMap.pin2
 
-  // doInitialCreateNetsFromProps() {
-  //   const propsWithConnections = [this.props.pullupFor, this.props.pullupTo]
-  //   for (const prop of propsWithConnections) {
-  //     if (typeof prop === "string" && prop.startsWith("net.")) {
-  //       this.getOpaqueGroup().add(
-  //         new Net({
-  //           name: prop.split(".")[1],
-  //         }),
-  //       )
-  //     }
-  //   }
-  // }
+  doInitialCreateNetsFromProps() {
+    this._createNetsFromProps([this.props.pullupFor, this.props.pullupTo])
+  }
 
   doInitialCreateTracesFromProps() {
     if (this.props.pullupFor && this.props.pullupTo) {

@@ -349,6 +349,9 @@ export abstract class PrimitiveComponent<
     if (parent?.props?.name && props?.name) {
       return `<${cname}#${this._renderId}(.${parent?.props.name}>.${props?.name}) />`
     }
+    if (props?.from && props?.to) {
+      return `<${cname}#${this._renderId}(from:${props.from} to:${props?.to}) />`
+    }
     if (props?.name) {
       return `<${cname}#${this._renderId} name=".${props?.name}" />`
     }
