@@ -1,6 +1,8 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { z } from "zod"
 import type { Port } from "./Port"
+import type { Trace } from "./Trace"
+import { pairs } from "lib/utils/pairs"
 
 export const netProps = z.object({
   name: z.string(),
@@ -25,12 +27,18 @@ export class Net extends PrimitiveComponent<typeof netProps> {
     this.source_net_id = net.source_net_id
   }
 
+  /**
+   * Get all ports connected to this net.
+   *
+   * TODO currently we're not checking for indirect connections (traces that are
+   * connected to other traces that are in turn connected to the net)
+   */
   getAllConnectedPorts(): Port[] {
     const allPorts = this.getSubcircuit().selectAll("port") as Port[]
     const connectedPorts: Port[] = []
 
     for (const port of allPorts) {
-      const traces = port._getExplicitlyConnectedTraces()
+      const traces = port._getDirectlyConnectedTraces()
 
       for (const trace of traces) {
         if (trace._isExplicitlyConnectedToNet(this)) {
@@ -41,5 +49,99 @@ export class Net extends PrimitiveComponent<typeof netProps> {
     }
 
     return connectedPorts
+  }
+
+  /**
+   * Get all traces that are directly connected to this net, i.e. they list
+   * this net in their path, from, or to props
+   */
+  _getAllDirectlyConnectedTraces(): Trace[] {
+    const allTraces = this.getSubcircuit().selectAll("trace") as Trace[]
+    const connectedTraces: Trace[] = []
+
+    for (const trace of allTraces) {
+      if (trace._isExplicitlyConnectedToNet(this)) {
+        connectedTraces.push(trace)
+      }
+    }
+
+    return connectedTraces
+  }
+
+  /**
+   * Add PCB Traces to connect net islands together. A net island is a set of
+   * ports that are connected to each other. If a there are multiple net islands
+   * that means that the net is not fully connected and we need to add traces
+   * such that the nets are fully connected
+   */
+  doInitialPcbRouteNetIslands(): void {
+    const { db } = this.project!
+    const { _parsedProps: props } = this
+
+    const traces = this._getAllDirectlyConnectedTraces().filter(
+      (trace) => (trace._portsRoutedOnPcb?.length ?? 0) > 0,
+    )
+
+    const islands: Array<{ ports: Port[]; traces: Trace[] }> = []
+
+    for (const trace of traces) {
+      const tracePorts = trace._portsRoutedOnPcb
+      const traceIsland = islands.find((island) =>
+        tracePorts.some((port) => island.ports.includes(port)),
+      )
+      if (!traceIsland) {
+        islands.push({ ports: [...tracePorts], traces: [trace] })
+        continue
+      }
+      traceIsland.traces.push(trace)
+      traceIsland.ports.push(...tracePorts)
+    }
+
+    if (islands.length === 0) {
+      return
+    }
+
+    // Connect islands together by looking at each pair of islands and adding
+    // a trace between them
+    const islandPairs = pairs(islands)
+    for (const [A, B] of islandPairs) {
+      // Find two closest ports on the island
+      const Apositions: Array<{ x: number; y: number }> = A.ports.map((port) =>
+        port.getGlobalPcbPosition(),
+      )
+      const Bpositions: Array<{ x: number; y: number }> = B.ports.map((port) =>
+        port.getGlobalPcbPosition(),
+      )
+
+      let closestDist = Infinity
+      let closestPair: [number, number] = [-1, -1]
+      for (let i = 0; i < Apositions.length; i++) {
+        const Apos = Apositions[i]
+        for (let j = 0; j < Bpositions.length; j++) {
+          const Bpos = Bpositions[j]
+          const dist = Math.sqrt(
+            (Apos.x - Bpos.x) ** 2 + (Apos.y - Bpos.y) ** 2,
+          )
+          if (dist < closestDist) {
+            closestDist = dist
+            closestPair = [i, j]
+          }
+        }
+      }
+
+      const Aport = A.ports[closestPair[0]]
+      const Bport = B.ports[closestPair[1]]
+      const Apos = Apositions[closestPair[0]]
+      const Bpos = Bpositions[closestPair[1]]
+
+      // Attempt to route trace between Aport and Bport
+      // TODO use autorouter
+      db.pcb_trace.insert({
+        route: [
+          { ...Apos, layer: "top", route_type: "wire", width: 0.1 },
+          { ...Bpos, layer: "top", route_type: "wire", width: 0.1 },
+        ],
+      })
+    }
   }
 }

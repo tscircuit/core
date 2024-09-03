@@ -263,29 +263,29 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       return
     }
 
+    // If there is already a pcb trace representing the connection, we don't
+    // need to route
+    const alreadyRoutedTraces = this.getSubcircuit()
+      .selectAll("trace")
+      .filter(
+        (trace) => trace.renderPhaseStates.PcbTraceRender.initialized,
+      ) as Trace[]
+
+    // This method is likely to have some errors, we need to check more
+    // extensively if a trace already routed a port to another port, most
+    // likely by creating a set of e.g. source_port_ids inside each trace as
+    // an artifact of the PcbTraceRender phase
+    const alreadyRouted = alreadyRoutedTraces.some((trace) =>
+      trace._portsRoutedOnPcb.every((portRoutedByOtherTrace) =>
+        ports.includes(portRoutedByOtherTrace),
+      ),
+    )
+
+    if (alreadyRouted) {
+      return
+    }
+
     if (pcbRouteHints.length === 0) {
-      // If there is already a pcb trace representing the connection, we don't
-      // need to route
-      const alreadyRoutedTraces = this.getSubcircuit()
-        .selectAll("trace")
-        .filter(
-          (trace) => trace.renderPhaseStates.PcbTraceRender.initialized,
-        ) as Trace[]
-
-      // This method is likely to have some errors, we need to check more
-      // extensively if a trace already routed a port to another port, most
-      // likely by creating a set of e.g. source_port_ids inside each trace as
-      // an artifact of the PcbTraceRender phase
-      const alreadyRouted = alreadyRoutedTraces.some((trace) =>
-        trace._portsRoutedOnPcb.every((portRoutedByOtherTrace) =>
-          ports.includes(portRoutedByOtherTrace),
-        ),
-      )
-
-      if (alreadyRouted) {
-        return
-      }
-
       const { solution } = autoroute(
         pcbElements.concat([
           {

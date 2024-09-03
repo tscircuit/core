@@ -103,7 +103,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   /**
    * Return traces that are explicitly connected to this port (not via a net)
    */
-  _getExplicitlyConnectedTraces(): Trace[] {
+  _getDirectlyConnectedTraces(): Trace[] {
     const allSubcircuitTraces = this.getSubcircuit().selectAll(
       "trace",
     ) as Trace[]
