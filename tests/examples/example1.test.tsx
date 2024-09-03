@@ -41,6 +41,8 @@ test("example1", async () => {
       <trace from=".J1 pin.2" to=".U1 port.2" />
       <trace from=".J1 pin.3" to=".U1 port.3" />
       <trace from=".J1 pin.4" to="net.gnd" />
+
+      <tracehint for=".C1 pin.1" offset={{ x: -2, y: 3 }} />
     </board>,
   )
 
