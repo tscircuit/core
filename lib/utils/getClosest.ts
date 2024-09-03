@@ -15,7 +15,7 @@ export function getClosest<T extends PointLike, U extends PointLike>(
   if (candidates.length === 0)
     throw new Error("No candidates given to getClosest method")
   let closest: U = candidates[0]
-  let closestDist = Number.Infinity
+  let closestDist = Infinity
 
   for (const candidate of candidates) {
     const dist = getDistance(point, candidate)

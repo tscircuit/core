@@ -44,7 +44,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
   schematic_trace_id: string | null = null
-  _portsConnectedOnPcbViaNet: Port[] = []
+  _portsRoutedOnPcb: Port[] = []
 
   get config() {
     return {
@@ -272,16 +272,13 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
           (trace) => trace.renderPhaseStates.PcbTraceRender.initialized,
         ) as Trace[]
 
-      // TODO this is technically not correct, to determine if something is
-      // already routed we should include information inside the pcb_trace about
-      // what ports it was targeting, or we should use a proper function that
-      // investigates if traces were already routed via a method call. This
-      // method works when there's a net connecting two traces
+      // This method is likely to have some errors, we need to check more
+      // extensively if a trace already routed a port to another port, most
+      // likely by creating a set of e.g. source_port_ids inside each trace as
+      // an artifact of the PcbTraceRender phase
       const alreadyRouted = alreadyRoutedTraces.some((trace) =>
-        trace._portsConnectedOnPcbViaNet.some((portConnectedViaNet) =>
-          ports.some(
-            (p) => p.source_port_id === portConnectedViaNet.source_port_id,
-          ),
+        trace._portsRoutedOnPcb.every((portRoutedByOtherTrace) =>
+          ports.includes(portRoutedByOtherTrace),
         ),
       )
 
@@ -313,7 +310,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       const pcb_trace = db.pcb_trace.insert(inputPcbTrace as any)
 
       this.pcb_trace_id = pcb_trace.pcb_trace_id
-      this._portsConnectedOnPcbViaNet = portsConnectedOnPcbViaNet
+      this._portsRoutedOnPcb = ports
       return
     }
 
