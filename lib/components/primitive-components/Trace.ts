@@ -27,6 +27,7 @@ import { pairs } from "lib/utils/pairs"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import type { Net } from "./Net"
 import { getClosest } from "lib/utils/getClosest"
+import { z } from "zod"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -44,7 +45,12 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
   schematic_trace_id: string | null = null
-  _portsRoutedOnPcb: Port[] = []
+  _portsRoutedOnPcb: Port[]
+
+  constructor(props: z.input<typeof traceProps>) {
+    super(props)
+    this._portsRoutedOnPcb = []
+  }
 
   get config() {
     return {
@@ -263,25 +269,21 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       return
     }
 
-    // If there is already a pcb trace representing the connection, we don't
-    // need to route
     const alreadyRoutedTraces = this.getSubcircuit()
       .selectAll("trace")
       .filter(
         (trace) => trace.renderPhaseStates.PcbTraceRender.initialized,
       ) as Trace[]
 
-    // This method is likely to have some errors, we need to check more
-    // extensively if a trace already routed a port to another port, most
-    // likely by creating a set of e.g. source_port_ids inside each trace as
-    // an artifact of the PcbTraceRender phase
-    const alreadyRouted = alreadyRoutedTraces.some((trace) =>
-      trace._portsRoutedOnPcb.every((portRoutedByOtherTrace) =>
-        ports.includes(portRoutedByOtherTrace),
-      ),
+    const isAlreadyRouted = alreadyRoutedTraces.some(
+      (trace) =>
+        trace._portsRoutedOnPcb.length === ports.length &&
+        trace._portsRoutedOnPcb.every((portRoutedByOtherTrace) =>
+          ports.includes(portRoutedByOtherTrace),
+        ),
     )
 
-    if (alreadyRouted) {
+    if (isAlreadyRouted) {
       return
     }
 
@@ -303,7 +305,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       if (!inputPcbTrace) {
         // TODO render error indicating we could not find a route
         console.log(
-          `Failed to find route ffrom ${ports[0]} to ${ports[1]} (TODO render error!)`,
+          `Failed to find route from ${ports[0]} to ${ports[1]} (TODO render error!)`,
         )
         return
       }
