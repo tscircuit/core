@@ -3,6 +3,8 @@ import { z } from "zod"
 import type { Port } from "./Port"
 import type { Trace } from "./Trace"
 import { pairs } from "lib/utils/pairs"
+import type { AnySoupElement, SourceTrace } from "@tscircuit/soup"
+import { autoroute } from "@tscircuit/infgrid-ijump-astar"
 
 export const netProps = z.object({
   name: z.string(),
@@ -131,17 +133,39 @@ export class Net extends PrimitiveComponent<typeof netProps> {
 
       const Aport = A.ports[closestPair[0]]
       const Bport = B.ports[closestPair[1]]
-      const Apos = Apositions[closestPair[0]]
-      const Bpos = Bpositions[closestPair[1]]
 
-      // Attempt to route trace between Aport and Bport
-      // TODO use autorouter
-      db.pcb_trace.insert({
-        route: [
-          { ...Apos, layer: "top", route_type: "wire", width: 0.1 },
-          { ...Bpos, layer: "top", route_type: "wire", width: 0.1 },
-        ],
-      })
+      const pcbElements: AnySoupElement[] = db
+        .toArray()
+        .filter(
+          (elm) =>
+            elm.type === "pcb_smtpad" ||
+            elm.type === "pcb_trace" ||
+            elm.type === "pcb_plated_hole" ||
+            elm.type === "pcb_hole" ||
+            elm.type === "source_port" ||
+            elm.type === "pcb_port",
+        )
+
+      const { solution } = autoroute(
+        pcbElements.concat([
+          {
+            type: "source_trace",
+            source_trace_id: "__net_trace_tmp",
+            connected_source_port_ids: [
+              Aport.source_port_id!,
+              Bport.source_port_id!,
+            ],
+          } as SourceTrace,
+        ]),
+      )
+
+      const trace = solution[0]
+      if (!trace) {
+        this.renderError("Failed to route net islands")
+        return
+      }
+
+      db.pcb_trace.insert(trace as any)
     }
   }
 }
