@@ -29,7 +29,7 @@ it("should create a Net component with correct properties", () => {
 
   const pcbTraces = project.db.pcb_trace.list()
 
-  // expect(pcbTraces.length).toBe(2)
+  expect(pcbTraces.length).toBe(3)
 
   expect(project.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
