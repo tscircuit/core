@@ -17,5 +17,9 @@ it("should create a Net component with correct properties", () => {
 
   project.render()
 
+  const pcbTraces = project.db.pcb_trace.list()
+
+  expect(pcbTraces.length).toBe(1)
+
   expect(project.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
