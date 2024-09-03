@@ -24,6 +24,7 @@ import type { TraceHint } from "./TraceHint"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { pairs } from "lib/utils/pairs"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
+import type { Net } from "./Net"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -48,7 +49,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     }
   }
 
-  getTracePortPathSelectors(): string[] {
+  _getTracePortOrNetSelectorListFromProps(): string[] {
     if ("from" in this.props && "to" in this.props) {
       return [
         typeof this.props.from === "string"
@@ -65,6 +66,18 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       )
     }
     return []
+  }
+
+  getTracePortPathSelectors(): string[] {
+    return this._getTracePortOrNetSelectorListFromProps().filter(
+      (selector) => !selector.includes("net."),
+    )
+  }
+
+  getTracePathNetSelectors(): string[] {
+    return this._getTracePortOrNetSelectorListFromProps().filter((selector) =>
+      selector.includes("net."),
+    )
   }
 
   _findConnectedPorts():
@@ -110,6 +123,13 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     return { allPortsFound: true, ports }
   }
 
+  _findConnectedNets(): Array<{ selector: string; net: Net }> {
+    return this.getTracePathNetSelectors().map((selector) => ({
+      selector,
+      net: this.getOpaqueGroup().selectOne(selector, { type: "net" }) as Net,
+    }))
+  }
+
   doInitialSourceTraceRender(): void {
     const { db } = this.project!
     const { _parsedProps: props, parent } = this
@@ -122,9 +142,11 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     const { allPortsFound, ports } = this._findConnectedPorts()
     if (!allPortsFound) return
 
+    const nets = this._findConnectedNets()
+
     const trace = db.source_trace.insert({
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
-      connected_source_net_ids: [],
+      connected_source_net_ids: nets.map((n) => n.net.source_net_id!),
     })
 
     this.source_trace_id = trace.source_trace_id
@@ -139,6 +161,32 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     const { allPortsFound, ports } = this._findConnectedPorts()
 
     if (!allPortsFound) return
+
+    const nets = this._findConnectedNets()
+
+    if (ports.length === 0 && nets.length === 2) {
+      // Find the two optimal points to connect the two nets
+      this.renderError(
+        `Trace connects two nets, we haven't implemented a way to route this yet`,
+      )
+      return
+    } else if (ports.length === 1 && nets.length === 1) {
+      // Add a port from the net that is closest to the port
+      this.renderError(
+        `Trace connects a single port and a single net, we haven't implemented a way to route this yet`,
+      )
+      return
+    } else if (ports.length > 1 && nets.length >= 1) {
+      this.renderError(
+        `Trace has more than one port and one or more nets, we don't currently support this type of complex trace routing`,
+      )
+      return
+    }
+
+    console.log({
+      ports,
+      nets,
+    })
 
     const pcbElements: AnySoupElement[] = db
       .toArray()
