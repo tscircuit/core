@@ -4,6 +4,7 @@ import { z } from "zod"
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
 import { symbols, type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
+import type { Trace } from "./Trace"
 
 export const portProps = z.object({
   name: z.string().optional(),
@@ -90,13 +91,28 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     return this.isMatchingAnyOf(port.getNameAndAliases())
   }
   getPortSelector() {
+    // TODO this.parent.getSubcircuitSelector() >
     return `.${this.parent?.props.name} > port.${this.props.name}`
-    // return `#${this.props.id}`
   }
   getAvailablePcbLayers(): string[] {
     return Array.from(
       new Set(this.matchedComponents.flatMap((c) => c.getAvailablePcbLayers())),
     )
+  }
+
+  /**
+   * Return traces that are explicitly connected to this port (not via a net)
+   */
+  _getExplicitlyConnectedTraces(): Trace[] {
+    const allSubcircuitTraces = this.getSubcircuit().selectAll(
+      "trace",
+    ) as Trace[]
+
+    const connectedTraces = allSubcircuitTraces.filter((trace) =>
+      trace._isExplicitlyConnectedToPort(this),
+    )
+
+    return connectedTraces
   }
 
   doInitialSourceRender(): void {

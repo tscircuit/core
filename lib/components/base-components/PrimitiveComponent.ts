@@ -50,14 +50,14 @@ export abstract class PrimitiveComponent<
   externallyAddedAliases: string[]
 
   /**
-   * An opaque group is a self-contained subcircuit. All the selectors inside
-   * an opaque group are relative to the group. You can have multiple opaque
-   * groups and their selectors will not interact with each other (even if the
+   * An subcircuit is self-contained. All the selectors inside
+   * a subcircuit are relative to the subcircuit group. You can have multiple
+   * subcircuits and their selectors will not interact with each other (even if the
    * components share the same names) unless you explicitly break out some ports
    */
-  get isOpaqueGroup() {
+  get isSubcircuit() {
     return (
-      Boolean(this.props.opaque) ||
+      Boolean(this.props.subcircuit) ||
       // Implied opaque group for top-level group
       (this.lowercaseComponentName === "group" &&
         this?.parent?.props?.name === "$root")
@@ -212,15 +212,15 @@ export abstract class PrimitiveComponent<
     component.shouldBeRemoved = true
   }
 
-  getOpaqueGroupSelector(): string {
+  getSubcircuitSelector(): string {
     const name = this._parsedProps.name
     const endPart = name
       ? `${this.lowercaseComponentName}.${name}`
       : this.lowercaseComponentName
 
     if (!this.parent) return endPart
-    if (this.parent.isOpaqueGroup) return endPart
-    return `${this.parent.getOpaqueGroupSelector()} > ${endPart}`
+    if (this.parent.isSubcircuit) return endPart
+    return `${this.parent.getSubcircuitSelector()} > ${endPart}`
   }
 
   getFullPathSelector(): string {
@@ -266,9 +266,9 @@ export abstract class PrimitiveComponent<
     return false
   }
 
-  getOpaqueGroup(): PrimitiveComponent {
-    if (this.isOpaqueGroup) return this
-    const group = this.parent?.getOpaqueGroup()
+  getSubcircuit(): PrimitiveComponent {
+    if (this.isSubcircuit) return this
+    const group = this.parent?.getSubcircuit()
     if (!group)
       throw new Error("Component is not inside an opaque group (no board?)")
     return group

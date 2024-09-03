@@ -25,6 +25,7 @@ import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPo
 import { pairs } from "lib/utils/pairs"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import type { Net } from "./Net"
+import { getClosest } from "lib/utils/getClosest"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -93,14 +94,14 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     const ports = portSelectors.map((selector) => ({
       selector,
       port:
-        (this.getOpaqueGroup().selectOne(selector, { type: "port" }) as Port) ??
+        (this.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
         null,
     }))
 
     for (const { selector, port } of ports) {
       if (!port) {
         const parentSelector = selector.replace(/\>.*$/, "")
-        const targetComponent = this.getOpaqueGroup().selectOne(parentSelector)
+        const targetComponent = this.getSubcircuit().selectOne(parentSelector)
         if (!targetComponent) {
           this.renderError(`Could not find port for selector "${selector}"`)
         } else {
@@ -126,8 +127,27 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
   _findConnectedNets(): Array<{ selector: string; net: Net }> {
     return this.getTracePathNetSelectors().map((selector) => ({
       selector,
-      net: this.getOpaqueGroup().selectOne(selector, { type: "net" }) as Net,
+      net: this.getSubcircuit().selectOne(selector, { type: "net" }) as Net,
     }))
+  }
+
+  /**
+   * Determine if a trace is explicitly connected to a port (not via a net)
+   */
+  _isExplicitlyConnectedToPort(port: Port) {
+    const { allPortsFound, ports: portsWithMetadata } =
+      this._findConnectedPorts()
+    if (!allPortsFound) return false
+    const ports = portsWithMetadata.map((p) => p.port)
+    return ports.includes(port)
+  }
+
+  /**
+   * Determine if a trace is explicitly connected to a net (not via a port)
+   */
+  _isExplicitlyConnectedToNet(net: Net) {
+    const nets = this._findConnectedNets().map((n) => n.net)
+    return nets.includes(net)
   }
 
   doInitialSourceTraceRender(): void {
@@ -170,23 +190,30 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
         `Trace connects two nets, we haven't implemented a way to route this yet`,
       )
       return
+      // biome-ignore lint/style/noUselessElse: <explanation>
     } else if (ports.length === 1 && nets.length === 1) {
       // Add a port from the net that is closest to the port
-      this.renderError(
-        `Trace connects a single port and a single net, we haven't implemented a way to route this yet`,
-      )
-      return
+      const port = ports[0].port
+      const portsInNet = nets[0].net.getAllConnectedPorts()
+      const otherPortsInNet = portsInNet.filter((p) => p !== port)
+      if (otherPortsInNet.length === 0) {
+        console.log(
+          "Nothing to connect this port to, the net is empty. TODO should emit a warning!",
+        )
+        return
+      }
+      const closestPortInNet = getClosest(port, otherPortsInNet)
+
+      ports.push({
+        port: closestPortInNet,
+        selector: closestPortInNet.getPortSelector(),
+      })
     } else if (ports.length > 1 && nets.length >= 1) {
       this.renderError(
         `Trace has more than one port and one or more nets, we don't currently support this type of complex trace routing`,
       )
       return
     }
-
-    console.log({
-      ports,
-      nets,
-    })
 
     const pcbElements: AnySoupElement[] = db
       .toArray()
@@ -229,7 +256,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       if (!inputPcbTrace) {
         // TODO render error indicating we could not find a route
         console.log(
-          `Failed to find route ffrom ${ports[0].port} to ${ports[1].port} render error!`,
+          `Failed to find route ffrom ${ports[0].port} to ${ports[1].port} (TODO render error!)`,
         )
         return
       }

@@ -38,13 +38,13 @@ export class Resistor extends NormalComponent<
     if (this.props.pullupFor && this.props.pullupTo) {
       this.add(
         new Trace({
-          from: `${this.getOpaqueGroupSelector()} > port.1`,
+          from: `${this.getSubcircuitSelector()} > port.1`,
           to: this.props.pullupFor,
         }),
       )
       this.add(
         new Trace({
-          from: `${this.getOpaqueGroupSelector()} > port.2`,
+          from: `${this.getSubcircuitSelector()} > port.2`,
           to: this.props.pullupTo,
         }),
       )

@@ -33,13 +33,13 @@ export class Capacitor extends NormalComponent<
     if (this.props.decouplingFor && this.props.decouplingTo) {
       this.add(
         new Trace({
-          from: `${this.getOpaqueGroupSelector()} > port.1`,
+          from: `${this.getSubcircuitSelector()} > port.1`,
           to: this.props.decouplingFor,
         }),
       )
       this.add(
         new Trace({
-          from: `${this.getOpaqueGroupSelector()} > port.2`,
+          from: `${this.getSubcircuitSelector()} > port.2`,
           to: this.props.decouplingTo,
         }),
       )
