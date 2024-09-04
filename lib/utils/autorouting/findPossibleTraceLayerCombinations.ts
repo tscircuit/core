@@ -13,7 +13,7 @@ const LAYER_SELECTION_PREFERENCE = ["top", "bottom", "inner1", "inner2"]
  * top    -> bottom -> bottom -> top
  * bottom -> top    -> top    -> bottom
  */
-interface CandidateTraceLayerCombination {
+export interface CandidateTraceLayerCombination {
   layer_path: string[]
 }
 
