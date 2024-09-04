@@ -210,6 +210,7 @@ export class NormalComponent<
    * the width/height of the component
    */
   doInitialPcbComponentSizeCalculation(): void {
+    if (!this.pcb_component_id) return
     const { db } = this.project!
     const { _parsedProps: props } = this
 
@@ -221,10 +222,11 @@ export class NormalComponent<
     for (const child of this.children) {
       if (child.isPcbPrimitive) {
         const { x, y } = child.getGlobalPcbPosition()
-        minX = Math.min(minX, x)
-        minY = Math.min(minY, y)
-        maxX = Math.max(maxX, x)
-        maxY = Math.max(maxY, y)
+        const { width, height } = child.getPcbSize()
+        minX = Math.min(minX, x - width / 2)
+        minY = Math.min(minY, y - height / 2)
+        maxX = Math.max(maxX, x + width / 2)
+        maxY = Math.max(maxY, y + height / 2)
       }
     }
 
