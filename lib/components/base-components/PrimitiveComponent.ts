@@ -185,7 +185,13 @@ export abstract class PrimitiveComponent<
     if (!placementConfig) return null
 
     for (const position of placementConfig.positions) {
-      console.log(position)
+      if (isMatchingSelector(component, position.selector)) {
+        const center = applyToPoint(
+          this.computePcbGlobalTransform(),
+          position.center,
+        )
+        return center
+      }
     }
 
     return null
