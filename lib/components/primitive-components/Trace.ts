@@ -22,12 +22,16 @@ import type {
 import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
 import { projectPointInDirection } from "lib/utils/projectPointInDirection"
 import type { TraceHint } from "./TraceHint"
-import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
+import {
+  findPossibleTraceLayerCombinations,
+  type CandidateTraceLayerCombination,
+} from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { pairs } from "lib/utils/pairs"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import type { Net } from "./Net"
 import { getClosest } from "lib/utils/getClosest"
 import { z } from "zod"
+import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -144,20 +148,47 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     }
   }
 
-  _findConnectedNets(): Array<{ selector: string; net: Net }> {
-    const nets = this.getTracePathNetSelectors().map((selector) => ({
-      selector,
-      net: this.getSubcircuit().selectOne(selector, { type: "net" }) as Net,
-    }))
+  _findConnectedNets(): {
+    nets: Net[]
+    netsWithSelectors: Array<{ selector: string; net: Net }>
+  } {
+    const netsWithSelectors = this.getTracePathNetSelectors().map(
+      (selector) => ({
+        selector,
+        net: this.getSubcircuit().selectOne(selector, { type: "net" }) as Net,
+      }),
+    )
 
-    const undefinedNets = nets.filter((n) => !n.net)
+    const undefinedNets = netsWithSelectors.filter((n) => !n.net)
     if (undefinedNets.length > 0) {
       this.renderError(
         `Could not find net for selector "${undefinedNets[0].selector}" inside ${this}`,
       )
     }
 
-    return nets
+    return { netsWithSelectors, nets: netsWithSelectors.map((n) => n.net) }
+  }
+
+  /**
+   * Get all the traces that are connected in any degree to this trace, this is
+   * used during autorouting to routes to pass through traces connected to the
+   * same net.
+   */
+  _getAllTracesConnectedToSameNet(): Trace[] {
+    const traces = this.getSubcircuit().selectAll("trace") as Trace[]
+
+    const myNets = this._findConnectedNets().nets
+    const myPorts = this._findConnectedPorts().ports ?? []
+
+    return traces.filter((t) => {
+      if (t === this) return false
+      const tNets = t._findConnectedNets().nets
+      const tPorts = t._findConnectedPorts().ports ?? []
+      return (
+        tNets.some((n) => myNets.includes(n)) ||
+        tPorts.some((p) => myPorts.includes(p))
+      )
+    })
   }
 
   /**
@@ -175,8 +206,12 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
    * Determine if a trace is explicitly connected to a net (not via a port)
    */
   _isExplicitlyConnectedToNet(net: Net) {
-    const nets = this._findConnectedNets().map((n) => n.net)
+    const nets = this._findConnectedNets().nets
     return nets.includes(net)
+  }
+
+  doInitialCreateNetsFromProps(): void {
+    createNetsFromProps(this, this.getTracePathNetSelectors())
   }
 
   doInitialSourceTraceRender(): void {
@@ -192,11 +227,11 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       this._findConnectedPorts()
     if (!allPortsFound) return
 
-    const nets = this._findConnectedNets()
+    const nets = this._findConnectedNets().nets
 
     const trace = db.source_trace.insert({
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
-      connected_source_net_ids: nets.map((n) => n.net.source_net_id!),
+      connected_source_net_ids: nets.map((n) => n.source_net_id!),
     })
 
     this.source_trace_id = trace.source_trace_id
@@ -213,7 +248,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     if (!allPortsFound) return
 
-    const nets = this._findConnectedNets()
+    const nets = this._findConnectedNets().netsWithSelectors
 
     if (ports.length === 0 && nets.length === 2) {
       // Find the two optimal points to connect the two nets
@@ -254,7 +289,8 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
           elm.type === "pcb_plated_hole" ||
           elm.type === "pcb_hole" ||
           elm.type === "source_port" ||
-          elm.type === "pcb_port",
+          elm.type === "pcb_port" ||
+          elm.type === "source_trace",
       )
 
     const source_trace = db.source_trace.get(this.source_trace_id!)!
@@ -296,43 +332,23 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       return
     }
 
+    let orderedRouteObjectives: PcbRouteObjective[] = []
+
     if (pcbRouteHints.length === 0) {
-      const { solution } = autoroute(
-        pcbElements.concat([
-          {
-            ...source_trace,
-            // manually override b/c some of the ports may be connected via nets
-            // so they don't appear properly in the source_trace, we don't need
-            // to do this if the algorithm correctly looks at connected_source_net_ids
-            connected_source_port_ids: ports.map((p) => p.source_port_id!),
-          } as SourceTrace,
-        ]),
-      )
-      // TODO for some reason, the solution gets duplicated inside ijump-astar
-      const inputPcbTrace = solution[0]
-
-      if (!inputPcbTrace) {
-        // TODO render error indicating we could not find a route
-        console.log(
-          `Failed to find route from ${ports[0]} to ${ports[1]} (TODO render error!)`,
-        )
-        return
-      }
-      const pcb_trace = db.pcb_trace.insert(inputPcbTrace as any)
-
-      this.pcb_trace_id = pcb_trace.pcb_trace_id
-      this._portsRoutedOnPcb = ports
-      return
+      orderedRouteObjectives = [
+        portToObjective(ports[0]),
+        portToObjective(ports[1]),
+      ]
+    } else {
+      // When we have hints, we have to order the hints then route between each
+      // terminal of the trace and the hints
+      // TODO order based on proximity to ports
+      orderedRouteObjectives = [
+        portToObjective(ports[0]),
+        ...pcbRouteHints,
+        portToObjective(ports[1]),
+      ]
     }
-
-    // When we have hints, we have to order the hints then route between each
-    // terminal of the trace and the hints
-    // TODO order based on proximity to ports
-    const orderedRouteObjectives: PcbRouteObjective[] = [
-      portToObjective(ports[0]),
-      ...pcbRouteHints,
-      portToObjective(ports[1]),
-    ]
 
     // Hints can indicate where there should be a via, but the layer is allowed
     // to be unspecified, therefore we need to find possible layer combinations
@@ -356,6 +372,19 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       this.source_trace_id!,
     )
 
+    const allConnectedTraceIds = this._getAllTracesConnectedToSameNet().map(
+      (t) => t.source_trace_id,
+    )
+    for (const obstacle of obstacles) {
+      if (
+        obstacle.connectedTo.some((connection) =>
+          allConnectedTraceIds.includes(connection),
+        )
+      ) {
+        obstacle.connectedTo.push(this.source_trace_id!)
+      }
+    }
+
     // TODO explore all candidate layer combinations if one fails
     const candidateLayerSelections = candidateLayerCombinations[0].layer_path
 
@@ -377,6 +406,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     for (const [a, b] of pairs(orderedRoutePoints)) {
       const BOUNDS_MARGIN = 2 //mm
       const ijump = new IJumpAutorouter({
+        OBSTACLE_MARGIN: 0.3,
         input: {
           obstacles,
           connections: [
@@ -396,8 +426,8 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       })
       const traces = ijump.solveAndMapToTraces()
       if (traces.length === 0) {
-        this.renderError(
-          `Could not find a route between ${a.x}, ${a.y} and ${b.x}, ${b.y}`,
+        console.log(
+          `Could not find a route between ${a} and ${b} for ${this} (TODO render error)`,
         )
         return
       }
@@ -410,6 +440,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       route: mergeRoutes(routes),
       source_trace_id: this.source_trace_id!,
     })
+    this._portsRoutedOnPcb = ports
     this.pcb_trace_id = pcb_trace.pcb_trace_id
   }
 
