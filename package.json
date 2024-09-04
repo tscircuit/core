@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@tscircuit/infgrid-ijump-astar": "^0.0.6",
-    "@tscircuit/props": "^0.0.51",
+    "@tscircuit/props": "^0.0.52",
     "@tscircuit/soup": "^0.0.58",
     "@tscircuit/soup-util": "0.0.18",
     "footprinter": "^0.0.44",

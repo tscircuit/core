@@ -11,6 +11,7 @@ export class Circuit {
   children: PrimitiveComponent[]
   db: SoupUtilObjects
   root: Circuit | null = null
+  isRoot = true
 
   _hasRenderedAtleastOnce = false
 
@@ -103,11 +104,11 @@ export class Circuit {
     throw new Error("project.preview is not yet implemented")
   }
 
-  computeGlobalSchematicTransform(): Matrix {
+  computeSchematicGlobalTransform(): Matrix {
     return identity()
   }
 
-  computeGlobalPcbTransform(): Matrix {
+  computePcbGlobalTransform(): Matrix {
     return identity()
   }
 

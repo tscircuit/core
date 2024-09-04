@@ -59,8 +59,7 @@ export abstract class PrimitiveComponent<
     return (
       Boolean(this.props.subcircuit) ||
       // Implied opaque group for top-level group
-      (this.lowercaseComponentName === "group" &&
-        this?.parent?.props?.name === "$root")
+      (this.lowercaseComponentName === "group" && (this?.parent as any)?.isRoot)
     )
   }
 
