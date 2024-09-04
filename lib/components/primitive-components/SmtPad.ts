@@ -18,6 +18,19 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     }
   }
 
+  getPcbSize(): { width: number; height: number } {
+    const { _parsedProps: props } = this
+    if (props.shape === "circle") {
+      return { width: props.radius! * 2, height: props.radius! * 2 }
+    }
+    if (props.shape === "rect") {
+      return { width: props.width!, height: props.height! }
+    }
+    throw new Error(
+      `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
+    )
+  }
+
   doInitialPortMatching(): void {
     const parentPorts = (this.parent?.children ?? []).filter(
       (c) => c.componentName === "Port",

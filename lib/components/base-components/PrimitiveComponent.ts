@@ -298,6 +298,9 @@ export abstract class PrimitiveComponent<
       aliases.map((a) => a.toString()).includes(a),
     )
   }
+  getPcbSize(): { width: number; height: number } {
+    throw new Error(`getPcbSize not implemented for ${this.componentName}`)
+  }
 
   doesSelectorMatch(selector: string): boolean {
     const myTypeNames = [this.componentName, this.lowercaseComponentName]

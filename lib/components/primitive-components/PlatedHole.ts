@@ -14,6 +14,19 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     }
   }
 
+  getPcbSize(): { width: number; height: number } {
+    const { _parsedProps: props } = this
+    if (props.shape === "circle") {
+      return { width: props.outerDiameter, height: props.outerDiameter }
+    }
+    if (props.shape === "oval") {
+      return { width: props.outerWidth, height: props.outerHeight }
+    }
+    throw new Error(
+      `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
+    )
+  }
+
   doInitialPortMatching(): void {
     const parentPorts = (this.parent?.children ?? []).filter(
       (c) => c.componentName === "Port",
