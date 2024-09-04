@@ -1,7 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><style>
               .pcb-board { fill: #000; }
-              .pcb-trace { stroke: #FF0000; stroke-width: 0.3; fill: none; }
-              .pcb-hole { fill: #FF00FF; }
-              .pcb-pad { fill: #FF0000; }
-              .pcb-boundary { fill: none; stroke: #f2eda1; stroke-width: 2.5; }
-            </style><rect class="pcb-board" x="0" y="0" width="800" height="600"/><g transform="translate(300, 300) rotate(0) scale(1, -1)"><rect class="pcb-component" x="0" y="0" width="0" height="0"/><rect class="pcb-component-outline" x="0" y="0" width="0" height="0"/></g><g transform="translate(500, 300) rotate(0) scale(1, -1)"><rect class="pcb-component" x="0" y="0" width="0" height="0"/><rect class="pcb-component-outline" x="0" y="0" width="0" height="0"/></g><rect class="pcb-pad" x="260" y="285" width="30.000000000000004" height="30.000000000000004"/><rect class="pcb-pad" x="310" y="285" width="30.000000000000004" height="30.000000000000004"/><rect class="pcb-pad" x="460" y="285" width="30.000000000000004" height="30.000000000000004"/><rect class="pcb-pad" x="510" y="285" width="30.000000000000004" height="30.000000000000004"/><path class="pcb-trace" d="M 275 300 L 275 250 L 400 250 L 400 250 L 475 250 L 475 300"/><path class="pcb-boundary" d="M 275 300 L 275 250 L 400 250 L 400 250 L 475 250 L 475 300"/></svg>
+              .pcb-trace { stroke: rgb(200, 52, 52); stroke-width: 2.5; fill: none; }
+              .pcb-hole-outer { fill: rgb(200, 52, 52); }
+              .pcb-hole-inner { fill: rgb(255, 38, 226); }
+              .pcb-pad { fill: rgb(200, 52, 52); }
+              .pcb-boundary { fill: none; stroke: #fff; stroke-width: 0.3; }
+              .pcb-silkscreen { fill: none; }
+              .pcb-silkscreen-top { stroke: #f2eda1; }
+              .pcb-silkscreen-bottom { stroke: #f2eda1; }
+            </style><rect class="pcb-board" x="0" y="0" width="800" height="600"/><rect class="pcb-boundary" x="150" y="50" width="500" height="500"/><g id="other-elements"><g transform="translate(300, 300) rotate(0) scale(1, -1)"><rect class="pcb-component" x="0" y="0" width="0" height="0"/><rect class="pcb-component-outline" x="0" y="0" width="0" height="0"/></g><g transform="translate(500, 300) rotate(0) scale(1, -1)"><rect class="pcb-component" x="0" y="0" width="0" height="0"/><rect class="pcb-component-outline" x="0" y="0" width="0" height="0"/></g><rect class="pcb-pad" x="260" y="285" width="30.000000000000004" height="30.000000000000004"/><rect class="pcb-pad" x="310" y="285" width="30.000000000000004" height="30.000000000000004"/><rect class="pcb-pad" x="460" y="285" width="30.000000000000004" height="30.000000000000004"/><rect class="pcb-pad" x="510" y="285" width="30.000000000000004" height="30.000000000000004"/></g><g id="traces"><path class="pcb-trace" d="M 275 300 L 275 250.2 A 0.2 0.2 0 0 1 275.2 250 L 400 250 A 0 0 0 0 1 400 250 L 400 250 A 0 0 0 0 1 400 250 L 474.8 250 A 0.2 0.2 0 0 1 475 250.2 L 475 300" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round"/></g><g id="holes"/><g id="silkscreen"/></svg>
