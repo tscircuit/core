@@ -126,9 +126,31 @@ export abstract class PrimitiveComponent<
 
   /**
    * Compute a transformation matrix combining all parent transforms for PCB
-   * components
+   * components, including this component's translation and rotation.
+   *
+   * This is used to compute this component's position as well as all children
+   * components positions
    */
   computePcbGlobalTransform(): Matrix {
+    const { _parsedProps: props } = this
+    const manualPlacement =
+      this.getSubcircuit()._getManualPlacementForComponent(this)
+
+    // pcbX or pcbY will override the manual placement
+    if (
+      manualPlacement &&
+      this.props.pcbX === undefined &&
+      this.props.pcbY === undefined
+    ) {
+      return compose(
+        this.parent?.computePcbGlobalTransform() ?? identity(),
+        compose(
+          translate(manualPlacement.x, manualPlacement.y),
+          rotate(((props.pcbRotation ?? 0) * Math.PI) / 180),
+        ),
+      )
+    }
+
     return compose(
       this.parent?.computePcbGlobalTransform() ?? identity(),
       this.computePcbPropsTransform(),
@@ -198,11 +220,6 @@ export abstract class PrimitiveComponent<
   }
 
   getGlobalPcbPosition(): { x: number; y: number } {
-    const manualPlacement =
-      this.getSubcircuit()._getManualPlacementForComponent(this)
-    if (manualPlacement) {
-      return manualPlacement
-    }
     return applyToPoint(this.computePcbGlobalTransform(), { x: 0, y: 0 })
   }
 
