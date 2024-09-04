@@ -3,6 +3,7 @@ import { Component, createElement, type ReactElement } from "react"
 
 export const orderedRenderPhases = [
   "ReactSubtreesRender", // probably going to be removed b/c subtrees should render instantly
+  "InitializePortsFromChildren",
   "CreateNetsFromProps",
   "CreateTracesFromProps",
   "SourceRender",

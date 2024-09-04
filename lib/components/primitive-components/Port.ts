@@ -116,7 +116,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   doInitialSourceRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const port_hints = this.getNameAndAliases()
@@ -132,7 +132,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   doInitialSourceParentAttachment(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     if (!this.parent?.source_component_id) {
       throw new Error(
         `${this.getString()} has no parent source component (parent: ${this.parent?.getString()})`,
@@ -152,7 +152,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * to exist)
    */
   doInitialPcbPortRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { matchedComponents } = this
 
     if (!this.parent?.pcb_component_id) {
@@ -191,7 +191,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   doInitialSchematicPortRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     if (!this.parent) return

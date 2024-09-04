@@ -148,7 +148,7 @@ export class NormalComponent<
   doInitialSourceRender() {
     const ftype = this.config.sourceFtype
     if (!ftype) return
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype,
@@ -166,7 +166,7 @@ export class NormalComponent<
    * You can override this method to do more complicated things.
    */
   doInitialSchematicComponentRender() {
-    const { db } = this.project!
+    const { db } = this.root!
     const { schematicSymbolName } = this.config
     if (!schematicSymbolName) return
     // TODO switch between horizontal and vertical based on schRotation
@@ -191,7 +191,7 @@ export class NormalComponent<
   }
 
   doInitialPcbComponentRender() {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
     const pcb_component = db.pcb_component.insert({
       center: this.getGlobalPcbPosition(),
@@ -211,7 +211,7 @@ export class NormalComponent<
    */
   doInitialPcbComponentSizeCalculation(): void {
     if (!this.pcb_component_id) return
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     let minX = Infinity
@@ -246,6 +246,10 @@ export class NormalComponent<
     }
   }
 
+  doInitialInitializePortsFromChildren(): void {
+    this.initPorts()
+  }
+
   doInitialReactSubtreesRender(): void {
     if (isReactElement(this.props.footprint)) {
       if (this.reactSubtrees.some((rs) => rs.element === this.props.footprint))
@@ -256,6 +260,20 @@ export class NormalComponent<
     }
   }
 
+  _hasExistingPortExactly(port1: Port): boolean {
+    const existingPorts = this.children.filter(
+      (c) => c.componentName === "Port",
+    ) as Port[]
+    return existingPorts.some((port2) => {
+      const aliases1 = port1.getNameAndAliases()
+      const aliases2 = port2.getNameAndAliases()
+      return (
+        aliases1.length === aliases2.length &&
+        aliases1.every((alias) => aliases2.includes(alias))
+      )
+    })
+  }
+
   add(componentOrElm: PrimitiveComponent | ReactElement) {
     let component: PrimitiveComponent
     if (isReactElement(componentOrElm)) {
@@ -264,6 +282,23 @@ export class NormalComponent<
       component = subtree.component
     } else {
       component = componentOrElm as PrimitiveComponent
+    }
+
+    if (component.componentName === "Port") {
+      if (this._hasExistingPortExactly(component as Port)) return
+      // Check if this port is already contained in the children, skip if it's
+      // already defined
+      const existingPorts = this.children.filter(
+        (c) => c.componentName === "Port",
+      ) as Port[]
+      const conflictingPort = existingPorts.find((p) =>
+        p.isMatchingAnyOf(component.getNameAndAliases()),
+      )
+      if (conflictingPort) {
+        throw new Error(
+          `Conflicting ports added. Port 1: ${conflictingPort}, Port 2: ${component}`,
+        )
+      }
     }
 
     super.add(component)
@@ -302,6 +337,12 @@ export class NormalComponent<
         const newPort = getPortFromHints(fpChild.props.portHints ?? [])
         if (!newPort) continue
         newPorts.push(newPort)
+      }
+
+      if (newPorts.length === 0) {
+        throw new Error(
+          `No ports found in chip ${this} (define a schPortArrangement, a footprint or add portHints to elements of the footprint)`,
+        )
       }
 
       return newPorts

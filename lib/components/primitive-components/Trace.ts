@@ -104,7 +104,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
         ports?: undefined
         portsWithSelectors?: undefined
       } {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props, parent } = this
 
     if (!parent) throw new Error("Trace has no parent")
@@ -215,7 +215,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
   }
 
   doInitialSourceTraceRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props, parent } = this
 
     if (!parent) {
@@ -238,7 +238,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
   }
 
   doInitialPcbTraceRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props, parent } = this
 
     if (!parent) throw new Error("Trace has no parent")
@@ -365,7 +365,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     // Cache the PCB obstacles, they'll be needed for each segment between
     // ports/hints
-    const obstacles = getObstaclesFromSoup(this.project!.db.toArray())
+    const obstacles = getObstaclesFromSoup(this.root!.db.toArray())
     markObstaclesAsConnected(
       obstacles,
       orderedRouteObjectives,
@@ -445,7 +445,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
   }
 
   doInitialSchematicTraceRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props, parent } = this
 
     if (!parent) throw new Error("Trace has no parent")

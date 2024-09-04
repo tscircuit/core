@@ -7,15 +7,17 @@ import { createInstanceFromReactElement } from "./fiber/create-instance-from-rea
 import { identity, type Matrix } from "transformation-matrix"
 
 export class Circuit {
-  rootComponent: PrimitiveComponent | null = null
+  firstChild: PrimitiveComponent | null = null
   children: PrimitiveComponent[]
   db: SoupUtilObjects
+  root: Circuit | null = null
 
   _hasRenderedAtleastOnce = false
 
   constructor() {
     this.children = []
     this.db = su([])
+    this.root = this
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
@@ -30,9 +32,9 @@ export class Circuit {
   }
 
   _guessRootComponent() {
-    if (this.rootComponent) return
+    if (this.firstChild) return
     if (this.children.length === 1) {
-      this.rootComponent = this.children[0]
+      this.firstChild = this.children[0]
       return
     }
     if (this.children.length === 0) {
@@ -46,7 +48,7 @@ export class Circuit {
         this.children.find((c) => c.componentName === "Board") ?? null
 
       if (board) {
-        this.rootComponent = board
+        this.firstChild = board
         return
       }
     }
@@ -56,16 +58,14 @@ export class Circuit {
   }
 
   render() {
-    if (!this.rootComponent) {
+    if (!this.firstChild) {
       this._guessRootComponent()
     }
-    const { rootComponent, db } = this
+    const { firstChild, db } = this
 
-    if (!rootComponent) throw new Error("Project has no root component")
-
-    rootComponent.setProject(this)
-
-    rootComponent.runRenderCycle()
+    if (!firstChild) throw new Error("Project has no root component")
+    firstChild.parent = this as any
+    firstChild.runRenderCycle()
     this._hasRenderedAtleastOnce = true
   }
 
@@ -112,14 +112,14 @@ export class Circuit {
   }
 
   selectAll(selector: string): PrimitiveComponent[] {
-    return this.rootComponent?.selectAll(selector) ?? []
+    return this.firstChild?.selectAll(selector) ?? []
   }
 
   selectOne(
     selector: string,
     opts?: { type?: "component" | "port" },
   ): PrimitiveComponent | null {
-    return this.rootComponent?.selectOne(selector, opts) ?? null
+    return this.firstChild?.selectOne(selector, opts) ?? null
   }
 }
 

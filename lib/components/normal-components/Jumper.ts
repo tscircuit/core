@@ -22,7 +22,7 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
   }
 
   doInitialSourceRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const source_component = db.source_component.insert({
@@ -36,7 +36,7 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
   }
 
   doInitialSchematicComponentRender() {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const ports = this.children.filter((child) => child instanceof Port)
@@ -84,7 +84,7 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
   }
 
   doInitialPcbComponentRender() {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const pcb_component = db.pcb_component.insert({
