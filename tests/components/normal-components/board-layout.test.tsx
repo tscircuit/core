@@ -45,4 +45,13 @@ test("board with manual layout edits", () => {
 
   expect(capacitorPosition.x).toBeCloseTo(-5, 1)
   expect(capacitorPosition.y).toBeCloseTo(-5, 1)
+
+  const r1SmtpadPositions = project
+    .selectAll(".R1 > smtpad")
+    .map((elm) => elm.getGlobalPcbPosition())
+
+  expect(Math.abs(r1SmtpadPositions[0].x - 5)).toBeLessThan(1)
+  expect(Math.abs(r1SmtpadPositions[1].x - 5)).toBeLessThan(1)
+
+  expect(project.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
