@@ -52,4 +52,6 @@ test("board with manual layout edits", () => {
 
   expect(Math.abs(r1SmtpadPositions[0].x - 5)).toBeLessThan(1)
   expect(Math.abs(r1SmtpadPositions[1].x - 5)).toBeLessThan(1)
+
+  expect(project.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
