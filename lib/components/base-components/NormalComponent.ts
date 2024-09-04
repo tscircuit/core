@@ -68,6 +68,7 @@ export class NormalComponent<
    */
   initPorts() {
     const { config } = this
+    const portsToCreate: Port[] = []
     if (config.schematicSymbolName) {
       const sym = symbols[
         `${config.schematicSymbolName}_horz` as keyof typeof symbols
@@ -79,32 +80,36 @@ export class NormalComponent<
 
         if (port) {
           port.schematicSymbolPortDef = symPort
-          this.add(port)
+          portsToCreate.push(port)
         }
       }
 
+      this.addAll(portsToCreate)
       return
     }
 
     const portsFromFootprint = this.getPortsFromFootprint()
-
-    this.addAll(portsFromFootprint)
+    portsToCreate.push(...portsFromFootprint)
 
     const pinLabels: Record<string, string> | undefined =
       this._parsedProps.pinLabels
     if (pinLabels) {
       for (let [pinNumber, label] of Object.entries(pinLabels)) {
         pinNumber = pinNumber.replace("pin", "")
-        const port = this.selectOne(`port[pinNumber='${pinNumber}']`)
-        if (!port) {
+        const existingPort = portsToCreate.find(
+          (p) => p._parsedProps.pinNumber === Number(pinNumber),
+        )
+        if (!existingPort) {
           throw new Error(
             `Could not find port for pin number ${pinNumber} in chip ${this.getString()}`,
           )
         }
-        port.externallyAddedAliases.push(label)
-        port.props.name = label
+        existingPort.externallyAddedAliases.push(label)
+        existingPort.props.name = label
       }
     }
+
+    this.addAll(portsToCreate)
   }
 
   _addChildrenFromStringFootprint() {
