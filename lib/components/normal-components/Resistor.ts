@@ -43,7 +43,7 @@ export class Resistor extends NormalComponent<
   }
 
   doInitialSourceRender() {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype: "simple_resistor",

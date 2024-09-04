@@ -46,7 +46,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
     if (!props.portHints) return
     const position = this.getGlobalPcbPosition()

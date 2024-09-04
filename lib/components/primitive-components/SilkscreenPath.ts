@@ -14,7 +14,7 @@ export class SilkscreenPath extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const layer = props.layer ?? "top"

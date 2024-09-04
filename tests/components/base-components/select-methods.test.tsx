@@ -18,7 +18,7 @@ it("should correctly use selectAll and selectOne methods", () => {
 
   project.render()
 
-  const board = project.rootComponent!
+  const board = project.firstChild!
 
   // Test selectAll
   const allResistors = board.selectAll("resistor")

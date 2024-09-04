@@ -18,7 +18,7 @@ export class Board extends Group<typeof boardProps> {
   }
 
   doInitialPcbComponentRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     if (!props.width || !props.height) {
@@ -36,7 +36,7 @@ export class Board extends Group<typeof boardProps> {
   }
 
   removePcbComponentRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     if (!this.pcb_board_id) return
     db.pcb_board.delete(this.pcb_board_id!)
     this.pcb_board_id = null

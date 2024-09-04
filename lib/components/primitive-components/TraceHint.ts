@@ -8,7 +8,7 @@ export class TraceHint extends PrimitiveComponent<typeof traceHintProps> {
   matchedPort: Port | null = null
 
   doInitialPortMatching(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props, parent } = this
 
     if (!parent) return

@@ -41,7 +41,6 @@ export abstract class PrimitiveComponent<
     }
   }
 
-  project: Circuit | null = null
   props: z.input<ZodProps>
   _parsedProps: z.infer<ZodProps>
 
@@ -60,8 +59,7 @@ export abstract class PrimitiveComponent<
     return (
       Boolean(this.props.subcircuit) ||
       // Implied opaque group for top-level group
-      (this.lowercaseComponentName === "group" &&
-        this?.parent?.props?.name === "$root")
+      (this.lowercaseComponentName === "group" && (this?.parent as any)?.isRoot)
     )
   }
 
@@ -83,13 +81,6 @@ export abstract class PrimitiveComponent<
     if (!this.componentName) {
       this.componentName = this.constructor.name
       this.lowercaseComponentName = this.componentName.toLowerCase()
-    }
-  }
-
-  setProject(project: Circuit) {
-    this.project = project
-    for (const c of this.children) {
-      c.setProject(project)
     }
   }
 
@@ -227,9 +218,12 @@ export abstract class PrimitiveComponent<
     return applyToPoint(this.computeSchematicGlobalTransform(), { x: 0, y: 0 })
   }
 
+  get root(): Circuit | null {
+    return this.parent?.root ?? null
+  }
+
   onAddToParent(parent: PrimitiveComponent) {
     this.parent = parent
-    this.project = parent.project
   }
 
   /**

@@ -21,7 +21,7 @@ it("simple trace with trace hint test", async () => {
   )
 
   project.render()
-  const traceHint = project.rootComponent!.selectOne("tracehint") as TraceHint
+  const traceHint = project.firstChild!.selectOne("tracehint") as TraceHint
 
   // a bit of a look at the internals
   expect(traceHint.matchedPort).toBeTruthy()

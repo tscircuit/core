@@ -18,7 +18,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
   }
 
   doInitialSourceComponentRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const net = db.source_net.insert({
@@ -77,7 +77,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
    * such that the nets are fully connected
    */
   doInitialPcbRouteNetIslands(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const traces = this._getAllDirectlyConnectedTraces().filter(
