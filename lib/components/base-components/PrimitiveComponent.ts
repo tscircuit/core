@@ -15,6 +15,7 @@ import {
   type Matrix,
 } from "transformation-matrix"
 import { isMatchingSelector } from "lib/utils/selector-matching"
+import type { LayoutBuilder } from "@tscircuit/layout"
 
 export interface BaseComponentConfig {
   schematicSymbolName?: BaseSymbolName | null
@@ -168,7 +169,40 @@ export abstract class PrimitiveComponent<
     )
   }
 
+  /**
+   * Subcircuit groups have a prop called "layout" that can include manual
+   * placements for pcb components. These are typically added from an IDE
+   */
+  _getManualPlacementForComponent(
+    component: PrimitiveComponent,
+  ): { x: number; y: number } | null {
+    if (!this.isSubcircuit) return null
+
+    const layout: LayoutBuilder = this.props.layout
+    if (!layout) return null
+
+    const placementConfig = layout.manual_pcb_placement_config
+    if (!placementConfig) return null
+
+    for (const position of placementConfig.positions) {
+      if (isMatchingSelector(component, position.selector)) {
+        const center = applyToPoint(
+          this.computePcbGlobalTransform(),
+          position.center,
+        )
+        return center
+      }
+    }
+
+    return null
+  }
+
   getGlobalPcbPosition(): { x: number; y: number } {
+    const manualPlacement =
+      this.getSubcircuit()._getManualPlacementForComponent(this)
+    if (manualPlacement) {
+      return manualPlacement
+    }
     return applyToPoint(this.computePcbGlobalTransform(), { x: 0, y: 0 })
   }
 
