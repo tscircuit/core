@@ -3,6 +3,7 @@ import { Component, createElement, type ReactElement } from "react"
 
 export const orderedRenderPhases = [
   "ReactSubtreesRender", // probably going to be removed b/c subtrees should render instantly
+  "CreateNetsFromProps",
   "CreateTracesFromProps",
   "SourceRender",
   "SourceParentAttachment",
@@ -19,6 +20,7 @@ export const orderedRenderPhases = [
   "PcbParentAttachment",
   "PcbLayout",
   "PcbTraceRender",
+  "PcbRouteNetIslands",
   "CadModelRender",
   "PcbAnalysis",
 ] as const

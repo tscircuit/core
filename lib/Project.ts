@@ -117,7 +117,7 @@ export class Circuit {
 
   selectOne(
     selector: string,
-    opts: { type?: "component" | "port" },
+    opts?: { type?: "component" | "port" },
   ): PrimitiveComponent | null {
     return this.rootComponent?.selectOne(selector, opts) ?? null
   }

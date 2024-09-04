@@ -12,6 +12,7 @@ import type {
   PCBTrace,
   RouteHintPoint,
   SchematicTrace,
+  SourceTrace,
 } from "@tscircuit/soup"
 import type {
   Obstacle,
@@ -24,6 +25,9 @@ import type { TraceHint } from "./TraceHint"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { pairs } from "lib/utils/pairs"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
+import type { Net } from "./Net"
+import { getClosest } from "lib/utils/getClosest"
+import { z } from "zod"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -41,6 +45,12 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
   schematic_trace_id: string | null = null
+  _portsRoutedOnPcb: Port[]
+
+  constructor(props: z.input<typeof traceProps>) {
+    super(props)
+    this._portsRoutedOnPcb = []
+  }
 
   get config() {
     return {
@@ -48,7 +58,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     }
   }
 
-  getTracePortPathSelectors(): string[] {
+  _getTracePortOrNetSelectorListFromProps(): string[] {
     if ("from" in this.props && "to" in this.props) {
       return [
         typeof this.props.from === "string"
@@ -67,9 +77,29 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     return []
   }
 
+  getTracePortPathSelectors(): string[] {
+    return this._getTracePortOrNetSelectorListFromProps().filter(
+      (selector) => !selector.includes("net."),
+    )
+  }
+
+  getTracePathNetSelectors(): string[] {
+    return this._getTracePortOrNetSelectorListFromProps().filter((selector) =>
+      selector.includes("net."),
+    )
+  }
+
   _findConnectedPorts():
-    | { allPortsFound: true; ports: Array<{ selector: string; port: Port }> }
-    | { allPortsFound: false; ports?: undefined } {
+    | {
+        allPortsFound: true
+        ports: Port[]
+        portsWithSelectors: Array<{ selector: string; port: Port }>
+      }
+    | {
+        allPortsFound: false
+        ports?: undefined
+        portsWithSelectors?: undefined
+      } {
     const { db } = this.project!
     const { _parsedProps: props, parent } = this
 
@@ -77,17 +107,17 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const portSelectors = this.getTracePortPathSelectors()
 
-    const ports = portSelectors.map((selector) => ({
+    const portsWithSelectors = portSelectors.map((selector) => ({
       selector,
       port:
-        (this.getOpaqueGroup().selectOne(selector, { type: "port" }) as Port) ??
+        (this.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
         null,
     }))
 
-    for (const { selector, port } of ports) {
+    for (const { selector, port } of portsWithSelectors) {
       if (!port) {
         const parentSelector = selector.replace(/\>.*$/, "")
-        const targetComponent = this.getOpaqueGroup().selectOne(parentSelector)
+        const targetComponent = this.getSubcircuit().selectOne(parentSelector)
         if (!targetComponent) {
           this.renderError(`Could not find port for selector "${selector}"`)
         } else {
@@ -103,11 +133,50 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       }
     }
 
-    if (ports.some((p) => !p.port)) {
+    if (portsWithSelectors.some((p) => !p.port)) {
       return { allPortsFound: false }
     }
 
-    return { allPortsFound: true, ports }
+    return {
+      allPortsFound: true,
+      portsWithSelectors,
+      ports: portsWithSelectors.map(({ port }) => port),
+    }
+  }
+
+  _findConnectedNets(): Array<{ selector: string; net: Net }> {
+    const nets = this.getTracePathNetSelectors().map((selector) => ({
+      selector,
+      net: this.getSubcircuit().selectOne(selector, { type: "net" }) as Net,
+    }))
+
+    const undefinedNets = nets.filter((n) => !n.net)
+    if (undefinedNets.length > 0) {
+      this.renderError(
+        `Could not find net for selector "${undefinedNets[0].selector}" inside ${this}`,
+      )
+    }
+
+    return nets
+  }
+
+  /**
+   * Determine if a trace is explicitly connected to a port (not via a net)
+   */
+  _isExplicitlyConnectedToPort(port: Port) {
+    const { allPortsFound, portsWithSelectors: portsWithMetadata } =
+      this._findConnectedPorts()
+    if (!allPortsFound) return false
+    const ports = portsWithMetadata.map((p) => p.port)
+    return ports.includes(port)
+  }
+
+  /**
+   * Determine if a trace is explicitly connected to a net (not via a port)
+   */
+  _isExplicitlyConnectedToNet(net: Net) {
+    const nets = this._findConnectedNets().map((n) => n.net)
+    return nets.includes(net)
   }
 
   doInitialSourceTraceRender(): void {
@@ -119,12 +188,15 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       return
     }
 
-    const { allPortsFound, ports } = this._findConnectedPorts()
+    const { allPortsFound, portsWithSelectors: ports } =
+      this._findConnectedPorts()
     if (!allPortsFound) return
+
+    const nets = this._findConnectedNets()
 
     const trace = db.source_trace.insert({
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
-      connected_source_net_ids: [],
+      connected_source_net_ids: nets.map((n) => n.net.source_net_id!),
     })
 
     this.source_trace_id = trace.source_trace_id
@@ -137,8 +209,41 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     if (!parent) throw new Error("Trace has no parent")
 
     const { allPortsFound, ports } = this._findConnectedPorts()
+    const portsConnectedOnPcbViaNet: Port[] = []
 
     if (!allPortsFound) return
+
+    const nets = this._findConnectedNets()
+
+    if (ports.length === 0 && nets.length === 2) {
+      // Find the two optimal points to connect the two nets
+      this.renderError(
+        `Trace connects two nets, we haven't implemented a way to route this yet`,
+      )
+      return
+      // biome-ignore lint/style/noUselessElse: <explanation>
+    } else if (ports.length === 1 && nets.length === 1) {
+      // Add a port from the net that is closest to the port
+      const port = ports[0]
+      const portsInNet = nets[0].net.getAllConnectedPorts()
+      const otherPortsInNet = portsInNet.filter((p) => p !== port)
+      if (otherPortsInNet.length === 0) {
+        console.log(
+          "Nothing to connect this port to, the net is empty. TODO should emit a warning!",
+        )
+        return
+      }
+      const closestPortInNet = getClosest(port, otherPortsInNet)
+
+      portsConnectedOnPcbViaNet.push(closestPortInNet)
+
+      ports.push(closestPortInNet)
+    } else if (ports.length > 1 && nets.length >= 1) {
+      this.renderError(
+        `Trace has more than one port and one or more nets, we don't currently support this type of complex trace routing`,
+      )
+      return
+    }
 
     const pcbElements: AnySoupElement[] = db
       .toArray()
@@ -154,7 +259,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const source_trace = db.source_trace.get(this.source_trace_id!)!
 
-    const hints = ports.flatMap(({ port }) =>
+    const hints = ports.flatMap((port) =>
       port.matchedComponents.filter((c) => c.componentName === "TraceHint"),
     ) as TraceHint[]
 
@@ -165,7 +270,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     if (ports.length > 2) {
       this.renderError(
         `Trace has more than two ports (${ports
-          .map((p) => p.port.getString())
+          .map((p) => p.getString())
           .join(
             ", ",
           )}), routing between more than two ports for a single trace is not implemented`,
@@ -173,21 +278,50 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       return
     }
 
+    const alreadyRoutedTraces = this.getSubcircuit()
+      .selectAll("trace")
+      .filter(
+        (trace) => trace.renderPhaseStates.PcbTraceRender.initialized,
+      ) as Trace[]
+
+    const isAlreadyRouted = alreadyRoutedTraces.some(
+      (trace) =>
+        trace._portsRoutedOnPcb.length === ports.length &&
+        trace._portsRoutedOnPcb.every((portRoutedByOtherTrace) =>
+          ports.includes(portRoutedByOtherTrace),
+        ),
+    )
+
+    if (isAlreadyRouted) {
+      return
+    }
+
     if (pcbRouteHints.length === 0) {
-      const { solution } = autoroute(pcbElements.concat([source_trace]))
+      const { solution } = autoroute(
+        pcbElements.concat([
+          {
+            ...source_trace,
+            // manually override b/c some of the ports may be connected via nets
+            // so they don't appear properly in the source_trace, we don't need
+            // to do this if the algorithm correctly looks at connected_source_net_ids
+            connected_source_port_ids: ports.map((p) => p.source_port_id!),
+          } as SourceTrace,
+        ]),
+      )
       // TODO for some reason, the solution gets duplicated inside ijump-astar
       const inputPcbTrace = solution[0]
 
       if (!inputPcbTrace) {
         // TODO render error indicating we could not find a route
         console.log(
-          `Failed to find route ffrom ${ports[0].port} to ${ports[1].port} render error!`,
+          `Failed to find route from ${ports[0]} to ${ports[1]} (TODO render error!)`,
         )
         return
       }
       const pcb_trace = db.pcb_trace.insert(inputPcbTrace as any)
 
       this.pcb_trace_id = pcb_trace.pcb_trace_id
+      this._portsRoutedOnPcb = ports
       return
     }
 
@@ -195,9 +329,9 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     // terminal of the trace and the hints
     // TODO order based on proximity to ports
     const orderedRouteObjectives: PcbRouteObjective[] = [
-      portToObjective(ports[0].port),
+      portToObjective(ports[0]),
       ...pcbRouteHints,
-      portToObjective(ports[1].port),
+      portToObjective(ports[1]),
     ]
 
     // Hints can indicate where there should be a via, but the layer is allowed
@@ -285,7 +419,8 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     if (!parent) throw new Error("Trace has no parent")
 
-    const { allPortsFound, ports } = this._findConnectedPorts()
+    const { allPortsFound, portsWithSelectors: ports } =
+      this._findConnectedPorts()
 
     if (!allPortsFound) return
 

@@ -4,6 +4,7 @@ import { NormalComponent } from "../base-components/NormalComponent"
 import type { SourceSimpleResistorInput } from "@tscircuit/soup"
 import { z } from "zod"
 import { Trace } from "../primitive-components/Trace"
+import { Net } from "../primitive-components/Net"
 
 export class Resistor extends NormalComponent<
   typeof resistorProps,
@@ -20,22 +21,27 @@ export class Resistor extends NormalComponent<
   pin1 = this.portMap.pin1
   pin2 = this.portMap.pin2
 
+  doInitialCreateNetsFromProps() {
+    this._createNetsFromProps([this.props.pullupFor, this.props.pullupTo])
+  }
+
   doInitialCreateTracesFromProps() {
     if (this.props.pullupFor && this.props.pullupTo) {
       this.add(
         new Trace({
-          from: `${this.getOpaqueGroupSelector()} > port.1`,
+          from: `${this.getSubcircuitSelector()} > port.1`,
           to: this.props.pullupFor,
         }),
       )
       this.add(
         new Trace({
-          from: `${this.getOpaqueGroupSelector()} > port.2`,
+          from: `${this.getSubcircuitSelector()} > port.2`,
           to: this.props.pullupTo,
         }),
       )
     }
   }
+
   doInitialSourceRender() {
     const { db } = this.project!
     const { _parsedProps: props } = this
