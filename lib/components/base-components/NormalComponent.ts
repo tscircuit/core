@@ -194,8 +194,8 @@ export class NormalComponent<
     const { db } = this.project!
     const { _parsedProps: props } = this
     const pcb_component = db.pcb_component.insert({
-      center: { x: this.props.pcbX ?? 0, y: this.props.pcbY ?? 0 },
-      // width/height are computed in the PcbAnalysis phase
+      center: this.getGlobalPcbPosition(),
+      // width/height are computed in the PcbComponentSizeCalculation phase
       width: 0,
       height: 0,
       layer: props.layer ?? "top",
@@ -205,11 +205,36 @@ export class NormalComponent<
     this.pcb_component_id = pcb_component.pcb_component_id
   }
 
-  doInitialPcbAnalysis(): void {
+  /**
+   * At this stage, the smtpads/pcb primitives are placed, so we can compute
+   * the width/height of the component
+   */
+  doInitialPcbComponentSizeCalculation(): void {
     const { db } = this.project!
     const { _parsedProps: props } = this
 
-    // TODO Examine children to compute width/height and pcbX/pcbY
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+
+    for (const child of this.children) {
+      if (child.isPcbPrimitive) {
+        const { x, y } = child.getGlobalPcbPosition()
+        minX = Math.min(minX, x)
+        minY = Math.min(minY, y)
+        maxX = Math.max(maxX, x)
+        maxY = Math.max(maxY, y)
+      }
+    }
+
+    const width = maxX - minX
+    const height = maxY - minY
+
+    db.pcb_component.update(this.pcb_component_id!, {
+      width,
+      height,
+    })
   }
 
   _renderReactSubtree(element: ReactElement): ReactSubtree {
