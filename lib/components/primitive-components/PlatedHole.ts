@@ -27,6 +27,37 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     )
   }
 
+  _getCircuitJsonBounds(): {
+    center: { x: number; y: number }
+    bounds: { left: number; top: number; right: number; bottom: number }
+    width: number
+    height: number
+  } {
+    const { db } = this.root!
+    const platedHole = db.pcb_plated_hole.get(this.pcb_plated_hole_id!)!
+    const size = this.getPcbSize()
+
+    return {
+      center: { x: platedHole.x, y: platedHole.y },
+      bounds: {
+        left: platedHole.x - size.width / 2,
+        top: platedHole.y - size.height / 2,
+        right: platedHole.x + size.width / 2,
+        bottom: platedHole.y + size.height / 2,
+      },
+      width: size.width,
+      height: size.height,
+    }
+  }
+
+  _setPositionFromLayout(newCenter: { x: number; y: number }) {
+    const { db } = this.root!
+    db.pcb_plated_hole.update(this.pcb_plated_hole_id!, {
+      x: newCenter.x,
+      y: newCenter.y,
+    })
+  }
+
   doInitialPortMatching(): void {
     const parentPorts = (this.parent?.children ?? []).filter(
       (c) => c.componentName === "Port",
@@ -67,7 +98,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       // @ts-ignore - some issue with soup-util types it seems
       const pcb_plated_hole = db.pcb_plated_hole.insert(plated_hole_input)
 
-      // this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     }
   }
 }
