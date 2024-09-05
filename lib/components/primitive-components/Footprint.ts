@@ -39,6 +39,7 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
     function getKVar(name: string) {
       if (!(name in kVars)) {
         kVars[name] = new kiwi.Variable(name)
+        solver.addEditVariable(kVars[name], kiwi.Strength.weak)
       }
       return kVars[name]
     }
@@ -47,8 +48,6 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
     for (const { selector, bounds } of involvedComponents) {
       const kvx = getKVar(`${selector}_x`)
       const kvy = getKVar(`${selector}_y`)
-      solver.addEditVariable(kvx, kiwi.Strength.weak)
-      solver.addEditVariable(kvy, kiwi.Strength.weak)
       solver.suggestValue(kvx, bounds.center.x)
       solver.suggestValue(kvy, bounds.center.y)
     }
@@ -77,10 +76,10 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
           )
         } else if (edgeToEdge) {
           // rightEdge - leftEdge = xdist
-          // right + rightBounds.width/2 - left - leftBounds.width/2 = xdist
+          // right - rightBounds.width/2 - left - leftBounds.width/2 = xdist
           const expr = new kiwi.Expression(
             rightVar,
-            rightBounds.width / 2,
+            -rightBounds.width / 2,
             [-1, leftVar],
             -leftBounds.width / 2,
           )
@@ -93,69 +92,107 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
             ),
           )
         }
+      } else if ("ydist" in props) {
+        const { ydist, top, bottom, edgeToEdge, centerToCenter } = props
+        const topVar = getKVar(`${top}_y`)
+        const bottomVar = getKVar(`${bottom}_y`)
+        const topBounds = getComponentDetails(top)?.bounds!
+        const bottomBounds = getComponentDetails(bottom)?.bounds!
+
+        // Top - Bottom = ydist
+
+        if (centerToCenter) {
+          // top - bottom = ydist
+          const expr = new kiwi.Expression(topVar, [-1, bottomVar])
+          solver.addConstraint(
+            new kiwi.Constraint(
+              expr,
+              kiwi.Operator.Eq,
+              props.ydist,
+              kiwi.Strength.required,
+            ),
+          )
+        } else if (edgeToEdge) {
+          // topElmBottomEdge - bottomElmTopEdge = ydist
+          // topElmCenterY - topElmHeight/2 - bottomElmCenterY - bottomElmHeight/2 = ydist
+          const expr = new kiwi.Expression(
+            topVar,
+            topBounds.height / 2,
+            [-1, bottomVar],
+            -bottomBounds.height / 2,
+          )
+          solver.addConstraint(
+            new kiwi.Constraint(
+              expr,
+              kiwi.Operator.Eq,
+              props.ydist,
+              kiwi.Strength.required,
+            ),
+          )
+        }
       }
+    }
 
-      // 3. Solve the system of equations
-      solver.updateVariables()
-      if (debug.enabled) {
-        console.log("Solution to layout constraints:")
-        console.table(
-          Object.entries(kVars).map(([key, kvar]) => ({
-            var: key,
-            val: kvar.value(),
-          })),
-        )
-      }
+    // 3. Solve the system of equations
+    solver.updateVariables()
+    if (debug.enabled) {
+      console.log("Solution to layout constraints:")
+      console.table(
+        Object.entries(kVars).map(([key, kvar]) => ({
+          var: key,
+          val: kvar.value(),
+        })),
+      )
+    }
 
-      // 3.1 Compute the global offset. There are different ways to do this:
-      // - If any component has a fixed position, then that can be used as the
-      //   origin to determine the offset of all other components
-      // - If no component has a fixed position, then we recenter everything
-      //   using the new bounds of all the involved components
+    // 3.1 Compute the global offset. There are different ways to do this:
+    // - If any component has a fixed position, then that can be used as the
+    //   origin to determine the offset of all other components
+    // - If no component has a fixed position, then we recenter everything
+    //   using the new bounds of all the involved components
 
-      // TODO determine if there's a fixed component
+    // TODO determine if there's a fixed component
 
-      // Determine the new bounds all the involved components and compute the
-      // bounds of this footprint
-      const bounds = {
-        left: Infinity,
-        right: -Infinity,
-        top: -Infinity,
-        bottom: Infinity,
-      }
-      for (const {
-        selector,
-        bounds: { width, height },
-      } of involvedComponents) {
-        const kvx = getKVar(`${selector}_x`)
-        const kvy = getKVar(`${selector}_y`)
+    // Determine the new bounds all the involved components and compute the
+    // bounds of this footprint
+    const bounds = {
+      left: Infinity,
+      right: -Infinity,
+      top: -Infinity,
+      bottom: Infinity,
+    }
+    for (const {
+      selector,
+      bounds: { width, height },
+    } of involvedComponents) {
+      const kvx = getKVar(`${selector}_x`)
+      const kvy = getKVar(`${selector}_y`)
 
-        const newLeft = kvx.value() - width / 2
-        const newRight = kvx.value() + width / 2
-        const newTop = kvy.value() + height / 2
-        const newBottom = kvy.value() - height / 2
+      const newLeft = kvx.value() - width / 2
+      const newRight = kvx.value() + width / 2
+      const newTop = kvy.value() + height / 2
+      const newBottom = kvy.value() - height / 2
 
-        bounds.left = Math.min(bounds.left, newLeft)
-        bounds.right = Math.max(bounds.right, newRight)
-        bounds.top = Math.max(bounds.top, newTop)
-        bounds.bottom = Math.min(bounds.bottom, newBottom)
-      }
+      bounds.left = Math.min(bounds.left, newLeft)
+      bounds.right = Math.max(bounds.right, newRight)
+      bounds.top = Math.max(bounds.top, newTop)
+      bounds.bottom = Math.min(bounds.bottom, newBottom)
+    }
 
-      // Compute the global offset, we can use this to recenter each component
-      const globalOffset = {
-        x: -(bounds.right + bounds.left) / 2,
-        y: -(bounds.top + bounds.bottom) / 2,
-      }
+    // Compute the global offset, we can use this to recenter each component
+    const globalOffset = {
+      x: -(bounds.right + bounds.left) / 2,
+      y: -(bounds.top + bounds.bottom) / 2,
+    }
 
-      // 4. Update the component positions
-      for (const { component, selector } of involvedComponents) {
-        const kvx = getKVar(`${selector}_x`)
-        const kvy = getKVar(`${selector}_y`)
-        component._setPositionFromLayout({
-          x: kvx.value() + globalOffset.x,
-          y: kvy.value() + globalOffset.y,
-        })
-      }
+    // 4. Update the component positions
+    for (const { component, selector } of involvedComponents) {
+      const kvx = getKVar(`${selector}_x`)
+      const kvy = getKVar(`${selector}_y`)
+      component._setPositionFromLayout({
+        x: kvx.value() + globalOffset.x,
+        y: kvy.value() + globalOffset.y,
+      })
     }
   }
 }

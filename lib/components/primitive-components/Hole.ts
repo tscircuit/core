@@ -14,7 +14,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
 
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
-    return { width: props.holeDiameter, height: props.holeDiameter }
+    return { width: props.diameter, height: props.diameter }
   }
 
   doInitialPcbPrimitiveRender(): void {
@@ -22,15 +22,44 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
 
-    const pcb_hole: PCBHole = {
-      type: "pcb_hole",
+    const inserted_hole = db.pcb_hole.insert({
       hole_shape: "round",
-      hole_diameter: props.holeDiameter,
+      // @ts-ignore
+      hole_diameter: props.diameter,
       x: position.x,
       y: position.y,
-    }
+    })
+    this.pcb_hole_id = inserted_hole.pcb_hole_id!
+  }
 
-    const inserted_hole = db.pcb_hole.insert(pcb_hole)
-    // this.pcb_hole_id = inserted_hole.pcb_hole_id!
+  _getCircuitJsonBounds(): {
+    center: { x: number; y: number }
+    bounds: { left: number; top: number; right: number; bottom: number }
+    width: number
+    height: number
+  } {
+    const { db } = this.root!
+    const hole = db.pcb_hole.get(this.pcb_hole_id!)!
+    const size = this.getPcbSize()
+
+    return {
+      center: { x: hole.x, y: hole.y },
+      bounds: {
+        left: hole.x - size.width / 2,
+        top: hole.y - size.height / 2,
+        right: hole.x + size.width / 2,
+        bottom: hole.y + size.height / 2,
+      },
+      width: size.width,
+      height: size.height,
+    }
+  }
+
+  _setPositionFromLayout(newCenter: { x: number; y: number }) {
+    const { db } = this.root!
+    db.pcb_hole.update(this.pcb_hole_id!, {
+      x: newCenter.x,
+      y: newCenter.y,
+    })
   }
 }
