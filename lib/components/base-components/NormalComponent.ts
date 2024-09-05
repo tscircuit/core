@@ -46,6 +46,8 @@ export class NormalComponent<
 > extends PrimitiveComponent<ZodProps> {
   reactSubtrees: Array<ReactSubtree> = []
 
+  isPrimitiveContainer = true
+
   constructor(props: z.input<ZodProps>) {
     super(props)
     this._addChildrenFromStringFootprint()

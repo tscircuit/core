@@ -146,11 +146,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     this.source_component_id = this.parent?.source_component_id
   }
 
-  /**
-   * For PcbPorts, we use the parent attachment phase to determine where to place
-   * the pcb_port (prior to this phase, the smtpad/platedhole isn't guaranteed
-   * to exist)
-   */
   doInitialPcbPortRender(): void {
     const { db } = this.root!
     const { matchedComponents } = this
@@ -173,12 +168,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const pcbMatch: any = pcbMatches[0]
 
-    if ("_getGlobalPcbPositionBeforeLayout" in pcbMatch) {
+    if ("_getCircuitJsonBounds" in pcbMatch) {
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
         layers: ["top"],
 
-        ...pcbMatch._getGlobalPcbPositionBeforeLayout(),
+        ...pcbMatch._getCircuitJsonBounds().center,
 
         source_port_id: this.source_port_id!,
       })

@@ -38,5 +38,12 @@ test("footprint layout", () => {
   // Should be centered about 0
   expect(Math.abs(smtpads[0].x + smtpads[1].x) / 2).toBeCloseTo(0, 1)
 
+  const pcbPorts = circuit.db.pcb_port.list()
+
+  expect(pcbPorts.length).toBe(2)
+
+  expect(pcbPorts[0].x).toBeOneOf([-2, 2])
+  expect(pcbPorts[1].x).toBeOneOf([-2, 2])
+
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

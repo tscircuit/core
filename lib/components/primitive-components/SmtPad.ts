@@ -32,8 +32,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   }
 
   doInitialPortMatching(): void {
-    const parentPorts = (this.parent?.children ?? []).filter(
-      (c) => c.componentName === "Port",
+    const parentPorts = this.getPrimitiveContainer()?.selectAll(
+      "port",
     ) as Port[]
 
     if (!this.props.portHints) {

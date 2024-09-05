@@ -63,6 +63,18 @@ export abstract class PrimitiveComponent<
     )
   }
 
+  /**
+   * A primitive container is a component that contains one or more ports and
+   * primitive components that are designed to interact.
+   *
+   * For example a resistor contains ports and smtpads that interact, so the
+   * resistor is a primitive container. Inside a primitive container, the ports
+   * and pads are likely to reference each other and look for eachother during
+   * the port matching phase.
+   *
+   */
+  isPrimitiveContainer = false
+
   source_group_id: string | null = null
   source_component_id: string | null = null
   schematic_component_id: string | null = null
@@ -146,6 +158,11 @@ export abstract class PrimitiveComponent<
       this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
       this.computePcbPropsTransform(),
     )
+  }
+
+  getPrimitiveContainer(): PrimitiveComponent | null {
+    if (this.isPrimitiveContainer) return this
+    return this.parent?.getPrimitiveContainer?.() ?? null
   }
 
   /**
