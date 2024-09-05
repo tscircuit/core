@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><style>
+              .pcb-board { fill: #000; }
+              .pcb-trace { stroke: rgb(200, 52, 52); stroke-width: 2.5; fill: none; }
+              .pcb-hole-outer { fill: rgb(200, 52, 52); }
+              .pcb-hole-inner { fill: rgb(255, 38, 226); }
+              .pcb-pad { fill: rgb(200, 52, 52); }
+              .pcb-boundary { fill: none; stroke: #fff; stroke-width: 0.3; }
+              .pcb-silkscreen { fill: none; }
+              .pcb-silkscreen-top { stroke: #f2eda1; }
+              .pcb-silkscreen-bottom { stroke: #f2eda1; }
+            </style><rect class="pcb-board" x="0" y="0" width="800" height="600"/><rect class="pcb-boundary" x="150" y="50" width="500" height="500"/><g id="other-elements"><g transform="translate(400, 300) rotate(0) scale(1, -1)"><rect class="pcb-component" x="Infinity" y="Infinity" width="-Infinity" height="-Infinity"/><rect class="pcb-component-outline" x="Infinity" y="Infinity" width="-Infinity" height="-Infinity"/></g><rect class="pcb-pad" x="175" y="275" width="50" height="50"/><rect class="pcb-pad" x="375" y="275" width="50" height="50"/></g><g id="traces"/><g id="holes"/><g id="silkscreen"/></svg>

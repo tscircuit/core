@@ -46,7 +46,7 @@ export class TraceHint extends PrimitiveComponent<typeof traceHintProps> {
 
     if (!offsets) return []
 
-    const globalTransform = this.computePcbGlobalTransform()
+    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
 
     return offsets.map(
       (offset): RouteHintPoint => ({

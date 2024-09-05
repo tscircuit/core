@@ -39,6 +39,8 @@ declare global {
       pcbtrace: Props.PcbTraceProps
       fabricationnotetext: Props.FabricationNoteTextProps
       fabricationnotepath: Props.FabricationNotePathProps
+      constraint: Props.ConstraintProps
+      constrainedlayout: Props.ConstrainedLayoutProps
       jscad: any
     }
   }

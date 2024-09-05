@@ -38,7 +38,7 @@ type PcbRouteObjective =
   | { layers: string[]; x: number; y: number; via?: boolean }
 
 const portToObjective = (port: Port): PcbRouteObjective => {
-  const portPosition = port.getGlobalPcbPosition()
+  const portPosition = port._getGlobalPcbPositionBeforeLayout()
   return {
     ...portPosition,
     layers: port.getAvailablePcbLayers(),
@@ -476,7 +476,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     for (const { port } of ports) {
       connection.pointsToConnect.push(
         projectPointInDirection(
-          port.getGlobalSchematicPosition(),
+          port._getGlobalSchematicPositionBeforeLayout(),
           port.facingDirection!,
           0.1501,
         ),

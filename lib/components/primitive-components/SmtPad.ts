@@ -53,8 +53,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
     if (!props.portHints) return
-    const position = this.getGlobalPcbPosition()
-    const decomposedMat = decomposeTSR(this.computePcbGlobalTransform())
+    const position = this._getGlobalPcbPositionBeforeLayout()
+    const decomposedMat = decomposeTSR(
+      this._computePcbGlobalTransformBeforeLayout(),
+    )
     const isRotated90 =
       Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) < 0.01
     let pcb_smtpad: PCBSMTPad | null = null
@@ -93,5 +95,53 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
     }
+  }
+
+  _getCircuitJsonBounds(): {
+    center: { x: number; y: number }
+    bounds: { left: number; top: number; right: number; bottom: number }
+    width: number
+    height: number
+  } {
+    const { db } = this.root!
+    const smtpad = db.pcb_smtpad.get(this.pcb_smtpad_id!)!
+
+    if (smtpad.shape === "rect") {
+      return {
+        center: { x: smtpad.x, y: smtpad.y },
+        bounds: {
+          left: smtpad.x - smtpad.width / 2,
+          top: smtpad.y - smtpad.height / 2,
+          right: smtpad.x + smtpad.width / 2,
+          bottom: smtpad.y + smtpad.height / 2,
+        },
+        width: smtpad.width,
+        height: smtpad.height,
+      }
+    }
+    if (smtpad.shape === "circle") {
+      return {
+        center: { x: smtpad.x, y: smtpad.y },
+        bounds: {
+          left: smtpad.x - smtpad.radius,
+          top: smtpad.y - smtpad.radius,
+          right: smtpad.x + smtpad.radius,
+          bottom: smtpad.y + smtpad.radius,
+        },
+        width: smtpad.radius * 2,
+        height: smtpad.radius * 2,
+      }
+    }
+    throw new Error(
+      `circuitJson bounds calculation not implemented for shape "${(smtpad as any).shape}"`,
+    )
+  }
+
+  _setPositionFromLayout(newCenter: { x: number; y: number }) {
+    const { db } = this.root!
+    db.pcb_smtpad.update(this.pcb_smtpad_id!, {
+      x: newCenter.x,
+      y: newCenter.y,
+    })
   }
 }

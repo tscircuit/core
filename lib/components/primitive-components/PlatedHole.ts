@@ -49,7 +49,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
     if (!props.portHints) return
-    const position = this.getGlobalPcbPosition()
+    const position = this._getGlobalPcbPositionBeforeLayout()
     if (props.shape === "circle") {
       const plated_hole_input: PCBPlatedHoleInput = {
         pcb_component_id: this.parent?.pcb_component_id!,

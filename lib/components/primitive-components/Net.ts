@@ -109,10 +109,10 @@ export class Net extends PrimitiveComponent<typeof netProps> {
     for (const [A, B] of islandPairs) {
       // Find two closest ports on the island
       const Apositions: Array<{ x: number; y: number }> = A.ports.map((port) =>
-        port.getGlobalPcbPosition(),
+        port._getGlobalPcbPositionBeforeLayout(),
       )
       const Bpositions: Array<{ x: number; y: number }> = B.ports.map((port) =>
-        port.getGlobalPcbPosition(),
+        port._getGlobalPcbPositionBeforeLayout(),
       )
 
       let closestDist = Infinity

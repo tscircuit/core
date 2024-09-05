@@ -32,7 +32,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     this.matchedComponents = []
   }
 
-  getGlobalPcbPosition(): { x: number; y: number } {
+  _getGlobalPcbPositionBeforeLayout(): { x: number; y: number } {
     const matchedPcbElm = this.matchedComponents.find((c) => c.isPcbPrimitive)
 
     if (!matchedPcbElm) {
@@ -41,10 +41,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       )
     }
 
-    return matchedPcbElm?.getGlobalPcbPosition() ?? { x: 0, y: 0 }
+    return matchedPcbElm?._getGlobalPcbPositionBeforeLayout() ?? { x: 0, y: 0 }
   }
 
-  getGlobalSchematicPosition(): { x: number; y: number } {
+  _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
     if (!this.schematicSymbolPortDef) {
       return applyToPoint(this.parent!.computeSchematicGlobalTransform(), {
         x: 0,
@@ -196,8 +196,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (!this.parent) return
 
-    const center = this.getGlobalSchematicPosition()
-    const parentCenter = this.parent?.getGlobalSchematicPosition()
+    const center = this._getGlobalSchematicPositionBeforeLayout()
+    const parentCenter = this.parent?._getGlobalSchematicPositionBeforeLayout()
 
     this.facingDirection = getRelativeDirection(parentCenter, center)
 
