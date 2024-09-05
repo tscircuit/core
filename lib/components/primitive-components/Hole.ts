@@ -22,15 +22,13 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
 
-    const pcb_hole: PCBHole = {
-      type: "pcb_hole",
+    const inserted_hole = db.pcb_hole.insert({
       hole_shape: "round",
+      // @ts-ignore
       hole_diameter: props.holeDiameter,
       x: position.x,
       y: position.y,
-    }
-
-    const inserted_hole = db.pcb_hole.insert(pcb_hole)
+    })
     this.pcb_hole_id = inserted_hole.pcb_hole_id!
   }
 

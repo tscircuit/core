@@ -82,21 +82,18 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     if (!props.portHints) return
     const position = this._getGlobalPcbPositionBeforeLayout()
     if (props.shape === "circle") {
-      const plated_hole_input: PCBPlatedHoleInput = {
+      const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
         pcb_port_id: this.matchedPort?.pcb_port_id!,
-        layers: ["top", "bottom"],
+        // @ts-ignore - some issue with @tscircuit/soup union type
         outer_diameter: props.outerDiameter,
         hole_diameter: props.holeDiameter,
-        shape: "circle",
+        shape: "circle" as const,
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
-        type: "pcb_plated_hole",
-      }
-
-      // @ts-ignore - some issue with soup-util types it seems
-      const pcb_plated_hole = db.pcb_plated_hole.insert(plated_hole_input)
+        layers: ["top", "bottom"],
+      })
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     }
