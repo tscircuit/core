@@ -11,16 +11,12 @@ test("footprint layout", () => {
         footprint={
           <footprint>
             <smtpad
-              pcbX={0}
-              pcbY={0}
               shape="rect"
               width="1mm"
               height="1mm"
               portHints={["pin1"]}
             />
             <smtpad
-              pcbX={0}
-              pcbY={0}
               shape="rect"
               width="1mm"
               height="1mm"
@@ -37,8 +33,10 @@ test("footprint layout", () => {
 
   const smtpads = circuit.db.pcb_smtpad.list()
 
-  console.log(smtpads)
   expect(Math.abs(smtpads[0].x - smtpads[1].x)).toBeCloseTo(4, 1)
+
+  // Should be centered about 0
+  expect(Math.abs(smtpads[0].x + smtpads[1].x) / 2).toBeCloseTo(0, 1)
 
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
