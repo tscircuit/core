@@ -6,7 +6,7 @@ test("Hole component rendering", () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <hole holeDiameter="0.08in" pcbX={3} pcbY={1} />
+      <hole diameter="0.08in" pcbX={3} pcbY={1} />
     </board>,
   )
 
