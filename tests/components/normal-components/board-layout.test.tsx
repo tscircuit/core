@@ -37,8 +37,8 @@ test("board with manual layout edits", () => {
   expect(resistor).not.toBeNull()
   expect(capacitor).not.toBeNull()
 
-  const resistorPosition = resistor!.getGlobalPcbPosition()
-  const capacitorPosition = capacitor!.getGlobalPcbPosition()
+  const resistorPosition = resistor!._getGlobalPcbPositionBeforeLayout()
+  const capacitorPosition = capacitor!._getGlobalPcbPositionBeforeLayout()
 
   expect(resistorPosition.x).toBeCloseTo(5, 1)
   expect(resistorPosition.y).toBeCloseTo(5, 1)
@@ -48,7 +48,7 @@ test("board with manual layout edits", () => {
 
   const r1SmtpadPositions = project
     .selectAll(".R1 > smtpad")
-    .map((elm) => elm.getGlobalPcbPosition())
+    .map((elm) => elm._getGlobalPcbPositionBeforeLayout())
 
   expect(Math.abs(r1SmtpadPositions[0].x - 5)).toBeLessThan(1)
   expect(Math.abs(r1SmtpadPositions[1].x - 5)).toBeLessThan(1)

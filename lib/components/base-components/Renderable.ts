@@ -2,13 +2,13 @@ import type { PCBPlacementError, PCBTraceError } from "@tscircuit/soup"
 import { Component, createElement, type ReactElement } from "react"
 
 export const orderedRenderPhases = [
-  "ReactSubtreesRender", // probably going to be removed b/c subtrees should render instantly
+  "ReactSubtreesRender",
   "InitializePortsFromChildren",
   "CreateNetsFromProps",
   "CreateTracesFromProps",
   "SourceRender",
   "SourceParentAttachment",
-  "PortDiscovery", // probably going to be removed b/c port discovery can always be done on prop change
+  "PortDiscovery",
   "PortMatching",
   "SourceTraceRender",
   "SchematicComponentRender",
@@ -16,8 +16,9 @@ export const orderedRenderPhases = [
   "SchematicPortRender",
   "SchematicTraceRender",
   "PcbComponentRender",
-  "PcbPortRender",
   "PcbPrimitiveRender",
+  "PcbFootprintLayout",
+  "PcbPortRender",
   "PcbParentAttachment",
   "PcbLayout",
   "PcbTraceRender",

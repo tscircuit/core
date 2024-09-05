@@ -1,10 +1,16 @@
 export type PointLike =
-  | { getGlobalPcbPosition: () => { x: number; y: number } }
+  | { _getGlobalPcbPositionBeforeLayout: () => { x: number; y: number } }
   | { x: number; y: number }
 
 const getDistance = (a: PointLike, b: PointLike) => {
-  const aPos = "getGlobalPcbPosition" in a ? a.getGlobalPcbPosition() : a
-  const bPos = "getGlobalPcbPosition" in b ? b.getGlobalPcbPosition() : b
+  const aPos =
+    "_getGlobalPcbPositionBeforeLayout" in a
+      ? a._getGlobalPcbPositionBeforeLayout()
+      : a
+  const bPos =
+    "_getGlobalPcbPositionBeforeLayout" in b
+      ? b._getGlobalPcbPositionBeforeLayout()
+      : b
   return Math.sqrt((aPos.x - bPos.x) ** 2 + (aPos.y - bPos.y) ** 2)
 }
 

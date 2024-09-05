@@ -63,6 +63,18 @@ export abstract class PrimitiveComponent<
     )
   }
 
+  /**
+   * A primitive container is a component that contains one or more ports and
+   * primitive components that are designed to interact.
+   *
+   * For example a resistor contains ports and smtpads that interact, so the
+   * resistor is a primitive container. Inside a primitive container, the ports
+   * and pads are likely to reference each other and look for eachother during
+   * the port matching phase.
+   *
+   */
+  isPrimitiveContainer = false
+
   source_group_id: string | null = null
   source_component_id: string | null = null
   schematic_component_id: string | null = null
@@ -120,9 +132,9 @@ export abstract class PrimitiveComponent<
    * components, including this component's translation and rotation.
    *
    * This is used to compute this component's position as well as all children
-   * components positions
+   * components positions before layout is applied
    */
-  computePcbGlobalTransform(): Matrix {
+  _computePcbGlobalTransformBeforeLayout(): Matrix {
     const { _parsedProps: props } = this
     const manualPlacement =
       this.getSubcircuit()._getManualPlacementForComponent(this)
@@ -134,7 +146,7 @@ export abstract class PrimitiveComponent<
       this.props.pcbY === undefined
     ) {
       return compose(
-        this.parent?.computePcbGlobalTransform() ?? identity(),
+        this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
         compose(
           translate(manualPlacement.x, manualPlacement.y),
           rotate(((props.pcbRotation ?? 0) * Math.PI) / 180),
@@ -143,8 +155,43 @@ export abstract class PrimitiveComponent<
     }
 
     return compose(
-      this.parent?.computePcbGlobalTransform() ?? identity(),
+      this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
       this.computePcbPropsTransform(),
+    )
+  }
+
+  getPrimitiveContainer(): PrimitiveComponent | null {
+    if (this.isPrimitiveContainer) return this
+    return this.parent?.getPrimitiveContainer?.() ?? null
+  }
+
+  /**
+   * Compute the bounds of this component the circuit json elements associated
+   * with it.
+   */
+  _getCircuitJsonBounds(): {
+    center: { x: number; y: number }
+    bounds: { left: number; top: number; right: number; bottom: number }
+    width: number
+    height: number
+  } {
+    return {
+      center: { x: 0, y: 0 },
+      bounds: { left: 0, top: 0, right: 0, bottom: 0 },
+      width: 0,
+      height: 0,
+    }
+  }
+
+  /**
+   * Set the position of this component from the layout solver. This method
+   * should operate using CircuitJson associated with this component, like
+   * _getCircuitJsonBounds it can be called multiple times as different
+   * parents apply layout to their children.
+   */
+  _setPositionFromLayout(newCenter: { x: number; y: number }) {
+    throw new Error(
+      `_setPositionFromLayout not implemented for ${this.componentName}`,
     )
   }
 
@@ -200,7 +247,7 @@ export abstract class PrimitiveComponent<
     for (const position of placementConfig.positions) {
       if (isMatchingSelector(component, position.selector)) {
         const center = applyToPoint(
-          this.computePcbGlobalTransform(),
+          this._computePcbGlobalTransformBeforeLayout(),
           position.center,
         )
         return center
@@ -210,11 +257,14 @@ export abstract class PrimitiveComponent<
     return null
   }
 
-  getGlobalPcbPosition(): { x: number; y: number } {
-    return applyToPoint(this.computePcbGlobalTransform(), { x: 0, y: 0 })
+  _getGlobalPcbPositionBeforeLayout(): { x: number; y: number } {
+    return applyToPoint(this._computePcbGlobalTransformBeforeLayout(), {
+      x: 0,
+      y: 0,
+    })
   }
 
-  getGlobalSchematicPosition(): { x: number; y: number } {
+  _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
     return applyToPoint(this.computeSchematicGlobalTransform(), { x: 0, y: 0 })
   }
 

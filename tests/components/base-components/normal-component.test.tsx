@@ -27,10 +27,9 @@ it("should be able to get ports from Footprint class", () => {
 
   footprint.add(
     new SmtPad({
-      pcbX: 0,
-      pcbY: 0,
       layer: "top",
       shape: "circle",
+      radius: 0.2,
       portHints: ["pin1"],
     }),
   )

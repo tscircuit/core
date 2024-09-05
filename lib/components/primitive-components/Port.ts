@@ -32,7 +32,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     this.matchedComponents = []
   }
 
-  getGlobalPcbPosition(): { x: number; y: number } {
+  _getGlobalPcbPositionBeforeLayout(): { x: number; y: number } {
     const matchedPcbElm = this.matchedComponents.find((c) => c.isPcbPrimitive)
 
     if (!matchedPcbElm) {
@@ -41,10 +41,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       )
     }
 
-    return matchedPcbElm?.getGlobalPcbPosition() ?? { x: 0, y: 0 }
+    return matchedPcbElm?._getGlobalPcbPositionBeforeLayout() ?? { x: 0, y: 0 }
   }
 
-  getGlobalSchematicPosition(): { x: number; y: number } {
+  _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
     if (!this.schematicSymbolPortDef) {
       return applyToPoint(this.parent!.computeSchematicGlobalTransform(), {
         x: 0,
@@ -146,11 +146,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     this.source_component_id = this.parent?.source_component_id
   }
 
-  /**
-   * For PcbPorts, we use the parent attachment phase to determine where to place
-   * the pcb_port (prior to this phase, the smtpad/platedhole isn't guaranteed
-   * to exist)
-   */
   doInitialPcbPortRender(): void {
     const { db } = this.root!
     const { matchedComponents } = this
@@ -173,19 +168,19 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const pcbMatch: any = pcbMatches[0]
 
-    if ("getGlobalPcbPosition" in pcbMatch) {
+    if ("_getCircuitJsonBounds" in pcbMatch) {
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
         layers: ["top"],
 
-        ...pcbMatch.getGlobalPcbPosition(),
+        ...pcbMatch._getCircuitJsonBounds().center,
 
         source_port_id: this.source_port_id!,
       })
       this.pcb_port_id = pcb_port.pcb_port_id
     } else {
       throw new Error(
-        `${pcbMatch.getString()} does not have a getGlobalPcbPosition method (needed for pcb_port placement)`,
+        `${pcbMatch.getString()} does not have a _getGlobalPcbPositionBeforeLayout method (needed for pcb_port placement)`,
       )
     }
   }
@@ -196,8 +191,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (!this.parent) return
 
-    const center = this.getGlobalSchematicPosition()
-    const parentCenter = this.parent?.getGlobalSchematicPosition()
+    const center = this._getGlobalSchematicPositionBeforeLayout()
+    const parentCenter = this.parent?._getGlobalSchematicPositionBeforeLayout()
 
     this.facingDirection = getRelativeDirection(parentCenter, center)
 

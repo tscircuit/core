@@ -42,7 +42,7 @@ export class Board extends Group<typeof boardProps> {
     this.pcb_board_id = null
   }
 
-  computePcbGlobalTransform(): Matrix {
+  _computePcbGlobalTransformBeforeLayout(): Matrix {
     return identity()
   }
 }

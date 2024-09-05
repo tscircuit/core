@@ -24,7 +24,7 @@ export class SilkscreenPath extends PrimitiveComponent<
       )
     }
 
-    const transform = this.computePcbGlobalTransform()
+    const transform = this._computePcbGlobalTransformBeforeLayout()
 
     const pcb_silkscreen_path = db.pcb_silkscreen_path.insert({
       pcb_component_id: this.parent?.pcb_component_id!,

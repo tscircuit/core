@@ -46,6 +46,8 @@ export class NormalComponent<
 > extends PrimitiveComponent<ZodProps> {
   reactSubtrees: Array<ReactSubtree> = []
 
+  isPrimitiveContainer = true
+
   constructor(props: z.input<ZodProps>) {
     super(props)
     this._addChildrenFromStringFootprint()
@@ -199,7 +201,7 @@ export class NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
     const pcb_component = db.pcb_component.insert({
-      center: this.getGlobalPcbPosition(),
+      center: this._getGlobalPcbPositionBeforeLayout(),
       // width/height are computed in the PcbComponentSizeCalculation phase
       width: 0,
       height: 0,
@@ -226,7 +228,7 @@ export class NormalComponent<
 
     for (const child of this.children) {
       if (child.isPcbPrimitive) {
-        const { x, y } = child.getGlobalPcbPosition()
+        const { x, y } = child._getGlobalPcbPositionBeforeLayout()
         const { width, height } = child.getPcbSize()
         minX = Math.min(minX, x - width / 2)
         minY = Math.min(minY, y - height / 2)
