@@ -108,7 +108,7 @@ export class Circuit {
     return identity()
   }
 
-  computePcbGlobalTransform(): Matrix {
+  _computePcbGlobalTransformBeforeLayout(): Matrix {
     return identity()
   }
 
@@ -124,4 +124,7 @@ export class Circuit {
   }
 }
 
+/**
+ * @deprecated
+ */
 export const Project = Circuit

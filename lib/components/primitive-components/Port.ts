@@ -173,19 +173,19 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const pcbMatch: any = pcbMatches[0]
 
-    if ("getGlobalPcbPosition" in pcbMatch) {
+    if ("_getGlobalPcbPositionBeforeLayout" in pcbMatch) {
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
         layers: ["top"],
 
-        ...pcbMatch.getGlobalPcbPosition(),
+        ...pcbMatch._getGlobalPcbPositionBeforeLayout(),
 
         source_port_id: this.source_port_id!,
       })
       this.pcb_port_id = pcb_port.pcb_port_id
     } else {
       throw new Error(
-        `${pcbMatch.getString()} does not have a getGlobalPcbPosition method (needed for pcb_port placement)`,
+        `${pcbMatch.getString()} does not have a _getGlobalPcbPositionBeforeLayout method (needed for pcb_port placement)`,
       )
     }
   }

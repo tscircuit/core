@@ -11,7 +11,7 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
    * A footprint is a constrainedlayout, the db elements are adjusted according
    * to any constraints that are defined.
    */
-  doInitialPcbLayout() {
+  doInitialPcbFootprintLayout() {
     const constraints = this.children.filter(
       (child) => child.componentName === "Constraint",
     ) as Constraint[]
