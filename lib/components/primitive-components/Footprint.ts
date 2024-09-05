@@ -2,6 +2,9 @@ import type { footprintProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Constraint } from "./Constraint"
 import * as kiwi from "@lume/kiwi"
+import Debug from "debug"
+
+const debug = Debug("tscircuit:core:footprint")
 
 export class Footprint extends PrimitiveComponent<typeof footprintProps> {
   /**
@@ -69,7 +72,7 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
               expr,
               kiwi.Operator.Eq,
               props.xdist,
-              kiwi.Strength.medium,
+              kiwi.Strength.required,
             ),
           )
         } else if (edgeToEdge) {
@@ -86,7 +89,7 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
               expr,
               kiwi.Operator.Eq,
               props.xdist,
-              kiwi.Strength.medium,
+              kiwi.Strength.required,
             ),
           )
         }
@@ -94,14 +97,63 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
 
       // 3. Solve the system of equations
       solver.updateVariables()
+      if (debug.enabled) {
+        console.log("Solution to layout constraints:")
+        console.table(
+          Object.entries(kVars).map(([key, kvar]) => ({
+            var: key,
+            val: kvar.value(),
+          })),
+        )
+      }
+
+      // 3.1 Compute the global offset. There are different ways to do this:
+      // - If any component has a fixed position, then that can be used as the
+      //   origin to determine the offset of all other components
+      // - If no component has a fixed position, then we recenter everything
+      //   using the new bounds of all the involved components
+
+      // TODO determine if there's a fixed component
+
+      // Determine the new bounds all the involved components and compute the
+      // bounds of this footprint
+      const bounds = {
+        left: Infinity,
+        right: -Infinity,
+        top: -Infinity,
+        bottom: Infinity,
+      }
+      for (const {
+        selector,
+        bounds: { width, height },
+      } of involvedComponents) {
+        const kvx = getKVar(`${selector}_x`)
+        const kvy = getKVar(`${selector}_y`)
+
+        const newLeft = kvx.value() - width / 2
+        const newRight = kvx.value() + width / 2
+        const newTop = kvy.value() + height / 2
+        const newBottom = kvy.value() - height / 2
+
+        bounds.left = Math.min(bounds.left, newLeft)
+        bounds.right = Math.max(bounds.right, newRight)
+        bounds.top = Math.max(bounds.top, newTop)
+        bounds.bottom = Math.min(bounds.bottom, newBottom)
+      }
+
+      // Compute the global offset, we can use this to recenter each component
+      const globalOffset = {
+        x: -(bounds.right + bounds.left) / 2,
+        y: -(bounds.top + bounds.bottom) / 2,
+      }
 
       // 4. Update the component positions
       for (const { component, selector } of involvedComponents) {
         const kvx = getKVar(`${selector}_x`)
         const kvy = getKVar(`${selector}_y`)
         component._setPositionFromLayout({
-          x: kvx.value(),
-          y: kvy.value(),
+          x: kvx.value() + globalOffset.x,
+          y: kvy.value() + globalOffset.y,
         })
       }
     }

@@ -37,6 +37,7 @@ test("footprint layout", () => {
 
   const smtpads = circuit.db.pcb_smtpad.list()
 
+  console.log(smtpads)
   expect(Math.abs(smtpads[0].x - smtpads[1].x)).toBeCloseTo(4, 1)
 
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
