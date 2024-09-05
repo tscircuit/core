@@ -14,7 +14,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
 
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
-    return { width: props.holeDiameter, height: props.holeDiameter }
+    return { width: props.diameter, height: props.diameter }
   }
 
   doInitialPcbPrimitiveRender(): void {
@@ -25,7 +25,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     const inserted_hole = db.pcb_hole.insert({
       hole_shape: "round",
       // @ts-ignore
-      hole_diameter: props.holeDiameter,
+      hole_diameter: props.diameter,
       x: position.x,
       y: position.y,
     })
