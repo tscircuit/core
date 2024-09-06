@@ -179,3 +179,5 @@ dist
 
 *.old.ts
 context
+
+test.json
