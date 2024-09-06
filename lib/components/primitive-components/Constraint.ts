@@ -56,15 +56,19 @@ export class Constraint extends PrimitiveComponent<typeof constraintProps> {
     function addComponentFromSelector(selector: string) {
       // TODO this selector has to be modified in case it contains a leftedge,
       // center/topedge/rightedge indicator
-      const component = container.selectOne(selector)
+      const maybeEdge = selector.split(" ").pop() as EdgeSpecifier
+      const edge = edgeSpecifiers.includes(maybeEdge) ? maybeEdge : undefined
+      const componentSelector = edge
+        ? selector.replace(` ${edge}`, "")
+        : selector
+      const component = container.selectOne(componentSelector, {
+        pcbPrimitive: true,
+      })
       if (component) {
-        const maybeEdge = selector.split(" ").pop() as EdgeSpecifier
-        const edge = edgeSpecifiers.includes(maybeEdge) ? maybeEdge : undefined
-
         componentsWithSelectors.push({
           selector,
           component,
-          componentSelector: edge ? selector.replace(` ${edge}`, "") : selector,
+          componentSelector,
           edge,
         })
       }

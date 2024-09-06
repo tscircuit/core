@@ -143,5 +143,6 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       x: newCenter.x,
       y: newCenter.y,
     })
+    this.matchedPort?._setPositionFromLayout(newCenter)
   }
 }

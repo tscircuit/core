@@ -208,9 +208,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   _setPositionFromLayout(newCenter: { x: number; y: number }): void {
     const { db } = this.root!
+    if (!this.pcb_port_id) return
 
-    db.schematic_port.update(this.schematic_port_id!, {
-      center: newCenter,
+    db.pcb_port.update(this.pcb_port_id!, {
+      x: newCenter.x,
+      y: newCenter.y,
     })
   }
 }
