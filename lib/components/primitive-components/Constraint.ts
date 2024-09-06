@@ -51,12 +51,12 @@ export class Constraint extends PrimitiveComponent<typeof constraintProps> {
       edge: EdgeSpecifier | undefined
     }> = []
 
-    const subcircuit = this.getSubcircuit()
+    const container = this.getPrimitiveContainer()!
 
     function addComponentFromSelector(selector: string) {
       // TODO this selector has to be modified in case it contains a leftedge,
       // center/topedge/rightedge indicator
-      const component = subcircuit.selectOne(selector)
+      const component = container.selectOne(selector)
       if (component) {
         const maybeEdge = selector.split(" ").pop() as EdgeSpecifier
         const edge = edgeSpecifiers.includes(maybeEdge) ? maybeEdge : undefined

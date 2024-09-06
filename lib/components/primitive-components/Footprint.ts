@@ -220,6 +220,12 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
       y: -(bounds.top + bounds.bottom) / 2,
     }
 
+    const containerPos =
+      this.getPrimitiveContainer()!._getGlobalPcbPositionBeforeLayout()
+
+    globalOffset.x += containerPos.x
+    globalOffset.y += containerPos.y
+
     // 4. Update the component positions
     for (const { component, selector } of involvedComponents) {
       const kvx = getKVar(`${selector}_x`)
