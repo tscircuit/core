@@ -23,11 +23,19 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
         (constraint) =>
           constraint._getAllReferencedComponents().componentsWithSelectors,
       )
-      .map(({ component, selector }) => ({
+      .map(({ component, selector, componentSelector, edge }) => ({
         component,
         selector,
+        componentSelector,
+        edge,
         bounds: component._getCircuitJsonBounds(),
       }))
+
+    if (involvedComponents.some((c) => c.edge)) {
+      throw new Error(
+        "edge constraints not implemented yet for footprint layout, contributions welcome!",
+      )
+    }
 
     function getComponentDetails(selector: string) {
       return involvedComponents.find(({ selector: s }) => s === selector)
@@ -56,8 +64,8 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
     for (const constraint of constraints) {
       const props = constraint._parsedProps
 
-      if ("xdist" in props) {
-        const { xdist, left, right, edgeToEdge, centerToCenter } = props
+      if ("xDist" in props) {
+        const { xDist, left, right, edgeToEdge, centerToCenter } = props
         const leftVar = getKVar(`${left}_x`)
         const rightVar = getKVar(`${right}_x`)
         const leftBounds = getComponentDetails(left)?.bounds!
@@ -70,7 +78,7 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
             new kiwi.Constraint(
               expr,
               kiwi.Operator.Eq,
-              props.xdist,
+              props.xDist,
               kiwi.Strength.required,
             ),
           )
@@ -87,13 +95,13 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
             new kiwi.Constraint(
               expr,
               kiwi.Operator.Eq,
-              props.xdist,
+              props.xDist,
               kiwi.Strength.required,
             ),
           )
         }
-      } else if ("ydist" in props) {
-        const { ydist, top, bottom, edgeToEdge, centerToCenter } = props
+      } else if ("yDist" in props) {
+        const { yDist, top, bottom, edgeToEdge, centerToCenter } = props
         const topVar = getKVar(`${top}_y`)
         const bottomVar = getKVar(`${bottom}_y`)
         const topBounds = getComponentDetails(top)?.bounds!
@@ -108,7 +116,7 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
             new kiwi.Constraint(
               expr,
               kiwi.Operator.Eq,
-              props.ydist,
+              props.yDist,
               kiwi.Strength.required,
             ),
           )
@@ -125,11 +133,38 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
             new kiwi.Constraint(
               expr,
               kiwi.Operator.Eq,
-              props.ydist,
+              props.yDist,
               kiwi.Strength.required,
             ),
           )
         }
+      } else if ("sameY" in props) {
+        const { for: selectors } = props
+        if (selectors.length < 2) continue
+        const vars = selectors.map((selector) => getKVar(`${selector}_y`))
+        const expr = new kiwi.Expression(...vars.slice(1))
+
+        solver.addConstraint(
+          new kiwi.Constraint(
+            expr,
+            kiwi.Operator.Eq,
+            vars[0],
+            kiwi.Strength.required,
+          ),
+        )
+      } else if ("sameX" in props) {
+        const { for: selectors } = props
+        if (selectors.length < 2) continue
+        const vars = selectors.map((selector) => getKVar(`${selector}_x`))
+        const expr = new kiwi.Expression(...vars.slice(1))
+        solver.addConstraint(
+          new kiwi.Constraint(
+            expr,
+            kiwi.Operator.Eq,
+            vars[0],
+            kiwi.Strength.required,
+          ),
+        )
       }
     }
 
