@@ -55,7 +55,8 @@ test("example2-switchshaft", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <SwitchShaft name="S1" />
+      <SwitchShaft name="S1" pcbX={0} pcbY={0} />
+      <SwitchShaft name="S2" pcbX={0} pcbY={-10} />
     </board>,
   )
 
