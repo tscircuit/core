@@ -46,3 +46,34 @@ export class SilkscreenPath extends PrimitiveComponent<
     this.pcb_silkscreen_path_id = pcb_silkscreen_path.pcb_silkscreen_path_id
   }
 }
+import { z } from "zod"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+
+const silkscreenPathProps = z.object({
+  path: z.string(),
+  layer: z.enum(["top", "bottom"]).default("top"),
+  width: z.string().optional(),
+})
+
+export class SilkscreenPath extends PrimitiveComponent<typeof silkscreenPathProps> {
+  constructor(props: z.input<typeof silkscreenPathProps>) {
+    super(props)
+  }
+
+  get config() {
+    return {
+      zodProps: silkscreenPathProps,
+    }
+  }
+
+  doInitialSourceComponentRender(): void {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+
+    db.source_component.create({
+      id: this.id,
+      type: "silkscreenpath",
+      ...props,
+    })
+  }
+}
