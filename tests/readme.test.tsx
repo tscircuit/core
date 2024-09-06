@@ -1,5 +1,5 @@
 import { it, expect } from "bun:test"
-import { Board, Resistor, Circuit } from "../index"
+import { Board, Resistor, Circuit, SilkscreenText } from "../index"
 import { Led } from "lib/components/normal-components/Led"
 import "lib/register-catalogue"
 
@@ -17,12 +17,15 @@ it("should create soup with various elements", () => {
 
   board.add(<led name="LED1" footprint="0402" />)
 
+  board.add(<silkscreentext name="TEXT1" text="Test" x={5} y={5} size={1} />)
+
   project.render()
 
   // Let's check the db to make sure everything we expect is there
 
   expect(project.db.source_component.select(".R1")?.name).toBe("R1")
   // expect(project.db.source_component.select(".LED1")?.name).toBe("LED1")
+  expect(project.db.source_component.select(".TEXT1")?.name).toBe("TEXT1")
 
   expect(project.db.pcb_smtpad.list()).toHaveLength(4)
 
