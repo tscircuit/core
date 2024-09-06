@@ -6,8 +6,7 @@ import { extendCatalogue } from "./fiber/catalogue"
 // it'll automatically be registered!
 extendCatalogue(Components)
 
-// Aliases
+// Aliases (only when class name is different than the name of the component)
 extendCatalogue({
   Bug: Components.Chip,
-  silkscreentext: Components.SilkscreenText,
 })
