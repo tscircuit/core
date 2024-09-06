@@ -16,17 +16,19 @@ export class KeepOut extends PrimitiveComponent<typeof pcbKeepoutProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    const { db } = this.project!
+    const { db } = this.root!
     const { _parsedProps: props } = this
-    const position = this.getGlobalPcbPosition()
-    const decomposedMat = decomposeTSR(this.computePcbGlobalTransform())
+    const position = this._getGlobalPcbPositionBeforeLayout()
+    const decomposedMat = decomposeTSR(
+      this._computePcbGlobalTransformBeforeLayout(),
+    )
     const isRotated90 =
       Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) < 0.01
 
     let pcb_keepout: PCBKeepout | null = null
     if (props.shape === "circle") {
       pcb_keepout = db.pcb_keepout.insert({
-        layer: ["top"], 
+        layer: ["top"],
         shape: "circle",
         // @ts-ignore: no idea why this is triggering
         radius: props.radius,
@@ -37,12 +39,12 @@ export class KeepOut extends PrimitiveComponent<typeof pcbKeepoutProps> {
       })
     } else if (props.shape === "rect") {
       pcb_keepout = db.pcb_keepout.insert({
-        layer: ["top"], 
+        layer: ["top"],
         shape: "rect",
         ...(isRotated90
           ? { width: props.height, height: props.width }
           : { width: props.width, height: props.height }),
-          // @ts-ignore: no idea why this is triggering
+        // @ts-ignore: no idea why this is triggering
         x: position.x,
         y: position.y,
       })
