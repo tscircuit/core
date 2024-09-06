@@ -53,7 +53,7 @@ const hostConfig: HostConfig<
         )
       }
       throw new Error(
-        `Unsupported component type (not registered in @tscircuit/core catalogue): ${type}`,
+        `Unsupported component type (not registered in @tscircuit/core catalogue): "${type}" See CREATING_NEW_COMPONENTS.md`,
       )
     }
 
