@@ -27,6 +27,7 @@ test("footprint layout", () => {
               holeDiameter="0.75mm"
               outerDiameter="1mm"
               shape="circle"
+              portHints={["pin3"]}
             />
             <constraint pcb edgeToEdge xDist="4mm" left=".pin1" right=".pin2" />
             <constraint
@@ -56,10 +57,11 @@ test("footprint layout", () => {
 
   const pcbPorts = circuit.db.pcb_port.list()
 
-  expect(pcbPorts.length).toBe(2)
+  expect(pcbPorts.length).toBe(3)
 
-  expect(pcbPorts[0].x).toBeOneOf([-2.5, 2.5])
-  expect(pcbPorts[1].x).toBeOneOf([-2.5, 2.5])
+  const portXPositions = pcbPorts.map((p) => p.x).sort()
+
+  expect(portXPositions).toEqual([-2.5, 0, 2.5])
 
   // Check hole position
   const hole = circuit.db.pcb_plated_hole.list()[0]

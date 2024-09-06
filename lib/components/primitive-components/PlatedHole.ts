@@ -56,11 +56,12 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       x: newCenter.x,
       y: newCenter.y,
     })
+    this.matchedPort?._setPositionFromLayout(newCenter)
   }
 
   doInitialPortMatching(): void {
-    const parentPorts = (this.parent?.children ?? []).filter(
-      (c) => c.componentName === "Port",
+    const parentPorts = this.getPrimitiveContainer()?.selectAll(
+      "port",
     ) as Port[]
 
     if (!this.props.portHints) {
