@@ -44,6 +44,24 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     return matchedPcbElm?._getGlobalPcbPositionBeforeLayout() ?? { x: 0, y: 0 }
   }
 
+  _getPcbCircuitJsonBounds() {
+    if (!this.pcb_port_id) {
+      return super._getPcbCircuitJsonBounds()
+    }
+    const { db } = this.root!
+    const pcb_port = db.pcb_port.get(this.pcb_port_id)!
+    return {
+      center: { x: pcb_port.x, y: pcb_port.y },
+      bounds: { left: 0, top: 0, right: 0, bottom: 0 },
+      width: 0,
+      height: 0,
+    }
+  }
+
+  _getGlobalPcbPositionAfterLayout(): { x: number; y: number } {
+    return this._getPcbCircuitJsonBounds().center
+  }
+
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
     if (!this.schematicSymbolPortDef) {
       return applyToPoint(this.parent!.computeSchematicGlobalTransform(), {
@@ -168,12 +186,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const pcbMatch: any = pcbMatches[0]
 
-    if ("_getCircuitJsonBounds" in pcbMatch) {
+    if ("_getPcbCircuitJsonBounds" in pcbMatch) {
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
         layers: ["top"],
 
-        ...pcbMatch._getCircuitJsonBounds().center,
+        ...pcbMatch._getPcbCircuitJsonBounds().center,
 
         source_port_id: this.source_port_id!,
       })

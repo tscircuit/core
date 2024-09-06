@@ -166,10 +166,10 @@ export abstract class PrimitiveComponent<
   }
 
   /**
-   * Compute the bounds of this component the circuit json elements associated
-   * with it.
+   * Compute the PCB bounds of this component the circuit json elements
+   * associated with it.
    */
-  _getCircuitJsonBounds(): {
+  _getPcbCircuitJsonBounds(): {
     center: { x: number; y: number }
     bounds: { left: number; top: number; right: number; bottom: number }
     width: number
@@ -186,7 +186,7 @@ export abstract class PrimitiveComponent<
   /**
    * Set the position of this component from the layout solver. This method
    * should operate using CircuitJson associated with this component, like
-   * _getCircuitJsonBounds it can be called multiple times as different
+   * _getPcbCircuitJsonBounds it can be called multiple times as different
    * parents apply layout to their children.
    */
   _setPositionFromLayout(newCenter: { x: number; y: number }) {

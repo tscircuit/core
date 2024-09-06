@@ -32,7 +32,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     this.pcb_hole_id = inserted_hole.pcb_hole_id!
   }
 
-  _getCircuitJsonBounds(): {
+  _getPcbCircuitJsonBounds(): {
     center: { x: number; y: number }
     bounds: { left: number; top: number; right: number; bottom: number }
     width: number
