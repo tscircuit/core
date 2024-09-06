@@ -21,6 +21,7 @@ declare global {
       schematictext: Props.SchematicTextProps
       smtpad: Props.SmtPadProps
       platedhole: Props.PlatedHoleProps
+      keepout: Props.PcbKeepoutProps
       hole: Props.HoleProps
       port: Props.PortProps
       group: Props.GroupProps
