@@ -8,7 +8,7 @@ declare global {
       inductor: Props.InductorProps
       diode: Props.DiodeProps
       led: Props.LedProps
-      board: Props.BoardProps
+      board: Props.BoardProps & { outline?: string }
       jumper: Props.JumperProps
       bug: Props.ChipProps
       // TODO use ChipProps once it gets merged in @tscircuit/props
