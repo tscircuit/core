@@ -13,6 +13,8 @@ const edgeSpecifiers = [
 export type EdgeSpecifier = (typeof edgeSpecifiers)[number]
 
 export class Constraint extends PrimitiveComponent<typeof constraintProps> {
+  componentName = "Constraint"
+
   get config() {
     return {
       zodProps: constraintProps,

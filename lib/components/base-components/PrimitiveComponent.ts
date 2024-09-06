@@ -92,8 +92,8 @@ export abstract class PrimitiveComponent<
     ) as z.infer<ZodProps>
     if (!this.componentName) {
       this.componentName = this.constructor.name
-      this.lowercaseComponentName = this.componentName.toLowerCase()
     }
+    this.lowercaseComponentName = this.componentName.toLowerCase()
   }
 
   setProps(props: Partial<z.input<ZodProps>>) {
