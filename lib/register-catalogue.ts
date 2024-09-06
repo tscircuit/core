@@ -9,4 +9,5 @@ extendCatalogue(Components)
 // Aliases
 extendCatalogue({
   Bug: Components.Chip,
+  silkscreentext: Components.SilkscreenText,
 })
