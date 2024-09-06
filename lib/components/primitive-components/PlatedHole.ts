@@ -27,7 +27,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     )
   }
 
-  _getCircuitJsonBounds(): {
+  _getPcbCircuitJsonBounds(): {
     center: { x: number; y: number }
     bounds: { left: number; top: number; right: number; bottom: number }
     width: number

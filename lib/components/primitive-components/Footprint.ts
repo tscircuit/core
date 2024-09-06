@@ -28,7 +28,7 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
         selector,
         componentSelector,
         edge,
-        bounds: component._getCircuitJsonBounds(),
+        bounds: component._getPcbCircuitJsonBounds(),
       }))
 
     if (involvedComponents.some((c) => c.edge)) {

@@ -38,7 +38,7 @@ type PcbRouteObjective =
   | { layers: string[]; x: number; y: number; via?: boolean }
 
 const portToObjective = (port: Port): PcbRouteObjective => {
-  const portPosition = port._getGlobalPcbPositionBeforeLayout()
+  const portPosition = port._getGlobalPcbPositionAfterLayout()
   return {
     ...portPosition,
     layers: port.getAvailablePcbLayers(),
