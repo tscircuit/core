@@ -4,7 +4,7 @@ import type { RenderPhaseFn } from "../base-components/Renderable"
 import type { PCBKeepout } from "@tscircuit/soup"
 import { decomposeTSR } from "transformation-matrix"
 
-export class KeepOut extends PrimitiveComponent<typeof pcbKeepoutProps> {
+export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   pcb_keepout_id: string | null = null
 
   isPcbPrimitive = true
@@ -28,7 +28,7 @@ export class KeepOut extends PrimitiveComponent<typeof pcbKeepoutProps> {
     let pcb_keepout: PCBKeepout | null = null
     if (props.shape === "circle") {
       pcb_keepout = db.pcb_keepout.insert({
-        layer: ["top"],
+        layers: ["top"],
         shape: "circle",
         // @ts-ignore: no idea why this is triggering
         radius: props.radius,
@@ -39,14 +39,16 @@ export class KeepOut extends PrimitiveComponent<typeof pcbKeepoutProps> {
       })
     } else if (props.shape === "rect") {
       pcb_keepout = db.pcb_keepout.insert({
-        layer: ["top"],
+        layers: ["top"],
         shape: "rect",
         ...(isRotated90
           ? { width: props.height, height: props.width }
           : { width: props.width, height: props.height }),
         // @ts-ignore: no idea why this is triggering
-        x: position.x,
-        y: position.y,
+        center: {
+          x: position.x,
+          y: position.y,
+        },
       })
     }
     if (pcb_keepout) {
