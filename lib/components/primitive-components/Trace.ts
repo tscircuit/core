@@ -37,6 +37,22 @@ import {
   isMatchingSelector,
 } from "lib/utils/selector-matching"
 
+export const traceProps = z.object({
+  width: z.string().optional(),
+  color: z.string().optional(),
+  layer: z.string().optional(),
+  net: z.string().optional(),
+  pcbTraceHint: z.object({
+    pcbPortId: z.string(),
+    pcbComponentId: z.string(),
+    route: z.array(z.object({
+      x: z.number(),
+      y: z.number(),
+      layer: z.string().optional(),
+    })).optional(),
+  }).optional(),
+})
+
 type PcbRouteObjective =
   | RouteHintPoint
   | { layers: string[]; x: number; y: number; via?: boolean }
