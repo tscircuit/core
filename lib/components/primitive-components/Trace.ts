@@ -60,6 +60,21 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     this._portsRoutedOnPcb = []
   }
 
+  doInitialPcbTraceRender() {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+
+    if (props.pcbTraceHint) {
+      db.pcb_trace_hint.insert({
+        pcb_trace_hint_id: this.id,
+        type: "pcb_trace_hint",
+        pcb_port_id: props.pcbTraceHint.pcbPortId,
+        pcb_component_id: props.pcbTraceHint.pcbComponentId,
+        route: props.pcbTraceHint.route,
+      })
+    }
+  }
+
   get config() {
     return {
       zodProps: traceProps,
