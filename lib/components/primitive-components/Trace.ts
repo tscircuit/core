@@ -305,19 +305,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const manualTraceHints =
       this.getSubcircuit().props.layout?.manual_trace_hints ?? []
-    console.log("manualTraceHints", manualTraceHints)
-    // manualTraceHints [
-    //   {
-    //     pcb_port_selector: ".R1 > .pin2",
-    //     offsets: [
-    //       {
-    //         x: 0,
-    //         y: 5,
-    //         via: false,
-    //       }
-    //     ],
-    //   }
-    // ]
+
     const pcbRouteHints = (this._parsedProps.pcbRouteHints ?? [])
       .concat(hints.flatMap((h) => h.getPcbRouteHints()))
       .concat(
@@ -329,17 +317,6 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
           )
           .flatMap((hint: { offsets: RouteHintPoint[] }) => hint.offsets),
       )
-
-    console.log("pcbRouteHints", pcbRouteHints)
-    // pcbRouteHints [
-    //   {
-    //     x: 0,
-    //     y: 1,
-    //     via: undefined,
-    //     to_layer: undefined,
-    //     trace_width: undefined,
-    //   }
-    // ]
 
     if (ports.length > 2) {
       this.renderError(
