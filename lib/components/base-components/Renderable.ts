@@ -19,7 +19,7 @@ export const orderedRenderPhases = [
   "PcbPrimitiveRender",
   "PcbFootprintLayout",
   "PcbPortRender",
-  "PcbParentAttachment",
+  "PcbPortAttachment",
   "PcbLayout",
   "PcbTraceRender",
   "PcbRouteNetIslands",

@@ -98,4 +98,11 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     }
   }
+
+  doInitialPcbPortAttachment(): void {
+    const { db } = this.root!
+    db.pcb_plated_hole.update(this.pcb_plated_hole_id!, {
+      pcb_port_id: this.matchedPort?.pcb_port_id!,
+    })
+  }
 }
