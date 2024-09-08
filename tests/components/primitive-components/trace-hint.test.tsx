@@ -3,9 +3,9 @@ import type { TraceHint } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("simple trace with trace hint test", async () => {
-  const { project, logSoup } = getTestFixture()
+  const { circuit } = getTestFixture()
 
-  project.add(
+  circuit.add(
     <board width="10mm" height="10mm">
       <resistor
         name="R1"
@@ -20,12 +20,12 @@ it("simple trace with trace hint test", async () => {
     </board>,
   )
 
-  project.render()
-  const traceHint = project.firstChild!.selectOne("tracehint") as TraceHint
+  circuit.render()
+  const traceHint = circuit.firstChild!.selectOne("tracehint") as TraceHint
 
   // a bit of a look at the internals
   expect(traceHint.matchedPort).toBeTruthy()
 
-  expect(project).toMatchPcbSnapshot(import.meta.path)
-  expect(project).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
