@@ -3,6 +3,7 @@ import type { PrimitiveComponent } from "../components/base-components/Primitive
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
 import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
+import { Keepout } from "lib/components/primitive-components/Keepout"
 
 export const createComponentsFromSoup = (
   soup: AnySoupElement[],
@@ -53,6 +54,25 @@ export const createComponentsFromSoup = (
           }),
         )
       }
+    } else if (elm.type === "pcb_keepout" && elm.shape === "circle") {
+      components.push(
+        new Keepout({
+          pcbX: elm.center.x,
+          pcbY: elm.center.y,
+          shape: "circle",
+          radius: elm.radius,
+        }),
+      )
+    } else if (elm.type === "pcb_keepout" && elm.shape === "rect") {
+      components.push(
+        new Keepout({
+          pcbX: elm.center.x,
+          pcbY: elm.center.y,
+          shape: "rect",
+          width: elm.width,
+          height: elm.height,
+        }),
+      )
     }
   }
   return components

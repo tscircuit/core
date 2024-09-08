@@ -294,7 +294,8 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
           elm.type === "pcb_hole" ||
           elm.type === "source_port" ||
           elm.type === "pcb_port" ||
-          elm.type === "source_trace",
+          elm.type === "source_trace" ||
+          elm.type === "pcb_keepout",
       )
 
     const source_trace = db.source_trace.get(this.source_trace_id!)!
