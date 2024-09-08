@@ -91,6 +91,23 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     }
   }
 
+  doInitialSourceTraceRender(): void {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+
+    const { allPortsFound, portsWithSelectors: ports } = this._findConnectedPorts()
+    if (!allPortsFound) return
+
+    const nets = this._findConnectedNets().nets
+
+    const trace = db.source_trace.insert({
+      connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
+      connected_source_net_ids: nets.map((n) => n.source_net_id!),
+    })
+
+    this.source_trace_id = trace.source_trace_id
+  }
+
   get config() {
     return {
       zodProps: traceProps,
