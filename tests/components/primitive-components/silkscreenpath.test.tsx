@@ -36,6 +36,5 @@ test("SilkscreenPath rendering", () => {
 
   expect(silkscreenPaths[0].pcb_silkscreen_path_id).toBeTruthy()
 
-  Bun.write("silkscreenpath_test.json", JSON.stringify(silkscreenPaths, null, 2))
   expect(project).toMatchPcbSnapshot(import.meta.path)
 })
