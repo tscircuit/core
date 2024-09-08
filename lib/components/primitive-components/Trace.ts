@@ -377,6 +377,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       this.renderError(
         `Could not find a common layer (using hints) for trace ${this.getString()}`,
       )
+      return
     }
 
     // Cache the PCB obstacles, they'll be needed for each segment between
@@ -431,7 +432,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
               pointsToConnect: [a, b],
             },
           ],
-          layerCount: 1,
+          layerCount: 2, // Change to 2 to support top and bottom layers
           bounds: {
             minX: Math.min(a.x, b.x) - BOUNDS_MARGIN,
             maxX: Math.max(a.x, b.x) + BOUNDS_MARGIN,
@@ -442,8 +443,8 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       })
       const traces = ijump.solveAndMapToTraces()
       if (traces.length === 0) {
-        console.log(
-          `Could not find a route between ${a} and ${b} for ${this} (TODO render error)`,
+        this.renderError(
+          `Could not find a route between ${JSON.stringify(a)} and ${JSON.stringify(b)} for ${this}`,
         )
         return
       }
@@ -452,8 +453,23 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       routes.push(trace.route)
     }
 
+    const mergedRoute = mergeRoutes(routes)
+    
+    // Add vias where layer changes occur
+    const routeWithVias = mergedRoute.reduce((acc, point, index, array) => {
+      acc.push(point)
+      if (index < array.length - 1 && point.layer !== array[index + 1].layer) {
+        acc.push({
+          ...point,
+          via: true,
+          via_to_layer: array[index + 1].layer,
+        })
+      }
+      return acc
+    }, [] as PCBTrace["route"])
+
     const pcb_trace = db.pcb_trace.insert({
-      route: mergeRoutes(routes),
+      route: routeWithVias,
       source_trace_id: this.source_trace_id!,
     })
     this._portsRoutedOnPcb = ports
