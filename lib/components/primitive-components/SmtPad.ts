@@ -63,7 +63,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     if (props.shape === "circle") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
-        pcb_port_id: this.matchedPort?.pcb_port_id!,
+        pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
         layer: props.layer ?? "top",
         shape: "circle",
 
@@ -78,7 +78,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     } else if (props.shape === "rect") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
-        pcb_port_id: this.matchedPort?.pcb_port_id!,
+        pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
         layer: props.layer ?? "top",
         shape: "rect",
 
@@ -95,6 +95,13 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
     }
+  }
+
+  doInitialPcbPortAttachment(): void {
+    const { db } = this.root!
+    db.pcb_smtpad.update(this.pcb_smtpad_id!, {
+      pcb_port_id: this.matchedPort?.pcb_port_id!,
+    })
   }
 
   _getPcbCircuitJsonBounds(): {

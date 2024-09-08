@@ -48,7 +48,10 @@ test("example1", async () => {
 
   circuit.render()
 
-  await logSoup("example1")
+  // the PcbPortAttachment phase should configure all the port ids
+  expect(
+    circuit.db.pcb_smtpad.list().map((smtpad) => smtpad.pcb_port_id),
+  ).not.toContain(null)
 
   await expect(
     circuit.getSvg({
