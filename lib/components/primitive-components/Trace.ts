@@ -32,6 +32,10 @@ import type { Net } from "./Net"
 import { getClosest } from "lib/utils/getClosest"
 import { z } from "zod"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
+import {
+  isMatchingPathSelector,
+  isMatchingSelector,
+} from "lib/utils/selector-matching"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -299,9 +303,20 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       port.matchedComponents.filter((c) => c.componentName === "TraceHint"),
     ) as TraceHint[]
 
-    const pcbRouteHints = (this._parsedProps.pcbRouteHints ?? []).concat(
-      hints.flatMap((h) => h.getPcbRouteHints()),
-    )
+    const manualTraceHints =
+      this.getSubcircuit().props.layout?.manual_trace_hints ?? []
+
+    const pcbRouteHints = (this._parsedProps.pcbRouteHints ?? [])
+      .concat(hints.flatMap((h) => h.getPcbRouteHints()))
+      .concat(
+        manualTraceHints
+          .filter((hint: { pcb_port_selector: string }) =>
+            ports.some((port) =>
+              isMatchingPathSelector(port, hint.pcb_port_selector),
+            ),
+          )
+          .flatMap((hint: { offsets: RouteHintPoint[] }) => hint.offsets),
+      )
 
     if (ports.length > 2) {
       this.renderError(

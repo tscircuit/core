@@ -58,5 +58,5 @@ test("example1", async () => {
       view: "pcb",
       layer: "top",
     }),
-  ).toMatchSvgSnapshot(import.meta.dir, "example1")
+  ).toMatchSvgSnapshot(import.meta.path, "example1")
 })
