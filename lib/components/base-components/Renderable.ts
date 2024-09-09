@@ -6,6 +6,7 @@ export const orderedRenderPhases = [
   "InitializePortsFromChildren",
   "CreateNetsFromProps",
   "CreateTracesFromProps",
+  "CreateTraceHintsFromProps",
   "SourceRender",
   "SourceParentAttachment",
   "PortDiscovery",

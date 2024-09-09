@@ -38,5 +38,7 @@ test("manual trace hints correctly change trace routes", async () => {
 
   circuit.render()
 
+  expect(circuit.selectAll("tracehint").length).toBe(1)
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
