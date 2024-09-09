@@ -57,4 +57,15 @@ export class TraceHint extends PrimitiveComponent<typeof traceHintProps> {
       }),
     )
   }
+
+  doInitialPcbTraceHintRender(): void {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+
+    db.pcb_trace_hint.insert({
+      pcb_component_id: this.matchedPort?.pcb_component_id!,
+      pcb_port_id: this.matchedPort?.pcb_port_id!,
+      route: this.getPcbRouteHints(),
+    })
+  }
 }
