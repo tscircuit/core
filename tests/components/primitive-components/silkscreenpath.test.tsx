@@ -22,8 +22,6 @@ test("SilkscreenPath rendering", () => {
 
   const silkscreenPaths = project.db.pcb_silkscreen_path.list()
 
-  console.log(JSON.stringify(silkscreenPaths[0], null, 2));
-
   expect(silkscreenPaths.length).toBe(1)
   expect(silkscreenPaths[0].layer).toBe("top")
   expect(silkscreenPaths[0].stroke_width).toBe(0.2)
