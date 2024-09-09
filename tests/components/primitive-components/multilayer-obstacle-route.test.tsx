@@ -44,10 +44,6 @@ test("multilayer obstacle route", async () => {
   // expect(circuit.db.pcb_smtpad.list().map((smtpad) => smtpad.pcb_port_id)).not.toContain(null)
   // expect(circuit.db.pcb_plated_hole.list()[0].hole_diameter).toBe(0.4)
 
-  Bun.write("test.json", JSON.stringify(circuit.getCircuitJson()))
-
-  await logSoup("multilayer obstacle route")
-
   await expect(
     circuit.getSvg({
       view: "pcb",
