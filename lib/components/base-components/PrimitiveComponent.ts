@@ -442,6 +442,17 @@ export abstract class PrimitiveComponent<
     return descendants
   }
 
+  // TODO we shouldn't need to override this, errors can be rendered and handled
+  // by the Renderable class, however, the Renderable class currently doesn't
+  // have access to the database or cleanup
+  renderError(message: Parameters<typeof Renderable.prototype.renderError>[0]) {
+    if (typeof message === "string") {
+      return super.renderError(message)
+    }
+    // TODO this needs to be cleaned up at some point!
+    this.root?.db.pcb_error.insert(message)
+  }
+
   getString(): string {
     const { lowercaseComponentName: cname, _parsedProps: props, parent } = this
     if (parent?.props?.name && props?.name) {

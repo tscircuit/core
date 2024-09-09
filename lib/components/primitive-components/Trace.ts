@@ -439,9 +439,16 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       })
       const traces = ijump.solveAndMapToTraces()
       if (traces.length === 0) {
-        this.renderError(
-          `Could not find a route between ${JSON.stringify(a)} and ${JSON.stringify(b)} for ${this}`,
-        )
+        this.renderError({
+          type: "pcb_error",
+          error_type: "pcb_trace_error",
+          message: `Could not find a route for ${this}`,
+          source_trace_id: this.source_trace_id!,
+          center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+          pcb_port_ids: ports.map((p) => p.pcb_port_id!),
+          pcb_trace_id: this.pcb_trace_id!,
+          pcb_component_ids: ports.map((p) => p.pcb_component_id!),
+        })
         return
       }
       // TODO ijump returns multiple traces for some reason

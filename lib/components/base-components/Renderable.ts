@@ -110,11 +110,17 @@ export abstract class Renderable implements IRenderable {
     }
   }
 
-  renderError(message: string | PCBTraceError | PCBPlacementError) {
+  renderError(
+    message:
+      | string
+      | Omit<PCBTraceError, "pcb_error_id">
+      | Omit<PCBPlacementError, "pcb_error_id">,
+  ) {
     // TODO add to render phase error list and try to add position or
     // relationships etc.
     if (typeof message === "string") {
       throw new Error(message)
     }
+    throw new Error(JSON.stringify(message, null, 2))
   }
 }

@@ -45,7 +45,7 @@ test("multilayer obstacle route", async () => {
   // expect(circuit.db.pcb_plated_hole.list()[0].hole_diameter).toBe(0.4)
 
   await expect(
-    circuit.getSvg({
+    await circuit.getSvg({
       view: "pcb",
       layer: "top",
     }),
