@@ -3,7 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { layout } from "@tscircuit/layout"
 
 test("manual trace hints correctly change trace routes", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit, logSoup } = getTestFixture()
 
   circuit.add(
     <board
@@ -15,9 +15,14 @@ test("manual trace hints correctly change trace routes", async () => {
             pcb_port_selector: ".R1 > .pin2",
             offsets: [
               {
-                x: 0,
+                x: -1,
                 y: 5,
-                via: false,
+                via: true,
+              },
+              {
+                x: 1,
+                y: 5,
+                via: true,
               },
             ],
           },
@@ -37,6 +42,14 @@ test("manual trace hints correctly change trace routes", async () => {
   )
 
   circuit.render()
+
+  expect(circuit.db.pcb_trace.list().length).toBe(1)
+
+  const traceRoute = circuit.db.pcb_trace.list()[0].route
+
+  expect(traceRoute.map((p) => ("layer" in p ? p.layer : ""))).toContain(
+    "bottom",
+  )
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
