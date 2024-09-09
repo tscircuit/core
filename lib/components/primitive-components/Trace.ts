@@ -9,6 +9,7 @@ import {
 } from "@tscircuit/infgrid-ijump-astar"
 import type {
   AnySoupElement,
+  LayerRef,
   PCBTrace,
   RouteHintPoint,
   SchematicTrace,
@@ -366,6 +367,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       this.renderError(
         `Could not find a common layer (using hints) for trace ${this.getString()}`,
       )
+      return
     }
 
     // Cache the PCB obstacles, they'll be needed for each segment between
@@ -420,7 +422,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
               pointsToConnect: [a, b],
             },
           ],
-          layerCount: 1,
+          layerCount: 2,
           bounds: {
             minX: Math.min(a.x, b.x) - BOUNDS_MARGIN,
             maxX: Math.max(a.x, b.x) + BOUNDS_MARGIN,
@@ -431,18 +433,67 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       })
       const traces = ijump.solveAndMapToTraces()
       if (traces.length === 0) {
-        console.log(
-          `Could not find a route between ${a} and ${b} for ${this} (TODO render error)`,
+        this.renderError(
+          `Could not find a route between ${JSON.stringify(a)} and ${JSON.stringify(b)} for ${this}`,
         )
         return
       }
       // TODO ijump returns multiple traces for some reason
       const [trace] = traces as PCBTrace[]
+      // TODO ijump always returns on top layer and has no multilayer support
+      // https://github.com/tscircuit/autorouting-dataset/issues/35
+      // For now, we'll move the trace to whatever layer the first point
+      // specifies we should have "via'd" to
+      if ("via_to_layer" in a) {
+        trace.route = trace.route.map((p) => {
+          if (p.route_type === "wire") {
+            p.layer = a.via_to_layer as LayerRef
+          }
+          return p
+        })
+      }
       routes.push(trace.route)
     }
 
+    const mergedRoute = mergeRoutes(routes)
+
+    // Add vias where layer changes occur
+    const routeWithVias = mergedRoute.flatMap((point, index) => {
+      const nextPoint = mergedRoute[index + 1]
+      if (!nextPoint) return [point]
+      if (
+        point.route_type === "wire" &&
+        nextPoint.route_type === "wire" &&
+        point.layer !== nextPoint.layer
+      ) {
+        return [
+          {
+            route_type: "via",
+            from_layer: point.layer,
+            to_layer: nextPoint.layer,
+            x: nextPoint.x,
+            y: nextPoint.y,
+          } as (typeof mergedRoute)[number],
+          point,
+        ]
+      }
+      return [point]
+    })
+
+    for (const via of routeWithVias.filter((p) => p.route_type === "via")) {
+      db.pcb_via.insert({
+        x: via.x,
+        y: via.y,
+        hole_diameter: 0.3,
+        outer_diameter: 0.6,
+        layers: [via.from_layer as LayerRef, via.to_layer as LayerRef],
+        from_layer: via.from_layer as LayerRef,
+        to_layer: via.to_layer as LayerRef,
+      })
+    }
+
     const pcb_trace = db.pcb_trace.insert({
-      route: mergeRoutes(routes),
+      route: routeWithVias,
       source_trace_id: this.source_trace_id!,
     })
     this._portsRoutedOnPcb = ports
