@@ -28,24 +28,28 @@ The render phases in @tscircuit/core are defined in the `Renderable` class (`Ren
 
 13. SchematicTraceRender: Renders traces in the schematic view.
 
-14. PcbComponentRender: Renders the PCB representation of the component.
+14. PcbInsertTraceHints: Inserts trace hints into the PCB from "manual trace hints" or other props that imply trace hints
 
-15. PcbPrimitiveRender: Renders primitive PCB elements (e.g., pads, holes).
+15. PcbComponentRender: Renders the PCB representation of the component.
 
-16. PcbFootprintLayout: Handles the layout of PCB footprints.
+16. PcbPrimitiveRender: Renders primitive PCB elements (e.g., pads, holes).
 
-17. PcbPortRender: Renders ports in the PCB view.
+17. PcbFootprintLayout: Handles the layout of PCB footprints.
 
-18. PcbPortAttachment: Attaches ports to their corresponding PCB elements.
+18. PcbPortRender: Renders ports in the PCB view.
 
-19. PcbLayout: Handles the overall layout of PCB components.
+19. PcbPortAttachment: Attaches ports to their corresponding PCB elements.
 
-20. PcbTraceRender: Renders traces in the PCB view.
+20. PcbLayout: Handles the overall layout of PCB components.
 
-21. PcbRouteNetIslands: Routes connections between isolated net islands on the PCB.
+21. PcbTraceRender: Renders traces in the PCB view.
 
-22. PcbComponentSizeCalculation: Calculates the size of PCB components.
+22. PcbTraceHintRender: Renders trace hints in the PCB view.
 
-23. CadModelRender: Renders 3D CAD models of components.
+23. PcbRouteNetIslands: Routes connections between isolated net islands on the PCB.
+
+24. PcbComponentSizeCalculation: Calculates the size of PCB components.
+
+25. CadModelRender: Renders 3D CAD models of components.
 
 Each of these phases is executed in order for every component in the project during the rendering process. Components can implement specific logic for each phase by defining methods like `doInitial<PhaseName>`, `update<PhaseName>`, or `remove<PhaseName>`.
