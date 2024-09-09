@@ -411,7 +411,10 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const routes: PCBTrace["route"][] = []
     for (const [a, b] of pairs(orderedRoutePoints)) {
+      const dominantLayer =
+        "via_to_layer" in a ? (a.via_to_layer as LayerRef) : null
       const BOUNDS_MARGIN = 2 //mm
+
       const ijump = new IJumpAutorouter({
         OBSTACLE_MARGIN: 0.3,
         input: {
@@ -419,7 +422,10 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
           connections: [
             {
               name: this.source_trace_id!,
-              pointsToConnect: [a, b],
+              pointsToConnect: [
+                { ...a, layer: dominantLayer ?? "top" },
+                { ...b, layer: dominantLayer ?? "top" },
+              ],
             },
           ],
           layerCount: 2,
@@ -444,10 +450,10 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       // https://github.com/tscircuit/autorouting-dataset/issues/35
       // For now, we'll move the trace to whatever layer the first point
       // specifies we should have "via'd" to
-      if ("via_to_layer" in a) {
+      if (dominantLayer) {
         trace.route = trace.route.map((p) => {
           if (p.route_type === "wire") {
-            p.layer = a.via_to_layer as LayerRef
+            p.layer = dominantLayer
           }
           return p
         })
@@ -521,6 +527,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       if (elm.type === "schematic_component") {
         obstacles.push({
           type: "rect",
+          layers: ["top"],
           center: elm.center,
           width: elm.size.width,
           height: elm.size.height,
@@ -530,13 +537,14 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     }
 
     for (const { port } of ports) {
-      connection.pointsToConnect.push(
-        projectPointInDirection(
+      connection.pointsToConnect.push({
+        ...projectPointInDirection(
           port._getGlobalSchematicPositionBeforeLayout(),
           port.facingDirection!,
           0.1501,
         ),
-      )
+        layer: "top",
+      })
     }
 
     const bounds = computeObstacleBounds(obstacles)
