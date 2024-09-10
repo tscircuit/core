@@ -17,7 +17,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
     return `net.${this.props.name}`
   }
 
-  doInitialSourceComponentRender(): void {
+  doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
