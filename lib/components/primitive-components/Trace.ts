@@ -19,6 +19,7 @@ import type {
   Obstacle,
   SimpleRouteConnection,
   SimpleRouteJson,
+  SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
 import { projectPointInDirection } from "lib/utils/projectPointInDirection"
@@ -37,6 +38,7 @@ import {
   isMatchingPathSelector,
   isMatchingSelector,
 } from "lib/utils/selector-matching"
+import { tryNow } from "lib/utils/try-now"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -285,22 +287,6 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       return
     }
 
-    const pcbElements: AnySoupElement[] = db
-      .toArray()
-      .filter(
-        (elm) =>
-          elm.type === "pcb_smtpad" ||
-          elm.type === "pcb_trace" ||
-          elm.type === "pcb_plated_hole" ||
-          elm.type === "pcb_hole" ||
-          elm.type === "source_port" ||
-          elm.type === "pcb_port" ||
-          elm.type === "source_trace" ||
-          elm.type === "pcb_keepout",
-      )
-
-    const source_trace = db.source_trace.get(this.source_trace_id!)!
-
     const hints = ports.flatMap((port) =>
       port.matchedComponents.filter((c) => c.componentName === "TraceHint"),
     ) as TraceHint[]
@@ -372,7 +358,24 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     // Cache the PCB obstacles, they'll be needed for each segment between
     // ports/hints
-    const obstacles = getObstaclesFromSoup(this.root!.db.toArray())
+    const [obstacles, err] = tryNow(() =>
+      getObstaclesFromSoup(this.root!.db.toArray()),
+    )
+
+    if (err) {
+      this.renderError({
+        type: "pcb_error",
+        error_type: "pcb_trace_error",
+        message: `Error getting obstacles for autorouting: ${err.message}`,
+        source_trace_id: this.source_trace_id!,
+        center: { x: 0, y: 0 },
+        pcb_port_ids: ports.map((p) => p.pcb_port_id!),
+        pcb_trace_id: this.pcb_trace_id!,
+        pcb_component_ids: [],
+      })
+      return
+    }
+
     markObstaclesAsConnected(
       obstacles,
       orderedRouteObjectives,
@@ -437,7 +440,22 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
           },
         },
       })
-      const traces = ijump.solveAndMapToTraces()
+      let traces: SimplifiedPcbTrace[] | null = null
+      try {
+        traces = ijump.solveAndMapToTraces()
+      } catch (e: any) {
+        this.renderError({
+          type: "pcb_error",
+          error_type: "pcb_trace_error",
+          message: `error solving route: ${e.message}`,
+          source_trace_id: this.source_trace_id!,
+          center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+          pcb_port_ids: ports.map((p) => p.pcb_port_id!),
+          pcb_trace_id: this.pcb_trace_id!,
+          pcb_component_ids: ports.map((p) => p.pcb_component_id!),
+        })
+      }
+      if (!traces) return
       if (traces.length === 0) {
         this.renderError({
           type: "pcb_error",
