@@ -39,6 +39,7 @@ import {
   isMatchingSelector,
 } from "lib/utils/selector-matching"
 import { tryNow } from "lib/utils/try-now"
+import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -356,17 +357,21 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       return
     }
 
+    const connMap = getFullConnectivityMapFromCircuitJson(
+      this.root!.db.toArray(),
+    )
+
     // Cache the PCB obstacles, they'll be needed for each segment between
     // ports/hints
-    const [obstacles, err] = tryNow(() =>
+    const [obstacles, errGettingObstacles] = tryNow(() =>
       getObstaclesFromSoup(this.root!.db.toArray()),
     )
 
-    if (err) {
+    if (errGettingObstacles) {
       this.renderError({
         type: "pcb_error",
         error_type: "pcb_trace_error",
-        message: `Error getting obstacles for autorouting: ${err.message}`,
+        message: `Error getting obstacles for autorouting: ${errGettingObstacles.message}`,
         source_trace_id: this.source_trace_id!,
         center: { x: 0, y: 0 },
         pcb_port_ids: ports.map((p) => p.pcb_port_id!),
@@ -376,22 +381,13 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       return
     }
 
-    markObstaclesAsConnected(
-      obstacles,
-      orderedRouteObjectives,
-      this.source_trace_id!,
-    )
-
-    const allConnectedTraceIds = this._getAllTracesConnectedToSameNet().map(
-      (t) => t.source_trace_id,
-    )
     for (const obstacle of obstacles) {
-      if (
-        obstacle.connectedTo.some((connection) =>
-          allConnectedTraceIds.includes(connection),
-        )
-      ) {
-        obstacle.connectedTo.push(this.source_trace_id!)
+      const connectedTo = obstacle.connectedTo
+      if (connectedTo.length > 0) {
+        const netId = connMap.getNetConnectedToId(obstacle.connectedTo[0])
+        if (netId) {
+          obstacle.connectedTo.push(netId)
+        }
       }
     }
 
@@ -424,7 +420,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
           obstacles,
           connections: [
             {
-              name: this.source_trace_id!,
+              name: connMap.getNetConnectedToId(this.source_trace_id!)!,
               pointsToConnect: [
                 { ...a, layer: dominantLayer ?? "top" },
                 { ...b, layer: dominantLayer ?? "top" },
