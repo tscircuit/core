@@ -251,6 +251,10 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     if (!parent) throw new Error("Trace has no parent")
 
+    if (this.getSubcircuit()._parsedProps.routingDisabled) {
+      return
+    }
+
     const { allPortsFound, ports } = this._findConnectedPorts()
     const portsConnectedOnPcbViaNet: Port[] = []
 
