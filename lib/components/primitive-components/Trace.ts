@@ -231,6 +231,10 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       return
     }
 
+    if (this.getSubcircuit()._parsedProps.routingDisabled) {
+      return
+    }
+
     const { allPortsFound, portsWithSelectors: ports } =
       this._findConnectedPorts()
     if (!allPortsFound) return
