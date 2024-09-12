@@ -2,7 +2,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { smtPadProps } from "@tscircuit/props"
 import type { Port } from "./Port"
 import type { RenderPhaseFn } from "../base-components/Renderable"
-import type { PCBSMTPad } from "@tscircuit/soup"
+import type { LayerRef, PCBSMTPad } from "@tscircuit/soup"
 import { decomposeTSR } from "transformation-matrix"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
@@ -47,6 +47,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         return
       }
     }
+  }
+
+  getAvailablePcbLayers(): string[] {
+    return this.props.layer ? [this.props.layer as LayerRef] : []
   }
 
   doInitialPcbPrimitiveRender(): void {
