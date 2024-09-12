@@ -189,7 +189,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if ("_getPcbCircuitJsonBounds" in pcbMatch) {
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
-        layers: ["top"],
+        layers: this.getAvailablePcbLayers(),
 
         ...pcbMatch._getPcbCircuitJsonBounds().center,
 

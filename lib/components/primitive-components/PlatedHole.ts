@@ -14,6 +14,11 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     }
   }
 
+  getAvailablePcbLayers(): string[] {
+    // TODO use project layerCount
+    return ["top", "inner1", "inner2", "bottom"]
+  }
+
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
     if (props.shape === "circle") {
