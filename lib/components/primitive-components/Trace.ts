@@ -54,6 +54,8 @@ const portToObjective = (port: Port): PcbRouteObjective => {
   }
 }
 
+const SHOULD_USE_SINGLE_LAYER_ROUTING = false
+
 export class Trace extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
@@ -355,7 +357,10 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       orderedRouteObjectives,
     )
 
-    if (candidateLayerCombinations.length === 0) {
+    if (
+      SHOULD_USE_SINGLE_LAYER_ROUTING &&
+      candidateLayerCombinations.length === 0
+    ) {
       this.renderError(
         `Could not find a common layer (using hints) for trace ${this.getString()}`,
       )
@@ -396,28 +401,42 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       }
     }
 
-    // TODO explore all candidate layer combinations if one fails
-    const candidateLayerSelections = candidateLayerCombinations[0].layer_path
+    let orderedRoutePoints: PcbRouteObjective[] = []
+    if (candidateLayerCombinations.length === 0) {
+      orderedRoutePoints = orderedRouteObjectives
+    } else {
+      // TODO explore all candidate layer combinations if one fails
+      const candidateLayerSelections = candidateLayerCombinations[0].layer_path
 
-    /**
-     * Apply the candidate layer selections to the route objectives, now we
-     * have a set of points that have definite layers
-     */
-    const orderedRoutePoints = orderedRouteObjectives.map((t, idx) => {
-      if (t.via) {
-        return {
-          ...t,
-          via_to_layer: candidateLayerSelections[idx],
+      /**
+       * Apply the candidate layer selections to the route objectives, now we
+       * have a set of points that have definite layers
+       */
+      orderedRoutePoints = orderedRouteObjectives.map((t, idx) => {
+        if (t.via) {
+          return {
+            ...t,
+            via_to_layer: candidateLayerSelections[idx],
+          }
         }
-      }
-      return { ...t, layers: [candidateLayerSelections[idx]] }
-    })
+        return { ...t, layers: [candidateLayerSelections[idx]] }
+      })
+    }
 
     const routes: PCBTrace["route"][] = []
     for (const [a, b] of pairs(orderedRoutePoints)) {
       const dominantLayer =
         "via_to_layer" in a ? (a.via_to_layer as LayerRef) : null
       const BOUNDS_MARGIN = 2 //mm
+
+      const aLayer =
+        "layers" in a && a.layers.length === 1
+          ? a.layers[0]
+          : dominantLayer ?? "top"
+      const bLayer =
+        "layers" in b && b.layers.length === 1
+          ? b.layers[0]
+          : dominantLayer ?? "top"
 
       const ijump = new MultilayerIjump({
         OBSTACLE_MARGIN: 0.3,
@@ -428,8 +447,8 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
             {
               name: connMap.getNetConnectedToId(this.source_trace_id!)!,
               pointsToConnect: [
-                { ...a, layer: dominantLayer ?? "top" },
-                { ...b, layer: dominantLayer ?? "top" },
+                { ...a, layer: aLayer },
+                { ...b, layer: bLayer },
               ],
             },
           ],
@@ -490,43 +509,22 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const mergedRoute = mergeRoutes(routes)
 
-    // Add vias where layer changes occur
-    const routeWithVias = mergedRoute.flatMap((point, index) => {
-      const nextPoint = mergedRoute[index + 1]
-      if (!nextPoint) return [point]
-      if (
-        point.route_type === "wire" &&
-        nextPoint.route_type === "wire" &&
-        point.layer !== nextPoint.layer
-      ) {
-        return [
-          {
-            route_type: "via",
-            from_layer: point.layer,
-            to_layer: nextPoint.layer,
-            x: nextPoint.x,
-            y: nextPoint.y,
-          } as (typeof mergedRoute)[number],
-          point,
-        ]
+    for (const point of mergedRoute) {
+      if (point.route_type === "via") {
+        db.pcb_via.insert({
+          x: point.x,
+          y: point.y,
+          hole_diameter: 0.3,
+          outer_diameter: 0.6,
+          layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
+          from_layer: point.from_layer as LayerRef,
+          to_layer: point.to_layer as LayerRef,
+        })
       }
-      return [point]
-    })
-
-    for (const via of routeWithVias.filter((p) => p.route_type === "via")) {
-      db.pcb_via.insert({
-        x: via.x,
-        y: via.y,
-        hole_diameter: 0.3,
-        outer_diameter: 0.6,
-        layers: [via.from_layer as LayerRef, via.to_layer as LayerRef],
-        from_layer: via.from_layer as LayerRef,
-        to_layer: via.to_layer as LayerRef,
-      })
     }
 
     const pcb_trace = db.pcb_trace.insert({
-      route: routeWithVias,
+      route: mergedRoute,
       source_trace_id: this.source_trace_id!,
     })
     this._portsRoutedOnPcb = ports
