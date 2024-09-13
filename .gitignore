@@ -181,3 +181,4 @@ dist
 context
 
 test.json
+test*.json

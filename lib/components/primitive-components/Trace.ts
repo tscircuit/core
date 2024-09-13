@@ -54,6 +54,8 @@ const portToObjective = (port: Port): PcbRouteObjective => {
   }
 }
 
+let autoroutingCount = 0
+
 export class Trace extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
@@ -419,6 +421,34 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
         "via_to_layer" in a ? (a.via_to_layer as LayerRef) : null
       const BOUNDS_MARGIN = 2 //mm
 
+      const autoroutingInput = {
+        OBSTACLE_MARGIN: 0.3,
+        isRemovePathLoopsEnabled: true,
+        layerCount: 2,
+        input: {
+          obstacles,
+          connections: [
+            {
+              name: connMap.getNetConnectedToId(this.source_trace_id!)!,
+              pointsToConnect: [
+                { ...a, layer: dominantLayer ?? "top" },
+                { ...b, layer: dominantLayer ?? "top" },
+              ],
+            },
+          ],
+          layerCount: 2,
+          bounds: {
+            minX: Math.min(a.x, b.x) - BOUNDS_MARGIN,
+            maxX: Math.max(a.x, b.x) + BOUNDS_MARGIN,
+            minY: Math.min(a.y, b.y) - BOUNDS_MARGIN,
+            maxY: Math.max(a.y, b.y) + BOUNDS_MARGIN,
+          },
+        },
+      }
+      Bun.write(
+        `./test${autoroutingCount++}.json`,
+        JSON.stringify(autoroutingInput, null, 2),
+      )
       const ijump = new MultilayerIjump({
         OBSTACLE_MARGIN: 0.3,
         isRemovePathLoopsEnabled: true,
