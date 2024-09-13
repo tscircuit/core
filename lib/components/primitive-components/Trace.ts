@@ -422,7 +422,6 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       const ijump = new MultilayerIjump({
         OBSTACLE_MARGIN: 0.3,
         isRemovePathLoopsEnabled: true,
-        layerCount: 2,
         input: {
           obstacles,
           connections: [
