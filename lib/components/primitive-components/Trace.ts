@@ -54,8 +54,6 @@ const portToObjective = (port: Port): PcbRouteObjective => {
   }
 }
 
-let autoroutingCount = 0
-
 export class Trace extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
