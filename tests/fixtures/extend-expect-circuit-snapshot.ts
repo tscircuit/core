@@ -75,11 +75,12 @@ expect.extend({
     received: unknown,
     ...args: any[]
   ): Promise<MatcherResult> {
+    const soup = await (received instanceof Circuit
+      ? received.getCircuitJson()
+      : (received as AnySoupElement[]))
+
     return saveSnapshotOfSoup({
-      soup:
-        received instanceof Circuit
-          ? received.getSoup()
-          : (received as AnySoupElement[]),
+      soup,
       testPath: args[0],
       mode: "pcb",
       updateSnapshot:
