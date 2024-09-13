@@ -18,6 +18,7 @@ export class FabricationNoteText extends PrimitiveComponent<
       font: props.font ?? "tscircuit2024",
       font_size: props.fontSize ?? 1,
       layer: "top",
+      color: props.color,
       text: props.text ?? "",
       pcb_component_id: container.pcb_component_id!,
     })
