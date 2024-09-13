@@ -2,6 +2,7 @@ import { traceProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import {
+  MultilayerIjump,
   IJumpAutorouter,
   autoroute,
   getObstaclesFromSoup,
@@ -418,8 +419,10 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
         "via_to_layer" in a ? (a.via_to_layer as LayerRef) : null
       const BOUNDS_MARGIN = 2 //mm
 
-      const ijump = new IJumpAutorouter({
+      const ijump = new MultilayerIjump({
         OBSTACLE_MARGIN: 0.3,
+        isRemovePathLoopsEnabled: true,
+        layerCount: 2,
         input: {
           obstacles,
           connections: [
