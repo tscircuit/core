@@ -36,10 +36,5 @@ test("fabrication note path and text are created", async () => {
   expect(circuit.db.pcb_fabrication_note_text.list()).toHaveLength(1)
   expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(1)
 
-  await expect(
-    circuit.getSvg({
-      view: "pcb",
-      layer: "top",
-    }),
-  ).toMatchSvgSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
