@@ -25,8 +25,8 @@ test("four 0402 resistors with crossing traces", async () => {
   circuit.render()
 
   // Check if vias were created
-  // const vias = circuit.db.pcb_via.list()
-  // expect(vias.length).toBeGreaterThan(0)
+  const vias = circuit.db.pcb_via.list()
+  expect(vias.length).toBeGreaterThan(0)
 
   // Check if traces were created
   const traces = circuit.db.pcb_trace.list()
