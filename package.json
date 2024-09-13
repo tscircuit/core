@@ -23,7 +23,7 @@
     "@types/react": "^18.3.3",
     "@types/react-reconciler": "^0.28.8",
     "bun-match-svg": "0.0.2",
-    "circuit-to-svg": "^0.0.22",
+    "circuit-to-svg": "^0.0.28",
     "debug": "^4.3.6",
     "howfat": "^0.3.8",
     "looks-same": "^9.0.1",
@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/infgrid-ijump-astar": "^0.0.13",
+    "@tscircuit/infgrid-ijump-astar": "^0.0.15",
     "@tscircuit/props": "^0.0.62",
     "@tscircuit/soup": "^0.0.67",
     "@tscircuit/soup-util": "^0.0.23",

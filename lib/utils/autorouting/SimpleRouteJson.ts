@@ -1,13 +1,22 @@
 export type SimplifiedPcbTrace = {
   type: "pcb_trace"
   pcb_trace_id: string
-  route: Array<{
-    route_type: "wire" | "via"
-    x: number
-    y: number
-    width: number
-    layer: string
-  }>
+  route: Array<
+    | {
+        route_type: "wire"
+        x: number
+        y: number
+        width: number
+        layer: string
+      }
+    | {
+        route_type: "via"
+        x: number
+        y: number
+        to_layer: string
+        from_layer: string
+      }
+  >
 }
 export type Obstacle = {
   // TODO include ovals
