@@ -34,10 +34,10 @@
   },
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
+    "@tscircuit/props": "^0.0.63",
+    "@tscircuit/soup": "^0.0.69",
+    "@tscircuit/soup-util": "^0.0.26",
     "@tscircuit/infgrid-ijump-astar": "^0.0.16",
-    "@tscircuit/props": "^0.0.62",
-    "@tscircuit/soup": "^0.0.67",
-    "@tscircuit/soup-util": "^0.0.23",
     "circuit-json-to-connectivity-map": "^0.0.8",
     "footprinter": "^0.0.44",
     "react": "^18.3.1",
