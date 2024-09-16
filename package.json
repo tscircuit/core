@@ -27,6 +27,7 @@
     "debug": "^4.3.6",
     "howfat": "^0.3.8",
     "looks-same": "^9.0.1",
+    "performance-now": "^2.1.0",
     "tsup": "^8.2.4"
   },
   "peerDependencies": {
@@ -34,12 +35,14 @@
   },
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/infgrid-ijump-astar": "^0.0.17",
+    "@tscircuit/infgrid-ijump-astar": "^0.0.18",
+    "@tscircuit/math-utils": "^0.0.4",
     "@tscircuit/props": "^0.0.63",
     "@tscircuit/soup": "^0.0.69",
     "@tscircuit/soup-util": "^0.0.26",
-    "circuit-json-to-connectivity-map": "^0.0.8",
+    "circuit-json-to-connectivity-map": "^0.0.15",
     "footprinter": "^0.0.44",
+    "nanoid": "^5.0.7",
     "react": "^18.3.1",
     "react-reconciler": "^0.29.2",
     "schematic-symbols": "0.0.17",

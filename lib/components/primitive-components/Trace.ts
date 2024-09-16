@@ -44,7 +44,13 @@ import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectiv
 
 type PcbRouteObjective =
   | RouteHintPoint
-  | { layers: string[]; x: number; y: number; via?: boolean }
+  | {
+      layers: string[]
+      x: number
+      y: number
+      via?: boolean
+      pcb_port_id?: string
+    }
 
 const portToObjective = (port: Port): PcbRouteObjective => {
   const portPosition = port._getGlobalPcbPositionAfterLayout()
@@ -422,6 +428,9 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
         return { ...t, layers: [candidateLayerSelections[idx]] }
       })
     }
+    ;(orderedRoutePoints[0] as any).pcb_port_id = ports[0].pcb_port_id
+    ;(orderedRoutePoints[orderedRoutePoints.length - 1] as any).pcb_port_id =
+      ports[1].pcb_port_id
 
     const routes: PCBTrace["route"][] = []
     for (const [a, b] of pairs(orderedRoutePoints)) {
@@ -432,23 +441,28 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       const aLayer =
         "layers" in a && a.layers.length === 1
           ? a.layers[0]
-          : dominantLayer ?? "top"
+          : (dominantLayer ?? "top")
       const bLayer =
         "layers" in b && b.layers.length === 1
           ? b.layers[0]
-          : dominantLayer ?? "top"
+          : (dominantLayer ?? "top")
+
+      const pcbPortA = "pcb_port_id" in a ? a.pcb_port_id : null
+      const pcbPortB = "pcb_port_id" in b ? b.pcb_port_id : null
 
       const ijump = new MultilayerIjump({
         OBSTACLE_MARGIN: 0.3,
-        isRemovePathLoopsEnabled: true,
+        // isRemovePathLoopsEnabled: true,
+        optimizeWithGoalBoxes: false, // Boolean(pcbPortA && pcbPortB),
+        connMap,
         input: {
           obstacles,
           connections: [
             {
-              name: connMap.getNetConnectedToId(this.source_trace_id!)!,
+              name: this.source_trace_id!,
               pointsToConnect: [
-                { ...a, layer: aLayer },
-                { ...b, layer: bLayer },
+                { ...a, layer: aLayer, pcb_port_id: pcbPortA! },
+                { ...b, layer: bLayer, pcb_port_id: pcbPortB! },
               ],
             },
           ],
