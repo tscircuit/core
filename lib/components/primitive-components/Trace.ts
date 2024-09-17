@@ -591,6 +591,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     const bounds = computeObstacleBounds(obstacles)
 
     const simpleRouteJsonInput: SimpleRouteJson = {
+      minTraceWidth: 0.1,
       obstacles,
       connections: [connection],
       bounds,
