@@ -450,13 +450,17 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       const pcbPortA = "pcb_port_id" in a ? a.pcb_port_id : null
       const pcbPortB = "pcb_port_id" in b ? b.pcb_port_id : null
 
+      const minTraceWidth =
+        this.getSubcircuit()._parsedProps.minTraceWidth ?? 0.16
+
       const ijump = new MultilayerIjump({
-        OBSTACLE_MARGIN: 0.3,
+        OBSTACLE_MARGIN: minTraceWidth * 2,
         // isRemovePathLoopsEnabled: true,
-        optimizeWithGoalBoxes: false, // Boolean(pcbPortA && pcbPortB),
+        optimizeWithGoalBoxes: Boolean(pcbPortA && pcbPortB),
         connMap,
         input: {
           obstacles,
+          minTraceWidth,
           connections: [
             {
               name: this.source_trace_id!,
