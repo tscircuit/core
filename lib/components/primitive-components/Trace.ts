@@ -504,15 +504,13 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
         })
         return
       }
-      // TODO ijump returns multiple traces for some reason
       const [trace] = traces as PCBTrace[]
-      // TODO ijump always returns on top layer and has no multilayer support
-      // https://github.com/tscircuit/autorouting-dataset/issues/35
-      // For now, we'll move the trace to whatever layer the first point
-      // specifies we should have "via'd" to
+
+      // If the autorouter didn't specify a layer, use the dominant layer
+      // Some of the single-layer autorouters don't add the layer property
       if (dominantLayer) {
         trace.route = trace.route.map((p) => {
-          if (p.route_type === "wire") {
+          if (p.route_type === "wire" && !p.layer) {
             p.layer = dominantLayer
           }
           return p
