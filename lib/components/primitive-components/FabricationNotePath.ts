@@ -42,10 +42,9 @@ export class FabricationNotePath extends PrimitiveComponent<
         }
       }),
       stroke_width: props.strokeWidth ?? 0.1,
-      fabrication_note_path_id: `fabrication_note_${Math.random().toString()}`,
     })
 
     this.fabrication_note_path_id =
-      fabrication_note_path.fabrication_note_path_id
+      fabrication_note_path.pcb_fabrication_note_path_id
   }
 }
