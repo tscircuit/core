@@ -9,6 +9,12 @@ test("board with manual layout edits", () => {
     <board
       width="20mm"
       height="20mm"
+      outline={[
+        { x: -8, y: -6 },
+        { x: 0, y: -6 },
+        { x: 10, y: 10 },
+        { x: 5, y: 10 },
+      ]}
       layout={layout().manualEdits({
         pcb_placements: [
           {
