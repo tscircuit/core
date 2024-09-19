@@ -182,5 +182,7 @@ test("example3-2x2-keyboard", () => {
 
   circuit.add(<MacroKeypad />)
 
-  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
+  const circuitJson = circuit.getCircuitJson()
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -18,6 +18,7 @@ import { getPortFromHints } from "lib/utils/getPortFromHints"
 import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
 import { Net } from "../primitive-components/Net"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 
 export type PortMap<T extends string> = {
   [K in T]: Port
@@ -229,28 +230,11 @@ export class NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    let minX = Infinity
-    let minY = Infinity
-    let maxX = -Infinity
-    let maxY = -Infinity
-
-    for (const child of this.children) {
-      if (child.isPcbPrimitive) {
-        const { x, y } = child._getGlobalPcbPositionBeforeLayout()
-        const { width, height } = child.getPcbSize()
-        minX = Math.min(minX, x - width / 2)
-        minY = Math.min(minY, y - height / 2)
-        maxX = Math.max(maxX, x + width / 2)
-        maxY = Math.max(maxY, y + height / 2)
-      }
-    }
-
-    const width = maxX - minX
-    const height = maxY - minY
+    const bounds = getBoundsOfPcbComponents(this.children)
 
     db.pcb_component.update(this.pcb_component_id!, {
-      width,
-      height,
+      width: bounds.width,
+      height: bounds.height,
     })
   }
 
