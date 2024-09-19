@@ -30,6 +30,7 @@ export class Board extends Group<typeof boardProps> {
 
       width: props.width,
       height: props.height,
+      outline: props.outline,
     })
 
     this.pcb_board_id = pcb_board.pcb_board_id!
