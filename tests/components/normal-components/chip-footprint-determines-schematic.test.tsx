@@ -30,7 +30,7 @@ test("chip footprint determines schematic port arrangement", () => {
 
   expect(schematicComponent).toBeDefined()
 
-  const ports = circuit.selectAll("port")
-
-  // console.log(ports)
+  expect(
+    circuit.db.pcb_smtpad.list().every((smtpad) => smtpad.pcb_component_id),
+  ).toBeTruthy()
 })
