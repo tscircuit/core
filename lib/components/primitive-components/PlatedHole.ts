@@ -86,9 +86,12 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
+    const pcb_component_id =
+      this.parent?.pcb_component_id ??
+      this.getPrimitiveContainer()?.pcb_component_id!
     if (props.shape === "circle") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
-        pcb_component_id: this.parent?.pcb_component_id!,
+        pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!,
         // @ts-ignore - some issue with @tscircuit/soup union type
         outer_diameter: props.outerDiameter,

@@ -18,6 +18,7 @@ export class Circuit {
   constructor() {
     this.children = []
     this.db = su([])
+    // TODO rename to rootCircuit
     this.root = this
   }
 

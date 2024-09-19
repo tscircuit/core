@@ -64,9 +64,12 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const isRotated90 =
       Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) < 0.01
     let pcb_smtpad: PCBSMTPad | null = null
+    const pcb_component_id =
+      this.parent?.pcb_component_id ??
+      this.getPrimitiveContainer()?.pcb_component_id!
     if (props.shape === "circle") {
       pcb_smtpad = db.pcb_smtpad.insert({
-        pcb_component_id: this.parent?.pcb_component_id!,
+        pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
         layer: props.layer ?? "top",
         shape: "circle",
@@ -81,7 +84,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       })
     } else if (props.shape === "rect") {
       pcb_smtpad = db.pcb_smtpad.insert({
-        pcb_component_id: this.parent?.pcb_component_id!,
+        pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
         layer: props.layer ?? "top",
         shape: "rect",
