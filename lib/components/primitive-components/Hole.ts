@@ -23,7 +23,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     const position = this._getGlobalPcbPositionBeforeLayout()
 
     const inserted_hole = db.pcb_hole.insert({
-      hole_shape: "round",
+      hole_shape: "circle",
       // @ts-ignore
       hole_diameter: props.diameter,
       x: position.x,
