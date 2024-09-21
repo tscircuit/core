@@ -2,10 +2,6 @@
 
 [tscircuit](https://github.com/tscircuit/tscircuit) &middot; [Development Guide](./docs/DEVELOPMENT.md)
 
-> [!WARNING]
-> You should use [@tscircuit/builder](https://github.com/tscircuit/builder) instead, this package is
-> going to be in alpha for a while.
-
 A rewrite of [tscircuit builder](https://github.com/tscircuit/builder) with a ThreeJS/react-three-like API and architecture.
 
 ## Usage
