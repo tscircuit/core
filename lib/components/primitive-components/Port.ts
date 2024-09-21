@@ -5,6 +5,7 @@ import { getRelativeDirection } from "lib/utils/get-relative-direction"
 import { symbols, type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
 import type { Trace } from "./Trace"
+import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 
 export const portProps = z.object({
   name: z.string().optional(),
@@ -207,12 +208,21 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    if (!this.parent) return
+    const container = this.getPrimitiveContainer()
 
-    const center = this._getGlobalSchematicPositionBeforeLayout()
-    const parentCenter = this.parent?._getGlobalSchematicPositionBeforeLayout()
+    if (!container) return
 
-    this.facingDirection = getRelativeDirection(parentCenter, center)
+    let center = this._getGlobalSchematicPositionBeforeLayout()
+
+    if ("schematicDimensions" in container && props.pinNumber !== undefined) {
+      const chipDims = container.schematicDimensions as SchematicBoxDimensions
+
+      center = chipDims.getPortPositionByPinNumber(props.pinNumber!)
+    }
+
+    const containerCenter = container._getGlobalSchematicPositionBeforeLayout()
+
+    this.facingDirection = getRelativeDirection(containerCenter, center)
 
     const schematic_port = db.schematic_port.insert({
       schematic_component_id: this.parent?.schematic_component_id!,

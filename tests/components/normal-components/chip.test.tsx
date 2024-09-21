@@ -3,11 +3,12 @@ import { Circuit } from "lib/Project"
 import { Chip } from "lib/components/normal-components/Chip"
 import "lib/register-catalogue"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 
 it("should create a Chip component with correct properties", async () => {
-  const { project } = getTestFixture()
+  const { circuit } = getTestFixture()
 
-  project.add(
+  circuit.add(
     <board width="10mm" height="10mm">
       <chip
         name="U1"
@@ -24,9 +25,9 @@ it("should create a Chip component with correct properties", async () => {
     </board>,
   )
 
-  project.render()
+  circuit.render()
 
-  const chip = project.selectOne("chip") as Chip
+  const chip = circuit.selectOne("chip") as Chip
 
   expect(chip).not.toBeNull()
   expect(chip.props.name).toBe("U1")
@@ -50,10 +51,14 @@ it("should create a Chip component with correct properties", async () => {
   // Test PCB rendering
   expect(chip.pcb_component_id).not.toBeNull()
 
-  const schematic_component = project.db.schematic_component.get(
+  const schematic_component = circuit.db.schematic_component.get(
     chip.schematic_component_id!,
   )
 
   expect(schematic_component?.port_labels).toBeTruthy()
   expect(schematic_component?.port_arrangement).toBeTruthy()
+
+  expect(
+    convertCircuitJsonToSchematicSvg(circuit.getCircuitJson()),
+  ).toMatchSvgSnapshot(import.meta.path)
 })
