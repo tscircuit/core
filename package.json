@@ -32,19 +32,20 @@
   },
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/infgrid-ijump-astar": "^0.0.20",
+    "@tscircuit/infgrid-ijump-astar": "^0.0.21",
     "@tscircuit/math-utils": "^0.0.4",
     "@tscircuit/props": "^0.0.63",
     "@tscircuit/soup": "^0.0.73",
     "@tscircuit/soup-util": "^0.0.28",
+    "circuit-json": "^0.0.77",
     "circuit-json-to-connectivity-map": "^0.0.15",
     "footprinter": "^0.0.44",
     "nanoid": "^5.0.7",
+    "performance-now": "^2.1.0",
     "react": "^18.3.1",
     "react-reconciler": "^0.29.2",
     "schematic-symbols": "0.0.17",
     "transformation-matrix": "^2.16.1",
-    "zod": "^3.23.8",
-    "performance-now": "^2.1.0"
+    "zod": "^3.23.8"
   }
 }
