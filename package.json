@@ -1,13 +1,11 @@
 {
   "name": "@tscircuit/core",
-  "module": "index.ts",
   "type": "module",
   "version": "0.0.73",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "files": [
-    "index.ts",
-    "lib",
     "dist"
   ],
   "scripts": {
