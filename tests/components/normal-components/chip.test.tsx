@@ -62,3 +62,25 @@ it("should create a Chip component with correct properties", async () => {
     convertCircuitJsonToSchematicSvg(circuit.getCircuitJson()),
   ).toMatchSvgSnapshot(import.meta.path)
 })
+
+it("should create a Chip component with cadModel prop", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <chip
+        name="U1"
+        footprint="soic8"
+        cadModel={{
+          stlUrl: "https://example.com/chip.stl",
+        }}
+      />
+    </board>,
+  )
+
+  circuit.render()
+
+  const cadComponents = circuit.db.cad_component.list()
+  expect(cadComponents).toHaveLength(1)
+  expect(cadComponents[0].model_stl_url).toBe("https://example.com/chip.stl")
+})

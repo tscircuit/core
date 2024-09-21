@@ -19,6 +19,7 @@ import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
 import { Net } from "../primitive-components/Net"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import type { CadModelProp } from "@tscircuit/props"
 
 export type PortMap<T extends string> = {
   [K in T]: Port
@@ -414,6 +415,35 @@ export class NormalComponent<
       }
       existingPorts.push(newPort)
       this.add(newPort)
+    }
+  }
+
+  doInitialCadModelRender(): void {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+
+    if (props.cadModel) {
+      // Use post-layout bounds
+      const bounds = this._getPcbCircuitJsonBounds()
+
+      const cadModel: CadModelProp = props.cadModel
+
+      if (typeof cadModel === "string") {
+        throw new Error("String cadModel not yet implemented")
+      }
+
+      const cad_model = db.cad_component.insert({
+        // TODO z maybe depends on layer
+        position: { x: bounds.center.x, y: bounds.center.y, z: 0 },
+        pcb_component_id: this.pcb_component_id!,
+        source_component_id: this.source_component_id!,
+        model_stl_url: "stlUrl" in cadModel ? cadModel.stlUrl : undefined,
+        model_obj_url: "objUrl" in cadModel ? cadModel.objUrl : undefined,
+        model_jscad: "jscad" in cadModel ? cadModel.jscad : undefined,
+
+        // TODO
+        // footprinter_string:
+      })
     }
   }
 }
