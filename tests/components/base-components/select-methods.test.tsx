@@ -1,5 +1,5 @@
 import { it, expect } from "bun:test"
-import { Circuit } from "lib/Project"
+import { Circuit } from "lib/Circuit"
 import "lib/register-catalogue"
 
 it("should correctly use selectAll and selectOne methods", () => {

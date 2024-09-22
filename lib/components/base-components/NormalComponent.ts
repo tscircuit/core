@@ -420,7 +420,7 @@ export class NormalComponent<
 
   doInitialCadModelRender(): void {
     const { db } = this.root!
-    const { boardThickness } = this.root!._getBoard()
+    const { boardThickness = 0 } = this.root?._getBoard() ?? {}
     const { _parsedProps: props } = this
 
     if (props.cadModel) {
