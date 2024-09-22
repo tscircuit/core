@@ -1,7 +1,7 @@
 import { capacitorProps, ledProps } from "@tscircuit/props"
 import { FTYPE, SYMBOL } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
-import type { capacitance, SourceSimpleCapacitorInput } from "@tscircuit/soup"
+import type { capacitance, SourceSimpleCapacitorInput } from "circuit-json"
 import { Trace } from "../primitive-components/Trace"
 
 type PortNames =

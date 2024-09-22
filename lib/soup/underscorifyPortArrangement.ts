@@ -1,4 +1,4 @@
-import type { SchematicComponentInput } from "@tscircuit/soup"
+import type { SchematicComponentInput } from "circuit-json"
 import type { PortArrangement } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 
 export const underscorifyPortArrangement = (

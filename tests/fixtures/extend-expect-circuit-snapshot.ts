@@ -3,8 +3,8 @@ import { it, expect, type CustomMatcher, type MatcherResult } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import looksSame from "looks-same"
-import type { AnySoupElement } from "@tscircuit/soup"
 import { Circuit } from "lib/Circuit"
+import type { AnyCircuitElement } from "circuit-json"
 
 async function saveSnapshotOfSoup({
   soup,
@@ -12,7 +12,7 @@ async function saveSnapshotOfSoup({
   mode,
   updateSnapshot,
 }: {
-  soup: AnySoupElement[]
+  soup: AnyCircuitElement[]
   testPath: string
   mode: "pcb" | "schematic"
   updateSnapshot: boolean
@@ -77,7 +77,7 @@ expect.extend({
   ): Promise<MatcherResult> {
     const soup = await (received instanceof Circuit
       ? received.getCircuitJson()
-      : (received as AnySoupElement[]))
+      : (received as AnyCircuitElement[]))
 
     return saveSnapshotOfSoup({
       soup,
@@ -98,7 +98,7 @@ expect.extend({
       soup:
         received instanceof Circuit
           ? received.getSoup()
-          : (received as AnySoupElement[]),
+          : (received as AnyCircuitElement[]),
       testPath: args[0],
       mode: "schematic",
       updateSnapshot:

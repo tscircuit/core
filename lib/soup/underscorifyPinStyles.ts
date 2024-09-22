@@ -1,5 +1,5 @@
 import type { SchematicPinStyle } from "@tscircuit/props"
-import { schematic_component } from "@tscircuit/soup"
+import { schematic_component } from "circuit-json"
 import { z } from "zod"
 
 type UnderscorePinStyles = z.input<typeof schematic_component>["pin_styles"]

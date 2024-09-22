@@ -9,13 +9,13 @@ import {
   markObstaclesAsConnected,
 } from "@tscircuit/infgrid-ijump-astar"
 import type {
-  AnySoupElement,
+  AnyCircuitElement,
   LayerRef,
   PCBTrace,
   RouteHintPoint,
   SchematicTrace,
   SourceTrace,
-} from "@tscircuit/soup"
+} from "circuit-json"
 import type {
   Obstacle,
   SimpleRouteConnection,
@@ -525,9 +525,17 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const mergedRoute = mergeRoutes(routes)
 
+    const pcb_trace = db.pcb_trace.insert({
+      route: mergedRoute,
+      source_trace_id: this.source_trace_id!,
+    })
+    this._portsRoutedOnPcb = ports
+    this.pcb_trace_id = pcb_trace.pcb_trace_id
+
     for (const point of mergedRoute) {
       if (point.route_type === "via") {
         db.pcb_via.insert({
+          pcb_trace_id: pcb_trace.pcb_trace_id,
           x: point.x,
           y: point.y,
           hole_diameter: 0.3,
@@ -538,13 +546,6 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
         })
       }
     }
-
-    const pcb_trace = db.pcb_trace.insert({
-      route: mergedRoute,
-      source_trace_id: this.source_trace_id!,
-    })
-    this._portsRoutedOnPcb = ports
-    this.pcb_trace_id = pcb_trace.pcb_trace_id
   }
 
   doInitialSchematicTraceRender(): void {

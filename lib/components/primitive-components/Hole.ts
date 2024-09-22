@@ -1,6 +1,6 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { holeProps } from "@tscircuit/props"
-import type { PCBHole } from "@tscircuit/soup"
+import type { PCBHole } from "circuit-json"
 
 export class Hole extends PrimitiveComponent<typeof holeProps> {
   pcb_hole_id: string | null = null

@@ -1,4 +1,4 @@
-import type { PCBPlacementError, PCBTraceError } from "@tscircuit/soup"
+import type { PCBPlacementError, PCBTraceError } from "circuit-json"
 import { Component, createElement, type ReactElement } from "react"
 
 export const orderedRenderPhases = [

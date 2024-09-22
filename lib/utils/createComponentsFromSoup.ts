@@ -1,4 +1,4 @@
-import type { AnySoupElement } from "@tscircuit/soup"
+import type { AnyCircuitElement } from "circuit-json"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
@@ -6,7 +6,7 @@ import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 import { Keepout } from "lib/components/primitive-components/Keepout"
 
 export const createComponentsFromSoup = (
-  soup: AnySoupElement[],
+  soup: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
   const components: PrimitiveComponent[] = []
   for (const elm of soup) {

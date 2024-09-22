@@ -1,7 +1,7 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { platedHoleProps } from "@tscircuit/props"
 import type { Port } from "./Port"
-import type { PCBPlatedHoleInput } from "@tscircuit/soup"
+import type { PCBPlatedHoleInput } from "circuit-json"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
@@ -93,7 +93,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!,
-        // @ts-ignore - some issue with @tscircuit/soup union type
+        // @ts-ignore - some issue with circuit-json union type
         outer_diameter: props.outerDiameter,
         hole_diameter: props.holeDiameter,
         shape: "circle" as const,

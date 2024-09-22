@@ -1,4 +1,4 @@
-import type { PCBSMTPad } from "@tscircuit/soup"
+import type { PCBSMTPad } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { z } from "zod"
 import { getRelativeDirection } from "lib/utils/get-relative-direction"

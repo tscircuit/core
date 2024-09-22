@@ -1,7 +1,7 @@
 import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { traceHintProps } from "@tscircuit/props"
 import type { Port } from "./Port"
-import type { RouteHintPoint } from "@tscircuit/soup"
+import type { RouteHintPoint } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
 
 export class TraceHint extends PrimitiveComponent<typeof traceHintProps> {
