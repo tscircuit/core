@@ -9,6 +9,7 @@ import { Renderable, type RenderPhase } from "./Renderable"
 import {
   applyToPoint,
   compose,
+  flipY,
   identity,
   rotate,
   translate,
@@ -152,6 +153,27 @@ export abstract class PrimitiveComponent<
           rotate(((props.pcbRotation ?? 0) * Math.PI) / 180),
         ),
       )
+    }
+
+    // If this is a primitive, and the parent primitive container is flipped,
+    // we flip it's position
+    if (false && this.isPcbPrimitive) {
+      const primitiveContainer = this.getPrimitiveContainer()
+      if (primitiveContainer) {
+        const isFlipped = primitiveContainer._parsedProps.layer === "bottom"
+        const containerCenter =
+          primitiveContainer._getGlobalPcbPositionBeforeLayout()
+
+        if (isFlipped) {
+          return compose(
+            this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
+            translate(containerCenter.x, containerCenter.y),
+            flipY(),
+            translate(-containerCenter.x, -containerCenter.y),
+            this.computePcbPropsTransform(),
+          )
+        }
+      }
     }
 
     return compose(

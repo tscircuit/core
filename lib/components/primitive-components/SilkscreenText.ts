@@ -9,11 +9,14 @@ export class SilkscreenText extends PrimitiveComponent<
     const { _parsedProps: props } = this
     const container = this.getPrimitiveContainer()!
 
+    const position = this._getGlobalPcbPositionBeforeLayout()
+
+    // TODO handle layer flipping
     db.pcb_silkscreen_text.insert({
       anchor_alignment: props.anchorAlignment,
       anchor_position: {
-        x: props.pcbX ?? 0,
-        y: props.pcbY ?? 0,
+        x: position.x,
+        y: position.y,
       },
       font: props.font ?? "tscircuit2024",
       font_size: props.fontSize ?? 1,

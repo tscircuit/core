@@ -7,6 +7,7 @@ import {
   applyToPoint,
   compose,
   decomposeTSR,
+  flipX,
   flipY,
   translate,
 } from "transformation-matrix"
@@ -76,18 +77,25 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       ? false
       : container._parsedProps.layer === "bottom"
 
+    const maybeFlipLayer = (layer: LayerRef) => {
+      if (isFlipped) {
+        return layer === "top" ? "bottom" : "top"
+      }
+      return layer
+    }
+
     // When a component is flipped, we need to reflect it's position over the
     // reference horizontal line formed at the container's center y
     if (isFlipped && containerCenter) {
       // TODO move this into _getGlobalPcbPositionBeforeLayout
-      // position = applyToPoint(
-      //   compose(
-      //     translate(-containerCenter.x, -containerCenter.y),
-      //     flipY(),
-      //     translate(containerCenter.x, containerCenter.y),
-      //   ),
-      //   position,
-      // )
+      position = applyToPoint(
+        compose(
+          translate(containerCenter.x, containerCenter.y),
+          flipY(),
+          translate(-containerCenter.x, -containerCenter.y),
+        ),
+        position,
+      )
     }
 
     let pcb_smtpad: PCBSMTPad | null = null
@@ -98,7 +106,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
-        layer: props.layer ?? "top",
+        layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "circle",
 
         // @ts-ignore: no idea why this is triggering
@@ -113,7 +121,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
-        layer: props.layer ?? "top",
+        layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "rect",
 
         ...(isRotated90
