@@ -3,7 +3,13 @@ import { smtPadProps } from "@tscircuit/props"
 import type { Port } from "./Port"
 import type { RenderPhaseFn } from "../base-components/Renderable"
 import type { LayerRef, PCBSMTPad } from "@tscircuit/soup"
-import { decomposeTSR } from "transformation-matrix"
+import {
+  applyToPoint,
+  compose,
+  decomposeTSR,
+  flipY,
+  translate,
+} from "transformation-matrix"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -57,12 +63,33 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
     if (!props.portHints) return
-    const position = this._getGlobalPcbPositionBeforeLayout()
+    const container = this.getPrimitiveContainer()
+    let position = this._getGlobalPcbPositionBeforeLayout()
+    const containerCenter = container?._getGlobalPcbPositionBeforeLayout()
     const decomposedMat = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
     )
     const isRotated90 =
       Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) < 0.01
+
+    const isFlipped = !container
+      ? false
+      : container._parsedProps.layer === "bottom"
+
+    // When a component is flipped, we need to reflect it's position over the
+    // reference horizontal line formed at the container's center y
+    if (isFlipped && containerCenter) {
+      // TODO move this into _getGlobalPcbPositionBeforeLayout
+      // position = applyToPoint(
+      //   compose(
+      //     translate(-containerCenter.x, -containerCenter.y),
+      //     flipY(),
+      //     translate(containerCenter.x, containerCenter.y),
+      //   ),
+      //   position,
+      // )
+    }
+
     let pcb_smtpad: PCBSMTPad | null = null
     const pcb_component_id =
       this.parent?.pcb_component_id ??
