@@ -22,6 +22,14 @@ export class Board extends Group<typeof boardProps> {
     return 1.4 // TODO use prop
   }
 
+  /**
+   * Get all available layers for the board
+   */
+  get allLayers() {
+    // TODO use the board numLayers prop
+    return ["top", "bottom", "inner1", "inner2"]
+  }
+
   doInitialPcbComponentRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this

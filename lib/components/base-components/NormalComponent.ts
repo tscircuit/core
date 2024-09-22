@@ -121,14 +121,6 @@ export class NormalComponent<
     if (!footprint) return
     if (typeof footprint === "string") {
       const fpSoup = fp.string(footprint).soup()
-      // Adjust the layer of the footprint to match the layer of the component
-      if (this.props.layer) {
-        for (const elm of fpSoup) {
-          if ("layer" in elm) {
-            elm.layer = this.props.layer
-          }
-        }
-      }
       const fpComponents = createComponentsFromSoup(fpSoup)
       this.addAll(fpComponents)
     }

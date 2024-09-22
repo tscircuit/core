@@ -474,9 +474,16 @@ export abstract class PrimitiveComponent<
 
   getAvailablePcbLayers(): string[] {
     if (this.isPcbPrimitive) {
-      if (this.props.layer) return [this.props.layer]
+      const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+      if ("layer" in this._parsedProps) {
+        const layer = maybeFlipLayer(this._parsedProps.layer ?? "top")
+        return [layer]
+      }
+      if ("layers" in this._parsedProps) {
+        return this._parsedProps.layers
+      }
       if (this.componentName === "PlatedHole") {
-        return ["top", "bottom"] // TODO derive layers from parent
+        return this.root?._getBoard()?.allLayers ?? ["top", "bottom"]
       }
       return []
     }

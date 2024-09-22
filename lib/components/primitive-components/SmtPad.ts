@@ -56,10 +56,6 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     }
   }
 
-  getAvailablePcbLayers(): string[] {
-    return this.props.layer ? [this.props.layer as LayerRef] : []
-  }
-
   doInitialPcbPrimitiveRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
