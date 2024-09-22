@@ -65,7 +65,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const { _parsedProps: props } = this
     if (!props.portHints) return
     const container = this.getPrimitiveContainer()
-    let position = this._getGlobalPcbPositionBeforeLayout()
+    const position = this._getGlobalPcbPositionBeforeLayout()
     const containerCenter = container?._getGlobalPcbPositionBeforeLayout()
     const decomposedMat = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
@@ -73,30 +73,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const isRotated90 =
       Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) < 0.01
 
-    const isFlipped = !container
-      ? false
-      : container._parsedProps.layer === "bottom"
-
-    const maybeFlipLayer = (layer: LayerRef) => {
-      if (isFlipped) {
-        return layer === "top" ? "bottom" : "top"
-      }
-      return layer
-    }
-
-    // When a component is flipped, we need to reflect it's position over the
-    // reference horizontal line formed at the container's center y
-    if (isFlipped && containerCenter) {
-      // TODO move this into _getGlobalPcbPositionBeforeLayout
-      position = applyToPoint(
-        compose(
-          translate(containerCenter.x, containerCenter.y),
-          flipY(),
-          translate(-containerCenter.x, -containerCenter.y),
-        ),
-        position,
-      )
-    }
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
 
     let pcb_smtpad: PCBSMTPad | null = null
     const pcb_component_id =

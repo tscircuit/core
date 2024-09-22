@@ -17,6 +17,7 @@ import {
 } from "transformation-matrix"
 import { isMatchingSelector } from "lib/utils/selector-matching"
 import type { LayoutBuilder } from "@tscircuit/layout"
+import type { LayerRef } from "circuit-json"
 
 export interface BaseComponentConfig {
   schematicSymbolName?: BaseSymbolName | null
@@ -157,7 +158,7 @@ export abstract class PrimitiveComponent<
 
     // If this is a primitive, and the parent primitive container is flipped,
     // we flip it's position
-    if (false && this.isPcbPrimitive) {
+    if (this.isPcbPrimitive) {
       const primitiveContainer = this.getPrimitiveContainer()
       if (primitiveContainer) {
         const isFlipped = primitiveContainer._parsedProps.layer === "bottom"
@@ -165,11 +166,14 @@ export abstract class PrimitiveComponent<
           primitiveContainer._getGlobalPcbPositionBeforeLayout()
 
         if (isFlipped) {
-          return compose(
-            this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
+          const flipOperation = compose(
             translate(containerCenter.x, containerCenter.y),
             flipY(),
             translate(-containerCenter.x, -containerCenter.y),
+          )
+          return compose(
+            this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
+            flipY(),
             this.computePcbPropsTransform(),
           )
         }
@@ -203,6 +207,30 @@ export abstract class PrimitiveComponent<
       width: 0,
       height: 0,
     }
+  }
+
+  /**
+   * Determine if this pcb primitive should be flipped because the primitive
+   * container is flipped
+   *
+   * TODO use footprint.originalLayer instead of assuming everything is defined
+   * relative to the top layer
+   */
+  _getPcbPrimitiveFlippedHelpers(): {
+    isFlipped: boolean
+    maybeFlipLayer: (layer: LayerRef) => LayerRef
+  } {
+    const container = this.getPrimitiveContainer()
+    const isFlipped = !container
+      ? false
+      : container._parsedProps.layer === "bottom"
+    const maybeFlipLayer = (layer: LayerRef) => {
+      if (isFlipped) {
+        return layer === "top" ? "bottom" : "top"
+      }
+      return layer
+    }
+    return { isFlipped, maybeFlipLayer }
   }
 
   /**
