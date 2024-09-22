@@ -70,6 +70,7 @@ it("should create a Chip component with cadModel prop", async () => {
     <board width="10mm" height="10mm">
       <chip
         name="U1"
+        pcbX={4}
         footprint="soic8"
         cadModel={{
           stlUrl: "https://example.com/chip.stl",
@@ -82,5 +83,6 @@ it("should create a Chip component with cadModel prop", async () => {
 
   const cadComponents = circuit.db.cad_component.list()
   expect(cadComponents).toHaveLength(1)
+  expect(cadComponents[0].position.x).toBeCloseTo(4)
   expect(cadComponents[0].model_stl_url).toBe("https://example.com/chip.stl")
 })
