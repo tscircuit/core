@@ -9,6 +9,7 @@ import { Renderable, type RenderPhase } from "./Renderable"
 import {
   applyToPoint,
   compose,
+  flipY,
   identity,
   rotate,
   translate,
@@ -16,6 +17,7 @@ import {
 } from "transformation-matrix"
 import { isMatchingSelector } from "lib/utils/selector-matching"
 import type { LayoutBuilder } from "@tscircuit/layout"
+import type { LayerRef } from "circuit-json"
 
 export interface BaseComponentConfig {
   schematicSymbolName?: BaseSymbolName | null
@@ -154,6 +156,30 @@ export abstract class PrimitiveComponent<
       )
     }
 
+    // If this is a primitive, and the parent primitive container is flipped,
+    // we flip it's position
+    if (this.isPcbPrimitive) {
+      const primitiveContainer = this.getPrimitiveContainer()
+      if (primitiveContainer) {
+        const isFlipped = primitiveContainer._parsedProps.layer === "bottom"
+        const containerCenter =
+          primitiveContainer._getGlobalPcbPositionBeforeLayout()
+
+        if (isFlipped) {
+          const flipOperation = compose(
+            translate(containerCenter.x, containerCenter.y),
+            flipY(),
+            translate(-containerCenter.x, -containerCenter.y),
+          )
+          return compose(
+            this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
+            flipY(),
+            this.computePcbPropsTransform(),
+          )
+        }
+      }
+    }
+
     return compose(
       this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
       this.computePcbPropsTransform(),
@@ -181,6 +207,30 @@ export abstract class PrimitiveComponent<
       width: 0,
       height: 0,
     }
+  }
+
+  /**
+   * Determine if this pcb primitive should be flipped because the primitive
+   * container is flipped
+   *
+   * TODO use footprint.originalLayer instead of assuming everything is defined
+   * relative to the top layer
+   */
+  _getPcbPrimitiveFlippedHelpers(): {
+    isFlipped: boolean
+    maybeFlipLayer: (layer: LayerRef) => LayerRef
+  } {
+    const container = this.getPrimitiveContainer()
+    const isFlipped = !container
+      ? false
+      : container._parsedProps.layer === "bottom"
+    const maybeFlipLayer = (layer: LayerRef) => {
+      if (isFlipped) {
+        return layer === "top" ? "bottom" : "top"
+      }
+      return layer
+    }
+    return { isFlipped, maybeFlipLayer }
   }
 
   /**
@@ -424,9 +474,16 @@ export abstract class PrimitiveComponent<
 
   getAvailablePcbLayers(): string[] {
     if (this.isPcbPrimitive) {
-      if (this.props.layer) return [this.props.layer]
+      const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+      if ("layer" in this._parsedProps) {
+        const layer = maybeFlipLayer(this._parsedProps.layer ?? "top")
+        return [layer]
+      }
+      if ("layers" in this._parsedProps) {
+        return this._parsedProps.layers
+      }
       if (this.componentName === "PlatedHole") {
-        return ["top", "bottom"] // TODO derive layers from parent
+        return this.root?._getBoard()?.allLayers ?? ["top", "bottom"]
       }
       return []
     }

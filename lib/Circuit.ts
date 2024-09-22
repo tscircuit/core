@@ -1,4 +1,5 @@
 import type { AnySoupElement } from "@tscircuit/soup"
+import type { LayerRef } from "circuit-json"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
 import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import { su } from "@tscircuit/soup-util"
@@ -36,11 +37,15 @@ export class Circuit {
   /**
    * Get the main board for this Circuit.
    */
-  _getBoard(): PrimitiveComponent & { boardThickness: number } {
+  _getBoard(): PrimitiveComponent & {
+    boardThickness: number
+    allLayers: LayerRef[]
+  } {
     return this.children.find(
       (c) => c.componentName === "Board",
     ) as PrimitiveComponent & {
       boardThickness: number
+      allLayers: LayerRef[]
     }
   }
 
