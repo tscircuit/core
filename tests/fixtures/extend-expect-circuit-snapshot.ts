@@ -4,7 +4,7 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 import looksSame from "looks-same"
 import type { AnySoupElement } from "@tscircuit/soup"
-import { Circuit } from "lib/Project"
+import { Circuit } from "lib/Circuit"
 
 async function saveSnapshotOfSoup({
   soup,

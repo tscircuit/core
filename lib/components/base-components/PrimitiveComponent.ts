@@ -1,5 +1,5 @@
 import type { AnySoupElement, AnySourceComponent } from "@tscircuit/soup"
-import type { Circuit } from "../../Project"
+import type { Circuit } from "../../Circuit"
 import type { ZodType } from "zod"
 import { z } from "zod"
 import { symbols, type SchSymbol, type BaseSymbolName } from "schematic-symbols"

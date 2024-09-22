@@ -1,4 +1,4 @@
-import { Circuit } from "lib/Project"
+import { Circuit } from "lib/Circuit"
 import { logSoup } from "@tscircuit/log-soup"
 import "lib/register-catalogue"
 import "./extend-expect-circuit-snapshot"

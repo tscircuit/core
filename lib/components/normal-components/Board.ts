@@ -17,6 +17,11 @@ export class Board extends Group<typeof boardProps> {
     }
   }
 
+  get boardThickness() {
+    const { _parsedProps: props } = this
+    return 1.4 // TODO use prop
+  }
+
   doInitialPcbComponentRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this

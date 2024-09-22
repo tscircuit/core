@@ -1,5 +1,5 @@
 import { it, expect } from "bun:test"
-import { Circuit } from "lib/Project"
+import { Circuit } from "lib/Circuit"
 import { Chip } from "lib/components/normal-components/Chip"
 import "lib/register-catalogue"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
