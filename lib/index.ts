@@ -1,5 +1,5 @@
 export * from "./components"
-export * from "./Project"
+export * from "./Circuit"
 
 import "./register-catalogue"
 import "./fiber/intrinsic-jsx"

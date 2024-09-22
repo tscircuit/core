@@ -33,6 +33,17 @@ export class Circuit {
     this.children.push(component)
   }
 
+  /**
+   * Get the main board for this Circuit.
+   */
+  _getBoard(): PrimitiveComponent & { boardThickness: number } {
+    return this.children.find(
+      (c) => c.componentName === "Board",
+    ) as PrimitiveComponent & {
+      boardThickness: number
+    }
+  }
+
   _guessRootComponent() {
     if (this.firstChild) return
     if (this.children.length === 1) {

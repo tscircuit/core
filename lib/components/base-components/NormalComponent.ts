@@ -420,6 +420,7 @@ export class NormalComponent<
 
   doInitialCadModelRender(): void {
     const { db } = this.root!
+    const { boardThickness } = this.root!._getBoard()
     const { _parsedProps: props } = this
 
     if (props.cadModel) {
@@ -434,15 +435,24 @@ export class NormalComponent<
 
       const cad_model = db.cad_component.insert({
         // TODO z maybe depends on layer
-        position: { x: bounds.center.x, y: bounds.center.y, z: 0 },
+        position: {
+          x: bounds.center.x,
+          y: bounds.center.y,
+          z:
+            this.props.layer === "bottom"
+              ? -boardThickness / 2
+              : boardThickness / 2,
+        },
         pcb_component_id: this.pcb_component_id!,
         source_component_id: this.source_component_id!,
         model_stl_url: "stlUrl" in cadModel ? cadModel.stlUrl : undefined,
         model_obj_url: "objUrl" in cadModel ? cadModel.objUrl : undefined,
         model_jscad: "jscad" in cadModel ? cadModel.jscad : undefined,
 
-        // TODO
-        // footprinter_string:
+        footprinter_string:
+          typeof this.props.footprint === "string" && !cadModel
+            ? this.props.footprint
+            : undefined,
       })
     }
   }
