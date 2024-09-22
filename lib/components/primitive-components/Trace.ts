@@ -385,8 +385,9 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     if (errGettingObstacles) {
       this.renderError({
-        type: "pcb_error",
+        type: "pcb_trace_error",
         error_type: "pcb_trace_error",
+        pcb_trace_error_id: this.pcb_trace_id!,
         message: `Error getting obstacles for autorouting: ${errGettingObstacles.message}`,
         source_trace_id: this.source_trace_id!,
         center: { x: 0, y: 0 },
@@ -484,10 +485,11 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
         traces = ijump.solveAndMapToTraces()
       } catch (e: any) {
         this.renderError({
-          type: "pcb_error",
+          type: "pcb_trace_error",
+          pcb_trace_error_id: this.source_trace_id!,
           error_type: "pcb_trace_error",
           message: `error solving route: ${e.message}`,
-          source_trace_id: this.source_trace_id!,
+          source_trace_id: this.pcb_trace_id!,
           center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
           pcb_port_ids: ports.map((p) => p.pcb_port_id!),
           pcb_trace_id: this.pcb_trace_id!,
@@ -497,8 +499,9 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       if (!traces) return
       if (traces.length === 0) {
         this.renderError({
-          type: "pcb_error",
+          type: "pcb_trace_error",
           error_type: "pcb_trace_error",
+          pcb_trace_error_id: this.pcb_trace_id!,
           message: `Could not find a route for ${this}`,
           source_trace_id: this.source_trace_id!,
           center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
