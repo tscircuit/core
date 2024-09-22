@@ -3,7 +3,15 @@ import { smtPadProps } from "@tscircuit/props"
 import type { Port } from "./Port"
 import type { RenderPhaseFn } from "../base-components/Renderable"
 import type { LayerRef, PCBSMTPad } from "circuit-json"
-import { decomposeTSR } from "transformation-matrix"
+import {
+  applyToPoint,
+  compose,
+  decomposeTSR,
+  flipX,
+  flipY,
+  translate,
+} from "transformation-matrix"
+
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -49,20 +57,21 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     }
   }
 
-  getAvailablePcbLayers(): string[] {
-    return this.props.layer ? [this.props.layer as LayerRef] : []
-  }
-
   doInitialPcbPrimitiveRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
     if (!props.portHints) return
+    const container = this.getPrimitiveContainer()
     const position = this._getGlobalPcbPositionBeforeLayout()
+    const containerCenter = container?._getGlobalPcbPositionBeforeLayout()
     const decomposedMat = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
     )
     const isRotated90 =
       Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) < 0.01
+
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+
     let pcb_smtpad: PCBSMTPad | null = null
     const pcb_component_id =
       this.parent?.pcb_component_id ??
@@ -71,7 +80,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
-        layer: props.layer ?? "top",
+        layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "circle",
 
         // @ts-ignore: no idea why this is triggering
@@ -86,7 +95,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
-        layer: props.layer ?? "top",
+        layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "rect",
 
         ...(isRotated90
