@@ -419,6 +419,8 @@ export class NormalComponent<
       // Use post-layout bounds
       const bounds = this._getPcbCircuitJsonBounds()
 
+      const pcb_component = db.pcb_component.get(this.pcb_component_id!)
+
       const cadModel: CadModelProp = props.cadModel
 
       if (typeof cadModel === "string") {
@@ -434,6 +436,11 @@ export class NormalComponent<
             this.props.layer === "bottom"
               ? -boardThickness / 2
               : boardThickness / 2,
+        },
+        rotation: {
+          x: 0,
+          y: this.props.layer === "top" ? 0 : 180,
+          z: pcb_component?.rotation ?? 0,
         },
         pcb_component_id: this.pcb_component_id!,
         source_component_id: this.source_component_id!,
