@@ -20,6 +20,13 @@ import { Net } from "../primitive-components/Net"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import type { CadModelProp } from "@tscircuit/props"
+import { rotation } from "circuit-json"
+
+const rotation3 = z.object({
+  x: rotation,
+  y: rotation,
+  z: rotation,
+})
 
 export type PortMap<T extends string> = {
   [K in T]: Port
@@ -413,9 +420,9 @@ export class NormalComponent<
   doInitialCadModelRender(): void {
     const { db } = this.root!
     const { boardThickness = 0 } = this.root?._getBoard() ?? {}
-    const { _parsedProps: props } = this
+    const cadModel = this._parsedProps as { cadModel?: CadModelProp }
 
-    if (props.cadModel) {
+    if (cadModel) {
       // Use post-layout bounds
       const bounds = this._getPcbCircuitJsonBounds()
 
@@ -426,6 +433,18 @@ export class NormalComponent<
       if (typeof cadModel === "string") {
         throw new Error("String cadModel not yet implemented")
       }
+
+      const rotationOffset = rotation3.parse({
+        x: 0,
+        y: 0,
+        z:
+          typeof cadModel.rotationOffset === "number"
+            ? cadModel.rotationOffset
+            : 0,
+        ...(typeof cadModel.rotationOffset === "object"
+          ? (cadModel.rotationOffset ?? {})
+          : {}),
+      })
 
       const cad_model = db.cad_component.insert({
         // TODO z maybe depends on layer
@@ -438,11 +457,12 @@ export class NormalComponent<
               : boardThickness / 2,
         },
         rotation: {
-          x: 0,
-          y: this.props.layer === "top" ? 0 : 180,
+          x: rotationOffset.x,
+          y: (this.props.layer === "top" ? 0 : 180) + rotationOffset.y,
           z:
             (pcb_component?.rotation ?? 0) +
-            (this.props.layer === "bottom" ? 180 : 0),
+            (this.props.layer === "bottom" ? 180 : 0) +
+            rotationOffset.z,
         },
         pcb_component_id: this.pcb_component_id!,
         source_component_id: this.source_component_id!,
