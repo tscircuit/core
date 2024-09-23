@@ -1,4 +1,4 @@
-import { circuitJsonToPcbSvg, circuitJsonToSchematicSvg } from "circuit-to-svg"
+import { circuitJsonToPcbSvg, circuitJsonToSchematicSvg, convertCircuitJsonToPcbSvg, convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { it, expect, type CustomMatcher, type MatcherResult } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
@@ -23,7 +23,7 @@ async function saveSnapshotOfSoup({
   const filePath = path.join(snapshotDir, snapshotName)
 
   const svg =
-    mode === "pcb" ? circuitJsonToPcbSvg(soup) : circuitJsonToSchematicSvg(soup)
+    mode === "pcb" ? convertCircuitJsonToPcbSvg(soup) : convertCircuitJsonToSchematicSvg(soup)
 
   if (!fs.existsSync(snapshotDir)) {
     fs.mkdirSync(snapshotDir, { recursive: true })
