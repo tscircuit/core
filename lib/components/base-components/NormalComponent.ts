@@ -121,9 +121,7 @@ export class NormalComponent<
     }
 
     // If no ports were created, don't throw an error
-    if (portsToCreate.length === 0) {
-      console.warn(`No ports found for chip ${this.getString()}. This might be intentional.`)
-    } else {
+    if (portsToCreate.length > 0) {
       this.addAll(portsToCreate)
     }
   }

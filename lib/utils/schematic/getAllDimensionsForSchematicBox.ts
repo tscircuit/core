@@ -117,12 +117,11 @@ export const getAllDimensionsForSchematicBox = (
   }
 
   if (!sidePinCounts) {
-    // Default to a 1x1 box if there are no pins
     sidePinCounts = {
       leftSize: 0,
       rightSize: 0,
       topSize: 0,
-      bottomSize: 0
+      bottomSize: 0,
     }
   }
 
