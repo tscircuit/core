@@ -18,6 +18,22 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
 
     if (constraints.length === 0) return
 
+    const { isFlipped } = this._getPcbPrimitiveFlippedHelpers()
+
+    // If we're flipped, left/right is reversed for constraints
+    const maybeFlipLeftRight = <T extends object>(props: T): T => {
+      if (isFlipped) {
+        if ("left" in props && "right" in props) {
+          return {
+            ...props,
+            left: props.right,
+            right: props.left,
+          }
+        }
+      }
+      return props
+    }
+
     const involvedComponents = constraints
       .flatMap(
         (constraint) =>
@@ -65,7 +81,8 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
       const props = constraint._parsedProps
 
       if ("xDist" in props) {
-        const { xDist, left, right, edgeToEdge, centerToCenter } = props
+        const { xDist, left, right, edgeToEdge, centerToCenter } =
+          maybeFlipLeftRight(props)
         const leftVar = getKVar(`${left}_x`)
         const rightVar = getKVar(`${right}_x`)
         const leftBounds = getComponentDetails(left)?.bounds!
