@@ -440,7 +440,9 @@ export class NormalComponent<
         rotation: {
           x: 0,
           y: this.props.layer === "top" ? 0 : 180,
-          z: pcb_component?.rotation ?? 0,
+          z:
+            (pcb_component?.rotation ?? 0) +
+            (this.props.layer === "bottom" ? 180 : 0),
         },
         pcb_component_id: this.pcb_component_id!,
         source_component_id: this.source_component_id!,
