@@ -120,7 +120,12 @@ export class NormalComponent<
       }
     }
 
-    this.addAll(portsToCreate)
+    // If no ports were created, don't throw an error
+    if (portsToCreate.length === 0) {
+      console.warn(`No ports found for chip ${this.getString()}. This might be intentional.`)
+    } else {
+      this.addAll(portsToCreate)
+    }
   }
 
   _addChildrenFromStringFootprint() {
@@ -338,12 +343,7 @@ export class NormalComponent<
         newPorts.push(newPort)
       }
 
-      if (newPorts.length === 0) {
-        throw new Error(
-          `No ports found in chip ${this} (define a schPortArrangement, a footprint or add portHints to elements of the footprint)`,
-        )
-      }
-
+      // If no ports were found, return an empty array instead of throwing an error
       return newPorts
     }
 

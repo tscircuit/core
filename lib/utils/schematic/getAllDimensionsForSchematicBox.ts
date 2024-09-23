@@ -117,7 +117,13 @@ export const getAllDimensionsForSchematicBox = (
   }
 
   if (!sidePinCounts) {
-    throw new Error("Could not determine side sizes for the schematic box")
+    // Default to a 1x1 box if there are no pins
+    sidePinCounts = {
+      leftSize: 0,
+      rightSize: 0,
+      topSize: 0,
+      bottomSize: 0
+    }
   }
 
   // Map the indices to the sides they correspond to
