@@ -420,15 +420,13 @@ export class NormalComponent<
   doInitialCadModelRender(): void {
     const { db } = this.root!
     const { boardThickness = 0 } = this.root?._getBoard() ?? {}
-    const cadModel = this._parsedProps as { cadModel?: CadModelProp }
+    const cadModel = this._parsedProps.cadModel as CadModelProp
 
     if (cadModel) {
       // Use post-layout bounds
       const bounds = this._getPcbCircuitJsonBounds()
 
       const pcb_component = db.pcb_component.get(this.pcb_component_id!)
-
-      const cadModel: CadModelProp = props.cadModel
 
       if (typeof cadModel === "string") {
         throw new Error("String cadModel not yet implemented")
