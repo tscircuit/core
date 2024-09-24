@@ -1,26 +1,30 @@
 import { resistorProps } from "@tscircuit/props"
-import type { PassivePorts, Ftype, BaseSymbolName } from "lib/utils/constants"
+import type { SourceSimpleResistorInput } from "@tscircuit/soup"
+import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
-import type { SourceSimpleResistorInput } from "circuit-json"
-import { z } from "zod"
+import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace"
-import { Net } from "../primitive-components/Net"
 
 export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
 > {
+  // @ts-ignore (cause the symbolName is string and not fixed)
   get config() {
     return {
       componentName: "Resistor",
-      schematicSymbolName: "boxresistor" as BaseSymbolName,
+      schematicSymbolName:
+        this.props.symbolName ?? ("boxresistor_horz" as BaseSymbolName),
       zodProps: resistorProps,
       sourceFtype: "simple_resistor" as Ftype,
     }
   }
 
-  pin1 = this.portMap.pin1
-  pin2 = this.portMap.pin2
+
+  initPorts() {
+    this.add(new Port({ name: "pin1", aliases: ["anode", "pos"] }))
+    this.add(new Port({ name: "pin2", aliases: ["cathode", "neg"] }))
+  }
 
   doInitialCreateNetsFromProps() {
     this._createNetsFromProps([this.props.pullupFor, this.props.pullupTo])

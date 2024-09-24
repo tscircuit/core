@@ -1,34 +1,33 @@
-import { capacitorProps, ledProps } from "@tscircuit/props"
-import { FTYPE, SYMBOL } from "lib/utils/constants"
+import { capacitorProps } from "@tscircuit/props"
+import type { SourceSimpleCapacitorInput } from "@tscircuit/soup"
+import {
+  FTYPE,
+  type BaseSymbolName,
+  type PassivePorts,
+} from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
-import type { capacitance, SourceSimpleCapacitorInput } from "circuit-json"
+import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace"
-
-type PortNames =
-  | "1"
-  | "2"
-  | "pin1"
-  | "pin2"
-  | "left"
-  | "right"
-  | "anode"
-  | "cathode"
 
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
-  PortNames
+  PassivePorts
 > {
+  // @ts-ignore (cause the symbolName is string and not fixed)
   get config() {
     return {
       componentName: "Capacitor",
-      // schematicSymbolName: BASE_SYMBOLS.capacitor,
-      zodProps: ledProps,
+      schematicSymbolName:
+        this.props.symbolName ?? ("capacitor_horz" as BaseSymbolName),
+      zodProps: capacitorProps,
       sourceFtype: FTYPE.simple_capacitor,
     }
   }
 
-  pin1 = this.portMap.pin1
-  pin2 = this.portMap.pin2
+  initPorts() {
+    this.add(new Port({ name: "pin1", aliases: ["anode", "pos"] }))
+    this.add(new Port({ name: "pin2", aliases: ["cathode", "neg"] }))
+  }
 
   doInitialCreateNetsFromProps() {
     this._createNetsFromProps([
