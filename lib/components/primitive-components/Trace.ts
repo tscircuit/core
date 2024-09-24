@@ -379,8 +379,8 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     // Cache the PCB obstacles, they'll be needed for each segment between
     // ports/hints
-    const [obstacles, errGettingObstacles] = tryNow(() =>
-      getObstaclesFromSoup(this.root!.db.toArray()),
+    const [obstacles, errGettingObstacles] = tryNow(
+      () => getObstaclesFromSoup(this.root!.db.toArray() as any), // Remove as any when autorouting-dataset gets updated
     )
 
     if (errGettingObstacles) {

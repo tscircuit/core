@@ -102,7 +102,7 @@ export class Circuit {
       )
     })
 
-    return circuitToSvg.circuitJsonToPcbSvg(this.getCircuitJson())
+    return circuitToSvg.convertCircuitJsonToPcbSvg(this.getCircuitJson())
   }
 
   async preview(
