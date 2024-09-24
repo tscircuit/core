@@ -67,5 +67,25 @@ export const mergeRoutes = (routes: PCBTrace["route"][]) => {
   }
   // console.log(reverse_log)
   // console.table(merged)
+
+  // Wherever a layer changes, insert a via
+  for (let i = 1; i < merged.length - 1; i++) {
+    const lastPoint = merged[i - 1]
+    const currentPoint = merged[i]
+
+    if (lastPoint.route_type !== "wire") continue
+    if (currentPoint.route_type !== "wire") continue
+
+    if (lastPoint.layer !== currentPoint.layer) {
+      merged.splice(i, 0, {
+        x: lastPoint.x,
+        y: lastPoint.y,
+        from_layer: lastPoint.layer,
+        to_layer: currentPoint.layer,
+        route_type: "via",
+      })
+    }
+  }
+
   return merged
 }
