@@ -156,7 +156,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
               Bport.source_port_id!,
             ],
           } as SourceTrace,
-        ]),
+        ]) as any, // Remove as any when autorouting-dataset has been updated
       )
 
       const trace = solution[0]
