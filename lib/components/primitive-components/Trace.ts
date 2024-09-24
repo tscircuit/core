@@ -524,8 +524,9 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       if (pcbPortA && trace.route[0].route_type === "wire") {
         trace.route[0].start_pcb_port_id = pcbPortA
       }
-      if (pcbPortB && trace.route[0].route_type === "wire") {
-        trace.route[0].end_pcb_port_id = pcbPortB
+      const lastRoutePoint = trace.route[trace.route.length - 1]
+      if (pcbPortB && lastRoutePoint.route_type === "wire") {
+        lastRoutePoint.end_pcb_port_id = pcbPortB
       }
       routes.push(trace.route)
     }

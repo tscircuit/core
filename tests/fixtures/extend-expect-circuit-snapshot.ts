@@ -30,6 +30,7 @@ async function saveSnapshotOfSoup({
   }
 
   if (!fs.existsSync(filePath) || updateSnapshot) {
+    console.log("Creating snapshot at", filePath)
     fs.writeFileSync(filePath, svg)
     return {
       message: () => `Snapshot created at ${filePath}`,
