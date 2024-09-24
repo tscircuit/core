@@ -12,8 +12,8 @@ it("should create soup with various elements", () => {
   })
   project.add(board)
 
-  const R1 = new Resistor({ name: "R1", resistance: "10k", footprint: "0402" })
-  board.add(R1)
+  const R1 = <resistor name="R1" resistance="10k" footprint="0402" />;
+  board.add(R1);
 
   board.add(<led name="LED1" footprint="0402" />)
 
