@@ -1,4 +1,4 @@
-import type { AnySourceComponent } from "@tscircuit/soup"
+import type { AnySourceComponent } from "circuit-json"
 import type { BaseSymbolName } from "schematic-symbols"
 
 /**

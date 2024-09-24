@@ -9,13 +9,13 @@ import {
   markObstaclesAsConnected,
 } from "@tscircuit/infgrid-ijump-astar"
 import type {
-  AnySoupElement,
+  AnyCircuitElement,
   LayerRef,
   PCBTrace,
   RouteHintPoint,
   SchematicTrace,
   SourceTrace,
-} from "@tscircuit/soup"
+} from "circuit-json"
 import type {
   Obstacle,
   SimpleRouteConnection,
@@ -379,14 +379,15 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     // Cache the PCB obstacles, they'll be needed for each segment between
     // ports/hints
-    const [obstacles, errGettingObstacles] = tryNow(() =>
-      getObstaclesFromSoup(this.root!.db.toArray()),
+    const [obstacles, errGettingObstacles] = tryNow(
+      () => getObstaclesFromSoup(this.root!.db.toArray() as any), // Remove as any when autorouting-dataset gets updated
     )
 
     if (errGettingObstacles) {
       this.renderError({
-        type: "pcb_error",
+        type: "pcb_trace_error",
         error_type: "pcb_trace_error",
+        pcb_trace_error_id: this.pcb_trace_id!,
         message: `Error getting obstacles for autorouting: ${errGettingObstacles.message}`,
         source_trace_id: this.source_trace_id!,
         center: { x: 0, y: 0 },
@@ -484,10 +485,11 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
         traces = ijump.solveAndMapToTraces()
       } catch (e: any) {
         this.renderError({
-          type: "pcb_error",
+          type: "pcb_trace_error",
+          pcb_trace_error_id: this.source_trace_id!,
           error_type: "pcb_trace_error",
           message: `error solving route: ${e.message}`,
-          source_trace_id: this.source_trace_id!,
+          source_trace_id: this.pcb_trace_id!,
           center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
           pcb_port_ids: ports.map((p) => p.pcb_port_id!),
           pcb_trace_id: this.pcb_trace_id!,
@@ -497,8 +499,9 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       if (!traces) return
       if (traces.length === 0) {
         this.renderError({
-          type: "pcb_error",
+          type: "pcb_trace_error",
           error_type: "pcb_trace_error",
+          pcb_trace_error_id: this.pcb_trace_id!,
           message: `Could not find a route for ${this}`,
           source_trace_id: this.source_trace_id!,
           center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
@@ -533,9 +536,17 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const mergedRoute = mergeRoutes(routes)
 
+    const pcb_trace = db.pcb_trace.insert({
+      route: mergedRoute,
+      source_trace_id: this.source_trace_id!,
+    })
+    this._portsRoutedOnPcb = ports
+    this.pcb_trace_id = pcb_trace.pcb_trace_id
+
     for (const point of mergedRoute) {
       if (point.route_type === "via") {
         db.pcb_via.insert({
+          pcb_trace_id: pcb_trace.pcb_trace_id,
           x: point.x,
           y: point.y,
           hole_diameter: 0.3,
@@ -546,13 +557,6 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
         })
       }
     }
-
-    const pcb_trace = db.pcb_trace.insert({
-      route: mergedRoute,
-      source_trace_id: this.source_trace_id!,
-    })
-    this._portsRoutedOnPcb = ports
-    this.pcb_trace_id = pcb_trace.pcb_trace_id
   }
 
   doInitialSchematicTraceRender(): void {

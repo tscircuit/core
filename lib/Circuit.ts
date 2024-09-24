@@ -1,5 +1,4 @@
-import type { AnySoupElement } from "@tscircuit/soup"
-import type { LayerRef } from "circuit-json"
+import type { AnyCircuitElement, LayerRef } from "circuit-json"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
 import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import { su } from "@tscircuit/soup-util"
@@ -87,12 +86,12 @@ export class Circuit {
     this._hasRenderedAtleastOnce = true
   }
 
-  getSoup(): AnySoupElement[] {
+  getSoup(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
     return this.db.toArray()
   }
 
-  getCircuitJson(): AnySoupElement[] {
+  getCircuitJson(): AnyCircuitElement[] {
     return this.getSoup()
   }
 
@@ -103,7 +102,7 @@ export class Circuit {
       )
     })
 
-    return circuitToSvg.circuitJsonToPcbSvg(this.getCircuitJson())
+    return circuitToSvg.convertCircuitJsonToPcbSvg(this.getCircuitJson())
   }
 
   async preview(

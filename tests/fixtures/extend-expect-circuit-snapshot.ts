@@ -1,10 +1,10 @@
-import { circuitJsonToPcbSvg, circuitJsonToSchematicSvg } from "circuit-to-svg"
+import { circuitJsonToPcbSvg, circuitJsonToSchematicSvg, convertCircuitJsonToPcbSvg, convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { it, expect, type CustomMatcher, type MatcherResult } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import looksSame from "looks-same"
-import type { AnySoupElement } from "@tscircuit/soup"
 import { Circuit } from "lib/Circuit"
+import type { AnyCircuitElement } from "circuit-json"
 
 async function saveSnapshotOfSoup({
   soup,
@@ -12,7 +12,7 @@ async function saveSnapshotOfSoup({
   mode,
   updateSnapshot,
 }: {
-  soup: AnySoupElement[]
+  soup: AnyCircuitElement[]
   testPath: string
   mode: "pcb" | "schematic"
   updateSnapshot: boolean
@@ -23,7 +23,7 @@ async function saveSnapshotOfSoup({
   const filePath = path.join(snapshotDir, snapshotName)
 
   const svg =
-    mode === "pcb" ? circuitJsonToPcbSvg(soup) : circuitJsonToSchematicSvg(soup)
+    mode === "pcb" ? convertCircuitJsonToPcbSvg(soup) : convertCircuitJsonToSchematicSvg(soup)
 
   if (!fs.existsSync(snapshotDir)) {
     fs.mkdirSync(snapshotDir, { recursive: true })
@@ -78,7 +78,7 @@ expect.extend({
   ): Promise<MatcherResult> {
     const soup = await (received instanceof Circuit
       ? received.getCircuitJson()
-      : (received as AnySoupElement[]))
+      : (received as AnyCircuitElement[]))
 
     return saveSnapshotOfSoup({
       soup,
@@ -99,7 +99,7 @@ expect.extend({
       soup:
         received instanceof Circuit
           ? received.getSoup()
-          : (received as AnySoupElement[]),
+          : (received as AnyCircuitElement[]),
       testPath: args[0],
       mode: "schematic",
       updateSnapshot:

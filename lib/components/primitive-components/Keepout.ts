@@ -1,7 +1,7 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { pcbKeepoutProps } from "@tscircuit/props"
 import type { RenderPhaseFn } from "../base-components/Renderable"
-import type { PCBKeepout } from "@tscircuit/soup"
+import type { PCBKeepout } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 
 export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {

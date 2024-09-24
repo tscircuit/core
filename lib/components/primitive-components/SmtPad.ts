@@ -2,7 +2,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { smtPadProps } from "@tscircuit/props"
 import type { Port } from "./Port"
 import type { RenderPhaseFn } from "../base-components/Renderable"
-import type { LayerRef, PCBSMTPad } from "@tscircuit/soup"
+import type { LayerRef, PCBSMTPad } from "circuit-json"
 import {
   applyToPoint,
   compose,
@@ -11,6 +11,7 @@ import {
   flipY,
   translate,
 } from "transformation-matrix"
+
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null

@@ -1,4 +1,4 @@
-import type { PCBTrace } from "@tscircuit/soup"
+import type { PCBTrace } from "circuit-json"
 
 function pdist(a: any, b: any) {
   return Math.hypot(a.x - b.x, a.y - b.y)

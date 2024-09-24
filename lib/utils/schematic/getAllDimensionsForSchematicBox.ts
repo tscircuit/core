@@ -1,4 +1,4 @@
-import { current } from "@tscircuit/soup"
+import { current } from "circuit-json"
 import { getSizeOfSidesFromPortArrangement } from "./getSizeOfSidesFromPortArrangement"
 import { schematicPortArrangement } from "@tscircuit/props"
 import { z } from "zod"

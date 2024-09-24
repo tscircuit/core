@@ -1,5 +1,5 @@
-import type { AnySoupElement, AnySourceComponent } from "@tscircuit/soup"
 import type { Circuit } from "../../Circuit"
+import type { AnyCircuitElement, AnySourceComponent } from "circuit-json"
 import type { ZodType } from "zod"
 import { z } from "zod"
 import { symbols, type SchSymbol, type BaseSymbolName } from "schematic-symbols"
@@ -507,7 +507,7 @@ export abstract class PrimitiveComponent<
       return super.renderError(message)
     }
     // TODO this needs to be cleaned up at some point!
-    this.root?.db.pcb_error.insert(message)
+    this.root?.db.pcb_placement_error.insert(message)
   }
 
   getString(): string {

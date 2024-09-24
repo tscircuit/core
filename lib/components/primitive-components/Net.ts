@@ -3,7 +3,7 @@ import { z } from "zod"
 import type { Port } from "./Port"
 import type { Trace } from "./Trace"
 import { pairs } from "lib/utils/pairs"
-import type { AnySoupElement, SourceTrace } from "@tscircuit/soup"
+import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import { autoroute } from "@tscircuit/infgrid-ijump-astar"
 
 export const netProps = z.object({
@@ -134,7 +134,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
       const Aport = A.ports[closestPair[0]]
       const Bport = B.ports[closestPair[1]]
 
-      const pcbElements: AnySoupElement[] = db
+      const pcbElements: AnyCircuitElement[] = db
         .toArray()
         .filter(
           (elm) =>
@@ -156,7 +156,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
               Bport.source_port_id!,
             ],
           } as SourceTrace,
-        ]),
+        ]) as any, // Remove as any when autorouting-dataset has been updated
       )
 
       const trace = solution[0]
