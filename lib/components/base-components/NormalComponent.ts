@@ -415,6 +415,30 @@ export class NormalComponent<
     }
   }
 
+  _getPcbCircuitJsonBounds(): {
+    center: { x: number; y: number }
+    bounds: { left: number; top: number; right: number; bottom: number }
+    width: number
+    height: number
+  } {
+    const { db } = this.root!
+    if (!this.pcb_component_id) return super._getPcbCircuitJsonBounds()
+
+    const pcb_component = db.pcb_component.get(this.pcb_component_id)!
+
+    return {
+      center: { x: pcb_component.center.x, y: pcb_component.center.y },
+      bounds: {
+        left: pcb_component.center.x - pcb_component.width / 2,
+        top: pcb_component.center.y - pcb_component.height / 2,
+        right: pcb_component.center.x + pcb_component.width / 2,
+        bottom: pcb_component.center.y + pcb_component.height / 2,
+      },
+      width: pcb_component.width,
+      height: pcb_component.height,
+    }
+  }
+
   doInitialCadModelRender(): void {
     const { db } = this.root!
     const { boardThickness = 0 } = this.root?._getBoard() ?? {}
