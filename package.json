@@ -43,7 +43,7 @@
     "performance-now": "^2.1.0",
     "react": "^18.3.1",
     "react-reconciler": "^0.29.2",
-    "schematic-symbols": "0.0.17",
+    "schematic-symbols": "0.0.19",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.23.8"
   }

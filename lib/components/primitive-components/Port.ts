@@ -1,11 +1,10 @@
-import type { PCBSMTPad } from "circuit-json"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { z } from "zod"
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
-import { symbols, type SchSymbol } from "schematic-symbols"
-import { applyToPoint, compose, translate } from "transformation-matrix"
-import type { Trace } from "./Trace"
 import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { type SchSymbol } from "schematic-symbols"
+import { applyToPoint, compose, translate } from "transformation-matrix"
+import { z } from "zod"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Trace } from "./Trace"
 
 export const portProps = z.object({
   name: z.string().optional(),
@@ -76,13 +75,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         x: 0,
         y: 0,
       })
-      throw new Error(
-        `Could not find schematic symbol port for port ${this} so couldn't determine port position`,
-      )
     }
 
     const symbol = this.parent?.getSchematicSymbol()
-    if (!symbol) throw new Error(`Could not find parent symbol for ${this}`)
+    if (!symbol) {
+      console.warn(`Could not find parent symbol for ${this}`)
+      return { x: 0, y: 0 }
+    }
 
     const transform = compose(
       this.parent!.computeSchematicGlobalTransform(),

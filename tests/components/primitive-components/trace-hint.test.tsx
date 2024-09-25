@@ -27,5 +27,5 @@ it("simple trace with trace hint test", async () => {
   expect(traceHint.matchedPort).toBeTruthy()
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  // expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

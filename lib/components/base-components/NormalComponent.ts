@@ -189,7 +189,7 @@ export class NormalComponent<
     const { schematicSymbolName } = this.config
     if (!schematicSymbolName) return
     // TODO switch between horizontal and vertical based on schRotation
-    const symbol_name = `${this.config.schematicSymbolName}_horz`
+    const symbol_name = `${this.config.schematicSymbolName}`
 
     const symbol = (symbols as any)[symbol_name] as SchSymbol | undefined
 
