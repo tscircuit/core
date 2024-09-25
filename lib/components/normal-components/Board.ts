@@ -7,14 +7,13 @@ import { Group } from "../primitive-components/Group"
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
 
-  componentName = "Board"
-
   get isSubcircuit() {
     return true
   }
 
   get config() {
     return {
+      componentName: "Board",
       zodProps: boardProps,
     }
   }

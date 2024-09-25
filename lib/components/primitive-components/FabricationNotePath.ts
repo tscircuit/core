@@ -5,11 +5,11 @@ import { applyToPoint } from "transformation-matrix"
 export class FabricationNotePath extends PrimitiveComponent<
   typeof fabricationNotePathProps
 > {
-  componentName = "FabricationNotePath"
   fabrication_note_path_id: string | null = null
 
   get config() {
     return {
+      componentName: "FabricationNotePath",
       zodProps: fabricationNotePathProps,
     }
   }

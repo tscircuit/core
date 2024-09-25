@@ -12,13 +12,12 @@ export class Led extends NormalComponent<
 > {
   get config() {
     return {
+      componentName: "Led",
       schematicSymbolName: "led" as BaseSymbolName,
       zodProps: ledProps,
       sourceFtype: "simple_diode" as Ftype,
     }
   }
-
-  componentName = "Led"
 
   pos = this.portMap.pin1
   pin1 = this.portMap.pin1

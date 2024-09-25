@@ -20,13 +20,12 @@ export class Capacitor extends NormalComponent<
 > {
   get config() {
     return {
+      componentName: "Capacitor",
       // schematicSymbolName: BASE_SYMBOLS.capacitor,
       zodProps: ledProps,
       sourceFtype: FTYPE.simple_capacitor,
     }
   }
-
-  componentName = "Capacitor"
 
   pin1 = this.portMap.pin1
   pin2 = this.portMap.pin2

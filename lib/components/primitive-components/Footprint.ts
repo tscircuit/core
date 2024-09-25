@@ -1,4 +1,4 @@
-import type { footprintProps } from "@tscircuit/props"
+import { footprintProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Constraint } from "./Constraint"
 import * as kiwi from "@lume/kiwi"
@@ -7,7 +7,13 @@ import Debug from "debug"
 const debug = Debug("tscircuit:core:footprint")
 
 export class Footprint extends PrimitiveComponent<typeof footprintProps> {
-  componentName = "Footprint"
+  get config() {
+    return {
+      componentName: "Footprint",
+      zodProps: footprintProps,
+    }
+  }
+
   /**
    * A footprint is a constrainedlayout, the db elements are adjusted according
    * to any constraints that are defined.
