@@ -41,6 +41,9 @@ export class Board extends Group<typeof boardProps> {
     const pcb_board = db.pcb_board.insert({
       center: { x: props.pcbX, y: props.pcbY },
 
+      thickness: this.boardThickness,
+      num_layers: this.allLayers.length,
+
       width: props.width,
       height: props.height,
       outline: props.outline,
