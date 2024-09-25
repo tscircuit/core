@@ -1,5 +1,4 @@
-import type { PCBPlacementError, PCBTraceError } from "circuit-json"
-import { Component, createElement, type ReactElement } from "react"
+import type { PcbPlacementError, PcbTraceError } from "circuit-json"
 
 export const orderedRenderPhases = [
   "ReactSubtreesRender",
@@ -113,8 +112,8 @@ export abstract class Renderable implements IRenderable {
   renderError(
     message:
       | string
-      | Omit<PCBTraceError, "pcb_error_id">
-      | Omit<PCBPlacementError, "pcb_error_id">,
+      | Omit<PcbTraceError, "pcb_error_id">
+      | Omit<PcbPlacementError, "pcb_error_id">,
   ) {
     // TODO add to render phase error list and try to add position or
     // relationships etc.
