@@ -7,7 +7,12 @@ import { applyToPoint } from "transformation-matrix"
 export class TraceHint extends PrimitiveComponent<typeof traceHintProps> {
   matchedPort: Port | null = null
 
-  componentName = "TraceHint"
+  get config() {
+    return {
+      componentName: "TraceHint",
+      zodProps: traceHintProps,
+    }
+  }
 
   doInitialPortMatching(): void {
     const { db } = this.root!
