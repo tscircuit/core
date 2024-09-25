@@ -20,6 +20,8 @@ export class Diode extends NormalComponent<typeof diodeProps, TwoPinPorts> {
     }
   }
 
+  componentName = "Diode"
+
   initPorts() {
     this.add(new Port({ name: "pin1", aliases: ["1", "pin1"] }))
     this.add(new Port({ name: "pin2", aliases: ["2", "pin2"] }))

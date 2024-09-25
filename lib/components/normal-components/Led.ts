@@ -18,6 +18,8 @@ export class Led extends NormalComponent<
     }
   }
 
+  componentName = "Led"
+
   pos = this.portMap.pin1
   pin1 = this.portMap.pin1
   anode = this.portMap.pin1

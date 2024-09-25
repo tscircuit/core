@@ -17,6 +17,7 @@ export class Group<
       zodProps: groupProps as unknown as Props,
     }
   }
+  componentName = "Group"
 
   doInitialCreateTraceHintsFromProps(): void {
     const { _parsedProps: props } = this

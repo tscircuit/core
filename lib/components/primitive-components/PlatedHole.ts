@@ -7,6 +7,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
   matchedPort: Port | null = null
   isPcbPrimitive = true
+  componentName = "PlatedHole"
 
   get config() {
     return {

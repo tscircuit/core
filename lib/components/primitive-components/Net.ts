@@ -13,6 +13,8 @@ export const netProps = z.object({
 export class Net extends PrimitiveComponent<typeof netProps> {
   source_net_id?: string
 
+  componentName = "Net"
+
   getPortSelector() {
     return `net.${this.props.name}`
   }

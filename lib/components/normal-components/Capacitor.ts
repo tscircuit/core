@@ -26,6 +26,8 @@ export class Capacitor extends NormalComponent<
     }
   }
 
+  componentName = "Capacitor"
+
   pin1 = this.portMap.pin1
   pin2 = this.portMap.pin2
 

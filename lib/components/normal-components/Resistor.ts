@@ -10,6 +10,8 @@ export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
 > {
+  componentName = "Resistor"
+
   get config() {
     return {
       schematicSymbolName: "boxresistor" as BaseSymbolName,

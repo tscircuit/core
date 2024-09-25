@@ -21,6 +21,8 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
     }
   }
 
+  componentName = "Jumper"
+
   doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this

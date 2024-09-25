@@ -24,6 +24,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   matchedComponents: PrimitiveComponent[]
   facingDirection: "up" | "down" | "left" | "right" | null = null
 
+  componentName = "Port"
+
   constructor(props: z.input<typeof portProps>) {
     if (!props.name && props.pinNumber) props.name = `pin${props.pinNumber}`
     if (!props.name) {
