@@ -19,10 +19,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
 
   isPcbPrimitive = true
 
-  componentName = "SmtPad"
-
   get config() {
     return {
+      componentName: "SmtPad",
       zodProps: smtPadProps,
     }
   }

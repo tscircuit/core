@@ -15,12 +15,11 @@ export class Diode extends NormalComponent<typeof diodeProps, TwoPinPorts> {
   get config() {
     return {
       // schematicSymbolName: "diode" as BaseSymbolName,
+      componentName: "Diode",
       zodProps: diodeProps,
       sourceFtype: "simple_diode" as Ftype,
     }
   }
-
-  componentName = "Diode"
 
   initPorts() {
     this.add(new Port({ name: "pin1", aliases: ["1", "pin1"] }))

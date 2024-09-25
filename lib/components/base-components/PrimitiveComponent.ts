@@ -20,6 +20,7 @@ import type { LayoutBuilder } from "@tscircuit/layout"
 import type { LayerRef } from "circuit-json"
 
 export interface BaseComponentConfig {
+  componentName: string
   schematicSymbolName?: BaseSymbolName | null
   zodProps: ZodType
   sourceFtype?: AnySourceComponent["ftype"] | null
@@ -39,6 +40,7 @@ export abstract class PrimitiveComponent<
 
   get config(): BaseComponentConfig {
     return {
+      componentName: "",
       zodProps: z.object({}).passthrough(),
     }
   }
@@ -46,8 +48,13 @@ export abstract class PrimitiveComponent<
   props: z.input<ZodProps>
   _parsedProps: z.infer<ZodProps>
 
-  componentName = ""
-  lowercaseComponentName = ""
+  get componentName() {
+    return this.config.componentName
+  }
+
+  get lowercaseComponentName() {
+    return this.componentName.toLowerCase()
+  }
 
   externallyAddedAliases: string[]
 
@@ -92,10 +99,6 @@ export abstract class PrimitiveComponent<
     this._parsedProps = this.config.zodProps.parse(
       props ?? {},
     ) as z.infer<ZodProps>
-    if (!this.componentName) {
-      this.componentName = this.constructor.name
-    }
-    this.lowercaseComponentName = this.componentName.toLowerCase()
   }
 
   setProps(props: Partial<z.input<ZodProps>>) {

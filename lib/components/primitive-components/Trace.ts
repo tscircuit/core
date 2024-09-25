@@ -68,8 +68,6 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
   schematic_trace_id: string | null = null
   _portsRoutedOnPcb: Port[]
 
-  componentName = "Trace"
-
   constructor(props: z.input<typeof traceProps>) {
     super(props)
     this._portsRoutedOnPcb = []
@@ -78,6 +76,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
   get config() {
     return {
       zodProps: traceProps,
+      componentName: "Trace",
     }
   }
 

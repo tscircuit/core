@@ -17,11 +17,10 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
 
   get config() {
     return {
+      componentName: "Chip",
       zodProps: chipProps,
     }
   }
-
-  componentName = "Chip"
 
   doInitialSourceRender(): void {
     const { db } = this.root!

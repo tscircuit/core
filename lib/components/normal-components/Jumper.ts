@@ -17,11 +17,10 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
 
   get config() {
     return {
+      componentName: "Jumper",
       zodProps: jumperProps,
     }
   }
-
-  componentName = "Jumper"
 
   doInitialSourceRender(): void {
     const { db } = this.root!

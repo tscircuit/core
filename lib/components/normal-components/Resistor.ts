@@ -10,10 +10,9 @@ export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
 > {
-  componentName = "Resistor"
-
   get config() {
     return {
+      componentName: "Resistor",
       schematicSymbolName: "boxresistor" as BaseSymbolName,
       zodProps: resistorProps,
       sourceFtype: "simple_resistor" as Ftype,

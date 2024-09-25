@@ -7,10 +7,9 @@ export class SilkscreenPath extends PrimitiveComponent<
 > {
   pcb_silkscreen_path_id: string | null = null
 
-  componentName = "SilkscreenPath"
-
   get config() {
     return {
+      componentName: "SilkscreenPath",
       zodProps: silkscreenPathProps,
     }
   }

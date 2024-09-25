@@ -5,7 +5,14 @@ export class SilkscreenText extends PrimitiveComponent<
   typeof silkscreenTextProps
 > {
   isPcbPrimitive = true
-  componentName = "SilkscreenText"
+
+  get config() {
+    return {
+      componentName: "SilkscreenText",
+      zodProps: silkscreenTextProps,
+    }
+  }
+
   doInitialPcbPrimitiveRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
