@@ -12,13 +12,14 @@ import {
   translate,
 } from "transformation-matrix"
 
-
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
 
   matchedPort: Port | null = null
 
   isPcbPrimitive = true
+
+  componentName = "SmtPad"
 
   get config() {
     return {

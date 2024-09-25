@@ -4,6 +4,7 @@ import { fabricationNoteTextProps } from "@tscircuit/props"
 export class FabricationNoteText extends PrimitiveComponent<
   typeof fabricationNoteTextProps
 > {
+  componentName = "FabricationNoteText"
   doInitialPcbPrimitiveRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this

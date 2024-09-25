@@ -5,6 +5,7 @@ export class SilkscreenText extends PrimitiveComponent<
   typeof silkscreenTextProps
 > {
   isPcbPrimitive = true
+  componentName = "SilkscreenText"
   doInitialPcbPrimitiveRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this

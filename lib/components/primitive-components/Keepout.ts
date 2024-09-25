@@ -8,6 +8,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   pcb_keepout_id: string | null = null
 
   isPcbPrimitive = true
+  componentName = "Keepout"
 
   get config() {
     return {

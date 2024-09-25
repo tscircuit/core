@@ -7,6 +7,7 @@ import Debug from "debug"
 const debug = Debug("tscircuit:core:footprint")
 
 export class Footprint extends PrimitiveComponent<typeof footprintProps> {
+  componentName = "Footprint"
   /**
    * A footprint is a constrainedlayout, the db elements are adjusted according
    * to any constraints that are defined.

@@ -5,6 +5,7 @@ import type { PCBHole } from "circuit-json"
 export class Hole extends PrimitiveComponent<typeof holeProps> {
   pcb_hole_id: string | null = null
   isPcbPrimitive = true
+  componentName = "Hole"
 
   get config() {
     return {
