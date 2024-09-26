@@ -267,17 +267,12 @@ export abstract class PrimitiveComponent<
     )
   }
 
-  getSchematicSymbol(variant: "horz" | "vert" | null = null): SchSymbol | null {
-    if (variant === null) {
-      return this.getSchematicSymbol(
-        this.props.schRotation % 90 === 0 ? "vert" : "horz",
-      )
-    }
+  getSchematicSymbol(): SchSymbol | null {
     const { config } = this
     if (!config.schematicSymbolName) return null
     return (
       symbols[
-        `${config.schematicSymbolName}_${variant}` as keyof typeof symbols
+        `${config.schematicSymbolName}` as keyof typeof symbols
       ] ?? null
     )
   }
