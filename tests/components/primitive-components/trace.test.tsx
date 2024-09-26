@@ -21,5 +21,5 @@ it("simple trace test", async () => {
   project.render()
 
   expect(project).toMatchPcbSnapshot(import.meta.path)
-  // expect(project).toMatchSchematicSnapshot(import.meta.path)
+  expect(project).toMatchSchematicSnapshot(import.meta.path)
 })

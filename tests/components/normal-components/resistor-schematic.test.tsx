@@ -6,7 +6,7 @@ test("resistor schematic", () => {
 
   project.add(
     <board width="10mm" height="10mm">
-      <resistor name="R1" resistance="10k" footprint="0402" pcbX={0} pcbY={0} />
+      <resistor name="R1" resistance="10k" footprint="0402" schX={5} />
     </board>,
   )
 
