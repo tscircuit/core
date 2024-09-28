@@ -8,6 +8,10 @@
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tscircuit/core"
+  },
   "scripts": {
     "build": "tsup-node index.ts --format esm --dts",
     "measure-bundle": "howfat -r table ."
