@@ -1,20 +1,20 @@
 import { diodeProps } from "@tscircuit/props"
 import {
-  FTYPE,
-  SYMBOL,
+  type BaseSymbolName,
   type Ftype,
-  type TwoPinPorts,
+  type PolarizedPassivePorts,
 } from "lib/utils/constants"
-import { Port } from "../primitive-components/Port"
 import { NormalComponent } from "../base-components/NormalComponent"
+import { Port } from "../primitive-components/Port"
 
-export class Diode extends NormalComponent<typeof diodeProps, TwoPinPorts> {
-  pin1 = this.portMap.pin1
-  pin2 = this.portMap.pin2
-
+export class Diode extends NormalComponent<
+  typeof diodeProps,
+  PolarizedPassivePorts
+> {
+  // @ts-ignore
   get config() {
     return {
-      // schematicSymbolName: "diode" as BaseSymbolName,
+      schematicSymbolName: this.props.symbolName ?? "diode_horz" as BaseSymbolName,
       componentName: "Diode",
       zodProps: diodeProps,
       sourceFtype: "simple_diode" as Ftype,
@@ -22,7 +22,12 @@ export class Diode extends NormalComponent<typeof diodeProps, TwoPinPorts> {
   }
 
   initPorts() {
-    this.add(new Port({ name: "pin1", aliases: ["1", "pin1"] }))
-    this.add(new Port({ name: "pin2", aliases: ["2", "pin2"] }))
+    this.add(new Port({ name: "pin1", pinNumber: 1, aliases: ["anode", "pos"] }))
+    this.add(new Port({ name: "pin2", pinNumber: 2, aliases: ["cathode", "neg"] }))
   }
+
+  pos = this.portMap.pin1
+  anode = this.portMap.pin1
+  neg = this.portMap.pin2
+  cathode = this.portMap.pin2
 }

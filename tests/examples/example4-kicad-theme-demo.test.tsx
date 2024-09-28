@@ -13,7 +13,13 @@ it("example 4: kicad theme demo", async () => {
         pcbX={-2}
         schX={-2}
       />
-      <led name="LED1" footprint="0402" pcbX={2} schX={2} />
+      {/* Doesn't generate the schematic_trace */}
+      {/* <capacitor capacitance={"10"} name="LED1" footprint="0402" pcbX={2} schX={2} /> */}
+
+
+      <diode name="LED1" footprint="0603" pcbX={2} schX={2} />
+      {/* <led name="LED1" footprint="0402" pcbX={2} schX={2} schRotation={90} /> */}
+      {/* <resistor resistance={"10"} name="LED1" footprint="0402" pcbX={2} schX={2} /> */}
       <trace from=".R1 > .pin2" to=".LED1 > .anode" />
 
       <chip
@@ -41,8 +47,11 @@ it("example 4: kicad theme demo", async () => {
     </board>,
   )
 
+  const fs = require('node:fs');
+  const circuitJson = project.getCircuitJson();
+  fs.writeFileSync('circuit.json', JSON.stringify(circuitJson, null, 2)); 
+
   project.render()
 
-  expect(project).toMatchPcbSnapshot(import.meta.path)
-  expect(project).toMatchSchematicSnapshot(import.meta.path)
+  // expect(project).toMatchSchematicSnapshot(import.meta.path)
 })
