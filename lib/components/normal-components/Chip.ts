@@ -26,6 +26,8 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
 
+    console.log("chip schematic render props", props)
+
     const source_component = db.source_component.insert({
       ftype: "simple_chip",
       name: props.name,
