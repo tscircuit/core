@@ -249,4 +249,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       y: newCenter.y,
     })
   }
+
+  _hasMatchedPcbPrimitive() {
+    return this.matchedComponents.some((c) => c.isPcbPrimitive)
+  }
 }
