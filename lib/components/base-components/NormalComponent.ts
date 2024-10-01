@@ -19,7 +19,12 @@ import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
 import { Net } from "../primitive-components/Net"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import type { CadModelProp } from "@tscircuit/props"
+import type {
+  CadModelJscad,
+  CadModelObj,
+  CadModelProp,
+  CadModelStl,
+} from "@tscircuit/props"
 import { rotation } from "circuit-json"
 
 const rotation3 = z.object({
@@ -442,59 +447,69 @@ export class NormalComponent<
   doInitialCadModelRender(): void {
     const { db } = this.root!
     const { boardThickness = 0 } = this.root?._getBoard() ?? {}
-    const cadModel = this._parsedProps.cadModel as CadModelProp
+    const cadModel = this._parsedProps.cadModel as CadModelProp | undefined
 
-    if (cadModel) {
-      // Use post-layout bounds
-      const bounds = this._getPcbCircuitJsonBounds()
+    if (!this.pcb_component_id) return
+    if (!cadModel && !this.props.footprint) return
 
-      const pcb_component = db.pcb_component.get(this.pcb_component_id!)
+    // Use post-layout bounds
+    const bounds = this._getPcbCircuitJsonBounds()
 
-      if (typeof cadModel === "string") {
-        throw new Error("String cadModel not yet implemented")
-      }
+    const pcb_component = db.pcb_component.get(this.pcb_component_id!)
 
-      const rotationOffset = rotation3.parse({
-        x: 0,
-        y: 0,
-        z:
-          typeof cadModel.rotationOffset === "number"
-            ? cadModel.rotationOffset
-            : 0,
-        ...(typeof cadModel.rotationOffset === "object"
-          ? (cadModel.rotationOffset ?? {})
-          : {}),
-      })
-
-      const cad_model = db.cad_component.insert({
-        // TODO z maybe depends on layer
-        position: {
-          x: bounds.center.x,
-          y: bounds.center.y,
-          z:
-            this.props.layer === "bottom"
-              ? -boardThickness / 2
-              : boardThickness / 2,
-        },
-        rotation: {
-          x: rotationOffset.x,
-          y: (this.props.layer === "top" ? 0 : 180) + rotationOffset.y,
-          z:
-            (pcb_component?.rotation ?? 0) +
-            (this.props.layer === "bottom" ? 180 : 0) +
-            rotationOffset.z,
-        },
-        pcb_component_id: this.pcb_component_id!,
-        source_component_id: this.source_component_id!,
-        model_stl_url: "stlUrl" in cadModel ? cadModel.stlUrl : undefined,
-        model_obj_url: "objUrl" in cadModel ? cadModel.objUrl : undefined,
-        model_jscad: "jscad" in cadModel ? cadModel.jscad : undefined,
-
-        footprinter_string:
-          typeof this.props.footprint === "string" && !cadModel
-            ? this.props.footprint
-            : undefined,
-      })
+    if (typeof cadModel === "string") {
+      throw new Error("String cadModel not yet implemented")
     }
+
+    const rotationOffset = rotation3.parse({
+      x: 0,
+      y: 0,
+      z:
+        typeof cadModel?.rotationOffset === "number"
+          ? cadModel.rotationOffset
+          : 0,
+      ...(typeof cadModel?.rotationOffset === "object"
+        ? (cadModel.rotationOffset ?? {})
+        : {}),
+    })
+
+    const cad_model = db.cad_component.insert({
+      // TODO z maybe depends on layer
+      position: {
+        x: bounds.center.x,
+        y: bounds.center.y,
+        z:
+          this.props.layer === "bottom"
+            ? -boardThickness / 2
+            : boardThickness / 2,
+      },
+      rotation: {
+        x: rotationOffset.x,
+        y: (this.props.layer === "top" ? 0 : 180) + rotationOffset.y,
+        z:
+          (pcb_component?.rotation ?? 0) +
+          (this.props.layer === "bottom" ? 180 : 0) +
+          rotationOffset.z,
+      },
+      pcb_component_id: this.pcb_component_id!,
+      source_component_id: this.source_component_id!,
+      model_stl_url:
+        "stlUrl" in (cadModel ?? {})
+          ? (cadModel as CadModelStl).stlUrl
+          : undefined,
+      model_obj_url:
+        "objUrl" in (cadModel ?? {})
+          ? (cadModel as CadModelObj).objUrl
+          : undefined,
+      model_jscad:
+        "jscad" in (cadModel ?? {})
+          ? (cadModel as CadModelJscad).jscad
+          : undefined,
+
+      footprinter_string:
+        typeof this.props.footprint === "string" && !cadModel
+          ? this.props.footprint
+          : undefined,
+    })
   }
 }
