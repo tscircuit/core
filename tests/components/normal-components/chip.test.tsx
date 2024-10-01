@@ -82,6 +82,7 @@ it("should create a Chip component with cadModel prop", async () => {
   circuit.render()
 
   const cadComponents = circuit.db.cad_component.list()
+
   expect(cadComponents).toHaveLength(1)
   expect(cadComponents[0].position.x).toBeCloseTo(4)
   expect(cadComponents[0].model_stl_url).toBe("https://example.com/chip.stl")

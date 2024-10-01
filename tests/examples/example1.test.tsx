@@ -53,6 +53,10 @@ test("example1", async () => {
     circuit.db.pcb_smtpad.list().map((smtpad) => smtpad.pcb_port_id),
   ).not.toContain(null)
 
+  // We should have a cad_component for each component
+  const cadComponents = circuit.db.cad_component.list()
+  expect(cadComponents).toHaveLength(4)
+
   await expect(
     circuit.getSvg({
       view: "pcb",
