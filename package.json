@@ -38,7 +38,7 @@
     "@lume/kiwi": "^0.4.3",
     "@tscircuit/infgrid-ijump-astar": "^0.0.21",
     "@tscircuit/math-utils": "^0.0.4",
-    "@tscircuit/props": "^0.0.65",
+    "@tscircuit/props": "^0.0.67",
     "@tscircuit/soup-util": "^0.0.31",
     "circuit-json": "^0.0.82",
     "circuit-json-to-connectivity-map": "^0.0.17",
@@ -47,7 +47,7 @@
     "performance-now": "^2.1.0",
     "react": "^18.3.1",
     "react-reconciler": "^0.29.2",
-    "schematic-symbols": "0.0.26",
+    "schematic-symbols": "0.0.32",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.23.8"
   }
