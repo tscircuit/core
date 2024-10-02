@@ -1,13 +1,12 @@
-import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { chipProps } from "@tscircuit/props"
-import { Port } from "../primitive-components/Port"
-import type { BaseSymbolName } from "lib/utils/constants"
-import {
-  getAllDimensionsForSchematicBox,
-  type SchematicBoxDimensions,
-} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
+import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
+import {
+  type SchematicBoxDimensions,
+  getAllDimensionsForSchematicBox,
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { Port } from "../primitive-components/Port"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
@@ -21,6 +20,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       zodProps: chipProps,
     }
   }
+
 
   doInitialSourceRender(): void {
     const { db } = this.root!
