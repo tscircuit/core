@@ -13,6 +13,7 @@ it("example 4: kicad theme demo", async () => {
         pcbX={-2}
         schX={-2}
       />
+
       <capacitor capacitance={"10uF"} name="C1" footprint="0402" pcbX={2} schX={2} />
       <trace from=".R1 > .pin2" to=".C1 > .anode" />
 
@@ -36,7 +37,7 @@ it("example 4: kicad theme demo", async () => {
           },
           topSide: {
             direction: "left-to-right",
-            pins: [4, 18, 1, 2],
+            pins: [4, 18],
           },
           rightSide: {
             direction: "bottom-to-top",
@@ -46,7 +47,6 @@ it("example 4: kicad theme demo", async () => {
       />
     </board>,
   )
-
   const fs = require('node:fs');
   const circuitJson = project.getCircuitJson();
   fs.writeFileSync('circuit.json', JSON.stringify(circuitJson, null, 2)); 

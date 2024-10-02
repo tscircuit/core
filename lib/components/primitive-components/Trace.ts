@@ -41,6 +41,7 @@ import {
 } from "lib/utils/selector-matching"
 import { tryNow } from "lib/utils/try-now"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import type { Renderable } from "../base-components/Renderable"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -269,6 +270,27 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     const portsConnectedOnPcbViaNet: Port[] = []
 
     if (!allPortsFound) return
+
+    const portsWithoutMatchedPcbPrimitive: Port[] = []
+    for (const port of ports) {
+      if (!port._hasMatchedPcbPrimitive()) {
+        portsWithoutMatchedPcbPrimitive.push(port)
+      }
+    }
+
+    if (portsWithoutMatchedPcbPrimitive.length > 0) {
+      db.pcb_trace_error.insert({
+        error_type: "pcb_trace_error",
+        source_trace_id: this.source_trace_id!,
+        message: `Some ports did not have a matching PCB primitive (e.g. a pad or plated hole), this can happen if a footprint is missing. As a result, ${this} wasn't routed. Missing ports: ${portsWithoutMatchedPcbPrimitive.map((p) => p.getString()).join(", ")}`,
+        pcb_trace_id: this.pcb_trace_id!,
+        pcb_component_ids: [],
+        pcb_port_ids: portsWithoutMatchedPcbPrimitive
+          .map((p) => p.pcb_port_id!)
+          .filter(Boolean),
+      })
+      return
+    }
 
     const nets = this._findConnectedNets().netsWithSelectors
 
