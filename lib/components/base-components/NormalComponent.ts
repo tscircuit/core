@@ -1,24 +1,3 @@
-import { Footprint } from "../primitive-components/Footprint"
-import { ZodType, z } from "zod"
-import { PrimitiveComponent } from "./PrimitiveComponent"
-import { Port } from "../primitive-components/Port"
-import { symbols, type BaseSymbolName, type SchSymbol } from "schematic-symbols"
-import { fp } from "footprinter"
-import {
-  isValidElement as isReactElement,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-} from "react"
-import {
-  createInstanceFromReactElement,
-  type ReactSubtree,
-} from "lib/fiber/create-instance-from-react-element"
-import { getPortFromHints } from "lib/utils/getPortFromHints"
-import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
-import { Net } from "../primitive-components/Net"
-import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
-import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import type {
   CadModelJscad,
   CadModelObj,
@@ -160,7 +139,9 @@ export class NormalComponent<
 
     const portsFromFootprint = this.getPortsFromFootprint()
     for (const port of portsFromFootprint) {
-      if (!portsToCreate.some(p => p.isMatchingAnyOf(port.getNameAndAliases()))) {
+      if (
+        !portsToCreate.some((p) => p.isMatchingAnyOf(port.getNameAndAliases()))
+      ) {
         portsToCreate.push(port)
       }
     }
