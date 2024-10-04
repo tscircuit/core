@@ -23,10 +23,10 @@ it("example 4: kicad theme demo", async () => {
         schX={7}
         schWidth={3}
         schHeight={7}
-        // pinLabels={{
-        //     pin7: "GND",
-        //     pin8: "-V+"
-        // }}
+        pinLabels={{
+            pin7: "GND",
+            pin8: "-V+"
+        }}
         schPinStyle={{
           pin29: { bottomMargin: 0.5 },
         }}
@@ -53,5 +53,5 @@ it("example 4: kicad theme demo", async () => {
 
   project.render()
 
-//   expect(project).toMatchSchematicSnapshot(import.meta.path)
+  expect(project).toMatchSchematicSnapshot(import.meta.path)
 })

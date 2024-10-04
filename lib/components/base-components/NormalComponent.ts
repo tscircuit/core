@@ -1,24 +1,3 @@
-import { Footprint } from "../primitive-components/Footprint"
-import { ZodType, z } from "zod"
-import { PrimitiveComponent } from "./PrimitiveComponent"
-import { Port } from "../primitive-components/Port"
-import { symbols, type BaseSymbolName, type SchSymbol } from "schematic-symbols"
-import { fp } from "footprinter"
-import {
-  isValidElement as isReactElement,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-} from "react"
-import {
-  createInstanceFromReactElement,
-  type ReactSubtree,
-} from "lib/fiber/create-instance-from-react-element"
-import { getPortFromHints } from "lib/utils/getPortFromHints"
-import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
-import { Net } from "../primitive-components/Net"
-import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
-import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import type {
   CadModelJscad,
   CadModelObj,
@@ -26,6 +5,25 @@ import type {
   CadModelStl,
 } from "@tscircuit/props"
 import { rotation } from "circuit-json"
+import { fp } from "footprinter"
+import {
+  type ReactSubtree,
+  createInstanceFromReactElement,
+} from "lib/fiber/create-instance-from-react-element"
+import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
+import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { getPortFromHints } from "lib/utils/getPortFromHints"
+import {
+  type ReactElement,
+  isValidElement as isReactElement,
+  isValidElement,
+} from "react"
+import { type SchSymbol, symbols } from "schematic-symbols"
+import { ZodType, z } from "zod"
+import { Footprint } from "../primitive-components/Footprint"
+import { Port } from "../primitive-components/Port"
+import { PrimitiveComponent } from "./PrimitiveComponent"
 
 const rotation3 = z.object({
   x: rotation,
@@ -85,6 +83,41 @@ export class NormalComponent<
   initPorts() {
     const { config } = this
     const portsToCreate: Port[] = []
+
+    // Handle schPortArrangement
+    const schPortArrangement = this._parsedProps.schPortArrangement as any
+    if (schPortArrangement) {
+      for (const side in schPortArrangement) {
+        const pins = schPortArrangement[side].pins
+        if (Array.isArray(pins)) {
+          for (const pinNumber of pins) {
+            portsToCreate.push(new Port({ pinNumber }))
+          }
+        }
+      }
+    }
+
+    const pinLabels: Record<string, string> | undefined =
+      this._parsedProps.pinLabels
+    if (pinLabels) {
+      for (let [pinNumber, label] of Object.entries(pinLabels)) {
+        pinNumber = pinNumber.replace("pin", "")
+        let existingPort = portsToCreate.find(
+          (p) => p._parsedProps.pinNumber === Number(pinNumber),
+        )
+        if (!existingPort) {
+          existingPort = new Port({
+            pinNumber: parseInt(pinNumber),
+            name: label,
+          })
+          portsToCreate.push(existingPort)
+        } else {
+          existingPort.externallyAddedAliases.push(label)
+          existingPort.props.name = label
+        }
+      }
+    }
+
     if (config.schematicSymbolName) {
       const sym = symbols[
         `${config.schematicSymbolName}_horz` as keyof typeof symbols
@@ -105,23 +138,11 @@ export class NormalComponent<
     }
 
     const portsFromFootprint = this.getPortsFromFootprint()
-    portsToCreate.push(...portsFromFootprint)
-
-    const pinLabels: Record<string, string> | undefined =
-      this._parsedProps.pinLabels
-    if (pinLabels) {
-      for (let [pinNumber, label] of Object.entries(pinLabels)) {
-        pinNumber = pinNumber.replace("pin", "")
-        const existingPort = portsToCreate.find(
-          (p) => p._parsedProps.pinNumber === Number(pinNumber),
-        )
-        if (!existingPort) {
-          throw new Error(
-            `Could not find port for pin number ${pinNumber} in chip ${this.getString()}`,
-          )
-        }
-        existingPort.externallyAddedAliases.push(label)
-        existingPort.props.name = label
+    for (const port of portsFromFootprint) {
+      if (
+        !portsToCreate.some((p) => p.isMatchingAnyOf(port.getNameAndAliases()))
+      ) {
+        portsToCreate.push(port)
       }
     }
 
