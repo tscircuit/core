@@ -1,7 +1,4 @@
-import { current } from "circuit-json"
 import { getSizeOfSidesFromPortArrangement } from "./getSizeOfSidesFromPortArrangement"
-import { schematicPortArrangement } from "@tscircuit/props"
-import { z } from "zod"
 
 export type VerticalPortSideConfiguration = {
   direction?: "top-to-bottom" | "bottom-to-top"
@@ -58,6 +55,12 @@ interface Params {
 
 type Side = "left" | "right" | "top" | "bottom"
 
+function isExplicitPinMappingArrangement(
+  arrangement: PortArrangement,
+): arrangement is ExplicitPinMappingArrangement {
+  return (arrangement as ExplicitPinMappingArrangement).leftSide !== undefined
+}
+
 export interface SchematicBoxDimensions {
   pinCount: number
   getPortPositionByPinNumber(pinNumber: number): { x: number; y: number }
@@ -87,7 +90,6 @@ export const getAllDimensionsForSchematicBox = (
   let sidePinCounts = params.schPortArrangement
     ? getSizeOfSidesFromPortArrangement(params.schPortArrangement)
     : null
-
   const sideLengths: Record<Side, number> = {
     left: 0,
     right: 0,
@@ -136,7 +138,11 @@ export const getAllDimensionsForSchematicBox = (
   let truePinIndex = 0
   // moving downward from the top-left corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.leftSize; sideIndex++) {
-    const pinNumber = truePinIndex + 1 // TODO check mapping from schPortArrangement
+    const pinNumber =
+      params.schPortArrangement &&
+      isExplicitPinMappingArrangement(params.schPortArrangement)
+        ? params.schPortArrangement?.leftSide?.pins[sideIndex]!
+        : truePinIndex + 1
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
@@ -167,7 +173,11 @@ export const getAllDimensionsForSchematicBox = (
   currentDistanceFromEdge = 0
   // moving rightward from the left-bottom corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.bottomSize; sideIndex++) {
-    const pinNumber = truePinIndex + 1 // TODO check mapping from schPortArrangement
+    const pinNumber =
+      params.schPortArrangement &&
+      isExplicitPinMappingArrangement(params.schPortArrangement)
+        ? params.schPortArrangement.bottomSide?.pins[sideIndex]!
+        : truePinIndex + 1
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
@@ -198,7 +208,11 @@ export const getAllDimensionsForSchematicBox = (
   currentDistanceFromEdge = 0
   // moving upward from the bottom-right corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.rightSize; sideIndex++) {
-    const pinNumber = truePinIndex + 1 // TODO check mapping from schPortArrangement
+    const pinNumber =
+      params.schPortArrangement &&
+      isExplicitPinMappingArrangement(params.schPortArrangement)
+        ? params.schPortArrangement.rightSide?.pins[sideIndex]!
+        : truePinIndex + 1
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
@@ -229,7 +243,11 @@ export const getAllDimensionsForSchematicBox = (
   currentDistanceFromEdge = 0
   // moving leftward from the top-right corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.topSize; sideIndex++) {
-    const pinNumber = truePinIndex + 1 // TODO check mapping from schPortArrangement
+    const pinNumber =
+      params.schPortArrangement &&
+      isExplicitPinMappingArrangement(params.schPortArrangement)
+        ? params.schPortArrangement.topSide?.pins[sideIndex]!
+        : truePinIndex + 1
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
@@ -321,9 +339,7 @@ export const getAllDimensionsForSchematicBox = (
         (p) => p.pinNumber.toString() === pinNumber.toString(),
       )
       if (!port) {
-        throw new Error(
-          `Could not find port for pin number ${pinNumber}, available pins: ${truePortsWithPositions.map((tp) => tp.pinNumber).join(", ")}`,
-        )
+        return { x: 0, y: 0 }
       }
       return port
     },
