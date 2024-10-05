@@ -91,6 +91,16 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         x: position.x,
         y: position.y,
       })
+      db.pcb_solder_paste.insert({
+        layer: pcb_smtpad.layer,
+        shape: "circle",
+        // @ts-ignore: no idea why this is triggering
+        radius: pcb_smtpad.radius * 0.7,
+        x: pcb_smtpad.x,
+        y: pcb_smtpad.y,
+        pcb_component_id: pcb_smtpad.pcb_component_id,
+        pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+      })
     } else if (props.shape === "rect") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
@@ -107,6 +117,18 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         x: position.x,
         y: position.y,
       })
+      if (pcb_smtpad.shape === "rect")
+        db.pcb_solder_paste.insert({
+          layer: pcb_smtpad.layer,
+          shape: "rect",
+          // @ts-ignore: no idea why this is triggering
+          width: pcb_smtpad.width * 0.7,
+          height: pcb_smtpad.height * 0.7,
+          x: pcb_smtpad.x,
+          y: pcb_smtpad.y,
+          pcb_component_id: pcb_smtpad.pcb_component_id,
+          pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+        })
     }
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id

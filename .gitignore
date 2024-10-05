@@ -183,3 +183,8 @@ context
 test.json
 test*.json
 test-artifact-*
+
+.yalc
+yalc.lock
+
+circuit.json
