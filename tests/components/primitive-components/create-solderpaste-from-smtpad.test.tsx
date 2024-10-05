@@ -29,10 +29,5 @@ test("create solderpaste from smtpad", async () => {
   expect(solderPaste.height).toBe(smtPadHeight * 0.7)
   expect(smtPad.pcb_smtpad_id).toBe(solderPaste.pcb_smtpad_id!)
 
-  await expect(
-    circuit.getSvg({
-      view: "pcb",
-      layer: "top",
-    }),
-  ).toMatchSvgSnapshot(import.meta.path)
+  await expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

@@ -16,10 +16,5 @@ test("create solderpaste", async () => {
   expect(solderPaste.shape).toBe("circle")
   expect(solderPaste.pcb_smtpad_id).toBe("")
 
-  await expect(
-    circuit.getSvg({
-      view: "pcb",
-      layer: "top",
-    }),
-  ).toMatchSvgSnapshot(import.meta.path)
+  await expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
