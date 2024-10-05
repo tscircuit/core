@@ -1,7 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.7000000000000002 -1.5 3.4000000000000004 3" width="1200" height="600" style="background-color: #fff;"><style>
-              .component { fill: none; stroke: red; stroke-width: 0.03; }
-              .component-pin { fill: none; stroke: red; stroke-width: 0.03; }
-              .trace { stroke: green; stroke-width: 0.03; fill: none; }
-              .text { font-family: Arial, sans-serif; font-size: 0.2px; }
-              .port { fill: none; stroke: blue; stroke-width: 0.03; }
-            </style><g transform="translate(0, 0) rotate(0)"><rect class="component" x="-0.2" y="-0.5" width="0.4" height="1"/></g><rect class="port" x="-0.7000000000000001" y="-0.4" width="0.2" height="0.2"/><line class="component-pin" x1="-0.6000000000000001" y1="-0.30000000000000004" x2="-0.2" y2="-0.30000000000000004"/><rect class="port" x="-0.7000000000000001" y="-0.2000000000000001" width="0.2" height="0.2"/><line class="component-pin" x1="-0.6000000000000001" y1="-0.10000000000000009" x2="-0.2" y2="-0.10000000000000009"/><rect class="port" x="-0.7000000000000001" y="-2.7755575615628914e-17" width="0.2" height="0.2"/><line class="component-pin" x1="-0.6000000000000001" y1="0.09999999999999998" x2="-0.2" y2="0.09999999999999998"/><rect class="port" x="-0.7000000000000001" y="0.20000000000000004" width="0.2" height="0.2"/><line class="component-pin" x1="-0.6000000000000001" y1="0.30000000000000004" x2="-0.2" y2="0.30000000000000004"/><rect class="port" x="0.5000000000000001" y="0.20000000000000004" width="0.2" height="0.2"/><line class="component-pin" x1="0.6000000000000001" y1="0.30000000000000004" x2="0.2" y2="0.30000000000000004"/><rect class="port" x="0.5000000000000001" y="8.326672684688674e-17" width="0.2" height="0.2"/><line class="component-pin" x1="0.6000000000000001" y1="0.10000000000000009" x2="0.2" y2="0.10000000000000009"/><rect class="port" x="0.5000000000000001" y="-0.19999999999999998" width="0.2" height="0.2"/><line class="component-pin" x1="0.6000000000000001" y1="-0.09999999999999998" x2="0.2" y2="-0.09999999999999998"/><rect class="port" x="0.5000000000000001" y="-0.4" width="0.2" height="0.2"/><line class="component-pin" x1="0.6000000000000001" y1="-0.30000000000000004" x2="0.2" y2="-0.30000000000000004"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.7000000000000002 -1.5 3.4000000000000004 3" width="1200" height="600" style="background-color: rgb(245, 241, 237)"><style>
+              .component { fill: none; stroke: rgb(132, 0, 0); stroke-width: 0.03; }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); stroke-width: 0.03; }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); stroke-width: 0.02; }
+              .trace { stroke: rgb(0, 150, 0); stroke-width: 0.02; fill: none; }
+              .text { font-family: Arial, sans-serif; font-size: 0.2px; fill: rgb(0, 150, 0); }
+              .pin-number { font-size: 0.15px; fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { font-size: 0.25px; fill: rgb(0, 100, 100); }
+            </style><g transform="translate(0, 0) rotate(0)"><rect class="component chip" x="-0.2" y="-0.5" width="0.4" height="1"/></g></svg>
