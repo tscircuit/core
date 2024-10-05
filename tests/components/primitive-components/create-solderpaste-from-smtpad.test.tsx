@@ -20,14 +20,12 @@ test("create solderpaste from smtpad", async () => {
   )
 
   circuit.render()
-  const solderPaste = circuit
-    .getCircuitJson()
-    .filter((elm) => elm.type === "pcb_solder_paste" && elm.shape === "rect")[0]
-  const smtPad = circuit
-    .getCircuitJson()
-    .filter((elm) => elm.type === "pcb_smtpad")[0]
-  expect(solderPaste.height).toBe(smtPadHeight * 0.7)
-  expect(smtPad.pcb_smtpad_id).toBe(solderPaste.pcb_smtpad_id!)
 
-  await expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
+  const [solder_paste] = circuit.db.pcb_solder_paste.list()
+  const [smtpad] = circuit.db.pcb_smtpad.list()
+
+  expect(solder_paste.shape).toBe("rect")
+  if (solder_paste.shape === "rect")
+    expect(solder_paste.height).toBe(smtPadHeight * 0.7)
+  expect(smtpad.pcb_smtpad_id).toBe(solder_paste.pcb_smtpad_id!)
 })

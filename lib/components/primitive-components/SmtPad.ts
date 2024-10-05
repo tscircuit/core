@@ -11,7 +11,6 @@ import {
   flipY,
   translate,
 } from "transformation-matrix"
-import { SolderPaste } from "./SolderPaste"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -24,35 +23,6 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     return {
       componentName: "SmtPad",
       zodProps: smtPadProps,
-    }
-  }
-
-  createSolderPasteComponent(): void {
-    let solderPaste: SolderPaste
-    if (this._parsedProps.shape === "circle") {
-      solderPaste = new SolderPaste({
-        shape: "circle",
-        radius: this._parsedProps.radius * 0.7,
-        layer: this._parsedProps.layer,
-        pcbX: this._parsedProps.pcbX,
-        pcbY: this._parsedProps.pcbY,
-      })
-      solderPaste.pcb_smtpad_id = this.pcb_smtpad_id
-      this.add(solderPaste)
-      solderPaste.doInitialPcbPrimitiveRender()
-    }
-    if (this._parsedProps.shape === "rect") {
-      solderPaste = new SolderPaste({
-        shape: "rect",
-        height: this._parsedProps.height * 0.7,
-        width: this._parsedProps.height * 0.7,
-        layer: this._parsedProps.layer,
-        pcbX: this._parsedProps.pcbX,
-        pcbY: this._parsedProps.pcbY,
-      })
-      solderPaste.pcb_smtpad_id = this.pcb_smtpad_id
-      this.add(solderPaste)
-      solderPaste.doInitialPcbPrimitiveRender()
     }
   }
 
@@ -121,6 +91,16 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         x: position.x,
         y: position.y,
       })
+      db.pcb_solder_paste.insert({
+        layer: pcb_smtpad.layer,
+        shape: "circle",
+        // @ts-ignore: no idea why this is triggering
+        radius: pcb_smtpad.radius * 0.7,
+        x: pcb_smtpad.x,
+        y: pcb_smtpad.y,
+        pcb_component_id: pcb_smtpad.pcb_component_id,
+        pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+      })
     } else if (props.shape === "rect") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
@@ -137,10 +117,21 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         x: position.x,
         y: position.y,
       })
+      if (pcb_smtpad.shape === "rect")
+        db.pcb_solder_paste.insert({
+          layer: pcb_smtpad.layer,
+          shape: "rect",
+          // @ts-ignore: no idea why this is triggering
+          width: pcb_smtpad.width * 0.7,
+          height: pcb_smtpad.height * 0.7,
+          x: pcb_smtpad.x,
+          y: pcb_smtpad.y,
+          pcb_component_id: pcb_smtpad.pcb_component_id,
+          pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+        })
     }
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
-      this.createSolderPasteComponent()
     }
   }
 
