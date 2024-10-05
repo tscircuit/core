@@ -11,6 +11,7 @@ import {
   flipY,
   translate,
 } from "transformation-matrix"
+import { SolderPaste } from "./SolderPaste"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -23,6 +24,35 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     return {
       componentName: "SmtPad",
       zodProps: smtPadProps,
+    }
+  }
+
+  createSolderPasteComponent(): void {
+    let solderPaste: SolderPaste
+    if (this._parsedProps.shape === "circle") {
+      solderPaste = new SolderPaste({
+        shape: "circle",
+        radius: this._parsedProps.radius * 0.7,
+        layer: this._parsedProps.layer,
+        pcbX: this._parsedProps.pcbX,
+        pcbY: this._parsedProps.pcbY,
+      })
+      solderPaste.pcb_smtpad_id = this.pcb_smtpad_id
+      this.add(solderPaste)
+      solderPaste.doInitialPcbPrimitiveRender()
+    }
+    if (this._parsedProps.shape === "rect") {
+      solderPaste = new SolderPaste({
+        shape: "rect",
+        height: this._parsedProps.height * 0.7,
+        width: this._parsedProps.height * 0.7,
+        layer: this._parsedProps.layer,
+        pcbX: this._parsedProps.pcbX,
+        pcbY: this._parsedProps.pcbY,
+      })
+      solderPaste.pcb_smtpad_id = this.pcb_smtpad_id
+      this.add(solderPaste)
+      solderPaste.doInitialPcbPrimitiveRender()
     }
   }
 
@@ -110,6 +140,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     }
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
+      this.createSolderPasteComponent()
     }
   }
 

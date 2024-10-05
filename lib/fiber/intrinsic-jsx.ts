@@ -20,6 +20,7 @@ declare global {
       schematicpath: Props.SchematicPathProps
       schematictext: Props.SchematicTextProps
       smtpad: Props.SmtPadProps
+      solderpaste: Props.SolderPasteProps
       platedhole: Props.PlatedHoleProps
       keepout: Props.PcbKeepoutProps
       hole: Props.HoleProps

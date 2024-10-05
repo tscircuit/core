@@ -4,6 +4,7 @@ import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
 import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 import { Keepout } from "lib/components/primitive-components/Keepout"
+import { SolderPaste } from "lib/components/primitive-components/SolderPaste"
 
 export const createComponentsFromSoup = (
   soup: AnyCircuitElement[],
@@ -31,6 +32,27 @@ export const createComponentsFromSoup = (
           shape: "circle",
           radius: elm.radius,
           portHints: elm.port_hints,
+        }),
+      )
+    } else if (elm.type === "pcb_solder_paste" && elm.shape === "circle") {
+      components.push(
+        new SolderPaste({
+          radius: elm.radius,
+          shape: "circle",
+          layer: elm.layer,
+          pcbX: elm.x,
+          pcbY: elm.y,
+        }),
+      )
+    } else if (elm.type === "pcb_solder_paste" && elm.shape === "rect") {
+      components.push(
+        new SolderPaste({
+          height: elm.height,
+          width: elm.width,
+          shape: "rect",
+          layer: elm.layer,
+          pcbX: elm.x,
+          pcbY: elm.y,
         }),
       )
     } else if (elm.type === "pcb_silkscreen_path") {
