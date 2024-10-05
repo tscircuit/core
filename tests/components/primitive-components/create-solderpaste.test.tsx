@@ -21,5 +21,5 @@ test("create solderpaste", async () => {
       view: "pcb",
       layer: "top",
     }),
-  ).toMatchSvgSnapshot(import.meta.path, "create-solderpaste")
+  ).toMatchSvgSnapshot(import.meta.path)
 })
