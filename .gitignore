@@ -186,3 +186,5 @@ test-artifact-*
 
 .yalc
 yalc.lock
+
+circuit.json
