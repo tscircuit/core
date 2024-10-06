@@ -188,6 +188,15 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       x: newCenter.x,
       y: newCenter.y,
     })
+
+    const solderPaste = db.pcb_solder_paste
+      .list()
+      .find((elm) => elm.pcb_smtpad_id === this.pcb_smtpad_id)
+    db.pcb_solder_paste.update(solderPaste?.pcb_solder_paste_id!, {
+      x: newCenter.x,
+      y: newCenter.y,
+    })
+
     this.matchedPort?._setPositionFromLayout(newCenter)
   }
 }
