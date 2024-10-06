@@ -42,9 +42,9 @@ test("getAllDimensionsForSchematicBox 3 (4 sided with margins)", () => {
   const params: Parameters<typeof getAllDimensionsForSchematicBox>[0] = {
     schPinSpacing: 0.2,
     schPinStyle: {
-      pin6: { rightMargin: 0.5 },
+      pin6: { bottomMargin: 0.5 },
       pin9: { topMargin: 0.4 },
-      pin13: { leftMargin: 0.9 },
+      pin13: { leftMargin: 0.2 },
     },
     schPortArrangement: {
       leftSize: 4,
