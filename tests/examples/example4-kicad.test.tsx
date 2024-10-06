@@ -1,8 +1,8 @@
-import { it, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-
+import { expect, it } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import * as fs from "fs"
 it("example 4: kicad theme demo", async () => {
-  const { project, logSoup } = getTestFixture()
+  const { project, logSoup } = getTestFixture();
 
   project.add(
     <board width="10mm" height="10mm">
@@ -14,7 +14,13 @@ it("example 4: kicad theme demo", async () => {
         schX={-2}
       />
 
-      <capacitor capacitance={"10uF"} name="C1" footprint="0402" pcbX={2} schX={2} />
+      <capacitor
+        capacitance={"10uF"}
+        name="C1"
+        footprint="0402"
+        pcbX={2}
+        schX={2}
+      />
       <trace from=".R1 > .pin2" to=".C1 > .anode" />
 
       <chip
@@ -24,11 +30,13 @@ it("example 4: kicad theme demo", async () => {
         schWidth={3}
         schHeight={7}
         pinLabels={{
-            pin7: "GND",
-            pin8: "-V+"
+          pin7: "GND",
+          pin8: "-V+",
         }}
         schPinStyle={{
-          pin29: { bottomMargin: 0.5 },
+          pin22: { topMargin: 0.8 },
+          pin12: { bottomMargin: 0.5 },
+          pin15: { topMargin: 0.8 },
         }}
         schPortArrangement={{
           leftSide: {
@@ -43,15 +51,16 @@ it("example 4: kicad theme demo", async () => {
             direction: "bottom-to-top",
             pins: [12, 13, 14, 15, 16, 17, 23],
           },
+          bottomSide: {
+            direction: "left-to-right",
+            pins: [2, 3],
+          },
         }}
       />
-    </board>,
-  )
-  const fs = require('node:fs');
-  const circuitJson = project.getCircuitJson();
-  fs.writeFileSync('circuit.json', JSON.stringify(circuitJson, null, 2)); 
+    </board>
+  );
 
-  project.render()
+  project.render();
 
-  expect(project).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(project).toMatchSchematicSnapshot(import.meta.path);
+});

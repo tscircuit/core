@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.7000000000000002 -1.5 3.4000000000000004 3" width="1200" height="600" style="background-color: rgb(245, 241, 237)"><style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.2 -1.6 2.4 3.2" width="1200" height="600" style="background-color: rgb(245, 241, 237)"><style>
               .component { fill: none; stroke: rgb(132, 0, 0); stroke-width: 0.03; }
               .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); stroke-width: 0.03; }
               .component-pin { fill: none; stroke: rgb(132, 0, 0); stroke-width: 0.02; }
@@ -7,4 +7,4 @@
               .pin-number { font-size: 0.15px; fill: rgb(169, 0, 0); }
               .port-label { fill: rgb(0, 100, 100); }
               .component-name { font-size: 0.25px; fill: rgb(0, 100, 100); }
-            </style><g transform="translate(0, 0) rotate(0)"><rect class="component chip" x="-0.2" y="-0.5" width="0.4" height="1"/></g></svg>
+            </style><g transform="translate(0, 0) rotate(0)"><rect class="component chip" x="-0.2" y="-0.6000000000000001" width="0.4" height="1.2000000000000002"/></g></svg>
