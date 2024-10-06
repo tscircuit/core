@@ -196,9 +196,31 @@ export const getAllDimensionsForSchematicBox = (
 
       if (pinStyle) {
         if (isVertical) {
-          currentDistanceFromEdge += pinStyle.topMargin ?? 0
+          if (side === "left") {
+            currentDistanceFromEdge +=
+              direction === "top-to-bottom"
+                ? (pinStyle.topMargin ?? 0)
+                : (pinStyle.bottomMargin ?? 0)
+          } else {
+            // right side
+            currentDistanceFromEdge +=
+              direction === "top-to-bottom"
+                ? (pinStyle.bottomMargin ?? 0)
+                : (pinStyle.topMargin ?? 0)
+          }
         } else {
-          currentDistanceFromEdge += pinStyle.leftMargin ?? 0
+          if (side === "top") {
+            currentDistanceFromEdge +=
+              direction === "left-to-right"
+                ? (pinStyle.leftMargin ?? 0)
+                : (pinStyle.rightMargin ?? 0)
+          } else {
+            // bottom side
+            currentDistanceFromEdge +=
+              direction === "left-to-right"
+                ? (pinStyle.rightMargin ?? 0)
+                : (pinStyle.leftMargin ?? 0)
+          }
         }
       }
 
@@ -211,9 +233,31 @@ export const getAllDimensionsForSchematicBox = (
 
       if (pinStyle) {
         if (isVertical) {
-          currentDistanceFromEdge += pinStyle.bottomMargin ?? 0
+          if (side === "left") {
+            currentDistanceFromEdge +=
+              direction === "top-to-bottom"
+                ? (pinStyle.bottomMargin ?? 0)
+                : (pinStyle.topMargin ?? 0)
+          } else {
+            // right side
+            currentDistanceFromEdge +=
+              direction === "top-to-bottom"
+                ? (pinStyle.topMargin ?? 0)
+                : (pinStyle.bottomMargin ?? 0)
+          }
         } else {
-          currentDistanceFromEdge += pinStyle.rightMargin ?? 0
+          if (side === "top") {
+            currentDistanceFromEdge +=
+              direction === "left-to-right"
+                ? (pinStyle.rightMargin ?? 0)
+                : (pinStyle.leftMargin ?? 0)
+          } else {
+            // bottom side
+            currentDistanceFromEdge +=
+              direction === "left-to-right"
+                ? (pinStyle.leftMargin ?? 0)
+                : (pinStyle.rightMargin ?? 0)
+          }
         }
       }
 
@@ -258,10 +302,33 @@ export const getAllDimensionsForSchematicBox = (
       )
     }
   } else {
-    const leftSide = Array.from({ length: sidePinCounts.leftSize }, (_, i) => i + 1)
-    const rightSide = Array.from({ length: sidePinCounts.rightSize }, (_, i) => i + sidePinCounts.leftSize + 1)
-    const topSide = Array.from({ length: sidePinCounts.topSize }, (_, i) => i + sidePinCounts.leftSize + sidePinCounts.rightSize + 1)
-    const bottomSide = Array.from({ length: pinCount - sidePinCounts.leftSize - sidePinCounts.rightSize - sidePinCounts.topSize }, (_, i) => i + sidePinCounts.leftSize + sidePinCounts.rightSize + sidePinCounts.topSize + 1)
+    const leftSide = Array.from(
+      { length: sidePinCounts.leftSize },
+      (_, i) => i + 1,
+    )
+    const rightSide = Array.from(
+      { length: sidePinCounts.rightSize },
+      (_, i) => i + sidePinCounts.leftSize + 1,
+    )
+    const topSide = Array.from(
+      { length: sidePinCounts.topSize },
+      (_, i) => i + sidePinCounts.leftSize + sidePinCounts.rightSize + 1,
+    )
+    const bottomSide = Array.from(
+      {
+        length:
+          pinCount -
+          sidePinCounts.leftSize -
+          sidePinCounts.rightSize -
+          sidePinCounts.topSize,
+      },
+      (_, i) =>
+        i +
+        sidePinCounts.leftSize +
+        sidePinCounts.rightSize +
+        sidePinCounts.topSize +
+        1,
+    )
     processSide("left", leftSide, "top-to-bottom")
     processSide("right", rightSide, "top-to-bottom")
     processSide("top", topSide, "left-to-right")

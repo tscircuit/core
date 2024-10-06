@@ -1,6 +1,6 @@
 import { expect, it } from "bun:test";
 import { getTestFixture } from "tests/fixtures/get-test-fixture";
-import * as fs from "fs"
+
 it("example 4: kicad theme demo", async () => {
   const { project, logSoup } = getTestFixture();
 
