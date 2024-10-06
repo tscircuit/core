@@ -18,6 +18,7 @@ import {
 import { isMatchingSelector } from "lib/utils/selector-matching"
 import type { LayoutBuilder } from "@tscircuit/layout"
 import type { LayerRef } from "circuit-json"
+import { InvalidProps } from "lib/errors/InvalidProps"
 
 export interface BaseComponentConfig {
   componentName: string
@@ -96,9 +97,16 @@ export abstract class PrimitiveComponent<
     this.childrenPendingRemoval = []
     this.props = props ?? {}
     this.externallyAddedAliases = []
-    this._parsedProps = this.config.zodProps.parse(
-      props ?? {},
-    ) as z.infer<ZodProps>
+    const parsePropsResult = this.config.zodProps.safeParse(props ?? {})
+    if (parsePropsResult.success) {
+      this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
+    } else {
+      throw new InvalidProps(
+        this.lowercaseComponentName,
+        this.props,
+        parsePropsResult.error.format(),
+      )
+    }
   }
 
   setProps(props: Partial<z.input<ZodProps>>) {
@@ -271,9 +279,7 @@ export abstract class PrimitiveComponent<
     const { config } = this
     if (!config.schematicSymbolName) return null
     return (
-      symbols[
-        `${config.schematicSymbolName}` as keyof typeof symbols
-      ] ?? null
+      symbols[`${config.schematicSymbolName}` as keyof typeof symbols] ?? null
     )
   }
 
