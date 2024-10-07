@@ -1,3 +1,4 @@
+import { fp } from "@tscircuit/footprinter"
 import type {
   CadModelJscad,
   CadModelObj,
@@ -5,7 +6,6 @@ import type {
   CadModelStl,
 } from "@tscircuit/props"
 import { rotation } from "circuit-json"
-import { fp } from "footprinter"
 import {
   type ReactSubtree,
   createInstanceFromReactElement,
