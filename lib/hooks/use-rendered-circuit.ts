@@ -1,6 +1,6 @@
 import type { AnyCircuitElement } from "circuit-json"
 import { Circuit } from "lib/Circuit"
-import { useEffect, useState } from "react"
+import React from "react"
 
 export const useRenderedCircuit = (
   reactElements: React.ReactElement,
@@ -10,12 +10,12 @@ export const useRenderedCircuit = (
   circuit?: Circuit
   circuitJson?: AnyCircuitElement[]
 } => {
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-  const [circuit, setCircuit] = useState<Circuit>()
-  const [circuitJson, setCircuitJson] = useState<AnyCircuitElement[]>()
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<Error | null>(null)
+  const [circuit, setCircuit] = React.useState<Circuit>()
+  const [circuitJson, setCircuitJson] = React.useState<AnyCircuitElement[]>()
 
-  useEffect(() => {
+  React.useEffect(() => {
     setIsLoading(true)
     setError(null)
     if (reactElements) {
