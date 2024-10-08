@@ -95,6 +95,10 @@ export class Circuit {
     return this.getSoup()
   }
 
+  toJson(): AnyCircuitElement[] {
+    return this.getSoup()
+  }
+
   async getSvg(options: { view: "pcb"; layer?: string }): Promise<string> {
     const circuitToSvg = await import("circuit-to-svg").catch((e) => {
       throw new Error(
