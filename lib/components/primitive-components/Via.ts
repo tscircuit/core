@@ -53,7 +53,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       x: newCenter.x,
       y: newCenter.y,
     })
-    this.matchedPort?._setPositionFromLayout(newCenter)
   }
 
   doInitialPcbPrimitiveRender(): void {

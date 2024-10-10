@@ -20,6 +20,8 @@ it("should create a Via component with correct properties", () => {
 
   project.render();
 
+  expect(project).toMatchPcbSnapshot(import.meta.path)
+
   const via = project.selectOne("via") as Via;
 
   expect(via).not.toBeNull();

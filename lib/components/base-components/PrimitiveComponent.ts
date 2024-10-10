@@ -420,7 +420,7 @@ export abstract class PrimitiveComponent<
 
   getSubcircuit(): PrimitiveComponent {
     if (this.isSubcircuit) return this
-    const group = this.parent?.getSubcircuit()
+    const group = this.parent?.getSubcircuit?.()
     if (!group)
       throw new Error("Component is not inside an opaque group (no board?)")
     return group
