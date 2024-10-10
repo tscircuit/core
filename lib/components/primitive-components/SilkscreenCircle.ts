@@ -1,5 +1,4 @@
 import { silkscreenCircleProps } from "@tscircuit/props"
-import { applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SilkscreenCircle extends PrimitiveComponent<
@@ -25,17 +24,13 @@ export class SilkscreenCircle extends PrimitiveComponent<
     }
 
     const transform = this._computePcbGlobalTransformBeforeLayout()
-    const transformedCenter = applyToPoint(transform, {
-      x: props.pcbX ?? 0,
-      y: props.pcbY ?? 0,
-    })
 
     const pcb_silkscreen_circle = db.pcb_silkscreen_circle.insert({
       pcb_component_id: this.parent?.pcb_component_id!,
       layer,
       center: {
-        x: transformedCenter.x,
-        y: transformedCenter.y,
+        x: props.pcbX ?? 0,
+        y: props.pcbY ?? 0,
       },
       radius: props.radius,
     })
