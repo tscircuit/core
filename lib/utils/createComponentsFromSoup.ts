@@ -4,6 +4,7 @@ import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
 import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 import { Keepout } from "lib/components/primitive-components/Keepout"
+import { Hole } from "lib/components/primitive-components/Hole"
 
 export const createComponentsFromSoup = (
   soup: AnyCircuitElement[],
@@ -71,6 +72,14 @@ export const createComponentsFromSoup = (
           shape: "rect",
           width: elm.width,
           height: elm.height,
+        }),
+      )
+    } else if (elm.type === "pcb_hole" && elm.hole_shape === "circle") {
+      components.push(
+        new Hole({
+          pcbX: elm.x,
+          pcbY: elm.y,
+          diameter: elm.hole_diameter,
         }),
       )
     }
