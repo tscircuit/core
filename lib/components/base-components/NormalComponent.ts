@@ -5,7 +5,7 @@ import type {
   CadModelProp,
   CadModelStl,
 } from "@tscircuit/props"
-import { rotation } from "circuit-json"
+import { point3, rotation } from "circuit-json"
 import {
   type ReactSubtree,
   createInstanceFromReactElement,
@@ -494,15 +494,24 @@ export class NormalComponent<
         : {}),
     })
 
+    const positionOffset = point3.parse({
+      x: 0,
+      y: 0,
+      z: 0,
+      ...(typeof cadModel?.positionOffset === "object"
+        ? cadModel.positionOffset
+        : {}),
+    })
+
     const cad_model = db.cad_component.insert({
       // TODO z maybe depends on layer
       position: {
-        x: bounds.center.x,
-        y: bounds.center.y,
+        x: bounds.center.x + positionOffset.x,
+        y: bounds.center.y + positionOffset.y,
         z:
-          this.props.layer === "bottom"
+          (this.props.layer === "bottom"
             ? -boardThickness / 2
-            : boardThickness / 2,
+            : boardThickness / 2) + positionOffset.z,
       },
       rotation: {
         x: rotationOffset.x,
