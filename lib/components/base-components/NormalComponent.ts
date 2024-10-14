@@ -503,22 +503,23 @@ export class NormalComponent<
         : {}),
     })
 
+    const computedLayer = this.props.layer === "bottom" ? "bottom" : "top"
     const cad_model = db.cad_component.insert({
       // TODO z maybe depends on layer
       position: {
         x: bounds.center.x + positionOffset.x,
         y: bounds.center.y + positionOffset.y,
         z:
-          (this.props.layer === "bottom"
+          (computedLayer === "bottom"
             ? -boardThickness / 2
             : boardThickness / 2) + positionOffset.z,
       },
       rotation: {
         x: rotationOffset.x,
-        y: (this.props.layer === "top" ? 0 : 180) + rotationOffset.y,
+        y: (computedLayer === "top" ? 0 : 180) + rotationOffset.y,
         z:
           (pcb_component?.rotation ?? 0) +
-          (this.props.layer === "bottom" ? 180 : 0) +
+          (computedLayer === "bottom" ? 180 : 0) +
           rotationOffset.z,
       },
       pcb_component_id: this.pcb_component_id!,
