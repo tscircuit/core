@@ -6,7 +6,7 @@ it("should render a net alias", async () => {
 
   project.add(
     <board width="10mm" height="10mm">
-      <netalias net="net1" />
+      <netalias net="net1" schX="1mm" schY="1mm" />
     </board>
   );
 
