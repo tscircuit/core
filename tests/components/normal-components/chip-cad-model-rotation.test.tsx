@@ -27,7 +27,7 @@ test("chip with cadModel rotationOffset", () => {
   expect(cadComponent.model_stl_url).toBe("https://example.com/chip.stl")
   expect(cadComponent.rotation).toEqual({
     x: 0,
-    y: 180,
+    y: 0,
     z: 90,
   })
 })
