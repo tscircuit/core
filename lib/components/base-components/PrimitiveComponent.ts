@@ -479,7 +479,7 @@ export abstract class PrimitiveComponent<
   getAvailablePcbLayers(): string[] {
     if (this.isPcbPrimitive) {
       const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
-      if ("layer" in this._parsedProps) {
+      if ("layer" in this._parsedProps || this.componentName === "SmtPad") {
         const layer = maybeFlipLayer(this._parsedProps.layer ?? "top")
         return [layer]
       }
