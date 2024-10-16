@@ -2,9 +2,9 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("board with routingDisabled should not create pcb_trace", () => {
-  const { project } = getTestFixture()
+  const { circuit } = getTestFixture()
 
-  project.add(
+  circuit.add(
     <board width="10mm" height="10mm" routingDisabled>
       <resistor
         name="R1"
@@ -18,11 +18,11 @@ test("board with routingDisabled should not create pcb_trace", () => {
     </board>,
   )
 
-  project.render()
+  circuit.render()
 
-  const pcbTraces = project.db.pcb_trace.list()
+  const pcbTraces = circuit.db.pcb_trace.list()
   expect(pcbTraces.length).toBe(0)
 
-  const sourceTraces = project.db.source_trace.list()
+  const sourceTraces = circuit.db.source_trace.list()
   expect(sourceTraces.length).toBe(1)
 })

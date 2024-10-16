@@ -24,7 +24,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       this._computePcbGlobalTransformBeforeLayout(),
     )
     const isRotated90 =
-      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) < 0.01
+      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) % 180 < 0.01
 
     let pcb_keepout: PCBKeepout | null = null
     if (props.shape === "circle") {
