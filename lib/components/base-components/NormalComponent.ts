@@ -24,6 +24,9 @@ import { ZodType, z } from "zod"
 import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
+import Debug from "debug"
+
+const debug = Debug("tscircuit:core")
 
 const rotation3 = z.object({
   x: rotation,
@@ -91,13 +94,22 @@ export class NormalComponent<
         const pins = schPortArrangement[side].pins
         if (Array.isArray(pins)) {
           for (const pinNumber of pins) {
-            portsToCreate.push(new Port({ pinNumber }))
+            portsToCreate.push(
+              new Port(
+                {
+                  pinNumber,
+                },
+                {
+                  originDescription: `schPortArrangement:${side}`,
+                },
+              ),
+            )
           }
         }
       }
     }
 
-    const pinLabels: Record<string, string> | undefined =
+    const pinLabels: Record<string, string | string[]> | undefined =
       this._parsedProps.pinLabels
     if (pinLabels) {
       for (let [pinNumber, label] of Object.entries(pinLabels)) {
@@ -105,15 +117,24 @@ export class NormalComponent<
         let existingPort = portsToCreate.find(
           (p) => p._parsedProps.pinNumber === Number(pinNumber),
         )
+        const primaryLabel = Array.isArray(label) ? label[0] : label
+        const otherLabels = Array.isArray(label) ? label.slice(1) : []
+
         if (!existingPort) {
-          existingPort = new Port({
-            pinNumber: parseInt(pinNumber),
-            name: label,
-          })
+          existingPort = new Port(
+            {
+              pinNumber: parseInt(pinNumber),
+              name: primaryLabel,
+              aliases: otherLabels,
+            },
+            {
+              originDescription: `pinLabels:pin${pinNumber}`,
+            },
+          )
           portsToCreate.push(existingPort)
         } else {
-          existingPort.externallyAddedAliases.push(label)
-          existingPort.props.name = label
+          existingPort.externallyAddedAliases.push(primaryLabel, ...otherLabels)
+          existingPort.props.name = primaryLabel
         }
       }
     }
@@ -128,6 +149,7 @@ export class NormalComponent<
         const port = getPortFromHints(symPort.labels)
 
         if (port) {
+          port.originDescription = `schematicSymbol:labels[0]:${symPort.labels[0]}`
           port.schematicSymbolPortDef = symPort
           portsToCreate.push(port)
         }
@@ -323,8 +345,8 @@ export class NormalComponent<
         p.isMatchingAnyOf(component.getNameAndAliases()),
       )
       if (conflictingPort) {
-        throw new Error(
-          `Conflicting ports added. Port 1: ${conflictingPort}, Port 2: ${component}`,
+        debug(
+          `Similar ports added. Port 1: ${conflictingPort}, Port 2: ${component}`,
         )
       }
     }
@@ -347,6 +369,7 @@ export class NormalComponent<
         if ("port_hints" in elm && elm.port_hints) {
           const newPort = getPortFromHints(elm.port_hints)
           if (!newPort) continue
+          newPort.originDescription = `footprint:string:${footprint}:port_hints[0]:${elm.port_hints[0]}`
           newPorts.push(newPort)
         }
       }
@@ -364,6 +387,7 @@ export class NormalComponent<
       for (const fpChild of fp.children) {
         const newPort = getPortFromHints(fpChild.props.portHints ?? [])
         if (!newPort) continue
+        newPort.originDescription = `footprint:${footprint}`
         newPorts.push(newPort)
       }
 
