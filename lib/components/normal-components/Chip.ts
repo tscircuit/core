@@ -73,7 +73,14 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       // @ts-ignore soup needs to support distance for pin_styles
       pin_styles: underscorifyPinStyles(props.schPinStyle),
 
-      port_labels: props.pinLabels,
+      port_labels: props.pinLabels
+        ? Object.fromEntries(
+            Object.entries(props.pinLabels).map(([key, value]) => [
+              String(key),
+              Array.isArray(value) ? value.join(", ") : value,
+            ]),
+          )
+        : undefined,
 
       source_component_id: this.source_component_id!,
     })

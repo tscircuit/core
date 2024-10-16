@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("resistor PCB component size calculation", () => {
@@ -6,7 +6,15 @@ test("resistor PCB component size calculation", () => {
 
   project.add(
     <board width="10mm" height="10mm">
-      <resistor name="R1" resistance="10k" footprint="0402" pcbX={0} pcbY={0} />
+      <resistor
+        name="R1"
+        resistance="10k"
+        footprint="0402"
+        pcbX={0}
+        pcbY={0}
+        schWidth={2}
+        schHeight={1.6}
+      />
     </board>,
   )
 

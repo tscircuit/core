@@ -226,7 +226,10 @@ export class NormalComponent<
     const schematic_component = db.schematic_component.insert({
       center: { x: this.props.schX ?? 0, y: this.props.schY ?? 0 },
       rotation: this.props.schRotation ?? 0,
-      size: symbol.size,
+      size: {
+        width: this.props.schWidth ?? symbol.size.width,
+        height: this.props.schHeight ?? symbol.size.height,
+      },
       source_component_id: this.source_component_id!,
 
       // @ts-ignore
