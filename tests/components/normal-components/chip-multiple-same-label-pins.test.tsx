@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import type { Port } from "lib/components"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("chip with multiple pins having the same label", () => {
@@ -24,6 +25,9 @@ test("chip with multiple pins having the same label", () => {
 
   const chip = project.selectOne("chip")
   expect(chip).not.toBeNull()
+
+  const ports = project.selectAll(".U1 port") as Port[]
+  expect(ports.length).toBe(16)
 
   const gndPorts = project.selectAll(".U1 .GND")
   expect(gndPorts.length).toBe(3)

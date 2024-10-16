@@ -23,6 +23,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   matchedComponents: PrimitiveComponent[]
   facingDirection: "up" | "down" | "left" | "right" | null = null
 
+  originDescription: string | null = null
+
   get config() {
     return {
       componentName: "Port",
@@ -30,12 +32,18 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
   }
 
-  constructor(props: z.input<typeof portProps>) {
+  constructor(
+    props: z.input<typeof portProps>,
+    opts: { originDescription?: string } = {},
+  ) {
     if (!props.name && props.pinNumber) props.name = `pin${props.pinNumber}`
     if (!props.name) {
       throw new Error("Port must have a name or a pinNumber")
     }
     super(props)
+    if (opts.originDescription) {
+      this.originDescription = opts.originDescription
+    }
     this.matchedComponents = []
   }
 

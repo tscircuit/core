@@ -94,7 +94,16 @@ export class NormalComponent<
         const pins = schPortArrangement[side].pins
         if (Array.isArray(pins)) {
           for (const pinNumber of pins) {
-            portsToCreate.push(new Port({ pinNumber }))
+            portsToCreate.push(
+              new Port(
+                {
+                  pinNumber,
+                },
+                {
+                  originDescription: `schPortArrangement:${side}`,
+                },
+              ),
+            )
           }
         }
       }
@@ -112,11 +121,16 @@ export class NormalComponent<
         const otherLabels = Array.isArray(label) ? label.slice(1) : []
 
         if (!existingPort) {
-          existingPort = new Port({
-            pinNumber: parseInt(pinNumber),
-            name: primaryLabel,
-            aliases: otherLabels,
-          })
+          existingPort = new Port(
+            {
+              pinNumber: parseInt(pinNumber),
+              name: primaryLabel,
+              aliases: otherLabels,
+            },
+            {
+              originDescription: `pinLabels:pin${pinNumber}`,
+            },
+          )
           portsToCreate.push(existingPort)
         } else {
           existingPort.externallyAddedAliases.push(primaryLabel, ...otherLabels)
@@ -135,6 +149,7 @@ export class NormalComponent<
         const port = getPortFromHints(symPort.labels)
 
         if (port) {
+          port.originDescription = `schematicSymbol:labels[0]:${symPort.labels[0]}`
           port.schematicSymbolPortDef = symPort
           portsToCreate.push(port)
         }
@@ -354,6 +369,7 @@ export class NormalComponent<
         if ("port_hints" in elm && elm.port_hints) {
           const newPort = getPortFromHints(elm.port_hints)
           if (!newPort) continue
+          newPort.originDescription = `footprint:string:${footprint}:port_hints[0]:${elm.port_hints[0]}`
           newPorts.push(newPort)
         }
       }
@@ -371,6 +387,7 @@ export class NormalComponent<
       for (const fpChild of fp.children) {
         const newPort = getPortFromHints(fpChild.props.portHints ?? [])
         if (!newPort) continue
+        newPort.originDescription = `footprint:${footprint}`
         newPorts.push(newPort)
       }
 

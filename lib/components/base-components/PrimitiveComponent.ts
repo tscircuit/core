@@ -516,6 +516,9 @@ export abstract class PrimitiveComponent<
 
   getString(): string {
     const { lowercaseComponentName: cname, _parsedProps: props, parent } = this
+    if (props?.pinNumber !== undefined && parent?.props?.name && props?.name) {
+      return `<${cname}#${this._renderId}(pin:${props.pinNumber} .${parent?.props.name}>.${props.name}) />`
+    }
     if (parent?.props?.name && props?.name) {
       return `<${cname}#${this._renderId}(.${parent?.props.name}>.${props?.name}) />`
     }
