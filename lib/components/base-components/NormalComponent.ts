@@ -97,7 +97,7 @@ export class NormalComponent<
       }
     }
 
-    const pinLabels: Record<string, string> | undefined =
+    const pinLabels: Record<string, string | string[]> | undefined =
       this._parsedProps.pinLabels
     if (pinLabels) {
       for (let [pinNumber, label] of Object.entries(pinLabels)) {
@@ -105,15 +105,19 @@ export class NormalComponent<
         let existingPort = portsToCreate.find(
           (p) => p._parsedProps.pinNumber === Number(pinNumber),
         )
+        const primaryLabel = Array.isArray(label) ? label[0] : label
+        const otherLabels = Array.isArray(label) ? label.slice(1) : []
+
         if (!existingPort) {
           existingPort = new Port({
             pinNumber: parseInt(pinNumber),
-            name: label,
+            name: primaryLabel,
+            aliases: otherLabels,
           })
           portsToCreate.push(existingPort)
         } else {
-          existingPort.externallyAddedAliases.push(label)
-          existingPort.props.name = label
+          existingPort.externallyAddedAliases.push(primaryLabel, ...otherLabels)
+          existingPort.props.name = primaryLabel
         }
       }
     }
