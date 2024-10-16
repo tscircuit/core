@@ -4,11 +4,11 @@ import "lib/register-catalogue"
 import "./extend-expect-circuit-snapshot"
 
 export const getTestFixture = () => {
-  const project = new Circuit()
+  const circuit = new Circuit()
 
   return {
-    project,
-    circuit: project,
+    circuit,
+    project: circuit,
     logSoup: async (nameOfTest: string) => {
       if (process.env.CI) return
       if (!project.firstChild?.renderPhaseStates.SourceRender.initialized) {

@@ -3,9 +3,9 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { layout } from "@tscircuit/layout"
 
 test("board with manual layout edits", () => {
-  const { project } = getTestFixture()
+  const { circuit } = getTestFixture()
 
-  project.add(
+  circuit.add(
     <board
       width="20mm"
       height="20mm"
@@ -35,10 +35,10 @@ test("board with manual layout edits", () => {
     </board>,
   )
 
-  project.render()
+  circuit.render()
 
-  const resistor = project.selectOne(".R1")
-  const capacitor = project.selectOne(".C1")
+  const resistor = circuit.selectOne(".R1")
+  const capacitor = circuit.selectOne(".C1")
 
   expect(resistor).not.toBeNull()
   expect(capacitor).not.toBeNull()
@@ -52,12 +52,12 @@ test("board with manual layout edits", () => {
   expect(capacitorPosition.x).toBeCloseTo(-5, 1)
   expect(capacitorPosition.y).toBeCloseTo(-5, 1)
 
-  const r1SmtpadPositions = project
+  const r1SmtpadPositions = circuit
     .selectAll(".R1 > smtpad")
     .map((elm) => elm._getGlobalPcbPositionBeforeLayout())
 
   expect(Math.abs(r1SmtpadPositions[0].x - 5)).toBeLessThan(1)
   expect(Math.abs(r1SmtpadPositions[1].x - 5)).toBeLessThan(1)
 
-  expect(project.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

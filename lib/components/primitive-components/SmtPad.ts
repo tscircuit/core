@@ -68,7 +68,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       this._computePcbGlobalTransformBeforeLayout(),
     )
     const isRotated90 =
-      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) < 0.01
+      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) % 180 < 0.01
 
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
 

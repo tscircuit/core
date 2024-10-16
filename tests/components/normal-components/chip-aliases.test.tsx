@@ -5,9 +5,9 @@ import "lib/register-catalogue"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("should create a Chip component when using the <bug /> alias", async () => {
-  const { project } = getTestFixture()
+  const { circuit } = getTestFixture()
 
-  project.add(
+  circuit.add(
     <board width="10mm" height="10mm">
       <bug
         name="U1"
@@ -24,9 +24,9 @@ it("should create a Chip component when using the <bug /> alias", async () => {
     </board>,
   )
 
-  project.render()
+  circuit.render()
 
-  const chip = project.selectOne("chip") as Chip
+  const chip = circuit.selectOne("chip") as Chip
 
   expect(chip).not.toBeNull()
 })
