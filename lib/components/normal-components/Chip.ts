@@ -21,7 +21,6 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     }
   }
 
-
   doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -59,6 +58,11 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     })
     this.schematicDimensions = dimensions
 
+    const primaryPortLabels: Record<string, string> = {}
+    for (const [port, label] of Object.entries(props.pinLabels ?? {})) {
+      primaryPortLabels[port] = Array.isArray(label) ? label[0] : label
+    }
+
     const schematic_component = db.schematic_component.insert({
       center: { x: props.schX ?? 0, y: props.schY ?? 0 },
       rotation: props.schRotation ?? 0,
@@ -73,7 +77,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       // @ts-ignore soup needs to support distance for pin_styles
       pin_styles: underscorifyPinStyles(props.schPinStyle),
 
-      port_labels: props.pinLabels,
+      port_labels: primaryPortLabels,
 
       source_component_id: this.source_component_id!,
     })
