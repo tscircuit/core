@@ -24,6 +24,9 @@ import { ZodType, z } from "zod"
 import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
+import Debug from "debug"
+
+const debug = Debug("tscircuit:core")
 
 const rotation3 = z.object({
   x: rotation,
@@ -327,8 +330,8 @@ export class NormalComponent<
         p.isMatchingAnyOf(component.getNameAndAliases()),
       )
       if (conflictingPort) {
-        throw new Error(
-          `Conflicting ports added. Port 1: ${conflictingPort}, Port 2: ${component}`,
+        debug(
+          `Similar ports added. Port 1: ${conflictingPort}, Port 2: ${component}`,
         )
       }
     }

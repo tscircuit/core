@@ -14,10 +14,10 @@ test("chip with multiple pins having the same label", () => {
           pin4: "GND",
           pin8: "GND",
           pin12: "OUT",
-          pin16: "GND"
+          pin16: "GND",
         }}
       />
-    </board>
+    </board>,
   )
 
   project.render()
@@ -28,7 +28,9 @@ test("chip with multiple pins having the same label", () => {
   const gndPorts = project.selectAll(".U1 .GND")
   expect(gndPorts.length).toBe(3)
 
-  const gndPinNumbers = gndPorts.map(port => port.props.pinNumber).sort()
+  const gndPinNumbers = gndPorts
+    .map((port) => port.props.pinNumber)
+    .sort((a, b) => a - b)
   expect(gndPinNumbers).toEqual([4, 8, 16])
 
   const vccPort = project.selectOne(".U1 .VCC")
