@@ -237,9 +237,24 @@ export class NormalComponent<
     const { schematicSymbolName } = this.config
     if (!schematicSymbolName) return
     // TODO switch between horizontal and vertical based on schRotation
-    const symbol_name = `${this.config.schematicSymbolName}`
+    const base_symbol_name = this.config.schematicSymbolName
+    const symbol_name_horz = `${base_symbol_name}_horz`
 
-    const symbol = (symbols as any)[symbol_name] as SchSymbol | undefined
+    let symbol_name: keyof typeof symbols
+    if (!base_symbol_name) {
+      throw new Error(
+        "No schematic symbol defined (schematicSymbolName not provided)",
+      )
+    }
+    if (base_symbol_name in symbols) {
+      symbol_name = base_symbol_name as keyof typeof symbols
+    } else if (symbol_name_horz in symbols) {
+      symbol_name = symbol_name_horz as keyof typeof symbols
+    } else {
+      throw new Error(`Could not find schematic-symbol: "${base_symbol_name}"`)
+    }
+
+    const symbol: SchSymbol | undefined = symbols[symbol_name]
 
     if (!symbol) {
       throw new Error(`Could not find schematic-symbol "${symbol_name}"`)
@@ -251,7 +266,6 @@ export class NormalComponent<
       size: symbol.size,
       source_component_id: this.source_component_id!,
 
-      // @ts-ignore
       symbol_name,
     })
     this.schematic_component_id = schematic_component.schematic_component_id

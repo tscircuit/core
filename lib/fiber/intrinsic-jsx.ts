@@ -42,6 +42,7 @@ declare global {
       fabricationnotepath: Props.FabricationNotePathProps
       constraint: Props.ConstraintProps
       constrainedlayout: Props.ConstrainedLayoutProps
+      battery: any // Props.BatteryProps
       jscad: any
     }
   }

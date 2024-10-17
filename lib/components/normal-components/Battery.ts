@@ -1,21 +1,38 @@
-import { resistorProps } from "@tscircuit/props"
-import type { SourceSimpleResistorInput } from "@tscircuit/soup"
+// import { batteryProps } from "@tscircuit/props"
+// import type { SourceBatteryInput } from "circuit-json"
+
 import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace"
+import { z } from "zod"
 
-export class Resistor extends NormalComponent<
-  typeof resistorProps,
+type SourceBatteryInput = {
+  name: string
+  ftype: Ftype
+  manufacturer_part_number: string
+  supplier_part_numbers: any
+}
+
+export const batteryProps = z.object({
+  name: z.string(),
+  mfn: z.string().optional(),
+  symbolName: z.string().optional(),
+  manufacturerPartNumber: z.string().optional(),
+  supplierPartNumbers: z.any(),
+})
+
+export class Battery extends NormalComponent<
+  typeof batteryProps,
   PassivePorts
 > {
   get config() {
     return {
-      componentName: "Resistor",
+      componentName: "Battery",
       schematicSymbolName: (this.props.symbolName ??
-        ("boxresistor_horz" as BaseSymbolName)) as BaseSymbolName,
-      zodProps: resistorProps,
-      sourceFtype: "simple_resistor" as Ftype,
+        ("dc_ammeter" as BaseSymbolName)) as BaseSymbolName,
+      zodProps: batteryProps,
+      sourceFtype: "simple_power_source" as Ftype,
     }
   }
 
@@ -36,39 +53,15 @@ export class Resistor extends NormalComponent<
     )
   }
 
-  doInitialCreateNetsFromProps() {
-    this._createNetsFromProps([this.props.pullupFor, this.props.pullupTo])
-  }
-
-  doInitialCreateTracesFromProps() {
-    if (this.props.pullupFor && this.props.pullupTo) {
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.1`,
-          to: this.props.pullupFor,
-        }),
-      )
-      this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.2`,
-          to: this.props.pullupTo,
-        }),
-      )
-    }
-  }
-
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
-      ftype: "simple_resistor",
       name: props.name,
-      // @ts-ignore
+      ftype: "simple_power_source" as Ftype,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
-
-      resistance: props.resistance,
-    } as SourceSimpleResistorInput)
+    } as SourceBatteryInput)
     this.source_component_id = source_component.source_component_id
   }
 }
