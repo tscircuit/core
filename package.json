@@ -17,31 +17,31 @@
     "measure-bundle": "howfat -r table ."
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.3",
+    "@biomejs/biome": "^1.9.3",
     "@tscircuit/layout": "^0.0.28",
     "@tscircuit/log-soup": "^1.0.2",
     "@types/bun": "latest",
     "@types/debug": "^4.1.12",
-    "@types/react": "^18.3.3",
+    "@types/react": "^18.3.11",
     "@types/react-reconciler": "^0.28.8",
     "bun-match-svg": "0.0.2",
     "circuit-to-svg": "^0.0.40",
-    "debug": "^4.3.6",
+    "debug": "^4.3.7",
     "howfat": "^0.3.8",
     "looks-same": "^9.0.1",
-    "tsup": "^8.2.4"
+    "tsup": "^8.3.0"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.6.2"
   },
   "dependencies": {
-    "@lume/kiwi": "^0.4.3",
+    "@lume/kiwi": "^0.4.4",
     "@tscircuit/footprinter": "^0.0.71",
     "@tscircuit/infgrid-ijump-astar": "^0.0.21",
     "@tscircuit/math-utils": "^0.0.4",
-    "@tscircuit/props": "^0.0.70",
+    "@tscircuit/props": "^0.0.74",
     "@tscircuit/soup-util": "^0.0.33",
-    "circuit-json": "^0.0.85",
+    "circuit-json": "^0.0.86",
     "circuit-json-to-connectivity-map": "^0.0.17",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",

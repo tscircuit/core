@@ -1,26 +1,11 @@
-// import { batteryProps } from "@tscircuit/props"
-// import type { SourceBatteryInput } from "circuit-json"
+import { batteryProps } from "@tscircuit/props"
+import type { SourceSimpleBatteryInput } from "circuit-json"
 
 import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace"
 import { z } from "zod"
-
-type SourceBatteryInput = {
-  name: string
-  ftype: Ftype
-  manufacturer_part_number: string
-  supplier_part_numbers: any
-}
-
-export const batteryProps = z.object({
-  name: z.string(),
-  mfn: z.string().optional(),
-  symbolName: z.string().optional(),
-  manufacturerPartNumber: z.string().optional(),
-  supplierPartNumbers: z.any(),
-})
 
 export class Battery extends NormalComponent<
   typeof batteryProps,
@@ -59,9 +44,9 @@ export class Battery extends NormalComponent<
     const source_component = db.source_component.insert({
       name: props.name,
       ftype: "simple_power_source" as Ftype,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      capacity: props.capacity,
       supplier_part_numbers: props.supplierPartNumbers,
-    } as SourceBatteryInput)
+    } as SourceSimpleBatteryInput)
     this.source_component_id = source_component.source_component_id
   }
 }
