@@ -9,21 +9,31 @@ export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
 > {
-  // @ts-ignore (cause the symbolName is string and not fixed)
   get config() {
     return {
       componentName: "Resistor",
-      schematicSymbolName:
-        this.props.symbolName ?? ("boxresistor_horz" as BaseSymbolName),
+      schematicSymbolName: (this.props.symbolName ??
+        ("boxresistor_horz" as BaseSymbolName)) as BaseSymbolName,
       zodProps: resistorProps,
       sourceFtype: "simple_resistor" as Ftype,
     }
   }
 
-
   initPorts() {
-    this.add(new Port({ name: "pin1", pinNumber: 1, aliases: ["anode", "pos", "left"] }))
-    this.add(new Port({ name: "pin2", pinNumber: 2, aliases: ["cathode", "neg", "right"] }))
+    this.add(
+      new Port({
+        name: "pin1",
+        pinNumber: 1,
+        aliases: ["anode", "pos", "left"],
+      }),
+    )
+    this.add(
+      new Port({
+        name: "pin2",
+        pinNumber: 2,
+        aliases: ["cathode", "neg", "right"],
+      }),
+    )
   }
 
   doInitialCreateNetsFromProps() {

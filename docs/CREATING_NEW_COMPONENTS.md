@@ -5,9 +5,12 @@ If you got an error like `Unsupported component type (not registered in @tscircu
 ## Steps to creating a new component
 
 - Determine if the component is a normal component or a primitive component
+  - Normal components are things like resistors, capacitors, diodes, etc.
+  - Primitive components are things like traces, holes, texts, etc.
 - If it's a normal component, create a new file in `lib/components/normal-components`
 - If it's a primitive component, create a new file in `lib/components/primitive-components`
 - Add the component to the catalogue by exporting it from the `lib/components/index.ts` file
+- Add the component to the `intrinsic-jsx.ts` file
 - Create a test for the component
 
 ## Getting Props for a Component
