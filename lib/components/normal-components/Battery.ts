@@ -15,7 +15,7 @@ export class Battery extends NormalComponent<
     return {
       componentName: "Battery",
       schematicSymbolName: (this.props.symbolName ??
-        ("dc_ammeter" as BaseSymbolName)) as BaseSymbolName,
+        ("battery" as BaseSymbolName)) as BaseSymbolName,
       zodProps: batteryProps,
       sourceFtype: "simple_power_source" as Ftype,
     }
