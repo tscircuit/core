@@ -8,6 +8,7 @@ import { compose, identity } from "transformation-matrix"
 import { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { TraceHint } from "./TraceHint"
+import type { SchematicComponent } from "circuit-json"
 
 export class Group<
   Props extends z.ZodType<any, any, any> = typeof groupProps,
@@ -38,6 +39,27 @@ export class Group<
           offsets: manualTraceHint.offsets,
         }),
       )
+    }
+  }
+
+  doInitialSchematicLayout(): void {
+    // The schematic_components are rendered in our children
+    const { db } = this.root!
+
+    const descendants = this.getDescendants()
+    console.log("descendants.length", descendants.length)
+
+    const components: SchematicComponent[] = []
+    // TODO move subcircuits as a group, don't re-layout subcircuits
+    for (const descendant of descendants) {
+      if ("schematic_component_id" in descendant) {
+        const component = db.schematic_component.get(
+          descendant.schematic_component_id!,
+        )
+        if (component) {
+          components.push(component)
+        }
+      }
     }
   }
 }
