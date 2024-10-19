@@ -83,18 +83,18 @@ export class Group<
     const scene = SAL.convertSoupToScene(db.toArray())
     console.log("scene", scene)
 
-    SAL.ascendingCentralLrBug1(scene)
-    console.log("scene", scene)
+    const laidOutScene = SAL.ascendingCentralLrBug1(scene)
+    console.log("laidOutScene", laidOutScene)
 
-    // SAL.mutateSoupForScene(db.toArray(), scene)
-    for (const box of scene.boxes) {
-      const component = db.schematic_component.get(box.box_id)
-      if (component) {
-        // TODO also move ports
-        component.center.x = box.x
-        component.center.y = box.y
-      }
-    }
+    SAL.mutateSoupForScene(db.toArray(), laidOutScene)
+    // for (const box of scene.boxes) {
+    //   const component = db.schematic_component.get(box.box_id)
+    //   if (component) {
+    //     // TODO also move ports
+    //     component.center.x = box.x
+    //     component.center.y = box.y
+    //   }
+    // }
 
     console.table(
       db.toArray().map((a: any) => ({
