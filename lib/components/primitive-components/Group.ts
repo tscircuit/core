@@ -8,7 +8,8 @@ import { compose, identity } from "transformation-matrix"
 import { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { TraceHint } from "./TraceHint"
-import type { SchematicComponent } from "circuit-json"
+import type { SchematicComponent, SchematicPort } from "circuit-json"
+import * as SAL from "@tscircuit/schematic-autolayout"
 
 export class Group<
   Props extends z.ZodType<any, any, any> = typeof groupProps,
@@ -50,6 +51,7 @@ export class Group<
     console.log("descendants.length", descendants.length)
 
     const components: SchematicComponent[] = []
+    const ports: SchematicPort[] = []
     // TODO move subcircuits as a group, don't re-layout subcircuits
     for (const descendant of descendants) {
       if ("schematic_component_id" in descendant) {
@@ -57,9 +59,51 @@ export class Group<
           descendant.schematic_component_id!,
         )
         if (component) {
+          // Get all ports associated with this component
+          const schPorts = db.schematic_port
+            .list()
+            .filter(
+              (p) =>
+                p.schematic_component_id === component.schematic_component_id,
+            )
+
           components.push(component)
+          ports.push(...schPorts)
         }
       }
     }
+
+    console.table(
+      db.toArray().map((a: any) => ({
+        type: a.type,
+        name: a.name,
+      })),
+    )
+
+    const scene = SAL.convertSoupToScene(db.toArray())
+    console.log("scene", scene)
+
+    SAL.ascendingCentralLrBug1(scene)
+    console.log("scene", scene)
+
+    // SAL.mutateSoupForScene(db.toArray(), scene)
+    for (const box of scene.boxes) {
+      const component = db.schematic_component.get(box.box_id)
+      if (component) {
+        // TODO also move ports
+        component.center.x = box.x
+        component.center.y = box.y
+      }
+    }
+
+    console.table(
+      db.toArray().map((a: any) => ({
+        type: a.type,
+        id: a[`${a.type}_id`],
+        name: a.name,
+        x: a.x ?? a.center?.x,
+        y: a.y ?? a.center?.y,
+      })),
+    )
   }
 }

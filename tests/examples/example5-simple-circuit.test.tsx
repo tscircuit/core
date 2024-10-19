@@ -18,9 +18,11 @@ test("example 5: simple circuit with capacitor, resistor, and pushbutton", async
       <net name="VCC" />
       <net name="GND" />
 
-      <trace from="net.VCC" to=".C1 > .pin1" />
+      {/* <trace from="net.VCC" to=".C1 > .pin1" /> */}
+      <trace from=".SW1 > .pin1" to=".C1 > .pin1" />
       <trace from=".C1 > .pin2" to="net.GND" />
-      <trace from="net.VCC" to=".R1 > .pin1" />
+      {/* <trace from="net.VCC" to=".R1 > .pin1" /> */}
+      <trace from=".SW1 > .pin1" to=".R1 > .pin1" />
       <trace from=".R1 > .pin2" to=".SW1 > .pin1" />
       <trace from=".SW1 > .pin2" to="net.GND" />
     </board>,
