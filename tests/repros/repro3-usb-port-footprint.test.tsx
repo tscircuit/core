@@ -1,4 +1,3 @@
-import { createUseComponent } from "@tscircuit/core"
 import type { CommonLayoutProps } from "@tscircuit/props"
 
 interface Props extends CommonLayoutProps {
@@ -235,7 +234,6 @@ test("repro3 usb-port-footprint", async () => {
   )
 
   circuit.render()
-
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
