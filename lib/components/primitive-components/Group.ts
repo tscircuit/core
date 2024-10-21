@@ -48,7 +48,6 @@ export class Group<
     const { db } = this.root!
 
     const descendants = this.getDescendants()
-    console.log("descendants.length", descendants.length)
 
     const components: SchematicComponent[] = []
     const ports: SchematicPort[] = []
@@ -73,37 +72,11 @@ export class Group<
       }
     }
 
-    console.table(
-      db.toArray().map((a: any) => ({
-        type: a.type,
-        name: a.name,
-      })),
-    )
-
+    // TODO only move components that belong to this subcircuit
     const scene = SAL.convertSoupToScene(db.toArray())
-    console.log("scene", scene)
 
     const laidOutScene = SAL.ascendingCentralLrBug1(scene)
-    console.log("laidOutScene", laidOutScene)
 
     SAL.mutateSoupForScene(db.toArray(), laidOutScene)
-    // for (const box of scene.boxes) {
-    //   const component = db.schematic_component.get(box.box_id)
-    //   if (component) {
-    //     // TODO also move ports
-    //     component.center.x = box.x
-    //     component.center.y = box.y
-    //   }
-    // }
-
-    console.table(
-      db.toArray().map((a: any) => ({
-        type: a.type,
-        id: a[`${a.type}_id`],
-        name: a.name,
-        x: a.x ?? a.center?.x,
-        y: a.y ?? a.center?.y,
-      })),
-    )
   }
 }

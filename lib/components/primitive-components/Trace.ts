@@ -42,6 +42,7 @@ import {
 import { tryNow } from "lib/utils/try-now"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import type { Renderable } from "../base-components/Renderable"
+import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -615,7 +616,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     for (const { port } of ports) {
       connection.pointsToConnect.push({
         ...projectPointInDirection(
-          port._getGlobalSchematicPositionBeforeLayout(),
+          port._getGlobalSchematicPositionAfterLayout(),
           port.facingDirection!,
           0.1501,
         ),
@@ -627,7 +628,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const simpleRouteJsonInput: SimpleRouteJson = {
       minTraceWidth: 0.1,
-      obstacles,
+      obstacles: [], // leave empty to force traces to draw
       connections: [connection],
       bounds,
       layerCount: 1,
@@ -636,13 +637,11 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     const autorouter = new IJumpAutorouter({
       input: simpleRouteJsonInput,
     })
-    const results = autorouter.solve()
+    const results = autorouter.solveAndMapToTraces()
 
     if (results.length === 0) return
 
     const [result] = results
-
-    if (!result.solved) return
 
     const { route } = result
 
