@@ -241,15 +241,16 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (!container) return
 
+    const containerCenter = container._getGlobalSchematicPositionBeforeLayout()
     let center = this._getGlobalSchematicPositionBeforeLayout()
 
     if ("schematicDimensions" in container && props.pinNumber !== undefined) {
       const chipDims = container.schematicDimensions as SchematicBoxDimensions
 
       center = chipDims.getPortPositionByPinNumber(props.pinNumber!)
+      center.x += containerCenter.x
+      center.y += containerCenter.y
     }
-
-    const containerCenter = container._getGlobalSchematicPositionBeforeLayout()
 
     this.facingDirection = getRelativeDirection(containerCenter, center)
 

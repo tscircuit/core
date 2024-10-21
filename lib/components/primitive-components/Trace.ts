@@ -615,11 +615,12 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     for (const { port } of ports) {
       connection.pointsToConnect.push({
-        ...projectPointInDirection(
-          port._getGlobalSchematicPositionAfterLayout(),
-          port.facingDirection!,
-          0.1501,
-        ),
+        ...port._getGlobalSchematicPositionAfterLayout(),
+        // ...projectPointInDirection(
+        //   port._getGlobalSchematicPositionAfterLayout(),
+        //   port.facingDirection!,
+        //   0.1501,
+        // ),
         layer: "top",
       })
     }
@@ -634,7 +635,12 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       layerCount: 1,
     }
 
-    const autorouter = new IJumpAutorouter({
+    let Autorouter = IJumpAutorouter
+    if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
+      Autorouter = DirectLineRouter as any
+    }
+
+    const autorouter = new Autorouter({
       input: simpleRouteJsonInput,
     })
     const results = autorouter.solveAndMapToTraces()
