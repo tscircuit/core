@@ -16,7 +16,7 @@ export class Group<
 > extends NormalComponent<Props> {
   get config() {
     return {
-      zodProps: groupProps as unknown as Props,
+      zodProps: groupProps,
       componentName: "Group",
     }
   }
@@ -45,6 +45,9 @@ export class Group<
 
   doInitialSchematicLayout(): void {
     // The schematic_components are rendered in our children
+    if (!this.isSubcircuit) return
+    const props = this._parsedProps as SubcircuitGroupProps
+    if (!props.schAutoLayoutEnabled) return
     const { db } = this.root!
 
     const descendants = this.getDescendants()
