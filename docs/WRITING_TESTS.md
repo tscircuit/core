@@ -7,7 +7,7 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("my test name", async () => {
-  const { circuit, logSoup } = getTestFixture()
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="12mm" height="10mm">
