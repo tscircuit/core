@@ -36,7 +36,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     props: z.input<typeof portProps>,
     opts: { originDescription?: string } = {},
   ) {
-    if (!props.name && props.pinNumber) props.name = `pin${props.pinNumber}`
+    if (!props.name && props.pinNumber !== undefined)
+      props.name = `pin${props.pinNumber}`
     if (!props.name) {
       throw new Error("Port must have a name or a pinNumber")
     }
