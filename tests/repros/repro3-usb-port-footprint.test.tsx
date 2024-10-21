@@ -236,12 +236,6 @@ test("repro3 usb-port-footprint", async () => {
 
   circuit.render()
 
-  // optional: add expect statements that query against classes
-  // expect(circuit.selectAll("trace").length).toBe(7)
-
-  // optional: add expect statements here to check for expected values
-  // expect(circuit.db.pcb_smtpad.list().map((smtpad) => smtpad.pcb_port_id)).not.toContain(null)
-  // expect(circuit.db.pcb_plated_hole.list()[0].hole_diameter).toBe(0.4)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
