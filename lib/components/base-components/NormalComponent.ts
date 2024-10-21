@@ -6,6 +6,7 @@ import type {
   CadModelStl,
 } from "@tscircuit/props"
 import { point3, rotation } from "circuit-json"
+import Debug from "debug"
 import {
   type ReactSubtree,
   createInstanceFromReactElement,
@@ -24,7 +25,6 @@ import { ZodType, z } from "zod"
 import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
-import Debug from "debug"
 
 const debug = Debug("tscircuit:core")
 
@@ -105,6 +105,25 @@ export class NormalComponent<
               ),
             )
           }
+        }
+      }
+      // Takes care of the case where the user only specifies the size of the
+      // sides, and not the pins
+      const sides = ["left", "right", "top", "bottom"]
+      let pinNum = 1
+      for (const side of sides) {
+        const size = schPortArrangement[`${side}Size`]
+        for (let i = 0; i < size; i++) {
+          portsToCreate.push(
+            new Port(
+              {
+                pinNumber: pinNum++,
+              },
+              {
+                originDescription: `schPortArrangement:${side}`,
+              },
+            ),
+          )
         }
       }
     }

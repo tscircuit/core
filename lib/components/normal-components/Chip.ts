@@ -6,7 +6,6 @@ import {
   type SchematicBoxDimensions,
   getAllDimensionsForSchematicBox,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { Port } from "../primitive-components/Port"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
@@ -39,7 +38,11 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const ports = this.children.filter((child) => child instanceof Port)
+    const pinCount =
+      (props.schPortArrangement?.leftSize ?? 0) +
+      (props.schPortArrangement?.rightSize ?? 0) +
+      (props.schPortArrangement?.topSize ?? 0) +
+      (props.schPortArrangement?.bottomSize ?? 0)
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 
@@ -49,7 +52,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       schPinSpacing: pinSpacing,
       schPinStyle: props.schPinStyle,
 
-      pinCount: ports.length,
+      pinCount,
 
       // @ts-ignore there's a subtley in the definition difference with
       // leftSide/rightSide/topSide/bottomSide in how the direction is defined
