@@ -99,6 +99,21 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     return applyToPoint(transform, this.schematicSymbolPortDef)
   }
 
+  _getGlobalSchematicPositionAfterLayout(): { x: number; y: number } {
+    const { db } = this.root!
+    if (!this.schematic_port_id) {
+      throw new Error(
+        `Can't get schematic port position after layout, no schematic_port_id`,
+      )
+    }
+    const schematic_port = db.schematic_port.get(this.schematic_port_id)!
+    if (!schematic_port)
+      throw new Error(
+        `Schematic port not found when trying to get post-layout position: ${this.schematic_port_id}`,
+      )
+    return schematic_port.center
+  }
+
   /**
    * Smtpads and platedholes call this method to register themselves as a match
    * for this port. All the matching is done by primitives other than the Port,

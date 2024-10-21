@@ -35,10 +35,11 @@
   },
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/footprinter": "^0.0.71",
+    "@tscircuit/footprinter": "^0.0.77",
     "@tscircuit/infgrid-ijump-astar": "^0.0.21",
     "@tscircuit/math-utils": "^0.0.4",
-    "@tscircuit/props": "^0.0.74",
+    "@tscircuit/props": "^0.0.75",
+    "@tscircuit/schematic-autolayout": "^0.0.5",
     "@tscircuit/soup-util": "^0.0.33",
     "circuit-json": "^0.0.86",
     "circuit-json-to-connectivity-map": "^0.0.17",
