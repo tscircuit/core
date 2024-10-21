@@ -16,7 +16,7 @@ export class Group<
 > extends NormalComponent<Props> {
   get config() {
     return {
-      zodProps: groupProps,
+      zodProps: groupProps as unknown as Props,
       componentName: "Group",
     }
   }
