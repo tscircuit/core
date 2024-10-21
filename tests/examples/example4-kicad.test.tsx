@@ -1,8 +1,8 @@
-import { expect, it } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, it } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("example 4: kicad theme demo", async () => {
-  const { project, logSoup } = getTestFixture();
+  const { project, logSoup } = getTestFixture()
 
   project.add(
     <board width="10mm" height="10mm">
@@ -57,10 +57,10 @@ it("example 4: kicad theme demo", async () => {
           },
         }}
       />
-    </board>
-  );
+    </board>,
+  )
 
-  project.render();
+  project.render()
 
-  expect(project).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(project).toMatchSchematicSnapshot(import.meta.path)
+})

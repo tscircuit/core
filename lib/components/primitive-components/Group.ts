@@ -80,6 +80,44 @@ export class Group<
 
     const laidOutScene = SAL.ascendingCentralLrBug1(scene)
 
-    SAL.mutateSoupForScene(db.toArray(), laidOutScene)
+    // This method doesn't shift ports properly- it assumes ports are on the
+    // edges of components (they're not, they're slightly outside)
+    // SAL.mutateSoupForScene(db.toArray(), laidOutScene)
+
+    // Shift components and ports appropriately
+    // TODO use SAL.mutateSoupForScene when it's fixed
+    for (const ogBox of scene.boxes) {
+      const schematic_component_id = ogBox.box_id
+      const laidOutBox = laidOutScene.boxes.find(
+        (b) => b.box_id === schematic_component_id,
+      )
+      if (!laidOutBox) continue
+
+      const delta = {
+        x: laidOutBox.x - ogBox.x,
+        y: laidOutBox.y - ogBox.y,
+      }
+
+      db.schematic_component.update(schematic_component_id, {
+        center: {
+          x: ogBox.x + delta.x,
+          y: ogBox.y + delta.y,
+        },
+      })
+
+      // Shift all the ports
+      const ports = db.schematic_port
+        .list()
+        .filter((p) => p.schematic_component_id === schematic_component_id)
+
+      for (const port of ports) {
+        db.schematic_port.update(port.schematic_port_id!, {
+          center: {
+            x: port.center.x + delta.x,
+            y: port.center.y + delta.y,
+          },
+        })
+      }
+    }
   }
 }
