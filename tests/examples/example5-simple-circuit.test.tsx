@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("example 5: simple circuit with capacitor, resistor, and pushbutton", async () => {
@@ -14,7 +14,18 @@ test("example 5: simple circuit with capacitor, resistor, and pushbutton", async
         pcbY={5}
       />
       <resistor name="R1" resistance="10k" footprint="0603" pcbX={5} pcbY={0} />
-      <chip name="SW1" footprint="pushbutton" pcbX={-5} pcbY={0} />
+      <chip
+        name="SW1"
+        footprint="pushbutton"
+        pcbX={-5}
+        pcbY={0}
+        schPortArrangement={{
+          leftSize: 2,
+          rightSize: 2,
+          topSize: 0,
+          bottomSize: 0,
+        }}
+      />
       <net name="VCC" />
       <net name="GND" />
 
