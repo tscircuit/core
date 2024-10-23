@@ -642,6 +642,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const autorouter = new Autorouter({
       input: simpleRouteJsonInput,
+      OBSTACLE_MARGIN: 2,
     })
     const results = autorouter.solveAndMapToTraces()
 
