@@ -637,16 +637,18 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     }
 
     // For each obstacle, create a schematic_debug_object
-    for (const obstacle of obstacles) {
-      db.schematic_debug_object.insert({
-        shape: "rect",
-        center: obstacle.center,
-        size: {
-          width: obstacle.width,
-          height: obstacle.height,
-        },
-        label: "obstacle",
-      } as any) // TODO issue with discriminated union
+    if (this.getSubcircuit().props._schDebugObjectsEnabled) {
+      for (const obstacle of obstacles) {
+        db.schematic_debug_object.insert({
+          shape: "rect",
+          center: obstacle.center,
+          size: {
+            width: obstacle.width,
+            height: obstacle.height,
+          },
+          label: "obstacle",
+        } as any) // TODO issue with discriminated union
+      }
     }
 
     let Autorouter = IJumpAutorouter

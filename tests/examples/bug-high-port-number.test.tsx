@@ -5,7 +5,12 @@ test("bug high port number", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width={10} height={10}>
+    <board
+      width={10}
+      height={10}
+      // @ts-ignore
+      _schDebugObjectsEnabled
+    >
       <chip
         name="U1"
         manufacturerPartNumber="part-number"
