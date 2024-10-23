@@ -108,9 +108,9 @@ test("bug high port number", async () => {
 
   circuit.render()
 
-  const fs = require('fs');
-  const circuitJson = circuit.getCircuitJson();
-  fs.writeFileSync('circuit.json', JSON.stringify(circuitJson, null, 2));
+  // const fs = require('fs');
+  // const circuitJson = circuit.getCircuitJson();
+  // fs.writeFileSync('circuit.json', JSON.stringify(circuitJson, null, 2));
   // Check if all components are created
   //   expect(circuit.selectOne("capacitor")).not.toBeNull()
   //   expect(circuit.selectOne("resistor")).not.toBeNull()

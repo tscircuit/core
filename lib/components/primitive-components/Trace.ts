@@ -629,11 +629,15 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const simpleRouteJsonInput: SimpleRouteJson = {
       minTraceWidth: 0.1,
-      obstacles: [], // leave empty to force traces to draw
+      // obstacles: [], // leave empty to force traces to draw
+      obstacles,
       connections: [connection],
       bounds,
       layerCount: 1,
     }
+
+    // For each obstacle, create a schematic_debug_object
+    // TODO
 
     let Autorouter = IJumpAutorouter
     if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
@@ -642,7 +646,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const autorouter = new Autorouter({
       input: simpleRouteJsonInput,
-      OBSTACLE_MARGIN: 2,
+      OBSTACLE_MARGIN: 0.1,
     })
     const results = autorouter.solveAndMapToTraces()
 
