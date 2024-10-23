@@ -650,7 +650,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       }
     }
 
-    let Autorouter = IJumpAutorouter
+    let Autorouter = MultilayerIjump
     if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
       Autorouter = DirectLineRouter as any
     }
