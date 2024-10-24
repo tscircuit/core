@@ -16,11 +16,13 @@ async function saveSnapshotOfSoup({
   testPath,
   mode,
   updateSnapshot,
+  options,
 }: {
   soup: AnyCircuitElement[]
   testPath: string
   mode: "pcb" | "schematic"
   updateSnapshot: boolean
+  options?: any
 }): Promise<MatcherResult> {
   testPath = testPath.replace(/\.test\.tsx?$/, "")
   const snapshotDir = path.join(path.dirname(testPath || ""), "__snapshots__")
@@ -30,7 +32,7 @@ async function saveSnapshotOfSoup({
   const svg =
     mode === "pcb"
       ? convertCircuitJsonToPcbSvg(soup)
-      : convertCircuitJsonToSchematicSvg(soup)
+      : convertCircuitJsonToSchematicSvg(soup, options)
 
   if (!fs.existsSync(snapshotDir)) {
     fs.mkdirSync(snapshotDir, { recursive: true })
@@ -109,6 +111,7 @@ expect.extend({
           : (received as AnyCircuitElement[]),
       testPath: args[0],
       mode: "schematic",
+      options: args[1],
       updateSnapshot:
         process.argv.includes("--update-snapshots") ||
         process.argv.includes("-u") ||
@@ -120,6 +123,9 @@ expect.extend({
 declare module "bun:test" {
   interface Matchers<T = unknown> {
     toMatchPcbSnapshot(testPath: string): Promise<MatcherResult>
-    toMatchSchematicSnapshot(testPath: string): Promise<MatcherResult>
+    toMatchSchematicSnapshot(
+      testPath: string,
+      options?: Parameters<typeof convertCircuitJsonToSchematicSvg>[1],
+    ): Promise<MatcherResult>
   }
 }
