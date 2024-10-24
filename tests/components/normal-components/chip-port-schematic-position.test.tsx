@@ -14,10 +14,6 @@ test("chip port schematic position", () => {
           pin1: "VCC",
           pin8: "GND",
         }}
-        schPortArrangement={{
-          leftSize: 4,
-          rightSize: 4,
-        }}
       />
     </board>,
   )
