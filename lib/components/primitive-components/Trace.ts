@@ -629,19 +629,35 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const simpleRouteJsonInput: SimpleRouteJson = {
       minTraceWidth: 0.1,
-      obstacles: [], // leave empty to force traces to draw
+      obstacles,
       connections: [connection],
       bounds,
       layerCount: 1,
     }
 
-    let Autorouter = IJumpAutorouter
+    // For each obstacle, create a schematic_debug_object
+    if (this.getSubcircuit().props._schDebugObjectsEnabled) {
+      for (const obstacle of obstacles) {
+        db.schematic_debug_object.insert({
+          shape: "rect",
+          center: obstacle.center,
+          size: {
+            width: obstacle.width,
+            height: obstacle.height,
+          },
+          label: "obstacle",
+        } as any) // TODO issue with discriminated union
+      }
+    }
+
+    let Autorouter = MultilayerIjump
     if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
       Autorouter = DirectLineRouter as any
     }
 
     const autorouter = new Autorouter({
       input: simpleRouteJsonInput,
+      OBSTACLE_MARGIN: 0.1,
     })
     const results = autorouter.solveAndMapToTraces()
 

@@ -20,8 +20,14 @@ test("chip port schematic position", () => {
 
   circuit.render()
 
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    grid: {
+      cellSize: 0.5,
+      labelCells: true,
+    },
+  })
+
   const schematicPorts = circuit.db.schematic_port.list()
-  console.log(schematicPorts)
 
   // Find the VCC port (pin1)
   const vccPort = schematicPorts.find(
