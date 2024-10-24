@@ -129,5 +129,10 @@ test("bug high port number", async () => {
   //   expect(circuit.selectAll("trace").length).toBe(5)
 
   // Generate and check PCB snapshot
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    grid: {
+      cellSize: 1,
+      labelCells: true,
+    },
+  })
 })
