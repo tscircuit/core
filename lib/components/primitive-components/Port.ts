@@ -253,6 +253,19 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       center.y += containerCenter.y
     }
 
+    // For each obstacle, create a schematic_debug_object
+    if (this.getSubcircuit().props._schDebugObjectsEnabled) {
+      db.schematic_debug_object.insert({
+        shape: "rect",
+        center,
+        size: {
+          width: 0.1,
+          height: 0.1,
+        },
+        label: "obstacle",
+      } as any) // TODO issue with discriminated union
+    }
+
     this.facingDirection = getRelativeDirection(containerCenter, center)
 
     const schematic_port = db.schematic_port.insert({

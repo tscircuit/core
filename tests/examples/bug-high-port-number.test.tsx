@@ -9,7 +9,7 @@ test("bug high port number", async () => {
       width={10}
       height={10}
       // @ts-ignore
-      _schDebugObjectsEnabled
+    //   _schDebugObjectsEnabled
     >
       <chip
         name="U1"
@@ -60,7 +60,7 @@ test("bug high port number", async () => {
         name="R1"
         footprint="0805"
         schX={3}
-        schY={0}
+        schY={-1}
         symbolName="boxresistor_vert"
       />
       <resistor
@@ -68,7 +68,7 @@ test("bug high port number", async () => {
         name="R2"
         footprint="0805"
         schX={4.5}
-        schY={0}
+        schY={-1}
         symbolName="boxresistor_vert"
       />
       <diode
@@ -76,14 +76,14 @@ test("bug high port number", async () => {
         footprint="0805"
         symbolName="diode_vert"
         schX={3}
-        schY={3}
+        schY={2}
       />
       <diode
         name="LED2"
         footprint="0805"
         symbolName="diode_vert"
         schX={4.5}
-        schY={3}
+        schY={2}
       />
       <netalias net="5V" schX={3} schY={-2} />
       <netalias net="5V" schX={4.5} schY={-2} />
@@ -91,8 +91,8 @@ test("bug high port number", async () => {
       <trace path={[".5V", ".R1 > port.left"]} /> */}
       <trace path={[".R1 > port.right", ".LED1 > port.left"]} />
       <trace path={[".R2 > port.right", ".LED2 > port.left"]} />
-      <trace path={[".LED1 > port.right", ".U1 > .pin1"]} />
-      <trace path={[".LED2 > port.right", ".U1 > .RXLED"]} />
+      <trace path={[".LED1 > port.right", ".U1 > .pin20"]} />
+      <trace path={[".LED2 > port.right", ".U1 > .pin6"]} />
       <netalias net="GND" schX={-3} schY={4} schRotation="180deg" />
       <netalias net="GND" schX={-5} schY={3} schRotation="180deg" />
       <netalias net="GND" schX={-6} schY={3} schRotation="180deg" />
