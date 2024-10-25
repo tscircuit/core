@@ -1,10 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.473959241 -1.1456447499999995 2.947918482 2.291289499999999" width="1200" height="600" style="background-color: rgb(245, 241, 237)"><style>
-              .component { fill: none; stroke: rgb(132, 0, 0); stroke-width: 0.03; }
-              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); stroke-width: 0.03; }
-              .component-pin { fill: none; stroke: rgb(132, 0, 0); stroke-width: 0.02; }
-              .trace { stroke: rgb(0, 150, 0); stroke-width: 0.02; fill: none; }
-              .text { font-family: Arial, sans-serif; font-size: 0.2px; fill: rgb(0, 150, 0); }
-              .pin-number { font-size: 0.15px; fill: rgb(169, 0, 0); }
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)"><style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; stroke-width: 0.3; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              .trace { stroke: rgb(0, 150, 0); stroke-width: 3.6459873857951433; fill: none; }
+              .text { font-family: Arial, sans-serif; font-size: 36.45987385795143px; fill: rgb(0, 150, 0); }
+              .pin-number { font-size: 27.344905393463574px; fill: rgb(169, 0, 0); }
               .port-label { fill: rgb(0, 100, 100); }
-              .component-name { font-size: 0.25px; fill: rgb(0, 100, 100); }
-            </style><g transform="translate(0, 0) rotate(0)"><path d="M-0.05901489999999909,-0.18831315000000015 L-0.05869489999999833,0.11814524999999954" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.015375000000000805,-0.12533125000000034 L0.016669000000000933,0.05562075000000033" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M-0.06443049999999961,-0.032673549999999496 L-0.4368029,-0.032673549999999496" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.4350822999999997,-0.03438825000000034 L0.028285099999999952,-0.03438825000000034" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.03" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
+              .component-name { font-size: 45.57484232243929px; fill: rgb(0, 100, 100); }
+            </style><rect class="boundary" x="0" y="0" width="1200" height="600"/><g transform="translate(600, 300) rotate(0) scale(182.29936928975715)"><path d="M-0.05901489999999909,-0.18831315000000015 L-0.05869489999999833,0.11814524999999954" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.02" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.015375000000000805,-0.12533125000000034 L0.016669000000000933,0.05562075000000033" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.02" stroke-linecap="round" stroke-linejoin="round"/><path d="M-0.06443049999999961,-0.032673549999999496 L-0.4368029,-0.032673549999999496" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.02" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.4350822999999997,-0.03438825000000034 L0.028285099999999952,-0.03438825000000034" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.02" stroke-linecap="round" stroke-linejoin="round"/></g><g/></svg>
