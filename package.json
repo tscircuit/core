@@ -14,6 +14,7 @@
   },
   "scripts": {
     "build": "tsup-node index.ts --format esm --dts",
+    "format": "biome format . --write",
     "measure-bundle": "howfat -r table ."
   },
   "devDependencies": {
@@ -43,7 +44,7 @@
     "@tscircuit/soup-util": "^0.0.33",
     "circuit-json": "^0.0.91",
     "circuit-json-to-connectivity-map": "^0.0.17",
-    "circuit-to-svg": "^0.0.48",
+    "circuit-to-svg": "^0.0.52",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
     "react": "^18.3.1",
