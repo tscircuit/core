@@ -54,6 +54,15 @@ interface Params {
 
 type Side = "left" | "right" | "top" | "bottom"
 
+type PortInfo = {
+  trueIndex: number
+  pinNumber: number
+  side: "left" | "right" | "top" | "bottom" | "center"
+  distanceFromEdge: number
+  x: number
+  y: number
+}
+
 function isExplicitPinMappingArrangement(
   arrangement: PortArrangement,
 ): arrangement is ExplicitPinMappingArrangement {
@@ -75,7 +84,7 @@ function isExplicitPinMappingArrangement(
  */
 export interface SchematicBoxDimensions {
   pinCount: number
-  getPortPositionByPinNumber(pinNumber: number): { x: number; y: number }
+  getPortPositionByPinNumber(pinNumber: number): PortInfo
   getSize(): { width: number; height: number }
 }
 
@@ -148,12 +157,7 @@ export const getAllDimensionsForSchematicBox = (
     return (sideLength - totalMargin) / (sideSize - 1)
   }
 
-  const orderedTruePorts: Array<{
-    trueIndex: number
-    pinNumber: number
-    side: "left" | "right" | "top" | "bottom"
-    distanceFromEdge: number
-  }> = []
+  const orderedTruePorts: PortInfo[] = []
 
   let truePinIndex = 0
 
@@ -229,6 +233,8 @@ export const getAllDimensionsForSchematicBox = (
         pinNumber,
         side,
         distanceFromEdge: currentDistanceFromEdge,
+        x: 0,
+        y: 0,
       })
 
       if (pinStyle) {
@@ -351,23 +357,37 @@ export const getAllDimensionsForSchematicBox = (
 
   const truePortsWithPositions = orderedTruePorts.map((p) => {
     const { distanceFromEdge, side } = p
+    if (side === "center") {
+      return {
+        ...p,
+        x: 0,
+        y: 0,
+      }
+    }
     const edgePos = trueEdgePositions[side]
     const edgeDir = trueEdgeTraversalDirections[side]
 
     return {
+      ...p,
       x: edgePos.x + distanceFromEdge * edgeDir.x,
       y: edgePos.y + distanceFromEdge * edgeDir.y,
-      ...p,
     }
   })
 
   return {
-    getPortPositionByPinNumber(pinNumber: number): { x: number; y: number } {
+    getPortPositionByPinNumber(pinNumber: number): PortInfo {
       const port = truePortsWithPositions.find(
         (p) => p.pinNumber.toString() === pinNumber.toString(),
       )
       if (!port) {
-        return { x: 0, y: 0 }
+        return {
+          trueIndex: -1, // Use -1 for non-existent ports
+          pinNumber: pinNumber,
+          side: "center",
+          distanceFromEdge: 0,
+          x: 0,
+          y: 0,
+        }
       }
       return port
     },
