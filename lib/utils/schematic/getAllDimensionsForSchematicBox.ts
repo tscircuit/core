@@ -336,10 +336,10 @@ export const getAllDimensionsForSchematicBox = (
   }
 
   const trueEdgePositions = {
-    left: { x: -schWidth / 2, y: schHeight / 2 },
-    bottom: { x: -schWidth / 2, y: schHeight / 2 },
-    right: { x: schWidth / 2, y: -schHeight / 2 },
-    top: { x: schWidth / 2, y: -schHeight / 2 },
+    left: { x: -schWidth / 2 - 0.2, y: schHeight / 2 },
+    bottom: { x: -schWidth / 2, y: schHeight / 2 + 0.2 },
+    right: { x: schWidth / 2 + 0.2, y: -schHeight / 2 },
+    top: { x: schWidth / 2, y: -schHeight / 2 - 0.2 },
   }
 
   const trueEdgeTraversalDirections = {
