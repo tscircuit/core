@@ -611,6 +611,16 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
           connectedTo: [],
         })
       }
+      if (elm.type === "schematic_port") {
+        obstacles.push({
+          type: "rect",
+          layers: ["top"],
+          center: elm.center,
+          width: 0.1,
+          height: 0.1,
+          connectedTo: [],
+        })
+      }
     }
 
     for (const { port } of ports) {
@@ -650,7 +660,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       }
     }
 
-    let Autorouter = IJumpAutorouter
+    let Autorouter = MultilayerIjump
     if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
       Autorouter = DirectLineRouter as any
     }
