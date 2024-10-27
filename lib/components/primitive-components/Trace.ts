@@ -614,9 +614,15 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     const portData = ports.map(({ port }) => ({
       port,
       position: port._getGlobalSchematicPositionAfterLayout(),
-      schematic_port_id: port.schematic_port_id,
+      schematic_port_id: port.schematic_port_id ?? undefined,
       facingDirection: port.facingDirection,
     }))
+
+    // Ensure there are at least two ports
+    // Else return insufficient ports to draw a trace
+    if (portData.length < 2) {
+      return
+    }
 
     // Add points for autorouter to connect
     connection.pointsToConnect = portData.map(({ position }) => ({
