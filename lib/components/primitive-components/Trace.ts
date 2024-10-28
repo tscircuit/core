@@ -23,6 +23,8 @@ import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getClosest } from "lib/utils/getClosest"
 import { pairs } from "lib/utils/pairs"
+import { projectPointInDirection } from "lib/utils/projectPointInDirection"
+import { projectPointInOppositeDirection } from "lib/utils/projectPointInOppositeDirection"
 import { tryNow } from "lib/utils/try-now"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
@@ -611,7 +613,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     }
 
     // Get port positions for later use
-    const portData = ports.map(({ port }) => ({
+    const portsWithPosition = ports.map(({ port }) => ({
       port,
       position: port._getGlobalSchematicPositionAfterLayout(),
       schematic_port_id: port.schematic_port_id ?? undefined,
@@ -620,12 +622,12 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     // Ensure there are at least two ports
     // Else return insufficient ports to draw a trace
-    if (portData.length < 2) {
+    if (portsWithPosition.length < 2) {
       return
     }
 
     // Add points for autorouter to connect
-    connection.pointsToConnect = portData.map(({ position }) => ({
+    connection.pointsToConnect = portsWithPosition.map(({ position }) => ({
       ...position,
       layer: "top",
     }))
@@ -667,59 +669,33 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     }
 
     // Add small segments at the ends to connect to ports
-    const STUB_LENGTH = 0.1
+    const STUB_LENGTH = 0.15
 
-    // Connect start of trace to first port
-    const firstPoint = route[0]
-    const firstPort = portData[0]
-    const firstStub = {
-      from: firstPoint,
-      to: { ...firstPoint },
-      from_schematic_port_id: firstPort.schematic_port_id!,
-    }
+    // First port stub
+    edges.unshift({
+      from: {
+        ...projectPointInDirection(
+          route[0],
+          portsWithPosition[0].facingDirection!,
+          STUB_LENGTH,
+        ),
+      },
+      to: route[0],
+      from_schematic_port_id: portsWithPosition[0].schematic_port_id!,
+    })
 
-    // Extend the stub in the direction opposite to port's facing direction
-    switch (firstPort.facingDirection) {
-      case "left":
-        firstStub.from.x += STUB_LENGTH
-        break
-      case "right":
-        firstStub.from.x -= STUB_LENGTH
-        break
-      case "up":
-        firstStub.from.y += STUB_LENGTH
-        break
-      case "down":
-        firstStub.from.y -= STUB_LENGTH
-        break
-    }
-    edges.unshift(firstStub)
-
-    // Connect end of trace to second port
-    const lastPoint = route[route.length - 1]
-    const lastPort = portData[1]
-    const lastStub = {
-      from: lastPoint,
-      to: { ...lastPoint },
-      from_schematic_port_id: lastPort.schematic_port_id!,
-    }
-
-    // Extend the stub in the direction opposite to port's facing direction
-    switch (lastPort.facingDirection) {
-      case "left":
-        lastStub.to.x += STUB_LENGTH
-        break
-      case "right":
-        lastStub.to.x -= STUB_LENGTH
-        break
-      case "up":
-        lastStub.to.y += STUB_LENGTH
-        break
-      case "down":
-        lastStub.to.y -= STUB_LENGTH
-        break
-    }
-    edges.push(lastStub)
+    // Last port stub
+    edges.push({
+      from: route[route.length - 1],
+      to: {
+        ...projectPointInOppositeDirection(
+          route[route.length - 1],
+          portsWithPosition[1].facingDirection!,
+          STUB_LENGTH,
+        ),
+      },
+      from_schematic_port_id: portsWithPosition[1].schematic_port_id!,
+    })
 
     const trace = db.schematic_trace.insert({
       source_trace_id: this.source_trace_id!,

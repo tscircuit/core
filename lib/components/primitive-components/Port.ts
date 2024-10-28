@@ -92,9 +92,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       return { x: 0, y: 0 }
     }
 
+    const offsetY = -0.045
     const transform = compose(
       this.parent!.computeSchematicGlobalTransform(),
-      translate(-symbol.center.x, -symbol.center.y),
+      translate(-symbol.center.x, -symbol.center.y + offsetY),
     )
 
     return applyToPoint(transform, this.schematicSymbolPortDef)
