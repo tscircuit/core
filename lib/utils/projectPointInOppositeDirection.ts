@@ -1,4 +1,4 @@
-export const projectPointInDirection = (
+export const projectPointInOppositeDirection = (
   point: { x: number; y: number },
   direction: "up" | "down" | "left" | "right",
   distance: number,

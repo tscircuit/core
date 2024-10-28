@@ -1,21 +1,16 @@
-import { traceProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { Port } from "./Port"
 import {
   MultilayerIjump,
-  IJumpAutorouter,
-  autoroute,
   getObstaclesFromSoup,
-  markObstaclesAsConnected,
 } from "@tscircuit/infgrid-ijump-astar"
+import { traceProps } from "@tscircuit/props"
 import type {
-  AnyCircuitElement,
   LayerRef,
   PCBTrace,
   RouteHintPoint,
   SchematicTrace,
-  SourceTrace,
 } from "circuit-json"
+import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
 import type {
   Obstacle,
   SimpleRouteConnection,
@@ -23,26 +18,19 @@ import type {
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
-import { projectPointInDirection } from "lib/utils/projectPointInDirection"
-import type { TraceHint } from "./TraceHint"
-import {
-  findPossibleTraceLayerCombinations,
-  type CandidateTraceLayerCombination,
-} from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
-import { pairs } from "lib/utils/pairs"
+import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
-import type { Net } from "./Net"
-import { getClosest } from "lib/utils/getClosest"
-import { z } from "zod"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
-import {
-  isMatchingPathSelector,
-  isMatchingSelector,
-} from "lib/utils/selector-matching"
+import { getClosest } from "lib/utils/getClosest"
+import { pairs } from "lib/utils/pairs"
+import { projectPointInDirection } from "lib/utils/projectPointInDirection"
+import { projectPointInOppositeDirection } from "lib/utils/projectPointInOppositeDirection"
 import { tryNow } from "lib/utils/try-now"
-import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
-import type { Renderable } from "../base-components/Renderable"
-import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
+import { z } from "zod"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Net } from "./Net"
+import type { Port } from "./Port"
+import type { TraceHint } from "./TraceHint"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -600,6 +588,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       pointsToConnect: [],
     }
 
+    // Add obstacles from components and ports
     for (const elm of db.toArray()) {
       if (elm.type === "schematic_component") {
         obstacles.push({
@@ -623,17 +612,25 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       }
     }
 
-    for (const { port } of ports) {
-      connection.pointsToConnect.push({
-        ...port._getGlobalSchematicPositionAfterLayout(),
-        ...projectPointInDirection(
-          port._getGlobalSchematicPositionAfterLayout(),
-          port.facingDirection!,
-          0.1501,
-        ),
-        layer: "top",
-      })
+    // Get port positions for later use
+    const portsWithPosition = ports.map(({ port }) => ({
+      port,
+      position: port._getGlobalSchematicPositionAfterLayout(),
+      schematic_port_id: port.schematic_port_id ?? undefined,
+      facingDirection: port.facingDirection,
+    }))
+
+    // Ensure there are at least two ports
+    // Else return insufficient ports to draw a trace
+    if (portsWithPosition.length < 2) {
+      return
     }
+
+    // Add points for autorouter to connect
+    connection.pointsToConnect = portsWithPosition.map(({ position }) => ({
+      ...position,
+      layer: "top",
+    }))
 
     const bounds = computeObstacleBounds(obstacles)
 
@@ -643,21 +640,6 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       connections: [connection],
       bounds,
       layerCount: 1,
-    }
-
-    // For each obstacle, create a schematic_debug_object
-    if (this.getSubcircuit().props._schDebugObjectsEnabled) {
-      for (const obstacle of obstacles) {
-        db.schematic_debug_object.insert({
-          shape: "rect",
-          center: obstacle.center,
-          size: {
-            width: obstacle.width,
-            height: obstacle.height,
-          },
-          label: "obstacle",
-        } as any) // TODO issue with discriminated union
-      }
     }
 
     let Autorouter = MultilayerIjump
@@ -674,25 +656,49 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     if (results.length === 0) return
 
     const [result] = results
-
     const { route } = result
 
     const edges: SchematicTrace["edges"] = []
 
+    // Add autorouted path
     for (let i = 0; i < route.length - 1; i++) {
-      const from = route[i]
-      const to = route[i + 1]
-
       edges.push({
-        from,
-        to,
-        // TODO to_schematic_port_id and from_schematic_port_id
+        from: route[i],
+        to: route[i + 1],
       })
     }
 
+    // Add small segments at the ends to connect to ports
+    const STUB_LENGTH = 0.15
+
+    // First port stub
+    edges.unshift({
+      from: {
+        ...projectPointInDirection(
+          route[0],
+          portsWithPosition[0].facingDirection!,
+          STUB_LENGTH,
+        ),
+      },
+      to: route[0],
+      from_schematic_port_id: portsWithPosition[0].schematic_port_id!,
+    })
+
+    // Last port stub
+    edges.push({
+      from: route[route.length - 1],
+      to: {
+        ...projectPointInOppositeDirection(
+          route[route.length - 1],
+          portsWithPosition[1].facingDirection!,
+          STUB_LENGTH,
+        ),
+      },
+      from_schematic_port_id: portsWithPosition[1].schematic_port_id!,
+    })
+
     const trace = db.schematic_trace.insert({
       source_trace_id: this.source_trace_id!,
-
       edges,
     })
 
