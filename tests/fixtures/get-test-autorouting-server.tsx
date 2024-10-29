@@ -25,7 +25,7 @@ export const getTestAutoroutingServer = () => {
 
         const autorouter = new MultilayerIjump({
           input: simpleRouteJson,
-          OBSTACLE_MARGIN: 0.1,
+          OBSTACLE_MARGIN: 0.2,
         })
 
         const traces = autorouter.solveAndMapToTraces()

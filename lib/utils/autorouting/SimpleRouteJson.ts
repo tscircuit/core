@@ -39,6 +39,8 @@ export interface SimpleRouteJson {
   obstacles: Obstacle[]
   connections: Array<SimpleRouteConnection>
   bounds: { minX: number; maxX: number; minY: number; maxY: number }
+  // NOTE: this is only present after an autorouter solves the input
+  traces?: SimplifiedPcbTrace[]
 }
 
 // declare module "autorouting-dataset" {

@@ -22,6 +22,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
   implements ISubcircuit
 {
+  _asyncAutoroutingResult: {
+    output_simple_route_json: SimpleRouteJson
+  } | null = null
+
   get config() {
     return {
       zodProps: groupProps as unknown as Props,
@@ -103,7 +107,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     return {
       bounds,
-      obstacles,
+      obstacles: [],
       connections,
       layerCount: 2,
       minTraceWidth: this._parsedProps.minTraceWidth ?? 0.1,
@@ -128,11 +132,53 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
         const { output_simple_route_json } = autorouting_result
 
-        // Apply the autorouting result to the traces
-        // TODO
+        this._asyncAutoroutingResult = autorouting_result
 
         this._markDirty("PcbTraceRender")
       })
+    }
+  }
+
+  updatePcbTraceRender() {
+    if (!this._asyncAutoroutingResult) return
+    if (this._shouldUseTraceByTraceRouting()) return
+
+    const { db } = this.root!
+    const { traces: routedTraces } =
+      this._asyncAutoroutingResult.output_simple_route_json
+
+    if (!routedTraces) return
+
+    // Apply each routed trace to the corresponding circuit trace
+    const circuitTraces = this.selectAll("trace") as Trace[]
+    for (const routedTrace of routedTraces) {
+      // const circuitTrace = circuitTraces.find(
+      //   (t) => t.source_trace_id === routedTrace.,
+      // )
+
+      // Create the PCB trace with the routed path
+      // TODO use upsert to make sure we're not re-creating traces
+      const pcb_trace = db.pcb_trace.insert({
+        route: routedTrace.route as any,
+        // source_trace_id: circuitTrace.source_trace_id!,
+      })
+      // circuitTrace.pcb_trace_id = pcb_trace.pcb_trace_id
+
+      // Create vias for any layer transitions
+      // for (const point of routedTrace.route) {
+      //   if (point.route_type === "via") {
+      //     db.pcb_via.insert({
+      //       pcb_trace_id: pcb_trace.pcb_trace_id,
+      //       x: point.x,
+      //       y: point.y,
+      //       hole_diameter: 0.3,
+      //       outer_diameter: 0.6,
+      //       layers: [point.from_layer, point.to_layer],
+      //       from_layer: point.from_layer,
+      //       to_layer: point.to_layer,
+      //     })
+      //   }
+      // }
     }
   }
 
