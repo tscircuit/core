@@ -35,7 +35,19 @@ export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
   | `update${K}`
   | `remove${K}`
 
-export type RenderPhaseStates = Record<RenderPhase, { initialized: boolean }>
+export type RenderPhaseStates = Record<
+  RenderPhase,
+  {
+    initialized: boolean
+    dirty: boolean
+  }
+>
+
+export type AsyncEffect = {
+  promise: Promise<void>
+  phase: RenderPhase
+  complete: boolean
+}
 
 export type RenderPhaseFunctions = {
   [T in RenderPhaseFn]?: () => void
@@ -62,14 +74,70 @@ export abstract class Renderable implements IRenderable {
   isSchematicPrimitive = false
 
   _renderId: string
+  _currentRenderPhase: RenderPhase | null = null
+
+  private _asyncEffects: AsyncEffect[] = []
 
   constructor(props: any) {
     this._renderId = `${globalRenderCounter++}`
     this.children = []
     this.renderPhaseStates = {} as RenderPhaseStates
     for (const phase of orderedRenderPhases) {
-      this.renderPhaseStates[phase] = { initialized: false }
+      this.renderPhaseStates[phase] = {
+        initialized: false,
+        dirty: false,
+      }
     }
+  }
+
+  protected _markDirty(phase: RenderPhase) {
+    this.renderPhaseStates[phase].dirty = true
+    // Mark all subsequent phases as dirty
+    const phaseIndex = orderedRenderPhases.indexOf(phase)
+    for (let i = phaseIndex + 1; i < orderedRenderPhases.length; i++) {
+      this.renderPhaseStates[orderedRenderPhases[i]].dirty = true
+    }
+  }
+
+  protected _queueAsyncEffect(effect: () => Promise<void>) {
+    const asyncEffect: AsyncEffect = {
+      promise: effect(), // TODO don't start effects until end of render cycle
+      phase: this._currentRenderPhase!,
+      complete: false,
+    }
+    this._asyncEffects.push(asyncEffect)
+
+    // Set up completion handler
+    asyncEffect.promise
+      .then(() => {
+        asyncEffect.complete = true
+        // HACK: emit to the root circuit component that an async effect has completed
+        if ("root" in this && this.root) {
+          ;(this.root as any).emit("asyncEffectComplete", {
+            component: this,
+            asyncEffect,
+          })
+        }
+      })
+      .catch((error) => {
+        console.error(
+          `Async effect error in ${this._currentRenderPhase}:`,
+          error,
+        )
+        asyncEffect.complete = true
+
+        // HACK: emit to the root circuit component that an async effect has completed
+        if ("root" in this && this.root) {
+          ;(this.root as any).emit("asyncEffectComplete", {
+            component: this,
+            asyncEffect,
+          })
+        }
+      })
+  }
+
+  _hasIncompleteAsyncEffects(): boolean {
+    return this._asyncEffects.some((effect) => !effect.complete)
   }
 
   runRenderCycle() {
@@ -87,19 +155,44 @@ export abstract class Renderable implements IRenderable {
    *  ...depending on the current state of the component.
    */
   runRenderPhase(phase: RenderPhase) {
-    const isInitialized = this.renderPhaseStates[phase].initialized
+    this._currentRenderPhase = phase
+    const phaseState = this.renderPhaseStates[phase]
+    const isInitialized = phaseState.initialized
+    const isDirty = phaseState.dirty
+
+    // Skip if component is being removed and not initialized
     if (!isInitialized && this.shouldBeRemoved) return
+
+    // Handle removal
     if (this.shouldBeRemoved && isInitialized) {
       ;(this as any)?.[`remove${phase}`]?.()
-      this.renderPhaseStates[phase].initialized = false
+      phaseState.initialized = false
+      phaseState.dirty = false
       return
     }
+
+    // Check for incomplete async effects from previous phases
+    const prevPhaseIndex = orderedRenderPhases.indexOf(phase) - 1
+    if (prevPhaseIndex >= 0) {
+      const prevPhase = orderedRenderPhases[prevPhaseIndex]
+      const hasIncompleteEffects = this._asyncEffects
+        .filter((e) => e.phase === prevPhase)
+        .some((e) => !e.complete)
+      if (hasIncompleteEffects) return
+    }
+
+    // Handle updates
     if (isInitialized) {
-      ;(this as any)?.[`update${phase}`]?.()
+      if (isDirty) {
+        ;(this as any)?.[`update${phase}`]?.()
+        phaseState.dirty = false
+      }
       return
     }
+    // Initial render
+    phaseState.dirty = false
     ;(this as any)?.[`doInitial${phase}`]?.()
-    this.renderPhaseStates[phase].initialized = true
+    phaseState.initialized = true
   }
 
   runRenderPhaseForChildren(phase: RenderPhase): void {

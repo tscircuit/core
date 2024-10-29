@@ -6,6 +6,8 @@ import { isValidElement, type ReactElement } from "react"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 import { identity, type Matrix } from "transformation-matrix"
 
+type RootCircuitEventName = "asyncEffectComplete"
+
 export class Circuit {
   firstChild: PrimitiveComponent | null = null
   children: PrimitiveComponent[]
@@ -86,6 +88,25 @@ export class Circuit {
     this._hasRenderedAtleastOnce = true
   }
 
+  async renderUntilSettled(): Promise<void> {
+    this.render()
+
+    // TODO: use this.on("asyncEffectComplete", ...) instead
+    while (this._hasIncompleteAsyncEffects()) {
+      await new Promise((resolve) => setTimeout(resolve, 100)) // Small delay
+      this.render()
+    }
+  }
+
+  private _hasIncompleteAsyncEffects(): boolean {
+    return this.children.some((child) => {
+      if (child._hasIncompleteAsyncEffects()) return true
+      return child.children.some((grandchild) =>
+        grandchild._hasIncompleteAsyncEffects(),
+      )
+    })
+  }
+
   getSoup(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
     return this.db.toArray()
@@ -141,6 +162,25 @@ export class Circuit {
     opts?: { type?: "component" | "port" },
   ): PrimitiveComponent | null {
     return this.firstChild?.selectOne(selector, opts) ?? null
+  }
+
+  _eventListeners: Record<
+    RootCircuitEventName,
+    Array<(...args: any[]) => void>
+  > = { asyncEffectComplete: [] }
+
+  emit(event: RootCircuitEventName, ...args: any[]) {
+    if (!this._eventListeners[event]) return
+    for (const listener of this._eventListeners[event]) {
+      listener(...args)
+    }
+  }
+
+  on(event: RootCircuitEventName, listener: (...args: any[]) => void) {
+    if (!this._eventListeners[event]) {
+      this._eventListeners[event] = []
+    }
+    this._eventListeners[event]!.push(listener)
   }
 }
 
