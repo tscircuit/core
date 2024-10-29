@@ -149,6 +149,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     if (!routedTraces) return
 
+    // Delete any previously created traces
+    // TODO
+
     // Apply each routed trace to the corresponding circuit trace
     const circuitTraces = this.selectAll("trace") as Trace[]
     for (const routedTrace of routedTraces) {
