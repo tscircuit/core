@@ -38,11 +38,12 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const pinCount =
+    const pinCountFromSchArrangement =
       (props.schPortArrangement?.leftSize ?? 0) +
       (props.schPortArrangement?.rightSize ?? 0) +
       (props.schPortArrangement?.topSize ?? 0) +
       (props.schPortArrangement?.bottomSize ?? 0)
+    const pinCount = pinCountFromSchArrangement || this.getPortsFromFootprint().length
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 
