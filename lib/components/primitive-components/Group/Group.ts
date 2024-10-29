@@ -11,7 +11,12 @@ import { TraceHint } from "../TraceHint"
 import type { SchematicComponent, SchematicPort } from "circuit-json"
 import * as SAL from "@tscircuit/schematic-autolayout"
 import type { ISubcircuit } from "./ISubcircuit"
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import type {
+  SimpleRouteConnection,
+  SimpleRouteJson,
+} from "lib/utils/autorouting/SimpleRouteJson"
+import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
+import type { Trace } from "../Trace"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -47,19 +52,61 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _getSimpleRouteJsonFromPcbTraces(): SimpleRouteJson {
-    const traces = this.selectAll("trace")
+    const traces = this.selectAll("trace") as Trace[]
+    const { db } = this.root!
+
+    const obstacles = getObstaclesFromSoup([
+      ...db.pcb_component.list(),
+      ...db.pcb_smtpad.list(),
+      ...db.pcb_plated_hole.list(),
+    ])
+
+    // Calculate bounds
+    const allPoints = obstacles.flatMap((o) => [
+      {
+        x: o.center.x - o.width / 2,
+        y: o.center.y - o.height / 2,
+      },
+      {
+        x: o.center.x + o.width / 2,
+        y: o.center.y + o.height / 2,
+      },
+    ])
+
+    const bounds = {
+      minX: Math.min(...allPoints.map((p) => p.x)) - 1,
+      maxX: Math.max(...allPoints.map((p) => p.x)) + 1,
+      minY: Math.min(...allPoints.map((p) => p.y)) - 1,
+      maxY: Math.max(...allPoints.map((p) => p.y)) + 1,
+    }
+
+    // Create connections from traces
+    const connections = traces
+      .map((trace) => {
+        const connectedPorts = trace._findConnectedPorts()
+        if (!connectedPorts.allPortsFound || connectedPorts.ports.length < 2)
+          return null
+
+        return {
+          name: trace.source_trace_id ?? "",
+          pointsToConnect: connectedPorts.ports.map((port) => {
+            const pos = port._getGlobalPcbPositionBeforeLayout()
+            return {
+              x: pos.x,
+              y: pos.y,
+              layer: port.getAvailablePcbLayers()[0] ?? "top",
+            }
+          }),
+        }
+      })
+      .filter((c): c is SimpleRouteConnection => c !== null)
 
     return {
-      bounds: {
-        minX: 0,
-        maxX: 0,
-        minY: 0,
-        maxY: 0,
-      },
-      obstacles: [],
-      connections: [],
+      bounds,
+      obstacles,
+      connections,
       layerCount: 2,
-      minTraceWidth: 0.1,
+      minTraceWidth: this._parsedProps.minTraceWidth ?? 0.1,
     }
   }
 
@@ -69,14 +116,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this.props.autorouter?.serverUrl) {
       // Make a request to the autorouter server
       this._queueAsyncEffect(async () => {
-        const response = await fetch(this.props.autorouter.serverUrl, {
-          method: "POST",
-          body: JSON.stringify({
-            input_simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
-          }),
-        }).then((r) => r.json())
+        const { autorouting_result } = await fetch(
+          this.props.autorouter.serverUrl,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              input_simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
+            }),
+          },
+        ).then((r) => r.json())
 
-        console.log({ response })
+        const { output_simple_route_json } = autorouting_result
+
+        // Apply the autorouting result to the traces
+        // TODO
+
+        this._markDirty("PcbTraceRender")
       })
     }
   }

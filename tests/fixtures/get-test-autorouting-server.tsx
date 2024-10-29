@@ -12,12 +12,12 @@ export const getTestAutoroutingServer = () => {
 
       try {
         const body = await req.json()
-        const simpleRouteJson = body.simple_route_json as SimpleRouteJson
+        const simpleRouteJson = body.input_simple_route_json as SimpleRouteJson
 
         if (!simpleRouteJson) {
           return new Response(
             JSON.stringify({
-              error: "Missing simple_route_json in request body",
+              error: { message: "Missing simple_route_json in request body" },
             }),
             { status: 400 },
           )
