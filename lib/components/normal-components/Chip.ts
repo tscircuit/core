@@ -38,11 +38,12 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const pinCount =
+    const totalPinCount =
       (props.schPortArrangement?.leftSize ?? 0) +
       (props.schPortArrangement?.rightSize ?? 0) +
       (props.schPortArrangement?.topSize ?? 0) +
       (props.schPortArrangement?.bottomSize ?? 0)
+    const pinCount = totalPinCount || this.getPortsFromFootprint().length
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 
@@ -52,7 +53,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       schPinSpacing: pinSpacing,
       schPinStyle: props.schPinStyle,
 
-      pinCount: pinCount === 0 ? this.getPortsFromFootprint().length : pinCount,
+      pinCount,
 
       // @ts-ignore there's a subtley in the definition difference with
       // leftSide/rightSide/topSide/bottomSide in how the direction is defined
