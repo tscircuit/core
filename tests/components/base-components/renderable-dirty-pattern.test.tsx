@@ -30,11 +30,11 @@ test("dirty pattern and async effects", async () => {
   component.runRenderPhase("SourceRender")
 
   // Check async effects
-  expect(component.hasIncompleteAsyncEffects()).toBe(true)
+  expect(component._hasIncompleteAsyncEffects()).toBe(true)
 
   // Wait for async effects
   await new Promise((resolve) => setTimeout(resolve, 150))
-  expect(component.hasIncompleteAsyncEffects()).toBe(false)
+  expect(component._hasIncompleteAsyncEffects()).toBe(false)
 
   // Test marking phases dirty
   component.runRenderPhase("SchematicComponentRender")

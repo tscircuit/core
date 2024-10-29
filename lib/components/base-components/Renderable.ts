@@ -118,7 +118,7 @@ export abstract class Renderable implements IRenderable {
       })
   }
 
-  hasIncompleteAsyncEffects(): boolean {
+  _hasIncompleteAsyncEffects(): boolean {
     return this._asyncEffects.some((effect) => !effect.complete)
   }
 
