@@ -86,6 +86,22 @@ export class Circuit {
     this._hasRenderedAtleastOnce = true
   }
 
+  async renderUntilSettled(): Promise<void> {
+    this.render()
+    
+    while (this.hasIncompleteAsyncEffects()) {
+      await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
+      this.render()
+    }
+  }
+
+  private hasIncompleteAsyncEffects(): boolean {
+    return this.children.some(child => {
+      if (child.hasIncompleteAsyncEffects()) return true
+      return child.children.some(grandchild => grandchild.hasIncompleteAsyncEffects())
+    })
+  }
+
   getSoup(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
     return this.db.toArray()
