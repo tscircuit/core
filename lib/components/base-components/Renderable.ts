@@ -111,10 +111,28 @@ export abstract class Renderable implements IRenderable {
     asyncEffect.promise
       .then(() => {
         asyncEffect.complete = true
+        // HACK: emit to the root circuit component that an async effect has completed
+        if ("root" in this && this.root) {
+          ;(this.root as any).emit("asyncEffectComplete", {
+            component: this,
+            asyncEffect,
+          })
+        }
       })
       .catch((error) => {
-        console.error(`Async effect error in ${phase}:`, error)
+        console.error(
+          `Async effect error in ${this._currentRenderPhase}:`,
+          error,
+        )
         asyncEffect.complete = true
+
+        // HACK: emit to the root circuit component that an async effect has completed
+        if ("root" in this && this.root) {
+          ;(this.root as any).emit("asyncEffectComplete", {
+            component: this,
+            asyncEffect,
+          })
+        }
       })
   }
 
