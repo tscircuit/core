@@ -72,8 +72,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const response = await fetch(this.props.autorouter.serverUrl, {
           method: "POST",
           body: JSON.stringify({
-            simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
-            response_format: "simple_route_json",
+            input_simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
           }),
         }).then((r) => r.json())
 
