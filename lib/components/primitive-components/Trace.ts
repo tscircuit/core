@@ -255,6 +255,10 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       return
     }
 
+    if (!this.getSubcircuit()._shouldUseTraceByTraceRouting()) {
+      return
+    }
+
     const { allPortsFound, ports } = this._findConnectedPorts()
     const portsConnectedOnPcbViaNet: Port[] = []
 

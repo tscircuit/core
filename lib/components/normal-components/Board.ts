@@ -2,7 +2,7 @@ import { boardProps } from "@tscircuit/props"
 import type { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { identity, type Matrix } from "transformation-matrix"
-import { Group } from "../primitive-components/Group"
+import { Group } from "../primitive-components/Group/Group"
 
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
