@@ -91,6 +91,7 @@ export class Circuit {
   async renderUntilSettled(): Promise<void> {
     this.render()
 
+    // TODO: use this.on("asyncEffectComplete", ...) instead
     while (this._hasIncompleteAsyncEffects()) {
       await new Promise((resolve) => setTimeout(resolve, 100)) // Small delay
       this.render()
