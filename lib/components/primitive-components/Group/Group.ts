@@ -11,6 +11,7 @@ import { TraceHint } from "../TraceHint"
 import type { SchematicComponent, SchematicPort } from "circuit-json"
 import * as SAL from "@tscircuit/schematic-autolayout"
 import type { ISubcircuit } from "./ISubcircuit"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -42,6 +43,42 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           offsets: manualTraceHint.offsets,
         }),
       )
+    }
+  }
+
+  _getSimpleRouteJsonFromPcbTraces(): SimpleRouteJson {
+    const traces = this.selectAll("trace")
+
+    return {
+      bounds: {
+        minX: 0,
+        maxX: 0,
+        minY: 0,
+        maxY: 0,
+      },
+      obstacles: [],
+      connections: [],
+      layerCount: 2,
+      minTraceWidth: 0.1,
+    }
+  }
+
+  doInitialPcbTraceRender() {
+    if (this._shouldUseTraceByTraceRouting()) return
+
+    if (this.props.autorouter?.serverUrl) {
+      // Make a request to the autorouter server
+      this._queueAsyncEffect(async () => {
+        const response = await fetch(this.props.autorouter.serverUrl, {
+          method: "POST",
+          body: JSON.stringify({
+            simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
+            response_format: "simple_route_json",
+          }),
+        }).then((r) => r.json())
+
+        console.log({ response })
+      })
     }
   }
 
@@ -94,6 +131,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    * or if using a "fullview" or "rip and replace" autorouting mode
    */
   _shouldUseTraceByTraceRouting(): boolean {
+    // HACK: change when @tscircuit/props provides a spec for the autorouter
+    // prop
+    if (this.props.autorouter) return false
     return true
   }
 }

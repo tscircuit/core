@@ -82,6 +82,10 @@ export class Net extends PrimitiveComponent<typeof netProps> {
    * ports that are connected to each other. If a there are multiple net islands
    * that means that the net is not fully connected and we need to add traces
    * such that the nets are fully connected
+   *
+   * Sometimes this phase doesn't find any net islands if the autorouter did
+   * a good job and connected the islands. In some sense this is a "backup"
+   * routing phase for autorouters that don't care about connecting nets.
    */
   doInitialPcbRouteNetIslands(): void {
     const { db } = this.root!
