@@ -3,17 +3,19 @@ import {
   type GroupProps,
   type SubcircuitGroupProps,
 } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { compose, identity } from "transformation-matrix"
 import { z } from "zod"
-import { NormalComponent } from "../base-components/NormalComponent"
-import { TraceHint } from "./TraceHint"
+import { NormalComponent } from "../../base-components/NormalComponent"
+import { TraceHint } from "../TraceHint"
 import type { SchematicComponent, SchematicPort } from "circuit-json"
 import * as SAL from "@tscircuit/schematic-autolayout"
+import type { ISubcircuit } from "./ISubcircuit"
 
-export class Group<
-  Props extends z.ZodType<any, any, any> = typeof groupProps,
-> extends NormalComponent<Props> {
+export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
+  extends NormalComponent<Props>
+  implements ISubcircuit
+{
   get config() {
     return {
       zodProps: groupProps as unknown as Props,
@@ -81,5 +83,17 @@ export class Group<
     const laidOutScene = SAL.ascendingCentralLrBug1(scene)
 
     SAL.mutateSoupForScene(db.toArray(), laidOutScene)
+  }
+
+  /**
+   * Trace-by-trace autorouting is where each trace routes itself in a well-known
+   * order. It's the most deterministic way to autoroute, because a new trace
+   * is generally ordered last.
+   *
+   * This method will return false if using an external service for autorouting
+   * or if using a "fullview" or "rip and replace" autorouting mode
+   */
+  _shouldUseTraceByTraceRouting(): boolean {
+    return true
   }
 }

@@ -19,6 +19,7 @@ import { isMatchingSelector } from "lib/utils/selector-matching"
 import type { LayoutBuilder } from "@tscircuit/layout"
 import type { LayerRef } from "circuit-json"
 import { InvalidProps } from "lib/errors/InvalidProps"
+import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
 
 export interface BaseComponentConfig {
   componentName: string
@@ -418,8 +419,8 @@ export abstract class PrimitiveComponent<
     return false
   }
 
-  getSubcircuit(): PrimitiveComponent {
-    if (this.isSubcircuit) return this
+  getSubcircuit(): ISubcircuit {
+    if (this.isSubcircuit) return this as unknown as ISubcircuit
     const group = this.parent?.getSubcircuit?.()
     if (!group)
       throw new Error("Component is not inside an opaque group (no board?)")
