@@ -52,7 +52,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       schPinSpacing: pinSpacing,
       schPinStyle: props.schPinStyle,
 
-      pinCount,
+      pinCount: pinCount === 0 ? this.getPortsFromFootprint().length : pinCount,
 
       // @ts-ignore there's a subtley in the definition difference with
       // leftSide/rightSide/topSide/bottomSide in how the direction is defined
