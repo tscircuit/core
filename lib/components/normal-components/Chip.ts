@@ -43,7 +43,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       (props.schPortArrangement?.rightSize ?? 0) +
       (props.schPortArrangement?.topSize ?? 0) +
       (props.schPortArrangement?.bottomSize ?? 0)
-    const pinCount = totalPinCount || this.getPortsFromFootprint().length
+    const pinCount = pinCountFromSchArrangement || this.getPortsFromFootprint().length
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 
