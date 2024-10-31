@@ -10,8 +10,7 @@ export const createUseComponent = <
   pins:
     | readonly PiD[]
     | readonly (readonly PiD[])[]
-    | Record<string, PiD[]>
-    | Record<string, PiD>,
+    | { [key: string]: readonly PiD[] },
 ) => {
   return <T extends Omit<ComponentProps<C>, "name"> | undefined = undefined>(
     name: string,
@@ -25,11 +24,12 @@ export const createUseComponent = <
   > & {
     [key in PiD]: string
   } => {
-    let pinLabelsFlatArray: PiD[] = []
+    const pinLabelsFlatArray: PiD[] = []
     if (Array.isArray(pins)) {
       pinLabelsFlatArray.push(...pins.flat())
     } else if (typeof pins === "object") {
-      pinLabelsFlatArray = Object.values(pins).flat()
+      pinLabelsFlatArray.push(...Object.values(pins).flat())
+      pinLabelsFlatArray.push(...(Object.keys(pins) as PiD[]))
     }
     const R: any = (props2: any) => {
       const combinedProps = { ...props, ...props2, name }

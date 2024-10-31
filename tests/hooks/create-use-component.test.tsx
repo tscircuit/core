@@ -10,15 +10,24 @@ import { Resistor } from "lib/components"
 import { expectTypesMatch } from "tests/fixtures/expect-types-match"
 
 test("createUseComponent creates a component with correct props and traces", () => {
-  const useResistor = createUseComponent(
+  const useResistor1 = createUseComponent(
     (props: ResistorProps) => <resistor {...props} />,
     resistorPins,
+  )
+  const useResistor2 = createUseComponent(
+    (props: ResistorProps) => <resistor {...props} />,
+    {
+      // TODO unfortunately pin1 and pin2 have to be specified because the type
+      // inference isn't good enough yet
+      pin1: ["pin1", "left"],
+      pin2: ["pin2", "right"],
+    } as const,
   )
 
   const circuit = new Circuit()
 
-  const R1 = useResistor("R1", { resistance: "10k", footprint: "0402" })
-  const R2 = useResistor("R2", { resistance: "10k", footprint: "0402" })
+  const R1 = useResistor1("R1", { resistance: "10k", footprint: "0402" })
+  const R2 = useResistor2("R2", { resistance: "10k", footprint: "0402" })
 
   expectTypesMatch<typeof R1.pin1, string>(true)
 
