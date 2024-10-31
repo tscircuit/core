@@ -2,34 +2,43 @@ import React, { Component, type ComponentProps } from "react"
 import { z } from "zod"
 import { resistorProps, resistorPins } from "@tscircuit/props"
 
+export type ComponentWithPins<
+  Props,
+  PinLabel extends string | never = never,
+  PropsFromHook extends Omit<Props, "name"> | undefined = undefined,
+> = React.ComponentType<
+  (PropsFromHook extends undefined
+    ? Omit<Props, "name">
+    : Omit<Partial<Props>, "name">) & {
+    [key in PinLabel]?: string
+  }
+> & {
+  [key in PinLabel]: string
+}
+
 export const createUseComponent = <
-  C extends React.ComponentType<any>,
-  PiD extends string,
+  Props,
+  PinLabel extends string | never = never,
 >(
-  Component: C,
+  Component: React.ComponentType<Props>,
   pins:
-    | readonly PiD[]
-    | readonly (readonly PiD[])[]
-    | { [key: string]: readonly PiD[] },
-) => {
-  return <T extends Omit<ComponentProps<C>, "name"> | undefined = undefined>(
+    | readonly PinLabel[]
+    | readonly (readonly PinLabel[])[]
+    | { [key: string]: readonly PinLabel[] },
+): (<PropsFromHook extends Omit<Props, "name"> | undefined = undefined>(
+  name: string,
+  props?: PropsFromHook,
+) => ComponentWithPins<Props, PinLabel, PropsFromHook>) => {
+  return <T extends Omit<Props, "name"> | undefined = undefined>(
     name: string,
     props?: T,
-  ): React.ComponentType<
-    (T extends undefined
-      ? Omit<ComponentProps<C>, "name">
-      : Omit<Partial<ComponentProps<C>>, "name">) & {
-      [key in PiD]?: string
-    }
-  > & {
-    [key in PiD]: string
-  } => {
-    const pinLabelsFlatArray: PiD[] = []
+  ): ComponentWithPins<Props, PinLabel, T> => {
+    const pinLabelsFlatArray: PinLabel[] = []
     if (Array.isArray(pins)) {
       pinLabelsFlatArray.push(...pins.flat())
     } else if (typeof pins === "object") {
       pinLabelsFlatArray.push(...Object.values(pins).flat())
-      pinLabelsFlatArray.push(...(Object.keys(pins) as PiD[]))
+      pinLabelsFlatArray.push(...(Object.keys(pins) as PinLabel[]))
     }
     const R: any = (props2: any) => {
       const combinedProps = { ...props, ...props2, name }
