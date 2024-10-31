@@ -2,29 +2,49 @@ import React, { Component, type ComponentProps } from "react"
 import { z } from "zod"
 import { resistorProps, resistorPins } from "@tscircuit/props"
 
+export type ComponentWithPins<
+  Props,
+  PinLabel extends string | never = never,
+  PropsFromHook extends Omit<Props, "name"> | undefined = undefined,
+> = React.ComponentType<
+  (PropsFromHook extends undefined
+    ? Omit<Props, "name">
+    : Omit<Partial<Props>, "name">) & {
+    [key in PinLabel]?: string
+  }
+> & {
+  [key in PinLabel]: string
+}
+
 export const createUseComponent = <
-  C extends React.ComponentType<any>,
-  PiD extends string,
+  Props,
+  PinLabel extends string | never = never,
 >(
-  Component: C,
-  pins: readonly PiD[],
-) => {
-  return <T extends Omit<ComponentProps<C>, "name"> | undefined = undefined>(
+  Component: React.ComponentType<Props>,
+  pins:
+    | readonly PinLabel[]
+    | readonly (readonly PinLabel[])[]
+    | { [key: string]: readonly PinLabel[] },
+): (<PropsFromHook extends Omit<Props, "name"> | undefined = undefined>(
+  name: string,
+  props?: PropsFromHook,
+) => ComponentWithPins<Props, PinLabel, PropsFromHook>) => {
+  return <T extends Omit<Props, "name"> | undefined = undefined>(
     name: string,
     props?: T,
-  ): React.ComponentType<
-    (T extends undefined
-      ? Omit<ComponentProps<C>, "name">
-      : Omit<Partial<ComponentProps<C>>, "name">) & {
-      [key in (typeof pins)[number]]?: string
+  ): ComponentWithPins<Props, PinLabel, T> => {
+    const pinLabelsFlatArray: PinLabel[] = []
+    if (Array.isArray(pins)) {
+      pinLabelsFlatArray.push(...pins.flat())
+    } else if (typeof pins === "object") {
+      pinLabelsFlatArray.push(...Object.values(pins).flat())
+      pinLabelsFlatArray.push(...(Object.keys(pins) as PinLabel[]))
     }
-  > & {
-    [key in (typeof pins)[number]]: string
-  } => {
     const R: any = (props2: any) => {
       const combinedProps = { ...props, ...props2, name }
       const tracesToCreate: any[] = []
-      for (const portLabel of pins) {
+
+      for (const portLabel of pinLabelsFlatArray) {
         if (combinedProps[portLabel]) {
           const from = `.${name} > .${portLabel}`
           const to = combinedProps[portLabel]
@@ -43,7 +63,7 @@ export const createUseComponent = <
         </>
       )
     }
-    for (const port of pins) {
+    for (const port of pinLabelsFlatArray) {
       R[port] = `.${name} > .${port}`
     }
 

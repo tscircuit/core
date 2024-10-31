@@ -7,22 +7,43 @@ import {
 } from "@tscircuit/props"
 import { Circuit } from "lib/Circuit"
 import { Resistor } from "lib/components"
+import { expectTypesMatch } from "tests/fixtures/expect-types-match"
 
 test("createUseComponent creates a component with correct props and traces", () => {
-  const useResistor = createUseComponent(
+  const useResistor1 = createUseComponent(
     (props: ResistorProps) => <resistor {...props} />,
     resistorPins,
+  )
+  const useResistor2 = createUseComponent(
+    (props: ResistorProps) => <resistor {...props} />,
+    {
+      // TODO unfortunately pin1 and pin2 have to be specified because the type
+      // inference isn't good enough yet
+      pin1: ["pin1", "left"],
+      pin2: ["pin2", "right"],
+    } as const,
+  )
+  const useResistor3 = createUseComponent(
+    (props: ResistorProps) => <resistor {...props} />,
+    [],
   )
 
   const circuit = new Circuit()
 
-  const R1 = useResistor("R1", { resistance: "10k", footprint: "0402" })
-  const R2 = useResistor("R2", { resistance: "10k", footprint: "0402" })
+  const R1 = useResistor1("R1", { resistance: "10k", footprint: "0402" })
+  const R2 = useResistor2("R2", { resistance: "10k", footprint: "0402" })
+  const R3 = useResistor3("R3")
+
+  expectTypesMatch<typeof R1.pin1, string>(true)
+
+  // @ts-expect-error
+  const err1 = <R3 />
 
   circuit.add(
     <board width="10mm" height="10mm">
       <R1 pin1="net.VCC" pin2="net.GND" />
       <R2 pin1={R1.pin1} pin2="net.GND" />
+      <R3 resistance="10k" />
     </board>,
   )
 
