@@ -172,11 +172,35 @@ export class Net extends PrimitiveComponent<typeof netProps> {
 
       const trace = solution[0]
       if (!trace) {
-        this.renderError("Failed to route net islands")
+        this.renderError({
+          pcb_trace_error_id: "",
+          pcb_trace_id: "__net_trace_tmp",
+          pcb_component_ids: [
+            Aport.pcb_component_id!,
+            Bport.pcb_component_id!,
+          ].filter(Boolean),
+          pcb_port_ids: [Aport.pcb_port_id!, Bport.pcb_port_id!].filter(
+            Boolean,
+          ),
+          type: "pcb_trace_error",
+          error_type: "pcb_trace_error",
+          message: `Failed to route net islands for "${this.getString()}"`,
+          source_trace_id: "__net_trace_tmp",
+        })
         return
       }
 
       db.pcb_trace.insert(trace as any)
     }
+  }
+
+  renderError(
+    message: Parameters<typeof PrimitiveComponent.prototype.renderError>[0],
+  ) {
+    if (typeof message === "string") {
+      return super.renderError(message)
+    }
+    // TODO this needs to be cleaned up at some point!
+    this.root?.db.pcb_trace_error.insert(message as any)
   }
 }
