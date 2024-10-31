@@ -7,7 +7,11 @@ export const createUseComponent = <
   PiD extends string,
 >(
   Component: C,
-  pins: readonly PiD[],
+  pins:
+    | readonly PiD[]
+    | readonly (readonly PiD[])[]
+    | Record<string, PiD[]>
+    | Record<string, PiD>,
 ) => {
   return <T extends Omit<ComponentProps<C>, "name"> | undefined = undefined>(
     name: string,
@@ -16,15 +20,22 @@ export const createUseComponent = <
     (T extends undefined
       ? Omit<ComponentProps<C>, "name">
       : Omit<Partial<ComponentProps<C>>, "name">) & {
-      [key in (typeof pins)[number]]?: string
+      [key in PiD]?: string
     }
   > & {
-    [key in (typeof pins)[number]]: string
+    [key in PiD]: string
   } => {
+    let pinLabelsFlatArray: PiD[] = []
+    if (Array.isArray(pins)) {
+      pinLabelsFlatArray.push(...pins.flat())
+    } else if (typeof pins === "object") {
+      pinLabelsFlatArray = Object.values(pins).flat()
+    }
     const R: any = (props2: any) => {
       const combinedProps = { ...props, ...props2, name }
       const tracesToCreate: any[] = []
-      for (const portLabel of pins) {
+
+      for (const portLabel of pinLabelsFlatArray) {
         if (combinedProps[portLabel]) {
           const from = `.${name} > .${portLabel}`
           const to = combinedProps[portLabel]
@@ -43,7 +54,7 @@ export const createUseComponent = <
         </>
       )
     }
-    for (const port of pins) {
+    for (const port of pinLabelsFlatArray) {
       R[port] = `.${name} > .${port}`
     }
 

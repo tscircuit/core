@@ -7,6 +7,7 @@ import {
 } from "@tscircuit/props"
 import { Circuit } from "lib/Circuit"
 import { Resistor } from "lib/components"
+import { expectTypesMatch } from "tests/fixtures/expect-types-match"
 
 test("createUseComponent creates a component with correct props and traces", () => {
   const useResistor = createUseComponent(
@@ -18,6 +19,8 @@ test("createUseComponent creates a component with correct props and traces", () 
 
   const R1 = useResistor("R1", { resistance: "10k", footprint: "0402" })
   const R2 = useResistor("R2", { resistance: "10k", footprint: "0402" })
+
+  expectTypesMatch<typeof R1.pin1, string>(true)
 
   circuit.add(
     <board width="10mm" height="10mm">
