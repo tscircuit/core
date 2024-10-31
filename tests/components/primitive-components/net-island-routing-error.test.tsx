@@ -48,7 +48,7 @@ test("net island routing errors are handled gracefully", () => {
 
   // Verify error messages
   const errorMessages = traceErrors.map((e) => e.message)
-  expect(errorMessages).toContain("Failed to route net islands")
+  expect(errorMessages.join("\n")).toContain("Failed to route net islands")
 
   // Verify that the circuit still rendered despite the errors
   expect(circuit.db.pcb_component.list().length).toBeGreaterThan(0)

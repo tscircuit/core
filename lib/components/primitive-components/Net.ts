@@ -184,7 +184,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
           ),
           type: "pcb_trace_error",
           error_type: "pcb_trace_error",
-          message: "Failed to route net islands",
+          message: `Failed to route net islands for "${this.getString()}"`,
           source_trace_id: "__net_trace_tmp",
         })
         return
