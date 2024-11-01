@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import manualEdits from "./manual-edits.json"
+import manualEdits from "./json/manual-edits.json"
 
 test("Manual edits prop usage", () => {
   const { project } = getTestFixture()
