@@ -1,0 +1,15 @@
+{
+  "pcb_placements": [
+    {
+      "selector": "R1",
+      "center": {
+        "x": 0,
+        "y": 6.869495369849336
+      },
+      "relative_to": "group_center",
+      "_edit_event_id": "0.037205222437411756"
+    }
+  ],
+  "edit_events": [],
+  "manual_trace_hints": []
+}

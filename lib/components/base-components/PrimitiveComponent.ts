@@ -1,25 +1,22 @@
-import type { Circuit } from "../../Circuit"
-import type { AnyCircuitElement, AnySourceComponent } from "circuit-json"
-import type { ZodType } from "zod"
-import { z } from "zod"
-import { symbols, type SchSymbol, type BaseSymbolName } from "schematic-symbols"
-import { isValidElement as isReactElement, type ReactElement } from "react"
-import type { Port } from "../primitive-components/Port"
-import { Renderable, type RenderPhase } from "./Renderable"
+import type { LayoutBuilder } from "@tscircuit/layout"
+import type { AnySourceComponent, LayerRef } from "circuit-json"
+import { InvalidProps } from "lib/errors/InvalidProps"
+import { isMatchingSelector } from "lib/utils/selector-matching"
+import { type BaseSymbolName, type SchSymbol, symbols } from "schematic-symbols"
 import {
+  type Matrix,
   applyToPoint,
   compose,
   flipY,
   identity,
   rotate,
   translate,
-  type Matrix,
 } from "transformation-matrix"
-import { isMatchingSelector } from "lib/utils/selector-matching"
-import type { LayoutBuilder } from "@tscircuit/layout"
-import type { LayerRef } from "circuit-json"
-import { InvalidProps } from "lib/errors/InvalidProps"
+import type { ZodType } from "zod"
+import { z } from "zod"
+import type { Circuit } from "../../Circuit"
 import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
+import { Renderable } from "./Renderable"
 
 export interface BaseComponentConfig {
   componentName: string
@@ -294,18 +291,26 @@ export abstract class PrimitiveComponent<
     if (!this.isSubcircuit) return null
 
     const layout: LayoutBuilder = this.props.layout
-    if (!layout) return null
+    const manualEdits = this.props.manualEdits
 
-    const placementConfig = layout.manual_pcb_placement_config
-    if (!placementConfig) return null
+    if (!layout && !manualEdits) return null
 
-    for (const position of placementConfig.positions) {
-      if (isMatchingSelector(component, position.selector)) {
+    const placementConfigPositions =
+      layout?.manual_pcb_placement_config?.positions ||
+      manualEdits?.pcb_placements
+
+    if (!placementConfigPositions) return null
+
+    for (const position of placementConfigPositions) {
+      if (
+        (layout && isMatchingSelector(component, position.selector)) ||
+        component.props.name === position.selector
+      ) {
         const center = applyToPoint(
           this._computePcbGlobalTransformBeforeLayout(),
           position.center,
         )
-        return center
+        return Array.isArray(center) ? { x: center[0], y: center[1] } : center
       }
     }
 
