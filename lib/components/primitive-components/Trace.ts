@@ -472,7 +472,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
       const ijump = new MultilayerIjump({
         OBSTACLE_MARGIN: minTraceWidth * 2,
-        // isRemovePathLoopsEnabled: true,
+        isRemovePathLoopsEnabled: true,
         optimizeWithGoalBoxes: Boolean(pcbPortA && pcbPortB),
         connMap,
         input: {
