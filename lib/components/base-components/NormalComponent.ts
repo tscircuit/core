@@ -316,7 +316,15 @@ export class NormalComponent<
 
     const bounds = getBoundsOfPcbComponents(this.children)
 
+    if (bounds.width === 0 || bounds.height === 0) return
+
+    const center = {
+      x: (bounds.minX + bounds.maxX) / 2,
+      y: (bounds.minY + bounds.maxY) / 2,
+    }
+
     db.pcb_component.update(this.pcb_component_id!, {
+      center,
       width: bounds.width,
       height: bounds.height,
     })
