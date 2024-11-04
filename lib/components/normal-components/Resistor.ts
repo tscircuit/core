@@ -14,7 +14,12 @@ export class Resistor extends NormalComponent<
       componentName: "Resistor",
       schematicSymbolName: (this.props.symbolName ??
         ("boxresistor_horz" as BaseSymbolName)) as BaseSymbolName,
-      zodProps: resistorProps,
+      zodProps: resistorProps.transform((props) => ({
+        ...props,
+        // Define component-specific defaults here
+        name: props.name ?? `R${Math.floor(Math.random() * 1000)}`,
+        resistance: props.resistance ?? "1k"
+      })),
       sourceFtype: "simple_resistor" as Ftype,
     }
   }

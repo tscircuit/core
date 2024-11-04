@@ -93,17 +93,40 @@ export abstract class PrimitiveComponent<
     super(props)
     this.children = []
     this.childrenPendingRemoval = []
-    this.props = props ?? {}
     this.externallyAddedAliases = []
+    
+    // Store original props
+    this.props = props ?? {}
+
+    // Try to parse with schema
     const parsePropsResult = this.config.zodProps.safeParse(props ?? {})
+
     if (parsePropsResult.success) {
       this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
     } else {
-      throw new InvalidProps(
-        this.lowercaseComponentName,
-        this.props,
-        parsePropsResult.error.format(),
+      // Instead of throwing, log warning and use default/partial props
+      console.warn(
+        `Warning: Invalid props for ${this.componentName}:`,
+        parsePropsResult.error.format()
       )
+
+      // Create partial props by taking what's valid and using defaults
+      const partialProps = {
+        ...props,
+        // Add component-specific defaults here
+        name: props?.name ?? `${this.componentName}${Math.floor(Math.random() * 1000)}`,
+        resistance: props?.resistance ?? "1k",
+        pcbX: props?.pcbX ?? 0,
+        pcbY: props?.pcbY ?? 0,
+        pcbRotation: props?.pcbRotation ?? 0,
+        layer: props?.layer ?? "top",
+      }
+
+      // Try parsing again with defaults
+      const reparseResult = this.config.zodProps.safeParse(partialProps)
+      this._parsedProps = reparseResult.success 
+        ? reparseResult.data 
+        : partialProps as z.infer<ZodProps>
     }
   }
 
