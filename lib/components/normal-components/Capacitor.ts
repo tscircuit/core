@@ -19,7 +19,12 @@ export class Capacitor extends NormalComponent<
       componentName: "Capacitor",
       schematicSymbolName:
         this.props.symbolName ?? ("capacitor_horz" as BaseSymbolName),
-      zodProps: capacitorProps,
+      zodProps: capacitorProps.transform((props) => ({
+          ...props,
+          // Define component-specific defaults here
+          name: props.name ?? `C${Math.floor(Math.random() * 1000)}`,
+          resistance: props.capacitance ?? "1uF"
+        })),
       sourceFtype: FTYPE.simple_capacitor,
     }
   }
