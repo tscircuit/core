@@ -433,8 +433,8 @@ export class NormalComponent<
         )
         if (!hasPinPrefix) {
           portHintsList = [...portHintsList, `pin${pinNumber}`]
-          pinNumber++
         }
+        pinNumber++
         const newPort = getPortFromHints(portHintsList)
         if (!newPort) continue
         newPort.originDescription = `footprint:${footprint}`
