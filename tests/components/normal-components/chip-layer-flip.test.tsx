@@ -62,4 +62,5 @@ test("chip with manual footprint flips when layer is set to bottom", async () =>
 
   // Use snapshot to verify the overall layout
   expect(project).toMatchPcbSnapshot(import.meta.path)
+  expect(project).toMatchSchematicSnapshot(import.meta.path)
 })
