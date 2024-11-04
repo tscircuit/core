@@ -424,9 +424,18 @@ export class NormalComponent<
     ) {
       const fp = footprint as Footprint
 
+      let pinNumber = 1
       const newPorts: Port[] = []
       for (const fpChild of fp.children) {
-        const newPort = getPortFromHints(fpChild.props.portHints ?? [])
+        let portHintsList = fpChild.props.portHints ?? []
+        const hasPinPrefix = portHintsList.some((hint: string) =>
+          hint.startsWith("pin"),
+        )
+        if (!hasPinPrefix) {
+          portHintsList = [...portHintsList, `pin${pinNumber}`]
+        }
+        pinNumber++
+        const newPort = getPortFromHints(portHintsList)
         if (!newPort) continue
         newPort.originDescription = `footprint:${footprint}`
         newPorts.push(newPort)
