@@ -60,6 +60,7 @@ export class NormalComponent<
   PortNames extends string = never,
 > extends PrimitiveComponent<ZodProps> {
   reactSubtrees: Array<ReactSubtree> = []
+  _impliedFootprint?: string | undefined
 
   isPrimitiveContainer = true
 
@@ -193,8 +194,13 @@ export class NormalComponent<
     }
   }
 
+  _getImpliedFootprintString(): string | null {
+    return null
+  }
+
   _addChildrenFromStringFootprint() {
-    const { footprint } = this.props
+    let { footprint } = this.props
+    footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
     if (typeof footprint === "string") {
       const fpSoup = fp.string(footprint).soup()
