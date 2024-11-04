@@ -43,6 +43,7 @@ declare global {
       constraint: Props.ConstraintProps
       constrainedlayout: Props.ConstrainedLayoutProps
       battery: Props.BatteryProps
+      pinheader: Props.PinHeaderProps
       jscad: any
     }
   }
