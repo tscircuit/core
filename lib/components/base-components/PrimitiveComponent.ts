@@ -17,12 +17,14 @@ import { z } from "zod"
 import type { Circuit } from "../../Circuit"
 import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
 import { Renderable } from "./Renderable"
+import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 
 export interface BaseComponentConfig {
   componentName: string
   schematicSymbolName?: BaseSymbolName | null
   zodProps: ZodType
   sourceFtype?: AnySourceComponent["ftype"] | null
+  shouldRenderAsSchematicBox?: boolean
 }
 
 /**
@@ -507,6 +509,22 @@ export abstract class PrimitiveComponent<
       descendants.push(...child.getDescendants())
     }
     return descendants
+  }
+
+  /**
+   * Return the number of pins in this component, this is important for
+   * NormalComponents
+   */
+  _getPinCount(): number {
+    return 0
+  }
+
+  /**
+   * If this component represents a SchematicBox (like a Chip), return the
+   * dimensions of the box, which allows computing the position of ports etc.
+   */
+  _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
+    return null
   }
 
   // TODO we shouldn't need to override this, errors can be rendered and handled

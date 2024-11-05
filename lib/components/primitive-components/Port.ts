@@ -79,26 +79,28 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
-    if (!this.schematicSymbolPortDef) {
-      return applyToPoint(this.parent!.computeSchematicGlobalTransform(), {
-        x: 0,
-        y: 0,
-      })
-    }
-
     const symbol = this.parent?.getSchematicSymbol()
-    if (!symbol) {
-      console.warn(`Could not find parent symbol for ${this}`)
-      return { x: 0, y: 0 }
+    if (symbol && this.schematicSymbolPortDef) {
+      const transform = compose(
+        this.parent!.computeSchematicGlobalTransform(),
+        translate(-symbol.center.x, -symbol.center.y),
+      )
+
+      return applyToPoint(transform, this.schematicSymbolPortDef!)
     }
 
-    const offsetY = -0.045
-    const transform = compose(
-      this.parent!.computeSchematicGlobalTransform(),
-      translate(-symbol.center.x, -symbol.center.y + offsetY),
-    )
+    const parentBoxDim = this?.parent?._getSchematicBoxDimensions()
+    if (parentBoxDim && this.props.pinNumber !== undefined) {
+      const localPortPosition = parentBoxDim.getPortPositionByPinNumber(
+        this.props.pinNumber!,
+      )
+      return applyToPoint(
+        this.parent!.computeSchematicGlobalTransform(),
+        localPortPosition,
+      )
+    }
 
-    return applyToPoint(transform, this.schematicSymbolPortDef)
+    return { x: 0, y: 0 }
   }
 
   _getGlobalSchematicPositionAfterLayout(): { x: number; y: number } {

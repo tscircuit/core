@@ -11,12 +11,13 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
   PinLabels
 > {
-  schematicDimensions: SchematicBoxDimensions | null = null
+  schematicBoxDimensions: SchematicBoxDimensions | null = null
 
   get config() {
     return {
       componentName: "Chip",
       zodProps: chipProps,
+      shouldRenderAsSchematicBox: true,
     }
   }
 
@@ -34,60 +35,38 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     this.source_component_id = source_component.source_component_id!
   }
 
-  doInitialSchematicComponentRender() {
-    const { db } = this.root!
-    const { _parsedProps: props } = this
+  // doInitialSchematicComponentRender() {
+  //   const { db } = this.root!
+  //   const { _parsedProps: props } = this
+  //   const dimensions = this._getSchematicBoxDimensions()!
+  //   this.schematicBoxDimensions = dimensions
 
-    const pinCountFromSchArrangement =
-      (props.schPortArrangement?.leftSize ?? 0) +
-      (props.schPortArrangement?.rightSize ?? 0) +
-      (props.schPortArrangement?.topSize ?? 0) +
-      (props.schPortArrangement?.bottomSize ?? 0)
-    const pinCount = pinCountFromSchArrangement || this.getPortsFromFootprint().length
+  //   const primaryPortLabels: Record<string, string> = {}
+  //   for (const [port, label] of Object.entries(props.pinLabels ?? {})) {
+  //     primaryPortLabels[port] = Array.isArray(label) ? label[0] : label
+  //   }
 
-    const pinSpacing = props.schPinSpacing ?? 0.2
+  //   const schematic_component = db.schematic_component.insert({
+  //     center: { x: props.schX ?? 0, y: props.schY ?? 0 },
+  //     rotation: props.schRotation ?? 0,
+  //     size: dimensions.getSize(),
 
-    const dimensions = getAllDimensionsForSchematicBox({
-      schWidth: props.schWidth,
-      schHeight: props.schHeight,
-      schPinSpacing: pinSpacing,
-      schPinStyle: props.schPinStyle,
+  //     port_arrangement: underscorifyPortArrangement(
+  //       props.schPortArrangement as any,
+  //     ),
 
-      pinCount,
+  //     pin_spacing: props.schPinSpacing ?? 0.2,
 
-      // @ts-ignore there's a subtley in the definition difference with
-      // leftSide/rightSide/topSide/bottomSide in how the direction is defined
-      // that doesn't really matter
-      schPortArrangement: props.schPortArrangement,
-    })
-    this.schematicDimensions = dimensions
+  //     // @ts-ignore soup needs to support distance for pin_styles
+  //     pin_styles: underscorifyPinStyles(props.schPinStyle),
 
-    const primaryPortLabels: Record<string, string> = {}
-    for (const [port, label] of Object.entries(props.pinLabels ?? {})) {
-      primaryPortLabels[port] = Array.isArray(label) ? label[0] : label
-    }
+  //     port_labels: primaryPortLabels,
 
-    const schematic_component = db.schematic_component.insert({
-      center: { x: props.schX ?? 0, y: props.schY ?? 0 },
-      rotation: props.schRotation ?? 0,
-      size: dimensions.getSize(),
+  //     source_component_id: this.source_component_id!,
+  //   })
 
-      port_arrangement: underscorifyPortArrangement(
-        props.schPortArrangement as any,
-      ),
-
-      pin_spacing: pinSpacing,
-
-      // @ts-ignore soup needs to support distance for pin_styles
-      pin_styles: underscorifyPinStyles(props.schPinStyle),
-
-      port_labels: primaryPortLabels,
-
-      source_component_id: this.source_component_id!,
-    })
-
-    this.schematic_component_id = schematic_component.schematic_component_id
-  }
+  //   this.schematic_component_id = schematic_component.schematic_component_id
+  // }
 
   doInitialPcbComponentRender() {
     const { db } = this.root!

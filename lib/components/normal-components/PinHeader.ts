@@ -1,4 +1,4 @@
-import { pinHeaderProps } from "@tscircuit/props"
+import { pinHeaderProps, type SchematicPortArrangement } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import type { BaseSymbolName } from "lib/utils/constants"
@@ -8,7 +8,7 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
     return {
       componentName: "PinHeader",
       zodProps: pinHeaderProps,
-      schematicSymbolName: "pinrow_horz" as BaseSymbolName,
+      shouldRenderAsSchematicBox: true,
     }
   }
 
@@ -41,6 +41,13 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
     }
   }
 
+  _getSchematicPortArrangement(): SchematicPortArrangement | null {
+    return {
+      leftSize: 0,
+      rightSize: this._parsedProps.pinCount ?? 1,
+    }
+  }
+
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -55,23 +62,5 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
     })
 
     this.source_component_id = source_component.source_component_id
-  }
-
-  doInitialSchematicComponentRender() {
-    const { db } = this.root!
-    const { _parsedProps: props } = this
-
-    const schematic_component = db.schematic_component.insert({
-      center: { x: props.schX ?? 0, y: props.schY ?? 0 },
-      rotation: props.schRotation ?? 0,
-      size: { width: 2, height: props.pinCount ?? 1 },
-      source_component_id: this.source_component_id!,
-      port_arrangement: {
-        left_size: 0,
-        right_size: props.pinCount ?? 1,
-      },
-    })
-
-    this.schematic_component_id = schematic_component.schematic_component_id
   }
 }
