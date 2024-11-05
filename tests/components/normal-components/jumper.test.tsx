@@ -2,9 +2,9 @@ import { it, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("should render a jumper with pinrow4 footprint", async () => {
-  const { project } = getTestFixture()
+  const { circuit } = getTestFixture()
 
-  project.add(
+  circuit.add(
     <board width="10mm" height="10mm">
       <jumper
         name="J1"
@@ -17,8 +17,8 @@ it("should render a jumper with pinrow4 footprint", async () => {
     </board>,
   )
 
-  project.render()
+  circuit.render()
 
-  expect(project).toMatchPcbSnapshot(import.meta.path)
-  expect(project).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
