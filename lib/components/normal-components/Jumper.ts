@@ -19,6 +19,7 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
     return {
       componentName: "Jumper",
       zodProps: jumperProps,
+      shouldRenderAsSchematicBox: true,
     }
   }
 
@@ -34,54 +35,6 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
     })
 
     this.source_component_id = source_component.source_component_id!
-  }
-
-  doInitialSchematicComponentRender() {
-    const { db } = this.root!
-    const { _parsedProps: props } = this
-
-    const ports = this.children.filter((child) => child instanceof Port)
-
-    const pinSpacing = props.schPinSpacing ?? 0.2
-
-    const dimensions = getAllDimensionsForSchematicBox({
-      schWidth: props.schWidth,
-      schHeight: props.schHeight,
-      schPinSpacing: pinSpacing,
-      schPinStyle: props.schPinStyle,
-
-      pinCount: ports.length,
-
-      // @ts-ignore there's a subtley in the definition difference with
-      // leftSide/rightSide/topSide/bottomSide in how the direction is defined
-      // that doesn't really matter
-      schPortArrangement: {
-        // TODO use schematic direction or schPortArrangement
-        rightSize: ports.length,
-      },
-    })
-    this.schematicDimensions = dimensions
-
-    const schematic_component = db.schematic_component.insert({
-      center: { x: props.schX ?? 0, y: props.schY ?? 0 },
-      rotation: props.schRotation ?? 0,
-      size: dimensions.getSize(),
-
-      port_arrangement: underscorifyPortArrangement(
-        props.schPortArrangement as any,
-      ),
-
-      pin_spacing: pinSpacing,
-
-      // @ts-ignore soup needs to support distance for pin_styles
-      pin_styles: underscorifyPinStyles(props.schPinStyle),
-
-      port_labels: props.pinLabels,
-
-      source_component_id: this.source_component_id!,
-    })
-
-    this.schematic_component_id = schematic_component.schematic_component_id
   }
 
   doInitialPcbComponentRender() {

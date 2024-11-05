@@ -54,10 +54,10 @@ interface Params {
 
 type Side = "left" | "right" | "top" | "bottom"
 
-type PortInfo = {
+export type SchematicBoxPortPositionWithMetadata = {
   trueIndex: number
   pinNumber: number
-  side: "left" | "right" | "top" | "bottom" | "center"
+  side: "left" | "right" | "top" | "bottom"
   distanceFromEdge: number
   x: number
   y: number
@@ -84,7 +84,9 @@ function isExplicitPinMappingArrangement(
  */
 export interface SchematicBoxDimensions {
   pinCount: number
-  getPortPositionByPinNumber(pinNumber: number): PortInfo
+  getPortPositionByPinNumber(
+    pinNumber: number,
+  ): SchematicBoxPortPositionWithMetadata | null
   getSize(): { width: number; height: number }
 }
 
@@ -157,7 +159,7 @@ export const getAllDimensionsForSchematicBox = (
     return (sideLength - totalMargin) / (sideSize - 1)
   }
 
-  const orderedTruePorts: PortInfo[] = []
+  const orderedTruePorts: SchematicBoxPortPositionWithMetadata[] = []
 
   let truePinIndex = 0
 
@@ -357,13 +359,6 @@ export const getAllDimensionsForSchematicBox = (
 
   const truePortsWithPositions = orderedTruePorts.map((p) => {
     const { distanceFromEdge, side } = p
-    if (side === "center") {
-      return {
-        ...p,
-        x: 0,
-        y: 0,
-      }
-    }
     const edgePos = trueEdgePositions[side]
     const edgeDir = trueEdgeTraversalDirections[side]
 
@@ -375,19 +370,14 @@ export const getAllDimensionsForSchematicBox = (
   })
 
   return {
-    getPortPositionByPinNumber(pinNumber: number): PortInfo {
+    getPortPositionByPinNumber(
+      pinNumber: number,
+    ): SchematicBoxPortPositionWithMetadata | null {
       const port = truePortsWithPositions.find(
         (p) => p.pinNumber.toString() === pinNumber.toString(),
       )
       if (!port) {
-        return {
-          trueIndex: -1, // Use -1 for non-existent ports
-          pinNumber: pinNumber,
-          side: "center",
-          distanceFromEdge: 0,
-          x: 0,
-          y: 0,
-        }
+        return null
       }
       return port
     },

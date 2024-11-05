@@ -4,6 +4,7 @@ import type {
   CadModelObj,
   CadModelProp,
   CadModelStl,
+  SchematicPortArrangement,
 } from "@tscircuit/props"
 import { point3, rotation } from "circuit-json"
 import Debug from "debug"
@@ -25,6 +26,12 @@ import { ZodType, z } from "zod"
 import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
+import {
+  getAllDimensionsForSchematicBox,
+  type SchematicBoxDimensions,
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
+import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 
 const debug = Debug("tscircuit:core")
 
@@ -253,14 +260,29 @@ export class NormalComponent<
 
   /**
    * Render the schematic component for this NormalComponent using the
-   * config.schematicSymbolName if it exists.
+   * config.schematicSymbolName if it exists, or create a generic box if
+   * no symbol is defined.
    *
    * You can override this method to do more complicated things.
    */
   doInitialSchematicComponentRender() {
-    const { db } = this.root!
     const { schematicSymbolName } = this.config
-    if (!schematicSymbolName) return
+    if (schematicSymbolName) {
+      return this._doInitialSchematicComponentRenderWithSymbol()
+    }
+
+    const dimensions = this._getSchematicBoxDimensions()
+    if (dimensions) {
+      return this._doInitialSchematicComponentRenderWithSchematicBoxDimensions()
+    }
+
+    // No schematic symbol or dimensions defined, this could be a board, group
+    // or other NormalComponent that doesn't have a schematic representation
+  }
+
+  _doInitialSchematicComponentRenderWithSymbol() {
+    const { db } = this.root!
+
     // TODO switch between horizontal and vertical based on schRotation
     const base_symbol_name = this.config.schematicSymbolName
     const symbol_name_horz = `${base_symbol_name}_horz`
@@ -281,18 +303,48 @@ export class NormalComponent<
 
     const symbol: SchSymbol | undefined = symbols[symbol_name]
 
-    if (!symbol) {
-      throw new Error(`Could not find schematic-symbol "${symbol_name}"`)
+    if (symbol) {
+      const schematic_component = db.schematic_component.insert({
+        center: { x: this.props.schX ?? 0, y: this.props.schY ?? 0 },
+        rotation: this.props.schRotation ?? 0,
+        size: symbol.size,
+        source_component_id: this.source_component_id!,
+
+        symbol_name,
+      })
+      this.schematic_component_id = schematic_component.schematic_component_id
+    }
+  }
+
+  _doInitialSchematicComponentRenderWithSchematicBoxDimensions() {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const dimensions = this._getSchematicBoxDimensions()!
+
+    const primaryPortLabels: Record<string, string> = {}
+    for (const [port, label] of Object.entries(props.pinLabels ?? {})) {
+      primaryPortLabels[port] = Array.isArray(label) ? label[0] : label
     }
 
     const schematic_component = db.schematic_component.insert({
-      center: { x: this.props.schX ?? 0, y: this.props.schY ?? 0 },
-      rotation: this.props.schRotation ?? 0,
-      size: symbol.size,
-      source_component_id: this.source_component_id!,
+      center: { x: props.schX ?? 0, y: props.schY ?? 0 },
+      rotation: props.schRotation ?? 0,
+      size: dimensions.getSize(),
 
-      symbol_name,
+      port_arrangement: underscorifyPortArrangement(
+        props.schPortArrangement as any,
+      ),
+
+      pin_spacing: props.schPinSpacing ?? 0.2,
+
+      // @ts-ignore soup needs to support distance for pin_styles
+      pin_styles: underscorifyPinStyles(props.schPinStyle),
+
+      port_labels: primaryPortLabels,
+
+      source_component_id: this.source_component_id!,
     })
+
     this.schematic_component_id = schematic_component.schematic_component_id
   }
 
@@ -543,6 +595,51 @@ export class NormalComponent<
       width: pcb_component.width,
       height: pcb_component.height,
     }
+  }
+
+  _getPinCount(): number {
+    const schPortArrangement = this._getSchematicPortArrangement()
+    const pinCountFromSchArrangement =
+      (schPortArrangement?.leftSize ?? 0) +
+      (schPortArrangement?.rightSize ?? 0) +
+      (schPortArrangement?.topSize ?? 0) +
+      (schPortArrangement?.bottomSize ?? 0)
+    const pinCount =
+      pinCountFromSchArrangement || this.getPortsFromFootprint().length
+    return pinCount
+  }
+
+  /**
+   * Override the schematic port arrangement if you want to customize where pins
+   * appear on a schematic box, e.g. for a pin header
+   */
+  _getSchematicPortArrangement(): SchematicPortArrangement | null {
+    return this._parsedProps.schPortArrangement
+  }
+
+  _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
+    // Only valid if we don't have a schematic symbol
+    if (this.getSchematicSymbol()) return null
+    if (!this.config.shouldRenderAsSchematicBox) return null
+
+    const { _parsedProps: props } = this
+
+    const pinCount = this._getPinCount()
+
+    const pinSpacing = props.schPinSpacing ?? 0.2
+
+    const dimensions = getAllDimensionsForSchematicBox({
+      schWidth: props.schWidth,
+      schHeight: props.schHeight,
+      schPinSpacing: pinSpacing,
+      schPinStyle: props.schPinStyle,
+
+      pinCount,
+
+      schPortArrangement: this._getSchematicPortArrangement()!,
+    })
+
+    return dimensions
   }
 
   doInitialCadModelRender(): void {

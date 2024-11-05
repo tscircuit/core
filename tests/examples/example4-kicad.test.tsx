@@ -2,9 +2,9 @@ import { expect, it } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("example 4: kicad theme demo", async () => {
-  const { project, logSoup } = getTestFixture()
+  const { circuit, logSoup } = getTestFixture()
 
-  project.add(
+  circuit.add(
     <board width="10mm" height="10mm">
       <resistor
         name="R1"
@@ -60,7 +60,7 @@ it("example 4: kicad theme demo", async () => {
     </board>,
   )
 
-  project.render()
+  circuit.render()
 
-  expect(project).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
