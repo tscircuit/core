@@ -74,7 +74,7 @@ export interface SchematicBoxDimensions {
   pinCount: number
   getPortPositionByPinNumber(
     pinNumber: number,
-  ): SchematicBoxPortPositionWithMetadata
+  ): SchematicBoxPortPositionWithMetadata | null
   getSize(): { width: number; height: number }
 }
 
@@ -142,7 +142,7 @@ export const getAllDimensionsForSchematicBox = (
     trueIndex: number
     pinNumber: number
     side: "left" | "right" | "top" | "bottom"
-    distanceFromEdge: number
+    distanceFromOrthogonalEdge: number
   }> = []
   let currentDistanceFromEdge = 0
   let truePinIndex = 0
@@ -164,7 +164,7 @@ export const getAllDimensionsForSchematicBox = (
       trueIndex: truePinIndex,
       pinNumber,
       side: "left",
-      distanceFromEdge: currentDistanceFromEdge,
+      distanceFromOrthogonalEdge: currentDistanceFromEdge,
     })
 
     if (pinStyle?.bottomMargin) {
@@ -199,7 +199,7 @@ export const getAllDimensionsForSchematicBox = (
       trueIndex: truePinIndex,
       pinNumber,
       side: "bottom",
-      distanceFromEdge: currentDistanceFromEdge,
+      distanceFromOrthogonalEdge: currentDistanceFromEdge,
     })
 
     if (pinStyle?.rightMargin) {
@@ -234,7 +234,7 @@ export const getAllDimensionsForSchematicBox = (
       trueIndex: truePinIndex,
       pinNumber,
       side: "right",
-      distanceFromEdge: currentDistanceFromEdge,
+      distanceFromOrthogonalEdge: currentDistanceFromEdge,
     })
 
     if (pinStyle?.topMargin) {
@@ -269,7 +269,7 @@ export const getAllDimensionsForSchematicBox = (
       trueIndex: truePinIndex,
       pinNumber,
       side: "top",
-      distanceFromEdge: currentDistanceFromEdge,
+      distanceFromOrthogonalEdge: currentDistanceFromEdge,
     })
 
     if (pinStyle?.leftMargin) {
@@ -332,24 +332,25 @@ export const getAllDimensionsForSchematicBox = (
   }
 
   const truePortsWithPositions = orderedTruePorts.map((p) => {
-    const { distanceFromEdge, side } = p
+    const { distanceFromOrthogonalEdge, side } = p
     const edgePos = trueEdgePositions[side]
     const edgeDir = trueEdgeTraversalDirections[side]
 
     return {
-      x: edgePos.x + distanceFromEdge * edgeDir.x,
-      y: edgePos.y + distanceFromEdge * edgeDir.y,
+      x: edgePos.x + distanceFromOrthogonalEdge * edgeDir.x,
+      y: edgePos.y + distanceFromOrthogonalEdge * edgeDir.y,
       ...p,
     }
   })
-
   return {
-    getPortPositionByPinNumber(pinNumber: number): { x: number; y: number } {
+    getPortPositionByPinNumber(
+      pinNumber: number,
+    ): SchematicBoxPortPositionWithMetadata | null {
       const port = truePortsWithPositions.find(
         (p) => p.pinNumber.toString() === pinNumber.toString(),
       )
       if (!port) {
-        return { x: 0, y: 0 }
+        return null
       }
       return port
     },

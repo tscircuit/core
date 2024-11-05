@@ -581,7 +581,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     if (!parent) throw new Error("Trace has no parent")
 
-    const { allPortsFound, portsWithSelectors: ports } =
+    const { allPortsFound, portsWithSelectors: connectedPorts } =
       this._findConnectedPorts()
 
     if (!allPortsFound) return
@@ -617,7 +617,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     }
 
     // Get port positions for later use
-    const portsWithPosition = ports.map(({ port }) => ({
+    const portsWithPosition = connectedPorts.map(({ port }) => ({
       port,
       position: port._getGlobalSchematicPositionAfterLayout(),
       schematic_port_id: port.schematic_port_id ?? undefined,
@@ -660,8 +660,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     if (results.length === 0) return
 
-    const [result] = results
-    const { route } = result
+    const [{ route }] = results
 
     const edges: SchematicTrace["edges"] = []
 
