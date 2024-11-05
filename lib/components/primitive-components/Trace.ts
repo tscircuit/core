@@ -31,6 +31,9 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Net } from "./Net"
 import type { Port } from "./Port"
 import type { TraceHint } from "./TraceHint"
+import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
+import type { Point } from "@tscircuit/math-utils"
+import { getStubEdges } from "lib/utils/schematic/getStubEdges"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -671,6 +674,17 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
         to: route[i + 1],
       })
     }
+
+    // The last edges sometimes don't connect to the ports because the
+    // autorouter is within the "goal box" and doesn't finish the route
+    // Add a stub to connect the last point to the end port
+    const lastEdge = edges[edges.length - 1]
+    const lastEdgePort = portsWithPosition[portsWithPosition.length - 1]
+    const lastDominantDirection = getDominantDirection(lastEdge)
+    // Add the connecting edges
+    edges.push(
+      ...getStubEdges({ lastEdge, lastEdgePort, lastDominantDirection }),
+    )
 
     const trace = db.schematic_trace.insert({
       source_trace_id: this.source_trace_id!,
