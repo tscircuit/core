@@ -599,12 +599,12 @@ export class NormalComponent<
   }
 
   _getPinCount(): number {
-    const { _parsedProps: props } = this
+    const schPortArrangement = this._getSchematicPortArrangement()
     const pinCountFromSchArrangement =
-      (props.schPortArrangement?.leftSize ?? 0) +
-      (props.schPortArrangement?.rightSize ?? 0) +
-      (props.schPortArrangement?.topSize ?? 0) +
-      (props.schPortArrangement?.bottomSize ?? 0)
+      (schPortArrangement?.leftSize ?? 0) +
+      (schPortArrangement?.rightSize ?? 0) +
+      (schPortArrangement?.topSize ?? 0) +
+      (schPortArrangement?.bottomSize ?? 0)
     const pinCount =
       pinCountFromSchArrangement || this.getPortsFromFootprint().length
     return pinCount
@@ -637,7 +637,7 @@ export class NormalComponent<
 
       pinCount,
 
-      schPortArrangement: this._getSchematicPortArrangement(),
+      schPortArrangement: this._getSchematicPortArrangement()!,
     })
 
     return dimensions
