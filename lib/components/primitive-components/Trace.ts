@@ -673,35 +673,6 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       })
     }
 
-    // Add small segments at the ends to connect to ports
-    const STUB_LENGTH = 0.15
-
-    // First port stub
-    edges.unshift({
-      from: {
-        ...projectPointInDirection(
-          route[0],
-          portsWithPosition[0].facingDirection!,
-          STUB_LENGTH,
-        ),
-      },
-      to: route[0],
-      from_schematic_port_id: portsWithPosition[0].schematic_port_id!,
-    })
-
-    // Last port stub
-    edges.push({
-      from: route[route.length - 1],
-      to: {
-        ...projectPointInOppositeDirection(
-          route[route.length - 1],
-          portsWithPosition[1].facingDirection!,
-          STUB_LENGTH,
-        ),
-      },
-      from_schematic_port_id: portsWithPosition[1].schematic_port_id!,
-    })
-
     const trace = db.schematic_trace.insert({
       source_trace_id: this.source_trace_id!,
       edges,
