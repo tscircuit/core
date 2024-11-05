@@ -44,7 +44,7 @@ it("example 4: kicad theme demo", async () => {
             direction: "top-to-bottom",
           },
           topSide: {
-            direction: "left-to-right",
+            direction: "right-to-left",
             pins: [4, 18],
           },
           rightSide: {
@@ -61,6 +61,23 @@ it("example 4: kicad theme demo", async () => {
   )
 
   circuit.render()
+
+  const schChip = circuit.db.schematic_component
+    .list()
+    .find((sc) => sc.port_arrangement)
+
+  expect(
+    circuit.db.schematic_port.getWhere({
+      pin_number: 2,
+      schematic_component_id: schChip?.schematic_component_id,
+    })?.side_of_component,
+  ).toEqual("bottom")
+  expect(
+    circuit.db.schematic_port.getWhere({
+      pin_number: 18,
+      schematic_component_id: schChip?.schematic_component_id,
+    })?.side_of_component,
+  ).toEqual("top")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

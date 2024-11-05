@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)"><style>
               .boundary { fill: rgb(245, 241, 237); }
-              .schematic-boundary { fill: none; stroke: #fff; stroke-width: 0.3; }
+              .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
               .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
               .component-pin { fill: none; stroke: rgb(132, 0, 0); }
-              .trace { stroke: rgb(0, 150, 0); stroke-width: 3.6459873857951433; fill: none; }
-              .text { font-family: Arial, sans-serif; font-size: 36.45987385795143px; fill: rgb(0, 150, 0); }
-              .pin-number { font-size: 27.344905393463574px; fill: rgb(169, 0, 0); }
+              .trace { stroke: rgb(0, 150, 0); }
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
               .port-label { fill: rgb(0, 100, 100); }
-              .component-name { font-size: 45.57484232243929px; fill: rgb(0, 100, 100); }
-            </style><rect class="boundary" x="0" y="0" width="1200" height="600"/><g transform="translate(600, 300) rotate(0) scale(182.29936928975715)"><path d="M-0.05901489999999909,-0.18831315000000015 L-0.05869489999999833,0.11814524999999954" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.02" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.015375000000000805,-0.12533125000000034 L0.016669000000000933,0.05562075000000033" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.02" stroke-linecap="round" stroke-linejoin="round"/><path d="M-0.06443049999999961,-0.032673549999999496 L-0.4368029,-0.032673549999999496" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.02" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.4350822999999997,-0.03438825000000034 L0.028285099999999952,-0.03438825000000034" fill="none" stroke="rgb(132, 0, 0)" stroke-width="0.02" stroke-linecap="round" stroke-linejoin="round"/></g><g/></svg>
+              .component-name { fill: rgb(0, 100, 100); }
+            </style><rect class="boundary" x="0" y="0" width="1200" height="600"/><g class="grid"><line x1="600" y1="599.9999999999952" x2="600" y2="4.831690603168681e-12" stroke="rgb(181, 181, 181)" stroke-width="4.6465180736" stroke-opacity="0.5"/><line x1="147.44807837437617" y1="300" x2="1052.551921625624" y2="300" stroke="rgb(181, 181, 181)" stroke-width="4.6465180736" stroke-opacity="0.5"/><text x="597.5" y="295" fill="rgb(181, 181, 181)" font-size="92.93036147200002" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">0,0</text></g><path d="M 600 279.09066866880005 L 600 279.09066866880005" stroke="rgb(132, 0, 0)" fill="none" stroke-width="9.2930361472px"/><path d="M 600 279.09066866880005 L 600 279.09066866880005" stroke="rgb(132, 0, 0)" fill="none" stroke-width="9.2930361472px"/><path d="M 600 279.09066866880005 L 600 279.09066866880005" stroke="rgb(132, 0, 0)" fill="none" stroke-width="9.2930361472px"/><path d="M 600 279.09066866880005 L 600 279.09066866880005" stroke="rgb(132, 0, 0)" fill="none" stroke-width="9.2930361472px"/><text x="600" y="279.09066866880005" dominant-baseline="hanging" text-anchor="middle" font-family="sans-serif" font-size="83.6373253248px">U1</text><text x="600" y="279.09066866880005" dominant-baseline="auto" text-anchor="middle" font-family="sans-serif" font-size="83.6373253248px"></text><circle cx="600" cy="279.09066866880005" r="9.2930361472px" fill="none" stroke="rgb(132, 0, 0)"/><circle cx="600" cy="279.09066866880005" r="9.2930361472px" fill="none" stroke="rgb(132, 0, 0)"/></svg>

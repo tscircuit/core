@@ -280,7 +280,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,
-      distance_from_component_edge: localPortInfo?.distanceFromEdge,
+      distance_from_component_edge: 0.4,
       side_of_component: localPortInfo?.side,
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
