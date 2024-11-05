@@ -1,5 +1,8 @@
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
-import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import type {
+  SchematicBoxDimensions,
+  SchematicBoxPortPositionWithMetadata,
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
 import { z } from "zod"
@@ -94,6 +97,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       const localPortPosition = parentBoxDim.getPortPositionByPinNumber(
         this.props.pinNumber!,
       )
+      if (!localPortPosition) {
+        return { x: 0, y: 0 }
+      }
       return applyToPoint(
         this.parent!.computeSchematicGlobalTransform(),
         localPortPosition,
@@ -246,21 +252,19 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (!container) return
 
     const containerCenter = container._getGlobalSchematicPositionBeforeLayout()
-    let center = this._getGlobalSchematicPositionBeforeLayout()
+    const portCenter = this._getGlobalSchematicPositionBeforeLayout()
 
-    if ("schematicDimensions" in container && props.pinNumber !== undefined) {
-      const chipDims = container.schematicDimensions as SchematicBoxDimensions
-
-      center = chipDims.getPortPositionByPinNumber(props.pinNumber!)
-      center.x += containerCenter.x
-      center.y += containerCenter.y
+    let localPortInfo: SchematicBoxPortPositionWithMetadata | null = null
+    const containerDims = container._getSchematicBoxDimensions()
+    if (containerDims && props.pinNumber !== undefined) {
+      localPortInfo = containerDims.getPortPositionByPinNumber(props.pinNumber)
     }
 
     // For each obstacle, create a schematic_debug_object
     if (this.getSubcircuit().props._schDebugObjectsEnabled) {
       db.schematic_debug_object.insert({
         shape: "rect",
-        center,
+        center: portCenter,
         size: {
           width: 0.1,
           height: 0.1,
@@ -269,13 +273,17 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       } as any) // TODO issue with discriminated union
     }
 
-    this.facingDirection = getRelativeDirection(containerCenter, center)
+    this.facingDirection = getRelativeDirection(containerCenter, portCenter)
 
     const schematic_port = db.schematic_port.insert({
       schematic_component_id: this.parent?.schematic_component_id!,
-      center,
+      center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,
+      distance_from_component_edge: localPortInfo?.distanceFromEdge,
+      side_of_component: localPortInfo?.side,
+      pin_number: props.pinNumber,
+      true_ccw_index: localPortInfo?.trueIndex,
     })
 
     this.schematic_port_id = schematic_port.schematic_port_id
