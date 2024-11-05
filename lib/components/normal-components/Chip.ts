@@ -35,39 +35,6 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     this.source_component_id = source_component.source_component_id!
   }
 
-  // doInitialSchematicComponentRender() {
-  //   const { db } = this.root!
-  //   const { _parsedProps: props } = this
-  //   const dimensions = this._getSchematicBoxDimensions()!
-  //   this.schematicBoxDimensions = dimensions
-
-  //   const primaryPortLabels: Record<string, string> = {}
-  //   for (const [port, label] of Object.entries(props.pinLabels ?? {})) {
-  //     primaryPortLabels[port] = Array.isArray(label) ? label[0] : label
-  //   }
-
-  //   const schematic_component = db.schematic_component.insert({
-  //     center: { x: props.schX ?? 0, y: props.schY ?? 0 },
-  //     rotation: props.schRotation ?? 0,
-  //     size: dimensions.getSize(),
-
-  //     port_arrangement: underscorifyPortArrangement(
-  //       props.schPortArrangement as any,
-  //     ),
-
-  //     pin_spacing: props.schPinSpacing ?? 0.2,
-
-  //     // @ts-ignore soup needs to support distance for pin_styles
-  //     pin_styles: underscorifyPinStyles(props.schPinStyle),
-
-  //     port_labels: primaryPortLabels,
-
-  //     source_component_id: this.source_component_id!,
-  //   })
-
-  //   this.schematic_component_id = schematic_component.schematic_component_id
-  // }
-
   doInitialPcbComponentRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
