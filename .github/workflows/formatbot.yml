@@ -39,11 +39,11 @@ jobs:
 
     - name: Run Formatter and autofix
       if: steps.check_fork.outputs.is_fork == 'false'
-      run: biome format . --write
+      run: npx @biomejs/biome format . --write
 
     - name: Format Check (cannot autofix against forks)
       if: steps.check_fork.outputs.is_fork == 'true'
-      run: biome format .
+      run: npx @biomejs/biome format .
 
     - name: Restore lock files
       if: steps.check_fork.outputs.is_fork == 'false'
