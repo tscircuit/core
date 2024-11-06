@@ -11,7 +11,7 @@
     "baseUrl": ".",
 
     "paths": {
-      "lib/*": ["lib/*"],
+      "lib/*": ["lib/*"]
     },
 
     // Bundler mode

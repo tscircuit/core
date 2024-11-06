@@ -15,15 +15,28 @@ export class Led extends NormalComponent<
   get config() {
     return {
       componentName: "Led",
-      schematicSymbolName: this.props.symbolName ?? "led_horz" as BaseSymbolName,
+      schematicSymbolName:
+        this.props.symbolName ?? ("led_horz" as BaseSymbolName),
       zodProps: ledProps,
       sourceFtype: "simple_diode" as Ftype,
     }
   }
 
   initPorts() {
-    this.add(new Port({ name: "pin1", pinNumber: 1, aliases: ["anode", "pos", "left"] }))
-    this.add(new Port({ name: "pin2", pinNumber: 2, aliases: ["cathode", "neg", "right"] }))
+    this.add(
+      new Port({
+        name: "pin1",
+        pinNumber: 1,
+        aliases: ["anode", "pos", "left"],
+      }),
+    )
+    this.add(
+      new Port({
+        name: "pin2",
+        pinNumber: 2,
+        aliases: ["cathode", "neg", "right"],
+      }),
+    )
   }
 
   pos = this.portMap.pin1

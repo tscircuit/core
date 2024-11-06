@@ -1,6 +1,10 @@
 import { inductorProps } from "@tscircuit/props"
 import type { SourceSimpleInductor } from "circuit-json"
-import { FTYPE, type BaseSymbolName,type PassivePorts } from "lib/utils/constants"
+import {
+  FTYPE,
+  type BaseSymbolName,
+  type PassivePorts,
+} from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
 

@@ -1,9 +1,9 @@
-import { expect, it } from "bun:test";
-import type { Via } from "lib/components";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, it } from "bun:test"
+import type { Via } from "lib/components"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("should create a Via component with correct properties", () => {
-  const { project } = getTestFixture();
+  const { project } = getTestFixture()
 
   project.add(
     <board width="10mm" height="10mm">
@@ -15,15 +15,15 @@ it("should create a Via component with correct properties", () => {
         fromLayer="top"
         toLayer="bottom"
       />
-    </board>
-  );
+    </board>,
+  )
 
-  project.render();
+  project.render()
 
   expect(project).toMatchPcbSnapshot(import.meta.path)
 
-  const via = project.selectOne("via") as Via;
+  const via = project.selectOne("via") as Via
 
-  expect(via).not.toBeNull();
-  expect(via.props.pcbX).toBe("0mm");
-});
+  expect(via).not.toBeNull()
+  expect(via.props.pcbX).toBe("0mm")
+})
