@@ -5,8 +5,8 @@ import { Circuit } from "lib/Circuit"
 test("useDiode hook creates component with correct props and traces", () => {
   const circuit = new Circuit()
 
-  const D1 = useDiode("D1", { footprint: "1206" }) // SOD-123 is approximately 1206 size
-  const D2 = useDiode("D2", { footprint: "0603" }) // SOD-323 is approximately 0603 size
+  const D1 = useDiode("D1", { footprint: "1206" })
+  const D2 = useDiode("D2", { footprint: "0603" })
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -22,7 +22,7 @@ test("useDiode hook creates component with correct props and traces", () => {
   expect(diodes.length).toBe(2)
   expect(diodes[0].props.name).toBe("D1")
   expect(diodes[0].props.footprint).toBe("1206")
-  expect(diodes[1].props.name).toBe("D2") 
+  expect(diodes[1].props.name).toBe("D2")
   expect(diodes[1].props.footprint).toBe("0603")
 
   // Check if traces were created correctly
