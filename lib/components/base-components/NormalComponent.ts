@@ -12,10 +12,16 @@ import {
   type ReactSubtree,
   createInstanceFromReactElement,
 } from "lib/fiber/create-instance-from-react-element"
+import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getPortFromHints } from "lib/utils/getPortFromHints"
+import {
+  type SchematicBoxDimensions,
+  getAllDimensionsForSchematicBox,
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import {
   type ReactElement,
   isValidElement as isReactElement,
@@ -26,12 +32,6 @@ import { ZodType, z } from "zod"
 import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
-import {
-  getAllDimensionsForSchematicBox,
-  type SchematicBoxDimensions,
-} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 
 const debug = Debug("tscircuit:core")
 
@@ -186,12 +186,16 @@ export class NormalComponent<
       return
     }
 
-    const portsFromFootprint = this.getPortsFromFootprint()
-    for (const port of portsFromFootprint) {
-      if (
-        !portsToCreate.some((p) => p.isMatchingAnyOf(port.getNameAndAliases()))
-      ) {
-        portsToCreate.push(port)
+    if (!this._parsedProps.schPortArrangement) {
+      const portsFromFootprint = this.getPortsFromFootprint()
+      for (const port of portsFromFootprint) {
+        if (
+          !portsToCreate.some((p) =>
+            p.isMatchingAnyOf(port.getNameAndAliases()),
+          )
+        ) {
+          portsToCreate.push(port)
+        }
       }
     }
 
@@ -546,15 +550,21 @@ export class NormalComponent<
    *
    */
   doInitialPortDiscovery(): void {
-    const newPorts = [
-      ...this.getPortsFromFootprint(),
-      ...this.getPortsFromSchematicSymbol(),
-    ]
-
+    const { _parsedProps: props } = this
+  
+    // Only get ports from footprint and schematic if no schPortArrangement
+    let newPorts: Port[] = []
+    if (!props.schPortArrangement) {
+      newPorts = [
+        ...this.getPortsFromFootprint(),
+        ...this.getPortsFromSchematicSymbol(),
+      ]
+    }
+  
     const existingPorts = this.children.filter(
       (c) => c.componentName === "Port",
     ) as Port[]
-
+  
     for (const newPort of newPorts) {
       const existingPort = existingPorts.find((p) =>
         p.isMatchingAnyOf(newPort.getNameAndAliases()),
@@ -599,14 +609,19 @@ export class NormalComponent<
 
   _getPinCount(): number {
     const schPortArrangement = this._getSchematicPortArrangement()
-    const pinCountFromSchArrangement =
-      (schPortArrangement?.leftSize ?? 0) +
-      (schPortArrangement?.rightSize ?? 0) +
-      (schPortArrangement?.topSize ?? 0) +
-      (schPortArrangement?.bottomSize ?? 0)
-    const pinCount =
-      pinCountFromSchArrangement || this.getPortsFromFootprint().length
-    return pinCount
+
+    // If schPortArrangement exists, use only that for pin count
+    if (schPortArrangement) {
+      return (
+        (schPortArrangement.leftSize ?? 0) +
+        (schPortArrangement.rightSize ?? 0) +
+        (schPortArrangement.topSize ?? 0) +
+        (schPortArrangement.bottomSize ?? 0)
+      )
+    }
+
+    // If no schPortArrangement, fall back to footprint ports
+    return this.getPortsFromFootprint().length
   }
 
   /**
