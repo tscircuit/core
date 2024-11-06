@@ -5,6 +5,7 @@ export * from "./hooks/create-use-component"
 export * from "./hooks/use-capacitor"
 export * from "./hooks/use-chip"
 export * from "./hooks/use-diode"
+export * from "./hooks/use-led"
 export * from "./hooks/use-resistor"
 
 import "./register-catalogue"
