@@ -275,6 +275,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     this.facingDirection = getRelativeDirection(containerCenter, portCenter)
 
+    const sourcePort = db.source_port.get(this.source_port_id!)
+
+    let bestDisplayPinLabel: string | undefined = undefined
+    for (const portHint of sourcePort?.port_hints ?? []) {
+      if (portHint.match(/^(pin)?\d+$/)) continue
+      bestDisplayPinLabel = portHint
+    }
+
     const schematic_port = db.schematic_port.insert({
       schematic_component_id: this.parent?.schematic_component_id!,
       center: portCenter,
@@ -284,6 +292,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       side_of_component: localPortInfo?.side,
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
+      display_pin_label: bestDisplayPinLabel,
     })
 
     this.schematic_port_id = schematic_port.schematic_port_id

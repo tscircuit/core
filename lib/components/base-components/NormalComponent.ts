@@ -284,6 +284,10 @@ export class NormalComponent<
     // or other NormalComponent that doesn't have a schematic representation
   }
 
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    return undefined
+  }
+
   _doInitialSchematicComponentRenderWithSymbol() {
     const { db } = this.root!
 
@@ -315,6 +319,8 @@ export class NormalComponent<
         source_component_id: this.source_component_id!,
 
         symbol_name,
+
+        symbol_display_value: this._getSchematicSymbolDisplayValue(),
       })
       this.schematic_component_id = schematic_component.schematic_component_id
     }
@@ -551,7 +557,7 @@ export class NormalComponent<
    */
   doInitialPortDiscovery(): void {
     const { _parsedProps: props } = this
-  
+
     // Only get ports from footprint and schematic if no schPortArrangement
     let newPorts: Port[] = []
     if (!props.schPortArrangement) {
@@ -560,11 +566,11 @@ export class NormalComponent<
         ...this.getPortsFromSchematicSymbol(),
       ]
     }
-  
+
     const existingPorts = this.children.filter(
       (c) => c.componentName === "Port",
     ) as Port[]
-  
+
     for (const newPort of newPorts) {
       const existingPort = existingPorts.find((p) =>
         p.isMatchingAnyOf(newPort.getNameAndAliases()),

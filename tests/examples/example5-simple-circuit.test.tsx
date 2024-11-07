@@ -50,6 +50,14 @@ test("example 5: simple circuit with capacitor, resistor, and pushbutton", async
   expect(circuit.selectOne("net[name='VCC']")).not.toBeNull()
   expect(circuit.selectOne("net[name='GND']")).not.toBeNull()
 
+  const r1SourceComponent = circuit.db.source_component.getWhere({ name: "R1" })
+  console.log(r1SourceComponent)
+  const c1SchematicComponent = circuit.db.schematic_component.getWhere({
+    source_component_id: circuit.db.source_component.getWhere({ name: "C1" })
+      ?.source_component_id,
+  })
+  console.log(c1SchematicComponent)
+
   // Check if traces are created
   expect(circuit.selectAll("trace").length).toBe(5)
 
