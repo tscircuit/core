@@ -24,10 +24,18 @@ export class Diode extends NormalComponent<
 
   initPorts() {
     this.add(
-      new Port({ name: "pin1", pinNumber: 1, aliases: ["anode", "pos", "left"] }),
+      new Port({
+        name: "pin1",
+        pinNumber: 1,
+        aliases: ["anode", "pos", "left"],
+      }),
     )
     this.add(
-      new Port({ name: "pin2", pinNumber: 2, aliases: ["cathode", "neg", "right"] }),
+      new Port({
+        name: "pin2",
+        pinNumber: 2,
+        aliases: ["cathode", "neg", "right"],
+      }),
     )
   }
 

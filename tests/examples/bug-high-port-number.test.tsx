@@ -9,7 +9,7 @@ test("bug high port number", async () => {
       width={10}
       height={10}
       // @ts-ignore
-    //   _schDebugObjectsEnabled
+      //   _schDebugObjectsEnabled
     >
       <chip
         name="U1"

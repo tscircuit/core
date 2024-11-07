@@ -50,12 +50,12 @@ test("manual trace hints correctly change trace routes", async () => {
   expect(traceRoute.map((p) => ("layer" in p ? p.layer : ""))).toContain(
     "bottom",
   )
-      
+
   expect(circuit.selectAll("tracehint").length).toBe(1)
 
   expect(circuit.db.pcb_trace_hint.list().length).toBe(1)
 
   expect(circuit.db.pcb_trace_hint.list()[0].pcb_port_id).toBeTruthy()
-  
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
