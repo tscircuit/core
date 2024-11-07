@@ -8,6 +8,7 @@ import {
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace"
+import { formatSiUnit } from "format-si-unit"
 
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
@@ -39,6 +40,10 @@ export class Capacitor extends NormalComponent<
         aliases: ["cathode", "neg", "right"],
       }),
     )
+  }
+
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    return `${formatSiUnit(this._parsedProps.capacitance)}F`
   }
 
   doInitialCreateNetsFromProps() {

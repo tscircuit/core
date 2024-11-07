@@ -284,6 +284,10 @@ export class NormalComponent<
     // or other NormalComponent that doesn't have a schematic representation
   }
 
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    return undefined
+  }
+
   _doInitialSchematicComponentRenderWithSymbol() {
     const { db } = this.root!
 
@@ -315,6 +319,8 @@ export class NormalComponent<
         source_component_id: this.source_component_id!,
 
         symbol_name,
+
+        symbol_display_value: this._getSchematicSymbolDisplayValue(),
       })
       this.schematic_component_id = schematic_component.schematic_component_id
     }

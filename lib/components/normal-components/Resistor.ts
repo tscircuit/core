@@ -4,6 +4,7 @@ import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace"
+import { formatSiUnit } from "format-si-unit"
 
 export class Resistor extends NormalComponent<
   typeof resistorProps,
@@ -34,6 +35,10 @@ export class Resistor extends NormalComponent<
         aliases: ["cathode", "neg", "right"],
       }),
     )
+  }
+
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    return `${formatSiUnit(this._parsedProps.resistance)}Ω`
   }
 
   doInitialCreateNetsFromProps() {
