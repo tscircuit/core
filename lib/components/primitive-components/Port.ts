@@ -1,7 +1,6 @@
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
 import type {
-  SchematicBoxDimensions,
-  SchematicBoxPortPositionWithMetadata,
+  SchematicBoxPortPositionWithMetadata
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
@@ -94,8 +93,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const parentBoxDim = this?.parent?._getSchematicBoxDimensions()
     if (parentBoxDim && this.props.pinNumber !== undefined) {
-      const localPortPosition = parentBoxDim.getPortPositionByPinNumber(
-        this.props.pinNumber!,
+      const localPortPosition = parentBoxDim.getPortPositionByPinNumberOrAliases(
+        this.getNameAndAliases(),
       )
       if (!localPortPosition) {
         return { x: 0, y: 0 }
@@ -257,7 +256,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     let localPortInfo: SchematicBoxPortPositionWithMetadata | null = null
     const containerDims = container._getSchematicBoxDimensions()
     if (containerDims && props.pinNumber !== undefined) {
-      localPortInfo = containerDims.getPortPositionByPinNumber(props.pinNumber)
+      localPortInfo = containerDims.getPortPositionByPinNumberOrAliases(this.getNameAndAliases())
     }
 
     // For each obstacle, create a schematic_debug_object

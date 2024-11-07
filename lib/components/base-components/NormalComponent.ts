@@ -101,17 +101,20 @@ export class NormalComponent<
       for (const side in schPortArrangement) {
         const pins = schPortArrangement[side].pins
         if (Array.isArray(pins)) {
-          for (const pinNumber of pins) {
-            portsToCreate.push(
-              new Port(
-                {
-                  pinNumber,
-                },
-                {
-                  originDescription: `schPortArrangement:${side}`,
-                },
-              ),
-            )
+          let pinNumber = 1
+          for (const pin of pins) {
+            // check if pinNumber is a number or a string
+            const pinNumberInt = parseInt(pin)
+            if(pinNumberInt) {
+              portsToCreate.push(
+                new Port({ pinNumber: pinNumberInt }),
+              )
+            } else {
+              portsToCreate.push(
+                new Port({ pinNumber: pinNumber, aliases: [pin] }),
+              )
+            }
+            pinNumber++
           }
         }
       }
