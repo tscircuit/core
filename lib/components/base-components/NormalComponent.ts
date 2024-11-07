@@ -551,7 +551,7 @@ export class NormalComponent<
    */
   doInitialPortDiscovery(): void {
     const { _parsedProps: props } = this
-  
+
     // Only get ports from footprint and schematic if no schPortArrangement
     let newPorts: Port[] = []
     if (!props.schPortArrangement) {
@@ -560,11 +560,11 @@ export class NormalComponent<
         ...this.getPortsFromSchematicSymbol(),
       ]
     }
-  
+
     const existingPorts = this.children.filter(
       (c) => c.componentName === "Port",
     ) as Port[]
-  
+
     for (const newPort of newPorts) {
       const existingPort = existingPorts.find((p) =>
         p.isMatchingAnyOf(newPort.getNameAndAliases()),

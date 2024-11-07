@@ -22,7 +22,7 @@ test("useLed hook creates component with correct props and traces", () => {
   expect(leds.length).toBe(2)
   expect(leds[0].props.name).toBe("LED1")
   expect(leds[0].props.footprint).toBe("1206")
-  expect(leds[1].props.name).toBe("LED2") 
+  expect(leds[1].props.name).toBe("LED2")
   expect(leds[1].props.footprint).toBe("0603")
 
   // Check if traces were created correctly
