@@ -98,10 +98,10 @@ export class NormalComponent<
     // Handle schPortArrangement
     const schPortArrangement = this._parsedProps.schPortArrangement as any
     if (schPortArrangement) {
+      let pinNumber = 1
       for (const side in schPortArrangement) {
         const pins = schPortArrangement[side].pins
         if (Array.isArray(pins)) {
-          let pinNumber = 1
           for (const pin of pins) {
             // check if pinNumber is a number or a string
             const pinNumberInt = parseInt(pin)

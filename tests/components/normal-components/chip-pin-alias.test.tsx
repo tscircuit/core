@@ -13,7 +13,19 @@ it("Chip with pins in string", async () => {
         schPortArrangement={{
         leftSide: {
           direction: "top-to-bottom",
-          pins: ["B1", "B2"],
+          pins: ["B2", "B1"],
+        },
+        rightSide: {
+          direction: "top-to-bottom",
+          pins: ["A1", "A2"],
+        },
+        topSide: {
+          direction: "left-to-right",
+          pins: ["B10", "B11"],
+        },
+        bottomSide: {
+          direction: "left-to-right",
+          pins: [7, 8],
         },
       }}
       supplierPartNumbers={{

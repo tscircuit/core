@@ -273,7 +273,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     this.facingDirection = getRelativeDirection(containerCenter, portCenter)
-
+  
     const schematic_port = db.schematic_port.insert({
       schematic_component_id: this.parent?.schematic_component_id!,
       center: portCenter,
@@ -281,7 +281,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       facing_direction: this.facingDirection,
       distance_from_component_edge: 0.4,
       side_of_component: localPortInfo?.side,
-      pin_number: props.pinNumber,
+      pin_number: localPortInfo?.pinNumberOrAlias,
       true_ccw_index: localPortInfo?.trueIndex,
     })
 
