@@ -1,4 +1,4 @@
-import { createUseComponent } from "@tscircuit/core"
+import { createUseComponent } from "lib/hooks/create-use-component"
 import type { CommonLayoutProps } from "@tscircuit/props"
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
