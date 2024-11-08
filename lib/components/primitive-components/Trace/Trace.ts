@@ -683,14 +683,15 @@ export class Trace
       })
     }
 
+    const source_trace_id = this.source_trace_id!
     // Check if these edges run along any other schematic traces, if they do
     // push them out of the way
-    pushEdgesOfSchematicTraceToPreventOverlap({ edges, db })
+    pushEdgesOfSchematicTraceToPreventOverlap({ edges, db, source_trace_id })
 
     // Find all intersections between myEdges and all otherEdges and create a
     // segment representing the crossing. Wherever there's a crossing, we create
     // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
-    createSchematicTraceCrossingSegments({ edges, db })
+    createSchematicTraceCrossingSegments({ edges, db, source_trace_id })
 
     // The last edges sometimes don't connect to the ports because the
     // autorouter is within the "goal box" and doesn't finish the route
