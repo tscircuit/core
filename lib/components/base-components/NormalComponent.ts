@@ -62,6 +62,14 @@ export type PortMap<T extends string> = {
  *   }
  * }
  */
+
+class MissingFootprintError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "MissingFootprintError"
+  }
+}
+
 export class NormalComponent<
   ZodProps extends ZodType = any,
   PortNames extends string = never,
@@ -212,7 +220,9 @@ export class NormalComponent<
   _addChildrenFromStringFootprint() {
     let { footprint } = this.props
     footprint ??= this._getImpliedFootprintString?.()
-    if (!footprint) return
+    if (!footprint) {
+      throw new MissingFootprintError("Footprint is missing")
+    }
     if (typeof footprint === "string") {
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromSoup(fpSoup as any) // Remove as any when footprinter gets updated
