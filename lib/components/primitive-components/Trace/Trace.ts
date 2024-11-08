@@ -706,6 +706,7 @@ export class Trace
     const trace = db.schematic_trace.insert({
       source_trace_id: this.source_trace_id!,
       edges,
+      junctions: [],
     })
 
     this.schematic_trace_id = trace.schematic_trace_id

@@ -130,9 +130,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     connMap.addConnections(
       traces
         .map((t) => {
-          const source_trace: SourceTrace = db.source_trace.get(
+          const source_trace = db.source_trace.get(
             t.source_trace_id!,
-          )
+          ) as SourceTrace
           if (!source_trace) return null
 
           return [
