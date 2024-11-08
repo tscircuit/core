@@ -136,6 +136,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           if (!source_trace) return null
 
           return [
+            source_trace.source_trace_id,
             ...source_trace.connected_source_port_ids,
             ...source_trace.connected_source_net_ids,
           ]
