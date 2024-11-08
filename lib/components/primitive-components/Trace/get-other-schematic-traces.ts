@@ -18,6 +18,7 @@ export const getOtherSchematicTraces = ({
   const mySourceTrace = db.source_trace.get(source_trace_id)!
   const traces: SchematicTrace[] = []
   for (const otherSchematicTrace of db.schematic_trace.list()) {
+    if (otherSchematicTrace.source_trace_id === source_trace_id) continue
     // Check if these traces are connected to the same connectivity map key
     const otherSourceTrace = db.source_trace.get(
       otherSchematicTrace.source_trace_id,

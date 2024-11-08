@@ -67,16 +67,6 @@ export const createSchematicTraceJunctions = ({
     }
   }
 
-  // Check intersections between my own edges
-  for (let i = 0; i < myEdges.length; i++) {
-    for (let j = i + 1; j < myEdges.length; j++) {
-      const intersection = getIntersectionPoint(myEdges[i], myEdges[j])
-      if (intersection) {
-        junctions.add(`${intersection.x},${intersection.y}`)
-      }
-    }
-  }
-
   // Convert back to point objects
   return Array.from(junctions).map((key) => {
     const [x, y] = key.split(",").map(Number)
