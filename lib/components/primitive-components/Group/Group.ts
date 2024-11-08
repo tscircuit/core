@@ -146,8 +146,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     for (const trace of traces) {
       if (!trace.source_trace_id) continue
-      trace.subcircuit_connectivity_map_key =
-        connMap.getNetConnectedToId(trace.source_trace_id) ?? null
+      const connNetId = connMap.getNetConnectedToId(trace.source_trace_id)
+      if (!connNetId) continue
+      const { name: subcircuitName } = this._parsedProps
+      trace.subcircuit_connectivity_map_key = `${subcircuitName ?? `unnamedsubcircuit${this._renderId}`}_${connNetId}`
       db.source_trace.update(trace.source_trace_id, {
         subcircuit_connectivity_map_key: trace.subcircuit_connectivity_map_key!,
       })
