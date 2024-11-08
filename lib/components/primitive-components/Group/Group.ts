@@ -16,7 +16,7 @@ import type {
   SimpleRouteJson,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
-import type { Trace } from "../Trace"
+import type { Trace } from "../Trace/Trace"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>

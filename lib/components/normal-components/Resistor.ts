@@ -3,7 +3,7 @@ import type { SourceSimpleResistorInput } from "@tscircuit/soup"
 import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { Trace } from "../primitive-components/Trace"
+import { Trace } from "../primitive-components/Trace/Trace"
 import { formatSiUnit } from "format-si-unit"
 
 export class Resistor extends NormalComponent<

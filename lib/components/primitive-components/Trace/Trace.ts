@@ -27,14 +27,16 @@ import { projectPointInDirection } from "lib/utils/projectPointInDirection"
 import { projectPointInOppositeDirection } from "lib/utils/projectPointInOppositeDirection"
 import { tryNow } from "lib/utils/try-now"
 import { z } from "zod"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { Net } from "./Net"
-import type { Port } from "./Port"
-import type { TraceHint } from "./TraceHint"
+import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import type { Net } from "../Net"
+import type { Port } from "../Port"
+import type { TraceHint } from "../TraceHint"
 import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
 import type { Point } from "@tscircuit/math-utils"
 import { getStubEdges } from "lib/utils/schematic/getStubEdges"
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
+import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
+import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -678,51 +680,12 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     // Check if these edges run along any other schematic traces, if they do
     // push them out of the way
-    const otherEdges: SchematicTrace["edges"] = []
-    for (const otherSchematicTrace of db.schematic_trace.list()) {
-      otherEdges.push(...otherSchematicTrace.edges)
-    }
-
-    const edgeOrientation = (edge: SchematicTrace["edges"][number]) => {
-      const { from, to } = edge
-      return from.x === to.x ? "vertical" : "horizontal"
-    }
-
-    for (const mySegment of edges) {
-      const mySegmentOrientation = edgeOrientation(mySegment)
-      const findOverlappingParallelSegment = () =>
-        otherEdges.find(
-          (otherEdge) =>
-            edgeOrientation(otherEdge) === mySegmentOrientation &&
-            doesLineIntersectLine(
-              [mySegment.from, mySegment.to],
-              [otherEdge.from, otherEdge.to],
-              {
-                lineThickness: 0.01,
-              },
-            ),
-        )
-      let overlappingParallelSegmentFromOtherTrace =
-        findOverlappingParallelSegment()
-      while (overlappingParallelSegmentFromOtherTrace) {
-        // Move my segment out of the way
-        if (mySegmentOrientation === "horizontal") {
-          mySegment.from.y += 0.1
-          mySegment.to.y += 0.1
-        } else {
-          mySegment.from.x += 0.1
-          mySegment.to.x += 0.1
-        }
-        overlappingParallelSegmentFromOtherTrace =
-          findOverlappingParallelSegment()
-        // TODO eventually push in the direction that makes the most sense to
-        // reduce the number of intersections
-      }
-    }
+    pushEdgesOfSchematicTraceToPreventOverlap({ edges, db })
 
     // Find all intersections between myEdges and all otherEdges and create a
-    // segment representing the junction
-    // TODO
+    // segment representing the crossing. Wherever there's a crossing, we create
+    // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
+    createSchematicTraceCrossingSegments({ edges, db })
 
     // The last edges sometimes don't connect to the ports because the
     // autorouter is within the "goal box" and doesn't finish the route
