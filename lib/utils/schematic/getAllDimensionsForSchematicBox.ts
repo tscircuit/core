@@ -107,7 +107,6 @@ export const getAllDimensionsForSchematicBox = (
     top: 0,
     bottom: 0,
   }
-  console.log(params.pinLabels)
   let pinCount: number | null = params.pinCount ?? null
 
   if (pinCount === null) {
