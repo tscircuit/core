@@ -60,6 +60,7 @@ interface Params {
   >
   pinCount?: number
   schPortArrangement?: PortArrangement
+  pinLabels?: Record<string, string>
 }
 
 type Side = "left" | "right" | "top" | "bottom"
@@ -106,7 +107,7 @@ export const getAllDimensionsForSchematicBox = (
     top: 0,
     bottom: 0,
   }
-
+  console.log(params.pinLabels)
   let pinCount: number | null = params.pinCount ?? null
 
   if (pinCount === null) {
@@ -293,6 +294,18 @@ export const getAllDimensionsForSchematicBox = (
       sideLengths.bottom + params.schPinSpacing * 2,
     )
   }
+
+  const labelWidth = params.pinLabels
+    ? Math.max(
+        ...Object.values(params.pinLabels).map(
+          (label) => label.length * 0.1, // Estimated text width
+        ),
+      )
+    : 0
+
+  const LABEL_PADDING = 1.1
+  schWidth = Math.max(schWidth, labelWidth + LABEL_PADDING)
+
   let schHeight = params.schHeight
   if (!schHeight) {
     schHeight = Math.max(

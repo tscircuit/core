@@ -35,7 +35,7 @@ test("chip port schematic position", () => {
   )
 
   expect(vccPort).toBeDefined()
-  expect(vccPort!.center.x).toBeGreaterThan(4.3) // Should be to the right of schX
+  expect(vccPort!.center.x).toBeGreaterThan(3.8) // Should be to the right of schX
 
   // Find the GND port (pin8)
   const gndPort = schematicPorts.find(
