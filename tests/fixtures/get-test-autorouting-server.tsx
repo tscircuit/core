@@ -5,6 +5,7 @@ import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
 export const getTestAutoroutingServer = () => {
   const server = serve({
+    port: 0,
     fetch: async (req) => {
       if (req.method !== "POST") {
         return new Response("Method not allowed", { status: 405 })

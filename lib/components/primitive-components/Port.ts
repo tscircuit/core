@@ -56,7 +56,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (!matchedPcbElm) {
       throw new Error(
-        `Port ${this} has no matched pcb component, can't get global schematic position`,
+        `Port ${this} has no matched pcb component, can't get global pcb position`,
       )
     }
 

@@ -37,6 +37,7 @@ import { getStubEdges } from "lib/utils/schematic/getStubEdges"
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
+import type { TraceI } from "./TraceI"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -58,11 +59,15 @@ const portToObjective = (port: Port): PcbRouteObjective => {
 
 const SHOULD_USE_SINGLE_LAYER_ROUTING = false
 
-export class Trace extends PrimitiveComponent<typeof traceProps> {
+export class Trace
+  extends PrimitiveComponent<typeof traceProps>
+  implements TraceI
+{
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
   schematic_trace_id: string | null = null
   _portsRoutedOnPcb: Port[]
+  subcircuit_connectivity_map_key: string | null = null
 
   constructor(props: z.input<typeof traceProps>) {
     super(props)
@@ -701,6 +706,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     const trace = db.schematic_trace.insert({
       source_trace_id: this.source_trace_id!,
       edges,
+      junctions: [],
     })
 
     this.schematic_trace_id = trace.schematic_trace_id
