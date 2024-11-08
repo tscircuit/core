@@ -1,7 +1,7 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { z } from "zod"
 import type { Port } from "./Port"
-import type { Trace } from "./Trace"
+import type { Trace } from "./Trace/Trace"
 import { pairs } from "lib/utils/pairs"
 import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import { autoroute } from "@tscircuit/infgrid-ijump-astar"

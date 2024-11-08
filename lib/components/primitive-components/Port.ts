@@ -7,7 +7,7 @@ import { type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { Trace } from "./Trace"
+import type { Trace } from "./Trace/Trace"
 
 export const portProps = z.object({
   name: z.string().optional(),
