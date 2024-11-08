@@ -38,6 +38,7 @@ import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import type { TraceI } from "./TraceI"
+import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -683,14 +684,24 @@ export class Trace
       })
     }
 
+    const source_trace_id = this.source_trace_id!
     // Check if these edges run along any other schematic traces, if they do
     // push them out of the way
-    pushEdgesOfSchematicTraceToPreventOverlap({ edges, db })
+    pushEdgesOfSchematicTraceToPreventOverlap({ edges, db, source_trace_id })
 
     // Find all intersections between myEdges and all otherEdges and create a
     // segment representing the crossing. Wherever there's a crossing, we create
     // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
-    createSchematicTraceCrossingSegments({ edges, db })
+    createSchematicTraceCrossingSegments({ edges, db, source_trace_id })
+
+    // Find all the intersections between myEdges and edges connected to the
+    // same net and create junction points
+    // Calculate junctions where traces of the same net intersect
+    const junctions = createSchematicTraceJunctions({
+      edges,
+      db,
+      source_trace_id: this.source_trace_id!,
+    })
 
     // The last edges sometimes don't connect to the ports because the
     // autorouter is within the "goal box" and doesn't finish the route
@@ -706,7 +717,7 @@ export class Trace
     const trace = db.schematic_trace.insert({
       source_trace_id: this.source_trace_id!,
       edges,
-      junctions: [],
+      junctions,
     })
 
     this.schematic_trace_id = trace.schematic_trace_id

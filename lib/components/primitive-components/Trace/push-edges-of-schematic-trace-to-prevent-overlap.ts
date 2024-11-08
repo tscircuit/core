@@ -1,6 +1,7 @@
 import type { SchematicTrace } from "circuit-json"
 import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
+import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 
 /**
  *  Check if these edges run along any other schematic traces, if they do
@@ -9,14 +10,18 @@ import { doesLineIntersectLine } from "@tscircuit/math-utils"
 export const pushEdgesOfSchematicTraceToPreventOverlap = ({
   edges,
   db,
+  source_trace_id,
 }: {
   edges: SchematicTrace["edges"]
   db: SoupUtilObjects
+  source_trace_id: string
 }) => {
-  const otherEdges: SchematicTrace["edges"] = []
-  for (const otherSchematicTrace of db.schematic_trace.list()) {
-    otherEdges.push(...otherSchematicTrace.edges)
-  }
+  const mySourceTrace = db.source_trace.get(source_trace_id)!
+  const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
+    db,
+    source_trace_id,
+    differentNetOnly: true,
+  }).flatMap((t) => t.edges)
 
   const edgeOrientation = (edge: SchematicTrace["edges"][number]) => {
     const { from, to } = edge

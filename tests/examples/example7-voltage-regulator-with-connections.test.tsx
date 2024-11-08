@@ -173,5 +173,26 @@ test("example7 voltage regulator with connections", async () => {
 
   circuit.render()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  // Get all schematic traces
+  const traces = circuit.db.schematic_trace.list()
+
+  // Get all junctions from traces
+  const junctions = traces.flatMap((trace) => trace.junctions || [])
+
+  // There should be at least one junction where traces intersect
+  expect(junctions.length).toBeGreaterThan(0)
+
+  // Each junction should have x,y coordinates
+  for (const junction of junctions) {
+    expect(junction).toHaveProperty("x")
+    expect(junction).toHaveProperty("y")
+  }
+
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    grid: {
+      cellSize: 1,
+      labelCells: true,
+    },
+    labeledPoints: junctions.map((a) => ({ ...a, label: "junction" })),
+  })
 })

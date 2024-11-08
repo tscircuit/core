@@ -1,6 +1,7 @@
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import type { SchematicTrace } from "circuit-json"
+import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 
 /**
  *  Find all intersections between myEdges and all otherEdges and create a
@@ -10,14 +11,17 @@ import type { SchematicTrace } from "circuit-json"
 export const createSchematicTraceCrossingSegments = ({
   edges,
   db,
+  source_trace_id,
 }: {
   edges: SchematicTrace["edges"]
   db: SoupUtilObjects
+  source_trace_id: string
 }) => {
-  const otherEdges: SchematicTrace["edges"] = []
-  for (const otherSchematicTrace of db.schematic_trace.list()) {
-    otherEdges.push(...otherSchematicTrace.edges)
-  }
+  const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
+    db,
+    source_trace_id,
+    differentNetOnly: true,
+  }).flatMap((t: SchematicTrace) => t.edges)
 
   // For each edge in our trace
   for (let i = 0; i < edges.length; i++) {
