@@ -2,6 +2,10 @@ import type { SchematicTrace } from "circuit-json"
 import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
 
+/**
+ *  Check if these edges run along any other schematic traces, if they do
+ *  push them out of the way
+ */
 export const pushEdgesOfSchematicTraceToPreventOverlap = ({
   edges,
   db,

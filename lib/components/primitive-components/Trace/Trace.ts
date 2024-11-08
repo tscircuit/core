@@ -36,6 +36,7 @@ import type { Point } from "@tscircuit/math-utils"
 import { getStubEdges } from "lib/utils/schematic/getStubEdges"
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
+import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 
 type PcbRouteObjective =
   | RouteHintPoint
