@@ -682,7 +682,9 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
     pushEdgesOfSchematicTraceToPreventOverlap({ edges, db })
 
     // Find all intersections between myEdges and all otherEdges and create a
-    // segment representing the crossing so that it can be drawn differently
+    // segment representing the crossing. Wherever there's a crossing, we create
+    // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
+    createSchematicTraceCrossingSegments({ edges, db })
 
     // The last edges sometimes don't connect to the ports because the
     // autorouter is within the "goal box" and doesn't finish the route
