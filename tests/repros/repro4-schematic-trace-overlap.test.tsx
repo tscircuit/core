@@ -29,5 +29,26 @@ test("repro4 schematic trace overlap", async () => {
 
   circuit.render()
 
+  // Get the schematic traces
+  const traces = circuit.db.schematic_trace.list()
+
+  // Find edges with is_crossing=true
+  const crossingEdges = traces.flatMap((trace) =>
+    trace.edges.filter((edge) => edge.is_crossing),
+  )
+
+  // There should be exactly one crossing
+  expect(crossingEdges.length).toBe(1)
+
+  const crossingEdge = crossingEdges[0]
+  expect(crossingEdge.is_crossing).toBe(true)
+
+  // Check crossing segment length is ~0.1mm
+  const length = Math.sqrt(
+    (crossingEdge.to.x - crossingEdge.from.x) ** 2 +
+      (crossingEdge.to.y - crossingEdge.from.y) ** 2,
+  )
+  expect(length).toBeCloseTo(0.1, 2)
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
