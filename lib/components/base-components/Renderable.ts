@@ -8,6 +8,7 @@ export const orderedRenderPhases = [
   "CreateTraceHintsFromProps",
   "SourceRender",
   "SourceParentAttachment",
+  "SourceAddConnectivityMapKey",
   "PortDiscovery",
   "PortMatching",
   "SourceTraceRender",
