@@ -290,6 +290,7 @@ export class NormalComponent<
 
   _doInitialSchematicComponentRenderWithSymbol() {
     const { db } = this.root!
+    const { _parsedProps: props } = this
 
     // TODO switch between horizontal and vertical based on schRotation
     const base_symbol_name = this.config.schematicSymbolName
@@ -313,8 +314,8 @@ export class NormalComponent<
 
     if (symbol) {
       const schematic_component = db.schematic_component.insert({
-        center: { x: this.props.schX ?? 0, y: this.props.schY ?? 0 },
-        rotation: this.props.schRotation ?? 0,
+        center: { x: props.schX ?? 0, y: props.schY ?? 0 },
+        rotation: props.schRotation ?? 0,
         size: symbol.size,
         source_component_id: this.source_component_id!,
 
