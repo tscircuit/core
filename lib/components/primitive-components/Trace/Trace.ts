@@ -595,6 +595,7 @@ export class Trace
 
     const { allPortsFound, portsWithSelectors: connectedPorts } =
       this._findConnectedPorts()
+    const { netsWithSelectors } = this._findConnectedNets()
 
     if (!allPortsFound) return
 
@@ -635,6 +636,25 @@ export class Trace
       schematic_port_id: port.schematic_port_id ?? undefined,
       facingDirection: port.facingDirection,
     }))
+
+    const isPortAndNetConnection =
+      portsWithPosition.length === 1 && netsWithSelectors.length === 1
+
+    if (isPortAndNetConnection) {
+      const net = netsWithSelectors[0].net
+      const { port, position: anchorPos } = portsWithPosition[0]
+      // Create a schematic_net_label
+      const netAlias = db.schematic_net_label.insert({
+        text: net._parsedProps.name,
+        source_net_id: net.source_net_id!,
+        anchor_position: anchorPos,
+        // TODO compute the center based on the text size
+        center: anchorPos,
+        anchor_side: "top",
+      })
+
+      return
+    }
 
     // Ensure there are at least two ports
     // Else return insufficient ports to draw a trace
