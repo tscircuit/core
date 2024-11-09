@@ -39,6 +39,8 @@ import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schem
 import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import type { TraceI } from "./TraceI"
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
+import { getExitingEdgeFromDirection } from "lib/utils/schematic/getExitingEdgeFromDirection"
+import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -595,6 +597,7 @@ export class Trace
 
     const { allPortsFound, portsWithSelectors: connectedPorts } =
       this._findConnectedPorts()
+    const { netsWithSelectors } = this._findConnectedNets()
 
     if (!allPortsFound) return
 
@@ -635,6 +638,27 @@ export class Trace
       schematic_port_id: port.schematic_port_id ?? undefined,
       facingDirection: port.facingDirection,
     }))
+
+    const isPortAndNetConnection =
+      portsWithPosition.length === 1 && netsWithSelectors.length === 1
+
+    if (isPortAndNetConnection) {
+      const net = netsWithSelectors[0].net
+      const { port, position: anchorPos } = portsWithPosition[0]
+
+      // Create a schematic_net_label
+      const netLabel = db.schematic_net_label.insert({
+        text: net._parsedProps.name,
+        source_net_id: net.source_net_id!,
+        anchor_position: anchorPos,
+        // TODO compute the center based on the text size
+        center: anchorPos,
+        anchor_side:
+          getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom",
+      })
+
+      return
+    }
 
     // Ensure there are at least two ports
     // Else return insufficient ports to draw a trace
