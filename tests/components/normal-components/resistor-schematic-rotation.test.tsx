@@ -14,7 +14,7 @@ test("resistor with schematic rotation", () => {
         schY={0}
         schRotation="90deg"
       />
-    </board>
+    </board>,
   )
 
   project.render()
