@@ -17,7 +17,10 @@ import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangemen
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getPortFromHints } from "lib/utils/getPortFromHints"
+import {
+  getPinNumberFromLabels,
+  getPortFromHints,
+} from "lib/utils/getPortFromHints"
 import {
   type SchematicBoxDimensions,
   getAllDimensionsForSchematicBox,
@@ -181,9 +184,11 @@ export class NormalComponent<
       if (!sym) return
 
       for (const symPort of sym.ports) {
+        const pinNumber = getPinNumberFromLabels(symPort.labels)
+        if (!pinNumber) continue
         const port = getPortFromHints(
           symPort.labels.concat(
-            opts.additionalAliases?.[symPort.labels[0]] ?? [],
+            opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
           ),
         )
 
