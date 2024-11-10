@@ -13,28 +13,31 @@ export class Resistor extends NormalComponent<
   get config() {
     return {
       componentName: "Resistor",
-      schematicSymbolName: (this.props.symbolName ??
-        ("boxresistor_horz" as BaseSymbolName)) as BaseSymbolName,
+      schematicSymbolName: this.props.symbolName ?? "boxresistor",
       zodProps: resistorProps,
       sourceFtype: "simple_resistor" as Ftype,
     }
   }
 
   initPorts() {
-    this.add(
-      new Port({
-        name: "pin1",
-        pinNumber: 1,
-        aliases: ["anode", "pos", "left"],
-      }),
-    )
-    this.add(
-      new Port({
-        name: "pin2",
-        pinNumber: 2,
-        aliases: ["cathode", "neg", "right"],
-      }),
-    )
+    super.initPorts({
+      additionalAliases: {
+        pin1: ["anode", "pos", "left"],
+        pin2: ["cathode", "neg", "right"],
+      },
+    })
+    // const port1 = this.selectOne<Port>("port.1")!
+    // port1.setProps({ aliases: ["anode", "pos", "left"] })
+
+    // console.log("port1", port1.)
+    // const port2 = this.selectOne<Port>("port.2")!
+    // port2.setProps({ aliases: ["cathode", "neg", "right"] })
+    // console.log(
+    //   "initPorts",
+    //   this.children
+    //     .filter((c) => c.lowercaseComponentName === "port")
+    //     .map((c) => c.getNameAndAliases()),
+    // )
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
