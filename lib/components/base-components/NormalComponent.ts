@@ -99,16 +99,48 @@ export class NormalComponent<
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement() as any
     if (schPortArrangement) {
-      const normalizedPinLabels = this._getNormalizedPinLabels()
-      for (const pinLabels of normalizedPinLabels) {
-        const pinNumber = parseInt(pinLabels[0].replace("pin", ""))
-        portsToCreate.push(
-          new Port({
-            pinNumber,
-            name: pinLabels[1],
-            aliases: pinLabels,
-          }),
-        )
+      let normalizationNeeded = true
+      // pins are number
+      for (const side in schPortArrangement) {
+        const pins = schPortArrangement[side].pins
+        if (Array.isArray(pins)) {
+          for (const pinNumber of pins) {
+            if (typeof pinNumber === "string") {
+              break
+            }
+            portsToCreate.push(
+              new Port(
+                {
+                  pinNumber,
+                },
+                {
+                  originDescription: `schPortArrangement:${side}`,
+                },
+              ),
+            )
+          }
+        }
+        normalizationNeeded = false // Not required because Integer pins
+      }
+      // pin label are string
+      if (normalizationNeeded) {
+        const normalizedPinLabels =
+          this._getNormalizedPinLabelsFromSchPortArrangement()
+        for (const [pinLabel, pinName] of Object.entries(normalizedPinLabels)) {
+          const pinNumber = parseInt(pinLabel.replace("pin", ""))
+          portsToCreate.push(
+            new Port(
+              {
+                pinNumber,
+                name: pinName.toString(),
+                aliases: [pinLabel, pinName],
+              },
+              {
+                originDescription: `schPortArrangement:pin${pinNumber}`,
+              },
+            ),
+          )
+        }
       }
       // Takes care of the case where the user only specifies the size of the
       // sides, and not the pins
@@ -634,21 +666,33 @@ export class NormalComponent<
     return this._parsedProps.schPortArrangement
   }
 
-  _getNormalizedPinLabels(): string[][] {
+  _getNormalizedPinLabelsFromSchPortArrangement(): Record<string, string> {
     const schPortArrangement = this._getSchematicPortArrangement() as any
-    const allPinLabels: string[][] = []
-    if (schPortArrangement) {
-      let pinNumber = 1
-      for (const side in schPortArrangement) {
-        const pins = schPortArrangement[side].pins
-        if (Array.isArray(pins)) {
-          for (const pinLabel of pins) {
-            allPinLabels.push([`${pinNumber++}`, pinLabel])
-          }
+    const pinLabels: Record<string, string> = {}
+
+    const pinLabelsFromPortArrangement: string[][] = []
+    let pinNumber = 1
+    for (const side in schPortArrangement) {
+      const pins = schPortArrangement[side].pins
+      if (Array.isArray(pins)) {
+        for (const pinLabel of pins) {
+          pinLabelsFromPortArrangement.push([`${pinNumber++}`, pinLabel])
         }
       }
     }
-    return normalizePinLabels(allPinLabels)
+    const normalizedPinLabels = normalizePinLabels(pinLabelsFromPortArrangement)
+
+    for (const [key, value] of normalizedPinLabels) {
+      if (key !== undefined) {
+        if (value !== undefined) {
+          pinLabels[key] = value
+        } else {
+          pinLabels[key] = "" // If the label is unique, it is not normalized
+        }
+      }
+    }
+
+    return pinLabels
   }
 
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
@@ -662,6 +706,29 @@ export class NormalComponent<
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 
+    const portArrangementWithLeftSidePinsPresentTypeString = Boolean(
+      this._getSchematicPortArrangement()?.leftSide?.pins && typeof this._getSchematicPortArrangement()?.leftSide?.pins === "string",
+    )
+    const portArrangementWithRightSidePinsPresentTypeString = Boolean(
+      this._getSchematicPortArrangement()?.rightSide?.pins && typeof this._getSchematicPortArrangement()?.rightSide?.pins === "string",
+    )
+    const portArrangementWithBottomSidePinsPresentTypeString = Boolean(
+      this._getSchematicPortArrangement()?.bottomSide?.pins && typeof this._getSchematicPortArrangement()?.bottomSide?.pins === "string",
+    )
+    const portArrangementWithTopSidePinsPresentTypeString = Boolean(
+      this._getSchematicPortArrangement()?.topSide?.pins && typeof this._getSchematicPortArrangement()?.topSide?.pins === "string",
+    )
+
+    const normalizationOfPinsLabelsRequired =
+      portArrangementWithLeftSidePinsPresentTypeString ||
+      portArrangementWithRightSidePinsPresentTypeString ||
+      portArrangementWithBottomSidePinsPresentTypeString ||
+      portArrangementWithTopSidePinsPresentTypeString
+
+    const pinLabels = normalizationOfPinsLabelsRequired
+      ? this._getNormalizedPinLabelsFromSchPortArrangement()
+      : props.pinLabels
+
     const dimensions = getAllDimensionsForSchematicBox({
       schWidth: props.schWidth,
       schHeight: props.schHeight,
@@ -671,7 +738,7 @@ export class NormalComponent<
       pinCount,
 
       schPortArrangement: this._getSchematicPortArrangement()!,
-      pinLabels: this._getNormalizedPinLabels(),
+      pinLabels,
     })
 
     return dimensions
