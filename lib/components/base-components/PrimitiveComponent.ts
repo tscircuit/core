@@ -283,7 +283,6 @@ export abstract class PrimitiveComponent<
     const symbol_name_horz = `${base_symbol_name}_horz` as keyof typeof symbols
     const symbol_name_vert = `${base_symbol_name}_vert` as keyof typeof symbols
 
-    if (base_symbol_name in symbols) return base_symbol_name
     if (symbol_name_horz in symbols) {
       if (props.schRotation === 0 || props.schRotation === undefined)
         return symbol_name_horz
@@ -293,6 +292,7 @@ export abstract class PrimitiveComponent<
       if (props.schRotation === 90) return symbol_name_vert
       if (props.schRotation === 270) return symbol_name_vert
     }
+    if (base_symbol_name in symbols) return base_symbol_name
 
     return undefined
   }
