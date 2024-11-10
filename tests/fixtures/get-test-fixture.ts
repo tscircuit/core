@@ -8,6 +8,9 @@ export const getTestFixture = () => {
 
   return {
     circuit,
+    /**
+     * @deprecated use `circuit` instead
+     */
     project: circuit,
     logSoup: async (nameOfTest: string) => {
       if (process.env.CI) return

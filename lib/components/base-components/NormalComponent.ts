@@ -17,7 +17,10 @@ import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangemen
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getPortFromHints } from "lib/utils/getPortFromHints"
+import {
+  getPinNumberFromLabels,
+  getPortFromHints,
+} from "lib/utils/getPortFromHints"
 import {
   type SchematicBoxDimensions,
   getAllDimensionsForSchematicBox,
@@ -91,7 +94,11 @@ export class NormalComponent<
    * 2. `props.footprint`
    *
    */
-  initPorts() {
+  initPorts(
+    opts: {
+      additionalAliases?: Record<`pin${number}`, string[]>
+    } = {},
+  ) {
     const { config } = this
     const portsToCreate: Port[] = []
 
@@ -106,6 +113,7 @@ export class NormalComponent<
               new Port(
                 {
                   pinNumber,
+                  aliases: opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
                 },
                 {
                   originDescription: `schPortArrangement:${side}`,
@@ -126,6 +134,7 @@ export class NormalComponent<
             new Port(
               {
                 pinNumber: pinNum++,
+                aliases: opts.additionalAliases?.[`pin${pinNum}`] ?? [],
               },
               {
                 originDescription: `schPortArrangement:${side}`,
@@ -152,7 +161,11 @@ export class NormalComponent<
             {
               pinNumber: parseInt(pinNumber),
               name: primaryLabel,
-              aliases: otherLabels,
+              aliases: [
+                ...otherLabels,
+                ...(opts.additionalAliases?.[`pin${parseInt(pinNumber)}`] ??
+                  []),
+              ],
             },
             {
               originDescription: `pinLabels:pin${pinNumber}`,
@@ -167,13 +180,17 @@ export class NormalComponent<
     }
 
     if (config.schematicSymbolName) {
-      const sym = symbols[
-        `${config.schematicSymbolName}_horz` as keyof typeof symbols
-      ] as SchSymbol | undefined
+      const sym = symbols[this._getSchematicSymbolNameOrThrow()]
       if (!sym) return
 
       for (const symPort of sym.ports) {
-        const port = getPortFromHints(symPort.labels)
+        const pinNumber = getPinNumberFromLabels(symPort.labels)
+        if (!pinNumber) continue
+        const port = getPortFromHints(
+          symPort.labels.concat(
+            opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
+          ),
+        )
 
         if (port) {
           port.originDescription = `schematicSymbol:labels[0]:${symPort.labels[0]}`
@@ -292,23 +309,7 @@ export class NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    // TODO switch between horizontal and vertical based on schRotation
-    const base_symbol_name = this.config.schematicSymbolName
-    const symbol_name_horz = `${base_symbol_name}_horz`
-
-    let symbol_name: keyof typeof symbols
-    if (!base_symbol_name) {
-      throw new Error(
-        "No schematic symbol defined (schematicSymbolName not provided)",
-      )
-    }
-    if (base_symbol_name in symbols) {
-      symbol_name = base_symbol_name as keyof typeof symbols
-    } else if (symbol_name_horz in symbols) {
-      symbol_name = symbol_name_horz as keyof typeof symbols
-    } else {
-      throw new Error(`Could not find schematic-symbol: "${base_symbol_name}"`)
-    }
+    const symbol_name = this._getSchematicSymbolNameOrThrow()
 
     const symbol: SchSymbol | undefined = symbols[symbol_name]
 

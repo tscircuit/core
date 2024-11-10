@@ -137,11 +137,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     return Array.from(
       new Set([
         ...(props.aliases ?? []),
-        props.name,
+        ...(props.name ? [props.name] : []),
         ...(typeof props.pinNumber === "number"
           ? [`pin${props.pinNumber}`, props.pinNumber.toString()]
           : []),
-        ...this.externallyAddedAliases,
+        ...(this.externallyAddedAliases ?? []),
       ]),
     ) as string[]
   }
