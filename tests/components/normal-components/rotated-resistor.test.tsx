@@ -12,11 +12,9 @@ test("rotated resistor schematic", () => {
 
   circuit.render()
 
-  // expect(circuit.db.schematic_component.list()[0].symbol_name).toEqual(
-  //   "boxresistor_vert",
-  // )
-
-  // console.log(circuit.db.schematic_port.list())
+  expect(circuit.db.schematic_component.list()[0].symbol_name).toEqual(
+    "boxresistor_vert",
+  )
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
