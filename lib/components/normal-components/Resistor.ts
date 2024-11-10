@@ -26,18 +26,6 @@ export class Resistor extends NormalComponent<
         pin2: ["cathode", "neg", "right"],
       },
     })
-    // const port1 = this.selectOne<Port>("port.1")!
-    // port1.setProps({ aliases: ["anode", "pos", "left"] })
-
-    // console.log("port1", port1.)
-    // const port2 = this.selectOne<Port>("port.2")!
-    // port2.setProps({ aliases: ["cathode", "neg", "right"] })
-    // console.log(
-    //   "initPorts",
-    //   this.children
-    //     .filter((c) => c.lowercaseComponentName === "port")
-    //     .map((c) => c.getNameAndAliases()),
-    // )
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
