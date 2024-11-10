@@ -54,15 +54,15 @@ it("Chip with pin labels as strings and duplicates", async () => {
 
   // Get source ports and check their pin numbers
   const sourcePorts = project.db.source_port.list()
-  const portNames = sourcePorts.map(p => p.name)
-  
+  const portNames = sourcePorts.map((p) => p.name)
+
   // Should have 8 ports total (2 per side)
   expect(sourcePorts).toHaveLength(8)
-  
+
   // Check duplicates
-  expect(portNames.filter(p => p.startsWith("B1"))).toHaveLength(2)
-  expect(portNames.filter(p => p.startsWith("B2"))).toHaveLength(2)
-  expect(portNames.filter(p => p.startsWith("B3"))).toHaveLength(2)
+  expect(portNames.filter((p) => p.startsWith("B1"))).toHaveLength(2)
+  expect(portNames.filter((p) => p.startsWith("B2"))).toHaveLength(2)
+  expect(portNames.filter((p) => p.startsWith("B3"))).toHaveLength(2)
 
   expect(project.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
 })
@@ -104,7 +104,6 @@ it("Chip with pin labels as numbers, decimals and duplicates", async () => {
     expect(e).toBeInstanceOf(InvalidProps)
     expect((e as InvalidProps).message).toContain("-4")
   }
-  
 })
 
 // TODO

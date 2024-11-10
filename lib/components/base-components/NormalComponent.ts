@@ -707,16 +707,22 @@ export class NormalComponent<
     const pinSpacing = props.schPinSpacing ?? 0.2
 
     const portArrangementWithLeftSidePinsPresentTypeString = Boolean(
-      this._getSchematicPortArrangement()?.leftSide?.pins && typeof this._getSchematicPortArrangement()?.leftSide?.pins === "string",
+      this._getSchematicPortArrangement()?.leftSide?.pins &&
+        typeof this._getSchematicPortArrangement()?.leftSide?.pins === "string",
     )
     const portArrangementWithRightSidePinsPresentTypeString = Boolean(
-      this._getSchematicPortArrangement()?.rightSide?.pins && typeof this._getSchematicPortArrangement()?.rightSide?.pins === "string",
+      this._getSchematicPortArrangement()?.rightSide?.pins &&
+        typeof this._getSchematicPortArrangement()?.rightSide?.pins ===
+          "string",
     )
     const portArrangementWithBottomSidePinsPresentTypeString = Boolean(
-      this._getSchematicPortArrangement()?.bottomSide?.pins && typeof this._getSchematicPortArrangement()?.bottomSide?.pins === "string",
+      this._getSchematicPortArrangement()?.bottomSide?.pins &&
+        typeof this._getSchematicPortArrangement()?.bottomSide?.pins ===
+          "string",
     )
     const portArrangementWithTopSidePinsPresentTypeString = Boolean(
-      this._getSchematicPortArrangement()?.topSide?.pins && typeof this._getSchematicPortArrangement()?.topSide?.pins === "string",
+      this._getSchematicPortArrangement()?.topSide?.pins &&
+        typeof this._getSchematicPortArrangement()?.topSide?.pins === "string",
     )
 
     const normalizationOfPinsLabelsRequired =
