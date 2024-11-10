@@ -32,6 +32,7 @@ import { ZodType, z } from "zod"
 import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
+import { normalizePinLabels } from "lib/utils/schematic/normalizePinLabels"
 
 const debug = Debug("tscircuit:core")
 
@@ -96,24 +97,18 @@ export class NormalComponent<
     const portsToCreate: Port[] = []
 
     // Handle schPortArrangement
-    const schPortArrangement = this._parsedProps.schPortArrangement as any
+    const schPortArrangement = this._getSchematicPortArrangement() as any
     if (schPortArrangement) {
-      for (const side in schPortArrangement) {
-        const pins = schPortArrangement[side].pins
-        if (Array.isArray(pins)) {
-          for (const pinNumber of pins) {
-            portsToCreate.push(
-              new Port(
-                {
-                  pinNumber,
-                },
-                {
-                  originDescription: `schPortArrangement:${side}`,
-                },
-              ),
-            )
-          }
-        }
+      const normalizedPinLabels = this._getNormalizedPinLabels()
+      for (const pinLabels of normalizedPinLabels) {
+        const pinNumber = parseInt(pinLabels[0].replace("pin", ""))
+        portsToCreate.push(
+          new Port({
+            pinNumber,
+            name: pinLabels[1],
+            aliases: pinLabels,
+          }),
+        )
       }
       // Takes care of the case where the user only specifies the size of the
       // sides, and not the pins
@@ -639,6 +634,23 @@ export class NormalComponent<
     return this._parsedProps.schPortArrangement
   }
 
+  _getNormalizedPinLabels(): string[][] {
+    const schPortArrangement = this._getSchematicPortArrangement() as any
+    const allPinLabels: string[][] = []
+    if (schPortArrangement) {
+      let pinNumber = 1
+      for (const side in schPortArrangement) {
+        const pins = schPortArrangement[side].pins
+        if (Array.isArray(pins)) {
+          for (const pinLabel of pins) {
+            allPinLabels.push([`${pinNumber++}`, pinLabel])
+          }
+        }
+      }
+    }
+    return normalizePinLabels(allPinLabels)
+  }
+
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     // Only valid if we don't have a schematic symbol
     if (this.getSchematicSymbol()) return null
@@ -659,7 +671,7 @@ export class NormalComponent<
       pinCount,
 
       schPortArrangement: this._getSchematicPortArrangement()!,
-      pinLabels: props.pinLabels,
+      pinLabels: this._getNormalizedPinLabels(),
     })
 
     return dimensions

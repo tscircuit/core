@@ -60,7 +60,7 @@ interface Params {
   >
   pinCount?: number
   schPortArrangement?: PortArrangement
-  pinLabels?: Record<string, string>
+  pinLabels?: string[][]
 }
 
 type Side = "left" | "right" | "top" | "bottom"
@@ -151,7 +151,7 @@ export const getAllDimensionsForSchematicBox = (
     const pinNumber =
       params.schPortArrangement &&
       isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement?.leftSide?.pins[sideIndex]!
+        ? parseInt(params.pinLabels?.[truePinIndex]?.[0].replace("pin", ""))
         : truePinIndex + 1
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
@@ -186,7 +186,7 @@ export const getAllDimensionsForSchematicBox = (
     const pinNumber =
       params.schPortArrangement &&
       isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement.bottomSide?.pins[sideIndex]!
+        ? parseInt(params.pinLabels?.[truePinIndex]?.[0].replace("pin", ""))
         : truePinIndex + 1
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
@@ -221,7 +221,7 @@ export const getAllDimensionsForSchematicBox = (
     const pinNumber =
       params.schPortArrangement &&
       isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement.rightSide?.pins[sideIndex]!
+        ? parseInt(params.pinLabels?.[truePinIndex]?.[0].replace("pin", ""))
         : truePinIndex + 1
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
@@ -256,7 +256,7 @@ export const getAllDimensionsForSchematicBox = (
     const pinNumber =
       params.schPortArrangement &&
       isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement.topSide?.pins[sideIndex]!
+        ? parseInt(params.pinLabels?.[truePinIndex]?.[0].replace("pin", ""))
         : truePinIndex + 1
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]

@@ -45,7 +45,7 @@
     "@tscircuit/soup-util": "^0.0.33",
     "circuit-json": "^0.0.99",
     "circuit-json-to-connectivity-map": "^0.0.17",
-    "circuit-to-svg": "^0.0.67",
+    "circuit-to-svg": "^0.0.70",
     "format-si-unit": "^0.0.2",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
