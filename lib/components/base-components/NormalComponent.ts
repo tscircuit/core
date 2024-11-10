@@ -99,13 +99,14 @@ export class NormalComponent<
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement() as any
     if (schPortArrangement) {
-      let normalizationNeeded = true
+      let normalizationNeeded = false
       // pins are number
       for (const side in schPortArrangement) {
         const pins = schPortArrangement[side].pins
         if (Array.isArray(pins)) {
           for (const pinNumber of pins) {
             if (typeof pinNumber === "string") {
+              normalizationNeeded = true // String label needs normalization
               break
             }
             portsToCreate.push(
@@ -120,7 +121,6 @@ export class NormalComponent<
             )
           }
         }
-        normalizationNeeded = false // Not required because Integer pins
       }
       // pin label are string
       if (normalizationNeeded) {
