@@ -23,20 +23,12 @@ export class Inductor extends NormalComponent<
   }
 
   initPorts() {
-    this.add(
-      new Port({
-        name: "pin1",
-        pinNumber: 1,
-        aliases: ["anode", "pos", "left"],
-      }),
-    )
-    this.add(
-      new Port({
-        name: "pin2",
-        pinNumber: 2,
-        aliases: ["cathode", "neg", "right"],
-      }),
-    )
+    super.initPorts({
+      additionalAliases: {
+        pin1: ["anode", "pos", "left"],
+        pin2: ["cathode", "neg", "right"],
+      },
+    })
   }
 
   doInitialSourceRender() {
