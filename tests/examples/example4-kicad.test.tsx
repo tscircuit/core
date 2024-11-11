@@ -1,7 +1,7 @@
 import { expect, it } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it.skip("example 4: kicad theme demo", async () => {
+it("example 4: kicad theme demo", async () => {
   const { circuit, logSoup } = getTestFixture()
 
   circuit.add(

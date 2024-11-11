@@ -227,12 +227,11 @@ export class NormalComponent<
     const pinLabels: Record<string, string> = {}
 
     const pinLabelsFromPortArrangement: string[][] = []
-    let pinNumber = 1
     for (const side in schPortArrangement) {
       const pins = schPortArrangement[side].pins
       if (Array.isArray(pins)) {
         for (const pinLabel of pins) {
-          pinLabelsFromPortArrangement.push([`${pinNumber++}`, pinLabel])
+          pinLabelsFromPortArrangement.push([pinLabel])
         }
       }
     }

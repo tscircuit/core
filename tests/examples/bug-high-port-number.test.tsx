@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.skip("bug high port number", async () => {
+test("bug high port number", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

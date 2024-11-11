@@ -67,7 +67,7 @@ it("Chip with pin labels as strings and duplicates", async () => {
   expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
 })
 
-it.skip("Chip with pin labels as numbers, decimals and duplicates", async () => {
+it("Chip with pin labels as numbers, decimals and duplicates", async () => {
   const { circuit } = getTestFixture()
 
   try {
