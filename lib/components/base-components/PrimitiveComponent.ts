@@ -21,7 +21,7 @@ import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimension
 
 export interface BaseComponentConfig {
   componentName: string
-  schematicSymbolName?: BaseSymbolName | null
+  schematicSymbolName?: string | null
   zodProps: ZodType
   sourceFtype?: AnySourceComponent["ftype"] | null
   shouldRenderAsSchematicBox?: boolean
@@ -122,7 +122,7 @@ export abstract class PrimitiveComponent<
       newProps,
       changedProps: Object.keys(props),
     })
-    this.parent?.onChildChanged(this)
+    this.parent?.onChildChanged?.(this)
   }
 
   /**
@@ -275,12 +275,42 @@ export abstract class PrimitiveComponent<
     )
   }
 
+  _getSchematicSymbolName(): keyof typeof symbols | undefined {
+    const { _parsedProps: props } = this
+    const base_symbol_name = this.config
+      .schematicSymbolName as keyof typeof symbols
+
+    const symbol_name_horz = `${base_symbol_name}_horz` as keyof typeof symbols
+    const symbol_name_vert = `${base_symbol_name}_vert` as keyof typeof symbols
+
+    if (symbol_name_horz in symbols) {
+      if (props.schRotation === 0 || props.schRotation === undefined)
+        return symbol_name_horz
+      if (props.schRotation === 180) return symbol_name_vert
+    }
+    if (symbol_name_vert in symbols) {
+      if (props.schRotation === 90) return symbol_name_vert
+      if (props.schRotation === 270) return symbol_name_vert
+    }
+    if (base_symbol_name in symbols) return base_symbol_name
+
+    return undefined
+  }
+
+  _getSchematicSymbolNameOrThrow(): keyof typeof symbols {
+    const symbol_name = this._getSchematicSymbolName()
+    if (!symbol_name) {
+      throw new Error(
+        `No schematic symbol found (given: "${this.config.schematicSymbolName}")`,
+      )
+    }
+    return symbol_name
+  }
+
   getSchematicSymbol(): SchSymbol | null {
-    const { config } = this
-    if (!config.schematicSymbolName) return null
-    return (
-      symbols[`${config.schematicSymbolName}` as keyof typeof symbols] ?? null
-    )
+    const symbol_name = this._getSchematicSymbolName()
+    if (!symbol_name) return null
+    return symbols[symbol_name as keyof typeof symbols] ?? null
   }
 
   /**
@@ -348,7 +378,7 @@ export abstract class PrimitiveComponent<
   }) {}
 
   onChildChanged(child: PrimitiveComponent) {
-    this.parent?.onChildChanged(child)
+    this.parent?.onChildChanged?.(child)
   }
 
   add(component: PrimitiveComponent) {
@@ -455,7 +485,7 @@ export abstract class PrimitiveComponent<
     return results.filter((component) => component !== this)
   }
 
-  selectOne(
+  selectOne<T = PrimitiveComponent>(
     selector: string,
     options?: {
       type?: string
@@ -463,25 +493,28 @@ export abstract class PrimitiveComponent<
       pcbPrimitive?: boolean
       schematicPrimitive?: boolean
     },
-  ): PrimitiveComponent | null {
+  ): T | null {
     let type = options?.type?.toLowerCase()
     if (options?.port) type = "port"
     if (type) {
       return (
-        this.selectAll(selector).find(
+        (this.selectAll(selector).find(
           (c) => c.lowercaseComponentName === type,
-        ) ?? null
+        ) as T) ?? null
       )
     }
     if (options?.pcbPrimitive) {
-      return this.selectAll(selector).find((c) => c.isPcbPrimitive) ?? null
+      return (
+        (this.selectAll(selector).find((c) => c.isPcbPrimitive) as T) ?? null
+      )
     }
     if (options?.schematicPrimitive) {
       return (
-        this.selectAll(selector).find((c) => c.isSchematicPrimitive) ?? null
+        (this.selectAll(selector).find((c) => c.isSchematicPrimitive) as T) ??
+        null
       )
     }
-    return this.selectAll(selector)[0] ?? null
+    return (this.selectAll(selector)[0] as T) ?? null
   }
 
   getAvailablePcbLayers(): string[] {

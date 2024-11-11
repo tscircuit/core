@@ -56,7 +56,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (!matchedPcbElm) {
       throw new Error(
-        `Port ${this} has no matched pcb component, can't get global schematic position`,
+        `Port ${this} has no matched pcb component, can't get global pcb position`,
       )
     }
 
@@ -137,11 +137,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     return Array.from(
       new Set([
         ...(props.aliases ?? []),
-        props.name,
+        ...(props.name ? [props.name] : []),
         ...(typeof props.pinNumber === "number"
           ? [`pin${props.pinNumber}`, props.pinNumber.toString()]
           : []),
-        ...this.externallyAddedAliases,
+        ...(this.externallyAddedAliases ?? []),
       ]),
     ) as string[]
   }

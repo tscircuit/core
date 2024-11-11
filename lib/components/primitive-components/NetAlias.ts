@@ -12,24 +12,19 @@ export class NetAlias extends PrimitiveComponent<typeof netAliasProps> {
     }
   }
 
-  initPorts() {
-    this.add(
-      new Port({
-        name: "pin1",
-        pinNumber: 1,
-        aliases: ["anode", "pos", "left"],
-      }),
-    )
-  }
-
   doInitialSchematicComponentRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
+    const anchorPos = { x: props.schX ?? 0, y: props.schY ?? 0 }
+
     const netAlias = db.schematic_net_label.insert({
       text: props.net!,
       source_net_id: props.net!,
-      center: { x: props.schX ?? 0, y: props.schY ?? 0 },
+      anchor_position: anchorPos,
+
+      // TODO compute the center based on the text size
+      center: anchorPos,
       anchor_side: "bottom",
     })
 

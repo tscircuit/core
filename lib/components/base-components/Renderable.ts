@@ -11,6 +11,7 @@ export const orderedRenderPhases = [
   "PortDiscovery",
   "PortMatching",
   "SourceTraceRender",
+  "SourceAddConnectivityMapKey",
   "SchematicComponentRender",
   "SchematicPortRender",
   "SchematicLayout",

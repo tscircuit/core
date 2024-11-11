@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.155",
+  "version": "0.0.163",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -43,15 +43,15 @@
     "@tscircuit/props": "^0.0.86",
     "@tscircuit/schematic-autolayout": "^0.0.5",
     "@tscircuit/soup-util": "^0.0.33",
-    "circuit-json": "^0.0.97",
+    "circuit-json": "^0.0.99",
     "circuit-json-to-connectivity-map": "^0.0.17",
-    "circuit-to-svg": "^0.0.62",
+    "circuit-to-svg": "^0.0.71",
     "format-si-unit": "^0.0.2",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
     "react": "^18.3.1",
     "react-reconciler": "^0.29.2",
-    "schematic-symbols": "0.0.90",
+    "schematic-symbols": "^0.0.92",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.23.8"
   }
