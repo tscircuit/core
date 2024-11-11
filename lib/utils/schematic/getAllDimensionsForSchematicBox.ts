@@ -150,7 +150,8 @@ export const getAllDimensionsForSchematicBox = (
   for (let sideIndex = 0; sideIndex < sidePinCounts.leftSize; sideIndex++) {
     const pinNumber =
       params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement) && typeof params.schPortArrangement.leftSide?.pins[sideIndex] !== "string"
+      isExplicitPinMappingArrangement(params.schPortArrangement) &&
+      typeof params.schPortArrangement.leftSide?.pins[sideIndex] !== "string"
         ? params.schPortArrangement.leftSide?.pins[sideIndex]!
         : truePinIndex + 1
     const pinStyle =
@@ -185,7 +186,8 @@ export const getAllDimensionsForSchematicBox = (
   for (let sideIndex = 0; sideIndex < sidePinCounts.bottomSize; sideIndex++) {
     const pinNumber =
       params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement) && typeof params.schPortArrangement.bottomSide?.pins[sideIndex] !== "string"
+      isExplicitPinMappingArrangement(params.schPortArrangement) &&
+      typeof params.schPortArrangement.bottomSide?.pins[sideIndex] !== "string"
         ? params.schPortArrangement.bottomSide?.pins[sideIndex]!
         : truePinIndex + 1
     const pinStyle =
@@ -220,7 +222,8 @@ export const getAllDimensionsForSchematicBox = (
   for (let sideIndex = 0; sideIndex < sidePinCounts.rightSize; sideIndex++) {
     const pinNumber =
       params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement) && typeof params.schPortArrangement.rightSide?.pins[sideIndex] !== "string"
+      isExplicitPinMappingArrangement(params.schPortArrangement) &&
+      typeof params.schPortArrangement.rightSide?.pins[sideIndex] !== "string"
         ? params.schPortArrangement.rightSide?.pins[sideIndex]!
         : truePinIndex + 1
     const pinStyle =
@@ -255,7 +258,8 @@ export const getAllDimensionsForSchematicBox = (
   for (let sideIndex = 0; sideIndex < sidePinCounts.topSize; sideIndex++) {
     const pinNumber =
       params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement) && typeof params.schPortArrangement.topSide?.pins[sideIndex] !== "string"
+      isExplicitPinMappingArrangement(params.schPortArrangement) &&
+      typeof params.schPortArrangement.topSide?.pins[sideIndex] !== "string"
         ? params.schPortArrangement.topSide?.pins[sideIndex]!
         : truePinIndex + 1
     const pinStyle =
