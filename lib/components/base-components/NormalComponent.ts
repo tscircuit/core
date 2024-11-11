@@ -689,7 +689,8 @@ export class NormalComponent<
       pinCount,
 
       schPortArrangement: this._getSchematicPortArrangement()!,
-      pinLabels: props.pinLabels ?? this._getNormalizedPinLabelsFromSchPortArrangement(),
+      pinLabels:
+        props.pinLabels ?? this._getNormalizedPinLabelsFromSchPortArrangement(),
     })
 
     return dimensions
