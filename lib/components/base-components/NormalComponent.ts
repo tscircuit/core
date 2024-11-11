@@ -744,4 +744,32 @@ export class NormalComponent<
           : undefined,
     })
   }
+
+  doInitialPartsEngineRender(): void {
+    const { partsEngine } = this.getSubcircuit()._parsedProps
+    if (!partsEngine) return
+    const { db } = this.root!
+
+    const source_component = db.source_component.get(this.source_component_id!)
+    if (!source_component) return
+    if (source_component.supplier_part_numbers) return
+
+    const supplierPartNumbersMaybePromise =
+      partsEngine.findPart(source_component)
+
+    // Check if it's not a promise
+    if (!(supplierPartNumbersMaybePromise instanceof Promise)) {
+      db.source_component.update(this.source_component_id!, {
+        supplier_part_numbers: supplierPartNumbersMaybePromise,
+      })
+      return
+    }
+
+    this._queueAsyncEffect(async () => {
+      const supplierPartNumbers = await supplierPartNumbersMaybePromise
+      db.source_component.update(this.source_component_id!, {
+        supplier_part_numbers: supplierPartNumbers,
+      })
+    })
+  }
 }
