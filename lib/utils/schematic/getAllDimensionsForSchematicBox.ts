@@ -278,7 +278,7 @@ export const getAllDimensionsForSchematicBox = (
     )
   }
 
-  const labelWidth = params.pinLabels
+  const labelWidth = params.pinLabels && Object.keys(params.pinLabels).length > 0
     ? Math.max(
         ...Object.values(params.pinLabels).map(
           (label) => label.length * 0.1, // Estimated text width
