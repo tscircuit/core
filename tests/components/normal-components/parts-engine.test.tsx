@@ -7,21 +7,22 @@ test("parts engine modifies source component", async () => {
   const mockPartsEngine = {
     findPart: async () => ({
       digikey: ["123-456"],
-      mouser: ["789-012"]
-    })
+      mouser: ["789-012"],
+    }),
   }
 
   circuit.add(
     <board partsEngine={mockPartsEngine} width="20mm" height="20mm">
       <resistor name="R1" resistance="10k" footprint="0402" />
-    </board>
+    </board>,
   )
 
   await circuit.renderUntilSettled()
 
   const sourceComponent = circuit.db.source_component.list()[0]
+  console.log("sourceComponent", sourceComponent)
   expect(sourceComponent.supplier_part_numbers).toEqual({
     digikey: ["123-456"],
-    mouser: ["789-012"]
+    mouser: ["789-012"],
   })
 })
