@@ -66,13 +66,6 @@ export type PortMap<T extends string> = {
  * }
  */
 
-class MissingFootprintError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = "MissingFootprintError"
-  }
-}
-
 export class NormalComponent<
   ZodProps extends ZodType = any,
   PortNames extends string = never,
@@ -236,9 +229,14 @@ export class NormalComponent<
 
   _addChildrenFromStringFootprint() {
     let { footprint } = this.props
+    let { db } = this.root!
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) {
-      throw new MissingFootprintError("Footprint is missing")
+      db.pcb_missing_footprint_error.insert({
+        message: `No footprint found for component ${this.componentName} with name ${this.props.name}`,
+        source_component_id: `${this.source_component_id}`,
+        error_type: "pcb_missing_footprint_error",
+      })
     }
     if (typeof footprint === "string") {
       const fpSoup = fp.string(footprint).soup()
@@ -259,7 +257,11 @@ export class NormalComponent<
           )
           if (!port) {
             throw new Error(
-              `There was an issue finding the port "${prop.toString()}" inside of a ${this.componentName} component with name: "${this.props.name}". This is a bug in @tscircuit/core`,
+              `There was an issue finding the port "${prop.toString()}" inside of a ${
+                this.componentName
+              } component with name: "${
+                this.props.name
+              }". This is a bug in @tscircuit/core`,
             )
           }
           return port as Port
