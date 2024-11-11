@@ -259,6 +259,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (containerDims && props.pinNumber !== undefined) {
       localPortInfo = containerDims.getPortPositionByPinNumber(props.pinNumber)
     }
+    const { width: containerWidth, height: containerHeight } =
+      containerDims?.getSize() ?? { width: 0, height: 0 }
 
     // For each obstacle, create a schematic_debug_object
     if (this.getSubcircuit().props._schDebugObjectsEnabled) {
@@ -273,8 +275,22 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       } as any) // TODO issue with discriminated union
     }
 
+    const nearestPointInContainer = {
+      x: Math.min(
+        Math.max(portCenter.x, containerCenter.x - containerWidth / 2),
+        containerCenter.x + containerWidth / 2,
+      ),
+      y: Math.min(
+        Math.max(portCenter.y, containerCenter.y - containerHeight / 2),
+        containerCenter.y + containerHeight / 2,
+      ),
+    }
+
     if (!localPortInfo?.side)
-      this.facingDirection = getRelativeDirection(containerCenter, portCenter)
+      this.facingDirection = getRelativeDirection(
+        nearestPointInContainer,
+        portCenter,
+      )
     else
       this.facingDirection = {
         left: "left",
