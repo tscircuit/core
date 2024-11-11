@@ -363,7 +363,6 @@ export const getAllDimensionsForSchematicBox = (
     getPortPositionByPinNumber(
       pinNumber: number,
     ): SchematicBoxPortPositionWithMetadata | null {
-      console.log(truePortsWithPositions)
       const port = truePortsWithPositions.find(
         (p) => p.pinNumber.toString() === pinNumber.toString(),
       )
