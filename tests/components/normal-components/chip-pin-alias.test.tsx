@@ -3,7 +3,7 @@ import { InvalidProps } from "lib/errors/InvalidProps"
 import "lib/register-catalogue"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it.skip("Chip with pin labels as strings and duplicates", async () => {
+it("Chip with pin labels as strings and duplicates", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

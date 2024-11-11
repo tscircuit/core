@@ -35,6 +35,7 @@ import { ZodType, z } from "zod"
 import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
+import { normalizePinLabels } from "lib/utils/schematic/normalizePinLabels"
 
 const debug = Debug("tscircuit:core")
 
@@ -105,23 +106,22 @@ export class NormalComponent<
     // Handle schPortArrangement
     const schPortArrangement = this._parsedProps.schPortArrangement as any
     if (schPortArrangement) {
-      for (const side in schPortArrangement) {
-        const pins = schPortArrangement[side].pins
-        if (Array.isArray(pins)) {
-          for (const pinNumber of pins) {
-            portsToCreate.push(
-              new Port(
-                {
-                  pinNumber,
-                  aliases: opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
-                },
-                {
-                  originDescription: `schPortArrangement:${side}`,
-                },
-              ),
-            )
-          }
-        }
+      const normalizedPinLabels =
+        this._getNormalizedPinLabelsFromSchPortArrangement()
+      for (const [pinLabel, pinName] of Object.entries(normalizedPinLabels)) {
+        const pinNumber = parseInt(pinLabel.replace("pin", ""))
+        portsToCreate.push(
+          new Port(
+            {
+              pinNumber,
+              name: pinName.toString(),
+              aliases: [pinLabel, pinName],
+            },
+            {
+              originDescription: `schPortArrangement:pin${pinNumber}`,
+            },
+          ),
+        )
       }
       // Takes care of the case where the user only specifies the size of the
       // sides, and not the pins
@@ -220,6 +220,35 @@ export class NormalComponent<
     if (portsToCreate.length > 0) {
       this.addAll(portsToCreate)
     }
+  }
+
+  _getNormalizedPinLabelsFromSchPortArrangement(): Record<string, string> {
+    const schPortArrangement = this._getSchematicPortArrangement() as any
+    const pinLabels: Record<string, string> = {}
+
+    const pinLabelsFromPortArrangement: string[][] = []
+    let pinNumber = 1
+    for (const side in schPortArrangement) {
+      const pins = schPortArrangement[side].pins
+      if (Array.isArray(pins)) {
+        for (const pinLabel of pins) {
+          pinLabelsFromPortArrangement.push([`${pinNumber++}`, pinLabel])
+        }
+      }
+    }
+    const normalizedPinLabels = normalizePinLabels(pinLabelsFromPortArrangement)
+
+    for (const [key, value] of normalizedPinLabels) {
+      if (key !== undefined) {
+        if (value !== undefined) {
+          pinLabels[key] = value
+        } else {
+          pinLabels[key] = "" // If the label is unique, it is not normalized
+        }
+      }
+    }
+
+    return pinLabels
   }
 
   _getImpliedFootprintString(): string | null {
@@ -660,7 +689,7 @@ export class NormalComponent<
       pinCount,
 
       schPortArrangement: this._getSchematicPortArrangement()!,
-      pinLabels: props.pinLabels,
+      pinLabels: props.pinLabels ?? this._getNormalizedPinLabelsFromSchPortArrangement(),
     })
 
     return dimensions
