@@ -228,16 +228,19 @@ export class NormalComponent<
   }
 
   _addChildrenFromStringFootprint() {
+    const { db } = this.root!
     let { footprint } = this.props
-    let { db } = this.root!
     footprint ??= this._getImpliedFootprintString?.()
-    if (!footprint) {
-      db.pcb_missing_footprint_error.insert({
-        message: `No footprint found for component ${this.componentName} with name ${this.props.name}`,
-        source_component_id: `${this.source_component_id}`,
-        error_type: "pcb_missing_footprint_error",
-      })
-    }
+    if (!footprint) return
+
+    const { _parsedProps: props } = this
+    const source_component = db.pcb_missing_footprint_error.insert({
+      message: `No footprint found for component ${props.componentName} with name ${props.props.name}`,
+      source_component_id: `${props.source_component_id}`,
+      error_type: "pcb_missing_footprint_error",
+    })
+    this.source_component_id = source_component.source_component_id
+
     if (typeof footprint === "string") {
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromSoup(fpSoup as any) // Remove as any when footprinter gets updated
