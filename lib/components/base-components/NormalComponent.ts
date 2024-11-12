@@ -749,7 +749,6 @@ export class NormalComponent<
   }
 
   doInitialPartsEngineRender(): void {
-    console.log("doInitialPartsEngineRender", this)
     const { partsEngine } = this.getSubcircuit()._parsedProps
     if (!partsEngine) return
     const { db } = this.root!
@@ -784,7 +783,6 @@ export class NormalComponent<
 
   updatePartsEngineRender(): void {
     const { db } = this.root!
-    console.log("updatePartsEngineRender", this)
 
     const source_component = db.source_component.get(this.source_component_id!)
     if (!source_component) return

@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("schematic junction rendering with multiple connections", () => {
+test("schematic crossing rendering with reproduced bad crossing (upward)", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -30,21 +30,6 @@ test("schematic junction rendering with multiple connections", () => {
   )
 
   circuit.render()
-
-  // // Get all schematic traces
-  // const traces = circuit.db.schematic_trace.list()
-
-  // // Get all junctions from traces
-  // const junctions = traces.flatMap((trace) => trace.junctions || [])
-
-  // // There should be junctions where traces intersect
-  // expect(junctions.length).toBeGreaterThan(0)
-
-  // // Each junction should have x,y coordinates
-  // for (const junction of junctions) {
-  //   expect(junction).toHaveProperty("x")
-  //   expect(junction).toHaveProperty("y")
-  // }
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
