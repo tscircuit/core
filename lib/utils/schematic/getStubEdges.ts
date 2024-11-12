@@ -1,4 +1,4 @@
-import type { Point } from "@tscircuit/math-utils"
+import { distance, type Point } from "@tscircuit/math-utils"
 
 type Edge = {
   from: Point
@@ -6,14 +6,42 @@ type Edge = {
 }
 
 export const getStubEdges = ({
+  firstEdge,
+  firstEdgePort,
+  firstDominantDirection,
   lastEdge,
   lastEdgePort,
   lastDominantDirection,
-}: {
-  lastEdge: Edge
-  lastEdgePort: { position: Point }
-  lastDominantDirection: "left" | "right" | "up" | "down"
-}) => {
+}:
+  | {
+      firstEdge?: undefined
+      firstEdgePort?: undefined
+      firstDominantDirection?: undefined
+      lastEdge: Edge
+      lastEdgePort: { position: Point }
+      lastDominantDirection: "left" | "right" | "up" | "down"
+    }
+  | {
+      lastEdge?: undefined
+      lastEdgePort?: undefined
+      lastDominantDirection?: undefined
+      firstEdge: Edge
+      firstEdgePort: { position: Point }
+      firstDominantDirection: "left" | "right" | "up" | "down"
+    }) => {
+  if (firstEdge && firstEdgePort) {
+    return getStubEdges({
+      lastEdge: firstEdge,
+      lastEdgePort: firstEdgePort,
+      lastDominantDirection: firstDominantDirection,
+    })
+      .reverse()
+      .map((e: any) => ({
+        from: e.to,
+        to: e.from,
+      }))
+  }
+
   const edges: Edge[] = []
   if (lastEdge && lastEdgePort) {
     const intermediatePoint = { x: lastEdge.to.x, y: lastEdge.to.y }
@@ -49,5 +77,10 @@ export const getStubEdges = ({
       })
     }
   }
+
+  if (edges.length === 2 && distance(edges[1].from, edges[1].to) < 0.01) {
+    edges.pop()
+  }
+
   return edges
 }
