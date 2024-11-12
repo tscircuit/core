@@ -28,10 +28,14 @@ export const getStubEdges = ({
       firstEdge: Edge
       firstEdgePort: { position: Point }
       firstDominantDirection: "left" | "right" | "up" | "down"
-    }) => {
+    }): Edge[] => {
   if (firstEdge && firstEdgePort) {
+    // HACK: empirically verified hack to avoid doing the math for first edges
     return getStubEdges({
-      lastEdge: firstEdge,
+      lastEdge: {
+        from: firstEdge.to,
+        to: firstEdge.from,
+      },
       lastEdgePort: firstEdgePort,
       lastDominantDirection: firstDominantDirection,
     })
@@ -42,7 +46,7 @@ export const getStubEdges = ({
       }))
   }
 
-  const edges: Edge[] = []
+  let edges: Edge[] = []
   if (lastEdge && lastEdgePort) {
     const intermediatePoint = { x: lastEdge.to.x, y: lastEdge.to.y }
 
@@ -78,9 +82,7 @@ export const getStubEdges = ({
     }
   }
 
-  if (edges.length === 2 && distance(edges[1].from, edges[1].to) < 0.01) {
-    edges.pop()
-  }
+  edges = edges.filter((e) => distance(e.from, e.to) > 0.01)
 
   return edges
 }
