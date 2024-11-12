@@ -758,8 +758,15 @@ export class NormalComponent<
     if (!source_component) return
     if (source_component.supplier_part_numbers) return
 
-    const supplierPartNumbersMaybePromise =
-      partsEngine.findPart(source_component)
+    let footprinterString: string | undefined
+    if (this.props.footprint && typeof this.props.footprint === "string") {
+      footprinterString = this.props.footprint
+    }
+
+    const supplierPartNumbersMaybePromise = partsEngine.findPart({
+      sourceComponent: source_component,
+      footprinterString,
+    })
 
     // Check if it's not a promise
     if (!(supplierPartNumbersMaybePromise instanceof Promise)) {
