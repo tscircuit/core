@@ -38,7 +38,7 @@ export const pushEdgesOfSchematicTraceToPreventOverlap = ({
             [mySegment.from, mySegment.to],
             [otherEdge.from, otherEdge.to],
             {
-              lineThickness: 0.01,
+              lineThickness: 0.05,
             },
           ),
       )
