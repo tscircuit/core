@@ -28,17 +28,17 @@ test("complex chip schematic with multiple connections", () => {
           pin13: "OUT5",
           pin14: "OUT6",
           pin15: "OUT7",
-          pin16: "OUT8"
+          pin16: "OUT8",
         }}
         schPortArrangement={{
           leftSide: {
             pins: [1, 2, 3, 4, 5, 6, 7, 8],
-            direction: "top-to-bottom"
+            direction: "top-to-bottom",
           },
           rightSide: {
             pins: [16, 15, 14, 13, 12, 11, 10, 9],
-            direction: "top-to-bottom"
-          }
+            direction: "top-to-bottom",
+          },
         }}
       />
 
@@ -77,7 +77,7 @@ test("complex chip schematic with multiple connections", () => {
       <trace from=".R1 > .pin1" to=".R12 > .pin2" />
       <trace from=".R3 > .pin1" to=".R10 > .pin2" />
       <trace from=".R5 > .pin1" to=".R8 > .pin2" />
-    </board>
+    </board>,
   )
 
   circuit.render()
