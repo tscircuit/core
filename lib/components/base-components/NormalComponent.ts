@@ -397,10 +397,11 @@ export class NormalComponent<
     })
     if (this._footprintError) {
       const source_component = db.pcb_missing_footprint_error.insert(
-        props._footprintError
-      );
-      this.source_component_id = source_component.source_component_id;
-    }    this.pcb_component_id = pcb_component.pcb_component_id
+        props._footprintError,
+      )
+      this.source_component_id = source_component.source_component_id
+    }
+    this.pcb_component_id = pcb_component.pcb_component_id
   }
 
   /**
