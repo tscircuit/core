@@ -6,8 +6,8 @@ export const getEnteringEdgeFromDirection = (
   return (
     (
       {
-        up: "bottom",
-        down: "top",
+        up: "top",
+        down: "bottom",
         left: "right",
         right: "left",
       } as const

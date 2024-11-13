@@ -1,6 +1,7 @@
 import { netAliasProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Port } from "./Port"
+import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 
 export class NetAlias extends PrimitiveComponent<typeof netAliasProps> {
   source_net_alias_id?: string
@@ -25,7 +26,7 @@ export class NetAlias extends PrimitiveComponent<typeof netAliasProps> {
 
       // TODO compute the center based on the text size
       center: anchorPos,
-      anchor_side: "bottom",
+      anchor_side: getEnteringEdgeFromDirection(props.anchorSide ?? "down"),
     })
 
     this.source_net_alias_id = netAlias.source_net_id

@@ -85,8 +85,8 @@ test("bug high port number", async () => {
         schX={4.5}
         schY={2}
       />
-      <netalias net="5V" schX={3} schY={-2} />
-      <netalias net="5V" schX={4.5} schY={-2} />
+      <netalias net="5V" schX={3} schY={-1.5} anchorSide="up" />
+      <netalias net="5V" schX={4.5} schY={-1.5} anchorSide="up" />
       {/* <trace path={[".5V", ".R2 > port.left"]} />
       <trace path={[".5V", ".R1 > port.left"]} /> */}
       <trace path={[".R1 > port.right", ".LED1 > port.left"]} />
@@ -127,7 +127,8 @@ test("bug high port number", async () => {
 
   //   // Check if traces are created
   //   expect(circuit.selectAll("trace").length).toBe(5)
-
+  const netAlias = circuit.db.schematic_net_label.list()
+  console.log(netAlias.filter((n) => n.text === "5V"))
   // Generate and check PCB snapshot
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
