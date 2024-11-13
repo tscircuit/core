@@ -42,9 +42,12 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
   }
 
   _getSchematicPortArrangement(): SchematicPortArrangement | null {
+    const pinCount = this._parsedProps.pinCount ?? 1
+    const facingDirection = this._parsedProps.facingDirection ?? "right"
+
     return {
-      leftSize: 0,
-      rightSize: this._parsedProps.pinCount ?? 1,
+      leftSize: facingDirection === "left" ? pinCount : 0,
+      rightSize: facingDirection === "right" ? pinCount : 0,
     }
   }
 
