@@ -8,7 +8,7 @@ export function getRelativeDirection(
   const dx = pointB.x - pointA.x
   const dy = pointB.y - pointA.y
   if (Math.abs(dx) > Math.abs(dy)) {
-    return dx > 0 ? "right" : "left"
+    return dx >= 0 ? "right" : "left"
   }
-  return dy > 0 ? "down" : "up"
+  return dy >= 0 ? "up" : "down"
 }
