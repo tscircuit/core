@@ -127,8 +127,6 @@ test("bug high port number", async () => {
 
   //   // Check if traces are created
   //   expect(circuit.selectAll("trace").length).toBe(5)
-  const netAlias = circuit.db.schematic_net_label.list()
-  console.log(netAlias.filter((n) => n.text === "5V"))
   // Generate and check PCB snapshot
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
