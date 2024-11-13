@@ -346,7 +346,8 @@ export const getAllDimensionsForSchematicBox = (
       )
     : 0
 
-  const LABEL_PADDING = 1.1
+  // When label is present, only then add some padding to the width
+  const LABEL_PADDING = labelWidth > 0 ? 1.1 : 0
   schWidth = Math.max(schWidth, labelWidth + LABEL_PADDING)
 
   let schHeight = params.schHeight
