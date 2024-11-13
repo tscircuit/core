@@ -6,7 +6,13 @@ test("<inductor /> component", async () => {
 
   circuit.add(
     <board width="12mm" height="10mm">
-      <inductor name="U1" inductance="10" footprint="axial_p0.3in" pcbX={0} pcbY={0} />
+      <inductor
+        name="U1"
+        inductance="10"
+        footprint="axial_p0.3in"
+        pcbX={0}
+        pcbY={0}
+      />
     </board>,
   )
 

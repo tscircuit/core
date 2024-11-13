@@ -3,7 +3,8 @@ import type { SourceSimpleResistorInput } from "@tscircuit/soup"
 import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { Trace } from "../primitive-components/Trace"
+import { Trace } from "../primitive-components/Trace/Trace"
+import { formatSiUnit } from "format-si-unit"
 
 export class Resistor extends NormalComponent<
   typeof resistorProps,
@@ -12,28 +13,23 @@ export class Resistor extends NormalComponent<
   get config() {
     return {
       componentName: "Resistor",
-      schematicSymbolName: (this.props.symbolName ??
-        ("boxresistor_horz" as BaseSymbolName)) as BaseSymbolName,
+      schematicSymbolName: this.props.symbolName ?? "boxresistor",
       zodProps: resistorProps,
       sourceFtype: "simple_resistor" as Ftype,
     }
   }
 
   initPorts() {
-    this.add(
-      new Port({
-        name: "pin1",
-        pinNumber: 1,
-        aliases: ["anode", "pos", "left"],
-      }),
-    )
-    this.add(
-      new Port({
-        name: "pin2",
-        pinNumber: 2,
-        aliases: ["cathode", "neg", "right"],
-      }),
-    )
+    super.initPorts({
+      additionalAliases: {
+        pin1: ["anode", "pos", "left"],
+        pin2: ["cathode", "neg", "right"],
+      },
+    })
+  }
+
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    return `${formatSiUnit(this._parsedProps.resistance)}Ω`
   }
 
   doInitialCreateNetsFromProps() {

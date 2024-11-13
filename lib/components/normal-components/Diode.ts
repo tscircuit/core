@@ -14,8 +14,7 @@ export class Diode extends NormalComponent<
   // @ts-ignore
   get config() {
     return {
-      schematicSymbolName:
-        this.props.symbolName ?? ("diode_horz" as BaseSymbolName),
+      schematicSymbolName: this.props.symbolName ?? ("diode" as BaseSymbolName),
       componentName: "Diode",
       zodProps: diodeProps,
       sourceFtype: "simple_diode" as Ftype,
@@ -23,12 +22,12 @@ export class Diode extends NormalComponent<
   }
 
   initPorts() {
-    this.add(
-      new Port({ name: "pin1", pinNumber: 1, aliases: ["anode", "pos", "left"] }),
-    )
-    this.add(
-      new Port({ name: "pin2", pinNumber: 2, aliases: ["cathode", "neg", "right"] }),
-    )
+    super.initPorts({
+      additionalAliases: {
+        pin1: ["anode", "pos", "left"],
+        pin2: ["cathode", "neg", "right"],
+      },
+    })
   }
 
   pos = this.portMap.pin1

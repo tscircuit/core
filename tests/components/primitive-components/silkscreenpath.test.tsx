@@ -10,12 +10,12 @@ test("SilkscreenPath rendering", () => {
         route={[
           { x: "0mm", y: "0mm" },
           { x: "5mm", y: "5mm" },
-          { x: "10mm", y: "0mm" }
+          { x: "10mm", y: "0mm" },
         ]}
         strokeWidth="0.2mm"
         layer="top"
       />
-    </board>
+    </board>,
   )
 
   project.render()
@@ -25,11 +25,11 @@ test("SilkscreenPath rendering", () => {
   expect(silkscreenPaths.length).toBe(1)
   expect(silkscreenPaths[0].layer).toBe("top")
   expect(silkscreenPaths[0].stroke_width).toBe(0.2)
-  
+
   expect(silkscreenPaths[0].route).toEqual([
     { x: 0, y: 0 },
     { x: 5, y: 5 },
-    { x: 10, y: 0 }
+    { x: 10, y: 0 },
   ])
 
   expect(silkscreenPaths[0].pcb_silkscreen_path_id).toBeTruthy()

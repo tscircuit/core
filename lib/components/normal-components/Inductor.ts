@@ -1,6 +1,10 @@
 import { inductorProps } from "@tscircuit/props"
 import type { SourceSimpleInductor } from "circuit-json"
-import { FTYPE, type BaseSymbolName,type PassivePorts } from "lib/utils/constants"
+import {
+  FTYPE,
+  type BaseSymbolName,
+  type PassivePorts,
+} from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
 
@@ -19,20 +23,12 @@ export class Inductor extends NormalComponent<
   }
 
   initPorts() {
-    this.add(
-      new Port({
-        name: "pin1",
-        pinNumber: 1,
-        aliases: ["anode", "pos", "left"],
-      }),
-    )
-    this.add(
-      new Port({
-        name: "pin2",
-        pinNumber: 2,
-        aliases: ["cathode", "neg", "right"],
-      }),
-    )
+    super.initPorts({
+      additionalAliases: {
+        pin1: ["anode", "pos", "left"],
+        pin2: ["cathode", "neg", "right"],
+      },
+    })
   }
 
   doInitialSourceRender() {

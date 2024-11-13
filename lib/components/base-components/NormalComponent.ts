@@ -5,6 +5,7 @@ import type {
   CadModelProp,
   CadModelStl,
   SchematicPortArrangement,
+  SupplierPartNumbers,
 } from "@tscircuit/props"
 import { point3, rotation } from "circuit-json"
 import Debug from "debug"
@@ -12,10 +13,19 @@ import {
   type ReactSubtree,
   createInstanceFromReactElement,
 } from "lib/fiber/create-instance-from-react-element"
+import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getPortFromHints } from "lib/utils/getPortFromHints"
+import {
+  getPinNumberFromLabels,
+  getPortFromHints,
+} from "lib/utils/getPortFromHints"
+import {
+  type SchematicBoxDimensions,
+  getAllDimensionsForSchematicBox,
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import {
   type ReactElement,
   isValidElement as isReactElement,
@@ -26,12 +36,6 @@ import { ZodType, z } from "zod"
 import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
-import {
-  getAllDimensionsForSchematicBox,
-  type SchematicBoxDimensions,
-} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 
 const debug = Debug("tscircuit:core")
 
@@ -71,6 +75,8 @@ export class NormalComponent<
 
   isPrimitiveContainer = true
 
+  _asyncSupplierPartNumbers?: SupplierPartNumbers
+
   constructor(props: z.input<ZodProps>) {
     super(props)
     this._addChildrenFromStringFootprint()
@@ -91,7 +97,11 @@ export class NormalComponent<
    * 2. `props.footprint`
    *
    */
-  initPorts() {
+  initPorts(
+    opts: {
+      additionalAliases?: Record<`pin${number}`, string[]>
+    } = {},
+  ) {
     const { config } = this
     const portsToCreate: Port[] = []
 
@@ -106,6 +116,7 @@ export class NormalComponent<
               new Port(
                 {
                   pinNumber,
+                  aliases: opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
                 },
                 {
                   originDescription: `schPortArrangement:${side}`,
@@ -126,6 +137,7 @@ export class NormalComponent<
             new Port(
               {
                 pinNumber: pinNum++,
+                aliases: opts.additionalAliases?.[`pin${pinNum}`] ?? [],
               },
               {
                 originDescription: `schPortArrangement:${side}`,
@@ -152,7 +164,11 @@ export class NormalComponent<
             {
               pinNumber: parseInt(pinNumber),
               name: primaryLabel,
-              aliases: otherLabels,
+              aliases: [
+                ...otherLabels,
+                ...(opts.additionalAliases?.[`pin${parseInt(pinNumber)}`] ??
+                  []),
+              ],
             },
             {
               originDescription: `pinLabels:pin${pinNumber}`,
@@ -167,13 +183,17 @@ export class NormalComponent<
     }
 
     if (config.schematicSymbolName) {
-      const sym = symbols[
-        `${config.schematicSymbolName}_horz` as keyof typeof symbols
-      ] as SchSymbol | undefined
+      const sym = symbols[this._getSchematicSymbolNameOrThrow()]
       if (!sym) return
 
       for (const symPort of sym.ports) {
-        const port = getPortFromHints(symPort.labels)
+        const pinNumber = getPinNumberFromLabels(symPort.labels)
+        if (!pinNumber) continue
+        const port = getPortFromHints(
+          symPort.labels.concat(
+            opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
+          ),
+        )
 
         if (port) {
           port.originDescription = `schematicSymbol:labels[0]:${symPort.labels[0]}`
@@ -186,12 +206,16 @@ export class NormalComponent<
       return
     }
 
-    const portsFromFootprint = this.getPortsFromFootprint()
-    for (const port of portsFromFootprint) {
-      if (
-        !portsToCreate.some((p) => p.isMatchingAnyOf(port.getNameAndAliases()))
-      ) {
-        portsToCreate.push(port)
+    if (!this._parsedProps.schPortArrangement) {
+      const portsFromFootprint = this.getPortsFromFootprint()
+      for (const port of portsFromFootprint) {
+        if (
+          !portsToCreate.some((p) =>
+            p.isMatchingAnyOf(port.getNameAndAliases()),
+          )
+        ) {
+          portsToCreate.push(port)
+        }
       }
     }
 
@@ -280,37 +304,28 @@ export class NormalComponent<
     // or other NormalComponent that doesn't have a schematic representation
   }
 
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    return undefined
+  }
+
   _doInitialSchematicComponentRenderWithSymbol() {
     const { db } = this.root!
+    const { _parsedProps: props } = this
 
-    // TODO switch between horizontal and vertical based on schRotation
-    const base_symbol_name = this.config.schematicSymbolName
-    const symbol_name_horz = `${base_symbol_name}_horz`
-
-    let symbol_name: keyof typeof symbols
-    if (!base_symbol_name) {
-      throw new Error(
-        "No schematic symbol defined (schematicSymbolName not provided)",
-      )
-    }
-    if (base_symbol_name in symbols) {
-      symbol_name = base_symbol_name as keyof typeof symbols
-    } else if (symbol_name_horz in symbols) {
-      symbol_name = symbol_name_horz as keyof typeof symbols
-    } else {
-      throw new Error(`Could not find schematic-symbol: "${base_symbol_name}"`)
-    }
+    const symbol_name = this._getSchematicSymbolNameOrThrow()
 
     const symbol: SchSymbol | undefined = symbols[symbol_name]
 
     if (symbol) {
       const schematic_component = db.schematic_component.insert({
-        center: { x: this.props.schX ?? 0, y: this.props.schY ?? 0 },
-        rotation: this.props.schRotation ?? 0,
+        center: { x: props.schX ?? 0, y: props.schY ?? 0 },
+        rotation: props.schRotation ?? 0,
         size: symbol.size,
         source_component_id: this.source_component_id!,
 
         symbol_name,
+
+        symbol_display_value: this._getSchematicSymbolDisplayValue(),
       })
       this.schematic_component_id = schematic_component.schematic_component_id
     }
@@ -546,10 +561,16 @@ export class NormalComponent<
    *
    */
   doInitialPortDiscovery(): void {
-    const newPorts = [
-      ...this.getPortsFromFootprint(),
-      ...this.getPortsFromSchematicSymbol(),
-    ]
+    const { _parsedProps: props } = this
+
+    // Only get ports from footprint and schematic if no schPortArrangement
+    let newPorts: Port[] = []
+    if (!props.schPortArrangement) {
+      newPorts = [
+        ...this.getPortsFromFootprint(),
+        ...this.getPortsFromSchematicSymbol(),
+      ]
+    }
 
     const existingPorts = this.children.filter(
       (c) => c.componentName === "Port",
@@ -599,14 +620,19 @@ export class NormalComponent<
 
   _getPinCount(): number {
     const schPortArrangement = this._getSchematicPortArrangement()
-    const pinCountFromSchArrangement =
-      (schPortArrangement?.leftSize ?? 0) +
-      (schPortArrangement?.rightSize ?? 0) +
-      (schPortArrangement?.topSize ?? 0) +
-      (schPortArrangement?.bottomSize ?? 0)
-    const pinCount =
-      pinCountFromSchArrangement || this.getPortsFromFootprint().length
-    return pinCount
+
+    // If schPortArrangement exists, use only that for pin count
+    if (schPortArrangement) {
+      return (
+        (schPortArrangement.leftSize ?? 0) +
+        (schPortArrangement.rightSize ?? 0) +
+        (schPortArrangement.topSize ?? 0) +
+        (schPortArrangement.bottomSize ?? 0)
+      )
+    }
+
+    // If no schPortArrangement, fall back to footprint ports
+    return this.getPortsFromFootprint().length
   }
 
   /**
@@ -637,6 +663,7 @@ export class NormalComponent<
       pinCount,
 
       schPortArrangement: this._getSchematicPortArrangement()!,
+      pinLabels: props.pinLabels,
     })
 
     return dimensions
@@ -719,5 +746,53 @@ export class NormalComponent<
           ? this.props.footprint
           : undefined,
     })
+  }
+
+  doInitialPartsEngineRender(): void {
+    const { partsEngine } = this.getSubcircuit()._parsedProps
+    if (!partsEngine) return
+    const { db } = this.root!
+
+    const source_component = db.source_component.get(this.source_component_id!)
+    if (!source_component) return
+    if (source_component.supplier_part_numbers) return
+
+    let footprinterString: string | undefined
+    if (this.props.footprint && typeof this.props.footprint === "string") {
+      footprinterString = this.props.footprint
+    }
+
+    const supplierPartNumbersMaybePromise = partsEngine.findPart({
+      sourceComponent: source_component,
+      footprinterString,
+    })
+
+    // Check if it's not a promise
+    if (!(supplierPartNumbersMaybePromise instanceof Promise)) {
+      db.source_component.update(this.source_component_id!, {
+        supplier_part_numbers: supplierPartNumbersMaybePromise,
+      })
+      return
+    }
+
+    this._queueAsyncEffect(async () => {
+      this._asyncSupplierPartNumbers = await supplierPartNumbersMaybePromise
+      this._markDirty("PartsEngineRender")
+    })
+  }
+
+  updatePartsEngineRender(): void {
+    const { db } = this.root!
+
+    const source_component = db.source_component.get(this.source_component_id!)
+    if (!source_component) return
+    if (source_component.supplier_part_numbers) return
+
+    if (this._asyncSupplierPartNumbers) {
+      db.source_component.update(this.source_component_id!, {
+        supplier_part_numbers: this._asyncSupplierPartNumbers,
+      })
+      return
+    }
   }
 }

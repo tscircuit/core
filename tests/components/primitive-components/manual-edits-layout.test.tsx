@@ -7,7 +7,7 @@ test("Manual edits prop usage", () => {
 
   project.add(
     <board width="10mm" height="10mm" manualEdits={manualEdits}>
-      <resistor name="R1" resistance="100" footprint="0402"/>
+      <resistor name="R1" resistance="100" footprint="0402" />
     </board>,
   )
 

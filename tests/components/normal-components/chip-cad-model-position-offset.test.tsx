@@ -16,7 +16,7 @@ test("chip with cadModel positionOffset", () => {
           positionOffset: { x: 1, y: 2, z: 3 },
         }}
       />
-    </board>
+    </board>,
   )
 
   project.render()

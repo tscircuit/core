@@ -27,13 +27,20 @@ import { projectPointInDirection } from "lib/utils/projectPointInDirection"
 import { projectPointInOppositeDirection } from "lib/utils/projectPointInOppositeDirection"
 import { tryNow } from "lib/utils/try-now"
 import { z } from "zod"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { Net } from "./Net"
-import type { Port } from "./Port"
-import type { TraceHint } from "./TraceHint"
+import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import type { Net } from "../Net"
+import type { Port } from "../Port"
+import type { TraceHint } from "../TraceHint"
 import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
 import type { Point } from "@tscircuit/math-utils"
 import { getStubEdges } from "lib/utils/schematic/getStubEdges"
+import { doesLineIntersectLine } from "@tscircuit/math-utils"
+import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
+import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
+import type { TraceI } from "./TraceI"
+import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
+import { getExitingEdgeFromDirection } from "lib/utils/schematic/getExitingEdgeFromDirection"
+import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -55,11 +62,15 @@ const portToObjective = (port: Port): PcbRouteObjective => {
 
 const SHOULD_USE_SINGLE_LAYER_ROUTING = false
 
-export class Trace extends PrimitiveComponent<typeof traceProps> {
+export class Trace
+  extends PrimitiveComponent<typeof traceProps>
+  implements TraceI
+{
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
   schematic_trace_id: string | null = null
   _portsRoutedOnPcb: Port[]
+  subcircuit_connectivity_map_key: string | null = null
 
   constructor(props: z.input<typeof traceProps>) {
     super(props)
@@ -586,6 +597,7 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
 
     const { allPortsFound, portsWithSelectors: connectedPorts } =
       this._findConnectedPorts()
+    const { netsWithSelectors } = this._findConnectedNets()
 
     if (!allPortsFound) return
 
@@ -626,6 +638,27 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       schematic_port_id: port.schematic_port_id ?? undefined,
       facingDirection: port.facingDirection,
     }))
+
+    const isPortAndNetConnection =
+      portsWithPosition.length === 1 && netsWithSelectors.length === 1
+
+    if (isPortAndNetConnection) {
+      const net = netsWithSelectors[0].net
+      const { port, position: anchorPos } = portsWithPosition[0]
+
+      // Create a schematic_net_label
+      const netLabel = db.schematic_net_label.insert({
+        text: net._parsedProps.name,
+        source_net_id: net.source_net_id!,
+        anchor_position: anchorPos,
+        // TODO compute the center based on the text size
+        center: anchorPos,
+        anchor_side:
+          getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom",
+      })
+
+      return
+    }
 
     // Ensure there are at least two ports
     // Else return insufficient ports to draw a trace
@@ -675,20 +708,54 @@ export class Trace extends PrimitiveComponent<typeof traceProps> {
       })
     }
 
-    // The last edges sometimes don't connect to the ports because the
+    const source_trace_id = this.source_trace_id!
+    // Check if these edges run along any other schematic traces, if they do
+    // push them out of the way
+    pushEdgesOfSchematicTraceToPreventOverlap({ edges, db, source_trace_id })
+
+    // Find all intersections between myEdges and all otherEdges and create a
+    // segment representing the crossing. Wherever there's a crossing, we create
+    // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
+    createSchematicTraceCrossingSegments({ edges, db, source_trace_id })
+
+    // Find all the intersections between myEdges and edges connected to the
+    // same net and create junction points
+    // Calculate junctions where traces of the same net intersect
+    const junctions = createSchematicTraceJunctions({
+      edges,
+      db,
+      source_trace_id: this.source_trace_id!,
+    })
+
+    // The first/last edges sometimes don't connect to the ports because the
     // autorouter is within the "goal box" and doesn't finish the route
     // Add a stub to connect the last point to the end port
     const lastEdge = edges[edges.length - 1]
     const lastEdgePort = portsWithPosition[portsWithPosition.length - 1]
     const lastDominantDirection = getDominantDirection(lastEdge)
+
     // Add the connecting edges
     edges.push(
       ...getStubEdges({ lastEdge, lastEdgePort, lastDominantDirection }),
     )
 
+    const firstEdge = edges[0]
+    const firstEdgePort = portsWithPosition[0]
+    const firstDominantDirection = getDominantDirection(firstEdge)
+
+    // Add the connecting edges
+    edges.unshift(
+      ...getStubEdges({
+        firstEdge,
+        firstEdgePort,
+        firstDominantDirection,
+      }),
+    )
+
     const trace = db.schematic_trace.insert({
       source_trace_id: this.source_trace_id!,
       edges,
+      junctions,
     })
 
     this.schematic_trace_id = trace.schematic_trace_id

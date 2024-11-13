@@ -8,7 +8,11 @@ import { compose, identity } from "transformation-matrix"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent"
 import { TraceHint } from "../TraceHint"
-import type { SchematicComponent, SchematicPort } from "circuit-json"
+import type {
+  SchematicComponent,
+  SchematicPort,
+  SourceTrace,
+} from "circuit-json"
 import * as SAL from "@tscircuit/schematic-autolayout"
 import type { ISubcircuit } from "./ISubcircuit"
 import type {
@@ -16,7 +20,9 @@ import type {
   SimpleRouteJson,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
-import type { Trace } from "../Trace"
+import type { Trace } from "../Trace/Trace"
+import { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import type { TraceI } from "../Trace/TraceI"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -111,6 +117,42 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       connections,
       layerCount: 2,
       minTraceWidth: this._parsedProps.minTraceWidth ?? 0.1,
+    }
+  }
+
+  doInitialSourceAddConnectivityMapKey(): void {
+    if (!this.isSubcircuit) return
+    const { db } = this.root!
+    // Find all traces that belong to this subcircuit, generate a connectivity
+    // map, and add source_trace.subcircuit_connectivity_map_key
+    const traces = this.selectAll("trace") as TraceI[]
+    const connMap = new ConnectivityMap({})
+    connMap.addConnections(
+      traces
+        .map((t) => {
+          const source_trace = db.source_trace.get(
+            t.source_trace_id!,
+          ) as SourceTrace
+          if (!source_trace) return null
+
+          return [
+            source_trace.source_trace_id,
+            ...source_trace.connected_source_port_ids,
+            ...source_trace.connected_source_net_ids,
+          ]
+        })
+        .filter((c): c is string[] => c !== null),
+    )
+
+    for (const trace of traces) {
+      if (!trace.source_trace_id) continue
+      const connNetId = connMap.getNetConnectedToId(trace.source_trace_id)
+      if (!connNetId) continue
+      const { name: subcircuitName } = this._parsedProps
+      trace.subcircuit_connectivity_map_key = `${subcircuitName ?? `unnamedsubcircuit${this._renderId}`}_${connNetId}`
+      db.source_trace.update(trace.source_trace_id, {
+        subcircuit_connectivity_map_key: trace.subcircuit_connectivity_map_key!,
+      })
     }
   }
 

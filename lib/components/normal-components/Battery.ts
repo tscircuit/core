@@ -4,7 +4,7 @@ import type { SourceSimpleBatteryInput } from "circuit-json"
 import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { Trace } from "../primitive-components/Trace"
+import { Trace } from "../primitive-components/Trace/Trace"
 import { z } from "zod"
 
 export class Battery extends NormalComponent<
