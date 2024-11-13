@@ -73,15 +73,11 @@ export class NormalComponent<
 > extends PrimitiveComponent<ZodProps> {
   reactSubtrees: Array<ReactSubtree> = []
   _impliedFootprint?: string | undefined
-  _footprintError?: {
-    message: string
-    source_component_id: string
-    error_type: string
-  }
 
   isPrimitiveContainer = true
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
+  pcb_missing_footprint_error_id?: string
 
   constructor(props: z.input<ZodProps>) {
     super(props)
@@ -374,15 +370,6 @@ export class NormalComponent<
     this.schematic_component_id = schematic_component.schematic_component_id
   }
 
-  _missingFootprintError() {
-    const { _parsedProps: props } = this
-    this._footprintError = {
-      message: `No footprint found for component ${props.componentName} with name ${props.props.name}`,
-      source_component_id: `${props.source_component_id}`,
-      error_type: "pcb_missing_footprint_error",
-    }
-  }
-
   doInitialPcbComponentRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -395,11 +382,16 @@ export class NormalComponent<
       rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
     })
-    if (this._footprintError) {
-      const source_component = db.pcb_missing_footprint_error.insert(
-        props._footprintError,
-      )
-      this.source_component_id = source_component.source_component_id
+
+    if (!props.footprint) {
+      const footprint_error = db.pcb_missing_footprint_error.insert({
+        message: `No footprint found for component ${props.componentName} with name ${props.name}`,
+        source_component_id: `${this.source_component_id}`,
+        error_type: "pcb_missing_footprint_error",
+      })
+
+      this.pcb_missing_footprint_error_id =
+        footprint_error.pcb_missing_footprint_error_id
     }
     this.pcb_component_id = pcb_component.pcb_component_id
   }
