@@ -385,7 +385,7 @@ export class NormalComponent<
 
     if (!props.footprint) {
       const footprint_error = db.pcb_missing_footprint_error.insert({
-        message: `No footprint found for component ${props.componentName} with name ${props.name}`,
+        message: `No footprint found for component: ${this.componentName}`,
         source_component_id: `${this.source_component_id}`,
         error_type: "pcb_missing_footprint_error",
       })
