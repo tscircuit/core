@@ -32,7 +32,7 @@ it("should render a net alias with correct anchor position on components", async
         symbolName="capacitor_vert"
       />
 
-      <netalias net="GND" schX={-2.57} schY={3.55} anchorSide="down" />
+      <netalias net="GND" schX={-2.54} schY={3.55} anchorSide="down" />
       <trace from=".C1 > .pos" to="net.GND" />
     </board>,
   )
