@@ -66,6 +66,7 @@ export type PortMap<T extends string> = {
  *   }
  * }
  */
+
 export class NormalComponent<
   ZodProps extends ZodType = any,
   PortNames extends string = never,
@@ -76,6 +77,7 @@ export class NormalComponent<
   isPrimitiveContainer = true
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
+  pcb_missing_footprint_error_id?: string
 
   constructor(props: z.input<ZodProps>) {
     super(props)
@@ -233,6 +235,7 @@ export class NormalComponent<
     let { footprint } = this.props
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
+
     if (typeof footprint === "string") {
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromSoup(fpSoup as any) // Remove as any when footprinter gets updated
@@ -252,7 +255,11 @@ export class NormalComponent<
           )
           if (!port) {
             throw new Error(
-              `There was an issue finding the port "${prop.toString()}" inside of a ${this.componentName} component with name: "${this.props.name}". This is a bug in @tscircuit/core`,
+              `There was an issue finding the port "${prop.toString()}" inside of a ${
+                this.componentName
+              } component with name: "${
+                this.props.name
+              }". This is a bug in @tscircuit/core`,
             )
           }
           return port as Port
@@ -375,6 +382,17 @@ export class NormalComponent<
       rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
     })
+
+    if (!props.footprint) {
+      const footprint_error = db.pcb_missing_footprint_error.insert({
+        message: `No footprint found for component: ${this.componentName}`,
+        source_component_id: `${this.source_component_id}`,
+        error_type: "pcb_missing_footprint_error",
+      })
+
+      this.pcb_missing_footprint_error_id =
+        footprint_error.pcb_missing_footprint_error_id
+    }
     this.pcb_component_id = pcb_component.pcb_component_id
   }
 

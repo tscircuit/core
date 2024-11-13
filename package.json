@@ -43,7 +43,7 @@
     "@tscircuit/props": "^0.0.93",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/soup-util": "^0.0.40",
-    "circuit-json": "^0.0.99",
+    "circuit-json": "^0.0.101",
     "circuit-json-to-connectivity-map": "^0.0.17",
     "circuit-to-svg": "^0.0.71",
     "format-si-unit": "^0.0.2",
