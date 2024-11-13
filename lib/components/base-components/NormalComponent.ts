@@ -25,6 +25,7 @@ import {
 import {
   type SchematicBoxDimensions,
   getAllDimensionsForSchematicBox,
+  isExplicitPinMappingArrangement,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import {
   type ReactElement,
@@ -36,6 +37,7 @@ import { ZodType, z } from "zod"
 import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
+import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
 
 const debug = Debug("tscircuit:core")
 
@@ -66,6 +68,7 @@ export type PortMap<T extends string> = {
  *   }
  * }
  */
+
 export class NormalComponent<
   ZodProps extends ZodType = any,
   PortNames extends string = never,
@@ -76,6 +79,7 @@ export class NormalComponent<
   isPrimitiveContainer = true
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
+  pcb_missing_footprint_error_id?: string
 
   constructor(props: z.input<ZodProps>) {
     super(props)
@@ -107,11 +111,16 @@ export class NormalComponent<
 
     // Handle schPortArrangement
     const schPortArrangement = this._parsedProps.schPortArrangement as any
-    if (schPortArrangement) {
+    if (schPortArrangement && !this._parsedProps.pinLabels) {
       for (const side in schPortArrangement) {
         const pins = schPortArrangement[side].pins
         if (Array.isArray(pins)) {
-          for (const pinNumber of pins) {
+          for (const pinNumberOrLabel of pins) {
+            const pinNumber = parsePinNumberFromLabelsOrThrow(
+              pinNumberOrLabel,
+              this._parsedProps.pinLabels,
+            )
+
             portsToCreate.push(
               new Port(
                 {
@@ -219,6 +228,56 @@ export class NormalComponent<
       }
     }
 
+    // Add ports that we know must exist because we know the pin count and
+    // missing pin numbers, and they are inside the pins array of the
+    // schPortArrangement
+    for (let pn = 1; pn <= this._getPinCount(); pn++) {
+      if (!this._parsedProps.schPortArrangement) continue
+      if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
+      let explicitlyListedPinNumbersInSchPortArrangement = [
+        ...(this._parsedProps.schPortArrangement?.leftSide?.pins ?? []),
+        ...(this._parsedProps.schPortArrangement?.rightSide?.pins ?? []),
+        ...(this._parsedProps.schPortArrangement?.topSide?.pins ?? []),
+        ...(this._parsedProps.schPortArrangement?.bottomSide?.pins ?? []),
+      ].map((pn) =>
+        parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
+      )
+
+      if (
+        [
+          "leftSize",
+          "rightSize",
+          "topSize",
+          "bottomSize",
+          "leftPinCount",
+          "rightPinCount",
+          "topPinCount",
+          "bottomPinCount",
+        ].some((key) => key in this._parsedProps.schPortArrangement)
+      ) {
+        explicitlyListedPinNumbersInSchPortArrangement = Array.from(
+          { length: this._getPinCount() },
+          (_, i) => i + 1,
+        )
+      }
+
+      if (!explicitlyListedPinNumbersInSchPortArrangement.includes(pn)) {
+        continue
+      }
+
+      portsToCreate.push(
+        new Port(
+          {
+            pinNumber: pn,
+            aliases: opts.additionalAliases?.[`pin${pn}`] ?? [],
+          },
+          {
+            originDescription: `notOtherwiseAddedButDeducedFromPinCount:${pn}`,
+          },
+        ),
+      )
+    }
+
     // If no ports were created, don't throw an error
     if (portsToCreate.length > 0) {
       this.addAll(portsToCreate)
@@ -233,6 +292,7 @@ export class NormalComponent<
     let { footprint } = this.props
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
+
     if (typeof footprint === "string") {
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromSoup(fpSoup as any) // Remove as any when footprinter gets updated
@@ -252,7 +312,11 @@ export class NormalComponent<
           )
           if (!port) {
             throw new Error(
-              `There was an issue finding the port "${prop.toString()}" inside of a ${this.componentName} component with name: "${this.props.name}". This is a bug in @tscircuit/core`,
+              `There was an issue finding the port "${prop.toString()}" inside of a ${
+                this.componentName
+              } component with name: "${
+                this.props.name
+              }". This is a bug in @tscircuit/core`,
             )
           }
           return port as Port
@@ -375,6 +439,17 @@ export class NormalComponent<
       rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
     })
+
+    if (!props.footprint) {
+      const footprint_error = db.pcb_missing_footprint_error.insert({
+        message: `No footprint found for component: ${this.componentName}`,
+        source_component_id: `${this.source_component_id}`,
+        error_type: "pcb_missing_footprint_error",
+      })
+
+      this.pcb_missing_footprint_error_id =
+        footprint_error.pcb_missing_footprint_error_id
+    }
     this.pcb_component_id = pcb_component.pcb_component_id
   }
 
@@ -622,12 +697,31 @@ export class NormalComponent<
     const schPortArrangement = this._getSchematicPortArrangement()
 
     // If schPortArrangement exists, use only that for pin count
+
     if (schPortArrangement) {
-      return (
-        (schPortArrangement.leftSize ?? 0) +
-        (schPortArrangement.rightSize ?? 0) +
-        (schPortArrangement.topSize ?? 0) +
-        (schPortArrangement.bottomSize ?? 0)
+      const isExplicitPinMapping =
+        isExplicitPinMappingArrangement(schPortArrangement)
+      if (!isExplicitPinMapping) {
+        return (
+          (schPortArrangement.leftSize ??
+            schPortArrangement.leftPinCount ??
+            0) +
+          (schPortArrangement.rightSize ??
+            schPortArrangement.rightPinCount ??
+            0) +
+          (schPortArrangement.topSize ?? schPortArrangement.topPinCount ?? 0) +
+          (schPortArrangement.bottomSize ??
+            schPortArrangement.bottomPinCount ??
+            0)
+        )
+      }
+
+      const { leftSide, rightSide, topSide, bottomSide } = schPortArrangement
+      return Math.max(
+        ...(leftSide?.pins ?? []),
+        ...(rightSide?.pins ?? []),
+        ...(topSide?.pins ?? []),
+        ...(bottomSide?.pins ?? []),
       )
     }
 

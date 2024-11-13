@@ -1,4 +1,5 @@
 import { getSizeOfSidesFromPortArrangement } from "./getSizeOfSidesFromPortArrangement"
+import { parsePinNumberFromLabelsOrThrow } from "./parsePinNumberFromLabelsOrThrow"
 
 export type VerticalPortSideConfiguration = {
   direction?: "top-to-bottom" | "bottom-to-top"
@@ -65,7 +66,7 @@ interface Params {
 
 type Side = "left" | "right" | "top" | "bottom"
 
-function isExplicitPinMappingArrangement(
+export function isExplicitPinMappingArrangement(
   arrangement: PortArrangement,
 ): arrangement is ExplicitPinMappingArrangement {
   return (arrangement as ExplicitPinMappingArrangement).leftSide !== undefined
@@ -137,6 +138,45 @@ export const getAllDimensionsForSchematicBox = (
     }
   }
 
+  const getPinNumberUsingSideIndex = ({
+    side,
+    sideIndex,
+    truePinIndex,
+  }: {
+    side: "top" | "bottom" | "left" | "right"
+    sideIndex: number
+    truePinIndex: number
+  }) => {
+    if (!params.schPortArrangement) return truePinIndex + 1
+    if (!isExplicitPinMappingArrangement(params.schPortArrangement))
+      return truePinIndex + 1
+
+    const normalCcwDirection = {
+      left: "top-to-bottom",
+      bottom: "left-to-right",
+      right: "bottom-to-top",
+      top: "right-to-left",
+    }[side]
+
+    const directionAlongSide =
+      params.schPortArrangement?.[`${side}Side`]?.direction ??
+      normalCcwDirection
+
+    const pinsDefinitionForSide =
+      params.schPortArrangement?.[`${side}Side`]?.pins!
+
+    let sideIndexWithDirectionCorrection: number = sideIndex
+    if (directionAlongSide !== normalCcwDirection) {
+      sideIndexWithDirectionCorrection =
+        pinsDefinitionForSide.length - sideIndex - 1
+    }
+
+    return parsePinNumberFromLabelsOrThrow(
+      pinsDefinitionForSide[sideIndexWithDirectionCorrection]!,
+      params.pinLabels,
+    )
+  }
+
   // Map the indices to the sides they correspond to
   const orderedTruePorts: Array<{
     trueIndex: number
@@ -148,11 +188,12 @@ export const getAllDimensionsForSchematicBox = (
   let truePinIndex = 0
   // moving downward from the top-left corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.leftSize; sideIndex++) {
-    const pinNumber =
-      params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement?.leftSide?.pins[sideIndex]!
-        : truePinIndex + 1
+    const pinNumber = getPinNumberUsingSideIndex({
+      side: "left",
+      sideIndex,
+      truePinIndex,
+    })
+
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
@@ -183,11 +224,12 @@ export const getAllDimensionsForSchematicBox = (
   currentDistanceFromEdge = 0
   // moving rightward from the left-bottom corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.bottomSize; sideIndex++) {
-    const pinNumber =
-      params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement.bottomSide?.pins[sideIndex]!
-        : truePinIndex + 1
+    const pinNumber = getPinNumberUsingSideIndex({
+      side: "bottom",
+      sideIndex,
+      truePinIndex,
+    })
+
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
@@ -218,11 +260,12 @@ export const getAllDimensionsForSchematicBox = (
   currentDistanceFromEdge = 0
   // moving upward from the bottom-right corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.rightSize; sideIndex++) {
-    const pinNumber =
-      params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement.rightSide?.pins[sideIndex]!
-        : truePinIndex + 1
+    const pinNumber = getPinNumberUsingSideIndex({
+      side: "right",
+      sideIndex,
+      truePinIndex,
+    })
+
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
@@ -253,11 +296,12 @@ export const getAllDimensionsForSchematicBox = (
   currentDistanceFromEdge = 0
   // moving leftward from the top-right corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.topSize; sideIndex++) {
-    const pinNumber =
-      params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement.topSide?.pins[sideIndex]!
-        : truePinIndex + 1
+    const pinNumber = getPinNumberUsingSideIndex({
+      side: "top",
+      sideIndex,
+      truePinIndex,
+    })
+
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
@@ -302,7 +346,8 @@ export const getAllDimensionsForSchematicBox = (
       )
     : 0
 
-  const LABEL_PADDING = 1.1
+  // When label is present, only then add some padding to the width
+  const LABEL_PADDING = labelWidth > 0 ? 1.1 : 0
   schWidth = Math.max(schWidth, labelWidth + LABEL_PADDING)
 
   let schHeight = params.schHeight
