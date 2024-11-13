@@ -229,9 +229,41 @@ export class NormalComponent<
     }
 
     // Add ports that we know must exist because we know the pin count and
-    // missing pin numbers
+    // missing pin numbers, and they are inside the pins array of the
+    // schPortArrangement
     for (let pn = 1; pn <= this._getPinCount(); pn++) {
+      if (!this._parsedProps.schPortArrangement) continue
       if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
+      let explicitlyListedPinNumbersInSchPortArrangement = [
+        ...(this._parsedProps.schPortArrangement?.leftSide?.pins ?? []),
+        ...(this._parsedProps.schPortArrangement?.rightSide?.pins ?? []),
+        ...(this._parsedProps.schPortArrangement?.topSide?.pins ?? []),
+        ...(this._parsedProps.schPortArrangement?.bottomSide?.pins ?? []),
+      ].map((pn) =>
+        parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
+      )
+
+      if (
+        [
+          "leftSize",
+          "rightSize",
+          "topSize",
+          "bottomSize",
+          "leftPinCount",
+          "rightPinCount",
+          "topPinCount",
+          "bottomPinCount",
+        ].some((key) => key in this._parsedProps.schPortArrangement)
+      ) {
+        explicitlyListedPinNumbersInSchPortArrangement = Array.from(
+          { length: this._getPinCount() },
+          (_, i) => i + 1,
+        )
+      }
+
+      if (!explicitlyListedPinNumbersInSchPortArrangement.includes(pn)) {
+        continue
+      }
 
       portsToCreate.push(
         new Port(
