@@ -36,6 +36,7 @@ import { ZodType, z } from "zod"
 import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
+import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
 
 const debug = Debug("tscircuit:core")
 
@@ -107,11 +108,16 @@ export class NormalComponent<
 
     // Handle schPortArrangement
     const schPortArrangement = this._parsedProps.schPortArrangement as any
-    if (schPortArrangement) {
+    if (schPortArrangement && !this._parsedProps.pinLabels) {
       for (const side in schPortArrangement) {
         const pins = schPortArrangement[side].pins
         if (Array.isArray(pins)) {
-          for (const pinNumber of pins) {
+          for (const pinNumberOrLabel of pins) {
+            const pinNumber = parsePinNumberFromLabelsOrThrow(
+              pinNumberOrLabel,
+              this._parsedProps.pinLabels,
+            )
+
             portsToCreate.push(
               new Port(
                 {

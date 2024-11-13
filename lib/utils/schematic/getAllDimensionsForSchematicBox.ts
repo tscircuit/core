@@ -1,4 +1,5 @@
 import { getSizeOfSidesFromPortArrangement } from "./getSizeOfSidesFromPortArrangement"
+import { parsePinNumberFromLabelsOrThrow } from "./parsePinNumberFromLabelsOrThrow"
 
 export type VerticalPortSideConfiguration = {
   direction?: "top-to-bottom" | "bottom-to-top"
@@ -137,6 +138,25 @@ export const getAllDimensionsForSchematicBox = (
     }
   }
 
+  const getPinNumberUsingSideIndex = ({
+    side,
+    sideIndex,
+    truePinIndex,
+  }: {
+    side: "top" | "bottom" | "left" | "right"
+    sideIndex: number
+    truePinIndex: number
+  }) => {
+    if (!params.schPortArrangement) return truePinIndex + 1
+    if (!isExplicitPinMappingArrangement(params.schPortArrangement))
+      return truePinIndex + 1
+
+    return parsePinNumberFromLabelsOrThrow(
+      params.schPortArrangement?.[`${side}Side`]?.pins[sideIndex]!,
+      params.pinLabels,
+    )
+  }
+
   // Map the indices to the sides they correspond to
   const orderedTruePorts: Array<{
     trueIndex: number
@@ -148,11 +168,12 @@ export const getAllDimensionsForSchematicBox = (
   let truePinIndex = 0
   // moving downward from the top-left corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.leftSize; sideIndex++) {
-    const pinNumber =
-      params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement?.leftSide?.pins[sideIndex]!
-        : truePinIndex + 1
+    const pinNumber = getPinNumberUsingSideIndex({
+      side: "left",
+      sideIndex,
+      truePinIndex,
+    })
+
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
@@ -183,11 +204,12 @@ export const getAllDimensionsForSchematicBox = (
   currentDistanceFromEdge = 0
   // moving rightward from the left-bottom corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.bottomSize; sideIndex++) {
-    const pinNumber =
-      params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement.bottomSide?.pins[sideIndex]!
-        : truePinIndex + 1
+    const pinNumber = getPinNumberUsingSideIndex({
+      side: "bottom",
+      sideIndex,
+      truePinIndex,
+    })
+
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
@@ -218,11 +240,12 @@ export const getAllDimensionsForSchematicBox = (
   currentDistanceFromEdge = 0
   // moving upward from the bottom-right corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.rightSize; sideIndex++) {
-    const pinNumber =
-      params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement.rightSide?.pins[sideIndex]!
-        : truePinIndex + 1
+    const pinNumber = getPinNumberUsingSideIndex({
+      side: "right",
+      sideIndex,
+      truePinIndex,
+    })
+
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
@@ -253,11 +276,12 @@ export const getAllDimensionsForSchematicBox = (
   currentDistanceFromEdge = 0
   // moving leftward from the top-right corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.topSize; sideIndex++) {
-    const pinNumber =
-      params.schPortArrangement &&
-      isExplicitPinMappingArrangement(params.schPortArrangement)
-        ? params.schPortArrangement.topSide?.pins[sideIndex]!
-        : truePinIndex + 1
+    const pinNumber = getPinNumberUsingSideIndex({
+      side: "top",
+      sideIndex,
+      truePinIndex,
+    })
+
     const pinStyle =
       params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
 
