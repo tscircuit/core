@@ -29,6 +29,8 @@ test("rotated resistor/diode/inductor/led/capacitor schematic", () => {
         schRotation="90deg"
       />
       <diode name="D1" schY={0} schX={8} schRotation="90deg" />
+
+      <trace from=".D1 > .pin2" to="net.GND" />
     </board>,
   )
 
