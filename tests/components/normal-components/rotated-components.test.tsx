@@ -30,8 +30,12 @@ test("rotated resistor/diode/inductor/led/capacitor schematic", () => {
       />
       <diode name="D1" schY={0} schX={8} schRotation="90deg" />
 
+      <diode name="D2" schY={0} schX={10} />
+
       <trace from=".D1 > .pin2" to="net.GND" />
       <trace from=".D1 > .pin1" to="net.VCC" />
+      <trace from=".D2 > .pin2" to="net.GND" />
+      <trace from=".D2 > .pin1" to="net.VCC" />
     </board>,
   )
 
