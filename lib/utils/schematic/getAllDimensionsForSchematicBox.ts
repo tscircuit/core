@@ -66,7 +66,7 @@ interface Params {
 
 type Side = "left" | "right" | "top" | "bottom"
 
-function isExplicitPinMappingArrangement(
+export function isExplicitPinMappingArrangement(
   arrangement: PortArrangement,
 ): arrangement is ExplicitPinMappingArrangement {
   return (arrangement as ExplicitPinMappingArrangement).leftSide !== undefined

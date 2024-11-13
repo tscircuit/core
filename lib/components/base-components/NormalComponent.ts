@@ -25,6 +25,7 @@ import {
 import {
   type SchematicBoxDimensions,
   getAllDimensionsForSchematicBox,
+  isExplicitPinMappingArrangement,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import {
   type ReactElement,
@@ -223,6 +224,24 @@ export class NormalComponent<
           portsToCreate.push(port)
         }
       }
+    }
+
+    // Add ports that we know must exist because we know the pin count and
+    // missing pin numbers
+    for (let pn = 1; pn <= this._getPinCount(); pn++) {
+      if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
+
+      portsToCreate.push(
+        new Port(
+          {
+            pinNumber: pn,
+            aliases: opts.additionalAliases?.[`pin${pn}`] ?? [],
+          },
+          {
+            originDescription: `notOtherwiseAddedButDeducedFromPinCount:${pn}`,
+          },
+        ),
+      )
     }
 
     // If no ports were created, don't throw an error
@@ -628,12 +647,31 @@ export class NormalComponent<
     const schPortArrangement = this._getSchematicPortArrangement()
 
     // If schPortArrangement exists, use only that for pin count
+
     if (schPortArrangement) {
-      return (
-        (schPortArrangement.leftSize ?? 0) +
-        (schPortArrangement.rightSize ?? 0) +
-        (schPortArrangement.topSize ?? 0) +
-        (schPortArrangement.bottomSize ?? 0)
+      const isExplicitPinMapping =
+        isExplicitPinMappingArrangement(schPortArrangement)
+      if (!isExplicitPinMapping) {
+        return (
+          (schPortArrangement.leftSize ??
+            schPortArrangement.leftPinCount ??
+            0) +
+          (schPortArrangement.rightSize ??
+            schPortArrangement.rightPinCount ??
+            0) +
+          (schPortArrangement.topSize ?? schPortArrangement.topPinCount ?? 0) +
+          (schPortArrangement.bottomSize ??
+            schPortArrangement.bottomPinCount ??
+            0)
+        )
+      }
+
+      const { leftSide, rightSide, topSide, bottomSide } = schPortArrangement
+      return Math.max(
+        ...(leftSide?.pins ?? []),
+        ...(rightSide?.pins ?? []),
+        ...(topSide?.pins ?? []),
+        ...(bottomSide?.pins ?? []),
       )
     }
 
