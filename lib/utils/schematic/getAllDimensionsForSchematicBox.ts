@@ -151,8 +151,28 @@ export const getAllDimensionsForSchematicBox = (
     if (!isExplicitPinMappingArrangement(params.schPortArrangement))
       return truePinIndex + 1
 
+    const normalCcwDirection = {
+      left: "top-to-bottom",
+      bottom: "left-to-right",
+      right: "bottom-to-top",
+      top: "right-to-left",
+    }[side]
+
+    const directionAlongSide =
+      params.schPortArrangement?.[`${side}Side`]?.direction ??
+      normalCcwDirection
+
+    const pinsDefinitionForSide =
+      params.schPortArrangement?.[`${side}Side`]?.pins!
+
+    let sideIndexWithDirectionCorrection: number = sideIndex
+    if (directionAlongSide !== normalCcwDirection) {
+      sideIndexWithDirectionCorrection =
+        pinsDefinitionForSide.length - sideIndex - 1
+    }
+
     return parsePinNumberFromLabelsOrThrow(
-      params.schPortArrangement?.[`${side}Side`]?.pins[sideIndex]!,
+      pinsDefinitionForSide[sideIndexWithDirectionCorrection]!,
       params.pinLabels,
     )
   }
