@@ -25,6 +25,7 @@ import {
 import {
   type SchematicBoxDimensions,
   getAllDimensionsForSchematicBox,
+  isExplicitPinMappingArrangement,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import {
   type ReactElement,
@@ -36,6 +37,7 @@ import { ZodType, z } from "zod"
 import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
+import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
 
 const debug = Debug("tscircuit:core")
 
@@ -109,11 +111,16 @@ export class NormalComponent<
 
     // Handle schPortArrangement
     const schPortArrangement = this._parsedProps.schPortArrangement as any
-    if (schPortArrangement) {
+    if (schPortArrangement && !this._parsedProps.pinLabels) {
       for (const side in schPortArrangement) {
         const pins = schPortArrangement[side].pins
         if (Array.isArray(pins)) {
-          for (const pinNumber of pins) {
+          for (const pinNumberOrLabel of pins) {
+            const pinNumber = parsePinNumberFromLabelsOrThrow(
+              pinNumberOrLabel,
+              this._parsedProps.pinLabels,
+            )
+
             portsToCreate.push(
               new Port(
                 {
@@ -219,6 +226,56 @@ export class NormalComponent<
           portsToCreate.push(port)
         }
       }
+    }
+
+    // Add ports that we know must exist because we know the pin count and
+    // missing pin numbers, and they are inside the pins array of the
+    // schPortArrangement
+    for (let pn = 1; pn <= this._getPinCount(); pn++) {
+      if (!this._parsedProps.schPortArrangement) continue
+      if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
+      let explicitlyListedPinNumbersInSchPortArrangement = [
+        ...(this._parsedProps.schPortArrangement?.leftSide?.pins ?? []),
+        ...(this._parsedProps.schPortArrangement?.rightSide?.pins ?? []),
+        ...(this._parsedProps.schPortArrangement?.topSide?.pins ?? []),
+        ...(this._parsedProps.schPortArrangement?.bottomSide?.pins ?? []),
+      ].map((pn) =>
+        parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
+      )
+
+      if (
+        [
+          "leftSize",
+          "rightSize",
+          "topSize",
+          "bottomSize",
+          "leftPinCount",
+          "rightPinCount",
+          "topPinCount",
+          "bottomPinCount",
+        ].some((key) => key in this._parsedProps.schPortArrangement)
+      ) {
+        explicitlyListedPinNumbersInSchPortArrangement = Array.from(
+          { length: this._getPinCount() },
+          (_, i) => i + 1,
+        )
+      }
+
+      if (!explicitlyListedPinNumbersInSchPortArrangement.includes(pn)) {
+        continue
+      }
+
+      portsToCreate.push(
+        new Port(
+          {
+            pinNumber: pn,
+            aliases: opts.additionalAliases?.[`pin${pn}`] ?? [],
+          },
+          {
+            originDescription: `notOtherwiseAddedButDeducedFromPinCount:${pn}`,
+          },
+        ),
+      )
     }
 
     // If no ports were created, don't throw an error
@@ -640,12 +697,31 @@ export class NormalComponent<
     const schPortArrangement = this._getSchematicPortArrangement()
 
     // If schPortArrangement exists, use only that for pin count
+
     if (schPortArrangement) {
-      return (
-        (schPortArrangement.leftSize ?? 0) +
-        (schPortArrangement.rightSize ?? 0) +
-        (schPortArrangement.topSize ?? 0) +
-        (schPortArrangement.bottomSize ?? 0)
+      const isExplicitPinMapping =
+        isExplicitPinMappingArrangement(schPortArrangement)
+      if (!isExplicitPinMapping) {
+        return (
+          (schPortArrangement.leftSize ??
+            schPortArrangement.leftPinCount ??
+            0) +
+          (schPortArrangement.rightSize ??
+            schPortArrangement.rightPinCount ??
+            0) +
+          (schPortArrangement.topSize ?? schPortArrangement.topPinCount ?? 0) +
+          (schPortArrangement.bottomSize ??
+            schPortArrangement.bottomPinCount ??
+            0)
+        )
+      }
+
+      const { leftSide, rightSide, topSide, bottomSide } = schPortArrangement
+      return Math.max(
+        ...(leftSide?.pins ?? []),
+        ...(rightSide?.pins ?? []),
+        ...(topSide?.pins ?? []),
+        ...(bottomSide?.pins ?? []),
       )
     }
 
