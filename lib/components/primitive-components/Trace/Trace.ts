@@ -727,15 +727,29 @@ export class Trace
       source_trace_id: this.source_trace_id!,
     })
 
-    // The last edges sometimes don't connect to the ports because the
+    // The first/last edges sometimes don't connect to the ports because the
     // autorouter is within the "goal box" and doesn't finish the route
     // Add a stub to connect the last point to the end port
     const lastEdge = edges[edges.length - 1]
     const lastEdgePort = portsWithPosition[portsWithPosition.length - 1]
     const lastDominantDirection = getDominantDirection(lastEdge)
+
     // Add the connecting edges
     edges.push(
       ...getStubEdges({ lastEdge, lastEdgePort, lastDominantDirection }),
+    )
+
+    const firstEdge = edges[0]
+    const firstEdgePort = portsWithPosition[0]
+    const firstDominantDirection = getDominantDirection(firstEdge)
+
+    // Add the connecting edges
+    edges.unshift(
+      ...getStubEdges({
+        firstEdge,
+        firstEdgePort,
+        firstDominantDirection,
+      }),
     )
 
     const trace = db.schematic_trace.insert({

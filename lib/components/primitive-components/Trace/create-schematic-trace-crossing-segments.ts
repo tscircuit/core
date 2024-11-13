@@ -2,6 +2,7 @@ import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import type { SchematicTrace } from "circuit-json"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
+import { getUnitVectorFromPointAToB } from "@tscircuit/math-utils"
 
 /**
  *  Find all intersections between myEdges and all otherEdges and create a
@@ -53,29 +54,24 @@ export const createSchematicTraceCrossingSegments = ({
 
         // Create 3 new edges: before crossing, crossing segment, after crossing
         const crossingSegmentLength = 0.1 // mm
+
+        const lastDrawnPoint = edge.from
         const crossingPoint = { x: intersectX, y: intersectY }
+
+        const crossingUnitVec = getUnitVectorFromPointAToB(
+          lastDrawnPoint,
+          crossingPoint,
+        )
 
         // Calculate points slightly before and after crossing
         const beforeCrossing = {
-          x:
-            edgeOrientation === "vertical"
-              ? crossingPoint.x
-              : crossingPoint.x - crossingSegmentLength / 2,
-          y:
-            edgeOrientation === "vertical"
-              ? crossingPoint.y - crossingSegmentLength / 2
-              : crossingPoint.y,
+          x: crossingPoint.x - (crossingUnitVec.x * crossingSegmentLength) / 2,
+          y: crossingPoint.y - (crossingUnitVec.y * crossingSegmentLength) / 2,
         }
 
         const afterCrossing = {
-          x:
-            edgeOrientation === "vertical"
-              ? crossingPoint.x
-              : crossingPoint.x + crossingSegmentLength / 2,
-          y:
-            edgeOrientation === "vertical"
-              ? crossingPoint.y + crossingSegmentLength / 2
-              : crossingPoint.y,
+          x: crossingPoint.x + (crossingUnitVec.x * crossingSegmentLength) / 2,
+          y: crossingPoint.y + (crossingUnitVec.y * crossingSegmentLength) / 2,
         }
 
         // Replace the original edge with 3 new edges

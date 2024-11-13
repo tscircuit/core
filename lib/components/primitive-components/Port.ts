@@ -273,7 +273,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       } as any) // TODO issue with discriminated union
     }
 
-    this.facingDirection = getRelativeDirection(containerCenter, portCenter)
+    if (!localPortInfo?.side)
+      this.facingDirection = getRelativeDirection(containerCenter, portCenter)
+    else
+      this.facingDirection = {
+        left: "left",
+        right: "right",
+        top: "up",
+        bottom: "down",
+      }[localPortInfo.side] as "up" | "down" | "left" | "right"
 
     const sourcePort = db.source_port.get(this.source_port_id!)
 

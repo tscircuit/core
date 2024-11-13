@@ -5,6 +5,7 @@ import type {
   CadModelProp,
   CadModelStl,
   SchematicPortArrangement,
+  SupplierPartNumbers,
 } from "@tscircuit/props"
 import { point3, rotation } from "circuit-json"
 import Debug from "debug"
@@ -79,6 +80,8 @@ export class NormalComponent<
   }
 
   isPrimitiveContainer = true
+
+  _asyncSupplierPartNumbers?: SupplierPartNumbers
 
   constructor(props: z.input<ZodProps>) {
     super(props)
@@ -768,5 +771,53 @@ export class NormalComponent<
           ? this.props.footprint
           : undefined,
     })
+  }
+
+  doInitialPartsEngineRender(): void {
+    const { partsEngine } = this.getSubcircuit()._parsedProps
+    if (!partsEngine) return
+    const { db } = this.root!
+
+    const source_component = db.source_component.get(this.source_component_id!)
+    if (!source_component) return
+    if (source_component.supplier_part_numbers) return
+
+    let footprinterString: string | undefined
+    if (this.props.footprint && typeof this.props.footprint === "string") {
+      footprinterString = this.props.footprint
+    }
+
+    const supplierPartNumbersMaybePromise = partsEngine.findPart({
+      sourceComponent: source_component,
+      footprinterString,
+    })
+
+    // Check if it's not a promise
+    if (!(supplierPartNumbersMaybePromise instanceof Promise)) {
+      db.source_component.update(this.source_component_id!, {
+        supplier_part_numbers: supplierPartNumbersMaybePromise,
+      })
+      return
+    }
+
+    this._queueAsyncEffect(async () => {
+      this._asyncSupplierPartNumbers = await supplierPartNumbersMaybePromise
+      this._markDirty("PartsEngineRender")
+    })
+  }
+
+  updatePartsEngineRender(): void {
+    const { db } = this.root!
+
+    const source_component = db.source_component.get(this.source_component_id!)
+    if (!source_component) return
+    if (source_component.supplier_part_numbers) return
+
+    if (this._asyncSupplierPartNumbers) {
+      db.source_component.update(this.source_component_id!, {
+        supplier_part_numbers: this._asyncSupplierPartNumbers,
+      })
+      return
+    }
   }
 }

@@ -27,6 +27,7 @@ export const orderedRenderPhases = [
   "PcbRouteNetIslands",
   "PcbComponentSizeCalculation",
   "CadModelRender",
+  "PartsEngineRender",
 ] as const
 
 export type RenderPhase = (typeof orderedRenderPhases)[number]
