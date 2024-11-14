@@ -27,8 +27,8 @@ export class Potentiometer extends NormalComponent<
   initPorts() {
     super.initPorts({
       additionalAliases: {
-        pin1: ["anode", "pos", "left"],
-        pin2: ["cathode", "neg", "right"],
+        pin1: ["pos", "left"],
+        pin2: ["neg", "right"],
       },
     })
   }
