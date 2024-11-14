@@ -82,7 +82,7 @@ export const createSchematicTraceCrossingSegments = ({
 
     // Create 3 new edges: before crossing, crossing segment, after crossing
     const crossingPoint = closestIntersection.crossingPoint
-    const crossingSegmentLength = 0.1 // mm
+    const crossingSegmentLength = 0.075 // mm
 
     const crossingUnitVec = getUnitVectorFromPointAToB(edge.from, crossingPoint)
 
@@ -105,7 +105,6 @@ export const createSchematicTraceCrossingSegments = ({
     ]
 
     // Replace the original edge with our new edges
-    console.log(i)
     edges.splice(i, 1, ...newEdges)
     i += newEdges.length - 2 // Skip the first segment and the crossing segment
 

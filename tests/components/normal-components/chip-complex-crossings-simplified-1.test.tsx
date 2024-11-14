@@ -58,19 +58,19 @@ test("complex chip schematic with multiple connections", () => {
 
   const traces = circuit.db.schematic_trace.list()
 
-  console.table(
-    traces.flatMap((t) =>
-      t.edges.map((te, ei) => ({
-        schematic_trace_id: t.schematic_trace_id,
-        ei,
-        x: te.is_crossing ? "X" : "",
-        from_x: te.from.x.toFixed(2),
-        from_y: te.from.y.toFixed(2),
-        to_x: te.to.x.toFixed(2),
-        to_y: te.to.y.toFixed(2),
-      })),
-    ),
-  )
+  // console.table(
+  //   traces.flatMap((t) =>
+  //     t.edges.map((te, ei) => ({
+  //       schematic_trace_id: t.schematic_trace_id,
+  //       ei,
+  //       x: te.is_crossing ? "X" : "",
+  //       from_x: te.from.x.toFixed(2),
+  //       from_y: te.from.y.toFixed(2),
+  //       to_x: te.to.x.toFixed(2),
+  //       to_y: te.to.y.toFixed(2),
+  //     })),
+  //   ),
+  // )
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
