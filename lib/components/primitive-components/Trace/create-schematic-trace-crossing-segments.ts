@@ -97,6 +97,9 @@ export const createSchematicTraceCrossingSegments = ({
       y: crossingPoint.y + (crossingUnitVec.y * crossingSegmentLength) / 2,
     }
 
+    // The trace is overshooting if the distance between afterCrossing and edge.to is less than crossingSegmentLength
+    const overshot = distance(afterCrossing, edge.to) < crossingSegmentLength
+
     // Replace the original edge with 3 new edges
     const newEdges = [
       { from: edge.from, to: beforeCrossing },
@@ -108,8 +111,8 @@ export const createSchematicTraceCrossingSegments = ({
     edges.splice(i, 1, ...newEdges)
     i += newEdges.length - 2 // Skip the first segment and the crossing segment
 
-    // If we're within 1mm of the end of the edge, stop processing this edge
-    if (distance(afterCrossing, edge.to) <= 1) {
+    // if we overshot the end of the edge, skip to the next edge
+    if (overshot) {
       i++
     }
   }
