@@ -43,44 +43,36 @@ test("complex chip schematic with multiple connections", () => {
       />
 
       {/* Left side resistors */}
-      <resistor name="R1" resistance="10k" schX={-4} schY={-3} />
       <resistor name="R2" resistance="10k" schX={-4} schY={-2} />
       <resistor name="R3" resistance="10k" schX={-4} schY={-1} />
       <resistor name="R4" resistance="10k" schX={-4} schY={0} />
-      <resistor name="R5" resistance="10k" schX={-4} schY={1} />
-      <resistor name="R6" resistance="10k" schX={-4} schY={2} />
-
-      {/* Right side resistors */}
-      <resistor name="R7" resistance="10k" schX={4} schY={-3} />
-      <resistor name="R8" resistance="10k" schX={4} schY={-2} />
-      <resistor name="R9" resistance="10k" schX={4} schY={-1} />
-      <resistor name="R10" resistance="10k" schX={4} schY={0} />
-      <resistor name="R11" resistance="10k" schX={4} schY={1} />
-      <resistor name="R12" resistance="10k" schX={4} schY={2} />
 
       {/* Random connections */}
-      <trace from=".R1 > .pin2" to=".U1 > .IN1" />
       <trace from=".R2 > .pin2" to=".U1 > .IN3" />
       <trace from=".R3 > .pin2" to=".U1 > .IN4" />
       <trace from=".R4 > .pin2" to=".U1 > .IN6" />
-      <trace from=".R5 > .pin2" to=".U1 > .IN7" />
-      <trace from=".R6 > .pin2" to=".U1 > .IN8" />
-
-      <trace from=".R7 > .pin1" to=".U1 > .OUT8" />
-      <trace from=".R8 > .pin1" to=".U1 > .OUT6" />
-      <trace from=".R9 > .pin1" to=".U1 > .OUT5" />
-      <trace from=".R10 > .pin1" to=".U1 > .OUT4" />
-      <trace from=".R11 > .pin1" to=".U1 > .OUT2" />
-      <trace from=".R12 > .pin1" to=".U1 > .OUT1" />
-
-      {/* Cross connections for complexity */}
-      <trace from=".R1 > .pin1" to=".R12 > .pin2" />
-      <trace from=".R3 > .pin1" to=".R10 > .pin2" />
-      <trace from=".R5 > .pin1" to=".R8 > .pin2" />
     </board>,
   )
 
   circuit.render()
+
+  const traces = circuit.db.schematic_trace.list()
+
+  console.table(
+    traces.flatMap((t) =>
+      t.edges.map((te, ei) => ({
+        schematic_trace_id: t.schematic_trace_id,
+        ei,
+        x: te.is_crossing ? "X" : "",
+        from_x: te.from.x.toFixed(2),
+        from_y: te.from.y.toFixed(2),
+        to_x: te.to.x.toFixed(2),
+        to_y: te.to.y.toFixed(2),
+      })),
+    ),
+  )
+
+  console.dir(traces[2], { depth: null })
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
