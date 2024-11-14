@@ -286,7 +286,7 @@ export abstract class PrimitiveComponent<
     if (symbol_name_horz in symbols) {
       if (props.schRotation === 0 || props.schRotation === undefined)
         return symbol_name_horz
-      if (props.schRotation === 180) return symbol_name_vert
+      if (props.schRotation === 180) return symbol_name_horz
     }
     if (symbol_name_vert in symbols) {
       if (props.schRotation === 90) return symbol_name_vert

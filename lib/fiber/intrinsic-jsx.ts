@@ -11,6 +11,7 @@ declare global {
       board: Props.BoardProps
       jumper: Props.JumperProps
       bug: Props.ChipProps
+      potentiometer: Props.PotentiometerProps
       // TODO use ChipProps once it gets merged in @tscircuit/props
       chip: Props.ChipProps
       powersource: Props.PowerSourceProps
