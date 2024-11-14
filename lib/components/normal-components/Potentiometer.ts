@@ -16,7 +16,8 @@ export class Potentiometer extends NormalComponent<
   // @ts-ignore
   get config() {
     return {
-      schematicSymbolName: this.props.symbolName ?? ("potentiometer2" as BaseSymbolName),
+      schematicSymbolName:
+        this.props.symbolName ?? ("potentiometer2" as BaseSymbolName),
       componentName: "Potentiometer",
       zodProps: potentiometerProps,
       sourceFtype: "simple_potentiometer" as Ftype,
