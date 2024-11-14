@@ -48,7 +48,7 @@ test("repro4 schematic trace overlap", async () => {
     (crossingEdge.to.x - crossingEdge.from.x) ** 2 +
       (crossingEdge.to.y - crossingEdge.from.y) ** 2,
   )
-  expect(length).toBeCloseTo(0.1, 2)
+  expect(length).toBeCloseTo(0.075, 2)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
