@@ -47,9 +47,9 @@ test("rotated resistor/diode/inductor/led/capacitor schematic", () => {
 
   expect(symbolNames.includes("capacitor_vert")).toBeTruthy()
   expect(symbolNames.includes("inductor_vert")).toBeTruthy()
-  expect(symbolNames.includes("led_vert")).toBeTruthy()
+  expect(symbolNames.includes("led_up")).toBeTruthy()
   expect(symbolNames.includes("boxresistor_vert")).toBeTruthy()
-  expect(symbolNames.includes("diode_vert")).toBeTruthy()
+  expect(symbolNames.includes("diode_up")).toBeTruthy()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

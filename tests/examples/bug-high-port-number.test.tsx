@@ -74,14 +74,14 @@ test("bug high port number", async () => {
       <diode
         name="LED1"
         footprint="0805"
-        symbolName="diode_vert"
+        symbolName="diode"
         schX={3}
         schY={2}
       />
       <diode
         name="LED2"
         footprint="0805"
-        symbolName="diode_vert"
+        symbolName="diode"
         schX={4.5}
         schY={2}
       />
