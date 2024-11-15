@@ -4,7 +4,9 @@
               .component { fill: none; stroke: rgb(132, 0, 0); }
               .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
               .component-pin { fill: none; stroke: rgb(132, 0, 0); }
-              .trace { stroke: rgb(0, 150, 0); }
+              .trace:hover {
+                filter: invert(1);
+              }
               .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
               .pin-number { fill: rgb(169, 0, 0); }
               .port-label { fill: rgb(0, 100, 100); }
