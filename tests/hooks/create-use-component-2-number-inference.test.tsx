@@ -20,3 +20,18 @@ test("createUseComponent pin type inference", () => {
   // @ts-expect-error
   expectTypesMatch<typeof R1.pin20, string>(true)
 })
+
+test("createUseComponent pin type inference", () => {
+  const useResistor = createUseComponent(
+    (props: ResistorProps) => <resistor {...props} />,
+    ["left", "pin1", "right", "pin2"] as const,
+  )
+
+  const R1 = useResistor("R1", { resistance: "10k" })
+
+  expectTypesMatch<typeof R1.left, string>(true)
+  expectTypesMatch<typeof R1.pin1, string>(true)
+
+  // @ts-expect-error
+  expectTypesMatch<typeof R1.pin20, string>(true)
+})

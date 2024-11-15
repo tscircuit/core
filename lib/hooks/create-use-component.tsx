@@ -24,27 +24,40 @@ export type ComponentWithPins<
   [key in PinLabel]: string
 }
 
-export const createUseComponent = <
+type CreateUseComponentConstPinLabels = <
+  Props,
+  PinLabel extends string | never = never,
+>(
+  Component: React.ComponentType<Props>,
+  pins: readonly PinLabel[],
+) => <PropsFromHook extends Omit<Props, "name"> | undefined = undefined>(
+  name: string,
+  props?: PropsFromHook,
+) => ComponentWithPins<Props, PinLabel, PropsFromHook>
+
+type CreateUseComponentPinLabelMap = <
   Props,
   PinLabel extends string | never = never,
   PinNumberKey extends string = never,
 >(
   Component: React.ComponentType<Props>,
-  pins: PinLabelSpec<PinLabel, PinNumberKey>,
-): (<PropsFromHook extends Omit<Props, "name"> | undefined = undefined>(
+  pins: Record<PinNumberKey, readonly PinLabel[] | PinLabel[]>,
+) => <PropsFromHook extends Omit<Props, "name"> | undefined = undefined>(
   name: string,
   props?: PropsFromHook,
-) => ComponentWithPins<Props, PinLabel | PinNumberKey, PropsFromHook>) => {
-  return <T extends Omit<Props, "name"> | undefined = undefined>(
-    name: string,
-    props?: T,
-  ): ComponentWithPins<Props, PinLabel, T> => {
-    const pinLabelsFlatArray: PinLabel[] = []
+) => ComponentWithPins<Props, PinLabel | PinNumberKey, PropsFromHook>
+
+export const createUseComponent: CreateUseComponentConstPinLabels &
+  CreateUseComponentPinLabelMap = (Component: any, pins: any) => {
+  return (name: string, props?: any) => {
+    const pinLabelsFlatArray: string[] = []
     if (Array.isArray(pins)) {
       pinLabelsFlatArray.push(...pins.flat())
     } else if (typeof pins === "object") {
-      pinLabelsFlatArray.push(...Object.values(pins).flat())
-      pinLabelsFlatArray.push(...(Object.keys(pins) as PinLabel[]))
+      pinLabelsFlatArray.push(
+        ...Object.values(pins as Record<string, string[]>).flat(),
+      )
+      pinLabelsFlatArray.push(...(Object.keys(pins) as string[]))
     }
     const R: any = (props2: any) => {
       const combinedProps = { ...props, ...props2, name }

@@ -41,7 +41,7 @@ test("createUseComponent creates a component with correct props and traces", () 
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <R1 pin1="net.VCC" pin2="net.GND" />
+      <R1 left="net.VCC" pin2="net.GND" />
       <R2 pin1={R1.pin1} pin2="net.GND" />
       <R3 resistance="10k" />
     </board>,
