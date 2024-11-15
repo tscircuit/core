@@ -45,7 +45,7 @@ test("rotated resistor/diode/inductor/led/capacitor schematic", () => {
     .list()
     .map((elm) => elm.symbol_name)
 
-  expect(symbolNames.includes("capacitor_vert")).toBeTruthy()
+  expect(symbolNames.includes("capacitor_up")).toBeTruthy()
   expect(symbolNames.includes("inductor_vert")).toBeTruthy()
   expect(symbolNames.includes("led_up")).toBeTruthy()
   expect(symbolNames.includes("boxresistor_vert")).toBeTruthy()
