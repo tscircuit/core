@@ -2,10 +2,13 @@ import React, { Component, type ComponentProps } from "react"
 import { z } from "zod"
 import { resistorProps, resistorPins } from "@tscircuit/props"
 
-export type PinLabelSpec<PinLabel extends string> =
+export type PinLabelSpec<
+  PinLabel extends string,
+  PinNumberKey extends string = never,
+> =
   | readonly PinLabel[]
   | readonly (readonly PinLabel[])[]
-  | { [key: string]: readonly PinLabel[] }
+  | Record<PinNumberKey, readonly PinLabel[]>
 
 export type ComponentWithPins<
   Props,
@@ -24,13 +27,14 @@ export type ComponentWithPins<
 export const createUseComponent = <
   Props,
   PinLabel extends string | never = never,
+  PinNumberKey extends string = never,
 >(
   Component: React.ComponentType<Props>,
-  pins: PinLabelSpec<PinLabel>,
+  pins: PinLabelSpec<PinLabel, PinNumberKey>,
 ): (<PropsFromHook extends Omit<Props, "name"> | undefined = undefined>(
   name: string,
   props?: PropsFromHook,
-) => ComponentWithPins<Props, PinLabel, PropsFromHook>) => {
+) => ComponentWithPins<Props, PinLabel | PinNumberKey, PropsFromHook>) => {
   return <T extends Omit<Props, "name"> | undefined = undefined>(
     name: string,
     props?: T,
