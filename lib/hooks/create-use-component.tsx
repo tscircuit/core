@@ -2,10 +2,13 @@ import React, { Component, type ComponentProps } from "react"
 import { z } from "zod"
 import { resistorProps, resistorPins } from "@tscircuit/props"
 
-export type PinLabelSpec<PinLabel extends string> =
+export type PinLabelSpec<
+  PinLabel extends string,
+  PinNumberKey extends string = never,
+> =
   | readonly PinLabel[]
   | readonly (readonly PinLabel[])[]
-  | { [key: string]: readonly PinLabel[] }
+  | Record<PinNumberKey, readonly PinLabel[]>
 
 export type ComponentWithPins<
   Props,
@@ -21,26 +24,40 @@ export type ComponentWithPins<
   [key in PinLabel]: string
 }
 
-export const createUseComponent = <
+type CreateUseComponentConstPinLabels = <
   Props,
   PinLabel extends string | never = never,
 >(
   Component: React.ComponentType<Props>,
-  pins: PinLabelSpec<PinLabel>,
-): (<PropsFromHook extends Omit<Props, "name"> | undefined = undefined>(
+  pins: readonly PinLabel[],
+) => <PropsFromHook extends Omit<Props, "name"> | undefined = undefined>(
   name: string,
   props?: PropsFromHook,
-) => ComponentWithPins<Props, PinLabel, PropsFromHook>) => {
-  return <T extends Omit<Props, "name"> | undefined = undefined>(
-    name: string,
-    props?: T,
-  ): ComponentWithPins<Props, PinLabel, T> => {
-    const pinLabelsFlatArray: PinLabel[] = []
+) => ComponentWithPins<Props, PinLabel, PropsFromHook>
+
+type CreateUseComponentPinLabelMap = <
+  Props,
+  PinLabel extends string | never = never,
+  PinNumberKey extends string = never,
+>(
+  Component: React.ComponentType<Props>,
+  pins: Record<PinNumberKey, readonly PinLabel[] | PinLabel[]>,
+) => <PropsFromHook extends Omit<Props, "name"> | undefined = undefined>(
+  name: string,
+  props?: PropsFromHook,
+) => ComponentWithPins<Props, PinLabel | PinNumberKey, PropsFromHook>
+
+export const createUseComponent: CreateUseComponentConstPinLabels &
+  CreateUseComponentPinLabelMap = (Component: any, pins: any) => {
+  return (name: string, props?: any) => {
+    const pinLabelsFlatArray: string[] = []
     if (Array.isArray(pins)) {
       pinLabelsFlatArray.push(...pins.flat())
     } else if (typeof pins === "object") {
-      pinLabelsFlatArray.push(...Object.values(pins).flat())
-      pinLabelsFlatArray.push(...(Object.keys(pins) as PinLabel[]))
+      pinLabelsFlatArray.push(
+        ...Object.values(pins as Record<string, string[]>).flat(),
+      )
+      pinLabelsFlatArray.push(...(Object.keys(pins) as string[]))
     }
     const R: any = (props2: any) => {
       const combinedProps = { ...props, ...props2, name }

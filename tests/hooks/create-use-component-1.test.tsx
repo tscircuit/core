@@ -41,7 +41,7 @@ test("createUseComponent creates a component with correct props and traces", () 
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <R1 pin1="net.VCC" pin2="net.GND" />
+      <R1 left="net.VCC" pin2="net.GND" />
       <R2 pin1={R1.pin1} pin2="net.GND" />
       <R3 resistance="10k" />
     </board>,
@@ -60,8 +60,9 @@ test("createUseComponent creates a component with correct props and traces", () 
   const traces = circuit.selectAll("trace")
   expect(traces.length).toBe(4)
 
-  const trace1 = traces.find((t) => t.props.from === ".R1 > .pin1")
+  const trace1 = traces.find((t) => t.props.from === ".R1 > .left")
   const trace2 = traces.find((t) => t.props.from === ".R1 > .pin2")
+  console.log(trace1?.props)
 
   expect(trace1).not.toBeNull()
   expect(trace1?.props.to).toBe("net.VCC")
