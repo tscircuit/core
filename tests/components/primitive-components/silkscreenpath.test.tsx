@@ -36,3 +36,27 @@ test("SilkscreenPath rendering", () => {
 
   expect(project).toMatchPcbSnapshot(import.meta.path)
 })
+
+test("SilkscreenPath not interpreted as pins in schematic view", () => {
+  const { project } = getTestFixture()
+
+  project.add(
+    <board width="10mm" height="10mm">
+      <silkscreenpath
+        route={[
+          { x: "0mm", y: "0mm" },
+          { x: "5mm", y: "5mm" },
+          { x: "10mm", y: "0mm" },
+        ]}
+        strokeWidth="0.2mm"
+        layer="top"
+      />
+    </board>,
+  )
+
+  project.render()
+
+  const schematicPins = project.db.schematic_pin.list()
+
+  expect(schematicPins.length).toBe(0)
+})

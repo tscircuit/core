@@ -46,4 +46,8 @@ export class SilkscreenPath extends PrimitiveComponent<
 
     this.pcb_silkscreen_path_id = pcb_silkscreen_path.pcb_silkscreen_path_id
   }
+
+  doInitialSchematicComponentRender(): void {
+    // This method intentionally left blank to prevent silkscreen paths from being interpreted as pins in the schematic view
+  }
 }
