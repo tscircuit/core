@@ -54,13 +54,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   _getGlobalPcbPositionBeforeLayout(): { x: number; y: number } {
     const matchedPcbElm = this.matchedComponents.find((c) => c.isPcbPrimitive)
 
+    // If no PCB primitive is matched, use the parent component's position
     if (!matchedPcbElm) {
-      throw new Error(
-        `Port ${this} has no matched pcb component, can't get global pcb position`,
-      )
+      return this.parent?._getGlobalPcbPositionBeforeLayout() ?? { x: 0, y: 0 }
     }
 
-    return matchedPcbElm?._getGlobalPcbPositionBeforeLayout() ?? { x: 0, y: 0 }
+    return matchedPcbElm._getGlobalPcbPositionBeforeLayout()
   }
 
   _getPcbCircuitJsonBounds() {
