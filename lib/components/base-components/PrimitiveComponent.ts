@@ -282,6 +282,29 @@ export abstract class PrimitiveComponent<
 
     const symbol_name_horz = `${base_symbol_name}_horz` as keyof typeof symbols
     const symbol_name_vert = `${base_symbol_name}_vert` as keyof typeof symbols
+    const symbol_name_up = `${base_symbol_name}_up` as keyof typeof symbols
+    const symbol_name_down = `${base_symbol_name}_down` as keyof typeof symbols
+    const symbol_name_left = `${base_symbol_name}_left` as keyof typeof symbols
+    const symbol_name_right =
+      `${base_symbol_name}_right` as keyof typeof symbols
+
+    if (
+      symbol_name_right in symbols &&
+      (props.schRotation === undefined || props.schRotation === 0)
+    ) {
+      return symbol_name_right
+    }
+    if (symbol_name_up in symbols && props.schRotation === 90) {
+      return symbol_name_up
+    }
+
+    if (symbol_name_left in symbols && props.schRotation === 180) {
+      return symbol_name_left
+    }
+
+    if (symbol_name_down in symbols && props.schRotation === 270) {
+      return symbol_name_down
+    }
 
     if (symbol_name_horz in symbols) {
       if (props.schRotation === 0 || props.schRotation === undefined)
