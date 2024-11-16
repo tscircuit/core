@@ -575,7 +575,9 @@ export class NormalComponent<
       let pinNumber = 1
       const newPorts: Port[] = []
       for (const fpChild of fp.children) {
-        let portHintsList = fpChild.props.portHints ?? []
+        if (!fpChild.props.portHints) continue
+
+        let portHintsList = fpChild.props.portHints
         const hasPinPrefix = portHintsList.some((hint: string) =>
           hint.startsWith("pin"),
         )
@@ -603,6 +605,7 @@ export class NormalComponent<
         }
       }
     }
+
     return newPorts
   }
 
