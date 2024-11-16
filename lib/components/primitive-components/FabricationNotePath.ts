@@ -48,4 +48,8 @@ export class FabricationNotePath extends PrimitiveComponent<
     this.fabrication_note_path_id =
       fabrication_note_path.pcb_fabrication_note_path_id
   }
+
+  doInitialSchematicComponentRender(): void {
+    // This method intentionally left blank to prevent fabrication note paths from being interpreted as pins in the schematic view
+  }
 }
