@@ -10,7 +10,7 @@ const pinLabels = {
   pin4: ["pin4", "VOUT2"],
 } as const
 
-test("custom footptint extra pin", () => {
+test("Custom footprint with 4 ports", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

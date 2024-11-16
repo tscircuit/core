@@ -605,7 +605,6 @@ export class NormalComponent<
         }
       }
     }
-
     return newPorts
   }
 
