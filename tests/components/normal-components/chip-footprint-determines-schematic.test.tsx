@@ -1,17 +1,18 @@
-import { test, expect } from "bun:test"
-import { Board, Chip, Footprint, SmtPad } from "lib/index"
+import { jsx } from "react/jsx-runtime"
+import { test, expect } from "@jest/globals"
+import { Board, Chip, Footprint, SmtPad } from "lib/components"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("chip footprint determines schematic port arrangement", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm">
-      <chip
+    <Board width="10mm" height="10mm">
+      <Chip
         name="U1"
         footprint={
-          <footprint>
-            <smtpad
+          <Footprint>
+            <SmtPad
               pcbX={0}
               pcbY={0}
               shape="rect"
@@ -19,10 +20,10 @@ test("chip footprint determines schematic port arrangement", () => {
               height={1}
               portHints={["pin1"]}
             />
-          </footprint>
+          </Footprint>
         }
       />
-    </board>,
+    </Board>
   )
   circuit.render()
 
@@ -30,21 +31,26 @@ test("chip footprint determines schematic port arrangement", () => {
 
   expect(schematicComponent).toBeDefined()
 
-  expect(
-    circuit.db.pcb_smtpad.list().every((smtpad) => smtpad.pcb_component_id),
-  ).toBeTruthy()
+  const schematicPorts = circuit.db.schematic_port.list()
+  expect(schematicPorts).toHaveLength(1)
+
+  expect(schematicPorts[0].schematic_component_id).toBe(schematicComponent.schematic_component_id)
+
+  const pcbPorts = circuit.db.pcb_port.list()
+  expect(pcbPorts).toHaveLength(1)
+  expect(pcbPorts[0].pcb_component_id).toBe(circuit.db.pcb_component.list()[0].pcb_component_id)
 })
 
 test("chip footprint does not cause extra pins in schematic view", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm">
-      <chip
+    <Board width="10mm" height="10mm">
+      <Chip
         name="U1"
         footprint={
-          <footprint>
-            <smtpad
+          <Footprint>
+            <SmtPad
               pcbX={0}
               pcbY={0}
               shape="rect"
@@ -61,14 +67,16 @@ test("chip footprint does not cause extra pins in schematic view", () => {
               strokeWidth="0.2mm"
               layer="top"
             />
-          </footprint>
+          </Footprint>
         }
       />
-    </board>,
+    </Board>
   )
   circuit.render()
 
-  const schematicPins = circuit.db.schematic_pin.list()
+  const schematicPins = circuit.db.schematic_port.list()
 
   expect(schematicPins.length).toBe(1)
+
+  expect(circuit.db.schematic_component.list()).toHaveLength(1)
 })
