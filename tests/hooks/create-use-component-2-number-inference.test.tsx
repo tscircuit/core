@@ -17,8 +17,7 @@ test("createUseComponent pin type inference", () => {
   expectTypesMatch<typeof R1.left, string>(true)
   expectTypesMatch<typeof R1.pin1, string>(true)
 
-  // @ts-expect-error
-  expectTypesMatch<typeof R1.pin20, string>(true)
+  expectTypesMatch<typeof R1.pin2, string>(true)
 })
 
 test("createUseComponent pin type inference", () => {
