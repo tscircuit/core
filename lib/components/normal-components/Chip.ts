@@ -43,7 +43,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
         x: (props.schX ?? 0) + (schematic_box_width ?? 0) / 2,
         y: (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55,
       },
-      color: "black",
+      color: "#006464",
     })
     const component_name_text = db.schematic_text.insert({
       text: props.name ?? "",
@@ -54,7 +54,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
         x: (props.schX ?? 0) + (schematic_box_width ?? 0) / 2,
         y: (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35,
       },
-      color: "black",
+      color: "#006464",
     })
     this.source_component_id = source_component.source_component_id!
   }
