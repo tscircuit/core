@@ -1,4 +1,5 @@
 import { chipProps } from "@tscircuit/props"
+import type { SchematicPortArrangement } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
@@ -24,17 +25,39 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
-
     const source_component = db.source_component.insert({
       ftype: "simple_chip",
       name: props.name,
       manufacturer_part_number: props.manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
     })
-
+    const dimensions = this._getSchematicBoxDimensions()
+    const schematic_box_width = dimensions?.getSize().width
+    const schematic_box_height = dimensions?.getSize().height
+    const manufacturer_part_number_text = db.schematic_text.insert({
+      text: props.manufacturerPartNumber ?? "",
+      schematic_component_id: source_component.source_component_id,
+      anchor: "left",
+      rotation: 0,
+      position: {
+        x: (props.schX ?? 0) + (schematic_box_width ?? 0) / 2,
+        y: (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55,
+      },
+      color: "#006464",
+    })
+    const component_name_text = db.schematic_text.insert({
+      text: props.name ?? "",
+      schematic_component_id: source_component.source_component_id,
+      anchor: "left",
+      rotation: 0,
+      position: {
+        x: (props.schX ?? 0) + (schematic_box_width ?? 0) / 2,
+        y: (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35,
+      },
+      color: "#006464",
+    })
     this.source_component_id = source_component.source_component_id!
   }
-
   doInitialPcbComponentRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -47,7 +70,6 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
     })
-
     this.pcb_component_id = pcb_component.pcb_component_id
   }
 }
