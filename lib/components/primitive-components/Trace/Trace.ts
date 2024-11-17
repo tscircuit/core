@@ -629,6 +629,17 @@ export class Trace
           connectedTo: [],
         })
       }
+      if (elm.type === "schematic_text") {
+        obstacles.push({
+          type: "rect",
+          layers: ["top"],
+          center: elm.position,
+          // Approximate text bounds based on text length
+          width: (elm.text?.length ?? 0) * 0.1,
+          height: 0.2,
+          connectedTo: [],
+        })
+      }
     }
 
     // Get port positions for later use
