@@ -1,41 +1,43 @@
-import { batteryProps } from "@tscircuit/props"
-import type { SourceSimpleBatteryInput } from "circuit-json"
-
-import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
+import { pushButtonProps } from "@tscircuit/props"
+import type { SourceSimplePushbutton } from "circuit-json"
+import {
+  FTYPE,
+  type BaseSymbolName,
+  type PassivePorts,
+} from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
-export class Battery extends NormalComponent<
-  typeof batteryProps,
+
+export class PushButton extends NormalComponent<
+  typeof pushButtonProps,
   PassivePorts
 > {
   get config() {
     return {
-      componentName: "Battery",
+      componentName: "PushButton",
       schematicSymbolName: (this.props.symbolName ??
-        ("battery" as BaseSymbolName)) as BaseSymbolName,
-      zodProps: batteryProps,
-      sourceFtype: "simple_power_source" as Ftype,
+        ("push_button_normally_open_momentary" as BaseSymbolName)) as BaseSymbolName,
+      zodProps: pushButtonProps,
+      sourceFtype: FTYPE.simple_push_button,
     }
   }
 
   initPorts() {
     super.initPorts({
       additionalAliases: {
-        pin1: ["anode", "pos", "left"],
-        pin2: ["cathode", "neg", "right"],
+        pin1: ["side1"],
+        pin3: ["side2"],
       },
     })
   }
-
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       name: props.name,
-      ftype: "simple_power_source" as Ftype,
-      capacity: props.capacity,
+      ftype: FTYPE.simple_push_button,
       supplier_part_numbers: props.supplierPartNumbers,
-    } as SourceSimpleBatteryInput)
+    } as SourceSimplePushbutton)
     this.source_component_id = source_component.source_component_id
   }
 }
