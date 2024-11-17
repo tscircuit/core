@@ -148,7 +148,7 @@ export class Trace
           this.renderError(`Could not find port for selector "${selector}"`)
         } else {
           this.renderError(
-            `Could not find port for selector "${selector}"\nsearched component ${targetComponent.getString()}, which has ports: ${targetComponent.children
+            `Could not find port for selector "${selector}" (did you forget to include the pin name?)\nsearched component ${targetComponent.getString()}, which has ports: ${targetComponent.children
               .filter((c) => c.componentName === "Port")
               .map(
                 (c) => `${c.getString()}(${c.getNameAndAliases().join(",")})`,
