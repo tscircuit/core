@@ -83,10 +83,11 @@ jobs:
             echo "diff=$diff" >> $GITHUB_OUTPUT
           fi
 
-      - name: Update comment  
+      - name: Update comment
         uses: marocchino/sticky-pull-request-comment@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
         with:
-          GITHUB_TrocchinOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
           header: Size Report
           message: |
             ## Size Report
