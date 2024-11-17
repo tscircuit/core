@@ -11,6 +11,6 @@ test("diode SVG snapshot", async () => {
   )
 
   project.render()
-
   expect(project).toMatchPcbSnapshot(import.meta.path)
+  expect(project).toMatchSchematicSnapshot(import.meta.path)
 })

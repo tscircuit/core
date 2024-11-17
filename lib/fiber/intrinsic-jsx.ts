@@ -6,6 +6,7 @@ declare global {
       resistor: Props.ResistorProps
       capacitor: Props.CapacitorProps
       inductor: Props.InductorProps
+      pushbutton: Props.PushButtonProps
       diode: Props.DiodeProps
       led: Props.LedProps
       board: Props.BoardProps

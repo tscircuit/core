@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.183",
+  "version": "0.0.186",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -45,7 +45,7 @@
     "@tscircuit/soup-util": "^0.0.40",
     "circuit-json": "^0.0.104",
     "circuit-json-to-connectivity-map": "^0.0.17",
-    "circuit-to-svg": "^0.0.77",
+    "circuit-to-svg": "^0.0.80",
     "format-si-unit": "^0.0.2",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",

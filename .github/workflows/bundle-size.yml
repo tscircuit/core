@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  pull-requests: write
+
 jobs:
   size:
     name: Report bundle and install size
@@ -85,8 +88,9 @@ jobs:
 
       - name: Update comment
         uses: marocchino/sticky-pull-request-comment@v2
-        with:
+        env:
           GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+        with:
           header: Size Report
           message: |
             ## Size Report
