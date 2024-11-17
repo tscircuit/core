@@ -3,13 +3,13 @@ import { createUseComponent } from "./create-use-component"
 
 export const usePinHeader = (
   name: string,
-  options: {
+  PinHeaderProps: {
     pinLabels: PinHeaderProps["pinLabels"]
   },
 ) =>
   createUseComponent(
     (props: PinHeaderProps) => (
-      <pinheader {...props} name={name} pinLabels={options.pinLabels} />
+      <pinheader {...props} name={name} pinLabels={PinHeaderProps.pinLabels} />
     ),
-    options.pinLabels!,
+    PinHeaderProps.pinLabels!,
   )
