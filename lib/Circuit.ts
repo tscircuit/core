@@ -154,6 +154,7 @@ export class Circuit {
   }
 
   selectAll(selector: string): PrimitiveComponent[] {
+    this._guessRootComponent()
     return this.firstChild?.selectAll(selector) ?? []
   }
 
@@ -161,6 +162,7 @@ export class Circuit {
     selector: string,
     opts?: { type?: "component" | "port" },
   ): PrimitiveComponent | null {
+    this._guessRootComponent()
     return this.firstChild?.selectOne(selector, opts) ?? null
   }
 

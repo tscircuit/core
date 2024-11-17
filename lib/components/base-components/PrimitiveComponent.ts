@@ -18,6 +18,9 @@ import type { Circuit } from "../../Circuit"
 import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
 import { Renderable } from "./Renderable"
 import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import Debug from "debug"
+
+const debugSelectAll = Debug("tscircuit:primitive-component:selectAll")
 
 export interface BaseComponentConfig {
   componentName: string
@@ -488,24 +491,77 @@ export abstract class PrimitiveComponent<
   }
 
   selectAll(selector: string): PrimitiveComponent[] {
+    debugSelectAll(`selectAll: "${selector}"`)
+    /**
+     * Splits something like ".R1 > .R2" into [".R1", ">", ".R2"]
+     */
     const parts = selector.trim().split(/\s+/)
-    let results: PrimitiveComponent[] = [this]
+
+    /**
+     * Mutable array of results. As we iterate over the parts, we'll filter
+     * or add items to this array. For example, if we go into a subcircuit,
+     * we'll add all the components in that subcircuit to this array because
+     * they're now accessible.
+     *
+     * this = <board />
+     * parts: [".subcircuit1", ">", ".R1"]
+     *
+     * iteration 0:
+     * part: ".subcircuit1"
+     * currentSearch: [<subcircuit />]
+     * currentResults: []
+     * ...
+     * currentSearch: [<resistor name="R1" />]
+     * currentResults: [<subcircuit />]
+     *
+     * iteration 1:
+     * part: ">"
+     * onlyDirectChildren = true
+     *
+     * iteration 2:
+     * part: ".R1"
+     * currentSearch: [<resistor />]
+     * currentResults: [<subcircuit />]
+     * ...
+     * currentSearch: []
+     * currentResults: [<resistor />]
+     */
+    let currentSearch: PrimitiveComponent[] =
+      parts[0] === ">" ? this.children : this.getSelectableDescendants()
+    let currentResults: PrimitiveComponent[] = []
 
     let onlyDirectChildren = false
+    let iteration = -1
     for (const part of parts) {
+      iteration++
+      debugSelectAll(`\n\niteration: ${iteration}`)
+      debugSelectAll(`part: "${parts[iteration]}"`)
+      debugSelectAll(
+        `currentSearch: [${currentSearch.map((r) => r.getString()).join(",")}]`,
+      )
+      debugSelectAll(
+        `currentResults: [${currentResults.map((r) => r.getString()).join(",")}]`,
+      )
+
       if (part === ">") {
         onlyDirectChildren = true
       } else {
-        results = results.flatMap((component) => {
-          return (
-            onlyDirectChildren ? component.children : component.getDescendants()
-          ).filter((descendant) => isMatchingSelector(descendant, part))
+        const newResults = currentSearch.filter((component) =>
+          isMatchingSelector(component, part),
+        )
+        const newSearch = newResults.flatMap((component) => {
+          if (onlyDirectChildren) return component.children
+          return component.getSelectableDescendants()
         })
+
+        currentSearch = newSearch
+        currentResults = newResults
+
         onlyDirectChildren = false
       }
     }
 
-    return results.filter((component) => component !== this)
+    return currentResults
   }
 
   selectOne<T = PrimitiveComponent>(
@@ -558,11 +614,34 @@ export abstract class PrimitiveComponent<
     return []
   }
 
+  /**
+   * Returns all descendants
+   *
+   * NOTE: This crosses subcircuit boundaries, you may want to use
+   * getSelectableDescendants instead
+   */
   getDescendants(): PrimitiveComponent[] {
     const descendants: PrimitiveComponent[] = []
     for (const child of this.children) {
       descendants.push(child)
       descendants.push(...child.getDescendants())
+    }
+    return descendants
+  }
+
+  /**
+   * Returns all descendants that are accessible without crossing a subcircuit
+   * boundary
+   */
+  getSelectableDescendants(): PrimitiveComponent[] {
+    const descendants: PrimitiveComponent[] = []
+    for (const child of this.children) {
+      if (child.isSubcircuit) {
+        descendants.push(child)
+      } else {
+        descendants.push(child)
+        descendants.push(...child.getSelectableDescendants())
+      }
     }
     return descendants
   }
