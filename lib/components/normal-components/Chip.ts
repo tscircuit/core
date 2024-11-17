@@ -43,8 +43,12 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       anchor: "left",
       rotation: 0,
       position: {
-        x: isTopOrBottomPins?((props.schX ?? 0) + (schematic_box_width ?? 0) / 2) : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2 ,
-        y: isTopOrBottomPins? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55 : (props.schY ?? 0) - (schematic_box_height ?? 0) / 2 - 0.13,
+        x: isTopOrBottomPins
+          ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2
+          : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
+        y: isTopOrBottomPins
+          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55
+          : (props.schY ?? 0) - (schematic_box_height ?? 0) / 2 - 0.13,
       },
       color: "#006464",
     })
@@ -54,8 +58,12 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       anchor: "left",
       rotation: 0,
       position: {
-        x: isTopOrBottomPins?(props.schX ?? 0) + (schematic_box_width ?? 0) / 2 : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
-        y: isTopOrBottomPins?(props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35: (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.13,
+        x: isTopOrBottomPins
+          ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2
+          : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
+        y: isTopOrBottomPins
+          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35
+          : (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.13,
       },
       color: "#006464",
     })
