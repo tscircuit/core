@@ -45,20 +45,26 @@ export type PortArrangement =
   | SidePinCounts
   | ExplicitPinMappingArrangement
 
+export type schPinStylePinNumbers = Record<
+  `pin${number}` | number | `${number}`,
+  {
+    leftMargin?: number
+    rightMargin?: number
+    topMargin?: number
+    bottomMargin?: number
+  }
+>
+
+export type schPinStylePinLabels = string
+
+export type schPinStyleInputs = schPinStylePinNumbers | schPinStylePinLabels
+
 interface Params {
   schWidth?: number
   schHeight?: number
   portDistanceFromEdge?: number
   schPinSpacing: number
-  schPinStyle?: Record<
-    `pin${number}` | number | `${number}`,
-    {
-      leftMargin?: number
-      rightMargin?: number
-      topMargin?: number
-      bottomMargin?: number
-    }
-  >
+  schPinStyle?: schPinStyleInputs
   pinCount?: number
   schPortArrangement?: PortArrangement
   pinLabels?: Record<string, string>
