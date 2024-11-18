@@ -7,6 +7,7 @@ on:
 
 permissions:
   pull-requests: write
+  issues: write
 
 jobs:
   size:
@@ -87,6 +88,7 @@ jobs:
           fi
 
       - name: Update comment
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: marocchino/sticky-pull-request-comment@v2
         env:
           GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}

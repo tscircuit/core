@@ -29,3 +29,7 @@ board.add(trace)
 
 project.getJson() // [{ type: "board", ...}, { type: "resistor", ...}, ...]
 ```
+
+## Note
+
+The bundle-size reporter workflow requires a `GITHUB_TOKEN` to be passed to the `sticky-pull-request-comment` action. Ensure that the `GITHUB_TOKEN` is correctly configured in the workflow file to avoid permission issues.
