@@ -440,7 +440,7 @@ export class NormalComponent<
       source_component_id: this.source_component_id!,
     })
 
-    if (!props.footprint) {
+    if (!props.footprint && !this.isGroup) {
       const footprint_error = db.pcb_missing_footprint_error.insert({
         message: `No footprint found for component: ${this.componentName}`,
         source_component_id: `${this.source_component_id}`,

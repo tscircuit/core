@@ -76,6 +76,10 @@ export abstract class PrimitiveComponent<
     )
   }
 
+  get isGroup() {
+    return this.lowercaseComponentName === "group"
+  }
+
   /**
    * A primitive container is a component that contains one or more ports and
    * primitive components that are designed to interact.
