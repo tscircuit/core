@@ -12,19 +12,25 @@ test("bug high port number", async () => {
         pcbX="-10mm"
         pcbY="0mm"
         pinLabels={{
-          1: "OUT1",
-          2: "OUT2",
-          3: "OUT3",
-          4: "OUT4",
-          5: "VCC",
-          6: "IN1",
-          7: "IN2",
-          8: "GND",
+          1: "OUT1", 2: "OUT2", 3: "OUT3", 4: "OUT4",
+          5: "VCC", 6: "IN1", 7: "IN2", 8: "GND",
         }}
       />
 
-      <diode name="D1" footprint="sod123" pcbX="-5mm" pcbY="5mm" />
-      <diode name="D2" footprint="sod123" pcbX="-5mm" pcbY="-5mm" />
+      <diode
+        name="D1"
+        footprint="sod123"
+        direction="right"
+        pcbX="-5mm"
+        pcbY="5mm"
+      />
+      <diode
+        name="D2"
+        footprint="sod123"
+        direction="right"
+        pcbX="-5mm"
+        pcbY="-5mm"
+      />
       <capacitor
         name="C1"
         footprint="0805"
@@ -55,10 +61,6 @@ test("bug high port number", async () => {
   expect(circuit.selectOne("capacitor")).not.toBeNull()
   expect(circuit.selectOne("diode")).not.toBeNull()
   expect(circuit.selectOne("chip[name='U1']")).not.toBeNull()
-
-  // Check if traces are created
   expect(circuit.selectAll("trace").length).toBe(7)
-
-  // Generate and check PCB snapshot
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

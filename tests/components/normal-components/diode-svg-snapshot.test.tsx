@@ -6,7 +6,11 @@ test("diode SVG snapshot", async () => {
 
   project.add(
     <board width="10mm" height="10mm">
-      <diode name="D1" footprint="0603" />
+      <diode
+        name="D1"
+        footprint="0603"
+        direction="right"
+      />
     </board>,
   )
 

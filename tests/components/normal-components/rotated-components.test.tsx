@@ -13,7 +13,13 @@ test("rotated resistor/diode/inductor/led/capacitor schematic", () => {
         resistance="10k"
         schRotation="90deg"
       />
-      <led name="L1" schY={0} schX={2} schRotation="90deg" />
+      <led
+        name="L1"
+        schY={0}
+        schX={2}
+        direction="up"
+        schRotation="90deg"
+      />
       <inductor
         name="I1"
         schY={0}
@@ -28,9 +34,19 @@ test("rotated resistor/diode/inductor/led/capacitor schematic", () => {
         capacitance="10k"
         schRotation="90deg"
       />
-      <diode name="D1" schY={0} schX={8} schRotation="90deg" />
-
-      <diode name="D2" schY={0} schX={10} />
+      <diode
+        name="D1"
+        schY={0}
+        schX={8}
+        direction="up"
+        schRotation="90deg"
+      />
+      <diode
+        name="D2"
+        schY={0}
+        schX={10}
+        direction="right"
+      />
 
       <trace from=".D1 > .pin2" to="net.GND" />
       <trace from=".D1 > .pin1" to="net.VCC" />

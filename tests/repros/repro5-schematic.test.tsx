@@ -25,32 +25,12 @@ test("Schematic trace overlaps manufacturer label", async () => {
         schHeight={5}
         footprint="ssop28Db"
         pinLabels={{
-          "1": "TXD",
-          "5": "RXD",
-          "11": "CTS",
-          "3": "RTS",
-          "2": "DTR",
-          "9": "DSR",
-          "10": "DCD",
-          "6": "RI",
-          "23": "TXLED",
-          "22": "RXLED",
-          "14": "PWRUN",
-          "13": "TXDEN",
-          "12": "SLEEP",
-          "16": "USBDM",
-          "15": "USBDP",
-          "20": "VCC",
-          "17": "3V3OUT",
-          "4": "VCCIO",
-          "27": "OSCI",
-          "28": "OSCO",
-          "19": "RESET",
-          "26": "TEST",
-          "25": "AGND",
-          "7": "GND7",
-          "18": "GND18",
-          "21": "GND21",
+          "1": "TXD", "5": "RXD", "11": "CTS", "3": "RTS", "2": "DTR",
+          "9": "DSR", "10": "DCD", "6": "RI", "23": "TXLED", "22": "RXLED",
+          "14": "PWRUN", "13": "TXDEN", "12": "SLEEP", "16": "USBDM",
+          "15": "USBDP", "20": "VCC", "17": "3V3OUT", "4": "VCCIO",
+          "27": "OSCI", "28": "OSCO", "19": "RESET", "26": "TEST",
+          "25": "AGND", "7": "GND7", "18": "GND18", "21": "GND21",
         }}
       />
       <diode
@@ -59,8 +39,18 @@ test("Schematic trace overlaps manufacturer label", async () => {
         symbolName="diode"
         schX={2}
         schY={1}
+        direction="right" 
+      />
+      <diode
+        name="LED2"
+        footprint="0805"
+        symbolName="diode"
+        schX={2}
+        schY={2}
+        direction="up" 
       />
       <trace path={[".LED1 > port.right", ".U1 > .pin20"]} />
+      <trace path={[".LED2 > port.top", ".U1 > .pin22"]} />
     </board>,
   )
 

@@ -7,14 +7,23 @@ import {
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
 
+type Direction = 'right' | 'left' | 'up' | 'down';
+
 export class Diode extends NormalComponent<
   typeof diodeProps,
   PolarizedPassivePorts
 > {
-  // @ts-ignore
   get config() {
+    const direction = (this.props.direction ?? "right") as Direction
+    const symbolMap: Record<Direction, BaseSymbolName> = {
+      right: "diode",
+      left: "diode_left",
+      up: "diode_up",
+      down: "diode_down"
+    }
+
     return {
-      schematicSymbolName: this.props.symbolName ?? ("diode" as BaseSymbolName),
+      schematicSymbolName: this.props.symbolName ?? symbolMap[direction],
       componentName: "Diode",
       zodProps: diodeProps,
       sourceFtype: "simple_diode" as Ftype,
@@ -22,11 +31,28 @@ export class Diode extends NormalComponent<
   }
 
   initPorts() {
-    super.initPorts({
-      additionalAliases: {
+    const direction = (this.props.direction ?? "right") as Direction
+    const portAliases: Record<Direction, Record<string, string[]>> = {
+      right: {
         pin1: ["anode", "pos", "left"],
         pin2: ["cathode", "neg", "right"],
       },
+      left: {
+        pin1: ["anode", "pos", "right"],
+        pin2: ["cathode", "neg", "left"],
+      },
+      up: {
+        pin1: ["anode", "pos", "bottom"],
+        pin2: ["cathode", "neg", "top"],
+      },
+      down: {
+        pin1: ["anode", "pos", "top"],
+        pin2: ["cathode", "neg", "bottom"],
+      },
+    }
+
+    super.initPorts({
+      additionalAliases: portAliases[direction],
     })
   }
 
