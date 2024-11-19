@@ -23,7 +23,7 @@ test("getAllDimensionsForSchematicBox 2 (pinStyle)", () => {
   const params: Parameters<typeof getAllDimensionsForSchematicBox>[0] = {
     schWidth: 1,
     pinLabels: {
-      pin2: "VCC",
+      pin1: "VCC",
     },
     schPinSpacing: 0.2,
     schPinStyle: {

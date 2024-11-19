@@ -194,8 +194,13 @@ export const getAllDimensionsForSchematicBox = (
       truePinIndex,
     })
 
+    const pinLabel =
+      params.pinLabels?.[`pin${pinNumber}`] ?? params.pinLabels?.[pinNumber]
+
     const pinStyle =
-      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
+      params.schPinStyle?.[`pin${pinNumber}`] ??
+      params.schPinStyle?.[pinNumber] ??
+      (pinLabel ? params.schPinStyle?.[pinLabel] : undefined)
 
     if (pinStyle?.topMargin) {
       currentDistanceFromEdge += pinStyle.topMargin
@@ -230,8 +235,13 @@ export const getAllDimensionsForSchematicBox = (
       truePinIndex,
     })
 
+    const pinLabel =
+      params.pinLabels?.[`pin${pinNumber}`] ?? params.pinLabels?.[pinNumber]
+
     const pinStyle =
-      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
+      params.schPinStyle?.[`pin${pinNumber}`] ??
+      params.schPinStyle?.[pinNumber] ??
+      (pinLabel ? params.schPinStyle?.[pinLabel] : undefined)
 
     if (pinStyle?.leftMargin) {
       currentDistanceFromEdge += pinStyle.leftMargin
@@ -266,8 +276,13 @@ export const getAllDimensionsForSchematicBox = (
       truePinIndex,
     })
 
+    const pinLabel =
+      params.pinLabels?.[`pin${pinNumber}`] ?? params.pinLabels?.[pinNumber]
+
     const pinStyle =
-      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
+      params.schPinStyle?.[`pin${pinNumber}`] ??
+      params.schPinStyle?.[pinNumber] ??
+      (pinLabel ? params.schPinStyle?.[pinLabel] : undefined)
 
     if (pinStyle?.bottomMargin) {
       currentDistanceFromEdge += pinStyle.bottomMargin
@@ -302,9 +317,13 @@ export const getAllDimensionsForSchematicBox = (
       truePinIndex,
     })
 
-    const pinStyle =
-      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
+    const pinLabel =
+      params.pinLabels?.[`pin${pinNumber}`] ?? params.pinLabels?.[pinNumber]
 
+    const pinStyle =
+      params.schPinStyle?.[`pin${pinNumber}`] ??
+      params.schPinStyle?.[pinNumber] ??
+      (pinLabel ? params.schPinStyle?.[pinLabel] : undefined)
     if (pinStyle?.rightMargin) {
       currentDistanceFromEdge += pinStyle.rightMargin
     }
