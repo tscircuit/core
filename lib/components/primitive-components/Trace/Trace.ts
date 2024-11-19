@@ -5,7 +5,7 @@ import {
 import { traceProps } from "@tscircuit/props"
 import type {
   LayerRef,
-  PCBTrace,
+  PcbTrace,
   RouteHintPoint,
   SchematicTrace,
 } from "circuit-json"
@@ -19,28 +19,23 @@ import type {
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
+import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getClosest } from "lib/utils/getClosest"
 import { pairs } from "lib/utils/pairs"
-import { projectPointInDirection } from "lib/utils/projectPointInDirection"
-import { projectPointInOppositeDirection } from "lib/utils/projectPointInOppositeDirection"
+import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { getStubEdges } from "lib/utils/schematic/getStubEdges"
 import { tryNow } from "lib/utils/try-now"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Net } from "../Net"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
-import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
-import type { Point } from "@tscircuit/math-utils"
-import { getStubEdges } from "lib/utils/schematic/getStubEdges"
-import { doesLineIntersectLine } from "@tscircuit/math-utils"
-import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
-import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import type { TraceI } from "./TraceI"
+import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
-import { getExitingEdgeFromDirection } from "lib/utils/schematic/getExitingEdgeFromDirection"
-import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -71,10 +66,12 @@ export class Trace
   schematic_trace_id: string | null = null
   _portsRoutedOnPcb: Port[]
   subcircuit_connectivity_map_key: string | null = null
+  _cachedRoute: PcbTrace["route"] | null = null
 
   constructor(props: z.input<typeof traceProps>) {
     super(props)
     this._portsRoutedOnPcb = []
+    this._cachedRoute = null
   }
 
   get config() {
@@ -463,7 +460,18 @@ export class Trace
     ;(orderedRoutePoints[orderedRoutePoints.length - 1] as any).pcb_port_id =
       ports[1].pcb_port_id
 
-    const routes: PCBTrace["route"][] = []
+    // Use cached route if available
+    if (this._cachedRoute) {
+      const pcb_trace = db.pcb_trace.insert({
+        route: this._cachedRoute,
+        source_trace_id: this.source_trace_id!,
+      })
+      this._portsRoutedOnPcb = ports
+      this.pcb_trace_id = pcb_trace.pcb_trace_id
+      return
+    }
+
+    const routes: PcbTrace["route"][] = []
     for (const [a, b] of pairs(orderedRoutePoints)) {
       const dominantLayer =
         "via_to_layer" in a ? (a.via_to_layer as LayerRef) : null
@@ -541,7 +549,7 @@ export class Trace
         })
         return
       }
-      const [trace] = traces as PCBTrace[]
+      const [trace] = traces as PcbTrace[]
 
       // If the autorouter didn't specify a layer, use the dominant layer
       // Some of the single-layer autorouters don't add the layer property
@@ -566,6 +574,9 @@ export class Trace
 
     const mergedRoute = mergeRoutes(routes)
 
+    // Cache the successful route
+    
+    this._cachedRoute = mergedRoute
     const pcb_trace = db.pcb_trace.insert({
       route: mergedRoute,
       source_trace_id: this.source_trace_id!,
