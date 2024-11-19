@@ -6,7 +6,13 @@ test("header with default pinrow footprint", () => {
 
   project.add(
     <board width="10mm" height="10mm">
-      <pinheader name="J1" pinCount={4} pitch="2.54mm" gender="male" />
+      <pinheader
+        name="J1"
+        pinCount={4}
+        pinLabels={["label1", "label2", "label3", "label4"]}
+        pitch="2.54mm"
+        gender="male"
+      />
     </board>,
   )
 
