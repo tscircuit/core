@@ -5,7 +5,7 @@ import { usePinHeader } from "lib/hooks/use-pinheader"
 test("usePinheader hook creates component with correct props", () => {
   const circuit = new Circuit()
 
-  const useHeader = usePinHeader("J1", {
+  const J1 = usePinHeader("J1", {
     pinLabels: ["VCC", "GND", "TX", "RX"],
   })
 
