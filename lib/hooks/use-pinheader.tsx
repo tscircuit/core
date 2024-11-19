@@ -9,7 +9,7 @@ export const usePinHeader = (
 ) =>
   createUseComponent(
     (props: PinHeaderProps) => (
-      <pinheader {...props} name={name} pinLabels={props.pinLabels} />
+      <pinheader {...props} name={name}/>
     ),
     props.pinLabels!,
   )
