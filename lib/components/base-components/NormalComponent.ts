@@ -401,10 +401,15 @@ export class NormalComponent<
     const dimensions = this._getSchematicBoxDimensions()!
 
     const primaryPortLabels: Record<string, string> = {}
-    for (const [port, label] of Object.entries(props.pinLabels ?? {})) {
-      primaryPortLabels[port] = Array.isArray(label) ? label[0] : label
+    if (Array.isArray(props.pinLabels)) {
+      props.pinLabels.forEach((label: string, index: number) => {
+        primaryPortLabels[String(index + 1)] = label
+      })
+    } else {
+      for (const [port, label] of Object.entries(props.pinLabels ?? {})) {
+        primaryPortLabels[port] = Array.isArray(label) ? label[0] : label
+      }
     }
-
     const schematic_component = db.schematic_component.insert({
       center: { x: props.schX ?? 0, y: props.schY ?? 0 },
       rotation: props.schRotation ?? 0,
