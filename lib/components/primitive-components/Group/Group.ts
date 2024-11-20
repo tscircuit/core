@@ -9,6 +9,7 @@ import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent"
 import { TraceHint } from "../TraceHint"
 import type {
+  PcbTrace,
   SchematicComponent,
   SchematicPort,
   SourceTrace,
@@ -29,7 +30,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   implements ISubcircuit
 {
   _asyncAutoroutingResult: {
-    output_simple_route_json: SimpleRouteJson
+    output_simple_route_json?: SimpleRouteJson
+    output_pcb_traces?: PcbTrace[]
   } | null = null
 
   get config() {
@@ -162,21 +164,32 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this.props.autorouter?.serverUrl) {
       // Make a request to the autorouter server
       this._queueAsyncEffect(async () => {
+        if (this.props.autorouter.inputFormat === "simplified") {
+          const { autorouting_result } = await fetch(
+            this.props.autorouter.serverUrl,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                input_simple_route_json:
+                  this._getSimpleRouteJsonFromPcbTraces(),
+              }),
+            },
+          ).then((r) => r.json())
+          this._asyncAutoroutingResult = autorouting_result
+          this._markDirty("PcbTraceRender")
+        }
+
         const { autorouting_result } = await fetch(
           this.props.autorouter.serverUrl,
           {
             method: "POST",
             body: JSON.stringify({
-              input_simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
+              // TODO filter such that we're only sending the subcircuit's
+              // components
+              input_circuit_json: this.root!.db.toArray(),
             }),
           },
         ).then((r) => r.json())
-
-        const { output_simple_route_json } = autorouting_result
-
-        this._asyncAutoroutingResult = autorouting_result
-
-        this._markDirty("PcbTraceRender")
       })
     }
   }
