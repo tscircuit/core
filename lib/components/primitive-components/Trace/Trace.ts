@@ -269,7 +269,7 @@ export class Trace
     const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
     if (cachedRoute) {
       const pcb_trace = db.pcb_trace.insert({
-        route: cachedRoute.flatMap(trace => trace.route),
+        route: cachedRoute.flatMap((trace) => trace.route),
         source_trace_id: this.source_trace_id!,
       })
       this.pcb_trace_id = pcb_trace.pcb_trace_id
