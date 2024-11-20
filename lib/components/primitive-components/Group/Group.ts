@@ -114,35 +114,46 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   doInitialPcbTraceRender() {
     if (this._shouldUseTraceByTraceRouting()) return
 
-    if (this.props.autorouter?.serverUrl) {
+    let serverUrl = this.props.autorouter?.serverUrl
+
+    if (this.props.autorouter === "auto-cloud") {
+      // TODO this url should be inferred by scanning parent subcircuits, the
+      // default should be provided by the platform OR error
+      serverUrl = "https://registry-api.tscircuit.com/autorouting/solve"
+    }
+
+    if (serverUrl) {
       // Make a request to the autorouter server
       this._queueAsyncEffect(async () => {
-        if (this.props.autorouter.inputFormat === "simplified") {
-          const { autorouting_result } = await fetch(
-            this.props.autorouter.serverUrl,
-            {
-              method: "POST",
-              body: JSON.stringify({
-                input_simple_route_json:
-                  this._getSimpleRouteJsonFromPcbTraces(),
-              }),
+        if (this.props.autorouter?.inputFormat === "simplified") {
+          const { autorouting_result } = await fetch(serverUrl, {
+            method: "POST",
+            body: JSON.stringify({
+              input_simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
+            }),
+            headers: {
+              "Content-Type": "application/json",
             },
-          ).then((r) => r.json())
+          }).then((r) => r.json())
           this._asyncAutoroutingResult = autorouting_result
           this._markDirty("PcbTraceRender")
         }
 
-        const { autorouting_result } = await fetch(
-          this.props.autorouter.serverUrl,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              // TODO filter such that we're only using this subcircuit's
-              // components
-              input_circuit_json: this.root!.db.toArray(),
-            }),
+        const arRes = await fetch(serverUrl, {
+          method: "POST",
+          body: JSON.stringify({
+            // TODO filter such that we're only using this subcircuit's
+            // components
+            input_circuit_json: this.root!.db.toArray(),
+          }),
+          headers: {
+            "Content-Type": "application/json",
           },
-        ).then((r) => r.json())
+        })
+
+        const resultText = await arRes.text()
+        // TODO handle errors
+        const { autorouting_result } = JSON.parse(resultText)
         this._asyncAutoroutingResult = autorouting_result
         this._markDirty("PcbTraceRender")
       })

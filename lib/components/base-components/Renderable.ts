@@ -122,10 +122,7 @@ export abstract class Renderable implements IRenderable {
         }
       })
       .catch((error) => {
-        console.error(
-          `Async effect error in ${this._currentRenderPhase}:`,
-          error,
-        )
+        console.error(`Async effect error in ${asyncEffect.phase}:`, error)
         asyncEffect.complete = true
 
         // HACK: emit to the root circuit component that an async effect has completed
