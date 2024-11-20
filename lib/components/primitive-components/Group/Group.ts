@@ -9,6 +9,7 @@ import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent"
 import { TraceHint } from "../TraceHint"
 import type {
+  PcbTrace,
   SchematicComponent,
   SchematicPort,
   SourceTrace,
@@ -23,13 +24,15 @@ import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
 import type { Trace } from "../Trace/Trace"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { TraceI } from "../Trace/TraceI"
+import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
   implements ISubcircuit
 {
   _asyncAutoroutingResult: {
-    output_simple_route_json: SimpleRouteJson
+    output_simple_route_json?: SimpleRouteJson
+    output_pcb_traces?: PcbTrace[]
   } | null = null
 
   get config() {
@@ -65,59 +68,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const traces = this.selectAll("trace") as Trace[]
     const { db } = this.root!
 
-    const obstacles = getObstaclesFromSoup([
-      ...db.pcb_component.list(),
-      ...db.pcb_smtpad.list(),
-      ...db.pcb_plated_hole.list(),
-    ])
-
-    // Calculate bounds
-    const allPoints = obstacles.flatMap((o) => [
-      {
-        x: o.center.x - o.width / 2,
-        y: o.center.y - o.height / 2,
-      },
-      {
-        x: o.center.x + o.width / 2,
-        y: o.center.y + o.height / 2,
-      },
-    ])
-
-    const bounds = {
-      minX: Math.min(...allPoints.map((p) => p.x)) - 1,
-      maxX: Math.max(...allPoints.map((p) => p.x)) + 1,
-      minY: Math.min(...allPoints.map((p) => p.y)) - 1,
-      maxY: Math.max(...allPoints.map((p) => p.y)) + 1,
-    }
-
-    // Create connections from traces
-    const connections = traces
-      .map((trace) => {
-        const connectedPorts = trace._findConnectedPorts()
-        if (!connectedPorts.allPortsFound || connectedPorts.ports.length < 2)
-          return null
-
-        return {
-          name: trace.source_trace_id ?? "",
-          pointsToConnect: connectedPorts.ports.map((port) => {
-            const pos = port._getGlobalPcbPositionBeforeLayout()
-            return {
-              x: pos.x,
-              y: pos.y,
-              layer: port.getAvailablePcbLayers()[0] ?? "top",
-            }
-          }),
-        }
-      })
-      .filter((c): c is SimpleRouteConnection => c !== null)
-
-    return {
-      bounds,
-      obstacles: [],
-      connections,
-      layerCount: 2,
+    return getSimpleRouteJsonFromTracesAndDb({
+      db,
+      traces,
       minTraceWidth: this._parsedProps.minTraceWidth ?? 0.1,
-    }
+    })
   }
 
   doInitialSourceAddConnectivityMapKey(): void {
@@ -159,23 +114,47 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   doInitialPcbTraceRender() {
     if (this._shouldUseTraceByTraceRouting()) return
 
-    if (this.props.autorouter?.serverUrl) {
+    let serverUrl = this.props.autorouter?.serverUrl
+
+    if (this.props.autorouter === "auto-cloud") {
+      // TODO this url should be inferred by scanning parent subcircuits, the
+      // default should be provided by the platform OR error
+      serverUrl = "https://registry-api.tscircuit.com/autorouting/solve"
+    }
+
+    if (serverUrl) {
       // Make a request to the autorouter server
       this._queueAsyncEffect(async () => {
-        const { autorouting_result } = await fetch(
-          this.props.autorouter.serverUrl,
-          {
+        if (this.props.autorouter?.inputFormat === "simplified") {
+          const { autorouting_result } = await fetch(serverUrl, {
             method: "POST",
             body: JSON.stringify({
               input_simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
             }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }).then((r) => r.json())
+          this._asyncAutoroutingResult = autorouting_result
+          this._markDirty("PcbTraceRender")
+        }
+
+        const arRes = await fetch(serverUrl, {
+          method: "POST",
+          body: JSON.stringify({
+            // TODO filter such that we're only using this subcircuit's
+            // components
+            input_circuit_json: this.root!.db.toArray(),
+          }),
+          headers: {
+            "Content-Type": "application/json",
           },
-        ).then((r) => r.json())
+        })
 
-        const { output_simple_route_json } = autorouting_result
-
+        const resultText = await arRes.text()
+        // TODO handle errors
+        const { autorouting_result } = JSON.parse(resultText)
         this._asyncAutoroutingResult = autorouting_result
-
         this._markDirty("PcbTraceRender")
       })
     }
@@ -186,8 +165,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this._shouldUseTraceByTraceRouting()) return
 
     const { db } = this.root!
+
+    if (this._asyncAutoroutingResult.output_simple_route_json) {
+      this._updatePcbTraceRenderFromSimpleRouteJson()
+      return
+    }
+
+    if (this._asyncAutoroutingResult.output_pcb_traces) {
+      this._updatePcbTraceRenderFromPcbTraces()
+      return
+    }
+  }
+
+  _updatePcbTraceRenderFromSimpleRouteJson() {
+    const { db } = this.root!
     const { traces: routedTraces } =
-      this._asyncAutoroutingResult.output_simple_route_json
+      this._asyncAutoroutingResult!.output_simple_route_json!
 
     if (!routedTraces) return
 
@@ -224,6 +217,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       //     })
       //   }
       // }
+    }
+  }
+
+  _updatePcbTraceRenderFromPcbTraces() {
+    const { output_pcb_traces } = this._asyncAutoroutingResult!
+    if (!output_pcb_traces) return
+
+    const { db } = this.root!
+
+    // Delete any previously created traces
+    // TODO
+
+    // Apply each routed trace to the corresponding circuit trace
+    for (const pcb_trace of output_pcb_traces) {
+      db.pcb_trace.insert(pcb_trace)
     }
   }
 
