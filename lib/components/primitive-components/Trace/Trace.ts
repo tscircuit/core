@@ -5,7 +5,7 @@ import {
 import { traceProps } from "@tscircuit/props"
 import type {
   LayerRef,
-  PCBTrace,
+  PcbTrace,
   RouteHintPoint,
   SchematicTrace,
 } from "circuit-json"
@@ -19,28 +19,23 @@ import type {
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
+import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getClosest } from "lib/utils/getClosest"
 import { pairs } from "lib/utils/pairs"
-import { projectPointInDirection } from "lib/utils/projectPointInDirection"
-import { projectPointInOppositeDirection } from "lib/utils/projectPointInOppositeDirection"
+import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { getStubEdges } from "lib/utils/schematic/getStubEdges"
 import { tryNow } from "lib/utils/try-now"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Net } from "../Net"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
-import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
-import type { Point } from "@tscircuit/math-utils"
-import { getStubEdges } from "lib/utils/schematic/getStubEdges"
-import { doesLineIntersectLine } from "@tscircuit/math-utils"
-import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
-import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import type { TraceI } from "./TraceI"
+import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
-import { getExitingEdgeFromDirection } from "lib/utils/schematic/getExitingEdgeFromDirection"
-import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -262,14 +257,26 @@ export class Trace
   doInitialPcbTraceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
+    const subcircuit = this.getSubcircuit()
 
     if (!parent) throw new Error("Trace has no parent")
 
-    if (this.getSubcircuit()._parsedProps.routingDisabled) {
+    if (subcircuit._parsedProps.routingDisabled) {
       return
     }
 
-    if (!this.getSubcircuit()._shouldUseTraceByTraceRouting()) {
+    // Check for cached route
+    const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
+    if (cachedRoute) {
+      const pcb_trace = db.pcb_trace.insert({
+        route: cachedRoute.flatMap((trace) => trace.route),
+        source_trace_id: this.source_trace_id!,
+      })
+      this.pcb_trace_id = pcb_trace.pcb_trace_id
+      return
+    }
+
+    if (!subcircuit._shouldUseTraceByTraceRouting()) {
       return
     }
 
@@ -463,7 +470,7 @@ export class Trace
     ;(orderedRoutePoints[orderedRoutePoints.length - 1] as any).pcb_port_id =
       ports[1].pcb_port_id
 
-    const routes: PCBTrace["route"][] = []
+    const routes: PcbTrace["route"][] = []
     for (const [a, b] of pairs(orderedRoutePoints)) {
       const dominantLayer =
         "via_to_layer" in a ? (a.via_to_layer as LayerRef) : null
@@ -541,7 +548,7 @@ export class Trace
         })
         return
       }
-      const [trace] = traces as PCBTrace[]
+      const [trace] = traces as PcbTrace[]
 
       // If the autorouter didn't specify a layer, use the dominant layer
       // Some of the single-layer autorouters don't add the layer property
