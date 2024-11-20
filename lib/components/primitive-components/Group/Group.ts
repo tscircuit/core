@@ -201,8 +201,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this._shouldUseTraceByTraceRouting()) return
 
     const { db } = this.root!
+
+    if (this._asyncAutoroutingResult.output_simple_route_json) {
+      this._updatePcbTraceRenderFromSimpleRouteJson()
+      return
+    }
+
+    if (this._asyncAutoroutingResult.output_pcb_traces) {
+      this._updatePcbTraceRenderFromPcbTraces()
+      return
+    }
+  }
+
+  _updatePcbTraceRenderFromSimpleRouteJson() {
     const { traces: routedTraces } =
-      this._asyncAutoroutingResult.output_simple_route_json
+      this._asyncAutoroutingResult!.output_simple_route_json!
 
     if (!routedTraces) return
 
@@ -239,6 +252,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       //     })
       //   }
       // }
+    }
+  }
+
+  _updatePcbTraceRenderFromPcbTraces() {
+    const { output_pcb_traces } = this._asyncAutoroutingResult!
+    if (!output_pcb_traces) return
+
+    const { db } = this.root!
+
+    // Delete any previously created traces
+    // TODO
+
+    // Apply each routed trace to the corresponding circuit trace
+    for (const pcb_trace of output_pcb_traces) {
+      db.pcb_trace.insert(pcb_trace)
     }
   }
 
