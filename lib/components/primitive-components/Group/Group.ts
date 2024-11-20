@@ -184,12 +184,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           {
             method: "POST",
             body: JSON.stringify({
-              // TODO filter such that we're only sending the subcircuit's
+              // TODO filter such that we're only using this subcircuit's
               // components
               input_circuit_json: this.root!.db.toArray(),
             }),
           },
         ).then((r) => r.json())
+        this._asyncAutoroutingResult = autorouting_result
+        this._markDirty("PcbTraceRender")
       })
     }
   }
