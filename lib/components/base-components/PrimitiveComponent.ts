@@ -56,6 +56,17 @@ export abstract class PrimitiveComponent<
     return this.config.componentName
   }
 
+  getInheritedProperty(propertyName: string) {
+    let current: PrimitiveComponent<ZodProps> | null = this
+    while (current) {
+      if (current._parsedProps && propertyName in current._parsedProps) {
+        return current._parsedProps[propertyName]
+      }
+      current = current.parent as PrimitiveComponent<ZodProps> | null // Move up to the parent
+    }
+    return undefined // Return undefined if not found
+  }
+
   get lowercaseComponentName() {
     return this.componentName.toLowerCase()
   }
