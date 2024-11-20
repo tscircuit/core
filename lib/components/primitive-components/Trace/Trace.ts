@@ -647,6 +647,16 @@ export class Trace
           connectedTo: [],
         })
       }
+      if (elm.type === "schematic_box") {
+        obstacles.push({
+          type: "rect",
+          layers: ["top"],
+          center: { x: elm.x, y: elm.y },
+          width: elm.width,
+          height: elm.width,
+          connectedTo: [],
+        })
+      }
     }
 
     // Get port positions for later use
