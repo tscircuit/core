@@ -2,6 +2,7 @@ import { serve } from "bun"
 import { afterEach } from "bun:test"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
 export const getTestAutoroutingServer = () => {
   const server = serve({
@@ -11,10 +12,18 @@ export const getTestAutoroutingServer = () => {
         return new Response("Method not allowed", { status: 405 })
       }
 
-      try {
-        const body = await req.json()
-        const simpleRouteJson = body.input_simple_route_json as SimpleRouteJson
+      const body = await req.json()
 
+      let simpleRouteJson: SimpleRouteJson | undefined
+      if (body.input_simple_route_json) {
+        simpleRouteJson = body.input_simple_route_json as SimpleRouteJson
+      } else if (body.input_circuit_json) {
+        simpleRouteJson = getSimpleRouteJsonFromCircuitJson({
+          circuitJson: body.input_circuit_json,
+        })
+      }
+
+      try {
         if (!simpleRouteJson) {
           return new Response(
             JSON.stringify({

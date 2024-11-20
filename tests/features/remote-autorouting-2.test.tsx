@@ -5,7 +5,7 @@ import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-se
 
 // This test uses the board autorouter={{ serverUrl: "http://..." }} prop to
 // test the remote autorouter
-test("remote autorouter", async () => {
+test("remote autorouter 2 with circuit json as input", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer()
 
   const { circuit } = getTestFixture()
