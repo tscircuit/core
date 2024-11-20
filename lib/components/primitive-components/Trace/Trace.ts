@@ -66,12 +66,10 @@ export class Trace
   schematic_trace_id: string | null = null
   _portsRoutedOnPcb: Port[]
   subcircuit_connectivity_map_key: string | null = null
-  _cachedRoute: PcbTrace["route"] | null = null
 
   constructor(props: z.input<typeof traceProps>) {
     super(props)
     this._portsRoutedOnPcb = []
-    this._cachedRoute = null
   }
 
   get config() {
@@ -259,14 +257,26 @@ export class Trace
   doInitialPcbTraceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
+    const subcircuit = this.getSubcircuit()
 
     if (!parent) throw new Error("Trace has no parent")
 
-    if (this.getSubcircuit()._parsedProps.routingDisabled) {
+    if (subcircuit._parsedProps.routingDisabled) {
       return
     }
 
-    if (!this.getSubcircuit()._shouldUseTraceByTraceRouting()) {
+    // Check for cached route
+    const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
+    if (cachedRoute) {
+      const pcb_trace = db.pcb_trace.insert({
+        route: cachedRoute.flatMap(trace => trace.route),
+        source_trace_id: this.source_trace_id!,
+      })
+      this.pcb_trace_id = pcb_trace.pcb_trace_id
+      return
+    }
+
+    if (!subcircuit._shouldUseTraceByTraceRouting()) {
       return
     }
 
@@ -460,17 +470,6 @@ export class Trace
     ;(orderedRoutePoints[orderedRoutePoints.length - 1] as any).pcb_port_id =
       ports[1].pcb_port_id
 
-    // Use cached route if available
-    if (this._cachedRoute) {
-      const pcb_trace = db.pcb_trace.insert({
-        route: this._cachedRoute,
-        source_trace_id: this.source_trace_id!,
-      })
-      this._portsRoutedOnPcb = ports
-      this.pcb_trace_id = pcb_trace.pcb_trace_id
-      return
-    }
-
     const routes: PcbTrace["route"][] = []
     for (const [a, b] of pairs(orderedRoutePoints)) {
       const dominantLayer =
@@ -574,9 +573,6 @@ export class Trace
 
     const mergedRoute = mergeRoutes(routes)
 
-    // Cache the successful route
-    
-    this._cachedRoute = mergedRoute
     const pcb_trace = db.pcb_trace.insert({
       route: mergedRoute,
       source_trace_id: this.source_trace_id!,
