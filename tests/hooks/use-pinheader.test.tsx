@@ -9,10 +9,14 @@ test("usePinheader hook creates component with correct props", () => {
     pinLabels: ["VCC", "GND", "TX", "RX"],
   })
 
+  const J1Component = J1("J1Component", {
+    pinCount: 4,
+    pinLabels: ["VCC", "GND", "TX", "RX"],
+  })
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <J1 pin1="net.GND" pin2="net.VCC" pin3="net.TX" pin4="net.RX" />
+      <J1Component pin1="net.GND" pin2="net.VCC" pin3="net.TX" pin4="net.RX" />
     </board>,
   )
 
