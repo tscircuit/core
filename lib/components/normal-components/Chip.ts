@@ -47,7 +47,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
           ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2
           : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
         y: hasOnlyLeftAndRightPins
-          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55
+          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35
           : (props.schY ?? 0) - (schematic_box_height ?? 0) / 2 - 0.13,
       },
       color: "#006464",
@@ -62,7 +62,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
           ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2
           : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
         y: hasOnlyLeftAndRightPins
-          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35
+          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55
           : (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.13,
       },
       color: "#006464",
