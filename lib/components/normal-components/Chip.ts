@@ -32,7 +32,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
     })
     const dimensions = this._getSchematicBoxDimensions()
-    const hasTopAndBottomPins =
+    const hasTopOrBottomPins =
       props.schPortArrangement?.topSide !== undefined ||
       props.schPortArrangement?.bottomSide !== undefined
     const schematic_box_width = dimensions?.getSize().width
@@ -43,10 +43,10 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       anchor: "left",
       rotation: 0,
       position: {
-        x: hasTopAndBottomPins
+        x: hasTopOrBottomPins
           ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2 + 0.1
           : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
-        y: hasTopAndBottomPins
+        y: hasTopOrBottomPins
           ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35
           : (props.schY ?? 0) - (schematic_box_height ?? 0) / 2 - 0.13,
       },
@@ -58,10 +58,10 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       anchor: "left",
       rotation: 0,
       position: {
-        x: hasTopAndBottomPins
+        x: hasTopOrBottomPins
           ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2 + 0.1
           : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
-        y: hasTopAndBottomPins
+        y: hasTopOrBottomPins
           ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55
           : (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.13,
       },
