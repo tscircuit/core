@@ -32,8 +32,8 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
     })
     const dimensions = this._getSchematicBoxDimensions()
-    const hasOnlyLeftAndRightPins =
-      props.schPortArrangement?.topSide !== undefined &&
+    const hasTopOrBottomPins =
+      props.schPortArrangement?.topSide !== undefined ||
       props.schPortArrangement?.bottomSide !== undefined
     const schematic_box_width = dimensions?.getSize().width
     const schematic_box_height = dimensions?.getSize().height
@@ -43,11 +43,11 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       anchor: "left",
       rotation: 0,
       position: {
-        x: hasOnlyLeftAndRightPins
-          ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2
+        x: hasTopOrBottomPins
+          ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2 + 0.1
           : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
-        y: hasOnlyLeftAndRightPins
-          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55
+        y: hasTopOrBottomPins
+          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35
           : (props.schY ?? 0) - (schematic_box_height ?? 0) / 2 - 0.13,
       },
       color: "#006464",
@@ -58,11 +58,11 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       anchor: "left",
       rotation: 0,
       position: {
-        x: hasOnlyLeftAndRightPins
-          ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2
+        x: hasTopOrBottomPins
+          ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2 + 0.1
           : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
-        y: hasOnlyLeftAndRightPins
-          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35
+        y: hasTopOrBottomPins
+          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55
           : (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.13,
       },
       color: "#006464",
