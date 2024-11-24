@@ -1,6 +1,7 @@
 import { pinHeaderProps, type SchematicPortArrangement } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
+import type { SourceSimplePinHeader } from "circuit-json"
 import type { BaseSymbolName } from "lib/utils/constants"
 
 export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
@@ -54,15 +55,13 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
-
     const source_component = db.source_component.insert({
-      ftype: "simple_chip",
+      ftype: "simple_pin_header",
       name: props.name,
-      // manufacturer_part_number: props.,
       supplier_part_numbers: props.supplierPartNumbers,
-      // gender: props.gender,
-      // pitch: props.pitch,
-    })
+      pin_count: props.pinCount,
+      gender: props.gender,
+    } as SourceSimplePinHeader)
     const dimensions = this._getSchematicBoxDimensions()
     const schematic_box_width = dimensions?.getSize().width
     const schematic_box_height = dimensions?.getSize().height
