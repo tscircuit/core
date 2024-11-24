@@ -197,7 +197,7 @@ export const getAllDimensionsForSchematicBox = (
     const pinLabel =
       params.pinLabels?.[`pin${pinNumber}`] ?? params.pinLabels?.[pinNumber]
 
-    const pinLabelArray = Array.isArray(pinLabel)
+    const pinLabelsArray = Array.isArray(pinLabel)
       ? pinLabel.join(", ")
       : pinLabel
 
@@ -205,7 +205,7 @@ export const getAllDimensionsForSchematicBox = (
       params.schPinStyle?.[`pin${pinNumber}`] ??
       params.schPinStyle?.[pinNumber] ??
       (pinLabel ? params.schPinStyle?.[pinLabel] : undefined) ??
-      (pinLabelArray ? params.schPinStyle?.[pinLabelArray] : undefined)
+      (pinLabelsArray ? params.schPinStyle?.[pinLabelsArray] : undefined)
 
     if (pinStyle?.topMargin) {
       currentDistanceFromEdge += pinStyle.topMargin
@@ -242,7 +242,7 @@ export const getAllDimensionsForSchematicBox = (
 
     const pinLabel =
       params.pinLabels?.[`pin${pinNumber}`] ?? params.pinLabels?.[pinNumber]
-    const pinLabelArray = Array.isArray(pinLabel)
+    const pinLabelsArray = Array.isArray(pinLabel)
       ? pinLabel.join(", ")
       : pinLabel
 
@@ -250,7 +250,7 @@ export const getAllDimensionsForSchematicBox = (
       params.schPinStyle?.[`pin${pinNumber}`] ??
       params.schPinStyle?.[pinNumber] ??
       (pinLabel ? params.schPinStyle?.[pinLabel] : undefined) ??
-      (pinLabelArray ? params.schPinStyle?.[pinLabelArray] : undefined)
+      (pinLabelsArray ? params.schPinStyle?.[pinLabelsArray] : undefined)
     if (pinStyle?.leftMargin) {
       currentDistanceFromEdge += pinStyle.leftMargin
     }
@@ -287,7 +287,7 @@ export const getAllDimensionsForSchematicBox = (
     const pinLabel =
       params.pinLabels?.[`pin${pinNumber}`] ?? params.pinLabels?.[pinNumber]
 
-    const pinLabelArray = Array.isArray(pinLabel)
+    const pinLabelsArray = Array.isArray(pinLabel)
       ? pinLabel.join(", ")
       : pinLabel
 
@@ -295,7 +295,7 @@ export const getAllDimensionsForSchematicBox = (
       params.schPinStyle?.[`pin${pinNumber}`] ??
       params.schPinStyle?.[pinNumber] ??
       (pinLabel ? params.schPinStyle?.[pinLabel] : undefined) ??
-      (pinLabelArray ? params.schPinStyle?.[pinLabelArray] : undefined)
+      (pinLabelsArray ? params.schPinStyle?.[pinLabelsArray] : undefined)
     if (pinStyle?.bottomMargin) {
       currentDistanceFromEdge += pinStyle.bottomMargin
     }
@@ -331,7 +331,7 @@ export const getAllDimensionsForSchematicBox = (
 
     const pinLabel =
       params.pinLabels?.[`pin${pinNumber}`] ?? params.pinLabels?.[pinNumber]
-    const pinLabelArray = Array.isArray(pinLabel)
+    const pinLabelsArray = Array.isArray(pinLabel)
       ? pinLabel.join(", ")
       : pinLabel
 
@@ -339,7 +339,7 @@ export const getAllDimensionsForSchematicBox = (
       params.schPinStyle?.[`pin${pinNumber}`] ??
       params.schPinStyle?.[pinNumber] ??
       (pinLabel ? params.schPinStyle?.[pinLabel] : undefined) ??
-      (pinLabelArray ? params.schPinStyle?.[pinLabelArray] : undefined)
+      (pinLabelsArray ? params.schPinStyle?.[pinLabelsArray] : undefined)
 
     if (pinStyle?.rightMargin) {
       currentDistanceFromEdge += pinStyle.rightMargin
