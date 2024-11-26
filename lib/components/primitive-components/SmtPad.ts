@@ -131,7 +131,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
               y: position.y,
               ccw_rotation: parentRotation,
               port_hints: props.portHints.map((ph) => ph.toString()),
-            })
+            } as PcbSmtPad)
       if (pcb_smtpad.shape === "rect")
         db.pcb_solder_paste.insert({
           layer: pcb_smtpad.layer,
