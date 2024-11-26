@@ -184,6 +184,16 @@ export class Circuit {
     }
     this._eventListeners[event]!.push(listener)
   }
+
+  getClientOrigin(): string {
+    if (typeof window !== 'undefined') {
+      return window.location.origin
+    }
+    if (typeof self !== 'undefined') {
+      return self.origin
+    }
+    return ''
+  }
 }
 
 /**

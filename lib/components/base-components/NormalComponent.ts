@@ -831,11 +831,11 @@ export class NormalComponent<
       source_component_id: this.source_component_id!,
       model_stl_url:
         "stlUrl" in (cadModel ?? {})
-          ? (cadModel as CadModelStl).stlUrl
+          ? this._addCachebustToModelUrl((cadModel as CadModelStl).stlUrl)
           : undefined,
       model_obj_url:
         "objUrl" in (cadModel ?? {})
-          ? (cadModel as CadModelObj).objUrl
+          ? this._addCachebustToModelUrl((cadModel as CadModelObj).objUrl)
           : undefined,
       model_jscad:
         "jscad" in (cadModel ?? {})
@@ -847,6 +847,12 @@ export class NormalComponent<
           ? this.props.footprint
           : undefined,
     })
+  }
+
+  private _addCachebustToModelUrl(url?: string): string | undefined {
+    if (!url || !url.includes("modelcdn.tscircuit.com")) return url
+    const origin = this.root?.getClientOrigin() ?? ""
+    return `${url}${url.includes("?") ? "&" : "?"}cachebust_origin=${encodeURIComponent(origin)}`
   }
 
   doInitialPartsEngineRender(): void {
