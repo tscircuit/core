@@ -60,7 +60,7 @@ export const createUseComponent: CreateUseComponentConstPinLabels &
       pinLabelsFlatArray.push(...(Object.keys(pins) as string[]))
     }
     const R: any = (props2: any) => {
-      const combinedProps = { ...props, ...props2, name }
+      const combinedProps = { ...props, ...props2, name: props2?.name || name }
       const tracesToCreate: any[] = []
 
       for (const portLabel of pinLabelsFlatArray) {
