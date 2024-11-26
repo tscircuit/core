@@ -67,6 +67,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const decomposedMat = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
     )
+    const isRotated90 =
+      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) % 180 < 0.01
 
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
 
@@ -110,7 +112,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
               layer: maybeFlipLayer(props.layer ?? "top"),
               shape: "rect",
 
-              ...{ width: props.width, height: props.height },
+              ...{
+                width: isRotated90 ? props.height : props.width,
+                height: isRotated90 ? props.width : props.height,
+              },
 
               port_hints: props.portHints.map((ph) => ph.toString()),
 
