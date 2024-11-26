@@ -186,13 +186,13 @@ export class Circuit {
   }
 
   getClientOrigin(): string {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       return window.location.origin
     }
-    if (typeof self !== 'undefined') {
+    if (typeof self !== "undefined") {
       return self.origin
     }
-    return ''
+    return ""
   }
 }
 
