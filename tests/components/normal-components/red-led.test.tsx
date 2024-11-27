@@ -142,7 +142,7 @@ const useRedLed = createUseComponent(RedLed, pinNames)
 
 test("<RedLed /> component", async () => {
   const { circuit } = getTestFixture()
-  const RedLedComp = useRedLed("LED")
+  const RedLedComp = useRedLed("LED") as typeof RedLed
   circuit.add(
     <board width="12mm" height="10mm">
       <RedLedComp name="led1" schX={0} />
