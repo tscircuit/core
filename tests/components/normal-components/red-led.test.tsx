@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { createUseComponent } from  "lib/hooks/create-use-component"
+import { createUseComponent } from "lib/hooks/create-use-component"
 import type { CommonLayoutProps } from "@tscircuit/props"
 import { getTestFixture } from "../../fixtures/get-test-fixture"
 
@@ -145,19 +145,10 @@ test("<RedLed /> component", async () => {
   const RedLedComp = useRedLed("LED")
   circuit.add(
     <board width="12mm" height="10mm">
-      <RedLedComp
-        name="led1"
-        schX={0}
-      />
-      <RedLedComp
-        name="led2"
-        schX={3}
-      />
-      <RedLedComp
-        name="led3"
-        schX={6}
-      />
-    </board>
+      <RedLedComp name="led1" schX={0} />
+      <RedLedComp name="led2" schX={3} />
+      <RedLedComp name="led3" schX={6} />
+    </board>,
   )
   circuit.render()
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
