@@ -253,7 +253,7 @@ export abstract class Renderable implements IRenderable {
       | Omit<PcbPlacementError, "pcb_error_id">,
   ) {
     // TODO add to render phase error list and try to add position or
-    // relationships etc.
+    // relationships etc
     if (typeof message === "string") {
       throw new Error(message)
     }
