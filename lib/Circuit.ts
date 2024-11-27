@@ -5,12 +5,13 @@ import { su } from "@tscircuit/soup-util"
 import { isValidElement, type ReactElement } from "react"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 import { identity, type Matrix } from "transformation-matrix"
+import type { RenderPhase } from "./components/base-components/Renderable"
 
 type RootCircuitEventName =
   | "asyncEffectComplete"
   | "renderable:renderLifecycle:anyEvent"
-  | `renderable:renderLifecycle:${string}:start`
-  | `renderable:renderLifecycle:${string}:end`
+  | `renderable:renderLifecycle:${RenderPhase}:start`
+  | `renderable:renderLifecycle:${RenderPhase}:end`
 
 export class Circuit {
   firstChild: PrimitiveComponent | null = null
@@ -173,10 +174,7 @@ export class Circuit {
   _eventListeners: Record<
     RootCircuitEventName,
     Array<(...args: any[]) => void>
-  > = {
-    asyncEffectComplete: [],
-    "renderable:renderLifecycle:anyEvent": [],
-  }
+  > = {} as Record<RootCircuitEventName, Array<(...args: any[]) => void>>
 
   emit(event: RootCircuitEventName, ...args: any[]) {
     if (!this._eventListeners[event]) return
