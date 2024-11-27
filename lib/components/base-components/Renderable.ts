@@ -182,15 +182,12 @@ export abstract class Renderable implements IRenderable {
     const emitRenderEvent = (eventType: "start" | "end") => {
       const eventPayload = { renderId: this._renderId }
       const eventName = `renderable:renderLifecycle:${phase}:${eventType}`
-      ;(this as any).root
-        ?.emit(
-          eventName,
-          eventPayload,
-        )(this as any)
-        .root?.emit("renderable:renderLifecycle:anyEvent", {
-          ...eventPayload,
-          eventName,
-        })
+
+      this.root?.emit(eventName, eventPayload)
+      this.root?.emit("renderable:renderLifecycle:anyEvent", {
+        ...eventPayload,
+        eventName,
+      })
     }
 
     // Handle removal
@@ -213,7 +210,6 @@ export abstract class Renderable implements IRenderable {
       if (hasIncompleteEffects) return
     }
 
-    // Handle start
     emitRenderEvent("start")
 
     // Handle updates
