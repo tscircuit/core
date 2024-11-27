@@ -135,6 +135,30 @@ export abstract class Renderable implements IRenderable {
       })
   }
 
+  protected _emitRenderLifecycleEvent(
+    phase: RenderPhase,
+    eventType: "start" | "end",
+  ) {
+    const eventPayload = {
+      renderId: this._renderId,
+      componentDisplayName: this.getString(),
+    }
+    const eventName = `renderable:renderLifecycle:${phase}:${eventType}`
+    if ("root" in this && this.root) {
+      ;(this.root as any).emit(eventName, {
+        ...eventPayload,
+        type: eventName,
+      })
+      ;(this.root as any).emit("renderable:renderLifecycle:anyEvent", {
+        ...eventPayload,
+        type: eventName,
+      })
+    }
+  }
+  getString() {
+    return this.constructor.name
+  }
+
   _hasIncompleteAsyncEffects(): boolean {
     return this._asyncEffects.some((effect) => !effect.complete)
   }
@@ -144,7 +168,7 @@ export abstract class Renderable implements IRenderable {
   }
 
   getRenderGraph(): Record<string, any> {
-    const graph = {
+    return {
       id: this._renderId,
       currentPhase: this._currentRenderPhase,
       renderPhaseStates: this.renderPhaseStates,
@@ -153,7 +177,6 @@ export abstract class Renderable implements IRenderable {
         (child as Renderable).getRenderGraph(),
       ),
     }
-    return graph
   }
 
   runRenderCycle() {
@@ -179,11 +202,12 @@ export abstract class Renderable implements IRenderable {
     // Skip if component is being removed and not initialized
     if (!isInitialized && this.shouldBeRemoved) return
 
-    // Handle removal
     if (this.shouldBeRemoved && isInitialized) {
+      this._emitRenderLifecycleEvent(phase, "start")
       ;(this as any)?.[`remove${phase}`]?.()
       phaseState.initialized = false
       phaseState.dirty = false
+      this._emitRenderLifecycleEvent(phase, "end")
       return
     }
 
@@ -197,18 +221,22 @@ export abstract class Renderable implements IRenderable {
       if (hasIncompleteEffects) return
     }
 
+    this._emitRenderLifecycleEvent(phase, "start")
+
     // Handle updates
     if (isInitialized) {
       if (isDirty) {
         ;(this as any)?.[`update${phase}`]?.()
         phaseState.dirty = false
       }
+      this._emitRenderLifecycleEvent(phase, "end")
       return
     }
     // Initial render
     phaseState.dirty = false
     ;(this as any)?.[`doInitial${phase}`]?.()
     phaseState.initialized = true
+    this._emitRenderLifecycleEvent(phase, "end")
   }
 
   runRenderPhaseForChildren(phase: RenderPhase): void {
@@ -225,7 +253,7 @@ export abstract class Renderable implements IRenderable {
       | Omit<PcbPlacementError, "pcb_error_id">,
   ) {
     // TODO add to render phase error list and try to add position or
-    // relationships etc.
+    // relationships etc
     if (typeof message === "string") {
       throw new Error(message)
     }
