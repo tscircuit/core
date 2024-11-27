@@ -6,7 +6,11 @@ import { isValidElement, type ReactElement } from "react"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 import { identity, type Matrix } from "transformation-matrix"
 
-type RootCircuitEventName = "asyncEffectComplete"
+type RootCircuitEventName =
+  | "asyncEffectComplete"
+  | "renderable:renderLifecycle:anyEvent"
+  | `renderable:renderLifecycle:${string}:start`
+  | `renderable:renderLifecycle:${string}:end`
 
 export class Circuit {
   firstChild: PrimitiveComponent | null = null
@@ -169,7 +173,10 @@ export class Circuit {
   _eventListeners: Record<
     RootCircuitEventName,
     Array<(...args: any[]) => void>
-  > = { asyncEffectComplete: [] }
+  > = {
+    asyncEffectComplete: [],
+    "renderable:renderLifecycle:anyEvent": [],
+  }
 
   emit(event: RootCircuitEventName, ...args: any[]) {
     if (!this._eventListeners[event]) return

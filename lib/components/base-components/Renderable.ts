@@ -179,11 +179,27 @@ export abstract class Renderable implements IRenderable {
     // Skip if component is being removed and not initialized
     if (!isInitialized && this.shouldBeRemoved) return
 
+    const emitRenderEvent = (eventType: "start" | "end") => {
+      const eventPayload = { renderId: this._renderId }
+      const eventName = `renderable:renderLifecycle:${phase}:${eventType}`
+      ;(this as any).root
+        ?.emit(
+          eventName,
+          eventPayload,
+        )(this as any)
+        .root?.emit("renderable:renderLifecycle:anyEvent", {
+          ...eventPayload,
+          eventName,
+        })
+    }
+
     // Handle removal
     if (this.shouldBeRemoved && isInitialized) {
+      emitRenderEvent("start")
       ;(this as any)?.[`remove${phase}`]?.()
       phaseState.initialized = false
       phaseState.dirty = false
+      emitRenderEvent("end")
       return
     }
 
@@ -197,18 +213,23 @@ export abstract class Renderable implements IRenderable {
       if (hasIncompleteEffects) return
     }
 
+    // Handle start
+    emitRenderEvent("start")
+
     // Handle updates
     if (isInitialized) {
       if (isDirty) {
         ;(this as any)?.[`update${phase}`]?.()
         phaseState.dirty = false
       }
+      emitRenderEvent("end")
       return
     }
     // Initial render
     phaseState.dirty = false
     ;(this as any)?.[`doInitial${phase}`]?.()
     phaseState.initialized = true
+    emitRenderEvent("end")
   }
 
   runRenderPhaseForChildren(phase: RenderPhase): void {
