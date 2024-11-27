@@ -2,8 +2,7 @@ name: Size
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   pull-requests: write
@@ -87,7 +86,7 @@ jobs:
           fi
 
       - name: Update comment
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: mshick/add-pr-comment@v2
         env:
           GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
         with:
@@ -108,3 +107,5 @@ jobs:
             ```
             ${{ steps.pr-install-size.outputs.full_output }}
             ```
+          proxy-url: https://add-pr-comment-proxy-tscircuit.vercel.app/api
+          allow-repeats: false
