@@ -1,9 +1,8 @@
 name: Size
 
 on:
-  pull_request_target:
-    branches:
-      - main
+  pull_request:
+    branches: [main]
 
 permissions:
   pull-requests: write
