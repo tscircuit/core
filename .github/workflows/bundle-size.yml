@@ -87,10 +87,11 @@ jobs:
 
       - name: Update comment
         uses: marocchino/sticky-pull-request-comment@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
         with:
           header: Size Report
+          proxy-url: https://add-pr-comment-proxy-tscircuit.vercel.app/api 
+          repo-token: ${{ secrets.GITHUB_TOKEN }}                                                                         
+          allow-repeats: false
           message: |
             ## Size Report
             ### Bundle Size
@@ -107,3 +108,5 @@ jobs:
             ```
             ${{ steps.pr-install-size.outputs.full_output }}
             ```
+
+            
