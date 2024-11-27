@@ -94,6 +94,7 @@ export abstract class Renderable implements IRenderable {
 
   protected _markDirty(phase: RenderPhase) {
     this.renderPhaseStates[phase].dirty = true
+    // Mark all subsequent phases as dirty
     const phaseIndex = orderedRenderPhases.indexOf(phase)
     for (let i = phaseIndex + 1; i < orderedRenderPhases.length; i++) {
       this.renderPhaseStates[orderedRenderPhases[i]].dirty = true
@@ -102,15 +103,17 @@ export abstract class Renderable implements IRenderable {
 
   protected _queueAsyncEffect(effect: () => Promise<void>) {
     const asyncEffect: AsyncEffect = {
-      promise: effect(),
+      promise: effect(), // TODO don't start effects until end of render cycle
       phase: this._currentRenderPhase!,
       complete: false,
     }
     this._asyncEffects.push(asyncEffect)
 
+    // Set up completion handler
     asyncEffect.promise
       .then(() => {
         asyncEffect.complete = true
+        // HACK: emit to the root circuit component that an async effect has completed
         if ("root" in this && this.root) {
           ;(this.root as any).emit("asyncEffectComplete", {
             component: this,
@@ -121,6 +124,8 @@ export abstract class Renderable implements IRenderable {
       .catch((error) => {
         console.error(`Async effect error in ${asyncEffect.phase}:`, error)
         asyncEffect.complete = true
+
+        // HACK: emit to the root circuit component that an async effect has completed
         if ("root" in this && this.root) {
           ;(this.root as any).emit("asyncEffectComplete", {
             component: this,
@@ -181,12 +186,20 @@ export abstract class Renderable implements IRenderable {
     }
   }
 
+  /**
+   * This runs all the render methods for a given phase, calling one of:
+   * - doInitial*
+   * - update*
+   *  -remove*
+   *  ...depending on the current state of the component.
+   */
   runRenderPhase(phase: RenderPhase) {
     this._currentRenderPhase = phase
     const phaseState = this.renderPhaseStates[phase]
     const isInitialized = phaseState.initialized
     const isDirty = phaseState.dirty
 
+    // Skip if component is being removed and not initialized
     if (!isInitialized && this.shouldBeRemoved) return
 
     if (this.shouldBeRemoved && isInitialized) {
@@ -198,6 +211,7 @@ export abstract class Renderable implements IRenderable {
       return
     }
 
+    // Check for incomplete async effects from previous phases
     const prevPhaseIndex = orderedRenderPhases.indexOf(phase) - 1
     if (prevPhaseIndex >= 0) {
       const prevPhase = orderedRenderPhases[prevPhaseIndex]
@@ -209,6 +223,7 @@ export abstract class Renderable implements IRenderable {
 
     this._emitRenderLifecycleEvent(phase, "start")
 
+    // Handle updates
     if (isInitialized) {
       if (isDirty) {
         ;(this as any)?.[`update${phase}`]?.()
@@ -217,7 +232,7 @@ export abstract class Renderable implements IRenderable {
       this._emitRenderLifecycleEvent(phase, "end")
       return
     }
-
+    // Initial render
     phaseState.dirty = false
     ;(this as any)?.[`doInitial${phase}`]?.()
     phaseState.initialized = true
@@ -237,6 +252,8 @@ export abstract class Renderable implements IRenderable {
       | Omit<PcbTraceError, "pcb_error_id">
       | Omit<PcbPlacementError, "pcb_error_id">,
   ) {
+    // TODO add to render phase error list and try to add position or
+    // relationships etc.
     if (typeof message === "string") {
       throw new Error(message)
     }
