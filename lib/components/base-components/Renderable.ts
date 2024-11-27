@@ -139,6 +139,23 @@ export abstract class Renderable implements IRenderable {
     return this._asyncEffects.some((effect) => !effect.complete)
   }
 
+  getCurrentRenderPhase(): RenderPhase | null {
+    return this._currentRenderPhase
+  }
+
+  getRenderGraph(): Record<string, any> {
+    const graph = {
+      id: this._renderId,
+      currentPhase: this._currentRenderPhase,
+      renderPhaseStates: this.renderPhaseStates,
+      shouldBeRemoved: this.shouldBeRemoved,
+      children: this.children.map((child) =>
+        (child as Renderable).getRenderGraph(),
+      ),
+    }
+    return graph
+  }
+
   runRenderCycle() {
     for (const renderPhase of orderedRenderPhases) {
       this.runRenderPhaseForChildren(renderPhase)
