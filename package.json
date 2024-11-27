@@ -25,7 +25,7 @@
     "@types/debug": "^4.1.12",
     "@types/react": "^18.3.3",
     "@types/react-reconciler": "^0.28.8",
-    "bun-match-svg": "0.0.2",
+    "bun-match-svg": "0.0.8",
     "circuit-to-svg": "^0.0.84",
     "debug": "^4.3.6",
     "howfat": "^0.3.8",
@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/footprinter": "^0.0.77",
+    "@tscircuit/footprinter": "^0.0.89",
     "@tscircuit/infgrid-ijump-astar": "^0.0.24",
     "@tscircuit/math-utils": "^0.0.5",
     "@tscircuit/props": "^0.0.105",
