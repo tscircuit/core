@@ -16,7 +16,16 @@ const getIntersectionPoint = (
   edge2: SchematicTrace["edges"][number],
 ): { x: number; y: number } | null => {
   // Skip if edges aren't orthogonal
-  if (!isOrthogonal(edge1, edge2)) return null
+  if (!isOrthogonal(edge1, edge2)) {
+    // Check for overlapping or collinear edges
+    if (
+      (edge1.from.x === edge2.from.x && edge1.from.y === edge2.from.y) ||
+      (edge1.to.x === edge2.to.x && edge1.to.y === edge2.to.y)
+    ) {
+      return { x: edge1.from.x, y: edge1.from.y } // Add the shared point as a junction
+    }
+    return null // Not orthogonal or overlapping
+  }
 
   const isVertical1 = edge1.from.x === edge1.to.x
   const vertical = isVertical1 ? edge1 : edge2

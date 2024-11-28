@@ -59,6 +59,11 @@ test("example 5: simple circuit with capacitor, resistor, and pushbutton", async
   // Check if traces are created
   expect(circuit.selectAll("trace").length).toBe(5)
 
-  // Generate and check PCB snapshot
+  // Check if junction points are created
+  const expectedX = -1.5
+  const expectedY = 0
+  expect(
+    circuit.db.schematic_trace.getWhere({ x: expectedX, y: expectedY })
+  ).not.toBeNull()
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
