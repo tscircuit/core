@@ -1,37 +1,30 @@
 import { test, expect } from "bun:test"
-import type { PcbSmtPadRect } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("chip rotation should properly adjust SMT pad positions", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm">
+    <board width="30mm" height="30mm">
+      <chip name="U1" pcbX={0} pcbY={0} footprint={"ms012"} />
       <chip
         name="U1"
-        pcbX={0}
-        pcbY={0}
+        pcbX={-10}
+        pcbY={-10}
         pcbRotation={90}
-        footprint={
-          <footprint>
-            <smtpad
-              shape="rect"
-              width="3mm"
-              height="1mm"
-              pcbX={-2}
-              pcbY={0}
-              portHints={["1"]}
-            />
-          </footprint>
-        }
+        footprint={"ms012"}
+      />
+      <chip
+        name="U2"
+        pcbX={10}
+        pcbY={10}
+        pcbRotation={45}
+        footprint={"ms012"}
       />
     </board>,
   )
 
   circuit.render()
 
-  const [pad] = circuit.db.pcb_smtpad.list() as PcbSmtPadRect[]
-
-  expect(pad.width).toBe(1)
-  expect(pad.height).toBe(3)
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
