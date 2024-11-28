@@ -63,7 +63,7 @@ test("example 5: simple circuit with capacitor, resistor, and pushbutton", async
   const expectedX = -1.5
   const expectedY = 0
   expect(
-    circuit.db.schematic_trace.getWhere({ x: expectedX, y: expectedY })
+    circuit.db.schematic_trace.getWhere({ x: expectedX, y: expectedY }),
   ).not.toBeNull()
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
