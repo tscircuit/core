@@ -2,7 +2,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { smtPadProps } from "@tscircuit/props"
 import type { Port } from "./Port"
 import type { RenderPhaseFn } from "../base-components/Renderable"
-import type { LayerRef, PCBSMTPad } from "circuit-json"
+import type { LayerRef, PcbSmtPad } from "circuit-json"
 import {
   applyToPoint,
   compose,
@@ -72,7 +72,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
 
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
 
-    let pcb_smtpad: PCBSMTPad | null = null
+    const parentRotation = container?._parsedProps.pcbRotation ?? 0
+
+    let pcb_smtpad: PcbSmtPad | null = null
     const pcb_component_id =
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
@@ -102,21 +104,34 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
       })
     } else if (props.shape === "rect") {
-      pcb_smtpad = db.pcb_smtpad.insert({
-        pcb_component_id,
-        pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
-        layer: maybeFlipLayer(props.layer ?? "top"),
-        shape: "rect",
+      pcb_smtpad =
+        parentRotation === 0
+          ? db.pcb_smtpad.insert({
+              pcb_component_id,
+              pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
+              layer: maybeFlipLayer(props.layer ?? "top"),
+              shape: "rect",
 
-        ...(isRotated90
-          ? { width: props.height, height: props.width }
-          : { width: props.width, height: props.height }),
+              ...{
+                width: isRotated90 ? props.height : props.width,
+                height: isRotated90 ? props.width : props.height,
+              },
 
-        port_hints: props.portHints.map((ph) => ph.toString()),
+              port_hints: props.portHints.map((ph) => ph.toString()),
 
-        x: position.x,
-        y: position.y,
-      })
+              x: position.x,
+              y: position.y,
+            })
+          : db.pcb_smtpad.insert({
+              pcb_component_id,
+              layer: props.layer ?? "top",
+              shape: "rotated_rect",
+              ...{ width: props.width, height: props.height },
+              x: position.x,
+              y: position.y,
+              ccw_rotation: parentRotation,
+              port_hints: props.portHints.map((ph) => ph.toString()),
+            } as PcbSmtPad)
       if (pcb_smtpad.shape === "rect")
         db.pcb_solder_paste.insert({
           layer: pcb_smtpad.layer,
@@ -162,6 +177,29 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         },
         width: smtpad.width,
         height: smtpad.height,
+      }
+    }
+    if (smtpad.shape === "rotated_rect") {
+      const angleRad = (smtpad.ccw_rotation * Math.PI) / 180
+      const cosAngle = Math.cos(angleRad)
+      const sinAngle = Math.sin(angleRad)
+
+      const w2 = smtpad.width / 2
+      const h2 = smtpad.height / 2
+
+      const xExtent = Math.abs(w2 * cosAngle) + Math.abs(h2 * sinAngle)
+      const yExtent = Math.abs(w2 * sinAngle) + Math.abs(h2 * cosAngle)
+
+      return {
+        center: { x: smtpad.x, y: smtpad.y },
+        bounds: {
+          left: smtpad.x - xExtent,
+          right: smtpad.x + xExtent,
+          top: smtpad.y - yExtent,
+          bottom: smtpad.y + yExtent,
+        },
+        width: xExtent * 2,
+        height: yExtent * 2,
       }
     }
     if (smtpad.shape === "circle") {
