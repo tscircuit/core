@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
-test("Schematic trace overlaps manufacturer label", async () => {
+test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () => {
   const { circuit } = getTestFixture()
   const pinLabels = {
     1: ["GND1", "A1"],
