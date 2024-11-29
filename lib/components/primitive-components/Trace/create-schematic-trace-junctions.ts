@@ -11,37 +11,47 @@ const isOrthogonal = (
   return isVertical1 !== isVertical2
 }
 
+const isBetween = (value: number, min: number, max: number): boolean => {
+  return value > Math.min(min, max) && value < Math.max(min, max)
+}
+
 const getIntersectionPoint = (
   edge1: SchematicTrace["edges"][number],
   edge2: SchematicTrace["edges"][number],
 ): { x: number; y: number } | null => {
   // Skip if edges aren't orthogonal
-  if (!isOrthogonal(edge1, edge2)) {
-    // Check for overlapping or collinear edges
-    if (
-      (edge1.from.x === edge2.from.x && edge1.from.y === edge2.from.y) ||
-      (edge1.to.x === edge2.to.x && edge1.to.y === edge2.to.y)
-    ) {
-      return { x: edge1.from.x, y: edge1.from.y } // Add the shared point as a junction
-    }
-    return null // Not orthogonal or overlapping
-  }
+  if (!isOrthogonal(edge1, edge2)) return null
 
   const isVertical1 = edge1.from.x === edge1.to.x
   const vertical = isVertical1 ? edge1 : edge2
   const horizontal = isVertical1 ? edge2 : edge1
 
-  // Check if the vertical line's x is between horizontal line's x range
-  const minX = Math.min(horizontal.from.x, horizontal.to.x)
-  const maxX = Math.max(horizontal.from.x, horizontal.to.x)
-  if (vertical.from.x < minX || vertical.from.x > maxX) return null
+  // Only create junction if vertical line intersects middle of horizontal line
+  if (!isBetween(vertical.from.x, horizontal.from.x, horizontal.to.x))
+    return null
 
-  // Check if the horizontal line's y is between vertical line's y range
-  const minY = Math.min(vertical.from.y, vertical.to.y)
-  const maxY = Math.max(vertical.from.y, vertical.to.y)
-  if (horizontal.from.y < minY || horizontal.from.y > maxY) return null
+  // Only create junction if horizontal line intersects middle of vertical line
+  if (!isBetween(horizontal.from.y, vertical.from.y, vertical.to.y)) return null
 
-  // Lines intersect, return intersection point
+  // Ensure it's not an endpoint connection
+  if (
+    vertical.from.x === horizontal.from.x &&
+    vertical.from.y === horizontal.from.y
+  )
+    return null
+  if (
+    vertical.from.x === horizontal.to.x &&
+    vertical.from.y === horizontal.to.y
+  )
+    return null
+  if (
+    vertical.to.x === horizontal.from.x &&
+    vertical.to.y === horizontal.from.y
+  )
+    return null
+  if (vertical.to.x === horizontal.to.x && vertical.to.y === horizontal.to.y)
+    return null
+
   return {
     x: vertical.from.x,
     y: horizontal.from.y,
@@ -57,21 +67,23 @@ export const createSchematicTraceJunctions = ({
   db: SoupUtilObjects
   source_trace_id: string
 }): Array<{ x: number; y: number }> => {
-  const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
+  const otherTraces = getOtherSchematicTraces({
     db,
     source_trace_id,
     sameNetOnly: true,
-  }).flatMap((t: SchematicTrace) => t.edges)
+  })
 
   const junctions = new Set<string>()
 
-  // Check intersections between my edges and other edges
+  // Check for true T-intersections only
   for (const myEdge of myEdges) {
-    for (const otherEdge of otherEdges) {
-      const intersection = getIntersectionPoint(myEdge, otherEdge)
-      if (intersection) {
-        // Use string key to deduplicate points
-        junctions.add(`${intersection.x},${intersection.y}`)
+    for (const otherTrace of otherTraces) {
+      for (const otherEdge of otherTrace.edges) {
+        const intersection = getIntersectionPoint(myEdge, otherEdge)
+        if (intersection) {
+          // Use string key to deduplicate points
+          junctions.add(`${intersection.x},${intersection.y}`)
+        }
       }
     }
   }
