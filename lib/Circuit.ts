@@ -81,7 +81,9 @@ export class Circuit {
     )
   }
 
-  render() {
+  async render(
+    partial = false,
+  ): Promise<{ complete: boolean; soup: AnyCircuitElement[] }> {
     if (!this.firstChild) {
       this._guessRootComponent()
     }
@@ -89,20 +91,37 @@ export class Circuit {
 
     if (!firstChild) throw new Error("Project has no root component")
     firstChild.parent = this as any
+
+    if (partial) {
+      await new Promise((resolve) => setImmediate(resolve))
+    }
+
     firstChild.runRenderCycle()
     this._hasRenderedAtleastOnce = true
-  }
 
-  async renderUntilSettled(): Promise<void> {
-    this.render()
+    if (this._hasIncompleteAsyncEffects()) {
+      await new Promise((resolve) => setImmediate(resolve))
+    }
 
-    // TODO: use this.on("asyncEffectComplete", ...) instead
-    while (this._hasIncompleteAsyncEffects()) {
-      await new Promise((resolve) => setTimeout(resolve, 100)) // Small delay
-      this.render()
+    return {
+      complete: !this._hasIncompleteAsyncEffects(),
+      soup: this.getSoup(),
     }
   }
 
+  async renderUntilSettled(): Promise<{
+    complete: boolean
+    soup: AnyCircuitElement[]
+  }> {
+    let result = await this.render(true)
+
+    while (!result.complete) {
+      await new Promise((resolve) => setImmediate(resolve))
+      result = await this.render(true)
+    }
+
+    return await this.render(false)
+  }
   private _hasIncompleteAsyncEffects(): boolean {
     return this.children.some((child) => {
       if (child._hasIncompleteAsyncEffects()) return true
