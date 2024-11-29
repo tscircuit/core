@@ -105,7 +105,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       })
     } else if (props.shape === "rect") {
       pcb_smtpad =
-        parentRotation === 0
+        parentRotation === 0 || isRotated90
           ? db.pcb_smtpad.insert({
               pcb_component_id,
               pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
