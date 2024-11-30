@@ -26,5 +26,15 @@ test("chip rotation should properly adjust SMT pad positions", () => {
 
   circuit.render()
 
+  const rotated_rect_smtpads = circuit
+    .getCircuitJson()
+    .filter((elm) => elm.type === "pcb_smtpad" && elm.shape === "rotated_rect")
+  const rect_smtpads = circuit
+    .getCircuitJson()
+    .filter((elm) => elm.type === "pcb_smtpad" && elm.shape === "rect")
+
+  expect(rotated_rect_smtpads.length === 8)
+  expect(rect_smtpads.length === 16)
+
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
