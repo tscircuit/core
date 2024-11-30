@@ -56,13 +56,20 @@ export const createUseComponent: CreateUseComponentConstPinLabels &
     } else if (typeof pins === "object") {
       pinLabelsFlatArray.push(
         ...Object.values(pins as Record<string, string[]>).flat(),
+        ...(Object.keys(pins) as string[]),
       )
-      pinLabelsFlatArray.push(...(Object.keys(pins) as string[]))
     }
     const R: any = (props2: any) => {
-      const combinedProps = { ...props, ...props2, name: props2?.name || name }
-      const tracesToCreate: any[] = []
+      // Explicitly throw an error if names don't match
+      if (props2?.name && props2.name !== name) {
+        throw new Error(
+          `Component name mismatch. Hook name: ${name}, ` +
+            `Component prop name: ${props2.name}`,
+        )
+      }
 
+      const combinedProps = { ...props, ...props2, name: name }
+      const tracesToCreate: any[] = []
       for (const portLabel of pinLabelsFlatArray) {
         if (combinedProps[portLabel]) {
           const from = `.${name} > .${portLabel}`
@@ -71,7 +78,6 @@ export const createUseComponent: CreateUseComponentConstPinLabels &
           delete combinedProps[portLabel]
         }
       }
-
       return (
         <>
           <Component {...combinedProps} />
@@ -85,7 +91,6 @@ export const createUseComponent: CreateUseComponentConstPinLabels &
     for (const port of pinLabelsFlatArray) {
       R[port] = `.${name} > .${port}`
     }
-
     return R
   }
 }

@@ -140,17 +140,37 @@ const RedLed = (props: Props) => {
 
 const useRedLed = createUseComponent(RedLed, pinNames)
 
-test("<RedLed /> component", async () => {
+test("<RedLed /> component name validation", async () => {
   const { circuit } = getTestFixture()
   const RedLedComp = useRedLed("LED") as typeof RedLed
-  circuit.add(
-    <board width="12mm" height="10mm">
-      <RedLedComp name="led1" schX={0} />
-      <RedLedComp name="led2" schX={3} />
-      <RedLedComp name="led3" schX={6} />
-    </board>,
-  )
-  circuit.render()
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+
+  // Successful case with original name
+  expect(() => {
+    circuit.add(
+      <board width="12mm" height="10mm">
+        <RedLedComp name="LED" schX={0} />
+      </board>,
+    )
+  }).not.toThrow()
+
+  // More explicit error catching
+  let errorThrown = false
+  try {
+    circuit.add(
+      <board width="12mm" height="10mm">
+        <RedLedComp name="different_led_name" schX={0} />
+      </board>,
+    )
+  } catch (error: unknown) {
+    errorThrown = true
+    if (error instanceof Error) {
+      expect(error).toBeInstanceOf(Error)
+      expect(error.message).toMatch(
+        /Component name mismatch. Hook name: LED, Component prop name: different_led_name/,
+      )
+    } else {
+      throw new Error("Unexpected error type")
+    }
+  }
+  expect(errorThrown).toBe(true)
 })
