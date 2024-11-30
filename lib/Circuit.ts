@@ -19,6 +19,7 @@ export class Circuit {
   db: SoupUtilObjects
   root: Circuit | null = null
   isRoot = true
+  schematicDisabled: boolean = false // Add the schematicDisabled property
 
   _hasRenderedAtleastOnce = false
 
@@ -82,6 +83,11 @@ export class Circuit {
   }
 
   render() {
+    if (this.schematicDisabled) {
+      console.log("Schematic rendering is disabled for the root circuit.")
+      return // Skip schematic rendering if disabled
+    }
+
     if (!this.firstChild) {
       this._guessRootComponent()
     }
@@ -94,6 +100,11 @@ export class Circuit {
   }
 
   async renderUntilSettled(): Promise<void> {
+    if (this.schematicDisabled) {
+      console.log("Schematic rendering is disabled for the root circuit.")
+      return // Skip schematic rendering if disabled
+    }
+
     this.render()
 
     // TODO: use this.on("asyncEffectComplete", ...) instead
@@ -126,6 +137,11 @@ export class Circuit {
   }
 
   async getSvg(options: { view: "pcb"; layer?: string }): Promise<string> {
+    if (this.schematicDisabled) {
+      console.log("Schematic rendering is disabled for the root circuit.")
+      return "" // Return empty string if schematic rendering is disabled
+    }
+
     const circuitToSvg = await import("circuit-to-svg").catch((e) => {
       throw new Error(
         `To use project.getSvg, you must install the "circuit-to-svg" package.\n\n"${e.message}"`,
@@ -151,6 +167,10 @@ export class Circuit {
   }
 
   computeSchematicGlobalTransform(): Matrix {
+    if (this.schematicDisabled) {
+      console.log("Schematic rendering is disabled for the root circuit.")
+      return identity() // Return identity if schematic rendering is disabled
+    }
     return identity()
   }
 
