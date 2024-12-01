@@ -81,8 +81,6 @@ export const getTestAutoroutingServer = () => {
           output: { output_pcb_traces: traces },
         })
 
-        console.log("jobResults", jobResults)
-
         return new Response(
           JSON.stringify({
             autorouting_job: {
