@@ -5,6 +5,9 @@ import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
 export const getTestAutoroutingServer = () => {
+  let currentJobId = 0
+  const jobResults = new Map<string, any>()
+
   const server = serve({
     port: 0,
     fetch: async (req) => {
@@ -12,22 +15,26 @@ export const getTestAutoroutingServer = () => {
         return new Response("Method not allowed", { status: 405 })
       }
 
-      const body = await req.json()
+      const url = new URL(req.url)
+      const endpoint = url.pathname
 
-      let simpleRouteJson: SimpleRouteJson | undefined
-      if (body.input_simple_route_json) {
-        simpleRouteJson = body.input_simple_route_json as SimpleRouteJson
-      } else if (body.input_circuit_json) {
-        simpleRouteJson = getSimpleRouteJsonFromCircuitJson({
-          circuitJson: body.input_circuit_json,
-        })
-      }
+      // Legacy solve endpoint
+      if (endpoint === "/autorouting/solve") {
+        const body = await req.json()
+        let simpleRouteJson: SimpleRouteJson | undefined
 
-      try {
+        if (body.input_simple_route_json) {
+          simpleRouteJson = body.input_simple_route_json as SimpleRouteJson
+        } else if (body.input_circuit_json) {
+          simpleRouteJson = getSimpleRouteJsonFromCircuitJson({
+            circuitJson: body.input_circuit_json,
+          })
+        }
+
         if (!simpleRouteJson) {
           return new Response(
             JSON.stringify({
-              error: { message: "Missing simple_route_json in request body" },
+              error: { message: "Missing input data" },
             }),
             { status: 400 },
           )
@@ -49,18 +56,72 @@ export const getTestAutoroutingServer = () => {
               },
             },
           }),
-          {
-            headers: { "Content-Type": "application/json" },
-          },
-        )
-      } catch (e: any) {
-        return new Response(
-          JSON.stringify({
-            error: e.message,
-          }),
-          { status: 500 },
+          { headers: { "Content-Type": "application/json" } },
         )
       }
+
+      // New job-based endpoints
+      if (endpoint === "/autorouting/jobs/create") {
+        const body = await req.json()
+        const jobId = `job_${currentJobId++}`
+
+        const simpleRouteJson = getSimpleRouteJsonFromCircuitJson({
+          circuitJson: body.input_circuit_json,
+        })
+
+        const autorouter = new MultilayerIjump({
+          input: simpleRouteJson,
+          OBSTACLE_MARGIN: 0.2,
+        })
+
+        const traces = autorouter.solveAndMapToTraces()
+
+        jobResults.set(jobId, {
+          status: "completed",
+          output: { output_pcb_traces: traces },
+        })
+
+        console.log("jobResults", jobResults)
+
+        return new Response(
+          JSON.stringify({
+            autorouting_job: {
+              autorouting_job_id: jobId,
+              status: "created",
+            },
+          }),
+          { headers: { "Content-Type": "application/json" } },
+        )
+      }
+
+      if (endpoint === "/autorouting/jobs/get") {
+        const jobId = url.searchParams.get("autorouting_job_id")
+        const job = jobResults.get(jobId!)
+
+        return new Response(
+          JSON.stringify({
+            autorouting_job: {
+              autorouting_job_id: jobId,
+              status: job?.status ?? "failed",
+            },
+          }),
+          { headers: { "Content-Type": "application/json" } },
+        )
+      }
+
+      if (endpoint === "/autorouting/jobs/get_output") {
+        const jobId = url.searchParams.get("autorouting_job_id")
+        const job = jobResults.get(jobId!)
+
+        return new Response(
+          JSON.stringify({
+            autorouting_job_output: job?.output,
+          }),
+          { headers: { "Content-Type": "application/json" } },
+        )
+      }
+
+      return new Response("Not found", { status: 404 })
     },
   })
 
@@ -69,7 +130,7 @@ export const getTestAutoroutingServer = () => {
   })
 
   return {
-    autoroutingServerUrl: `http://localhost:${server.port}/autorouting/solve`,
+    autoroutingServerUrl: `http://localhost:${server.port}/`,
     close: () => server.stop(),
   }
 }

@@ -882,7 +882,7 @@ export class NormalComponent<
       return
     }
 
-    this._queueAsyncEffect(async () => {
+    this._queueAsyncEffect("get-supplier-part-numbers", async () => {
       this._asyncSupplierPartNumbers = await supplierPartNumbersMaybePromise
       this._markDirty("PartsEngineRender")
     })

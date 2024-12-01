@@ -114,50 +114,87 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   doInitialPcbTraceRender() {
     if (this._shouldUseTraceByTraceRouting()) return
 
-    let serverUrl = this.props.autorouter?.serverUrl
+    const serverUrl =
+      this.props.autorouter?.serverUrl ?? "https://registry-api.tscircuit.com"
+    const serverMode = this.props.autorouter?.serverMode ?? "job"
 
-    if (this.props.autorouter === "auto-cloud") {
-      // TODO this url should be inferred by scanning parent subcircuits, the
-      // default should be provided by the platform OR error
-      serverUrl = "https://registry-api.tscircuit.com/autorouting/solve"
-    }
-
-    if (serverUrl) {
-      // Make a request to the autorouter server
-      this._queueAsyncEffect(async () => {
+    // Queue the autorouting request
+    this._queueAsyncEffect("make-http-autorouting-request", async () => {
+      if (serverMode === "solve-endpoint") {
+        // Legacy solve endpoint mode
         if (this.props.autorouter?.inputFormat === "simplified") {
-          const { autorouting_result } = await fetch(serverUrl, {
-            method: "POST",
-            body: JSON.stringify({
-              input_simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
-            }),
-            headers: {
-              "Content-Type": "application/json",
+          const { autorouting_result } = await fetch(
+            `${serverUrl}/autorouting/solve`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                input_simple_route_json:
+                  this._getSimpleRouteJsonFromPcbTraces(),
+              }),
+              headers: { "Content-Type": "application/json" },
             },
-          }).then((r) => r.json())
+          ).then((r) => r.json())
           this._asyncAutoroutingResult = autorouting_result
           this._markDirty("PcbTraceRender")
+          return
         }
 
-        const arRes = await fetch(serverUrl, {
-          method: "POST",
-          body: JSON.stringify({
-            // TODO filter such that we're only using this subcircuit's
-            // components
-            input_circuit_json: this.root!.db.toArray(),
-          }),
-          headers: {
-            "Content-Type": "application/json",
+        const { autorouting_result } = await fetch(
+          `${serverUrl}/autorouting/solve`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              input_circuit_json: this.root!.db.toArray(),
+            }),
+            headers: { "Content-Type": "application/json" },
           },
-        })
-
-        const resultText = await arRes.text()
-        // TODO handle errors
-        const { autorouting_result } = JSON.parse(resultText)
+        ).then((r) => r.json())
         this._asyncAutoroutingResult = autorouting_result
         this._markDirty("PcbTraceRender")
-      })
-    }
+        return
+      }
+
+      const { autorouting_job } = await fetch(
+        `${serverUrl}/autorouting/jobs/create`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            input_circuit_json: this.root!.db.toArray(),
+            provider: "freerouting",
+            autostart: true,
+          }),
+          headers: { "Content-Type": "application/json" },
+        },
+      ).then((r) => r.json())
+
+      // Poll until job is complete
+      while (true) {
+        const { autorouting_job: job } = await fetch(
+          `${serverUrl}/autorouting/jobs/get?autorouting_job_id=${autorouting_job.autorouting_job_id}`,
+          { method: "POST" },
+        ).then((r) => r.json())
+
+        if (job.status === "completed") {
+          const { autorouting_job_output } = await fetch(
+            `${serverUrl}/autorouting/jobs/get_output?autorouting_job_id=${autorouting_job.autorouting_job_id}`,
+            { method: "POST" },
+          ).then((r) => r.json())
+
+          this._asyncAutoroutingResult = {
+            output_pcb_traces: autorouting_job_output.output_pcb_traces,
+          }
+          this._markDirty("PcbTraceRender")
+          break
+        }
+
+        if (job.status === "failed") {
+          throw new Error("Autorouting job failed")
+        }
+
+        // Wait before polling again
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+    })
   }
 
   updatePcbTraceRender() {
