@@ -77,7 +77,9 @@ export const getTestAutoroutingServer = () => {
         const traces = autorouter.solveAndMapToTraces()
 
         jobResults.set(jobId, {
-          status: "completed",
+          is_finished: true,
+          is_started: true,
+          is_running: true,
           output: { output_pcb_traces: traces },
         })
 
@@ -85,7 +87,8 @@ export const getTestAutoroutingServer = () => {
           JSON.stringify({
             autorouting_job: {
               autorouting_job_id: jobId,
-              status: "created",
+              is_running: true,
+              is_started: true,
             },
           }),
           { headers: { "Content-Type": "application/json" } },
@@ -100,7 +103,11 @@ export const getTestAutoroutingServer = () => {
           JSON.stringify({
             autorouting_job: {
               autorouting_job_id: jobId,
-              status: job?.status ?? "failed",
+              is_running: job?.is_running ?? false,
+              is_started: job?.is_started ?? false,
+              is_finished: job?.is_finished ?? false,
+              has_error: job?.has_error ?? false,
+              error: job?.error ?? null,
             },
           }),
           { headers: { "Content-Type": "application/json" } },

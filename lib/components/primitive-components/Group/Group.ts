@@ -25,6 +25,7 @@ import type { Trace } from "../Trace/Trace"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { TraceI } from "../Trace/TraceI"
 import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
+import Debug from "debug"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -118,12 +119,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this.props.autorouter?.serverUrl ?? "https://registry-api.tscircuit.com"
     const serverMode = this.props.autorouter?.serverMode ?? "job"
 
+    const debug = Debug("tscircuit:core:autorouting")
+
+    const fetchWithDebug = (url: string, options: RequestInit) => {
+      debug("fetching", url)
+      return fetch(url, options)
+    }
+
     // Queue the autorouting request
     this._queueAsyncEffect("make-http-autorouting-request", async () => {
       if (serverMode === "solve-endpoint") {
         // Legacy solve endpoint mode
         if (this.props.autorouter?.inputFormat === "simplified") {
-          const { autorouting_result } = await fetch(
+          const { autorouting_result } = await fetchWithDebug(
             `${serverUrl}/autorouting/solve`,
             {
               method: "POST",
@@ -139,7 +147,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           return
         }
 
-        const { autorouting_result } = await fetch(
+        const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
             method: "POST",
@@ -154,7 +162,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         return
       }
 
-      const { autorouting_job } = await fetch(
+      const { autorouting_job } = await fetchWithDebug(
         `${serverUrl}/autorouting/jobs/create`,
         {
           method: "POST",
@@ -169,13 +177,26 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       // Poll until job is complete
       while (true) {
-        const { autorouting_job: job } = await fetch(
+        const { autorouting_job: job } = (await fetchWithDebug(
           `${serverUrl}/autorouting/jobs/get?autorouting_job_id=${autorouting_job.autorouting_job_id}`,
           { method: "POST" },
-        ).then((r) => r.json())
+        ).then((r) => r.json())) as {
+          autorouting_job: {
+            autorouting_job_id: string
+            is_running: boolean
+            is_started: boolean
+            is_finished: boolean
+            has_error: boolean
+            error: string | null
+            autorouting_provider: "freerouting" | "tscircuit"
+            created_at: string
+            started_at?: string
+            finished_at?: string
+          }
+        }
 
-        if (job.status === "completed") {
-          const { autorouting_job_output } = await fetch(
+        if (job.is_finished) {
+          const { autorouting_job_output } = await fetchWithDebug(
             `${serverUrl}/autorouting/jobs/get_output?autorouting_job_id=${autorouting_job.autorouting_job_id}`,
             { method: "POST" },
           ).then((r) => r.json())
@@ -187,8 +208,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           break
         }
 
-        if (job.status === "failed") {
-          throw new Error("Autorouting job failed")
+        if (job.has_error) {
+          throw new Error(
+            `Autorouting job failed: ${JSON.stringify(job.error)}`,
+          )
         }
 
         // Wait before polling again
@@ -321,9 +344,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    * or if using a "fullview" or "rip and replace" autorouting mode
    */
   _shouldUseTraceByTraceRouting(): boolean {
-    // HACK: change when @tscircuit/props provides a spec for the autorouter
-    // prop
-    if (this.props.autorouter) return false
+    const props = this._parsedProps as SubcircuitGroupProps
+    if (props.autorouter === "auto-local") return true
+    if (props.autorouter === "sequential-trace") return true
+    if (props.autorouter) return false
     return true
   }
 }
