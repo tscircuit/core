@@ -96,7 +96,8 @@ export const getTestAutoroutingServer = () => {
       }
 
       if (endpoint === "/autorouting/jobs/get") {
-        const jobId = url.searchParams.get("autorouting_job_id")
+        const body = await req.json()
+        const jobId = body.autorouting_job_id
         const job = jobResults.get(jobId!)
 
         return new Response(
@@ -115,7 +116,8 @@ export const getTestAutoroutingServer = () => {
       }
 
       if (endpoint === "/autorouting/jobs/get_output") {
-        const jobId = url.searchParams.get("autorouting_job_id")
+        const body = await req.json()
+        const jobId = body.autorouting_job_id
         const job = jobResults.get(jobId!)
 
         return new Response(

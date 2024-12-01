@@ -178,8 +178,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Poll until job is complete
       while (true) {
         const { autorouting_job: job } = (await fetchWithDebug(
-          `${serverUrl}/autorouting/jobs/get?autorouting_job_id=${autorouting_job.autorouting_job_id}`,
-          { method: "POST" },
+          `${serverUrl}/autorouting/jobs/get`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              autorouting_job_id: autorouting_job.autorouting_job_id,
+            }),
+            headers: { "Content-Type": "application/json" },
+          },
         ).then((r) => r.json())) as {
           autorouting_job: {
             autorouting_job_id: string
@@ -197,8 +203,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
         if (job.is_finished) {
           const { autorouting_job_output } = await fetchWithDebug(
-            `${serverUrl}/autorouting/jobs/get_output?autorouting_job_id=${autorouting_job.autorouting_job_id}`,
-            { method: "POST" },
+            `${serverUrl}/autorouting/jobs/get_output`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                autorouting_job_id: autorouting_job.autorouting_job_id,
+              }),
+              headers: { "Content-Type": "application/json" },
+            },
           ).then((r) => r.json())
 
           this._asyncAutoroutingResult = {
