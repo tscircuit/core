@@ -2,22 +2,13 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
-test("remote-autorouter-1 with legacy solve endpoint", async () => {
-  const { autoroutingServerUrl } = getTestAutoroutingServer()
-
+test.skip("remote-autorouter-5 with job mode against production server", async () => {
+  if (process.env.CI) return
   const { circuit } = getTestFixture()
 
   // Create a basic circuit that needs routing
   circuit.add(
-    <board
-      width="20mm"
-      height="20mm"
-      autorouter={{
-        serverUrl: autoroutingServerUrl,
-        serverMode: "solve-endpoint",
-        inputFormat: "simplified",
-      }}
-    >
+    <board width="20mm" height="20mm" autorouter="auto-cloud">
       <chip name="U1" footprint="soic8" pcbX={5} pcbY={0} />
       <resistor
         name="R1"

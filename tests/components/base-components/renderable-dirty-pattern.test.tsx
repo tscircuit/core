@@ -8,7 +8,7 @@ class TestComponent extends Renderable {
 
   doInitialSourceRender() {
     // Test async effect
-    this._queueAsyncEffect(async () => {
+    this._queueAsyncEffect("test-async-effect", async () => {
       await new Promise((resolve) => setTimeout(resolve, 100))
     })
   }

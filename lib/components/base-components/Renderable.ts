@@ -46,6 +46,7 @@ export type RenderPhaseStates = Record<
 >
 
 export type AsyncEffect = {
+  effectName: string
   promise: Promise<void>
   phase: RenderPhase
   complete: boolean
@@ -101,10 +102,11 @@ export abstract class Renderable implements IRenderable {
     }
   }
 
-  protected _queueAsyncEffect(effect: () => Promise<void>) {
+  protected _queueAsyncEffect(effectName: string, effect: () => Promise<void>) {
     const asyncEffect: AsyncEffect = {
       promise: effect(), // TODO don't start effects until end of render cycle
       phase: this._currentRenderPhase!,
+      effectName,
       complete: false,
     }
     this._asyncEffects.push(asyncEffect)
@@ -116,20 +118,25 @@ export abstract class Renderable implements IRenderable {
         // HACK: emit to the root circuit component that an async effect has completed
         if ("root" in this && this.root) {
           ;(this.root as any).emit("asyncEffectComplete", {
-            component: this,
-            asyncEffect,
+            effectName,
+            componentDisplayName: this.getString(),
+            phase: asyncEffect.phase,
           })
         }
       })
       .catch((error) => {
-        console.error(`Async effect error in ${asyncEffect.phase}:`, error)
+        console.error(
+          `Async effect error in ${asyncEffect.phase} "${effectName}":\n${error.stack}`,
+        )
         asyncEffect.complete = true
 
         // HACK: emit to the root circuit component that an async effect has completed
         if ("root" in this && this.root) {
           ;(this.root as any).emit("asyncEffectComplete", {
-            component: this,
-            asyncEffect,
+            effectName,
+            componentDisplayName: this.getString(),
+            phase: asyncEffect.phase,
+            error: error.toString(),
           })
         }
       })
