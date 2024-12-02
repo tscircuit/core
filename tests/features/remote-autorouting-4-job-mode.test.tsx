@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
-test("remote-autorouter-1 with legacy solve endpoint", async () => {
+test("remote-autorouter-4 with job mode", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer()
 
   const { circuit } = getTestFixture()
@@ -14,8 +14,7 @@ test("remote-autorouter-1 with legacy solve endpoint", async () => {
       height="20mm"
       autorouter={{
         serverUrl: autoroutingServerUrl,
-        serverMode: "solve-endpoint",
-        inputFormat: "simplified",
+        serverMode: "job",
       }}
     >
       <chip name="U1" footprint="soic8" pcbX={5} pcbY={0} />
