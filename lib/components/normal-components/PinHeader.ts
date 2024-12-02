@@ -62,22 +62,6 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
       pin_count: props.pinCount,
       gender: props.gender,
     } as SourceSimplePinHeader)
-    if (!this.parent?.root?.schematicDisabled) {
-      const dimensions = this._getSchematicBoxDimensions()
-      const schematic_box_width = dimensions?.getSize().width
-      const schematic_box_height = dimensions?.getSize().height
-      const component_name_text = db.schematic_text.insert({
-        text: props.name ?? "",
-        schematic_component_id: source_component.source_component_id,
-        anchor: "left",
-        rotation: 0,
-        position: {
-          x: (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
-          y: (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.13,
-        },
-        color: "#006464",
-      })
-    }
     this.source_component_id = source_component.source_component_id
   }
 }
