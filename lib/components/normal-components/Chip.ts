@@ -31,42 +31,44 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       manufacturer_part_number: props.manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
     })
-    const dimensions = this._getSchematicBoxDimensions()
-    const hasTopOrBottomPins =
-      props.schPortArrangement?.topSide !== undefined ||
-      props.schPortArrangement?.bottomSide !== undefined
-    const schematic_box_width = dimensions?.getSize().width
-    const schematic_box_height = dimensions?.getSize().height
-    const manufacturer_part_number_text = db.schematic_text.insert({
-      text: props.manufacturerPartNumber ?? "",
-      schematic_component_id: source_component.source_component_id,
-      anchor: "left",
-      rotation: 0,
-      position: {
-        x: hasTopOrBottomPins
-          ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2 + 0.1
-          : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
-        y: hasTopOrBottomPins
-          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35
-          : (props.schY ?? 0) - (schematic_box_height ?? 0) / 2 - 0.13,
-      },
-      color: "#006464",
-    })
-    const component_name_text = db.schematic_text.insert({
-      text: props.name ?? "",
-      schematic_component_id: source_component.source_component_id,
-      anchor: "left",
-      rotation: 0,
-      position: {
-        x: hasTopOrBottomPins
-          ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2 + 0.1
-          : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
-        y: hasTopOrBottomPins
-          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55
-          : (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.13,
-      },
-      color: "#006464",
-    })
+    if (!this.parent?.root?.schematicDisabled) {
+      const dimensions = this._getSchematicBoxDimensions()
+      const hasTopOrBottomPins =
+        props.schPortArrangement?.topSide !== undefined ||
+        props.schPortArrangement?.bottomSide !== undefined
+      const schematic_box_width = dimensions?.getSize().width
+      const schematic_box_height = dimensions?.getSize().height
+      const manufacturer_part_number_text = db.schematic_text.insert({
+        text: props.manufacturerPartNumber ?? "",
+        schematic_component_id: source_component.source_component_id,
+        anchor: "left",
+        rotation: 0,
+        position: {
+          x: hasTopOrBottomPins
+            ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2 + 0.1
+            : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
+          y: hasTopOrBottomPins
+            ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35
+            : (props.schY ?? 0) - (schematic_box_height ?? 0) / 2 - 0.13,
+        },
+        color: "#006464",
+      })
+      const component_name_text = db.schematic_text.insert({
+        text: props.name ?? "",
+        schematic_component_id: source_component.source_component_id,
+        anchor: "left",
+        rotation: 0,
+        position: {
+          x: hasTopOrBottomPins
+            ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2 + 0.1
+            : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
+          y: hasTopOrBottomPins
+            ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55
+            : (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.13,
+        },
+        color: "#006464",
+      })
+    }
     this.source_component_id = source_component.source_component_id!
   }
   doInitialPcbComponentRender() {

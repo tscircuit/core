@@ -19,6 +19,7 @@ export class Circuit {
   db: SoupUtilObjects
   root: Circuit | null = null
   isRoot = true
+  schematicDisabled = false
 
   _hasRenderedAtleastOnce = false
 
@@ -86,7 +87,6 @@ export class Circuit {
       this._guessRootComponent()
     }
     const { firstChild, db } = this
-
     if (!firstChild) throw new Error("Project has no root component")
     firstChild.parent = this as any
     firstChild.runRenderCycle()
@@ -162,7 +162,6 @@ export class Circuit {
     this._guessRootComponent()
     return this.firstChild?.selectAll(selector) ?? []
   }
-
   selectOne(
     selector: string,
     opts?: { type?: "component" | "port" },
