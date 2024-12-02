@@ -106,6 +106,7 @@ export class NormalComponent<
       additionalAliases?: Record<`pin${number}`, string[]>
     } = {},
   ) {
+    if (this.root?.schematicDisabled) return
     const { config } = this
     const portsToCreate: Port[] = []
 
@@ -354,6 +355,7 @@ export class NormalComponent<
    * You can override this method to do more complicated things.
    */
   doInitialSchematicComponentRender() {
+    if (this.root?.schematicDisabled) return
     const { schematicSymbolName } = this.config
     if (schematicSymbolName) {
       return this._doInitialSchematicComponentRenderWithSymbol()
@@ -373,6 +375,7 @@ export class NormalComponent<
   }
 
   _doInitialSchematicComponentRenderWithSymbol() {
+    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -396,6 +399,7 @@ export class NormalComponent<
   }
 
   _doInitialSchematicComponentRenderWithSchematicBoxDimensions() {
+    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const dimensions = this._getSchematicBoxDimensions()!
@@ -614,6 +618,7 @@ export class NormalComponent<
   }
 
   getPortsFromSchematicSymbol(): Port[] {
+    if (this.root?.schematicDisabled) return []
     const { config } = this
     if (!config.schematicSymbolName) return []
     const symbol: SchSymbol = (symbols as any)[config.schematicSymbolName]

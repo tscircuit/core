@@ -597,6 +597,7 @@ export class Trace
   }
 
   doInitialSchematicTraceRender(): void {
+    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
 
