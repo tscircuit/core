@@ -39,17 +39,17 @@ test("Should not render any schematic components", async () => {
         capacitance="10k"
       />
 
-      <trace from={".R2 > .pin2"} to={".C1 > .pin1"} />
-      <trace schDisplayLabel="U2" path={[".C1 > .pin2", ".C2 > .pin2"]} />
+      <trace from={".C1 > .pin1"} to={".R2 > .pin1"} />
+      <trace schDisplayLabel="C2_POS" path={[".C1 > .pin2", ".C2 > .pin2"]} />
       <trace
         pcbRouteHints={[{ x: 2, y: -8 }]}
-        schDisplayLabel="U2"
-        from={".R1 > .pin2"}
-        to={".C2 > .pin2"}
+        schDisplayLabel="C2_POS"
+        from={".C2 > .pin2"}
+        to={".R1 > .pin2"}
       />
       <trace
         pcbRouteHints={[{ x: 2, y: -8 }]}
-        schDisplayLabel="U1"
+        schDisplayLabel="R1_1"
         from={".R1 > .pin1"}
         to={".C2 > .pin1"}
       />

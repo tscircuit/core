@@ -594,6 +594,99 @@ export class Trace
       }
     }
   }
+  _doInitialSchematicTraceRenderWithDisplayLabel(): void {
+    if (this.root?.schematicDisabled) return
+    const { db } = this.root!
+    const { _parsedProps: props, parent } = this
+
+    if (!parent) throw new Error("Trace has no parent")
+
+    const { allPortsFound, portsWithSelectors: connectedPorts } =
+      this._findConnectedPorts()
+
+    if (!allPortsFound) return
+
+    const portsWithPosition = connectedPorts.map(({ port }) => ({
+      port,
+      position: port._getGlobalSchematicPositionAfterLayout(),
+      schematic_port_id: port.schematic_port_id ?? undefined,
+      facingDirection: port.facingDirection,
+    }))
+    if (portsWithPosition.length < 2) {
+      throw new Error("Expected at least two ports in portsWithPosition.")
+    }
+
+    let fromPortName: any
+    let toPortName: any
+    const fromAnchorPos = portsWithPosition[0].position
+    const fromPort = portsWithPosition[0].port
+
+    // Validate `path`, `from`, and `to`
+    if ("path" in this.props) {
+      if (this.props.path.length !== 2) {
+        throw new Error("Invalid 'path': Must contain exactly two elements.")
+      }
+      ;[fromPortName, toPortName] = this.props.path
+    } else {
+      if (!("from" in this.props && "to" in this.props)) {
+        throw new Error("Missing 'from' or 'to' properties in props.")
+      }
+      fromPortName = this.props.from
+      toPortName = this.props.to
+    }
+
+    if (!fromPort.source_port_id) {
+      throw new Error(
+        `Missing source_port_id for the 'from' port (${fromPortName}).`,
+      )
+    }
+    const toAnchorPos = portsWithPosition[1].position
+    const toPort = portsWithPosition[1].port
+
+    if (!toPort.source_port_id) {
+      throw new Error(
+        `Missing source_port_id for the 'to' port (${toPortName}).`,
+      )
+    }
+
+    // Handle `from` port label
+    const existingFromNetLabel = db.schematic_net_label
+      .list()
+      .find((label) => label.source_net_id === fromPort.source_port_id)
+
+    const existingToNetLabel = db.schematic_net_label
+      .list()
+      .find((label) => label.source_net_id === toPort.source_port_id)
+
+    if (
+      (existingFromNetLabel &&
+        existingFromNetLabel.text !== this.props.schDisplayLabel) ||
+      (existingToNetLabel &&
+        existingToNetLabel?.text !== this.props.schDisplayLabel)
+    ) {
+      throw new Error(
+        `Cannot create net label for port ${existingFromNetLabel ? fromPortName : toPortName} because it already has a net label with text "${existingFromNetLabel ? existingFromNetLabel.text : existingToNetLabel?.text}".`,
+      )
+    }
+    db.schematic_net_label.insert({
+      text: this.props.schDisplayLabel!,
+      source_net_id: fromPort.source_port_id!,
+      anchor_position: fromAnchorPos,
+      center: fromAnchorPos,
+      anchor_side:
+        getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom",
+    })
+    // Handle `to` port label
+
+    db.schematic_net_label.insert({
+      text: this.props.schDisplayLabel!,
+      source_net_id: toPort.source_port_id!,
+      anchor_position: toAnchorPos,
+      center: toAnchorPos,
+      anchor_side:
+        getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom",
+    })
+  }
 
   doInitialSchematicTraceRender(): void {
     if (this.root?.schematicDisabled) return
@@ -612,6 +705,13 @@ export class Trace
     const connection: SimpleRouteConnection = {
       name: this.source_trace_id!,
       pointsToConnect: [],
+    }
+    if (
+      this.props.schDisplayLabel &&
+      (("from" in this.props && "to" in this.props) || "path" in this.props)
+    ) {
+      this._doInitialSchematicTraceRenderWithDisplayLabel()
+      return
     }
 
     // Add obstacles from components and ports
@@ -780,102 +880,17 @@ export class Trace
       }),
     )
 
-    if (
-      this.props.schDisplayLabel &&
-      (("from" in this.props && "to" in this.props) || "path" in this.props)
-    ) {
-      if (portsWithPosition.length < 2) {
-        throw new Error("Expected at least two ports in portsWithPosition.")
-      }
-
-      let fromPortName: any
-      let toPortName: any
-      const fromAnchorPos = portsWithPosition[0].position
-      const fromPort = portsWithPosition[0].port
-
-      // Validate `path`, `from`, and `to`
-      if ("path" in this.props) {
-        if (this.props.path.length !== 2) {
-          throw new Error("Invalid 'path': Must contain exactly two elements.")
-        }
-        ;[fromPortName, toPortName] = this.props.path
-      } else {
-        if (!("from" in this.props && "to" in this.props)) {
-          throw new Error("Missing 'from' or 'to' properties in props.")
-        }
-        fromPortName = this.props.from
-        toPortName = this.props.to
-      }
-
-      if (!fromPort.source_port_id) {
-        throw new Error(
-          `Missing source_port_id for the 'from' port (${fromPortName}).`,
-        )
-      }
-
-      // Handle `from` port label
-      const existingFromNetLabel = db.schematic_net_label
-        .list()
-        .find((label) => label.source_net_id === fromPort.source_port_id)
-
-      if (!existingFromNetLabel) {
-        db.schematic_net_label.insert({
-          text: this.props.schDisplayLabel!,
-          source_net_id: fromPort.source_port_id!,
-          anchor_position: fromAnchorPos,
-          center: fromAnchorPos,
-          anchor_side:
-            getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom",
-        })
-      } else if (existingFromNetLabel.text !== this.props.schDisplayLabel) {
-        throw new Error(
-          `Cannot create net label for port ${fromPortName} because it already has a net label with text "${existingFromNetLabel.text}".`,
-        )
-      }
-
-      // Handle `to` port label
-      const toAnchorPos = portsWithPosition[1].position
-      const toPort = portsWithPosition[1].port
-
-      if (!toPort.source_port_id) {
-        throw new Error(
-          `Missing source_port_id for the 'to' port (${toPortName}).`,
-        )
-      }
-
-      const existingToNetLabel = db.schematic_net_label
-        .list()
-        .find((label) => label.source_net_id === toPort.source_port_id)
-
-      if (!existingToNetLabel) {
-        db.schematic_net_label.insert({
-          text: this.props.schDisplayLabel!,
-          source_net_id: toPort.source_port_id!,
-          anchor_position: toAnchorPos,
-          center: toAnchorPos,
-          anchor_side:
-            getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom",
-        })
-      } else if (existingToNetLabel.text !== this.props.schDisplayLabel) {
-        throw new Error(
-          `Cannot create net label for port ${toPortName} because it already has a net label with text "${existingToNetLabel.text}".`,
-        )
-      }
-    } else {
-      // Handle case where no labels are created and trace is inserted
-      if (!this.source_trace_id) {
-        throw new Error(
-          "Missing source_trace_id for schematic trace insertion.",
-        )
-      }
-
-      const trace = db.schematic_trace.insert({
-        source_trace_id: this.source_trace_id!,
-        edges,
-        junctions,
-      })
-
-      this.schematic_trace_id = trace.schematic_trace_id
+    // Handle case where no labels are created and trace is inserted
+    if (!this.source_trace_id) {
+      throw new Error("Missing source_trace_id for schematic trace insertion.")
     }
+
+    const trace = db.schematic_trace.insert({
+      source_trace_id: this.source_trace_id!,
+      edges,
+      junctions,
+    })
+
+    this.schematic_trace_id = trace.schematic_trace_id
   }
 }
