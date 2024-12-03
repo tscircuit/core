@@ -9,7 +9,7 @@ test("Should not render any schematic components", async () => {
       <resistor
         name="R1"
         footprint="0603"
-        schX={4}
+        schX={8}
         schY={-1}
         pcbX={0}
         resistance="10k"
@@ -33,19 +33,26 @@ test("Should not render any schematic components", async () => {
       <capacitor
         name="C2"
         footprint="0603"
-        schX={0}
-        schY={1}
+        schX={2}
+        schY={0}
         pcbX={-8}
         capacitance="10k"
       />
 
+      <trace from={".R2 > .pin2"} to={".C1 > .pin1"} />
+      <trace schDisplayLabel="U2" path={[".C1 > .pin2", ".C2 > .pin2"]} />
+      <trace
+        pcbRouteHints={[{ x: 2, y: -8 }]}
+        schDisplayLabel="U2"
+        from={".R1 > .pin2"}
+        to={".C2 > .pin2"}
+      />
       <trace
         pcbRouteHints={[{ x: 2, y: -8 }]}
         schDisplayLabel="U1"
-        from={".R1 > .pin2"}
+        from={".R1 > .pin1"}
         to={".C2 > .pin1"}
       />
-      <trace from={".R2 > .pin2"} to={".C1 > .pin1"} />
     </board>,
   )
 
