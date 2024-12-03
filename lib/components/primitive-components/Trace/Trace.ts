@@ -29,14 +29,13 @@ import { getStubEdges } from "lib/utils/schematic/getStubEdges"
 import { tryNow } from "lib/utils/try-now"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
-import type { Net } from "../Net"
+import { Net } from "../Net"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
 import type { TraceI } from "./TraceI"
 import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
-
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -781,12 +780,62 @@ export class Trace
       }),
     )
 
-    const trace = db.schematic_trace.insert({
-      source_trace_id: this.source_trace_id!,
-      edges,
-      junctions,
-    })
+    if (
+      this.props.schDisplayLabel &&
+      "from" in this.props &&
+      "to" in this.props
+    ) {
+      const fromAnchorPos = portsWithPosition[0].position
+      const fromPort = portsWithPosition[0].port
 
-    this.schematic_trace_id = trace.schematic_trace_id
+      // Check if the port already has a net label
+      const existingFromNetLabel = db.schematic_net_label
+        .list()
+        .find((label) => label.source_net_id === fromPort.source_port_id)
+
+      if (!existingFromNetLabel) {
+        db.schematic_net_label.insert({
+          text: props.schDisplayLabel!,
+          source_net_id: fromPort.source_port_id!,
+          anchor_position: fromAnchorPos,
+          center: fromAnchorPos,
+          anchor_side:
+            getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom",
+        })
+      } else if (existingFromNetLabel.text !== props.schDisplayLabel) {
+        throw new Error(
+          `Cannot create net label for port ${this.props.from} because it already has a net label with text "${existingFromNetLabel.text}"`,
+        )
+      }
+      const toAnchorPos = portsWithPosition[1].position
+      const toPort = portsWithPosition[1].port
+
+      // Check if the port already has a net label
+      const existingToNetLabel = db.schematic_net_label
+        .list()
+        .find((label) => label.source_net_id === toPort.source_port_id)
+      console.log("existingToNetLabel", existingToNetLabel)
+      if (!existingToNetLabel) {
+        db.schematic_net_label.insert({
+          text: props.schDisplayLabel!,
+          source_net_id: toPort.source_port_id!,
+          anchor_position: toAnchorPos,
+          center: toAnchorPos,
+          anchor_side:
+            getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom",
+        })
+      } else if (existingToNetLabel.text !== props.schDisplayLabel) {
+        throw new Error(
+          `Cannot create net label for port ${this.props.to} because it already has a net label with text "${existingToNetLabel.text}"`,
+        )
+      }
+    } else {
+      const trace = db.schematic_trace.insert({
+        source_trace_id: this.source_trace_id!,
+        edges,
+        junctions,
+      })
+      this.schematic_trace_id = trace.schematic_trace_id
+    }
   }
 }
