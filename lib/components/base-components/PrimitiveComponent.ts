@@ -279,6 +279,17 @@ export abstract class PrimitiveComponent<
    * schematic components
    */
   computeSchematicPropsTransform(): Matrix {
+    const manualPlacement =
+      this.getSubcircuit()._getManualSchematicPlacementForComponent(this)
+
+    if (
+      manualPlacement &&
+      this.props.schX === undefined &&
+      this.props.schY === undefined
+    ) {
+      return compose(translate(manualPlacement.x, manualPlacement.y))
+    }
+
     return compose(translate(this.props.schX ?? 0, this.props.schY ?? 0))
   }
 
@@ -381,6 +392,27 @@ export abstract class PrimitiveComponent<
       ) {
         const center = applyToPoint(
           this._computePcbGlobalTransformBeforeLayout(),
+          position.center,
+        )
+        return Array.isArray(center) ? { x: center[0], y: center[1] } : center
+      }
+    }
+
+    return null
+  }
+
+  _getManualSchematicPlacementForComponent(
+    component: PrimitiveComponent,
+  ): { x: number; y: number } | null {
+    if (!this.isSubcircuit) return null
+
+    const manualEdits = this.props.manualEdits
+    if (!manualEdits?.schematic_placements) return null
+
+    for (const position of manualEdits.schematic_placements) {
+      if (component.props.name === position.selector) {
+        const center = applyToPoint(
+          this.computeSchematicGlobalTransform(),
           position.center,
         )
         return Array.isArray(center) ? { x: center[0], y: center[1] } : center

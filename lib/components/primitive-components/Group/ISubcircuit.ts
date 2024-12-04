@@ -5,4 +5,7 @@ import { z } from "zod"
 export interface ISubcircuit extends PrimitiveComponent {
   _shouldUseTraceByTraceRouting(): boolean
   _parsedProps: z.infer<typeof subcircuitGroupProps>
+  _getManualSchematicPlacementForComponent(
+    component: PrimitiveComponent,
+  ): { x: number; y: number } | null
 }
