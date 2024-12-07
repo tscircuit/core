@@ -688,6 +688,53 @@ export class Trace
     })
   }
 
+  _getChipSideComplexityInfo() {
+    const { allPortsFound, portsWithSelectors: connectedPorts } =
+      this._findConnectedPorts()
+    if (!allPortsFound || connectedPorts.length !== 2) return null
+
+    // Determine which port is on the chip and which is passive
+    const chipSidePort = connectedPorts.find(
+      ({ port }) => port.parent?.config.shouldRenderAsSchematicBox,
+    )?.port
+    const passiveSidePort = connectedPorts.find(
+      ({ port }) => !port.parent?.config.shouldRenderAsSchematicBox,
+    )?.port
+
+    if (!chipSidePort || !passiveSidePort) return null
+
+    return {
+      chipSidePort,
+      passiveSidePort,
+    }
+  }
+
+  _countComplexElements(): number {
+    if (!this.schematic_trace_id) return 0
+    const { db } = this.root!
+    const trace = db.schematic_trace.get(this.schematic_trace_id)
+    if (!trace) return 0
+
+    let count = 0
+
+    // Count junctions
+    count += trace.junctions?.length ?? 0
+
+    // Count crossings
+    count += trace.edges.filter((edge) => edge.is_crossing).length
+
+    // Count turns (where direction changes between edges)
+    for (let i = 1; i < trace.edges.length; i++) {
+      const prev = trace.edges[i - 1]
+      const curr = trace.edges[i]
+      const prevVertical = Math.abs(prev.from.x - prev.to.x) < 0.01
+      const currVertical = Math.abs(curr.from.x - curr.to.x) < 0.01
+      if (prevVertical !== currVertical) count++
+    }
+
+    return count
+  }
+
   doInitialSchematicTraceRender(): void {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
@@ -892,5 +939,60 @@ export class Trace
     })
 
     this.schematic_trace_id = trace.schematic_trace_id
+
+    // Now that the trace is created, check if it should be converted to net labels
+    const complexityInfo = this._getChipSideComplexityInfo()
+    if (complexityInfo !== null) {
+      // Get the pin label and chip reference
+      const chipPort = complexityInfo.chipSidePort
+      const chipComponent = chipPort.parent
+      const chipRefDes = chipComponent?.props.name
+      const pinName = chipPort.props.name || `pin${chipPort.props.pinNumber}`
+      const fullLabel = chipRefDes ? `${chipRefDes}_${pinName}` : pinName
+
+      if (this._countComplexElements() >= 4) {
+        // Create net labels with different formats for chip side vs passive side
+        const chipSidePosition = {
+          position:
+            complexityInfo.chipSidePort._getGlobalSchematicPositionAfterLayout(),
+          facingDirection: complexityInfo.chipSidePort.facingDirection,
+          port: complexityInfo.chipSidePort,
+        }
+
+        const passiveSidePosition = {
+          position:
+            complexityInfo.passiveSidePort._getGlobalSchematicPositionAfterLayout(),
+          facingDirection: complexityInfo.passiveSidePort.facingDirection,
+          port: complexityInfo.passiveSidePort,
+        }
+
+        // Chip side gets just the pin name
+        db.schematic_net_label.insert({
+          text: pinName,
+          source_net_id: chipSidePosition.port.source_port_id!,
+          anchor_position: chipSidePosition.position,
+          center: chipSidePosition.position,
+          anchor_side:
+            getEnteringEdgeFromDirection(chipSidePosition.facingDirection!) ??
+            "bottom",
+        })
+
+        // Passive side gets the full reference (e.g. "U1_OUT1")
+        db.schematic_net_label.insert({
+          text: fullLabel,
+          source_net_id: passiveSidePosition.port.source_port_id!,
+          anchor_position: passiveSidePosition.position,
+          center: passiveSidePosition.position,
+          anchor_side:
+            getEnteringEdgeFromDirection(
+              passiveSidePosition.facingDirection!,
+            ) ?? "bottom",
+        })
+
+        // Remove the trace since we're using net labels instead
+        db.schematic_trace.delete(this.schematic_trace_id)
+        this.schematic_trace_id = null
+      }
+    }
   }
 }
