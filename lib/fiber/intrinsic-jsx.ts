@@ -1,6 +1,6 @@
 import type * as Props from "@tscircuit/props"
 
-export interface TScircuitElements {
+export interface TscircuitElements {
   resistor: Props.ResistorProps
   capacitor: Props.CapacitorProps
   inductor: Props.InductorProps
@@ -50,11 +50,11 @@ export interface TScircuitElements {
 
 declare module "react" {
   namespace JSX {
-    interface IntrinsicElements extends TScircuitElements {}
+    interface IntrinsicElements extends TscircuitElements {}
   }
 }
 declare module "react/jsx-runtime" {
   namespace JSX {
-    interface IntrinsicElements extends TScircuitElements {}
+    interface IntrinsicElements extends TscircuitElements {}
   }
 }
