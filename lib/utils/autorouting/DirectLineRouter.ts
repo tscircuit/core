@@ -21,6 +21,8 @@ export class DirectLineRouter {
       const endX = Number(end.x)
       const endY = Number(end.y)
 
+      
+
       const trace: SimplifiedPcbTrace = {
         type: "pcb_trace",
         pcb_trace_id: "",
