@@ -23,7 +23,7 @@
     "@tscircuit/log-soup": "^1.0.2",
     "@types/bun": "latest",
     "@types/debug": "^4.1.12",
-    "@types/react": "^18.3.3",
+    "@types/react": "^19.0.1",
     "@types/react-reconciler": "^0.28.8",
     "bun-match-svg": "0.0.8",
     "circuit-to-svg": "^0.0.87",
