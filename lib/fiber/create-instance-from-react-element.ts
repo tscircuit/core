@@ -139,7 +139,7 @@ const hostConfig: HostConfig<
 const reconciler = ReactReconciler(hostConfig as any)
 
 export const createInstanceFromReactElement = (
-  reactElm: React.ReactElement,
+  reactElm: React.JSX.Element,
 ): NormalComponent => {
   const rootContainer = {
     children: [] as any[],

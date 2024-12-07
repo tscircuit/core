@@ -1,6 +1,6 @@
 import type * as Props from "@tscircuit/props"
 
-declare global {
+declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
       resistor: Props.ResistorProps
