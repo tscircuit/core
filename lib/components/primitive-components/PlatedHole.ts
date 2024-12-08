@@ -105,7 +105,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       })
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
-    } else if (props.shape === "pill") {
+    } else if (props.shape === "pill" || props.shape === "oval") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!,
@@ -113,7 +113,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         outer_height: props.outerHeight,
         hole_width: props.innerWidth,
         hole_height: props.innerHeight,
-        shape: "pill" as const,
+        shape: props.shape,
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
