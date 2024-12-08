@@ -14,26 +14,34 @@ export class DirectLineRouter {
     for (const connection of this.input.connections) {
       if (connection.pointsToConnect.length !== 2) continue
       const [start, end] = connection.pointsToConnect
+
+      // Ensure x and y are numbers
+      const startX = Number(start.x)
+      const startY = Number(start.y)
+      const endX = Number(end.x)
+      const endY = Number(end.y)
+
       const trace: SimplifiedPcbTrace = {
         type: "pcb_trace",
         pcb_trace_id: "",
         route: [
           {
             route_type: "wire",
-            x: start.x,
-            y: start.y,
+            x: startX,
+            y: startY,
             layer: "top",
             width: 0.1,
           },
           {
             route_type: "wire",
-            x: end.x,
-            y: end.y,
+            x: endX,
+            y: endY,
             layer: "top",
             width: 0.1,
           },
         ],
       }
+
       traces.push(trace)
     }
 
