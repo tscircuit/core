@@ -39,10 +39,12 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     width: number
     height: number
   } {
+    console.log("getPcbCircuitJsonBounds", this.pcb_plated_hole_id)
     const { db } = this.root!
     const platedHole = db.pcb_plated_hole.get(this.pcb_plated_hole_id!)!
     const size = this.getPcbSize()
 
+    console.log("platedHole", platedHole)
     return {
       center: { x: platedHole.x, y: platedHole.y },
       bounds: {
@@ -91,6 +93,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
     if (props.shape === "circle") {
+      console.log("inserting circle plated hole", this.matchedPort)
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!,
@@ -105,7 +108,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       })
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
-    } else if (props.shape === "pill") {
+    } else if (props.shape === "pill" || props.shape === "oval") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!,
@@ -113,7 +116,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         outer_height: props.outerHeight,
         hole_width: props.innerWidth,
         hole_height: props.innerHeight,
-        shape: "pill" as const,
+        shape: props.shape,
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
