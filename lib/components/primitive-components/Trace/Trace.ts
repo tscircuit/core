@@ -36,6 +36,7 @@ import type { TraceI } from "./TraceI"
 import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
+import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -609,7 +610,7 @@ export class Trace
     const portsWithPosition = connectedPorts.map(({ port }) => ({
       port,
       position: port._getGlobalSchematicPositionAfterLayout(),
-      schematic_port_id: port.schematic_port_id ?? undefined,
+      schematic_port_id: port.schematic_port_id!,
       facingDirection: port.facingDirection,
     }))
     if (portsWithPosition.length < 2) {
@@ -658,18 +659,33 @@ export class Trace
       .list()
       .find((label) => label.source_net_id === toPort.source_port_id)
 
-    if (
-      (existingFromNetLabel &&
-        existingFromNetLabel.text !== this.props.schDisplayLabel) ||
-      (existingToNetLabel &&
-        existingToNetLabel?.text !== this.props.schDisplayLabel)
-    ) {
-      throw new Error(
-        `Cannot create net label for port ${existingFromNetLabel ? fromPortName : toPortName} because it already has a net label with text "${existingFromNetLabel ? existingFromNetLabel.text : existingToNetLabel?.text}".`,
-      )
+    if (this.props.schDisplayLabel) {
+      if (
+        (existingFromNetLabel &&
+          existingFromNetLabel.text !== this.props.schDisplayLabel) ||
+        (existingToNetLabel &&
+          existingToNetLabel?.text !== this.props.schDisplayLabel)
+      ) {
+        throw new Error(
+          `Cannot create net label for port ${existingFromNetLabel ? fromPortName : toPortName} because it already has a net label with text "${existingFromNetLabel ? existingFromNetLabel.text : existingToNetLabel?.text}".`,
+        )
+      }
     }
+
+    const [firstPort, secondPort] = connectedPorts.map(({ port }) => port)
+    const isFirstPortSchematicBox =
+      firstPort.parent?.config.shouldRenderAsSchematicBox
+    const isSecondPortSchematicBox =
+      secondPort.parent?.config.shouldRenderAsSchematicBox
+    const firstPortName = isFirstPortSchematicBox
+      ? firstPort?.props.name
+      : `${secondPort?.parent?.props.name}_${secondPort?.props.name}`
+    const secondPortName = isSecondPortSchematicBox
+      ? secondPort?.props.name
+      : `${firstPort?.parent?.props.name}_${firstPort?.props.name}`
+
     db.schematic_net_label.insert({
-      text: this.props.schDisplayLabel!,
+      text: this.props.schDisplayLabel! ?? firstPortName,
       source_net_id: fromPort.source_port_id!,
       anchor_position: fromAnchorPos,
       center: fromAnchorPos,
@@ -679,7 +695,7 @@ export class Trace
     // Handle `to` port label
 
     db.schematic_net_label.insert({
-      text: this.props.schDisplayLabel!,
+      text: this.props.schDisplayLabel! ?? secondPortName,
       source_net_id: toPort.source_port_id!,
       anchor_position: toAnchorPos,
       center: toAnchorPos,
@@ -688,51 +704,14 @@ export class Trace
     })
   }
 
-  _getChipSideComplexityInfo() {
-    const { allPortsFound, portsWithSelectors: connectedPorts } =
-      this._findConnectedPorts()
-    if (!allPortsFound || connectedPorts.length !== 2) return null
-
-    // Determine which port is on the chip and which is passive
-    const chipSidePort = connectedPorts.find(
-      ({ port }) => port.parent?.config.shouldRenderAsSchematicBox,
-    )?.port
-    const passiveSidePort = connectedPorts.find(
-      ({ port }) => !port.parent?.config.shouldRenderAsSchematicBox,
-    )?.port
-
-    if (!chipSidePort || !passiveSidePort) return null
-
-    return {
-      chipSidePort,
-      passiveSidePort,
-    }
-  }
-
-  _countComplexElements(): number {
-    if (!this.schematic_trace_id) return 0
-    const { db } = this.root!
-    const trace = db.schematic_trace.get(this.schematic_trace_id)
-    if (!trace) return 0
-
-    let count = 0
-
-    // Count junctions
-    count += trace.junctions?.length ?? 0
-
-    // Count crossings
-    count += trace.edges.filter((edge) => edge.is_crossing).length
-
-    // Count turns (where direction changes between edges)
-    for (let i = 1; i < trace.edges.length; i++) {
-      const prev = trace.edges[i - 1]
-      const curr = trace.edges[i]
-      const prevVertical = Math.abs(prev.from.x - prev.to.x) < 0.01
-      const currVertical = Math.abs(curr.from.x - curr.to.x) < 0.01
-      if (prevVertical !== currVertical) count++
-    }
-
-    return count
+  private _isPassiveToChipConnection(): boolean | undefined {
+    const { allPortsFound, ports } = this._findConnectedPorts()
+    if (!allPortsFound || ports.length !== 2) return false
+    const [port1, port2] = ports
+    if (!port1?.parent || !port2?.parent) return false
+    const isPort1Chip = port1.parent.config.shouldRenderAsSchematicBox
+    const isPort2Chip = port2.parent.config.shouldRenderAsSchematicBox
+    return (isPort1Chip && !isPort2Chip) || (!isPort1Chip && isPort2Chip)
   }
 
   doInitialSchematicTraceRender(): void {
@@ -932,67 +911,22 @@ export class Trace
       throw new Error("Missing source_trace_id for schematic trace insertion.")
     }
 
-    const trace = db.schematic_trace.insert({
-      source_trace_id: this.source_trace_id!,
-      edges,
-      junctions,
-    })
-
-    this.schematic_trace_id = trace.schematic_trace_id
-
-    // Now that the trace is created, check if it should be converted to net labels
-    const complexityInfo = this._getChipSideComplexityInfo()
-    if (complexityInfo !== null) {
-      // Get the pin label and chip reference
-      const chipPort = complexityInfo.chipSidePort
-      const chipComponent = chipPort.parent
-      const chipRefDes = chipComponent?.props.name
-      const pinName = chipPort.props.name || `pin${chipPort.props.pinNumber}`
-      const fullLabel = chipRefDes ? `${chipRefDes}_${pinName}` : pinName
-
-      if (this._countComplexElements() >= 4) {
-        // Create net labels with different formats for chip side vs passive side
-        const chipSidePosition = {
-          position:
-            complexityInfo.chipSidePort._getGlobalSchematicPositionAfterLayout(),
-          facingDirection: complexityInfo.chipSidePort.facingDirection,
-          port: complexityInfo.chipSidePort,
-        }
-
-        const passiveSidePosition = {
-          position:
-            complexityInfo.passiveSidePort._getGlobalSchematicPositionAfterLayout(),
-          facingDirection: complexityInfo.passiveSidePort.facingDirection,
-          port: complexityInfo.passiveSidePort,
-        }
-
-        // Chip side gets just the pin name
-        db.schematic_net_label.insert({
-          text: pinName,
-          source_net_id: chipSidePosition.port.source_port_id!,
-          anchor_position: chipSidePosition.position,
-          center: chipSidePosition.position,
-          anchor_side:
-            getEnteringEdgeFromDirection(chipSidePosition.facingDirection!) ??
-            "bottom",
-        })
-
-        // Passive side gets the full reference (e.g. "U1_OUT1")
-        db.schematic_net_label.insert({
-          text: fullLabel,
-          source_net_id: passiveSidePosition.port.source_port_id!,
-          anchor_position: passiveSidePosition.position,
-          center: passiveSidePosition.position,
-          anchor_side:
-            getEnteringEdgeFromDirection(
-              passiveSidePosition.facingDirection!,
-            ) ?? "bottom",
-        })
-
-        // Remove the trace since we're using net labels instead
-        db.schematic_trace.delete(this.schematic_trace_id)
-        this.schematic_trace_id = null
-      }
+    // Use net labels for complex traces between chips and passive components
+    if (
+      countComplexElements(junctions, edges) >= 5 &&
+      this._isPassiveToChipConnection()
+    ) {
+      this._doInitialSchematicTraceRenderWithDisplayLabel()
+      db.schematic_trace.delete(this.schematic_trace_id!)
+    }
+    // Insert schematic trace
+    else {
+      const trace = db.schematic_trace.insert({
+        source_trace_id: this.source_trace_id!,
+        edges,
+        junctions,
+      })
+      this.schematic_trace_id = trace.schematic_trace_id
     }
   }
 }
