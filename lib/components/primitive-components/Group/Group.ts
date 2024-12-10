@@ -152,7 +152,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           {
             method: "POST",
             body: JSON.stringify({
-              input_circuit_json: this.root!.getCircuitJson(),
+              input_circuit_json: this.root!.db.toArray(),
             }),
             headers: { "Content-Type": "application/json" },
           },
@@ -167,7 +167,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         {
           method: "POST",
           body: JSON.stringify({
-            input_circuit_json: this.root!.getCircuitJson(),
+            input_circuit_json: this.root!.db.toArray(),
             provider: "freerouting",
             autostart: true,
           }),
