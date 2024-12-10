@@ -73,8 +73,8 @@
   " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.5px"/><text class="net-label-text" x="997.46801625" y="224.54220750000025" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.5px" transform="">U1_VCC</text><path class="net-label" d="
     M 633.03198375,315
     L 628.98198375,323.1
-    L 593.45198375,323.1
-    L 593.45198375,306.9
+    L 569.52198375,323.09999999999997
+    L 569.52198375,306.9
     L 628.98198375,306.9
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.5px"/><text class="net-label-text" x="626.28198375" y="315" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.5px" transform="">VCC</text><text x="663.03198375" y="489.75" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="13.5px" transform="rotate(0, 663.03198375, 489.75)">part-number</text><text x="663.03198375" y="260.25" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="13.5px" transform="rotate(0, 663.03198375, 260.25)">U1</text></svg>
+  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.5px"/><text class="net-label-text" x="626.28198375" y="315" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.5px" transform="">U1_VCC</text><text x="663.03198375" y="489.75" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="13.5px" transform="rotate(0, 663.03198375, 489.75)">part-number</text><text x="663.03198375" y="260.25" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="13.5px" transform="rotate(0, 663.03198375, 260.25)">U1</text></svg>

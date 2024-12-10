@@ -87,11 +87,11 @@
   " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7140677460859999px"/><text class="net-label-text" x="953.5264726302545" y="85.70338730412664" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.426609714774px" transform="">gnd</text><path class="net-label" d="
     M 458.48576984165504,311.11057641718753
     L 453.85778692722283,320.36654224605195
-    L 415.7597744908847,320.36654224605195
-    L 415.7597744908847,301.8546105883231
+    L 364.28060651676844,320.3665422460519
+    L 364.28060651676844,301.8546105883231
     L 453.85778692722283,301.8546105883231
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7140677460859999px"/><text class="net-label-text" x="450.772464984268" y="311.11057641718753" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.426609714774px" transform="">pin2</text><path class="net-label" d="
+  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7140677460859999px"/><text class="net-label-text" x="450.772464984268" y="311.11057641718753" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.426609714774px" transform="">PWR1_pin2</text><path class="net-label" d="
     M 254.18683222716663,514.2966126958358
     L 249.55884931273442,523.5525785247003
     L 159.98166890228006,523.5525785247003

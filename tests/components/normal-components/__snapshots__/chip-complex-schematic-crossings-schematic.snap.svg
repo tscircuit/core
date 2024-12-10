@@ -24,11 +24,11 @@
   " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="295.73778291933263" y="230.19425863291465" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">U1_IN6</text><path class="net-label" d="
     M 466.557982711055,253.57749117569
     L 462.4144860556628,261.8644844864744
-    L 432.71431126404906,261.8644844864744
-    L 432.71431126404906,245.2904978649056
+    L 408.23187300144775,261.8644844864744
+    L 408.23187300144775,245.2904978649056
     L 462.4144860556628,245.2904978649056
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="459.652154952068" y="253.57749117569" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">IN6</text><path class="net-label" d="
+  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="459.652154952068" y="253.57749117569" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">U1_IN6</text><path class="net-label" d="
     M 288.8319551603456,76.73141954431469
     L 292.9754518157378,68.4444262335303
     L 347.15806486995285,68.4444262335303
@@ -38,11 +38,11 @@
   " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="295.73778291933263" y="76.73141954431469" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">U1_IN8</text><path class="net-label" d="
     M 466.557982711055,284.27005899341
     L 462.4144860556628,292.55705230419437
-    L 432.71431126404906,292.55705230419437
-    L 432.71431126404906,275.9830656826256
+    L 408.23187300144775,292.55705230419437
+    L 408.23187300144775,275.9830656826256
     L 462.4144860556628,275.9830656826256
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="459.652154952068" y="284.27005899341" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">IN8</text><path class="net-label" d="
+  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="459.652154952068" y="284.27005899341" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">U1_IN8</text><path class="net-label" d="
     M 820.7662752136544,230.23619235369551
     L 816.6227785582621,238.5231856644799
     L 747.7998106549946,238.5231856644799
@@ -52,11 +52,11 @@
   " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="813.8604474546673" y="230.23619235369551" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">U1_OUT4</text><path class="net-label" d="
     M 643.0402476629449,238.23120726682998
     L 647.1837443183372,229.9442139560456
-    L 691.5242739590033,229.9442139560456
-    L 691.5242739590033,246.51820057761438
+    L 716.0067122216046,229.9442139560456
+    L 716.0067122216046,246.51820057761438
     L 647.1837443183372,246.51820057761438
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="649.9460754219319" y="238.23120726682998" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">OUT4</text><path class="net-label" d="
+  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="649.9460754219319" y="238.23120726682998" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">U1_OUT4</text><path class="net-label" d="
     M 820.7662752136544,153.50477280939552
     L 816.6227785582621,161.79176612017991
     L 747.7998106549946,161.79176612017991
@@ -66,11 +66,11 @@
   " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="813.8604474546673" y="153.50477280939552" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">U1_OUT2</text><path class="net-label" d="
     M 643.0402476629449,268.92377508455
     L 647.1837443183372,260.6367817737656
-    L 691.5242739590033,260.6367817737656
-    L 691.5242739590033,277.2107683953344
+    L 716.0067122216046,260.6367817737656
+    L 716.0067122216046,277.2107683953344
     L 647.1837443183372,277.2107683953344
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="649.9460754219319" y="268.92377508455" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">OUT2</text><path class="net-label" d="
+  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="649.9460754219319" y="268.92377508455" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">U1_OUT2</text><path class="net-label" d="
     M 820.7662752136544,76.77335326509555
     L 816.6227785582621,85.06034657587995
     L 747.7998106549946,85.06034657587995
@@ -80,8 +80,8 @@
   " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="813.8604474546673" y="76.77335326509555" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">U1_OUT1</text><path class="net-label" d="
     M 643.0402476629449,284.27005899341
     L 647.1837443183372,275.9830656826256
-    L 691.5242739590033,275.9830656826256
-    L 691.5242739590033,292.55705230419437
+    L 716.0067122216046,275.9830656826256
+    L 716.0067122216046,292.55705230419437
     L 647.1837443183372,292.55705230419437
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="649.9460754219319" y="284.27005899341" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">OUT1</text><text x="497.25055052877497" y="309.591427443029" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="13.811655517973998px" transform="rotate(0, 497.25055052877497, 309.591427443029)"></text><text x="497.25055052877497" y="151.52470318177103" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="13.811655517973998px" transform="rotate(0, 497.25055052877497, 151.52470318177103)">U1</text></svg>
+  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.534628390886px"/><text class="net-label-text" x="649.9460754219319" y="284.27005899341" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.811655517973998px" transform="">U1_OUT1</text><text x="497.25055052877497" y="309.591427443029" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="13.811655517973998px" transform="rotate(0, 497.25055052877497, 309.591427443029)"></text><text x="497.25055052877497" y="151.52470318177103" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="13.811655517973998px" transform="rotate(0, 497.25055052877497, 151.52470318177103)">U1</text></svg>

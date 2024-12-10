@@ -675,17 +675,11 @@ export class Trace
     const [firstPort, secondPort] = connectedPorts.map(({ port }) => port)
     const isFirstPortSchematicBox =
       firstPort.parent?.config.shouldRenderAsSchematicBox
-    const isSecondPortSchematicBox =
-      secondPort.parent?.config.shouldRenderAsSchematicBox
-    const firstPortName = isFirstPortSchematicBox
-      ? firstPort?.props.name
+    const pinFullName = isFirstPortSchematicBox
+      ? `${firstPort?.parent?.props.name}_${firstPort?.props.name}`
       : `${secondPort?.parent?.props.name}_${secondPort?.props.name}`
-    const secondPortName = isSecondPortSchematicBox
-      ? secondPort?.props.name
-      : `${firstPort?.parent?.props.name}_${firstPort?.props.name}`
-
     db.schematic_net_label.insert({
-      text: this.props.schDisplayLabel! ?? firstPortName,
+      text: this.props.schDisplayLabel! ?? pinFullName,
       source_net_id: fromPort.source_port_id!,
       anchor_position: fromAnchorPos,
       center: fromAnchorPos,
@@ -695,7 +689,7 @@ export class Trace
     // Handle `to` port label
 
     db.schematic_net_label.insert({
-      text: this.props.schDisplayLabel! ?? secondPortName,
+      text: this.props.schDisplayLabel! ?? pinFullName,
       source_net_id: toPort.source_port_id!,
       anchor_position: toAnchorPos,
       center: toAnchorPos,

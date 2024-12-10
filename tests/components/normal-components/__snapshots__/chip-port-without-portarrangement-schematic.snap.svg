@@ -24,11 +24,11 @@
   " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.87495651844px"/><text class="net-label-text" x="259.7355741431756" y="181.551065664049" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="16.87460866596px" transform="">GND</text><path class="net-label" d="
     M 719.2022844121,332.3044227127
     L 714.139901812312,342.429187912276
-    L 659.9661581395189,342.429187912276
-    L 659.9661581395189,322.17965751312397
+    L 630.0543518153395,342.429187912276
+    L 630.0543518153395,322.17965751312397
     L 714.139901812312,322.17965751312397
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.87495651844px"/><text class="net-label-text" x="710.7649800791199" y="332.3044227127" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="16.87460866596px" transform="">OUT1</text><path class="net-label" d="
+  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.87495651844px"/><text class="net-label-text" x="710.7649800791199" y="332.3044227127" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="16.87460866596px" transform="">U1_OUT1</text><path class="net-label" d="
     M 302.9729433131831,301.36020595584444
     L 297.9105607133951,311.48497115542045
     L 213.82501071642258,311.48497115542045
