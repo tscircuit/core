@@ -22,7 +22,7 @@ export class Circuit {
   schematicDisabled = false
 
   _hasRenderedAtleastOnce = false
-  private _isRendering = false;
+  private _isRendering = false
 
   constructor() {
     this.children = []
@@ -118,7 +118,7 @@ export class Circuit {
       // If we're already rendering, return the current state
       return this.db.toArray()
     }
-    
+
     if (!this._hasRenderedAtleastOnce) {
       this._isRendering = true
       try {
