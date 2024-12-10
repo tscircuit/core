@@ -22,6 +22,7 @@ export class Circuit {
   schematicDisabled = false
 
   _hasRenderedAtleastOnce = false
+  private _isRendering = false
 
   constructor() {
     this.children = []
@@ -113,7 +114,19 @@ export class Circuit {
   }
 
   getSoup(): AnyCircuitElement[] {
-    if (!this._hasRenderedAtleastOnce) this.render()
+    if (this._isRendering) {
+      // If we're already rendering, return the current state
+      return this.db.toArray()
+    }
+
+    if (!this._hasRenderedAtleastOnce) {
+      this._isRendering = true
+      try {
+        this.render()
+      } finally {
+        this._isRendering = false
+      }
+    }
     return this.db.toArray()
   }
 
