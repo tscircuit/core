@@ -110,6 +110,8 @@ jobs:
             ### Full Howfat Output (PR Branch)
             ```
             ${{ steps.pr-install-size.outputs.full_output }}
+
+            (aside)
             ```
           proxy-url: https://add-pr-comment-proxy-tscircuit.vercel.app/api
           allow-repeats: false
