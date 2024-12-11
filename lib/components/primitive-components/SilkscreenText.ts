@@ -14,6 +14,7 @@ export class SilkscreenText extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
+    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const container = this.getPrimitiveContainer()!

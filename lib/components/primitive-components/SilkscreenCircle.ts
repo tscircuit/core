@@ -14,6 +14,7 @@ export class SilkscreenCircle extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
+    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const layer = props.layer ?? "top"

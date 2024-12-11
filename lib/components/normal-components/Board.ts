@@ -32,6 +32,7 @@ export class Board extends Group<typeof boardProps> {
   }
 
   doInitialPcbComponentRender(): void {
+    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 

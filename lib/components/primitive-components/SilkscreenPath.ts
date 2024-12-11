@@ -15,6 +15,7 @@ export class SilkscreenPath extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
+    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 

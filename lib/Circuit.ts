@@ -20,7 +20,7 @@ export class Circuit {
   root: Circuit | null = null
   isRoot = true
   schematicDisabled = false
-
+  pcbDisabled = false
   _hasRenderedAtleastOnce = false
 
   constructor() {
