@@ -36,6 +36,7 @@ import type { TraceI } from "./TraceI"
 import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
+import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -609,7 +610,7 @@ export class Trace
     const portsWithPosition = connectedPorts.map(({ port }) => ({
       port,
       position: port._getGlobalSchematicPositionAfterLayout(),
-      schematic_port_id: port.schematic_port_id ?? undefined,
+      schematic_port_id: port.schematic_port_id!,
       facingDirection: port.facingDirection,
     }))
     if (portsWithPosition.length < 2) {
@@ -658,18 +659,27 @@ export class Trace
       .list()
       .find((label) => label.source_net_id === toPort.source_port_id)
 
-    if (
-      (existingFromNetLabel &&
-        existingFromNetLabel.text !== this.props.schDisplayLabel) ||
-      (existingToNetLabel &&
-        existingToNetLabel?.text !== this.props.schDisplayLabel)
-    ) {
-      throw new Error(
-        `Cannot create net label for port ${existingFromNetLabel ? fromPortName : toPortName} because it already has a net label with text "${existingFromNetLabel ? existingFromNetLabel.text : existingToNetLabel?.text}".`,
-      )
+    if (this.props.schDisplayLabel) {
+      if (
+        (existingFromNetLabel &&
+          existingFromNetLabel.text !== this.props.schDisplayLabel) ||
+        (existingToNetLabel &&
+          existingToNetLabel?.text !== this.props.schDisplayLabel)
+      ) {
+        throw new Error(
+          `Cannot create net label for port ${existingFromNetLabel ? fromPortName : toPortName} because it already has a net label with text "${existingFromNetLabel ? existingFromNetLabel.text : existingToNetLabel?.text}".`,
+        )
+      }
     }
+
+    const [firstPort, secondPort] = connectedPorts.map(({ port }) => port)
+    const isFirstPortSchematicBox =
+      firstPort.parent?.config.shouldRenderAsSchematicBox
+    const pinFullName = isFirstPortSchematicBox
+      ? `${firstPort?.parent?.props.name}_${firstPort?.props.name}`
+      : `${secondPort?.parent?.props.name}_${secondPort?.props.name}`
     db.schematic_net_label.insert({
-      text: this.props.schDisplayLabel!,
+      text: this.props.schDisplayLabel! ?? pinFullName,
       source_net_id: fromPort.source_port_id!,
       anchor_position: fromAnchorPos,
       center: fromAnchorPos,
@@ -679,13 +689,23 @@ export class Trace
     // Handle `to` port label
 
     db.schematic_net_label.insert({
-      text: this.props.schDisplayLabel!,
+      text: this.props.schDisplayLabel! ?? pinFullName,
       source_net_id: toPort.source_port_id!,
       anchor_position: toAnchorPos,
       center: toAnchorPos,
       anchor_side:
         getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom",
     })
+  }
+
+  private _isPassiveToChipConnection(): boolean | undefined {
+    const { allPortsFound, ports } = this._findConnectedPorts()
+    if (!allPortsFound || ports.length !== 2) return false
+    const [port1, port2] = ports
+    if (!port1?.parent || !port2?.parent) return false
+    const isPort1Chip = port1.parent.config.shouldRenderAsSchematicBox
+    const isPort2Chip = port2.parent.config.shouldRenderAsSchematicBox
+    return (isPort1Chip && !isPort2Chip) || (!isPort1Chip && isPort2Chip)
   }
 
   doInitialSchematicTraceRender(): void {
@@ -741,7 +761,6 @@ export class Trace
           type: "rect",
           layers: ["top"],
           center: elm.position,
-          // Approximate text bounds based on text length
           width: (elm.text?.length ?? 0) * 0.1,
           height: 0.2,
           connectedTo: [],
@@ -885,12 +904,22 @@ export class Trace
       throw new Error("Missing source_trace_id for schematic trace insertion.")
     }
 
-    const trace = db.schematic_trace.insert({
-      source_trace_id: this.source_trace_id!,
-      edges,
-      junctions,
-    })
-
-    this.schematic_trace_id = trace.schematic_trace_id
+    // Use net labels for complex traces between chips and passive components
+    if (
+      countComplexElements(junctions, edges) >= 5 &&
+      this._isPassiveToChipConnection()
+    ) {
+      this._doInitialSchematicTraceRenderWithDisplayLabel()
+      db.schematic_trace.delete(this.schematic_trace_id!)
+    }
+    // Insert schematic trace
+    else {
+      const trace = db.schematic_trace.insert({
+        source_trace_id: this.source_trace_id!,
+        edges,
+        junctions,
+      })
+      this.schematic_trace_id = trace.schematic_trace_id
+    }
   }
 }
