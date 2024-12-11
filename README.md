@@ -2,14 +2,37 @@
 
 [tscircuit](https://github.com/tscircuit/tscircuit) &middot; [Development Guide](./docs/DEVELOPMENT.md)
 
-A rewrite of [tscircuit builder](https://github.com/tscircuit/builder) with a ThreeJS/react-three-like API and architecture.
+The core logic used to build Circuit JSON from tscircuit React elements.
+
+Using `core
 
 ## Usage
 
 ```tsx
-import { Board, Resistor, Led, Trace, Project } from "@tscircuit/core"
+import { Circuit } from "@tscircuit/core"
 
-const project = new Project()
+const circuit = new Circuit()
+
+circuit.add(
+  <board width="10mm" height="10mm">
+    <resistor name="R1" resistance="10k" footprint="0402" />
+    <led name="L1" footprint="0402" />
+
+    <trace from=".R1 > .pin1" to="net.VCC" />
+    <trace from=".R1 > .pin2" to=".L1 > .pos" />
+    <trace from=".L1 > .neg" to="net.GND" />
+  </board>
+)
+
+circuit.getCircuitJson()
+```
+
+## Non-React Usage
+
+```tsx
+import { Board, Resistor, Led, Trace, Circuit } from "@tscircuit/core"
+
+const circuit = new Circuit()
 
 const board = new Board({
   width: "10mm",
@@ -27,5 +50,5 @@ const trace = new Trace({ width: "0.2mm" })
 trace.connect(R1.output, LED1.anode)
 board.add(trace)
 
-project.getJson() // [{ type: "board", ...}, { type: "resistor", ...}, ...]
+circuit.getJson() // [{ type: "board", ...}, { type: "resistor", ...}, ...]
 ```
