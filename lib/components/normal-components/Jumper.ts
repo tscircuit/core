@@ -37,6 +37,7 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
   }
 
   doInitialPcbComponentRender() {
+    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 

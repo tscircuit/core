@@ -471,6 +471,7 @@ export class NormalComponent<
   }
 
   doInitialPcbComponentRender() {
+    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const pcb_component = db.pcb_component.insert({
@@ -501,6 +502,7 @@ export class NormalComponent<
    * the width/height of the component
    */
   doInitialPcbComponentSizeCalculation(): void {
+    if (this.root?.pcbDisabled) return
     if (!this.pcb_component_id) return
     const { db } = this.root!
     const { _parsedProps: props } = this

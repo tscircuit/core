@@ -113,6 +113,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbTraceRender() {
+    if (this.root?.pcbDisabled) return
     if (this._shouldUseTraceByTraceRouting()) return
 
     const serverUrl =

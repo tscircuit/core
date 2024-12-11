@@ -255,6 +255,7 @@ export class Trace
   }
 
   doInitialPcbTraceRender(): void {
+    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
     const subcircuit = this.getSubcircuit()

@@ -19,6 +19,7 @@ export class Footprint extends PrimitiveComponent<typeof footprintProps> {
    * to any constraints that are defined.
    */
   doInitialPcbFootprintLayout() {
+    if (this.root?.pcbDisabled) return
     const constraints = this.children.filter(
       (child) => child.componentName === "Constraint",
     ) as Constraint[]

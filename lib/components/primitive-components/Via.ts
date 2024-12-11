@@ -56,6 +56,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
+    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()

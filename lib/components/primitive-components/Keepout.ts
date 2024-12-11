@@ -17,6 +17,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
+    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()

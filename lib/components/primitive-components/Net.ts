@@ -88,6 +88,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
    * routing phase for autorouters that don't care about connecting nets.
    */
   doInitialPcbRouteNetIslands(): void {
+    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 

@@ -205,6 +205,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   doInitialPcbPortRender(): void {
+    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { matchedComponents } = this
 
