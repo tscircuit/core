@@ -3,6 +3,10 @@ name: Size
 on:
   pull_request:
     branches: [main]
+    paths:
+      - 'package.json'
+      - 'bun.lockb'
+      - '.github/workflows/bundle-size-analysis.yml'
 
 permissions:
   pull-requests: write
