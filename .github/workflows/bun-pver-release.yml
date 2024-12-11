@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - lib
 jobs:
   publish:
     runs-on: ubuntu-latest
