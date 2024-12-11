@@ -170,6 +170,18 @@ export abstract class PrimitiveComponent<
     const manualPlacement =
       this.getSubcircuit()._getManualPlacementForComponent(this)
 
+    // Check for manual placement conflict with explicit coordinates
+    if (
+      manualPlacement &&
+      (this.props.pcbX !== undefined || this.props.pcbY !== undefined)
+    ) {
+      this.renderError({
+        type: "pcb_placement_error",
+        pcb_placement_error_id: `pcb_placement_error_${Date.now()}`,
+        message: `Component ${this.getString()} (pcb_id: ${this.pcb_component_id ?? "unknown"}, source_id: ${this.source_component_id ?? "unknown"}) has both manual placement and explicit pcbX/pcbY coordinates specified`,
+      })
+    }
+
     // pcbX or pcbY will override the manual placement
     if (
       manualPlacement &&
