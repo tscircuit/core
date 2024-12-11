@@ -4,7 +4,8 @@
 
 The core logic used to build Circuit JSON from tscircuit React elements.
 
-Using `core
+You can use `core` to create [Circuit JSON](https://github.com/tscircuit/circuit-json), which can then
+be converted into Gerbers, viewed online, and much more.
 
 ## Usage
 
