@@ -1,6 +1,7 @@
 import type { LayoutBuilder } from "@tscircuit/layout"
 import type { AnySourceComponent, LayerRef } from "circuit-json"
 import { InvalidProps } from "lib/errors/InvalidProps"
+import { ManualEditConflictError } from "lib/errors/ManualEditConflictError"
 import { isMatchingSelector } from "lib/utils/selector-matching"
 import { type BaseSymbolName, type SchSymbol, symbols } from "schematic-symbols"
 import {
@@ -175,11 +176,7 @@ export abstract class PrimitiveComponent<
       manualPlacement &&
       (this.props.pcbX !== undefined || this.props.pcbY !== undefined)
     ) {
-      this.renderError({
-        type: "pcb_placement_error",
-        pcb_placement_error_id: `pcb_placement_error_${Date.now()}`,
-        message: `Component ${this.getString()} (pcb_id: ${this.pcb_component_id ?? "unknown"}, source_id: ${this.source_component_id ?? "unknown"}) has both manual placement and explicit pcbX/pcbY coordinates specified`,
-      })
+      throw new ManualEditConflictError(this)
     }
 
     // pcbX or pcbY will override the manual placement
