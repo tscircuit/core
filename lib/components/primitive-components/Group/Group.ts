@@ -121,6 +121,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const serverMode = this.props.autorouter?.serverMode ?? "job"
 
     const debug = Debug("tscircuit:core:autorouting")
+    debug(
+      "pcb_component_size",
+      this.root?.db.toArray().filter((c) => c.type === "pcb_component"),
+    )
 
     const fetchWithDebug = (url: string, options: RequestInit) => {
       debug("fetching", url)
@@ -362,5 +366,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (props.autorouter === "sequential-trace") return true
     if (props.autorouter) return false
     return true
+  }
+
+  doInitialPcbComponentSizeCalculation() {
+    if (!this.isSubcircuit) return
+  
+    // Calculate sizes for all descendants first
+    const descendants = this.getDescendants()
+    for (const descendant of descendants) {
+      if (typeof descendant.doInitialPcbComponentSizeCalculation === 'function') {
+        descendant.doInitialPcbComponentSizeCalculation()
+      }
+    }
+  
+    // Then calculate group's size using parent implementation
+    super.doInitialPcbComponentSizeCalculation()
   }
 }
