@@ -182,13 +182,26 @@ export abstract class PrimitiveComponent<
     ) {
       const db = this.root?.db
       if (db) {
-        db.pcb_manual_edit_conflict_error.insert({
-          pcb_error_id: `${this.pcb_component_id}_manual_edit_conflict`,
-          message:
-            "Component has both manual placement and explicit pcbX/pcbY coordinates. Manual placement will be ignored.",
-          pcb_component_id: this.pcb_component_id!,
-          source_component_id: this.source_component_id!,
-        })
+        // Only emit error for non-primitive components and only once per component
+        if (!this.isPcbPrimitive) {
+          // Use component name if available, otherwise fallback to pcb_component_id
+          const componentId = this._parsedProps.name || this.pcb_component_id
+          if (componentId) {
+            const existingErrors = db.pcb_manual_edit_conflict_error
+              .list()
+              .filter((e) => e.pcb_component_id === componentId)
+
+            if (existingErrors.length === 0) {
+              db.pcb_manual_edit_conflict_error.insert({
+                pcb_error_id: `${componentId}_manual_edit_conflict`,
+                message:
+                  "Component has both manual placement and explicit pcbX/pcbY coordinates. Manual placement will be ignored.",
+                pcb_component_id: componentId,
+                source_component_id: this.source_component_id!,
+              })
+            }
+          }
+        }
       }
     }
 
@@ -213,21 +226,10 @@ export abstract class PrimitiveComponent<
       const primitiveContainer = this.getPrimitiveContainer()
       if (primitiveContainer) {
         const isFlipped = primitiveContainer._parsedProps.layer === "bottom"
-        // Use only the container's own position for flipping
-        const containerPosition = {
-          x: primitiveContainer._parsedProps.pcbX ?? 0,
-          y: primitiveContainer._parsedProps.pcbY ?? 0,
-        }
-
         if (isFlipped) {
-          const flipOperation = compose(
-            translate(containerPosition.x, containerPosition.y),
-            flipY(),
-            translate(-containerPosition.x, -containerPosition.y),
-          )
           return compose(
-            flipOperation,
             this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
+            flipY(),
             this.computePcbPropsTransform(),
           )
         }
