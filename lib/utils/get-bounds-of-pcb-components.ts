@@ -7,6 +7,7 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
   let maxY = -Infinity
 
   for (const child of components) {
+    // Check for PCB primitives (like smtpads)
     if (child.isPcbPrimitive) {
       const { x, y } = child._getGlobalPcbPositionBeforeLayout()
       const { width, height } = child.getPcbSize()
@@ -14,13 +15,34 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
       minY = Math.min(minY, y - height / 2)
       maxX = Math.max(maxX, x + width / 2)
       maxY = Math.max(maxY, y + height / 2)
-    } else if (child.componentName === "Footprint") {
-      const childBounds = getBoundsOfPcbComponents(child.children)
+    } 
+    // For components that have PCB representations, look up their PCB component
+    else if (child.root?.db) {
+      const pcbComponents = child.root.db.pcb_component
+        .list()
+        .filter(pc => pc.source_component_id === child.source_component_id)
 
-      minX = Math.min(minX, childBounds.minX)
-      minY = Math.min(minY, childBounds.minY)
-      maxX = Math.max(maxX, childBounds.maxX)
-      maxY = Math.max(maxY, childBounds.maxY)
+      for (const pcbComponent of pcbComponents) {
+        const x = pcbComponent.center.x
+        const y = pcbComponent.center.y
+        const { width, height } = pcbComponent
+        
+        minX = Math.min(minX, x - width / 2)
+        minY = Math.min(minY, y - height / 2)
+        maxX = Math.max(maxX, x + width / 2)
+        maxY = Math.max(maxY, y + height / 2)
+      }
+    }
+    // Check for footprints and groups that might contain PCB components
+    else if (child.componentName === "Footprint" || child.isGroup) {
+      const childBounds = getBoundsOfPcbComponents(child.children)
+      
+      if (childBounds.width > 0 || childBounds.height > 0) {
+        minX = Math.min(minX, childBounds.minX)
+        minY = Math.min(minY, childBounds.minY)
+        maxX = Math.max(maxX, childBounds.maxX)
+        maxY = Math.max(maxY, childBounds.maxY)
+      }
     }
   }
 

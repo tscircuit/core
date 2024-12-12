@@ -1,31 +1,27 @@
 import {
-  groupProps,
-  type GroupProps,
   type SubcircuitGroupProps,
+  groupProps
 } from "@tscircuit/props"
-import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
-import { compose, identity } from "transformation-matrix"
-import { z } from "zod"
-import { NormalComponent } from "../../base-components/NormalComponent"
-import { TraceHint } from "../TraceHint"
+import * as SAL from "@tscircuit/schematic-autolayout"
 import type {
   PcbTrace,
   SchematicComponent,
   SchematicPort,
   SourceTrace,
 } from "circuit-json"
-import * as SAL from "@tscircuit/schematic-autolayout"
-import type { ISubcircuit } from "./ISubcircuit"
-import type {
-  SimpleRouteConnection,
-  SimpleRouteJson,
-} from "lib/utils/autorouting/SimpleRouteJson"
-import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
-import type { Trace } from "../Trace/Trace"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import type { TraceI } from "../Trace/TraceI"
-import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import Debug from "debug"
+import type {
+  SimpleRouteJson
+} from "lib/utils/autorouting/SimpleRouteJson"
+import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { z } from "zod"
+import { NormalComponent } from "../../base-components/NormalComponent"
+import type { Trace } from "../Trace/Trace"
+import type { TraceI } from "../Trace/TraceI"
+import { TraceHint } from "../TraceHint"
+import type { ISubcircuit } from "./ISubcircuit"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -362,5 +358,40 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (props.autorouter === "sequential-trace") return true
     if (props.autorouter) return false
     return true
+  }
+
+  doInitialPcbComponentRender(): void {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+
+    const pcb_group = db.pcb_group.insert({
+      center: { x: props.pcbX ?? 0, y: props.pcbY ?? 0 },
+      rotation: props.pcbRotation ?? 0,
+    })
+
+    this.pcb_group_id = pcb_group.pcb_group_id!
+  }
+
+  doInitialPcbGroupSizeCalculation(): void {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+
+    const bounds = getBoundsOfPcbComponents(this.children)
+
+    if (bounds.width === 0 || bounds.height === 0) return;
+
+    // Add some padding around the group
+    const padding = 1; // 1mm padding
+    
+    if (this.pcb_group_id) {
+      db.pcb_group.update(this.pcb_group_id, {
+        center: { 
+          x: props.pcbX ?? bounds.minX + bounds.width / 2,
+          y: props.pcbY ?? bounds.minY + bounds.height / 2
+        },
+        width: bounds.width + padding * 2,
+        height: bounds.height + padding * 2
+      });
+    }
   }
 }
