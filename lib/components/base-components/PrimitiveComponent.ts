@@ -184,9 +184,10 @@ export abstract class PrimitiveComponent<
       if (db) {
         db.pcb_manual_edit_conflict_error.insert({
           pcb_error_id: `${this.pcb_component_id}_manual_edit_conflict`,
-          message: "Component has both manual placement and explicit pcbX/pcbY coordinates. Manual placement will be ignored.",
+          message:
+            "Component has both manual placement and explicit pcbX/pcbY coordinates. Manual placement will be ignored.",
           pcb_component_id: this.pcb_component_id!,
-          source_component_id: this.source_component_id!
+          source_component_id: this.source_component_id!,
         })
       }
     }
@@ -196,35 +197,53 @@ export abstract class PrimitiveComponent<
       const primitiveContainer = this.getPrimitiveContainer()
       if (primitiveContainer) {
         const isFlipped = primitiveContainer._parsedProps.layer === "bottom"
-        const containerCenter = primitiveContainer._getGlobalPcbPositionBeforeLayout()
+        const containerCenter =
+          primitiveContainer._getGlobalPcbPositionBeforeLayout()
 
         if (isFlipped) {
           // For flipped components, apply parent transform, then flip around container center
-          const parentTransform = this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity()
+          const parentTransform =
+            this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity()
 
           // Apply position transform based on coordinates or manual placement
           if (hasExplicitCoordinates) {
-            return compose(parentTransform, flipY(), this.computePcbPropsTransform())
+            return compose(
+              parentTransform,
+              flipY(),
+              this.computePcbPropsTransform(),
+            )
           }
 
           if (manualPlacement) {
-            return compose(parentTransform, flipY(), translate(manualPlacement.x, manualPlacement.y))
+            return compose(
+              parentTransform,
+              flipY(),
+              translate(manualPlacement.x, manualPlacement.y),
+            )
           }
 
-          return compose(parentTransform, flipY(), this.computePcbPropsTransform())
+          return compose(
+            parentTransform,
+            flipY(),
+            this.computePcbPropsTransform(),
+          )
         }
       }
     }
 
     // For non-flipped components, apply standard transforms
-    const parentTransform = this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity()
+    const parentTransform =
+      this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity()
 
     if (hasExplicitCoordinates) {
       return compose(parentTransform, this.computePcbPropsTransform())
     }
 
     if (manualPlacement) {
-      return compose(parentTransform, translate(manualPlacement.x, manualPlacement.y))
+      return compose(
+        parentTransform,
+        translate(manualPlacement.x, manualPlacement.y),
+      )
     }
 
     return compose(parentTransform, this.computePcbPropsTransform())
