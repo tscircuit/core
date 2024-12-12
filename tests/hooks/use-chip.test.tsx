@@ -41,20 +41,28 @@ test("useChip hook creates component with correct props and traces", () => {
     from: t.props.from,
     to: t.props.to,
   }))
-  expect(traceConnections).toContainEqual(expect.objectContaining({
-    from: expect.stringMatching(/^\.U1 > (port\.|\.)?VCC$/),
-    to: "net.VCC"
-  }))
-  expect(traceConnections).toContainEqual(expect.objectContaining({
-    from: expect.stringMatching(/^\.U1 > (port\.|\.)?GND$/),
-    to: "net.GND"
-  }))
-  expect(traceConnections).toContainEqual(expect.objectContaining({
-    from: expect.stringMatching(/^\.U1 > (port\.|\.)?TX$/),
-    to: "net.TX"
-  }))
-  expect(traceConnections).toContainEqual(expect.objectContaining({
-    from: expect.stringMatching(/^\.U1 > (port\.|\.)?RX$/),
-    to: expect.stringMatching(/^\.U1 > (port\.|\.)?TX$/)
-  }))
+  expect(traceConnections).toContainEqual(
+    expect.objectContaining({
+      from: expect.stringMatching(/^\.U1 > (port\.|\.)?VCC$/),
+      to: "net.VCC",
+    }),
+  )
+  expect(traceConnections).toContainEqual(
+    expect.objectContaining({
+      from: expect.stringMatching(/^\.U1 > (port\.|\.)?GND$/),
+      to: "net.GND",
+    }),
+  )
+  expect(traceConnections).toContainEqual(
+    expect.objectContaining({
+      from: expect.stringMatching(/^\.U1 > (port\.|\.)?TX$/),
+      to: "net.TX",
+    }),
+  )
+  expect(traceConnections).toContainEqual(
+    expect.objectContaining({
+      from: expect.stringMatching(/^\.U1 > (port\.|\.)?RX$/),
+      to: expect.stringMatching(/^\.U1 > (port\.|\.)?TX$/),
+    }),
+  )
 })

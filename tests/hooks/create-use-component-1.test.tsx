@@ -60,8 +60,12 @@ test("createUseComponent creates a component with correct props and traces", () 
   const traces = circuit.selectAll("trace")
   expect(traces.length).toBe(4)
 
-  const trace1 = traces.find((t) => /^\.R1 > (port\.|\.)?left$/.test(t.props.from))
-  const trace2 = traces.find((t) => /^\.R1 > (port\.|\.)?pin2$/.test(t.props.from))
+  const trace1 = traces.find((t) =>
+    /^\.R1 > (port\.|\.)?left$/.test(t.props.from),
+  )
+  const trace2 = traces.find((t) =>
+    /^\.R1 > (port\.|\.)?pin2$/.test(t.props.from),
+  )
   console.log(trace1?.props)
 
   expect(trace1).not.toBeNull()
