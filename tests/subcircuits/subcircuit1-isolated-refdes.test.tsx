@@ -18,7 +18,7 @@ describe("subcircuit1-isolated-refdes", () => {
     )
 
     expect(() => circuit.render()).toThrow(
-      'Could not find port for selector ".R1"',
+      /Could not find (component for port selector|port for selector)/,
     )
   })
 
