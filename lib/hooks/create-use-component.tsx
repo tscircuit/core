@@ -72,7 +72,7 @@ export const createUseComponent: CreateUseComponentConstPinLabels &
       const tracesToCreate: any[] = []
       for (const portLabel of pinLabelsFlatArray) {
         if (combinedProps[portLabel]) {
-          const from = `.${name} > .${portLabel}`
+          const from = `.${name} > port.${portLabel}`
           const to = combinedProps[portLabel]
           tracesToCreate.push({ from, to })
           delete combinedProps[portLabel]
@@ -89,7 +89,7 @@ export const createUseComponent: CreateUseComponentConstPinLabels &
       )
     }
     for (const port of pinLabelsFlatArray) {
-      R[port] = `.${name} > .${port}`
+      R[port] = `.${name} > port.${port}`
     }
     return R
   }
