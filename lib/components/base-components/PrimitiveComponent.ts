@@ -213,18 +213,21 @@ export abstract class PrimitiveComponent<
       const primitiveContainer = this.getPrimitiveContainer()
       if (primitiveContainer) {
         const isFlipped = primitiveContainer._parsedProps.layer === "bottom"
-        const containerCenter =
-          primitiveContainer._getGlobalPcbPositionBeforeLayout()
+        // Use only the container's own position for flipping
+        const containerPosition = {
+          x: primitiveContainer._parsedProps.pcbX ?? 0,
+          y: primitiveContainer._parsedProps.pcbY ?? 0,
+        }
 
         if (isFlipped) {
           const flipOperation = compose(
-            translate(containerCenter.x, containerCenter.y),
+            translate(containerPosition.x, containerPosition.y),
             flipY(),
-            translate(-containerCenter.x, -containerCenter.y),
+            translate(-containerPosition.x, -containerPosition.y),
           )
           return compose(
-            this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
             flipOperation,
+            this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
             this.computePcbPropsTransform(),
           )
         }
