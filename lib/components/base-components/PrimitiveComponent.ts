@@ -170,6 +170,41 @@ export abstract class PrimitiveComponent<
     const manualPlacement =
       this.getSubcircuit()._getManualPlacementForComponent(this)
 
+    // Check for explicit pcbX/pcbY that would override manual placement
+    const hasExplicitCoordinates =
+      this.props.pcbX !== undefined || this.props.pcbY !== undefined
+
+    // Emit error if both manual placement and non-zero explicit coordinates exist
+    if (
+      manualPlacement &&
+      hasExplicitCoordinates &&
+      (this.props.pcbX !== 0 || this.props.pcbY !== 0)
+    ) {
+      const db = this.root?.db
+      if (db) {
+        // Only emit error for non-primitive components and only once per component
+        if (!this.isPcbPrimitive) {
+          // Use component name if available, otherwise fallback to pcb_component_id
+          const componentId = this._parsedProps.name || this.pcb_component_id
+          if (componentId) {
+            const existingErrors = db.pcb_manual_edit_conflict_error
+              .list()
+              .filter((e) => e.pcb_component_id === componentId)
+
+            if (existingErrors.length === 0) {
+              db.pcb_manual_edit_conflict_error.insert({
+                pcb_error_id: `${componentId}_manual_edit_conflict`,
+                message:
+                  "Component has both manual placement and explicit pcbX/pcbY coordinates. Manual placement will be ignored.",
+                pcb_component_id: componentId,
+                source_component_id: this.source_component_id!,
+              })
+            }
+          }
+        }
+      }
+    }
+
     // pcbX or pcbY will override the manual placement
     if (
       manualPlacement &&
@@ -191,15 +226,7 @@ export abstract class PrimitiveComponent<
       const primitiveContainer = this.getPrimitiveContainer()
       if (primitiveContainer) {
         const isFlipped = primitiveContainer._parsedProps.layer === "bottom"
-        const containerCenter =
-          primitiveContainer._getGlobalPcbPositionBeforeLayout()
-
         if (isFlipped) {
-          const flipOperation = compose(
-            translate(containerCenter.x, containerCenter.y),
-            flipY(),
-            translate(-containerCenter.x, -containerCenter.y),
-          )
           return compose(
             this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
             flipY(),
