@@ -217,6 +217,14 @@ export interface PcbSilkscreenOval {
   layer: VisibleLayer
 }
 
+export interface PcbManualEditConflictError {
+  type: "pcb_manual_edit_conflict_error"
+  pcb_manual_edit_conflict_error_id: string
+  message: string
+  pcb_component_id: string
+  source_component_id: string
+}
+
 export interface PcbPlacementError {
   type: "pcb_placement_error"
   pcb_placement_error_id: string
