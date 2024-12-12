@@ -1,5 +1,5 @@
 import { pushButtonProps } from "@tscircuit/props"
-import type { SourceSimplePushbutton } from "circuit-json"
+import type { SourceSimplePushButton } from "circuit-json"
 import {
   FTYPE,
   type BaseSymbolName,
@@ -37,7 +37,7 @@ export class PushButton extends NormalComponent<
       name: props.name,
       ftype: FTYPE.simple_push_button,
       supplier_part_numbers: props.supplierPartNumbers,
-    } as SourceSimplePushbutton)
+    } as SourceSimplePushButton)
     this.source_component_id = source_component.source_component_id
   }
 }
