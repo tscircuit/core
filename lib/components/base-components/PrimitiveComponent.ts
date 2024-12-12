@@ -174,7 +174,7 @@ export abstract class PrimitiveComponent<
     const hasExplicitCoordinates =
       this.props.pcbX !== undefined || this.props.pcbY !== undefined
 
-    // Only emit error if coordinates are explicitly set to non-zero values
+    // Emit error if both manual placement and non-zero explicit coordinates exist
     if (
       manualPlacement &&
       hasExplicitCoordinates &&
@@ -184,54 +184,50 @@ export abstract class PrimitiveComponent<
       if (db) {
         db.pcb_manual_edit_conflict_error.insert({
           pcb_error_id: `${this.pcb_component_id}_manual_edit_conflict`,
-          message:
-            "Component has both manual placement and explicit pcbX/pcbY coordinates. Manual placement will be ignored.",
+          message: "Component has both manual placement and explicit pcbX/pcbY coordinates. Manual placement will be ignored.",
           pcb_component_id: this.pcb_component_id!,
-          source_component_id: this.source_component_id!,
+          source_component_id: this.source_component_id!
         })
       }
     }
 
-    // Apply transformation based on whether explicit coordinates exist
-    if (hasExplicitCoordinates) {
-      return compose(
-        this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-        this.computePcbPropsTransform(),
-      )
-    }
-
-    // If this is a primitive, and the parent primitive container is flipped,
-    // we flip it's position
+    // If this is a primitive and needs flipping, handle it first
     if (this.isPcbPrimitive) {
       const primitiveContainer = this.getPrimitiveContainer()
       if (primitiveContainer) {
         const isFlipped = primitiveContainer._parsedProps.layer === "bottom"
-        const containerCenter =
-          primitiveContainer._getGlobalPcbPositionBeforeLayout()
+        const containerCenter = primitiveContainer._getGlobalPcbPositionBeforeLayout()
 
         if (isFlipped) {
-          return compose(
-            this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-            flipY(),
-            this.computePcbPropsTransform(),
-          )
+          // For flipped components, apply parent transform, then flip around container center
+          const parentTransform = this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity()
+
+          // Apply position transform based on coordinates or manual placement
+          if (hasExplicitCoordinates) {
+            return compose(parentTransform, flipY(), this.computePcbPropsTransform())
+          }
+
+          if (manualPlacement) {
+            return compose(parentTransform, flipY(), translate(manualPlacement.x, manualPlacement.y))
+          }
+
+          return compose(parentTransform, flipY(), this.computePcbPropsTransform())
         }
       }
     }
 
-    // Use manual placement if available
-    if (manualPlacement) {
-      return compose(
-        this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-        translate(manualPlacement.x, manualPlacement.y),
-      )
+    // For non-flipped components, apply standard transforms
+    const parentTransform = this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity()
+
+    if (hasExplicitCoordinates) {
+      return compose(parentTransform, this.computePcbPropsTransform())
     }
 
-    // Default transformation
-    return compose(
-      this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-      this.computePcbPropsTransform(),
-    )
+    if (manualPlacement) {
+      return compose(parentTransform, translate(manualPlacement.x, manualPlacement.y))
+    }
+
+    return compose(parentTransform, this.computePcbPropsTransform())
   }
 
   getPrimitiveContainer(): PrimitiveComponent | null {
