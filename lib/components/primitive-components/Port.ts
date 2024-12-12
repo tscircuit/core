@@ -149,8 +149,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     return this.isMatchingAnyOf(port.getNameAndAliases())
   }
   getPortSelector() {
-    // TODO this.parent.getSubcircuitSelector() >
-    return `.${this.parent?.props.name} > port.${this.props.name}`
+    const subcircuitSelector = this.parent?.getSubcircuitSelector?.() ?? ""
+    const componentName = this.parent?.props.name
+    const portName = this.props.name
+    if (!componentName || !portName) {
+      throw new Error(
+        `Cannot create port selector: ${!componentName ? "component has no name" : "port has no name"}`,
+      )
+    }
+    return `${subcircuitSelector}.${componentName} > port.${portName}`
   }
   getAvailablePcbLayers(): string[] {
     return Array.from(
