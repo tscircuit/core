@@ -170,18 +170,33 @@ export abstract class PrimitiveComponent<
     const manualPlacement =
       this.getSubcircuit()._getManualPlacementForComponent(this)
 
-    // pcbX or pcbY will override the manual placement
+    // Check for explicit pcbX/pcbY that would override manual placement
+    const hasExplicitCoordinates =
+      this.props.pcbX !== undefined || this.props.pcbY !== undefined
+
+    // Only emit error if coordinates are explicitly set to non-zero values
     if (
       manualPlacement &&
-      this.props.pcbX === undefined &&
-      this.props.pcbY === undefined
+      hasExplicitCoordinates &&
+      (this.props.pcbX !== 0 || this.props.pcbY !== 0)
     ) {
+      const db = this.root?.db
+      if (db) {
+        db.pcb_manual_edit_conflict_error.insert({
+          pcb_error_id: `${this.pcb_component_id}_manual_edit_conflict`,
+          message:
+            "Component has both manual placement and explicit pcbX/pcbY coordinates. Manual placement will be ignored.",
+          pcb_component_id: this.pcb_component_id!,
+          source_component_id: this.source_component_id!,
+        })
+      }
+    }
+
+    // Apply transformation based on whether explicit coordinates exist
+    if (hasExplicitCoordinates) {
       return compose(
         this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-        compose(
-          translate(manualPlacement.x, manualPlacement.y),
-          rotate(((props.pcbRotation ?? 0) * Math.PI) / 180),
-        ),
+        this.computePcbPropsTransform(),
       )
     }
 
@@ -195,11 +210,6 @@ export abstract class PrimitiveComponent<
           primitiveContainer._getGlobalPcbPositionBeforeLayout()
 
         if (isFlipped) {
-          const flipOperation = compose(
-            translate(containerCenter.x, containerCenter.y),
-            flipY(),
-            translate(-containerCenter.x, -containerCenter.y),
-          )
           return compose(
             this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
             flipY(),
@@ -209,6 +219,15 @@ export abstract class PrimitiveComponent<
       }
     }
 
+    // Use manual placement if available
+    if (manualPlacement) {
+      return compose(
+        this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
+        translate(manualPlacement.x, manualPlacement.y),
+      )
+    }
+
+    // Default transformation
     return compose(
       this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
       this.computePcbPropsTransform(),
