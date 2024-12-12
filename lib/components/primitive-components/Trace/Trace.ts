@@ -81,19 +81,46 @@ export class Trace
 
   _getTracePortOrNetSelectorListFromProps(): string[] {
     if ("from" in this.props && "to" in this.props) {
+      if (!this.props.from || !this.props.to) {
+        this.renderError(
+          `Invalid trace props: ${!this.props.from ? "'from'" : "'to'"} is ${
+            !this.props.from ? String(this.props.from) : String(this.props.to)
+          }`,
+        )
+        return []
+      }
       return [
         typeof this.props.from === "string"
           ? this.props.from
-          : this.props.from.getPortSelector(),
+          : (this.props.from.getPortSelector?.() ??
+            this.renderError(
+              `Port in 'from' prop does not implement getPortSelector()`,
+            )),
         typeof this.props.to === "string"
           ? this.props.to
-          : this.props.to.getPortSelector(),
+          : (this.props.to.getPortSelector?.() ??
+            this.renderError(
+              `Port in 'to' prop does not implement getPortSelector()`,
+            )),
       ]
     }
     if ("path" in this.props) {
-      return this.props.path.map((p) =>
-        typeof p === "string" ? p : p.getPortSelector(),
-      )
+      return this.props.path
+        .map((p, idx) => {
+          if (!p) {
+            this.renderError(
+              `Invalid path element at index ${idx}: ${String(p)}`,
+            )
+            return ""
+          }
+          return typeof p === "string"
+            ? p
+            : (p.getPortSelector?.() ??
+                this.renderError(
+                  `Port at path[${idx}] does not implement getPortSelector()`,
+                ))
+        })
+        .filter(Boolean)
     }
     return []
   }
@@ -140,15 +167,20 @@ export class Trace
         const parentSelector = selector.replace(/\>.*$/, "")
         const targetComponent = this.getSubcircuit().selectOne(parentSelector)
         if (!targetComponent) {
-          this.renderError(`Could not find port for selector "${selector}"`)
-        } else {
           this.renderError(
-            `Could not find port for selector "${selector}" (did you forget to include the pin name?)\nsearched component ${targetComponent.getString()}, which has ports: ${targetComponent.children
-              .filter((c) => c.componentName === "Port")
-              .map(
-                (c) => `${c.getString()}(${c.getNameAndAliases().join(",")})`,
-              )
-              .join(" & ")}`,
+            `Could not find component for port selector "${selector}" in subcircuit ${this.getSubcircuit().getString()}. ` +
+              `Available components: ${this.getSubcircuit()
+                .children.map((c) => c.getString())
+                .join(", ")}`,
+          )
+        } else {
+          const availablePorts = targetComponent.children
+            .filter((c) => c.componentName === "Port")
+            .map((c) => `${c.getString()}(${c.getNameAndAliases().join(",")})`)
+
+          this.renderError(
+            `Could not find port for selector "${selector}" in component ${targetComponent.getString()}. ` +
+              `Available ports: ${availablePorts.join(", ")}`,
           )
         }
       }
