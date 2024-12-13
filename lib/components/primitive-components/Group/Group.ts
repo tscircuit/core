@@ -362,9 +362,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { _parsedProps: props } = this
 
     const bounds = getBoundsOfPcbComponents(this.children)
-    // Use pcbX/pcbY from props as the center position
-    const centerX = props.pcbX ?? bounds.minX + bounds.width / 2
-    const centerY = props.pcbY ?? bounds.minY + bounds.height / 2
+    // Calculate center from bounds first
+    const baseCenterX = bounds.minX + bounds.width / 2
+    const baseCenterY = bounds.minY + bounds.height / 2
+
+    // Apply pcbX/pcbY as offsets if provided
+    const centerX =
+      props.pcbX !== undefined ? baseCenterX + props.pcbX : baseCenterX
+    const centerY =
+      props.pcbY !== undefined ? baseCenterY + props.pcbY : baseCenterY
 
     // @ts-ignore source_group is added by the PCB plugin
     const source_group = db.source_group.insert({
@@ -377,16 +383,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // After creating the group, update positions of child PCB components
     if (props.pcbX !== undefined || props.pcbY !== undefined) {
-      const childSourceIds = this.children.map(child => child.source_component_id)
+      const childSourceIds = this.children.map(
+        (child) => child.source_component_id,
+      )
       const pcbComponents = db.pcb_component
         .list()
-        .filter(pc => childSourceIds.includes(pc.source_component_id))
+        .filter((pc) => childSourceIds.includes(pc.source_component_id))
 
       for (const pcbComponent of pcbComponents) {
         db.pcb_component.update(pcbComponent.pcb_component_id!, {
           center: {
-            x: props.pcbX ?? pcbComponent.center.x,
-            y: props.pcbY ?? pcbComponent.center.y,
+            x: pcbComponent.center.x + (props.pcbX ?? 0),
+            y: pcbComponent.center.y + (props.pcbY ?? 0),
           },
         })
       }
@@ -405,9 +413,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const padding = 1 // 1mm padding
 
     if (this._pcb_group_id) {
-      // Use pcbX/pcbY from props as the center position if provided
-      const centerX = props.pcbX ?? bounds.minX + bounds.width / 2
-      const centerY = props.pcbY ?? bounds.minY + bounds.height / 2
+      // Calculate center from bounds first
+      const baseCenterX = bounds.minX + bounds.width / 2
+      const baseCenterY = bounds.minY + bounds.height / 2
+
+      // Apply pcbX/pcbY as offsets if provided
+      const centerX =
+        props.pcbX !== undefined ? baseCenterX + props.pcbX : baseCenterX
+      const centerY =
+        props.pcbY !== undefined ? baseCenterY + props.pcbY : baseCenterY
 
       // @ts-ignore source_group is added by the PCB plugin
       db.source_group.update(this._pcb_group_id, {
