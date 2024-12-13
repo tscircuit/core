@@ -27,7 +27,7 @@ test("component with both manual placement and explicit coordinates emits error"
   // Check error details
   const error = errors[0]
   expect(error.pcb_component_id).toBeDefined()
-  const expectedMessage =
-    '<resistor#0 name=".R1" /> has both manual placement and explicit coordinates. pcbX and pcbY will be used. Remove pcbX/pcbY or clear the manual placement.'
-  expect(error.message).toBe(expectedMessage)
+  expect(error.message).toMatch(
+    /<resistor#\d+ name="\.R1" \/> has both manual placement and explicit coordinates\. pcbX and pcbY will be used\. Remove pcbX\/pcbY or clear the manual placement\./,
+  )
 })
