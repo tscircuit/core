@@ -495,6 +495,22 @@ export class NormalComponent<
         footprint_error.pcb_missing_footprint_error_id
     }
     this.pcb_component_id = pcb_component.pcb_component_id
+
+    const manualPlacement =
+      this.getSubcircuit()._getManualPlacementForComponent(this)
+
+    if (
+      this.props.pcbX !== undefined &&
+      this.props.pcbY !== undefined &&
+      manualPlacement
+    ) {
+      this.renderError({
+        type: "pcb_manual_edit_conflict_error",
+        message: `${this.getString()} has both manual placement and explicit coordinates. pcbX and pcbY will be used. Remove pcbX/pcbY or clear the manual placement.`,
+        pcb_component_id: this.pcb_component_id!,
+        source_component_id: this.source_component_id!,
+      })
+    }
   }
 
   /**
