@@ -361,9 +361,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const bounds = getBoundsOfPcbComponents(this.children)
-    const initialX = bounds.width === 0 ? 0 : bounds.minX + bounds.width / 2
-    const initialY = bounds.height === 0 ? 0 : bounds.minY + bounds.height / 2
+    // Use the group's pcbX and pcbY props for initial positioning
+    const initialX = props.pcbX ?? 0
+    const initialY = props.pcbY ?? 0
 
     // @ts-ignore source_group is added by the PCB plugin
     const source_group = db.source_group.insert({
