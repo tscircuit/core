@@ -1,6 +1,10 @@
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 
-export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
+export function getBoundsOfPcbComponents(
+  components: PrimitiveComponent[],
+  parentOffsetX: number = 0,
+  parentOffsetY: number = 0,
+) {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity
@@ -11,10 +15,10 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
     if (child.isPcbPrimitive) {
       const { x, y } = child._getGlobalPcbPositionBeforeLayout()
       const { width, height } = child.getPcbSize()
-      minX = Math.min(minX, x - width / 2)
-      minY = Math.min(minY, y - height / 2)
-      maxX = Math.max(maxX, x + width / 2)
-      maxY = Math.max(maxY, y + height / 2)
+      minX = Math.min(minX, x + parentOffsetX - width / 2)
+      minY = Math.min(minY, y + parentOffsetY - height / 2)
+      maxX = Math.max(maxX, x + parentOffsetX + width / 2)
+      maxY = Math.max(maxY, y + parentOffsetY + height / 2)
     }
     // For components that have PCB representations, look up their PCB component
     else if (child.root?.db) {
@@ -27,15 +31,24 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
         const y = pcbComponent.center.y
         const { width, height } = pcbComponent
 
-        minX = Math.min(minX, x - width / 2)
-        minY = Math.min(minY, y - height / 2)
-        maxX = Math.max(maxX, x + width / 2)
-        maxY = Math.max(maxY, y + height / 2)
+        minX = Math.min(minX, x + parentOffsetX - width / 2)
+        minY = Math.min(minY, y + parentOffsetY - height / 2)
+        maxX = Math.max(maxX, x + parentOffsetX + width / 2)
+        maxY = Math.max(maxY, y + parentOffsetY + height / 2)
       }
     }
     // Check for footprints and groups that might contain PCB components
     else if (child.componentName === "Footprint" || child.isGroup) {
-      const childBounds = getBoundsOfPcbComponents(child.children)
+      // If it's a group, check for pcbX/pcbY props
+      let childOffsetX = parentOffsetX
+      let childOffsetY = parentOffsetY
+      if (child.isGroup) {
+        const props = child._parsedProps as any
+        if (props.pcbX !== undefined) childOffsetX = props.pcbX
+        if (props.pcbY !== undefined) childOffsetY = props.pcbY
+      }
+
+      const childBounds = getBoundsOfPcbComponents(child.children, childOffsetX, childOffsetY)
 
       if (childBounds.width > 0 || childBounds.height > 0) {
         minX = Math.min(minX, childBounds.minX)
