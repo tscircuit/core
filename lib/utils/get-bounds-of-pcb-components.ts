@@ -15,18 +15,18 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
       minY = Math.min(minY, y - height / 2)
       maxX = Math.max(maxX, x + width / 2)
       maxY = Math.max(maxY, y + height / 2)
-    } 
+    }
     // For components that have PCB representations, look up their PCB component
     else if (child.root?.db) {
       const pcbComponents = child.root.db.pcb_component
         .list()
-        .filter(pc => pc.source_component_id === child.source_component_id)
+        .filter((pc) => pc.source_component_id === child.source_component_id)
 
       for (const pcbComponent of pcbComponents) {
         const x = pcbComponent.center.x
         const y = pcbComponent.center.y
         const { width, height } = pcbComponent
-        
+
         minX = Math.min(minX, x - width / 2)
         minY = Math.min(minY, y - height / 2)
         maxX = Math.max(maxX, x + width / 2)
@@ -36,7 +36,7 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
     // Check for footprints and groups that might contain PCB components
     else if (child.componentName === "Footprint" || child.isGroup) {
       const childBounds = getBoundsOfPcbComponents(child.children)
-      
+
       if (childBounds.width > 0 || childBounds.height > 0) {
         minX = Math.min(minX, childBounds.minX)
         minY = Math.min(minY, childBounds.minY)

@@ -1,7 +1,4 @@
-import {
-  type SubcircuitGroupProps,
-  groupProps
-} from "@tscircuit/props"
+import { type SubcircuitGroupProps, groupProps } from "@tscircuit/props"
 import * as SAL from "@tscircuit/schematic-autolayout"
 import type {
   PcbTrace,
@@ -11,9 +8,7 @@ import type {
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import Debug from "debug"
-import type {
-  SimpleRouteJson
-} from "lib/utils/autorouting/SimpleRouteJson"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { z } from "zod"
@@ -31,6 +26,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: PcbTrace[]
   } | null = null
+
+  private _pcb_group_id?: string
 
   get config() {
     return {
@@ -364,34 +361,43 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const pcb_group = db.pcb_group.insert({
-      center: { x: props.pcbX ?? 0, y: props.pcbY ?? 0 },
+    const bounds = getBoundsOfPcbComponents(this.children)
+    const initialX = bounds.width === 0 ? 0 : bounds.minX + bounds.width / 2
+    const initialY = bounds.height === 0 ? 0 : bounds.minY + bounds.height / 2
+
+    // @ts-ignore source_group is added by the PCB plugin
+    const source_group = db.source_group.insert({
+      // @ts-ignore anchor is the correct property name
+      anchor: { x: initialX, y: initialY },
       rotation: props.pcbRotation ?? 0,
     })
 
-    this.pcb_group_id = pcb_group.pcb_group_id!
+    this._pcb_group_id = source_group.source_group_id!
   }
 
   doInitialPcbGroupSizeCalculation(): void {
     const { db } = this.root!
-    const { _parsedProps: props } = this
 
     const bounds = getBoundsOfPcbComponents(this.children)
 
-    if (bounds.width === 0 || bounds.height === 0) return;
+    if (bounds.width === 0 || bounds.height === 0) return
 
     // Add some padding around the group
-    const padding = 1; // 1mm padding
-    
-    if (this.pcb_group_id) {
-      db.pcb_group.update(this.pcb_group_id, {
-        center: { 
-          x: props.pcbX ?? bounds.minX + bounds.width / 2,
-          y: props.pcbY ?? bounds.minY + bounds.height / 2
+    const padding = 1 // 1mm padding
+
+    if (this._pcb_group_id) {
+      // @ts-ignore source_group is added by the PCB plugin
+      db.source_group.update(this._pcb_group_id, {
+        // @ts-ignore center is added by the PCB plugin
+        center: {
+          x: bounds.minX + bounds.width / 2,
+          y: bounds.minY + bounds.height / 2,
         },
+        // @ts-ignore width is added by the PCB plugin
         width: bounds.width + padding * 2,
-        height: bounds.height + padding * 2
-      });
+        // @ts-ignore height is added by the PCB plugin
+        height: bounds.height + padding * 2,
+      })
     }
   }
 }
