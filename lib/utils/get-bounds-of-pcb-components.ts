@@ -48,7 +48,11 @@ export function getBoundsOfPcbComponents(
         if (props.pcbY !== undefined) childOffsetY = props.pcbY
       }
 
-      const childBounds = getBoundsOfPcbComponents(child.children, childOffsetX, childOffsetY)
+      const childBounds = getBoundsOfPcbComponents(
+        child.children,
+        childOffsetX,
+        childOffsetY,
+      )
 
       if (childBounds.width > 0 || childBounds.height > 0) {
         minX = Math.min(minX, childBounds.minX)
