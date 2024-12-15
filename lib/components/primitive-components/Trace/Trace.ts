@@ -37,6 +37,7 @@ import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-c
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 import { countComplexElements } from "lib/utils/schematic/countComplexElements"
+import { createDownwardNetLabelSymbol } from "./create-downward-net-label-symbol"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -596,157 +597,7 @@ export class Trace
       }
     }
   }
-  __doInitialSchematicTraceRenderWithNetLabelSymbol(
-    fromPort: Port,
-    toPort: Port,
-    fromAnchorPos: { x: number; y: number },
-    toAnchorPos: { x: number; y: number },
-  ): void {
-    const { db } = this.root!
-    // Insert ground symbol components for both ports
-    const fromSchBoxVertOffset = fromPort.parent?.config
-      .shouldRenderAsSchematicBox
-      ? 3
-      : 1
-    const fromSchBoxHorzOffset =
-      fromPort.parent?.config.shouldRenderAsSchematicBox &&
-      (fromPort.facingDirection === "left" ||
-        fromPort.facingDirection === "right")
-        ? 3
-        : 1
-    const fromHorzPortDirection =
-      fromPort.facingDirection === "left"
-        ? -0.5
-        : fromPort.facingDirection === "down"
-          ? 0
-          : 0.5
-    const fromVertPortDirectionOffset =
-      fromPort.facingDirection === "up"
-        ? 0.5
-        : fromPort.facingDirection === "down"
-          ? -0.5
-          : 0
-    const fromHandelUp = fromPort.facingDirection === "up" ? 0.5 : 0
-    db.schematic_net_label.insert({
-      anchor_side: "top",
-      center: {
-        x: fromAnchorPos.x + fromHorzPortDirection * fromSchBoxHorzOffset,
-        y: fromAnchorPos.y + fromVertPortDirectionOffset * fromSchBoxVertOffset,
-      },
-      source_net_id: fromPort.source_port_id!,
-      text: this.props.schDisplayLabel!,
-      anchor_position: {
-        x: fromAnchorPos.x + fromHorzPortDirection * fromSchBoxHorzOffset,
-        y: fromAnchorPos.y + fromVertPortDirectionOffset * fromSchBoxVertOffset,
-      },
-      symbol_name: "ground_horz",
-    })
-    db.schematic_trace.insert({
-      edges: [
-        {
-          from: {
-            x: fromAnchorPos.x,
-            y: fromAnchorPos.y,
-          },
-          to: {
-            x: fromAnchorPos.x,
-            y: fromAnchorPos.y + fromHandelUp * fromSchBoxVertOffset,
-          },
-        },
 
-        {
-          from: {
-            x: fromAnchorPos.x,
-            y: fromAnchorPos.y,
-          },
-          to: {
-            x: fromAnchorPos.x + fromHorzPortDirection * fromSchBoxHorzOffset,
-            y:
-              fromAnchorPos.y +
-              fromVertPortDirectionOffset * fromSchBoxVertOffset,
-          },
-        },
-      ],
-      junctions: [
-        {
-          x: fromAnchorPos.x + fromHorzPortDirection * fromSchBoxHorzOffset,
-          y:
-            fromAnchorPos.y +
-            fromVertPortDirectionOffset * fromSchBoxVertOffset,
-        },
-      ],
-      source_trace_id: this.source_trace_id!,
-    })
-
-    const toSchBoxVertOffset = toPort.parent?.config.shouldRenderAsSchematicBox
-      ? 3
-      : 1
-    const toSchBoxHorzOffset =
-      toPort.parent?.config.shouldRenderAsSchematicBox &&
-      (toPort.facingDirection === "left" || toPort.facingDirection === "right")
-        ? 3
-        : 1
-    const toHorzPortDirectionOffset =
-      toPort.facingDirection === "left"
-        ? -0.5
-        : toPort.facingDirection === "down"
-          ? 0
-          : 0.5
-    const toVertPortDirectionOffset =
-      toPort.facingDirection === "up"
-        ? 0.5
-        : toPort.facingDirection === "down"
-          ? -0.5
-          : 0
-
-    db.schematic_net_label.insert({
-      anchor_side: "top",
-      center: {
-        x: toAnchorPos.x + toHorzPortDirectionOffset * toSchBoxHorzOffset,
-        y: toAnchorPos.y + toVertPortDirectionOffset * toSchBoxVertOffset,
-      },
-      source_net_id: toPort.source_port_id!,
-      text: this.props.schDisplayLabel!,
-      anchor_position: {
-        x: toAnchorPos.x + toHorzPortDirectionOffset * toSchBoxHorzOffset,
-        y: toAnchorPos.y + toVertPortDirectionOffset * toSchBoxVertOffset,
-      },
-      symbol_name: "ground_horz",
-    })
-    const toHandelUp = toPort.facingDirection === "up" ? 0.5 : 0
-    db.schematic_trace.insert({
-      edges: [
-        {
-          from: {
-            x: toAnchorPos.x,
-            y: toAnchorPos.y,
-          },
-          to: {
-            x: toAnchorPos.x,
-            y: toAnchorPos.y + toHandelUp * toSchBoxVertOffset,
-          },
-        },
-
-        {
-          from: {
-            x: toAnchorPos.x,
-            y: toAnchorPos.y,
-          },
-          to: {
-            x: toAnchorPos.x + toHorzPortDirectionOffset * toSchBoxHorzOffset,
-            y: toAnchorPos.y + toVertPortDirectionOffset * toSchBoxVertOffset,
-          },
-        },
-      ],
-      junctions: [
-        {
-          x: toAnchorPos.x + toHorzPortDirectionOffset * toSchBoxHorzOffset,
-          y: toAnchorPos.y + toVertPortDirectionOffset * toSchBoxVertOffset,
-        },
-      ],
-      source_trace_id: this.source_trace_id!,
-    })
-  }
   _doInitialSchematicTraceRenderWithDisplayLabel(): void {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
@@ -826,11 +677,16 @@ export class Trace
       this.props.schDisplayLabel?.toLocaleLowerCase().includes("gnd") ||
       this.props.schDisplayLabel?.toLocaleLowerCase().includes("ground")
     ) {
-      this.__doInitialSchematicTraceRenderWithNetLabelSymbol(
-        fromPort,
-        toPort,
-        fromAnchorPos,
-        toAnchorPos,
+      createDownwardNetLabelSymbol(
+        {
+          fromPort,
+          toPort,
+          fromAnchorPos,
+          toAnchorPos,
+          schDisplayLabel: this.props.schDisplayLabel!,
+          source_trace_id: this.source_trace_id!,
+        },
+        db,
       )
       return
     }
