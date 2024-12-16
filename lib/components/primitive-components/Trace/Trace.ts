@@ -37,7 +37,7 @@ import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-c
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 import { countComplexElements } from "lib/utils/schematic/countComplexElements"
-import { createDownwardNetLabelSymbol } from "./create-downward-net-label-symbol"
+import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-ground-symbol"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -677,7 +677,7 @@ export class Trace
       this.props.schDisplayLabel?.toLocaleLowerCase().includes("gnd") ||
       this.props.schDisplayLabel?.toLocaleLowerCase().includes("ground")
     ) {
-      createDownwardNetLabelSymbol(
+      createDownwardNetLabelGroundSymbol(
         {
           fromPort,
           toPort,
@@ -686,7 +686,7 @@ export class Trace
           schDisplayLabel: this.props.schDisplayLabel!,
           source_trace_id: this.source_trace_id!,
         },
-        db,
+        { db },
       )
       return
     }
@@ -793,11 +793,7 @@ export class Trace
           connectedTo: [],
         })
       }
-      if (
-        elm.type === "schematic_net_label" &&
-        (elm.text.toLowerCase().includes("gnd") ||
-          elm.text.toLowerCase().includes("ground"))
-      ) {
+      if (elm.type === "schematic_net_label" && elm.symbol_name) {
         obstacles.push({
           type: "rect",
           layers: ["top"],
