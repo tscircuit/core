@@ -16,7 +16,7 @@
     "build": "tsup-node index.ts --format esm --dts",
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",
-    "pkg-pr-new-release": "bun pkg-pr-new publish --comment=off --peerDeps"
+    "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
