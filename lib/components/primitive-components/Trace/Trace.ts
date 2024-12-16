@@ -3,11 +3,11 @@ import {
   getObstaclesFromSoup,
 } from "@tscircuit/infgrid-ijump-astar"
 import { traceProps } from "@tscircuit/props"
-import type {
-  LayerRef,
-  PcbTrace,
-  RouteHintPoint,
-  SchematicTrace,
+import {
+  type LayerRef,
+  type PcbTrace,
+  type RouteHintPoint,
+  type SchematicTrace,
 } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
@@ -37,6 +37,7 @@ import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-c
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 import { countComplexElements } from "lib/utils/schematic/countComplexElements"
+import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-ground-symbol"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -596,6 +597,7 @@ export class Trace
       }
     }
   }
+
   _doInitialSchematicTraceRenderWithDisplayLabel(): void {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
@@ -660,17 +662,33 @@ export class Trace
       .list()
       .find((label) => label.source_net_id === toPort.source_port_id)
 
-    if (this.props.schDisplayLabel) {
-      if (
-        (existingFromNetLabel &&
-          existingFromNetLabel.text !== this.props.schDisplayLabel) ||
-        (existingToNetLabel &&
-          existingToNetLabel?.text !== this.props.schDisplayLabel)
-      ) {
-        throw new Error(
-          `Cannot create net label for port ${existingFromNetLabel ? fromPortName : toPortName} because it already has a net label with text "${existingFromNetLabel ? existingFromNetLabel.text : existingToNetLabel?.text}".`,
-        )
-      }
+    if (
+      (existingFromNetLabel &&
+        existingFromNetLabel.text !== this.props.schDisplayLabel) ||
+      (existingToNetLabel &&
+        existingToNetLabel?.text !== this.props.schDisplayLabel)
+    ) {
+      throw new Error(
+        `Cannot create net label for port ${existingFromNetLabel ? fromPortName : toPortName} because it already has a net label with text "${existingFromNetLabel ? existingFromNetLabel.text : existingToNetLabel?.text}".`,
+      )
+    }
+
+    if (
+      this.props.schDisplayLabel?.toLocaleLowerCase().includes("gnd") ||
+      this.props.schDisplayLabel?.toLocaleLowerCase().includes("ground")
+    ) {
+      createDownwardNetLabelGroundSymbol(
+        {
+          fromPort,
+          toPort,
+          fromAnchorPos,
+          toAnchorPos,
+          schDisplayLabel: this.props.schDisplayLabel!,
+          source_trace_id: this.source_trace_id!,
+        },
+        { db },
+      )
+      return
     }
 
     const [firstPort, secondPort] = connectedPorts.map(({ port }) => port)
@@ -681,21 +699,19 @@ export class Trace
       : `${secondPort?.parent?.props.name}_${secondPort?.props.name}`
     db.schematic_net_label.insert({
       text: this.props.schDisplayLabel! ?? pinFullName,
-      source_net_id: fromPort.source_port_id!,
-      anchor_position: fromAnchorPos,
-      center: fromAnchorPos,
-      anchor_side:
-        getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom",
-    })
-    // Handle `to` port label
-
-    db.schematic_net_label.insert({
-      text: this.props.schDisplayLabel! ?? pinFullName,
       source_net_id: toPort.source_port_id!,
       anchor_position: toAnchorPos,
       center: toAnchorPos,
       anchor_side:
         getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom",
+    })
+    db.schematic_net_label.insert({
+      text: this.props.schDisplayLabel! ?? pinFullName,
+      source_net_id: fromPort.source_port_id!,
+      anchor_position: fromAnchorPos,
+      center: fromAnchorPos,
+      anchor_side:
+        getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom",
     })
   }
 
@@ -774,6 +790,25 @@ export class Trace
           center: { x: elm.x, y: elm.y },
           width: elm.width,
           height: elm.width,
+          connectedTo: [],
+        })
+      }
+      if (elm.type === "schematic_net_label" && elm.symbol_name) {
+        obstacles.push({
+          type: "rect",
+          layers: ["top"],
+          center: elm.center,
+          width: 0.25,
+          height: 0.6,
+          connectedTo: [],
+        })
+      } else if (elm.type === "schematic_net_label") {
+        obstacles.push({
+          type: "rect",
+          layers: ["top"],
+          center: elm.center,
+          width: (elm.text?.length ?? 0) * 0.1,
+          height: 0.2,
           connectedTo: [],
         })
       }
