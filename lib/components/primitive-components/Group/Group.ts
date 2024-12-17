@@ -354,17 +354,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       for (const child of this.children) {
         if ("schematic_component_id" in child) {
           const component = db.schematic_component.get(
-            child.schematic_component_id!
+            child.schematic_component_id!,
           )
           if (!component) continue
 
           // Preserve all original properties and only update position
           db.schematic_component.update(child.schematic_component_id!, {
-            ...component,  // Keep all original properties
+            ...component, // Keep all original properties
             center: {
               x: component.center.x + offsetX,
-              y: component.center.y + offsetY
-            }
+              y: component.center.y + offsetY,
+            },
           })
         }
       }
