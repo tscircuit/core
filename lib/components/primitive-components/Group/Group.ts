@@ -309,43 +309,66 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicLayout(): void {
-    // The schematic_components are rendered in our children
-    if (!this.isSubcircuit) return
-    const props = this._parsedProps as SubcircuitGroupProps
-    if (!props.schAutoLayoutEnabled) return
     const { db } = this.root!
+    const props = this._parsedProps
 
-    const descendants = this.getDescendants()
+    if (this.isSubcircuit) {
+      if (!props.schAutoLayoutEnabled) return
 
-    const components: SchematicComponent[] = []
-    const ports: SchematicPort[] = []
-    // TODO move subcircuits as a group, don't re-layout subcircuits
-    for (const descendant of descendants) {
-      if ("schematic_component_id" in descendant) {
-        const component = db.schematic_component.get(
-          descendant.schematic_component_id!,
-        )
-        if (component) {
-          // Get all ports associated with this component
-          const schPorts = db.schematic_port
-            .list()
-            .filter(
-              (p) =>
-                p.schematic_component_id === component.schematic_component_id,
-            )
+      const descendants = this.getDescendants()
+      const components: SchematicComponent[] = []
+      const ports: SchematicPort[] = []
 
-          components.push(component)
-          ports.push(...schPorts)
+      for (const descendant of descendants) {
+        if ("schematic_component_id" in descendant) {
+          const component = db.schematic_component.get(
+            descendant.schematic_component_id!,
+          )
+          if (component) {
+            const schPorts = db.schematic_port
+              .list()
+              .filter(
+                (p) =>
+                  p.schematic_component_id === component.schematic_component_id,
+              )
+
+            components.push(component)
+            ports.push(...schPorts)
+          }
+        }
+      }
+
+      // Apply auto-layout for subcircuits
+      const scene = SAL.convertSoupToScene(db.toArray())
+      const laidOutScene = SAL.ascendingCentralLrBug1(scene)
+      SAL.mutateSoupForScene(db.toArray(), laidOutScene)
+    } else {
+      // Handle non-subcircuit group offset
+      const offsetX = props.schX ?? 0
+      const offsetY = props.schY ?? 0
+
+      // Skip if no offset
+      if (offsetX === 0 && offsetY === 0) return
+
+      // Move all child components by the group's offset
+      for (const child of this.children) {
+        if ("schematic_component_id" in child) {
+          const component = db.schematic_component.get(
+            child.schematic_component_id!
+          )
+          if (!component) continue
+
+          // Preserve all original properties and only update position
+          db.schematic_component.update(child.schematic_component_id!, {
+            ...component,  // Keep all original properties
+            center: {
+              x: component.center.x + offsetX,
+              y: component.center.y + offsetY
+            }
+          })
         }
       }
     }
-
-    // TODO only move components that belong to this subcircuit
-    const scene = SAL.convertSoupToScene(db.toArray())
-
-    const laidOutScene = SAL.ascendingCentralLrBug1(scene)
-
-    SAL.mutateSoupForScene(db.toArray(), laidOutScene)
   }
 
   /**
