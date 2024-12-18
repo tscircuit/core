@@ -29,4 +29,3 @@ test("SilkscreenLine rendering", () => {
 
   expect(project).toMatchPcbSnapshot(import.meta.path)
 })
-
