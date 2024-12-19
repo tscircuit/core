@@ -28,6 +28,3 @@ jobs:
 
       - name: Run pkg.pr.new for PR-based release
         run: bun run pkg-pr-new-release
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        
