@@ -10,15 +10,15 @@ const HigherOrderComponent = () => {
   )
 }
 
-test("should create a project with a higher-order component", async () => {
-  const { project } = getTestFixture()
+test("should create a circuit with a higher-order component", async () => {
+  const { circuit } = getTestFixture()
 
-  // project.add(<chip name="U1" footprint="soic8" />)
-  project.add(<HigherOrderComponent />)
+  // circuit.add(<chip name="U1" footprint="soic8" />)
+  circuit.add(<HigherOrderComponent />)
 
-  project.render()
+  circuit.render()
 
-  const chip = project.selectOne("chip") as Chip
+  const chip = circuit.selectOne("chip") as Chip
 
   expect(chip).not.toBeNull()
   expect(chip.props.name).toBe("U1")

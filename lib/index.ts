@@ -7,6 +7,7 @@ export * from "./hooks/use-chip"
 export * from "./hooks/use-diode"
 export * from "./hooks/use-led"
 export * from "./hooks/use-resistor"
+export * from "./utils/public-exports"
 
 import "./register-catalogue"
 import "./fiber/intrinsic-jsx"

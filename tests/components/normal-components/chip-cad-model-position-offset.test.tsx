@@ -2,9 +2,9 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("chip with cadModel positionOffset", () => {
-  const { project } = getTestFixture()
+  const { circuit } = getTestFixture()
 
-  project.add(
+  circuit.add(
     <board width="10mm" height="10mm">
       <chip
         name="U1"
@@ -19,9 +19,9 @@ test("chip with cadModel positionOffset", () => {
     </board>,
   )
 
-  project.render()
+  circuit.render()
 
-  const cadComponent = project.db.cad_component.list()[0]
+  const cadComponent = circuit.db.cad_component.list()[0]
 
   expect(cadComponent).toBeDefined()
   expect(cadComponent.model_stl_url).toBe("https://example.com/chip.stl")
