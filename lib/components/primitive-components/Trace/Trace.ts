@@ -793,16 +793,6 @@ export class Trace
           })
         }
       }
-      // if (elm.type === "schematic_port") {
-      //   obstacles.push({
-      //     type: "rect",
-      //     layers: ["top"],
-      //     center: elm.center,
-      //     width: 0,
-      //     height: 0,
-      //     connectedTo: [],
-      //   })
-      // }
       if (elm.type === "schematic_text") {
         obstacles.push({
           type: "rect",
@@ -894,8 +884,6 @@ export class Trace
       bounds,
       layerCount: 1,
     }
-
-    console.log(connection)
 
     let Autorouter = MultilayerIjump
     if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
