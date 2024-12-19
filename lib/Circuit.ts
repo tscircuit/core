@@ -12,6 +12,7 @@ type RootCircuitEventName =
   | "renderable:renderLifecycle:anyEvent"
   | `renderable:renderLifecycle:${RenderPhase}:start`
   | `renderable:renderLifecycle:${RenderPhase}:end`
+  | "eval_error"
 
 export class Circuit {
   firstChild: PrimitiveComponent | null = null
