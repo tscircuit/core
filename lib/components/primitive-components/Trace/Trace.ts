@@ -793,6 +793,14 @@ export class Trace
           })
         }
       }
+      if (elm.type === "schematic_port") {
+        db.schematic_debug_object.insert({
+          shape: "rect",
+          center: elm.center,
+          size: { width: 0.1, height: 0.1 },
+          label: "Debug Box",
+        })
+      }
       if (elm.type === "schematic_text") {
         obstacles.push({
           type: "rect",
