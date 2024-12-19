@@ -786,19 +786,19 @@ export class Trace
           const OFFSET = 0.5 // Distance from port to obstacle center
 
           switch (schematicPort?.facing_direction) {
-            case "left": // Port is on right side of chip
+            case "left":
               obstacleCenter.x = elm.center.x - OFFSET
               obstacleSize = { width: 0.4, height: 0.1 }
               break
-            case "right": // Port is on left side of chip
+            case "right":
               obstacleCenter.x = elm.center.x + OFFSET
               obstacleSize = { width: 0.4, height: 0.1 }
               break
-            case "up": // Port is on bottom of chip
+            case "up":
               obstacleCenter.y = elm.center.y - OFFSET
               obstacleSize = { width: 0.1, height: 0.4 }
               break
-            case "down": // Port is on top of chip
+            case "down":
               obstacleCenter.y = elm.center.y + OFFSET
               obstacleSize = { width: 0.1, height: 0.4 }
               break
