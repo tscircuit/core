@@ -800,6 +800,14 @@ export class Trace
           size: { width: 0.1, height: 0.1 },
           label: "Debug Box",
         })
+        obstacles.push({
+          type: "rect",
+          layers: ["top"],
+          center: elm.center,
+          width: 0.1,
+          height: 0.1,
+          connectedTo: [],
+        })
       }
       if (elm.type === "schematic_text") {
         obstacles.push({
