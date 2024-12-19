@@ -754,25 +754,55 @@ export class Trace
     // Add obstacles from components and ports
     for (const elm of db.toArray()) {
       if (elm.type === "schematic_component") {
-        obstacles.push({
-          type: "rect",
-          layers: ["top"],
-          center: elm.center,
-          width: elm.size.width,
-          height: elm.size.height,
-          connectedTo: [],
-        })
+        const schematicComponent = db.schematic_component.get(
+          elm.schematic_component_id!,
+        )
+        const sourceComponent = db.source_component.get(
+          schematicComponent?.source_component_id!,
+        )
+        const PORT_STEM_LENGTH = 0.45
+        if (sourceComponent?.ftype === "simple_chip") {
+          db.schematic_debug_object.insert({
+            shape: "rect",
+            center: elm.center,
+            size: { width: elm.size.width + PORT_STEM_LENGTH, height: elm.size.height + PORT_STEM_LENGTH },
+            label: "Debug Box",
+          })
+          obstacles.push({
+            type: "rect",
+            layers: ["top"],
+            center: elm.center,
+            width: elm.size.width + PORT_STEM_LENGTH,
+            height: elm.size.height + PORT_STEM_LENGTH,
+            connectedTo: [],
+          })
+        } else {
+          db.schematic_debug_object.insert({
+            shape: "rect",
+            center: elm.center,
+            size: { width: elm.size.width, height: elm.size.height },
+            label: "Debug Box",
+          })
+          obstacles.push({
+            type: "rect",
+            layers: ["top"],
+            center: elm.center,
+            width: elm.size.width,
+            height: elm.size.height,
+            connectedTo: [],
+          })
+        }
       }
-      if (elm.type === "schematic_port") {
-        obstacles.push({
-          type: "rect",
-          layers: ["top"],
-          center: elm.center,
-          width: 0.1,
-          height: 0.1,
-          connectedTo: [],
-        })
-      }
+      // if (elm.type === "schematic_port") {
+      //   obstacles.push({
+      //     type: "rect",
+      //     layers: ["top"],
+      //     center: elm.center,
+      //     width: 0,
+      //     height: 0,
+      //     connectedTo: [],
+      //   })
+      // }
       if (elm.type === "schematic_text") {
         obstacles.push({
           type: "rect",
@@ -864,6 +894,8 @@ export class Trace
       bounds,
       layerCount: 1,
     }
+
+    console.log(connection)
 
     let Autorouter = MultilayerIjump
     if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {

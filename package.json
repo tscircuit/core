@@ -27,7 +27,7 @@
     "@types/react": "^19.0.1",
     "@types/react-reconciler": "^0.28.8",
     "bun-match-svg": "0.0.8",
-    "circuit-to-svg": "^0.0.93",
+    "circuit-to-svg": "^0.0.95",
     "debug": "^4.3.6",
     "howfat": "^0.3.8",
     "looks-same": "^9.0.1",
