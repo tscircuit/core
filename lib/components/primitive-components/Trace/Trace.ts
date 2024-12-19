@@ -897,11 +897,7 @@ export class Trace
       layer: "top",
     }))
 
-    console.log(obstacles)
-
     const bounds = computeObstacleBounds(obstacles)
-
-    console.log(bounds)
 
     const simpleRouteJsonInput: SimpleRouteJson = {
       minTraceWidth: 0.1,
