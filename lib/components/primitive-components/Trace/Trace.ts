@@ -24,6 +24,7 @@ import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getClosest } from "lib/utils/getClosest"
 import { pairs } from "lib/utils/pairs"
+import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { getStubEdges } from "lib/utils/schematic/getStubEdges"
 import { tryNow } from "lib/utils/try-now"
@@ -33,11 +34,10 @@ import { Net } from "../Net"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
 import type { TraceI } from "./TraceI"
+import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-ground-symbol"
 import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
-import { countComplexElements } from "lib/utils/schematic/countComplexElements"
-import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-ground-symbol"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -764,6 +764,13 @@ export class Trace
         })
       }
       if (elm.type === "schematic_port") {
+        db.schematic_debug_object.insert({
+          type: "schematic_debug_object",
+          shape: "rect",
+          center: elm.center,
+          size: { width: 0.1, height: 0.1 },
+          label: `Port ${elm.schematic_port_id}`,
+        })
         obstacles.push({
           type: "rect",
           layers: ["top"],
@@ -772,6 +779,55 @@ export class Trace
           height: 0.1,
           connectedTo: [],
         })
+
+        // Add wider obstacle only for chip ports
+        const schematicPort = db.schematic_port.get(elm.schematic_port_id!)
+        const sourcePort = db.source_port.get(schematicPort?.source_port_id!)
+        const sourceComponent = db.source_component.get(
+          sourcePort?.source_component_id!,
+        )
+
+        if (sourceComponent?.ftype === "simple_chip") {
+          const obstacleCenter = { x: elm.center.x, y: elm.center.y }
+          let obstacleSize = { width: 0.2, height: 0.1 }
+          const OFFSET = 0.3 // Distance from port to obstacle center
+
+          switch (schematicPort?.facing_direction) {
+            case "left":
+              obstacleCenter.x = elm.center.x + OFFSET
+              obstacleSize = { width: 0.4, height: 0.1 }
+              break
+            case "right":
+              obstacleCenter.x = elm.center.x - OFFSET
+              obstacleSize = { width: 0.4, height: 0.1 }
+              break
+            case "up":
+              obstacleCenter.y = elm.center.y - OFFSET
+              obstacleSize = { width: 0.1, height: 0.4 }
+              break
+            case "down":
+              obstacleCenter.y = elm.center.y + OFFSET
+              obstacleSize = { width: 0.1, height: 0.4 }
+              break
+          }
+
+          db.schematic_debug_object.insert({
+            type: "schematic_debug_object",
+            shape: "rect",
+            center: obstacleCenter,
+            size: obstacleSize,
+            label: `Port ${elm.schematic_port_id} (${schematicPort?.facing_direction})`,
+          })
+          // Add the port obstacle
+          obstacles.push({
+            type: "rect",
+            layers: ["top"],
+            center: obstacleCenter,
+            width: obstacleSize.width,
+            height: obstacleSize.height,
+            connectedTo: [],
+          })
+        }
       }
       if (elm.type === "schematic_text") {
         obstacles.push({
@@ -856,6 +912,7 @@ export class Trace
     }))
 
     const bounds = computeObstacleBounds(obstacles)
+    // console.log(bounds)
 
     const simpleRouteJsonInput: SimpleRouteJson = {
       minTraceWidth: 0.1,
