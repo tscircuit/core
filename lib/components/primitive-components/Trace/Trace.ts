@@ -764,6 +764,13 @@ export class Trace
         })
       }
       if (elm.type === "schematic_port") {
+        db.schematic_debug_object.insert({
+          type: "schematic_debug_object",
+          shape: "rect",
+          center: elm.center,
+          size: { width: 0.1, height: 0.1 },
+          label: `Port ${elm.schematic_port_id}`,
+        })
         obstacles.push({
           type: "rect",
           layers: ["top"],
@@ -782,16 +789,16 @@ export class Trace
 
         if (sourceComponent?.ftype === "simple_chip") {
           const obstacleCenter = { x: elm.center.x, y: elm.center.y }
-          let obstacleSize = { width: 0.4, height: 0.1 }
-          const OFFSET = 0.5 // Distance from port to obstacle center
+          let obstacleSize = { width: 0.2, height: 0.1 }
+          const OFFSET = 0.3 // Distance from port to obstacle center
 
           switch (schematicPort?.facing_direction) {
             case "left":
-              obstacleCenter.x = elm.center.x - OFFSET
+              obstacleCenter.x = elm.center.x + OFFSET
               obstacleSize = { width: 0.4, height: 0.1 }
               break
             case "right":
-              obstacleCenter.x = elm.center.x + OFFSET
+              obstacleCenter.x = elm.center.x - OFFSET
               obstacleSize = { width: 0.4, height: 0.1 }
               break
             case "up":
@@ -804,6 +811,13 @@ export class Trace
               break
           }
 
+          db.schematic_debug_object.insert({
+            type: "schematic_debug_object",
+            shape: "rect",
+            center: obstacleCenter,
+            size: obstacleSize,
+            label: `Port ${elm.schematic_port_id} (${schematicPort?.facing_direction})`,
+          })
           // Add the port obstacle
           obstacles.push({
             type: "rect",
@@ -898,6 +912,7 @@ export class Trace
     }))
 
     const bounds = computeObstacleBounds(obstacles)
+    // console.log(bounds)
 
     const simpleRouteJsonInput: SimpleRouteJson = {
       minTraceWidth: 0.1,

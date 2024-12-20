@@ -27,7 +27,7 @@ test("chip pins not overlapped with schematic traces", () => {
       {/* Top port side */}
       <trace from=".U1 > .11" to=".R1 > .1" />
       {/* Bottom port side */}
-      <trace from=".U1 > .5" to=".R1 > .2" />
+      <trace from=".U1 > .6" to=".R1 > .2" />
       {/* Left port side */}
       <trace from=".U1 > .4" to=".R1 > .1" />
 
@@ -38,7 +38,7 @@ test("chip pins not overlapped with schematic traces", () => {
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     grid: {
-      cellSize: 0.5,
+      cellSize: 0.25,
       labelCells: true,
     },
   })
