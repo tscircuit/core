@@ -44,6 +44,7 @@ export interface TscircuitElements {
   constrainedlayout: Props.ConstrainedLayoutProps
   battery: Props.BatteryProps
   pinheader: Props.PinHeaderProps
+  resonator: Props.ResonatorProps
   subcircuit: Props.SubcircuitGroupProps
   jscad: any
 }
