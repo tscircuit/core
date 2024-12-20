@@ -26,8 +26,8 @@ export class Crystal4Pin extends NormalComponent<
   initPorts() {
     super.initPorts({
       additionalAliases: {
-        pin1: ["pos", "top_left"],   
-        pin2: ["neg", "top_right"], 
+        pin1: ["pos", "top_left"],
+        pin2: ["neg", "top_right"],
         pin3: ["cap1", "bottom_left"],
         pin4: ["cap2", "bottom_right"],
       },
