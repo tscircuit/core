@@ -3,11 +3,14 @@ import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import { SourceSimpleResonator } from "circuit-json"
 import type { SchematicPortArrangement } from "@tscircuit/props"
+import type { BaseSymbolName } from "lib/utils/constants"
 
 export class Resonator extends NormalComponent<typeof resonatorProps> {
   get config() {
     return {
       componentName: "Resonator",
+      schematicSymbolName:
+        this.props.symbolName ?? ("resonator" as BaseSymbolName),
       zodProps: resonatorProps, // Using resonatorProps for validation
       shouldRenderAsSchematicBox: true,
     }
@@ -47,13 +50,12 @@ export class Resonator extends NormalComponent<typeof resonatorProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
-      ftype: "resonator",
+      ftype: "simple_resonator",
       name: props.name,
       frequency: props.frequency,
       load_capacitance: props.loadCapacitance,
       pin_count: 3,
       supplier_part_numbers: props.supplierPartNumbers,
-      gender: props.gender,
     } as SourceSimpleResonator) // Cast to SourceSimpleResonator type
     this.source_component_id = source_component.source_component_id
   }
