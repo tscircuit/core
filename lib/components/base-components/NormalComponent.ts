@@ -454,7 +454,7 @@ export class NormalComponent<
     })
     const component_name_text = db.schematic_text.insert({
       text: props.name ?? "",
-      schematic_component_id: schematic_component.source_component_id,
+      schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",
       rotation: 0,
       position: {
