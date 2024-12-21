@@ -6,13 +6,11 @@ test("Non-subcircuit group offset schematic", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
   circuit.add(
-    <board width={10} height={10}>
-      <group name="group1" schX={5}>
-        <resistor name="R1" footprint="0402" resistance={1000} />
-        <capacitor name="C1" footprint="0402" capacitance={1000} schX={3} />
-        <trace path={[".R1 > .pin2", ".C1 > .pin1"]} />
-      </group>
-    </board>,
+    <group name="group1" schX={5}>
+      <resistor name="R1" footprint="0402" resistance={1000} />
+      <capacitor name="C1" footprint="0402" capacitance={1000} schX={3} />
+      <trace path={[".R1 > .pin2", ".C1 > .pin1"]} />
+    </group>,
   )
 
   circuit.render()
