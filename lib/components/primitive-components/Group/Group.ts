@@ -336,14 +336,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicLayout(): void {
-    
     this._computeSchematicPositionBeforeLayout()
     // The schematic_components are rendered in our children
     if (!this.isSubcircuit) return
 
     const props = this._parsedProps as SubcircuitGroupProps
     if (!props.schAutoLayoutEnabled) return
-
 
     const { db } = this.root!
 
