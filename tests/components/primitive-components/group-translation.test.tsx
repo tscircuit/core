@@ -34,12 +34,12 @@ test("Non-subcircuit group offset schematic with resistor", async () => {
     "rotation": 0,
     "schematic_component_id": "schematic_component_0",
     "size": {
-      "height": 0.24999600000000122,
-      "width": 1.1238982820000005,
+      "height": 1.1238982820000005,
+      "width": 0.4999960000000012,
     },
     "source_component_id": "source_component_0",
     "symbol_display_value": "1kΩ",
-    "symbol_name": "boxresistor_horz",
+    "symbol_name": "boxresistor_right",
     "type": "schematic_component",
   },
 ]
@@ -95,14 +95,14 @@ test("Non-subcircuit group offset schematic with resistor and capacitor connecte
           "route_type": "wire",
           "width": 0.1,
           "x": 3.5337907000000004,
-          "y": 3.004741299999999,
+          "y": 3.0452587000000007,
         },
         "to": {
           "layer": "top",
           "route_type": "wire",
           "width": 0.1,
           "x": 5.2987907,
-          "y": 3.004741299999999,
+          "y": 3.0452587000000007,
         },
       },
       {
@@ -111,21 +111,21 @@ test("Non-subcircuit group offset schematic with resistor and capacitor connecte
           "route_type": "wire",
           "width": 0.1,
           "x": 5.2987907,
-          "y": 3.004741299999999,
+          "y": 3.0452587000000007,
         },
         "to": {
           "x": 5.4487907,
-          "y": 3.004741299999999,
+          "y": 3.0452587000000007,
         },
       },
       {
         "from": {
           "x": 5.4487907,
-          "y": 3.004741299999999,
+          "y": 3.0452587000000007,
         },
         "to": {
           "x": 5.4487907,
-          "y": 3.0336195999999997,
+          "y": 3.016380250000001,
         },
       },
     ],

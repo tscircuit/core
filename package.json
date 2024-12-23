@@ -27,7 +27,7 @@
     "@types/react": "^19.0.1",
     "@types/react-reconciler": "^0.28.8",
     "bun-match-svg": "0.0.8",
-    "circuit-to-svg": "^0.0.93",
+    "circuit-to-svg": "^0.0.97",
     "debug": "^4.3.6",
     "howfat": "^0.3.8",
     "looks-same": "^9.0.1",
@@ -53,7 +53,7 @@
     "performance-now": "^2.1.0",
     "react": "^18.3.1",
     "react-reconciler": "^0.29.2",
-    "schematic-symbols": "^0.0.99",
+    "schematic-symbols": "^0.0.110",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.23.8"
   }
