@@ -1,7 +1,7 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { platedHoleProps } from "@tscircuit/props"
 import type { Port } from "./Port"
-import type { PCBPlatedHoleInput, PcbPlatedHoleOval } from "circuit-json"
+import type { PCBPlatedHoleInput, PcbPlatedHoleOval, PcbPlatedHoleSquare } from "circuit-json"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
@@ -28,8 +28,14 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     if (props.shape === "oval" || props.shape === "pill") {
       return { width: props.outerWidth, height: props.outerHeight }
     }
+    if (props.shape === "square") {
+      return {
+        width: props.outerSideLength,
+        height: props.outerSideLength,
+      }
+    }
     throw new Error(
-      `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
+      `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`
     )
   }
 
@@ -121,6 +127,20 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         layers: ["top", "bottom"],
         // NOTE: currently PcbPlatedHoleOval erroneously includes both the shape "pill" and "oval"
       } as PcbPlatedHoleOval)
+
+      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+    } else if (props.shape === "square") {
+      const pcb_plated_hole = db.pcb_plated_hole.insert({
+        pcb_component_id,
+        pcb_port_id: this.matchedPort?.pcb_port_id!,
+        outer_side_length: props.outerSideLength,
+        hole_side_length: props.holeSideLength,
+        shape: "square" as const,
+        port_hints: this.getNameAndAliases(),
+        x: position.x,
+        y: position.y,
+        layers: ["top", "bottom"],
+      } as PcbPlatedHoleSquare)
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     }
