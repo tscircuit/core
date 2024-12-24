@@ -383,9 +383,11 @@ export class NormalComponent<
 
     const symbol: SchSymbol | undefined = symbols[symbol_name]
 
+    const center = this._getGlobalSchematicPositionBeforeLayout()
+
     if (symbol) {
       const schematic_component = db.schematic_component.insert({
-        center: { x: props.schX ?? 0, y: props.schY ?? 0 },
+        center,
         rotation: props.schRotation ?? 0,
         size: symbol.size,
         source_component_id: this.source_component_id!,
@@ -454,7 +456,7 @@ export class NormalComponent<
     })
     const component_name_text = db.schematic_text.insert({
       text: props.name ?? "",
-      schematic_component_id: schematic_component.source_component_id,
+      schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",
       rotation: 0,
       position: {
@@ -909,7 +911,9 @@ export class NormalComponent<
   private _addCachebustToModelUrl(url?: string): string | undefined {
     if (!url || !url.includes("modelcdn.tscircuit.com")) return url
     const origin = this.root?.getClientOrigin() ?? ""
-    return `${url}${url.includes("?") ? "&" : "?"}cachebust_origin=${encodeURIComponent(origin)}`
+    return `${url}${
+      url.includes("?") ? "&" : "?"
+    }cachebust_origin=${encodeURIComponent(origin)}`
   }
 
   doInitialPartsEngineRender(): void {
