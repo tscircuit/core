@@ -71,7 +71,7 @@ export type PortMap<T extends string> = {
 
 export class NormalComponent<
   ZodProps extends ZodType = any,
-  PortNames extends string = never,
+  PortNames extends string = never
 > extends PrimitiveComponent<ZodProps> {
   reactSubtrees: Array<ReactSubtree> = []
   _impliedFootprint?: string | undefined
@@ -104,7 +104,7 @@ export class NormalComponent<
   initPorts(
     opts: {
       additionalAliases?: Record<`pin${number}`, string[]>
-    } = {},
+    } = {}
   ) {
     if (this.root?.schematicDisabled) return
     const { config } = this
@@ -119,7 +119,7 @@ export class NormalComponent<
           for (const pinNumberOrLabel of pins) {
             const pinNumber = parsePinNumberFromLabelsOrThrow(
               pinNumberOrLabel,
-              this._parsedProps.pinLabels,
+              this._parsedProps.pinLabels
             )
 
             portsToCreate.push(
@@ -130,8 +130,8 @@ export class NormalComponent<
                 },
                 {
                   originDescription: `schPortArrangement:${side}`,
-                },
-              ),
+                }
+              )
             )
           }
         }
@@ -151,8 +151,8 @@ export class NormalComponent<
               },
               {
                 originDescription: `schPortArrangement:${side}`,
-              },
-            ),
+              }
+            )
           )
         }
       }
@@ -164,7 +164,7 @@ export class NormalComponent<
       for (let [pinNumber, label] of Object.entries(pinLabels)) {
         pinNumber = pinNumber.replace("pin", "")
         let existingPort = portsToCreate.find(
-          (p) => p._parsedProps.pinNumber === Number(pinNumber),
+          (p) => p._parsedProps.pinNumber === Number(pinNumber)
         )
         const primaryLabel = Array.isArray(label) ? label[0] : label
         const otherLabels = Array.isArray(label) ? label.slice(1) : []
@@ -182,7 +182,7 @@ export class NormalComponent<
             },
             {
               originDescription: `pinLabels:pin${pinNumber}`,
-            },
+            }
           )
           portsToCreate.push(existingPort)
         } else {
@@ -201,8 +201,8 @@ export class NormalComponent<
         if (!pinNumber) continue
         const port = getPortFromHints(
           symPort.labels.concat(
-            opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
-          ),
+            opts.additionalAliases?.[`pin${pinNumber}`] ?? []
+          )
         )
 
         if (port) {
@@ -221,7 +221,7 @@ export class NormalComponent<
       for (const port of portsFromFootprint) {
         if (
           !portsToCreate.some((p) =>
-            p.isMatchingAnyOf(port.getNameAndAliases()),
+            p.isMatchingAnyOf(port.getNameAndAliases())
           )
         ) {
           portsToCreate.push(port)
@@ -241,7 +241,7 @@ export class NormalComponent<
         ...(this._parsedProps.schPortArrangement?.topSide?.pins ?? []),
         ...(this._parsedProps.schPortArrangement?.bottomSide?.pins ?? []),
       ].map((pn) =>
-        parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
+        parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels)
       )
 
       if (
@@ -258,7 +258,7 @@ export class NormalComponent<
       ) {
         explicitlyListedPinNumbersInSchPortArrangement = Array.from(
           { length: this._getPinCount() },
-          (_, i) => i + 1,
+          (_, i) => i + 1
         )
       }
 
@@ -274,8 +274,8 @@ export class NormalComponent<
           },
           {
             originDescription: `notOtherwiseAddedButDeducedFromPinCount:${pn}`,
-          },
-        ),
+          }
+        )
       )
     }
 
@@ -309,7 +309,7 @@ export class NormalComponent<
           const port = this.children.find(
             (c) =>
               c.componentName === "Port" &&
-              (c as Port).isMatchingNameOrAlias(prop as string),
+              (c as Port).isMatchingNameOrAlias(prop as string)
           )
           if (!port) {
             throw new Error(
@@ -317,12 +317,12 @@ export class NormalComponent<
                 this.componentName
               } component with name: "${
                 this.props.name
-              }". This is a bug in @tscircuit/core`,
+              }". This is a bug in @tscircuit/core`
             )
           }
           return port as Port
         },
-      },
+      }
     ) as any
   }
 
@@ -422,7 +422,7 @@ export class NormalComponent<
       size: dimensions.getSize(),
 
       port_arrangement: underscorifyPortArrangement(
-        props.schPortArrangement as any,
+        props.schPortArrangement as any
       ),
 
       pin_spacing: props.schPinSpacing ?? 0.2,
@@ -499,7 +499,7 @@ export class NormalComponent<
     this.pcb_component_id = pcb_component.pcb_component_id
 
     const manualPlacement =
-      this.getSubcircuit()._getManualPlacementForComponent(this)
+      this.getSubcircuit()._getPcbManualPlacementForComponent(this)
 
     if (
       this.props.pcbX !== undefined &&
@@ -564,7 +564,7 @@ export class NormalComponent<
 
   _hasExistingPortExactly(port1: Port): boolean {
     const existingPorts = this.children.filter(
-      (c) => c.componentName === "Port",
+      (c) => c.componentName === "Port"
     ) as Port[]
     return existingPorts.some((port2) => {
       const aliases1 = port1.getNameAndAliases()
@@ -591,14 +591,14 @@ export class NormalComponent<
       // Check if this port is already contained in the children, skip if it's
       // already defined
       const existingPorts = this.children.filter(
-        (c) => c.componentName === "Port",
+        (c) => c.componentName === "Port"
       ) as Port[]
       const conflictingPort = existingPorts.find((p) =>
-        p.isMatchingAnyOf(component.getNameAndAliases()),
+        p.isMatchingAnyOf(component.getNameAndAliases())
       )
       if (conflictingPort) {
         debug(
-          `Similar ports added. Port 1: ${conflictingPort}, Port 2: ${component}`,
+          `Similar ports added. Port 1: ${conflictingPort}, Port 2: ${component}`
         )
       }
     }
@@ -642,7 +642,7 @@ export class NormalComponent<
 
         let portHintsList = fpChild.props.portHints
         const hasPinPrefix = portHintsList.some((hint: string) =>
-          hint.startsWith("pin"),
+          hint.startsWith("pin")
         )
         if (!hasPinPrefix) {
           portHintsList = [...portHintsList, `pin${pinNumber}`]
@@ -714,12 +714,12 @@ export class NormalComponent<
     }
 
     const existingPorts = this.children.filter(
-      (c) => c.componentName === "Port",
+      (c) => c.componentName === "Port"
     ) as Port[]
 
     for (const newPort of newPorts) {
       const existingPort = existingPorts.find((p) =>
-        p.isMatchingAnyOf(newPort.getNameAndAliases()),
+        p.isMatchingAnyOf(newPort.getNameAndAliases())
       )
       if (existingPort) {
         if (
@@ -787,7 +787,7 @@ export class NormalComponent<
         ...(leftSide?.pins ?? []),
         ...(rightSide?.pins ?? []),
         ...(topSide?.pins ?? []),
-        ...(bottomSide?.pins ?? []),
+        ...(bottomSide?.pins ?? [])
       )
     }
 
@@ -854,7 +854,7 @@ export class NormalComponent<
           ? cadModel.rotationOffset
           : 0,
       ...(typeof cadModel?.rotationOffset === "object"
-        ? (cadModel.rotationOffset ?? {})
+        ? cadModel.rotationOffset ?? {}
         : {}),
     })
 
