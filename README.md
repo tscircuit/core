@@ -1,8 +1,8 @@
 # @tscircuit/core
 
-[tscircuit](https://github.com/tscircuit/tscircuit) &middot; [Development Guide](./docs/DEVELOPMENT.md)
-
 The core logic used to build Circuit JSON from tscircuit React elements.
+
+[tscircuit](https://github.com/tscircuit/tscircuit) &middot; [Development Guide](./docs/DEVELOPMENT.md)
 
 You can use `core` to create [Circuit JSON](https://github.com/tscircuit/circuit-json), which can then
 be converted into Gerbers, viewed online, and much more.
