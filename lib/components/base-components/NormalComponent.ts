@@ -499,7 +499,7 @@ export class NormalComponent<
     this.pcb_component_id = pcb_component.pcb_component_id
 
     const manualPlacement =
-      this.getSubcircuit()._getManualPlacementForComponent(this)
+      this.getSubcircuit()._getPcbManualPlacementForComponent(this)
 
     if (
       this.props.pcbX !== undefined &&

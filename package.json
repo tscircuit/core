@@ -43,7 +43,7 @@
     "@tscircuit/footprinter": "^0.0.95",
     "@tscircuit/infgrid-ijump-astar": "^0.0.26",
     "@tscircuit/math-utils": "^0.0.5",
-    "@tscircuit/props": "^0.0.115",
+    "@tscircuit/props": "^0.0.119",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/soup-util": "^0.0.41",
     "circuit-json": "^0.0.119",
