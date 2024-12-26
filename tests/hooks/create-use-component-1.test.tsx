@@ -5,7 +5,7 @@ import {
   resistorPins,
   type ResistorProps,
 } from "@tscircuit/props"
-import { RootCircuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 import { Resistor } from "lib/components"
 import { expectTypesMatch } from "tests/fixtures/expect-types-match"
 

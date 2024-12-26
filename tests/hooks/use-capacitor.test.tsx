@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { useCapacitor } from "lib/hooks/use-capacitor"
-import { RootCircuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 
 test("useCapacitor hook creates component with correct props and traces", () => {
   const circuit = new RootCircuit()

@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { useChip } from "lib/hooks/use-chip"
-import { RootCircuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 
 test("useChip hook creates component with correct props and traces", () => {
   const circuit = new RootCircuit()

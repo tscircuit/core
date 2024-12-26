@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { RootCircuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 import { applyEditEventsToManualEditsFile } from "lib/utils/edit-events/apply-edit-events-to-manual-edits-file"
 import type { ManualEditEvent } from "@tscircuit/props"
 

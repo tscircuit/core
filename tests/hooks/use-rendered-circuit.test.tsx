@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { RootCircuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 import { useRenderedCircuit } from "lib/hooks/use-rendered-circuit"
 import React from "react"
 import { injectTestHookSystem } from "tests/fixtures/inject-test-hook-system"

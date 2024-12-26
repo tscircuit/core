@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
-import { RootCircuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 // this test needs core update and  PR to support net symbols
 test("schematic net symbol", () => {
   const circuit = new RootCircuit()

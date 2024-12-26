@@ -1,5 +1,5 @@
 import { it, expect } from "bun:test"
-import { RootCircuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 import "lib/register-catalogue"
 
 it("should correctly use selectAll and selectOne methods", () => {

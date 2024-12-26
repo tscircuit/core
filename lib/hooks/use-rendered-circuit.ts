@@ -1,5 +1,5 @@
 import type { AnyCircuitElement } from "circuit-json"
-import { RootCircuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 import React from "react"
 
 export const useRenderedCircuit = (
