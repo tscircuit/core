@@ -1,11 +1,11 @@
 import { test, expect } from "bun:test"
-import { Circuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 import { applyEditEventsToManualEditsFile } from "lib/utils/edit-events/apply-edit-events-to-manual-edits-file"
 import type { ManualEditEvent } from "@tscircuit/props"
 
 test("applyEditEventsToManualEditsFile updates component locations", async () => {
   // Create a circuit with a resistor
-  const circuit = new Circuit()
+  const circuit = new RootCircuit()
   circuit.add(
     <board width="10mm" height="10mm">
       <resistor name="R1" resistance="10k" />

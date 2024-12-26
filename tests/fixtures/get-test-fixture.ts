@@ -1,10 +1,10 @@
-import { Circuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 import { logSoup } from "@tscircuit/log-soup"
 import "lib/register-catalogue"
 import "./extend-expect-circuit-snapshot"
 
 export const getTestFixture = () => {
-  const circuit = new Circuit()
+  const circuit = new RootCircuit()
 
   return {
     circuit,

@@ -14,7 +14,7 @@ import {
 } from "transformation-matrix"
 import type { ZodType } from "zod"
 import { z } from "zod"
-import type { Circuit } from "../../Circuit"
+import type { RootCircuit } from "../../RootCircuit"
 import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
 import { Renderable } from "./Renderable"
 import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
@@ -428,7 +428,7 @@ export abstract class PrimitiveComponent<
     return applyToPoint(this.computeSchematicGlobalTransform(), { x: 0, y: 0 })
   }
 
-  get root(): Circuit | null {
+  get root(): RootCircuit | null {
     return this.parent?.root ?? null
   }
 

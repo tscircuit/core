@@ -1,5 +1,5 @@
 export * from "./components"
-export * from "./Circuit"
+export * from "./RootCircuit"
 export * from "./hooks/use-rendered-circuit"
 export * from "./hooks/create-use-component"
 export * from "./hooks/use-capacitor"
