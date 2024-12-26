@@ -4,7 +4,11 @@ import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
-export const getTestAutoroutingServer = () => {
+export const getTestAutoroutingServer = ({
+  requireDisplayName = false,
+}: {
+  requireDisplayName?: boolean
+} = {}) => {
   let currentJobId = 0
   const jobResults = new Map<string, any>()
 
@@ -64,6 +68,15 @@ export const getTestAutoroutingServer = () => {
       if (endpoint === "/autorouting/jobs/create") {
         const body = await req.json()
         const jobId = `job_${currentJobId++}`
+
+        if (requireDisplayName && !body.display_name) {
+          return new Response(
+            JSON.stringify({
+              error: { message: "Missing display_name" },
+            }),
+            { status: 400 },
+          )
+        }
 
         const simpleRouteJson = getSimpleRouteJsonFromCircuitJson({
           circuitJson: body.input_circuit_json,

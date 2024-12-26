@@ -3,9 +3,12 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
 test("remote-autorouter-4 with job mode", async () => {
-  const { autoroutingServerUrl } = getTestAutoroutingServer()
+  const { autoroutingServerUrl } = getTestAutoroutingServer({
+    requireDisplayName: true,
+  })
 
   const { circuit } = getTestFixture()
+  circuit.name = "test-circuit"
 
   // Create a basic circuit that needs routing
   circuit.add(
