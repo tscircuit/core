@@ -22,6 +22,15 @@ export class RootCircuit {
   isRoot = true
   schematicDisabled = false
   pcbDisabled = false
+  pcbRoutingDisabled = false
+
+  /**
+   * The RootCircuit name is usually set by the platform, it's not required but
+   * if supplied can identify the circuit in certain effects, e.g. it is passed
+   * as the display_name parameter for autorouting effects.
+   */
+  name?: string
+
   _hasRenderedAtleastOnce = false
 
   constructor() {
