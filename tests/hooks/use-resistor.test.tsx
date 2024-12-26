@@ -1,9 +1,9 @@
 import { test, expect } from "bun:test"
 import { useResistor } from "lib/hooks/use-resistor"
-import { Circuit } from "lib/Circuit"
+import { RootCircuit } from "lib/Circuit"
 
 test("useResistor hook creates component with correct props and traces", () => {
-  const circuit = new Circuit()
+  const circuit = new RootCircuit()
 
   const R1 = useResistor("R1", { resistance: "10k", footprint: "0402" })
   const R2 = useResistor("R2", { resistance: "20k", footprint: "0603" })

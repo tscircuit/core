@@ -14,11 +14,11 @@ type RootCircuitEventName =
   | `renderable:renderLifecycle:${RenderPhase}:end`
   | "external:evalError"
 
-export class Circuit {
+export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
   children: PrimitiveComponent[]
   db: SoupUtilObjects
-  root: Circuit | null = null
+  root: RootCircuit | null = null
   isRoot = true
   schematicDisabled = false
   pcbDisabled = false
@@ -204,4 +204,4 @@ export class Circuit {
 /**
  * @deprecated
  */
-export const Project = Circuit
+export const Project = RootCircuit

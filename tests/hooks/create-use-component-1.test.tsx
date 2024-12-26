@@ -5,7 +5,7 @@ import {
   resistorPins,
   type ResistorProps,
 } from "@tscircuit/props"
-import { Circuit } from "lib/Circuit"
+import { RootCircuit } from "lib/Circuit"
 import { Resistor } from "lib/components"
 import { expectTypesMatch } from "tests/fixtures/expect-types-match"
 
@@ -28,7 +28,7 @@ test("createUseComponent creates a component with correct props and traces", () 
     [],
   )
 
-  const circuit = new Circuit()
+  const circuit = new RootCircuit()
 
   const R1 = useResistor1("R1", { resistance: "10k", footprint: "0402" })
   const R2 = useResistor2("R2", { resistance: "10k", footprint: "0402" })

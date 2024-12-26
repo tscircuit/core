@@ -1,9 +1,9 @@
 import { test, expect } from "bun:test"
 import { useChip } from "lib/hooks/use-chip"
-import { Circuit } from "lib/Circuit"
+import { RootCircuit } from "lib/Circuit"
 
 test("useChip hook creates component with correct props and traces", () => {
-  const circuit = new Circuit()
+  const circuit = new RootCircuit()
 
   const useAtmega = useChip({
     pin1: ["VCC"],

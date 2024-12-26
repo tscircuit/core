@@ -1,9 +1,9 @@
 import { test, expect } from "bun:test"
 import { useDiode } from "lib/hooks/use-diode"
-import { Circuit } from "lib/Circuit"
+import { RootCircuit } from "lib/Circuit"
 
 test("useDiode hook creates component with correct props and traces", () => {
-  const circuit = new Circuit()
+  const circuit = new RootCircuit()
 
   const D1 = useDiode("D1", { footprint: "1206" })
   const D2 = useDiode("D2", { footprint: "0603" })

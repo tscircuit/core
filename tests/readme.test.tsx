@@ -1,9 +1,9 @@
 import { expect, it } from "bun:test"
 import "lib/register-catalogue"
-import { Board, Circuit } from "../index"
+import { Board, RootCircuit } from "../index"
 
 it("should create soup with various elements", () => {
-  const project = new Circuit()
+  const project = new RootCircuit()
 
   const board = new Board({
     width: "10mm",
