@@ -45,6 +45,7 @@ export interface TscircuitElements {
   battery: Props.BatteryProps
   pinheader: Props.PinHeaderProps
   subcircuit: Props.SubcircuitGroupProps
+  transistor: Props.TransistorProps
   jscad: any
 }
 
