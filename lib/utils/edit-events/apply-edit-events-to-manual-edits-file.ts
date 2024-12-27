@@ -43,12 +43,26 @@ export const applyEditEventsToManualEditsFile = ({
       }
 
       if (existingPlacementIndex >= 0) {
-        // Update existing placement
-        updatedManualEditsFile.schematic_placements[existingPlacementIndex] =
-          newPlacement
+        const existingPlacement =
+          updatedManualEditsFile.schematic_placements[existingPlacementIndex]
+        // Verify that original_center matches current position before applying update
+        if (
+          editEvent.original_center.x === existingPlacement.center.x &&
+          editEvent.original_center.y === existingPlacement.center.y
+        ) {
+          // Update existing placement only if positions match
+          updatedManualEditsFile.schematic_placements[existingPlacementIndex] =
+            newPlacement
+        }
+        // Skip update if positions don't match
       } else {
-        // Add new placement
-        updatedManualEditsFile.schematic_placements.push(newPlacement)
+        // For new placements, only apply if original_center is {0,0} (default position)
+        if (
+          editEvent.original_center.x === 0 &&
+          editEvent.original_center.y === 0
+        ) {
+          updatedManualEditsFile.schematic_placements.push(newPlacement)
+        }
       }
     }
   }
