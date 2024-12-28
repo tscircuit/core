@@ -8,7 +8,7 @@ import { it, expect, type CustomMatcher, type MatcherResult } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import looksSame from "looks-same"
-import { Circuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 import type { AnyCircuitElement } from "circuit-json"
 
 async function saveSnapshotOfSoup({
@@ -85,12 +85,16 @@ expect.extend({
     received: unknown,
     ...args: any[]
   ): Promise<MatcherResult> {
-    const soup = await (received instanceof Circuit
-      ? received.getCircuitJson()
-      : (received as AnyCircuitElement[]))
+    let circuitJson: AnyCircuitElement[]
+    if (received instanceof RootCircuit) {
+      await received.renderUntilSettled()
+      circuitJson = await received.getCircuitJson()
+    } else {
+      circuitJson = received as AnyCircuitElement[]
+    }
 
     return saveSnapshotOfSoup({
-      soup,
+      soup: circuitJson,
       testPath: args[0],
       mode: "pcb",
       updateSnapshot:
@@ -104,11 +108,16 @@ expect.extend({
     received: unknown,
     ...args: any[]
   ): Promise<MatcherResult> {
+    let circuitJson: AnyCircuitElement[]
+    if (received instanceof RootCircuit) {
+      await received.renderUntilSettled()
+      circuitJson = await received.getCircuitJson()
+    } else {
+      circuitJson = received as AnyCircuitElement[]
+    }
+
     return saveSnapshotOfSoup({
-      soup:
-        received instanceof Circuit
-          ? received.getSoup()
-          : (received as AnyCircuitElement[]),
+      soup: circuitJson,
       testPath: args[0],
       mode: "schematic",
       options: args[1] ?? {

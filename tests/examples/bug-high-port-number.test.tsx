@@ -61,7 +61,7 @@ test("bug high port number", async () => {
         footprint="0805"
         schX={3}
         schY={-1}
-        symbolName="boxresistor_vert"
+        symbolName="boxresistor_up"
       />
       <resistor
         resistance="1kohm"
@@ -69,7 +69,7 @@ test("bug high port number", async () => {
         footprint="0805"
         schX={4.5}
         schY={-1}
-        symbolName="boxresistor_vert"
+        symbolName="boxresistor_up"
       />
       <diode
         name="LED1"

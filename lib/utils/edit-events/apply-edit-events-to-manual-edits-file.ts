@@ -1,4 +1,4 @@
-import type { ManualEditEvent, manual_edit_file } from "@tscircuit/props"
+import type { ManualEditEvent, manual_edits_file } from "@tscircuit/props"
 import { z } from "zod"
 import type { CircuitJson } from "circuit-json"
 import { su } from "@tscircuit/soup-util"
@@ -10,8 +10,8 @@ export const applyEditEventsToManualEditsFile = ({
 }: {
   circuitJson: CircuitJson
   editEvents: ManualEditEvent[]
-  manualEditsFile: z.infer<typeof manual_edit_file>
-}): z.infer<typeof manual_edit_file> => {
+  manualEditsFile: z.infer<typeof manual_edits_file>
+}): z.infer<typeof manual_edits_file> => {
   const updatedManualEditsFile = {
     ...manualEditsFile,
     schematic_placements: [...(manualEditsFile.schematic_placements ?? [])],
@@ -33,7 +33,7 @@ export const applyEditEventsToManualEditsFile = ({
       // Find if there's an existing placement for this component
       const existingPlacementIndex =
         updatedManualEditsFile.schematic_placements?.findIndex(
-          (p) => p.selector === source_component.name,
+          (p: any) => p.selector === source_component.name,
         )
 
       const newPlacement = {

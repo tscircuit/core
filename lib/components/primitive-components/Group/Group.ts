@@ -171,6 +171,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             input_circuit_json: this.root!.db.toArray(),
             provider: "freerouting",
             autostart: true,
+            display_name: this.root?.name,
           }),
           headers: { "Content-Type": "application/json" },
         },

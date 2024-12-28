@@ -1,9 +1,9 @@
 import { test, expect } from "bun:test"
 import { useLed } from "lib/hooks/use-led"
-import { Circuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 
 test("useLed hook creates component with correct props and traces", () => {
-  const circuit = new Circuit()
+  const circuit = new RootCircuit()
 
   const LED1 = useLed("LED1", { footprint: "1206" })
   const LED2 = useLed("LED2", { footprint: "0603" })

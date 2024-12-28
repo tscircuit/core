@@ -1,9 +1,9 @@
 import { it, expect } from "bun:test"
-import { Circuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 import "lib/register-catalogue"
 
 it("should correctly use selectAll and selectOne methods", () => {
-  const project = new Circuit()
+  const project = new RootCircuit()
 
   project.add(
     <board width="10mm" height="10mm">

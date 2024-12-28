@@ -14,14 +14,23 @@ type RootCircuitEventName =
   | `renderable:renderLifecycle:${RenderPhase}:end`
   | "external:evalError"
 
-export class Circuit {
+export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
   children: PrimitiveComponent[]
   db: SoupUtilObjects
-  root: Circuit | null = null
+  root: RootCircuit | null = null
   isRoot = true
   schematicDisabled = false
   pcbDisabled = false
+  pcbRoutingDisabled = false
+
+  /**
+   * The RootCircuit name is usually set by the platform, it's not required but
+   * if supplied can identify the circuit in certain effects, e.g. it is passed
+   * as the display_name parameter for autorouting effects.
+   */
+  name?: string
+
   _hasRenderedAtleastOnce = false
 
   constructor() {
@@ -204,4 +213,11 @@ export class Circuit {
 /**
  * @deprecated
  */
-export const Project = Circuit
+export const Project = RootCircuit
+
+/**
+ * We currently don't make a distinction between RootCircuit and Circuit, but
+ * we may in the future allow subcircuits to be created as new Circuit then
+ * incorporated into a larger RootCircuit
+ */
+export const Circuit = RootCircuit

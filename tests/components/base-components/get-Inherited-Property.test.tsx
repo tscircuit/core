@@ -1,10 +1,10 @@
 import { it, expect } from "bun:test"
 import { Chip } from "lib/components/normal-components/Chip"
-import { Circuit } from "lib/Circuit"
+import { RootCircuit } from "lib/RootCircuit"
 import "lib/register-catalogue"
 
 it("should correctly use selectAll and selectOne methods", () => {
-  const project = new Circuit()
+  const project = new RootCircuit()
 
   project.add(
     <board width="10mm" height="10mm" minTraceWidth={0.2}>

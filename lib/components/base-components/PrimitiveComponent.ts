@@ -14,7 +14,7 @@ import {
 } from "transformation-matrix"
 import type { ZodType } from "zod"
 import { z } from "zod"
-import type { Circuit } from "../../Circuit"
+import type { RootCircuit } from "../../RootCircuit"
 import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
 import { Renderable } from "./Renderable"
 import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
@@ -168,7 +168,7 @@ export abstract class PrimitiveComponent<
   _computePcbGlobalTransformBeforeLayout(): Matrix {
     const { _parsedProps: props } = this
     const manualPlacement =
-      this.getSubcircuit()._getManualPlacementForComponent(this)
+      this.getSubcircuit()._getPcbManualPlacementForComponent(this)
 
     // pcbX or pcbY will override the manual placement
     if (
@@ -287,6 +287,10 @@ export abstract class PrimitiveComponent<
    * component
    */
   computeSchematicGlobalTransform(): Matrix {
+    const manualPlacementTransform =
+      this._getSchematicGlobalManualPlacementTransform(this)
+    if (manualPlacementTransform) return manualPlacementTransform
+
     return compose(
       this.parent?.computeSchematicGlobalTransform?.() ?? identity(),
       this.computeSchematicPropsTransform(),
@@ -358,7 +362,7 @@ export abstract class PrimitiveComponent<
    * Subcircuit groups have a prop called "layout" that can include manual
    * placements for pcb components. These are typically added from an IDE
    */
-  _getManualPlacementForComponent(
+  _getPcbManualPlacementForComponent(
     component: PrimitiveComponent,
   ): { x: number; y: number } | null {
     if (!this.isSubcircuit) return null
@@ -381,9 +385,32 @@ export abstract class PrimitiveComponent<
       ) {
         const center = applyToPoint(
           this._computePcbGlobalTransformBeforeLayout(),
-          position.center,
+          position.center as { x: number; y: number },
         )
-        return Array.isArray(center) ? { x: center[0], y: center[1] } : center
+        return center
+      }
+    }
+
+    return null
+  }
+
+  _getSchematicGlobalManualPlacementTransform(
+    component: PrimitiveComponent,
+  ): Matrix | null {
+    const manualEdits = this.getSubcircuit()?._parsedProps.manualEdits
+    if (!manualEdits) return null
+
+    for (const position of manualEdits.schematic_placements ?? []) {
+      if (
+        isMatchingSelector(component, position.selector) ||
+        component.props.name === position.selector
+      ) {
+        if (position.relative_to === "group_center") {
+          return compose(
+            this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
+            translate(position.center.x, position.center.y),
+          )
+        }
       }
     }
 
@@ -401,7 +428,7 @@ export abstract class PrimitiveComponent<
     return applyToPoint(this.computeSchematicGlobalTransform(), { x: 0, y: 0 })
   }
 
-  get root(): Circuit | null {
+  get root(): RootCircuit | null {
     return this.parent?.root ?? null
   }
 
