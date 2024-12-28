@@ -54,7 +54,7 @@ describe("Resonator Component", () => {
     const { circuit } = getTestFixture()
     circuit.add(
       <board width="10mm" height="10mm">
-        <resonator name="44" frequency="8MHz" loadCapacitance="15pF" />
+        <resonator name="K4" frequency="8MHz" loadCapacitance="15pF" />
       </board>,
     )
     circuit.render()
