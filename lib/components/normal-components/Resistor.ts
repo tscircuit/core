@@ -64,8 +64,8 @@ export class Resistor extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
 
       resistance: props.resistance,
-      display_value: this._getSchematicSymbolDisplayValue(),
-    } as unknown as SourceSimpleResistorInput)
+      display_resistance: this._getSchematicSymbolDisplayValue(),
+    } as SourceSimpleResistorInput)
     this.source_component_id = source_component.source_component_id
   }
 }

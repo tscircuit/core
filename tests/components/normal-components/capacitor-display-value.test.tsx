@@ -22,5 +22,5 @@ test("capacitor display_value property", () => {
     ftype: "simple_capacitor",
   })
   expect(capacitors).toHaveLength(1)
-  expect(capacitors[0].display_value).toBe("10µF")
+  expect(capacitors[0].display_capacitance).toBe("10µF")
 })

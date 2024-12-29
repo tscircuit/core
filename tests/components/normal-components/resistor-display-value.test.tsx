@@ -16,5 +16,5 @@ test("resistor display_value property", () => {
     ftype: "simple_resistor",
   })
   expect(resistors).toHaveLength(1)
-  expect(resistors[0].display_value).toBe("10kΩ")
+  expect(resistors[0].display_resistance).toBe("10kΩ")
 })
