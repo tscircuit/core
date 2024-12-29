@@ -14,7 +14,11 @@ test("resistor display_value property", () => {
 
   const resistors = project.db.source_component.list({
     ftype: "simple_resistor",
-  })
+  }) as Array<{
+    ftype: "simple_resistor"
+    display_resistance?: string
+  }>
+
   expect(resistors).toHaveLength(1)
   expect(resistors[0].display_resistance).toBe("10kΩ")
 })
