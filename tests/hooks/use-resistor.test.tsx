@@ -22,8 +22,21 @@ test("useResistor hook creates component with correct props and traces", () => {
   expect(resistors.length).toBe(2)
   expect(resistors[0].props.name).toBe("R1")
   expect(resistors[0].props.resistance).toBe("10k")
+  // Get source components from the circuit database
+  const sourceComponents = circuit
+    .getSoup()
+    .filter((c) => c.type === "source_component")
+  const r1Source = sourceComponents.find(
+    (c) => c.source_component_id === resistors[0].source_component_id,
+  )
+  const r2Source = sourceComponents.find(
+    (c) => c.source_component_id === resistors[1].source_component_id,
+  )
+
+  expect(r1Source?.display_value).toBe("10kΩ")
   expect(resistors[1].props.name).toBe("R2")
   expect(resistors[1].props.resistance).toBe("20k")
+  expect(r2Source?.display_value).toBe("20kΩ")
 
   // Check if traces were created correctly
   const traces = circuit.selectAll("trace")

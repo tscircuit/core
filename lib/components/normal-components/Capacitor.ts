@@ -35,7 +35,12 @@ export class Capacitor extends NormalComponent<
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    return `${formatSiUnit(this._parsedProps.capacitance)}F`
+    // Handle both string and number formats, ensure µ symbol
+    const cap = this.props.capacitance
+    if (typeof cap === "string") {
+      return cap.replace("uF", "µF")
+    }
+    return `${formatSiUnit(cap)}F`
   }
 
   doInitialCreateNetsFromProps() {
@@ -68,12 +73,9 @@ export class Capacitor extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_capacitor",
       name: props.name,
-      // @ts-ignore
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
-      supplier_part_numbers: props.supplierPartNumbers,
-
+      display_value: this._getSchematicSymbolDisplayValue(),
       capacitance: props.capacitance,
-    } as SourceSimpleCapacitorInput)
+    } as any)
     this.source_component_id = source_component.source_component_id
   }
 }

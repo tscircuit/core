@@ -29,7 +29,9 @@ export class Resistor extends NormalComponent<
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    return `${formatSiUnit(this._parsedProps.resistance)}Ω`
+    // Handle both string and number formats, ensure Ω symbol
+    const res = this.props.resistance
+    return typeof res === "string" ? `${res}Ω` : `${formatSiUnit(res)}Ω`
   }
 
   doInitialCreateNetsFromProps() {
@@ -59,12 +61,9 @@ export class Resistor extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_resistor",
       name: props.name,
-      // @ts-ignore
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
-      supplier_part_numbers: props.supplierPartNumbers,
-
+      display_value: this._getSchematicSymbolDisplayValue(),
       resistance: props.resistance,
-    } as SourceSimpleResistorInput)
+    } as any)
     this.source_component_id = source_component.source_component_id
   }
 }
