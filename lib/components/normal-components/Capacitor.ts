@@ -1,5 +1,5 @@
 import { capacitorProps } from "@tscircuit/props"
-import type { SourceSimpleCapacitorInput } from "@tscircuit/soup"
+import type { SourceSimpleCapacitorInput } from "circuit-json"
 import {
   FTYPE,
   type BaseSymbolName,
@@ -73,6 +73,7 @@ export class Capacitor extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
 
       capacitance: props.capacitance,
+      display_capacitance: this._getSchematicSymbolDisplayValue(),
     } as SourceSimpleCapacitorInput)
     this.source_component_id = source_component.source_component_id
   }

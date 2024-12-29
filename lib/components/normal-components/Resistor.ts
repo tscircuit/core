@@ -1,5 +1,5 @@
 import { resistorProps } from "@tscircuit/props"
-import type { SourceSimpleResistorInput } from "@tscircuit/soup"
+import type { SourceSimpleResistorInput } from "circuit-json"
 import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
@@ -64,6 +64,7 @@ export class Resistor extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
 
       resistance: props.resistance,
+      display_resistance: this._getSchematicSymbolDisplayValue(),
     } as SourceSimpleResistorInput)
     this.source_component_id = source_component.source_component_id
   }
