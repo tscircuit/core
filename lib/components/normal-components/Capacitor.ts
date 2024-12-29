@@ -73,7 +73,8 @@ export class Capacitor extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
 
       capacitance: props.capacitance,
-    } as SourceSimpleCapacitorInput)
+      display_value: this._getSchematicSymbolDisplayValue(),
+    } as unknown as SourceSimpleCapacitorInput)
     this.source_component_id = source_component.source_component_id
   }
 }
