@@ -1,5 +1,5 @@
 import { capacitorProps } from "@tscircuit/props"
-import type { SourceSimpleCapacitorInput } from "@tscircuit/soup"
+import type { SourceSimpleCapacitorInput } from "circuit-json"
 import {
   FTYPE,
   type BaseSymbolName,

@@ -1,5 +1,5 @@
 import { resistorProps } from "@tscircuit/props"
-import type { SourceSimpleResistorInput } from "@tscircuit/soup"
+import type { SourceSimpleResistorInput } from "circuit-json"
 import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent"
 import { Port } from "../primitive-components/Port"
