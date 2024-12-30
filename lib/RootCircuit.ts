@@ -74,7 +74,7 @@ export class RootCircuit {
     }
     if (this.children.length === 0) {
       throw new Error(
-        "Not able to guess root component: Project has no children (use project.add(...))",
+        "Not able to guess root component: RootCircuit has no children (use circuit.add(...))",
       )
     }
 
@@ -88,7 +88,7 @@ export class RootCircuit {
       }
     }
     throw new Error(
-      "Not able to guess root component: Project has multiple children and no board",
+      "Not able to guess root component: RootCircuit has multiple children and no board",
     )
   }
 
@@ -97,7 +97,7 @@ export class RootCircuit {
       this._guessRootComponent()
     }
     const { firstChild, db } = this
-    if (!firstChild) throw new Error("Project has no root component")
+    if (!firstChild) throw new Error("RootCircuit has no root component")
     firstChild.parent = this as any
     firstChild.runRenderCycle()
     this._hasRenderedAtleastOnce = true
