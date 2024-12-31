@@ -416,8 +416,9 @@ export class NormalComponent<
         primaryPortLabels[port] = Array.isArray(label) ? label[0] : label
       }
     }
+    const center = this._getGlobalSchematicPositionBeforeLayout()
     const schematic_component = db.schematic_component.insert({
-      center: { x: props.schX ?? 0, y: props.schY ?? 0 },
+      center,
       rotation: props.schRotation ?? 0,
       size: dimensions.getSize(),
 
@@ -446,11 +447,11 @@ export class NormalComponent<
       rotation: 0,
       position: {
         x: hasTopOrBottomPins
-          ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2 + 0.1
-          : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
+          ? center.x + (schematic_box_width ?? 0) / 2 + 0.1
+          : center.x - (schematic_box_width ?? 0) / 2,
         y: hasTopOrBottomPins
-          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.35
-          : (props.schY ?? 0) - (schematic_box_height ?? 0) / 2 - 0.13,
+          ? center.y + (schematic_box_height ?? 0) / 2 + 0.35
+          : center.y - (schematic_box_height ?? 0) / 2 - 0.13,
       },
       color: "#006464",
     })
@@ -461,11 +462,11 @@ export class NormalComponent<
       rotation: 0,
       position: {
         x: hasTopOrBottomPins
-          ? (props.schX ?? 0) + (schematic_box_width ?? 0) / 2 + 0.1
-          : (props.schX ?? 0) - (schematic_box_width ?? 0) / 2,
+          ? center.x + (schematic_box_width ?? 0) / 2 + 0.1
+          : center.x - (schematic_box_width ?? 0) / 2,
         y: hasTopOrBottomPins
-          ? (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.55
-          : (props.schY ?? 0) + (schematic_box_height ?? 0) / 2 + 0.13,
+          ? center.y + (schematic_box_height ?? 0) / 2 + 0.55
+          : center.y + (schematic_box_height ?? 0) / 2 + 0.13,
       },
       color: "#006464",
     })
