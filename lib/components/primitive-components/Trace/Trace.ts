@@ -21,6 +21,7 @@ import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBoun
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
+import { getTraceLength } from "./compute-trace-length"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getClosest } from "lib/utils/getClosest"
 import { pairs } from "lib/utils/pairs"
@@ -38,6 +39,7 @@ import { createSchematicTraceJunctions } from "./create-schematic-trace-junction
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-ground-symbol"
+import { getMaxLengthFromConnectedCapacitors } from "./get-max-length-from-conn ected-capacitors"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -244,12 +246,15 @@ export class Trace
     const { allPortsFound, portsWithSelectors: ports } =
       this._findConnectedPorts()
     if (!allPortsFound) return
-
     const nets = this._findConnectedNets().nets
-
     const trace = db.source_trace.insert({
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
       connected_source_net_ids: nets.map((n) => n.source_net_id!),
+      max_length:
+        getMaxLengthFromConnectedCapacitors(
+          ports.map((p) => p.port),
+          { db },
+        ) ?? props.maxLength,
     })
 
     this.source_trace_id = trace.source_trace_id
@@ -572,12 +577,13 @@ export class Trace
       }
       routes.push(trace.route)
     }
-
     const mergedRoute = mergeRoutes(routes)
 
+    const traceLength = getTraceLength(mergedRoute)
     const pcb_trace = db.pcb_trace.insert({
       route: mergedRoute,
       source_trace_id: this.source_trace_id!,
+      trace_length: traceLength,
     })
     this._portsRoutedOnPcb = ports
     this.pcb_trace_id = pcb_trace.pcb_trace_id
