@@ -22,9 +22,9 @@ test("Chip should support pin labels in schPinStyle", () => {
           // Should work with pin numbers
           pin1: { topMargin: 0.4 },
           // Should work with primary pin labels
-          GND: { bottomMargin: 0.3 },
+          VCC: { topMargin: 0.3 },
           // Should work with alternate pin labels
-          A4: { leftMargin: 0.2 },
+          A4: { topMargin: 0.2 },
         }}
         schPortArrangement={{
           leftSide: {
@@ -41,10 +41,28 @@ test("Chip should support pin labels in schPinStyle", () => {
 
   // The schematic component should be created with the correct pin styles
   const schComponent = circuit.db.schematic_component.list()[0]
-  expect(schComponent.pin_styles).toBeDefined()
-  expect(schComponent.pin_styles?.pin1?.top_margin).toBe(0.4)
-  expect(schComponent.pin_styles?.pin1?.bottom_margin).toBe(0.3)
-  expect(schComponent.pin_styles?.pin3?.left_margin).toBe(0.2)
+  expect(schComponent.pin_styles).toMatchInlineSnapshot(`
+{
+  "pin1": {
+    "bottom_margin": undefined,
+    "left_margin": undefined,
+    "right_margin": undefined,
+    "top_margin": 0.4,
+  },
+  "pin2": {
+    "bottom_margin": undefined,
+    "left_margin": undefined,
+    "right_margin": undefined,
+    "top_margin": 0.3,
+  },
+  "pin3": {
+    "bottom_margin": undefined,
+    "left_margin": undefined,
+    "right_margin": undefined,
+    "top_margin": 0.2,
+  },
+}
+`)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

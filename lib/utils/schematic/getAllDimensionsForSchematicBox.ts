@@ -50,7 +50,7 @@ interface Params {
   schHeight?: number
   portDistanceFromEdge?: number
   schPinSpacing: number
-  schPinStyle?: Record<
+  numericSchPinStyle?: Record<
     `pin${number}` | number | `${number}`,
     {
       leftMargin?: number
@@ -195,7 +195,8 @@ export const getAllDimensionsForSchematicBox = (
     })
 
     const pinStyle =
-      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
+      params.numericSchPinStyle?.[`pin${pinNumber}`] ??
+      params.numericSchPinStyle?.[pinNumber]
 
     if (pinStyle?.topMargin) {
       currentDistanceFromEdge += pinStyle.topMargin
@@ -231,7 +232,8 @@ export const getAllDimensionsForSchematicBox = (
     })
 
     const pinStyle =
-      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
+      params.numericSchPinStyle?.[`pin${pinNumber}`] ??
+      params.numericSchPinStyle?.[pinNumber]
 
     if (pinStyle?.leftMargin) {
       currentDistanceFromEdge += pinStyle.leftMargin
@@ -267,7 +269,8 @@ export const getAllDimensionsForSchematicBox = (
     })
 
     const pinStyle =
-      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
+      params.numericSchPinStyle?.[`pin${pinNumber}`] ??
+      params.numericSchPinStyle?.[pinNumber]
 
     if (pinStyle?.bottomMargin) {
       currentDistanceFromEdge += pinStyle.bottomMargin
@@ -303,7 +306,8 @@ export const getAllDimensionsForSchematicBox = (
     })
 
     const pinStyle =
-      params.schPinStyle?.[`pin${pinNumber}`] ?? params.schPinStyle?.[pinNumber]
+      params.numericSchPinStyle?.[`pin${pinNumber}`] ??
+      params.numericSchPinStyle?.[pinNumber]
 
     if (pinStyle?.rightMargin) {
       currentDistanceFromEdge += pinStyle.rightMargin

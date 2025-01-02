@@ -38,6 +38,7 @@ import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
+import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 
 const debug = Debug("tscircuit:core")
 
@@ -819,7 +820,10 @@ export class NormalComponent<
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
-      schPinStyle: props.schPinStyle,
+      numericSchPinStyle: getNumericSchPinStyle(
+        props.schPinStyle,
+        props.pinLabels,
+      ),
 
       pinCount,
 

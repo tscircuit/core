@@ -7,7 +7,7 @@ test("getAllDimensionsForSchematicBox 1", () => {
   const params: Parameters<typeof getAllDimensionsForSchematicBox>[0] = {
     schWidth: 1,
     schPinSpacing: 0.2,
-    schPinStyle: {},
+    numericSchPinStyle: {},
     pinCount: 8,
   }
 
@@ -23,7 +23,7 @@ test("getAllDimensionsForSchematicBox 2 (pinStyle)", () => {
   const params: Parameters<typeof getAllDimensionsForSchematicBox>[0] = {
     schWidth: 1,
     schPinSpacing: 0.2,
-    schPinStyle: {
+    numericSchPinStyle: {
       pin2: { bottomMargin: 0.5 },
       pin7: { topMargin: 0.5 },
     },
@@ -41,7 +41,7 @@ test("getAllDimensionsForSchematicBox 2 (pinStyle)", () => {
 test("getAllDimensionsForSchematicBox 3 (4 sided with margins)", () => {
   const params: Parameters<typeof getAllDimensionsForSchematicBox>[0] = {
     schPinSpacing: 0.2,
-    schPinStyle: {
+    numericSchPinStyle: {
       pin6: { bottomMargin: 0.5 },
       pin9: { topMargin: 0.4 },
       pin13: { leftMargin: 0.2 },
