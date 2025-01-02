@@ -18,7 +18,7 @@ export const underscorifyPinStyles = (
     [string, SchematicPinStyle]
   >) {
     const pinNumber = parsePinNumberFromLabelsOrThrow(pinNameOrLabel, pinLabels)
-    
+
     // Merge with existing styles for this pin
     mergedStyles[pinNumber] = {
       ...mergedStyles[pinNumber],
