@@ -429,7 +429,7 @@ export class NormalComponent<
       pin_spacing: props.schPinSpacing ?? 0.2,
 
       // @ts-ignore soup needs to support distance for pin_styles
-      pin_styles: underscorifyPinStyles(props.schPinStyle),
+      pin_styles: underscorifyPinStyles(props.schPinStyle, props.pinLabels),
 
       port_labels: primaryPortLabels,
 
