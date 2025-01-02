@@ -38,6 +38,7 @@ import { Footprint } from "../primitive-components/Footprint"
 import { Port } from "../primitive-components/Port"
 import { PrimitiveComponent } from "./PrimitiveComponent"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
+import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 
 const debug = Debug("tscircuit:core")
 
@@ -429,7 +430,7 @@ export class NormalComponent<
       pin_spacing: props.schPinSpacing ?? 0.2,
 
       // @ts-ignore soup needs to support distance for pin_styles
-      pin_styles: underscorifyPinStyles(props.schPinStyle),
+      pin_styles: underscorifyPinStyles(props.schPinStyle, props.pinLabels),
 
       port_labels: primaryPortLabels,
 
@@ -819,7 +820,10 @@ export class NormalComponent<
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
-      schPinStyle: props.schPinStyle,
+      numericSchPinStyle: getNumericSchPinStyle(
+        props.schPinStyle,
+        props.pinLabels,
+      ),
 
       pinCount,
 
