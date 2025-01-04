@@ -22,13 +22,12 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     }
   }
 
-  doInitialSchematicComponentRender() {
-    // Check if schematic representation should be disabled before any rendering
-    const rawProps = this._parsedProps as Record<string, unknown>
-    if (rawProps.noSchematicRepresentation === true && this.root) {
-      this.root.schematicDisabled = true
-      return
-    }
+  doInitialSchematicComponentRender(): void {
+    const { _parsedProps: props } = this
+    // Early return if noSchematicRepresentation is true
+    if (props?.noSchematicRepresentation === true) return
+
+    // Continue with normal schematic rendering
     super.doInitialSchematicComponentRender()
   }
 

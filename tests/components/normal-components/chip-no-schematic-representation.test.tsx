@@ -26,17 +26,40 @@ it("should not render chip in schematic when noSchematicRepresentation is true",
   expect(isChipInSchematic).toBe(false)
 })
 
-it("should render chip in schematic when noSchematicRepresentation is false or undefined", async () => {
+it("should render chip in schematic when noSchematicRepresentation is false", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
-      <chip name="U2" manufacturerPartNumber="ATmega8-16A" />
+      <chip
+        name="U2"
+        manufacturerPartNumber="ATmega8-16A"
+        noSchematicRepresentation={false}
+      />
     </board>,
   )
   circuit.render()
 
   // Verify that the chip exists and is in schematic
   const chip = circuit.selectOne("chip[name='U2']")
+  expect(chip).not.toBeNull()
+  expect(chip!.props.noSchematicRepresentation).toBe(false)
+  const schematic_component = circuit.db.schematic_component.list()
+  const isChipInSchematic = schematic_component.some(
+    (sc) => sc.source_component_id === chip!.source_component_id,
+  )
+  expect(isChipInSchematic).toBe(true)
+})
+
+it("should render chip in schematic when noSchematicRepresentation is undefined", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <chip name="U3" manufacturerPartNumber="ATmega8-16A" />
+    </board>,
+  )
+  circuit.render()
+  // Verify that the chip exists and is in schematic
+  const chip = circuit.selectOne("chip[name='U3']")
   expect(chip).not.toBeNull()
   expect(chip!.props.noSchematicRepresentation).toBeUndefined()
 
