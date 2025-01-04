@@ -15,12 +15,21 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   schematicBoxDimensions: SchematicBoxDimensions | null = null
 
   get config() {
-    const { _parsedProps: props } = this
     return {
       componentName: "Chip",
       zodProps: chipProps,
-      shouldRenderAsSchematicBox: props?.noSchematicRepresentation !== true,
+      shouldRenderAsSchematicBox: true,
     }
+  }
+
+  doInitialSchematicComponentRender() {
+    // Check if schematic representation should be disabled before any rendering
+    const rawProps = this._parsedProps as Record<string, unknown>
+    if (rawProps.noSchematicRepresentation === true && this.root) {
+      this.root.schematicDisabled = true
+      return
+    }
+    super.doInitialSchematicComponentRender()
   }
 
   doInitialSourceRender(): void {
