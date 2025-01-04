@@ -40,6 +40,7 @@ import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schem
 import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-ground-symbol"
 import { getMaxLengthFromConnectedCapacitors } from "./get-max-length-from-conn ected-capacitors"
+import { getTraceDisplayName } from "./get-trace-display-name"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -247,6 +248,7 @@ export class Trace
       this._findConnectedPorts()
     if (!allPortsFound) return
     const nets = this._findConnectedNets().nets
+    const displayName = getTraceDisplayName({ ports: ports, nets: nets })
     const trace = db.source_trace.insert({
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
       connected_source_net_ids: nets.map((n) => n.source_net_id!),
@@ -255,6 +257,7 @@ export class Trace
           ports.map((p) => p.port),
           { db },
         ) ?? props.maxLength,
+      display_name: displayName,
     })
 
     this.source_trace_id = trace.source_trace_id
