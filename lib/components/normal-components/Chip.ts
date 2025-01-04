@@ -22,17 +22,29 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     }
   }
 
+  doInitialSchematicComponentRender(): void {
+    const { _parsedProps: props } = this
+    // Early return if noSchematicRepresentation is true
+    if (props?.noSchematicRepresentation === true) return
+
+    // Continue with normal schematic rendering
+    super.doInitialSchematicComponentRender()
+  }
+
   doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
+
     const source_component = db.source_component.insert({
       ftype: "simple_chip",
       name: props.name,
       manufacturer_part_number: props.manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
     })
+
     this.source_component_id = source_component.source_component_id!
   }
+
   doInitialPcbComponentRender() {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -46,6 +58,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
     })
+
     this.pcb_component_id = pcb_component.pcb_component_id
   }
 }
