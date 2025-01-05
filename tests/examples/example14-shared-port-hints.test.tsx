@@ -7,18 +7,14 @@ test("example14-shared-port-hints", async () => {
 
   circuit.add(
     <board width="20mm" height="30mm">
-      <MyComponent name="U1" pcbX={0} pcbY={0} />
+      <MyComponent name="U1" />
     </board>,
   )
 
   circuit.render()
 })
 
-interface Props extends CommonLayoutProps {
-  name: string
-}
-
-const MyComponent = (props: Props) => {
+const MyComponent = (props: { name: string }) => {
   return (
     <chip
       {...props}
