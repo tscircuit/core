@@ -8,9 +8,9 @@ export const getCenterOfPcbPrimitives = (
   }
 
   // Get positions of all primitives
-  const positions = pcbPrimitives.map((p) =>
-    p._getGlobalPcbPositionBeforeLayout(),
-  )
+  const positions = pcbPrimitives
+    .map((p) => p._getPcbCircuitJsonBounds().center)
+    .filter(Boolean)
 
   // Calculate average x and y coordinates
   const sumX = positions.reduce((sum, pos) => sum + pos.x, 0)

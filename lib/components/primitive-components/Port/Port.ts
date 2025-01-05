@@ -225,7 +225,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     let matchCenter: { x: number; y: number } | null = null
 
     if (pcbMatches.length === 1) {
-      matchCenter = pcbMatches[0]._getGlobalPcbPositionBeforeLayout()
+      matchCenter = pcbMatches[0]._getPcbCircuitJsonBounds().center
     }
 
     if (pcbMatches.length > 1) {
@@ -238,8 +238,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       matchCenter = getCenterOfPcbPrimitives(pcbMatches)
     }
 
-    const pcbMatch: any = pcbMatches[0]
-
     if (matchCenter) {
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
@@ -251,6 +249,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       })
       this.pcb_port_id = pcb_port.pcb_port_id
     } else {
+      const pcbMatch: any = pcbMatches[0]
       throw new Error(
         `${pcbMatch.getString()} does not have a center or _getGlobalPcbPositionBeforeLayout method (needed for pcb_port placement)`,
       )
