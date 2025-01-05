@@ -6,8 +6,11 @@ import type {
 import { type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
 import { z } from "zod"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { Trace } from "./Trace/Trace"
+import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import type { Trace } from "../Trace/Trace"
+import type { LayerRef } from "circuit-json"
+import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
+import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
 
 export const portProps = z.object({
   name: z.string().optional(),
@@ -152,10 +155,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // TODO this.parent.getSubcircuitSelector() >
     return `.${this.parent?.props.name} > port.${this.props.name}`
   }
-  getAvailablePcbLayers(): string[] {
+  getAvailablePcbLayers(): LayerRef[] {
     return Array.from(
       new Set(this.matchedComponents.flatMap((c) => c.getAvailablePcbLayers())),
-    )
+    ) as LayerRef[]
   }
 
   /**
@@ -219,27 +222,36 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (pcbMatches.length === 0) return
 
-    if (pcbMatches.length > 1) {
-      throw new Error(
-        `${this.getString()} has multiple pcb matches, unclear how to place pcb_port: ${pcbMatches.map((c) => c.getString()).join(", ")}`,
-      )
+    let matchCenter: { x: number; y: number } | null = null
+
+    if (pcbMatches.length === 1) {
+      matchCenter = pcbMatches[0]._getPcbCircuitJsonBounds().center
     }
 
-    const pcbMatch: any = pcbMatches[0]
+    if (pcbMatches.length > 1) {
+      if (!areAllPcbPrimitivesOverlapping(pcbMatches)) {
+        throw new Error(
+          `${this.getString()} has multiple non-overlapping pcb matches, unclear how to place pcb_port: ${pcbMatches.map((c) => c.getString()).join(", ")}. (Note: tscircuit core does not currently allow you to specify internally connected pcb primitives with the same port hints, try giving them different port hints and specifying they are connected externally- or file an issue)`,
+        )
+      }
 
-    if ("_getPcbCircuitJsonBounds" in pcbMatch) {
+      matchCenter = getCenterOfPcbPrimitives(pcbMatches)
+    }
+
+    if (matchCenter) {
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
         layers: this.getAvailablePcbLayers(),
 
-        ...pcbMatch._getPcbCircuitJsonBounds().center,
+        ...matchCenter,
 
         source_port_id: this.source_port_id!,
       })
       this.pcb_port_id = pcb_port.pcb_port_id
     } else {
+      const pcbMatch: any = pcbMatches[0]
       throw new Error(
-        `${pcbMatch.getString()} does not have a _getGlobalPcbPositionBeforeLayout method (needed for pcb_port placement)`,
+        `${pcbMatch.getString()} does not have a center or _getGlobalPcbPositionBeforeLayout method (needed for pcb_port placement)`,
       )
     }
   }

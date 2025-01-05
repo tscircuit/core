@@ -47,9 +47,9 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       center: { x: platedHole.x, y: platedHole.y },
       bounds: {
         left: platedHole.x - size.width / 2,
-        top: platedHole.y - size.height / 2,
+        top: platedHole.y + size.height / 2,
         right: platedHole.x + size.width / 2,
-        bottom: platedHole.y + size.height / 2,
+        bottom: platedHole.y - size.height / 2,
       },
       width: size.width,
       height: size.height,

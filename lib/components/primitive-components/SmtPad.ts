@@ -173,9 +173,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         center: { x: smtpad.x, y: smtpad.y },
         bounds: {
           left: smtpad.x - smtpad.width / 2,
-          top: smtpad.y - smtpad.height / 2,
+          top: smtpad.y + smtpad.height / 2,
           right: smtpad.x + smtpad.width / 2,
-          bottom: smtpad.y + smtpad.height / 2,
+          bottom: smtpad.y - smtpad.height / 2,
         },
         width: smtpad.width,
         height: smtpad.height,

@@ -42,7 +42,7 @@ export const getSimpleRouteJsonFromTracesAndDb = ({
   }
 
   // Create connections from traces
-  const connections = traces
+  const connections: SimpleRouteConnection[] = traces
     .map((trace) => {
       const connectedPorts = trace._findConnectedPorts()
       if (!connectedPorts.allPortsFound || connectedPorts.ports.length < 2)
@@ -55,7 +55,7 @@ export const getSimpleRouteJsonFromTracesAndDb = ({
           return {
             x: pos.x,
             y: pos.y,
-            layer: port.getAvailablePcbLayers()[0] ?? "top",
+            layer: (port.getAvailablePcbLayers()[0] ?? "top") as any,
           }
         }),
       }
