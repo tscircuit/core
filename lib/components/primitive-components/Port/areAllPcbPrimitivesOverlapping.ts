@@ -16,23 +16,41 @@ export const areAllPcbPrimitivesOverlapping = (
     }
   })
 
-  // Check each primitive against every other primitive
+  // Build an adjacency matrix representing overlapping primitives
+  const overlaps: boolean[][] = Array(bounds.length)
+    .fill(false)
+    .map(() => Array(bounds.length).fill(false))
+
+  // Fill adjacency matrix
   for (let i = 0; i < bounds.length; i++) {
     for (let j = i + 1; j < bounds.length; j++) {
       const a = bounds[i]
       const b = bounds[j]
 
       // Check if bounding boxes overlap
-      const overlap = !(
+      overlaps[i][j] = overlaps[j][i] = !(
         a.right < b.left ||
         a.left > b.right ||
         a.bottom > b.top ||
         a.top < b.bottom
       )
-
-      if (!overlap) return false
     }
   }
 
-  return true
+  // Use DFS to check if all primitives are connected
+  const visited = new Set<number>()
+  const dfs = (node: number) => {
+    visited.add(node)
+    for (let i = 0; i < bounds.length; i++) {
+      if (overlaps[node][i] && !visited.has(i)) {
+        dfs(i)
+      }
+    }
+  }
+
+  // Start DFS from first primitive
+  dfs(0)
+
+  // Check if all primitives were visited
+  return visited.size === bounds.length
 }
