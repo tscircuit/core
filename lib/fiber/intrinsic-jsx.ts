@@ -47,6 +47,7 @@ export interface TscircuitElements {
   resonator: Props.ResonatorProps
   subcircuit: Props.SubcircuitGroupProps
   transistor: Props.TransistorProps
+  mosfet: Props.MosfetProps
   jscad: any
 }
 
