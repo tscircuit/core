@@ -56,9 +56,6 @@ export class Board extends Group<typeof boardProps> {
     if (!props.width || !props.height) {
       throw new Error("Board width and height or an outline are required")
     }
-    if (!props.pcbOffsetX || !props.pcbOffsetY) {
-      throw new Error("Board pcbOffsetX and pcbOffsetY are required")
-    }
 
     const pcb_board = db.pcb_board.insert({
       center: { x: props.pcbX ?? 0, y: props.pcbY ?? 0 },
@@ -70,6 +67,7 @@ export class Board extends Group<typeof boardProps> {
       pcbOffsetX: props.pcbOffsetX,
       pcbOffsetY: props.pcbOffsetY,
     } as PcbBoardWithOffsets)
+
     this.pcb_board_id = pcb_board.pcb_board_id ?? null
   }
 
