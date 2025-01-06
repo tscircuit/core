@@ -41,14 +41,20 @@ export class Board extends Group<typeof boardProps> {
     }
 
     const pcb_board = db.pcb_board.insert({
-      center: { x: props.pcbX ?? 0, y: props.pcbY ?? 0 },
+      center: {
+        x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
+        y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
+      },
 
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
 
       width: props.width,
       height: props.height,
-      outline: props.outline,
+      outline: props.outline?.map((point) => ({
+        x: point.x + (props.outlineOffsetX ?? 0),
+        y: point.y + (props.outlineOffsetY ?? 0),
+      })),
     })
 
     this.pcb_board_id = pcb_board.pcb_board_id!
