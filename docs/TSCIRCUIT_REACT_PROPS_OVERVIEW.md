@@ -200,6 +200,8 @@ export interface BoardProps {
    * sophisticated layout options/modes and will be enabled by default.
    */
   schAutoLayoutEnabled?: boolean
+  pcbOffsetX?: number | string
+  pcbOffsetY?: number | string
 }
 
 
