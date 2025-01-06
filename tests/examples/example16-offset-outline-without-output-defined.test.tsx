@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("Board outline offset", async () => {
+test("offsetOutline without output defined", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
