@@ -48,7 +48,10 @@ export class Board extends Group<typeof boardProps> {
 
       width: props.width,
       height: props.height,
-      outline: props.outline,
+      outline: props.outline?.map((point) => ({
+        x: point.x + (props.outlineOffsetX ?? 0),
+        y: point.y + (props.outlineOffsetY ?? 0),
+      })),
     })
 
     this.pcb_board_id = pcb_board.pcb_board_id!
