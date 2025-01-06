@@ -344,4 +344,8 @@ export interface PcbBoard {
   center: Point
   outline?: Point[]
 }
+type PcbBoardWithOffsets = PcbBoard & {
+  pcbOffsetX: number;
+  pcbOffsetY: number;
+};
 ```
