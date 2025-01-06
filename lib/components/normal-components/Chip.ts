@@ -19,6 +19,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       componentName: "Chip",
       zodProps: chipProps,
       shouldRenderAsSchematicBox: true,
+      schematicSymbolName: this.props.symbolName,
     }
   }
 
