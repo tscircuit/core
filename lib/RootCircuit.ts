@@ -7,8 +7,9 @@ import { createInstanceFromReactElement } from "./fiber/create-instance-from-rea
 import { identity, type Matrix } from "transformation-matrix"
 import type { RenderPhase } from "./components/base-components/Renderable"
 
-type RootCircuitEventName =
-  | "asyncEffectComplete"
+export type RootCircuitEventName =
+  | "asyncEffect:start"
+  | "asyncEffect:end"
   | "renderable:renderLifecycle:anyEvent"
   | `renderable:renderLifecycle:${RenderPhase}:start`
   | `renderable:renderLifecycle:${RenderPhase}:end`

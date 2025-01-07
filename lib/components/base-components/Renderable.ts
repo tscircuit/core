@@ -114,6 +114,11 @@ export abstract class Renderable implements IRenderable {
       complete: false,
     }
     this._asyncEffects.push(asyncEffect)
+    ;(this as any).root.emit("asyncEffect:start", {
+      effectName,
+      componentDisplayName: this.getString(),
+      phase: asyncEffect.phase,
+    })
 
     // Set up completion handler
     asyncEffect.promise
@@ -121,7 +126,7 @@ export abstract class Renderable implements IRenderable {
         asyncEffect.complete = true
         // HACK: emit to the root circuit component that an async effect has completed
         if ("root" in this && this.root) {
-          ;(this.root as any).emit("asyncEffectComplete", {
+          ;(this.root as any).emit("asyncEffect:end", {
             effectName,
             componentDisplayName: this.getString(),
             phase: asyncEffect.phase,
@@ -136,7 +141,7 @@ export abstract class Renderable implements IRenderable {
 
         // HACK: emit to the root circuit component that an async effect has completed
         if ("root" in this && this.root) {
-          ;(this.root as any).emit("asyncEffectComplete", {
+          ;(this.root as any).emit("asyncEffect:end", {
             effectName,
             componentDisplayName: this.getString(),
             phase: asyncEffect.phase,
