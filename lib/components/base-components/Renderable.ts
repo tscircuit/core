@@ -114,11 +114,14 @@ export abstract class Renderable implements IRenderable {
       complete: false,
     }
     this._asyncEffects.push(asyncEffect)
-    ;(this as any).root.emit("asyncEffect:start", {
-      effectName,
-      componentDisplayName: this.getString(),
-      phase: asyncEffect.phase,
-    })
+
+    if ("root" in this && this.root) {
+      ;(this.root as any).emit("asyncEffect:start", {
+        effectName,
+        componentDisplayName: this.getString(),
+        phase: asyncEffect.phase,
+      })
+    }
 
     // Set up completion handler
     asyncEffect.promise
