@@ -148,21 +148,19 @@ export abstract class Renderable implements IRenderable {
 
   protected _emitRenderLifecycleEvent(
     phase: RenderPhase,
-    eventType: "start" | "end",
+    startOrEnd: "start" | "end",
   ) {
+    const granular_event_type = `renderable:renderLifecycle:${phase}:${startOrEnd}`
     const eventPayload = {
       renderId: this._renderId,
       componentDisplayName: this.getString(),
+      type: granular_event_type,
     }
-    const eventName = `renderable:renderLifecycle:${phase}:${eventType}`
     if ("root" in this && this.root) {
-      ;(this.root as any).emit(eventName, {
-        ...eventPayload,
-        type: eventName,
-      })
+      ;(this.root as any).emit(granular_event_type, eventPayload)
       ;(this.root as any).emit("renderable:renderLifecycle:anyEvent", {
         ...eventPayload,
-        type: eventName,
+        type: granular_event_type,
       })
     }
   }
