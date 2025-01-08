@@ -9,5 +9,8 @@ export * from "./hooks/use-led"
 export * from "./hooks/use-resistor"
 export * from "./utils/public-exports"
 
+// Allows easier introspection of render process
+export * from "./components/base-components/Renderable"
+
 import "./register-catalogue"
 import "./fiber/intrinsic-jsx"

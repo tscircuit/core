@@ -89,6 +89,8 @@ export class Net extends PrimitiveComponent<typeof netProps> {
    */
   doInitialPcbRouteNetIslands(): void {
     if (this.root?.pcbDisabled) return
+    if (this.getSubcircuit()._parsedProps.routingDisabled) return
+
     const { db } = this.root!
     const { _parsedProps: props } = this
 
