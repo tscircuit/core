@@ -28,9 +28,7 @@ import type { TraceI } from "../Trace/TraceI"
 import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import Debug from "debug"
 
-export class Group<
-    Props extends z.ZodType<any, any, any> = typeof subcircuitGroupProps,
-  >
+export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
   implements ISubcircuit
 {
