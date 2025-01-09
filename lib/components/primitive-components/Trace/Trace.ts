@@ -886,17 +886,6 @@ export class Trace
       isRemovePathLoopsEnabled: true,
       isShortenPathWithShortcutsEnabled: true,
     })
-    if ("marginsWithCosts" in autorouter) {
-      // console.log("autorouter.marginsWithCosts", autorouter.marginsWithCosts)
-      // console.log("autorouter.GREEDY_MULTIPLIER", autorouter.GREEDY_MULTIPLIER)
-      autorouter.marginsWithCosts = [
-        {
-          margin: 0.1,
-          enterCost: 10,
-          travelCostFactor: 2,
-        },
-      ]
-    }
     const results = autorouter.solveAndMapToTraces()
 
     if (results.length === 0) return
