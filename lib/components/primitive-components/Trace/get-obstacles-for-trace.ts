@@ -21,22 +21,32 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
   // Add obstacles from components and ports
   for (const elm of db.toArray()) {
     if (elm.type === "schematic_component") {
+      const pinMargin = 0
       obstacles.push({
         type: "rect",
         layers: ["top"],
         center: elm.center,
-        width: elm.size.width,
+        width: elm.size.width + pinMargin,
         height: elm.size.height,
         connectedTo: [],
       })
     }
     if (elm.type === "schematic_port") {
+      const dirVec = elm.facing_direction
+        ? getUnitVectorFromDirection(elm.facing_direction)
+        : {
+            x: 0,
+            y: 0,
+          }
       obstacles.push({
         type: "rect",
         layers: ["top"],
-        center: elm.center,
-        width: 0.1,
-        height: 0.1,
+        center: {
+          x: elm.center.x - dirVec.x * 0.1,
+          y: elm.center.y - dirVec.y * 0.1,
+        },
+        width: 0.1 + Math.abs(dirVec.x) * 0.4,
+        height: 0.1 + Math.abs(dirVec.y) * 0.4,
         connectedTo: [],
       })
     }

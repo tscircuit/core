@@ -805,9 +805,9 @@ export class Trace
 
     const bounds = computeObstacleBounds(obstacles)
 
-    const BOUNDS_MARGIN = 1 // mm
+    const BOUNDS_MARGIN = 2 // mm
     const simpleRouteJsonInput: SimpleRouteJson = {
-      minTraceWidth: 0.1,
+      minTraceWidth: 0.01,
       obstacles,
       connections: [connection],
       bounds: {
@@ -826,13 +826,23 @@ export class Trace
 
     const autorouter = new Autorouter({
       input: simpleRouteJsonInput,
+      // MAX_ITERATIONS: 30,
       OBSTACLE_MARGIN: 0.1,
       isRemovePathLoopsEnabled: true,
-      isShortenPathWithShortcutsEnabled: false,
+      isShortenPathWithShortcutsEnabled: true,
     })
-    const results = autorouter.solveAndMapToTraces()
+    let results = autorouter.solveAndMapToTraces()
 
-    if (results.length === 0) return
+    if (results.length === 0) {
+      if (this._isPassiveToChipConnection()) {
+        this._doInitialSchematicTraceRenderWithDisplayLabel()
+        return
+      }
+      const directLineRouter = new DirectLineRouter({
+        input: simpleRouteJsonInput,
+      })
+      results = directLineRouter.solveAndMapToTraces()
+    }
 
     const [{ route }] = results
 
@@ -895,22 +905,23 @@ export class Trace
       throw new Error("Missing source_trace_id for schematic trace insertion.")
     }
 
+    // Automatic net label assignment for complex traces
+    // TODO enable at subcircuit level
     // Use net labels for complex traces between chips and passive components
-    if (
-      countComplexElements(junctions, edges) >= 5 &&
-      this._isPassiveToChipConnection()
-    ) {
-      this._doInitialSchematicTraceRenderWithDisplayLabel()
-      db.schematic_trace.delete(this.schematic_trace_id!)
-    }
+    // if (
+    //   countComplexElements(junctions, edges) >= 5 &&
+    //   this._isPassiveToChipConnection()
+    // ) {
+    //   this._doInitialSchematicTraceRenderWithDisplayLabel()
+    //   db.schematic_trace.delete(this.schematic_trace_id!)
+    // }
+
     // Insert schematic trace
-    else {
-      const trace = db.schematic_trace.insert({
-        source_trace_id: this.source_trace_id!,
-        edges,
-        junctions,
-      })
-      this.schematic_trace_id = trace.schematic_trace_id
-    }
+    const trace = db.schematic_trace.insert({
+      source_trace_id: this.source_trace_id!,
+      edges,
+      junctions,
+    })
+    this.schematic_trace_id = trace.schematic_trace_id
   }
 }
