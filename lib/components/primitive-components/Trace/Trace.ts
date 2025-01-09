@@ -726,7 +726,7 @@ export class Trace
     })
   }
 
-  private _isPassiveToChipConnection(): boolean | undefined {
+  private _isSymbolToChipConnection(): boolean | undefined {
     const { allPortsFound, ports } = this._findConnectedPorts()
     if (!allPortsFound || ports.length !== 2) return false
     const [port1, port2] = ports
@@ -734,6 +734,16 @@ export class Trace
     const isPort1Chip = port1.parent.config.shouldRenderAsSchematicBox
     const isPort2Chip = port2.parent.config.shouldRenderAsSchematicBox
     return (isPort1Chip && !isPort2Chip) || (!isPort1Chip && isPort2Chip)
+  }
+
+  private _isSymbolToSymbolConnection(): boolean | undefined {
+    const { allPortsFound, ports } = this._findConnectedPorts()
+    if (!allPortsFound || ports.length !== 2) return false
+    const [port1, port2] = ports
+    if (!port1?.parent || !port2?.parent) return false
+    const isPort1Symbol = !port1.parent.config.shouldRenderAsSchematicBox
+    const isPort2Symbol = !port2.parent.config.shouldRenderAsSchematicBox
+    return isPort1Symbol && isPort2Symbol
   }
 
   doInitialSchematicTraceRender(): void {
@@ -842,7 +852,11 @@ export class Trace
     let results = autorouter.solveAndMapToTraces()
 
     if (results.length === 0) {
-      if (this._isPassiveToChipConnection()) {
+      console.log(this.getString())
+      if (
+        this._isSymbolToChipConnection() ||
+        this._isSymbolToSymbolConnection()
+      ) {
         this._doInitialSchematicTraceRenderWithDisplayLabel()
         return
       }
@@ -872,19 +886,16 @@ export class Trace
     if (!skipOtherTraceInteraction) {
       // Check if these edges run along any other schematic traces, if they do
       // push them out of the way
-      console.log("running pushEdgesOfSchematicTraceToPreventOverlap")
       pushEdgesOfSchematicTraceToPreventOverlap({ edges, db, source_trace_id })
 
       // Find all intersections between myEdges and all otherEdges and create a
       // segment representing the crossing. Wherever there's a crossing, we create
       // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
-      console.log("running createSchematicTraceCrossingSegments")
       createSchematicTraceCrossingSegments({ edges, db, source_trace_id })
 
       // Find all the intersections between myEdges and edges connected to the
       // same net and create junction points
       // Calculate junctions where traces of the same net intersect
-      console.log("running createSchematicTraceJunctions")
       junctions = createSchematicTraceJunctions({
         edges,
         db,
