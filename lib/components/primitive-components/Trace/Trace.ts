@@ -41,6 +41,7 @@ import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-ground-symbol"
 import { getMaxLengthFromConnectedCapacitors } from "./get-max-length-from-conn ected-capacitors"
 import { getTraceDisplayName } from "./get-trace-display-name"
+import { getObstaclesForTrace } from "./get-obstacles-for-trace"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -748,11 +749,6 @@ export class Trace
 
     if (!allPortsFound) return
 
-    const obstacles: Obstacle[] = []
-    const connection: SimpleRouteConnection = {
-      name: this.source_trace_id!,
-      pointsToConnect: [],
-    }
     if (
       this.props.schDisplayLabel &&
       (("from" in this.props && "to" in this.props) || "path" in this.props)
@@ -761,68 +757,11 @@ export class Trace
       return
     }
 
-    // Add obstacles from components and ports
-    for (const elm of db.toArray()) {
-      if (elm.type === "schematic_component") {
-        obstacles.push({
-          type: "rect",
-          layers: ["top"],
-          center: elm.center,
-          width: elm.size.width,
-          height: elm.size.height,
-          connectedTo: [],
-        })
-      }
-      if (elm.type === "schematic_port") {
-        obstacles.push({
-          type: "rect",
-          layers: ["top"],
-          center: elm.center,
-          width: 0.1,
-          height: 0.1,
-          connectedTo: [],
-        })
-      }
-      if (elm.type === "schematic_text") {
-        obstacles.push({
-          type: "rect",
-          layers: ["top"],
-          center: elm.position,
-          width: (elm.text?.length ?? 0) * 0.1,
-          height: 0.2,
-          connectedTo: [],
-        })
-      }
-      if (elm.type === "schematic_box") {
-        obstacles.push({
-          type: "rect",
-          layers: ["top"],
-          center: { x: elm.x, y: elm.y },
-          width: elm.width,
-          height: elm.width,
-          connectedTo: [],
-        })
-      }
-      if (elm.type === "schematic_net_label" && elm.symbol_name) {
-        obstacles.push({
-          type: "rect",
-          layers: ["top"],
-          center: elm.center,
-          width: 0.25,
-          height: 0.6,
-          connectedTo: [],
-        })
-      } else if (elm.type === "schematic_net_label") {
-        obstacles.push({
-          type: "rect",
-          layers: ["top"],
-          center: elm.center,
-          width: (elm.text?.length ?? 0) * 0.1,
-          height: 0.2,
-          connectedTo: [],
-        })
-      }
+    const connection: SimpleRouteConnection = {
+      name: this.source_trace_id!,
+      pointsToConnect: [],
     }
+    const obstacles = getObstaclesForTrace(this)
 
     // Get port positions for later use
     const portsWithPosition = connectedPorts.map(({ port }) => ({
@@ -884,8 +823,19 @@ export class Trace
       input: simpleRouteJsonInput,
       OBSTACLE_MARGIN: 0.1,
       isRemovePathLoopsEnabled: true,
-      isShortenPathWithShortcutsEnabled: true,
+      isShortenPathWithShortcutsEnabled: false,
     })
+    if ("marginsWithCosts" in autorouter) {
+      // console.log("autorouter.marginsWithCosts", autorouter.marginsWithCosts)
+      // console.log("autorouter.GREEDY_MULTIPLIER", autorouter.GREEDY_MULTIPLIER)
+      // autorouter.marginsWithCosts = [
+      //   {
+      //     margin: 0.1,
+      //     enterCost: 10,
+      //     travelCostFactor: 2,
+      //   },
+      // ]
+    }
     const results = autorouter.solveAndMapToTraces()
 
     if (results.length === 0) return
