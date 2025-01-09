@@ -41,7 +41,7 @@ import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-ground-symbol"
 import { getMaxLengthFromConnectedCapacitors } from "./get-max-length-from-conn ected-capacitors"
 import { getTraceDisplayName } from "./get-trace-display-name"
-import { getObstaclesForTrace } from "./get-obstacles-for-trace"
+import { getSchematicObstaclesForTrace } from "./get-obstacles-for-trace"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -760,7 +760,7 @@ export class Trace
       name: this.source_trace_id!,
       pointsToConnect: [],
     }
-    const obstacles = getObstaclesForTrace(this)
+    const obstacles = getSchematicObstaclesForTrace(this)
 
     // Get port positions for later use
     const portsWithPosition = connectedPorts.map(({ port }) => ({
