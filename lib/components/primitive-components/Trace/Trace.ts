@@ -834,10 +834,10 @@ export class Trace
 
     const autorouter = new Autorouter({
       input: simpleRouteJsonInput,
-      MAX_ITERATIONS: 30,
+      // MAX_ITERATIONS: 100,
       OBSTACLE_MARGIN: 0.1,
       isRemovePathLoopsEnabled: true,
-      isShortenPathWithShortcutsEnabled: false,
+      isShortenPathWithShortcutsEnabled: true,
     })
     let results = autorouter.solveAndMapToTraces()
 

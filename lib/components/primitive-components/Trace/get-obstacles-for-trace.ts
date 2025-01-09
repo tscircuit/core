@@ -45,8 +45,8 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
           x: elm.center.x - dirVec.x * 0.1,
           y: elm.center.y - dirVec.y * 0.1,
         },
-        width: 0.1 + Math.abs(dirVec.x) * 0.4,
-        height: 0.1 + Math.abs(dirVec.y) * 0.4,
+        width: 0.1 + Math.abs(dirVec.x) * 0.3,
+        height: 0.1 + Math.abs(dirVec.y) * 0.3,
         connectedTo: [],
       })
     }
