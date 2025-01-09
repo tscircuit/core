@@ -6,6 +6,7 @@ import { getSchematicObstaclesForTrace } from "lib/components/primitive-componen
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import type { Trace } from "lib/components"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
+import { duplicateObstaclesWithMargins } from "tests/utils/autorouting/duplicateObstaclesWithMargins"
 
 test("trace schematic obstacles", () => {
   const { circuit } = getTestFixture()
@@ -33,6 +34,14 @@ test("trace schematic obstacles", () => {
   ).toMatchSvgSnapshot(
     import.meta.path,
     "schematic-trace-obstacles-1-obstacles",
+  )
+  expect(
+    getSvgFromGraphicsObject({
+      rects: duplicateObstaclesWithMargins(schematicObstacles),
+    }),
+  ).toMatchSvgSnapshot(
+    import.meta.path,
+    "schematic-trace-obstacles-1-obstacles-with-margins",
   )
   expect(
     convertCircuitJsonToSchematicSvg(circuit.getCircuitJson()),
