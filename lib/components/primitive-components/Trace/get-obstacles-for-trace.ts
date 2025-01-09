@@ -21,7 +21,7 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
   // Add obstacles from components and ports
   for (const elm of db.toArray()) {
     if (elm.type === "schematic_component") {
-      const pinLengthMargin = 0.4
+      const pinLengthMargin = 0
       obstacles.push({
         type: "rect",
         layers: ["top"],

@@ -14,7 +14,8 @@ test("trace schematic obstacles", () => {
     <board width="20mm" height="20mm" routingDisabled>
       <chip name="U1" footprint="soic16" />
       <resistor name="R1" schX={5} resistance={100} footprint="0402" />
-      <trace from=".U1 > .pin5" to=".R1 > .pin1" />
+      <trace from=".U1 > .pin9" to=".R1 > .pin1" />
+      <trace from=".U1 > .pin2" to="net.GND" />
     </board>,
   )
 

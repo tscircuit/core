@@ -805,11 +805,17 @@ export class Trace
 
     const bounds = computeObstacleBounds(obstacles)
 
+    const BOUNDS_MARGIN = 1 // mm
     const simpleRouteJsonInput: SimpleRouteJson = {
       minTraceWidth: 0.1,
       obstacles,
       connections: [connection],
-      bounds,
+      bounds: {
+        minX: bounds.minX - BOUNDS_MARGIN,
+        maxX: bounds.maxX + BOUNDS_MARGIN,
+        minY: bounds.minY - BOUNDS_MARGIN,
+        maxY: bounds.maxY + BOUNDS_MARGIN,
+      },
       layerCount: 1,
     }
 
