@@ -528,7 +528,6 @@ export class Trace
           },
         },
       })
-      ijump.marginsWithCosts = []
       let traces: SimplifiedPcbTrace[] | null = null
       try {
         traces = ijump.solveAndMapToTraces()
@@ -885,7 +884,19 @@ export class Trace
       input: simpleRouteJsonInput,
       OBSTACLE_MARGIN: 0.1,
       isRemovePathLoopsEnabled: true,
+      isShortenPathWithShortcutsEnabled: true,
     })
+    if ("marginsWithCosts" in autorouter) {
+      // console.log("autorouter.marginsWithCosts", autorouter.marginsWithCosts)
+      // console.log("autorouter.GREEDY_MULTIPLIER", autorouter.GREEDY_MULTIPLIER)
+      autorouter.marginsWithCosts = [
+        {
+          margin: 0.1,
+          enterCost: 10,
+          travelCostFactor: 2,
+        },
+      ]
+    }
     const results = autorouter.solveAndMapToTraces()
 
     if (results.length === 0) return
