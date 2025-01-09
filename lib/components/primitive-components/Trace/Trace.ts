@@ -503,6 +503,7 @@ export class Trace
 
       const ijump = new MultilayerIjump({
         OBSTACLE_MARGIN: minTraceWidth * 2,
+        // MAX_ITERATIONS: 10,
         isRemovePathLoopsEnabled: true,
         optimizeWithGoalBoxes: Boolean(pcbPortA && pcbPortB),
         connMap,
@@ -527,6 +528,7 @@ export class Trace
           },
         },
       })
+      ijump.marginsWithCosts = []
       let traces: SimplifiedPcbTrace[] | null = null
       try {
         traces = ijump.solveAndMapToTraces()
