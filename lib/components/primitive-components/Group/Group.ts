@@ -1,5 +1,6 @@
 import {
   groupProps,
+  subcircuitGroupProps,
   type GroupProps,
   type SubcircuitGroupProps,
 } from "@tscircuit/props"
@@ -27,7 +28,9 @@ import type { TraceI } from "../Trace/TraceI"
 import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import Debug from "debug"
 
-export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
+export class Group<
+    Props extends z.ZodType<any, any, any> = typeof subcircuitGroupProps,
+  >
   extends NormalComponent<Props>
   implements ISubcircuit
 {
@@ -38,7 +41,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   get config() {
     return {
-      zodProps: groupProps as unknown as Props,
+      zodProps: subcircuitGroupProps as unknown as Props,
       componentName: "Group",
     }
   }
