@@ -672,20 +672,27 @@ export class Trace
       .list()
       .find((label) => label.source_net_id === toPort.source_port_id)
 
+    const [firstPort, secondPort] = connectedPorts.map(({ port }) => port)
+    const isFirstPortSchematicBox =
+      firstPort.parent?.config.shouldRenderAsSchematicBox
+    const pinFullName = isFirstPortSchematicBox
+      ? `${firstPort?.parent?.props.name}_${firstPort?.props.name}`
+      : `${secondPort?.parent?.props.name}_${secondPort?.props.name}`
+
+    const netLabelText = this.props.schDisplayLabel ?? pinFullName
+
     if (
-      (existingFromNetLabel &&
-        existingFromNetLabel.text !== this.props.schDisplayLabel) ||
-      (existingToNetLabel &&
-        existingToNetLabel?.text !== this.props.schDisplayLabel)
+      (existingFromNetLabel && existingFromNetLabel.text !== netLabelText) ||
+      (existingToNetLabel && existingToNetLabel?.text !== netLabelText)
     ) {
       throw new Error(
-        `Cannot create net label for port ${existingFromNetLabel ? fromPortName : toPortName} because it already has a net label with text "${existingFromNetLabel ? existingFromNetLabel.text : existingToNetLabel?.text}".`,
+        `Cannot create net label "${netLabelText}" for port ${existingFromNetLabel ? fromPortName : toPortName} because it already has a net label with text "${existingFromNetLabel ? existingFromNetLabel.text : existingToNetLabel?.text}".`,
       )
     }
 
     if (
-      this.props.schDisplayLabel?.toLocaleLowerCase().includes("gnd") ||
-      this.props.schDisplayLabel?.toLocaleLowerCase().includes("ground")
+      netLabelText?.toLocaleLowerCase().includes("gnd") ||
+      netLabelText?.toLocaleLowerCase().includes("ground")
     ) {
       createDownwardNetLabelGroundSymbol(
         {
@@ -701,12 +708,6 @@ export class Trace
       return
     }
 
-    const [firstPort, secondPort] = connectedPorts.map(({ port }) => port)
-    const isFirstPortSchematicBox =
-      firstPort.parent?.config.shouldRenderAsSchematicBox
-    const pinFullName = isFirstPortSchematicBox
-      ? `${firstPort?.parent?.props.name}_${firstPort?.props.name}`
-      : `${secondPort?.parent?.props.name}_${secondPort?.props.name}`
     db.schematic_net_label.insert({
       text: this.props.schDisplayLabel! ?? pinFullName,
       source_net_id: toPort.source_port_id!,
@@ -820,16 +821,23 @@ export class Trace
     }
 
     let Autorouter = MultilayerIjump
+    let skipOtherTraceInteraction = false
     if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
       Autorouter = DirectLineRouter as any
+      skipOtherTraceInteraction = true
     }
+
+    // Bun.write(
+    //   `autorouter-input-${this._renderId}.json`,
+    //   JSON.stringify(simpleRouteJsonInput, null, 2),
+    // )
 
     const autorouter = new Autorouter({
       input: simpleRouteJsonInput,
-      // MAX_ITERATIONS: 30,
+      MAX_ITERATIONS: 30,
       OBSTACLE_MARGIN: 0.1,
       isRemovePathLoopsEnabled: true,
-      isShortenPathWithShortcutsEnabled: true,
+      isShortenPathWithShortcutsEnabled: false,
     })
     let results = autorouter.solveAndMapToTraces()
 
@@ -842,6 +850,7 @@ export class Trace
         input: simpleRouteJsonInput,
       })
       results = directLineRouter.solveAndMapToTraces()
+      skipOtherTraceInteraction = true
     }
 
     const [{ route }] = results
@@ -857,23 +866,31 @@ export class Trace
     }
 
     const source_trace_id = this.source_trace_id!
-    // Check if these edges run along any other schematic traces, if they do
-    // push them out of the way
-    pushEdgesOfSchematicTraceToPreventOverlap({ edges, db, source_trace_id })
 
-    // Find all intersections between myEdges and all otherEdges and create a
-    // segment representing the crossing. Wherever there's a crossing, we create
-    // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
-    createSchematicTraceCrossingSegments({ edges, db, source_trace_id })
+    let junctions: SchematicTrace["junctions"] = []
 
-    // Find all the intersections between myEdges and edges connected to the
-    // same net and create junction points
-    // Calculate junctions where traces of the same net intersect
-    const junctions = createSchematicTraceJunctions({
-      edges,
-      db,
-      source_trace_id: this.source_trace_id!,
-    })
+    if (!skipOtherTraceInteraction) {
+      // Check if these edges run along any other schematic traces, if they do
+      // push them out of the way
+      console.log("running pushEdgesOfSchematicTraceToPreventOverlap")
+      pushEdgesOfSchematicTraceToPreventOverlap({ edges, db, source_trace_id })
+
+      // Find all intersections between myEdges and all otherEdges and create a
+      // segment representing the crossing. Wherever there's a crossing, we create
+      // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
+      console.log("running createSchematicTraceCrossingSegments")
+      createSchematicTraceCrossingSegments({ edges, db, source_trace_id })
+
+      // Find all the intersections between myEdges and edges connected to the
+      // same net and create junction points
+      // Calculate junctions where traces of the same net intersect
+      console.log("running createSchematicTraceJunctions")
+      junctions = createSchematicTraceJunctions({
+        edges,
+        db,
+        source_trace_id: this.source_trace_id!,
+      })
+    }
 
     // The first/last edges sometimes don't connect to the ports because the
     // autorouter is within the "goal box" and doesn't finish the route

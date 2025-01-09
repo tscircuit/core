@@ -3,6 +3,9 @@ import type {
   PcbPlacementError,
   PcbTraceError,
 } from "circuit-json"
+import Debug from "debug"
+
+const debug = Debug("tscircuit:renderable")
 
 export const orderedRenderPhases = [
   "ReactSubtreesRender",
@@ -158,6 +161,7 @@ export abstract class Renderable implements IRenderable {
     phase: RenderPhase,
     startOrEnd: "start" | "end",
   ) {
+    debug(`${phase}:${startOrEnd} ${this.getString()}`)
     const granular_event_type = `renderable:renderLifecycle:${phase}:${startOrEnd}`
     const eventPayload = {
       renderId: this._renderId,
