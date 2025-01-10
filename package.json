@@ -42,9 +42,9 @@
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
     "@tscircuit/footprinter": "^0.0.97",
-    "@tscircuit/infgrid-ijump-astar": "^0.0.29",
+    "@tscircuit/infgrid-ijump-astar": "^0.0.30",
     "@tscircuit/math-utils": "^0.0.5",
-    "@tscircuit/props": "^0.0.128",
+    "@tscircuit/props": "^0.0.129",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/soup-util": "^0.0.41",
     "circuit-json": "^0.0.128",

@@ -27,6 +27,5 @@ test("SilkscreenText rendering", () => {
   expect(silkscreenTexts[0].font_size).toBe(1.5)
   expect(silkscreenTexts[0].anchor_alignment).toBe("center")
 
-  Bun.write("test.json", JSON.stringify(silkscreenTexts, null, 2))
   expect(project).toMatchPcbSnapshot(import.meta.path)
 })

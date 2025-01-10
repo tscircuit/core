@@ -818,7 +818,7 @@ export class Trace
 
     const BOUNDS_MARGIN = 2 // mm
     const simpleRouteJsonInput: SimpleRouteJson = {
-      minTraceWidth: 0.01,
+      minTraceWidth: 0.1,
       obstacles,
       connections: [connection],
       bounds: {
@@ -837,11 +837,6 @@ export class Trace
       skipOtherTraceInteraction = true
     }
 
-    // Bun.write(
-    //   `autorouter-input-${this._renderId}.json`,
-    //   JSON.stringify(simpleRouteJsonInput, null, 2),
-    // )
-
     const autorouter = new Autorouter({
       input: simpleRouteJsonInput,
       // MAX_ITERATIONS: 100,
@@ -852,7 +847,6 @@ export class Trace
     let results = autorouter.solveAndMapToTraces()
 
     if (results.length === 0) {
-      console.log(this.getString())
       if (
         this._isSymbolToChipConnection() ||
         this._isSymbolToSymbolConnection()
@@ -933,16 +927,14 @@ export class Trace
       throw new Error("Missing source_trace_id for schematic trace insertion.")
     }
 
-    // Automatic net label assignment for complex traces
-    // TODO enable at subcircuit level
-    // Use net labels for complex traces between chips and passive components
-    // if (
-    //   countComplexElements(junctions, edges) >= 5 &&
-    //   this._isPassiveToChipConnection()
-    // ) {
-    //   this._doInitialSchematicTraceRenderWithDisplayLabel()
-    //   db.schematic_trace.delete(this.schematic_trace_id!)
-    // }
+    if (
+      this.getSubcircuit()._parsedProps.schTraceAutoLabelEnabled &&
+      countComplexElements(junctions, edges) >= 5 &&
+      (this._isSymbolToChipConnection() || this._isSymbolToSymbolConnection())
+    ) {
+      this._doInitialSchematicTraceRenderWithDisplayLabel()
+      db.schematic_trace.delete(this.schematic_trace_id!)
+    }
 
     // Insert schematic trace
     const trace = db.schematic_trace.insert({
