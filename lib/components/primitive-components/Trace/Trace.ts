@@ -681,18 +681,19 @@ export class Trace
 
     const netLabelText = this.props.schDisplayLabel ?? pinFullName
 
-    if (
-      (existingFromNetLabel && existingFromNetLabel.text !== netLabelText) ||
-      (existingToNetLabel && existingToNetLabel?.text !== netLabelText)
-    ) {
-      throw new Error(
-        `Cannot create net label "${netLabelText}" for port ${existingFromNetLabel ? fromPortName : toPortName} because it already has a net label with text "${existingFromNetLabel ? existingFromNetLabel.text : existingToNetLabel?.text}".`,
-      )
+    if (existingFromNetLabel && existingFromNetLabel.text !== netLabelText) {
+      existingFromNetLabel.text = `${netLabelText} / ${existingFromNetLabel.text}`
+    }
+
+    if (existingToNetLabel && existingToNetLabel?.text !== netLabelText) {
+      existingToNetLabel.text = `${netLabelText} / ${existingToNetLabel.text}`
     }
 
     if (
-      netLabelText?.toLocaleLowerCase().includes("gnd") ||
-      netLabelText?.toLocaleLowerCase().includes("ground")
+      !existingFromNetLabel &&
+      !existingToNetLabel &&
+      (netLabelText?.toLocaleLowerCase().includes("gnd") ||
+        netLabelText?.toLocaleLowerCase().includes("ground"))
     ) {
       createDownwardNetLabelGroundSymbol(
         {
@@ -708,22 +709,26 @@ export class Trace
       return
     }
 
-    db.schematic_net_label.insert({
-      text: this.props.schDisplayLabel! ?? pinFullName,
-      source_net_id: toPort.source_port_id!,
-      anchor_position: toAnchorPos,
-      center: toAnchorPos,
-      anchor_side:
-        getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom",
-    })
-    db.schematic_net_label.insert({
-      text: this.props.schDisplayLabel! ?? pinFullName,
-      source_net_id: fromPort.source_port_id!,
-      anchor_position: fromAnchorPos,
-      center: fromAnchorPos,
-      anchor_side:
-        getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom",
-    })
+    if (!existingToNetLabel) {
+      db.schematic_net_label.insert({
+        text: this.props.schDisplayLabel! ?? pinFullName,
+        source_net_id: toPort.source_port_id!,
+        anchor_position: toAnchorPos,
+        center: toAnchorPos,
+        anchor_side:
+          getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom",
+      })
+    }
+    if (!existingFromNetLabel) {
+      db.schematic_net_label.insert({
+        text: this.props.schDisplayLabel! ?? pinFullName,
+        source_net_id: fromPort.source_port_id!,
+        anchor_position: fromAnchorPos,
+        center: fromAnchorPos,
+        anchor_side:
+          getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom",
+      })
+    }
   }
 
   private _isSymbolToChipConnection(): boolean | undefined {
