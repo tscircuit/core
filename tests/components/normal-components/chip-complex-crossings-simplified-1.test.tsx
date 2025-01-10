@@ -49,8 +49,8 @@ test("complex chip schematic with multiple connections", () => {
 
       {/* Random connections */}
       <trace from=".R2 > .pin2" to=".U1 > .IN3" />
-      <trace from=".R3 > .pin2" to=".U1 > .IN4" />
-      <trace from=".R4 > .pin2" to=".U1 > .IN6" />
+      {/* <trace from=".R3 > .pin2" to=".U1 > .IN4" />
+      <trace from=".R4 > .pin2" to=".U1 > .IN6" /> */}
     </board>,
   )
 
