@@ -70,25 +70,27 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
         connectedTo: [],
       })
     }
-    if (elm.type === "schematic_net_label" && elm.symbol_name) {
-      obstacles.push({
-        type: "rect",
-        layers: ["top"],
-        center: elm.center,
-        width: 0.25,
-        height: 0.6,
-        connectedTo: [],
-      })
-    } else if (elm.type === "schematic_net_label") {
-      obstacles.push({
-        type: "rect",
-        layers: ["top"],
-        center: elm.center,
-        width: (elm.text?.length ?? 0) * 0.1,
-        height: 0.2,
-        connectedTo: [],
-      })
-    }
+    // Schematic symbols don't need obstacles- traces often route through them
+    // we might roll this back later...
+    // if (elm.type === "schematic_net_label" && elm.symbol_name) {
+    //   obstacles.push({
+    //     type: "rect",
+    //     layers: ["top"],
+    //     center: elm.center,
+    //     width: 0.25,
+    //     height: 0.6,
+    //     connectedTo: [],
+    //   })
+    // } else if (elm.type === "schematic_net_label") {
+    //   obstacles.push({
+    //     type: "rect",
+    //     layers: ["top"],
+    //     center: elm.center,
+    //     width: (elm.text?.length ?? 0) * 0.1,
+    //     height: 0.2,
+    //     connectedTo: [],
+    //   })
+    // }
   }
 
   return obstacles
