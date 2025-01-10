@@ -15,28 +15,61 @@ const getIntersectionPoint = (
   edge1: SchematicTrace["edges"][number],
   edge2: SchematicTrace["edges"][number],
 ): { x: number; y: number } | null => {
-  // Skip if edges aren't orthogonal
-  if (!isOrthogonal(edge1, edge2)) return null
-
-  const isVertical1 = edge1.from.x === edge1.to.x
-  const vertical = isVertical1 ? edge1 : edge2
-  const horizontal = isVertical1 ? edge2 : edge1
-
-  // Check if the vertical line's x is between horizontal line's x range
-  const minX = Math.min(horizontal.from.x, horizontal.to.x)
-  const maxX = Math.max(horizontal.from.x, horizontal.to.x)
-  if (vertical.from.x < minX || vertical.from.x > maxX) return null
-
-  // Check if the horizontal line's y is between vertical line's y range
-  const minY = Math.min(vertical.from.y, vertical.to.y)
-  const maxY = Math.max(vertical.from.y, vertical.to.y)
-  if (horizontal.from.y < minY || horizontal.from.y > maxY) return null
-
-  // Lines intersect, return intersection point
-  return {
-    x: vertical.from.x,
-    y: horizontal.from.y,
+  if (edge1.from.x === edge1.to.x && edge2.from.x === edge2.to.x) {
+    return null
   }
+
+  if (edge1.from.x === edge1.to.x) {
+    const x = edge1.from.x
+    const m2 = (edge2.to.y - edge2.from.y) / (edge2.to.x - edge2.from.x)
+    const b2 = edge2.from.y - m2 * edge2.from.x
+    const y = m2 * x + b2
+
+    if (x >= Math.min(edge2.from.x, edge2.to.x) && x <= Math.max(edge2.from.x, edge2.to.x) &&
+        y >= Math.min(edge2.from.y, edge2.to.y) && y <= Math.max(edge2.from.y, edge2.to.y)) {
+      return { x, y }
+    }
+
+    return null
+  }
+
+  if (edge2.from.x === edge2.to.x) {
+    const x = edge2.from.x
+    const m1 = (edge1.to.y - edge1.from.y) / (edge1.to.x - edge1.from.x)
+    const b1 = edge1.from.y - m1 * edge1.from.x
+    const y = m1 * x + b1
+
+    if (x >= Math.min(edge1.from.x, edge1.to.x) && x <= Math.max(edge1.from.x, edge1.to.x) &&
+        y >= Math.min(edge1.from.y, edge1.to.y) && y <= Math.max(edge1.from.y, edge1.to.y)) {
+      return { x, y }
+    }
+    return null
+  }
+
+  const m1 = (edge1.to.y - edge1.from.y) / (edge1.to.x - edge1.from.x)
+  const b1 = edge1.from.y - m1 * edge1.from.x
+
+  const m2 = (edge2.to.y - edge2.from.y) / (edge2.to.x - edge2.from.x)
+  const b2 = edge2.from.y - m2 * edge2.from.x
+
+  if (m1 === m2) {
+    return null
+  }
+
+  const x = (b2 - b1) / (m1 - m2)
+  const y = m1 * x + b1
+
+  const isWithinEdge1 = x >= Math.min(edge1.from.x, edge1.to.x) && x <= Math.max(edge1.from.x, edge1.to.x) &&
+    y >= Math.min(edge1.from.y, edge1.to.y) && y <= Math.max(edge1.from.y, edge1.to.y)
+
+  const isWithinEdge2 = x >= Math.min(edge2.from.x, edge2.to.x) && x <= Math.max(edge2.from.x, edge2.to.x) &&
+    y >= Math.min(edge2.from.y, edge2.to.y) && y <= Math.max(edge2.from.y, edge2.to.y)
+
+  if (isWithinEdge1 && isWithinEdge2) {
+    return { x, y }
+  }
+
+  return null
 }
 
 export const createSchematicTraceJunctions = ({
@@ -56,20 +89,15 @@ export const createSchematicTraceJunctions = ({
 
   const junctions = new Set<string>()
 
-  // Check intersections between my edges and other edges
   for (const myEdge of myEdges) {
     for (const otherEdge of otherEdges) {
       const intersection = getIntersectionPoint(myEdge, otherEdge)
       if (intersection) {
-        // Use string key to deduplicate points
-        junctions.add(`${intersection.x},${intersection.y}`)
+        const pointKey = `${intersection.x},${intersection.y}`;
+        return [{ x: intersection.x, y: intersection.y }];
       }
     }
   }
 
-  // Convert back to point objects
-  return Array.from(junctions).map((key) => {
-    const [x, y] = key.split(",").map(Number)
-    return { x, y }
-  })
+  return [];
 }
