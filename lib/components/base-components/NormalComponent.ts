@@ -383,7 +383,6 @@ export class NormalComponent<
     const symbol_name = this._getSchematicSymbolNameOrThrow()
 
     const symbol: SchSymbol | undefined = symbols[symbol_name]
-    console.log(symbol_name, symbol?.size)
 
     const center = this._getGlobalSchematicPositionBeforeLayout()
 
