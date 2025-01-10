@@ -25,13 +25,23 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
   // Add obstacles from components and ports
   for (const elm of db.toArray()) {
     if (elm.type === "schematic_component") {
-      const pinMargin = 0
+      // TODO HACK we have to have special handling for components because of
+      // a bug in circuit-to-svg where it uses the schematic_component size to
+      // draw boxes instead of the schematic_box size, until we have proper
+      // schematic_box elements we need to use custom handling because symbols
+      // are sized properly but schematic_components are sized incorrectly
+      // Use tests/components/primitive-components/trace-schematic-obstacles-1.test.tsx
+      // to see the difference and test
+      const isSymbol = Boolean(elm.symbol_name)
+      const dominateAxis = elm.size.width > elm.size.height ? "horz" : "vert"
       obstacles.push({
         type: "rect",
         layers: ["top"],
         center: elm.center,
-        width: elm.size.width + pinMargin,
-        height: elm.size.height,
+        width:
+          elm.size.width + (isSymbol && dominateAxis === "horz" ? -0.5 : 0),
+        height:
+          elm.size.height + (isSymbol && dominateAxis === "vert" ? -0.5 : 0),
         connectedTo: [],
       })
     }

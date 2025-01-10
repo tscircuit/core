@@ -839,11 +839,16 @@ export class Trace
 
     const autorouter = new Autorouter({
       input: simpleRouteJsonInput,
-      MAX_ITERATIONS: 30,
+      MAX_ITERATIONS: 100,
       OBSTACLE_MARGIN: 0.1,
       isRemovePathLoopsEnabled: true,
       isShortenPathWithShortcutsEnabled: true,
       marginsWithCosts: [
+        {
+          margin: 1,
+          enterCost: 0,
+          travelCostFactor: 1,
+        },
         {
           margin: 0.3,
           enterCost: 0,
