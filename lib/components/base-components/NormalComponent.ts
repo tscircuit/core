@@ -422,6 +422,10 @@ export class NormalComponent<
       center,
       rotation: props.schRotation ?? 0,
       size: dimensions.getSize(),
+      // We should be using the full size, but circuit-to-svg incorrectly
+      // uses the schematic_component size to draw boxes instead of the
+      // schematic_box size
+      // size: dimensions.getSizeIncludingPins(),
 
       port_arrangement: underscorifyPortArrangement(
         props.schPortArrangement as any,

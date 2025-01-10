@@ -27,7 +27,7 @@
     "@types/react": "^19.0.1",
     "@types/react-reconciler": "^0.28.8",
     "bun-match-svg": "0.0.8",
-    "circuit-to-svg": "^0.0.97",
+    "circuit-to-svg": "^0.0.99",
     "debug": "^4.3.6",
     "graphics-debug": "^0.0.4",
     "howfat": "^0.3.8",
@@ -42,9 +42,9 @@
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
     "@tscircuit/footprinter": "^0.0.97",
-    "@tscircuit/infgrid-ijump-astar": "^0.0.27",
+    "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/math-utils": "^0.0.5",
-    "@tscircuit/props": "^0.0.128",
+    "@tscircuit/props": "^0.0.129",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/soup-util": "^0.0.41",
     "circuit-json": "^0.0.128",
@@ -54,7 +54,7 @@
     "performance-now": "^2.1.0",
     "react": "^18.3.1",
     "react-reconciler": "^0.29.2",
-    "schematic-symbols": "^0.0.111",
+    "schematic-symbols": "^0.0.113",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.23.8"
   }

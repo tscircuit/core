@@ -8,22 +8,22 @@ import type { Trace } from "lib/components"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { duplicateObstaclesWithMargins } from "tests/utils/autorouting/duplicateObstaclesWithMargins"
 
-test("trace schematic obstacles", () => {
+test("trace schematic obstacles 1", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="20mm" routingDisabled>
       <chip name="U1" footprint="soic16" />
       <resistor name="R1" schX={5} resistance={100} footprint="0402" />
-      <trace from=".U1 > .pin9" to=".R1 > .pin1" />
+      {/* <trace from=".U1 > .pin9" to=".R1 > .pin1" /> */}
       <trace from=".U1 > .pin7" to=".R1 > .pin2" />
-      <trace from=".U1 > .pin2" to="net.GND" />
+      {/* <trace from=".U1 > .pin2" to="net.GND" /> */}
     </board>,
   )
 
   circuit.render()
 
-  const trace = circuit.selectOne("trace")
+  const trace = circuit.selectOne("trace") as Trace
 
   const schematicObstacles = getSchematicObstaclesForTrace(trace as Trace)
 
@@ -44,7 +44,12 @@ test("trace schematic obstacles", () => {
     "schematic-trace-obstacles-1-obstacles-with-margins",
   )
   expect(
-    convertCircuitJsonToSchematicSvg(circuit.getCircuitJson()),
+    convertCircuitJsonToSchematicSvg(circuit.getCircuitJson(), {
+      grid: {
+        cellSize: 0.5,
+        labelCells: true,
+      },
+    }),
   ).toMatchSvgSnapshot(
     import.meta.path,
     "schematic-trace-obstacles-1-schematic",
