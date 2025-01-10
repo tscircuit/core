@@ -42,6 +42,7 @@ import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-
 import { getMaxLengthFromConnectedCapacitors } from "./get-max-length-from-conn ected-capacitors"
 import { getTraceDisplayName } from "./get-trace-display-name"
 import { getSchematicObstaclesForTrace } from "./get-obstacles-for-trace"
+import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -890,7 +891,7 @@ export class Trace
 
     const [{ route }] = results
 
-    const edges: SchematicTrace["edges"] = []
+    let edges: SchematicTrace["edges"] = []
 
     // Add autorouted path
     for (let i = 0; i < route.length - 1; i++) {
@@ -912,7 +913,12 @@ export class Trace
       // Find all intersections between myEdges and all otherEdges and create a
       // segment representing the crossing. Wherever there's a crossing, we create
       // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
-      createSchematicTraceCrossingSegments({ edges, db, source_trace_id })
+      const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
+        db,
+        source_trace_id,
+        differentNetOnly: true,
+      }).flatMap((t: SchematicTrace) => t.edges)
+      edges = createSchematicTraceCrossingSegments({ edges, otherEdges })
 
       // Find all the intersections between myEdges and edges connected to the
       // same net and create junction points

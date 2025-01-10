@@ -11,19 +11,12 @@ import { getUnitVectorFromPointAToB } from "@tscircuit/math-utils"
  */
 export const createSchematicTraceCrossingSegments = ({
   edges,
-  db,
-  source_trace_id,
+  otherEdges,
 }: {
   edges: SchematicTrace["edges"]
-  db: SoupUtilObjects
-  source_trace_id: string
+  otherEdges: SchematicTrace["edges"]
 }) => {
-  const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
-    db,
-    source_trace_id,
-    differentNetOnly: true,
-  }).flatMap((t: SchematicTrace) => t.edges)
-
+  edges = [...edges]
   // For each edge in our trace
   for (let i = 0; i < edges.length; i++) {
     if (i > 2000) {
@@ -89,6 +82,11 @@ export const createSchematicTraceCrossingSegments = ({
     const crossingPoint = closestIntersection.crossingPoint
     const crossingSegmentLength = 0.075 // mm
 
+    if (crossingPoint.x === edge.from.x && crossingPoint.y === edge.from.y) {
+      // On top of each other, the unit vector would be undefined, no crossing
+      // necessary
+      continue
+    }
     const crossingUnitVec = getUnitVectorFromPointAToB(edge.from, crossingPoint)
 
     // Calculate points slightly before and after crossing
@@ -121,4 +119,6 @@ export const createSchematicTraceCrossingSegments = ({
       i++
     }
   }
+
+  return edges
 }
