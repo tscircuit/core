@@ -6,13 +6,7 @@ it("simple trace test", async () => {
 
   project.add(
     <board width="10mm" height="10mm">
-      <resistor
-        resistance="1k"
-        footprint="0402"
-        name="R1"
-        schX={3}
-        pcbX={3}
-      />
+      <resistor resistance="1k" footprint="0402" name="R1" schX={3} pcbX={3} />
       <capacitor
         capacitance="1000pF"
         footprint="0402"
