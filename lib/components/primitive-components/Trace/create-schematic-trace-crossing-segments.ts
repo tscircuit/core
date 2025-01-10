@@ -26,6 +26,11 @@ export const createSchematicTraceCrossingSegments = ({
 
   // For each edge in our trace
   for (let i = 0; i < edges.length; i++) {
+    if (i > 2000) {
+      throw new Error(
+        "Over 2000 iterations spent inside createSchematicTraceCrossingSegments, you have triggered an infinite loop, please report this!",
+      )
+    }
     const edge = edges[i]
     const edgeOrientation =
       Math.abs(edge.from.x - edge.to.x) < 0.01 ? "vertical" : "horizontal"
