@@ -933,7 +933,7 @@ export class Trace
       (this._isSymbolToChipConnection() || this._isSymbolToSymbolConnection())
     ) {
       this._doInitialSchematicTraceRenderWithDisplayLabel()
-      db.schematic_trace.delete(this.schematic_trace_id!)
+      return
     }
 
     // Insert schematic trace
