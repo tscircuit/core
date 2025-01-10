@@ -1,6 +1,5 @@
 import { test, expect } from "bun:test"
 import { createSchematicTraceCrossingSegments } from "lib/components/primitive-components/Trace/create-schematic-trace-crossing-segments"
-import { getSvgFromGraphicsObject } from "graphics-debug"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 
 test("repro schematic trace crossing infinite loop", () => {
@@ -29,18 +28,10 @@ test("repro schematic trace crossing infinite loop", () => {
     edges: originalEdges,
     otherEdges: otherTraceEdges,
   })
-  console.table(edgesWithCrossings)
 
   expect(
     convertCircuitJsonToSchematicSvg(
       [
-        // {
-        //   type: "schematic_trace",
-        //   schematic_trace_id: "1",
-        //   source_trace_id: "1",
-        //   edges: originalEdges,
-        //   junctions: [],
-        // },
         {
           type: "schematic_trace",
           schematic_trace_id: "2",
@@ -64,29 +55,4 @@ test("repro schematic trace crossing infinite loop", () => {
       },
     ),
   ).toMatchSvgSnapshot(import.meta.path)
-
-  // expect(
-  //   getSvgFromGraphicsObject({
-  //     rects: edges.map((e) => ({
-  //       center: { x: (e.from.x + e.to.x) / 2, y: (e.from.y + e.to.y) / 2 },
-  //       width: Math.abs(e.from.x - e.to.x),
-  //       height: Math.abs(e.from.y - e.to.y),
-  //       fill: "red",
-  //     })),
-  //     // lines: [
-  //     //   {
-  //     //     points: edges.flatMap((e) => [
-  //     //       { x: e.from.x, y: e.from.y },
-  //     //       { x: e.to.x, y: e.to.y },
-  //     //     ]),
-  //     //   },
-  //     //   {
-  //     //     points: otherEdges.flatMap((e) => [
-  //     //       { x: e.from.x, y: e.from.y },
-  //     //       { x: e.to.x, y: e.to.y },
-  //     //     ]),
-  //     //   },
-  //     // ],
-  //   }),
-  // ).toMatchSvgSnapshot(import.meta.path)
 })
