@@ -845,7 +845,12 @@ export class Trace
       isShortenPathWithShortcutsEnabled: true,
       marginsWithCosts: [
         {
-          margin: 0.25,
+          margin: 1,
+          enterCost: 10,
+          travelCostFactor: 10,
+        },
+        {
+          margin: 0.2,
           enterCost: 0,
           travelCostFactor: 1,
         },

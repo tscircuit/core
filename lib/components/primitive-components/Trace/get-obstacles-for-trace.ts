@@ -15,6 +15,10 @@ import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
  */
 export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
   const db = trace.root!.db
+  const connectedPorts = trace._findConnectedPorts().ports ?? []
+  const connectedPortIds = new Set(
+    connectedPorts.map((p) => p.schematic_port_id),
+  )
 
   const obstacles: Obstacle[] = []
 
@@ -32,6 +36,9 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
       })
     }
     if (elm.type === "schematic_port") {
+      if (connectedPortIds.has(elm.schematic_port_id)) {
+        continue
+      }
       const dirVec = elm.facing_direction
         ? getUnitVectorFromDirection(elm.facing_direction)
         : {
