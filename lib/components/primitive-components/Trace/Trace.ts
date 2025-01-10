@@ -843,6 +843,18 @@ export class Trace
       OBSTACLE_MARGIN: 0.1,
       isRemovePathLoopsEnabled: true,
       isShortenPathWithShortcutsEnabled: true,
+      marginsWithCosts: [
+        {
+          margin: 0.5,
+          enterCost: 0,
+          travelCostFactor: 1,
+        },
+        {
+          margin: 0.1,
+          enterCost: 10,
+          travelCostFactor: 10,
+        },
+      ],
     })
     let results = autorouter.solveAndMapToTraces()
 
