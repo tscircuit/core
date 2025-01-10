@@ -42,6 +42,7 @@ import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-
 import { getMaxLengthFromConnectedCapacitors } from "./get-max-length-from-conn ected-capacitors"
 import { getTraceDisplayName } from "./get-trace-display-name"
 import { getSchematicObstaclesForTrace } from "./get-obstacles-for-trace"
+import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -681,18 +682,19 @@ export class Trace
 
     const netLabelText = this.props.schDisplayLabel ?? pinFullName
 
-    if (
-      (existingFromNetLabel && existingFromNetLabel.text !== netLabelText) ||
-      (existingToNetLabel && existingToNetLabel?.text !== netLabelText)
-    ) {
-      throw new Error(
-        `Cannot create net label "${netLabelText}" for port ${existingFromNetLabel ? fromPortName : toPortName} because it already has a net label with text "${existingFromNetLabel ? existingFromNetLabel.text : existingToNetLabel?.text}".`,
-      )
+    if (existingFromNetLabel && existingFromNetLabel.text !== netLabelText) {
+      existingFromNetLabel.text = `${netLabelText} / ${existingFromNetLabel.text}`
+    }
+
+    if (existingToNetLabel && existingToNetLabel?.text !== netLabelText) {
+      existingToNetLabel.text = `${netLabelText} / ${existingToNetLabel.text}`
     }
 
     if (
-      netLabelText?.toLocaleLowerCase().includes("gnd") ||
-      netLabelText?.toLocaleLowerCase().includes("ground")
+      !existingFromNetLabel &&
+      !existingToNetLabel &&
+      (netLabelText?.toLocaleLowerCase().includes("gnd") ||
+        netLabelText?.toLocaleLowerCase().includes("ground"))
     ) {
       createDownwardNetLabelGroundSymbol(
         {
@@ -708,22 +710,26 @@ export class Trace
       return
     }
 
-    db.schematic_net_label.insert({
-      text: this.props.schDisplayLabel! ?? pinFullName,
-      source_net_id: toPort.source_port_id!,
-      anchor_position: toAnchorPos,
-      center: toAnchorPos,
-      anchor_side:
-        getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom",
-    })
-    db.schematic_net_label.insert({
-      text: this.props.schDisplayLabel! ?? pinFullName,
-      source_net_id: fromPort.source_port_id!,
-      anchor_position: fromAnchorPos,
-      center: fromAnchorPos,
-      anchor_side:
-        getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom",
-    })
+    if (!existingToNetLabel) {
+      db.schematic_net_label.insert({
+        text: this.props.schDisplayLabel! ?? pinFullName,
+        source_net_id: toPort.source_port_id!,
+        anchor_position: toAnchorPos,
+        center: toAnchorPos,
+        anchor_side:
+          getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom",
+      })
+    }
+    if (!existingFromNetLabel) {
+      db.schematic_net_label.insert({
+        text: this.props.schDisplayLabel! ?? pinFullName,
+        source_net_id: fromPort.source_port_id!,
+        anchor_position: fromAnchorPos,
+        center: fromAnchorPos,
+        anchor_side:
+          getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom",
+      })
+    }
   }
 
   private _isSymbolToChipConnection(): boolean | undefined {
@@ -885,7 +891,7 @@ export class Trace
 
     const [{ route }] = results
 
-    const edges: SchematicTrace["edges"] = []
+    let edges: SchematicTrace["edges"] = []
 
     // Add autorouted path
     for (let i = 0; i < route.length - 1; i++) {
@@ -907,7 +913,12 @@ export class Trace
       // Find all intersections between myEdges and all otherEdges and create a
       // segment representing the crossing. Wherever there's a crossing, we create
       // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
-      createSchematicTraceCrossingSegments({ edges, db, source_trace_id })
+      const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
+        db,
+        source_trace_id,
+        differentNetOnly: true,
+      }).flatMap((t: SchematicTrace) => t.edges)
+      edges = createSchematicTraceCrossingSegments({ edges, otherEdges })
 
       // Find all the intersections between myEdges and edges connected to the
       // same net and create junction points
