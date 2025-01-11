@@ -12,5 +12,7 @@ export * from "./utils/public-exports"
 // Allows easier introspection of render process
 export * from "./components/base-components/Renderable"
 
+export { createElement } from "react"
+
 import "./register-catalogue"
 import "./fiber/intrinsic-jsx"
