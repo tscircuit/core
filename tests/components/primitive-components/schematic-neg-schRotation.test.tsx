@@ -1,70 +1,47 @@
-import { test, expect } from "bun:test"
+import { it, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("schematic symbol rotation -90 degrees", () => {
+it("should render rotated versions of capacitors", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm">
+    <board width="20mm" height="20mm">
       <capacitor
         name="C1"
-        capacitance="100nF"
-        footprint="0402"
+        schY={0}
+        schX={3}
+        capacitance="10k"
         schRotation={-90}
       />
-    </board>,
-  )
-  circuit.render()
-  expect(circuit).toMatchSchematicSnapshot("neg-90-" + import.meta.path)
-})
 
-test("schematic symbol rotation -180 degrees", () => {
-  const { circuit } = getTestFixture()
-
-  circuit.add(
-    <board width="10mm" height="10mm">
       <capacitor
-        name="C1"
-        capacitance="100nF"
-        footprint="0402"
+        name="C2"
+        schY={0}
+        schX={6}
+        capacitance="10k"
         schRotation={-180}
       />
-    </board>,
-  )
-  circuit.render()
-  expect(circuit).toMatchSchematicSnapshot("neg-180-" + import.meta.path)
-})
 
-test("schematic symbol rotation -270 degrees", () => {
-  const { circuit } = getTestFixture()
-
-  circuit.add(
-    <board width="10mm" height="10mm">
       <capacitor
-        name="C1"
-        capacitance="100nF"
-        footprint="0402"
+        name="C3"
+        schY={0}
+        schX={9}
+        capacitance="10k"
         schRotation={-270}
       />
-    </board>,
-  )
-  circuit.render()
-  expect(circuit).toMatchSchematicSnapshot("neg-270-" + import.meta.path)
-})
 
-test("schematic symbol rotation -360 degrees", () => {
-  const { circuit } = getTestFixture()
-
-  circuit.add(
-    <board width="10mm" height="10mm">
       <capacitor
-        name="C1"
-        capacitance="100nF"
-        footprint="0402"
+        name="C4"
+        schY={3}
+        schX={3}
+        capacitance="10k"
         schRotation={-360}
       />
+
+      <capacitor name="C5" schY={3} schX={6} capacitance="10k" />
     </board>,
   )
+
   circuit.render()
-  expect(circuit).toMatchSchematicSnapshot("neg-360-" + import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
