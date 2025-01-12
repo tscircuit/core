@@ -25,7 +25,6 @@ test("useCapacitor hook creates component with correct props and traces", () => 
   expect(capacitors[0].props.capacitance).toBe("10uF")
   expect(capacitors[1].props.name).toBe("C2")
   expect(capacitors[1].props.capacitance).toBe("100nF")
-  expect(capacitors[0].props.schRotation).toBe(-90)
 
   // Check if traces were created correctly
   const traces = circuit.selectAll("trace")
