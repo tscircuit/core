@@ -11,7 +11,7 @@ test("useCapacitor hook creates component with correct props and traces", () => 
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <C1 anode="net.VCC" cathode="net.GND" schRotation={-90} />
+      <C1 anode="net.VCC" cathode="net.GND" />
       <C2 pos={C1.anode} neg="net.GND" />
     </board>,
   )

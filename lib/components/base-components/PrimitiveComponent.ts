@@ -313,6 +313,13 @@ export abstract class PrimitiveComponent<
       rawRotation += 360
     }
 
+    // Validate that rotation is a multiple of 90 degrees
+    if (props.schRotation !== undefined && rawRotation % 90 !== 0) {
+      throw new Error(
+        `Schematic rotation ${props.schRotation} is not supported for ${this.componentName}`,
+      )
+    }
+
     const symbol_name_horz = `${base_symbol_name}_horz` as keyof typeof symbols
     const symbol_name_vert = `${base_symbol_name}_vert` as keyof typeof symbols
     const symbol_name_up = `${base_symbol_name}_up` as keyof typeof symbols
