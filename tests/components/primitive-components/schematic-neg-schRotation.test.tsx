@@ -7,7 +7,7 @@ it("should render rotated versions of capacitors", async () => {
   circuit.add(
     <board width="20mm" height="20mm">
       <capacitor
-        name="C1_90"
+        name="C1_n90"
         schY={0}
         schX={3}
         capacitance="10µF"
@@ -15,7 +15,7 @@ it("should render rotated versions of capacitors", async () => {
       />
 
       <capacitor
-        name="C2_180"
+        name="C2_n180"
         schY={0}
         schX={6}
         capacitance="10µF"
@@ -23,7 +23,7 @@ it("should render rotated versions of capacitors", async () => {
       />
 
       <capacitor
-        name="C3_270"
+        name="C3_n270"
         schY={0}
         schX={9}
         capacitance="10µF"
@@ -31,14 +31,14 @@ it("should render rotated versions of capacitors", async () => {
       />
 
       <capacitor
-        name="C4_360"
+        name="C4_n360"
         schY={3}
         schX={3}
         capacitance="10µF"
         schRotation={-360}
       />
 
-      <capacitor name="C5" schY={3} schX={6} capacitance="10µF" />
+      <capacitor name="C5_noRotation" schY={3} schX={6} capacitance="10µF" />
     </board>,
   )
 
