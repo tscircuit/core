@@ -310,33 +310,43 @@ export abstract class PrimitiveComponent<
     const symbol_name_right =
       `${base_symbol_name}_right` as keyof typeof symbols
 
+    const normalizeRotation = (rotation: number) =>
+      ((rotation % 360) + 360) % 360
+
+    const normalizedRotation = normalizeRotation(props.schRotation || 0)
+
     if (
       symbol_name_right in symbols &&
-      (props.schRotation === undefined || props.schRotation === 0)
+      (normalizedRotation === 0 || props.schRotation === undefined)
     ) {
       return symbol_name_right
     }
-    if (symbol_name_up in symbols && props.schRotation === 90) {
+    if (symbol_name_up in symbols && normalizedRotation === 90) {
       return symbol_name_up
     }
-
-    if (symbol_name_left in symbols && props.schRotation === 180) {
+    if (symbol_name_left in symbols && normalizedRotation === 180) {
       return symbol_name_left
     }
-
-    if (symbol_name_down in symbols && props.schRotation === 270) {
+    if (symbol_name_down in symbols && normalizedRotation === 270) {
       return symbol_name_down
     }
 
     if (symbol_name_horz in symbols) {
-      if (props.schRotation === 0 || props.schRotation === undefined)
+      if (
+        normalizedRotation === 0 ||
+        normalizedRotation === 180 ||
+        props.schRotation === undefined
+      ) {
         return symbol_name_horz
-      if (props.schRotation === 180) return symbol_name_horz
+      }
     }
+
     if (symbol_name_vert in symbols) {
-      if (props.schRotation === 90) return symbol_name_vert
-      if (props.schRotation === 270) return symbol_name_vert
+      if (normalizedRotation === 90 || normalizedRotation === 270) {
+        return symbol_name_vert
+      }
     }
+
     if (base_symbol_name in symbols) return base_symbol_name
 
     return undefined
