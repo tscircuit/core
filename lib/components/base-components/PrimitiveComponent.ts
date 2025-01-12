@@ -310,8 +310,15 @@ export abstract class PrimitiveComponent<
     const symbol_name_right =
       `${base_symbol_name}_right` as keyof typeof symbols
 
-    if (props.schRotation !== undefined && props.schRotation !== 0 && props.schRotation !== 180 && props.schRotation !== 270) {
-      throw new Error(`Schematic rotation ${props.schRotation} is not supported for ${this.componentName}`)
+    if (
+      props.schRotation !== undefined &&
+      props.schRotation !== 0 &&
+      props.schRotation !== 180 &&
+      props.schRotation !== 270
+    ) {
+      throw new Error(
+        `Schematic rotation ${props.schRotation} is not supported for ${this.componentName}`,
+      )
     }
 
     if (
