@@ -313,6 +313,7 @@ export abstract class PrimitiveComponent<
     if (
       props.schRotation !== undefined &&
       props.schRotation !== 0 &&
+      props.schRotation !== 90 &&
       props.schRotation !== 180 &&
       props.schRotation !== 270
     ) {
