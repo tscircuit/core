@@ -302,6 +302,24 @@ export abstract class PrimitiveComponent<
     const base_symbol_name = this.config
       .schematicSymbolName as keyof typeof symbols
 
+    // normalize the rotation
+    let normalizedRotation = props.schRotation
+    if (normalizedRotation === undefined) {
+      normalizedRotation = 0
+    }
+    // Normalize rotation to be between 0 and 360
+    normalizedRotation = normalizedRotation % 360
+    if (normalizedRotation < 0) {
+      normalizedRotation += 360
+    }
+
+    // Validate that rotation is a multiple of 90 degrees
+    if (props.schRotation !== undefined && normalizedRotation % 90 !== 0) {
+      throw new Error(
+        `Schematic rotation ${props.schRotation} is not supported for ${this.componentName}`,
+      )
+    }
+
     const symbol_name_horz = `${base_symbol_name}_horz` as keyof typeof symbols
     const symbol_name_vert = `${base_symbol_name}_vert` as keyof typeof symbols
     const symbol_name_up = `${base_symbol_name}_up` as keyof typeof symbols
@@ -310,44 +328,28 @@ export abstract class PrimitiveComponent<
     const symbol_name_right =
       `${base_symbol_name}_right` as keyof typeof symbols
 
-    if (
-      props.schRotation !== undefined &&
-      props.schRotation !== 0 &&
-      props.schRotation !== 90 &&
-      props.schRotation !== 180 &&
-      props.schRotation !== 270
-    ) {
-      throw new Error(
-        `Schematic rotation ${props.schRotation} is not supported for ${this.componentName}`,
-      )
-    }
-
-    if (
-      symbol_name_right in symbols &&
-      (props.schRotation === undefined || props.schRotation === 0)
-    ) {
+    if (symbol_name_right in symbols && normalizedRotation === 0) {
       return symbol_name_right
     }
-    if (symbol_name_up in symbols && props.schRotation === 90) {
+    if (symbol_name_up in symbols && normalizedRotation === 90) {
       return symbol_name_up
     }
 
-    if (symbol_name_left in symbols && props.schRotation === 180) {
+    if (symbol_name_left in symbols && normalizedRotation === 180) {
       return symbol_name_left
     }
 
-    if (symbol_name_down in symbols && props.schRotation === 270) {
+    if (symbol_name_down in symbols && normalizedRotation === 270) {
       return symbol_name_down
     }
 
     if (symbol_name_horz in symbols) {
-      if (props.schRotation === 0 || props.schRotation === undefined)
-        return symbol_name_horz
-      if (props.schRotation === 180) return symbol_name_horz
+      if (normalizedRotation === 0) return symbol_name_horz
+      if (normalizedRotation === 180) return symbol_name_horz
     }
     if (symbol_name_vert in symbols) {
-      if (props.schRotation === 90) return symbol_name_vert
-      if (props.schRotation === 270) return symbol_name_vert
+      if (normalizedRotation === 90) return symbol_name_vert
+      if (normalizedRotation === 270) return symbol_name_vert
     }
     if (base_symbol_name in symbols) return base_symbol_name
 
