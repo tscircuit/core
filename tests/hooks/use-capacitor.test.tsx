@@ -1,5 +1,4 @@
 import { test, expect } from "bun:test"
-import { Capacitor } from "lib/components"
 import { useCapacitor } from "lib/hooks/use-capacitor"
 import { RootCircuit } from "lib/RootCircuit"
 
