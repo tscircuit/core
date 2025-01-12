@@ -302,6 +302,17 @@ export abstract class PrimitiveComponent<
     const base_symbol_name = this.config
       .schematicSymbolName as keyof typeof symbols
 
+    // normalize the rotation
+    let rawRotation = props.schRotation
+    if (rawRotation === undefined) {
+      rawRotation = 0
+    }
+    // Normalize rotation to be between 0 and 360
+    rawRotation = rawRotation % 360
+    if (rawRotation < 0) {
+      rawRotation += 360
+    }
+
     const symbol_name_horz = `${base_symbol_name}_horz` as keyof typeof symbols
     const symbol_name_vert = `${base_symbol_name}_vert` as keyof typeof symbols
     const symbol_name_up = `${base_symbol_name}_up` as keyof typeof symbols
@@ -310,32 +321,28 @@ export abstract class PrimitiveComponent<
     const symbol_name_right =
       `${base_symbol_name}_right` as keyof typeof symbols
 
-    if (
-      symbol_name_right in symbols &&
-      (props.schRotation === undefined || props.schRotation === 0)
-    ) {
+    if (symbol_name_right in symbols && rawRotation === 0) {
       return symbol_name_right
     }
-    if (symbol_name_up in symbols && props.schRotation === 90) {
+    if (symbol_name_up in symbols && rawRotation === 90) {
       return symbol_name_up
     }
 
-    if (symbol_name_left in symbols && props.schRotation === 180) {
+    if (symbol_name_left in symbols && rawRotation === 180) {
       return symbol_name_left
     }
 
-    if (symbol_name_down in symbols && props.schRotation === 270) {
+    if (symbol_name_down in symbols && rawRotation === 270) {
       return symbol_name_down
     }
 
     if (symbol_name_horz in symbols) {
-      if (props.schRotation === 0 || props.schRotation === undefined)
-        return symbol_name_horz
-      if (props.schRotation === 180) return symbol_name_horz
+      if (rawRotation === 0) return symbol_name_horz
+      if (rawRotation === 180) return symbol_name_horz
     }
     if (symbol_name_vert in symbols) {
-      if (props.schRotation === 90) return symbol_name_vert
-      if (props.schRotation === 270) return symbol_name_vert
+      if (rawRotation === 90) return symbol_name_vert
+      if (rawRotation === 270) return symbol_name_vert
     }
     if (base_symbol_name in symbols) return base_symbol_name
 

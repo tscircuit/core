@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import { Capacitor } from "lib/components"
 import { useCapacitor } from "lib/hooks/use-capacitor"
 import { RootCircuit } from "lib/RootCircuit"
 
@@ -10,7 +11,7 @@ test("useCapacitor hook creates component with correct props and traces", () => 
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <C1 anode="net.VCC" cathode="net.GND" />
+      <C1 anode="net.VCC" cathode="net.GND" schRotation={-90} />
       <C2 pos={C1.anode} neg="net.GND" />
     </board>,
   )
@@ -24,6 +25,7 @@ test("useCapacitor hook creates component with correct props and traces", () => 
   expect(capacitors[0].props.capacitance).toBe("10uF")
   expect(capacitors[1].props.name).toBe("C2")
   expect(capacitors[1].props.capacitance).toBe("100nF")
+  expect(capacitors[0].props.schRotation).toBe(-90)
 
   // Check if traces were created correctly
   const traces = circuit.selectAll("trace")
