@@ -321,7 +321,6 @@ export abstract class PrimitiveComponent<
     const symbol_name_right =
       `${base_symbol_name}_right` as keyof typeof symbols
 
-
     if (symbol_name_right in symbols && rawRotation === 0) {
       return symbol_name_right
     }
