@@ -5,6 +5,7 @@ import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
 import type { AnyCircuitElement } from "circuit-json"
 import { su } from "@tscircuit/soup-util"
+import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -17,12 +18,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minTraceWidth?: number
 }): SimpleRouteJson => {
   const db = su(circuitJson)
+  const connMap = getFullConnectivityMapFromCircuitJson(circuitJson)
 
-  const obstacles = getObstaclesFromSoup([
-    ...db.pcb_component.list(),
-    ...db.pcb_smtpad.list(),
-    ...db.pcb_plated_hole.list(),
-  ])
+  const obstacles = getObstaclesFromSoup(
+    [
+      ...db.pcb_component.list(),
+      ...db.pcb_smtpad.list(),
+      ...db.pcb_plated_hole.list(),
+    ],
+    connMap,
+  )
 
   // Calculate bounds
   const allPoints = obstacles.flatMap((o) => [
@@ -61,7 +66,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       // TODO handle trace.connected_source_net_ids
 
       return {
-        name: trace.source_trace_id ?? "",
+        name:
+          connMap.getNetConnectedToId(trace.source_trace_id) ??
+          trace.source_trace_id ??
+          "",
+        source_trace_id: trace.source_trace_id,
         pointsToConnect: connectedPorts.map((port) => {
           return {
             x: port.x!,
@@ -69,13 +78,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             layer: (port.layers?.[0] as any) ?? "top",
           }
         }),
-      }
+      } as SimpleRouteConnection
     })
-    .filter((c): c is SimpleRouteConnection => c !== null)
+    .filter((c: any): c is SimpleRouteConnection => c !== null)
 
   return {
     bounds,
-    obstacles: [],
+    obstacles,
     connections,
     layerCount: 2,
     minTraceWidth,
