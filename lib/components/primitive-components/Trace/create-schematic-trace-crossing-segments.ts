@@ -21,7 +21,7 @@ export const createSchematicTraceCrossingSegments = ({
   for (let i = 0; i < edges.length; i++) {
     if (i > 2000) {
       throw new Error(
-        "Over 5 iterations spent inside createSchematicTraceCrossingSegments, you have triggered an infinite loop, please report this!",
+        "Over 2000 iterations spent inside createSchematicTraceCrossingSegments, you have triggered an infinite loop, please report this!",
       )
     }
     const edge = edges[i]
