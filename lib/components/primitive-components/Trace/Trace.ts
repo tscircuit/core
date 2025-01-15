@@ -751,6 +751,18 @@ export class Trace
     const isPort2Symbol = !port2.parent.config.shouldRenderAsSchematicBox
     return isPort1Symbol && isPort2Symbol
   }
+  private _isChipToChipConnection(): boolean | undefined {
+    const { allPortsFound, ports } = this._findConnectedPorts()
+    if (!allPortsFound || ports.length !== 2) return false
+    const [port1, port2] = ports
+    if (!port1?.parent || !port2?.parent) return false
+
+    const isPort1Chip = port1.parent.config.shouldRenderAsSchematicBox
+    const isPort2Chip = port2.parent.config.shouldRenderAsSchematicBox
+
+    // Check if both ports are chips
+    return isPort1Chip && isPort2Chip
+  }
 
   doInitialSchematicTraceRender(): void {
     if (this.root?.schematicDisabled) return
@@ -877,7 +889,8 @@ export class Trace
     if (results.length === 0) {
       if (
         this._isSymbolToChipConnection() ||
-        this._isSymbolToSymbolConnection()
+        this._isSymbolToSymbolConnection() ||
+        this._isChipToChipConnection()
       ) {
         this._doInitialSchematicTraceRenderWithDisplayLabel()
         return
@@ -963,7 +976,9 @@ export class Trace
     if (
       this.getSubcircuit()._parsedProps.schTraceAutoLabelEnabled &&
       countComplexElements(junctions, edges) >= 5 &&
-      (this._isSymbolToChipConnection() || this._isSymbolToSymbolConnection())
+      (this._isSymbolToChipConnection() ||
+        this._isSymbolToSymbolConnection() ||
+        this._isChipToChipConnection())
     ) {
       this._doInitialSchematicTraceRenderWithDisplayLabel()
       return
