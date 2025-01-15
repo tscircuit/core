@@ -10,16 +10,17 @@ import { getUnitVectorFromPointAToB } from "@tscircuit/math-utils"
  *  3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
  */
 export const createSchematicTraceCrossingSegments = ({
-  edges,
+  edges: inputEdges,
   otherEdges,
 }: {
   edges: SchematicTrace["edges"]
   otherEdges: SchematicTrace["edges"]
 }) => {
-  edges = [...edges]
+  const edges = [...inputEdges]
   // For each edge in our trace
   for (let i = 0; i < edges.length; i++) {
     if (i > 2000) {
+      debugger
       throw new Error(
         "Over 2000 iterations spent inside createSchematicTraceCrossingSegments, you have triggered an infinite loop, please report this!",
       )
