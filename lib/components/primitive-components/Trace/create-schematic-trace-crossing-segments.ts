@@ -10,13 +10,13 @@ import { getUnitVectorFromPointAToB } from "@tscircuit/math-utils"
  *  3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
  */
 export const createSchematicTraceCrossingSegments = ({
-  edges,
+  edges: inputEdges,
   otherEdges,
 }: {
   edges: SchematicTrace["edges"]
   otherEdges: SchematicTrace["edges"]
 }) => {
-  edges = [...edges]
+  const edges = [...inputEdges]
   // For each edge in our trace
   for (let i = 0; i < edges.length; i++) {
     if (i > 2000) {
@@ -26,7 +26,15 @@ export const createSchematicTraceCrossingSegments = ({
     }
     const edge = edges[i]
     const edgeOrientation =
-      Math.abs(edge.from.x - edge.to.x) < 0.01 ? "vertical" : "horizontal"
+      Math.abs(edge.from.x - edge.to.x) < 0.01
+        ? "vertical"
+        : edge.from.y === edge.to.y
+          ? "horizontal"
+          : "not-orthogonal"
+
+    if (edgeOrientation === "not-orthogonal") {
+      continue
+    }
 
     // Check against all other trace edges for intersections
     const otherEdgesIntersections: Array<{
@@ -36,10 +44,17 @@ export const createSchematicTraceCrossingSegments = ({
     }> = []
     for (const otherEdge of otherEdges) {
       const otherOrientation =
-        otherEdge.from.x === otherEdge.to.x ? "vertical" : "horizontal"
+        otherEdge.from.x === otherEdge.to.x
+          ? "vertical"
+          : otherEdge.from.y === otherEdge.to.y
+            ? "horizontal"
+            : "not-orthogonal"
 
-      // Only check perpendicular edges
-      if (edgeOrientation === otherOrientation) continue
+      if (otherOrientation === "not-orthogonal") continue
+
+      if (edgeOrientation === otherOrientation)
+        // Only check perpendicular edges
+        continue
 
       // Check if the edges intersect
       const hasIntersection = doesLineIntersectLine(
