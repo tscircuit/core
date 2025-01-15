@@ -1,8 +1,5 @@
 import { test, expect } from "bun:test"
 import { createSchematicTraceCrossingSegments } from "lib/components/primitive-components/Trace/create-schematic-trace-crossing-segments"
-import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
-
-// Reproduction created from debugger inside snippet-import1-contribution-board.test.tsx
 
 test("repro schematic trace crossing infinite loop 2", () => {
   const inputEdges = [
