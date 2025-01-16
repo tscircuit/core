@@ -279,7 +279,8 @@ export abstract class PrimitiveComponent<
    * schematic components
    */
   computeSchematicPropsTransform(): Matrix {
-    return compose(translate(this.props.schX ?? 0, this.props.schY ?? 0))
+    // need to find a way to make schX and schY 0 before autolayout and apply them after autolayout
+    return compose(translate(0, 0))
   }
 
   /**

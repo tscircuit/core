@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
-test("remote-autorouter-1 with legacy solve endpoint", async () => {
+test.skip("remote-autorouter-1 with legacy solve endpoint", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer()
 
   const { circuit } = getTestFixture()

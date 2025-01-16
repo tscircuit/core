@@ -42,6 +42,7 @@
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
     "@tscircuit/footprinter": "^0.0.97",
+    "@tscircuit/import-snippet": "^0.0.4",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/math-utils": "^0.0.5",
     "@tscircuit/props": "^0.0.129",
@@ -49,6 +50,7 @@
     "@tscircuit/soup-util": "^0.0.41",
     "circuit-json": "^0.0.128",
     "circuit-json-to-connectivity-map": "^0.0.17",
+    "elkjs": "^0.9.3",
     "format-si-unit": "^0.0.2",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",

@@ -26,6 +26,7 @@ import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { TraceI } from "../Trace/TraceI"
 import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import Debug from "debug"
+import { layoutSchematicWithElk } from "lib/utils/schematic/elkAutoLayout"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -309,44 +310,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  doInitialSchematicLayout(): void {
+  doInitialSchematicLayout() {
     // The schematic_components are rendered in our children
-    if (!this.isSubcircuit) return
     const props = this._parsedProps as SubcircuitGroupProps
+    if (!this.isSubcircuit) return
     if (!props.schAutoLayoutEnabled) return
     const { db } = this.root!
 
-    const descendants = this.getDescendants()
-
-    const components: SchematicComponent[] = []
-    const ports: SchematicPort[] = []
-    // TODO move subcircuits as a group, don't re-layout subcircuits
-    for (const descendant of descendants) {
-      if ("schematic_component_id" in descendant) {
-        const component = db.schematic_component.get(
-          descendant.schematic_component_id!,
-        )
-        if (component) {
-          // Get all ports associated with this component
-          const schPorts = db.schematic_port
-            .list()
-            .filter(
-              (p) =>
-                p.schematic_component_id === component.schematic_component_id,
-            )
-
-          components.push(component)
-          ports.push(...schPorts)
-        }
+    this._queueAsyncEffect("schematic-layout", async () => {
+      try {
+        await layoutSchematicWithElk(db)
+        this._markDirty("SchematicLayout")
+      } catch (error) {
+        console.error("Error during initial schematic layout:", error)
       }
-    }
-
-    // TODO only move components that belong to this subcircuit
-    const scene = SAL.convertSoupToScene(db.toArray())
-
-    const laidOutScene = SAL.ascendingCentralLrBug1(scene)
-
-    SAL.mutateSoupForScene(db.toArray(), laidOutScene)
+    })
   }
 
   /**
