@@ -29,6 +29,9 @@
         "noExplicitAny": "off",
         "noUnsafeDeclarationMerging": "off"
       },
+      "a11y": {
+        "noSvgWithoutTitle": "off"
+      },
       "style": {
         "noNonNullAssertion": "off",
         "useImportType": "off",
