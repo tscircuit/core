@@ -13,6 +13,7 @@
     "url": "https://github.com/tscircuit/core"
   },
   "scripts": {
+    "start:benchmark-server": "bun run benchmarking/server.ts",
     "build": "tsup-node index.ts --format esm --dts",
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",
