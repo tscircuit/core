@@ -7,8 +7,10 @@
  *
  *
  */
-import type React from "react"
+import React from "react"
 import ReactReconciler, { type HostConfig } from "react-reconciler"
+// @ts-expect-error
+import ReactReconciler18 from "react-reconciler-18"
 import { DefaultEventPriority } from "react-reconciler/constants"
 import { type Renderable } from "lib/components/base-components/Renderable"
 import { type NormalComponent } from "lib/components/base-components/NormalComponent"
@@ -154,7 +156,13 @@ const hostConfig: HostConfig<
   supportsHydration: false,
 }
 
-const reconciler = ReactReconciler(hostConfig as any)
+let reconciler: ReturnType<typeof ReactReconciler>
+if (React.version.startsWith("19.")) {
+  reconciler = ReactReconciler(hostConfig as any)
+} else {
+  // React 18 support
+  reconciler = ReactReconciler18(hostConfig as any)
+}
 
 export const createInstanceFromReactElement = (
   reactElm: React.JSX.Element,
@@ -191,12 +199,17 @@ export const createInstanceFromReactElement = (
     null,
   )
 
-  // @ts-expect-error
-  // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
-  reconciler.updateContainerSync(reactElm, container, null, () => {})
-  // @ts-expect-error
-  // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
-  reconciler.flushSyncWork()
+  if (React.version.startsWith("19.")) {
+    // @ts-expect-error
+    // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
+    reconciler.updateContainerSync(reactElm, container, null, () => {})
+    // @ts-expect-error
+    // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
+    reconciler.flushSyncWork()
+  } else {
+    // React 18 support
+    reconciler.updateContainer(reactElm, container, null, () => {})
+  }
 
   // Don't throw here if you want to avoid synchronous errors
   if (containerErrors.length > 0) {
