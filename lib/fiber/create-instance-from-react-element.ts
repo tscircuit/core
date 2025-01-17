@@ -172,6 +172,7 @@ export const createInstanceFromReactElement = (
       return identity()
     },
   }
+  const containerErrors: Error[] = []
   const container = reconciler.createContainer(
     // TODO Replace with store like react-three-fiber
     // https://github.com/pmndrs/react-three-fiber/blob/a457290856f57741bf8beef4f6ff9dbf4879c0a5/packages/fiber/src/core/index.tsx#L172
@@ -185,6 +186,7 @@ export const createInstanceFromReactElement = (
     (error: Error) => {
       console.log("Error in createContainer")
       console.error(error)
+      containerErrors.push(error)
     },
     null,
   )
@@ -195,6 +197,12 @@ export const createInstanceFromReactElement = (
   // @ts-expect-error
   // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
   reconciler.flushSyncWork()
+
+  // Don't throw here if you want to avoid synchronous errors
+  if (containerErrors.length > 0) {
+    throw containerErrors[0]
+  }
+
   const rootInstance = reconciler.getPublicRootInstance(
     container,
   ) as NormalComponent
