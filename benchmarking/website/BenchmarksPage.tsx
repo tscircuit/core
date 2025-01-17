@@ -95,7 +95,7 @@ export const BenchmarksPage = () => {
         </div>
       </div>
 
-      {history.length > 0 && (
+      {history.length > 3 && (
         <div className="mb-8 p-4 border rounded-lg">
           <h2 className="text-lg font-semibold mb-4">Historical Performance</h2>
           <div className="h-64 relative">
@@ -111,7 +111,7 @@ export const BenchmarksPage = () => {
                 aria-label="Performance history graph"
               >
                 {/* Average line */}
-                {history.length > 0 && (
+                {history.length > 3 && (
                   <>
                     <text
                       x="0"
