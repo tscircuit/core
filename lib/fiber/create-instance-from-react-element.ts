@@ -7,8 +7,10 @@
  *
  *
  */
-import type React from "react"
+import React from "react"
 import ReactReconciler, { type HostConfig } from "react-reconciler"
+// @ts-expect-error
+import ReactReconciler18 from "react-reconciler-18"
 import { DefaultEventPriority } from "react-reconciler/constants"
 import { type Renderable } from "lib/components/base-components/Renderable"
 import { type NormalComponent } from "lib/components/base-components/NormalComponent"
@@ -154,7 +156,13 @@ const hostConfig: HostConfig<
   supportsHydration: false,
 }
 
-const reconciler = ReactReconciler(hostConfig as any)
+let reconciler: ReturnType<typeof ReactReconciler>
+if (React.version.startsWith("19.")) {
+  reconciler = ReactReconciler(hostConfig as any)
+} else {
+  // React 18 support
+  reconciler = ReactReconciler18(hostConfig as any)
+}
 
 export const createInstanceFromReactElement = (
   reactElm: React.JSX.Element,
