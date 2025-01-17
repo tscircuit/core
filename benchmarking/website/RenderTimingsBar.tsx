@@ -33,7 +33,7 @@ export const RenderTimingsBar = ({
               }}
             >
               <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs whitespace-nowrap rounded bg-gray-900 text-white pointer-events-none">
-                {phase}: {time}ms
+                {phase}: {time.toFixed(1)}ms
               </div>
             </div>
           )
