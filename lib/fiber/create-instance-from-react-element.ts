@@ -199,12 +199,17 @@ export const createInstanceFromReactElement = (
     null,
   )
 
-  // @ts-expect-error
-  // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
-  reconciler.updateContainerSync(reactElm, container, null, () => {})
-  // @ts-expect-error
-  // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
-  reconciler.flushSyncWork()
+  if (React.version.startsWith("19.")) {
+    // @ts-expect-error
+    // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
+    reconciler.updateContainerSync(reactElm, container, null, () => {})
+    // @ts-expect-error
+    // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
+    reconciler.flushSyncWork()
+  } else {
+    // React 18 support
+    reconciler.updateContainer(reactElm, container, null, () => {})
+  }
 
   // Don't throw here if you want to avoid synchronous errors
   if (containerErrors.length > 0) {
