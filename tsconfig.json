@@ -29,5 +29,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "exclude": ["node_modules", "dist", "benchmarking-dist"]
 }
