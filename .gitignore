@@ -188,3 +188,4 @@ test-artifact-*
 yalc.lock
 
 circuit.json
+benchmarking-dist
