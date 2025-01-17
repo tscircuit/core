@@ -1,5 +1,15 @@
+/**
+ * This is how we render in React. This can be a confusing part of the codebase,
+ * but here are some helpful reference implementations:
+ *
+ * https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js
+ * https://github.com/pmndrs/react-three-fiber/blob/ec4f00bb61cc4f6e28b3a12b1dca9daa5594f10e/packages/fiber/src/core/renderer.ts
+ *
+ *
+ */
 import type React from "react"
 import ReactReconciler, { type HostConfig } from "react-reconciler"
+import { DefaultEventPriority } from "react-reconciler/constants"
 import { type Renderable } from "lib/components/base-components/Renderable"
 import { type NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { ReactElement, ReactNode } from "react"
@@ -112,9 +122,6 @@ const hostConfig: HostConfig<
   },
   noTimeout: undefined,
   isPrimaryRenderer: false,
-  getCurrentEventPriority(): ReactReconciler.Lane {
-    throw new Error("Function not implemented.")
-  },
   getInstanceFromNode(node: any): ReactReconciler.Fiber | null | undefined {
     throw new Error("Function not implemented.")
   },
@@ -133,6 +140,17 @@ const hostConfig: HostConfig<
   detachDeletedInstance: (node: any): void => {
     throw new Error("Function not implemented.")
   },
+
+  // https://github.com/pmndrs/react-three-fiber/pull/2360#discussion_r916356874
+  getCurrentEventPriority: () => DefaultEventPriority,
+
+  // @ts-expect-error
+  // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L57
+  getCurrentUpdatePriority: () => DefaultEventPriority,
+  resolveUpdatePriority: () => DefaultEventPriority,
+  setCurrentUpdatePriority: () => {},
+  maySuspendCommit: () => false,
+
   supportsHydration: false,
 }
 
@@ -154,6 +172,7 @@ export const createInstanceFromReactElement = (
       return identity()
     },
   }
+  const containerErrors: Error[] = []
   const container = reconciler.createContainer(
     // TODO Replace with store like react-three-fiber
     // https://github.com/pmndrs/react-three-fiber/blob/a457290856f57741bf8beef4f6ff9dbf4879c0a5/packages/fiber/src/core/index.tsx#L172
@@ -167,10 +186,23 @@ export const createInstanceFromReactElement = (
     (error: Error) => {
       console.log("Error in createContainer")
       console.error(error)
+      containerErrors.push(error)
     },
     null,
   )
-  reconciler.updateContainer(reactElm, container, null, () => {})
+
+  // @ts-expect-error
+  // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
+  reconciler.updateContainerSync(reactElm, container, null, () => {})
+  // @ts-expect-error
+  // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
+  reconciler.flushSyncWork()
+
+  // Don't throw here if you want to avoid synchronous errors
+  if (containerErrors.length > 0) {
+    throw containerErrors[0]
+  }
+
   const rootInstance = reconciler.getPublicRootInstance(
     container,
   ) as NormalComponent
