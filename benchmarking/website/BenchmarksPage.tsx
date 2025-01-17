@@ -4,6 +4,7 @@ import { RenderTimingsBar } from "./RenderTimingsBar"
 import { useState, useEffect } from "react"
 
 const STORAGE_KEY = "benchmark_history"
+const MAX_HISTORY_POINTS = 50
 
 interface HistoryDataPoint {
   timestamp: number
@@ -21,7 +22,9 @@ export const BenchmarksPage = () => {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
-      setHistory(JSON.parse(stored))
+      const parsedHistory = JSON.parse(stored)
+      // Only keep the last MAX_HISTORY_POINTS
+      setHistory(parsedHistory.slice(-MAX_HISTORY_POINTS))
     }
   }, [])
 
@@ -54,7 +57,7 @@ export const BenchmarksPage = () => {
       totalTime: totalExecutionTime,
     }
 
-    const newHistory = [...history, newPoint]
+    const newHistory = [...history, newPoint].slice(-MAX_HISTORY_POINTS)
     setHistory(newHistory)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory))
 
@@ -129,13 +132,19 @@ export const BenchmarksPage = () => {
                 return (
                   <div
                     key={point.timestamp}
-                    className="absolute w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1 -translate-y-1 hover:w-3 hover:h-3 transition-all"
+                    className="group relative w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1 -translate-y-1 hover:w-3 hover:h-3 transition-all"
                     style={{
+                      position: "absolute",
                       left: `${x}%`,
                       top: `${y}%`,
                     }}
-                    title={`Time: ${point.totalTime.toFixed(2)}ms\nDate: ${new Date(point.timestamp).toLocaleString()}`}
-                  />
+                  >
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs whitespace-nowrap rounded bg-gray-900 text-white pointer-events-none">
+                      Time: {point.totalTime.toFixed(2)}ms
+                      <br />
+                      Date: {new Date(point.timestamp).toLocaleString()}
+                    </div>
+                  </div>
                 )
               })}
             </div>
