@@ -1,4 +1,4 @@
-import { Circuit } from "@tscircuit/core"
+import { Circuit } from "lib"
 import { getPhaseTimingsFromRenderEvents } from "lib/utils/render-events/getPhaseTimingsFromRenderEvents"
 
 export const runBenchmark = async ({ Component }: { Component: any }) => {

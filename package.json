@@ -18,7 +18,8 @@
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
-    "start:benchmarking": "nodemon --watch lib,benchmarking --exec 'bun run build:benchmarking && live-server ./benchmarking-dist'"
+    "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
+    "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"serve ./benchmarking-dist\""
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
@@ -31,18 +32,19 @@
     "@types/react-dom": "^19.0.2",
     "@types/react-reconciler": "^0.28.9",
     "bun-match-svg": "0.0.8",
+    "chokidar-cli": "^3.0.0",
     "circuit-to-svg": "^0.0.99",
+    "concurrently": "^9.1.2",
     "debug": "^4.3.6",
     "graphics-debug": "^0.0.4",
     "howfat": "^0.3.8",
-    "live-server": "^1.2.2",
     "looks-same": "^9.0.1",
-    "nodemon": "^3.1.9",
     "pkg-pr-new": "^0.0.37",
-    "ts-expect": "^1.3.0",
-    "tsup": "^8.2.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "serve": "^14.2.4",
+    "ts-expect": "^1.3.0",
+    "tsup": "^8.2.4"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
