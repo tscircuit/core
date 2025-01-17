@@ -69,6 +69,9 @@ export const BenchmarksPage = () => {
     setHistory([])
   }
 
+  const averageTime =
+    history.reduce((sum, h) => sum + h.totalTime, 0) / history.length
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-8">
@@ -107,6 +110,33 @@ export const BenchmarksPage = () => {
                 className="absolute w-full h-full"
                 aria-label="Performance history graph"
               >
+                {/* Average line */}
+                {history.length > 0 && (
+                  <>
+                    <text
+                      x="0"
+                      y={`${(averageTime / Math.max(...history.map((h) => h.totalTime))) * 100 - 10}%`}
+                      fill="#9CA3AF"
+                      fontSize="12"
+                      style={{
+                        zIndex: 1000,
+                      }}
+                      dominantBaseline="middle"
+                      textAnchor="start"
+                    >
+                      Avg: {averageTime.toFixed(1)}ms
+                    </text>
+                    <line
+                      x1="0%"
+                      y1={`${(history.reduce((sum, h) => sum + h.totalTime, 0) / history.length / Math.max(...history.map((h) => h.totalTime))) * 100}%`}
+                      x2="100%"
+                      y2={`${(history.reduce((sum, h) => sum + h.totalTime, 0) / history.length / Math.max(...history.map((h) => h.totalTime))) * 100}%`}
+                      stroke="#9CA3AF"
+                      strokeWidth="1"
+                      strokeDasharray="4"
+                    />
+                  </>
+                )}
                 {history.map((point, i) => {
                   const maxTime = Math.max(...history.map((h) => h.totalTime))
                   const x = (i / (history.length - 1)) * 100
@@ -115,6 +145,7 @@ export const BenchmarksPage = () => {
                   return i < history.length - 1 ? (
                     <line
                       key={`line-${point.timestamp}`}
+                      opacity={0.5}
                       x1={`${x}%`}
                       y1={`${y}%`}
                       x2={`${((i + 1) / (history.length - 1)) * 100}%`}
