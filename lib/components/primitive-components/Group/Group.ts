@@ -1,31 +1,26 @@
 import {
-  groupProps,
-  type GroupProps,
   type SubcircuitGroupProps,
+  groupProps
 } from "@tscircuit/props"
-import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
-import { compose, identity } from "transformation-matrix"
-import { z } from "zod"
-import { NormalComponent } from "../../base-components/NormalComponent"
-import { TraceHint } from "../TraceHint"
+import * as SAL from "@tscircuit/schematic-autolayout"
 import type {
   PcbTrace,
   SchematicComponent,
   SchematicPort,
   SourceTrace,
 } from "circuit-json"
-import * as SAL from "@tscircuit/schematic-autolayout"
-import type { ISubcircuit } from "./ISubcircuit"
-import type {
-  SimpleRouteConnection,
-  SimpleRouteJson,
-} from "lib/utils/autorouting/SimpleRouteJson"
-import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
-import type { Trace } from "../Trace/Trace"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import type { TraceI } from "../Trace/TraceI"
-import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import Debug from "debug"
+import type {
+  SimpleRouteJson
+} from "lib/utils/autorouting/SimpleRouteJson"
+import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
+import { z } from "zod"
+import { NormalComponent } from "../../base-components/NormalComponent"
+import type { Trace } from "../Trace/Trace"
+import type { TraceI } from "../Trace/TraceI"
+import { TraceHint } from "../TraceHint"
+import type { ISubcircuit } from "./ISubcircuit"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -62,6 +57,47 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           offsets: manualTraceHint.offsets,
         }),
       )
+    }
+  }
+
+  doInitialSourceRender() {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const source_group = db.source_group.insert({
+      name: props.name ?? `unnamedsubcircuit_${this._renderId}`,
+      subcircuit_id: this.isSubcircuit ? `subcircuit_${this._renderId}` : undefined,
+      is_subcircuit: this.isSubcircuit,
+    })
+    this.source_group_id = source_group.source_group_id
+  }
+
+  doInitialPcbPrimitiveRender() {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+
+    // Get all child components that have pcb_component_ids
+    const childPcbComponents = this.children
+      .map(child => child.pcb_component_id)
+      .filter((id): id is string => id !== null)
+
+    const pcb_group = db.pcb_group.insert({
+      subcircuit_id: this.isSubcircuit ? `subcircuit_${this._renderId}` : undefined,
+      is_subcircuit: this.isSubcircuit,
+      width: 0,
+      height: 0,
+      center: { x: 0, y: 0 },
+      pcb_component_ids: childPcbComponents,
+      source_group_id: this.source_group_id!,
+    })
+    this.pcb_group_id = pcb_group.pcb_group_id
+
+    // Update all child pcb_components with the subcircuit id
+    if (this.isSubcircuit) {
+      for (const pcbComponent of childPcbComponents) {
+        db.pcb_component.update(pcbComponent, {
+          subcircuit_id: `subcircuit_${this._renderId}`,
+        })
+      }
     }
   }
 
