@@ -1,31 +1,26 @@
 import {
-  groupProps,
-  type GroupProps,
   type SubcircuitGroupProps,
+  groupProps
 } from "@tscircuit/props"
-import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
-import { compose, identity } from "transformation-matrix"
-import { z } from "zod"
-import { NormalComponent } from "../../base-components/NormalComponent"
-import { TraceHint } from "../TraceHint"
+import * as SAL from "@tscircuit/schematic-autolayout"
 import type {
   PcbTrace,
   SchematicComponent,
   SchematicPort,
   SourceTrace,
 } from "circuit-json"
-import * as SAL from "@tscircuit/schematic-autolayout"
-import type { ISubcircuit } from "./ISubcircuit"
-import type {
-  SimpleRouteConnection,
-  SimpleRouteJson,
-} from "lib/utils/autorouting/SimpleRouteJson"
-import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
-import type { Trace } from "../Trace/Trace"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import type { TraceI } from "../Trace/TraceI"
-import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import Debug from "debug"
+import type {
+  SimpleRouteJson
+} from "lib/utils/autorouting/SimpleRouteJson"
+import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
+import { z } from "zod"
+import { NormalComponent } from "../../base-components/NormalComponent"
+import type { Trace } from "../Trace/Trace"
+import type { TraceI } from "../Trace/TraceI"
+import { TraceHint } from "../TraceHint"
+import type { ISubcircuit } from "./ISubcircuit"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -35,6 +30,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: PcbTrace[]
   } | null = null
+
+  static currentAutoroutingPromise: Promise<void> | null = null;
 
   get config() {
     return {
@@ -112,7 +109,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  doInitialPcbTraceRender() {
+  async doInitialPcbTraceRender() {
     if (this.root?.pcbDisabled) return
     if (this._shouldUseTraceByTraceRouting()) return
 
@@ -121,14 +118,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const serverMode = this.props.autorouter?.serverMode ?? "job"
 
     const debug = Debug("tscircuit:core:autorouting")
+    debug("props", this.props.autorouter)
 
     const fetchWithDebug = (url: string, options: RequestInit) => {
       debug("fetching", url)
       return fetch(url, options)
     }
 
-    // Queue the autorouting request
-    this._queueAsyncEffect("make-http-autorouting-request", async () => {
+    // Wait for any existing autorouting to complete
+    if (Group.currentAutoroutingPromise) {
+      await Group.currentAutoroutingPromise
+    }
+
+    // Create a new promise for this autorouting job
+    const autoroutingPromise = (async () => {
       if (serverMode === "solve-endpoint") {
         // Legacy solve endpoint mode
         if (this.props.autorouter?.inputFormat === "simplified") {
@@ -163,6 +166,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         return
       }
 
+      debug(`creating autorouting job for ${this.constructor.name}`)
       const { autorouting_job } = await fetchWithDebug(
         `${serverUrl}/autorouting/jobs/create`,
         {
@@ -175,11 +179,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }),
           headers: { "Content-Type": "application/json" },
         },
-      ).then((r) => r.json())
+      ).then((r) => {
+        debug("message", r.statusText)
+        return r.json()
+      })
 
       // Poll until job is complete
       while (true) {
-        const { autorouting_job: job } = (await fetchWithDebug(
+        const { autorouting_job: job } = await fetchWithDebug(
           `${serverUrl}/autorouting/jobs/get`,
           {
             method: "POST",
@@ -188,20 +195,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             }),
             headers: { "Content-Type": "application/json" },
           },
-        ).then((r) => r.json())) as {
-          autorouting_job: {
-            autorouting_job_id: string
-            is_running: boolean
-            is_started: boolean
-            is_finished: boolean
-            has_error: boolean
-            error: string | null
-            autorouting_provider: "freerouting" | "tscircuit"
-            created_at: string
-            started_at?: string
-            finished_at?: string
-          }
-        }
+        ).then((r) => r.json())
 
         if (job.is_finished) {
           const { autorouting_job_output } = await fetchWithDebug(
@@ -218,6 +212,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           this._asyncAutoroutingResult = {
             output_pcb_traces: autorouting_job_output.output_pcb_traces,
           }
+          // Apply the routing results immediately before the next autorouting job starts
+          this._updatePcbTraceRenderFromPcbTraces()
           this._markDirty("PcbTraceRender")
           break
         }
@@ -228,8 +224,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           )
         }
 
-        // Wait before polling again
         await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+    })()
+
+    // Store the promise
+    Group.currentAutoroutingPromise = autoroutingPromise
+
+    // Queue the autorouting request
+    this._queueAsyncEffect("make-http-autorouting-request", async () => {
+      await autoroutingPromise
+      if (Group.currentAutoroutingPromise === autoroutingPromise) {
+        Group.currentAutoroutingPromise = null
       }
     })
   }
