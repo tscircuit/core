@@ -90,7 +90,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
     this.pcb_group_id = pcb_group.pcb_group_id
 
-    // Update all child pcb_components with the subcircuit id
     for (const pcbComponentId of childPcbComponentsIds) {
       const currentComponent = db.pcb_smtpad.getWhere({
         pcb_component_id: pcbComponentId,
