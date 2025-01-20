@@ -1,7 +1,4 @@
-import {
-  type SubcircuitGroupProps,
-  groupProps
-} from "@tscircuit/props"
+import { type SubcircuitGroupProps, groupProps } from "@tscircuit/props"
 import * as SAL from "@tscircuit/schematic-autolayout"
 import type {
   PcbTrace,
@@ -11,9 +8,7 @@ import type {
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import Debug from "debug"
-import type {
-  SimpleRouteJson
-} from "lib/utils/autorouting/SimpleRouteJson"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent"
@@ -31,7 +26,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     output_pcb_traces?: PcbTrace[]
   } | null = null
 
-  static currentAutoroutingPromise: Promise<void> | null = null;
+  static currentAutoroutingPromise: Promise<void> | null = null
 
   get config() {
     return {
