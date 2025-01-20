@@ -1,7 +1,4 @@
-import {
-  type SubcircuitGroupProps,
-  groupProps
-} from "@tscircuit/props"
+import { type SubcircuitGroupProps, groupProps } from "@tscircuit/props"
 import * as SAL from "@tscircuit/schematic-autolayout"
 import type {
   PcbTrace,
@@ -11,9 +8,7 @@ import type {
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import Debug from "debug"
-import type {
-  SimpleRouteJson
-} from "lib/utils/autorouting/SimpleRouteJson"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent"
@@ -65,7 +60,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { _parsedProps: props } = this
     const source_group = db.source_group.insert({
       name: props.name ?? `unnamedsubcircuit_${this._renderId}`,
-      subcircuit_id: this.isSubcircuit ? `subcircuit_${this._renderId}` : undefined,
+      subcircuit_id: this.isSubcircuit
+        ? `subcircuit_${this._renderId}`
+        : undefined,
       is_subcircuit: this.isSubcircuit,
     })
     this.source_group_id = source_group.source_group_id
@@ -76,26 +73,34 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { _parsedProps: props } = this
 
     // Get all child components that have pcb_component_ids
-    const childPcbComponents = this.children
-      .map(child => child.pcb_component_id)
+    const childPcbComponentsIds = this.children
+      .map((child) => child.pcb_component_id)
       .filter((id): id is string => id !== null)
 
     const pcb_group = db.pcb_group.insert({
-      subcircuit_id: this.isSubcircuit ? `subcircuit_${this._renderId}` : undefined,
+      subcircuit_id: this.isSubcircuit
+        ? `subcircuit_${this._renderId}`
+        : undefined,
       is_subcircuit: this.isSubcircuit,
       width: 0,
       height: 0,
       center: { x: 0, y: 0 },
-      pcb_component_ids: childPcbComponents,
+      pcb_component_ids: childPcbComponentsIds,
       source_group_id: this.source_group_id!,
     })
     this.pcb_group_id = pcb_group.pcb_group_id
 
     // Update all child pcb_components with the subcircuit id
-    if (this.isSubcircuit) {
-      for (const pcbComponent of childPcbComponents) {
-        db.pcb_component.update(pcbComponent, {
-          subcircuit_id: `subcircuit_${this._renderId}`,
+    for (const pcbComponentId of childPcbComponentsIds) {
+      const currentComponent = db.pcb_smtpad.getWhere({
+        pcb_component_id: pcbComponentId,
+      })
+      if (currentComponent) {
+        db.pcb_smtpad.update(currentComponent.pcb_smtpad_id, {
+          pcb_group_id: pcb_group.pcb_group_id,
+          subcircuit_id: this.isSubcircuit
+            ? `subcircuit_${this._renderId}`
+            : undefined,
         })
       }
     }

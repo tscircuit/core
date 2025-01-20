@@ -490,6 +490,7 @@ export class NormalComponent<
       layer: props.layer ?? "top",
       rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
+      subcircuit_id: this.isSubcircuit ? `subcircuit_${this._renderId}` : undefined,
     })
 
     if (!props.footprint && !this.isGroup) {
