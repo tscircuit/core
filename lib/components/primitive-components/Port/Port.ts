@@ -240,7 +240,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (matchCenter) {
       const subcircuit = this.getSubcircuit()
-      
+
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
         layers: this.getAvailablePcbLayers(),

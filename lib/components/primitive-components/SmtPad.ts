@@ -1,8 +1,6 @@
 import { smtPadProps } from "@tscircuit/props"
 import type { PcbSmtPad } from "circuit-json"
-import {
-  decomposeTSR
-} from "transformation-matrix"
+import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 
@@ -57,9 +55,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const { _parsedProps: props } = this
     if (!props.portHints) return
     const container = this.getPrimitiveContainer()
-    
+
     const subcircuit = this.getSubcircuit()
-    
+
     const position = this._getGlobalPcbPositionBeforeLayout()
     const containerCenter = container?._getGlobalPcbPositionBeforeLayout()
     const decomposedMat = decomposeTSR(
