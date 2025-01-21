@@ -145,117 +145,125 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this.root?.pcbDisabled) return
     if (this._shouldUseTraceByTraceRouting()) return
 
-    const serverUrl = this.props.autorouter?.serverUrl ?? "https://registry-api.tscircuit.com"
+    const serverUrl =
+      this.props.autorouter?.serverUrl ?? "https://registry-api.tscircuit.com"
     const serverMode = this.props.autorouter?.serverMode ?? "job"
 
     // Find all child groups that are subcircuits
-    const subcircuits = this.children.filter(child => 
-        child instanceof Group && child.isSubcircuit
+    const subcircuits = this.children.filter(
+      (child) => child instanceof Group && child.isSubcircuit,
     ) as Group[]
 
-    const subcircuitPromises = subcircuits.map(subcircuit => 
-        subcircuit._queueAutorouting(serverUrl, serverMode, debug)
+    const subcircuitPromises = subcircuits.map((subcircuit) =>
+      subcircuit._queueAutorouting(serverUrl, serverMode, debug),
     )
 
     // After all subcircuits complete, do board-level routing
     Promise.all(subcircuitPromises).then(() => {
-        this._queueAutorouting(serverUrl, serverMode, debug)
+      this._queueAutorouting(serverUrl, serverMode, debug)
     })
   }
 
-  private _queueAutorouting(serverUrl: string, serverMode: string, debug: Debug.Debugger) {
+  private _queueAutorouting(
+    serverUrl: string,
+    serverMode: string,
+    debug: Debug.Debugger,
+  ) {
     const fetchWithDebug = (url: string, options: RequestInit) => {
-        debug("fetching", url)
-        return fetch(url, options)
+      debug("fetching", url)
+      return fetch(url, options)
     }
 
     return this._queueAsyncEffect("make-http-autorouting-request", async () => {
-        if (serverMode === "solve-endpoint") {
-            // Legacy solve endpoint mode
-            if (this.props.autorouter?.inputFormat === "simplified") {
-                const { autorouting_result } = await fetchWithDebug(
-                    `${serverUrl}/autorouting/solve`,
-                    {
-                        method: "POST",
-                        body: JSON.stringify({
-                            input_simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
-                        }),
-                        headers: { "Content-Type": "application/json" },
-                    },
-                ).then((r) => r.json())
-                this._asyncAutoroutingResult = autorouting_result
-                this._markDirty("PcbTraceRender")
-                return
-            }
-
-            const { autorouting_result } = await fetchWithDebug(
-                `${serverUrl}/autorouting/solve`,
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        input_circuit_json: this.root!.db.toArray(),
-                    }),
-                    headers: { "Content-Type": "application/json" },
-                },
-            ).then((r) => r.json())
-            this._asyncAutoroutingResult = autorouting_result
-            this._markDirty("PcbTraceRender")
-            return
+      if (serverMode === "solve-endpoint") {
+        // Legacy solve endpoint mode
+        if (this.props.autorouter?.inputFormat === "simplified") {
+          const { autorouting_result } = await fetchWithDebug(
+            `${serverUrl}/autorouting/solve`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                input_simple_route_json:
+                  this._getSimpleRouteJsonFromPcbTraces(),
+              }),
+              headers: { "Content-Type": "application/json" },
+            },
+          ).then((r) => r.json())
+          this._asyncAutoroutingResult = autorouting_result
+          this._markDirty("PcbTraceRender")
+          return
         }
 
-        const { autorouting_job } = await fetchWithDebug(
-            `${serverUrl}/autorouting/jobs/create`,
-            {
-                method: "POST",
-                body: JSON.stringify({
-                    input_circuit_json: this.root!.db.toArray(),
-                    provider: "freerouting",
-                    autostart: true,
-                    display_name: this.root?.name,
-                }),
-                headers: { "Content-Type": "application/json" },
-            },
+        const { autorouting_result } = await fetchWithDebug(
+          `${serverUrl}/autorouting/solve`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              input_circuit_json: this.root!.db.toArray(),
+            }),
+            headers: { "Content-Type": "application/json" },
+          },
+        ).then((r) => r.json())
+        this._asyncAutoroutingResult = autorouting_result
+        this._markDirty("PcbTraceRender")
+        return
+      }
+
+      const { autorouting_job } = await fetchWithDebug(
+        `${serverUrl}/autorouting/jobs/create`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            input_circuit_json: this.root!.db.toArray(),
+            provider: "freerouting",
+            autostart: true,
+            display_name: this.root?.name,
+          }),
+          headers: { "Content-Type": "application/json" },
+        },
+      ).then((r) => r.json())
+
+      // Poll until job is complete
+      while (true) {
+        const { autorouting_job: job } = await fetchWithDebug(
+          `${serverUrl}/autorouting/jobs/get`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              autorouting_job_id: autorouting_job.autorouting_job_id,
+            }),
+            headers: { "Content-Type": "application/json" },
+          },
         ).then((r) => r.json())
 
-        // Poll until job is complete
-        while (true) {
-            const { autorouting_job: job } = await fetchWithDebug(
-                `${serverUrl}/autorouting/jobs/get`,
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        autorouting_job_id: autorouting_job.autorouting_job_id,
-                    }),
-                    headers: { "Content-Type": "application/json" },
-                },
-            ).then((r) => r.json())
+        if (job.is_finished) {
+          const { autorouting_job_output } = await fetchWithDebug(
+            `${serverUrl}/autorouting/jobs/get_output`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                autorouting_job_id: autorouting_job.autorouting_job_id,
+              }),
+              headers: { "Content-Type": "application/json" },
+            },
+          ).then((r) => r.json())
 
-            if (job.is_finished) {
-                const { autorouting_job_output } = await fetchWithDebug(
-                    `${serverUrl}/autorouting/jobs/get_output`,
-                    {
-                        method: "POST",
-                        body: JSON.stringify({
-                            autorouting_job_id: autorouting_job.autorouting_job_id,
-                        }),
-                        headers: { "Content-Type": "application/json" },
-                    },
-                ).then((r) => r.json())
-
-                this._asyncAutoroutingResult = {
-                    output_pcb_traces: autorouting_job_output.output_pcb_traces,
-                }
-                this._markDirty("PcbTraceRender")
-                break
-            }
-
-            if (job.has_error) {
-                throw new Error(`Autorouting job failed: ${JSON.stringify(job.error)}`)
-            }
-
-            // Wait before polling again
-            await new Promise((resolve) => setTimeout(resolve, 100))
+          this._asyncAutoroutingResult = {
+            output_pcb_traces: autorouting_job_output.output_pcb_traces,
+          }
+          this._markDirty("PcbTraceRender")
+          break
         }
+
+        if (job.has_error) {
+          throw new Error(
+            `Autorouting job failed: ${JSON.stringify(job.error)}`,
+          )
+        }
+
+        // Wait before polling again
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
     })
   }
 
