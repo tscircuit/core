@@ -31,6 +31,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
   implements ISubcircuit
 {
+  subcircuit_id?: string
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: PcbTrace[]
@@ -41,6 +42,32 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       zodProps: groupProps as unknown as Props,
       componentName: "Group",
     }
+  }
+
+  doInitialSourceRender() {
+    const { db } = this.root!
+    const source_group = db.source_group.insert({
+      name: this._parsedProps.name,
+      // TODO add subcircuit_id
+    })
+    this.subcircuit_id = `subcircuit_${source_group.source_group_id}`
+    this.source_group_id = source_group.source_group_id
+  }
+
+  doInitialPcbComponentRender() {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const pcb_group = db.pcb_group.insert({
+      is_subcircuit: this.isSubcircuit,
+      subcircuit_id: this.subcircuit_id!,
+      name: this._parsedProps.name,
+      center: this._getGlobalPcbPositionBeforeLayout(),
+      width: 0,
+      height: 0,
+      pcb_component_ids: [],
+      source_group_id: this.source_group_id!,
+    })
   }
 
   doInitialCreateTraceHintsFromProps(): void {
