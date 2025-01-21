@@ -70,6 +70,7 @@ test("Primitive components should have subcircuit_id", async () => {
     "height": 0.6000000000000001,
     "layer": "top",
     "pcb_component_id": "pcb_component_0",
+    "pcb_group_id": "pcb_group_0",
     "pcb_port_id": "pcb_port_0",
     "pcb_smtpad_id": "pcb_smtpad_0",
     "port_hints": [
@@ -87,6 +88,7 @@ test("Primitive components should have subcircuit_id", async () => {
     "height": 0.6000000000000001,
     "layer": "top",
     "pcb_component_id": "pcb_component_0",
+    "pcb_group_id": "pcb_group_0",
     "pcb_port_id": "pcb_port_1",
     "pcb_smtpad_id": "pcb_smtpad_1",
     "port_hints": [
