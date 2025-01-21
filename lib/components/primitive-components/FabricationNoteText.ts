@@ -30,6 +30,7 @@ export class FabricationNoteText extends PrimitiveComponent<
       text: props.text ?? "",
       pcb_component_id: container.pcb_component_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: subcircuit?.pcb_group_id ?? undefined,
     })
   }
 }

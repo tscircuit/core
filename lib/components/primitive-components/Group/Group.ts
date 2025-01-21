@@ -58,6 +58,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       pcb_component_ids: [],
       source_group_id: this.source_group_id!,
     })
+    this.pcb_group_id = pcb_group.pcb_group_id
   }
 
   doInitialCreateTraceHintsFromProps(): void {

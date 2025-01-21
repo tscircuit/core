@@ -106,6 +106,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         y: position.y,
         layers: ["top", "bottom"],
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: subcircuit?.pcb_group_id ?? undefined,
       })
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
@@ -123,6 +124,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         y: position.y,
         layers: ["top", "bottom"],
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: subcircuit?.pcb_group_id ?? undefined,
         // NOTE: currently PcbPlatedHoleOval erroneously includes both the shape "pill" and "oval"
       } as PcbPlatedHoleOval)
 

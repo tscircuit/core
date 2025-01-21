@@ -34,6 +34,7 @@ export class SilkscreenLine extends PrimitiveComponent<
       y2: props.y2,
       stroke_width: props.strokeWidth ?? 0.1,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: subcircuit?.pcb_group_id ?? undefined,
     })
 
     this.pcb_silkscreen_line_id = pcb_silkscreen_line.pcb_silkscreen_line_id

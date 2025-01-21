@@ -71,6 +71,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       from_layer: props.fromLayer || "bottom",
       to_layer: props.toLayer || "top",
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: this.pcb_group_id ?? undefined,
     })
 
     this.pcb_via_id = pcb_via.pcb_via_id

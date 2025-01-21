@@ -40,6 +40,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
           y: position.y,
         },
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: subcircuit?.pcb_group_id ?? undefined,
       })
     } else if (props.shape === "rect") {
       pcb_keepout = db.pcb_keepout.insert({
@@ -54,6 +55,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
           y: position.y,
         },
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: subcircuit?.pcb_group_id ?? undefined,
       })
     }
     if (pcb_keepout) {
