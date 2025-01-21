@@ -18,6 +18,7 @@ test("Subcircuit group should have subcircuit_id", async () => {
   expect(circuit.db.source_group.list()).toMatchInlineSnapshot(`
 [
   {
+    "is_subcircuit": true,
     "name": "G1",
     "source_group_id": "source_group_0",
     "type": "source_group",
@@ -41,6 +42,63 @@ test("Subcircuit group should have subcircuit_id", async () => {
     "subcircuit_id": "subcircuit_source_group_0",
     "type": "pcb_group",
     "width": 0,
+  },
+]
+`)
+})
+
+test("Primitive components should have subcircuit_id", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <group subcircuit name="G1">
+      <resistor
+        name="R1"
+        resistance={100}
+        footprint={"0402"}
+        pcbX={1}
+        pcbY={1}
+      />
+    </group>,
+  )
+
+  circuit.render()
+
+  expect(circuit.db.pcb_smtpad.list()).toMatchInlineSnapshot(`
+[
+  {
+    "height": 0.6000000000000001,
+    "layer": "top",
+    "pcb_component_id": "pcb_component_0",
+    "pcb_port_id": "pcb_port_0",
+    "pcb_smtpad_id": "pcb_smtpad_0",
+    "port_hints": [
+      "1",
+      "left",
+    ],
+    "shape": "rect",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "type": "pcb_smtpad",
+    "width": 0.6000000000000001,
+    "x": 0.5,
+    "y": 1,
+  },
+  {
+    "height": 0.6000000000000001,
+    "layer": "top",
+    "pcb_component_id": "pcb_component_0",
+    "pcb_port_id": "pcb_port_1",
+    "pcb_smtpad_id": "pcb_smtpad_1",
+    "port_hints": [
+      "2",
+      "right",
+    ],
+    "shape": "rect",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "type": "pcb_smtpad",
+    "width": 0.6000000000000001,
+    "x": 1.5,
+    "y": 1,
   },
 ]
 `)

@@ -27,7 +27,7 @@ export class SilkscreenPath extends PrimitiveComponent<
     }
 
     const transform = this._computePcbGlobalTransformBeforeLayout()
-
+    const subcircuit = this.getSubcircuit()
     const pcb_silkscreen_path = db.pcb_silkscreen_path.insert({
       pcb_component_id: this.parent?.pcb_component_id!,
       layer,
@@ -43,6 +43,7 @@ export class SilkscreenPath extends PrimitiveComponent<
         }
       }),
       stroke_width: props.strokeWidth ?? 0.1,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
     })
 
     this.pcb_silkscreen_path_id = pcb_silkscreen_path.pcb_silkscreen_path_id

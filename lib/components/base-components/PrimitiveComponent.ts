@@ -1,8 +1,10 @@
 import type { LayoutBuilder } from "@tscircuit/layout"
 import type { AnySourceComponent, LayerRef } from "circuit-json"
+import Debug from "debug"
 import { InvalidProps } from "lib/errors/InvalidProps"
+import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { isMatchingSelector } from "lib/utils/selector-matching"
-import { type BaseSymbolName, type SchSymbol, symbols } from "schematic-symbols"
+import { type SchSymbol, symbols } from "schematic-symbols"
 import {
   type Matrix,
   applyToPoint,
@@ -17,8 +19,6 @@ import { z } from "zod"
 import type { RootCircuit } from "../../RootCircuit"
 import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
 import { Renderable } from "./Renderable"
-import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import Debug from "debug"
 
 const debugSelectAll = Debug("tscircuit:primitive-component:selectAll")
 
@@ -108,6 +108,7 @@ export abstract class PrimitiveComponent<
   schematic_component_id: string | null = null
   pcb_component_id: string | null = null
   cad_component_id: string | null = null
+  subcircuit_id: string | null = null
 
   constructor(props: z.input<ZodProps>) {
     super(props)

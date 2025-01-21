@@ -1,37 +1,31 @@
 import {
-  groupProps,
-  type GroupProps,
   type SubcircuitGroupProps,
+  groupProps
 } from "@tscircuit/props"
-import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
-import { compose, identity } from "transformation-matrix"
+import * as SAL from "@tscircuit/schematic-autolayout"
+import {
+  type PcbTrace,
+  type SchematicComponent,
+  type SchematicPort,
+  type SourceTrace
+} from "circuit-json"
+import { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import Debug from "debug"
+import type {
+  SimpleRouteJson
+} from "lib/utils/autorouting/SimpleRouteJson"
+import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent"
-import { TraceHint } from "../TraceHint"
-import type {
-  PcbTrace,
-  SchematicComponent,
-  SchematicPort,
-  SourceTrace,
-} from "circuit-json"
-import * as SAL from "@tscircuit/schematic-autolayout"
-import type { ISubcircuit } from "./ISubcircuit"
-import type {
-  SimpleRouteConnection,
-  SimpleRouteJson,
-} from "lib/utils/autorouting/SimpleRouteJson"
-import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
 import type { Trace } from "../Trace/Trace"
-import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { TraceI } from "../Trace/TraceI"
-import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
-import Debug from "debug"
+import { TraceHint } from "../TraceHint"
+import type { ISubcircuit } from "./ISubcircuit"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
   implements ISubcircuit
 {
-  subcircuit_id?: string
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: PcbTrace[]
@@ -49,6 +43,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const source_group = db.source_group.insert({
       name: this._parsedProps.name,
       // TODO add subcircuit_id
+      is_subcircuit: this.isSubcircuit,
     })
     this.subcircuit_id = `subcircuit_${source_group.source_group_id}`
     this.source_group_id = source_group.source_group_id

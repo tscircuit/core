@@ -1,16 +1,10 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { smtPadProps } from "@tscircuit/props"
-import type { Port } from "./Port"
-import type { RenderPhaseFn } from "../base-components/Renderable"
-import type { LayerRef, PcbSmtPad } from "circuit-json"
+import type { PcbSmtPad } from "circuit-json"
 import {
-  applyToPoint,
-  compose,
-  decomposeTSR,
-  flipX,
-  flipY,
-  translate,
+  decomposeTSR
 } from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Port } from "./Port"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -63,6 +57,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const { _parsedProps: props } = this
     if (!props.portHints) return
     const container = this.getPrimitiveContainer()
+    
+    const subcircuit = this.getSubcircuit()
+    
     const position = this._getGlobalPcbPositionBeforeLayout()
     const containerCenter = container?._getGlobalPcbPositionBeforeLayout()
     const decomposedMat = decomposeTSR(
@@ -93,6 +90,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
 
         x: position.x,
         y: position.y,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       })
       db.pcb_solder_paste.insert({
         layer: pcb_smtpad.layer,
@@ -103,6 +101,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         y: pcb_smtpad.y,
         pcb_component_id: pcb_smtpad.pcb_component_id,
         pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       })
     } else if (props.shape === "rect") {
       pcb_smtpad =
@@ -122,6 +121,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
 
               x: position.x,
               y: position.y,
+              subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
             })
           : db.pcb_smtpad.insert({
               pcb_component_id,
@@ -132,6 +132,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
               y: position.y,
               ccw_rotation: parentRotation,
               port_hints: props.portHints.map((ph) => ph.toString()),
+              subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
             } as PcbSmtPad)
       if (pcb_smtpad.shape === "rect")
         db.pcb_solder_paste.insert({
@@ -144,6 +145,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           y: pcb_smtpad.y,
           pcb_component_id: pcb_smtpad.pcb_component_id,
           pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         })
     }
     if (pcb_smtpad) {
