@@ -175,6 +175,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return fetch(url, options)
     }
 
+    // Only include source and pcb elements
+    const inputCircuitJson = this.root!.db.toArray().filter((element) => {
+      return (
+        element.type.startsWith("source_") || element.type.startsWith("pcb_")
+      )
+    })
+
     if (serverMode === "solve-endpoint") {
       // Legacy solve endpoint mode
       if (this.props.autorouter?.inputFormat === "simplified") {
@@ -198,7 +205,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         {
           method: "POST",
           body: JSON.stringify({
-            input_circuit_json: this.root!.db.toArray(),
+            input_circuit_json: inputCircuitJson,
+            subcircuit_id: this.subcircuit_id,
           }),
           headers: { "Content-Type": "application/json" },
         },
@@ -207,13 +215,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this._markDirty("PcbTraceRender")
       return
     }
-
-    // Only include source and pcb elements
-    const inputCircuitJson = this.root!.db.toArray().filter((element) => {
-      return (
-        element.type.startsWith("source_") || element.type.startsWith("pcb_")
-      )
-    })
 
     const { autorouting_job } = await fetchWithDebug(
       `${serverUrl}/autorouting/jobs/create`,
@@ -224,6 +225,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,
+          subcircuit_id: this.subcircuit_id,
         }),
         headers: { "Content-Type": "application/json" },
       },
