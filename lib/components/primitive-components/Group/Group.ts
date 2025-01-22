@@ -24,6 +24,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   pcb_group_id: string | null = null
   subcircuit_id: string | null = null
 
+  _hasStartedAsyncAutorouting = false
+
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: PcbTrace[]
@@ -141,7 +143,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     ) as Group[]
     for (const subcircuitChild of subcircuitChildren) {
       if (
-        subcircuitChild._shouldRouteAsynchronously() &&
+        subcircuitChild._shouldRouteAsync() &&
         !subcircuitChild._asyncAutoroutingResult
       ) {
         return false
@@ -150,11 +152,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return true
   }
 
-  _shouldRouteAsynchronously(): boolean {
+  _shouldRouteAsync(): boolean {
     const props = this._parsedProps as SubcircuitGroupProps
     if (props.autorouter === "auto-local") return true
     if (props.autorouter === "auto-cloud") return true
     if (props.autorouter === "sequential-trace") return false
+    if (typeof props.autorouter === "object") return true
     return false
   }
 
@@ -273,17 +276,44 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  doInitialPcbTraceRender() {
-    if (this.root?.pcbDisabled) return
-    if (this._shouldUseTraceByTraceRouting()) return
-
-    // Queue the autorouting request
+  _startAsyncAutorouting() {
+    this._hasStartedAsyncAutorouting = true
     this._queueAsyncEffect("make-http-autorouting-request", async () =>
       this._runEffectMakeHttpAutoroutingRequest(),
     )
   }
 
+  doInitialPcbTraceRender() {
+    const debug = Debug("tscircuit:core:doInitialPcbTraceRender")
+    if (this.root?.pcbDisabled) return
+    if (this._shouldUseTraceByTraceRouting()) return
+
+    if (!this._areChildSubcircuitsRouted()) {
+      debug(
+        `[${this.getString()}] child subcircuits are not routed, skipping async autorouting until subcircuits routed`,
+      )
+      return
+    }
+
+    debug(
+      `[${this.getString()}] no child subcircuits to wait for, initiating async routing`,
+    )
+    this._startAsyncAutorouting()
+  }
+
   updatePcbTraceRender() {
+    console.log(`[${this.getString()}] updatePcbTraceRender`)
+    const debug = Debug("tscircuit:core:updatePcbTraceRender")
+    if (this._shouldRouteAsync() && !this._hasStartedAsyncAutorouting) {
+      if (this._areChildSubcircuitsRouted()) {
+        debug(
+          `[${this.getString()}] child subcircuits are now routed, starting async autorouting`,
+        )
+        this._startAsyncAutorouting()
+      }
+      return
+    }
+
     if (!this._asyncAutoroutingResult) return
     if (this._shouldUseTraceByTraceRouting()) return
 

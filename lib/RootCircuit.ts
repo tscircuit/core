@@ -107,9 +107,8 @@ export class RootCircuit {
   async renderUntilSettled(): Promise<void> {
     this.render()
 
-    // TODO: use this.on("asyncEffectComplete", ...) instead
     while (this._hasIncompleteAsyncEffects()) {
-      await new Promise((resolve) => setTimeout(resolve, 100)) // Small delay
+      await new Promise((resolve) => setTimeout(resolve, 100))
       this.render()
     }
   }

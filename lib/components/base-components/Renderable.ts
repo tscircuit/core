@@ -88,6 +88,8 @@ export abstract class Renderable implements IRenderable {
 
   private _asyncEffects: AsyncEffect[] = []
 
+  parent: Renderable | null = null
+
   constructor(props: any) {
     this._renderId = `${globalRenderCounter++}`
     this.children = []
@@ -100,12 +102,16 @@ export abstract class Renderable implements IRenderable {
     }
   }
 
-  protected _markDirty(phase: RenderPhase) {
+  _markDirty(phase: RenderPhase) {
     this.renderPhaseStates[phase].dirty = true
     // Mark all subsequent phases as dirty
     const phaseIndex = orderedRenderPhases.indexOf(phase)
     for (let i = phaseIndex + 1; i < orderedRenderPhases.length; i++) {
       this.renderPhaseStates[orderedRenderPhases[i]].dirty = true
+    }
+
+    if (this.parent?._markDirty) {
+      this.parent._markDirty(phase)
     }
   }
 
