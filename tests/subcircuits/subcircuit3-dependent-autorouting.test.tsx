@@ -49,11 +49,11 @@ test("subcircuit3-dependent-autorouting", async () => {
 
   const asyncEffectEndEvents: any[] = []
   circuit.on("asyncEffect:end", (event) => {
-    asyncEffectEndEvents.push(event)
+    asyncEffectEndEvents.push({
+      ...event,
+      componentDisplayName: event.componentDisplayName.replace(/#\d+/, "#"),
+    })
   })
-
-  // HACK: makes the snapshot renderIds deterministic
-  Renderable._globalRenderCounter = 0
 
   await circuit.renderUntilSettled()
 
@@ -62,12 +62,12 @@ test("subcircuit3-dependent-autorouting", async () => {
   expect(asyncEffectEndEvents).toMatchInlineSnapshot(`
 [
   {
-    "componentDisplayName": "<group#11 name=".S1" />",
+    "componentDisplayName": "<group# name=".S1" />",
     "effectName": "make-http-autorouting-request",
     "phase": "PcbTraceRender",
   },
   {
-    "componentDisplayName": "<board#20 />",
+    "componentDisplayName": "<board# />",
     "effectName": "make-http-autorouting-request",
     "phase": "PcbTraceRender",
   },
