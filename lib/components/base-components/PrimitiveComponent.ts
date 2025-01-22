@@ -19,6 +19,7 @@ import { z } from "zod"
 import type { RootCircuit } from "../../RootCircuit"
 import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
 import { Renderable } from "./Renderable"
+import type { IGroup } from "../primitive-components/Group/IGroup"
 
 const debugSelectAll = Debug("tscircuit:primitive-component:selectAll")
 
@@ -544,6 +545,11 @@ export abstract class PrimitiveComponent<
     if (!group)
       throw new Error("Component is not inside an opaque group (no board?)")
     return group
+  }
+
+  getGroup(): IGroup | null {
+    if (this.isGroup) return this as unknown as IGroup
+    return this.parent?.getGroup?.() ?? null
   }
 
   selectAll(selector: string): PrimitiveComponent[] {

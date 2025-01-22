@@ -36,7 +36,7 @@ export class SilkscreenCircle extends PrimitiveComponent<
       },
       radius: props.radius,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      pcb_group_id: subcircuit?.pcb_group_id ?? undefined,
+      pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
     })
 
     this.pcb_silkscreen_circle_id =

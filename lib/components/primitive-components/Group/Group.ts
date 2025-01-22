@@ -21,7 +21,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
   implements ISubcircuit
 {
-  pcb_group_id?: string | null = null
+  pcb_group_id: string | null = null
   subcircuit_id: string | null = null
 
   _asyncAutoroutingResult: {

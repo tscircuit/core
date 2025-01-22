@@ -32,7 +32,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       x: position.x,
       y: position.y,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      pcb_group_id: subcircuit?.pcb_group_id ?? undefined,
+      pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
     })
     this.pcb_hole_id = inserted_hole.pcb_hole_id!
   }
