@@ -108,8 +108,6 @@ export abstract class PrimitiveComponent<
   schematic_component_id: string | null = null
   pcb_component_id: string | null = null
   cad_component_id: string | null = null
-  subcircuit_id: string | null = null
-  pcb_group_id: string | null = null
 
   constructor(props: z.input<ZodProps>) {
     super(props)
