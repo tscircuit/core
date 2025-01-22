@@ -60,6 +60,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
+    const subcircuit = this.getSubcircuit()
 
     const pcb_via = db.pcb_via.insert({
       x: position.x,
@@ -69,6 +70,8 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       layers: ["bottom", "top"],
       from_layer: props.fromLayer || "bottom",
       to_layer: props.toLayer || "top",
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
     })
 
     this.pcb_via_id = pcb_via.pcb_via_id

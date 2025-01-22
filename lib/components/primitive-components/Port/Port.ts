@@ -239,10 +239,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     if (matchCenter) {
+      const subcircuit = this.getSubcircuit()
+
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
         layers: this.getAvailablePcbLayers(),
-
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         ...matchCenter,
 
         source_port_id: this.source_port_id!,

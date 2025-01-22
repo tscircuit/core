@@ -1,8 +1,10 @@
 import type { LayoutBuilder } from "@tscircuit/layout"
 import type { AnySourceComponent, LayerRef } from "circuit-json"
+import Debug from "debug"
 import { InvalidProps } from "lib/errors/InvalidProps"
+import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { isMatchingSelector } from "lib/utils/selector-matching"
-import { type BaseSymbolName, type SchSymbol, symbols } from "schematic-symbols"
+import { type SchSymbol, symbols } from "schematic-symbols"
 import {
   type Matrix,
   applyToPoint,
@@ -17,8 +19,7 @@ import { z } from "zod"
 import type { RootCircuit } from "../../RootCircuit"
 import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
 import { Renderable } from "./Renderable"
-import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import Debug from "debug"
+import type { IGroup } from "../primitive-components/Group/IGroup"
 
 const debugSelectAll = Debug("tscircuit:primitive-component:selectAll")
 
@@ -544,6 +545,11 @@ export abstract class PrimitiveComponent<
     if (!group)
       throw new Error("Component is not inside an opaque group (no board?)")
     return group
+  }
+
+  getGroup(): IGroup | null {
+    if (this.isGroup) return this as unknown as IGroup
+    return this.parent?.getGroup?.() ?? null
   }
 
   selectAll(selector: string): PrimitiveComponent[] {

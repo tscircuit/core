@@ -283,6 +283,8 @@ export class Trace
       const pcb_trace = db.pcb_trace.insert({
         route: cachedRoute.flatMap((trace) => trace.route),
         source_trace_id: this.source_trace_id!,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       })
       this.pcb_trace_id = pcb_trace.pcb_trace_id
       return

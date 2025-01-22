@@ -18,6 +18,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
 
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
+    const subcircuit = this.getSubcircuit()
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
@@ -38,6 +39,8 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
           x: position.x,
           y: position.y,
         },
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
       })
     } else if (props.shape === "rect") {
       pcb_keepout = db.pcb_keepout.insert({
@@ -51,6 +54,8 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
           x: position.x,
           y: position.y,
         },
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
       })
     }
     if (pcb_keepout) {

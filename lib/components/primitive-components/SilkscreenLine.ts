@@ -23,6 +23,7 @@ export class SilkscreenLine extends PrimitiveComponent<
         `Invalid layer "${layer}" for SilkscreenLine. Must be "top" or "bottom".`,
       )
     }
+    const subcircuit = this.getSubcircuit()
 
     const pcb_silkscreen_line = db.pcb_silkscreen_line.insert({
       pcb_component_id: this.parent?.pcb_component_id!,
@@ -32,6 +33,8 @@ export class SilkscreenLine extends PrimitiveComponent<
       x2: props.x2,
       y2: props.y2,
       stroke_width: props.strokeWidth ?? 0.1,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
     })
 
     this.pcb_silkscreen_line_id = pcb_silkscreen_line.pcb_silkscreen_line_id

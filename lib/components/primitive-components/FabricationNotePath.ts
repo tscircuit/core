@@ -17,6 +17,7 @@ export class FabricationNotePath extends PrimitiveComponent<
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
+    const subcircuit = this.getSubcircuit()
     const { _parsedProps: props } = this
 
     const layer = props.layer ?? "top"
@@ -44,6 +45,7 @@ export class FabricationNotePath extends PrimitiveComponent<
         }
       }),
       stroke_width: props.strokeWidth ?? 0.1,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
     })
 
     this.fabrication_note_path_id =

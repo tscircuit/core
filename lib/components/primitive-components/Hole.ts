@@ -22,6 +22,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const subcircuit = this.getSubcircuit()
     const position = this._getGlobalPcbPositionBeforeLayout()
 
     const inserted_hole = db.pcb_hole.insert({
@@ -30,6 +31,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       hole_diameter: props.diameter,
       x: position.x,
       y: position.y,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
     })
     this.pcb_hole_id = inserted_hole.pcb_hole_id!
   }
