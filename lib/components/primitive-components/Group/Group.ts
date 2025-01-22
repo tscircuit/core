@@ -176,11 +176,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     // Only include source and pcb elements
-    const pcbAndSourceCircuitJson = this.root!.db.toArray().filter((element) => {
-      return (
-        element.type.startsWith("source_") || element.type.startsWith("pcb_")
-      )
-    })
+    const pcbAndSourceCircuitJson = this.root!.db.toArray().filter(
+      (element) => {
+        return (
+          element.type.startsWith("source_") || element.type.startsWith("pcb_")
+        )
+      },
+    )
 
     if (serverMode === "solve-endpoint") {
       // Legacy solve endpoint mode
