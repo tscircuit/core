@@ -51,6 +51,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
   }
 
+  doInitialSourceParentAttachment() {
+    if (!this.parent?.isSubcircuit) return
+    const { db } = this.root!
+    db.source_group.update(this.source_group_id!, {
+      parent_subcircuit_id:
+        this.parent?.getSubcircuit()?.subcircuit_id ?? undefined,
+    })
+  }
+
   doInitialPcbComponentRender() {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
