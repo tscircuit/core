@@ -208,8 +208,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           method: "POST",
           body: JSON.stringify({
             input_circuit_json: pcbAndSourceCircuitJson,
-            subcircuit_id:
-              this.componentName === "Board" ? "" : this.subcircuit_id,
+            subcircuit_id: this.parent?.isSubcircuit ? this.subcircuit_id : "",
           }),
           headers: { "Content-Type": "application/json" },
         },
