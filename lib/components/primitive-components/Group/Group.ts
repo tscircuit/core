@@ -55,7 +55,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { db } = this.root!
     if (this.isSubcircuit) {
       db.source_group.update(this.source_group_id!, {
-        parent_subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+        parent_subcircuit_id:
+          this.parent?.getSubcircuit()?.subcircuit_id ?? undefined,
       })
     }
   }
