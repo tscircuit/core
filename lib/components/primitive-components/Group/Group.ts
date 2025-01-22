@@ -176,7 +176,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     // Only include source and pcb elements
-    const inputCircuitJson = this.root!.db.toArray().filter((element) => {
+    const pcbAndSourceCircuitJson = this.root!.db.toArray().filter((element) => {
       return (
         element.type.startsWith("source_") || element.type.startsWith("pcb_")
       )
@@ -205,7 +205,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         {
           method: "POST",
           body: JSON.stringify({
-            input_circuit_json: inputCircuitJson,
+            input_circuit_json: pcbAndSourceCircuitJson,
             subcircuit_id: this.subcircuit_id,
           }),
           headers: { "Content-Type": "application/json" },
@@ -221,7 +221,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       {
         method: "POST",
         body: JSON.stringify({
-          input_circuit_json: inputCircuitJson,
+          input_circuit_json: pcbAndSourceCircuitJson,
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,
