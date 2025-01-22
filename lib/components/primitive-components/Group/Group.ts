@@ -53,12 +53,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSourceParentAttachment() {
     const { db } = this.root!
-    if (this.isSubcircuit) {
-      db.source_group.update(this.source_group_id!, {
-        parent_subcircuit_id:
-          this.parent?.getSubcircuit?.()?.subcircuit_id ?? undefined,
-      })
-    }
+    if (!this.isSubcircuit) return
+    const parent_subcircuit_id = this.parent?.getSubcircuit?.()?.subcircuit_id
+    if (!parent_subcircuit_id) return
+    db.source_group.update(this.source_group_id!, {
+      parent_subcircuit_id,
+    })
   }
 
   doInitialPcbComponentRender() {
