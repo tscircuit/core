@@ -302,7 +302,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   updatePcbTraceRender() {
-    console.log(`[${this.getString()}] updatePcbTraceRender`)
     const debug = Debug("tscircuit:core:updatePcbTraceRender")
     if (this._shouldRouteAsync() && !this._hasStartedAsyncAutorouting) {
       if (this._areChildSubcircuitsRouted()) {
