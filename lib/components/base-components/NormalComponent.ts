@@ -482,6 +482,7 @@ export class NormalComponent<
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const subcircuit = this.getSubcircuit()
     const pcb_component = db.pcb_component.insert({
       center: this._getGlobalPcbPositionBeforeLayout(),
       // width/height are computed in the PcbComponentSizeCalculation phase
@@ -490,6 +491,7 @@ export class NormalComponent<
       layer: props.layer ?? "top",
       rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
+      subcircuit_id: subcircuit.subcircuit_id ?? undefined,
     })
 
     if (!props.footprint && !this.isGroup) {

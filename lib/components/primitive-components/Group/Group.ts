@@ -51,6 +51,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
   }
 
+  doInitialSourceParentAttachment() {
+    const { db } = this.root!
+    if (!this.isSubcircuit) return
+    const parent_subcircuit_id = this.parent?.getSubcircuit?.()?.subcircuit_id
+    if (!parent_subcircuit_id) return
+    db.source_group.update(this.source_group_id!, {
+      parent_subcircuit_id,
+    })
+  }
+
   doInitialPcbComponentRender() {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -175,6 +185,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return fetch(url, options)
     }
 
+    // Only include source and pcb elements
+    const pcbAndSourceCircuitJson = this.root!.db.toArray().filter(
+      (element) => {
+        return (
+          element.type.startsWith("source_") || element.type.startsWith("pcb_")
+        )
+      },
+    )
+
     if (serverMode === "solve-endpoint") {
       // Legacy solve endpoint mode
       if (this.props.autorouter?.inputFormat === "simplified") {
@@ -198,7 +217,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         {
           method: "POST",
           body: JSON.stringify({
-            input_circuit_json: this.root!.db.toArray(),
+            input_circuit_json: pcbAndSourceCircuitJson,
+            subcircuit_id: this.subcircuit_id!,
           }),
           headers: { "Content-Type": "application/json" },
         },
@@ -213,10 +233,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       {
         method: "POST",
         body: JSON.stringify({
-          input_circuit_json: this.root!.db.toArray(),
+          input_circuit_json: pcbAndSourceCircuitJson,
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,
+          subcircuit_id: this.subcircuit_id,
         }),
         headers: { "Content-Type": "application/json" },
       },
