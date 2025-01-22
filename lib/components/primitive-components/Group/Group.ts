@@ -24,6 +24,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   pcb_group_id: string | null = null
   subcircuit_id: string | null = null
 
+  _hasStartedAsyncAutorouting = false
+
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: PcbTrace[]
@@ -135,48 +137,53 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  doInitialPcbTraceRender() {
-    if (this.root?.pcbDisabled) return
-    if (this._shouldUseTraceByTraceRouting()) return
+  _areChildSubcircuitsRouted(): boolean {
+    const subcircuitChildren = this.selectAll("group").filter(
+      (g) => g.isSubcircuit,
+    ) as Group[]
+    for (const subcircuitChild of subcircuitChildren) {
+      if (
+        subcircuitChild._shouldRouteAsync() &&
+        !subcircuitChild._asyncAutoroutingResult
+      ) {
+        return false
+      }
+    }
+    return true
+  }
+
+  _shouldRouteAsync(): boolean {
+    const props = this._parsedProps as SubcircuitGroupProps
+    if (props.autorouter === "auto-local") return true
+    if (props.autorouter === "auto-cloud") return true
+    if (props.autorouter === "sequential-trace") return false
+    if (typeof props.autorouter === "object") return true
+    return false
+  }
+
+  async _runEffectMakeHttpAutoroutingRequest() {
+    const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
+    const props = this._parsedProps as SubcircuitGroupProps
 
     const serverUrl =
-      this.props.autorouter?.serverUrl ?? "https://registry-api.tscircuit.com"
-    const serverMode = this.props.autorouter?.serverMode ?? "job"
-
-    const debug = Debug("tscircuit:core:autorouting")
+      (props.autorouter as any)?.serverUrl ??
+      "https://registry-api.tscircuit.com"
+    const serverMode = (props.autorouter as any)?.serverMode ?? "job"
 
     const fetchWithDebug = (url: string, options: RequestInit) => {
       debug("fetching", url)
       return fetch(url, options)
     }
 
-    // Queue the autorouting request
-    this._queueAsyncEffect("make-http-autorouting-request", async () => {
-      if (serverMode === "solve-endpoint") {
-        // Legacy solve endpoint mode
-        if (this.props.autorouter?.inputFormat === "simplified") {
-          const { autorouting_result } = await fetchWithDebug(
-            `${serverUrl}/autorouting/solve`,
-            {
-              method: "POST",
-              body: JSON.stringify({
-                input_simple_route_json:
-                  this._getSimpleRouteJsonFromPcbTraces(),
-              }),
-              headers: { "Content-Type": "application/json" },
-            },
-          ).then((r) => r.json())
-          this._asyncAutoroutingResult = autorouting_result
-          this._markDirty("PcbTraceRender")
-          return
-        }
-
+    if (serverMode === "solve-endpoint") {
+      // Legacy solve endpoint mode
+      if (this.props.autorouter?.inputFormat === "simplified") {
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
             method: "POST",
             body: JSON.stringify({
-              input_circuit_json: this.root!.db.toArray(),
+              input_simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
             }),
             headers: { "Content-Type": "application/json" },
           },
@@ -186,24 +193,64 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         return
       }
 
-      const { autorouting_job } = await fetchWithDebug(
-        `${serverUrl}/autorouting/jobs/create`,
+      const { autorouting_result } = await fetchWithDebug(
+        `${serverUrl}/autorouting/solve`,
         {
           method: "POST",
           body: JSON.stringify({
             input_circuit_json: this.root!.db.toArray(),
-            provider: "freerouting",
-            autostart: true,
-            display_name: this.root?.name,
           }),
           headers: { "Content-Type": "application/json" },
         },
       ).then((r) => r.json())
+      this._asyncAutoroutingResult = autorouting_result
+      this._markDirty("PcbTraceRender")
+      return
+    }
 
-      // Poll until job is complete
-      while (true) {
-        const { autorouting_job: job } = (await fetchWithDebug(
-          `${serverUrl}/autorouting/jobs/get`,
+    const { autorouting_job } = await fetchWithDebug(
+      `${serverUrl}/autorouting/jobs/create`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          input_circuit_json: this.root!.db.toArray(),
+          provider: "freerouting",
+          autostart: true,
+          display_name: this.root?.name,
+        }),
+        headers: { "Content-Type": "application/json" },
+      },
+    ).then((r) => r.json())
+
+    // Poll until job is complete
+    while (true) {
+      const { autorouting_job: job } = (await fetchWithDebug(
+        `${serverUrl}/autorouting/jobs/get`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            autorouting_job_id: autorouting_job.autorouting_job_id,
+          }),
+          headers: { "Content-Type": "application/json" },
+        },
+      ).then((r) => r.json())) as {
+        autorouting_job: {
+          autorouting_job_id: string
+          is_running: boolean
+          is_started: boolean
+          is_finished: boolean
+          has_error: boolean
+          error: string | null
+          autorouting_provider: "freerouting" | "tscircuit"
+          created_at: string
+          started_at?: string
+          finished_at?: string
+        }
+      }
+
+      if (job.is_finished) {
+        const { autorouting_job_output } = await fetchWithDebug(
+          `${serverUrl}/autorouting/jobs/get_output`,
           {
             method: "POST",
             body: JSON.stringify({
@@ -211,53 +258,61 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             }),
             headers: { "Content-Type": "application/json" },
           },
-        ).then((r) => r.json())) as {
-          autorouting_job: {
-            autorouting_job_id: string
-            is_running: boolean
-            is_started: boolean
-            is_finished: boolean
-            has_error: boolean
-            error: string | null
-            autorouting_provider: "freerouting" | "tscircuit"
-            created_at: string
-            started_at?: string
-            finished_at?: string
-          }
+        ).then((r) => r.json())
+
+        this._asyncAutoroutingResult = {
+          output_pcb_traces: autorouting_job_output.output_pcb_traces,
         }
-
-        if (job.is_finished) {
-          const { autorouting_job_output } = await fetchWithDebug(
-            `${serverUrl}/autorouting/jobs/get_output`,
-            {
-              method: "POST",
-              body: JSON.stringify({
-                autorouting_job_id: autorouting_job.autorouting_job_id,
-              }),
-              headers: { "Content-Type": "application/json" },
-            },
-          ).then((r) => r.json())
-
-          this._asyncAutoroutingResult = {
-            output_pcb_traces: autorouting_job_output.output_pcb_traces,
-          }
-          this._markDirty("PcbTraceRender")
-          break
-        }
-
-        if (job.has_error) {
-          throw new Error(
-            `Autorouting job failed: ${JSON.stringify(job.error)}`,
-          )
-        }
-
-        // Wait before polling again
-        await new Promise((resolve) => setTimeout(resolve, 100))
+        this._markDirty("PcbTraceRender")
+        break
       }
-    })
+
+      if (job.has_error) {
+        throw new Error(`Autorouting job failed: ${JSON.stringify(job.error)}`)
+      }
+
+      // Wait before polling again
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+  }
+
+  _startAsyncAutorouting() {
+    this._hasStartedAsyncAutorouting = true
+    this._queueAsyncEffect("make-http-autorouting-request", async () =>
+      this._runEffectMakeHttpAutoroutingRequest(),
+    )
+  }
+
+  doInitialPcbTraceRender() {
+    const debug = Debug("tscircuit:core:doInitialPcbTraceRender")
+    if (this.root?.pcbDisabled) return
+    if (this._shouldUseTraceByTraceRouting()) return
+
+    if (!this._areChildSubcircuitsRouted()) {
+      debug(
+        `[${this.getString()}] child subcircuits are not routed, skipping async autorouting until subcircuits routed`,
+      )
+      return
+    }
+
+    debug(
+      `[${this.getString()}] no child subcircuits to wait for, initiating async routing`,
+    )
+    this._startAsyncAutorouting()
   }
 
   updatePcbTraceRender() {
+    const debug = Debug("tscircuit:core:updatePcbTraceRender")
+    if (this._shouldRouteAsync() && !this._hasStartedAsyncAutorouting) {
+      if (this._areChildSubcircuitsRouted()) {
+        debug(
+          `[${this.getString()}] child subcircuits are now routed, starting async autorouting`,
+        )
+        this._startAsyncAutorouting()
+      }
+      return
+    }
+
     if (!this._asyncAutoroutingResult) return
     if (this._shouldUseTraceByTraceRouting()) return
 
