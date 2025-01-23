@@ -11,7 +11,7 @@ import React from "react"
 import ReactReconciler, { type HostConfig } from "react-reconciler"
 // @ts-expect-error
 import ReactReconciler18 from "react-reconciler-18"
-import { DefaultEventPriority } from "react-reconciler/constants"
+import { DefaultEventPriority } from "react-reconciler/constants.js"
 import { type Renderable } from "lib/components/base-components/Renderable"
 import { type NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { ReactElement, ReactNode } from "react"
