@@ -7,12 +7,24 @@ import type {
 } from "./sel-utility-types"
 
 type NonPolarizedSel = Record<
-  `R${Nums40}` | `SW${Nums40}`,
+  `R${Nums40}`,
   {
     pin1: string
     pin2: string
     pos: string
     neg: string
+  }
+>
+
+type SwSel = Record<
+  `SW${Nums40}`,
+  {
+    pin1: string
+    pin2: string
+    pos: string
+    neg: string
+    side1: string
+    side2: string
   }
 >
 
@@ -46,6 +58,7 @@ export type Sel = NonPolarizedSel &
   TransistorSel &
   JumperSel &
   ChipSel &
+  SwSel &
   NetSel
 
 export const sel: Sel = new Proxy(

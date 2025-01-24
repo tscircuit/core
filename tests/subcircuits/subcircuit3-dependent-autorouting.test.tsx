@@ -5,11 +5,11 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("subcircuit3-dependent-autorouting", async () => {
   const { circuit } = await getTestFixture()
-  const { autoroutingServerUrl } = getTestAutoroutingServer()
+  // const { autoroutingServerUrl } = getTestAutoroutingServer()
 
   const cloudAutorouterConfig = {
-    serverUrl: autoroutingServerUrl,
-    serverMode: "solve-endpoint",
+    serverUrl: "https://registry-api.tscircuit.com",
+    serverMode: "job",
     inputFormat: "simplified",
   } as const
 

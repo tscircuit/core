@@ -6,13 +6,23 @@ export const getPinNumberFromLabels = (labels: string[]) => {
   return Number.parseInt(pinNumber.replace(/^pin/, ""))
 }
 
-export function getPortFromHints(hints: string[]): Port | null {
+export function getPortFromHints(
+  hints: string[],
+  opts?: { additionalAliases?: Record<string, string[]> },
+): Port | null {
   const pinNumber = getPinNumberFromLabels(hints)
   if (!pinNumber) return null
+  const aliasesFromHints = hints.filter(
+    (p) => p.toString() !== pinNumber.toString() && p !== `pin${pinNumber}`,
+  )
+
+  const aliases = [
+    ...aliasesFromHints,
+    ...(opts?.additionalAliases?.[`pin${pinNumber}`] ?? []),
+  ]
+
   return new Port({
     pinNumber,
-    aliases: hints.filter(
-      (p) => p.toString() !== pinNumber.toString() && p !== `pin${pinNumber}`,
-    ),
+    aliases,
   })
 }

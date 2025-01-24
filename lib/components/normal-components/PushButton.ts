@@ -24,12 +24,14 @@ export class PushButton extends NormalComponent<
 
   initPorts() {
     super.initPorts({
+      pinCount: 4,
       additionalAliases: {
         pin1: ["side1"],
         pin3: ["side2"],
       },
     })
   }
+
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this

@@ -105,6 +105,7 @@ export class NormalComponent<
   initPorts(
     opts: {
       additionalAliases?: Record<`pin${number}`, string[]>
+      pinCount?: number
     } = {},
   ) {
     if (this.root?.schematicDisabled) return
@@ -214,11 +215,10 @@ export class NormalComponent<
       }
 
       this.addAll(portsToCreate)
-      return
     }
 
     if (!this._parsedProps.schPortArrangement) {
-      const portsFromFootprint = this.getPortsFromFootprint()
+      const portsFromFootprint = this.getPortsFromFootprint(opts)
       for (const port of portsFromFootprint) {
         if (
           !portsToCreate.some((p) =>
@@ -233,7 +233,7 @@ export class NormalComponent<
     // Add ports that we know must exist because we know the pin count and
     // missing pin numbers, and they are inside the pins array of the
     // schPortArrangement
-    for (let pn = 1; pn <= this._getPinCount(); pn++) {
+    for (let pn = 1; pn <= (opts.pinCount ?? this._getPinCount()); pn++) {
       if (!this._parsedProps.schPortArrangement) continue
       if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
       let explicitlyListedPinNumbersInSchPortArrangement = [
@@ -614,7 +614,9 @@ export class NormalComponent<
     super.add(component)
   }
 
-  getPortsFromFootprint(): Port[] {
+  getPortsFromFootprint(opts?: {
+    additionalAliases?: Record<string, string[]>
+  }): Port[] {
     let { footprint } = this.props
 
     if (!footprint || isValidElement(footprint)) {
@@ -627,7 +629,7 @@ export class NormalComponent<
       const newPorts: Port[] = []
       for (const elm of fpSoup) {
         if ("port_hints" in elm && elm.port_hints) {
-          const newPort = getPortFromHints(elm.port_hints)
+          const newPort = getPortFromHints(elm.port_hints, opts)
           if (!newPort) continue
           newPort.originDescription = `footprint:string:${footprint}:port_hints[0]:${elm.port_hints[0]}`
           newPorts.push(newPort)
@@ -708,8 +710,17 @@ export class NormalComponent<
    *
    * Can probably be removed in favor of initPorts()
    *
+   * NOTE: THIS PHASE SHOULD BE REMOVED!!!!
+   *
+   * Initializing ports at this stage means we have to go back to render their
+   * early render phases like doInitialSourceRender-
+   * it just doesn't make sense, initPorts is much better. We should throw
+   * an error if a port is discovered here to validate that initPorts is
+   * comprehensive
+   *
    */
   doInitialPortDiscovery(): void {
+    return
     const { _parsedProps: props } = this
 
     // Only get ports from footprint and schematic if no schPortArrangement
@@ -767,36 +778,43 @@ export class NormalComponent<
     }
   }
 
+  _getPinCountFromSchematicPortArrangement(): number {
+    const schPortArrangement = this._getSchematicPortArrangement()
+    if (!schPortArrangement) return 0
+
+    const isExplicitPinMapping =
+      isExplicitPinMappingArrangement(schPortArrangement)
+    if (!isExplicitPinMapping) {
+      return (
+        (schPortArrangement.leftSize ?? schPortArrangement.leftPinCount ?? 0) +
+        (schPortArrangement.rightSize ??
+          schPortArrangement.rightPinCount ??
+          0) +
+        (schPortArrangement.topSize ?? schPortArrangement.topPinCount ?? 0) +
+        (schPortArrangement.bottomSize ??
+          schPortArrangement.bottomPinCount ??
+          0)
+      )
+    }
+
+    const { leftSide, rightSide, topSide, bottomSide } = schPortArrangement
+    return Math.max(
+      ...(leftSide?.pins ?? []),
+      ...(rightSide?.pins ?? []),
+      ...(topSide?.pins ?? []),
+      ...(bottomSide?.pins ?? []),
+    )
+  }
+
   _getPinCount(): number {
     const schPortArrangement = this._getSchematicPortArrangement()
 
     // If schPortArrangement exists, use only that for pin count
-
     if (schPortArrangement) {
-      const isExplicitPinMapping =
-        isExplicitPinMappingArrangement(schPortArrangement)
-      if (!isExplicitPinMapping) {
-        return (
-          (schPortArrangement.leftSize ??
-            schPortArrangement.leftPinCount ??
-            0) +
-          (schPortArrangement.rightSize ??
-            schPortArrangement.rightPinCount ??
-            0) +
-          (schPortArrangement.topSize ?? schPortArrangement.topPinCount ?? 0) +
-          (schPortArrangement.bottomSize ??
-            schPortArrangement.bottomPinCount ??
-            0)
-        )
-      }
+      const pinCountFromSchematicPortArrangement =
+        this._getPinCountFromSchematicPortArrangement()
 
-      const { leftSide, rightSide, topSide, bottomSide } = schPortArrangement
-      return Math.max(
-        ...(leftSide?.pins ?? []),
-        ...(rightSide?.pins ?? []),
-        ...(topSide?.pins ?? []),
-        ...(bottomSide?.pins ?? []),
-      )
+      return pinCountFromSchematicPortArrangement
     }
 
     // If no schPortArrangement, fall back to footprint ports
