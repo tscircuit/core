@@ -46,5 +46,4 @@ test("dirty pattern and async effects", async () => {
 
   // Previous phases should not be dirty
   expect(component.renderPhaseStates.SourceRender.dirty).toBe(false)
-  expect(component.renderPhaseStates.PortDiscovery.dirty).toBe(false)
 })

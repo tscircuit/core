@@ -11,7 +11,7 @@ it("should be able to get ports from footprinter string footprint prop", () => {
     footprint: "0402",
   })
 
-  component.doInitialPortDiscovery()
+  component.doInitialInitializePortsFromChildren()
 
   const ports = component.children.filter(
     (c) => c.componentName === "Port",
@@ -39,7 +39,7 @@ it("should be able to get ports from Footprint class", () => {
     footprint: footprint,
   })
 
-  component.doInitialPortDiscovery()
+  component.doInitialInitializePortsFromChildren()
 
   const ports = component.children.filter(
     (c) => c.componentName === "Port",

@@ -702,58 +702,6 @@ export class NormalComponent<
     createNetsFromProps(this, propsWithConnections)
   }
 
-  /**
-   * Use data from our props to create ports for this component.
-   *
-   * Generally, this is done by looking at the schematic and the footprint,
-   * reading the pins, making sure there aren't duplicates.
-   *
-   * Can probably be removed in favor of initPorts()
-   *
-   * NOTE: THIS PHASE SHOULD BE REMOVED!!!!
-   *
-   * Initializing ports at this stage means we have to go back to render their
-   * early render phases like doInitialSourceRender-
-   * it just doesn't make sense, initPorts is much better. We should throw
-   * an error if a port is discovered here to validate that initPorts is
-   * comprehensive
-   *
-   */
-  doInitialPortDiscovery(): void {
-    return
-    const { _parsedProps: props } = this
-
-    // Only get ports from footprint and schematic if no schPortArrangement
-    let newPorts: Port[] = []
-    if (!props.schPortArrangement) {
-      newPorts = [
-        ...this.getPortsFromFootprint(),
-        ...this.getPortsFromSchematicSymbol(),
-      ]
-    }
-
-    const existingPorts = this.children.filter(
-      (c) => c.componentName === "Port",
-    ) as Port[]
-
-    for (const newPort of newPorts) {
-      const existingPort = existingPorts.find((p) =>
-        p.isMatchingAnyOf(newPort.getNameAndAliases()),
-      )
-      if (existingPort) {
-        if (
-          !existingPort.schematicSymbolPortDef &&
-          newPort.schematicSymbolPortDef
-        ) {
-          existingPort.schematicSymbolPortDef = newPort.schematicSymbolPortDef
-        }
-        continue
-      }
-      existingPorts.push(newPort)
-      this.add(newPort)
-    }
-  }
-
   _getPcbCircuitJsonBounds(): {
     center: { x: number; y: number }
     bounds: { left: number; top: number; right: number; bottom: number }
