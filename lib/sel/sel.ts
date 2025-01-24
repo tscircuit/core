@@ -39,11 +39,14 @@ type JumperSel = Record<`J${Nums40}`, Record<PinNumbers100, string>>
 
 type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string>>
 
+type NetSel = Record<"net", Record<"VCC" | "GND" | "VDD", string>>
+
 export type Sel = NonPolarizedSel &
   PolarizedSel &
   TransistorSel &
   JumperSel &
-  ChipSel
+  ChipSel &
+  NetSel
 
 export const sel: Sel = new Proxy(
   {},
@@ -53,6 +56,9 @@ export const sel: Sel = new Proxy(
         {},
         {
           get: (_, prop2: string) => {
+            if (prop1 === "net") {
+              return `net.${prop2}`
+            }
             return `.${prop1} > .${prop2}`
           },
         },
