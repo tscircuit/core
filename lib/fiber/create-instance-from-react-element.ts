@@ -64,8 +64,21 @@ const hostConfig: HostConfig<
           "No components registered in catalogue, did you forget to import lib/register-catalogue in your test file?",
         )
       }
+      const knownComponents = Object.keys(catalogue)
+        .filter((k) => k === k.toLowerCase()) // Only show canonical names, not uppercase aliases
+        .sort()
+        .join(", ")
       throw new Error(
-        `Unsupported component type (not registered in @tscircuit/core catalogue): "${type}" See CREATING_NEW_COMPONENTS.md`,
+        `Unsupported component type "${type}" (not registered in @tscircuit/core catalogue).
+
+Possible causes:
+- Typo in the component name
+- Component not imported or registered
+- Component doesn't exist in the catalogue yet
+
+Available components: ${knownComponents}
+
+See CREATING_NEW_COMPONENTS.md for how to add new components.`,
       )
     }
 
