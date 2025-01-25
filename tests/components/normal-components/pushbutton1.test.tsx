@@ -14,6 +14,8 @@ test("<pushbutton /> component", async () => {
 
   expect(circuit.db.source_port.list().length).toBe(4)
 
+  expect(circuit.db.schematic_port.list().length).toEqual(4)
+
   expect(
     [
       ...new Set(circuit.db.source_port.list().flatMap((p) => p.port_hints)),
