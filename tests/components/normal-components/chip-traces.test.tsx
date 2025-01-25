@@ -1,7 +1,7 @@
-import { it, expect } from "bun:test"
+import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("should create traces between specified pins", async () => {
+test("should create traces between specified pins", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -18,8 +18,9 @@ it("should create traces between specified pins", async () => {
           ["1", "2"],
           ["3", "4"],
         ]}
+        footprint="soic8"
       />
-    </board>,
+    </board>
   )
 
   circuit.render()
@@ -28,6 +29,8 @@ it("should create traces between specified pins", async () => {
   expect(chip).not.toBeNull()
 
   const traces = circuit.selectAll("trace")
-
   expect(traces).toHaveLength(2)
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
