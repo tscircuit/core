@@ -7,18 +7,17 @@ test("footprinter-soic4 with autorouter", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="30mm" height="10mm" autorouter={{
-      serverUrl: autoroutingServerUrl,
-      serverMode: "solve-endpoint",
-      inputFormat: "simplified",
-    }}>
-      <pushbutton
-        footprint="soic4"
-          name="U1"
-          schX={3}
-          pcbX={5}
-        />
-    </board>
+    <board
+      width="30mm"
+      height="10mm"
+      autorouter={{
+        serverUrl: autoroutingServerUrl,
+        serverMode: "solve-endpoint",
+        inputFormat: "simplified",
+      }}
+    >
+      <pushbutton footprint="soic4" name="U1" schX={3} pcbX={5} />
+    </board>,
   )
 
   circuit.render()
