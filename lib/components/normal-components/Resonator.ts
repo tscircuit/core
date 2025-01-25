@@ -1,5 +1,5 @@
 import { resonatorProps } from "@tscircuit/props"
-import { NormalComponent } from "../base-components/NormalComponent"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
 
 function getResonatorSymbolName(variant: string | undefined): BaseSymbolName {

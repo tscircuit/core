@@ -1,4 +1,4 @@
-export { NormalComponent } from "./base-components/NormalComponent"
+export { NormalComponent } from "./base-components/NormalComponent/NormalComponent"
 export { PrimitiveComponent } from "./base-components/PrimitiveComponent"
 export { Renderable, type IRenderable } from "./base-components/Renderable"
 export { Board } from "./normal-components/Board"
