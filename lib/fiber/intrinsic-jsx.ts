@@ -1,6 +1,8 @@
 import type * as Props from "@tscircuit/props"
 
 export interface TscircuitElements {
+  // For testing invalid components
+  unknowncomponent: any
   resistor: Props.ResistorProps
   capacitor: Props.CapacitorProps
   inductor: Props.InductorProps

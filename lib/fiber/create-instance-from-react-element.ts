@@ -14,6 +14,7 @@ import ReactReconciler18 from "react-reconciler-18"
 import { DefaultEventPriority } from "react-reconciler/constants.js"
 import { type Renderable } from "lib/components/base-components/Renderable"
 import { type NormalComponent } from "lib/components/base-components/NormalComponent"
+import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { ReactElement, ReactNode } from "react"
 import { catalogue, type Instance } from "./catalogue"
 import { identity } from "transformation-matrix"
@@ -64,12 +65,53 @@ const hostConfig: HostConfig<
           "No components registered in catalogue, did you forget to import lib/register-catalogue in your test file?",
         )
       }
+      const knownComponents = Object.keys(catalogue)
+        .filter((k) => k === k.toLowerCase()) // Only show canonical names, not uppercase aliases
+        .sort()
+        .join(", ")
       throw new Error(
-        `Unsupported component type (not registered in @tscircuit/core catalogue): "${type}" See CREATING_NEW_COMPONENTS.md`,
+        `Unsupported component type "${type}" (not registered in @tscircuit/core catalogue).
+
+Possible causes:
+- Typo in the component name
+- Component not imported or registered
+- Component doesn't exist in the catalogue yet
+
+Available components: ${knownComponents}
+
+See CREATING_NEW_COMPONENTS.md for how to add new components.`,
       )
     }
 
     const instance = prepare(new target(props) as any, {})
+
+    // Validate component inheritance and critical methods
+    if (!(instance instanceof PrimitiveComponent)) {
+      console.error(`Component "${type}" must inherit from PrimitiveComponent`)
+      console.error(
+        "Component prototype chain:",
+        Object.getPrototypeOf(instance),
+      )
+      throw new Error(
+        `Component "${type}" must inherit from PrimitiveComponent. Check that your component properly extends PrimitiveComponent or NormalComponent.`,
+      )
+    }
+
+    // Debug logging to help track inheritance issues
+    if (!instance.onAddToParent) {
+      console.error(`Component "${type}" is missing onAddToParent method`)
+      console.error(
+        "Component prototype chain:",
+        Object.getPrototypeOf(instance),
+      )
+      console.error(
+        "Component methods:",
+        Object.getOwnPropertyNames(Object.getPrototypeOf(instance)),
+      )
+      throw new Error(
+        `Component "${type}" is missing required method onAddToParent. This usually means the component is not properly inheriting from PrimitiveComponent.`,
+      )
+    }
 
     return instance
   },
