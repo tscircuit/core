@@ -7,7 +7,6 @@ test("board with manual layout edits", () => {
 
   circuit.add(
     <board
-
       outline={[
         { x: -8, y: -6 },
         { x: 0, y: -6 },
@@ -22,6 +21,5 @@ test("board with manual layout edits", () => {
 
   circuit.render()
 
-  
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

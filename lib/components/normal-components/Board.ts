@@ -35,12 +35,12 @@ export class Board extends Group<typeof boardProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
-  
+
     // If outline is not provided, width and height must be specified
     if (!props.outline && (!props.width || !props.height)) {
       throw new Error("Board width and height or an outline are required")
     }
-  
+
     const pcb_board = db.pcb_board.insert({
       center: {
         x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
@@ -49,7 +49,7 @@ export class Board extends Group<typeof boardProps> {
 
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
-    
+
       width: props.width ?? 0,
       height: props.height ?? 0,
       outline: props.outline?.map((point) => ({
@@ -57,11 +57,9 @@ export class Board extends Group<typeof boardProps> {
         y: point.y + (props.outlineOffsetY ?? 0),
       })),
     })
-    
-  
+
     this.pcb_board_id = pcb_board.pcb_board_id!
   }
-  
 
   removePcbComponentRender(): void {
     const { db } = this.root!
