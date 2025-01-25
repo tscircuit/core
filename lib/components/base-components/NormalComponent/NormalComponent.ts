@@ -89,14 +89,14 @@ export class NormalComponent<
   /**
    * Override this property for component defaults
    */
-  get defaultInternallyConnectedPortNames(): string[][] {
+  get defaultInternallyConnectedPinNames(): string[][] {
     return []
   }
 
-  get internallyConnectedPortNames(): string[][] {
+  get internallyConnectedPinNames(): string[][] {
     return (
-      this._parsedProps.internallyConnectedPorts ??
-      this.defaultInternallyConnectedPortNames
+      this._parsedProps.internallyConnectedPins ??
+      this.defaultInternallyConnectedPinNames
     )
   }
 
@@ -393,11 +393,11 @@ export class NormalComponent<
     return undefined
   }
 
-  _getInternallyConnectedPorts(): Port[][] {
-    if (this.internallyConnectedPortNames.length === 0) return []
+  _getInternallyConnectedPins(): Port[][] {
+    if (this.internallyConnectedPinNames.length === 0) return []
 
     const internallyConnectedPorts: Port[][] = []
-    for (const netPortNames of this.internallyConnectedPortNames) {
+    for (const netPortNames of this.internallyConnectedPinNames) {
       const ports: Port[] = []
       for (const portName of netPortNames) {
         ports.push(this.portMap[portName as PortNames] as Port)

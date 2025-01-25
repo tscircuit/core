@@ -22,7 +22,7 @@ export class PushButton extends NormalComponent<
     }
   }
 
-  get defaultInternallyConnectedPortNames(): string[][] {
+  get defaultInternallyConnectedPinNames(): string[][] {
     return [
       ["pin1", "pin4"],
       ["pin2", "pin3"],
