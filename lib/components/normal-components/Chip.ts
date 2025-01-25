@@ -61,13 +61,17 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     })
 
     this.pcb_component_id = pcb_component.pcb_component_id
+  }
+
+  doInitialCreateTracesFromProps(): void {
+    const { _parsedProps: props } = this
 
     if (props.externallyConnectedPins) {
       for (const [pin1, pin2] of props.externallyConnectedPins) {
         this.add(
           new Trace({
-            from: `.${this._parsedProps.name} .${pin1}`,
-            to: `.${this._parsedProps.name} .${pin2}`,
+            from: `${this.getSubcircuitSelector()} > port.${pin1}`,
+            to: `${this.getSubcircuitSelector()} > port.${pin2}`,
           }),
         )
       }
