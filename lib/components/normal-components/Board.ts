@@ -1,6 +1,6 @@
 import { boardProps } from "@tscircuit/props"
 import type { z } from "zod"
-import { NormalComponent } from "../base-components/NormalComponent"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { identity, type Matrix } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
 

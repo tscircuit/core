@@ -1,5 +1,5 @@
 import { transistorProps } from "@tscircuit/props"
-import { NormalComponent } from "../base-components/NormalComponent"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
 
 export class Transistor extends NormalComponent<typeof transistorProps> {

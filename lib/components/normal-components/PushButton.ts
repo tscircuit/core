@@ -5,7 +5,7 @@ import {
   type BaseSymbolName,
   type PassivePorts,
 } from "lib/utils/constants"
-import { NormalComponent } from "../base-components/NormalComponent"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 
 export class PushButton extends NormalComponent<
@@ -20,6 +20,13 @@ export class PushButton extends NormalComponent<
       zodProps: pushButtonProps,
       sourceFtype: FTYPE.simple_push_button,
     }
+  }
+
+  get defaultInternallyConnectedPortNames(): string[][] {
+    return [
+      ["pin1", "pin4"],
+      ["pin2", "pin3"],
+    ]
   }
 
   initPorts() {

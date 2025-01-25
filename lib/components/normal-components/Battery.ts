@@ -2,7 +2,7 @@ import { batteryProps } from "@tscircuit/props"
 import type { SourceSimpleBatteryInput } from "circuit-json"
 
 import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
-import { NormalComponent } from "../base-components/NormalComponent"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 export class Battery extends NormalComponent<
   typeof batteryProps,
