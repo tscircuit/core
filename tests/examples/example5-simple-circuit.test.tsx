@@ -19,7 +19,7 @@ test("example 5: simple circuit with capacitor, resistor, and pushbutton", async
         footprint="pushbutton"
         pcbX={-5}
         pcbY={0}
-        schPortArrangement={{
+        schPinArrangement={{
           leftSize: 2,
           rightSize: 2,
           topSize: 0,

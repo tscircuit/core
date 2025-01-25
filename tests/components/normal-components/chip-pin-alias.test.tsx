@@ -22,7 +22,7 @@ it("Chip with pin labels as strings and duplicates", async () => {
           pin7: ["B3_1"],
           pin8: ["B3_2"],
         }}
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             direction: "top-to-bottom",
             pins: ["B2_1", "B1_1"],
@@ -65,7 +65,7 @@ it.skip("Chip with pin labels as numbers, decimals and duplicates", async () => 
         <chip
           name="U1"
           schPinSpacing={0.75}
-          schPortArrangement={{
+          schPinArrangement={{
             leftSide: {
               direction: "top-to-bottom",
               pins: [1, 2],
@@ -104,7 +104,7 @@ it.skip("Chip with pin labels as duplicates", async () => {
       <chip
         name="U1"
         schPinSpacing={0.75}
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             direction: "top-to-bottom",
             pins: ["pin1", "pin2"],

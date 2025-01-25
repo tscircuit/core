@@ -9,14 +9,14 @@ it("should create a Chip component when using the <bug /> alias", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <bug
+      <chip
         name="U1"
         footprint="soic8"
         pinLabels={{
           "1": "VCC",
           "8": "GND",
         }}
-        schPortArrangement={{
+        schPinArrangement={{
           leftSize: 4,
           rightSize: 4,
         }}

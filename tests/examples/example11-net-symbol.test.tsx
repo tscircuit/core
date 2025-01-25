@@ -28,7 +28,7 @@ test("schematic net symbol", () => {
         name="U1"
         schX={5}
         schY={3}
-        schPortArrangement={{
+        schPinArrangement={{
           topSide: {
             direction: "left-to-right",
             pins: [

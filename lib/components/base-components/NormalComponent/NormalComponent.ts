@@ -131,10 +131,10 @@ export class NormalComponent<
     const portsToCreate: Port[] = []
 
     // Handle schPortArrangement
-    const schPortArrangement = this._parsedProps.schPortArrangement as any
+    const schPortArrangement = this._getSchematicPortArrangement()
     if (schPortArrangement && !this._parsedProps.pinLabels) {
       for (const side in schPortArrangement) {
-        const pins = schPortArrangement[side].pins
+        const pins = (schPortArrangement as any)[side].pins
         if (Array.isArray(pins)) {
           for (const pinNumberOrLabel of pins) {
             const pinNumber = parsePinNumberFromLabelsOrThrow(
@@ -161,7 +161,7 @@ export class NormalComponent<
       const sides = ["left", "right", "top", "bottom"]
       let pinNum = 1
       for (const side of sides) {
-        const size = schPortArrangement[`${side}Size`]
+        const size = (schPortArrangement as any)[`${side}Size`]
         for (let i = 0; i < size; i++) {
           portsToCreate.push(
             new Port(
@@ -235,7 +235,7 @@ export class NormalComponent<
       this.addAll(portsToCreate)
     }
 
-    if (!this._parsedProps.schPortArrangement) {
+    if (!this._getSchematicPortArrangement()) {
       const portsFromFootprint = this.getPortsFromFootprint(opts)
       for (const port of portsFromFootprint) {
         if (
@@ -252,13 +252,13 @@ export class NormalComponent<
     // missing pin numbers, and they are inside the pins array of the
     // schPortArrangement
     for (let pn = 1; pn <= (opts.pinCount ?? this._getPinCount()); pn++) {
-      if (!this._parsedProps.schPortArrangement) continue
+      if (!schPortArrangement) continue
       if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
       let explicitlyListedPinNumbersInSchPortArrangement = [
-        ...(this._parsedProps.schPortArrangement?.leftSide?.pins ?? []),
-        ...(this._parsedProps.schPortArrangement?.rightSide?.pins ?? []),
-        ...(this._parsedProps.schPortArrangement?.topSide?.pins ?? []),
-        ...(this._parsedProps.schPortArrangement?.bottomSide?.pins ?? []),
+        ...(schPortArrangement.leftSide?.pins ?? []),
+        ...(schPortArrangement.rightSide?.pins ?? []),
+        ...(schPortArrangement.topSide?.pins ?? []),
+        ...(schPortArrangement.bottomSide?.pins ?? []),
       ].map((pn) =>
         parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
       )
@@ -273,7 +273,7 @@ export class NormalComponent<
           "rightPinCount",
           "topPinCount",
           "bottomPinCount",
-        ].some((key) => key in this._parsedProps.schPortArrangement)
+        ].some((key) => key in schPortArrangement)
       ) {
         explicitlyListedPinNumbersInSchPortArrangement = Array.from(
           { length: this._getPinCount() },
@@ -450,6 +450,7 @@ export class NormalComponent<
       }
     }
     const center = this._getGlobalSchematicPositionBeforeLayout()
+    const schPortArrangement = this._getSchematicPortArrangement()
     const schematic_component = db.schematic_component.insert({
       center,
       rotation: props.schRotation ?? 0,
@@ -459,9 +460,7 @@ export class NormalComponent<
       // schematic_box size
       // size: dimensions.getSizeIncludingPins(),
 
-      port_arrangement: underscorifyPortArrangement(
-        props.schPortArrangement as any,
-      ),
+      port_arrangement: underscorifyPortArrangement(schPortArrangement!),
 
       pin_spacing: props.schPinSpacing ?? 0.2,
 
@@ -473,8 +472,8 @@ export class NormalComponent<
       source_component_id: this.source_component_id!,
     })
     const hasTopOrBottomPins =
-      props.schPortArrangement?.topSide !== undefined ||
-      props.schPortArrangement?.bottomSide !== undefined
+      schPortArrangement?.topSide !== undefined ||
+      schPortArrangement?.bottomSide !== undefined
     const schematic_box_width = dimensions?.getSize().width
     const schematic_box_height = dimensions?.getSize().height
     const manufacturer_part_number_schematic_text = db.schematic_text.insert({
@@ -806,7 +805,10 @@ export class NormalComponent<
    * appear on a schematic box, e.g. for a pin header
    */
   _getSchematicPortArrangement(): SchematicPortArrangement | null {
-    return this._parsedProps.schPortArrangement
+    return (
+      this._parsedProps.schPinArrangement ??
+      this._parsedProps.schPortArrangement
+    )
   }
 
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {

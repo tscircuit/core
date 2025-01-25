@@ -9,7 +9,7 @@ test("Schematic box four sides and other layouts test", async () => {
       <chip
         name="4_Sides"
         manufacturerPartNumber="part-number"
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             pins: [1, 2, 3],
             direction: "top-to-bottom",
@@ -36,7 +36,7 @@ test("Schematic box four sides and other layouts test", async () => {
       <chip
         name="RL_Sides"
         manufacturerPartNumber="part-number"
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             pins: [1, 2, 3],
             direction: "top-to-bottom",
@@ -55,7 +55,7 @@ test("Schematic box four sides and other layouts test", async () => {
       <chip
         name="RLT_Sides"
         manufacturerPartNumber="part-number"
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             pins: [1, 2, 3],
             direction: "top-to-bottom",
@@ -78,7 +78,7 @@ test("Schematic box four sides and other layouts test", async () => {
       <chip
         name="RLB_Sides"
         manufacturerPartNumber="part-number"
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             pins: [1, 2, 3],
             direction: "top-to-bottom",
@@ -101,7 +101,7 @@ test("Schematic box four sides and other layouts test", async () => {
       <chip
         name="R_Side"
         manufacturerPartNumber="part-number"
-        schPortArrangement={{
+        schPinArrangement={{
           rightSide: {
             pins: [1, 2, 3],
             direction: "top-to-bottom",
@@ -116,7 +116,7 @@ test("Schematic box four sides and other layouts test", async () => {
       <chip
         name="L_Side"
         manufacturerPartNumber="part-number"
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             pins: [1, 2, 3],
             direction: "top-to-bottom",
