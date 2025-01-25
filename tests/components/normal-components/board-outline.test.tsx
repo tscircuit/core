@@ -1,8 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { layout } from "@tscircuit/layout"
 
-test("board with manual layout edits", () => {
+test("board support outline without width and height", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
