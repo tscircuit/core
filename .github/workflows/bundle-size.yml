@@ -70,11 +70,17 @@ jobs:
         run: |
           base_size=$(echo ${{ steps.base-bundle-size.outputs.base }} | sed 's/[^0-9.]*//g')
           pr_size=$(echo ${{ steps.pr-bundle-size.outputs.pr }} | sed 's/[^0-9.]*//g')
-          diff=$(echo "$pr_size - $base_size" | bc)
-          if (( $(echo "$diff > 0" | bc -l) )); then
+          diff=$((pr_size - base_size))
+          abs_diff=${diff#-}
+          if (( diff > 0 )); then
             echo "diff=+$diff" >> $GITHUB_OUTPUT
           else
             echo "diff=$diff" >> $GITHUB_OUTPUT
+          fi
+          if (( abs_diff >= 10 )); then
+            echo "significant=true" >> $GITHUB_OUTPUT
+          else
+            echo "significant=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Calculate install size difference
@@ -82,14 +88,15 @@ jobs:
         run: |
           base_size=$(echo ${{ steps.base-install-size.outputs.base }} | sed 's/[^0-9.]*//g')
           pr_size=$(echo ${{ steps.pr-install-size.outputs.pr }} | sed 's/[^0-9.]*//g')
-          diff=$(echo "$pr_size - $base_size" | bc)
-          if (( $(echo "$diff > 0" | bc -l) )); then
+          diff=$((pr_size - base_size))
+          if (( diff > 0 )); then
             echo "diff=+$diff" >> $GITHUB_OUTPUT
           else
             echo "diff=$diff" >> $GITHUB_OUTPUT
           fi
 
       - name: Update comment
+        if: steps.bundle-size-diff.outputs.significant == 'true'
         uses: mshick/add-pr-comment@v2
         env:
           GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
