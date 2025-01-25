@@ -14,7 +14,7 @@ test("bug high port number", async () => {
       <chip
         name="U1"
         manufacturerPartNumber="part-number"
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             pins: [16, 15, 20, 17, 4, 27, 28, 19, 26, 25, 7, 18, 21],
             direction: "top-to-bottom",

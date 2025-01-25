@@ -26,7 +26,7 @@ test("Chip should support pin labels in schPinStyle", () => {
           // Should work with alternate pin labels
           A4: { topMargin: 0.2 },
         }}
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             pins: ["GND", "VCC", "SIG"],
             direction: "top-to-bottom",

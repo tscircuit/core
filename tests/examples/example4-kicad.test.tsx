@@ -38,7 +38,7 @@ it("example 4: kicad theme demo", async () => {
           pin12: { bottomMargin: 0.5 },
           pin15: { topMargin: 0.8 },
         }}
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             pins: [29, 7, 8, 20, 19, 22],
             direction: "top-to-bottom",

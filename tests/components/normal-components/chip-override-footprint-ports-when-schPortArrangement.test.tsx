@@ -21,7 +21,7 @@ test("Chip override footprint ports when schPortArrangement is defined", async (
         }}
         pinLabels={pinLabels}
         schPinSpacing={0.75}
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             direction: "top-to-bottom",
             pins: [1],

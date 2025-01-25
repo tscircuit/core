@@ -30,7 +30,7 @@ test("complex chip schematic with multiple connections", () => {
           pin15: "OUT7",
           pin16: "OUT8",
         }}
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             pins: [1, 2, 3, 4, 5, 6, 7, 8],
             direction: "top-to-bottom",
