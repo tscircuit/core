@@ -31,7 +31,7 @@ test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () =>
         supplierPartNumbers={{
           jlcpcb: ["C165948"],
         }}
-        schPortArrangement={{
+        schPinArrangement={{
           leftSide: {
             pins: [],
             direction: "top-to-bottom",
