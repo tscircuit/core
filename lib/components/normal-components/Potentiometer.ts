@@ -4,7 +4,7 @@ import {
   type Ftype,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
-import { NormalComponent } from "../base-components/NormalComponent"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import type { SourceSimplePotentiometer } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"

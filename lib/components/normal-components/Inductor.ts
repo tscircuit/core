@@ -5,7 +5,7 @@ import {
   type BaseSymbolName,
   type PassivePorts,
 } from "lib/utils/constants"
-import { NormalComponent } from "../base-components/NormalComponent"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 
 export class Inductor extends NormalComponent<

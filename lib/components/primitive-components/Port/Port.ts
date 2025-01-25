@@ -11,6 +11,7 @@ import type { Trace } from "../Trace/Trace"
 import type { LayerRef } from "circuit-json"
 import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
+import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
 
 export const portProps = z.object({
   name: z.string().optional(),
@@ -84,15 +85,81 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     return this._getPcbCircuitJsonBounds().center
   }
 
+  _getPortsInternallyConnectedToThisPort(): Port[] {
+    const parent = this.parent as unknown as INormalComponent | undefined
+    if (!parent || !parent._getInternallyConnectedPorts) return []
+    const internallyConnectedPorts = parent._getInternallyConnectedPorts()
+    for (const ports of internallyConnectedPorts) {
+      if (ports.some((port) => port === this)) {
+        return ports
+      }
+    }
+    return []
+  }
+
+  /**
+   * Return true if this port has a schematic representation and can be rendered
+   * to the schematic.
+   *
+   * Sometimes things like mounting holes don't have a schematic representation
+   * and aren't rendered to the schematic.
+   *
+   * It's common for a schematic symbol to not have a representation for all of
+   * the pins on a footprint, e.g. a pushbutton has 4 pins but is typically
+   * represented by a two-pin symbol. In these cases, it's best to use
+   * internallyConnectedPorts or externallyConnectedPorts to ensure the things
+   * are rendered properly.
+   */
+  _hasSchematicPort() {
+    const symbol = this.parent?.getSchematicSymbol()
+    if (symbol) {
+      if (this.schematicSymbolPortDef) return true
+
+      const portsInternallyConnectedToThisPort =
+        this._getPortsInternallyConnectedToThisPort()
+
+      if (
+        portsInternallyConnectedToThisPort.some((p) => p.schematicSymbolPortDef)
+      )
+        return true
+
+      return false
+    }
+
+    const parentBoxDim = this?.parent?._getSchematicBoxDimensions()
+    if (parentBoxDim && this.props.pinNumber !== undefined) {
+      const localPortPosition = parentBoxDim.getPortPositionByPinNumber(
+        this.props.pinNumber!,
+      )
+      if (localPortPosition) return true
+    }
+
+    return false
+  }
+
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
     const symbol = this.parent?.getSchematicSymbol()
-    if (symbol && this.schematicSymbolPortDef) {
+    if (symbol) {
+      let schematicSymbolPortDef = this.schematicSymbolPortDef
+
+      if (!schematicSymbolPortDef) {
+        schematicSymbolPortDef =
+          this._getPortsInternallyConnectedToThisPort().find(
+            (p) => p.schematicSymbolPortDef,
+          )?.schematicSymbolPortDef ?? null
+        if (!schematicSymbolPortDef) {
+          throw new Error(
+            `Couldn't find schematicSymbolPortDef for port ${this.getString()}, searched internally connected ports and none had a schematicSymbolPortDef. Why are we trying to get the schematic position of this port?`,
+          )
+        }
+      }
+
       const transform = compose(
         this.parent!.computeSchematicGlobalTransform(),
         translate(-symbol.center.x, -symbol.center.y),
       )
 
-      return applyToPoint(transform, this.schematicSymbolPortDef!)
+      return applyToPoint(transform, schematicSymbolPortDef!)
     }
 
     const parentBoxDim = this?.parent?._getSchematicBoxDimensions()
@@ -101,7 +168,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         this.props.pinNumber!,
       )
       if (!localPortPosition) {
-        return { x: 0, y: 0 }
+        throw new Error(
+          `Couldn't find position for schematic_port for port ${this.getString()} inside of the schematic box`,
+        )
       }
       return applyToPoint(
         this.parent!.computeSchematicGlobalTransform(),
@@ -109,7 +178,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       )
     }
 
-    return { x: 0, y: 0 }
+    throw new Error(
+      `Couldn't find position for schematic_port for port ${this.getString()}`,
+    )
   }
 
   _getGlobalSchematicPositionAfterLayout(): { x: number; y: number } {
@@ -266,6 +337,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const container = this.getPrimitiveContainer()
 
     if (!container) return
+    if (!this._hasSchematicPort()) return
 
     const containerCenter = container._getGlobalSchematicPositionBeforeLayout()
     const portCenter = this._getGlobalSchematicPositionBeforeLayout()

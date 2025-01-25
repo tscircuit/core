@@ -34,11 +34,12 @@ import {
 } from "react"
 import { type SchSymbol, symbols } from "schematic-symbols"
 import { ZodType, z } from "zod"
-import { Footprint } from "../primitive-components/Footprint"
-import { Port } from "../primitive-components/Port"
-import { PrimitiveComponent } from "./PrimitiveComponent"
+import { Footprint } from "../../primitive-components/Footprint"
+import { Port } from "../../primitive-components/Port"
+import { PrimitiveComponent } from "../PrimitiveComponent"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
+import type { INormalComponent } from "./INormalComponent"
 
 const debug = Debug("tscircuit:core")
 
@@ -71,9 +72,12 @@ export type PortMap<T extends string> = {
  */
 
 export class NormalComponent<
-  ZodProps extends ZodType = any,
-  PortNames extends string = never,
-> extends PrimitiveComponent<ZodProps> {
+    ZodProps extends ZodType = any,
+    PortNames extends string = never,
+  >
+  extends PrimitiveComponent<ZodProps>
+  implements INormalComponent
+{
   reactSubtrees: Array<ReactSubtree> = []
   _impliedFootprint?: string | undefined
 
@@ -81,6 +85,20 @@ export class NormalComponent<
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   pcb_missing_footprint_error_id?: string
+
+  /**
+   * Override this property for component defaults
+   */
+  get defaultInternallyConnectedPortNames(): string[][] {
+    return []
+  }
+
+  get internallyConnectedPortNames(): string[][] {
+    return (
+      this._parsedProps.internallyConnectedPorts ??
+      this.defaultInternallyConnectedPortNames
+    )
+  }
 
   constructor(props: z.input<ZodProps>) {
     super(props)
@@ -373,6 +391,20 @@ export class NormalComponent<
 
   _getSchematicSymbolDisplayValue(): string | undefined {
     return undefined
+  }
+
+  _getInternallyConnectedPorts(): Port[][] {
+    if (this.internallyConnectedPortNames.length === 0) return []
+
+    const internallyConnectedPorts: Port[][] = []
+    for (const netPortNames of this.internallyConnectedPortNames) {
+      const ports: Port[] = []
+      for (const portName of netPortNames) {
+        ports.push(this.portMap[portName as PortNames] as Port)
+      }
+      internallyConnectedPorts.push(ports)
+    }
+    return internallyConnectedPorts
   }
 
   _doInitialSchematicComponentRenderWithSymbol() {

@@ -1,5 +1,5 @@
 import { pinHeaderProps, type SchematicPortArrangement } from "@tscircuit/props"
-import { NormalComponent } from "../base-components/NormalComponent"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import type { SourceSimplePinHeader } from "circuit-json"
 import type { BaseSymbolName } from "lib/utils/constants"
