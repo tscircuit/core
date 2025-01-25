@@ -29,7 +29,6 @@ test("render lifecycle events are emitted", () => {
     "InitializePortsFromChildren",
     "CreateNetsFromProps",
     "SourceRender",
-    "PortDiscovery",
   ] as RenderPhase[]
 
   for (const phase of phases) {
