@@ -20,7 +20,7 @@ test("should create traces between specified pins", async () => {
         ]}
         footprint="soic8"
       />
-    </board>
+    </board>,
   )
 
   circuit.render()
