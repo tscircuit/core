@@ -22,6 +22,7 @@ it("should be able to get ports from react footprint definition", () => {
     ),
   })
   component.runRenderPhase("ReactSubtreesRender")
+  component.runRenderPhase("InitializePortsFromChildren")
 
   const ports = component.children.filter(
     (c) => c.componentName === "Port",
