@@ -121,6 +121,7 @@ jobs:
           header: Size Report
           message-id: bundle-size-report
           update-only: true
+          proxy-url: https://add-pr-comment-proxy-tscircuit.vercel.app/api
           message: |
             ## Size Report
             ### Bundle Size
