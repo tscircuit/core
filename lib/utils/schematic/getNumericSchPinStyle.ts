@@ -26,10 +26,17 @@ export const getNumericSchPinStyle = (
   for (const [pinNameOrLabel, pinStyle] of Object.entries(pinStyles)) {
     const pinNumber = parsePinNumberFromLabelsOrThrow(pinNameOrLabel, pinLabels)
 
+    const pinStyleWithSideFirst = {
+      leftMargin: pinStyle.marginLeft ?? pinStyle.leftMargin,
+      rightMargin: pinStyle.marginRight ?? pinStyle.rightMargin,
+      topMargin: pinStyle.marginTop ?? pinStyle.topMargin,
+      bottomMargin: pinStyle.marginBottom ?? pinStyle.bottomMargin,
+    }
+
     // Merge with any existing styles for this pin number
     numericPinStyles[`pin${pinNumber}`] = {
       ...numericPinStyles[`pin${pinNumber}`],
-      ...pinStyle,
+      ...pinStyleWithSideFirst,
     }
   }
 

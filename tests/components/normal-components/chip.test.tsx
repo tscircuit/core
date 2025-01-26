@@ -17,7 +17,7 @@ it("should create a Chip component with correct properties", async () => {
           "1": "VCC",
           "8": "GND",
         }}
-        schPortArrangement={{
+        schPinArrangement={{
           leftSize: 4,
           rightSize: 4,
         }}

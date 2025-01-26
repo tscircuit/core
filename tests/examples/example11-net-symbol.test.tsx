@@ -1,9 +1,9 @@
 import { test, expect } from "bun:test"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
-import { RootCircuit } from "lib/RootCircuit"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 // this test needs core update and  PR to support net symbols
 test("schematic net symbol", () => {
-  const circuit = new RootCircuit()
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="22mm" height="22mm">
@@ -28,7 +28,7 @@ test("schematic net symbol", () => {
         name="U1"
         schX={5}
         schY={3}
-        schPortArrangement={{
+        schPinArrangement={{
           topSide: {
             direction: "left-to-right",
             pins: [
