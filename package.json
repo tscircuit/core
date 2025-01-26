@@ -41,6 +41,7 @@
     "live-server": "^1.2.2",
     "lodash": "^4.17.21",
     "looks-same": "^9.0.1",
+    "moment": "^2.30.1",
     "pkg-pr-new": "^0.0.37",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
