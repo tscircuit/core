@@ -22,5 +22,5 @@ test("Board outline offset", async () => {
   )
 
   circuit.render()
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit.db.pcb_board.list()[0]).toMatchInlineSnapshot()
 })

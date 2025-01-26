@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("board auto-sizes when no dimensions provided", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
@@ -14,33 +14,33 @@ test("board auto-sizes when no dimensions provided", () => {
         pcbX={-5}
         pcbY={-5}
       />
-    </board>
-  );
+    </board>,
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const pcb_board = circuit.db.pcb_board.list()[0];
+  const pcb_board = circuit.db.pcb_board.list()[0]
 
   // Board should be larger than component bounds
-  expect(pcb_board.width).toBeGreaterThan(10);
-  expect(pcb_board.height).toBeGreaterThan(10);
-});
+  expect(pcb_board.width).toBeGreaterThan(10)
+  expect(pcb_board.height).toBeGreaterThan(10)
+})
 
 test("board respects explicit dimensions", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board width="50mm" height="50mm">
       <resistor name="R1" resistance="10k" footprint="0402" pcbX={5} pcbY={5} />
-    </board>
-  );
-  circuit.render();
-  const pcb_board = circuit.db.pcb_board.list()[0];
-  expect(pcb_board.width).toBe(50);
-  expect(pcb_board.height).toBe(50);
-});
+    </board>,
+  )
+  circuit.render()
+  const pcb_board = circuit.db.pcb_board.list()[0]
+  expect(pcb_board.width).toBe(50)
+  expect(pcb_board.height).toBe(50)
+})
 
 test("board auto-sizes with nested components", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board>
       <resistor
@@ -57,25 +57,25 @@ test("board auto-sizes with nested components", () => {
         pcbX={-10}
         pcbY={-10}
       />
-    </board>
-  );
-  circuit.render();
-  const pcb_board = circuit.db.pcb_board.list()[0];
+    </board>,
+  )
+  circuit.render()
+  const pcb_board = circuit.db.pcb_board.list()[0]
 
   // Should be at least 20mm (component spread) + padding
-  expect(pcb_board.width).toBeGreaterThan(22);
-  expect(pcb_board.height).toBeGreaterThan(22);
-});
+  expect(pcb_board.width).toBeGreaterThan(22)
+  expect(pcb_board.height).toBeGreaterThan(22)
+})
 
 test("board centers around components", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board>
       <resistor name="R1" resistance="10k" footprint="0402" pcbX={5} pcbY={0} />
-    </board>
-  );
-  circuit.render();
-  const pcb_board = circuit.db.pcb_board.list()[0];
-  expect(pcb_board.center.x).toBe(5);
-  expect(pcb_board.center.y).toBe(0);
-});
+    </board>,
+  )
+  circuit.render()
+  const pcb_board = circuit.db.pcb_board.list()[0]
+  expect(pcb_board.center.x).toBe(5)
+  expect(pcb_board.center.y).toBe(0)
+})
