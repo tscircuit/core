@@ -1,9 +1,10 @@
+// lib>components>normal-components>Board.ts
 import { boardProps } from "@tscircuit/props"
 import type { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { identity, type Matrix } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
-
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
 
@@ -31,47 +32,50 @@ export class Board extends Group<typeof boardProps> {
     return ["top", "bottom", "inner1", "inner2"]
   }
 
+  doInitialBoardAutoSize(): void {
+    if (this.root?.pcbDisabled) return
+    
+    // Skip auto-size if dimensions already specified
+    if ((this._parsedProps.width && this._parsedProps.height) || this._parsedProps.outline) {
+      // console.log("Skipping auto-size - dimensions specified", this._parsedProps)
+      console.log("Skipping auto-size because dimensions are specified")
+      return
+    }
+
+    const bounds = getBoundsOfPcbComponents(this.children)
+    
+    if (bounds.width === 0 || bounds.height === 0) {
+      console.log("No valid components found for auto-sizing")
+      return
+    }
+
+    const padding = 2
+    this._parsedProps.width = bounds.width + (padding * 2)
+    this._parsedProps.height = bounds.height + (padding * 2)
+    
+    // Set board center based on component bounds
+    this._parsedProps.pcbX = (bounds.minX + bounds.maxX) / 2
+    this._parsedProps.pcbY = (bounds.minY + bounds.maxY) / 2
+    
+    // console.log("Auto-sized dimensions:", bounds.width, bounds.height)
+    // console.log("Center position:", this._parsedProps.pcbX, this._parsedProps.pcbY)
+  }
+
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    // If outline is not provided, width and height must be specified
-    if (!props.outline && (!props.width || !props.height)) {
-      throw new Error("Board width and height or an outline are required")
-    }
-
-    // Compute width and height from outline if not provided
-    let computedWidth = props.width
-    let computedHeight = props.height
-    if (props.outline) {
-      const xValues = props.outline.map((point) => point.x)
-      const yValues = props.outline.map((point) => point.y)
-
-      const minX = Math.min(...xValues)
-      const maxX = Math.max(...xValues)
-      const minY = Math.min(...yValues)
-      const maxY = Math.max(...yValues)
-
-      computedWidth = maxX - minX
-      computedHeight = maxY - minY
-    }
-
     const pcb_board = db.pcb_board.insert({
       center: {
-        x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
-        y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
+        x: props.pcbX ?? 0,  // Use calculated center
+        y: props.pcbY ?? 0
       },
-
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
-
-      width: computedWidth!,
-      height: computedHeight!,
-      outline: props.outline?.map((point) => ({
-        x: point.x + (props.outlineOffsetX ?? 0),
-        y: point.y + (props.outlineOffsetY ?? 0),
-      })),
+      width: props.width!,
+      height: props.height!,
+      outline: props.outline
     })
 
     this.pcb_board_id = pcb_board.pcb_board_id!

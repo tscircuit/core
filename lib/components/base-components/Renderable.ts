@@ -1,3 +1,4 @@
+// lib>components>base-components>Renderable.ts
 import type {
   PcbManualEditConflictError,
   PcbPlacementError,
@@ -22,6 +23,7 @@ export const orderedRenderPhases = [
   "SchematicPortRender",
   "SchematicLayout",
   "SchematicTraceRender",
+  "BoardAutoSize",
   "PcbComponentRender",
   "PcbPrimitiveRender",
   "PcbFootprintLayout",
