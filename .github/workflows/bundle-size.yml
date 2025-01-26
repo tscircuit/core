@@ -119,6 +119,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
         with:
           header: Size Report
+          message-id: bundle-size-report
+          update-only: true
           message: |
             ## Size Report
             ### Bundle Size
@@ -137,5 +139,4 @@ jobs:
 
             (aside)
             ```
-          proxy-url: https://add-pr-comment-proxy-tscircuit.vercel.app/api
           allow-repeats: false
