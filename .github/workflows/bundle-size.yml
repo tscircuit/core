@@ -89,7 +89,31 @@ jobs:
             echo "diff=$diff" >> $GITHUB_OUTPUT
           fi
 
+      - name: Check size threshold
+        id: size-threshold
+        run: |
+          # Get the differences from previous steps
+          bundle_diff="${{ steps.bundle-size-diff.outputs.diff }}"
+          install_diff="${{ steps.install-size-diff.outputs.diff }}"
+
+          # Remove any leading "+" or "-" signs
+          bundle_abs="${bundle_diff//+/}"
+          bundle_abs="${bundle_abs//-/}"
+          install_abs="${install_diff//+/}"
+          install_abs="${install_abs//-/}"
+
+          # Set threshold to 0.01 (10KB when sizes are in MB)
+          threshold="0.01"
+
+          # Compare absolute differences to threshold
+          if (( $(echo "$bundle_abs >= $threshold" | bc -l) )) || (( $(echo "$install_abs >= $threshold" | bc -l) )); then
+            echo "exceeded=true" >> $GITHUB_OUTPUT
+          else
+            echo "exceeded=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Update comment
+        if: steps.size-threshold.outputs.exceeded == 'true'
         uses: mshick/add-pr-comment@v2
         env:
           GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
