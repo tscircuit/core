@@ -41,6 +41,22 @@ export class Board extends Group<typeof boardProps> {
       throw new Error("Board width and height or an outline are required")
     }
 
+    // Compute width and height from outline if not provided
+    let computedWidth = props.width
+    let computedHeight = props.height
+    if (props.outline) {
+      const xValues = props.outline.map((point) => point.x)
+      const yValues = props.outline.map((point) => point.y)
+
+      const minX = Math.min(...xValues)
+      const maxX = Math.max(...xValues)
+      const minY = Math.min(...yValues)
+      const maxY = Math.max(...yValues)
+
+      computedWidth = maxX - minX
+      computedHeight = maxY - minY
+    }
+
     const pcb_board = db.pcb_board.insert({
       center: {
         x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
@@ -50,8 +66,8 @@ export class Board extends Group<typeof boardProps> {
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
 
-      width: props.width ?? 0,
-      height: props.height ?? 0,
+      width: computedWidth!,
+      height: computedHeight!,
       outline: props.outline?.map((point) => ({
         x: point.x + (props.outlineOffsetX ?? 0),
         y: point.y + (props.outlineOffsetY ?? 0),
