@@ -928,7 +928,7 @@ export class NormalComponent<
   }
 
   doInitialPartsEngineRender(): void {
-    const { partsEngine } = this.getSubcircuit()._parsedProps
+    const partsEngine = this.getInheritedProperty("partsEngine")
     if (!partsEngine) return
     const { db } = this.root!
 
