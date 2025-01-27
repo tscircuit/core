@@ -68,21 +68,46 @@ export class Board extends Group<typeof boardProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
+    // If outline is not provided, width and height must be specified
+    if (!props.outline && (!props.width || !props.height)) {
+      throw new Error("Board width and height or an outline are required")
+    }
+
+    // Compute width and height from outline if not provided
+    let computedWidth = props.width
+    let computedHeight = props.height
+    if (props.outline) {
+      const xValues = props.outline.map((point) => point.x)
+      const yValues = props.outline.map((point) => point.y)
+
+      const minX = Math.min(...xValues)
+      const maxX = Math.max(...xValues)
+      const minY = Math.min(...yValues)
+      const maxY = Math.max(...yValues)
+
+      computedWidth = maxX - minX
+      computedHeight = maxY - minY
+    }
+
     const pcb_board = db.pcb_board.insert({
       center: {
-        x: props.pcbX ?? 0, // Use calculated center
-        y: props.pcbY ?? 0,
+        x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
+        y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
       },
+
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
-      width: props.width!,
-      height: props.height!,
-      outline: props.outline,
+
+      width: computedWidth!,
+      height: computedHeight!,
+      outline: props.outline?.map((point) => ({
+        x: point.x + (props.outlineOffsetX ?? 0),
+        y: point.y + (props.outlineOffsetY ?? 0),
+      })),
     })
 
     this.pcb_board_id = pcb_board.pcb_board_id!
   }
-
   removePcbComponentRender(): void {
     const { db } = this.root!
     if (!this.pcb_board_id) return
