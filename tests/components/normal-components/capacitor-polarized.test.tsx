@@ -29,5 +29,4 @@ test("capacitor polarized", () => {
   expect(capacitors).toHaveLength(1)
   expect(capacitors[0].display_capacitance).toBe("10µF")
   expect(project).toMatchSchematicSnapshot(import.meta.path)
-
 })
