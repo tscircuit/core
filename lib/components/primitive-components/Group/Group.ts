@@ -203,6 +203,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             method: "POST",
             body: JSON.stringify({
               input_simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
+              subcircuit_id: this.subcircuit_id!,
             }),
             headers: { "Content-Type": "application/json" },
           },
