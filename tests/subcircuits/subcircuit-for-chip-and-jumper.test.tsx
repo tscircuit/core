@@ -8,10 +8,8 @@ test("subcircuit-id property for chip", async () => {
 
   circuit.add(
     <board width="30mm" height="30mm">
-      <chip
-      name="M1"
-      />
-    </board>
+      <chip name="M1" />
+    </board>,
   )
 
   circuit.render()
@@ -41,7 +39,7 @@ test("subcircuit-id property for jumper", async () => {
   circuit.add(
     <board width="30mm" height="30mm">
       <jumper name="J1" />
-    </board>
+    </board>,
   )
 
   circuit.render()
