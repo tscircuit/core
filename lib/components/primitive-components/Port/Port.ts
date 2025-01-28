@@ -60,7 +60,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (!matchedPcbElm) {
       throw new Error(
-        `Port ${this} has no matched pcb component, can't get global pcb position`,
+        `Port ${this} has no matching PCB primitives. This often means the component is missing a footprint (e.g. footprint="R0603") or the footprint's pads lack matching port hints.`,
       )
     }
 
