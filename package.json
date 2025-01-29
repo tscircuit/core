@@ -61,6 +61,7 @@
     "circuit-json": "^0.0.134",
     "circuit-json-to-connectivity-map": "^0.0.17",
     "format-si-unit": "^0.0.2",
+    "lodash": "^4.17.21",
     "nanoid": "5.0.7",
     "performance-now": "^2.1.0",
     "react-reconciler": "^0.31.0",
