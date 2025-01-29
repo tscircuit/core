@@ -36,12 +36,12 @@ jobs:
       - name: Get base bundle size
         id: base-bundle-size
         run: |
-          echo "base=$(du -sh dist | cut -f1)" >> $GITHUB_OUTPUT
+          echo "base=$(du -sk dist | cut -f1)" >> $GITHUB_OUTPUT
 
       - name: Get base install size
         id: base-install-size
         run: |
-          echo "base=$(bunx howfat -r simple . | grep 'Size:' | awk '{print $2}')" >> $GITHUB_OUTPUT
+          echo "base=$(bunx howfat -r simple . | grep 'Size:' | awk '{print $2}' | sed 's/K//')" >> $GITHUB_OUTPUT
 
       - name: Checkout PR branch
         uses: actions/checkout@v3
@@ -55,12 +55,12 @@ jobs:
       - name: Get PR bundle size
         id: pr-bundle-size
         run: |
-          echo "pr=$(du -sh dist | cut -f1)" >> $GITHUB_OUTPUT
+          echo "pr=$(du -sk dist | cut -f1)" >> $GITHUB_OUTPUT
 
       - name: Get PR install size and full howfat output
         id: pr-install-size
         run: |
-          echo "pr=$(bunx howfat -r simple . | grep 'Size:' | awk '{print $2}')" >> $GITHUB_OUTPUT
+          echo "pr=$(bunx howfat -r simple . | grep 'Size:' | awk '{print $2}' | sed 's/K//')" >> $GITHUB_OUTPUT
           echo "full_output<<EOF" >> $GITHUB_OUTPUT
           bunx howfat -r table . >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -68,28 +68,25 @@ jobs:
       - name: Calculate bundle size difference
         id: bundle-size-diff
         run: |
-          base_size=$(echo ${{ steps.base-bundle-size.outputs.base }} | sed 's/[^0-9.]*//g')
-          pr_size=$(echo ${{ steps.pr-bundle-size.outputs.pr }} | sed 's/[^0-9.]*//g')
-          diff=$(echo "$pr_size - $base_size" | bc)
-          if (( $(echo "$diff > 0" | bc -l) )); then
-            echo "diff=+$diff" >> $GITHUB_OUTPUT
-          else
-            echo "diff=$diff" >> $GITHUB_OUTPUT
-          fi
+          base_size=${{ steps.base-bundle-size.outputs.base }}
+          pr_size=${{ steps.pr-bundle-size.outputs.pr }}
+          diff=$((pr_size - base_size))
+          echo "diff=$diff" >> $GITHUB_OUTPUT
 
       - name: Calculate install size difference
         id: install-size-diff
         run: |
-          base_size=$(echo ${{ steps.base-install-size.outputs.base }} | sed 's/[^0-9.]*//g')
-          pr_size=$(echo ${{ steps.pr-install-size.outputs.pr }} | sed 's/[^0-9.]*//g')
+          base_size=${{ steps.base-install-size.outputs.base }}
+          pr_size=${{ steps.pr-install-size.outputs.pr }}
           diff=$(echo "$pr_size - $base_size" | bc)
-          if (( $(echo "$diff > 0" | bc -l) )); then
-            echo "diff=+$diff" >> $GITHUB_OUTPUT
-          else
-            echo "diff=$diff" >> $GITHUB_OUTPUT
-          fi
+          echo "diff=$diff" >> $GITHUB_OUTPUT
 
-      - name: Update comment
+      - name: Conditionally Update PR Comment
+        if: |
+          steps.bundle-size-diff.outputs.diff | tonumber >= 10
+          or steps.bundle-size-diff.outputs.diff | tonumber <= -10
+          or steps.install-size-diff.outputs.diff | tonumber >= 10
+          or steps.install-size-diff.outputs.diff | tonumber <= -10
         uses: mshick/add-pr-comment@v2
         env:
           GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
@@ -98,14 +95,14 @@ jobs:
           message: |
             ## Size Report
             ### Bundle Size
-            - Base branch size: ${{ steps.base-bundle-size.outputs.base }}
-            - PR branch size: ${{ steps.pr-bundle-size.outputs.pr }}
-            - Difference: ${{ steps.bundle-size-diff.outputs.diff }}
+            - Base branch size: ${{ steps.base-bundle-size.outputs.base }} KB
+            - PR branch size: ${{ steps.pr-bundle-size.outputs.pr }} KB
+            - Difference: ${{ steps.bundle-size-diff.outputs.diff }} KB
 
             ### Install Size
-            - Base branch size: ${{ steps.base-install-size.outputs.base }}
-            - PR branch size: ${{ steps.pr-install-size.outputs.pr }}
-            - Difference: ${{ steps.install-size-diff.outputs.diff }}
+            - Base branch size: ${{ steps.base-install-size.outputs.base }} KB
+            - PR branch size: ${{ steps.pr-install-size.outputs.pr }} KB
+            - Difference: ${{ steps.install-size-diff.outputs.diff }} KB
 
             ### Full Howfat Output (PR Branch)
             ```
