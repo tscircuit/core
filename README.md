@@ -53,3 +53,4 @@ board.add(trace)
 
 circuit.getJson() // [{ type: "board", ...}, { type: "resistor", ...}, ...]
 ```
+Testing size workflow
