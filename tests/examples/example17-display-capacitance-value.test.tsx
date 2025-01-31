@@ -7,7 +7,13 @@ test("schematic capacitor symbol", () => {
 
   circuit.add(
     <board width="22mm" height="22mm">
-      <capacitor name="C1" capacitance="100uF" footprint="0402" schX={3} schY={0} />
+      <capacitor
+        name="C1"
+        capacitance="100uF"
+        footprint="0402"
+        schX={3}
+        schY={0}
+      />
     </board>,
   )
 
