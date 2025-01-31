@@ -1,5 +1,5 @@
-import type { SoupUtilObjects } from "@tscircuit/soup-util";
-import type { Port } from "../Port";
+import type { SoupUtilObjects } from "@tscircuit/soup-util"
+import type { Port } from "../Port"
 
 interface CreateDownwardNetLabelSymbolParams {
   port: Port
@@ -51,9 +51,7 @@ export const createDownwardNetLabelGroundSymbol = (
   db.schematic_net_label.insert({
     anchor_side: "top",
     center: {
-      x:
-        anchorPos.x +
-        offsets.horzPortDirection * offsets.schBoxHorzOffset,
+      x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
       y:
         anchorPos.y +
         offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
@@ -61,9 +59,7 @@ export const createDownwardNetLabelGroundSymbol = (
     source_net_id: port.source_port_id!,
     text: schDisplayLabel!,
     anchor_position: {
-      x:
-        anchorPos.x +
-        offsets.horzPortDirection * offsets.schBoxHorzOffset,
+      x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
       y:
         anchorPos.y +
         offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
@@ -77,17 +73,13 @@ export const createDownwardNetLabelGroundSymbol = (
         from: { x: anchorPos.x, y: anchorPos.y },
         to: {
           x: anchorPos.x,
-          y:
-            anchorPos.y +
-            offsets.handleUp * offsets.schBoxVertOffset,
+          y: anchorPos.y + offsets.handleUp * offsets.schBoxVertOffset,
         },
       },
       {
         from: { x: anchorPos.x, y: anchorPos.y },
         to: {
-          x:
-            anchorPos.x +
-            offsets.horzPortDirection * offsets.schBoxHorzOffset,
+          x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
           y:
             anchorPos.y +
             offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
@@ -96,9 +88,7 @@ export const createDownwardNetLabelGroundSymbol = (
     ],
     junctions: [
       {
-        x:
-          anchorPos.x +
-          offsets.horzPortDirection * offsets.schBoxHorzOffset,
+        x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
         y:
           anchorPos.y +
           offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
