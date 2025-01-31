@@ -64,7 +64,7 @@ const hostConfig: HostConfig<
           "No components registered in catalogue, did you forget to import lib/register-catalogue in your test file?",
         )
       }
-      
+
       // Improved error message with more context and helpful suggestions
       const availableComponents = Object.keys(catalogue).join(", ")
       throw new Error(
@@ -77,10 +77,10 @@ const hostConfig: HostConfig<
   
   Available components: ${availableComponents}
   
-  See CREATING_NEW_COMPONENTS.md for guidance on adding new components.`
+  See CREATING_NEW_COMPONENTS.md for guidance on adding new components.`,
       )
     }
-  
+
     const instance = prepare(new target(props) as any, {})
     return instance
   },
