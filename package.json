@@ -59,7 +59,7 @@
     "@tscircuit/soup-util": "^0.0.41",
     "circuit-json": "^0.0.135",
     "circuit-json-to-connectivity-map": "^0.0.17",
-    "format-si-unit": "^0.0.2",
+    "format-si-unit": "^0.0.3",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
     "react-reconciler": "^0.31.0",
