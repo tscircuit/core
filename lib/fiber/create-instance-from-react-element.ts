@@ -64,13 +64,24 @@ const hostConfig: HostConfig<
           "No components registered in catalogue, did you forget to import lib/register-catalogue in your test file?",
         )
       }
+      
+      // Improved error message with more context and helpful suggestions
+      const availableComponents = Object.keys(catalogue).join(", ")
       throw new Error(
-        `Unsupported component type (not registered in @tscircuit/core catalogue): "${type}" See CREATING_NEW_COMPONENTS.md`,
+        `Invalid JSX component "${type}"
+  
+  Possible issues:
+  1. Component "${type}" is not registered in @tscircuit/core catalogue
+  2. There might be a typo in the component name
+  3. The component might need to be imported and registered first
+  
+  Available components: ${availableComponents}
+  
+  See CREATING_NEW_COMPONENTS.md for guidance on adding new components.`
       )
     }
-
+  
     const instance = prepare(new target(props) as any, {})
-
     return instance
   },
   createTextInstance() {
