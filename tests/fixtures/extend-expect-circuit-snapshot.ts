@@ -11,6 +11,7 @@ import looksSame from "looks-same"
 import { RootCircuit } from "lib/RootCircuit"
 import type { AnyCircuitElement } from "circuit-json"
 
+
 async function saveSnapshotOfSoup({
   soup,
   testPath,
@@ -86,11 +87,24 @@ expect.extend({
     ...args: any[]
   ): Promise<MatcherResult> {
     let circuitJson: AnyCircuitElement[]
+    let circuitJsonErrors: { type: string; message: string }[] = []
     if (received instanceof RootCircuit) {
       await received.renderUntilSettled()
-      circuitJson = await received.getCircuitJson()
+      circuitJson = received.getCircuitJson()
+      circuitJsonErrors = received.getCircuitJsonErrors()
     } else {
       circuitJson = received as AnyCircuitElement[]
+    }
+
+
+    if (circuitJsonErrors.length > 0) {
+      return {
+        message: () =>
+          `Circuit JSON Errors:\n${circuitJsonErrors
+            .map((err) => `- [${err.type}] ${err.message}`)
+            .join("\n")}`,
+        pass: false,
+      };
     }
 
     return saveSnapshotOfSoup({
@@ -109,12 +123,25 @@ expect.extend({
     ...args: any[]
   ): Promise<MatcherResult> {
     let circuitJson: AnyCircuitElement[]
+    let circuitJsonErrors: { type: string; message: string }[] = []
     if (received instanceof RootCircuit) {
       await received.renderUntilSettled()
       circuitJson = await received.getCircuitJson()
+      circuitJsonErrors = received.getCircuitJsonErrors();
     } else {
       circuitJson = received as AnyCircuitElement[]
     }
+
+    if (circuitJsonErrors.length > 0) {
+      return {
+        message: () =>
+          `Circuit JSON Errors:\n${circuitJsonErrors
+            .map((err) => `- [${err.type}] ${err.message}`)
+            .join("\n")}`,
+        pass: false,
+      };
+    }
+
 
     return saveSnapshotOfSoup({
       soup: circuitJson,
@@ -136,10 +163,10 @@ expect.extend({
 
 declare module "bun:test" {
   interface Matchers<T = unknown> {
-    toMatchPcbSnapshot(testPath: string): Promise<MatcherResult>
+    toMatchPcbSnapshot(testPath: string): Promise<MatcherResult>;
     toMatchSchematicSnapshot(
       testPath: string,
       options?: Parameters<typeof convertCircuitJsonToSchematicSvg>[1],
-    ): Promise<MatcherResult>
+    ): Promise<MatcherResult>;
   }
 }

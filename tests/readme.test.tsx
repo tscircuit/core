@@ -3,7 +3,7 @@ import "lib/register-catalogue"
 import { Board, RootCircuit } from "../index"
 
 it("should create soup with various elements", () => {
-  const project = new RootCircuit()
+  const project = new RootCircuit({ elements: [] })
 
   const board = new Board({
     width: "10mm",

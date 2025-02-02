@@ -24,6 +24,8 @@ export class RootCircuit {
   schematicDisabled = false
   pcbDisabled = false
   pcbRoutingDisabled = false
+  private circuitJson: AnyCircuitElement[]
+  private circuitJsonErrors: { type: string; message: string }[]
 
   /**
    * The RootCircuit name is usually set by the platform, it's not required but
@@ -34,11 +36,13 @@ export class RootCircuit {
 
   _hasRenderedAtleastOnce = false
 
-  constructor() {
+  constructor({ elements }: { elements: AnyCircuitElement[] }) {
     this.children = []
     this.db = su([])
     // TODO rename to rootCircuit
     this.root = this
+    this.circuitJson = elements
+    this.circuitJsonErrors = this.extractCircuitJsonErrors()
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
@@ -207,6 +211,33 @@ export class RootCircuit {
       return self.origin
     }
     return ""
+  }
+
+  /**
+   * Returns the original circuit JSON elements.
+   */
+  toCircuitJson() {
+    return this.circuitJson
+  }
+
+  getCircuitJsonErrors() {
+    return this.circuitJsonErrors
+  }
+
+  addCircuitJsonError(error: { type: string; message: string }): void {
+    this.circuitJsonErrors.push(error);
+  }
+
+  extractCircuitJsonErrors() {
+    // Implement logic to extract errors from circuitJson
+    // This could involve parsing the circuit JSON structure or querying a database
+    return this.circuitJson
+      .filter((element) => element.type.endsWith("_error"))
+      .map((errorElement) => ({
+        type: errorElement.type,
+        message: `Error of type ${errorElement.type} encountered.`,
+        // Include other relevant error details
+      }))
   }
 }
 

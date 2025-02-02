@@ -290,7 +290,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
-
     if (pcbMatches.length === 0) return
 
     let matchCenter: { x: number; y: number } | null = null
@@ -302,23 +301,44 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (pcbMatches.length > 1) {
       if (!areAllPcbPrimitivesOverlapping(pcbMatches)) {
         throw new Error(
-          `${this.getString()} has multiple non-overlapping pcb matches, unclear how to place pcb_port: ${pcbMatches.map((c) => c.getString()).join(", ")}. (Note: tscircuit core does not currently allow you to specify internally connected pcb primitives with the same port hints, try giving them different port hints and specifying they are connected externally- or file an issue)`,
+          `${this.getString()} has multiple non-overlapping pcb matches, unclear how to place pcb_port: ${pcbMatches
+            .map((c) => c.getString())
+            .join(", ")}`,
         )
       }
-
       matchCenter = getCenterOfPcbPrimitives(pcbMatches)
     }
 
     if (matchCenter) {
-      const subcircuit = this.getSubcircuit()
+      // New code: ensure the port is within board boundaries
+      const pcb_board = db.pcb_board.get(this.parent?.pcb_component_id!)
+      if (pcb_board) {
+        const halfW = pcb_board.width / 2
+        const halfH = pcb_board.height / 2
+        const left = pcb_board.center.x - halfW
+        const right = pcb_board.center.x + halfW
+        const top = pcb_board.center.y - halfH
+        const bottom = pcb_board.center.y + halfH
 
+        if (
+          matchCenter.x < left ||
+          matchCenter.x > right ||
+          matchCenter.y < top ||
+          matchCenter.y > bottom
+        ) {
+          throw new Error(
+            `${this.getString()} is placed outside the board boundaries`,
+          )
+        }
+      }
+
+      const subcircuit = this.getSubcircuit()
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
         layers: this.getAvailablePcbLayers(),
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         ...matchCenter,
-
         source_port_id: this.source_port_id!,
       })
       this.pcb_port_id = pcb_port.pcb_port_id

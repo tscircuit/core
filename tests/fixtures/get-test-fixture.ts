@@ -4,7 +4,7 @@ import "lib/register-catalogue"
 import "./extend-expect-circuit-snapshot"
 
 export const getTestFixture = () => {
-  const circuit = new RootCircuit()
+  const circuit = new RootCircuit({ elements: [] })
 
   return {
     circuit,

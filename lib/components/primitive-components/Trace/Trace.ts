@@ -43,6 +43,7 @@ import { getMaxLengthFromConnectedCapacitors } from "./get-max-length-from-conn 
 import { getTraceDisplayName } from "./get-trace-display-name"
 import { getSchematicObstaclesForTrace } from "./get-obstacles-for-trace"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
+import { RootCircuit } from "lib/RootCircuit"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -318,6 +319,39 @@ export class Trace
           .filter(Boolean),
       })
       return
+    }
+
+    // New code: ensure all connected ports are within board boundaries
+    const pcb_board = db.pcb_board.list()[0]
+    if (pcb_board) {
+      const halfW = pcb_board.width / 2
+      const halfH = pcb_board.height / 2
+      const left = pcb_board.center.x - halfW
+      const right = pcb_board.center.x + halfW
+      const top = pcb_board.center.y - halfH
+      const bottom = pcb_board.center.y + halfH
+
+      for (const port of ports) {
+        const pos = port._getGlobalPcbPositionAfterLayout()
+        if (
+          pos.x < left ||
+          pos.x > right ||
+          pos.y < top ||
+          pos.y > bottom
+        ) {
+          // Instead of throwing, record the error in the circuit JSON errors list
+          const rootCircuit = this.getRootCircuit();
+          if (rootCircuit && typeof rootCircuit.addCircuitJsonError === "function") {
+            rootCircuit.addCircuitJsonError({
+              type: "OutOfBoundsError",
+              message: `Trace connected to port ${port.getString()} is placed outside the board boundaries`,
+            });
+          } else {
+            console.error("Root circuit not available to record error.");
+          }
+          return;
+        }
+      }
     }
 
     const nets = this._findConnectedNets().netsWithSelectors
@@ -993,5 +1027,16 @@ export class Trace
       junctions,
     })
     this.schematic_trace_id = trace.schematic_trace_id
+  }
+
+  getRootCircuit(): RootCircuit | null {
+    let current = this.parent;
+    while (current) {
+      if (current instanceof RootCircuit) {
+        return current;
+      }
+      current = current.parent;
+    }
+    return null;
   }
 }

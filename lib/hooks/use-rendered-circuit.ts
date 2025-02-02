@@ -21,7 +21,7 @@ export const useRenderedCircuit = (
     if (reactElements) {
       setTimeout(() => {
         try {
-          const circuit = new RootCircuit()
+          const circuit = new RootCircuit({ elements: [] })
           circuit.add(reactElements)
 
           setCircuit(circuit)
