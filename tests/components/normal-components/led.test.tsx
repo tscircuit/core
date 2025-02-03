@@ -24,7 +24,7 @@ test("led should show clear error when missing footprint", () => {
 
   // Verify error message is clear about missing footprint
   expect(error.message).toBe(
-    'No footprint specified for led. Add a footprint prop to the led component, e.g. <led footprint=\"...\" />',
+    'No footprint specified for led. Add a footprint prop to the led component, e.g. <led footprint="..." />',
   )
   expect(error.error_type).toBe("pcb_missing_footprint_error")
 })
