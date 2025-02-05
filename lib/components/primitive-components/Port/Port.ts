@@ -57,10 +57,18 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   _getGlobalPcbPositionBeforeLayout(): { x: number; y: number } {
     const matchedPcbElm = this.matchedComponents.find((c) => c.isPcbPrimitive)
+    const parentComponent = this.parent
+
+    // First check if parent component has a footprint
+    if (parentComponent && !parentComponent.props.footprint) {
+      throw new Error(
+        `${parentComponent.componentName} "${parentComponent.props.name}" does not have a footprint. Add a footprint prop, e.g. <${parentComponent.componentName} footprint="..." />`,
+      )
+    }
 
     if (!matchedPcbElm) {
       throw new Error(
-        `Port ${this} has no matching PCB primitives. This often means the component is missing a footprint (e.g. footprint="R0603") or the footprint's pads lack matching port hints.`,
+        `Port ${this} has no matching PCB primitives. This often means the footprint's pads lack matching port hints.`,
       )
     }
 
