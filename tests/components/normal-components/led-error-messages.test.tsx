@@ -17,7 +17,7 @@ test("LED without footprint should throw appropriate error", async () => {
       throw new Error("Expected err to be an Error instance")
     }
     expect(err.message).toBe(
-      'Led "LED1" does not have a footprint. Add a footprint prop, e.g. <Led footprint="..." />',
+      'Led "LED1" does not have a footprint. Add a footprint prop, e.g. <led footprint="..." />',
     )
   }
 })

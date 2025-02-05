@@ -62,7 +62,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // First check if parent component has a footprint
     if (parentComponent && !parentComponent.props.footprint) {
       throw new Error(
-        `${parentComponent.componentName} "${parentComponent.props.name}" does not have a footprint. Add a footprint prop, e.g. <${parentComponent.componentName} footprint="..." />`,
+        `${parentComponent.componentName} "${parentComponent.props.name}" does not have a footprint. Add a footprint prop, e.g. <${parentComponent.componentName.toLowerCase()} footprint="..." />`,
       )
     }
 
