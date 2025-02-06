@@ -12,7 +12,6 @@ import {
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
 import type {
-  Obstacle,
   SimpleRouteConnection,
   SimpleRouteJson,
   SimplifiedPcbTrace,
@@ -21,10 +20,10 @@ import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBoun
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
-import { getTraceLength } from "./compute-trace-length"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getClosest } from "lib/utils/getClosest"
 import { pairs } from "lib/utils/pairs"
+import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { getStubEdges } from "lib/utils/schematic/getStubEdges"
 import { tryNow } from "lib/utils/try-now"
@@ -34,15 +33,15 @@ import { Net } from "../Net"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
 import type { TraceI } from "./TraceI"
+import { getTraceLength } from "./compute-trace-length"
+import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-ground-symbol"
 import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
-import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
-import { countComplexElements } from "lib/utils/schematic/countComplexElements"
-import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-ground-symbol"
 import { getMaxLengthFromConnectedCapacitors } from "./get-max-length-from-conn ected-capacitors"
-import { getTraceDisplayName } from "./get-trace-display-name"
 import { getSchematicObstaclesForTrace } from "./get-obstacles-for-trace"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
+import { getTraceDisplayName } from "./get-trace-display-name"
+import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -693,22 +692,50 @@ export class Trace
     }
 
     if (
-      !existingFromNetLabel &&
-      !existingToNetLabel &&
-      (netLabelText?.toLocaleLowerCase().includes("gnd") ||
-        netLabelText?.toLocaleLowerCase().includes("ground"))
+      netLabelText?.toLocaleLowerCase().includes("gnd") ||
+      netLabelText?.toLocaleLowerCase().includes("ground")
     ) {
-      createDownwardNetLabelGroundSymbol(
-        {
-          fromPort,
-          toPort,
-          fromAnchorPos,
-          toAnchorPos,
-          schDisplayLabel: this.props.schDisplayLabel!,
-          source_trace_id: this.source_trace_id!,
-        },
-        { db },
-      )
+      if (!existingFromNetLabel && !existingToNetLabel) {
+        createDownwardNetLabelGroundSymbol(
+          {
+            port: fromPort,
+            anchorPos: fromAnchorPos,
+            schDisplayLabel: this.props.schDisplayLabel!,
+            source_trace_id: this.source_trace_id!,
+          },
+          { db },
+        )
+
+        createDownwardNetLabelGroundSymbol(
+          {
+            port: toPort,
+            anchorPos: toAnchorPos,
+            schDisplayLabel: this.props.schDisplayLabel!,
+            source_trace_id: this.source_trace_id!,
+          },
+          { db },
+        )
+      } else if (!existingFromNetLabel) {
+        createDownwardNetLabelGroundSymbol(
+          {
+            port: fromPort,
+            anchorPos: fromAnchorPos,
+            schDisplayLabel: this.props.schDisplayLabel!,
+            source_trace_id: this.source_trace_id!,
+          },
+          { db },
+        )
+      } else if (!existingToNetLabel) {
+        createDownwardNetLabelGroundSymbol(
+          {
+            port: toPort,
+            anchorPos: toAnchorPos,
+            schDisplayLabel: this.props.schDisplayLabel!,
+            source_trace_id: this.source_trace_id!,
+          },
+          { db },
+        )
+      }
       return
     }
 

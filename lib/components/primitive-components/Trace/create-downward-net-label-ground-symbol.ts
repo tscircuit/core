@@ -2,10 +2,8 @@ import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import type { Port } from "../Port"
 
 interface CreateDownwardNetLabelSymbolParams {
-  fromPort: Port
-  toPort: Port
-  fromAnchorPos: { x: number; y: number }
-  toAnchorPos: { x: number; y: number }
+  port: Port
+  anchorPos: { x: number; y: number }
   schDisplayLabel: string
   source_trace_id: string
 }
@@ -42,35 +40,29 @@ const calculateOffsets = (port: Port) => {
 
 export const createDownwardNetLabelGroundSymbol = (
   {
-    fromPort,
-    toPort,
-    fromAnchorPos,
-    toAnchorPos,
+    port,
+    anchorPos,
     schDisplayLabel,
     source_trace_id,
   }: CreateDownwardNetLabelSymbolParams,
   { db }: { db: SoupUtilObjects },
 ): void => {
-  const fromOffsets = calculateOffsets(fromPort)
+  const offsets = calculateOffsets(port)
   db.schematic_net_label.insert({
     anchor_side: "top",
     center: {
-      x:
-        fromAnchorPos.x +
-        fromOffsets.horzPortDirection * fromOffsets.schBoxHorzOffset,
+      x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
       y:
-        fromAnchorPos.y +
-        fromOffsets.vertPortDirectionOffset * fromOffsets.schBoxVertOffset,
+        anchorPos.y +
+        offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
     },
-    source_net_id: fromPort.source_port_id!,
+    source_net_id: port.source_port_id!,
     text: schDisplayLabel!,
     anchor_position: {
-      x:
-        fromAnchorPos.x +
-        fromOffsets.horzPortDirection * fromOffsets.schBoxHorzOffset,
+      x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
       y:
-        fromAnchorPos.y +
-        fromOffsets.vertPortDirectionOffset * fromOffsets.schBoxVertOffset,
+        anchorPos.y +
+        offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
     },
     symbol_name: "ground_horz",
   })
@@ -78,93 +70,28 @@ export const createDownwardNetLabelGroundSymbol = (
   db.schematic_trace.insert({
     edges: [
       {
-        from: { x: fromAnchorPos.x, y: fromAnchorPos.y },
+        from: { x: anchorPos.x, y: anchorPos.y },
         to: {
-          x: fromAnchorPos.x,
-          y:
-            fromAnchorPos.y +
-            fromOffsets.handleUp * fromOffsets.schBoxVertOffset,
+          x: anchorPos.x,
+          y: anchorPos.y + offsets.handleUp * offsets.schBoxVertOffset,
         },
       },
       {
-        from: { x: fromAnchorPos.x, y: fromAnchorPos.y },
+        from: { x: anchorPos.x, y: anchorPos.y },
         to: {
-          x:
-            fromAnchorPos.x +
-            fromOffsets.horzPortDirection * fromOffsets.schBoxHorzOffset,
+          x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
           y:
-            fromAnchorPos.y +
-            fromOffsets.vertPortDirectionOffset * fromOffsets.schBoxVertOffset,
+            anchorPos.y +
+            offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
         },
       },
     ],
     junctions: [
       {
-        x:
-          fromAnchorPos.x +
-          fromOffsets.horzPortDirection * fromOffsets.schBoxHorzOffset,
+        x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
         y:
-          fromAnchorPos.y +
-          fromOffsets.vertPortDirectionOffset * fromOffsets.schBoxVertOffset,
-      },
-    ],
-    source_trace_id: source_trace_id!,
-  })
-
-  const toOffsets = calculateOffsets(toPort)
-  db.schematic_net_label.insert({
-    anchor_side: "top",
-    center: {
-      x:
-        toAnchorPos.x +
-        toOffsets.horzPortDirection * toOffsets.schBoxHorzOffset,
-      y:
-        toAnchorPos.y +
-        toOffsets.vertPortDirectionOffset * toOffsets.schBoxVertOffset,
-    },
-    source_net_id: toPort.source_port_id!,
-    text: schDisplayLabel!,
-    anchor_position: {
-      x:
-        toAnchorPos.x +
-        toOffsets.horzPortDirection * toOffsets.schBoxHorzOffset,
-      y:
-        toAnchorPos.y +
-        toOffsets.vertPortDirectionOffset * toOffsets.schBoxVertOffset,
-    },
-    symbol_name: "ground_horz",
-  })
-
-  const toHandleUp = toPort.facingDirection === "up" ? 0.5 : 0
-  db.schematic_trace.insert({
-    edges: [
-      {
-        from: { x: toAnchorPos.x, y: toAnchorPos.y },
-        to: {
-          x: toAnchorPos.x,
-          y: toAnchorPos.y + toHandleUp * toOffsets.schBoxVertOffset,
-        },
-      },
-      {
-        from: { x: toAnchorPos.x, y: toAnchorPos.y },
-        to: {
-          x:
-            toAnchorPos.x +
-            toOffsets.horzPortDirection * toOffsets.schBoxHorzOffset,
-          y:
-            toAnchorPos.y +
-            toOffsets.vertPortDirectionOffset * toOffsets.schBoxVertOffset,
-        },
-      },
-    ],
-    junctions: [
-      {
-        x:
-          toAnchorPos.x +
-          toOffsets.horzPortDirection * toOffsets.schBoxHorzOffset,
-        y:
-          toAnchorPos.y +
-          toOffsets.vertPortDirectionOffset * toOffsets.schBoxVertOffset,
+          anchorPos.y +
+          offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
       },
     ],
     source_trace_id: source_trace_id!,
