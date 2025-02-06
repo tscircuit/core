@@ -58,6 +58,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       layer: props.layer ?? "top",
       rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
     })
 
     this.pcb_component_id = pcb_component.pcb_component_id
