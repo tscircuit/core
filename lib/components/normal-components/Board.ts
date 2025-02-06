@@ -55,7 +55,7 @@ export class Board extends Group<typeof boardProps> {
     this._parsedProps = {
       ...this._parsedProps,
       width: bounds.width + padding * 2,
-      height: bounds.height + padding * 2
+      height: bounds.height + padding * 2,
     }
 
     // Set board center based on component bounds
