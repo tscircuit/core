@@ -31,7 +31,7 @@ export class Board extends Group<typeof boardProps> {
     return ["top", "bottom", "inner1", "inner2"]
   }
 
-  doInitialBoardAutoSize(): void {
+  doInitialPcbBoardAutoSize(): void {
     if (this.root?.pcbDisabled) return
 
     // Skip auto-size if dimensions already specified
@@ -52,8 +52,11 @@ export class Board extends Group<typeof boardProps> {
     }
 
     const padding = 2
-    this._parsedProps.width = bounds.width + padding * 2
-    this._parsedProps.height = bounds.height + padding * 2
+    this._parsedProps = {
+      ...this._parsedProps,
+      width: bounds.width + padding * 2,
+      height: bounds.height + padding * 2
+    }
 
     // Set board center based on component bounds
     this._parsedProps.pcbX = (bounds.minX + bounds.maxX) / 2
