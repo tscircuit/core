@@ -3,6 +3,7 @@ import type { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { identity, type Matrix } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
@@ -31,6 +32,40 @@ export class Board extends Group<typeof boardProps> {
     return ["top", "bottom", "inner1", "inner2"]
   }
 
+  doInitialPcbBoardAutoSize(): void {
+    if (this.root?.pcbDisabled) return
+
+    // Skip auto-size if dimensions already specified
+    if (
+      (this._parsedProps.width && this._parsedProps.height) ||
+      this._parsedProps.outline
+    ) {
+      // console.log("Skipping auto-size - dimensions specified", this._parsedProps)
+      console.log("Skipping auto-size because dimensions are specified")
+      return
+    }
+
+    const bounds = getBoundsOfPcbComponents(this.children)
+
+    if (bounds.width === 0 || bounds.height === 0) {
+      console.log("No valid components found for auto-sizing")
+      return
+    }
+
+    const padding = 2
+    this._parsedProps = {
+      ...this._parsedProps,
+      width: bounds.width + padding * 2,
+      height: bounds.height + padding * 2,
+    }
+
+    // Set board center based on component bounds
+    this._parsedProps.pcbX = (bounds.minX + bounds.maxX) / 2
+    this._parsedProps.pcbY = (bounds.minY + bounds.maxY) / 2
+
+    // console.log("Auto-sized dimensions:", bounds.width, bounds.height)
+    // console.log("Center position:", this._parsedProps.pcbX, this._parsedProps.pcbY)
+  }
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
