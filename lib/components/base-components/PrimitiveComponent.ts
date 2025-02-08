@@ -116,6 +116,13 @@ export abstract class PrimitiveComponent<
     this.childrenPendingRemoval = []
     this.props = props ?? {}
     this.externallyAddedAliases = []
+    for (const key in props) {
+      if (props[key] === undefined) {
+        throw new Error(
+          `Invalid prop: '${key}' is undefined in component '${this.lowercaseComponentName}'.`,
+        )
+      }
+    }
     const parsePropsResult = this.config.zodProps.safeParse(props ?? {})
     if (parsePropsResult.success) {
       this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
@@ -602,7 +609,9 @@ export abstract class PrimitiveComponent<
         `currentSearch: [${currentSearch.map((r) => r.getString()).join(",")}]`,
       )
       debugSelectAll(
-        `currentResults: [${currentResults.map((r) => r.getString()).join(",")}]`,
+        `currentResults: [${currentResults
+          .map((r) => r.getString())
+          .join(",")}]`,
       )
 
       if (part === ">") {
@@ -750,7 +759,9 @@ export abstract class PrimitiveComponent<
       return `<${cname}#${this._renderId} name=".${props?.name}" />`
     }
     if (props?.portHints) {
-      return `<${cname}#${this._renderId}(${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
+      return `<${cname}#${this._renderId}(${props.portHints
+        .map((ph: string) => `.${ph}`)
+        .join(", ")}) />`
     }
     return `<${cname}#${this._renderId} />`
   }
