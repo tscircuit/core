@@ -69,7 +69,6 @@ export class Board extends Group<typeof boardProps> {
     if (newProps) {
       this._parsedProps = newProps
     }
-
   }
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
