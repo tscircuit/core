@@ -590,6 +590,7 @@ export class Trace
     const pcb_trace = db.pcb_trace.insert({
       route: mergedRoute,
       source_trace_id: this.source_trace_id!,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       trace_length: traceLength,
     })
     this._portsRoutedOnPcb = ports
