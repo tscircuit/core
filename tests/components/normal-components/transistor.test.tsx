@@ -5,7 +5,7 @@ it("should render an NPN transistor with 0° rotation", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
-      <transistor name="Q1" transistorType="npn" schRotation={0} />
+      <transistor name="Q1" type="npn" schRotation={0} />
     </board>,
   )
   circuit.render()
@@ -16,7 +16,7 @@ it("should render an NPN transistor with 90° rotation", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
-      <transistor name="Q1" transistorType="npn" schRotation={90} />
+      <transistor name="Q1" type="npn" schRotation={90} />
     </board>,
   )
   circuit.render()
@@ -27,7 +27,7 @@ it("should render an NPN transistor with 180° rotation", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
-      <transistor name="Q1" transistorType="npn" schRotation={180} />
+      <transistor name="Q1" type="npn" schRotation={180} />
     </board>,
   )
   circuit.render()
@@ -38,7 +38,7 @@ it("should render an NPN transistor with 270° rotation", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
-      <transistor name="Q1" transistorType="npn" schRotation={270} />
+      <transistor name="Q1" type="npn" schRotation={270} />
     </board>,
   )
   circuit.render()
@@ -49,7 +49,7 @@ it("should render a PNP transistor with 0° rotation", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
-      <transistor name="Q2" transistorType="pnp" schRotation={0} />
+      <transistor name="Q2" type="pnp" schRotation={0} />
     </board>,
   )
   circuit.render()
@@ -60,7 +60,7 @@ it("should render a PNP transistor with 90° rotation", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
-      <transistor name="Q2" transistorType="pnp" schRotation={90} />
+      <transistor name="Q2" type="pnp" schRotation={90} />
     </board>,
   )
   circuit.render()
@@ -71,7 +71,7 @@ it("should render a PNP transistor with 180° rotation", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
-      <transistor name="Q2" transistorType="pnp" schRotation={180} />
+      <transistor name="Q2" type="pnp" schRotation={180} />
     </board>,
   )
   circuit.render()
@@ -82,7 +82,7 @@ it("should render a PNP transistor with 270° rotation", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
-      <transistor name="Q2" transistorType="pnp" schRotation={270} />
+      <transistor name="Q2" type="pnp" schRotation={270} />
     </board>,
   )
   circuit.render()
