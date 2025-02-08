@@ -116,6 +116,7 @@ export abstract class PrimitiveComponent<
     this.childrenPendingRemoval = []
     this.props = props ?? {}
     this.externallyAddedAliases = []
+
     for (const key in props) {
       if (props[key] === undefined) {
         throw new Error(
