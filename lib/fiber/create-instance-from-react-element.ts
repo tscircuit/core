@@ -64,9 +64,13 @@ const hostConfig: HostConfig<
           "No components registered in catalogue, did you forget to import lib/register-catalogue in your test file?",
         )
       }
-      throw new Error(
-        `Unsupported component type (not registered in @tscircuit/core catalogue): "${type}" See CREATING_NEW_COMPONENTS.md`,
-      )
+      if (typeof type !== 'function' || !(type.prototype && type.prototype.isReactComponent)) {
+        throw new Error(
+          `Invalid component type: "${type}". 
+          This is not a registered React component in the @tscircuit/core catalogue.
+          Please ensure the component is correctly registered, or refer to CREATING_NEW_COMPONENTS.md for instructions.`
+        );
+      }
     }
 
     const instance = prepare(new target(props) as any, {})
