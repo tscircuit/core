@@ -1,4 +1,8 @@
-import { type SubcircuitGroupProps, groupProps } from "@tscircuit/props"
+import {
+  type AutorouterConfig,
+  type SubcircuitGroupProps,
+  groupProps,
+} from "@tscircuit/props"
 import * as SAL from "@tscircuit/schematic-autolayout"
 import {
   type PcbTrace,
@@ -175,10 +179,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
     const props = this._parsedProps as SubcircuitGroupProps
 
-    const serverUrl =
-      (props.autorouter as any)?.serverUrl ??
-      "https://registry-api.tscircuit.com"
-    const serverMode = (props.autorouter as any)?.serverMode ?? "job"
+    const autoroutingOptions: AutorouterConfig = {
+      serverUrl: "https://registry-api.tscircuit.com",
+      serverMode: "job",
+      serverCacheEnabled:
+        (props.autorouter as any)?.serverCachingEnabled ?? false,
+      ...(typeof props.autorouter === "object" ? props.autorouter : {}),
+    }
+
+    const serverUrl = autoroutingOptions.serverUrl!
+    const serverMode = autoroutingOptions.serverMode!
 
     const fetchWithDebug = (url: string, options: RequestInit) => {
       debug("fetching", url)
@@ -239,6 +249,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           autostart: true,
           display_name: this.root?.name,
           subcircuit_id: this.subcircuit_id,
+          server_cache_enabled: autoroutingOptions.serverCacheEnabled,
         }),
         headers: { "Content-Type": "application/json" },
       },
