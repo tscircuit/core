@@ -5,6 +5,25 @@ import { identity, type Matrix } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 
+export function getBoardSize(
+  parsedProps: Partial<typeof boardProps._type>,
+  children: any,
+): Partial<typeof boardProps._type> | null {
+  const bounds = getBoundsOfPcbComponents(children)
+  // console.log("children", children);
+  if (bounds.width === 0 || bounds.height === 0) {
+    console.log("No valid components found for auto-sizing")
+    return null
+  }
+  const padding = 2
+  return {
+    ...parsedProps,
+    width: bounds.width + padding * 2,
+    height: bounds.height + padding * 2,
+    pcbX: (bounds.minX + bounds.maxX) / 2,
+    pcbY: (bounds.minY + bounds.maxY) / 2,
+  }
+}
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
 
@@ -45,26 +64,12 @@ export class Board extends Group<typeof boardProps> {
       return
     }
 
-    const bounds = getBoundsOfPcbComponents(this.children)
-
-    if (bounds.width === 0 || bounds.height === 0) {
-      console.log("No valid components found for auto-sizing")
-      return
+    const newProps = getBoardSize(this._parsedProps, this.children)
+    // console.log("newProps",newProps);
+    if (newProps) {
+      this._parsedProps = newProps
     }
 
-    const padding = 2
-    this._parsedProps = {
-      ...this._parsedProps,
-      width: bounds.width + padding * 2,
-      height: bounds.height + padding * 2,
-    }
-
-    // Set board center based on component bounds
-    this._parsedProps.pcbX = (bounds.minX + bounds.maxX) / 2
-    this._parsedProps.pcbY = (bounds.minY + bounds.maxY) / 2
-
-    // console.log("Auto-sized dimensions:", bounds.width, bounds.height)
-    // console.log("Center position:", this._parsedProps.pcbX, this._parsedProps.pcbY)
   }
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
