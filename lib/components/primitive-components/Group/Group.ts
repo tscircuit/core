@@ -475,7 +475,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this.parent instanceof Group &&
       this.parent._shouldRouteAsync()
     ) {
-      return false;
+      return false
     }
 
     const props = this._parsedProps as SubcircuitGroupProps
