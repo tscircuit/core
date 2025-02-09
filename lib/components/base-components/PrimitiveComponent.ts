@@ -466,6 +466,11 @@ export abstract class PrimitiveComponent<
   }
 
   add(component: PrimitiveComponent) {
+    if (!component.onAddToParent) {
+      throw new Error(
+        "Invalid JSX Element: Expected a React component but received a non-component value. Ensure you are using a valid component (function or class) and that it's properly imported.",
+      )
+    }
     component.onAddToParent(this)
     component.parent = this
     this.children.push(component)
