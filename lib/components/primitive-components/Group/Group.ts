@@ -469,19 +469,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    * or if using a "fullview" or "rip and replace" autorouting mode
    */
   _shouldUseTraceByTraceRouting(): boolean {
-    // Skip if the parent subcircuit is performing async autorouting
-    if (
-      this.parent &&
-      this.parent instanceof Group &&
-      this.parent._shouldRouteAsync()
-    ) {
-      return false
-    }
-
-    const props = this._parsedProps as SubcircuitGroupProps
-    if (props.autorouter === "auto-local") return true
-    if (props.autorouter === "sequential-trace") return true
-    if (props.autorouter) return false
+    // Inherit from parent if not set by props
+    const autorouter = this._parsedProps.autorouter ?? this.getInheritedProperty("autorouter")
+    if (autorouter === "auto-local") return true
+    if (autorouter === "sequential-trace") return true
+    if (autorouter) return false
     return true
   }
 }
