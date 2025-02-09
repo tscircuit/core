@@ -183,7 +183,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       serverUrl: "https://registry-api.tscircuit.com",
       serverMode: "job",
       serverCacheEnabled:
-        (props.autorouter as any)?.serverCachingEnabled ?? false,
+        (props.autorouter as AutorouterConfig)?.serverCacheEnabled ?? false,
       ...(typeof props.autorouter === "object" ? props.autorouter : {}),
     }
 
