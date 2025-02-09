@@ -5,7 +5,7 @@ import type { BaseSymbolName } from "lib/utils/constants"
 export class Transistor extends NormalComponent<typeof transistorProps> {
   get config() {
     const baseSymbolName: BaseSymbolName =
-      this.props.transistorType === "npn"
+      this.props.type === "npn"
         ? "npn_bipolar_transistor"
         : "pnp_bipolar_transistor"
 
@@ -23,7 +23,7 @@ export class Transistor extends NormalComponent<typeof transistorProps> {
     const source_component = db.source_component.insert({
       ftype: "simple_transistor",
       name: props.name,
-      transistor_type: props.transistorType,
+      transistor_type: props.type,
     } as any)
     this.source_component_id = source_component.source_component_id
   }
