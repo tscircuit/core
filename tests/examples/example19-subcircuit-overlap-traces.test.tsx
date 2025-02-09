@@ -95,11 +95,11 @@ test("Autorouter should not create traces if the parent subcircuit has async aut
 
   circuit.add(
     <board width="10mm" height="10mm" autorouter={cloudAutorouterConfig}>
-      <subcircuit>
+      <group subcircuit>
         <resistor footprint="0402" resistance={1000} name="R1" pcbX={-2} />
         <resistor footprint="0402" resistance={1000} name="R2" pcbX={2} />
         <trace from=".R1 .1" to=".R2 .1" />
-      </subcircuit>
+      </group>
     </board>,
   )
 
