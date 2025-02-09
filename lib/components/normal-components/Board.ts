@@ -67,7 +67,7 @@ export class Board extends Group<typeof boardProps> {
     const newProps = getBoardSize(this._parsedProps, this.children)
     // console.log("newProps",newProps);
     if (newProps) {
-      this._parsedProps = newProps
+      this.setProps(newProps) // updating board dimensions by auto-sizing
     }
   }
   doInitialPcbComponentRender(): void {
