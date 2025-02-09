@@ -470,7 +470,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    */
   _shouldUseTraceByTraceRouting(): boolean {
     // Inherit from parent if not set by props
-    const autorouter = this._parsedProps.autorouter ?? this.getInheritedProperty("autorouter")
+    const autorouter =
+      this._parsedProps.autorouter ?? this.getInheritedProperty("autorouter")
     if (autorouter === "auto-local") return true
     if (autorouter === "sequential-trace") return true
     if (autorouter) return false
