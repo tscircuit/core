@@ -60,19 +60,24 @@ test("subcircuit3-dependent-autorouting", async () => {
   // Check the order of the async effect, should be S1 then board, and S2 is
   // synchronously routed so has no effect
   expect(asyncEffectEndEvents).toMatchInlineSnapshot(`
-[
-  {
-    "componentDisplayName": "<group# name=".S1" />",
-    "effectName": "make-http-autorouting-request",
-    "phase": "PcbTraceRender",
-  },
-  {
-    "componentDisplayName": "<board# />",
-    "effectName": "make-http-autorouting-request",
-    "phase": "PcbTraceRender",
-  },
-]
-`)
+    [
+      {
+        "componentDisplayName": "<group# name=".S1" />",
+        "effectName": "make-http-autorouting-request",
+        "phase": "PcbTraceRender",
+      },
+      {
+        "componentDisplayName": "<board# />",
+        "effectName": "make-http-autorouting-request",
+        "phase": "PcbTraceRender",
+      },
+      {
+        "componentDisplayName": "<group# name=".S2" />",
+        "effectName": "make-http-autorouting-request",
+        "phase": "PcbTraceRender",
+      },
+    ]
+  `)
 
   // Check if the circuit matches the expected PCB snapshot
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
