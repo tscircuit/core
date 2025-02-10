@@ -189,6 +189,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       serverMode: autorouterPropObj.serverMode ?? "job",
       serverCacheEnabled: autorouterPropObj.serverCacheEnabled ?? false,
     }
+    console.log("autoroutingOptions", autoroutingOptions)
 
     const serverUrl = autoroutingOptions.serverUrl!
     const serverMode = autoroutingOptions.serverMode!
