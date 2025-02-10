@@ -6,6 +6,7 @@ import {
 import * as SAL from "@tscircuit/schematic-autolayout"
 import {
   type PcbTrace,
+  type PcbVia,
   type SchematicComponent,
   type SchematicPort,
   type SourceTrace,
@@ -32,7 +33,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
+    /** @deprecated use output_pcb_circuit_json instead */
     output_pcb_traces?: PcbTrace[]
+    output_pcb_circuit_json?: (PcbTrace | PcbVia)[]
   } | null = null
 
   get config() {
@@ -189,7 +192,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       serverMode: autorouterPropObj.serverMode ?? "job",
       serverCacheEnabled: autorouterPropObj.serverCacheEnabled ?? false,
     }
-    console.log("autoroutingOptions", autoroutingOptions)
 
     const serverUrl = autoroutingOptions.serverUrl!
     const serverMode = autoroutingOptions.serverMode!
@@ -298,7 +300,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         ).then((r) => r.json())
 
         this._asyncAutoroutingResult = {
+          /** @deprecated */
           output_pcb_traces: autorouting_job_output.output_pcb_traces,
+          output_pcb_circuit_json:
+            autorouting_job_output.output_pcb_circuit_json,
         }
         this._markDirty("PcbTraceRender")
         break
@@ -360,7 +365,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return
     }
 
-    if (this._asyncAutoroutingResult.output_pcb_traces) {
+    if (this._asyncAutoroutingResult.output_pcb_circuit_json) {
       this._updatePcbTraceRenderFromPcbTraces()
       return
     }
@@ -410,8 +415,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _updatePcbTraceRenderFromPcbTraces() {
-    const { output_pcb_traces } = this._asyncAutoroutingResult!
-    if (!output_pcb_traces) return
+    const { output_pcb_circuit_json } = this._asyncAutoroutingResult!
+    if (!output_pcb_circuit_json) return
 
     const { db } = this.root!
 
@@ -419,8 +424,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // TODO
 
     // Apply each routed trace to the corresponding circuit trace
-    for (const pcb_trace of output_pcb_traces) {
-      db.pcb_trace.insert(pcb_trace)
+    for (const pcb_elm of output_pcb_circuit_json) {
+      if (pcb_elm.type === "pcb_trace") {
+        db.pcb_trace.insert(pcb_elm)
+      } else if (pcb_elm.type === "pcb_via") {
+        db.pcb_via.insert(pcb_elm)
+      }
     }
   }
 
