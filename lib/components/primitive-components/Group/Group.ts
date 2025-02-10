@@ -179,12 +179,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
     const props = this._parsedProps as SubcircuitGroupProps
 
+    const autorouterPropObj =
+      typeof props.autorouter === "object" ? props.autorouter : {}
+
     const autoroutingOptions: AutorouterConfig = {
-      serverUrl: "https://registry-api.tscircuit.com",
-      serverMode: "job",
-      serverCacheEnabled:
-        (props.autorouter as any)?.serverCachingEnabled ?? false,
-      ...(typeof props.autorouter === "object" ? props.autorouter : {}),
+      ...autorouterPropObj,
+      serverUrl:
+        autorouterPropObj.serverUrl ?? "https://registry-api.tscircuit.com",
+      serverMode: autorouterPropObj.serverMode ?? "job",
+      serverCacheEnabled: autorouterPropObj.serverCacheEnabled ?? false,
     }
 
     const serverUrl = autoroutingOptions.serverUrl!

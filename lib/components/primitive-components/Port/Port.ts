@@ -266,6 +266,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       pin_number: props.pinNumber,
       port_hints,
       source_component_id: this.parent?.source_component_id!,
+      subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
     })
 
     this.source_port_id = source_port.source_port_id

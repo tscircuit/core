@@ -253,6 +253,7 @@ export class Trace
     const trace = db.source_trace.insert({
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
       connected_source_net_ids: nets.map((n) => n.source_net_id!),
+      subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
       max_length:
         getMaxLengthFromConnectedCapacitors(
           ports.map((p) => p.port),
@@ -589,6 +590,7 @@ export class Trace
     const pcb_trace = db.pcb_trace.insert({
       route: mergedRoute,
       source_trace_id: this.source_trace_id!,
+      subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
       trace_length: traceLength,
     })
     this._portsRoutedOnPcb = ports

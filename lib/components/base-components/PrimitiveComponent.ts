@@ -466,6 +466,11 @@ export abstract class PrimitiveComponent<
   }
 
   add(component: PrimitiveComponent) {
+    if (!component.onAddToParent) {
+      throw new Error(
+        `Invalid JSX Element: Expected a React component but received "${JSON.stringify(component)}"`,
+      )
+    }
     component.onAddToParent(this)
     component.parent = this
     this.children.push(component)
