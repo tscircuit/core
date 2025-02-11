@@ -33,7 +33,10 @@ test("subcircuit3-dependent-autorouting", async () => {
         />
         <trace from=".R1 .pin1" to=".R2 .pin2" />
       </subcircuit>
-      <subcircuit name="S2">
+      <subcircuit
+        name="S2"
+        autorouter={{ local: true, groupMode: "sequential-trace" }}
+      >
         <capacitor
           capacitance="1000pF"
           footprint="0603"
@@ -61,11 +64,6 @@ test("subcircuit3-dependent-autorouting", async () => {
   // synchronously routed so has no effect
   expect(asyncEffectEndEvents).toMatchInlineSnapshot(`
     [
-      {
-        "componentDisplayName": "<group# name=".S2" />",
-        "effectName": "make-http-autorouting-request",
-        "phase": "PcbTraceRender",
-      },
       {
         "componentDisplayName": "<group# name=".S1" />",
         "effectName": "make-http-autorouting-request",
