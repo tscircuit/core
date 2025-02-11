@@ -1,9 +1,41 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("potentiometer schematic", () => {
+test("should render a two-pin potentiometer", async () => {
   const { circuit } = getTestFixture()
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <potentiometer name="P1" maxResistance="10k" pinVariant="two_pin" />
+    </board>,
+  )
+  circuit.render()
+  expect(circuit).toMatchSchematicSnapshot("potentiometer-two-pin")
+})
 
+test("should render a three-pin potentiometer", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <potentiometer name="P2" maxResistance="20k" pinVariant="three_pin" />
+    </board>,
+  )
+  circuit.render()
+  expect(circuit).toMatchSchematicSnapshot("potentiometer-three-pin")
+})
+
+test("should render a potentiometer without pinVariant specified", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <potentiometer name="P3" maxResistance="5k" />
+    </board>,
+  )
+  circuit.render()
+  expect(circuit).toMatchSchematicSnapshot("potentiometer-default")
+})
+
+test("should render multiple potentiometers with different rotations", async () => {
+  const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
       <potentiometer
