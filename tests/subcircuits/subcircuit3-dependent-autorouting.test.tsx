@@ -62,17 +62,17 @@ test("subcircuit3-dependent-autorouting", async () => {
   expect(asyncEffectEndEvents).toMatchInlineSnapshot(`
     [
       {
+        "componentDisplayName": "<group# name=".S2" />",
+        "effectName": "make-http-autorouting-request",
+        "phase": "PcbTraceRender",
+      },
+      {
         "componentDisplayName": "<group# name=".S1" />",
         "effectName": "make-http-autorouting-request",
         "phase": "PcbTraceRender",
       },
       {
         "componentDisplayName": "<board# />",
-        "effectName": "make-http-autorouting-request",
-        "phase": "PcbTraceRender",
-      },
-      {
-        "componentDisplayName": "<group# name=".S2" />",
         "effectName": "make-http-autorouting-request",
         "phase": "PcbTraceRender",
       },
