@@ -3,7 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { su } from "@tscircuit/soup-util"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
-test("Routing disabled subcircuit should be inherited from parent and not have traces from the autorouter", async () => {
+test("routingDisabled subcircuit prop should be inherited from parent and not have traces from the autorouter", async () => {
   const { circuit } = getTestFixture()
   const { autoroutingServerUrl } = getTestAutoroutingServer()
 
@@ -29,7 +29,7 @@ test("Routing disabled subcircuit should be inherited from parent and not have t
   expect(pcb_traces).toHaveLength(0)
 })
 
-test.skip("Autorouter should inherit if the parent subcircuit has async autorouter enabled", async () => {
+test("Autorouter should inherit if the parent subcircuit has async autorouter enabled", async () => {
   const { circuit } = getTestFixture()
   const { autoroutingServerUrl } = getTestAutoroutingServer()
 
