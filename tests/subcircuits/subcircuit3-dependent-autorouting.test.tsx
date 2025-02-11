@@ -33,7 +33,10 @@ test("subcircuit3-dependent-autorouting", async () => {
         />
         <trace from=".R1 .pin1" to=".R2 .pin2" />
       </subcircuit>
-      <subcircuit name="S2">
+      <subcircuit
+        name="S2"
+        autorouter={{ local: true, groupMode: "sequential-trace" }}
+      >
         <capacitor
           capacitance="1000pF"
           footprint="0603"
@@ -60,19 +63,19 @@ test("subcircuit3-dependent-autorouting", async () => {
   // Check the order of the async effect, should be S1 then board, and S2 is
   // synchronously routed so has no effect
   expect(asyncEffectEndEvents).toMatchInlineSnapshot(`
-[
-  {
-    "componentDisplayName": "<group# name=".S1" />",
-    "effectName": "make-http-autorouting-request",
-    "phase": "PcbTraceRender",
-  },
-  {
-    "componentDisplayName": "<board# />",
-    "effectName": "make-http-autorouting-request",
-    "phase": "PcbTraceRender",
-  },
-]
-`)
+    [
+      {
+        "componentDisplayName": "<group# name=".S1" />",
+        "effectName": "make-http-autorouting-request",
+        "phase": "PcbTraceRender",
+      },
+      {
+        "componentDisplayName": "<board# />",
+        "effectName": "make-http-autorouting-request",
+        "phase": "PcbTraceRender",
+      },
+    ]
+  `)
 
   // Check if the circuit matches the expected PCB snapshot
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

@@ -1,4 +1,8 @@
-import { type SubcircuitGroupProps, groupProps } from "@tscircuit/props"
+import {
+  type AutorouterConfig,
+  type SubcircuitGroupProps,
+  groupProps,
+} from "@tscircuit/props"
 import * as SAL from "@tscircuit/schematic-autolayout"
 import {
   type PcbTrace,
@@ -163,22 +167,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _shouldRouteAsync(): boolean {
-    const props = this._parsedProps as SubcircuitGroupProps
-    if (props.autorouter === "auto-local") return true
-    if (props.autorouter === "auto-cloud") return true
-    if (props.autorouter === "sequential-trace") return false
-    if (typeof props.autorouter === "object") return true
-    return false
+    const autorouter = this._getAutorouterConfig()
+    if (autorouter.local) return false
+    if (autorouter.groupMode === "sequential-trace") return false
+    return true
+  }
+
+  _hasTracesToRoute(): boolean {
+    const debug = Debug("tscircuit:core:_hasTracesToRoute")
+    const traces = this.selectAll("trace") as Trace[]
+    debug(`[${this.getString()}] has ${traces.length} traces to route`)
+    return traces.length > 0
   }
 
   async _runEffectMakeHttpAutoroutingRequest() {
     const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
     const props = this._parsedProps as SubcircuitGroupProps
 
-    const serverUrl =
-      (props.autorouter as any)?.serverUrl ??
-      "https://registry-api.tscircuit.com"
-    const serverMode = (props.autorouter as any)?.serverMode ?? "job"
+    const autorouterConfig = this._getAutorouterConfig()
+
+    const serverUrl = autorouterConfig.serverUrl!
+    const serverMode = autorouterConfig.serverMode!
 
     const fetchWithDebug = (url: string, options: RequestInit) => {
       debug("fetching", url)
@@ -239,6 +248,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           autostart: true,
           display_name: this.root?.name,
           subcircuit_id: this.subcircuit_id,
+          server_cache_enabled: autorouterConfig.serverCacheEnabled,
         }),
         headers: { "Content-Type": "application/json" },
       },
@@ -307,6 +317,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialPcbTraceRender() {
     const debug = Debug("tscircuit:core:doInitialPcbTraceRender")
+    if (!this.isSubcircuit) return
     if (this.root?.pcbDisabled) return
     if (this._shouldUseTraceByTraceRouting()) return
 
@@ -320,12 +331,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     debug(
       `[${this.getString()}] no child subcircuits to wait for, initiating async routing`,
     )
+    if (!this._hasTracesToRoute()) return
     this._startAsyncAutorouting()
   }
 
   updatePcbTraceRender() {
     const debug = Debug("tscircuit:core:updatePcbTraceRender")
-    if (this._shouldRouteAsync() && !this._hasStartedAsyncAutorouting) {
+    if (!this.isSubcircuit) return
+    if (
+      this._shouldRouteAsync() &&
+      this._hasTracesToRoute() &&
+      !this._hasStartedAsyncAutorouting
+    ) {
       if (this._areChildSubcircuitsRouted()) {
         debug(
           `[${this.getString()}] child subcircuits are now routed, starting async autorouting`,
@@ -449,6 +466,42 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     SAL.mutateSoupForScene(db.toArray(), laidOutScene)
   }
 
+  _getAutorouterConfig(): AutorouterConfig {
+    const defaults = {
+      serverUrl: "https://registry-api.tscircuit.com",
+      serverMode: "job",
+      serverCacheEnabled: false,
+    }
+    // Inherit from parent if not set by props
+    const autorouter =
+      this._parsedProps.autorouter ?? this.getInheritedProperty("autorouter")
+
+    if (typeof autorouter === "object") {
+      return {
+        local: !(
+          autorouter.serverUrl ||
+          autorouter.serverMode ||
+          autorouter.serverCacheEnabled
+        ),
+        ...defaults,
+        ...autorouter,
+      }
+    }
+
+    if (autorouter === "auto-local")
+      return {
+        local: true,
+      }
+    if (autorouter === "sequential-trace")
+      return {
+        local: true,
+        groupMode: "sequential-trace",
+      }
+    return {
+      local: true,
+      groupMode: "sequential-trace",
+    }
+  }
   /**
    * Trace-by-trace autorouting is where each trace routes itself in a well-known
    * order. It's the most deterministic way to autoroute, because a new trace
@@ -458,10 +511,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    * or if using a "fullview" or "rip and replace" autorouting mode
    */
   _shouldUseTraceByTraceRouting(): boolean {
-    const props = this._parsedProps as SubcircuitGroupProps
-    if (props.autorouter === "auto-local") return true
-    if (props.autorouter === "sequential-trace") return true
-    if (props.autorouter) return false
-    return true
+    // Inherit from parent if not set by props
+    const autorouter = this._getAutorouterConfig()
+    return autorouter.groupMode === "sequential-trace"
   }
 }

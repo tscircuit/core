@@ -6,8 +6,10 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimp
 
 export const getTestAutoroutingServer = ({
   requireDisplayName = false,
+  requireServerCacheEnabled = false,
 }: {
   requireDisplayName?: boolean
+  requireServerCacheEnabled?: boolean
 } = {}) => {
   let currentJobId = 0
   const jobResults = new Map<string, any>()
@@ -73,6 +75,15 @@ export const getTestAutoroutingServer = ({
           return new Response(
             JSON.stringify({
               error: { message: "Missing display_name" },
+            }),
+            { status: 400 },
+          )
+        }
+
+        if (requireServerCacheEnabled && !body.server_cache_enabled) {
+          return new Response(
+            JSON.stringify({
+              error: { message: "Missing server_cache_enabled" },
             }),
             { status: 400 },
           )

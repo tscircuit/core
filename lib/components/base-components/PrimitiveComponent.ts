@@ -280,7 +280,8 @@ export abstract class PrimitiveComponent<
    * schematic components
    */
   computeSchematicPropsTransform(): Matrix {
-    return compose(translate(this.props.schX ?? 0, this.props.schY ?? 0))
+    const { _parsedProps: props } = this
+    return compose(translate(props.schX ?? 0, props.schY ?? 0))
   }
 
   /**
@@ -465,6 +466,11 @@ export abstract class PrimitiveComponent<
   }
 
   add(component: PrimitiveComponent) {
+    if (!component.onAddToParent) {
+      throw new Error(
+        `Invalid JSX Element: Expected a React component but received "${JSON.stringify(component)}"`,
+      )
+    }
     component.onAddToParent(this)
     component.parent = this
     this.children.push(component)
