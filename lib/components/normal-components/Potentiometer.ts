@@ -1,50 +1,41 @@
 import { potentiometerProps } from "@tscircuit/props"
-import {
-  type BaseSymbolName,
-  type Ftype,
-  type PolarizedPassivePorts,
-} from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { Port } from "../primitive-components/Port"
-import type { SourceSimplePotentiometer } from "circuit-json"
-import { formatSiUnit } from "format-si-unit"
+import type { BaseSymbolName } from "lib/utils/constants"
 
-export class Potentiometer extends NormalComponent<
-  typeof potentiometerProps,
-  PolarizedPassivePorts
-> {
-  // @ts-ignore
+function getPotentiometerSymbolName(
+  variant: string | undefined,
+): BaseSymbolName {
+  switch (variant) {
+    case "three_pin":
+      return "potentiometer3"
+    case "two_pin":
+      return "potentiometer2"
+    default:
+      return "potentiometer2"
+  }
+}
+
+export class Potentiometer extends NormalComponent<typeof potentiometerProps> {
   get config() {
     return {
-      schematicSymbolName:
-        this.props.symbolName ?? ("potentiometer2" as BaseSymbolName),
       componentName: "Potentiometer",
+      schematicSymbolName:
+        this.props.symbolName ??
+        getPotentiometerSymbolName(this.props.pinVariant),
       zodProps: potentiometerProps,
-      sourceFtype: "simple_potentiometer" as Ftype,
+      shouldRenderAsSchematicBox: false,
     }
-  }
-
-  initPorts() {
-    super.initPorts({
-      additionalAliases: {
-        pin1: ["pos", "left"],
-        pin2: ["neg", "right"],
-      },
-    })
-  }
-
-  _getSchematicSymbolDisplayValue(): string | undefined {
-    return `${formatSiUnit(this._parsedProps.maxResistance)}Ω`
   }
 
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
-      name: props.name,
       ftype: "simple_potentiometer",
+      name: props.name,
       max_resistance: props.maxResistance,
-    } as SourceSimplePotentiometer)
+      pin_variant: props.pinVariant || "two_pin",
+    } as any)
     this.source_component_id = source_component.source_component_id
   }
 }
