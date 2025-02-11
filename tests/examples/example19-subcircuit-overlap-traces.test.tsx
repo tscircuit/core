@@ -83,7 +83,7 @@ test.skip("If the subcircuit is routing disabled, it should not have traces from
   `)
 })
 
-test("Autorouter should not create traces if the parent subcircuit has async autorouter enabled", async () => {
+test("Autorouter should inherit if the parent subcircuit has async autorouter enabled", async () => {
   const { circuit } = getTestFixture()
   const { autoroutingServerUrl } = getTestAutoroutingServer()
 
@@ -109,61 +109,44 @@ test("Autorouter should not create traces if the parent subcircuit has async aut
   expect(pcb_traces).toMatchInlineSnapshot(`
     [
       {
-        "pcb_trace_id": "pcb_trace_Net-(R1_source_component_0-Pad1)",
+        "pcb_trace_id": "pcb_trace_0",
         "route": [
           {
             "layer": "top",
             "route_type": "wire",
-            "width": 0.16,
-            "x": 1.5,
-            "y": 0,
-          },
-          {
-            "layer": "top",
-            "route_type": "wire",
-            "width": 0.16,
-            "x": 0.9483,
-            "y": 0,
-          },
-        ],
-        "source_trace_id": "source_trace_0",
-        "trace_length": 0.5517,
-        "type": "pcb_trace",
-      },
-      {
-        "pcb_trace_id": "pcb_trace_Net-(R1_source_component_0-Pad1)",
-        "route": [
-          {
-            "layer": "top",
-            "route_type": "wire",
-            "width": 0.16,
-            "x": 0.9483,
-            "y": 0,
-          },
-          {
-            "layer": "top",
-            "route_type": "wire",
-            "width": 0.16,
-            "x": 0.3966,
-            "y": -0.5517,
-          },
-          {
-            "layer": "top",
-            "route_type": "wire",
-            "width": 0.16,
-            "x": -1.9483,
-            "y": -0.5517,
-          },
-          {
-            "layer": "top",
-            "route_type": "wire",
-            "width": 0.16,
+            "width": 0.1,
             "x": -2.5,
             "y": 0,
           },
+          {
+            "layer": "top",
+            "route_type": "wire",
+            "width": 0.1,
+            "x": -2,
+            "y": 0,
+          },
+          {
+            "layer": "top",
+            "route_type": "wire",
+            "width": 0.1,
+            "x": -2,
+            "y": 1.3,
+          },
+          {
+            "layer": "top",
+            "route_type": "wire",
+            "width": 0.1,
+            "x": 1.5,
+            "y": 1.3,
+          },
+          {
+            "layer": "top",
+            "route_type": "wire",
+            "width": 0.1,
+            "x": 1.5,
+            "y": 0,
+          },
         ],
-        "source_trace_id": "source_trace_0",
-        "trace_length": 3.9053,
         "type": "pcb_trace",
       },
     ]
