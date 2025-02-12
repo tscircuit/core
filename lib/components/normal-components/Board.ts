@@ -3,7 +3,27 @@ import type { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { identity, type Matrix } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 
+export function getBoardSize(
+  parsedProps: Partial<typeof boardProps._type>,
+  children: any,
+): Partial<typeof boardProps._type> | null {
+  const bounds = getBoundsOfPcbComponents(children)
+  // console.log("children", children);
+  if (bounds.width === 0 || bounds.height === 0) {
+    console.log("No valid components found for auto-sizing")
+    return null
+  }
+  const padding = 2
+  return {
+    ...parsedProps,
+    width: bounds.width + padding * 2,
+    height: bounds.height + padding * 2,
+    pcbX: (bounds.minX + bounds.maxX) / 2,
+    pcbY: (bounds.minY + bounds.maxY) / 2,
+  }
+}
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
 
@@ -31,6 +51,25 @@ export class Board extends Group<typeof boardProps> {
     return ["top", "bottom", "inner1", "inner2"]
   }
 
+  doInitialPcbBoardAutoSize(): void {
+    if (this.root?.pcbDisabled) return
+
+    // Skip auto-size if dimensions already specified
+    if (
+      (this._parsedProps.width && this._parsedProps.height) ||
+      this._parsedProps.outline
+    ) {
+      // console.log("Skipping auto-size - dimensions specified", this._parsedProps)
+      console.log("Skipping auto-size because dimensions are specified")
+      return
+    }
+
+    const newProps = getBoardSize(this._parsedProps, this.children)
+    // console.log("newProps",newProps);
+    if (newProps) {
+      this.setProps(newProps) // updating board dimensions by auto-sizing
+    }
+  }
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
