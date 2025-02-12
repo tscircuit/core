@@ -4,14 +4,17 @@ import type { BaseSymbolName } from "lib/utils/constants"
 
 export class Switch extends NormalComponent<typeof switchProps> {
   get config() {
-    const baseSymbolName: BaseSymbolName =
-      this.props.type === "spst"
-        ? "SPST_switch"
-        : this.props.type === "spdt"
-          ? "SPDT_switch"
-          : this.props.type === "dpst"
-            ? "dpst_switch"
-            : "dpdt_switch"
+    let baseSymbolName: BaseSymbolName
+
+    if (this.props.type === "spst") {
+      baseSymbolName = "SPST_switch"
+    } else if (this.props.type === "spdt") {
+      baseSymbolName = "SPDT_switch"
+    } else if (this.props.type === "dpst") {
+      baseSymbolName = "dpst_switch"
+    } else {
+      baseSymbolName = "dpdt_switch"
+    }
 
     return {
       componentName: "Switch",
@@ -26,12 +29,11 @@ export class Switch extends NormalComponent<typeof switchProps> {
     const { _parsedProps: props } = this
 
     const source_component = db.source_component.insert({
-      ftype: "switch",
+      ftype: "simple_switch",
       name: props.name,
       switch_type: props.type,
       is_normally_closed: props.isNormallyClosed,
     } as any)
-
     this.source_component_id = source_component.source_component_id
   }
 }
