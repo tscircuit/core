@@ -1,5 +1,5 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const svgAlphabet = {
   "0": "M0.4544564813877358 0L0.2723441540828736 0.03592830447352719L0.1086847233315459 0.14528754990019965L0.020630545837255005 0.3040632652221331L0 0.5395277421960205L0.049259221760993496 0.7369487828466779L0.18080513776237842 0.9005494166306564L0.37036887043974215 0.9872116270037247L0.5864663759301132 1L0.8148695622827444 0.9332890276148733L0.9326583645506394 0.8113052246023419L1 0.4031281830668562L0.833288960385582 0.09886798567812842L0.6801767918233781 0.02483708485091681L0.4544564813877358 0",
@@ -154,9 +154,9 @@ test.skip("led-letter first circuit", async () => {
 
   await circuit.renderUntilSettled()
 
-  const pcb_traces = circuit.getCircuitJson().filter(
-    (e) => e.type === "pcb_trace",
-  )
+  const pcb_traces = circuit
+    .getCircuitJson()
+    .filter((e) => e.type === "pcb_trace")
 
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
