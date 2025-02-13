@@ -40,8 +40,6 @@ export class Crystal extends NormalComponent<
         : {
             pin1: ["pos", "left"],
             pin2: ["neg", "right"],
-            pin3: ["unused"],
-            pin4: ["unused"],
           }
 
     super.initPorts({
