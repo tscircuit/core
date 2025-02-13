@@ -30,6 +30,7 @@ export interface TscircuitElements {
   trace: Props.TraceProps
   custom: any
   component: Props.ComponentProps
+  crystal: Props.CrystalProps
   footprint: any
   silkscreentext: Props.SilkscreenTextProps
   silkscreenpath: Props.SilkscreenPathProps
