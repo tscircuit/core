@@ -5,12 +5,12 @@ it("should render an switch", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
-      <switch name="switch" type="spst" schX={2} schY={2} />
-      <switch name="switch" spst schX={-2} schY={-2} />
-      <switch name="switch" type="spdt" schX={0} schY={0} />
-      <switch name="switch" schX={2} schY={-2} />
-      <switch name="switch" dpdt schX={-2} schY={2} />
-      <switch name="switch" type="spdt" schX={0} schY={0} />
+      <switch name="SW1" type="spst" schX={2} schY={2} />
+      <switch name="SW2" spst schX={-2} schY={-2} />
+      <switch name="SW3" type="spdt" schX={0} schY={0} />
+      <switch name="SW4" schX={2} schY={-2} />
+      <switch name="SW5" dpdt schX={-2} schY={2} />
+      <switch name="SW6" type="spdt" schX={0} schY={0} />
     </board>,
   )
   circuit.render()
