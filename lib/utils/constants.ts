@@ -31,5 +31,12 @@ export type PolarizedPassivePorts =
   | "cathode"
   | "pos"
   | "neg"
+export type TransistorPorts =
+  | "pin1"
+  | "pin2"
+  | "pin3"
+  | "emitter"
+  | "collector"
+  | "base"
 
 export type { BaseSymbolName }
