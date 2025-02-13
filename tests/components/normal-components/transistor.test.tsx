@@ -127,3 +127,19 @@ it("should initialize base, emitter, and collector ports correctly for an NPN tr
   expect(collector).not.toBeNull()
   expect(emitter).not.toBeNull()
 })
+
+it("<mycomponent />", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <transistor name="Q1" type="npn" footprint="sot23" />
+      <resistor name="R1" resistance="10k" footprint="0402" />
+      <trace from=".Q1 > .emitter" to=".R1 > .pin1" />
+    </board>,
+  )
+
+  circuit.render()
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})
