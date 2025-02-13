@@ -1,6 +1,7 @@
 import { it, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { Transistor } from "lib/components/normal-components/Transistor"
+import { pcb_port } from "circuit-json"
 
 it("should render an NPN transistor with 0° rotation", async () => {
   const { circuit } = getTestFixture()
@@ -119,9 +120,17 @@ it("should initialize base, emitter, and collector ports correctly for an NPN tr
 
   const ports = circuit.db.pcb_port.list()
 
-  const base = ports.find((port) => port.source_port_id === "b")
-  const collector = ports.find((port) => port.source_port_id === "c")
-  const emitter = ports.find((port) => port.source_port_id === "e")
+  const base = ports.find(
+    (port) => circuit.db.source_port.get(port.source_port_id!)?.name === "base",
+  )
+  const collector = ports.find(
+    (port) =>
+      circuit.db.source_port.get(port.source_port_id!)?.name === "collector",
+  )
+  const emitter = ports.find(
+    (port) =>
+      circuit.db.source_port.get(port.source_port_id!)?.name === "emitter",
+  )
 
   expect(base).not.toBeNull()
   expect(collector).not.toBeNull()
@@ -133,9 +142,9 @@ it("should generate transistor pcb ports aliases", () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <transistor name="Q1" type="npn" footprint="sot23" />
-      <resistor name="R1" resistance="10k" footprint="0402" />
-      <trace from=".Q1 > .emitter" to=".R1 > .pin1" />
+      <resistor name="R1" resistance="10k" footprint="0402" pcbX={-3} />
+      <transistor name="Q1" type="npn" footprint="sot23" pcbX={2} />
+      <trace from=".Q1 > .base" to=".R1 > .pin2" />
     </board>,
   )
 
