@@ -14,9 +14,14 @@ export class Crystal extends NormalComponent<
 > {
   // @ts-ignore
   get config() {
+    const symbolName =
+      this.props.symbolName ??
+      ((this.props.pinVariant === "four_pin"
+        ? "crystal_4pin"
+        : "crystal") as BaseSymbolName)
+
     return {
-      schematicSymbolName:
-        this.props.symbolName ?? ("crystal" as BaseSymbolName),
+      schematicSymbolName: symbolName,
       componentName: "Crystal",
       zodProps: crystalProps,
       sourceFtype: "simple_crystal" as Ftype,
@@ -24,11 +29,23 @@ export class Crystal extends NormalComponent<
   }
 
   initPorts() {
+    const additionalAliases: Record<`pin${number}`, string[]> =
+      this.props.pinVariant === "four_pin"
+        ? {
+            pin1: ["left1", "1"],
+            pin2: ["top1", "2", "gnd1"],
+            pin3: ["right1", "3"],
+            pin4: ["bottom1", "4", "gnd2"],
+          }
+        : {
+            pin1: ["pos", "left"],
+            pin2: ["neg", "right"],
+            pin3: ["unused"],
+            pin4: ["unused"],
+          }
+
     super.initPorts({
-      additionalAliases: {
-        pin1: ["pos", "left"],
-        pin2: ["neg", "right"],
-      },
+      additionalAliases,
     })
   }
 
@@ -44,7 +61,9 @@ export class Crystal extends NormalComponent<
       ftype: "simple_crystal",
       frequency: props.frequency,
       load_capacitance: props.loadCapacitance,
-    } as SourceSimpleCrystal)
+      pin_variant: props.pinVariant || "two_pin",
+    } as any)
+
     this.source_component_id = source_component.source_component_id
   }
 }
