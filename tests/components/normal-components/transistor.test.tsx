@@ -128,7 +128,7 @@ it("should initialize base, emitter, and collector ports correctly for an NPN tr
   expect(emitter).not.toBeNull()
 })
 
-it("<mycomponent />", () => {
+it("should generate transistor pcb ports aliases", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
