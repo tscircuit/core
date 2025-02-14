@@ -1,17 +1,10 @@
 import { switchProps } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
-import { z } from "zod"
 
-interface ExtendedSwitchProps extends z.infer<typeof switchProps> {
-  spst?: boolean
-  spdt?: boolean
-  dpst?: boolean
-  dpdt?: boolean
-}
 export class Switch extends NormalComponent<typeof switchProps> {
   private _getSwitchType(): "spst" | "spdt" | "dpst" | "dpdt" {
-    const { spst, spdt, dpst, dpdt, type } = this.props as ExtendedSwitchProps
+    const { spst, spdt, dpst, dpdt, type } = this._parsedProps ?? {}
 
     if (spst) return "spst"
     if (spdt) return "spdt"
@@ -23,17 +16,18 @@ export class Switch extends NormalComponent<typeof switchProps> {
   get config() {
     const switchType = this._getSwitchType()
 
-    const baseSymbolName =
-      {
-        spst: "SPST_switch",
-        spdt: "SPDT_switch",
-        dpst: "dpst_switch",
-        dpdt: "dpdt_switch",
-      }[switchType] ?? "SPST_switch"
+    const baseSymbolName: Record<string, string> = {
+      spst: "SPST_switch",
+      spdt: "SPDT_switch",
+      dpst: "dpst_switch",
+      dpdt: "dpdt_switch",
+    }
+
+    const symbolName = baseSymbolName[switchType] ?? "SPST_switch"
 
     return {
       componentName: "Switch",
-      schematicSymbolName: baseSymbolName as BaseSymbolName, // Type casting
+      schematicSymbolName: symbolName as BaseSymbolName,
       zodProps: switchProps,
       shouldRenderAsSchematicBox: false,
     }

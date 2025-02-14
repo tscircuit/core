@@ -63,8 +63,9 @@ declare module "react" {
 declare module "react/jsx-runtime" {
   namespace JSX {
     interface IntrinsicElements extends TscircuitElements {
-      switch: DetailedHTMLProps<SVGProps<SVGSwitchElement>, SVGSwitchElement> &
-        TscircuitElements["switch"]
+      switch:
+        | DetailedHTMLProps<SVGProps<SVGSwitchElement>, SVGSwitchElement>
+        | TscircuitElements["switch"]
     }
   }
 }
