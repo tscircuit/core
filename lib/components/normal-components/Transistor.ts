@@ -1,8 +1,15 @@
 import { transistorProps } from "@tscircuit/props"
+import {
+  type BaseSymbolName,
+  type Ftype,
+  type TransistorPorts,
+} from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import type { BaseSymbolName } from "lib/utils/constants"
 
-export class Transistor extends NormalComponent<typeof transistorProps> {
+export class Transistor extends NormalComponent<
+  typeof transistorProps,
+  TransistorPorts
+> {
   get config() {
     const baseSymbolName: BaseSymbolName =
       this.props.type === "npn"
@@ -13,9 +20,25 @@ export class Transistor extends NormalComponent<typeof transistorProps> {
       componentName: "Transistor",
       schematicSymbolName: baseSymbolName,
       zodProps: transistorProps,
+      sourceFtype: "simple_transistor" as Ftype,
       shouldRenderAsSchematicBox: false,
     }
   }
+
+  initPorts() {
+    super.initPorts({
+      pinCount: 3,
+      additionalAliases: {
+        pin1: ["emitter", "e"],
+        pin2: ["collector", "c"],
+        pin3: ["base", "b"],
+      },
+    })
+  }
+
+  emitter = this.portMap.pin1
+  collector = this.portMap.pin2
+  base = this.portMap.pin3
 
   doInitialSourceRender() {
     const { db } = this.root!
