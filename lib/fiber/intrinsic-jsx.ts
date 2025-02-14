@@ -1,4 +1,5 @@
 import type * as Props from "@tscircuit/props"
+import type { DetailedHTMLProps, SVGProps } from "react"
 
 export interface TscircuitElements {
   resistor: Props.ResistorProps
@@ -58,8 +59,12 @@ declare module "react" {
     interface IntrinsicElements extends TscircuitElements {}
   }
 }
+
 declare module "react/jsx-runtime" {
   namespace JSX {
-    interface IntrinsicElements extends TscircuitElements {}
+    interface IntrinsicElements extends TscircuitElements {
+      switch: DetailedHTMLProps<SVGProps<SVGSwitchElement>, SVGSwitchElement> &
+        TscircuitElements["switch"]
+    }
   }
 }
