@@ -3,54 +3,37 @@ import { NormalComponent } from "../base-components/NormalComponent/NormalCompon
 import type { BaseSymbolName } from "lib/utils/constants"
 import { z } from "zod"
 
-export interface ExtendedSwitchProps extends z.infer<typeof switchProps> {
+interface ExtendedSwitchProps extends z.infer<typeof switchProps> {
   spst?: boolean
   spdt?: boolean
   dpst?: boolean
   dpdt?: boolean
 }
-
 export class Switch extends NormalComponent<typeof switchProps> {
-  get config() {
-    let baseSymbolName: BaseSymbolName
-
+  private _getSwitchType(): "spst" | "spdt" | "dpst" | "dpdt" {
     const { spst, spdt, dpst, dpdt, type } = this.props as ExtendedSwitchProps
 
-    let switchType: "spst" | "spdt" | "dpst" | "dpdt" = "spst"
+    if (spst) return "spst"
+    if (spdt) return "spdt"
+    if (dpst) return "dpst"
+    if (dpdt) return "dpdt"
+    return type ?? "spst"
+  }
 
-    if (spst) {
-      switchType = "spst"
-    } else if (spdt) {
-      switchType = "spdt"
-    } else if (dpst) {
-      switchType = "dpst"
-    } else if (dpdt) {
-      switchType = "dpdt"
-    } else if (type) {
-      switchType = type
-    }
+  get config() {
+    const switchType = this._getSwitchType()
 
-    switch (switchType) {
-      case "spst":
-        baseSymbolName = "SPST_switch"
-        break
-      case "spdt":
-        baseSymbolName = "SPDT_switch"
-        break
-      case "dpst":
-        baseSymbolName = "dpst_switch"
-        break
-      case "dpdt":
-        baseSymbolName = "dpdt_switch"
-        break
-      default:
-        baseSymbolName = "SPST_switch"
-        break
-    }
+    const baseSymbolName =
+      {
+        spst: "SPST_switch",
+        spdt: "SPDT_switch",
+        dpst: "dpst_switch",
+        dpdt: "dpdt_switch",
+      }[switchType] ?? "SPST_switch"
 
     return {
       componentName: "Switch",
-      schematicSymbolName: baseSymbolName,
+      schematicSymbolName: baseSymbolName as BaseSymbolName, // Type casting
       zodProps: switchProps,
       shouldRenderAsSchematicBox: false,
     }
