@@ -81,10 +81,9 @@ export class Capacitor extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
       capacitance: props.capacitance,
       max_voltage_rating: props.maxVoltageRating,
-      sch_show_ratings: props.schShowRatings,
       max_decoupling_trace_length: props.maxDecouplingTraceLength,
       display_capacitance: this._getSchematicSymbolDisplayValue(),
-    } as any)
+    } as SourceSimpleCapacitorInput)
 
     this.source_component_id = source_component.source_component_id
   }
