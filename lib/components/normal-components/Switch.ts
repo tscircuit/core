@@ -15,12 +15,13 @@ export class Switch extends NormalComponent<typeof switchProps> {
 
   get config() {
     const switchType = this._getSwitchType()
+    const { isNormallyClosed } = this._parsedProps ?? {}
 
     const baseSymbolNameMap = {
-      spst: "SPST_switch",
-      spdt: "SPDT_switch",
-      dpst: "dpst_switch",
-      dpdt: "dpdt_switch",
+      spst: isNormallyClosed ? "SPST_normally_closed_switch" : "SPST_switch",
+      spdt: isNormallyClosed ? "SPDT_normally_closed_switch" : "SPDT_switch",
+      dpst: isNormallyClosed ? "dpst_normally_closed_switch" : "dpst_switch",
+      dpdt: isNormallyClosed ? "dpdt_normally_closed_switch" : "dpdt_switch",
     }
 
     const symbolName = baseSymbolNameMap[switchType] ?? "SPST_switch"
