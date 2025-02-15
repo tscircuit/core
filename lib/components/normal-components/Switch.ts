@@ -1,4 +1,4 @@
-import { switchProps } from "@tscircuit/props"
+import { switchProps } from "../../../../../tscircuit/props/lib/"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
 
@@ -6,10 +6,10 @@ export class Switch extends NormalComponent<typeof switchProps> {
   private _getSwitchType(): "spst" | "spdt" | "dpst" | "dpdt" {
     const { spst, spdt, dpst, dpdt, type } = this._parsedProps ?? {}
 
+    if (dpdt) return "dpdt"
     if (spst) return "spst"
     if (spdt) return "spdt"
     if (dpst) return "dpst"
-    if (dpdt) return "dpdt"
     return type ?? "spst"
   }
 
