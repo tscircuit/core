@@ -59,22 +59,23 @@ test("capacitor display_value property with voltage rating", () => {
   }>
 
   expect(capacitors).toHaveLength(1)
-  expect(capacitors[0].display_capacitance).toBe("10µF/50V")
-  expect(capacitors[0].max_voltage_rating).toBe(50)
+  expect(capacitors[0].display_capacitance).toBe("10µF") // Only shows capacitance by default
+  expect(capacitors[0].max_voltage_rating).toBe(50) // Still stores the voltage rating
   expect(circuit).toMatchSchematicSnapshot(
-    import.meta.path + "-capacitor-with-voltage",
+    import.meta.path + "-basic-capacitor",
   )
 })
 
-test("capacitor with numeric values", () => {
+test("capacitor shows voltage rating when schShowRatings is enabled", () => {
   const { project, circuit } = getTestFixture()
 
   project.add(
     <board width="10mm" height="10mm">
       <capacitor
         name="C1"
-        capacitance={0.000001} // 1µF
-        maxVoltageRating={25}
+        capacitance="10µF"
+        maxVoltageRating="50V"
+        schShowRatings={true}
         footprint="0402"
         pcbX={0}
         pcbY={0}
@@ -90,19 +91,17 @@ test("capacitor with numeric values", () => {
     ftype: "simple_capacitor"
     display_capacitance?: string
     max_voltage_rating?: number
-    capacitance: number
   }>
 
   expect(capacitors).toHaveLength(1)
-  expect(capacitors[0].display_capacitance).toBe("1µF/25V")
-  expect(capacitors[0].max_voltage_rating).toBe(25)
-  expect(capacitors[0].capacitance).toBe(0.000001)
+  expect(capacitors[0].display_capacitance).toBe("10µF/50V") // Shows both when enabled
+  expect(capacitors[0].max_voltage_rating).toBe(50) // Stores the voltage rating
   expect(circuit).toMatchSchematicSnapshot(
-    import.meta.path + "-capacitor-numeric-values",
+    import.meta.path + "-capacitor-with-ratings-shown",
   )
 })
 
-test("polarized capacitor with voltage rating", () => {
+test("polarized capacitor with voltage rating follows same display rules", () => {
   const { project, circuit } = getTestFixture()
 
   project.add(
@@ -130,22 +129,23 @@ test("polarized capacitor with voltage rating", () => {
   }>
 
   expect(capacitors).toHaveLength(1)
-  expect(capacitors[0].display_capacitance).toBe("100µF/16V")
-  expect(capacitors[0].max_voltage_rating).toBe(16)
+  expect(capacitors[0].display_capacitance).toBe("100µF") // Only shows capacitance by default
+  expect(capacitors[0].max_voltage_rating).toBe(16) // Stores the voltage rating
   expect(circuit).toMatchSchematicSnapshot(
-    import.meta.path + "-polarized-capacitor-with-voltage",
+    import.meta.path + "-polarized-capacitor",
   )
 })
 
-test("capacitor with different voltage unit formats", () => {
+test("capacitor with numeric values handles display correctly", () => {
   const { project, circuit } = getTestFixture()
 
   project.add(
     <board width="10mm" height="10mm">
       <capacitor
         name="C1"
-        capacitance="1µF"
-        maxVoltageRating="3.3V"
+        capacitance={0.000001} // 1µF
+        maxVoltageRating={25}
+        schShowRatings={true}
         footprint="0402"
         pcbX={0}
         pcbY={0}
@@ -161,12 +161,14 @@ test("capacitor with different voltage unit formats", () => {
     ftype: "simple_capacitor"
     display_capacitance?: string
     max_voltage_rating?: number
+    capacitance: number
   }>
 
   expect(capacitors).toHaveLength(1)
-  expect(capacitors[0].display_capacitance).toBe("1µF/3.3V")
-  expect(capacitors[0].max_voltage_rating).toBe(3.3)
+  expect(capacitors[0].display_capacitance).toBe("1µF/25V") // Shows both when enabled
+  expect(capacitors[0].max_voltage_rating).toBe(25) // Stores the voltage rating
+  expect(capacitors[0].capacitance).toBe(0.000001)
   expect(circuit).toMatchSchematicSnapshot(
-    import.meta.path + "-capacitor-decimal-voltage",
+    import.meta.path + "-capacitor-numeric-values",
   )
 })

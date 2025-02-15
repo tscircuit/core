@@ -37,7 +37,10 @@ export class Capacitor extends NormalComponent<
 
   _getSchematicSymbolDisplayValue(): string | undefined {
     const capacitanceDisplay = `${formatSiUnit(this._parsedProps.capacitance)}F`
-    if (this._parsedProps.maxVoltageRating) {
+    if (
+      this._parsedProps.schShowRatings &&
+      this._parsedProps.maxVoltageRating
+    ) {
       return `${capacitanceDisplay}/${formatSiUnit(this._parsedProps.maxVoltageRating)}V`
     }
     return capacitanceDisplay
@@ -78,9 +81,11 @@ export class Capacitor extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
       capacitance: props.capacitance,
       max_voltage_rating: props.maxVoltageRating,
+      sch_show_ratings: props.schShowRatings,
       max_decoupling_trace_length: props.maxDecouplingTraceLength,
       display_capacitance: this._getSchematicSymbolDisplayValue(),
-    } as SourceSimpleCapacitorInput)
+    } as any)
+
     this.source_component_id = source_component.source_component_id
   }
 }
