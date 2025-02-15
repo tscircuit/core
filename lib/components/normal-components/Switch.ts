@@ -16,14 +16,14 @@ export class Switch extends NormalComponent<typeof switchProps> {
   get config() {
     const switchType = this._getSwitchType()
 
-    const baseSymbolName: Record<string, string> = {
+    const baseSymbolNameMap = {
       spst: "SPST_switch",
       spdt: "SPDT_switch",
       dpst: "dpst_switch",
       dpdt: "dpdt_switch",
     }
 
-    const symbolName = baseSymbolName[switchType] ?? "SPST_switch"
+    const symbolName = baseSymbolNameMap[switchType] ?? "SPST_switch"
 
     return {
       componentName: "Switch",
