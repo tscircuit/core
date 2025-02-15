@@ -28,7 +28,6 @@ test("schematic capacitor symbol", () => {
       "max_decoupling_trace_length": undefined,
       "max_voltage_rating": undefined,
       "name": "C1",
-      "sch_show_ratings": false,
       "source_component_id": "source_component_0",
       "supplier_part_numbers": undefined,
       "type": "source_component",
