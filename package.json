@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/footprinter": "^0.0.97",
+    "@tscircuit/footprinter": "^0.0.124",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/math-utils": "^0.0.9",
     "@tscircuit/props": "^0.0.152",
