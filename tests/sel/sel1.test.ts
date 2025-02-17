@@ -27,3 +27,16 @@ test("sel1 - invalid pin number", () => {
 test("sel1 - sel.net.VCC = net.VCC", () => {
   expect(sel.net.VCC).toBe("net.VCC")
 })
+
+test("sel1 - sel.CN1.pin1 = .CN1 > .pin1", () => {
+  expect(sel.CN1.pin1).toBe(".CN1 > .pin1")
+})
+
+test("sel1 - sel.CN20.pin10 = .CN20 > .pin10", () => {
+  expect(sel.CN20.pin10).toBe(".CN20 > .pin10")
+})
+
+test("sel1 - invalid CN pin number", () => {
+  // @ts-expect-error
+  const someval = sel.CN1.pin101
+})
