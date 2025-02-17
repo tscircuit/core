@@ -60,20 +60,20 @@ export class Board extends Group<typeof boardProps> {
 
     // Add padding around components (e.g. 2mm on each side)
     const padding = 2
-    const computedWidth = (maxX - minX) + padding * 2
-    const computedHeight = (maxY - minY) + padding * 2
+    const computedWidth = maxX - minX + padding * 2
+    const computedHeight = maxY - minY + padding * 2
 
     // Center the board around the components
     const center = {
       x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
-      y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0)
+      y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
     }
 
     // Update the board dimensions
     db.pcb_board.update(this.pcb_board_id, {
       width: computedWidth,
       height: computedHeight,
-      center
+      center,
     })
   }
 
