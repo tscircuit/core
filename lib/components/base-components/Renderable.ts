@@ -29,6 +29,7 @@ export const orderedRenderPhases = [
   "PcbPortAttachment",
   "PcbLayout",
   "PcbComponentSizeCalculation",
+  "PcbBoardAutoSize",
   "PcbTraceRender",
   "PcbTraceHintRender",
   "PcbRouteNetIslands",
