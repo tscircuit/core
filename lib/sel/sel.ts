@@ -53,7 +53,7 @@ type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string>>
 
 type NetSel = Record<"net", Record<"VCC" | "GND" | "VDD", string>>
 
-type ConnectionSel = Record<`CN${Nums40}`, Record<PinNumbers100, string>>
+type ConnectionSel = Record<`CN${Nums40}`, Record<CommonPinNames, string>>
 
 export type Sel = NonPolarizedSel &
   PolarizedSel &
