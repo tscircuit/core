@@ -53,13 +53,16 @@ type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string>>
 
 type NetSel = Record<"net", Record<"VCC" | "GND" | "VDD", string>>
 
+type ConnectionSel = Record<`CN${Nums40}`, Record<CommonPinNames, string>>
+
 export type Sel = NonPolarizedSel &
   PolarizedSel &
   TransistorSel &
   JumperSel &
   ChipSel &
   SwSel &
-  NetSel
+  NetSel &
+  ConnectionSel
 
 export const sel: Sel = new Proxy(
   {},
