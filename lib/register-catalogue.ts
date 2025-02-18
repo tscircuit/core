@@ -1,4 +1,5 @@
 import * as Components from "./components"
+import { Stampboard } from "./components/normal-components/StampBoard"
 import { extendCatalogue } from "./fiber/catalogue"
 
 // Register all components, generally you don't need to manually
