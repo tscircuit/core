@@ -10,8 +10,8 @@ it("should render an switch", async () => {
       <switch name="SW3" type="spdt" schX={0} schY={0} />
       <switch name="SW4" schX={2} schY={-2} />
       <switch name="SW5" dpdt schX={-2} schY={2} />
-      <switch name="SW5" isNormallyClosed dpdt schX={0} schY={2} />
-      <switch name="SW5" isNormallyClosed schX={-1} schY={1} />
+      <switch name="SW6" isNormallyClosed dpdt schX={0} schY={2} />
+      <switch name="SW7" isNormallyClosed schX={-1} schY={1} />
     </board>,
   )
   circuit.render()
