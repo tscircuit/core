@@ -1,6 +1,5 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { writeFile } from "fs"
 test("resistor with silkscreen text component name", () => {
   const { circuit } = getTestFixture()
 
@@ -66,8 +65,6 @@ test("resistor with silkscreen text component name", () => {
   )
 
   circuit.render()
-  const circuitJson = circuit.getCircuitJson()
-  writeFile("circuit.json", JSON.stringify(circuitJson, null, 2), () => {})
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit.db.pcb_missing_footprint_error.list()).toHaveLength(0)
 })
