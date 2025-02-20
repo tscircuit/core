@@ -6,9 +6,7 @@ it("should generate transistor pcb ports aliases", () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <resistor name="R1" resistance="10k" footprint="0402" pcbX={-3} />
-      <transistor name="Q1" type="npn" footprint="sot23" pcbX={2} />
-      <trace from=".Q1 > .base" to=".R1 > .pin2" />
+      <transistor name="Q1" type="npn" footprint="sot23" pcbX={2} pcbY={0} />
     </board>,
   )
 

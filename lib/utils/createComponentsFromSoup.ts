@@ -5,8 +5,13 @@ import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPa
 import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 import { Keepout } from "lib/components/primitive-components/Keepout"
 import { Hole } from "lib/components/primitive-components/Hole"
+import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 
 export const createComponentsFromSoup = (
+  {
+    componentName,
+    componentRotation,
+  }: { componentName: string; componentRotation: string },
   soup: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
   const components: PrimitiveComponent[] = []
@@ -80,6 +85,25 @@ export const createComponentsFromSoup = (
           pcbX: elm.x,
           pcbY: elm.y,
           diameter: elm.hole_diameter,
+        }),
+      )
+    } else if (elm.type === "pcb_silkscreen_text") {
+      let readableRotation = componentRotation ? parseInt(componentRotation) : 0
+      // Normalize the angle between 0 and 360 degrees.
+      const normalizedRotation = ((readableRotation % 360) + 360) % 360
+      // If the angle makes the text upside down, flip it so that it reads correctly.
+      const isUpsideDown = normalizedRotation > 90 && normalizedRotation <= 270
+      readableRotation = isUpsideDown
+        ? (normalizedRotation + 180) % 360
+        : normalizedRotation
+      components.push(
+        new SilkscreenText({
+          anchorAlignment: "center",
+          text: componentName,
+          fontSize: elm.font_size + 0.2,
+          pcbX: isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
+          pcbY: elm.anchor_position.y,
+          pcbRotation: readableRotation ?? 0,
         }),
       )
     }
