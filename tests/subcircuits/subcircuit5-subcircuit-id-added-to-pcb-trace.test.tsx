@@ -31,9 +31,7 @@ test("subcircuit_id added to pcb_trace output from autorouter", async () => {
         />
         <trace from=".R1 .pin1" to=".R2 .pin2" />
       </subcircuit>
-      <subcircuit
-        name="S2"
-      >
+      <subcircuit name="S2">
         <capacitor
           capacitance="1000pF"
           footprint="0603"
