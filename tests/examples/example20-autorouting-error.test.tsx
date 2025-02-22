@@ -41,7 +41,7 @@ test("remote-autorouter-1 with legacy solve endpoint", async () => {
   expect(autoroutingErrors).toMatchInlineSnapshot(`
     [
       {
-        "message": "{"message":"Failed to compute first trace"}",
+        "message": "Failed to compute first trace",
         "pcb_autorouting_error_id": "pcb_autorouting_error_0",
         "pcb_error_id": "job_0",
         "type": "pcb_autorouting_error",
