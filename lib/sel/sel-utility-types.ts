@@ -182,6 +182,15 @@ export type CommonPinNames =
   | "VIN"
   | "VOUT"
   | "VREF"
+  | "OUT"
+  | "DISCH"
+  | "EN"
+  | "IN"
+  | "CLK"
+  | "DATA"
+  | "THRES"
+  | "TRIG"
+  | "RESET"
   | `A${Nums40}`
   | `B${Nums40}`
   | PinNumbers100
