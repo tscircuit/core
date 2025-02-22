@@ -273,7 +273,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           is_started: boolean
           is_finished: boolean
           has_error: boolean
-          error: string | null
+          error: { message: string } | null
           autorouting_provider: "freerouting" | "tscircuit"
           created_at: string
           started_at?: string
@@ -302,7 +302,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (job.has_error) {
         db.pcb_autorouting_error.insert({
           pcb_error_id: autorouting_job.autorouting_job_id,
-          message: JSON.stringify(job.error),
+          message: job.error?.message ?? JSON.stringify(job.error),
         })
         throw new Error(`Autorouting job failed: ${JSON.stringify(job.error)}`)
       }
