@@ -119,7 +119,7 @@ export const getTestAutoroutingServer = ({
             is_started: true,
             is_running: false,
             has_error: true,
-            error: "Failed to compute first trace",
+            error: { message: "Failed to compute first trace" },
           })
 
           return new Response(

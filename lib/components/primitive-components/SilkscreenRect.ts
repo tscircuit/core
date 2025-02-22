@@ -38,6 +38,7 @@ export class SilkscreenRect extends PrimitiveComponent<
       height: props.height,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this?.getGroup()?.pcb_group_id ?? undefined,
+      stroke_width: props.strokeWidth ?? 0.1,
     })
 
     this.pcb_silkscreen_rect_id = pcb_silkscreen_rect.pcb_silkscreen_rect_id
