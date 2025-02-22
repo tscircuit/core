@@ -181,6 +181,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   async _runEffectMakeHttpAutoroutingRequest() {
+    const { db } = this.root!
     const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
     const props = this._parsedProps as SubcircuitGroupProps
 
@@ -279,7 +280,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           finished_at?: string
         }
       }
-
       if (job.is_finished) {
         const { autorouting_job_output } = await fetchWithDebug(
           `${serverUrl}/autorouting/jobs/get_output`,
@@ -300,6 +300,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       if (job.has_error) {
+        db.pcb_autorouting_error.insert({
+          pcb_error_id: autorouting_job.autorouting_job_id,
+          message: job.error!,
+        })
         throw new Error(`Autorouting job failed: ${JSON.stringify(job.error)}`)
       }
 
