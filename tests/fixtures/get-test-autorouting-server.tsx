@@ -7,9 +7,11 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimp
 export const getTestAutoroutingServer = ({
   requireDisplayName = false,
   requireServerCacheEnabled = false,
+  failInFirstTrace = false,
 }: {
   requireDisplayName?: boolean
   requireServerCacheEnabled?: boolean
+  failInFirstTrace?: boolean
 } = {}) => {
   let currentJobId = 0
   const jobResults = new Map<string, any>()
@@ -52,6 +54,16 @@ export const getTestAutoroutingServer = ({
         })
 
         const traces = autorouter.solveAndMapToTraces()
+
+        // Simulate failure in the first trace if the flag is set
+        if (failInFirstTrace && traces.length > 0) {
+          return new Response(
+            JSON.stringify({
+              error: { message: "Failed to compute first trace" },
+            }),
+            { status: 500 },
+          )
+        }
 
         return new Response(
           JSON.stringify({
@@ -99,6 +111,30 @@ export const getTestAutoroutingServer = ({
         })
 
         const traces = autorouter.solveAndMapToTraces()
+
+        // Simulate failure in the first trace if the flag is set
+        if (failInFirstTrace && traces.length > 0) {
+          jobResults.set(jobId, {
+            is_finished: false,
+            is_started: true,
+            is_running: false,
+            has_error: true,
+            error: { message: "Failed to compute first trace" },
+          })
+
+          return new Response(
+            JSON.stringify({
+              autorouting_job: {
+                autorouting_job_id: jobId,
+                is_running: false,
+                is_started: true,
+                has_error: true,
+                error: "Failed to compute first trace",
+              },
+            }),
+            { headers: { "Content-Type": "application/json" } },
+          )
+        }
 
         jobResults.set(jobId, {
           is_finished: true,
