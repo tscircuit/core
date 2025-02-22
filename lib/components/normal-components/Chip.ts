@@ -78,18 +78,6 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       }
     }
 
-    // Handle internally connected pins
-    if (props.internallyConnectedPins) {
-      for (const [pin1, pin2] of props.internallyConnectedPins) {
-        this.add(
-          new Trace({
-            from: `${this.getSubcircuitSelector()} > port.${pin1}`,
-            to: `${this.getSubcircuitSelector()} > port.${pin2}`,
-          }),
-        )
-      }
-    }
-
     // Handle connections
     if (props.connections) {
       for (const [pinName, target] of Object.entries(props.connections)) {
@@ -103,6 +91,13 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
           )
         }
       }
+    }
+
+    // Handle internally connected pins separately
+    if (props.internallyConnectedPins) {
+      // Log or store internally connected pins for reference
+      // Do not create traces for these connections in the schematic
+      console.log("Internal Connections:", props.internallyConnectedPins)
     }
   }
 }

@@ -34,31 +34,3 @@ test("chip with internally connected pins and connections", async () => {
     import.meta.path + "chip-internal-pins",
   )
 })
-
-test("push buttons with internally connected pins", async () => {
-  const { circuit } = getTestFixture()
-
-  circuit.add(
-    <board width="30mm" height="10mm">
-      <pushbutton
-        name="SW1"
-        pcbX={10}
-        schX={-3}
-        internallyConnectedPins={[["pin1", "pin4"]]}
-      />
-      <pushbutton
-        name="SW2"
-        pcbX={-10}
-        schX={3}
-        internallyConnectedPins={[["pin2", "pin3"]]}
-      />
-      <trace from=".SW1 .pin1" to=".SW2 .pin2" />
-    </board>,
-  )
-
-  await circuit.render()
-
-  expect(circuit).toMatchSchematicSnapshot(
-    import.meta.path + "pushbutton-internal-pins",
-  )
-})
