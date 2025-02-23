@@ -48,7 +48,7 @@
         "tsup": "^8.2.4",
       },
       "peerDependencies": {
-        "@tscircuit/footprinter": "^0.0.140",
+        "@tscircuit/footprinter": "*",
         "typescript": "^5.0.0",
       },
     },
