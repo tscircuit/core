@@ -40,6 +40,7 @@ import { PrimitiveComponent } from "../PrimitiveComponent"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import type { INormalComponent } from "./INormalComponent"
+import { Trace } from "lib/components/primitive-components/Trace/Trace"
 
 const debug = Debug("tscircuit:core")
 
@@ -733,6 +734,24 @@ export class NormalComponent<
     return newPorts
   }
 
+  doInitialCreateNetsFromProps(): void {
+    this._createNetsFromProps(this._getNetsFromConnectionsProp())
+  }
+
+  _getNetsFromConnectionsProp(): string[] {
+    const { _parsedProps: props } = this
+    const propsWithConnections: string[] = []
+    if (props.connections) {
+      for (const [pinName, target] of Object.entries(props.connections)) {
+        const targets = Array.isArray(target) ? target : [target]
+        for (const targetPath of targets) {
+          propsWithConnections.push(targetPath)
+        }
+      }
+    }
+    return propsWithConnections
+  }
+
   _createNetsFromProps(propsWithConnections: (string | undefined | null)[]) {
     createNetsFromProps(this, propsWithConnections)
   }
@@ -976,6 +995,28 @@ export class NormalComponent<
         supplier_part_numbers: this._asyncSupplierPartNumbers,
       })
       return
+    }
+  }
+
+  doInitialCreateTracesFromProps(): void {
+    this._createTracesFromConnectionsProp()
+  }
+
+  _createTracesFromConnectionsProp() {
+    const { _parsedProps: props } = this
+
+    if (props.connections) {
+      for (const [pinName, target] of Object.entries(props.connections)) {
+        const targets = Array.isArray(target) ? target : [target]
+        for (const targetPath of targets) {
+          this.add(
+            new Trace({
+              from: `${this.getSubcircuitSelector()} > port.${pinName}`,
+              to: targetPath as string,
+            }),
+          )
+        }
+      }
     }
   }
 }
