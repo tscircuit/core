@@ -247,19 +247,19 @@ export class Trace
 
     const { allPortsFound, portsWithSelectors: ports } =
       this._findConnectedPorts()
-    if (!allPortsFound) return
-    const nets = this._findConnectedNets().nets
-    const displayName = getTraceDisplayName({ ports: ports, nets: nets })
+    // if (!allPortsFound) return
+    // const nets = this._findConnectedNets().nets
+    // const displayName = getTraceDisplayName({ ports: ports, nets: nets })
     const trace = db.source_trace.insert({
-      connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
-      connected_source_net_ids: nets.map((n) => n.source_net_id!),
+      connected_source_port_ids: [], //ports.map((p) => p.port.source_port_id!),
+      connected_source_net_ids: [], //nets.map((n) => n.source_net_id!),
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
-      max_length:
-        getMaxLengthFromConnectedCapacitors(
-          ports.map((p) => p.port),
-          { db },
-        ) ?? props.maxLength,
-      display_name: displayName,
+      max_length: 0,
+      // getMaxLengthFromConnectedCapacitors(
+      //   ports.map((p) => p.port),
+      //   { db },
+      // ) ?? props.maxLength,
+      // display_name: displayName,
     })
 
     this.source_trace_id = trace.source_trace_id

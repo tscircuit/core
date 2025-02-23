@@ -50,6 +50,7 @@ export class Capacitor extends NormalComponent<
     this._createNetsFromProps([
       this.props.decouplingFor,
       this.props.decouplingTo,
+      ...this._getNetsFromConnectionsProp(),
     ])
   }
 

@@ -78,18 +78,6 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       }
     }
 
-    if (props.connections) {
-      for (const [pinName, target] of Object.entries(props.connections)) {
-        const targets = Array.isArray(target) ? target : [target]
-        for (const targetPath of targets) {
-          this.add(
-            new Trace({
-              from: `${this.getSubcircuitSelector()} > port.${pinName}`,
-              to: targetPath as string,
-            }),
-          )
-        }
-      }
-    }
+    this._createTracesFromConnectionsProp()
   }
 }

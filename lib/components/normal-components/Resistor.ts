@@ -33,7 +33,11 @@ export class Resistor extends NormalComponent<
   }
 
   doInitialCreateNetsFromProps() {
-    this._createNetsFromProps([this.props.pullupFor, this.props.pullupTo])
+    this._createNetsFromProps([
+      this.props.pullupFor,
+      this.props.pullupTo,
+      ...this._getNetsFromConnectionsProp(),
+    ])
   }
 
   doInitialCreateTracesFromProps() {

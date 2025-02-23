@@ -6,8 +6,6 @@ test("chip with connections", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <net name="VCC" />
-      <net name="GND" />
       <chip
         name="U1"
         footprint="soic8"
@@ -18,6 +16,7 @@ test("chip with connections", async () => {
         connections={{
           VCC: "net.VCC",
           OUT: "net.GND",
+          pin7: "net.NET_FOR_PIN7",
         }}
       />
     </board>,
