@@ -6,6 +6,7 @@ import { traceProps } from "@tscircuit/props"
 import {
   type LayerRef,
   type PcbTrace,
+  type PcbTraceRoutePoint,
   type RouteHintPoint,
   type SchematicTrace,
 } from "circuit-json"
@@ -42,7 +43,7 @@ import { getSchematicObstaclesForTrace } from "./get-obstacles-for-trace"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 import { getTraceDisplayName } from "./get-trace-display-name"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
-import { outsideBoard } from "../../../utils/outside-board"
+import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -265,7 +266,24 @@ export class Trace
 
     this.source_trace_id = trace.source_trace_id
   }
+  _checkIfTraceIsOutsideBoard(
+    mergedRoute: PcbTraceRoutePoint[],
+    ports: Port[],
+  ): void {
+    const { db } = this.root!
+    const isOutsideBoard = isRouteOutsideBoard(mergedRoute, { db })
 
+    if (isOutsideBoard) {
+      db.pcb_trace_error.insert({
+        error_type: "pcb_trace_error",
+        source_trace_id: this.source_trace_id!,
+        message: `Trace ${this.getString()} routed outside the board boundaries.`,
+        pcb_trace_id: this.pcb_trace_id!,
+        pcb_component_ids: [],
+        pcb_port_ids: ports.map((p) => p.pcb_port_id!),
+      })
+    }
+  }
   doInitialPcbTraceRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -611,19 +629,7 @@ export class Trace
         })
       }
     }
-
-    const isOutsideBoard = outsideBoard(mergedRoute, { db })
-
-    if (isOutsideBoard) {
-      db.pcb_trace_error.insert({
-        error_type: "pcb_trace_error",
-        source_trace_id: this.source_trace_id!,
-        message: `Trace ${this.source_trace_id} routed outside the board boundaries.`,
-        pcb_trace_id: this.pcb_trace_id!,
-        pcb_component_ids: [],
-        pcb_port_ids: ports.map((p) => p.pcb_port_id!),
-      })
-    }
+    this._checkIfTraceIsOutsideBoard(mergedRoute, ports)
   }
 
   _doInitialSchematicTraceRenderWithDisplayLabel(): void {

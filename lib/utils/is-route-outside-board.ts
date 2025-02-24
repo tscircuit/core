@@ -1,7 +1,7 @@
 import type { SoupUtilObjects } from "@tscircuit/soup-util"
 import type { PcbTraceRoutePoint } from "circuit-json"
 
-export const outsideBoard = (
+export const isRouteOutsideBoard = (
   mergedRoute: PcbTraceRoutePoint[],
   { db }: { db: SoupUtilObjects },
 ) => {
