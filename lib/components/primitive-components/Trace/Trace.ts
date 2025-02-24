@@ -266,7 +266,7 @@ export class Trace
 
     this.source_trace_id = trace.source_trace_id
   }
-  _checkIfTraceIsOutsideBoard(
+  _insertErrorIfTraceIsOutsideBoard(
     mergedRoute: PcbTraceRoutePoint[],
     ports: Port[],
   ): void {
@@ -629,7 +629,7 @@ export class Trace
         })
       }
     }
-    this._checkIfTraceIsOutsideBoard(mergedRoute, ports)
+    this._insertErrorIfTraceIsOutsideBoard(mergedRoute, ports)
   }
 
   _doInitialSchematicTraceRenderWithDisplayLabel(): void {

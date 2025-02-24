@@ -6,7 +6,10 @@ export const isRouteOutsideBoard = (
   { db }: { db: SoupUtilObjects },
 ) => {
   const pcbBoard = db.pcb_board.list()[0]
-
+  //TODO: Add support for board outline calculation
+  if (pcbBoard.outline) {
+    return true
+  }
   // New error handling for traces routed outside the board
   const boardWidth = pcbBoard.width
   const boardHeight = pcbBoard.height
