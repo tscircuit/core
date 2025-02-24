@@ -28,7 +28,7 @@ test("insert trace error when trace goes out of board", async () => {
     [
       {
         "error_type": "pcb_trace_error",
-        "message": "Trace <trace#30(from:.R1 > .pin1 to:.C1 > .pin1) /> routed outside the board boundaries.",
+        "message": "Trace <trace#2261(from:.R1 > .pin1 to:.C1 > .pin1) /> routed outside the board boundaries.",
         "pcb_component_ids": [],
         "pcb_port_ids": [
           "pcb_port_0",
