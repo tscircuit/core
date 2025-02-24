@@ -42,7 +42,7 @@ import { getSchematicObstaclesForTrace } from "./get-obstacles-for-trace"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 import { getTraceDisplayName } from "./get-trace-display-name"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
-import { outsideBoard } from "./outside-board"
+import { outsideBoard } from "../../../utils/outside-board"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
