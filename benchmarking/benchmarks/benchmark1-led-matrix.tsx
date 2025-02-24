@@ -13,6 +13,8 @@ export const Benchmark1LedMatrix = () => (
               name={ledName}
               pcbX={center.x}
               pcbY={center.y}
+              schX={center.x}
+              schY={center.y}
             />
             <resistor
               resistance="1k"
@@ -20,6 +22,8 @@ export const Benchmark1LedMatrix = () => (
               name={resistorName}
               pcbX={center.x}
               pcbY={center.y - 2}
+              schX={center.x}
+              schY={center.y - 2}
             />
             <trace from={`.${ledName} .pos`} to="net.VDD" />
             <trace from={`.${ledName} .neg`} to={`.${resistorName} .pos`} />
