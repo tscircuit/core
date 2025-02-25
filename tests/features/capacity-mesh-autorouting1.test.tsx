@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("board with capacity-mesh-autorouter", async () => {
+test("board with local group autorouter", async () => {
   const { circuit } = getTestFixture()
 
   // Create a circuit with two components that need to be connected by a trace
