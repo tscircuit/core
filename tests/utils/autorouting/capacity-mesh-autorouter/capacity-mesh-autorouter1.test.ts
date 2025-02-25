@@ -1,0 +1,59 @@
+import { test, expect } from "bun:test"
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+
+// Create a simple route test fixture
+const createTestSimpleRouteJson = (): SimpleRouteJson => ({
+  layerCount: 2,
+  minTraceWidth: 0.2,
+  obstacles: [
+    // Create a rectangular obstacle in the center
+    {
+      type: "rect",
+      layers: ["top", "bottom"],
+      center: { x: 0, y: 0 },
+      width: 5,
+      height: 5,
+      connectedTo: [],
+    },
+  ],
+  connections: [
+    // Create a connection that needs to go around the obstacle
+    {
+      name: "conn1",
+      pointsToConnect: [
+        { x: -10, y: 0, layer: "top" },
+        { x: 10, y: 0, layer: "top" },
+      ],
+    },
+  ],
+  bounds: { minX: -15, maxX: 15, minY: -15, maxY: 15 },
+})
+
+test("CapacityMeshAutorouter should solve a simple routing problem", () => {
+  const autorouter = new CapacityMeshAutorouter(createTestSimpleRouteJson())
+
+  // Execute the sync solve method
+  const traces = autorouter.solveSync()
+
+  console.log(traces)
+
+  // Validate basic expectations about the result
+  expect(traces.length).toBeGreaterThan(0)
+  expect(traces[0].type).toBe("pcb_trace")
+  expect(traces[0].route.length).toBeGreaterThan(2)
+
+  // The first and last points should match our input
+  const route = traces[0].route
+  const firstPoint = route[0] as { x: number; y: number; layer: string }
+  const lastPoint = route[route.length - 1] as {
+    x: number
+    y: number
+    layer: string
+  }
+
+  expect(firstPoint.x).toBeCloseTo(-10, 0)
+  expect(firstPoint.y).toBeCloseTo(0, 0)
+  expect(lastPoint.x).toBeCloseTo(10, 0)
+  expect(lastPoint.y).toBeCloseTo(0, 0)
+})
