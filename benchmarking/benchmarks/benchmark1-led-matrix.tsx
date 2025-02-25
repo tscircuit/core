@@ -47,9 +47,9 @@ export const Benchmark1LedMatrix = ({
                 pcbX={center.x}
                 pcbY={center.y - 2}
               />
-              <trace from={`.${ledName} .pos`} to="net.VDD" />
+              <trace from={`.${ledName} .pos`} to={sel.net.PWR} />
               <trace from={`.${ledName} .neg`} to={`.${resistorName} .pos`} />
-              <trace from={`.${resistorName} .neg`} to="net.GND" />
+              <trace from={`.${resistorName} .neg`} to={sel.net.GND} />
             </group>
           )
         },

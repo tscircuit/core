@@ -192,6 +192,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Remote autorouting
     const serverUrl = autorouterConfig.serverUrl!
     const serverMode = autorouterConfig.serverMode!
+    console.log({ serverUrl, serverMode })
 
     const fetchWithDebug = (url: string, options: RequestInit) => {
       debug("fetching", url)
@@ -561,8 +562,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _getAutorouterConfig(): AutorouterConfig {
     const defaults = {
       serverUrl: "https://registry-api.tscircuit.com",
-      serverMode: "job",
-      serverCacheEnabled: false,
+      serverMode: "job" as const,
+      serverCacheEnabled: true,
     }
     // Inherit from parent if not set by props
     const autorouter =
@@ -583,6 +584,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (autorouter === "auto-local")
       return {
         local: true,
+        groupMode: "subcircuit",
       }
     if (autorouter === "sequential-trace")
       return {
@@ -593,6 +595,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return {
         local: true,
         groupMode: "subcircuit",
+      }
+    if (autorouter === "auto-cloud")
+      return {
+        local: false,
+        groupMode: "subcircuit",
+        serverUrl: defaults.serverUrl,
+        serverMode: defaults.serverMode,
+        serverCacheEnabled: true,
       }
     return {
       local: true,

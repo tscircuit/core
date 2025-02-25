@@ -30,6 +30,8 @@ export class Net extends PrimitiveComponent<typeof netProps> {
 
     const net = db.source_net.insert({
       name: props.name,
+      // @ts-expect-error https://github.com/tscircuit/circuit-json/pull/147
+      subcircuit_id: this.getSubcircuit()?.subcircuit_id,
       member_source_group_ids: [],
     })
 
@@ -86,10 +88,17 @@ export class Net extends PrimitiveComponent<typeof netProps> {
    * Sometimes this phase doesn't find any net islands if the autorouter did
    * a good job and connected the islands. In some sense this is a "backup"
    * routing phase for autorouters that don't care about connecting nets.
+   *
+   * This should only run if the autorouter is sequential-trace
    */
   doInitialPcbRouteNetIslands(): void {
     if (this.root?.pcbDisabled) return
     if (this.getSubcircuit()._parsedProps.routingDisabled) return
+    if (
+      this.getSubcircuit()._getAutorouterConfig().groupMode !==
+      "sequential-trace"
+    )
+      return
 
     const { db } = this.root!
     const { _parsedProps: props } = this

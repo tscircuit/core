@@ -66,7 +66,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   // Create connections from traces
-  const connections = db.source_trace
+  const directTraceConnections = db.source_trace
     .list()
     .map((trace) => {
       const connectedPorts = trace.connected_source_port_ids.map((id) => {
@@ -98,6 +98,15 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       } as SimpleRouteConnection
     })
     .filter((c: any): c is SimpleRouteConnection => c !== null)
+
+  console.log({ subcircuit_id, nets: db.source_net.list() })
+  const source_nets = db.source_net
+    .list()
+    .filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id)
+
+  console.log(source_nets)
+
+  const connections = directTraceConnections
 
   return {
     bounds,

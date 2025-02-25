@@ -10,6 +10,7 @@ test("capacity mesh autorouting 2 - benchmark led matrix", async () => {
   // The capacity mesh autorouter will be used to find the optimal route
   circuit.add(
     <Benchmark1LedMatrix
+      // autorouter="auto-local"
       autorouter={{
         local: true,
         groupMode: "subcircuit",
