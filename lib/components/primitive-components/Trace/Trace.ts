@@ -12,6 +12,7 @@ import {
 } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type {
   SimpleRouteConnection,
   SimpleRouteJson,
@@ -524,49 +525,84 @@ export class Trace
       const minTraceWidth =
         this.getSubcircuit()._parsedProps.minTraceWidth ?? 0.16
 
-      const ijump = new MultilayerIjump({
-        OBSTACLE_MARGIN: minTraceWidth * 2,
-        isRemovePathLoopsEnabled: true,
-        optimizeWithGoalBoxes: Boolean(pcbPortA && pcbPortB),
-        connMap,
-        input: {
-          obstacles,
-          minTraceWidth,
-          connections: [
-            {
-              name: this.source_trace_id!,
-              pointsToConnect: [
-                { ...a, layer: aLayer, pcb_port_id: pcbPortA! },
-                { ...b, layer: bLayer, pcb_port_id: pcbPortB! },
-              ],
-            },
-          ],
-          layerCount: 2,
-          bounds: {
-            minX: Math.min(a.x, b.x) - BOUNDS_MARGIN,
-            maxX: Math.max(a.x, b.x) + BOUNDS_MARGIN,
-            minY: Math.min(a.y, b.y) - BOUNDS_MARGIN,
-            maxY: Math.max(a.y, b.y) + BOUNDS_MARGIN,
+      // Determine which autorouter to use
+      let useCapacityAutorouter = this.getSubcircuit().props._useCapacityAutorouter
+      
+      const routeInput = {
+        obstacles,
+        minTraceWidth,
+        connections: [
+          {
+            name: this.source_trace_id!,
+            pointsToConnect: [
+              { ...a, layer: aLayer, pcb_port_id: pcbPortA! },
+              { ...b, layer: bLayer, pcb_port_id: pcbPortB! },
+            ],
           },
+        ],
+        layerCount: 2,
+        bounds: {
+          minX: Math.min(a.x, b.x) - BOUNDS_MARGIN,
+          maxX: Math.max(a.x, b.x) + BOUNDS_MARGIN,
+          minY: Math.min(a.y, b.y) - BOUNDS_MARGIN,
+          maxY: Math.max(a.y, b.y) + BOUNDS_MARGIN,
         },
-      })
+      };
+      
       let traces: SimplifiedPcbTrace[] | null = null
-      try {
-        traces = ijump.solveAndMapToTraces()
-      } catch (e: any) {
-        this.renderError({
-          type: "pcb_trace_error",
-          pcb_trace_error_id: this.source_trace_id!,
-          error_type: "pcb_trace_error",
-          message: `error solving route: ${e.message}`,
-          source_trace_id: this.pcb_trace_id!,
-          center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
-          pcb_port_ids: ports.map((p) => p.pcb_port_id!),
-          pcb_trace_id: this.pcb_trace_id!,
-          pcb_component_ids: ports.map((p) => p.pcb_component_id!),
-        })
+      
+      if (useCapacityAutorouter) {
+        // Use the capacity mesh autorouter
+        try {
+          const capacityRouter = new CapacityMeshAutorouter({
+            input: routeInput,
+          });
+          traces = capacityRouter.solveAndMapToTraces();
+        } catch (e: any) {
+          this.renderError({
+            type: "pcb_trace_error",
+            pcb_trace_error_id: this.source_trace_id!,
+            error_type: "pcb_trace_error",
+            message: `error solving route with capacity autorouter: ${e.message}`,
+            source_trace_id: this.pcb_trace_id!,
+            center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+            pcb_port_ids: ports.map((p) => p.pcb_port_id!),
+            pcb_trace_id: this.pcb_trace_id!,
+            pcb_component_ids: ports.map((p) => p.pcb_component_id!),
+          });
+          // Fall back to the ijump router
+          useCapacityAutorouter = false;
+        }
       }
-      if (!traces) return
+      
+      if (!useCapacityAutorouter) {
+        // Use the default MultilayerIjump autorouter
+        const ijump = new MultilayerIjump({
+          OBSTACLE_MARGIN: minTraceWidth * 2,
+          isRemovePathLoopsEnabled: true,
+          optimizeWithGoalBoxes: Boolean(pcbPortA && pcbPortB),
+          connMap,
+          input: routeInput,
+        });
+        
+        try {
+          traces = ijump.solveAndMapToTraces();
+        } catch (e: any) {
+          this.renderError({
+            type: "pcb_trace_error",
+            pcb_trace_error_id: this.source_trace_id!,
+            error_type: "pcb_trace_error",
+            message: `error solving route: ${e.message}`,
+            source_trace_id: this.pcb_trace_id!,
+            center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+            pcb_port_ids: ports.map((p) => p.pcb_port_id!),
+            pcb_trace_id: this.pcb_trace_id!,
+            pcb_component_ids: ports.map((p) => p.pcb_component_id!),
+          });
+        }
+      }
+      
+      if (!traces) return;
       if (traces.length === 0) {
         this.renderError({
           type: "pcb_trace_error",
@@ -578,9 +614,10 @@ export class Trace
           pcb_port_ids: ports.map((p) => p.pcb_port_id!),
           pcb_trace_id: this.pcb_trace_id!,
           pcb_component_ids: ports.map((p) => p.pcb_component_id!),
-        })
-        return
+        });
+        return;
       }
+      
       const [trace] = traces as PcbTrace[]
 
       // If the autorouter didn't specify a layer, use the dominant layer
@@ -899,43 +936,92 @@ export class Trace
       layerCount: 1,
     }
 
-    let Autorouter = MultilayerIjump
     let skipOtherTraceInteraction = false
-    if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
-      Autorouter = DirectLineRouter as any
+    let results: SimplifiedPcbTrace[] = []
+    const subcircuit = this.getSubcircuit()
+    
+    // Determine which autorouter to use
+    if (subcircuit.props._schDirectLineRoutingEnabled) {
+      // Use direct line router
+      const directLineRouter = new DirectLineRouter({
+        input: simpleRouteJsonInput,
+      })
+      results = directLineRouter.solveAndMapToTraces()
       skipOtherTraceInteraction = true
+    } else if (subcircuit.props._useCapacityAutorouter) {
+      // Use capacity mesh autorouter
+      try {
+        const capacityRouter = new CapacityMeshAutorouter({
+          input: simpleRouteJsonInput,
+        })
+        results = capacityRouter.solveAndMapToTraces()
+      } catch (e) {
+        console.error("Capacity mesh autorouter failed for schematic:", e)
+        // Fall back to MultilayerIjump
+        const ijump = new MultilayerIjump({
+          input: simpleRouteJsonInput,
+          MAX_ITERATIONS: 100,
+          OBSTACLE_MARGIN: 0.1,
+          isRemovePathLoopsEnabled: true,
+          isShortenPathWithShortcutsEnabled: true,
+          marginsWithCosts: [
+            {
+              margin: 1,
+              enterCost: 0,
+              travelCostFactor: 1,
+            },
+            {
+              margin: 0.3,
+              enterCost: 0,
+              travelCostFactor: 1,
+            },
+            {
+              margin: 0.2,
+              enterCost: 0,
+              travelCostFactor: 2,
+            },
+            {
+              margin: 0.1,
+              enterCost: 0,
+              travelCostFactor: 3,
+            },
+          ],
+        })
+        results = ijump.solveAndMapToTraces()
+      }
+    } else {
+      // Use default MultilayerIjump
+      const ijump = new MultilayerIjump({
+        input: simpleRouteJsonInput,
+        MAX_ITERATIONS: 100,
+        OBSTACLE_MARGIN: 0.1,
+        isRemovePathLoopsEnabled: true,
+        isShortenPathWithShortcutsEnabled: true,
+        marginsWithCosts: [
+          {
+            margin: 1,
+            enterCost: 0,
+            travelCostFactor: 1,
+          },
+          {
+            margin: 0.3,
+            enterCost: 0,
+            travelCostFactor: 1,
+          },
+          {
+            margin: 0.2,
+            enterCost: 0,
+            travelCostFactor: 2,
+          },
+          {
+            margin: 0.1,
+            enterCost: 0,
+            travelCostFactor: 3,
+          },
+        ],
+      })
+      results = ijump.solveAndMapToTraces()
     }
-
-    const autorouter = new Autorouter({
-      input: simpleRouteJsonInput,
-      MAX_ITERATIONS: 100,
-      OBSTACLE_MARGIN: 0.1,
-      isRemovePathLoopsEnabled: true,
-      isShortenPathWithShortcutsEnabled: true,
-      marginsWithCosts: [
-        {
-          margin: 1,
-          enterCost: 0,
-          travelCostFactor: 1,
-        },
-        {
-          margin: 0.3,
-          enterCost: 0,
-          travelCostFactor: 1,
-        },
-        {
-          margin: 0.2,
-          enterCost: 0,
-          travelCostFactor: 2,
-        },
-        {
-          margin: 0.1,
-          enterCost: 0,
-          travelCostFactor: 3,
-        },
-      ],
-    })
-    let results = autorouter.solveAndMapToTraces()
 
     if (results.length === 0) {
       if (
@@ -946,6 +1032,7 @@ export class Trace
         this._doInitialSchematicTraceRenderWithDisplayLabel()
         return
       }
+      // Fall back to direct line routing as a last resort
       const directLineRouter = new DirectLineRouter({
         input: simpleRouteJsonInput,
       })

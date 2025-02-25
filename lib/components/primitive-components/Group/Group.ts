@@ -12,6 +12,7 @@ import {
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import Debug from "debug"
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import { z } from "zod"
@@ -29,6 +30,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   subcircuit_id: string | null = null
 
   _hasStartedAsyncAutorouting = false
+  _capacityAutorouter: CapacityMeshAutorouter | null = null
+  _capacityAutoroutingInProgress = false
 
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
@@ -312,11 +315,82 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
+  /**
+   * Starts the capacity mesh autorouter for local asynchronous routing
+   */
+  async _runCapacityMeshAutorouter(): Promise<void> {
+    const debug = Debug("tscircuit:core:_runCapacityMeshAutorouter")
+    const { db } = this.root!
+    debug(`[${this.getString()}] starting capacity mesh autorouter`)
+    
+    // Get the SimpleRouteJson for all traces in this group
+    const simpleRouteJson = this._getSimpleRouteJsonFromPcbTraces()
+    
+    // Skip if there are no connections to route
+    if (!simpleRouteJson.connections || simpleRouteJson.connections.length === 0) {
+      debug(`[${this.getString()}] no connections to route, skipping`)
+      return
+    }
+    
+    // Create the autorouter instance
+    this._capacityAutorouter = new CapacityMeshAutorouter({
+      input: simpleRouteJson,
+    })
+    
+    // Start asynchronous routing
+    this._capacityAutoroutingInProgress = true
+    try {
+      const success = await this._capacityAutorouter.solve()
+      
+      if (success) {
+        debug(`[${this.getString()}] capacity mesh autorouter succeeded`)
+        const traces = this._capacityAutorouter.solveAndMapToTraces()
+        
+        this._asyncAutoroutingResult = {
+          output_pcb_traces: traces,
+        }
+        
+        this._capacityAutoroutingInProgress = false
+        this._markDirty("PcbTraceRender")
+      } else {
+        debug(`[${this.getString()}] capacity mesh autorouter failed`)
+        // Fall back to HTTP autorouting if configured
+        const autorouter = this._getAutorouterConfig()
+        if (!autorouter.local && autorouter.serverUrl) {
+          debug(`[${this.getString()}] falling back to HTTP autorouting`)
+          await this._runEffectMakeHttpAutoroutingRequest()
+        }
+      }
+    } catch (e) {
+      console.error(`Capacity mesh autorouter error:`, e)
+      this._capacityAutoroutingInProgress = false
+      
+      // Fall back to HTTP autorouting if configured
+      const autorouter = this._getAutorouterConfig()
+      if (!autorouter.local && autorouter.serverUrl) {
+        debug(`[${this.getString()}] falling back to HTTP autorouting after error`)
+        await this._runEffectMakeHttpAutoroutingRequest()
+      }
+    }
+  }
+
   _startAsyncAutorouting() {
     this._hasStartedAsyncAutorouting = true
-    this._queueAsyncEffect("make-http-autorouting-request", async () =>
-      this._runEffectMakeHttpAutoroutingRequest(),
-    )
+    
+    // Determine which type of autorouter to use
+    const autorouter = this._getAutorouterConfig()
+    
+    if (autorouter.local && this._parsedProps._useCapacityAutorouter) {
+      // Use the local capacity mesh autorouter
+      this._queueAsyncEffect("capacity-mesh-autorouting", async () => 
+        this._runCapacityMeshAutorouter()
+      )
+    } else if (!autorouter.local) {
+      // Use the HTTP autorouter service
+      this._queueAsyncEffect("make-http-autorouting-request", async () =>
+        this._runEffectMakeHttpAutoroutingRequest(),
+      )
+    }
   }
 
   doInitialPcbTraceRender() {
@@ -421,15 +495,81 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (!output_pcb_traces) return
 
     const { db } = this.root!
+    const debug = Debug("tscircuit:core:_updatePcbTraceRenderFromPcbTraces")
+    debug(`[${this.getString()}] updating with ${output_pcb_traces.length} PCB traces`)
 
-    // Delete any previously created traces
-    // TODO
+    // Get existing traces for this subcircuit that we've already created
+    // and might need to clean up first
+    const existingPcbTraces = db.pcb_trace
+      .list()
+      .filter(trace => trace.subcircuit_id === this.subcircuit_id)
+    
+    // Delete any previously created traces that were auto-routed
+    // (only if they have a source_trace_id, meaning they're from autorouting)
+    for (const existingTrace of existingPcbTraces) {
+      if (existingTrace.source_trace_id) {
+        db.pcb_trace.delete(existingTrace.pcb_trace_id)
+        
+        // Also delete any vias associated with this trace
+        const viasToDelete = db.pcb_via
+          .list()
+          .filter(via => via.pcb_trace_id === existingTrace.pcb_trace_id)
+        
+        for (const via of viasToDelete) {
+          db.pcb_via.delete(via.pcb_via_id)
+        }
+      }
+    }
+
+    // Collect all source traces in this subcircuit
+    const sourceTraces = db.source_trace
+      .list()
+      .filter(trace => 
+        trace.subcircuit_id === this.subcircuit_id
+      )
+    
+    // Map from autorouter connection name to source_trace_id
+    const connectionToSourceTraceMap = new Map<string, string>()
+    for (const sourceTrace of sourceTraces) {
+      // Use connectivity map key if available, otherwise use source_trace_id
+      const key = sourceTrace.subcircuit_connectivity_map_key || sourceTrace.source_trace_id
+      connectionToSourceTraceMap.set(key, sourceTrace.source_trace_id)
+    }
 
     // Apply each routed trace to the corresponding circuit trace
     for (const pcb_trace of output_pcb_traces) {
-      pcb_trace.subcircuit_id = this.subcircuit_id!
-      db.pcb_trace.insert(pcb_trace)
+      const sourceTraceId = pcb_trace.name ? 
+        connectionToSourceTraceMap.get(pcb_trace.name) :
+        null
+      
+      // Insert the PCB trace with appropriate metadata
+      const newPcbTrace = db.pcb_trace.insert({
+        ...pcb_trace,
+        source_trace_id: sourceTraceId || undefined,
+        subcircuit_id: this.subcircuit_id!,
+        pcb_group_id: this.pcb_group_id || undefined,
+      })
+      
+      // Create vias for any layer transitions in the trace route
+      if (pcb_trace.route) {
+        for (const point of pcb_trace.route) {
+          if (point.route_type === "via") {
+            db.pcb_via.insert({
+              pcb_trace_id: newPcbTrace.pcb_trace_id,
+              x: point.x,
+              y: point.y,
+              hole_diameter: 0.3,
+              outer_diameter: 0.6,
+              layers: [point.from_layer as string, point.to_layer as string],
+              from_layer: point.from_layer as string,
+              to_layer: point.to_layer as string,
+            })
+          }
+        }
+      }
     }
+    
+    debug(`[${this.getString()}] PCB trace update complete`)
   }
 
   doInitialSchematicLayout(): void {

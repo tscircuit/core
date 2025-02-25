@@ -112,6 +112,13 @@ export class RootCircuit {
       this.render()
     }
   }
+  
+  /**
+   * Wait for all async effects to complete
+   */
+  async waitForAsyncEffects(): Promise<void> {
+    return this.renderUntilSettled()
+  }
 
   private _hasIncompleteAsyncEffects(): boolean {
     return this.children.some((child) => {
