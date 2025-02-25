@@ -7,8 +7,12 @@ export const createNetsFromProps = (
 ) => {
   for (const prop of props) {
     if (typeof prop === "string" && prop.startsWith("net.")) {
-      if (!component.getSubcircuit().selectOne(prop)) {
-        component.getSubcircuit().add(new Net({ name: prop.split("net.")[1] }))
+      const subcircuit = component.getSubcircuit()
+      if (!subcircuit.selectOne(prop)) {
+        const net = new Net({
+          name: prop.split("net.")[1],
+        })
+        subcircuit.add(net)
       }
     }
   }

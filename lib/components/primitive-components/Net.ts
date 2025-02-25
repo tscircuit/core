@@ -38,6 +38,15 @@ export class Net extends PrimitiveComponent<typeof netProps> {
     this.source_net_id = net.source_net_id
   }
 
+  doInitialSourceParentAttachment(): void {
+    const subcircuit = this.getSubcircuit()
+    if (!subcircuit) return
+    const { db } = this.root!
+    db.source_net.update(this.source_net_id!, {
+      subcircuit_id: subcircuit.subcircuit_id!,
+    })
+  }
+
   /**
    * Get all ports connected to this net.
    *
