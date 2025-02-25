@@ -11,21 +11,38 @@ import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectiv
  * This function can only be called in the PcbTraceRender phase or later
  */
 export const getSimpleRouteJsonFromCircuitJson = ({
+  db,
   circuitJson,
+  subcircuit_id,
   minTraceWidth = 0.1,
 }: {
-  circuitJson: AnyCircuitElement[]
+  db?: SoupUtilObjects
+  circuitJson?: AnyCircuitElement[]
+  subcircuit_id?: string | null
   minTraceWidth?: number
 }): SimpleRouteJson => {
-  const db = su(circuitJson)
-  const connMap = getFullConnectivityMapFromCircuitJson(circuitJson)
+  if (!db && circuitJson) {
+    db = su(circuitJson)
+  }
+
+  if (!db) {
+    throw new Error("db or circuitJson is required")
+  }
+
+  const connMap = getFullConnectivityMapFromCircuitJson(
+    (circuitJson ?? db.toArray()).filter(
+      (e) =>
+        !subcircuit_id ||
+        ("subcircuit_id" in e && e.subcircuit_id === subcircuit_id),
+    ),
+  )
 
   const obstacles = getObstaclesFromSoup(
     [
       ...db.pcb_component.list(),
       ...db.pcb_smtpad.list(),
       ...db.pcb_plated_hole.list(),
-    ],
+    ].filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id),
     connMap,
   )
 

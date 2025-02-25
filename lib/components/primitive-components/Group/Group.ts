@@ -4,6 +4,8 @@ import {
   groupProps,
 } from "@tscircuit/props"
 import * as SAL from "@tscircuit/schematic-autolayout"
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type PcbTrace,
   type SchematicComponent,
@@ -20,6 +22,7 @@ import type { Trace } from "../Trace/Trace"
 import type { TraceI } from "../Trace/TraceI"
 import { TraceHint } from "../TraceHint"
 import type { ISubcircuit } from "./ISubcircuit"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -104,17 +107,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _getSimpleRouteJsonFromPcbTraces(): SimpleRouteJson {
-    const traces = this.selectAll("trace") as Trace[]
-    const { db } = this.root!
-
-    return getSimpleRouteJsonFromTracesAndDb({
-      db,
-      traces,
-      minTraceWidth: this._parsedProps.minTraceWidth ?? 0.1,
-    })
-  }
-
   doInitialSourceAddConnectivityMapKey(): void {
     if (!this.isSubcircuit) return
     const { db } = this.root!
@@ -168,9 +160,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _shouldRouteAsync(): boolean {
     const autorouter = this._getAutorouterConfig()
-    if (autorouter.local) return false
     if (autorouter.groupMode === "sequential-trace") return false
-    return true
+    // Local subcircuit mode should use async routing with the CapacityMeshAutorouter
+    if (autorouter.local && autorouter.groupMode === "subcircuit") return true
+    // Remote autorouting always uses async
+    if (!autorouter.local) return true
+    return false
   }
 
   _hasTracesToRoute(): boolean {
@@ -187,6 +182,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const autorouterConfig = this._getAutorouterConfig()
 
+    // Handle local autorouting with CapacityMeshAutorouter
+    if (autorouterConfig.local && autorouterConfig.groupMode === "subcircuit") {
+      debug(`[${this.getString()}] using local CapacityMeshAutorouter`)
+      await this._runLocalCapacityMeshAutorouting()
+      return
+    }
+
+    // Remote autorouting
     const serverUrl = autorouterConfig.serverUrl!
     const serverMode = autorouterConfig.serverMode!
 
@@ -309,6 +312,89 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       // Wait before polling again
       await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+  }
+
+  /**
+   * Run local autorouting using the CapacityMeshAutorouter
+   */
+  async _runLocalCapacityMeshAutorouting() {
+    const { db } = this.root!
+    const debug = Debug("tscircuit:core:_runLocalCapacityMeshAutorouting")
+    debug(`[${this.getString()}] starting local capacity mesh autorouting`)
+
+    // Get the routing problem in SimpleRouteJson format
+    const simpleRouteJson = getSimpleRouteJsonFromCircuitJson({
+      db,
+      minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
+      subcircuit_id: this.subcircuit_id,
+    })
+
+    this.root?.emit("autorouting:start", {
+      subcircuit_id: this.subcircuit_id,
+      componentDisplayName: this.getString(),
+      simpleRouteJson,
+    })
+
+    // Create the autorouter instance
+    const autorouter = new CapacityMeshAutorouter(simpleRouteJson, {
+      // Optional configuration parameters
+      capacityDepth: this.props.autorouter?.capacityDepth,
+      targetMinCapacity: this.props.autorouter?.targetMinCapacity,
+    })
+
+    // Create a promise that will resolve when autorouting is complete
+    const routingPromise = new Promise<SimplifiedPcbTrace[]>(
+      (resolve, reject) => {
+        autorouter.on("complete", (event) => {
+          debug(`[${this.getString()}] local autorouting complete`)
+          resolve(event.traces)
+        })
+
+        autorouter.on("error", (event) => {
+          debug(
+            `[${this.getString()}] local autorouting error: ${event.error.message}`,
+          )
+          reject(event.error)
+        })
+
+        autorouter.on("progress", (event) => {
+          debug(
+            `[${this.getString()}] local autorouting progress: ${event.progress.toFixed(2)}, phase: ${event.phase}`,
+          )
+        })
+      },
+    )
+
+    // Start the autorouting process
+    autorouter.start()
+
+    try {
+      // Wait for the autorouting to complete
+      const traces = await routingPromise
+
+      // Store the result
+      this._asyncAutoroutingResult = {
+        output_simple_route_json: {
+          ...simpleRouteJson,
+          traces,
+        },
+      }
+
+      // Mark the component as needing to re-render the PCB traces
+      this._markDirty("PcbTraceRender")
+    } catch (error) {
+      const { db } = this.root!
+      // Record the error
+      db.pcb_autorouting_error.insert({
+        pcb_error_id: `local_${this.subcircuit_id}`,
+        message: error instanceof Error ? error.message : String(error),
+      })
+
+      throw error
+    } finally {
+      // Ensure the autorouter is stopped
+      autorouter.stop()
     }
   }
 
@@ -502,6 +588,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return {
         local: true,
         groupMode: "sequential-trace",
+      }
+    if (autorouter === "subcircuit")
+      return {
+        local: true,
+        groupMode: "subcircuit",
       }
     return {
       local: true,
