@@ -29,13 +29,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     throw new Error("db or circuitJson is required")
   }
 
-  const connMap = getFullConnectivityMapFromCircuitJson(
-    (circuitJson ?? db.toArray()).filter(
-      (e) =>
-        !subcircuit_id ||
-        ("subcircuit_id" in e && e.subcircuit_id === subcircuit_id),
-    ),
+  const subcircuitElements = (circuitJson ?? db.toArray()).filter(
+    (e) =>
+      !subcircuit_id ||
+      ("subcircuit_id" in e && e.subcircuit_id === subcircuit_id),
   )
+
+  const board = db.pcb_board.list()[0]
+  db = su(subcircuitElements)
+
+  const connMap = getFullConnectivityMapFromCircuitJson(subcircuitElements)
 
   const obstacles = getObstaclesFromSoup(
     [
@@ -58,11 +61,22 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     },
   ])
 
-  const bounds = {
-    minX: Math.min(...allPoints.map((p) => p.x)) - 1,
-    maxX: Math.max(...allPoints.map((p) => p.x)) + 1,
-    minY: Math.min(...allPoints.map((p) => p.y)) - 1,
-    maxY: Math.max(...allPoints.map((p) => p.y)) + 1,
+  let bounds: { minX: number; maxX: number; minY: number; maxY: number }
+
+  if (board) {
+    bounds = {
+      minX: board.center.x - board.width / 2,
+      maxX: board.center.x + board.width / 2,
+      minY: board.center.y - board.height / 2,
+      maxY: board.center.y + board.height / 2,
+    }
+  } else {
+    bounds = {
+      minX: Math.min(...allPoints.map((p) => p.x)) - 1,
+      maxX: Math.max(...allPoints.map((p) => p.x)) + 1,
+      minY: Math.min(...allPoints.map((p) => p.y)) - 1,
+      maxY: Math.max(...allPoints.map((p) => p.y)) + 1,
+    }
   }
 
   // Create connections from traces
@@ -99,19 +113,40 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
     .filter((c: any): c is SimpleRouteConnection => c !== null)
 
-  console.log({ subcircuit_id, nets: db.source_net.list() })
   const source_nets = db.source_net
     .list()
     .filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id)
 
-  console.log(source_nets)
+  const connectionsFromNets: SimpleRouteConnection[] = []
+  for (const net of source_nets) {
+    const connectedSourceTraces = db.source_trace
+      .list()
+      .filter((st) => st.connected_source_net_ids?.includes(net.source_net_id))
 
-  const connections = directTraceConnections
+    connectionsFromNets.push({
+      name:
+        connMap.getNetConnectedToId(net.source_net_id) ?? net.source_net_id!,
+      pointsToConnect: connectedSourceTraces.flatMap((st) => {
+        const pcb_ports = db.pcb_port
+          .list()
+          .filter((p) =>
+            st.connected_source_port_ids.includes(p.source_port_id),
+          )
+
+        return pcb_ports.map((p) => ({
+          x: p.x!,
+          y: p.y!,
+          layer: (p.layers?.[0] as any) ?? "top",
+          pcb_port_id: p.pcb_port_id,
+        }))
+      }),
+    })
+  }
 
   return {
     bounds,
     obstacles,
-    connections,
+    connections: [...directTraceConnections, ...connectionsFromNets],
     layerCount: 2,
     minTraceWidth,
   }
