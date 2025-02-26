@@ -14,8 +14,8 @@ export const Benchmark1LedMatrix = ({
   }
   return (
     <board
-      width="10mm"
-      height="10mm"
+      width="50mm"
+      height="60mm"
       routingDisabled={routingDisabled}
       autorouter={autorouter}
     >
@@ -24,11 +24,11 @@ export const Benchmark1LedMatrix = ({
         pinCount={2}
         pinLabels={["PWR", "GND"]}
         footprint="pinrow2"
-        pcbY={4}
+        pcbY={28}
       />
       <trace from={sel.J1.PWR} to={sel.net.PWR} />
       <trace from={sel.J1.GND} to={sel.net.GND} />
-      {grid({ rows: 4, cols: 4, xSpacing: 5, ySpacing: 5 }).map(
+      {grid({ rows: 4, cols: 4, xSpacing: 10, ySpacing: 10 }).map(
         ({ center, index }) => {
           const ledName = `LED${index}`
           const resistorName = `R${index}`
@@ -36,6 +36,7 @@ export const Benchmark1LedMatrix = ({
             <group key={ledName}>
               <led
                 footprint="0603"
+                color="red"
                 name={ledName}
                 pcbX={center.x}
                 pcbY={center.y}
