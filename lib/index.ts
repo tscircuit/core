@@ -9,6 +9,7 @@ export * from "./hooks/use-led"
 export * from "./hooks/use-resistor"
 export * from "./utils/public-exports"
 export * from "./sel"
+export * from "./utils/autorouting/SimpleRouteJson"
 
 // Allows easier introspection of render process
 export * from "./components/base-components/Renderable"
