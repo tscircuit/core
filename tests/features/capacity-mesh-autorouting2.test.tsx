@@ -18,14 +18,6 @@ test("capacity mesh autorouting 2 - benchmark led matrix", async () => {
     />,
   )
 
-  circuit.on("autorouting:start", (event) => {
-    // console.log("autorouting:start", event)
-    fs.writeFileSync(
-      "./autorouting-start.json",
-      JSON.stringify(event.simpleRouteJson, null, 2),
-    )
-  })
-
   // Wait for the render to complete, including autorouting
   await circuit.renderUntilSettled()
 
