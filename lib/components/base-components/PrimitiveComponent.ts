@@ -116,6 +116,13 @@ export abstract class PrimitiveComponent<
     this.childrenPendingRemoval = []
     this.props = props ?? {}
     this.externallyAddedAliases = []
+    for (const key in props) {
+      if (props[key] === undefined) {
+        throw new Error(
+          `Invalid prop: '${key}' is undefined in component '${this.lowercaseComponentName}'.`,
+        )
+      }
+    }
     const parsePropsResult = this.config.zodProps.safeParse(props ?? {})
     if (parsePropsResult.success) {
       this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
