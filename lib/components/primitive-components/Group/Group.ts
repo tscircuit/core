@@ -7,7 +7,9 @@ import * as SAL from "@tscircuit/schematic-autolayout"
 import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
+  type LayerRef,
   type PcbTrace,
+  type PcbVia,
   type SchematicComponent,
   type SchematicPort,
   type SourceTrace,
@@ -379,12 +381,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Wait for the autorouting to complete
       const traces = await routingPromise
 
+      // Make vias. Unclear if the autorouter should include this in it's output
+      // const vias: Partial<PcbVia>[] = []
+      // for (const via of traces.flatMap((t) =>
+      //   t.route.filter((r) => r.route_type === "via"),
+      // )) {
+      //   vias.push({
+      //     x: via.x,
+      //     y: via.y,
+      //     hole_diameter: 0.3,
+      //     outer_diameter: 0.6,
+      //     layers: [via.from_layer as any, via.to_layer as any],
+      //     from_layer: via.from_layer as any,
+      //     to_layer: via.to_layer as any,
+      //   })
+      // }
+
       // Store the result
       this._asyncAutoroutingResult = {
-        output_simple_route_json: {
-          ...simpleRouteJson,
-          traces,
-        },
+        output_pcb_traces: traces as any,
       }
 
       // Mark the component as needing to re-render the PCB traces
@@ -476,7 +491,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // TODO
 
     // Apply each routed trace to the corresponding circuit trace
-    const circuitTraces = this.selectAll("trace") as Trace[]
+    // const circuitTraces = this.selectAll("trace") as Trace[]
     for (const routedTrace of routedTraces) {
       // const circuitTrace = circuitTraces.find(
       //   (t) => t.source_trace_id === routedTrace.,
@@ -485,6 +500,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Create the PCB trace with the routed path
       // TODO use upsert to make sure we're not re-creating traces
       const pcb_trace = db.pcb_trace.insert({
+        subcircuit_id: this.subcircuit_id!,
         route: routedTrace.route as any,
         // source_trace_id: circuitTrace.source_trace_id!,
       })
@@ -499,9 +515,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       //       y: point.y,
       //       hole_diameter: 0.3,
       //       outer_diameter: 0.6,
-      //       layers: [point.from_layer, point.to_layer],
-      //       from_layer: point.from_layer,
-      //       to_layer: point.to_layer,
+      //       layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
+      //       from_layer: point.from_layer as LayerRef,
+      //       to_layer: point.to_layer as LayerRef,
       //     })
       //   }
       // }
@@ -521,6 +537,26 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     for (const pcb_trace of output_pcb_traces) {
       pcb_trace.subcircuit_id = this.subcircuit_id!
       db.pcb_trace.insert(pcb_trace)
+    }
+
+    // Create vias for layer transitions (this shouldn't be necessary, but
+    // the Circuit JSON spec is ambiguous as to whether a via should have a
+    // separate element from the route)
+    for (const pcb_trace of output_pcb_traces) {
+      for (const point of pcb_trace.route) {
+        if (point.route_type === "via") {
+          db.pcb_via.insert({
+            pcb_trace_id: pcb_trace.pcb_trace_id,
+            x: point.x,
+            y: point.y,
+            hole_diameter: 0.3,
+            outer_diameter: 0.6,
+            layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
+            from_layer: point.from_layer as LayerRef,
+            to_layer: point.to_layer as LayerRef,
+          })
+        }
+      }
     }
   }
 
