@@ -46,9 +46,6 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
       })
     }
     if (elm.type === "schematic_port") {
-      if (connectedPortIds.has(elm.schematic_port_id)) {
-        continue
-      }
       const dirVec = elm.facing_direction
         ? getUnitVectorFromDirection(elm.facing_direction)
         : {
@@ -59,11 +56,11 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
         type: "rect",
         layers: ["top"],
         center: {
-          x: elm.center.x - dirVec.x * 0.1,
-          y: elm.center.y - dirVec.y * 0.1,
+          x: elm.center.x + dirVec.x * 0.1,
+          y: elm.center.y + dirVec.y * 0.1,
         },
-        width: 0.1 + Math.abs(dirVec.x) * 0.3,
-        height: 0.1 + Math.abs(dirVec.y) * 0.3,
+        width: 0,
+        height: 0,
         connectedTo: [],
       })
     }
