@@ -30,8 +30,6 @@ export class Net extends PrimitiveComponent<typeof netProps> {
 
     const net = db.source_net.insert({
       name: props.name,
-      // @ts-expect-error https://github.com/tscircuit/circuit-json/pull/147
-      subcircuit_id: this.getSubcircuit()?.subcircuit_id,
       member_source_group_ids: [],
     })
 

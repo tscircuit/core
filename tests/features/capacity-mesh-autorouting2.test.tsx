@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { test, expect, describe } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 import { Benchmark1LedMatrix } from "benchmarking/benchmarks/benchmark1-led-matrix"
 import * as fs from "node:fs"
@@ -20,10 +20,10 @@ test("capacity mesh autorouting 2 - benchmark led matrix", async () => {
 
   circuit.on("autorouting:start", (event) => {
     // console.log("autorouting:start", event)
-    // fs.writeFileSync(
-    //   "./autorouting-start.json",
-    //   JSON.stringify(event.simpleRouteJson, null, 2),
-    // )
+    fs.writeFileSync(
+      "./autorouting-start.json",
+      JSON.stringify(event.simpleRouteJson, null, 2),
+    )
   })
 
   // Wait for the render to complete, including autorouting

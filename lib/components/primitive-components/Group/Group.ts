@@ -344,6 +344,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       targetMinCapacity: this.props.autorouter?.targetMinCapacity,
     })
 
+    autorouter.solveSync()
+
     // Create a promise that will resolve when autorouting is complete
     const routingPromise = new Promise<SimplifiedPcbTrace[]>(
       (resolve, reject) => {
