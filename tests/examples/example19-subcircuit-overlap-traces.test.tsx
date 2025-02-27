@@ -93,6 +93,7 @@ test("Autorouter should inherit if the parent subcircuit has async autorouter en
             "y": 0,
           },
         ],
+        "subcircuit_id": "subcircuit_source_group_0",
         "type": "pcb_trace",
       },
     ]

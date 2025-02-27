@@ -184,13 +184,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const autorouterConfig = this._getAutorouterConfig()
 
-    // Handle local autorouting with CapacityMeshAutorouter
-    if (autorouterConfig.local && autorouterConfig.groupMode === "subcircuit") {
-      debug(`[${this.getString()}] using local CapacityMeshAutorouter`)
-      await this._runLocalCapacityMeshAutorouting()
-      return
-    }
-
     // Remote autorouting
     const serverUrl = autorouterConfig.serverUrl!
     const serverMode = autorouterConfig.serverMode!
@@ -349,8 +342,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       targetMinCapacity: this.props.autorouter?.targetMinCapacity,
     })
 
-    autorouter.solveSync()
-
     // Create a promise that will resolve when autorouting is complete
     const routingPromise = new Promise<SimplifiedPcbTrace[]>(
       (resolve, reject) => {
@@ -421,9 +412,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _startAsyncAutorouting() {
     this._hasStartedAsyncAutorouting = true
-    this._queueAsyncEffect("make-http-autorouting-request", async () =>
-      this._runEffectMakeHttpAutoroutingRequest(),
-    )
+    if (this._getAutorouterConfig().local) {
+      this._queueAsyncEffect("capacity-mesh-autorouting", async () =>
+        this._runLocalCapacityMeshAutorouting(),
+      )
+    } else {
+      this._queueAsyncEffect("make-http-autorouting-request", async () =>
+        this._runEffectMakeHttpAutoroutingRequest(),
+      )
+    }
   }
 
   doInitialPcbTraceRender() {

@@ -86,11 +86,26 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       }
 
       // Execute one step of the solver
-      this.solver.step()
+      // Execute for 10ms to allow the solver to make progress
+      const startTime = performance.now()
+      const startIterations = this.solver.iterations
+      while (
+        performance.now() - startTime < 10 &&
+        !this.solver.failed &&
+        !this.solver.solved
+      ) {
+        this.solver.step()
+      }
+      // console.log(
+      //   "iterations/s",
+      //   ((this.solver.iterations - startIterations) /
+      //     (performance.now() - startTime)) *
+      //     1000,
+      // )
       this.cycleCount++
 
       // Get visualization data if available
-      const debugGraphics = this.solver.visualize() || undefined
+      const debugGraphics = this.solver.activeSolver?.visualize() || undefined
 
       // Report progress
       const progress = this.solver.progress
@@ -99,7 +114,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
         type: "progress",
         steps: this.cycleCount,
         progress,
-        phase: this.getCurrentPhase(),
+        phase: this.solver.getCurrentPhase(),
         debugGraphics,
       })
 
@@ -124,21 +139,6 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       })
       this.isRouting = false
     }
-  }
-
-  /**
-   * Determine the current routing phase based on the active solver
-   */
-  private getCurrentPhase(): string {
-    // The CapacityMeshSolver doesn't expose activeSolver or a currentPhase property
-    // in its public API, so we'll use a simple phase name based on progress
-    const progress = this.solver.progress
-
-    if (progress < 0.2) return "creating mesh"
-    if (progress < 0.4) return "planning paths"
-    if (progress < 0.6) return "optimizing segments"
-    if (progress < 0.8) return "routing traces"
-    return "finalizing"
   }
 
   /**
