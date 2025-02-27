@@ -1,6 +1,7 @@
 export type SimplifiedPcbTrace = {
   type: "pcb_trace"
   pcb_trace_id: string
+  connection_name: string
   route: Array<
     | {
         route_type: "wire"

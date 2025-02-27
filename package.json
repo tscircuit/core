@@ -53,7 +53,7 @@
   },
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/capacity-autorouter": "^0.0.6",
+    "@tscircuit/capacity-autorouter": "^0.0.9",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/math-utils": "^0.0.9",
     "@tscircuit/props": "^0.0.152",

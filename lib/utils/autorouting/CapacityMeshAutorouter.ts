@@ -209,6 +209,8 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       throw new Error(this.solver.error || "Routing failed")
     }
 
+    console.log(this.solver.getOutputSimpleRouteJson().traces)
+
     return this.solver.getOutputSimpleRouteJson().traces || []
   }
 }

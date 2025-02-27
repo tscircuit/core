@@ -42,6 +42,5 @@ test("sel1 - invalid CN pin number", () => {
 })
 
 test("sel1 - sel.subcircuit.S1.U1.pin1 = subcircuit.S1 > .pin1", () => {
-  console.log(sel.subcircuit.S1.U1)
   expect(sel.subcircuit.S1.U1.pin1).toBe("subcircuit.S1 > .U1 > .pin1")
 })

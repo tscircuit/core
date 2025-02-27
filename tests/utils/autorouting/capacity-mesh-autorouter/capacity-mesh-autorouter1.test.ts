@@ -36,8 +36,6 @@ test("CapacityMeshAutorouter should solve a simple routing problem", () => {
   // Execute the sync solve method
   const traces = autorouter.solveSync()
 
-  console.log(traces)
-
   // Validate basic expectations about the result
   expect(traces.length).toBeGreaterThan(0)
   expect(traces[0].type).toBe("pcb_trace")

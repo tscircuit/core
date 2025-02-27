@@ -192,7 +192,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Remote autorouting
     const serverUrl = autorouterConfig.serverUrl!
     const serverMode = autorouterConfig.serverMode!
-    console.log({ serverUrl, serverMode })
 
     const fetchWithDebug = (url: string, options: RequestInit) => {
       debug("fetching", url)
@@ -325,7 +324,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     debug(`[${this.getString()}] starting local capacity mesh autorouting`)
 
     // Get the routing problem in SimpleRouteJson format
-    const simpleRouteJson = getSimpleRouteJsonFromCircuitJson({
+    const { simpleRouteJson, connMap } = getSimpleRouteJsonFromCircuitJson({
       db,
       minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
       subcircuit_id: this.subcircuit_id,

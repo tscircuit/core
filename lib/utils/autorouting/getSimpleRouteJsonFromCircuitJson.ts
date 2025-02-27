@@ -5,7 +5,10 @@ import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
 import type { AnyCircuitElement } from "circuit-json"
 import { su } from "@tscircuit/soup-util"
-import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import {
+  ConnectivityMap,
+  getFullConnectivityMapFromCircuitJson,
+} from "circuit-json-to-connectivity-map"
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -20,7 +23,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   circuitJson?: AnyCircuitElement[]
   subcircuit_id?: string | null
   minTraceWidth?: number
-}): SimpleRouteJson => {
+}): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
   if (!db && circuitJson) {
     db = su(circuitJson)
   }
@@ -144,10 +147,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   return {
-    bounds,
-    obstacles,
-    connections: [...directTraceConnections, ...connectionsFromNets],
-    layerCount: 2,
-    minTraceWidth,
+    simpleRouteJson: {
+      bounds,
+      obstacles,
+      connections: [...directTraceConnections, ...connectionsFromNets],
+      layerCount: 2,
+      minTraceWidth,
+    },
+    connMap,
   }
 }
