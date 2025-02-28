@@ -17,6 +17,7 @@ export type RootCircuitEventName =
   | "autorouting:start"
   | "autorouting:end"
   | "autorouting:progress"
+  | "renderComplete"
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -114,6 +115,8 @@ export class RootCircuit {
       await new Promise((resolve) => setTimeout(resolve, 100))
       this.render()
     }
+
+    this.emit("renderComplete")
   }
 
   private _hasIncompleteAsyncEffects(): boolean {
