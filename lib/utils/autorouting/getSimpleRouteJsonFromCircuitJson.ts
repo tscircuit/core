@@ -169,6 +169,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       bounds,
       obstacles,
       connections: [...directTraceConnections, ...connectionsFromNets],
+      // TODO add traces so that we don't run into things routed by another
+      // subcircuit
       layerCount: 2,
       minTraceWidth,
     },
