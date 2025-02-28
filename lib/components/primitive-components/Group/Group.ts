@@ -358,6 +358,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       },
     )
 
+    autorouter.on("progress", (event) => {
+      this.root?.emit("autorouting:progress", {
+        subcircuit_id: this.subcircuit_id,
+        componentDisplayName: this.getString(),
+        ...event,
+      })
+    })
+
     // Start the autorouting process
     autorouter.start()
 
