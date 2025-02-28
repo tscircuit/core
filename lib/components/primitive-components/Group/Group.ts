@@ -383,7 +383,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // }
 
       // Store the result
-      console.log("storing local autorouting result")
       this._asyncAutoroutingResult = {
         output_pcb_traces: traces as any,
       }
@@ -407,7 +406,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _startAsyncAutorouting() {
     this._hasStartedAsyncAutorouting = true
-    console.log("starting async autorouting", this._getAutorouterConfig())
     if (this._getAutorouterConfig().local) {
       this._queueAsyncEffect("capacity-mesh-autorouting", async () =>
         this._runLocalCapacityMeshAutorouting(),
