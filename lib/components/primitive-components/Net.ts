@@ -36,6 +36,15 @@ export class Net extends PrimitiveComponent<typeof netProps> {
     this.source_net_id = net.source_net_id
   }
 
+  doInitialSourceParentAttachment(): void {
+    const subcircuit = this.getSubcircuit()
+    if (!subcircuit) return
+    const { db } = this.root!
+    db.source_net.update(this.source_net_id!, {
+      subcircuit_id: subcircuit.subcircuit_id!,
+    })
+  }
+
   /**
    * Get all ports connected to this net.
    *
@@ -86,10 +95,17 @@ export class Net extends PrimitiveComponent<typeof netProps> {
    * Sometimes this phase doesn't find any net islands if the autorouter did
    * a good job and connected the islands. In some sense this is a "backup"
    * routing phase for autorouters that don't care about connecting nets.
+   *
+   * This should only run if the autorouter is sequential-trace
    */
   doInitialPcbRouteNetIslands(): void {
     if (this.root?.pcbDisabled) return
     if (this.getSubcircuit()._parsedProps.routingDisabled) return
+    if (
+      this.getSubcircuit()._getAutorouterConfig().groupMode !==
+      "sequential-trace"
+    )
+      return
 
     const { db } = this.root!
     const { _parsedProps: props } = this

@@ -5,27 +5,66 @@ import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
 import type { AnyCircuitElement } from "circuit-json"
 import { su } from "@tscircuit/soup-util"
-import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import {
+  ConnectivityMap,
+  getFullConnectivityMapFromCircuitJson,
+} from "circuit-json-to-connectivity-map"
+import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
  */
 export const getSimpleRouteJsonFromCircuitJson = ({
+  db,
   circuitJson,
+  subcircuit_id,
   minTraceWidth = 0.1,
 }: {
-  circuitJson: AnyCircuitElement[]
+  db?: SoupUtilObjects
+  circuitJson?: AnyCircuitElement[]
+  subcircuit_id?: string | null
   minTraceWidth?: number
-}): SimpleRouteJson => {
-  const db = su(circuitJson)
-  const connMap = getFullConnectivityMapFromCircuitJson(circuitJson)
+}): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
+  if (!db && circuitJson) {
+    db = su(circuitJson)
+  }
+
+  if (!db) {
+    throw new Error("db or circuitJson is required")
+  }
+
+  const relevantSubcircuitIds: Set<string> | null = subcircuit_id
+    ? new Set([subcircuit_id])
+    : null
+  if (subcircuit_id) {
+    const descendantSubcircuitIds = getDescendantSubcircuitIds(
+      db,
+      subcircuit_id,
+    )
+    for (const id of descendantSubcircuitIds) {
+      relevantSubcircuitIds!.add(id)
+    }
+  }
+
+  const subcircuitElements = (circuitJson ?? db.toArray()).filter(
+    (e) =>
+      !subcircuit_id ||
+      ("subcircuit_id" in e && relevantSubcircuitIds!.has(e.subcircuit_id!)),
+  )
+
+  const board = db.pcb_board.list()[0]
+  db = su(subcircuitElements)
+
+  const connMap = getFullConnectivityMapFromCircuitJson(subcircuitElements)
 
   const obstacles = getObstaclesFromSoup(
     [
       ...db.pcb_component.list(),
       ...db.pcb_smtpad.list(),
       ...db.pcb_plated_hole.list(),
-    ],
+    ].filter(
+      (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
+    ),
     connMap,
   )
 
@@ -41,15 +80,26 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     },
   ])
 
-  const bounds = {
-    minX: Math.min(...allPoints.map((p) => p.x)) - 1,
-    maxX: Math.max(...allPoints.map((p) => p.x)) + 1,
-    minY: Math.min(...allPoints.map((p) => p.y)) - 1,
-    maxY: Math.max(...allPoints.map((p) => p.y)) + 1,
+  let bounds: { minX: number; maxX: number; minY: number; maxY: number }
+
+  if (board) {
+    bounds = {
+      minX: board.center.x - board.width / 2,
+      maxX: board.center.x + board.width / 2,
+      minY: board.center.y - board.height / 2,
+      maxY: board.center.y + board.height / 2,
+    }
+  } else {
+    bounds = {
+      minX: Math.min(...allPoints.map((p) => p.x)) - 1,
+      maxX: Math.max(...allPoints.map((p) => p.x)) + 1,
+      minY: Math.min(...allPoints.map((p) => p.y)) - 1,
+      maxY: Math.max(...allPoints.map((p) => p.y)) + 1,
+    }
   }
 
   // Create connections from traces
-  const connections = db.source_trace
+  const directTraceConnections = db.source_trace
     .list()
     .map((trace) => {
       const connectedPorts = trace.connected_source_port_ids.map((id) => {
@@ -82,11 +132,48 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
     .filter((c: any): c is SimpleRouteConnection => c !== null)
 
+  const source_nets = db.source_net
+    .list()
+    .filter(
+      (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
+    )
+
+  const connectionsFromNets: SimpleRouteConnection[] = []
+  for (const net of source_nets) {
+    const connectedSourceTraces = db.source_trace
+      .list()
+      .filter((st) => st.connected_source_net_ids?.includes(net.source_net_id))
+
+    connectionsFromNets.push({
+      name:
+        connMap.getNetConnectedToId(net.source_net_id) ?? net.source_net_id!,
+      pointsToConnect: connectedSourceTraces.flatMap((st) => {
+        const pcb_ports = db.pcb_port
+          .list()
+          .filter((p) =>
+            st.connected_source_port_ids.includes(p.source_port_id),
+          )
+
+        return pcb_ports.map((p) => ({
+          x: p.x!,
+          y: p.y!,
+          layer: (p.layers?.[0] as any) ?? "top",
+          pcb_port_id: p.pcb_port_id,
+        }))
+      }),
+    })
+  }
+
   return {
-    bounds,
-    obstacles,
-    connections,
-    layerCount: 2,
-    minTraceWidth,
+    simpleRouteJson: {
+      bounds,
+      obstacles,
+      connections: [...directTraceConnections, ...connectionsFromNets],
+      // TODO add traces so that we don't run into things routed by another
+      // subcircuit
+      layerCount: 2,
+      minTraceWidth,
+    },
+    connMap,
   }
 }

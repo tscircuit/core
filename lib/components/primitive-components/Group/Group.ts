@@ -4,8 +4,12 @@ import {
   groupProps,
 } from "@tscircuit/props"
 import * as SAL from "@tscircuit/schematic-autolayout"
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
+  type LayerRef,
   type PcbTrace,
+  type PcbVia,
   type SchematicComponent,
   type SchematicPort,
   type SourceTrace,
@@ -13,13 +17,13 @@ import {
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import Debug from "debug"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
-import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { Trace } from "../Trace/Trace"
 import type { TraceI } from "../Trace/TraceI"
 import { TraceHint } from "../TraceHint"
 import type { ISubcircuit } from "./ISubcircuit"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -104,17 +108,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _getSimpleRouteJsonFromPcbTraces(): SimpleRouteJson {
-    const traces = this.selectAll("trace") as Trace[]
-    const { db } = this.root!
-
-    return getSimpleRouteJsonFromTracesAndDb({
-      db,
-      traces,
-      minTraceWidth: this._parsedProps.minTraceWidth ?? 0.1,
-    })
-  }
-
   doInitialSourceAddConnectivityMapKey(): void {
     if (!this.isSubcircuit) return
     const { db } = this.root!
@@ -168,9 +161,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _shouldRouteAsync(): boolean {
     const autorouter = this._getAutorouterConfig()
-    if (autorouter.local) return false
     if (autorouter.groupMode === "sequential-trace") return false
-    return true
+    // Local subcircuit mode should use async routing with the CapacityMeshAutorouter
+    if (autorouter.local && autorouter.groupMode === "subcircuit") return true
+    // Remote autorouting always uses async
+    if (!autorouter.local) return true
+    return false
   }
 
   _hasTracesToRoute(): boolean {
@@ -187,6 +183,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const autorouterConfig = this._getAutorouterConfig()
 
+    // Remote autorouting
     const serverUrl = autorouterConfig.serverUrl!
     const serverMode = autorouterConfig.serverMode!
 
@@ -212,7 +209,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           {
             method: "POST",
             body: JSON.stringify({
-              input_simple_route_json: this._getSimpleRouteJsonFromPcbTraces(),
+              input_simple_route_json: getSimpleRouteJsonFromCircuitJson({
+                db,
+                minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
+                subcircuit_id: this.subcircuit_id,
+              }).simpleRouteJson,
               subcircuit_id: this.subcircuit_id!,
             }),
             headers: { "Content-Type": "application/json" },
@@ -312,11 +313,107 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
+  /**
+   * Run local autorouting using the CapacityMeshAutorouter
+   */
+  async _runLocalCapacityMeshAutorouting() {
+    const { db } = this.root!
+    const debug = Debug("tscircuit:core:_runLocalCapacityMeshAutorouting")
+    debug(`[${this.getString()}] starting local capacity mesh autorouting`)
+
+    // Get the routing problem in SimpleRouteJson format
+    const { simpleRouteJson, connMap } = getSimpleRouteJsonFromCircuitJson({
+      db,
+      minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
+      subcircuit_id: this.subcircuit_id,
+    })
+
+    this.root?.emit("autorouting:start", {
+      subcircuit_id: this.subcircuit_id,
+      componentDisplayName: this.getString(),
+      simpleRouteJson,
+    })
+
+    // Create the autorouter instance
+    const autorouter = new CapacityMeshAutorouter(simpleRouteJson, {
+      // Optional configuration parameters
+      capacityDepth: this.props.autorouter?.capacityDepth,
+      targetMinCapacity: this.props.autorouter?.targetMinCapacity,
+    })
+
+    // Create a promise that will resolve when autorouting is complete
+    const routingPromise = new Promise<SimplifiedPcbTrace[]>(
+      (resolve, reject) => {
+        autorouter.on("complete", (event) => {
+          debug(`[${this.getString()}] local autorouting complete`)
+          resolve(event.traces)
+        })
+
+        autorouter.on("error", (event) => {
+          debug(
+            `[${this.getString()}] local autorouting error: ${event.error.message}`,
+          )
+          reject(event.error)
+        })
+      },
+    )
+
+    // Start the autorouting process
+    autorouter.start()
+
+    try {
+      // Wait for the autorouting to complete
+      const traces = await routingPromise
+
+      // Make vias. Unclear if the autorouter should include this in it's output
+      // const vias: Partial<PcbVia>[] = []
+      // for (const via of traces.flatMap((t) =>
+      //   t.route.filter((r) => r.route_type === "via"),
+      // )) {
+      //   vias.push({
+      //     x: via.x,
+      //     y: via.y,
+      //     hole_diameter: 0.3,
+      //     outer_diameter: 0.6,
+      //     layers: [via.from_layer as any, via.to_layer as any],
+      //     from_layer: via.from_layer as any,
+      //     to_layer: via.to_layer as any,
+      //   })
+      // }
+
+      // Store the result
+      this._asyncAutoroutingResult = {
+        output_pcb_traces: traces as any,
+      }
+
+      // Mark the component as needing to re-render the PCB traces
+      this._markDirty("PcbTraceRender")
+    } catch (error) {
+      const { db } = this.root!
+      // Record the error
+      db.pcb_autorouting_error.insert({
+        pcb_error_id: `local_${this.subcircuit_id}`,
+        message: error instanceof Error ? error.message : String(error),
+      })
+
+      throw error
+    } finally {
+      // Ensure the autorouter is stopped
+      autorouter.stop()
+    }
+  }
+
   _startAsyncAutorouting() {
     this._hasStartedAsyncAutorouting = true
-    this._queueAsyncEffect("make-http-autorouting-request", async () =>
-      this._runEffectMakeHttpAutoroutingRequest(),
-    )
+    if (this._getAutorouterConfig().local) {
+      this._queueAsyncEffect("capacity-mesh-autorouting", async () =>
+        this._runLocalCapacityMeshAutorouting(),
+      )
+    } else {
+      this._queueAsyncEffect("make-http-autorouting-request", async () =>
+        this._runEffectMakeHttpAutoroutingRequest(),
+      )
+    }
   }
 
   doInitialPcbTraceRender() {
@@ -342,6 +439,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   updatePcbTraceRender() {
     const debug = Debug("tscircuit:core:updatePcbTraceRender")
+    debug(`[${this.getString()}] updating...`)
     if (!this.isSubcircuit) return
     if (
       this._shouldRouteAsync() &&
@@ -363,11 +461,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { db } = this.root!
 
     if (this._asyncAutoroutingResult.output_simple_route_json) {
+      debug(
+        `[${this.getString()}] updating PCB traces from simple route json (${this._asyncAutoroutingResult.output_simple_route_json.traces?.length} traces)`,
+      )
       this._updatePcbTraceRenderFromSimpleRouteJson()
       return
     }
 
     if (this._asyncAutoroutingResult.output_pcb_traces) {
+      debug(
+        `[${this.getString()}] updating PCB traces from ${this._asyncAutoroutingResult.output_pcb_traces.length} traces`,
+      )
       this._updatePcbTraceRenderFromPcbTraces()
       return
     }
@@ -384,7 +488,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // TODO
 
     // Apply each routed trace to the corresponding circuit trace
-    const circuitTraces = this.selectAll("trace") as Trace[]
+    // const circuitTraces = this.selectAll("trace") as Trace[]
     for (const routedTrace of routedTraces) {
       // const circuitTrace = circuitTraces.find(
       //   (t) => t.source_trace_id === routedTrace.,
@@ -393,6 +497,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Create the PCB trace with the routed path
       // TODO use upsert to make sure we're not re-creating traces
       const pcb_trace = db.pcb_trace.insert({
+        subcircuit_id: this.subcircuit_id!,
         route: routedTrace.route as any,
         // source_trace_id: circuitTrace.source_trace_id!,
       })
@@ -407,9 +512,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       //       y: point.y,
       //       hole_diameter: 0.3,
       //       outer_diameter: 0.6,
-      //       layers: [point.from_layer, point.to_layer],
-      //       from_layer: point.from_layer,
-      //       to_layer: point.to_layer,
+      //       layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
+      //       from_layer: point.from_layer as LayerRef,
+      //       to_layer: point.to_layer as LayerRef,
       //     })
       //   }
       // }
@@ -429,6 +534,26 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     for (const pcb_trace of output_pcb_traces) {
       pcb_trace.subcircuit_id = this.subcircuit_id!
       db.pcb_trace.insert(pcb_trace)
+    }
+
+    // Create vias for layer transitions (this shouldn't be necessary, but
+    // the Circuit JSON spec is ambiguous as to whether a via should have a
+    // separate element from the route)
+    for (const pcb_trace of output_pcb_traces) {
+      for (const point of pcb_trace.route) {
+        if (point.route_type === "via") {
+          db.pcb_via.insert({
+            pcb_trace_id: pcb_trace.pcb_trace_id,
+            x: point.x,
+            y: point.y,
+            hole_diameter: 0.3,
+            outer_diameter: 0.6,
+            layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
+            from_layer: point.from_layer as LayerRef,
+            to_layer: point.to_layer as LayerRef,
+          })
+        }
+      }
     }
   }
 
@@ -475,8 +600,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _getAutorouterConfig(): AutorouterConfig {
     const defaults = {
       serverUrl: "https://registry-api.tscircuit.com",
-      serverMode: "job",
-      serverCacheEnabled: false,
+      serverMode: "job" as const,
+      serverCacheEnabled: true,
     }
     // Inherit from parent if not set by props
     const autorouter =
@@ -497,11 +622,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (autorouter === "auto-local")
       return {
         local: true,
+        groupMode: "subcircuit",
       }
     if (autorouter === "sequential-trace")
       return {
         local: true,
         groupMode: "sequential-trace",
+      }
+    if (autorouter === "subcircuit")
+      return {
+        local: true,
+        groupMode: "subcircuit",
+      }
+    if (autorouter === "auto-cloud")
+      return {
+        local: false,
+        groupMode: "subcircuit",
+        serverUrl: defaults.serverUrl,
+        serverMode: defaults.serverMode,
+        serverCacheEnabled: true,
       }
     return {
       local: true,

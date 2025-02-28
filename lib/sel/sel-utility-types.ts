@@ -165,6 +165,7 @@ export type CommonPinNames =
   | "neg"
   | "V5"
   | "V3_3"
+  | "PWR"
   | "VCC"
   | "VDD"
   | "GND"

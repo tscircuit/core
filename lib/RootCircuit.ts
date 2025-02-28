@@ -13,7 +13,10 @@ export type RootCircuitEventName =
   | "renderable:renderLifecycle:anyEvent"
   | `renderable:renderLifecycle:${RenderPhase}:start`
   | `renderable:renderLifecycle:${RenderPhase}:end`
-  | "external:evalError"
+  | "external:evalError" // TODO remove
+  | "autorouting:start"
+  | "autorouting:end"
+  | "autorouting:progress"
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null

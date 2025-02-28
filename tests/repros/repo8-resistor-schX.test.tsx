@@ -25,7 +25,6 @@ test("board with resistor being passed schX and pcbX in mm", () => {
           "x": 2,
           "y": 0,
         },
-        "rotation": 0,
         "schematic_component_id": "schematic_component_0",
         "size": {
           "height": 0.388910699999999,
