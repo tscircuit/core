@@ -9,6 +9,7 @@ import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
+import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -32,10 +33,23 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     throw new Error("db or circuitJson is required")
   }
 
+  const relevantSubcircuitIds: Set<string> | null = subcircuit_id
+    ? new Set([subcircuit_id])
+    : null
+  if (subcircuit_id) {
+    const descendantSubcircuitIds = getDescendantSubcircuitIds(
+      db,
+      subcircuit_id,
+    )
+    for (const id of descendantSubcircuitIds) {
+      relevantSubcircuitIds!.add(id)
+    }
+  }
+
   const subcircuitElements = (circuitJson ?? db.toArray()).filter(
     (e) =>
       !subcircuit_id ||
-      ("subcircuit_id" in e && e.subcircuit_id === subcircuit_id),
+      ("subcircuit_id" in e && relevantSubcircuitIds!.has(e.subcircuit_id!)),
   )
 
   const board = db.pcb_board.list()[0]
@@ -48,7 +62,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_component.list(),
       ...db.pcb_smtpad.list(),
       ...db.pcb_plated_hole.list(),
-    ].filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id),
+    ].filter(
+      (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
+    ),
     connMap,
   )
 
@@ -118,7 +134,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const source_nets = db.source_net
     .list()
-    .filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id)
+    .filter(
+      (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
+    )
 
   const connectionsFromNets: SimpleRouteConnection[] = []
   for (const net of source_nets) {

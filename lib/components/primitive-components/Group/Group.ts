@@ -439,6 +439,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   updatePcbTraceRender() {
     const debug = Debug("tscircuit:core:updatePcbTraceRender")
+    debug(`[${this.getString()}] updating...`)
     if (!this.isSubcircuit) return
     if (
       this._shouldRouteAsync() &&
@@ -460,11 +461,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { db } = this.root!
 
     if (this._asyncAutoroutingResult.output_simple_route_json) {
+      debug(
+        `[${this.getString()}] updating PCB traces from simple route json (${this._asyncAutoroutingResult.output_simple_route_json.traces?.length} traces)`,
+      )
       this._updatePcbTraceRenderFromSimpleRouteJson()
       return
     }
 
     if (this._asyncAutoroutingResult.output_pcb_traces) {
+      debug(
+        `[${this.getString()}] updating PCB traces from ${this._asyncAutoroutingResult.output_pcb_traces.length} traces`,
+      )
       this._updatePcbTraceRenderFromPcbTraces()
       return
     }
