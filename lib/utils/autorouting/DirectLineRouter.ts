@@ -17,6 +17,7 @@ export class DirectLineRouter {
       const trace: SimplifiedPcbTrace = {
         type: "pcb_trace",
         pcb_trace_id: "",
+        connection_name: connection.name,
         route: [
           {
             route_type: "wire",

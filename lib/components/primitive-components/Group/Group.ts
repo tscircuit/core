@@ -17,7 +17,6 @@ import {
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import Debug from "debug"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
-import { getSimpleRouteJsonFromTracesAndDb } from "lib/utils/autorouting/getSimpleRouteJsonFromTracesAndDb"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { Trace } from "../Trace/Trace"

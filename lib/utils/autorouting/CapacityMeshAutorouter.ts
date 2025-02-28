@@ -39,7 +39,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
     const { capacityDepth, targetMinCapacity, stepDelay = 0 } = options
 
     // Initialize the solver with input and optional configuration
-    this.solver = new CapacityMeshSolver(input, {
+    this.solver = new CapacityMeshSolver(input as any, {
       capacityDepth,
       targetMinCapacity,
     })
