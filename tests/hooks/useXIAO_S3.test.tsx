@@ -82,6 +82,6 @@ test("useXIAO_S3 creates a component with correct props and traces", () => {
     expect(trace1).not.toBeNull()
     expect(trace1?.props.to).toBe("net.GND")
     expect(trace1).toHaveProperty("props.from", "XI > .DMINUS")
-    expect(trace1).toHaveProperty('props.to', 'net.GND');
+    expect(trace1).toHaveProperty("props.to", "net.GND")
   })
 })
