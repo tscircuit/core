@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><style>
+              .boundary { fill: #000; }
+              .pcb-board { fill: none; }
+              .pcb-trace { fill: none; }
+              .pcb-hole-outer { fill: rgb(200, 52, 52); }
+              .pcb-hole-inner { fill: rgb(255, 38, 226); }
+              .pcb-pad { }
+              .pcb-boundary { fill: none; stroke: #fff; stroke-width: 0.3; }
+              .pcb-silkscreen { fill: none; }
+              .pcb-silkscreen-top { stroke: #f2eda1; }
+              .pcb-silkscreen-bottom { stroke: #f2eda1; }
+              .pcb-silkscreen-text { fill: #f2eda1; }
+            </style><rect class="boundary" x="0" y="0" width="800" height="600"/><rect class="pcb-boundary" x="122.4669603524229" y="26.43171806167402" width="555.0660792951542" height="547.136563876652"/><path class="pcb-board" d="M 148.8986784140969 555.0660792951542 L 677.5330396475771 555.0660792951542 L 677.5330396475771 26.43171806167402 L 148.8986784140969 26.43171806167402 Z" stroke="rgba(255, 255, 255, 0.5)" stroke-width="2.643171806167401"/><g transform="translate(148.8986784140969, 555.0660792951542) rotate(0) scale(1, -1)"><rect class="pcb-component" x="-21.145374449339208" y="-7.929515418502204" width="42.290748898678416" height="15.859030837004408"/><rect class="pcb-component-outline" x="-21.145374449339208" y="-7.929515418502204" width="42.290748898678416" height="15.859030837004408"/></g><rect class="pcb-pad" fill="rgb(200, 52, 52)" x="127.75330396475769" y="547.136563876652" width="15.859030837004408" height="15.859030837004408"/><rect class="pcb-pad" fill="rgb(200, 52, 52)" x="154.1850220264317" y="547.136563876652" width="15.859030837004408" height="15.859030837004408"/><path class="pcb-silkscreen pcb-silkscreen-top" d="M 162.11453744493392 536.5638766519824 L 122.4669603524229 536.5638766519824 L 122.4669603524229 573.568281938326 L 162.11453744493392 573.568281938326" stroke-width="2.643171806167401" data-pcb-component-id="pcb_component_0" data-pcb-silkscreen-path-id="pcb_silkscreen_path_0"/><text x="0" y="0" font-family="Arial, sans-serif" font-size="10.572687224669604" text-anchor="middle" dominant-baseline="central" transform="matrix(0.9998476951563913,0.01745240643728351,-0.01745240643728351,0.9998476951563913,148.8986784140969,523.3480176211453)" class="pcb-silkscreen-text pcb-silkscreen-top" data-pcb-silkscreen-text-id="pcb_component_0">R1</text></svg>
