@@ -5,7 +5,7 @@ test("capacitor connection not working", async () => {
   const { circuit } = getTestFixture()
 
   const BlinkingLedWith555Timer = () => (
-    <board width="40mm" height="30mm">
+    <board width="40mm" height="30mm" autorouter="sequential-trace">
       <chip
         name="U1"
         footprint="dip8_p1.27mm"

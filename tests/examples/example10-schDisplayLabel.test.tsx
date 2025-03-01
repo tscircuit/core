@@ -5,7 +5,7 @@ test("Should not render any schematic components", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width={20} height={20}>
+    <board width={20} height={20} autorouter="sequential-trace">
       <resistor
         name="R1"
         footprint="0603"

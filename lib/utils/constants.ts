@@ -13,10 +13,10 @@ const stringProxy = new Proxy(
   },
 ) as any
 
-export type Ftype = AnySourceComponent["ftype"]
+export type Ftype = Extract<AnySourceComponent, { ftype: string }>["ftype"]
 
 export const FTYPE: {
-  [T in AnySourceComponent["ftype"]]: T
+  [T in Extract<AnySourceComponent, { ftype: string }>["ftype"]]: T
 } = stringProxy
 
 export const SYMBOL: {

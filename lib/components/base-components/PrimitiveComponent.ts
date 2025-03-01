@@ -20,6 +20,7 @@ import type { RootCircuit } from "../../RootCircuit"
 import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
 import { Renderable } from "./Renderable"
 import type { IGroup } from "../primitive-components/Group/IGroup"
+import type { Ftype } from "lib/utils/constants"
 
 const debugSelectAll = Debug("tscircuit:primitive-component:selectAll")
 
@@ -27,7 +28,7 @@ export interface BaseComponentConfig {
   componentName: string
   schematicSymbolName?: string | null
   zodProps: ZodType
-  sourceFtype?: AnySourceComponent["ftype"] | null
+  sourceFtype?: Ftype | null
   shouldRenderAsSchematicBox?: boolean
 }
 

@@ -5,7 +5,7 @@ test("trace hints with vias", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm">
+    <board width="20mm" height="20mm" autorouter="sequential-trace">
       <resistor
         name="R1"
         resistance="10k"
