@@ -108,10 +108,10 @@ export class RootCircuit {
     if (!firstChild) throw new Error("RootCircuit has no root component")
     firstChild.parent = this as any
     firstChild.runRenderCycle()
-    const currLength = db.toArray().length;
+    const currLength = db.toArray().length
     if (currLength !== this._lastDbLength) {
-      this._lastDbLength = currLength;
-      this.emit("change", currLength);
+      this._lastDbLength = currLength
+      this.emit("change", currLength)
     }
     this._hasRenderedAtleastOnce = true
   }
