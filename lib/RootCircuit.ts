@@ -18,6 +18,7 @@ export type RootCircuitEventName =
   | "autorouting:end"
   | "autorouting:progress"
   | "renderComplete"
+  | "circuitChange"
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -28,6 +29,7 @@ export class RootCircuit {
   schematicDisabled = false
   pcbDisabled = false
   pcbRoutingDisabled = false
+  private _lastCircuitState: string = ""
 
   /**
    * The RootCircuit name is usually set by the platform, it's not required but
@@ -97,6 +99,14 @@ export class RootCircuit {
     )
   }
 
+  private _checkForCircuitChanges() {
+    const currentState = JSON.stringify(this.db.toArray())
+    if (this._lastCircuitState !== currentState) {
+      this._lastCircuitState = currentState
+      this.emit("circuitChange", this.db.toArray())
+    }
+  }
+
   render() {
     if (!this.firstChild) {
       this._guessRootComponent()
@@ -106,6 +116,7 @@ export class RootCircuit {
     firstChild.parent = this as any
     firstChild.runRenderCycle()
     this._hasRenderedAtleastOnce = true
+    this._checkForCircuitChanges()
   }
 
   async renderUntilSettled(): Promise<void> {
@@ -116,6 +127,7 @@ export class RootCircuit {
       this.render()
     }
 
+    this._checkForCircuitChanges()
     this.emit("renderComplete")
   }
 
