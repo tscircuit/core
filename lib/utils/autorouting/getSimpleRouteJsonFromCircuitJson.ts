@@ -68,6 +68,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     connMap,
   )
 
+  // Add everything in the connMap to the connectedTo array of each obstacle
+  for (const obstacle of obstacles) {
+    const additionalIds = obstacle.connectedTo.flatMap((id) =>
+      connMap.getIdsConnectedToNet(id),
+    )
+    obstacle.connectedTo.push(...additionalIds)
+  }
+
   // Calculate bounds
   const allPoints = obstacles.flatMap((o) => [
     {
