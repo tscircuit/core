@@ -35,7 +35,7 @@ test("multilayer obstacle route", async () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   await expect(
     await circuit.getSvg({

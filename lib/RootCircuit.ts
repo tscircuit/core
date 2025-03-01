@@ -147,7 +147,7 @@ export class RootCircuit {
   async getSvg(options: { view: "pcb"; layer?: string }): Promise<string> {
     const circuitToSvg = await import("circuit-to-svg").catch((e) => {
       throw new Error(
-        `To use project.getSvg, you must install the "circuit-to-svg" package.\n\n"${e.message}"`,
+        `To use circuit.getSvg, you must install the "circuit-to-svg" package.\n\n"${e.message}"`,
       )
     })
 
