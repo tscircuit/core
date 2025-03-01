@@ -1,6 +1,7 @@
 import type {
   CommonPinNames,
-  ComponentSelector,
+  ComponentInstance,
+  ComponentWithPinLabels,
   Nums16,
   Nums40,
   PinNumbers100,
@@ -77,30 +78,42 @@ type SelWithoutSubcircuit = NonPolarizedSel &
 
 export type Sel = SubcircuitSel & SelWithoutSubcircuit
 
-export const sel: Sel & ComponentSelector<any> = new Proxy(
-  function (component?: any) {
+type ComponentProxy = <T extends ComponentWithPinLabels>(
+  component: T,
+) => ComponentInstance<T>
+
+export const sel: Sel & ComponentProxy = new Proxy(
+  function <T extends ComponentWithPinLabels>(component?: T) {
     if (component) {
       // Function pattern
       return new Proxy(
         {},
         {
           get: (_, prop1: string) => {
-            // Only allow U1-U40
-            if (!prop1.match(/^U([1-9]|[1-3][0-9]|40)$/)) return undefined
             return new Proxy(
               {},
               {
                 get: (_, prop2: string) => {
                   return `.${prop1} > .${prop2}`
                 },
+                ownKeys: () => Object.keys(component.pinLabels),
+                getOwnPropertyDescriptor: () => ({
+                  enumerable: true,
+                  configurable: true,
+                }),
               },
             )
           },
+          ownKeys: () => ["U1"],
+          getOwnPropertyDescriptor: () => ({
+            enumerable: true,
+            configurable: true,
+          }),
         },
-      )
+      ) as ComponentInstance<T>
     }
     // Object pattern
-    return {}
+    return {} as Sel
   },
   {
     get: (target, prop1: string) => {
@@ -139,4 +152,4 @@ export const sel: Sel & ComponentSelector<any> = new Proxy(
       )
     },
   },
-) as any
+) as Sel & ComponentProxy
