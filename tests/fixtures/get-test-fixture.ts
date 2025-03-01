@@ -17,7 +17,7 @@ export const getTestFixture = () => {
       if (!circuit.firstChild?.renderPhaseStates.SourceRender.initialized) {
         circuit.render()
       }
-      await logSoup(`core_${nameOfTest}`, circuit.getSoup())
+      await logSoup(`core_${nameOfTest}`, circuit.getCircuitJson())
     },
   }
 }

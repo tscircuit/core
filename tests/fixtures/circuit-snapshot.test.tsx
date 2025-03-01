@@ -16,5 +16,5 @@ it("should be able to snapshot a circuit", async () => {
   expect(pcb_smtpads.every((smt) => !Number.isNaN(smt.x))).toBe(true)
   expect(pcb_smtpads.every((smt) => !Number.isNaN(smt.y))).toBe(true)
 
-  await expect(circuit.getSoup()).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
