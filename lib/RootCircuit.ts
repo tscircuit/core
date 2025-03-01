@@ -215,6 +215,15 @@ export class RootCircuit {
     this._eventListeners[event]!.push(listener)
   }
 
+  removeListener(
+    event: RootCircuitEventName,
+    listener: (...args: any[]) => void,
+  ) {
+    if (!this._eventListeners[event]) return
+    this._eventListeners[event] = this._eventListeners[event]!.filter(
+      (l) => l !== listener,
+    )
+  }
   getClientOrigin(): string {
     if (typeof window !== "undefined") {
       return window.location.origin
