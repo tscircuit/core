@@ -24,6 +24,7 @@ import type { TraceI } from "../Trace/TraceI"
 import { TraceHint } from "../TraceHint"
 import type { ISubcircuit } from "./ISubcircuit"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
+import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -316,10 +317,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   /**
    * Run local autorouting using the CapacityMeshAutorouter
    */
-  async _runLocalCapacityMeshAutorouting() {
+  async _runLocalAutorouting() {
     const { db } = this.root!
-    const debug = Debug("tscircuit:core:_runLocalCapacityMeshAutorouting")
-    debug(`[${this.getString()}] starting local capacity mesh autorouting`)
+    const props = this._parsedProps as SubcircuitGroupProps
+    const debug = Debug("tscircuit:core:_runLocalAutorouting")
+    debug(`[${this.getString()}] starting local autorouting`)
+    const autorouterConfig = this._getAutorouterConfig()
 
     // Get the routing problem in SimpleRouteJson format
     const { simpleRouteJson, connMap } = getSimpleRouteJsonFromCircuitJson({
@@ -335,11 +338,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
 
     // Create the autorouter instance
-    const autorouter = new CapacityMeshAutorouter(simpleRouteJson, {
-      // Optional configuration parameters
-      capacityDepth: this.props.autorouter?.capacityDepth,
-      targetMinCapacity: this.props.autorouter?.targetMinCapacity,
-    })
+    let autorouter: GenericLocalAutorouter
+    if (autorouterConfig.algorithmFn) {
+      autorouter = await autorouterConfig.algorithmFn(simpleRouteJson)
+    } else {
+      autorouter = new CapacityMeshAutorouter(simpleRouteJson, {
+        // Optional configuration parameters
+        capacityDepth: this.props.autorouter?.capacityDepth,
+        targetMinCapacity: this.props.autorouter?.targetMinCapacity,
+      })
+    }
 
     // Create a promise that will resolve when autorouting is complete
     const routingPromise = new Promise<SimplifiedPcbTrace[]>(
@@ -415,7 +423,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this._hasStartedAsyncAutorouting = true
     if (this._getAutorouterConfig().local) {
       this._queueAsyncEffect("capacity-mesh-autorouting", async () =>
-        this._runLocalCapacityMeshAutorouting(),
+        this._runLocalAutorouting(),
       )
     } else {
       this._queueAsyncEffect("make-http-autorouting-request", async () =>
