@@ -117,8 +117,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
       return {
         name:
-          connMap.getNetConnectedToId(trace.source_trace_id) ??
           trace.source_trace_id ??
+          connMap.getNetConnectedToId(trace.source_trace_id) ??
           "",
         source_trace_id: trace.source_trace_id,
         pointsToConnect: connectedPorts.map((port) => {
@@ -145,8 +145,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       .filter((st) => st.connected_source_net_ids?.includes(net.source_net_id))
 
     connectionsFromNets.push({
-      name:
-        connMap.getNetConnectedToId(net.source_net_id) ?? net.source_net_id!,
+      name: net.source_net_id ?? connMap.getNetConnectedToId(net.source_net_id),
       pointsToConnect: connectedSourceTraces.flatMap((st) => {
         const pcb_ports = db.pcb_port
           .list()
