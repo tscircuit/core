@@ -110,6 +110,12 @@ export class RootCircuit {
   }
 
   async renderUntilSettled(): Promise<void> {
+    if (!this.db.source_project_metadata.list()?.[0]) {
+      this.db.source_project_metadata.insert({
+        software_used_string: `@tscircuit/core@${this.getCoreVersion()}`,
+      })
+    }
+
     this.render()
 
     while (this._hasIncompleteAsyncEffects()) {
