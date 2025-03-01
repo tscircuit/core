@@ -670,7 +670,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
     return {
       local: true,
-      groupMode: "sequential-trace",
+      groupMode: "subcircuit",
     }
   }
   /**
