@@ -21,7 +21,7 @@ test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () =>
     16: ["GND2", "B1"],
   } as const
   circuit.add(
-    <board width={50} height={50}>
+    <board width={50} height={50} autorouter="sequential-trace">
       <pushbutton name="PB1" footprint={"pushbutton"} pcbX="0" pcbY="10" />
 
       <chip

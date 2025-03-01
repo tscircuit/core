@@ -146,7 +146,7 @@ const MacroKeypad = () => {
   }
 
   return (
-    <board width="120mm" height="80mm">
+    <board width="120mm" height="80mm" autorouter="sequential-trace">
       {keyPositions.map(({ keyNum, x, y }) => (
         <Key
           key={keyNum}

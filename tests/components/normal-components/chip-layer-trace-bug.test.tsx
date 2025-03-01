@@ -14,7 +14,7 @@ test("chip with flipped layer should have traces on correct layer", async () => 
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm">
+    <board width="20mm" height="20mm" autorouter="sequential-trace">
       <FlippedChip
         name="U1"
         footprint={
