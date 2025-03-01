@@ -17,6 +17,7 @@ export type RootCircuitEventName =
   | "autorouting:start"
   | "autorouting:end"
   | "autorouting:progress"
+  | "change"
   | "renderComplete"
 
 export class RootCircuit {
@@ -28,6 +29,7 @@ export class RootCircuit {
   schematicDisabled = false
   pcbDisabled = false
   pcbRoutingDisabled = false
+  _lastDbLength: number = 0
 
   /**
    * The RootCircuit name is usually set by the platform, it's not required but
@@ -41,6 +43,7 @@ export class RootCircuit {
   constructor() {
     this.children = []
     this.db = su([])
+    this._lastDbLength = 0
     // TODO rename to rootCircuit
     this.root = this
   }
@@ -105,6 +108,11 @@ export class RootCircuit {
     if (!firstChild) throw new Error("RootCircuit has no root component")
     firstChild.parent = this as any
     firstChild.runRenderCycle()
+    const currLength = db.toArray().length;
+    if (currLength !== this._lastDbLength) {
+      this._lastDbLength = currLength;
+      this.emit("change", currLength);
+    }
     this._hasRenderedAtleastOnce = true
   }
 
