@@ -190,6 +190,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const fetchWithDebug = (url: string, options: RequestInit) => {
       debug("fetching", url)
+      if (options.headers) {
+        // @ts-ignore
+        options.headers["Tscircuit-Core-Version"] = this.root?.getCoreVersion()!
+      }
       return fetch(url, options)
     }
 
@@ -217,7 +221,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               }).simpleRouteJson,
               subcircuit_id: this.subcircuit_id!,
             }),
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+            },
           },
         ).then((r) => r.json())
         this._asyncAutoroutingResult = autorouting_result
@@ -233,7 +239,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             input_circuit_json: pcbAndSourceCircuitJson,
             subcircuit_id: this.subcircuit_id!,
           }),
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
       ).then((r) => r.json())
       this._asyncAutoroutingResult = autorouting_result
@@ -253,7 +261,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           subcircuit_id: this.subcircuit_id,
           server_cache_enabled: autorouterConfig.serverCacheEnabled,
         }),
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
     ).then((r) => r.json())
 

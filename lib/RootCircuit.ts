@@ -6,6 +6,7 @@ import { isValidElement, type ReactElement } from "react"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 import { identity, type Matrix } from "transformation-matrix"
 import type { RenderPhase } from "./components/base-components/Renderable"
+import pkgJson from "../package.json"
 
 export type RootCircuitEventName =
   | "asyncEffect:start"
@@ -128,17 +129,13 @@ export class RootCircuit {
     })
   }
 
-  getSoup(): AnyCircuitElement[] {
+  getCircuitJson(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
     return this.db.toArray()
   }
 
-  getCircuitJson(): AnyCircuitElement[] {
-    return this.getSoup()
-  }
-
   toJson(): AnyCircuitElement[] {
-    return this.getSoup()
+    return this.getCircuitJson()
   }
 
   async getSvg(options: { view: "pcb"; layer?: string }): Promise<string> {
@@ -149,6 +146,13 @@ export class RootCircuit {
     })
 
     return circuitToSvg.convertCircuitJsonToPcbSvg(this.getCircuitJson())
+  }
+
+  getCoreVersion(): string {
+    const [major, minor, patch] = pkgJson.version.split(".").map(Number)
+    // We add one to the patch version because the build increments the version
+    // after the build (it's a hack- won't work for major releases)
+    return `${major}.${minor}.${patch + 1}`
   }
 
   async preview(
