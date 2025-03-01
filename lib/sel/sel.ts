@@ -1,5 +1,6 @@
 import type {
   CommonPinNames,
+  ComponentSelector,
   Nums16,
   Nums40,
   PinNumbers100,
@@ -76,10 +77,38 @@ type SelWithoutSubcircuit = NonPolarizedSel &
 
 export type Sel = SubcircuitSel & SelWithoutSubcircuit
 
-export const sel: Sel = new Proxy(
-  {},
+export const sel: Sel & ComponentSelector<any> = new Proxy(
+  function (component?: any) {
+    if (component) {
+      // Function pattern
+      return new Proxy(
+        {},
+        {
+          get: (_, prop1: string) => {
+            // Only allow U1-U40
+            if (!prop1.match(/^U([1-9]|[1-3][0-9]|40)$/)) return undefined
+            return new Proxy(
+              {},
+              {
+                get: (_, prop2: string) => {
+                  return `.${prop1} > .${prop2}`
+                },
+              },
+            )
+          },
+        },
+      )
+    }
+    // Object pattern
+    return {}
+  },
   {
-    get: (_, prop1: string) => {
+    get: (target, prop1: string) => {
+      // Handle function properties
+      if (prop1 === "apply" || prop1 === "call")
+        return target[prop1].bind(target)
+
+      // Handle object pattern
       return new Proxy(
         {},
         {
