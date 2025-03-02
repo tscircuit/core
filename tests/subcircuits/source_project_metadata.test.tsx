@@ -1,18 +1,12 @@
 import { test, expect } from "bun:test"
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { su } from "@tscircuit/soup-util"
 
 test("source_project_metadata added to circuit JSON output", async () => {
   const { circuit } = await getTestFixture()
-  const { autoroutingServerUrl } = getTestAutoroutingServer()
-
-  const cloudAutorouterConfig = {
-    serverUrl: autoroutingServerUrl,
-  } as const
 
   circuit.add(
-    <board width="10mm" height="10mm" autorouter={cloudAutorouterConfig}>
+    <board width="10mm" height="10mm">
       <subcircuit name="S1">
         <resistor
           resistance="1k"
