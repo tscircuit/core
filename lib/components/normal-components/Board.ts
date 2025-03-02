@@ -63,10 +63,10 @@ export class Board extends Group<typeof boardProps> {
     const computedWidth = maxX - minX + padding * 2
     const computedHeight = maxY - minY + padding * 2
 
-    // Center the board around the components
+    // Set the board center to outlineOffset values relative to the global center
     const center = {
-      x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
-      y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
+      x: props.outlineOffsetX ?? 0,
+      y: props.outlineOffsetY ?? 0,
     }
 
     // Update the board dimensions
@@ -103,8 +103,8 @@ export class Board extends Group<typeof boardProps> {
 
     const pcb_board = db.pcb_board.insert({
       center: {
-        x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
-        y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
+        x: props.outlineOffsetX ?? 0,
+        y: props.outlineOffsetY ?? 0,
       },
 
       thickness: this.boardThickness,
@@ -112,10 +112,7 @@ export class Board extends Group<typeof boardProps> {
 
       width: computedWidth!,
       height: computedHeight!,
-      outline: props.outline?.map((point) => ({
-        x: point.x + (props.outlineOffsetX ?? 0),
-        y: point.y + (props.outlineOffsetY ?? 0),
-      })),
+      outline: props.outline,
     })
 
     this.pcb_board_id = pcb_board.pcb_board_id!
