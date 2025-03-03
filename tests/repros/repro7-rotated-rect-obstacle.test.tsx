@@ -5,7 +5,7 @@ test("repro7-rotated-rect-obstacle", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="30mm" height="30mm">
+    <board width="30mm" height="30mm" autorouter="sequential-trace">
       <resistor
         name="R1"
         resistance="10k"

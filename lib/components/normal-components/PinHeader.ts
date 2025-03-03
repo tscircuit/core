@@ -36,7 +36,9 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
         new Port({
           name: `pin${i}`,
           pinNumber: i,
-          aliases: [],
+          aliases: [this._parsedProps.pinLabels?.[i - 1]].filter(
+            Boolean,
+          ) as string[],
         }),
       )
     }

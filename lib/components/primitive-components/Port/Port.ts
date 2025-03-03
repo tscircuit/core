@@ -282,6 +282,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     db.source_port.update(this.source_port_id!, {
       source_component_id: this.parent?.source_component_id!,
+      subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
     })
 
     this.source_component_id = this.parent?.source_component_id

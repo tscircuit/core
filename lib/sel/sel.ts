@@ -45,17 +45,27 @@ type PolarizedSel = Record<
   }
 >
 
+type CommonNetNames = "VCC" | "GND" | "VDD" | "PWR" | "V5" | "V3_3"
+
 type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
 
-type JumperSel = Record<`J${Nums40}`, Record<PinNumbers100, string>>
+type JumperSel = Record<
+  `J${Nums40}`,
+  Record<PinNumbers100 | CommonPinNames, string>
+>
 
 type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string>>
 
-type NetSel = Record<"net", Record<"VCC" | "GND" | "VDD", string>>
+type NetSel = Record<"net", Record<CommonNetNames, string>>
 
 type ConnectionSel = Record<`CN${Nums40}`, Record<CommonPinNames, string>>
 
-export type Sel = NonPolarizedSel &
+type SubcircuitSel = Record<
+  "subcircuit",
+  Record<`S${Nums40}`, SelWithoutSubcircuit>
+>
+
+type SelWithoutSubcircuit = NonPolarizedSel &
   PolarizedSel &
   TransistorSel &
   JumperSel &
@@ -63,6 +73,8 @@ export type Sel = NonPolarizedSel &
   SwSel &
   NetSel &
   ConnectionSel
+
+export type Sel = SubcircuitSel & SelWithoutSubcircuit
 
 export const sel: Sel = new Proxy(
   {},
@@ -74,6 +86,23 @@ export const sel: Sel = new Proxy(
           get: (_, prop2: string) => {
             if (prop1 === "net") {
               return `net.${prop2}`
+            }
+            if (prop1 === "subcircuit") {
+              return new Proxy(
+                {},
+                {
+                  get: (_, prop3: string) => {
+                    return new Proxy(
+                      {},
+                      {
+                        get: (_, prop4: string) => {
+                          return `subcircuit.${prop2} > .${prop3} > .${prop4}`
+                        },
+                      },
+                    )
+                  },
+                },
+              )
             }
             return `.${prop1} > .${prop2}`
           },

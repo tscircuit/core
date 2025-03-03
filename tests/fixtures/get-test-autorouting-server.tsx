@@ -36,7 +36,7 @@ export const getTestAutoroutingServer = ({
         } else if (body.input_circuit_json) {
           simpleRouteJson = getSimpleRouteJsonFromCircuitJson({
             circuitJson: body.input_circuit_json,
-          })
+          }).simpleRouteJson
         }
 
         if (!simpleRouteJson) {
@@ -101,12 +101,12 @@ export const getTestAutoroutingServer = ({
           )
         }
 
-        const simpleRouteJson = getSimpleRouteJsonFromCircuitJson({
+        const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
           circuitJson: body.input_circuit_json,
         })
 
         const autorouter = new MultilayerIjump({
-          input: simpleRouteJson,
+          input: simpleRouteJson as any,
           OBSTACLE_MARGIN: 0.2,
         })
 

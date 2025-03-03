@@ -426,7 +426,6 @@ export class NormalComponent<
     if (symbol) {
       const schematic_component = db.schematic_component.insert({
         center,
-        rotation: props.schRotation ?? 0,
         size: symbol.size,
         source_component_id: this.source_component_id!,
 

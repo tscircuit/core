@@ -5,7 +5,12 @@ test("complex chip schematic with multiple connections", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="40mm" height="40mm" schTraceAutoLabelEnabled>
+    <board
+      width="40mm"
+      height="40mm"
+      schTraceAutoLabelEnabled
+      autorouter="sequential-trace"
+    >
       {/* Central chip with 16 pins */}
       <chip
         name="U1"

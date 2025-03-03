@@ -87,10 +87,5 @@ test.skip("subcircuit autorouting max traces test", async () => {
 
   await circuit.renderUntilSettled()
 
-  console.log(
-    circuit.getCircuitJson().filter(({ type }) => type === "source_trace")
-      .length,
-  )
-
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

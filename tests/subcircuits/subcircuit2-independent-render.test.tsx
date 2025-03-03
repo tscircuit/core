@@ -6,7 +6,7 @@ describe("subcircuit2-independent-render", () => {
     const { circuit } = await getTestFixture()
 
     circuit.add(
-      <board width="10mm" height="10mm">
+      <board width="10mm" height="10mm" autorouter="sequential-trace">
         <subcircuit name="subcircuit1" routingDisabled>
           <resistor name="R1" resistance="1k" footprint="0402" pcbX={-2} />
           <resistor name="R2" resistance="2k" footprint="0402" pcbX={2} />

@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("example1", async () => {
   const { circuit, logSoup } = getTestFixture()
   circuit.add(
-    <board width="12mm" height="10mm">
+    <board width="12mm" height="10mm" autorouter="sequential-trace">
       <chip
         name="U1"
         footprint="soic8"

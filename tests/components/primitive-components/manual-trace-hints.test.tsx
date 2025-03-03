@@ -9,6 +9,7 @@ test("manual trace hints correctly change trace routes", async () => {
     <board
       width="10mm"
       height="10mm"
+      autorouter="sequential-trace"
       layout={layout().manualEdits({
         manual_trace_hints: [
           {

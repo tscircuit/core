@@ -6,14 +6,8 @@ import { isValidElement, type ReactElement } from "react"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 import { identity, type Matrix } from "transformation-matrix"
 import type { RenderPhase } from "./components/base-components/Renderable"
-
-export type RootCircuitEventName =
-  | "asyncEffect:start"
-  | "asyncEffect:end"
-  | "renderable:renderLifecycle:anyEvent"
-  | `renderable:renderLifecycle:${RenderPhase}:start`
-  | `renderable:renderLifecycle:${RenderPhase}:end`
-  | "external:evalError"
+import pkgJson from "../package.json"
+import type { RootCircuitEventName } from "./events"
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -105,12 +99,20 @@ export class RootCircuit {
   }
 
   async renderUntilSettled(): Promise<void> {
+    if (!this.db.source_project_metadata.list()?.[0]) {
+      this.db.source_project_metadata.insert({
+        software_used_string: `@tscircuit/core@${this.getCoreVersion()}`,
+      })
+    }
+
     this.render()
 
     while (this._hasIncompleteAsyncEffects()) {
       await new Promise((resolve) => setTimeout(resolve, 100))
       this.render()
     }
+
+    this.emit("renderComplete")
   }
 
   private _hasIncompleteAsyncEffects(): boolean {
@@ -122,27 +124,30 @@ export class RootCircuit {
     })
   }
 
-  getSoup(): AnyCircuitElement[] {
+  getCircuitJson(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
     return this.db.toArray()
   }
 
-  getCircuitJson(): AnyCircuitElement[] {
-    return this.getSoup()
-  }
-
   toJson(): AnyCircuitElement[] {
-    return this.getSoup()
+    return this.getCircuitJson()
   }
 
   async getSvg(options: { view: "pcb"; layer?: string }): Promise<string> {
     const circuitToSvg = await import("circuit-to-svg").catch((e) => {
       throw new Error(
-        `To use project.getSvg, you must install the "circuit-to-svg" package.\n\n"${e.message}"`,
+        `To use circuit.getSvg, you must install the "circuit-to-svg" package.\n\n"${e.message}"`,
       )
     })
 
     return circuitToSvg.convertCircuitJsonToPcbSvg(this.getCircuitJson())
+  }
+
+  getCoreVersion(): string {
+    const [major, minor, patch] = pkgJson.version.split(".").map(Number)
+    // We add one to the patch version because the build increments the version
+    // after the build (it's a hack- won't work for major releases)
+    return `${major}.${minor}.${patch + 1}`
   }
 
   async preview(
@@ -199,6 +204,15 @@ export class RootCircuit {
     this._eventListeners[event]!.push(listener)
   }
 
+  removeListener(
+    event: RootCircuitEventName,
+    listener: (...args: any[]) => void,
+  ) {
+    if (!this._eventListeners[event]) return
+    this._eventListeners[event] = this._eventListeners[event]!.filter(
+      (l) => l !== listener,
+    )
+  }
   getClientOrigin(): string {
     if (typeof window !== "undefined") {
       return window.location.origin

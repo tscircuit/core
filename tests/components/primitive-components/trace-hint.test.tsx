@@ -6,7 +6,7 @@ it("simple trace with trace hint test", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm">
+    <board width="10mm" height="10mm" autorouter="sequential-trace">
       <resistor
         name="R1"
         resistance="10k"
