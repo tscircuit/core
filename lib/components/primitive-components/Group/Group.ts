@@ -418,8 +418,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const { db } = this.root!
       // Record the error
       db.pcb_autorouting_error.insert({
-        pcb_error_id: `local_${this.subcircuit_id}`,
+        pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
         message: error instanceof Error ? error.message : String(error),
+      })
+
+      this.root?.emit("autorouting:error", {
+        subcircuit_id: this.subcircuit_id,
+        componentDisplayName: this.getString(),
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+        },
+        simpleRouteJson,
       })
 
       throw error

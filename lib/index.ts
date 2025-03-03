@@ -15,6 +15,7 @@ export * from "./utils/autorouting/GenericLocalAutorouter"
 
 // Allows easier introspection of render process
 export * from "./components/base-components/Renderable"
+export * from "./events/index"
 
 export { createElement } from "react"
 
