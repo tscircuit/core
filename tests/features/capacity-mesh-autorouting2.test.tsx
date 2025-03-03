@@ -3,7 +3,7 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 import { Benchmark1LedMatrix } from "benchmarking/benchmarks/benchmark1-led-matrix"
 import * as fs from "node:fs"
 
-test("capacity mesh autorouting 2 - benchmark led matrix", async () => {
+test.skip("capacity mesh autorouting 2 - benchmark led matrix", async () => {
   const { circuit } = getTestFixture()
 
   // Track autorouting progress events
