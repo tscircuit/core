@@ -95,7 +95,6 @@ export const SmdUsbC = (props: Props) => {
             outerWidth="1.1999975999999999mm"
             innerHeight="1.3999972mm"
             innerWidth="0.7999983999999999mm"
-            height="1.3999972mm"
             shape="pill"
           />
           <platedhole
@@ -106,7 +105,6 @@ export const SmdUsbC = (props: Props) => {
             outerWidth="1.1999975999999999mm"
             innerHeight="1.5999968mm"
             innerWidth="0.7999983999999999mm"
-            height="1.5999968mm"
             shape="pill"
           />
           <platedhole
@@ -117,7 +115,6 @@ export const SmdUsbC = (props: Props) => {
             outerWidth="1.1999975999999999mm"
             innerHeight="1.5999968mm"
             innerWidth="0.7999983999999999mm"
-            height="1.5999968mm"
             shape="pill"
           />
           <platedhole
@@ -128,7 +125,6 @@ export const SmdUsbC = (props: Props) => {
             outerWidth="1.1999975999999999mm"
             innerHeight="1.3999972mm"
             innerWidth="0.7999983999999999mm"
-            height="1.3999972mm"
             shape="pill"
           />
           <smtpad
