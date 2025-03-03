@@ -87,10 +87,10 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
 
       // Execute one step of the solver
       // Execute for 10ms to allow the solver to make progress
-      const startTime = performance.now()
+      const startTime = Date.now()
       const startIterations = this.solver.iterations
       while (
-        performance.now() - startTime < 10 &&
+        Date.now() - startTime < 250 &&
         !this.solver.failed &&
         !this.solver.solved
       ) {
