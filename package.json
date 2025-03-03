@@ -34,7 +34,7 @@
     "@types/react-reconciler": "^0.28.9",
     "bun-match-svg": "0.0.8",
     "chokidar-cli": "^3.0.0",
-    "circuit-to-svg": "^0.0.99",
+    "circuit-to-svg": "^0.0.109",
     "concurrently": "^9.1.2",
     "debug": "^4.3.6",
     "graphics-debug": "^0.0.4",
