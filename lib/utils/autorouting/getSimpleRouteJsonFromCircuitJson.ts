@@ -64,7 +64,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_plated_hole.list(),
       ...db.pcb_hole.list(),
       ...db.pcb_via.list(),
-      ...db.pcb_trace.list(),
+      // getObstaclesFromSoup is old and doesn't support diagonal traces
+      // ...db.pcb_trace.list(),
     ].filter(
       (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
