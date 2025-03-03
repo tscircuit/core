@@ -7,18 +7,7 @@ import { createInstanceFromReactElement } from "./fiber/create-instance-from-rea
 import { identity, type Matrix } from "transformation-matrix"
 import type { RenderPhase } from "./components/base-components/Renderable"
 import pkgJson from "../package.json"
-
-export type RootCircuitEventName =
-  | "asyncEffect:start"
-  | "asyncEffect:end"
-  | "renderable:renderLifecycle:anyEvent"
-  | `renderable:renderLifecycle:${RenderPhase}:start`
-  | `renderable:renderLifecycle:${RenderPhase}:end`
-  | "external:evalError" // TODO remove
-  | "autorouting:start"
-  | "autorouting:end"
-  | "autorouting:progress"
-  | "renderComplete"
+import type { RootCircuitEventName } from "./events"
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
