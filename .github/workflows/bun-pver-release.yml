@@ -26,3 +26,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+      - name: Trigger update in @tscircuit/eval repo
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+          repository: tscircuit/eval
+          event-type: workflow_dispatch
+          client-payload: '{"workflow": "update-core.yml"}'
