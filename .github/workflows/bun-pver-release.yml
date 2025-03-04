@@ -1,9 +1,13 @@
-# Created using @tscircuit/plop (npm install -g @tscircuit/plop)
 name: Publish to npm
 on:
   push:
     branches:
       - main
+    paths:
+      - 'lib/**'
+      - 'package.json'
+      - 'bun.lock'
+      - 'README.md'
 jobs:
   publish:
     runs-on: ubuntu-latest
