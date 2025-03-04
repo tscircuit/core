@@ -439,6 +439,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _startAsyncAutorouting() {
+    if (this._hasStartedAsyncAutorouting) return
     this._hasStartedAsyncAutorouting = true
     if (this._getAutorouterConfig().local) {
       this._queueAsyncEffect("capacity-mesh-autorouting", async () =>
