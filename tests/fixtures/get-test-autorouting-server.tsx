@@ -119,7 +119,10 @@ export const getTestAutoroutingServer = ({
             is_started: true,
             is_running: false,
             has_error: true,
-            error: { message: "Failed to compute first trace" },
+            error: {
+              message:
+                "Failed to compute first trace (failInFirstTrace simulated error)",
+            },
           })
 
           return new Response(
@@ -129,7 +132,8 @@ export const getTestAutoroutingServer = ({
                 is_running: false,
                 is_started: true,
                 has_error: true,
-                error: "Failed to compute first trace",
+                error:
+                  "Failed to compute first trace (failInFirstTrace simulated error)",
               },
             }),
             { headers: { "Content-Type": "application/json" } },
