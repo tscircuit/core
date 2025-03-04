@@ -16,6 +16,7 @@ export type AutorouterProgressEvent = {
   steps: number
   progress: number
   phase?: string
+  iterationsPerSecond?: number
   debugGraphics?: GraphicsObject
 }
 
