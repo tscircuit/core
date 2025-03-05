@@ -5,6 +5,7 @@ export class SilkscreenLine extends PrimitiveComponent<
   typeof silkscreenLineProps
 > {
   pcb_silkscreen_line_id: string | null = null
+  isPcbPrimitive = true
 
   get config() {
     return {
@@ -17,7 +18,9 @@ export class SilkscreenLine extends PrimitiveComponent<
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
-    const layer = props.layer ?? "top"
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const layer = maybeFlipLayer(props.layer ?? "top") as "top" | "bottom"
+
     if (layer !== "top" && layer !== "bottom") {
       throw new Error(
         `Invalid layer "${layer}" for SilkscreenLine. Must be "top" or "bottom".`,
@@ -38,5 +41,12 @@ export class SilkscreenLine extends PrimitiveComponent<
     })
 
     this.pcb_silkscreen_line_id = pcb_silkscreen_line.pcb_silkscreen_line_id
+  }
+
+  getPcbSize(): { width: number; height: number } {
+    const { _parsedProps: props } = this
+    const width = Math.abs(props.x2 - props.x1)
+    const height = Math.abs(props.y2 - props.y1)
+    return { width, height }
   }
 }
