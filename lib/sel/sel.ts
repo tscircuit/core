@@ -1,5 +1,7 @@
 import type {
   CommonPinNames,
+  ComponentInstance,
+  ComponentWithPinLabels,
   Nums16,
   Nums40,
   PinNumbers100,
@@ -75,6 +77,9 @@ type SelWithoutSubcircuit = NonPolarizedSel &
   ConnectionSel
 
 export type Sel = SubcircuitSel & SelWithoutSubcircuit
+
+type FunctionSelComponentProxy = <T extends ComponentWithPinLabels>(  component: T,
+) => ComponentInstance<T>
 
 export const sel: Sel = new Proxy(
   {},
