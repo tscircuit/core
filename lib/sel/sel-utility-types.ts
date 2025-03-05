@@ -177,12 +177,6 @@ export type CommonPinNames =
   | "VIN"
   | "VOUT"
   | "VREF"
-  | "VIN"
-  | "VOUT"
-  | "VREF"
-  | "VIN"
-  | "VOUT"
-  | "VREF"
   | "OUT"
   | "DISCH"
   | "EN"
@@ -197,3 +191,19 @@ export type CommonPinNames =
   | PinNumbers100
 
 export type TransistorPinNames = "base" | "collector" | "emitter"
+
+// New types for function pattern
+export type ComponentWithPinLabels = { pinLabels: Record<string, string> }
+
+export type ComponentInstance<T extends ComponentWithPinLabels> = {
+  [K in `U${Nums40}`]: Record<keyof T["pinLabels"], string>
+}
+
+export type ComponentType<T> = {
+  new (...args: any[]): T
+  pinLabels: Record<string, string>
+}
+
+export type ComponentSelector<T extends ComponentWithPinLabels> = (
+  component: ComponentType<T>,
+) => ComponentInstance<T>

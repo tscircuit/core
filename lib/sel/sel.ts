@@ -78,13 +78,50 @@ type SelWithoutSubcircuit = NonPolarizedSel &
 
 export type Sel = SubcircuitSel & SelWithoutSubcircuit
 
-type FunctionSelComponentProxy = <T extends ComponentWithPinLabels>(  component: T,
+type ComponentProxy = <T extends ComponentWithPinLabels>(
+  component: T,
 ) => ComponentInstance<T>
 
-export const sel: Sel = new Proxy(
-  {},
+export const sel: Sel & ComponentProxy = new Proxy(
+  function <T extends ComponentWithPinLabels>(component?: T) {
+    if (component) {
+      // Function pattern
+      return new Proxy(
+        {},
+        {
+          get: (_, prop1: string) => {
+            return new Proxy(
+              {},
+              {
+                get: (_, prop2: string) => {
+                  return `.${prop1} > .${prop2}`
+                },
+                ownKeys: () => Object.keys(component.pinLabels),
+                getOwnPropertyDescriptor: () => ({
+                  enumerable: true,
+                  configurable: true,
+                }),
+              },
+            )
+          },
+          ownKeys: () => ["U1"],
+          getOwnPropertyDescriptor: () => ({
+            enumerable: true,
+            configurable: true,
+          }),
+        },
+      ) as ComponentInstance<T>
+    }
+    // Object pattern
+    return {} as Sel
+  },
   {
-    get: (_, prop1: string) => {
+    get: (target, prop1: string) => {
+      // Handle function properties
+      if (prop1 === "apply" || prop1 === "call")
+        return target[prop1].bind(target)
+
+      // Handle object pattern
       return new Proxy(
         {},
         {
@@ -115,4 +152,4 @@ export const sel: Sel = new Proxy(
       )
     },
   },
-) as any
+) as Sel & ComponentProxy
