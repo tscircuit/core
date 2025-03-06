@@ -569,6 +569,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Apply each routed trace to the corresponding circuit trace
     for (const pcb_trace of output_pcb_traces) {
       pcb_trace.subcircuit_id = this.subcircuit_id!
+
+      if (pcb_trace.connection_name) {
+        pcb_trace.source_trace_id = pcb_trace.connection_name
+      }
+
+      
       db.pcb_trace.insert(pcb_trace)
     }
 
