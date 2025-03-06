@@ -28,9 +28,8 @@ test("repro-11-hover-trace-with-new-autorouter", async () => {
   const source_trace = circuit.db.source_trace.list()
   expect(source_trace).toHaveLength(1)
   expect(source_trace[0].source_trace_id).toBeDefined()
-  
+
   // To fix the hover trace, we need to ensure that the source_trace_id is
   // set to the pcb_trace_id
   expect(source_trace[0].source_trace_id).toBe(pcb_traces[0].source_trace_id)
 })
-

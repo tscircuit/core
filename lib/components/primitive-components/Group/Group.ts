@@ -574,7 +574,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         pcb_trace.source_trace_id = pcb_trace.connection_name
       }
 
-      
       db.pcb_trace.insert(pcb_trace)
     }
 
