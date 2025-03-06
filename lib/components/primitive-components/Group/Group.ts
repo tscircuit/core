@@ -571,8 +571,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       pcb_trace.subcircuit_id = this.subcircuit_id!
 
       if ((pcb_trace as any).connection_name) {
-        const sourceTraceId = (pcb_trace as any).connection_name;
-        pcb_trace.source_trace_id = sourceTraceId;
+        const sourceTraceId = (pcb_trace as any).connection_name
+        pcb_trace.source_trace_id = sourceTraceId
       }
 
       db.pcb_trace.insert(pcb_trace)
