@@ -162,12 +162,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _shouldRouteAsync(): boolean {
     const autorouter = this._getAutorouterConfig()
+
+    // If groupMode is "sequential-trace", use synchronous routing
     if (autorouter.groupMode === "sequential-trace") return false
-    // Local subcircuit mode should use async routing with the CapacityMeshAutorouter
-    if (autorouter.local && autorouter.groupMode === "subcircuit") return true
+
+    // "subcircuit" and "auto-local" should use async routing with CapacityMeshAutorouter
+    if (
+      autorouter.local &&
+      (autorouter.groupMode === "subcircuit" ||
+        autorouter.groupMode === "auto-local")
+    )
+      return true
+
     // Remote autorouting always uses async
-    if (!autorouter.local) return true
-    return false
+    return !autorouter.local
   }
 
   _hasTracesToRoute(): boolean {
