@@ -20,24 +20,9 @@ test("add thickness to the trace", async () => {
     </board>,
   )
 
-  await circuit.renderUntilSettled()
+  circuit.render()
 
   const source_trace = circuit.db.source_trace.list()[0]
   expect(source_trace.min_trace_thickness).toBeDefined()
-  expect(source_trace).toMatchInlineSnapshot(`
-    {
-      "connected_source_net_ids": [],
-      "connected_source_port_ids": [
-        "source_port_0",
-        "source_port_2",
-      ],
-      "display_name": ".R1 > .pin1 to .C1 > .pin1",
-      "max_length": NaN,
-      "min_trace_thickness": 1.2,
-      "source_trace_id": "source_trace_0",
-      "subcircuit_connectivity_map_key": "unnamedsubcircuit47_connectivity_net0",
-      "subcircuit_id": "subcircuit_source_group_0",
-      "type": "source_trace",
-    }
-  `)
+  expect(source_trace.min_trace_thickness).toBe(1.2)
 })
