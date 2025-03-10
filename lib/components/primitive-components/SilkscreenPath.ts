@@ -6,6 +6,7 @@ export class SilkscreenPath extends PrimitiveComponent<
   typeof silkscreenPathProps
 > {
   pcb_silkscreen_path_id: string | null = null
+  isPcbPrimitive = true
 
   get config() {
     return {
@@ -18,8 +19,9 @@ export class SilkscreenPath extends PrimitiveComponent<
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const layer = maybeFlipLayer(props.layer ?? "top") as "top" | "bottom"
 
-    const layer = props.layer ?? "top"
     if (layer !== "top" && layer !== "bottom") {
       throw new Error(
         `Invalid layer "${layer}" for SilkscreenPath. Must be "top" or "bottom".`,
@@ -48,5 +50,29 @@ export class SilkscreenPath extends PrimitiveComponent<
     })
 
     this.pcb_silkscreen_path_id = pcb_silkscreen_path.pcb_silkscreen_path_id
+  }
+
+  getPcbSize(): { width: number; height: number } {
+    const { _parsedProps: props } = this
+    if (!props.route || props.route.length === 0) {
+      return { width: 0, height: 0 }
+    }
+
+    let minX = Infinity,
+      maxX = -Infinity,
+      minY = Infinity,
+      maxY = -Infinity
+
+    for (const point of props.route) {
+      minX = Math.min(minX, point.x)
+      maxX = Math.max(maxX, point.x)
+      minY = Math.min(minY, point.y)
+      maxY = Math.max(maxY, point.y)
+    }
+
+    return {
+      width: maxX - minX,
+      height: maxY - minY,
+    }
   }
 }
