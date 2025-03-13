@@ -14,7 +14,9 @@ it("should render a two-pin crystal", async () => {
     </board>,
   )
   circuit.render()
-  expect(circuit).toMatchSchematicSnapshot("crystal-two-pin")
+  expect(circuit).toMatchSchematicSnapshot(
+    import.meta.path + "-crystal-two-pin",
+  )
 })
 
 it("should render a four-pin crystal", async () => {
@@ -30,7 +32,9 @@ it("should render a four-pin crystal", async () => {
     </board>,
   )
   circuit.render()
-  expect(circuit).toMatchSchematicSnapshot("crystal-four-pin")
+  expect(circuit).toMatchSchematicSnapshot(
+    import.meta.path + "-crystal-four-pin",
+  )
 })
 
 it("should render a crystal without pinVariant specified (default to two-pin)", async () => {
@@ -41,5 +45,7 @@ it("should render a crystal without pinVariant specified (default to two-pin)", 
     </board>,
   )
   circuit.render()
-  expect(circuit).toMatchSchematicSnapshot("crystal-default")
+  expect(circuit).toMatchSchematicSnapshot(
+    import.meta.path + "-crystal-default",
+  )
 })

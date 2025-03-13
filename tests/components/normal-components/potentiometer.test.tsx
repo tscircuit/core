@@ -9,7 +9,9 @@ test("should render a two-pin potentiometer", async () => {
     </board>,
   )
   circuit.render()
-  expect(circuit).toMatchSchematicSnapshot("potentiometer-two-pin")
+  expect(circuit).toMatchSchematicSnapshot(
+    import.meta.path + "-potentiometer-two-pin",
+  )
 })
 
 test("should render a three-pin potentiometer", async () => {
@@ -20,7 +22,9 @@ test("should render a three-pin potentiometer", async () => {
     </board>,
   )
   circuit.render()
-  expect(circuit).toMatchSchematicSnapshot("potentiometer-three-pin")
+  expect(circuit).toMatchSchematicSnapshot(
+    import.meta.path + "-potentiometer-three-pin",
+  )
 })
 
 test("should render a potentiometer without pinVariant specified", async () => {
@@ -31,7 +35,9 @@ test("should render a potentiometer without pinVariant specified", async () => {
     </board>,
   )
   circuit.render()
-  expect(circuit).toMatchSchematicSnapshot("potentiometer-default")
+  expect(circuit).toMatchSchematicSnapshot(
+    import.meta.path + "-potentiometer-default",
+  )
 })
 
 test("should render multiple potentiometers with different rotations", async () => {
