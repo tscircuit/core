@@ -399,22 +399,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Wait for the autorouting to complete
       const traces = await routingPromise
 
-      // Make vias. Unclear if the autorouter should include this in it's output
-      // const vias: Partial<PcbVia>[] = []
-      // for (const via of traces.flatMap((t) =>
-      //   t.route.filter((r) => r.route_type === "via"),
-      // )) {
-      //   vias.push({
-      //     x: via.x,
-      //     y: via.y,
-      //     hole_diameter: 0.3,
-      //     outer_diameter: 0.6,
-      //     layers: [via.from_layer as any, via.to_layer as any],
-      //     from_layer: via.from_layer as any,
-      //     to_layer: via.to_layer as any,
-      //   })
-      // }
-
       // Store the result
       this._asyncAutoroutingResult = {
         output_pcb_traces: traces as any,
