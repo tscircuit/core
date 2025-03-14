@@ -431,6 +431,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _startAsyncAutorouting() {
+    if (this._hasStartedAsyncAutorouting) return
     this._hasStartedAsyncAutorouting = true
     if (this._getAutorouterConfig().local) {
       this._queueAsyncEffect("capacity-mesh-autorouting", async () =>
@@ -560,6 +561,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Apply each routed trace to the corresponding circuit trace
     for (const pcb_trace of output_pcb_traces) {
       pcb_trace.subcircuit_id = this.subcircuit_id!
+
+      if ((pcb_trace as any).connection_name) {
+        const sourceTraceId = (pcb_trace as any).connection_name
+        pcb_trace.source_trace_id = sourceTraceId
+      }
+
       db.pcb_trace.insert(pcb_trace)
     }
 

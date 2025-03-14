@@ -35,6 +35,7 @@ export interface AutoroutingProgressEvent {
   subcircuit_id: string
   componentDisplayName: string
   progress: number
+  iterationsPerSecond?: number
   debugGraphics?: any
 }
 

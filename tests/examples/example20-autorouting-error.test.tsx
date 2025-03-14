@@ -37,15 +37,18 @@ test("remote-autorouter-1 with legacy solve endpoint", async () => {
   const autoroutingErrors = circuitJson.filter(
     (el) => el.type === "pcb_autorouting_error",
   )
+
   // Verify routing request was made
   expect(autoroutingErrors).toMatchInlineSnapshot(`
 [
   {
-    "message": "Failed to compute first trace",
+    "message": "Failed to compute first trace (failInFirstTrace simulated error)",
     "pcb_autorouting_error_id": "pcb_autorouting_error_0",
     "pcb_error_id": "job_0",
     "type": "pcb_autorouting_error",
   },
 ]
 `)
+  // expect(autoroutingErrors.length).toBe(1);
+  // expect(autoroutingErrors[0].message).toContain("Failed to compute first trace");
 })

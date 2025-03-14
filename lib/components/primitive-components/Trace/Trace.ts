@@ -262,6 +262,7 @@ export class Trace
           { db },
         ) ?? props.maxLength,
       display_name: displayName,
+      min_trace_thickness: props.thickness,
     })
 
     this.source_trace_id = trace.source_trace_id
