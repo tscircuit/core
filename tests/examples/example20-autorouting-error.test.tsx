@@ -49,6 +49,4 @@ test("remote-autorouter-1 with legacy solve endpoint", async () => {
   },
 ]
 `)
-  // expect(autoroutingErrors.length).toBe(1);
-  // expect(autoroutingErrors[0].message).toContain("Failed to compute first trace");
 })
