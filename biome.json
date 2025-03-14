@@ -7,8 +7,10 @@
     "enabled": true,
     "indentStyle": "space"
   },
+
   "files": {
-    "ignore": ["cosmos-export", "dist", "package.json"]
+    "ignore": ["cosmos-export", "dist", "package.json"],
+    "maxSize": 5000000
   },
   "javascript": {
     "formatter": {
