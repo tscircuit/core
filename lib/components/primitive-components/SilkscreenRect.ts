@@ -5,6 +5,7 @@ export class SilkscreenRect extends PrimitiveComponent<
   typeof silkscreenRectProps
 > {
   pcb_silkscreen_rect_id: string | null = null
+  isPcbPrimitive = true
 
   get config() {
     return {
@@ -17,8 +18,9 @@ export class SilkscreenRect extends PrimitiveComponent<
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const layer = maybeFlipLayer(props.layer ?? "top") as "top" | "bottom"
 
-    const layer = props.layer ?? "top"
     if (layer !== "top" && layer !== "bottom") {
       throw new Error(
         `Invalid layer "${layer}" for SilkscreenRect. Must be "top" or "bottom".`,
@@ -42,5 +44,10 @@ export class SilkscreenRect extends PrimitiveComponent<
     })
 
     this.pcb_silkscreen_rect_id = pcb_silkscreen_rect.pcb_silkscreen_rect_id
+  }
+
+  getPcbSize(): { width: number; height: number } {
+    const { _parsedProps: props } = this
+    return { width: props.width, height: props.height }
   }
 }

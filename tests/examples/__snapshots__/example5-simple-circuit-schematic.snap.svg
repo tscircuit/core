@@ -21,11 +21,11 @@
     L 453.4311200671698,224.8985088160942
     L 353.9382569269487,224.8985088160942
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="4.030226700252px"/><text class="net-label-text" x="361.19266498740234" y="203.1352846347334" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="36.272040302267996px" transform="">GND</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="4.030226700252px"/><text class="net-label-text" x="361.19266498740234" y="203.1352846347334" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="36.272040302267996px" transform="">GND</text><path class="net-label" d="
     M 837.27959697734,352.64197481106
     L 826.3979848866596,374.40519899242076
     L 726.9051217464386,374.40519899242076
     L 726.9051217464386,330.8787506296992
     L 826.3979848866596,330.8787506296992
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="4.030226700252px"/><text class="net-label-text" x="819.1435768262061" y="352.64197481106" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="36.272040302267996px" transform="">GND</text></svg>
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="4.030226700252px"/><text class="net-label-text" x="819.1435768262061" y="352.64197481106" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="36.272040302267996px" transform="">GND</text></svg>
