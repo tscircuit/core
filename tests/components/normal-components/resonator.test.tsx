@@ -15,7 +15,9 @@ describe("Resonator Component", () => {
       </board>,
     )
     circuit.render()
-    expect(circuit).toMatchSchematicSnapshot("resonator-no-ground")
+    expect(circuit).toMatchSchematicSnapshot(
+      import.meta.path + "-resonator-no-ground",
+    )
   })
 
   it("should render a resonator with single ground pin", async () => {
@@ -31,7 +33,9 @@ describe("Resonator Component", () => {
       </board>,
     )
     circuit.render()
-    expect(circuit).toMatchSchematicSnapshot("resonator-single-ground")
+    expect(circuit).toMatchSchematicSnapshot(
+      import.meta.path + "-resonator-single-ground",
+    )
   })
 
   it("should render a resonator with two ground pins", async () => {
@@ -47,7 +51,9 @@ describe("Resonator Component", () => {
       </board>,
     )
     circuit.render()
-    expect(circuit).toMatchSchematicSnapshot("resonator-two-ground")
+    expect(circuit).toMatchSchematicSnapshot(
+      import.meta.path + "-resonator-two-ground",
+    )
   })
 
   it("should render a resonator without pinVariant specified", async () => {
@@ -58,6 +64,8 @@ describe("Resonator Component", () => {
       </board>,
     )
     circuit.render()
-    expect(circuit).toMatchSchematicSnapshot("resonator-default")
+    expect(circuit).toMatchSchematicSnapshot(
+      import.meta.path + "-resonator-default",
+    )
   })
 })

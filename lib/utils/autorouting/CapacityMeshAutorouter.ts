@@ -96,12 +96,10 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       ) {
         this.solver.step()
       }
-      // console.log(
-      //   "iterations/s",
-      //   ((this.solver.iterations - startIterations) /
-      //     (performance.now() - startTime)) *
-      //     1000,
-      // )
+      const iterationsPerSecond =
+        ((this.solver.iterations - startIterations) /
+          (Date.now() - startTime)) *
+        1000
       this.cycleCount++
 
       // Get visualization data if available
@@ -113,6 +111,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       this.emitEvent({
         type: "progress",
         steps: this.cycleCount,
+        iterationsPerSecond,
         progress,
         phase: this.solver.getCurrentPhase(),
         debugGraphics,
