@@ -21,11 +21,11 @@
     L -3.2600000000000193,283.79999999999995
     L 141.9,283.8
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="3px"/><text class="net-label-text" x="136.5" y="300" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="27px" transform="">U1_XTAL2</text><path class="net-label" d="
+  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="3px"/><text class="net-label-text" x="136.5" y="300" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="27px" transform="">U1_XTAL2</text><path class="net-label" d="
     M 750,285
     L 741.9,301.2
     L 596.74,301.2
     L 596.74,268.79999999999995
     L 741.9,268.8
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="3px"/><text class="net-label-text" x="736.5" y="285" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="27px" transform="">U1_XTAL2</text></svg>
+  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="3px"/><text class="net-label-text" x="736.5" y="285" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="27px" transform="">U1_XTAL2</text></svg>
