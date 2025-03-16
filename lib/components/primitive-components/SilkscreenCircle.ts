@@ -5,6 +5,7 @@ export class SilkscreenCircle extends PrimitiveComponent<
   typeof silkscreenCircleProps
 > {
   pcb_silkscreen_circle_id: string | null = null
+  isPcbPrimitive = true
 
   get config() {
     return {
@@ -17,7 +18,9 @@ export class SilkscreenCircle extends PrimitiveComponent<
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
-    const layer = props.layer ?? "top"
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const layer = maybeFlipLayer(props.layer ?? "top") as "top" | "bottom"
+
     if (layer !== "top" && layer !== "bottom") {
       throw new Error(
         `Invalid layer "${layer}" for SilkscreenCircle. Must be "top" or "bottom".`,
@@ -42,5 +45,11 @@ export class SilkscreenCircle extends PrimitiveComponent<
 
     this.pcb_silkscreen_circle_id =
       pcb_silkscreen_circle.pcb_silkscreen_circle_id
+  }
+
+  getPcbSize(): { width: number; height: number } {
+    const { _parsedProps: props } = this
+    const diameter = props.radius * 2
+    return { width: diameter, height: diameter }
   }
 }

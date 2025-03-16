@@ -21,123 +21,123 @@
     L 436.27428571425844,243.24044571432563
     L 496.79999999998284,243.24044571432563
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="493.71428571426804" y="252.49758857147003" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN4</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="493.71428571426804" y="252.49758857147003" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN4</text><path class="net-label" d="
     M 302.8963457142362,342.9039857143422
     L 307.52491714280836,333.6468428571978
     L 368.05063142853277,333.6468428571978
     L 368.05063142853277,352.1611285714866
     L 307.52491714280836,352.1611285714866
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="310.61063142852316" y="342.9039857143422" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN4</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="310.61063142852316" y="342.9039857143422" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN4</text><path class="net-label" d="
     M 501.428571428555,303.92616000005
     L 496.7999999999828,313.1833028571944
     L 436.27428571425844,313.1833028571944
     L 436.27428571425844,294.6690171429056
     L 496.79999999998284,294.6690171429056
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="493.71428571426804" y="303.92616000005" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN7</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="493.71428571426804" y="303.92616000005" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN7</text><path class="net-label" d="
     M 302.8963457142362,171.47541428574215
     L 307.52491714280836,162.21827142859775
     L 368.05063142853277,162.21827142859775
     L 368.05063142853277,180.73255714288655
     L 307.52491714280836,180.73255714288655
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="310.61063142852316" y="171.47541428574215" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN7</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="310.61063142852316" y="171.47541428574215" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN7</text><path class="net-label" d="
     M 501.428571428555,321.06901714291
     L 496.7999999999828,330.3261600000544
     L 436.27428571425844,330.3261600000544
     L 436.27428571425844,311.8118742857656
     L 496.79999999998284,311.8118742857656
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="493.71428571426804" y="321.06901714291" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN8</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="493.71428571426804" y="321.06901714291" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN8</text><path class="net-label" d="
     M 302.8963457142362,85.76112857144216
     L 307.52491714280836,76.50398571429776
     L 368.05063142853277,76.50398571429776
     L 368.05063142853277,95.01827142858656
     L 307.52491714280836,95.01827142858656
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="310.61063142852316" y="85.76112857144216" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN8</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="310.61063142852316" y="85.76112857144216" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN8</text><path class="net-label" d="
     M 698.571428571445,252.49758857147
     L 703.2000000000172,243.2404457143256
     L 780.08000000003,243.2404457143256
     L 780.08000000003,261.7547314286144
     L 703.2000000000172,261.7547314286144
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="706.2857142857321" y="252.49758857147" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT5</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="706.2857142857321" y="252.49758857147" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT5</text><path class="net-label" d="
     M 897.1036542857638,342.8571428571994
     L 892.4750828571916,352.1142857143438
     L 815.5950828571788,352.1142857143438
     L 815.5950828571788,333.600000000055
     L 892.4750828571916,333.600000000055
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="889.3893685714768" y="342.8571428571994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT5</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="889.3893685714768" y="342.8571428571994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT5</text><path class="net-label" d="
     M 698.571428571445,303.92616000005
     L 703.2000000000172,294.6690171429056
     L 780.08000000003,294.6690171429056
     L 780.08000000003,313.1833028571944
     L 703.2000000000172,313.1833028571944
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="706.2857142857321" y="303.92616000005" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT2</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="706.2857142857321" y="303.92616000005" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT2</text><path class="net-label" d="
     M 897.1036542857638,171.4285714285994
     L 892.4750828571916,180.6857142857438
     L 815.5950828571788,180.6857142857438
     L 815.5950828571788,162.171428571455
     L 892.4750828571916,162.171428571455
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="889.3893685714768" y="171.4285714285994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT2</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="889.3893685714768" y="171.4285714285994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT2</text><path class="net-label" d="
     M 698.571428571445,321.06901714291
     L 703.2000000000172,311.8118742857656
     L 780.08000000003,311.8118742857656
     L 780.08000000003,330.3261600000544
     L 703.2000000000172,330.3261600000544
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="706.2857142857321" y="321.06901714291" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT1</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="706.2857142857321" y="321.06901714291" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT1</text><path class="net-label" d="
     M 897.1036542857638,85.7142857142994
     L 892.4750828571916,94.9714285714438
     L 815.5950828571788,94.97142857144378
     L 815.5950828571788,76.45714285715498
     L 892.4750828571916,76.45714285715499
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="889.3893685714768" y="85.7142857142994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT1</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="889.3893685714768" y="85.7142857142994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT1</text><path class="net-label" d="
     M 988.6106314286362,85.76112857144216
     L 993.2392028572084,76.50398571429776
     L 1067.044917142935,76.50398571429776
     L 1067.044917142935,95.01827142858656
     L 993.2392028572084,95.01827142858656
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="996.3249171429233" y="85.76112857144216" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R12_pin2</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="996.3249171429233" y="85.76112857144216" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R12_pin2</text><path class="net-label" d="
     M 211.38936857136378,514.2857142857995
     L 206.76079714279157,523.5428571429438
     L 132.955082857065,523.5428571429438
     L 132.955082857065,505.0285714286551
     L 206.76079714279157,505.0285714286551
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="203.67508285707677" y="514.2857142857995" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R12_pin2</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="203.67508285707677" y="514.2857142857995" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R12_pin2</text><path class="net-label" d="
     M 988.6106314286362,257.18970000004214
     L 993.2392028572084,247.93255714289774
     L 1067.044917142935,247.93255714289774
     L 1067.044917142935,266.44684285718654
     L 993.2392028572084,266.44684285718654
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="996.3249171429233" y="257.18970000004214" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R10_pin2</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="996.3249171429233" y="257.18970000004214" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R10_pin2</text><path class="net-label" d="
     M 211.38936857136378,342.8571428571994
     L 206.76079714279157,352.1142857143438
     L 132.955082857065,352.1142857143438
     L 132.955082857065,333.600000000055
     L 206.76079714279157,333.600000000055
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="203.67508285707677" y="342.8571428571994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R10_pin2</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="203.67508285707677" y="342.8571428571994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R10_pin2</text><path class="net-label" d="
     M 988.6106314286362,428.6182714286422
     L 993.2392028572084,419.3611285714978
     L 1058.690631428648,419.3611285714978
     L 1058.690631428648,437.8754142857866
     L 993.2392028572084,437.8754142857866
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="996.3249171429233" y="428.6182714286422" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R8_pin2</text><path class="net-label" d="
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="996.3249171429233" y="428.6182714286422" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R8_pin2</text><path class="net-label" d="
     M 211.38936857136378,171.4285714285994
     L 206.76079714279157,180.6857142857438
     L 141.30936857135208,180.6857142857438
     L 141.30936857135208,162.171428571455
     L 206.76079714279157,162.171428571455
     Z
-  " fill="white" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="203.67508285707677" y="171.4285714285994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R8_pin2</text></svg>
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="203.67508285707677" y="171.4285714285994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R8_pin2</text></svg>
