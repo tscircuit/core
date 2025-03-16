@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.349",
+  "version": "0.0.350",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -34,7 +34,7 @@
     "@types/react-reconciler": "^0.28.9",
     "bun-match-svg": "0.0.8",
     "chokidar-cli": "^3.0.0",
-    "circuit-to-svg": "^0.0.99",
+    "circuit-to-svg": "^0.0.113",
     "concurrently": "^9.1.2",
     "debug": "^4.3.6",
     "graphics-debug": "^0.0.4",
@@ -48,8 +48,8 @@
     "tsup": "^8.2.4"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0",
-    "@tscircuit/footprinter": "*"
+    "@tscircuit/footprinter": "*",
+    "typescript": "^5.0.0"
   },
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
