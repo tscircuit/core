@@ -121,4 +121,6 @@ test("board auto-size with grouped components", () => {
   expect(pcb_board.center.y).toBe(0)
   expect(pcb_board.width).toBeGreaterThan(10)
   expect(pcb_board.height).toBeGreaterThan(10)
+
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot("board-auto-size-grouped-components")
 })
