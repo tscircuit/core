@@ -162,12 +162,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _shouldRouteAsync(): boolean {
     const autorouter = this._getAutorouterConfig()
+
+    // If groupMode is "sequential-trace", use synchronous routing
     if (autorouter.groupMode === "sequential-trace") return false
-    // Local subcircuit mode should use async routing with the CapacityMeshAutorouter
-    if (autorouter.local && autorouter.groupMode === "subcircuit") return true
+
+    // "subcircuit" and "auto-local" should use async routing with CapacityMeshAutorouter
+    if (
+      autorouter.local &&
+      (autorouter.groupMode === "subcircuit" ||
+        autorouter.groupMode === "auto-local")
+    )
+      return true
+
     // Remote autorouting always uses async
-    if (!autorouter.local) return true
-    return false
+    return !autorouter.local
   }
 
   _hasTracesToRoute(): boolean {
@@ -390,22 +398,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     try {
       // Wait for the autorouting to complete
       const traces = await routingPromise
-
-      // Make vias. Unclear if the autorouter should include this in it's output
-      // const vias: Partial<PcbVia>[] = []
-      // for (const via of traces.flatMap((t) =>
-      //   t.route.filter((r) => r.route_type === "via"),
-      // )) {
-      //   vias.push({
-      //     x: via.x,
-      //     y: via.y,
-      //     hole_diameter: 0.3,
-      //     outer_diameter: 0.6,
-      //     layers: [via.from_layer as any, via.to_layer as any],
-      //     from_layer: via.from_layer as any,
-      //     to_layer: via.to_layer as any,
-      //   })
-      // }
 
       // Store the result
       this._asyncAutoroutingResult = {
