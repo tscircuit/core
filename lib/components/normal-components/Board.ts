@@ -42,21 +42,21 @@ export class Board extends Group<typeof boardProps> {
     let minY = Infinity
     let maxX = -Infinity
     let maxY = -Infinity
-    
+
     // Get all PCB components from the database
     const allPcbComponents = db.pcb_component.list()
     let hasComponents = false
-    
+
     // Process all PCB components
     for (const pcbComponent of allPcbComponents) {
       const { width, height, center } = pcbComponent
-      
+
       // Skip components with zero dimensions
       if (width === 0 || height === 0) continue
-      
+
       // Track that we found at least one valid component
       hasComponents = true
-      
+
       // Update bounds
       minX = Math.min(minX, center.x - width / 2)
       minY = Math.min(minY, center.y - height / 2)
@@ -66,15 +66,19 @@ export class Board extends Group<typeof boardProps> {
 
     // Add padding around components
     const padding = 2
-    
+
     // Use dimensions of 0,0 when no components are found
-    const computedWidth = hasComponents ? (maxX - minX + padding * 2) : 0
-    const computedHeight = hasComponents ? (maxY - minY + padding * 2) : 0
+    const computedWidth = hasComponents ? maxX - minX + padding * 2 : 0
+    const computedHeight = hasComponents ? maxY - minY + padding * 2 : 0
 
     // Center the board around the components or use (0,0) for empty boards
     const center = {
-      x: hasComponents ? ((minX + maxX) / 2 + (props.outlineOffsetX ?? 0)) : (props.outlineOffsetX ?? 0),
-      y: hasComponents ? ((minY + maxY) / 2 + (props.outlineOffsetY ?? 0)) : (props.outlineOffsetY ?? 0),
+      x: hasComponents
+        ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
+        : (props.outlineOffsetX ?? 0),
+      y: hasComponents
+        ? (minY + maxY) / 2 + (props.outlineOffsetY ?? 0)
+        : (props.outlineOffsetY ?? 0),
     }
 
     // Update the board dimensions

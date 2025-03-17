@@ -84,8 +84,7 @@ test("board auto-size with group is empty", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board>
-      <group>
-      </group>
+      <group></group>
     </board>,
   )
   circuit.render()
@@ -99,8 +98,20 @@ test("board auto-size with grouped components", () => {
   circuit.add(
     <board>
       <group>
-        <resistor name="R1" resistance="10k" footprint="0402" pcbX={5} pcbY={5} />
-        <resistor name="R2" resistance="10k" footprint="0402" pcbX={-5} pcbY={-5} />
+        <resistor
+          name="R1"
+          resistance="10k"
+          footprint="0402"
+          pcbX={5}
+          pcbY={5}
+        />
+        <resistor
+          name="R2"
+          resistance="10k"
+          footprint="0402"
+          pcbX={-5}
+          pcbY={-5}
+        />
       </group>
     </board>,
   )
