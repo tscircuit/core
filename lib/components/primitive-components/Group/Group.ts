@@ -37,7 +37,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
-    output_pcb_traces?: PcbTrace[]
+    output_pcb_traces?: (PcbTrace | PcbVia)[]
   } | null = null
 
   get config() {
@@ -568,6 +568,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // Apply each routed trace to the corresponding circuit trace
     for (const pcb_trace of output_pcb_traces) {
+      // vias can be included
+      if (pcb_trace.type !== "pcb_trace") continue
       pcb_trace.subcircuit_id = this.subcircuit_id!
 
       if ((pcb_trace as any).connection_name) {
@@ -582,18 +584,28 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // the Circuit JSON spec is ambiguous as to whether a via should have a
     // separate element from the route)
     for (const pcb_trace of output_pcb_traces) {
-      for (const point of pcb_trace.route) {
-        if (point.route_type === "via") {
-          db.pcb_via.insert({
-            pcb_trace_id: pcb_trace.pcb_trace_id,
-            x: point.x,
-            y: point.y,
-            hole_diameter: 0.3,
-            outer_diameter: 0.6,
-            layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
-            from_layer: point.from_layer as LayerRef,
-            to_layer: point.to_layer as LayerRef,
-          })
+      if (pcb_trace.type === "pcb_via") {
+        // TODO handling here- may need to handle if redundant with pcb_trace
+        // below (i.e. don't insert via if one already exists at that location)
+        continue
+      }
+      if (pcb_trace.type === "pcb_trace") {
+        for (const point of pcb_trace.route) {
+          if (point.route_type === "via") {
+            db.pcb_via.insert({
+              pcb_trace_id: pcb_trace.pcb_trace_id,
+              x: point.x,
+              y: point.y,
+              hole_diameter: 0.3,
+              outer_diameter: 0.6,
+              layers: [
+                point.from_layer as LayerRef,
+                point.to_layer as LayerRef,
+              ],
+              from_layer: point.from_layer as LayerRef,
+              to_layer: point.to_layer as LayerRef,
+            })
+          }
         }
       }
     }
