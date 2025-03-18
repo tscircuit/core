@@ -568,6 +568,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // Apply each routed trace to the corresponding circuit trace
     for (const pcb_trace of output_pcb_traces) {
+      // vias can be included
+      if (pcb_trace.type !== "pcb_trace") continue
       pcb_trace.subcircuit_id = this.subcircuit_id!
 
       if ((pcb_trace as any).connection_name) {
