@@ -103,7 +103,8 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       this.cycleCount++
 
       // Get visualization data if available
-      const debugGraphics = this.solver.activeSolver?.visualize() || undefined
+      const debugGraphics =
+        this.solver.activeSubSolver?.visualize() || undefined
 
       // Report progress
       const progress = this.solver.progress
