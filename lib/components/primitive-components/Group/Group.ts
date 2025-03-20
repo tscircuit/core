@@ -7,7 +7,6 @@ import * as SAL from "@tscircuit/schematic-autolayout"
 import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
-  type AnyCircuitElement,
   type LayerRef,
   type PcbTrace,
   type PcbVia,
@@ -26,12 +25,10 @@ import { TraceHint } from "../TraceHint"
 import type { ISubcircuit } from "./ISubcircuit"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
-import outputTraces from "../../../../output_pcb_circuit.json"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
-  implements ISubcircuit
-{
+  implements ISubcircuit {
   pcb_group_id: string | null = null
   subcircuit_id: string | null = null
 
