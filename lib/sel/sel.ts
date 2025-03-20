@@ -1,3 +1,4 @@
+import type { ChipProps } from "@tscircuit/props"
 import type {
   CommonPinNames,
   Nums16,
@@ -74,7 +75,16 @@ type SelWithoutSubcircuit = NonPolarizedSel &
   NetSel &
   ConnectionSel
 
-export type Sel = SubcircuitSel & SelWithoutSubcircuit
+type SelAsStringFn = (refdes: string) => Record<CommonPinNames, string>
+
+type SelAsChipFn = <T extends ChipProps<any>>(
+  chipDef: T,
+) => Record<keyof T["pinLabels"], string>
+
+export type Sel = SubcircuitSel &
+  SelWithoutSubcircuit &
+  SelAsStringFn &
+  SelAsChipFn
 
 export const sel: Sel = new Proxy(
   {},

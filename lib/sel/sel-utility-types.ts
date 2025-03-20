@@ -1,4 +1,5 @@
 export type Nums16 =
+  | "0"
   | "1"
   | "2"
   | "3"
@@ -17,6 +18,7 @@ export type Nums16 =
   | "16"
 
 export type Nums40 =
+  | "0"
   | "1"
   | "2"
   | "3"
@@ -59,6 +61,7 @@ export type Nums40 =
   | "40"
 
 export type PinNumbers100 =
+  | "pin0"
   | "pin1"
   | "pin2"
   | "pin3"
