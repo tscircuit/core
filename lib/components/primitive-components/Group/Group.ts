@@ -7,6 +7,7 @@ import * as SAL from "@tscircuit/schematic-autolayout"
 import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
+  type AnyCircuitElement,
   type LayerRef,
   type PcbTrace,
   type PcbVia,
@@ -25,6 +26,7 @@ import { TraceHint } from "../TraceHint"
 import type { ISubcircuit } from "./ISubcircuit"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
+import outputTraces from "../../../../output_pcb_circuit.json"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -580,33 +582,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       db.pcb_trace.insert(pcb_trace)
     }
 
-    // Create vias for layer transitions (this shouldn't be necessary, but
-    // the Circuit JSON spec is ambiguous as to whether a via should have a
-    // separate element from the route)
-    for (const pcb_trace of output_pcb_traces) {
-      if (pcb_trace.type === "pcb_via") {
-        // TODO handling here- may need to handle if redundant with pcb_trace
-        // below (i.e. don't insert via if one already exists at that location)
-        continue
-      }
-      if (pcb_trace.type === "pcb_trace") {
-        for (const point of pcb_trace.route) {
-          if (point.route_type === "via") {
-            db.pcb_via.insert({
-              pcb_trace_id: pcb_trace.pcb_trace_id,
-              x: point.x,
-              y: point.y,
-              hole_diameter: 0.3,
-              outer_diameter: 0.6,
-              layers: [
-                point.from_layer as LayerRef,
-                point.to_layer as LayerRef,
-              ],
-              from_layer: point.from_layer as LayerRef,
-              to_layer: point.to_layer as LayerRef,
-            })
-          }
-        }
+    // output_pcb_traces is having both pcb_via and pcb_trace
+    // we are inserting all the pcb_via elements, and not by the
+    // route type of pcb_trace
+    for (const pcb_via of output_pcb_traces) {
+      if (pcb_via.type === "pcb_via") {
+        db.pcb_via.insert(pcb_via)
       }
     }
   }
