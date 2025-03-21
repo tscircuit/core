@@ -23,7 +23,6 @@ export const PushButton = (props: Props) => {
         rotationOffset: { x: 0, y: 0, z: 0 },
         positionOffset: { x: 0, y: 0, z: 3.1 },
       }}
-      // @ts-expect-error
       pinLabels={pinLabels}
       schPinSpacing={0.75}
       schPortArrangement={{
