@@ -1,6 +1,12 @@
 import { sel } from "lib/sel"
 import { test, expect } from "bun:test"
-import type { ChipProps } from "@tscircuit/props"
+import type {
+  ChipProps,
+  PinLabelsProp,
+  PinLabelFromPinLabelMap,
+  ChipConnections,
+  ChipPinLabels,
+} from "@tscircuit/props"
 
 const pinLabels = {
   pin1: "CUSTOM_DATA_1",
@@ -32,4 +38,13 @@ test("sel2 - selU2.CUSTOM_DATA_1 = .U2 > .CUSTOM_DATA_1", () => {
   const selU2 = sel.U2(MyChip)
 
   expect(selU2.CUSTOM_DATA_1).toBe(".U2 > .CUSTOM_DATA_1")
+})
+
+test("sel2 - selU2.CUSTOM_DATA_1 = .U2 > .CUSTOM_DATA_1", () => {
+  expect(sel.U2<"custompin1" | "custompin2">().custompin1).toBe(
+    ".U2 > .custompin1",
+  )
+
+  // @ts-expect-error
+  sel.U2<"custompin1" | "custompin2">().doesnotexist
 })

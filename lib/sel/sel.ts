@@ -1,4 +1,10 @@
-import type { ChipProps } from "@tscircuit/props"
+import type {
+  ChipProps,
+  PinLabelFromPinLabelMap,
+  PinLabelsProp,
+  ChipConnections,
+  ChipPinLabels,
+} from "@tscircuit/props"
 import type {
   CommonPinNames,
   Nums16,
@@ -55,7 +61,7 @@ type JumperSel = Record<
   Record<PinNumbers100 | CommonPinNames, string>
 >
 
-type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string>>
+type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string> & ChipFnSel>
 
 type NetSel = Record<"net", Record<CommonNetNames, string>>
 
@@ -74,6 +80,35 @@ type SelWithoutSubcircuit = NonPolarizedSel &
   SwSel &
   NetSel &
   ConnectionSel
+
+type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
+  x: infer I,
+) => void
+  ? I
+  : never
+
+type ChipFn<T extends ChipProps<any>> = (props: T) => any
+type ChipFnSel = <T extends ChipFn<any> | string>(
+  chipFn?: T,
+) => UnionToIntersection<
+  T extends ChipFn<any>
+    ? ChipConnections<T>
+    : T extends string
+      ? { [K in T]: string }
+      : never
+>
+
+// type ChipSelFn<PLM extends PinLabelsProp> = <
+//   T extends (props: ChipProps<PLM>) => any,
+// >(
+//   ChipFn: T,
+// ) => {
+//   [K in keyof PLM]: string
+// }
+
+// type ChipSelFn<PLM extends PinLabelsProp> = (
+//   ChipFn: (props: ChipProps<PLM>) => any,
+// ) => Record<PinLabelFromPinLabelMap<PLM>, string>
 
 export type Sel = SubcircuitSel & SelWithoutSubcircuit
 
