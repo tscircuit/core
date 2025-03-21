@@ -75,16 +75,7 @@ type SelWithoutSubcircuit = NonPolarizedSel &
   NetSel &
   ConnectionSel
 
-type SelAsStringFn = (refdes: string) => Record<CommonPinNames, string>
-
-type SelAsChipFn = <T extends ChipProps<any>>(
-  chipDef: T,
-) => Record<keyof T["pinLabels"], string>
-
-export type Sel = SubcircuitSel &
-  SelWithoutSubcircuit &
-  SelAsStringFn &
-  SelAsChipFn
+export type Sel = SubcircuitSel & SelWithoutSubcircuit
 
 export const sel: Sel = new Proxy(
   {},
