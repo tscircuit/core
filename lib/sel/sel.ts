@@ -98,18 +98,6 @@ type ChipFnSel = <T extends ChipFn<any> | string>(
       : never
 >
 
-// type ChipSelFn<PLM extends PinLabelsProp> = <
-//   T extends (props: ChipProps<PLM>) => any,
-// >(
-//   ChipFn: T,
-// ) => {
-//   [K in keyof PLM]: string
-// }
-
-// type ChipSelFn<PLM extends PinLabelsProp> = (
-//   ChipFn: (props: ChipProps<PLM>) => any,
-// ) => Record<PinLabelFromPinLabelMap<PLM>, string>
-
 export type Sel = SubcircuitSel & SelWithoutSubcircuit
 
 export const sel: Sel = new Proxy(
