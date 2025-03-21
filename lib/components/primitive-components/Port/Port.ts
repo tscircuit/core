@@ -195,7 +195,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { db } = this.root!
     if (!this.schematic_port_id) {
       throw new Error(
-        `Can't get schematic port position after layout, no schematic_port_id`,
+        `Can't get schematic port position after layout for "${this.getString()}", no schematic_port_id`,
       )
     }
     const schematic_port = db.schematic_port.get(this.schematic_port_id)!

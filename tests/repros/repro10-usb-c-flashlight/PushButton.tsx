@@ -25,7 +25,7 @@ export const PushButton = (props: Props) => {
       }}
       pinLabels={pinLabels}
       schPinSpacing={0.75}
-      schPortArrangement={{
+      schPinArrangement={{
         leftSide: {
           direction: "top-to-bottom",
           pins: [1, 3],
