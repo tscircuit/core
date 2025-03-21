@@ -1,4 +1,11 @@
 import type {
+  ChipProps,
+  PinLabelFromPinLabelMap,
+  PinLabelsProp,
+  ChipConnections,
+  ChipPinLabels,
+} from "@tscircuit/props"
+import type {
   CommonPinNames,
   Nums16,
   Nums40,
@@ -54,7 +61,7 @@ type JumperSel = Record<
   Record<PinNumbers100 | CommonPinNames, string>
 >
 
-type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string>>
+type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string> & ChipFnSel>
 
 type NetSel = Record<"net", Record<CommonNetNames, string>>
 
@@ -74,40 +81,82 @@ type SelWithoutSubcircuit = NonPolarizedSel &
   NetSel &
   ConnectionSel
 
+type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
+  x: infer I,
+) => void
+  ? I
+  : never
+
+type ChipFn<T extends ChipProps<any>> = (props: T) => any
+type ChipFnSel = <T extends ChipFn<any> | string>(
+  chipFn?: T,
+) => UnionToIntersection<
+  T extends ChipFn<any>
+    ? ChipConnections<T>
+    : T extends string
+      ? { [K in T]: string }
+      : never
+>
+
 export type Sel = SubcircuitSel & SelWithoutSubcircuit
 
 export const sel: Sel = new Proxy(
   {},
   {
     get: (_, prop1: string) => {
-      return new Proxy(
-        {},
-        {
-          get: (_, prop2: string) => {
-            if (prop1 === "net") {
-              return `net.${prop2}`
-            }
-            if (prop1 === "subcircuit") {
-              return new Proxy(
-                {},
-                {
-                  get: (_, prop3: string) => {
-                    return new Proxy(
-                      {},
-                      {
-                        get: (_, prop4: string) => {
-                          return `subcircuit.${prop2} > .${prop3} > .${prop4}`
-                        },
-                      },
-                    )
-                  },
-                },
-              )
-            }
-            return `.${prop1} > .${prop2}`
+      // Create a function that will be our proxy target
+      const fn = (...args: any[]) => {
+        const chipFnOrPinType = args[0]
+
+        // Return a proxy for either case - with or without args
+        return new Proxy(
+          {},
+          {
+            get: (_, pinName: string) => {
+              return `.${prop1} > .${pinName}`
+            },
           },
+        )
+      }
+
+      // Create a proxy around this function
+      return new Proxy(fn, {
+        // This handles dot notation access like sel.U1.PIN
+        get: (_, prop2: string) => {
+          if (prop1 === "net") {
+            return `net.${prop2}`
+          }
+          if (prop1 === "subcircuit") {
+            return new Proxy(
+              {},
+              {
+                get: (_, prop3: string) => {
+                  return new Proxy(
+                    {},
+                    {
+                      get: (_, prop4: string) => {
+                        return `subcircuit.${prop2} > .${prop3} > .${prop4}`
+                      },
+                    },
+                  )
+                },
+              },
+            )
+          }
+          return `.${prop1} > .${prop2}`
         },
-      )
+        // This handles function calls like sel.U1(MyChip)
+        apply: (target, _, args: any[]) => {
+          return new Proxy(
+            {},
+            {
+              get: (_, pinName: string) => {
+                return `.${prop1} > .${pinName}`
+              },
+            },
+          )
+        },
+      })
     },
   },
 ) as any

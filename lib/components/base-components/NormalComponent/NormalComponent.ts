@@ -220,16 +220,25 @@ export class NormalComponent<
       for (const symPort of sym.ports) {
         const pinNumber = getPinNumberFromLabels(symPort.labels)
         if (!pinNumber) continue
-        const port = getPortFromHints(
-          symPort.labels.concat(
-            opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
-          ),
+
+        const existingPort = portsToCreate.find(
+          (p) => p._parsedProps.pinNumber === Number(pinNumber),
         )
 
-        if (port) {
-          port.originDescription = `schematicSymbol:labels[0]:${symPort.labels[0]}`
-          port.schematicSymbolPortDef = symPort
-          portsToCreate.push(port)
+        if (existingPort) {
+          existingPort.schematicSymbolPortDef = symPort
+        } else {
+          const port = getPortFromHints(
+            symPort.labels.concat(
+              opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
+            ),
+          )
+
+          if (port) {
+            port.originDescription = `schematicSymbol:labels[0]:${symPort.labels[0]}`
+            port.schematicSymbolPortDef = symPort
+            portsToCreate.push(port)
+          }
         }
       }
 

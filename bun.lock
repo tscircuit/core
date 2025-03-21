@@ -8,7 +8,7 @@
         "@tscircuit/capacity-autorouter": "^0.0.36",
         "@tscircuit/infgrid-ijump-astar": "^0.0.33",
         "@tscircuit/math-utils": "^0.0.9",
-        "@tscircuit/props": "^0.0.159",
+        "@tscircuit/props": "^0.0.163",
         "@tscircuit/schematic-autolayout": "^0.0.6",
         "@tscircuit/soup-util": "^0.0.41",
         "circuit-json": "^0.0.153",
@@ -229,7 +229,7 @@
 
     "@tscircuit/mm": ["@tscircuit/mm@0.0.8", "", { "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-nl7nxE7AhARbKuobflI0LUzoir7+wJyvwfPw6bzA/O0Q3YTcH3vBkU/Of+V/fp6ht+AofiCXj7YAH9E446138Q=="],
 
-    "@tscircuit/props": ["@tscircuit/props@0.0.159", "", { "peerDependencies": { "@tscircuit/layout": "*", "circuit-json": "*", "react": "*", "zod": "*" } }, "sha512-AI3V0uHd4rCu5MgP3oerYjYxJtyAi8XHYzT7E+AEyR9F2KBtrOjy+PRipDO3QoSF0gOf+rjZgLnodNNK00QGKw=="],
+    "@tscircuit/props": ["@tscircuit/props@0.0.163", "", { "peerDependencies": { "@tscircuit/layout": "*", "circuit-json": "*", "react": "*", "zod": "*" } }, "sha512-AVs17q0L7IqpXJ00k1QWTjGZ2neP/GsJwxlu5zI4+WxA6uaVJ3F9peVH3+pfmPQzXcrO1E+JFUGcXHbdGaF0oQ=="],
 
     "@tscircuit/routing": ["@tscircuit/routing@1.3.5", "", { "dependencies": { "bs58": "^5.0.0", "pathfinding": "^0.4.18", "react-error-boundary": "^4.0.11" } }, "sha512-6qHGsKC731TbeaqiQToHS5Zao+93nv99LjbpI479Bqz8Avc8CAUax9QnhMhJ5KvYQv5zLtjv2ywezzRxZf09ZA=="],
 
