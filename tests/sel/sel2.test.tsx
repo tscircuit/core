@@ -23,7 +23,7 @@ test("sel2 - sel.U1(MyChip).CUSTOM_DATA_1 = .U1 > .CUSTOM_DATA_1", () => {
   expect(sel.U1(MyChip).CUSTOM_DATA_1).toBe(".U1 > .CUSTOM_DATA_1")
 
   // @ts-expect-error
-  expect(sel.U1(MyChip).DOES_NOT_EXIST).toBe(".U1 > .CUSTOM_DATA_1")
+  expect(sel.U1(MyChip).DOES_NOT_EXIST).toBe(".U1 > .DOES_NOT_EXIST")
 })
 
 test("sel2 - selU2.CUSTOM_DATA_1 = .U2 > .CUSTOM_DATA_1", () => {
