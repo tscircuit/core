@@ -52,6 +52,7 @@ export interface TscircuitElements {
   switch: Props.SwitchProps
   mosfet: Props.MosfetProps
   jscad: any
+  stampboard: Props.StampboardProps
 }
 
 declare module "react" {
