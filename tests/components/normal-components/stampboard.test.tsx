@@ -24,4 +24,5 @@ it("should create a Stampboard component with correct properties", async () => {
   expect(stampboard.config.shouldRenderAsSchematicBox).toBe(true)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
