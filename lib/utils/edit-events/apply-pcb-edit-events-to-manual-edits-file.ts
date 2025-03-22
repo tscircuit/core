@@ -21,9 +21,7 @@ export const applyPcbEditEventsToManualEditsFile = ({
     if (editEvent.edit_event_type === "edit_pcb_component_location") {
       const { pcb_component_id, new_center } = editEvent
 
-      const pcb_component = su(circuitJson).pcb_component.get(
-        pcb_component_id,
-      )
+      const pcb_component = su(circuitJson).pcb_component.get(pcb_component_id)
       if (!pcb_component) continue
       const source_component = su(circuitJson).source_component.get(
         pcb_component.source_component_id,

@@ -11,7 +11,7 @@ test("applyPcbEditEventsToManualEditsFile updates component locations", async ()
       <resistor name="R1" resistance="10k" />
     </board>,
   )
-  
+
   circuit.render()
 
   const circuitJson = circuit.getCircuitJson()
@@ -27,8 +27,7 @@ test("applyPcbEditEventsToManualEditsFile updates component locations", async ()
       edit_event_type: "edit_pcb_component_location",
       edit_event_id: "test_event_1",
       created_at: Date.now(),
-      pcb_component_id:
-        circuit.db.pcb_component.list()[0].pcb_component_id,
+      pcb_component_id: circuit.db.pcb_component.list()[0].pcb_component_id,
       original_center: { x: 0, y: 0 },
       new_center: { x: 5, y: 3 },
       pcb_edit_event_type: "edit_component_location",
@@ -56,8 +55,7 @@ test("applyPcbEditEventsToManualEditsFile updates component locations", async ()
       edit_event_type: "edit_pcb_component_location",
       edit_event_id: "test_event_2",
       created_at: Date.now(),
-      pcb_component_id:
-        circuit.db.pcb_component.list()[0].pcb_component_id,
+      pcb_component_id: circuit.db.pcb_component.list()[0].pcb_component_id,
       original_center: { x: 5, y: 3 },
       new_center: { x: 8, y: 4 },
       pcb_edit_event_type: "edit_component_location",
