@@ -147,15 +147,24 @@ export class Trace
         const parentSelector = selector.replace(/\>.*$/, "")
         const targetComponent = this.getSubcircuit().selectOne(parentSelector)
         if (!targetComponent) {
-          this.renderError(`Could not find port for selector "${selector}"`)
-        } else {
           this.renderError(
-            `Could not find port for selector "${selector}" (did you forget to include the pin name?)\nsearched component ${targetComponent.getString()}, which has ports: ${targetComponent.children
-              .filter((c) => c.componentName === "Port")
-              .map(
-                (c) => `${c.getString()}(${c.getNameAndAliases().join(",")})`,
-              )
-              .join(" & ")}`,
+            `Could not find component for selector "${parentSelector}"`,
+          )
+        } else {
+          const availablePorts = targetComponent.children
+            .filter((c) => c.componentName === "Port")
+            .map((c) => {
+              const port = c as Port
+              const aliases = port.getNameAndAliases()
+              return aliases.join(", ")
+            })
+            .filter(Boolean)
+            .sort()
+
+          const portName = selector.split(">").pop()?.trim()
+          this.renderError(
+            `Port "${portName}" not found on component "${targetComponent.props.name}". ` +
+              `Available ports are: ${availablePorts.join("; ")}`,
           )
         }
       }
