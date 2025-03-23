@@ -158,20 +158,9 @@ export class Trace
             `Could not find component for selector "${parentSelector}"`,
           )
         } else {
-          const availablePorts = targetComponent.children
-            .filter((c) => c.componentName === "Port")
-            .map((c) => {
-              const port = c as Port
-              const aliases = port.getNameAndAliases()
-              return aliases.join(", ")
-            })
-            .filter(Boolean)
-            .sort()
-
           const portName = selector.split(">").pop()?.trim()
           this.renderError(
-            `Port "${portName}" not found on component "${targetComponent.props.name}". ` +
-              `Available ports are: ${availablePorts.join("; ")}`,
+            `Port "${portName}" not found on component "${targetComponent.props.name}"`,
           )
         }
       }

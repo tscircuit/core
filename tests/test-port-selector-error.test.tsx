@@ -26,15 +26,8 @@ test("should show helpful error message when port selector is invalid", async ()
     throw new Error("Should have thrown error")
   } catch (error: any) {
     console.log("Actual error message:", error.message)
-    expect(error.message).toContain(
-      'Port ".INVALID_PORT" not found on component',
+    expect(error.message).toBe(
+      'Port ".INVALID_PORT" not found on component "U1"',
     )
-    expect(error.message).toContain("Available ports are:")
-    expect(error.message).toContain("VCC")
-    expect(error.message).toContain("GND")
-    expect(error.message).toContain("OUT")
-    expect(error.message).toContain("pin1")
-    expect(error.message).toContain("pin2")
-    expect(error.message).toContain("pin3")
   }
 })
