@@ -146,6 +146,13 @@ export class Trace
       if (!port) {
         const parentSelector = selector.replace(/\>.*$/, "")
         const targetComponent = this.getSubcircuit().selectOne(parentSelector)
+
+        // Check if this is a subcircuit reference issue
+        if (selector.includes(".") && !selector.includes(" ")) {
+          this.renderError(`Could not find port for selector "${selector}"`)
+          continue
+        }
+
         if (!targetComponent) {
           this.renderError(
             `Could not find component for selector "${parentSelector}"`,
