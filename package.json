@@ -54,8 +54,10 @@
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
     "@tscircuit/capacity-autorouter": "^0.0.42",
+    "@tscircuit/checks": "^0.0.29",
+    "@tscircuit/circuit-json-util": "^0.0.45",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
-    "@tscircuit/math-utils": "^0.0.9",
+    "@tscircuit/math-utils": "^0.0.12",
     "@tscircuit/props": "^0.0.163",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/soup-util": "^0.0.41",
