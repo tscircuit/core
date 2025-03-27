@@ -156,12 +156,21 @@ export class Board extends Group<typeof boardProps> {
     if (this.getInheritedProperty("routingDisabled")) return
     const { db } = this.root!
 
+    // Store existing non-DRC errors
+    const existingErrors = db.pcb_trace_error
+      .list()
+      .filter((error) => !error.message.includes("overlaps with"))
+
+    // Clear all trace errors
     db.pcb_trace_error.list().forEach((error) => {
       db.pcb_trace_error.delete(error.pcb_trace_error_id)
     })
 
-    const errors = checkEachPcbTraceNonOverlapping(db.toArray())
-    for (const error of errors) {
+    // Run DRC checks
+    const drcErrors = checkEachPcbTraceNonOverlapping(db.toArray())
+
+    // Restore non-DRC errors and add new DRC errors
+    for (const error of [...existingErrors, ...drcErrors]) {
       db.pcb_trace_error.insert(error)
     }
   }
