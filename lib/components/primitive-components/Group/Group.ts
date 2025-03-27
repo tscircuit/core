@@ -475,27 +475,54 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   updatePcbTraceRender() {
-    if (this.root?.pcbDisabled) return
-    if (this.getInheritedProperty("routingDisabled")) return
-    const { db } = this.root!
-
-    db.pcb_trace.list().forEach((trace) => {
-      db.pcb_trace.delete(trace.pcb_trace_id)
-    })
-
-    // Update traces based on autorouting result
-    if (this._asyncAutoroutingResult) {
-      if (this._asyncAutoroutingResult.output_simple_route_json) {
-        this._updatePcbTraceRenderFromSimpleRouteJson()
-      } else if (this._asyncAutoroutingResult.output_pcb_traces) {
-        this._updatePcbTraceRenderFromPcbTraces()
+    const debug = Debug("tscircuit:core:updatePcbTraceRender")
+    debug(`[${this.getString()}] updating...`)
+    if (!this.isSubcircuit) return
+    if (
+      this._shouldRouteAsync() &&
+      this._hasTracesToRoute() &&
+      !this._hasStartedAsyncAutorouting
+    ) {
+      if (this._areChildSubcircuitsRouted()) {
+        debug(
+          `[${this.getString()}] child subcircuits are now routed, starting async autorouting`,
+        )
+        this._startAsyncAutorouting()
       }
+      return
     }
 
-    // Run DRC checks after trace updates
-    const board = this.root?.selectAll("board")[0] as Board | undefined
-    if (board) {
-      board.updatePcbDesignRuleChecks()
+    if (!this._asyncAutoroutingResult) return
+    if (this._shouldUseTraceByTraceRouting()) return
+
+    const { db } = this.root!
+
+    if (this._asyncAutoroutingResult.output_simple_route_json) {
+      debug(
+        `[${this.getString()}] updating PCB traces from simple route json (${this._asyncAutoroutingResult.output_simple_route_json.traces?.length} traces)`,
+      )
+      this._updatePcbTraceRenderFromSimpleRouteJson()
+
+      // Run DRC checks after trace updates
+      const board = this.root?.selectAll("board")[0] as Board | undefined
+      if (board) {
+        board.updatePcbDesignRuleChecks()
+      }
+      return
+    }
+
+    if (this._asyncAutoroutingResult.output_pcb_traces) {
+      debug(
+        `[${this.getString()}] updating PCB traces from ${this._asyncAutoroutingResult.output_pcb_traces.length} traces`,
+      )
+      this._updatePcbTraceRenderFromPcbTraces()
+
+      // Run DRC checks after trace updates
+      const board = this.root?.selectAll("board")[0] as Board | undefined
+      if (board) {
+        board.updatePcbDesignRuleChecks()
+      }
+      return
     }
   }
 
