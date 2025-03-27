@@ -25,6 +25,7 @@ import { TraceHint } from "../TraceHint"
 import type { ISubcircuit } from "./ISubcircuit"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
+import { Board } from "../../normal-components/Board"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -501,6 +502,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         `[${this.getString()}] updating PCB traces from simple route json (${this._asyncAutoroutingResult.output_simple_route_json.traces?.length} traces)`,
       )
       this._updatePcbTraceRenderFromSimpleRouteJson()
+
+      // Run DRC checks after trace updates
+      const board = this.root?.selectAll("board")[0] as Board | undefined
+      if (board) {
+        board.updatePcbDesignRuleChecks()
+      }
       return
     }
 
@@ -509,6 +516,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         `[${this.getString()}] updating PCB traces from ${this._asyncAutoroutingResult.output_pcb_traces.length} traces`,
       )
       this._updatePcbTraceRenderFromPcbTraces()
+
+      // Run DRC checks after trace updates
+      const board = this.root?.selectAll("board")[0] as Board | undefined
+      if (board) {
+        board.updatePcbDesignRuleChecks()
+      }
       return
     }
   }
