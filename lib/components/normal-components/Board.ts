@@ -148,7 +148,18 @@ export class Board extends Group<typeof boardProps> {
   doInitialPcbDesignRuleChecks() {
     if (this.root?.pcbDisabled) return
     if (this.getInheritedProperty("routingDisabled")) return
+    this.updatePcbDesignRuleChecks()
+  }
+
+  updatePcbDesignRuleChecks() {
+    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("routingDisabled")) return
     const { db } = this.root!
+
+    db.pcb_trace_error.list().forEach((error) => {
+      db.pcb_trace_error.delete(error.pcb_trace_error_id)
+    })
+
     const errors = checkEachPcbTraceNonOverlapping(db.toArray())
     for (const error of errors) {
       db.pcb_trace_error.insert(error)
