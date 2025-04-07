@@ -149,6 +149,9 @@ export class Board extends Group<typeof boardProps> {
     if (this.root?.pcbDisabled) return
     if (this.getInheritedProperty("routingDisabled")) return
     const { db } = this.root!
+
+    super.doInitialPcbDesignRuleChecks()
+
     const errors = checkEachPcbTraceNonOverlapping(db.toArray())
     for (const error of errors) {
       db.pcb_trace_error.insert(error)
