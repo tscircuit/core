@@ -4,8 +4,6 @@ import {
   groupProps,
 } from "@tscircuit/props"
 import * as SAL from "@tscircuit/schematic-autolayout"
-import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type LayerRef,
   type PcbTrace,
@@ -16,15 +14,21 @@ import {
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import Debug from "debug"
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
+import type {
+  SimpleRouteJson,
+  SimplifiedPcbTrace,
+} from "lib/utils/autorouting/SimpleRouteJson"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { Trace } from "../Trace/Trace"
 import type { TraceI } from "../Trace/TraceI"
 import { TraceHint } from "../TraceHint"
 import type { ISubcircuit } from "./ISubcircuit"
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
-import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -713,5 +717,48 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Inherit from parent if not set by props
     const autorouter = this._getAutorouterConfig()
     return autorouter.groupMode === "sequential-trace"
+  }
+
+  doInitialPcbDesignRuleChecks() {
+    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("routingDisabled")) return
+    const { db } = this.root!
+
+    if (this.isSubcircuit) {
+      const subcircuitComponentsByName = new Map<string, PrimitiveComponent[]>()
+
+      for (const child of this.children) {
+        // Skip if child is itself a subcircuit
+        if ((child as any).isSubcircuit) continue
+
+        if (child._parsedProps.name) {
+          const components =
+            subcircuitComponentsByName.get(child._parsedProps.name) || []
+          components.push(child)
+          subcircuitComponentsByName.set(child._parsedProps.name, components)
+        }
+      }
+
+      for (const [name, components] of subcircuitComponentsByName.entries()) {
+        if (components.length > 1) {
+          db.pcb_trace_error.insert({
+            error_type: "pcb_trace_error",
+            message: `Multiple components found with name "${name}" in subcircuit "${this._parsedProps.name || "unnamed"}". Component names must be unique within a subcircuit.`,
+            source_trace_id: "",
+            pcb_trace_id: "",
+            pcb_component_ids: components
+              .map((c) => c.pcb_component_id!)
+              .filter(Boolean),
+            pcb_port_ids: [],
+          })
+        }
+      }
+    }
+
+    // Run other DRC checks
+    const errors = checkEachPcbTraceNonOverlapping(db.toArray())
+    for (const error of errors) {
+      db.pcb_trace_error.insert(error)
+    }
   }
 }
