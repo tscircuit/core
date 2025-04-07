@@ -47,7 +47,7 @@ test("repro-12: same name of components in board", async () => {
   expect(pcb_trace_errors).toHaveLength(1)
 })
 
-test("repro-12: same name of components in different subcircuits", async () => {
+test("repro-12: same name of components in different subcircuits should not be an error", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

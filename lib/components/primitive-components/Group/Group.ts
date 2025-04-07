@@ -4,6 +4,8 @@ import {
   groupProps,
 } from "@tscircuit/props"
 import * as SAL from "@tscircuit/schematic-autolayout"
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type LayerRef,
   type PcbTrace,
@@ -14,21 +16,17 @@ import {
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import Debug from "debug"
-import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
-import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
-import type {
-  SimpleRouteJson,
-  SimplifiedPcbTrace,
-} from "lib/utils/autorouting/SimpleRouteJson"
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { Trace } from "../Trace/Trace"
 import type { TraceI } from "../Trace/TraceI"
 import { TraceHint } from "../TraceHint"
 import type { ISubcircuit } from "./ISubcircuit"
-import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
+import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -753,12 +751,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           })
         }
       }
-    }
-
-    // Run other DRC checks
-    const errors = checkEachPcbTraceNonOverlapping(db.toArray())
-    for (const error of errors) {
-      db.pcb_trace_error.insert(error)
     }
   }
 }
