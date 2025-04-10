@@ -83,8 +83,8 @@ test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () =>
               pcbY="-2.7740863499999477mm"
               outerHeight="1.7999964mm"
               outerWidth="1.1999975999999999mm"
-              innerHeight="1.3999972mm"
-              innerWidth="0.7999983999999999mm"
+              holeHeight="1.3999972mm"
+              holeWidth="0.7999983999999999mm"
               shape="pill"
             />
             <platedhole
@@ -93,8 +93,8 @@ test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () =>
               pcbY="1.4057376499998782mm"
               outerHeight="1.9999959999999999mm"
               outerWidth="1.1999975999999999mm"
-              innerHeight="1.5999968mm"
-              innerWidth="0.7999983999999999mm"
+              holeHeight="1.5999968mm"
+              holeWidth="0.7999983999999999mm"
               shape="pill"
             />
             <platedhole
@@ -103,8 +103,8 @@ test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () =>
               pcbY="1.4057376499998782mm"
               outerHeight="1.9999959999999999mm"
               outerWidth="1.1999975999999999mm"
-              innerHeight="1.5999968mm"
-              innerWidth="0.7999983999999999mm"
+              holeHeight="1.5999968mm"
+              holeWidth="0.7999983999999999mm"
               shape="pill"
             />
             <platedhole
@@ -113,8 +113,8 @@ test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () =>
               pcbY="-2.7740863499999477mm"
               outerHeight="1.7999964mm"
               outerWidth="1.1999975999999999mm"
-              innerHeight="1.3999972mm"
-              innerWidth="0.7999983999999999mm"
+              holeHeight="1.3999972mm"
+              holeWidth="0.7999983999999999mm"
               shape="pill"
             />
             <smtpad

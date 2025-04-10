@@ -11,8 +11,8 @@ test("PlatedHole pill shape", () => {
         shape="pill"
         outerWidth="2mm"
         outerHeight="4mm"
-        innerWidth="1mm"
-        innerHeight="2mm"
+        holeWidth="1mm"
+        holeHeight="2mm"
         pcbX={0}
         pcbY={0}
       />
