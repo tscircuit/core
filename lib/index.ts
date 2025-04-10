@@ -13,6 +13,7 @@ export * from "./utils/autorouting/SimpleRouteJson"
 
 export * from "./utils/autorouting/GenericLocalAutorouter"
 export * from "./utils/edit-events/apply-pcb-edit-events-to-manual-edits-file"
+export * from "./utils/edit-events/apply-schematic-edit-events-to-manual-edits-file"
 
 // Allows easier introspection of render process
 export * from "./components/base-components/Renderable"
