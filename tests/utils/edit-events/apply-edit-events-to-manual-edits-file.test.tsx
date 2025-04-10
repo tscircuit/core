@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
+import type { ManualEditEvent } from "@tscircuit/props"
+import { expect, test } from "bun:test"
 import { RootCircuit } from "lib/RootCircuit"
 import { applyEditEventsToManualEditsFile } from "lib/utils/edit-events/apply-edit-events-to-manual-edits-file"
-import type { ManualEditEvent } from "@tscircuit/props"
 
-test("applyEditEventsToManualEditsFile handles schematic edit events", async () => {
+test("applyEditEventsToManualEditsFile handles both schematic and PCB edit events", async () => {
   // Create a circuit with a resistor
   const circuit = new RootCircuit()
   circuit.add(
@@ -21,8 +21,9 @@ test("applyEditEventsToManualEditsFile handles schematic edit events", async () 
     pcb_placements: [],
   }
 
-  // Create edit event to move R1 in schematic
-  const schematicEditEvents: ManualEditEvent[] = [
+  // Create a mixed array of edit events (both schematic and PCB)
+  const mixedEditEvents: ManualEditEvent[] = [
+    // Schematic edit event
     {
       edit_event_type: "edit_schematic_component_location",
       edit_event_id: "test_event_1",
@@ -32,119 +33,7 @@ test("applyEditEventsToManualEditsFile handles schematic edit events", async () 
       original_center: { x: 0, y: 0 },
       new_center: { x: 5, y: 3 },
     },
-  ]
-
-  // Apply the schematic edit events
-  const updatedFile = applyEditEventsToManualEditsFile({
-    circuitJson,
-    editEvents: schematicEditEvents,
-    manualEditsFile,
-  })
-
-  // Verify the schematic placement was added
-  expect(updatedFile.schematic_placements).toHaveLength(1)
-  expect(updatedFile.schematic_placements?.[0]!).toEqual({
-    selector: "R1",
-    center: { x: 5, y: 3 },
-    relative_to: "group_center",
-  })
-  // PCB placements should remain empty
-  expect(updatedFile.pcb_placements).toHaveLength(0)
-})
-
-test("applyEditEventsToManualEditsFile handles PCB edit events", async () => {
-  // Create a circuit with a resistor
-  const circuit = new RootCircuit()
-  circuit.add(
-    <board width="10mm" height="10mm">
-      <resistor name="R1" resistance="10k" />
-    </board>,
-  )
-  await circuit.render()
-
-  const circuitJson = circuit.getCircuitJson()
-
-  // Initial manual edits file
-  const manualEditsFile = {
-    schematic_placements: [],
-    pcb_placements: [],
-  }
-
-  // Create edit event to move R1 in PCB
-  const pcbEditEvents: ManualEditEvent[] = [
-    {
-      edit_event_type: "edit_pcb_component_location",
-      edit_event_id: "test_event_1",
-      created_at: Date.now(),
-      pcb_component_id: circuit.db.pcb_component.list()[0].pcb_component_id,
-      original_center: { x: 0, y: 0 },
-      new_center: { x: 5, y: 3 },
-      pcb_edit_event_type: "edit_component_location",
-    },
-  ]
-
-  // Apply the PCB edit events
-  const updatedFile = applyEditEventsToManualEditsFile({
-    circuitJson,
-    editEvents: pcbEditEvents,
-    manualEditsFile,
-  })
-
-  // Verify the PCB placement was added
-  expect(updatedFile.pcb_placements).toHaveLength(1)
-  expect(updatedFile.pcb_placements?.[0]!).toEqual({
-    selector: "R1",
-    center: { x: 5, y: 3 },
-    relative_to: "group_center",
-  })
-  // Schematic placements should remain empty as we only edited PCB
-  expect(updatedFile.schematic_placements).toEqual([])
-})
-
-test("applyEditEventsToManualEditsFile handles mixed edit events", async () => {
-  // Create a circuit with a resistor
-  const circuit = new RootCircuit()
-  circuit.add(
-    <board width="10mm" height="10mm">
-      <resistor name="R1" resistance="10k" />
-    </board>,
-  )
-  await circuit.render()
-
-  const circuitJson = circuit.getCircuitJson()
-
-  // Initial manual edits file
-  const manualEditsFile = {
-    schematic_placements: [],
-    pcb_placements: [],
-  }
-
-  // Create mixed edit events (schematic first, then PCB)
-  const schematicEditEvents: ManualEditEvent[] = [
-    {
-      edit_event_type: "edit_schematic_component_location",
-      edit_event_id: "test_event_1",
-      created_at: Date.now(),
-      schematic_component_id:
-        circuit.db.schematic_component.list()[0].schematic_component_id,
-      original_center: { x: 0, y: 0 },
-      new_center: { x: 5, y: 3 },
-    },
-  ]
-
-  // Apply the schematic edit events
-  const updatedFileWithSchematic = applyEditEventsToManualEditsFile({
-    circuitJson,
-    editEvents: schematicEditEvents,
-    manualEditsFile,
-  })
-
-  // Verify the schematic placement was added
-  expect(updatedFileWithSchematic.schematic_placements).toHaveLength(1)
-  expect(updatedFileWithSchematic.pcb_placements).toHaveLength(0)
-
-  // Now add PCB edit events
-  const pcbEditEvents: ManualEditEvent[] = [
+    // PCB edit event
     {
       edit_event_type: "edit_pcb_component_location",
       edit_event_id: "test_event_2",
@@ -156,25 +45,98 @@ test("applyEditEventsToManualEditsFile handles mixed edit events", async () => {
     },
   ]
 
-  // Apply the PCB edit events
-  const finalFile = applyEditEventsToManualEditsFile({
+  // Apply the mixed edit events in a single call
+  const updatedFile = applyEditEventsToManualEditsFile({
     circuitJson,
-    editEvents: pcbEditEvents,
-    manualEditsFile: updatedFileWithSchematic,
+    editEvents: mixedEditEvents,
+    manualEditsFile,
   })
 
-  // Verify both placements exist
-  expect(finalFile.schematic_placements).toHaveLength(1)
-  expect(finalFile.schematic_placements?.[0]!).toEqual({
+  // Verify both schematic and PCB placements were correctly updated
+  expect(updatedFile.schematic_placements).toHaveLength(1)
+  expect(updatedFile.schematic_placements?.[0]!).toEqual({
     selector: "R1",
     center: { x: 5, y: 3 },
     relative_to: "group_center",
   })
-
-  expect(finalFile.pcb_placements).toHaveLength(1)
-  expect(finalFile.pcb_placements?.[0]!).toEqual({
+  
+  expect(updatedFile.pcb_placements).toHaveLength(1)
+  expect(updatedFile.pcb_placements?.[0]!).toEqual({
     selector: "R1",
     center: { x: 8, y: 4 },
+    relative_to: "group_center",
+  })
+})
+
+test("applyEditEventsToManualEditsFile updates existing placements", async () => {
+  // Create a circuit with a resistor
+  const circuit = new RootCircuit()
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <resistor name="R1" resistance="10k" />
+    </board>,
+  )
+  await circuit.render()
+
+  const circuitJson = circuit.getCircuitJson()
+
+  // Initial manual edits file with existing placements
+  const manualEditsFile = {
+    schematic_placements: [{
+      selector: "R1",
+      center: { x: 2, y: 2 },
+      relative_to: "group_center",
+    }],
+    pcb_placements: [{
+      selector: "R1",
+      center: { x: 3, y: 3 },
+      relative_to: "group_center",
+    }],
+  }
+
+  // Create edit events to update existing placements
+  const updateEditEvents: ManualEditEvent[] = [
+    // Update schematic placement
+    {
+      edit_event_type: "edit_schematic_component_location",
+      edit_event_id: "test_event_3",
+      created_at: Date.now(),
+      schematic_component_id:
+        circuit.db.schematic_component.list()[0].schematic_component_id,
+      original_center: { x: 2, y: 2 },
+      new_center: { x: 10, y: 10 },
+    },
+    // Update PCB placement
+    {
+      edit_event_type: "edit_pcb_component_location",
+      edit_event_id: "test_event_4",
+      created_at: Date.now(),
+      pcb_component_id: circuit.db.pcb_component.list()[0].pcb_component_id,
+      original_center: { x: 3, y: 3 },
+      new_center: { x: 12, y: 12 },
+      pcb_edit_event_type: "edit_component_location",
+    },
+  ]
+
+  // Apply the update edit events
+  const updatedFile = applyEditEventsToManualEditsFile({
+    circuitJson,
+    editEvents: updateEditEvents,
+    manualEditsFile,
+  })
+
+  // Verify placements were updated, not added
+  expect(updatedFile.schematic_placements).toHaveLength(1)
+  expect(updatedFile.schematic_placements?.[0]!).toEqual({
+    selector: "R1",
+    center: { x: 10, y: 10 },
+    relative_to: "group_center",
+  })
+  
+  expect(updatedFile.pcb_placements).toHaveLength(1)
+  expect(updatedFile.pcb_placements?.[0]!).toEqual({
+    selector: "R1",
+    center: { x: 12, y: 12 },
     relative_to: "group_center",
   })
 })
