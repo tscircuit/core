@@ -170,7 +170,7 @@ test("applyEditEventsToManualEditsFile handles mixed edit events", async () => {
     center: { x: 5, y: 3 },
     relative_to: "group_center",
   })
-  
+
   expect(finalFile.pcb_placements).toHaveLength(1)
   expect(finalFile.pcb_placements?.[0]!).toEqual({
     selector: "R1",

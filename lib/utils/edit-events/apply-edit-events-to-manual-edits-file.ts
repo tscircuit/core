@@ -13,8 +13,11 @@ export const applyEditEventsToManualEditsFile = ({
   editEvents: ManualEditEvent[]
   manualEditsFile: z.infer<typeof manual_edits_file>
 }): z.infer<typeof manual_edits_file> => {
-
-  if (editEvents.some(e => e.edit_event_type === "edit_schematic_component_location")) {
+  if (
+    editEvents.some(
+      (e) => e.edit_event_type === "edit_schematic_component_location",
+    )
+  ) {
     return applySchematicEditEventsToManualEditsFile({
       circuitJson,
       editEvents,
