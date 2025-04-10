@@ -74,4 +74,4 @@ test("applySchematicEditEventsToManualEditsFile updates component locations", as
     center: { x: 8, y: 4 },
     relative_to: "group_center",
   })
-}) 
+})
