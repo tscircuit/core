@@ -59,7 +59,7 @@ test("applyEditEventsToManualEditsFile handles both schematic and PCB edit event
     center: { x: 5, y: 3 },
     relative_to: "group_center",
   })
-  
+
   expect(updatedFile.pcb_placements).toHaveLength(1)
   expect(updatedFile.pcb_placements?.[0]!).toEqual({
     selector: "R1",
@@ -82,16 +82,20 @@ test("applyEditEventsToManualEditsFile updates existing placements", async () =>
 
   // Initial manual edits file with existing placements
   const manualEditsFile = {
-    schematic_placements: [{
-      selector: "R1",
-      center: { x: 2, y: 2 },
-      relative_to: "group_center",
-    }],
-    pcb_placements: [{
-      selector: "R1",
-      center: { x: 3, y: 3 },
-      relative_to: "group_center",
-    }],
+    schematic_placements: [
+      {
+        selector: "R1",
+        center: { x: 2, y: 2 },
+        relative_to: "group_center",
+      },
+    ],
+    pcb_placements: [
+      {
+        selector: "R1",
+        center: { x: 3, y: 3 },
+        relative_to: "group_center",
+      },
+    ],
   }
 
   // Create edit events to update existing placements
@@ -132,7 +136,7 @@ test("applyEditEventsToManualEditsFile updates existing placements", async () =>
     center: { x: 10, y: 10 },
     relative_to: "group_center",
   })
-  
+
   expect(updatedFile.pcb_placements).toHaveLength(1)
   expect(updatedFile.pcb_placements?.[0]!).toEqual({
     selector: "R1",
