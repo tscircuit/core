@@ -173,14 +173,19 @@ export const sel: Sel = new Proxy(
             {},
             {
               get: (_, pinOrSubComponentName: string) => {
-                const result = `.${prop1} > .${pinOrSubComponentName}`
-                return new Proxy(new String(result), {
+                const pinResult = `.${prop1} > .${pinOrSubComponentName}`
+
+                if (prop1.startsWith("U")) {
+                  return pinResult
+                }
+
+                return new Proxy(new String(pinResult), {
                   get: (_, nestedProp: string) => {
                     if (
                       typeof nestedProp === "symbol" ||
                       nestedProp === "toString"
                     ) {
-                      return () => result
+                      return () => pinResult
                     }
                     return `.${prop1} > .${pinOrSubComponentName} > .${nestedProp}`
                   },

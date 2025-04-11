@@ -41,7 +41,7 @@ test("sel2 - selU2.CUSTOM_DATA_1 = .U2 > .CUSTOM_DATA_1", () => {
 })
 
 test("sel2 - selU2.CUSTOM_DATA_1 = .U2 > .CUSTOM_DATA_1", () => {
-  expect(sel.U2<"custompin1" | "custompin2">().custompin1).toBe(
+  expect(sel.U2<"custompin1" | "custompin2">().custompin1.toString()).toBe(
     ".U2 > .custompin1",
   )
 
@@ -56,5 +56,5 @@ test(`sel2 - ChipProps<"custompin1" | "custompin2">`, () => {
 
   const chip = <MyChip2 name="U1" />
 
-  expect(sel.U1(MyChip2).custompin1).toBe(".U1 > .custompin1")
+  expect(sel.U1(MyChip2).custompin1.toString()).toBe(".U1 > .custompin1")
 })
