@@ -4,6 +4,8 @@ import type {
   PinLabelsProp,
   ChipConnections,
   ChipPinLabels,
+  Connections,
+  Selectors,
 } from "@tscircuit/props"
 import type {
   CommonPinNames,
@@ -65,11 +67,28 @@ type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string> & ChipFnSel>
 
 type NetSel = Record<"net", Record<CommonNetNames, string>>
 
-type ConnectionSel = Record<`CN${Nums40}`, Record<CommonPinNames, string>>
+type ExplicitModuleSel = Record<
+  "subcircuit" | "module" | "group",
+  Record<`S${Nums40}` | `M${Nums40}` | `G${Nums40}`, SelWithoutSubcircuit>
+>
 
-type SubcircuitSel = Record<
-  "subcircuit",
-  Record<`S${Nums40}`, SelWithoutSubcircuit>
+export type GenericConnectionsAndSelectorsSel = Record<
+  string,
+  <CMP_FN extends (props: any) => any>(
+    component: CMP_FN,
+  ) => CMP_FN extends (props: infer P) => any
+    ? P extends { connections: infer CN }
+      ? CN
+      : P extends { selectors: infer SEL }
+        ? SEL extends Record<string, Record<string, string>>
+          ? {
+              [K in keyof SEL]: SEL[K] extends Record<string, string>
+                ? SEL[K]
+                : never
+            }
+          : never
+        : never
+    : never
 >
 
 type SelWithoutSubcircuit = NonPolarizedSel &
@@ -79,7 +98,7 @@ type SelWithoutSubcircuit = NonPolarizedSel &
   ChipSel &
   SwSel &
   NetSel &
-  ConnectionSel
+  GenericConnectionsAndSelectorsSel
 
 type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
   x: infer I,
@@ -98,7 +117,7 @@ type ChipFnSel = <T extends ChipFn<any> | string>(
       : never
 >
 
-export type Sel = SubcircuitSel & SelWithoutSubcircuit
+export type Sel = ExplicitModuleSel & SelWithoutSubcircuit
 
 export const sel: Sel = new Proxy(
   {},
