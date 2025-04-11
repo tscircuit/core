@@ -26,11 +26,13 @@ export class Transistor extends NormalComponent<
   }
 
   initPorts() {
+    const isPNP = this.props.type === "pnp"
+
     super.initPorts({
       pinCount: 3,
       additionalAliases: {
-        pin1: ["emitter", "e"],
-        pin2: ["collector", "c"],
+        pin1: isPNP ? ["collector", "c"] : ["emitter", "e"],
+        pin2: isPNP ? ["emitter", "e"] : ["collector", "c"],
         pin3: ["base", "b"],
       },
     })
