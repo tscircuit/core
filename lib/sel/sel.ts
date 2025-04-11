@@ -59,7 +59,7 @@ type CommonNetNames = "VCC" | "GND" | "VDD" | "PWR" | "V5" | "V3_3"
 type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
 
 type JumperSel = Record<
-  `J${Nums40}`,
+  `J${Nums40}` | `CN${Nums40}`,
   Record<PinNumbers100 | CommonPinNames, string>
 >
 
