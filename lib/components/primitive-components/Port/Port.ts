@@ -22,6 +22,9 @@ export const portProps = z.object({
 export type PortProps = z.infer<typeof portProps>
 
 export class Port extends PrimitiveComponent<typeof portProps> {
+  aliases(aliases: any) {
+    throw new Error("Method not implemented.")
+  }
   source_port_id: string | null = null
   pcb_port_id: string | null = null
   schematic_port_id: string | null = null
