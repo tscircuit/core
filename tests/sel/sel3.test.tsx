@@ -1,6 +1,7 @@
 import { test, expect } from "bun:test"
 import type { Connections, Selectors } from "@tscircuit/props"
 import { sel } from "lib/sel"
+import { Circuit } from "lib/RootCircuit"
 
 // Define a simple module that uses the `connections` prop
 const MyModuleWithConnections = (props: {
@@ -30,8 +31,8 @@ const MyModuleWithSelectors = (props: {
 test("sel3 - sel with connections prop", () => {
   const selM1 = sel.M1(MyModuleWithConnections)
 
-  expect(selM1.GND).toBe(".M1 > .GND")
-  expect(selM1.VCC).toBe(".M1 > .VCC")
+  expect(selM1.GND.toString()).toBe(".M1 > .GND")
+  expect(selM1.VCC?.toString()).toBe(".M1 > .VCC")
 
   // @ts-expect-error - Should error for non-existent connection keys
   const invalidConnection = selM1.INVALID_KEY
@@ -50,4 +51,46 @@ test("sel3 - sel with selectors prop", () => {
 
   // @ts-expect-error - Should error for non-existent connection keys within a selector
   const invalidConnectionInSelector = selM2.U1.INVALID_KEY
+})
+
+test("sel3 in real circuit", async () => {
+  // Because sel uses a proxy to a string, we need to make sure it actually
+  // works with the selectors prop
+
+  const MyModule = (props: {
+    name: string
+    selectors: {
+      R1: { GND: string; VCC?: string }
+    }
+  }) => {
+    return (
+      <resistor
+        name={props.name}
+        resistance="1k"
+        pullupFor={props.selectors.R1.VCC}
+        pullupTo={props.selectors.R1.GND}
+      />
+    )
+  }
+
+  const circuit = new Circuit()
+  circuit.add(
+    <board>
+      <MyModule
+        name="R1"
+        selectors={{ R1: { GND: "net.GND", VCC: "net.VCC" } }}
+      />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  expect(
+    circuit.db.source_trace.list().map((t) => t.display_name),
+  ).toMatchInlineSnapshot(`
+    [
+      "resistor.R1 > port.1 to net.VCC",
+      "resistor.R1 > port.2 to net.GND",
+    ]
+  `)
 })

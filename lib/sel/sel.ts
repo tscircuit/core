@@ -164,13 +164,27 @@ export const sel: Sel = new Proxy(
           }
           return `.${prop1} > .${prop2}`
         },
-        // This handles function calls like sel.U1(MyChip)
+        // This handles function calls like...
+        // - sel.U1(MyChip)
+        // - sel.U1(({ selectors: { U1: { GND: "GND", VCC: "VCC" } } }) => ...)
+        // - sel.U1(({ connections: { GND: "GND", VCC: "VCC" } }) => ...)
         apply: (target, _, args: any[]) => {
           return new Proxy(
             {},
             {
-              get: (_, pinName: string) => {
-                return `.${prop1} > .${pinName}`
+              get: (_, pinOrSubComponentName: string) => {
+                const result = `.${prop1} > .${pinOrSubComponentName}`
+                return new Proxy(new String(result), {
+                  get: (_, nestedProp: string) => {
+                    if (
+                      typeof nestedProp === "symbol" ||
+                      nestedProp === "toString"
+                    ) {
+                      return () => result
+                    }
+                    return `.${prop1} > .${pinOrSubComponentName} > .${nestedProp}`
+                  },
+                })
               },
             },
           )
