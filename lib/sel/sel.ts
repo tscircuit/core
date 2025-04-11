@@ -4,6 +4,8 @@ import type {
   PinLabelsProp,
   ChipConnections,
   ChipPinLabels,
+  Connections,
+  Selectors,
 } from "@tscircuit/props"
 import type {
   CommonPinNames,
@@ -57,7 +59,7 @@ type CommonNetNames = "VCC" | "GND" | "VDD" | "PWR" | "V5" | "V3_3"
 type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
 
 type JumperSel = Record<
-  `J${Nums40}`,
+  `J${Nums40}` | `CN${Nums40}`,
   Record<PinNumbers100 | CommonPinNames, string>
 >
 
@@ -65,11 +67,28 @@ type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string> & ChipFnSel>
 
 type NetSel = Record<"net", Record<CommonNetNames, string>>
 
-type ConnectionSel = Record<`CN${Nums40}`, Record<CommonPinNames, string>>
+type ExplicitModuleSel = Record<
+  "subcircuit" | "module" | "group",
+  Record<`S${Nums40}` | `M${Nums40}` | `G${Nums40}`, SelWithoutSubcircuit>
+>
 
-type SubcircuitSel = Record<
-  "subcircuit",
-  Record<`S${Nums40}`, SelWithoutSubcircuit>
+export type GenericConnectionsAndSelectorsSel = Record<
+  string,
+  <CMP_FN extends (props: any) => any>(
+    component: CMP_FN,
+  ) => CMP_FN extends (props: infer P) => any
+    ? P extends { connections: infer CN }
+      ? CN
+      : P extends { selectors: infer SEL }
+        ? SEL extends Record<string, Record<string, string>>
+          ? {
+              [K in keyof SEL]: SEL[K] extends Record<string, string>
+                ? SEL[K]
+                : never
+            }
+          : never
+        : never
+    : never
 >
 
 type SelWithoutSubcircuit = NonPolarizedSel &
@@ -79,7 +98,7 @@ type SelWithoutSubcircuit = NonPolarizedSel &
   ChipSel &
   SwSel &
   NetSel &
-  ConnectionSel
+  GenericConnectionsAndSelectorsSel
 
 type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
   x: infer I,
@@ -98,7 +117,7 @@ type ChipFnSel = <T extends ChipFn<any> | string>(
       : never
 >
 
-export type Sel = SubcircuitSel & SelWithoutSubcircuit
+export type Sel = ExplicitModuleSel & SelWithoutSubcircuit
 
 export const sel: Sel = new Proxy(
   {},
@@ -145,13 +164,32 @@ export const sel: Sel = new Proxy(
           }
           return `.${prop1} > .${prop2}`
         },
-        // This handles function calls like sel.U1(MyChip)
+        // This handles function calls like...
+        // - sel.U1(MyChip)
+        // - sel.U1(({ selectors: { U1: { GND: "GND", VCC: "VCC" } } }) => ...)
+        // - sel.U1(({ connections: { GND: "GND", VCC: "VCC" } }) => ...)
         apply: (target, _, args: any[]) => {
           return new Proxy(
             {},
             {
-              get: (_, pinName: string) => {
-                return `.${prop1} > .${pinName}`
+              get: (_, pinOrSubComponentName: string) => {
+                const pinResult = `.${prop1} > .${pinOrSubComponentName}`
+
+                if (prop1.startsWith("U")) {
+                  return pinResult
+                }
+
+                return new Proxy(new String(pinResult), {
+                  get: (_, nestedProp: string) => {
+                    if (
+                      typeof nestedProp === "symbol" ||
+                      nestedProp === "toString"
+                    ) {
+                      return () => pinResult
+                    }
+                    return `.${prop1} > .${pinOrSubComponentName} > .${nestedProp}`
+                  },
+                })
               },
             },
           )
