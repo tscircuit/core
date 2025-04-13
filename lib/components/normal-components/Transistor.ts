@@ -30,15 +30,15 @@ export class Transistor extends NormalComponent<
       pinCount: 3,
       additionalAliases: {
         pin1: ["emitter", "e"],
-        pin2: ["collector", "c"],
-        pin3: ["base", "b"],
+        pin2: ["base", "b"],
+        pin3: ["collector", "c"],
       },
     })
   }
 
   emitter = this.portMap.pin1
-  collector = this.portMap.pin2
-  base = this.portMap.pin3
+  base = this.portMap.pin2
+  collector = this.portMap.pin3
 
   doInitialSourceRender() {
     const { db } = this.root!
