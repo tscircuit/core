@@ -26,13 +26,22 @@ export class Transistor extends NormalComponent<
   }
 
   initPorts() {
+    const pinAliases =
+      this.props.type === "npn"
+        ? {
+            pin1: ["collector", "c"],
+            pin2: ["base", "b"],
+            pin3: ["emitter", "e"],
+          }
+        : {
+            pin1: ["emitter", "e"],
+            pin2: ["base", "b"],
+            pin3: ["collector", "c"],
+          }
+
     super.initPorts({
       pinCount: 3,
-      additionalAliases: {
-        pin1: ["emitter", "e"],
-        pin2: ["base", "b"],
-        pin3: ["collector", "c"],
-      },
+      additionalAliases: pinAliases,
     })
   }
 

@@ -22,7 +22,9 @@ it("pnp transistor collector pin mapping", () => {
     <board width="10mm" height="10mm">
       <resistor name="R1" resistance="10k" footprint="0402" schX={-2} />
       <transistor name="Q1" type="npn" footprint="sot23" schX={2} />
+      <transistor name="Q2" type="pnp" footprint="sot23" schX={4} />
       <trace from=".Q1 > .collector" to=".R1 > .pin1" />
+      <trace from=".Q2 > .collector" to=".R1 > .pin2" />
     </board>,
   )
 
