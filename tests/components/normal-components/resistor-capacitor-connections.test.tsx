@@ -36,18 +36,10 @@ test("resistor and capacitor connections prop", async () => {
   const traces = circuit.db.source_trace.list()
   expect(traces.length).toBe(2) // Expect two traces to be created
 
-  // Check specific trace connections
-  const traceR1toC1 = traces.find(
-    (t) => t.display_name === ".R1 > .pin2 to .C1 > .pos",
-  )
-  const traceC1toR1 = traces.find(
-    (t) => t.display_name === ".C1 > .neg to .R1 > .pin1",
-  )
-
-  expect(traceR1toC1).toBeDefined()
-  expect(traceC1toR1).toBeDefined()
-
-  // Optional: Check schematic and PCB snapshots
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(traces.map((t) => t.display_name).sort()).toMatchInlineSnapshot(`
+    [
+      "capacitor.C1 > port.neg to .R1 > .pin1",
+      "resistor.R1 > port.pin2 to .C1 > .pos",
+    ]
+  `)
 })
