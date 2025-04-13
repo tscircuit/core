@@ -55,6 +55,7 @@ export class Resistor extends NormalComponent<
         }),
       )
     }
+    this._createTracesFromConnectionsProp()
   }
 
   doInitialSourceRender() {

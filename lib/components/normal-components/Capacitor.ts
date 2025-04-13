@@ -69,6 +69,7 @@ export class Capacitor extends NormalComponent<
         }),
       )
     }
+    this._createTracesFromConnectionsProp()
   }
 
   doInitialSourceRender() {
