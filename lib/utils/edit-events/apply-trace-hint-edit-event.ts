@@ -3,16 +3,16 @@ import { su } from "@tscircuit/soup-util"
 import type { EditTraceHintEvent } from "@tscircuit/props"
 
 export const applyTraceHintEditEvent = (
-  soup: AnyCircuitElement[],
+  circuitJson: AnyCircuitElement[],
   edit_event: EditTraceHintEvent,
 ): AnyCircuitElement[] => {
-  const existingTraceHint = su(soup).pcb_trace_hint.get(
+  const existingTraceHint = su(circuitJson).pcb_trace_hint.get(
     edit_event.pcb_trace_hint_id!,
   )
 
   if (existingTraceHint) {
     // biome-ignore lint: Parameter reassignment
-    soup = soup.map((e: any) =>
+    circuitJson = circuitJson.map((e: any) =>
       e.pcb_trace_hint_id === edit_event.pcb_trace_hint_id
         ? {
             ...e,
@@ -21,9 +21,9 @@ export const applyTraceHintEditEvent = (
         : e,
     )
   } else {
-    const pcbPort = su(soup).pcb_port.get(edit_event.pcb_port_id!)
+    const pcbPort = su(circuitJson).pcb_port.get(edit_event.pcb_port_id!)
     // biome-ignore lint: Parameter reassignment
-    soup = soup
+    circuitJson = circuitJson
       .filter(
         (e) =>
           !(
@@ -42,5 +42,5 @@ export const applyTraceHintEditEvent = (
       ])
   }
 
-  return soup
+  return circuitJson
 }
