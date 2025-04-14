@@ -6,7 +6,9 @@ export const applyTraceHintEditEvent = (
   soup: AnyCircuitElement[],
   edit_event: EditTraceHintEvent,
 ): AnyCircuitElement[] => {
-  const existingTraceHint = su(soup).pcb_trace_hint.get(edit_event.pcb_trace_hint_id!)
+  const existingTraceHint = su(soup).pcb_trace_hint.get(
+    edit_event.pcb_trace_hint_id!,
+  )
 
   if (existingTraceHint) {
     // biome-ignore lint: Parameter reassignment
