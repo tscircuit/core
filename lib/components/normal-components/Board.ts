@@ -5,6 +5,7 @@ import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
 
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
+  _drcChecksComplete: boolean = false
 
   get isSubcircuit() {
     return true
@@ -148,9 +149,20 @@ export class Board extends Group<typeof boardProps> {
   doInitialPcbDesignRuleChecks() {
     if (this.root?.pcbDisabled) return
     if (this.getInheritedProperty("routingDisabled")) return
-    const { db } = this.root!
 
     super.doInitialPcbDesignRuleChecks()
+  }
+
+  updatePcbDesignRuleChecks() {
+    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("routingDisabled")) return
+    const { db } = this.root!
+
+    if (!this._areChildSubcircuitsRouted()) return
+
+    // Only run once after all autorouting is complete
+    if (this._drcChecksComplete) return
+    this._drcChecksComplete = true
 
     const errors = checkEachPcbTraceNonOverlapping(db.toArray())
     for (const error of errors) {
