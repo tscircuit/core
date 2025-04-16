@@ -510,11 +510,14 @@ export abstract class PrimitiveComponent<
     return `${parentSelector} > ${endPart}`
   }
 
+  _cachedNamesAndAliases: string[] | null = null
   getNameAndAliases(): string[] {
-    return [
+    if (this._cachedNamesAndAliases) return this._cachedNamesAndAliases
+    this._cachedNamesAndAliases = [
       this._parsedProps.name,
       ...(this._parsedProps.portHints ?? []),
     ].filter(Boolean)
+    return this._cachedNamesAndAliases
   }
   isMatchingNameOrAlias(name: string) {
     return this.getNameAndAliases().includes(name)
@@ -603,14 +606,16 @@ export abstract class PrimitiveComponent<
     let iteration = -1
     for (const part of parts) {
       iteration++
-      debugSelectAll(`\n\niteration: ${iteration}`)
-      debugSelectAll(`part: "${parts[iteration]}"`)
-      debugSelectAll(
-        `currentSearch: [${currentSearch.map((r) => r.getString()).join(",")}]`,
-      )
-      debugSelectAll(
-        `currentResults: [${currentResults.map((r) => r.getString()).join(",")}]`,
-      )
+      if (debugSelectAll.enabled) {
+        debugSelectAll(`\n\niteration: ${iteration}`)
+        debugSelectAll(`part: "${parts[iteration]}"`)
+        debugSelectAll(
+          `currentSearch: [${currentSearch.map((r) => r.getString()).join(",")}]`,
+        )
+        debugSelectAll(
+          `currentResults: [${currentResults.map((r) => r.getString()).join(",")}]`,
+        )
+      }
 
       if (part === ">") {
         onlyDirectChildren = true

@@ -64,6 +64,23 @@ const portToObjective = (port: Port): PcbRouteObjective => {
 
 const SHOULD_USE_SINGLE_LAYER_ROUTING = false
 
+type ConnectedPortsResult =
+  | {
+      allPortsFound: true
+      ports: Port[]
+      portsWithSelectors: Array<{ selector: string; port: Port }>
+    }
+  | {
+      allPortsFound: false
+      ports?: undefined
+      portsWithSelectors?: undefined
+    }
+
+type ConnectedNetsResult = {
+  nets: Net[]
+  netsWithSelectors: Array<{ selector: string; net: Net }>
+}
+
 export class Trace
   extends PrimitiveComponent<typeof traceProps>
   implements TraceI
@@ -117,17 +134,9 @@ export class Trace
     )
   }
 
-  _findConnectedPorts():
-    | {
-        allPortsFound: true
-        ports: Port[]
-        portsWithSelectors: Array<{ selector: string; port: Port }>
-      }
-    | {
-        allPortsFound: false
-        ports?: undefined
-        portsWithSelectors?: undefined
-      } {
+  _cachedConnectedPorts: ConnectedPortsResult | null = null
+  _findConnectedPorts(): ConnectedPortsResult {
+    if (this._cachedConnectedPorts) return this._cachedConnectedPorts
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
 
@@ -161,21 +170,23 @@ export class Trace
       }
     }
 
+    let result: ConnectedPortsResult
     if (portsWithSelectors.some((p) => !p.port)) {
-      return { allPortsFound: false }
+      result = { allPortsFound: false }
+    } else {
+      result = {
+        allPortsFound: true,
+        portsWithSelectors,
+        ports: portsWithSelectors.map(({ port }) => port),
+      }
     }
 
-    return {
-      allPortsFound: true,
-      portsWithSelectors,
-      ports: portsWithSelectors.map(({ port }) => port),
-    }
+    this._cachedConnectedPorts = result
+    return result
   }
 
-  _findConnectedNets(): {
-    nets: Net[]
-    netsWithSelectors: Array<{ selector: string; net: Net }>
-  } {
+  _cachedConnectedNets: ConnectedNetsResult | null = null
+  _findConnectedNets(): ConnectedNetsResult {
     const netsWithSelectors = this.getTracePathNetSelectors().map(
       (selector) => ({
         selector,
@@ -190,7 +201,13 @@ export class Trace
       )
     }
 
-    return { netsWithSelectors, nets: netsWithSelectors.map((n) => n.net) }
+    const result: ConnectedNetsResult = {
+      netsWithSelectors,
+      nets: netsWithSelectors.map((n) => n.net),
+    }
+
+    this._cachedConnectedNets = result
+    return result
   }
 
   /**
