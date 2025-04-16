@@ -5,7 +5,14 @@ export const isRouteOutsideBoard = (
   mergedRoute: PcbTraceRoutePoint[],
   { db }: { db: CircuitJsonUtilObjects },
 ) => {
-  const pcbBoard = db.pcb_board.list()[0]
+  const boards = db.pcb_board.list()
+  
+  // If there's no board, can't be outside the board
+  if (boards.length === 0) {
+    return false
+  }
+  
+  const pcbBoard = boards[0]
 
   // Check if the board has an outline
   if (pcbBoard.outline) {
@@ -34,6 +41,14 @@ export const isRouteOutsideBoard = (
 
     // Check if any trace point is outside the board outline
     return mergedRoute.some((point) => !isInsidePolygon(point, boardOutline))
+  }
+
+  // If there's no outline, check if the board has width/height
+  if (pcbBoard.width === undefined || 
+      pcbBoard.height === undefined || 
+      !pcbBoard.center) {
+    // No board dimensions, can't be outside
+    return false
   }
 
   // New error handling for traces routed outside the board

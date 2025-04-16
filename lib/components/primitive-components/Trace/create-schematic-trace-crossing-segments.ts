@@ -3,6 +3,7 @@ import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SchematicTrace } from "circuit-json"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 import { getUnitVectorFromPointAToB } from "@tscircuit/math-utils"
+import Debug from "debug"
 
 /**
  *  Find all intersections between myEdges and all otherEdges and create a
@@ -16,6 +17,9 @@ export const createSchematicTraceCrossingSegments = ({
   edges: SchematicTrace["edges"]
   otherEdges: SchematicTrace["edges"]
 }) => {
+  const debug = Debug("tscircuit:core:create-schematic-trace-crossing-segments")
+  debug(`Processing ${inputEdges.length} edges against ${otherEdges.length} other edges to find crossings`)
+  
   const edges = [...inputEdges]
   // For each edge in our trace
   for (let i = 0; i < edges.length; i++) {
@@ -71,6 +75,8 @@ export const createSchematicTraceCrossingSegments = ({
           edgeOrientation === "vertical" ? otherEdge.from.y : edge.from.y
 
         const crossingPoint = { x: intersectX, y: intersectY }
+        
+        debug(`FOUND INTERSECTION: ${edge.from.x},${edge.from.y} to ${edge.to.x},${edge.to.y} crosses ${otherEdge.from.x},${otherEdge.from.y} to ${otherEdge.to.x},${otherEdge.to.y} at ${intersectX},${intersectY}`)
 
         otherEdgesIntersections.push({
           otherEdge,

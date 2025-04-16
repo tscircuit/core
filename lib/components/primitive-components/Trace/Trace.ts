@@ -10,6 +10,7 @@ import {
   type RouteHintPoint,
   type SchematicTrace,
 } from "circuit-json"
+import Debug from "debug"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
 import type {
@@ -271,17 +272,21 @@ export class Trace
     mergedRoute: PcbTraceRoutePoint[],
     ports: Port[],
   ): void {
+    // Skip if the trace isn't fully initialized yet
+    if (!this.source_trace_id || !this.pcb_trace_id) return
+    
     const { db } = this.root!
+    
     const isOutsideBoard = isRouteOutsideBoard(mergedRoute, { db })
 
     if (isOutsideBoard) {
       db.pcb_trace_error.insert({
         error_type: "pcb_trace_error",
-        source_trace_id: this.source_trace_id!,
+        source_trace_id: this.source_trace_id,
         message: `Trace ${this.getString()} routed outside the board boundaries.`,
-        pcb_trace_id: this.pcb_trace_id!,
+        pcb_trace_id: this.pcb_trace_id,
         pcb_component_ids: [],
-        pcb_port_ids: ports.map((p) => p.pcb_port_id!),
+        pcb_port_ids: ports.map((p) => p.pcb_port_id!).filter(Boolean),
       })
     }
   }
@@ -820,6 +825,7 @@ export class Trace
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
+    const debug = Debug("tscircuit:core:doInitialSchematicTraceRender")
 
     if (!parent) throw new Error("Trace has no parent")
 
@@ -829,6 +835,11 @@ export class Trace
 
     if (!allPortsFound) return
 
+    debug(`[${this.getString()}] rendering schematic trace`)
+
+    // Handle special cases that shouldn't be deferred to the Group's async rendering
+    
+    // Case 1: Trace with display label
     if (
       this.props.schDisplayLabel &&
       (("from" in this.props && "to" in this.props) || "path" in this.props)
@@ -837,13 +848,7 @@ export class Trace
       return
     }
 
-    const connection: SimpleRouteConnection = {
-      name: this.source_trace_id!,
-      pointsToConnect: [],
-    }
-    const obstacles = getSchematicObstaclesForTrace(this)
-
-    // Get port positions for later use
+    // Case 2: Port and net connection (creates net label)
     const portsWithPosition = connectedPorts.map(({ port }) => ({
       port,
       position: port._getGlobalSchematicPositionAfterLayout(),
@@ -872,176 +877,8 @@ export class Trace
       return
     }
 
-    // Ensure there are at least two ports
-    // Else return insufficient ports to draw a trace
-    if (portsWithPosition.length < 2) {
-      return
-    }
-
-    // Add points for autorouter to connect
-    connection.pointsToConnect = portsWithPosition.map(({ position }) => ({
-      ...position,
-      layer: "top",
-    }))
-
-    const bounds = computeObstacleBounds(obstacles)
-
-    const BOUNDS_MARGIN = 2 // mm
-    const simpleRouteJsonInput: SimpleRouteJson = {
-      minTraceWidth: 0.1,
-      obstacles,
-      connections: [connection],
-      bounds: {
-        minX: bounds.minX - BOUNDS_MARGIN,
-        maxX: bounds.maxX + BOUNDS_MARGIN,
-        minY: bounds.minY - BOUNDS_MARGIN,
-        maxY: bounds.maxY + BOUNDS_MARGIN,
-      },
-      layerCount: 1,
-    }
-
-    let Autorouter = MultilayerIjump
-    let skipOtherTraceInteraction = false
-    if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
-      Autorouter = DirectLineRouter as any
-      skipOtherTraceInteraction = true
-    }
-
-    const autorouter = new Autorouter({
-      input: simpleRouteJsonInput,
-      MAX_ITERATIONS: 100,
-      OBSTACLE_MARGIN: 0.1,
-      isRemovePathLoopsEnabled: true,
-      isShortenPathWithShortcutsEnabled: true,
-      marginsWithCosts: [
-        {
-          margin: 1,
-          enterCost: 0,
-          travelCostFactor: 1,
-        },
-        {
-          margin: 0.3,
-          enterCost: 0,
-          travelCostFactor: 1,
-        },
-        {
-          margin: 0.2,
-          enterCost: 0,
-          travelCostFactor: 2,
-        },
-        {
-          margin: 0.1,
-          enterCost: 0,
-          travelCostFactor: 3,
-        },
-      ],
-    })
-    let results = autorouter.solveAndMapToTraces()
-
-    if (results.length === 0) {
-      if (
-        this._isSymbolToChipConnection() ||
-        this._isSymbolToSymbolConnection() ||
-        this._isChipToChipConnection()
-      ) {
-        this._doInitialSchematicTraceRenderWithDisplayLabel()
-        return
-      }
-      const directLineRouter = new DirectLineRouter({
-        input: simpleRouteJsonInput,
-      })
-      results = directLineRouter.solveAndMapToTraces()
-      skipOtherTraceInteraction = true
-    }
-
-    const [{ route }] = results
-
-    let edges: SchematicTrace["edges"] = []
-
-    // Add autorouted path
-    for (let i = 0; i < route.length - 1; i++) {
-      edges.push({
-        from: route[i],
-        to: route[i + 1],
-      })
-    }
-
-    const source_trace_id = this.source_trace_id!
-
-    let junctions: SchematicTrace["junctions"] = []
-
-    if (!skipOtherTraceInteraction) {
-      // Check if these edges run along any other schematic traces, if they do
-      // push them out of the way
-      pushEdgesOfSchematicTraceToPreventOverlap({ edges, db, source_trace_id })
-
-      // Find all intersections between myEdges and all otherEdges and create a
-      // segment representing the crossing. Wherever there's a crossing, we create
-      // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
-      const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
-        db,
-        source_trace_id,
-        differentNetOnly: true,
-      }).flatMap((t: SchematicTrace) => t.edges)
-      edges = createSchematicTraceCrossingSegments({ edges, otherEdges })
-
-      // Find all the intersections between myEdges and edges connected to the
-      // same net and create junction points
-      // Calculate junctions where traces of the same net intersect
-      junctions = createSchematicTraceJunctions({
-        edges,
-        db,
-        source_trace_id: this.source_trace_id!,
-      })
-    }
-
-    // The first/last edges sometimes don't connect to the ports because the
-    // autorouter is within the "goal box" and doesn't finish the route
-    // Add a stub to connect the last point to the end port
-    const lastEdge = edges[edges.length - 1]
-    const lastEdgePort = portsWithPosition[portsWithPosition.length - 1]
-    const lastDominantDirection = getDominantDirection(lastEdge)
-
-    // Add the connecting edges
-    edges.push(
-      ...getStubEdges({ lastEdge, lastEdgePort, lastDominantDirection }),
-    )
-
-    const firstEdge = edges[0]
-    const firstEdgePort = portsWithPosition[0]
-    const firstDominantDirection = getDominantDirection(firstEdge)
-
-    // Add the connecting edges
-    edges.unshift(
-      ...getStubEdges({
-        firstEdge,
-        firstEdgePort,
-        firstDominantDirection,
-      }),
-    )
-
-    // Handle case where no labels are created and trace is inserted
-    if (!this.source_trace_id) {
-      throw new Error("Missing source_trace_id for schematic trace insertion.")
-    }
-
-    if (
-      this.getSubcircuit()._parsedProps.schTraceAutoLabelEnabled &&
-      countComplexElements(junctions, edges) >= 5 &&
-      (this._isSymbolToChipConnection() ||
-        this._isSymbolToSymbolConnection() ||
-        this._isChipToChipConnection())
-    ) {
-      this._doInitialSchematicTraceRenderWithDisplayLabel()
-      return
-    }
-
-    // Insert schematic trace
-    const trace = db.schematic_trace.insert({
-      source_trace_id: this.source_trace_id!,
-      edges,
-      junctions,
-    })
-    this.schematic_trace_id = trace.schematic_trace_id
+    // For all other traces, defer to the Group's async rendering
+    // The schematic_trace_id will be set during the Group's updateSchematicTraceRender phase
+    debug(`[${this.getString()}] deferring to async Group rendering`)
   }
 }
