@@ -1,29 +1,32 @@
-import type {
-  Obstacle,
-  SimpleRouteConnection,
-} from "lib/utils/autorouting/SimpleRouteJson"
-import { Trace } from "./Trace"
+import type { Obstacle } from "lib/utils/autorouting/SimpleRouteJson"
+import type { Group } from "../Group/Group"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
+import type { Port } from "../Port"
 
 /**
- * Gets the schematic obstacles for a trace.
- *
- * Note: this will probably be optimized to get the schematic obstacles for all
- * traces in the future. It will be done in a separate render step called
- * something like CreateSchematicTraceObstacles and be shared across all
- * traces within a subcircuit
+ * Gets the schematic obstacles for all components within a group/subcircuit.
  */
-export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
-  const db = trace.root!.db
-  const connectedPorts = trace._findConnectedPorts().ports ?? []
-  const connectedPortIds = new Set(
-    connectedPorts.map((p) => p.schematic_port_id),
+export const getSchematicObstaclesForGroup = (group: Group): Obstacle[] => {
+  const db = group.root!.db
+  const subcircuit_id = group.subcircuit_id
+
+  // Get all ports within this subcircuit to exclude them as obstacles if they
+  // are part of a connection being routed.
+  // Note: This logic might need refinement depending on how connections are defined.
+  // For now, we assume all ports within the subcircuit *could* be connection points.
+  const subcircuitPorts = group.selectAll("port") as Port[]
+  const subcircuitPortIds = new Set(
+    subcircuitPorts.map((p) => p.schematic_port_id).filter(Boolean),
   )
 
   const obstacles: Obstacle[] = []
 
-  // Add obstacles from components and ports
+  // Iterate over elements relevant to this subcircuit
   for (const elm of db.toArray()) {
+    // Filter elements not belonging to this subcircuit if it's defined
+    if (subcircuit_id && "subcircuit_id" in elm && elm.subcircuit_id !== subcircuit_id) {
+      continue
+    }
     if (elm.type === "schematic_component") {
       // TODO HACK we have to have special handling for components because of
       // a bug in circuit-to-svg where it uses the schematic_component size to
@@ -46,7 +49,8 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
       })
     }
     if (elm.type === "schematic_port") {
-      if (connectedPortIds.has(elm.schematic_port_id)) {
+      // Exclude ports that are part of the connections being routed within this group
+      if (subcircuitPortIds.has(elm.schematic_port_id)) {
         continue
       }
       const dirVec = elm.facing_direction

@@ -5,18 +5,26 @@ import {
 } from "@tscircuit/props"
 import * as SAL from "@tscircuit/schematic-autolayout"
 import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
+import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
+import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
+import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
+import { getStubEdges } from "lib/utils/schematic/getStubEdges"
+import { getSchematicObstaclesForGroup } from "lib/components/primitive-components/Trace/get-obstacles-for-group"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type LayerRef,
+  type SchematicTrace,
   type PcbTrace,
   type PcbVia,
   type SchematicComponent,
   type SchematicPort,
+  type SchematicTrace,
   type SourceTrace,
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import Debug from "debug"
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import type { SimpleRouteConnection, SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { Trace } from "../Trace/Trace"
@@ -461,7 +469,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     const connections: SimpleRouteConnection[] = []
-    const obstacles = getSchematicObstaclesForTrace(this) // Assuming getSchematicObstaclesForTrace is adapted for Group
+    const obstacles = getSchematicObstaclesForGroup(this)
 
     for (const trace of traces) {
       const { allPortsFound, portsWithSelectors: connectedPorts } =
