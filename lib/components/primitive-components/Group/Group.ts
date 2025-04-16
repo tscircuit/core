@@ -42,6 +42,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     output_pcb_traces?: (PcbTrace | PcbVia)[]
   } | null = null
 
+  _hasStartedAsyncSchematicAutorouting = false
+  _asyncSchematicAutoroutingResult: {
+    output_schematic_traces?: SchematicTrace[]
+  } | null = null
+
+
   get config() {
     return {
       zodProps: groupProps as unknown as Props,
@@ -440,6 +446,175 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
+  /**
+   * Run local schematic autorouting using the MultilayerIjump or DirectLineRouter
+   */
+  async _runLocalSchematicAutorouting() {
+    const { db } = this.root!
+    const debug = Debug("tscircuit:core:_runLocalSchematicAutorouting")
+    debug(`[${this.getString()}] starting local schematic autorouting`)
+
+    const traces = this.selectAll("trace") as Trace[]
+    if (traces.length === 0) {
+      debug(`[${this.getString()}] no traces to route`)
+      return
+    }
+
+    const connections: SimpleRouteConnection[] = []
+    const obstacles = getSchematicObstaclesForTrace(this) // Assuming getSchematicObstaclesForTrace is adapted for Group
+
+    for (const trace of traces) {
+      const { allPortsFound, portsWithSelectors: connectedPorts } =
+        trace._findConnectedPorts()
+      if (!allPortsFound) continue // Skip traces with missing ports
+
+      const portsWithPosition = connectedPorts.map(({ port }) => ({
+        port,
+        position: port._getGlobalSchematicPositionAfterLayout(),
+        schematic_port_id: port.schematic_port_id ?? undefined,
+        facingDirection: port.facingDirection,
+      }))
+
+      if (portsWithPosition.length < 2) continue // Skip traces with less than 2 ports
+
+      connections.push({
+        name: trace.source_trace_id!,
+        pointsToConnect: portsWithPosition.map(({ position }) => ({
+          ...position,
+          layer: "top", // Schematic is single layer
+        })),
+      })
+    }
+
+    if (connections.length === 0) {
+      debug(`[${this.getString()}] no valid connections found for routing`)
+      return
+    }
+
+    const bounds = computeObstacleBounds(obstacles)
+    const BOUNDS_MARGIN = 2 // mm
+
+    const simpleRouteJsonInput: SimpleRouteJson = {
+      minTraceWidth: 0.1,
+      obstacles,
+      connections,
+      bounds: {
+        minX: bounds.minX - BOUNDS_MARGIN,
+        maxX: bounds.maxX + BOUNDS_MARGIN,
+        minY: bounds.minY - BOUNDS_MARGIN,
+        maxY: bounds.maxY + BOUNDS_MARGIN,
+      },
+      layerCount: 1,
+    }
+
+    let Autorouter = MultilayerIjump
+    let skipOtherTraceInteraction = false
+    if (this.props._schDirectLineRoutingEnabled) {
+      Autorouter = DirectLineRouter as any
+      skipOtherTraceInteraction = true
+    }
+
+    const autorouter = new Autorouter({
+      input: simpleRouteJsonInput,
+      MAX_ITERATIONS: 100,
+      OBSTACLE_MARGIN: 0.1,
+      isRemovePathLoopsEnabled: true,
+      isShortenPathWithShortcutsEnabled: true,
+      marginsWithCosts: [
+        { margin: 1, enterCost: 0, travelCostFactor: 1 },
+        { margin: 0.3, enterCost: 0, travelCostFactor: 1 },
+        { margin: 0.2, enterCost: 0, travelCostFactor: 2 },
+        { margin: 0.1, enterCost: 0, travelCostFactor: 3 },
+      ],
+    })
+
+    let results: SimplifiedPcbTrace[] = []
+    try {
+      results = autorouter.solveAndMapToTraces()
+    } catch (e: any) {
+      debug(`[${this.getString()}] schematic autorouting error: ${e.message}`)
+      // TODO: Log error to db.schematic_trace_error or similar
+      return
+    }
+
+    const output_schematic_traces: SchematicTrace[] = []
+    const allOtherEdges: SchematicTrace["edges"] = [] // Collect edges from other traces for interaction checks
+
+    for (const result of results) {
+      const source_trace_id = result.connection_name!
+      const traceComponent = traces.find(t => t.source_trace_id === source_trace_id)
+      if (!traceComponent) continue
+
+      const { allPortsFound, portsWithSelectors: connectedPorts } = traceComponent._findConnectedPorts()
+      if (!allPortsFound) continue
+
+      const portsWithPosition = connectedPorts.map(({ port }) => ({
+        port,
+        position: port._getGlobalSchematicPositionAfterLayout(),
+        schematic_port_id: port.schematic_port_id ?? undefined,
+        facingDirection: port.facingDirection,
+      }))
+
+      if (portsWithPosition.length < 2) continue
+
+
+      let edges: SchematicTrace["edges"] = []
+      for (let i = 0; i < result.route.length - 1; i++) {
+        edges.push({
+          from: result.route[i],
+          to: result.route[i + 1],
+        })
+      }
+
+      let junctions: SchematicTrace["junctions"] = []
+
+      if (!skipOtherTraceInteraction) {
+        // Interactions need all *other* edges that will be generated in this run
+        // This requires a two-pass approach or collecting all raw edges first.
+        // For simplicity now, we'll skip the complex interactions until a potential
+        // second pass refactor if needed. We'll still add stubs.
+
+        // TODO: Implement proper interaction checks (push, crossing, junctions)
+        // by considering all edges generated in this autorouting run.
+        // pushEdgesOfSchematicTraceToPreventOverlap({ edges, db, source_trace_id });
+        // edges = createSchematicTraceCrossingSegments({ edges, otherEdges: allOtherEdges });
+        // junctions = createSchematicTraceJunctions({ edges, db, source_trace_id });
+      }
+
+      // Add stubs
+      const lastEdge = edges[edges.length - 1]
+      const lastEdgePort = portsWithPosition[portsWithPosition.length - 1]
+      const lastDominantDirection = getDominantDirection(lastEdge)
+      edges.push(...getStubEdges({ lastEdge, lastEdgePort, lastDominantDirection }))
+
+      const firstEdge = edges[0]
+      const firstEdgePort = portsWithPosition[0]
+      const firstDominantDirection = getDominantDirection(firstEdge)
+      edges.unshift(...getStubEdges({ firstEdge, firstEdgePort, firstDominantDirection }))
+
+      output_schematic_traces.push({
+        type: "schematic_trace",
+        schematic_trace_id: `schematic_trace_${source_trace_id}`, // Generate ID
+        source_trace_id: source_trace_id,
+        edges,
+        junctions,
+      })
+    }
+
+
+    this._asyncSchematicAutoroutingResult = { output_schematic_traces }
+    this._markDirty("SchematicTraceRender") // Mark the group dirty for the update phase
+    debug(`[${this.getString()}] local schematic autorouting complete`)
+  }
+
+  _startAsyncSchematicAutorouting() {
+    if (this._hasStartedAsyncSchematicAutorouting) return
+    this._hasStartedAsyncSchematicAutorouting = true
+    this._queueAsyncEffect("schematic-autorouting", async () =>
+      this._runLocalSchematicAutorouting(),
+    )
+  }
+
   _startAsyncAutorouting() {
     if (this._hasStartedAsyncAutorouting) return
     this._hasStartedAsyncAutorouting = true
@@ -472,8 +647,64 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       `[${this.getString()}] no child subcircuits to wait for, initiating async routing`,
     )
     if (!this._hasTracesToRoute()) return
-    this._startAsyncAutorouting()
+    // For schematic traces, we now handle routing here
+    if (!this.root?.schematicDisabled) {
+       this._startAsyncSchematicAutorouting()
+    }
+
+    // For PCB traces
+    if (!this.root?.pcbDisabled && !this.getInheritedProperty("routingDisabled") && !this._shouldUseTraceByTraceRouting()) {
+      this._startAsyncAutorouting()
+    }
   }
+
+  updateSchematicTraceRender() {
+    const debug = Debug("tscircuit:core:updateSchematicTraceRender")
+    if (this.root?.schematicDisabled) return
+    if (!this.isSubcircuit) return
+
+    if (!this._asyncSchematicAutoroutingResult) {
+      // If routing hasn't started but should, initiate it.
+      if (this._hasTracesToRoute() && !this._hasStartedAsyncSchematicAutorouting) {
+         debug(`[${this.getString()}] starting async schematic autorouting from update phase`)
+         this._startAsyncSchematicAutorouting()
+      }
+      return
+    }
+
+
+    const { output_schematic_traces } = this._asyncSchematicAutoroutingResult
+    if (!output_schematic_traces) return
+
+    debug(`[${this.getString()}] updating schematic traces from async result (${output_schematic_traces.length} traces)`)
+
+    const { db } = this.root!
+
+    // Clear existing traces for this subcircuit first? Or rely on upsert?
+    // For now, let's assume we insert new ones. Proper updates might need more logic.
+    // Consider deleting old traces belonging to this subcircuit before inserting new ones.
+    const existingTraces = db.schematic_trace.list().filter(t => t.subcircuit_id === this.subcircuit_id)
+    for (const trace of existingTraces) {
+      db.schematic_trace.delete(trace.schematic_trace_id)
+    }
+
+
+    for (const trace of output_schematic_traces) {
+      // Assign subcircuit_id before inserting
+      trace.subcircuit_id = this.subcircuit_id!
+      db.schematic_trace.insert(trace)
+
+      // Update the corresponding Trace component instance if needed (e.g., schematic_trace_id)
+      const traceComponent = this.selectAll("trace").find(t => t.source_trace_id === trace.source_trace_id) as Trace | undefined
+      if (traceComponent) {
+        traceComponent.schematic_trace_id = trace.schematic_trace_id
+      }
+    }
+
+    // Clear the result after applying?
+    // this._asyncSchematicAutoroutingResult = null;
+  }
+
 
   updatePcbTraceRender() {
     const debug = Debug("tscircuit:core:updatePcbTraceRender")
