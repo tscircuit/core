@@ -1,7 +1,7 @@
 import type { AnyCircuitElement, LayerRef } from "circuit-json"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { su } from "@tscircuit/circuit-json-util"
+import { cju, cjuIndexed, su } from "@tscircuit/circuit-json-util"
 import { isValidElement, type ReactElement } from "react"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 import { identity, type Matrix } from "transformation-matrix"
@@ -30,7 +30,7 @@ export class RootCircuit {
 
   constructor() {
     this.children = []
-    this.db = su([])
+    this.db = cju([])
     // TODO rename to rootCircuit
     this.root = this
   }
