@@ -1,7 +1,7 @@
-import type { SoupUtilObjects } from "@tscircuit/circuit-json-util"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 
 export const getDescendantSubcircuitIds = (
-  db: SoupUtilObjects,
+  db: CircuitJsonUtilObjects,
   root_subcircuit_id: string,
 ): string[] => {
   const groups = db.source_group.list()

@@ -1,4 +1,4 @@
-import type { SoupUtilObjects } from "@tscircuit/circuit-json-util"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SchematicTrace } from "circuit-json"
 
 export const getOtherSchematicTraces = ({
@@ -7,7 +7,7 @@ export const getOtherSchematicTraces = ({
   sameNetOnly,
   differentNetOnly,
 }: {
-  db: SoupUtilObjects
+  db: CircuitJsonUtilObjects
   source_trace_id: string
   sameNetOnly?: boolean
   differentNetOnly?: boolean

@@ -1,5 +1,5 @@
 import { distance, doesLineIntersectLine } from "@tscircuit/math-utils"
-import type { SoupUtilObjects } from "@tscircuit/circuit-json-util"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SchematicTrace } from "circuit-json"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 import { getUnitVectorFromPointAToB } from "@tscircuit/math-utils"

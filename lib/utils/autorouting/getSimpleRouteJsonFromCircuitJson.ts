@@ -1,4 +1,4 @@
-import type { SoupUtilObjects } from "@tscircuit/circuit-json-util"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { Trace } from "lib/components"
 import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
@@ -20,7 +20,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuit_id,
   minTraceWidth = 0.1,
 }: {
-  db?: SoupUtilObjects
+  db?: CircuitJsonUtilObjects
   circuitJson?: AnyCircuitElement[]
   subcircuit_id?: string | null
   minTraceWidth?: number

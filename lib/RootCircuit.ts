@@ -1,6 +1,6 @@
 import type { AnyCircuitElement, LayerRef } from "circuit-json"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
-import type { SoupUtilObjects } from "@tscircuit/circuit-json-util"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
 import { isValidElement, type ReactElement } from "react"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
@@ -12,7 +12,7 @@ import type { RootCircuitEventName } from "./events"
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
   children: PrimitiveComponent[]
-  db: SoupUtilObjects
+  db: CircuitJsonUtilObjects
   root: RootCircuit | null = null
   isRoot = true
   schematicDisabled = false
