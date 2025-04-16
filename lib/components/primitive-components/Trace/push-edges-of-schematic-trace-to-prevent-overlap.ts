@@ -1,5 +1,5 @@
 import type { SchematicTrace } from "circuit-json"
-import type { SoupUtilObjects } from "@tscircuit/soup-util"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 
@@ -13,7 +13,7 @@ export const pushEdgesOfSchematicTraceToPreventOverlap = ({
   source_trace_id,
 }: {
   edges: SchematicTrace["edges"]
-  db: SoupUtilObjects
+  db: CircuitJsonUtilObjects
   source_trace_id: string
 }) => {
   const mySourceTrace = db.source_trace.get(source_trace_id)!

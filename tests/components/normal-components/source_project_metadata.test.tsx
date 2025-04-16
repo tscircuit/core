@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { su } from "@tscircuit/soup-util"
+import { su } from "@tscircuit/circuit-json-util"
 
 test("source_project_metadata added to circuit JSON output", async () => {
   const { circuit } = await getTestFixture()

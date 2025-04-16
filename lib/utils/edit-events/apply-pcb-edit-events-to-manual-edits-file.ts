@@ -1,7 +1,7 @@
 import type { ManualEditEvent, manual_edits_file } from "@tscircuit/props"
 import { z } from "zod"
 import type { CircuitJson } from "circuit-json"
-import { su } from "@tscircuit/soup-util"
+import { su } from "@tscircuit/circuit-json-util"
 
 export const applyPcbEditEventsToManualEditsFile = ({
   circuitJson,

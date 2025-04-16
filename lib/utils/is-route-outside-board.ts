@@ -1,9 +1,9 @@
-import type { SoupUtilObjects } from "@tscircuit/soup-util"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { PcbTraceRoutePoint } from "circuit-json"
 
 export const isRouteOutsideBoard = (
   mergedRoute: PcbTraceRoutePoint[],
-  { db }: { db: SoupUtilObjects },
+  { db }: { db: CircuitJsonUtilObjects },
 ) => {
   const pcbBoard = db.pcb_board.list()[0]
 

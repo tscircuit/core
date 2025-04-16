@@ -1,10 +1,10 @@
-import type { SoupUtilObjects } from "@tscircuit/soup-util"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { Trace } from "lib/components"
 import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
 import type { AnyCircuitElement } from "circuit-json"
-import { su } from "@tscircuit/soup-util"
+import { su } from "@tscircuit/circuit-json-util"
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
@@ -20,7 +20,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuit_id,
   minTraceWidth = 0.1,
 }: {
-  db?: SoupUtilObjects
+  db?: CircuitJsonUtilObjects
   circuitJson?: AnyCircuitElement[]
   subcircuit_id?: string | null
   minTraceWidth?: number

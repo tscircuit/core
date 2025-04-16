@@ -1,4 +1,4 @@
-import type { SoupUtilObjects } from "@tscircuit/soup-util"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { Port } from "../Port"
 
 interface CreateDownwardNetLabelSymbolParams {
@@ -45,7 +45,7 @@ export const createDownwardNetLabelGroundSymbol = (
     schDisplayLabel,
     source_trace_id,
   }: CreateDownwardNetLabelSymbolParams,
-  { db }: { db: SoupUtilObjects },
+  { db }: { db: CircuitJsonUtilObjects },
 ): void => {
   const offsets = calculateOffsets(port)
   db.schematic_net_label.insert({

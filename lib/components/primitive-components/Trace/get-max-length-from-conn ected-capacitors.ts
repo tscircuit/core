@@ -1,9 +1,9 @@
 import type { Port } from "../Port"
-import type { SoupUtilObjects } from "@tscircuit/soup-util"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 
 export const getMaxLengthFromConnectedCapacitors = (
   ports: Port[],
-  { db }: { db: SoupUtilObjects },
+  { db }: { db: CircuitJsonUtilObjects },
 ): number | undefined => {
   const capacitorMaxLengths = ports
     .map((port) => {

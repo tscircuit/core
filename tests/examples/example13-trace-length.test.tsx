@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
-import { su } from "@tscircuit/soup-util"
+import { su } from "@tscircuit/circuit-json-util"
 
 test("schematic net symbol", async () => {
   const { circuit } = getTestFixture()

@@ -1,4 +1,4 @@
-import type { SoupUtilObjects } from "@tscircuit/soup-util"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SchematicTrace } from "circuit-json"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 
@@ -92,7 +92,7 @@ export const createSchematicTraceJunctions = ({
   source_trace_id,
 }: {
   edges: SchematicTrace["edges"]
-  db: SoupUtilObjects
+  db: CircuitJsonUtilObjects
   source_trace_id: string
 }): Array<{ x: number; y: number }> => {
   const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({

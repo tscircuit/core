@@ -1,5 +1,5 @@
 import type { ManualEditEvent } from "@tscircuit/props"
-import { transformPCBElement } from "@tscircuit/soup-util"
+import { transformPCBElement } from "@tscircuit/circuit-json-util"
 import type { AnyCircuitElement, CircuitJson, PcbComponent } from "circuit-json"
 import { translate } from "transformation-matrix"
 import { applyTraceHintEditEvent } from "./apply-trace-hint-edit-event"
