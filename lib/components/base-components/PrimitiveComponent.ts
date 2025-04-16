@@ -460,7 +460,18 @@ export abstract class PrimitiveComponent<
     oldProps: z.infer<ZodProps>
     newProps: z.infer<ZodProps>
     changedProps: string[]
-  }) {}
+  }) {
+    // When any of these important properties change, invalidate the caches
+    const cacheInvalidatingProps = ['name', 'pinNumber', 'from', 'to', 'portHints'];
+    if (params.changedProps.some(prop => cacheInvalidatingProps.includes(prop))) {
+      this.invalidateSelectCaches();
+      
+      // Also invalidate parent caches as this might affect selectability
+      if (this.parent && 'invalidateSelectCaches' in this.parent) {
+        (this.parent as PrimitiveComponent).invalidateSelectCaches();
+      }
+    }
+  }
 
   onChildChanged(child: PrimitiveComponent) {
     this.parent?.onChildChanged?.(child)
@@ -475,6 +486,7 @@ export abstract class PrimitiveComponent<
     component.onAddToParent(this)
     component.parent = this
     this.children.push(component)
+    this.invalidateSelectCaches()
   }
 
   addAll(components: PrimitiveComponent[]) {
@@ -487,6 +499,7 @@ export abstract class PrimitiveComponent<
     this.children = this.children.filter((c) => c !== component)
     this.childrenPendingRemoval.push(component)
     component.shouldBeRemoved = true
+    this.invalidateSelectCaches()
   }
 
   getSubcircuitSelector(): string {
@@ -562,7 +575,18 @@ export abstract class PrimitiveComponent<
     return this.parent?.getGroup?.() ?? null
   }
 
+  // Cache for selectAll results
+  private _selectAllCache: Map<string, PrimitiveComponent[]> = new Map();
+
   selectAll(selector: string): PrimitiveComponent[] {
+    // Only cache simple selectors (no relationships or complex matching)
+    const isSimpleSelector = !selector.includes('>') && !selector.includes('[');
+    
+    if (isSimpleSelector) {
+      const cachedResult = this._selectAllCache.get(selector);
+      if (cachedResult) return cachedResult;
+    }
+
     debugSelectAll(`selectAll: "${selector}"`)
     /**
      * Splits something like ".R1 > .R2" into [".R1", ">", ".R2"]
@@ -574,29 +598,6 @@ export abstract class PrimitiveComponent<
      * or add items to this array. For example, if we go into a subcircuit,
      * we'll add all the components in that subcircuit to this array because
      * they're now accessible.
-     *
-     * this = <board />
-     * parts: [".subcircuit1", ">", ".R1"]
-     *
-     * iteration 0:
-     * part: ".subcircuit1"
-     * currentSearch: [<subcircuit />]
-     * currentResults: []
-     * ...
-     * currentSearch: [<resistor name="R1" />]
-     * currentResults: [<subcircuit />]
-     *
-     * iteration 1:
-     * part: ">"
-     * onlyDirectChildren = true
-     *
-     * iteration 2:
-     * part: ".R1"
-     * currentSearch: [<resistor />]
-     * currentResults: [<subcircuit />]
-     * ...
-     * currentSearch: []
-     * currentResults: [<resistor />]
      */
     let currentSearch: PrimitiveComponent[] =
       parts[0] === ">" ? this.children : this.getSelectableDescendants()
@@ -620,9 +621,26 @@ export abstract class PrimitiveComponent<
       if (part === ">") {
         onlyDirectChildren = true
       } else {
-        const newResults = currentSearch.filter((component) =>
-          isMatchingSelector(component, part),
-        )
+        // Very simple optimization for common direct type selectors 
+        // (like "resistor", "capacitor", etc.)
+        const isSimpleTypeSelector = 
+          parts.length === 1 && 
+          /^[a-zA-Z0-9_]+$/.test(part) && 
+          !part.includes('[') && 
+          !part.includes('>');
+
+        let newResults: PrimitiveComponent[];
+        
+        if (isSimpleTypeSelector) {
+          const typeToMatch = part.toLowerCase();
+          newResults = currentSearch.filter(c => 
+            c.lowercaseComponentName === typeToMatch || c.componentName === part);
+        } else {
+          newResults = currentSearch.filter((component) =>
+            isMatchingSelector(component, part)
+          );
+        }
+        
         const newSearch = newResults.flatMap((component) => {
           if (onlyDirectChildren) return component.children
           return component.getSelectableDescendants()
@@ -635,8 +653,21 @@ export abstract class PrimitiveComponent<
       }
     }
 
+    // Cache result for simple selectors
+    if (isSimpleSelector) {
+      this._selectAllCache.set(selector, currentResults);
+    }
+    
     return currentResults
   }
+  
+  // Clear the cache when component tree changes
+  invalidateSelectAllCache() {
+    this._selectAllCache.clear();
+  }
+
+  // Cache for selectOne results
+  private _selectOneCache: Map<string, Map<string, PrimitiveComponent | null>> = new Map();
 
   selectOne<T = PrimitiveComponent>(
     selector: string,
@@ -647,27 +678,79 @@ export abstract class PrimitiveComponent<
       schematicPrimitive?: boolean
     },
   ): T | null {
+    // Extract type from options first (used throughout the method)
     let type = options?.type?.toLowerCase()
     if (options?.port) type = "port"
+    
+    // Only cache simple selectors (no relationships or complex attribute selectors)
+    const isSimpleSelector = !selector.includes('>') && !selector.includes('[');
+    
+    // Create a cache key from the options (needed for both cache lookup and storage)
+    const optionsKey = JSON.stringify({
+      type: type,
+      pcbPrimitive: options?.pcbPrimitive,
+      schematicPrimitive: options?.schematicPrimitive
+    });
+    
+    // Cache management
+    let selectorsCache: Map<string, PrimitiveComponent | null> | undefined;
+    
+    if (isSimpleSelector) {
+      // Look up in cache
+      selectorsCache = this._selectOneCache.get(selector);
+      if (selectorsCache) {
+        const cachedResult = selectorsCache.get(optionsKey);
+        if (cachedResult !== undefined) {
+          return cachedResult as T | null;
+        }
+      } else {
+        selectorsCache = new Map();
+        this._selectOneCache.set(selector, selectorsCache);
+      }
+      
+      // Fast-path for wildcard selector with type filter
+      if (selector === "*" && type && !options?.pcbPrimitive && !options?.schematicPrimitive) {
+        // Find component directly
+        for (const component of this.getSelectableDescendants()) {
+          if (component.lowercaseComponentName === type) {
+            selectorsCache.set(optionsKey, component);
+            return component as T;
+          }
+        }
+        
+        // Cache null result
+        selectorsCache.set(optionsKey, null);
+        return null;
+      }
+    }
+    
+    // Get components to filter
+    const components = this.selectAll(selector);
+    let result: PrimitiveComponent | null = null;
+    
+    // Find matching component based on options
     if (type) {
-      return (
-        (this.selectAll(selector).find(
-          (c) => c.lowercaseComponentName === type,
-        ) as T) ?? null
-      )
+      result = components.find((c) => c.lowercaseComponentName === type) ?? null;
+    } else if (options?.pcbPrimitive) {
+      result = components.find((c) => c.isPcbPrimitive) ?? null;
+    } else if (options?.schematicPrimitive) {
+      result = components.find((c) => c.isSchematicPrimitive) ?? null;
+    } else {
+      result = components[0] ?? null;
     }
-    if (options?.pcbPrimitive) {
-      return (
-        (this.selectAll(selector).find((c) => c.isPcbPrimitive) as T) ?? null
-      )
+    
+    // Cache result for simple selectors
+    if (isSimpleSelector && selectorsCache) {
+      selectorsCache.set(optionsKey, result);
     }
-    if (options?.schematicPrimitive) {
-      return (
-        (this.selectAll(selector).find((c) => c.isSchematicPrimitive) as T) ??
-        null
-      )
-    }
-    return (this.selectAll(selector)[0] as T) ?? null
+    
+    return result as T | null;
+  }
+  
+  // Clear both caches when component tree changes
+  invalidateSelectCaches() {
+    this.invalidateSelectAllCache();
+    this._selectOneCache.clear();
   }
 
   getAvailablePcbLayers(): string[] {

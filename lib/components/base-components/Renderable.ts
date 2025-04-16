@@ -111,6 +111,13 @@ export abstract class Renderable implements IRenderable {
       this.renderPhaseStates[orderedRenderPhases[i]].dirty = true
     }
 
+    // Cache invalidation hook for components that implement it
+    if ('invalidateSelectCaches' in this && 
+        ['ReactSubtreesRender', 'PortMatching', 'CreateNetsFromProps', 
+         'PcbComponentRender', 'SchematicComponentRender', 'SourceRender'].includes(phase)) {
+      (this as any).invalidateSelectCaches();
+    }
+
     if (this.parent?._markDirty) {
       this.parent._markDirty(phase)
     }
