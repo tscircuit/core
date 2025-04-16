@@ -1,5 +1,5 @@
 import type { SchematicTrace } from "circuit-json"
-import type { SoupUtilObjects } from "@tscircuit/soup-util"
+import type { SoupUtilObjects } from "@tscircuit/circuit-json-util"
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 

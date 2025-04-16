@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../../../tests/fixtures/get-test-fixture"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
-import { su } from "@tscircuit/soup-util"
+import { su } from "@tscircuit/circuit-json-util"
 
 const pinLabels = {
   pin1: ["pin1", "GND"],

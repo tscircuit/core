@@ -1,4 +1,4 @@
-import type { SoupUtilObjects } from "@tscircuit/soup-util"
+import type { SoupUtilObjects } from "@tscircuit/circuit-json-util"
 
 export const getDescendantSubcircuitIds = (
   db: SoupUtilObjects,

@@ -1,10 +1,10 @@
-import type { SoupUtilObjects } from "@tscircuit/soup-util"
+import type { SoupUtilObjects } from "@tscircuit/circuit-json-util"
 import type { Trace } from "lib/components"
 import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
 import type { AnyCircuitElement } from "circuit-json"
-import { su } from "@tscircuit/soup-util"
+import { su } from "@tscircuit/circuit-json-util"
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,

@@ -1,4 +1,4 @@
-import type { SoupUtilObjects } from "@tscircuit/soup-util"
+import type { SoupUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SchematicTrace } from "circuit-json"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 

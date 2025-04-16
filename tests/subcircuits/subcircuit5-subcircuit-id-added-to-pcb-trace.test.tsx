@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { su } from "@tscircuit/soup-util"
+import { su } from "@tscircuit/circuit-json-util"
 
 test("subcircuit_id added to pcb_trace output from autorouter", async () => {
   const { circuit } = await getTestFixture()

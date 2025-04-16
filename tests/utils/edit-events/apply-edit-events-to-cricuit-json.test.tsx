@@ -1,5 +1,5 @@
 import type { ManualEditEvent } from "@tscircuit/props"
-import { su } from "@tscircuit/soup-util"
+import { su } from "@tscircuit/circuit-json-util"
 import { expect, test } from "bun:test"
 import { RootCircuit } from "lib/RootCircuit"
 import { applyEditEvents } from "lib/utils/edit-events/apply-edit-events-to-circuit-json"

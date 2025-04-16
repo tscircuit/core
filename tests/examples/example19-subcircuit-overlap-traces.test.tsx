@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { su } from "@tscircuit/soup-util"
+import { su } from "@tscircuit/circuit-json-util"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
 test("routingDisabled subcircuit prop should be inherited from parent and not have traces from the autorouter", async () => {
