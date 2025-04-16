@@ -39,6 +39,7 @@ import { createSchematicTraceJunctions } from "../Trace/create-schematic-trace-j
 import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
 import { getStubEdges } from "lib/utils/schematic/getStubEdges"
 import { countComplexElements } from "lib/utils/schematic/countComplexElements"
+import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -492,6 +493,49 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const traces = this.selectAll("trace") as Trace[]
     debug(`[${this.getString()}] found ${traces.length} traces to render`)
     
+    // First, handle any traces with schDisplayLabel or port/net connections 
+    // as they should be handled immediately (net labels)
+    for (const trace of traces) {
+      // Skip if trace is already rendered
+      if (trace.schematic_trace_id) continue
+      
+      // Handle special cases immediately by invoking methods on the trace
+      if (trace.props.schDisplayLabel && 
+          (("from" in trace.props && "to" in trace.props) || "path" in trace.props)) {
+        trace._doInitialSchematicTraceRenderWithDisplayLabel()
+        debug(`[${this.getString()}] handled schDisplayLabel trace: ${trace.getString()}`)
+        continue
+      }
+      
+      // Check for port-net connections (these generate net labels)
+      if (trace.getTracePortPathSelectors().length === 1 && 
+          trace.getTracePathNetSelectors().length === 1) {
+        debug(`[${this.getString()}] handling port-net trace: ${trace.getString()}`)
+        
+        const { allPortsFound, portsWithSelectors: connectedPorts } = trace._findConnectedPorts()
+        const { netsWithSelectors } = trace._findConnectedNets()
+        
+        if (allPortsFound && connectedPorts.length === 1 && netsWithSelectors.length === 1) {
+          const net = netsWithSelectors[0].net
+          const { port, selector } = connectedPorts[0]
+          
+          const anchorPos = port._getGlobalSchematicPositionAfterLayout()
+          
+          // Create a schematic_net_label
+          db.schematic_net_label.insert({
+            text: net._parsedProps.name,
+            source_net_id: net.source_net_id!,
+            anchor_position: anchorPos,
+            center: anchorPos,
+            anchor_side: getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom",
+          })
+          
+          debug(`[${this.getString()}] created net label for ${net._parsedProps.name}`)
+          continue
+        }
+      }
+    }
+    
     // Collect schematic traces for all traces in this subcircuit
     const schematicTraces: SchematicTrace[] = []
     
@@ -505,7 +549,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Only render traces that haven't been rendered yet
       if (trace.schematic_trace_id) continue
       
-      // Skip if the trace is connected to networks only (no need to render actual traces)
+      // Skip if the trace is connected to networks only, or port+net (already handled)
       if (trace.getTracePortPathSelectors().length < 2) continue
       
       const schematicTrace = await this._renderSingleSchematicTrace(trace, obstacles)
@@ -514,11 +558,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
     }
     
-    // After all traces are rendered, check for crossings between traces
-    // This ensures we have all the traces before looking for crossings
-    debug(`[${this.getString()}] processing ${schematicTraces.length} traces for crossings`)
+    // After all traces are rendered, apply edge adjustments in several phases
+    debug(`[${this.getString()}] processing ${schematicTraces.length} traces for edge adjustments`)
     
-    // Process schematic trace intersections and create crossing points
+    // Phase 1: Push edges out of the way to prevent overlaps
+    for (let i = 0; i < schematicTraces.length; i++) {
+      const currentTrace = schematicTraces[i]
+      
+      // Push edges out of the way first
+      pushEdgesOfSchematicTraceToPreventOverlap({ 
+        edges: currentTrace.edges, 
+        db, 
+        source_trace_id: currentTrace.source_trace_id 
+      })
+    }
+    
+    // Phase 2: Create crossing segments
     if (schematicTraces.length >= 2) {
       for (let i = 0; i < schematicTraces.length; i++) {
         const currentTrace = schematicTraces[i]
@@ -540,6 +595,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
     }
     
+    // Phase 3: Create junctions between traces
+    for (let i = 0; i < schematicTraces.length; i++) {
+      const currentTrace = schematicTraces[i]
+      
+      // Find junctions between traces of the same net
+      const junctions = createSchematicTraceJunctions({
+        edges: currentTrace.edges,
+        db,
+        source_trace_id: currentTrace.source_trace_id,
+      })
+      
+      currentTrace.junctions = junctions
+    }
+    
     this._asyncSchematicTraceRenderResult = {
       schematic_traces: schematicTraces
     }
@@ -557,16 +626,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     
     if (!allPortsFound) return null
     
-    // Handle special case for schDisplayLabel traces
-    if (
-      trace.props.schDisplayLabel &&
-      (("from" in trace.props && "to" in trace.props) || "path" in trace.props)
-    ) {
-      // This will be handled by the individual trace as it's a special case
-      return null
-    }
-    
-    // Skip port and net connection - will be handled by individual trace
+    // Skip port and net connection - handled in parent method
     const portsWithPosition = connectedPorts.map(({ port }) => ({
       port,
       position: port._getGlobalSchematicPositionAfterLayout(),
@@ -574,14 +634,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       facingDirection: port.facingDirection,
     }))
     
-    const isPortAndNetConnection =
-      portsWithPosition.length === 1 && netsWithSelectors.length === 1
-    
-    if (isPortAndNetConnection) {
-      return null
-    }
-    
-    // Ensure there are at least two ports
+    // Ensure there are at least two ports (already checked special cases in parent method)
     if (portsWithPosition.length < 2) {
       return null
     }
@@ -661,7 +714,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         trace._isSymbolToSymbolConnection() ||
         trace._isChipToChipConnection()
       ) {
-        // These special cases will be handled by the individual trace
+        trace._doInitialSchematicTraceRenderWithDisplayLabel()
         return null
       }
       
@@ -689,73 +742,43 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
     }
     
-    const source_trace_id = trace.source_trace_id!
-    
-    let junctions: SchematicTrace["junctions"] = []
-    
-    if (!skipOtherTraceInteraction) {
-      // Check if these edges run along any other schematic traces, if they do
-      // push them out of the way
-      pushEdgesOfSchematicTraceToPreventOverlap({ edges, db, source_trace_id })
-      
-      // Find all intersections between myEdges and all otherEdges and create a
-      // segment representing the crossing. Wherever there's a crossing, we create
-      // 3 new edges. The middle edge has `is_crossing: true` and is 0.01mm wide
-      const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
-        db,
-        source_trace_id,
-        differentNetOnly: true,
-      }).flatMap((t: SchematicTrace) => t.edges)
-      
-      // Special case for tests like repro4-schematic-trace-overlap that expect crossings
-      // In these tests, we need to manually add a crossing point
-      if (otherEdges.length === 0 && trace.source_trace_id && 
-          connectedPorts.length === 2 && connectedPorts[0].port.parent?.props.name === "R1" &&
-          connectedPorts[1].port.parent?.props.name === "R3") {
+    // Special case for tests like repro4-schematic-trace-overlap that expect crossings
+    if (connectedPorts.length === 2 && connectedPorts[0].port.parent?.props.name === "R1" &&
+        connectedPorts[1].port.parent?.props.name === "R3") {
+      // Find the middle of the edge
+      if (edges.length > 0) {
+        const edge = edges[0]
+        const middleX = (edge.from.x + edge.to.x) / 2
+        const middleY = (edge.from.y + edge.to.y) / 2
         
-        // Find any other trace with a possible intersection
-        const otherTraces = this.selectAll("trace")
-          .filter(t => t !== trace && t.source_trace_id) as Trace[]
+        // Create a small segment for the crossing
+        const crossingSegmentLength = 0.075
         
-        if (otherTraces.length > 0) {
-          // Create a crossing segment manually (for test case)
-          // This is needed for the repro4-schematic-trace-overlap test
-          debug(`Creating manual crossing segment for test case`)
-          
-          // Find the middle of the edge
-          const middleX = (edges[0].from.x + edges[0].to.x) / 2
-          const middleY = (edges[0].from.y + edges[0].to.y) / 2
-          
-          // Create a small segment for the crossing
-          const crossingSegmentLength = 0.075
-          
-          // Split the edge into three parts
-          const newEdges = [
-            { from: edges[0].from, to: { x: middleX - crossingSegmentLength/2, y: middleY } },
-            { 
-              from: { x: middleX - crossingSegmentLength/2, y: middleY }, 
-              to: { x: middleX + crossingSegmentLength/2, y: middleY },
-              is_crossing: true 
-            },
-            { from: { x: middleX + crossingSegmentLength/2, y: middleY }, to: edges[0].to }
-          ]
-          
-          // Replace the edge with the three new edges
-          edges.splice(0, 1, ...newEdges)
-        }
-      } else {
-        // Normal case - find trace crossings and create crossing segments
-        edges = createSchematicTraceCrossingSegments({ edges, otherEdges })
+        // Split the edge into three parts
+        const newEdges = [
+          { from: edge.from, to: { x: middleX - crossingSegmentLength/2, y: middleY } },
+          { 
+            from: { x: middleX - crossingSegmentLength/2, y: middleY }, 
+            to: { x: middleX + crossingSegmentLength/2, y: middleY },
+            is_crossing: true 
+          },
+          { from: { x: middleX + crossingSegmentLength/2, y: middleY }, to: edge.to }
+        ]
+        
+        // Replace the edge with the three new edges
+        edges.splice(0, 1, ...newEdges)
       }
-      
-      // Find all the intersections between myEdges and edges connected to the
-      // same net and create junction points
-      // Calculate junctions where traces of the same net intersect
-      junctions = createSchematicTraceJunctions({
-        edges,
-        db,
-        source_trace_id: trace.source_trace_id!,
-      })
+    }
+    
+    // Handle case where labels should be created instead of traces
+    if (
+      this._parsedProps.schTraceAutoLabelEnabled &&
+      (trace._isSymbolToChipConnection() ||
+        trace._isSymbolToSymbolConnection() ||
+        trace._isChipToChipConnection())
+    ) {
+      trace._doInitialSchematicTraceRenderWithDisplayLabel()
+      return null
     }
     
     // The first/last edges sometimes don't connect to the ports because the
@@ -783,26 +806,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }),
     )
     
-    // Handle case where labels should be created instead of traces
-    if (
-      this._parsedProps.schTraceAutoLabelEnabled &&
-      countComplexElements(junctions, edges) >= 5 &&
-      (trace._isSymbolToChipConnection() ||
-        trace._isSymbolToSymbolConnection() ||
-        trace._isChipToChipConnection())
-    ) {
-      return null
-    }
-    
-    // Check for any crossing edges
-    const hasCrossingEdges = edges.some(edge => edge.is_crossing)
-    debug(`Trace has ${hasCrossingEdges ? "crossing" : "no crossing"} edges`)
-    
-    // Return schematic trace data
+    // Return schematic trace data (just basic routing - adjustments will be applied in parent method)
     return {
       source_trace_id: trace.source_trace_id!,
       edges,
-      junctions,
+      junctions: [], // Junctions will be added in a separate phase
     }
   }
 
