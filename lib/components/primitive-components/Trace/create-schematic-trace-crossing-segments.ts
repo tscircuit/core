@@ -18,8 +18,10 @@ export const createSchematicTraceCrossingSegments = ({
   otherEdges: SchematicTrace["edges"]
 }) => {
   const debug = Debug("tscircuit:core:create-schematic-trace-crossing-segments")
-  debug(`Processing ${inputEdges.length} edges against ${otherEdges.length} other edges to find crossings`)
-  
+  debug(
+    `Processing ${inputEdges.length} edges against ${otherEdges.length} other edges to find crossings`,
+  )
+
   const edges = [...inputEdges]
   // For each edge in our trace
   for (let i = 0; i < edges.length; i++) {
@@ -75,8 +77,10 @@ export const createSchematicTraceCrossingSegments = ({
           edgeOrientation === "vertical" ? otherEdge.from.y : edge.from.y
 
         const crossingPoint = { x: intersectX, y: intersectY }
-        
-        debug(`FOUND INTERSECTION: ${edge.from.x},${edge.from.y} to ${edge.to.x},${edge.to.y} crosses ${otherEdge.from.x},${otherEdge.from.y} to ${otherEdge.to.x},${otherEdge.to.y} at ${intersectX},${intersectY}`)
+
+        debug(
+          `FOUND INTERSECTION: ${edge.from.x},${edge.from.y} to ${edge.to.x},${edge.to.y} crosses ${otherEdge.from.x},${otherEdge.from.y} to ${otherEdge.to.x},${otherEdge.to.y} at ${intersectX},${intersectY}`,
+        )
 
         otherEdgesIntersections.push({
           otherEdge,

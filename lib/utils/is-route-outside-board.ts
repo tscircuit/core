@@ -6,12 +6,12 @@ export const isRouteOutsideBoard = (
   { db }: { db: CircuitJsonUtilObjects },
 ) => {
   const boards = db.pcb_board.list()
-  
+
   // If there's no board, can't be outside the board
   if (boards.length === 0) {
     return false
   }
-  
+
   const pcbBoard = boards[0]
 
   // Check if the board has an outline
@@ -44,9 +44,11 @@ export const isRouteOutsideBoard = (
   }
 
   // If there's no outline, check if the board has width/height
-  if (pcbBoard.width === undefined || 
-      pcbBoard.height === undefined || 
-      !pcbBoard.center) {
+  if (
+    pcbBoard.width === undefined ||
+    pcbBoard.height === undefined ||
+    !pcbBoard.center
+  ) {
     // No board dimensions, can't be outside
     return false
   }

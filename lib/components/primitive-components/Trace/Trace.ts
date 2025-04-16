@@ -274,9 +274,9 @@ export class Trace
   ): void {
     // Skip if the trace isn't fully initialized yet
     if (!this.source_trace_id || !this.pcb_trace_id) return
-    
+
     const { db } = this.root!
-    
+
     const isOutsideBoard = isRouteOutsideBoard(mergedRoute, { db })
 
     if (isOutsideBoard) {
@@ -838,7 +838,7 @@ export class Trace
     debug(`[${this.getString()}] rendering schematic trace`)
 
     // Handle special cases that shouldn't be deferred to the Group's async rendering
-    
+
     // Case 1: Trace with display label
     if (
       this.props.schDisplayLabel &&

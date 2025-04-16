@@ -34,7 +34,7 @@ test("repro4 schematic trace overlap", async () => {
 
   // Note: With the new async trace rendering approach, we no longer need to check
   // for explicit crossings in the internal data model. The visual result is the same
-  
+
   // Update snapshot
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
