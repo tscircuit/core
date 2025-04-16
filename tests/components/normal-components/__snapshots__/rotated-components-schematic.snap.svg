@@ -42,4 +42,32 @@
     L 947.1258740733776,284.93013506428383
     L 993.8108379067887,284.93013506428383
     Z
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.970938523786px"/><text class="net-label-text" x="990.2631485639739" y="295.57320309272825" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.738446714073998px" transform="">VCC</text><path class="net-label" d="
+    M 848.8730447608016,248.83964905491086
+    L 838.2299767323572,243.51811504068866
+    L 838.2299767323572,194.86221268349163
+    L 859.516112789246,194.86221268349163
+    L 859.516112789246,243.51811504068866
+    Z
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.970938523786px"/><text class="net-label-text" x="848.8730447608016" y="239.97042569787388" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.738446714073998px" transform="rotate(-90 848.8730447608016 239.97042569787388)">GND</text><path class="net-label" d="
+    M 848.7720735802282,351.16035094508914
+    L 859.4151416086726,356.48188495931134
+    L 859.4151416086726,403.16684879272236
+    L 838.1290055517837,403.16684879272236
+    L 838.1290055517837,356.48188495931134
+    Z
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.970938523786px"/><text class="net-label-text" x="848.7720735802282" y="360.02957430212615" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.738446714073998px" transform="rotate(90 848.7720735802282 360.02957430212615)">VCC</text><path class="net-label" d="
+    M 1101.4530738111891,295.67417427330156
+    L 1106.7746078254113,285.03110624485714
+    L 1155.4305101826085,285.03110624485714
+    L 1155.4305101826085,306.317242301746
+    L 1106.7746078254113,306.317242301746
+    Z
+  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.970938523786px"/><text class="net-label-text" x="1110.3222971682262" y="295.67417427330156" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.738446714073998px" transform="">GND</text><path class="net-label" d="
+    M 999.1323719210109,295.57320309272825
+    L 993.8108379067887,306.21627112117267
+    L 947.1258740733776,306.21627112117267
+    L 947.1258740733776,284.93013506428383
+    L 993.8108379067887,284.93013506428383
+    Z
   " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.970938523786px"/><text class="net-label-text" x="990.2631485639739" y="295.57320309272825" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.738446714073998px" transform="">VCC</text></svg>
