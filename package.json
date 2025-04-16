@@ -54,7 +54,7 @@
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
     "@tscircuit/capacity-autorouter": "^0.0.52",
-    "@tscircuit/checks": "^0.0.30",
+    "@tscircuit/checks": "^0.0.36",
     "@tscircuit/circuit-json-util": "^0.0.45",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/math-utils": "^0.0.12",
@@ -62,7 +62,7 @@
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/soup-util": "^0.0.41",
     "circuit-json": "^0.0.153",
-    "circuit-json-to-connectivity-map": "^0.0.17",
+    "circuit-json-to-connectivity-map": "^0.0.20",
     "format-si-unit": "^0.0.3",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
