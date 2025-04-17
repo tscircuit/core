@@ -130,6 +130,7 @@ export class Board extends Group<typeof boardProps> {
         x: point.x + (props.outlineOffsetX ?? 0),
         y: point.y + (props.outlineOffsetY ?? 0),
       })),
+      material: props.material,
     })
 
     this.pcb_board_id = pcb_board.pcb_board_id!
