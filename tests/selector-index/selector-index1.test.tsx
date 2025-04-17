@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { PrimitiveComponent, RootCircuit } from "lib"
 import { selectOne } from "css-select"
-import { cssSelectPrimitiveComponentAdapter } from "lib/components/base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
+import { cssSelectPrimitiveComponentAdapterWithoutSubcircuits } from "lib/components/base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
 
 test.skip("selector-index1", () => {
   const circuit = new RootCircuit()
@@ -15,17 +15,17 @@ test.skip("selector-index1", () => {
 
   expect(
     selectOne("board .R1", circuit as any, {
-      adapter: cssSelectPrimitiveComponentAdapter as any,
+      adapter: cssSelectPrimitiveComponentAdapterWithoutSubcircuits as any,
     }).toString(),
   ).toMatchInlineSnapshot(`"[object <resistor#0 name=".R1" />]"`)
   expect(
     selectOne("board > .R1", circuit as any, {
-      adapter: cssSelectPrimitiveComponentAdapter as any,
+      adapter: cssSelectPrimitiveComponentAdapterWithoutSubcircuits as any,
     }).toString(),
   ).toMatchInlineSnapshot(`"[object <resistor#0 name=".R1" />]"`)
   expect(
     selectOne("board > .R1 .pin1", circuit as any, {
-      adapter: cssSelectPrimitiveComponentAdapter as any,
+      adapter: cssSelectPrimitiveComponentAdapterWithoutSubcircuits as any,
     }).toString(),
   ).toMatchInlineSnapshot(`"[object <port#5(pin:1 .R1>.pin1) />]"`)
 })

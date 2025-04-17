@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { PrimitiveComponent, RootCircuit } from "lib"
 import { selectOne } from "css-select"
-import { cssSelectPrimitiveComponentAdapter } from "../../lib/components/base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
+import { cssSelectPrimitiveComponentAdapterWithoutSubcircuits } from "../../lib/components/base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
 import { grid } from "node_modules/@tscircuit/math-utils/dist/grid"
 
 test.skip("selector-index2", () => {
@@ -24,7 +24,7 @@ test.skip("selector-index2", () => {
 
   expect(
     selectOne("board .LED4 .pos", circuit as any, {
-      adapter: cssSelectPrimitiveComponentAdapter as any,
+      adapter: cssSelectPrimitiveComponentAdapterWithoutSubcircuits as any,
     }).toString(),
   ).toInclude(`"pos"`)
 
@@ -45,7 +45,7 @@ test.skip("selector-index2", () => {
   let cssSelectOneResult: PrimitiveComponent | null
   for (let i = 0; i < iterations; i++) {
     cssSelectOneResult = selectOne("board .LED4 .pos", circuit as any, {
-      adapter: cssSelectPrimitiveComponentAdapter as any,
+      adapter: cssSelectPrimitiveComponentAdapterWithoutSubcircuits as any,
     })
   }
   const endCssSelectOne = performance.now()

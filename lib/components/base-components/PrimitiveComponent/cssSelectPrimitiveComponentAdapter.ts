@@ -141,3 +141,19 @@ export const cssSelectPrimitiveComponentAdapter: Required<
   isVisited: (elem: PrimitiveComponent<any>): boolean => false,
   isActive: (elem: PrimitiveComponent<any>): boolean => false,
 }
+
+export const cssSelectPrimitiveComponentAdapterWithoutSubcircuits: Required<
+  Options<PrimitiveComponent, PrimitiveComponent>["adapter"]
+> = {
+  ...cssSelectPrimitiveComponentAdapter,
+  getChildren: (node: PrimitiveComponent) =>
+    node.children.filter((c) => !c.isSubcircuit),
+}
+
+export const cssSelectPrimitiveComponentAdapterOnlySubcircuits: Required<
+  Options<PrimitiveComponent, PrimitiveComponent>["adapter"]
+> = {
+  ...cssSelectPrimitiveComponentAdapter,
+  getChildren: (node: PrimitiveComponent) =>
+    node.children.filter((c) => c.isSubcircuit),
+}

@@ -22,14 +22,19 @@ import { Renderable } from "lib/components/base-components/Renderable"
 import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { Ftype } from "lib/utils/constants"
 import { selectOne, selectAll, type Options } from "css-select"
-import { cssSelectPrimitiveComponentAdapter } from "./cssSelectPrimitiveComponentAdapter"
+import {
+  cssSelectPrimitiveComponentAdapter,
+  cssSelectPrimitiveComponentAdapterOnlySubcircuits,
+  cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
+} from "./cssSelectPrimitiveComponentAdapter"
 
-const cssSelectOptions: Options<PrimitiveComponent, PrimitiveComponent> = {
-  adapter: cssSelectPrimitiveComponentAdapter as any,
+const cssSelectOptionsInsideSubcircuit: Options<
+  PrimitiveComponent,
+  PrimitiveComponent
+> = {
+  adapter: cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
   cacheResults: true,
 }
-
-const debugSelectAll = Debug("tscircuit:primitive-component:selectAll")
 
 export interface BaseComponentConfig {
   componentName: string
@@ -567,7 +572,16 @@ export abstract class PrimitiveComponent<
   }
 
   selectAll(selector: string): PrimitiveComponent[] {
-    return selectAll(selector, this, cssSelectOptions)
+    const result = selectAll(selector, this, cssSelectOptionsInsideSubcircuit)
+    if (result.length > 0) return result
+
+    // If we didn't find anything, check for a subcircuit query
+    const [firstpart, ...rest] = selector.split(" ")
+    const subcircuit = selectOne(firstpart, this, {
+      adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
+    }) as ISubcircuit | null
+    if (!subcircuit) return []
+    return subcircuit.selectAll(rest.join(" "))
   }
 
   selectOne<T = PrimitiveComponent>(
@@ -582,14 +596,35 @@ export abstract class PrimitiveComponent<
     if (options?.port) {
       options.type = "port"
     }
+    let result: T | null = null
     if (options?.type) {
-      const allMatching = selectAll(selector, this, cssSelectOptions)
-      return allMatching.find(
+      const allMatching = selectAll(
+        selector,
+        this,
+        cssSelectOptionsInsideSubcircuit,
+      )
+      result = allMatching.find(
         (n) => n.lowercaseComponentName === options.type,
       ) as T | null
     }
 
-    return selectOne(selector, this, cssSelectOptions) as T | null
+    result ??= selectOne(
+      selector,
+      this,
+      cssSelectOptionsInsideSubcircuit,
+    ) as T | null
+
+    if (result) return result
+
+    // If we didn't find anything, check for a subcircuit query
+    const [firstpart, ...rest] = selector.split(" ")
+    const subcircuit = selectOne(firstpart, this, {
+      adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
+    }) as ISubcircuit | null
+
+    if (!subcircuit) return null
+
+    return subcircuit.selectOne(rest.join(" "), options) as T | null
   }
 
   getAvailablePcbLayers(): string[] {
