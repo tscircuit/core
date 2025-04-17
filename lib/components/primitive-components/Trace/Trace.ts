@@ -144,7 +144,7 @@ export class Trace
 
     for (const { selector, port } of portsWithSelectors) {
       if (!port) {
-        const parentSelector = selector.replace(/\>.*$/, "")
+        const parentSelector = selector.replace(/(\> )?[^ ]+$/, "")
         const targetComponent = this.getSubcircuit().selectOne(parentSelector)
         if (!targetComponent) {
           this.renderError(`Could not find port for selector "${selector}"`)

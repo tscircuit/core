@@ -16,13 +16,26 @@ import {
 } from "transformation-matrix"
 import type { ZodType } from "zod"
 import { z } from "zod"
-import type { RootCircuit } from "../../RootCircuit"
-import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
-import { Renderable } from "./Renderable"
-import type { IGroup } from "../primitive-components/Group/IGroup"
+import type { RootCircuit } from "lib/RootCircuit"
+import type { ISubcircuit } from "lib/components/primitive-components/Group/ISubcircuit"
+import { Renderable } from "lib/components/base-components/Renderable"
+import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { Ftype } from "lib/utils/constants"
+import { selectOne, selectAll, type Options } from "css-select"
+import {
+  cssSelectPrimitiveComponentAdapter,
+  cssSelectPrimitiveComponentAdapterOnlySubcircuits,
+  cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
+} from "./cssSelectPrimitiveComponentAdapter"
+import { preprocessSelector } from "./preprocessSelector"
 
-const debugSelectAll = Debug("tscircuit:primitive-component:selectAll")
+const cssSelectOptionsInsideSubcircuit: Options<
+  PrimitiveComponent,
+  PrimitiveComponent
+> = {
+  adapter: cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
+  cacheResults: true,
+}
 
 export interface BaseComponentConfig {
   componentName: string
@@ -559,82 +572,34 @@ export abstract class PrimitiveComponent<
     return this.parent?.getGroup?.() ?? null
   }
 
-  selectAll(selector: string): PrimitiveComponent[] {
-    debugSelectAll(`selectAll: "${selector}"`)
-    /**
-     * Splits something like ".R1 > .R2" into [".R1", ">", ".R2"]
-     */
-    const parts = selector.trim().split(/\s+/)
-
-    /**
-     * Mutable array of results. As we iterate over the parts, we'll filter
-     * or add items to this array. For example, if we go into a subcircuit,
-     * we'll add all the components in that subcircuit to this array because
-     * they're now accessible.
-     *
-     * this = <board />
-     * parts: [".subcircuit1", ">", ".R1"]
-     *
-     * iteration 0:
-     * part: ".subcircuit1"
-     * currentSearch: [<subcircuit />]
-     * currentResults: []
-     * ...
-     * currentSearch: [<resistor name="R1" />]
-     * currentResults: [<subcircuit />]
-     *
-     * iteration 1:
-     * part: ">"
-     * onlyDirectChildren = true
-     *
-     * iteration 2:
-     * part: ".R1"
-     * currentSearch: [<resistor />]
-     * currentResults: [<subcircuit />]
-     * ...
-     * currentSearch: []
-     * currentResults: [<resistor />]
-     */
-    let currentSearch: PrimitiveComponent[] =
-      parts[0] === ">" ? this.children : this.getSelectableDescendants()
-    let currentResults: PrimitiveComponent[] = []
-
-    let onlyDirectChildren = false
-    let iteration = -1
-    for (const part of parts) {
-      iteration++
-      debugSelectAll(`\n\niteration: ${iteration}`)
-      debugSelectAll(`part: "${parts[iteration]}"`)
-      debugSelectAll(
-        `currentSearch: [${currentSearch.map((r) => r.getString()).join(",")}]`,
-      )
-      debugSelectAll(
-        `currentResults: [${currentResults.map((r) => r.getString()).join(",")}]`,
-      )
-
-      if (part === ">") {
-        onlyDirectChildren = true
-      } else {
-        const newResults = currentSearch.filter((component) =>
-          isMatchingSelector(component, part),
-        )
-        const newSearch = newResults.flatMap((component) => {
-          if (onlyDirectChildren) return component.children
-          return component.getSelectableDescendants()
-        })
-
-        currentSearch = newSearch
-        currentResults = newResults
-
-        onlyDirectChildren = false
-      }
+  _cachedSelectAllQueries: Map<string, PrimitiveComponent[]> = new Map()
+  selectAll(selectorRaw: string): PrimitiveComponent[] {
+    if (this._cachedSelectAllQueries.has(selectorRaw)) {
+      return this._cachedSelectAllQueries.get(
+        selectorRaw,
+      ) as PrimitiveComponent[]
+    }
+    const selector = preprocessSelector(selectorRaw)
+    const result = selectAll(selector, this, cssSelectOptionsInsideSubcircuit)
+    if (result.length > 0) {
+      this._cachedSelectAllQueries.set(selectorRaw, result)
+      return result
     }
 
-    return currentResults
+    // If we didn't find anything, check for a subcircuit query
+    const [firstpart, ...rest] = selector.split(" ")
+    const subcircuit = selectOne(firstpart, this, {
+      adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
+    }) as ISubcircuit | null
+    if (!subcircuit) return []
+    const result2 = subcircuit.selectAll(rest.join(" "))
+    this._cachedSelectAllQueries.set(selectorRaw, result2)
+    return result2
   }
 
+  _cachedSelectOneQueries: Map<string, PrimitiveComponent | null> = new Map()
   selectOne<T = PrimitiveComponent>(
-    selector: string,
+    selectorRaw: string,
     options?: {
       type?: string
       port?: boolean
@@ -642,27 +607,47 @@ export abstract class PrimitiveComponent<
       schematicPrimitive?: boolean
     },
   ): T | null {
-    let type = options?.type?.toLowerCase()
-    if (options?.port) type = "port"
-    if (type) {
-      return (
-        (this.selectAll(selector).find(
-          (c) => c.lowercaseComponentName === type,
-        ) as T) ?? null
-      )
+    if (this._cachedSelectOneQueries.has(selectorRaw)) {
+      return this._cachedSelectOneQueries.get(selectorRaw) as T | null
     }
-    if (options?.pcbPrimitive) {
-      return (
-        (this.selectAll(selector).find((c) => c.isPcbPrimitive) as T) ?? null
-      )
+    const selector = preprocessSelector(selectorRaw)
+    if (options?.port) {
+      options.type = "port"
     }
-    if (options?.schematicPrimitive) {
-      return (
-        (this.selectAll(selector).find((c) => c.isSchematicPrimitive) as T) ??
-        null
+    let result: T | null = null
+    if (options?.type) {
+      const allMatching = selectAll(
+        selector,
+        this,
+        cssSelectOptionsInsideSubcircuit,
       )
+      result = allMatching.find(
+        (n) => n.lowercaseComponentName === options.type,
+      ) as T | null
     }
-    return (this.selectAll(selector)[0] as T) ?? null
+
+    result ??= selectOne(
+      selector,
+      this,
+      cssSelectOptionsInsideSubcircuit,
+    ) as T | null
+
+    if (result) {
+      this._cachedSelectOneQueries.set(selectorRaw, result as any)
+      return result
+    }
+
+    // If we didn't find anything, check for a subcircuit query
+    const [firstpart, ...rest] = selector.split(" ")
+    const subcircuit = selectOne(firstpart, this, {
+      adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
+    }) as ISubcircuit | null
+
+    if (!subcircuit) return null
+
+    result = subcircuit.selectOne(rest.join(" "), options) as T | null
+    this._cachedSelectOneQueries.set(selectorRaw, result as any)
+    return result
   }
 
   getAvailablePcbLayers(): string[] {
