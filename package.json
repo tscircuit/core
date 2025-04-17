@@ -36,6 +36,7 @@
     "chokidar-cli": "^3.0.0",
     "circuit-to-svg": "^0.0.113",
     "concurrently": "^9.1.2",
+    "css-select": "^5.1.0",
     "debug": "^4.3.6",
     "graphics-debug": "^0.0.4",
     "howfat": "^0.3.8",
