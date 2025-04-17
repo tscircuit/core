@@ -27,6 +27,7 @@ import {
   cssSelectPrimitiveComponentAdapterOnlySubcircuits,
   cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
 } from "./cssSelectPrimitiveComponentAdapter"
+import { preprocessSelector } from "./preprocessSelector"
 
 const cssSelectOptionsInsideSubcircuit: Options<
   PrimitiveComponent,
@@ -571,7 +572,8 @@ export abstract class PrimitiveComponent<
     return this.parent?.getGroup?.() ?? null
   }
 
-  selectAll(selector: string): PrimitiveComponent[] {
+  selectAll(selectorRaw: string): PrimitiveComponent[] {
+    const selector = preprocessSelector(selectorRaw)
     const result = selectAll(selector, this, cssSelectOptionsInsideSubcircuit)
     if (result.length > 0) return result
 
@@ -585,7 +587,7 @@ export abstract class PrimitiveComponent<
   }
 
   selectOne<T = PrimitiveComponent>(
-    selector: string,
+    selectorRaw: string,
     options?: {
       type?: string
       port?: boolean
@@ -593,6 +595,7 @@ export abstract class PrimitiveComponent<
       schematicPrimitive?: boolean
     },
   ): T | null {
+    const selector = preprocessSelector(selectorRaw)
     if (options?.port) {
       options.type = "port"
     }
