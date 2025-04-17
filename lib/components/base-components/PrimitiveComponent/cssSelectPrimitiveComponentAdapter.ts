@@ -5,10 +5,9 @@ import type { Options } from "css-select"
  * CSS-Select adapter for PrimitiveComponent
  * This adapter allows css-select to work with our PrimitiveComponent tree structure
  */
-export const cssSelectPrimitiveComponentAdapter: Options<
-  PrimitiveComponent,
-  PrimitiveComponent
->["adapter"] = {
+export const cssSelectPrimitiveComponentAdapter: Required<
+  Options<PrimitiveComponent, PrimitiveComponent>["adapter"]
+> = {
   // Is the node an element?
   isTag: (node: PrimitiveComponent): node is PrimitiveComponent => true,
 
@@ -54,23 +53,10 @@ export const cssSelectPrimitiveComponentAdapter: Options<
     return node._parsedProps && name in node._parsedProps
   },
 
-  // Get a list of attribute names
-  getAttributeNames: (node: PrimitiveComponent) => {
-    return Object.keys(node._parsedProps || {})
-  },
-
   // Get the siblings of the node
   getSiblings: (node: PrimitiveComponent) => {
     if (!node.parent) return []
     return node.parent.children
-  },
-
-  // Get the next sibling
-  nextElementSibling: (node: PrimitiveComponent) => {
-    if (!node.parent) return null
-    const siblings = node.parent.children
-    const idx = siblings.indexOf(node)
-    return idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1] : null
   },
 
   // Get the previous sibling
@@ -83,12 +69,6 @@ export const cssSelectPrimitiveComponentAdapter: Options<
 
   // Get the text content
   getText: () => "",
-
-  // Get the text content of the node and its children
-  getInnerHTML: () => "",
-
-  // Get the HTML of the node's children
-  getOuterHTML: (node: PrimitiveComponent) => node.getString(),
 
   // Remove the node
   removeSubsets: (nodes: PrimitiveComponent[]) => {
@@ -143,7 +123,7 @@ export const cssSelectPrimitiveComponentAdapter: Options<
 
       const children = node.children
       if (children.length > 0) {
-        const result = cssSelectPrimitiveComponentAdapter.findOne(
+        const result = cssSelectPrimitiveComponentAdapter!.findOne(
           test,
           children,
         )
@@ -154,11 +134,10 @@ export const cssSelectPrimitiveComponentAdapter: Options<
     return null
   },
 
-  // Get the ID attribute
-  getElementById: (id: string, nodes: PrimitiveComponent[]) => {
-    return cssSelectPrimitiveComponentAdapter.findOne(
-      (node) => node._renderId === id,
-      nodes,
-    )
+  equals: (a: PrimitiveComponent, b: PrimitiveComponent) => {
+    return a._renderId === b._renderId
   },
+  isHovered: (elem: PrimitiveComponent<any>): boolean => false,
+  isVisited: (elem: PrimitiveComponent<any>): boolean => false,
+  isActive: (elem: PrimitiveComponent<any>): boolean => false,
 }
