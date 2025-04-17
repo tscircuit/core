@@ -22,6 +22,7 @@ export const orderedRenderPhases = [
   "SchematicComponentRender",
   "SchematicPortRender",
   "SchematicLayout",
+  "OptimizeSchematicObstacleCache",
   "SchematicTraceRender",
   "PcbComponentRender",
   "PcbPrimitiveRender",

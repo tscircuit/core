@@ -25,7 +25,9 @@ test("trace schematic obstacles 1", () => {
 
   const trace = circuit.selectOne("trace") as Trace
 
-  const schematicObstacles = getSchematicObstaclesForTrace(trace as Trace)
+  const schematicObstacles = getSchematicObstaclesForTrace({
+    db: trace.root!.db,
+  })
 
   expect(
     getSvgFromGraphicsObject({
