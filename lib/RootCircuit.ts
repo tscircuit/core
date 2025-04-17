@@ -8,6 +8,7 @@ import { identity, type Matrix } from "transformation-matrix"
 import type { RenderPhase } from "./components/base-components/Renderable"
 import pkgJson from "../package.json"
 import type { RootCircuitEventName } from "./events"
+import cssSelect, { type Adapter, type Query } from "css-select"
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -18,6 +19,8 @@ export class RootCircuit {
   schematicDisabled = false
   pcbDisabled = false
   pcbRoutingDisabled = false
+  private _selectorIndex: Query<PrimitiveComponent> | null = null
+  private _selectorIndexNeedsRebuild = true
 
   /**
    * The RootCircuit name is usually set by the platform, it's not required but
@@ -96,6 +99,21 @@ export class RootCircuit {
     firstChild.parent = this as any
     firstChild.runRenderCycle()
     this._hasRenderedAtleastOnce = true
+    this.buildSelectorIndex() // Build index after render
+  }
+
+  invalidateSelectorIndex() {
+    this._selectorIndexNeedsRebuild = true
+    this._selectorIndex = null
+  }
+
+  buildSelectorIndex() {
+    if (!this._selectorIndexNeedsRebuild || !this.firstChild) return
+    this._selectorIndex = cssSelect.compile(
+      "*", // Compile a dummy selector to get the Query object with the adapter
+      { adapter: primitiveComponentAdapter },
+    ) as Query<PrimitiveComponent> // Cast needed as compile signature is generic
+    this._selectorIndexNeedsRebuild = false
   }
 
   async renderUntilSettled(): Promise<void> {
@@ -109,7 +127,7 @@ export class RootCircuit {
 
     while (this._hasIncompleteAsyncEffects()) {
       await new Promise((resolve) => setTimeout(resolve, 100))
-      this.render()
+      this.render() // This will rebuild the index if needed
     }
 
     this.emit("renderComplete")
@@ -175,14 +193,62 @@ export class RootCircuit {
 
   selectAll(selector: string): PrimitiveComponent[] {
     this._guessRootComponent()
-    return this.firstChild?.selectAll(selector) ?? []
+    if (!this.firstChild) return []
+    this.buildSelectorIndex() // Ensure index is up-to-date
+    if (!this._selectorIndex) return [] // Should not happen if firstChild exists
+
+  selectAll(
+    selector: string,
+    contextNode?: PrimitiveComponent,
+  ): PrimitiveComponent[] {
+    const context = contextNode ?? this.firstChild
+    this._guessRootComponent() // Ensure firstChild is determined if context isn't provided
+    if (!context) return []
+
+    // Use cssSelect directly
+    return cssSelect(selector, context, {
+      adapter: primitiveComponentAdapter,
+    }) as PrimitiveComponent[] // Cast needed as cssSelect is generic
   }
+
   selectOne(
     selector: string,
-    opts?: { type?: "component" | "port" },
+    opts?: { type?: string; port?: boolean },
+    contextNode?: PrimitiveComponent,
   ): PrimitiveComponent | null {
-    this._guessRootComponent()
-    return this.firstChild?.selectOne(selector, opts) ?? null
+    const context = contextNode ?? this.firstChild
+    this._guessRootComponent() // Ensure firstChild is determined if context isn't provided
+    if (!context) return null
+
+    let type = opts?.type?.toLowerCase()
+    if (opts?.port) type = "port"
+
+    // Use cssSelect directly
+    const results = cssSelect(selector, context, {
+      adapter: primitiveComponentAdapter,
+    }) as PrimitiveComponent[] // Cast needed
+
+    if (type) {
+      return (
+        results.find(
+          (c: PrimitiveComponent) => c.lowercaseComponentName === type,
+        ) ?? null
+      )
+    }
+
+    return results[0] ?? null
+  }
+
+  matchesSelector(
+    component: PrimitiveComponent,
+    selector: string,
+  ): boolean {
+    this.buildSelectorIndex() // Ensure index is up-to-date
+    if (!this._selectorIndex) return false // Should not happen if component exists
+
+    return this._selectorIndex.is(component, selector, {
+      adapter: primitiveComponentAdapter,
+    })
   }
 
   _eventListeners: Record<
@@ -223,6 +289,109 @@ export class RootCircuit {
     return ""
   }
 }
+
+// Adapter for css-select to work with PrimitiveComponent
+const primitiveComponentAdapter: Adapter<PrimitiveComponent, PrimitiveComponent> =
+  {
+    isTag: (node: PrimitiveComponent): node is PrimitiveComponent => true, // All our nodes are "tags"
+
+    getAttributeValue: (
+      node: PrimitiveComponent,
+      name: string,
+    ): string | undefined => {
+      // Map selector attributes to component props
+      if (name === "id") return node.props.id
+      if (name === "name") return node.props.name // Allow selecting by specific name prop
+      if (name === "pinNumber" && node.props.pinNumber !== undefined)
+        return node.props.pinNumber.toString()
+      if (name === "from" && node.props.from) return node.props.from
+      if (name === "to" && node.props.to) return node.props.to
+      // Add other relevant props as needed
+      if (node.props[name] !== undefined) return String(node.props[name])
+      return undefined
+    },
+
+    getChildren: (node: PrimitiveComponent): PrimitiveComponent[] => node.children,
+
+    getName: (node: PrimitiveComponent): string => node.lowercaseComponentName, // Use lowercase name for tag matching
+
+    getParent: (node: PrimitiveComponent): PrimitiveComponent | null =>
+      node.parent,
+
+    getSiblings: (node: PrimitiveComponent): PrimitiveComponent[] => {
+      const parent = node.parent
+      if (!parent) return [node] // Root node?
+      return parent.children
+    },
+
+    getText: (node: PrimitiveComponent): string => "", // Not applicable
+
+    hasAttrib: (node: PrimitiveComponent, name: string): boolean => {
+      if (name === "id") return node.props.id !== undefined
+      if (name === "name") return node.props.name !== undefined
+      if (name === "pinNumber") return node.props.pinNumber !== undefined
+      if (name === "from") return node.props.from !== undefined
+      if (name === "to") return node.props.to !== undefined
+      // Add other relevant props as needed
+      return node.props[name] !== undefined
+    },
+
+    // Required methods, even if trivial
+    removeSubsets: (nodes: PrimitiveComponent[]): PrimitiveComponent[] => nodes,
+    findAll: (
+      test: (node: PrimitiveComponent) => boolean,
+      nodes: PrimitiveComponent[],
+    ): PrimitiveComponent[] => {
+      let result: PrimitiveComponent[] = []
+      for (const node of nodes) {
+        if (test(node)) {
+          result.push(node)
+        }
+        result = result.concat(
+          primitiveComponentAdapter.findAll(test, node.children),
+        )
+      }
+      return result
+    },
+    findOne: (
+      test: (node: PrimitiveComponent) => boolean,
+      nodes: PrimitiveComponent[],
+    ): PrimitiveComponent | null => {
+      for (const node of nodes) {
+        if (test(node)) {
+          return node
+        }
+        const foundInChildren = primitiveComponentAdapter.findOne(
+          test,
+          node.children,
+        )
+        if (foundInChildren) {
+          return foundInChildren
+        }
+      }
+      return null
+    },
+    existsOne: (
+      test: (node: PrimitiveComponent) => boolean,
+      nodes: PrimitiveComponent[],
+    ): boolean => {
+      for (const node of nodes) {
+        if (test(node) || primitiveComponentAdapter.existsOne(test, node.children)) {
+          return true
+        }
+      }
+      return false
+    },
+
+    // Add pseudo-class support for matching aliases/portHints as classes
+    // This allows selectors like `.R1` or `.anode`
+    isPseudoElement: () => false, // We don't support pseudo-elements like ::before
+    isPseudoClass: (node: PrimitiveComponent, name: string): boolean => {
+      // Treat aliases/portHints as classes
+      return node.getNameAndAliases().includes(name)
+    },
+    getPseudoElements: () => [], // No pseudo-elements
+  }
 
 /**
  * @deprecated

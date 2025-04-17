@@ -160,9 +160,9 @@ export class Trace
         } else {
           this.renderError(
             `Could not find port for selector "${selector}" (did you forget to include the pin name?)\nsearched component ${targetComponent.getString()}, which has ports: ${targetComponent.children
-              .filter((c) => c.componentName === "Port")
+              .filter((c: PrimitiveComponent) => c.componentName === "Port") // Add type annotation
               .map(
-                (c) => `${c.getString()}(${c.getNameAndAliases().join(",")})`,
+                (c: PrimitiveComponent) => `${c.getString()}(${c.getNameAndAliases().join(",")})`, // Add type annotation
               )
               .join(" & ")}`,
           )

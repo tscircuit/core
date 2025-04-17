@@ -116,7 +116,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { db } = this.root!
     // Find all traces that belong to this subcircuit, generate a connectivity
     // map, and add source_trace.subcircuit_connectivity_map_key
-    const traces = this.selectAll("trace") as TraceI[]
+    const traces = this.root?.selectAll("trace", this) as TraceI[] // Use root.selectAll with context
     const connMap = new ConnectivityMap({})
     connMap.addConnections(
       traces

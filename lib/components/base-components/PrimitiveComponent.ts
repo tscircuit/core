@@ -3,7 +3,7 @@ import type { AnySourceComponent, LayerRef } from "circuit-json"
 import Debug from "debug"
 import { InvalidProps } from "lib/errors/InvalidProps"
 import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { isMatchingSelector } from "lib/utils/selector-matching"
+// import { isMatchingSelector } from "lib/utils/selector-matching" // Removed
 import { type SchSymbol, symbols } from "schematic-symbols"
 import {
   type Matrix,
@@ -396,9 +396,10 @@ export abstract class PrimitiveComponent<
     if (!placementConfigPositions) return null
 
     for (const position of placementConfigPositions) {
+      // Use root.matchesSelector for checking manual placement selectors
       if (
-        (layout && isMatchingSelector(component, position.selector)) ||
-        component.props.name === position.selector
+        this.root?.matchesSelector(component, position.selector) ||
+        component.props.name === position.selector // Keep direct name match as fallback/alternative
       ) {
         const center = applyToPoint(
           this._computePcbGlobalTransformBeforeLayout(),
@@ -418,9 +419,10 @@ export abstract class PrimitiveComponent<
     if (!manualEdits) return null
 
     for (const position of manualEdits.schematic_placements ?? []) {
+      // Use root.matchesSelector for checking manual placement selectors
       if (
-        isMatchingSelector(component, position.selector) ||
-        component.props.name === position.selector
+        this.root?.matchesSelector(component, position.selector) ||
+        component.props.name === position.selector // Keep direct name match as fallback/alternative
       ) {
         if (position.relative_to === "group_center") {
           return compose(
@@ -461,23 +463,27 @@ export abstract class PrimitiveComponent<
     newProps: z.infer<ZodProps>
     changedProps: string[]
   }) {
-    // When any of these important properties change, invalidate the caches
-    const cacheInvalidatingProps = ['name', 'pinNumber', 'from', 'to', 'portHints'];
-    if (params.changedProps.some(prop => cacheInvalidatingProps.includes(prop))) {
-      this.invalidateSelectCaches();
-      
-      // Also invalidate parent caches as this might affect selectability
-      if (this.parent && 'invalidateSelectCaches' in this.parent) {
-        (this.parent as PrimitiveComponent).invalidateSelectCaches();
-      }
+    // When any of these important properties change, invalidate the selector index
+    const cacheInvalidatingProps = [
+      "name",
+      "pinNumber",
+      "from",
+      "to",
+      "portHints",
+      "id", // Added id as it's used in selectors
+    ]
+    if (
+      params.changedProps.some((prop) => cacheInvalidatingProps.includes(prop))
+    ) {
+      this.root?.invalidateSelectorIndex()
     }
   }
 
-  onChildChanged(child: PrimitiveComponent) {
+  onChildChanged(child: PrimitiveComponent): void {
     this.parent?.onChildChanged?.(child)
   }
 
-  add(component: PrimitiveComponent) {
+  add(component: PrimitiveComponent): void {
     if (!component.onAddToParent) {
       throw new Error(
         `Invalid JSX Element: Expected a React component but received "${JSON.stringify(component)}"`,
@@ -486,20 +492,20 @@ export abstract class PrimitiveComponent<
     component.onAddToParent(this)
     component.parent = this
     this.children.push(component)
-    this.invalidateSelectCaches()
+    this.root?.invalidateSelectorIndex() // Use invalidateSelectorIndex
   }
 
-  addAll(components: PrimitiveComponent[]) {
+  addAll(components: PrimitiveComponent[]): void {
     for (const component of components) {
       this.add(component)
     }
   }
 
-  remove(component: PrimitiveComponent) {
+  remove(component: PrimitiveComponent): void {
     this.children = this.children.filter((c) => c !== component)
     this.childrenPendingRemoval.push(component)
     component.shouldBeRemoved = true
-    this.invalidateSelectCaches()
+    this.root?.invalidateSelectorIndex() // Use invalidateSelectorIndex
   }
 
   getSubcircuitSelector(): string {
@@ -529,13 +535,13 @@ export abstract class PrimitiveComponent<
     this._cachedNamesAndAliases = [
       this._parsedProps.name,
       ...(this._parsedProps.portHints ?? []),
-    ].filter(Boolean)
+    ].filter(Boolean) as string[] // Ensure type is string[]
     return this._cachedNamesAndAliases
   }
-  isMatchingNameOrAlias(name: string) {
+  isMatchingNameOrAlias(name: string): boolean {
     return this.getNameAndAliases().includes(name)
   }
-  isMatchingAnyOf(aliases: Array<string | number>) {
+  isMatchingAnyOf(aliases: Array<string | number>): boolean {
     return this.getNameAndAliases().some((a) =>
       aliases.map((a) => a.toString()).includes(a),
     )
@@ -544,23 +550,7 @@ export abstract class PrimitiveComponent<
     throw new Error(`getPcbSize not implemented for ${this.componentName}`)
   }
 
-  doesSelectorMatch(selector: string): boolean {
-    const myTypeNames = [this.componentName, this.lowercaseComponentName]
-    const myClassNames = [this._parsedProps.name].filter(Boolean)
-
-    const parts = selector.trim().split(/\> /)[0]
-    const firstPart = parts[0]
-
-    if (parts.length > 1) return false
-    if (selector === "*") return true
-    if (selector[0] === "#" && selector.slice(1) === this.props.id) return true
-    if (selector[0] === "." && myClassNames.includes(selector.slice(1)))
-      return true
-    if (/^[a-zA-Z0-9_]/.test(firstPart) && myTypeNames.includes(firstPart))
-      return true
-
-    return false
-  }
+  // Removed doesSelectorMatch method
 
   getSubcircuit(): ISubcircuit {
     if (this.isSubcircuit) return this as unknown as ISubcircuit
@@ -575,183 +565,8 @@ export abstract class PrimitiveComponent<
     return this.parent?.getGroup?.() ?? null
   }
 
-  // Cache for selectAll results
-  private _selectAllCache: Map<string, PrimitiveComponent[]> = new Map();
-
-  selectAll(selector: string): PrimitiveComponent[] {
-    // Only cache simple selectors (no relationships or complex matching)
-    const isSimpleSelector = !selector.includes('>') && !selector.includes('[');
-    
-    if (isSimpleSelector) {
-      const cachedResult = this._selectAllCache.get(selector);
-      if (cachedResult) return cachedResult;
-    }
-
-    debugSelectAll(`selectAll: "${selector}"`)
-    /**
-     * Splits something like ".R1 > .R2" into [".R1", ">", ".R2"]
-     */
-    const parts = selector.trim().split(/\s+/)
-
-    /**
-     * Mutable array of results. As we iterate over the parts, we'll filter
-     * or add items to this array. For example, if we go into a subcircuit,
-     * we'll add all the components in that subcircuit to this array because
-     * they're now accessible.
-     */
-    let currentSearch: PrimitiveComponent[] =
-      parts[0] === ">" ? this.children : this.getSelectableDescendants()
-    let currentResults: PrimitiveComponent[] = []
-
-    let onlyDirectChildren = false
-    let iteration = -1
-    for (const part of parts) {
-      iteration++
-      if (debugSelectAll.enabled) {
-        debugSelectAll(`\n\niteration: ${iteration}`)
-        debugSelectAll(`part: "${parts[iteration]}"`)
-        debugSelectAll(
-          `currentSearch: [${currentSearch.map((r) => r.getString()).join(",")}]`,
-        )
-        debugSelectAll(
-          `currentResults: [${currentResults.map((r) => r.getString()).join(",")}]`,
-        )
-      }
-
-      if (part === ">") {
-        onlyDirectChildren = true
-      } else {
-        // Very simple optimization for common direct type selectors 
-        // (like "resistor", "capacitor", etc.)
-        const isSimpleTypeSelector = 
-          parts.length === 1 && 
-          /^[a-zA-Z0-9_]+$/.test(part) && 
-          !part.includes('[') && 
-          !part.includes('>');
-
-        let newResults: PrimitiveComponent[];
-        
-        if (isSimpleTypeSelector) {
-          const typeToMatch = part.toLowerCase();
-          newResults = currentSearch.filter(c => 
-            c.lowercaseComponentName === typeToMatch || c.componentName === part);
-        } else {
-          newResults = currentSearch.filter((component) =>
-            isMatchingSelector(component, part)
-          );
-        }
-        
-        const newSearch = newResults.flatMap((component) => {
-          if (onlyDirectChildren) return component.children
-          return component.getSelectableDescendants()
-        })
-
-        currentSearch = newSearch
-        currentResults = newResults
-
-        onlyDirectChildren = false
-      }
-    }
-
-    // Cache result for simple selectors
-    if (isSimpleSelector) {
-      this._selectAllCache.set(selector, currentResults);
-    }
-    
-    return currentResults
-  }
-  
-  // Clear the cache when component tree changes
-  invalidateSelectAllCache() {
-    this._selectAllCache.clear();
-  }
-
-  // Cache for selectOne results
-  private _selectOneCache: Map<string, Map<string, PrimitiveComponent | null>> = new Map();
-
-  selectOne<T = PrimitiveComponent>(
-    selector: string,
-    options?: {
-      type?: string
-      port?: boolean
-      pcbPrimitive?: boolean
-      schematicPrimitive?: boolean
-    },
-  ): T | null {
-    // Extract type from options first (used throughout the method)
-    let type = options?.type?.toLowerCase()
-    if (options?.port) type = "port"
-    
-    // Only cache simple selectors (no relationships or complex attribute selectors)
-    const isSimpleSelector = !selector.includes('>') && !selector.includes('[');
-    
-    // Create a cache key from the options (needed for both cache lookup and storage)
-    const optionsKey = JSON.stringify({
-      type: type,
-      pcbPrimitive: options?.pcbPrimitive,
-      schematicPrimitive: options?.schematicPrimitive
-    });
-    
-    // Cache management
-    let selectorsCache: Map<string, PrimitiveComponent | null> | undefined;
-    
-    if (isSimpleSelector) {
-      // Look up in cache
-      selectorsCache = this._selectOneCache.get(selector);
-      if (selectorsCache) {
-        const cachedResult = selectorsCache.get(optionsKey);
-        if (cachedResult !== undefined) {
-          return cachedResult as T | null;
-        }
-      } else {
-        selectorsCache = new Map();
-        this._selectOneCache.set(selector, selectorsCache);
-      }
-      
-      // Fast-path for wildcard selector with type filter
-      if (selector === "*" && type && !options?.pcbPrimitive && !options?.schematicPrimitive) {
-        // Find component directly
-        for (const component of this.getSelectableDescendants()) {
-          if (component.lowercaseComponentName === type) {
-            selectorsCache.set(optionsKey, component);
-            return component as T;
-          }
-        }
-        
-        // Cache null result
-        selectorsCache.set(optionsKey, null);
-        return null;
-      }
-    }
-    
-    // Get components to filter
-    const components = this.selectAll(selector);
-    let result: PrimitiveComponent | null = null;
-    
-    // Find matching component based on options
-    if (type) {
-      result = components.find((c) => c.lowercaseComponentName === type) ?? null;
-    } else if (options?.pcbPrimitive) {
-      result = components.find((c) => c.isPcbPrimitive) ?? null;
-    } else if (options?.schematicPrimitive) {
-      result = components.find((c) => c.isSchematicPrimitive) ?? null;
-    } else {
-      result = components[0] ?? null;
-    }
-    
-    // Cache result for simple selectors
-    if (isSimpleSelector && selectorsCache) {
-      selectorsCache.set(optionsKey, result);
-    }
-    
-    return result as T | null;
-  }
-  
-  // Clear both caches when component tree changes
-  invalidateSelectCaches() {
-    this.invalidateSelectAllCache();
-    this._selectOneCache.clear();
-  }
+  // Removed selectAll, selectOne, and cache invalidation methods.
+  // Selection is now handled by RootCircuit.
 
   getAvailablePcbLayers(): string[] {
     if (this.isPcbPrimitive) {
@@ -822,7 +637,7 @@ export abstract class PrimitiveComponent<
   // TODO we shouldn't need to override this, errors can be rendered and handled
   // by the Renderable class, however, the Renderable class currently doesn't
   // have access to the database or cleanup
-  renderError(message: Parameters<typeof Renderable.prototype.renderError>[0]) {
+  renderError(message: Parameters<typeof Renderable.prototype.renderError>[0]): void {
     if (typeof message === "string") {
       return super.renderError(message)
     }
@@ -852,7 +667,7 @@ export abstract class PrimitiveComponent<
   get [Symbol.toStringTag](): string {
     return this.getString()
   }
-  [Symbol.for("nodejs.util.inspect.custom")]() {
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
     return this.getString()
   }
 }

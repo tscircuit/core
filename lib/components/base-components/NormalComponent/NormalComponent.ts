@@ -41,6 +41,7 @@ import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNum
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import type { INormalComponent } from "./INormalComponent"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
+// Removed isMatchingSelector import as it's no longer used directly here
 
 const debug = Debug("tscircuit:core")
 
