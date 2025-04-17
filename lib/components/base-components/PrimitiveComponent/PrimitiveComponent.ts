@@ -575,21 +575,31 @@ export abstract class PrimitiveComponent<
   doInitialOptimizeSelectorCache() {
     if (!this.isSubcircuit) return
     const ports = this.selectAll("port")
+
     for (const port of ports) {
       const parentAliases = port.parent?.getNameAndAliases()
       const portAliases = port.getNameAndAliases()
       if (!parentAliases) continue
       for (const parentAlias of parentAliases) {
         for (const portAlias of portAliases) {
-          this._cachedSelectOneQueries.set(
+          const selectors = [
             `.${parentAlias} > .${portAlias}`,
-            port,
-          )
-          this._cachedSelectOneQueries.set(
             `.${parentAlias} .${portAlias}`,
-            port,
-          )
+          ]
+          for (const selector of selectors) {
+            let ar = this._cachedSelectAllQueries.get(selector)
+            if (ar) {
+              ar.push(port)
+            } else {
+              this._cachedSelectAllQueries.set(selector, [port])
+            }
+          }
         }
+      }
+    }
+    for (const [selector, ports] of this._cachedSelectAllQueries.entries()) {
+      if (ports.length === 1) {
+        this._cachedSelectOneQueries.set(selector, ports[0])
       }
     }
   }
