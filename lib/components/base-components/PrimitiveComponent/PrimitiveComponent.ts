@@ -16,10 +16,10 @@ import {
 } from "transformation-matrix"
 import type { ZodType } from "zod"
 import { z } from "zod"
-import type { RootCircuit } from "../../RootCircuit"
-import type { ISubcircuit } from "../primitive-components/Group/ISubcircuit"
-import { Renderable } from "./Renderable"
-import type { IGroup } from "../primitive-components/Group/IGroup"
+import type { RootCircuit } from "lib/RootCircuit"
+import type { ISubcircuit } from "lib/components/primitive-components/Group/ISubcircuit"
+import { Renderable } from "lib/components/base-components/Renderable"
+import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { Ftype } from "lib/utils/constants"
 
 const debugSelectAll = Debug("tscircuit:primitive-component:selectAll")
