@@ -587,7 +587,7 @@ export abstract class PrimitiveComponent<
             `.${parentAlias} .${portAlias}`,
           ]
           for (const selector of selectors) {
-            let ar = this._cachedSelectAllQueries.get(selector)
+            const ar = this._cachedSelectAllQueries.get(selector)
             if (ar) {
               ar.push(port)
             } else {
