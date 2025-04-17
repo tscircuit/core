@@ -51,6 +51,7 @@ test("Autorouter should inherit if the parent subcircuit has async autorouter en
 
   await circuit.renderUntilSettled()
 
+  const source_traces = su(circuit.getCircuitJson()).source_trace.list()
   const pcb_traces = su(circuit.getCircuitJson()).pcb_trace.list()
   expect(pcb_traces).toMatchInlineSnapshot(`
     [

@@ -1,12 +1,16 @@
-import type { PrimitiveComponent } from "lib/components"
+import { PrimitiveComponent } from "lib/components"
+import type { Options } from "css-select"
 
 /**
  * CSS-Select adapter for PrimitiveComponent
  * This adapter allows css-select to work with our PrimitiveComponent tree structure
  */
-export const cssSelectPrimitiveComponentAdapter = {
+export const cssSelectPrimitiveComponentAdapter: Options<
+  PrimitiveComponent,
+  PrimitiveComponent
+>["adapter"] = {
   // Is the node an element?
-  isTag: (node: PrimitiveComponent) => true,
+  isTag: (node: PrimitiveComponent): node is PrimitiveComponent => true,
 
   // Get the parent of the node
   getParent: (node: PrimitiveComponent) => node.parent,
