@@ -21,6 +21,13 @@ import type { ISubcircuit } from "lib/components/primitive-components/Group/ISub
 import { Renderable } from "lib/components/base-components/Renderable"
 import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { Ftype } from "lib/utils/constants"
+import { selectOne, selectAll, type Options } from "css-select"
+import { cssSelectPrimitiveComponentAdapter } from "./cssSelectPrimitiveComponentAdapter"
+
+const cssSelectOptions: Options<PrimitiveComponent, PrimitiveComponent> = {
+  adapter: cssSelectPrimitiveComponentAdapter as any,
+  cacheResults: true,
+}
 
 const debugSelectAll = Debug("tscircuit:primitive-component:selectAll")
 
@@ -560,77 +567,7 @@ export abstract class PrimitiveComponent<
   }
 
   selectAll(selector: string): PrimitiveComponent[] {
-    debugSelectAll(`selectAll: "${selector}"`)
-    /**
-     * Splits something like ".R1 > .R2" into [".R1", ">", ".R2"]
-     */
-    const parts = selector.trim().split(/\s+/)
-
-    /**
-     * Mutable array of results. As we iterate over the parts, we'll filter
-     * or add items to this array. For example, if we go into a subcircuit,
-     * we'll add all the components in that subcircuit to this array because
-     * they're now accessible.
-     *
-     * this = <board />
-     * parts: [".subcircuit1", ">", ".R1"]
-     *
-     * iteration 0:
-     * part: ".subcircuit1"
-     * currentSearch: [<subcircuit />]
-     * currentResults: []
-     * ...
-     * currentSearch: [<resistor name="R1" />]
-     * currentResults: [<subcircuit />]
-     *
-     * iteration 1:
-     * part: ">"
-     * onlyDirectChildren = true
-     *
-     * iteration 2:
-     * part: ".R1"
-     * currentSearch: [<resistor />]
-     * currentResults: [<subcircuit />]
-     * ...
-     * currentSearch: []
-     * currentResults: [<resistor />]
-     */
-    let currentSearch: PrimitiveComponent[] =
-      parts[0] === ">" ? this.children : this.getSelectableDescendants()
-    let currentResults: PrimitiveComponent[] = []
-
-    let onlyDirectChildren = false
-    let iteration = -1
-    for (const part of parts) {
-      iteration++
-      debugSelectAll(`\n\niteration: ${iteration}`)
-      debugSelectAll(`part: "${parts[iteration]}"`)
-      debugSelectAll(
-        `currentSearch: [${currentSearch.map((r) => r.getString()).join(",")}]`,
-      )
-      debugSelectAll(
-        `currentResults: [${currentResults.map((r) => r.getString()).join(",")}]`,
-      )
-
-      if (part === ">") {
-        onlyDirectChildren = true
-      } else {
-        const newResults = currentSearch.filter((component) =>
-          isMatchingSelector(component, part),
-        )
-        const newSearch = newResults.flatMap((component) => {
-          if (onlyDirectChildren) return component.children
-          return component.getSelectableDescendants()
-        })
-
-        currentSearch = newSearch
-        currentResults = newResults
-
-        onlyDirectChildren = false
-      }
-    }
-
-    return currentResults
+    return selectAll(selector, this, cssSelectOptions)
   }
 
   selectOne<T = PrimitiveComponent>(
@@ -642,27 +579,17 @@ export abstract class PrimitiveComponent<
       schematicPrimitive?: boolean
     },
   ): T | null {
-    let type = options?.type?.toLowerCase()
-    if (options?.port) type = "port"
-    if (type) {
-      return (
-        (this.selectAll(selector).find(
-          (c) => c.lowercaseComponentName === type,
-        ) as T) ?? null
-      )
+    if (options?.port) {
+      options.type = "port"
     }
-    if (options?.pcbPrimitive) {
-      return (
-        (this.selectAll(selector).find((c) => c.isPcbPrimitive) as T) ?? null
-      )
+    if (options?.type) {
+      const allMatching = selectAll(selector, this, cssSelectOptions)
+      return allMatching.find(
+        (n) => n.lowercaseComponentName === options.type,
+      ) as T | null
     }
-    if (options?.schematicPrimitive) {
-      return (
-        (this.selectAll(selector).find((c) => c.isSchematicPrimitive) as T) ??
-        null
-      )
-    }
-    return (this.selectAll(selector)[0] as T) ?? null
+
+    return selectOne(selector, this, cssSelectOptions) as T | null
   }
 
   getAvailablePcbLayers(): string[] {
