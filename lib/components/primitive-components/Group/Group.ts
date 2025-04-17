@@ -111,6 +111,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
+  doInitialOptimizeSchematicObstacleCache(): void {
+    if (!this.isSubcircuit) return
+  }
+
   doInitialSourceAddConnectivityMapKey(): void {
     if (!this.isSubcircuit) return
     const { db } = this.root!

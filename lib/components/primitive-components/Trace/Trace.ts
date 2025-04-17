@@ -841,7 +841,7 @@ export class Trace
       name: this.source_trace_id!,
       pointsToConnect: [],
     }
-    const obstacles = getSchematicObstaclesForTrace(this)
+    const obstacles = getSchematicObstaclesForTrace({ db: this.root!.db })
 
     // Get port positions for later use
     const portsWithPosition = connectedPorts.map(({ port }) => ({
