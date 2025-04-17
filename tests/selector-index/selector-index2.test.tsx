@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { PrimitiveComponent, RootCircuit } from "lib"
 import { selectOne } from "css-select"
-import { primitiveComponentAdapter } from "./SubcircuitSelectorIndex"
+import { cssSelectPrimitiveComponentAdapter } from "../../lib/components/base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
 import { grid } from "node_modules/@tscircuit/math-utils/dist/grid"
 
 test("selector-index2", () => {
@@ -24,7 +24,7 @@ test("selector-index2", () => {
 
   expect(
     selectOne("board .LED4 .pos", circuit as any, {
-      adapter: primitiveComponentAdapter,
+      adapter: cssSelectPrimitiveComponentAdapter,
     }).toString(),
   ).toMatchInlineSnapshot(`"[object <port#80(pin:1 .LED4>.pin1) />]"`)
 
@@ -45,7 +45,7 @@ test("selector-index2", () => {
   let cssSelectOneResult
   for (let i = 0; i < iterations; i++) {
     cssSelectOneResult = selectOne("board .LED4 .pos", circuit as any, {
-      adapter: primitiveComponentAdapter,
+      adapter: cssSelectPrimitiveComponentAdapter,
     })
   }
   const endCssSelectOne = performance.now()

@@ -4,7 +4,7 @@ import type { PrimitiveComponent } from "lib/components"
  * CSS-Select adapter for PrimitiveComponent
  * This adapter allows css-select to work with our PrimitiveComponent tree structure
  */
-export const primitiveComponentAdapter = {
+export const cssSelectPrimitiveComponentAdapter = {
   // Is the node an element?
   isTag: (node: PrimitiveComponent) => true,
 
@@ -139,7 +139,10 @@ export const primitiveComponentAdapter = {
 
       const children = node.children
       if (children.length > 0) {
-        const result = primitiveComponentAdapter.findOne(test, children)
+        const result = cssSelectPrimitiveComponentAdapter.findOne(
+          test,
+          children,
+        )
         if (result) return result
       }
     }
@@ -149,7 +152,7 @@ export const primitiveComponentAdapter = {
 
   // Get the ID attribute
   getElementById: (id: string, nodes: PrimitiveComponent[]) => {
-    return primitiveComponentAdapter.findOne(
+    return cssSelectPrimitiveComponentAdapter.findOne(
       (node) => node._renderId === id,
       nodes,
     )
