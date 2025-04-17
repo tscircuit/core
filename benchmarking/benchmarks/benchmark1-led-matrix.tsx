@@ -28,7 +28,7 @@ export const Benchmark1LedMatrix = ({
       />
       <trace from={sel.J1.PWR} to={sel.net.PWR} />
       <trace from={sel.J1.GND} to={sel.net.GND} />
-      {grid({ rows: 4, cols: 4, xSpacing: 10, ySpacing: 10 }).map(
+      {grid({ rows: 10, cols: 10, xSpacing: 10, ySpacing: 10 }).map(
         ({ center, index }) => {
           const ledName = `LED${index}`
           const resistorName = `R${index}`
