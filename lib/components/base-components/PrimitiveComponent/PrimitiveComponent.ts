@@ -572,10 +572,19 @@ export abstract class PrimitiveComponent<
     return this.parent?.getGroup?.() ?? null
   }
 
+  _cachedSelectAllQueries: Map<string, PrimitiveComponent[]> = new Map()
   selectAll(selectorRaw: string): PrimitiveComponent[] {
+    if (this._cachedSelectAllQueries.has(selectorRaw)) {
+      return this._cachedSelectAllQueries.get(
+        selectorRaw,
+      ) as PrimitiveComponent[]
+    }
     const selector = preprocessSelector(selectorRaw)
     const result = selectAll(selector, this, cssSelectOptionsInsideSubcircuit)
-    if (result.length > 0) return result
+    if (result.length > 0) {
+      this._cachedSelectAllQueries.set(selectorRaw, result)
+      return result
+    }
 
     // If we didn't find anything, check for a subcircuit query
     const [firstpart, ...rest] = selector.split(" ")
@@ -583,9 +592,12 @@ export abstract class PrimitiveComponent<
       adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
     }) as ISubcircuit | null
     if (!subcircuit) return []
-    return subcircuit.selectAll(rest.join(" "))
+    const result2 = subcircuit.selectAll(rest.join(" "))
+    this._cachedSelectAllQueries.set(selectorRaw, result2)
+    return result2
   }
 
+  _cachedSelectOneQueries: Map<string, PrimitiveComponent | null> = new Map()
   selectOne<T = PrimitiveComponent>(
     selectorRaw: string,
     options?: {
@@ -595,6 +607,9 @@ export abstract class PrimitiveComponent<
       schematicPrimitive?: boolean
     },
   ): T | null {
+    if (this._cachedSelectOneQueries.has(selectorRaw)) {
+      return this._cachedSelectOneQueries.get(selectorRaw) as T | null
+    }
     const selector = preprocessSelector(selectorRaw)
     if (options?.port) {
       options.type = "port"
@@ -617,7 +632,10 @@ export abstract class PrimitiveComponent<
       cssSelectOptionsInsideSubcircuit,
     ) as T | null
 
-    if (result) return result
+    if (result) {
+      this._cachedSelectOneQueries.set(selectorRaw, result as any)
+      return result
+    }
 
     // If we didn't find anything, check for a subcircuit query
     const [firstpart, ...rest] = selector.split(" ")
@@ -627,7 +645,9 @@ export abstract class PrimitiveComponent<
 
     if (!subcircuit) return null
 
-    return subcircuit.selectOne(rest.join(" "), options) as T | null
+    result = subcircuit.selectOne(rest.join(" "), options) as T | null
+    this._cachedSelectOneQueries.set(selectorRaw, result as any)
+    return result
   }
 
   getAvailablePcbLayers(): string[] {
