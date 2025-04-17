@@ -572,6 +572,38 @@ export abstract class PrimitiveComponent<
     return this.parent?.getGroup?.() ?? null
   }
 
+  doInitialOptimizeSelectorCache() {
+    if (!this.isSubcircuit) return
+    const ports = this.selectAll("port")
+
+    for (const port of ports) {
+      const parentAliases = port.parent?.getNameAndAliases()
+      const portAliases = port.getNameAndAliases()
+      if (!parentAliases) continue
+      for (const parentAlias of parentAliases) {
+        for (const portAlias of portAliases) {
+          const selectors = [
+            `.${parentAlias} > .${portAlias}`,
+            `.${parentAlias} .${portAlias}`,
+          ]
+          for (const selector of selectors) {
+            const ar = this._cachedSelectAllQueries.get(selector)
+            if (ar) {
+              ar.push(port)
+            } else {
+              this._cachedSelectAllQueries.set(selector, [port])
+            }
+          }
+        }
+      }
+    }
+    for (const [selector, ports] of this._cachedSelectAllQueries.entries()) {
+      if (ports.length === 1) {
+        this._cachedSelectOneQueries.set(selector, ports[0])
+      }
+    }
+  }
+
   _cachedSelectAllQueries: Map<string, PrimitiveComponent[]> = new Map()
   selectAll(selectorRaw: string): PrimitiveComponent[] {
     if (this._cachedSelectAllQueries.has(selectorRaw)) {
