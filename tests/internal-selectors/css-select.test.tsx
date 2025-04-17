@@ -16,5 +16,5 @@ test("css-select on RootCircuit", () => {
     // adapter: ...
   })
 
-  expect(result).toBeDefined()
+  expect(result?.props.name).toBe("R1")
 })
