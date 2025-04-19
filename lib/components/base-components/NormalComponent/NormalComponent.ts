@@ -600,7 +600,7 @@ export class NormalComponent<
     ) {
       const warning = pcb_manual_edit_conflict_warning.parse({
         type: "pcb_manual_edit_conflict_warning",
-        pcb_manual_edit_conflict_warning: `pcb_manual_edit_conflict_${this.source_component_id}`,
+        pcb_manual_edit_conflict_warning_id: `pcb_manual_edit_conflict_${this.source_component_id}`,
         message: `${this.getString()} has both manual placement and explicit coordinates. pcbX and pcbY will be used. Remove pcbX/pcbY or clear the manual placement.`,
         pcb_component_id: this.pcb_component_id!,
         source_component_id: this.source_component_id!,
