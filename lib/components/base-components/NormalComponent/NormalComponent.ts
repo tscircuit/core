@@ -7,7 +7,12 @@ import type {
   SchematicPortArrangement,
   SupplierPartNumbers,
 } from "@tscircuit/props"
-import { point3, rotation } from "circuit-json"
+import {
+  pcb_manual_edit_conflict_warning,
+  point3,
+  rotation,
+  schematic_manual_edit_conflict_warning,
+} from "circuit-json"
 import Debug from "debug"
 import {
   type ReactSubtree,
@@ -389,6 +394,41 @@ export class NormalComponent<
    */
   doInitialSchematicComponentRender() {
     if (this.root?.schematicDisabled) return
+
+    const { db } = this.root!
+    const manualPlacement =
+      this.getSubcircuit()?._getSchematicManualPlacementForComponent(this)
+
+    if (
+      this.props.schX !== undefined &&
+      this.props.schY !== undefined &&
+      manualPlacement
+    ) {
+      if (!this.schematic_component_id) {
+        const schematic_component = db.schematic_component.insert({
+          center: this._getGlobalSchematicPositionBeforeLayout(),
+          size: this._getSchematicBoxDimensions()?.getSize() ?? {
+            width: 0,
+            height: 0,
+          },
+          source_component_id: this.source_component_id!,
+        })
+        this.schematic_component_id = schematic_component.schematic_component_id
+      }
+
+      const warning = schematic_manual_edit_conflict_warning.parse({
+        type: "schematic_manual_edit_conflict_warning",
+        schematic_manual_edit_conflict_warning_id: `schematic_manual_edit_conflict_${this.source_component_id}`,
+        message: `${this.getString()} has both manual placement and explicit coordinates. schX and schY will be used. Remove schX/schY or clear the manual placement.`,
+        schematic_component_id: this.schematic_component_id!,
+        source_component_id: this.source_component_id!,
+        subcircuit_id: this.getSubcircuit()?.subcircuit_id,
+      })
+      console.log("sch warning", warning)
+
+      db.schematic_manual_edit_conflict_warning.insert(warning)
+    }
+
     const { schematicSymbolName } = this.config
     if (schematicSymbolName) {
       return this._doInitialSchematicComponentRenderWithSymbol()
@@ -558,12 +598,18 @@ export class NormalComponent<
       this.props.pcbY !== undefined &&
       manualPlacement
     ) {
-      this.renderError({
-        type: "pcb_manual_edit_conflict_error",
+      const warning = pcb_manual_edit_conflict_warning.parse({
+        type: "pcb_manual_edit_conflict_warning",
+        pcb_manual_edit_conflict_warning: `pcb_manual_edit_conflict_${this.source_component_id}`,
         message: `${this.getString()} has both manual placement and explicit coordinates. pcbX and pcbY will be used. Remove pcbX/pcbY or clear the manual placement.`,
         pcb_component_id: this.pcb_component_id!,
         source_component_id: this.source_component_id!,
+        subcircuit_id: subcircuit.subcircuit_id ?? undefined,
       })
+
+      console.log("pcb warning", warning)
+
+      db.pcb_manual_edit_conflict_warning.insert(warning)
     }
   }
 
