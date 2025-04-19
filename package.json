@@ -54,7 +54,7 @@
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
     "@tscircuit/capacity-autorouter": "^0.0.52",
-    "@tscircuit/checks": "^0.0.36",
+    "@tscircuit/checks": "^0.0.37",
     "@tscircuit/circuit-json-util": "^0.0.47",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/math-utils": "^0.0.12",
