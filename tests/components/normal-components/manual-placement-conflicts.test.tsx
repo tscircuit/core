@@ -22,7 +22,7 @@ test("component with both manual placement and explicit coordinates emits error"
   )
   circuit.render()
   // Verify error is added to the database
-  const errors = circuit.db.pcb_manual_edit_conflict_error.list()
+  const errors = circuit.db.pcb_manual_edit_conflict_warning.list()
   expect(errors).toHaveLength(1)
   // Check error details
   const error = errors[0]
