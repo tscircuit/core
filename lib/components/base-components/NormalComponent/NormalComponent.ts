@@ -424,7 +424,6 @@ export class NormalComponent<
         source_component_id: this.source_component_id!,
         subcircuit_id: this.getSubcircuit()?.subcircuit_id,
       })
-      console.log("sch warning", warning)
 
       db.schematic_manual_edit_conflict_warning.insert(warning)
     }
@@ -606,8 +605,6 @@ export class NormalComponent<
         source_component_id: this.source_component_id!,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
       })
-
-      console.log("pcb warning", warning)
 
       db.pcb_manual_edit_conflict_warning.insert(warning)
     }
