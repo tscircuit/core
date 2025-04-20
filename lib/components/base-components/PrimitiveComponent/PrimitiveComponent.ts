@@ -424,6 +424,35 @@ export abstract class PrimitiveComponent<
     return null
   }
 
+  _getSchematicManualPlacementForComponent(
+    component: PrimitiveComponent,
+  ): { x: number; y: number } | null {
+    if (!this.isSubcircuit) return null
+
+    const manualEdits = this.props.manualEdits
+
+    if (!manualEdits) return null
+
+    const placementConfigPositions = manualEdits.schematic_placements
+
+    if (!placementConfigPositions) return null
+
+    for (const position of placementConfigPositions) {
+      if (
+        isMatchingSelector(component, position.selector) ||
+        component.props.name === position.selector
+      ) {
+        const center = applyToPoint(
+          this.computeSchematicGlobalTransform(),
+          position.center as { x: number; y: number },
+        )
+        return center
+      }
+    }
+
+    return null
+  }
+
   _getSchematicGlobalManualPlacementTransform(
     component: PrimitiveComponent,
   ): Matrix | null {

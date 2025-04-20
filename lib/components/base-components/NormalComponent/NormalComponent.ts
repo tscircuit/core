@@ -7,7 +7,12 @@ import type {
   SchematicPortArrangement,
   SupplierPartNumbers,
 } from "@tscircuit/props"
-import { point3, rotation } from "circuit-json"
+import {
+  pcb_manual_edit_conflict_warning,
+  point3,
+  rotation,
+  schematic_manual_edit_conflict_warning,
+} from "circuit-json"
 import Debug from "debug"
 import {
   type ReactSubtree,
@@ -389,14 +394,42 @@ export class NormalComponent<
    */
   doInitialSchematicComponentRender() {
     if (this.root?.schematicDisabled) return
+    const { db } = this.root!
+
     const { schematicSymbolName } = this.config
+
     if (schematicSymbolName) {
-      return this._doInitialSchematicComponentRenderWithSymbol()
+      this._doInitialSchematicComponentRenderWithSymbol()
+    } else {
+      const dimensions = this._getSchematicBoxDimensions()
+      if (dimensions) {
+        this._doInitialSchematicComponentRenderWithSchematicBoxDimensions()
+      }
     }
 
-    const dimensions = this._getSchematicBoxDimensions()
-    if (dimensions) {
-      return this._doInitialSchematicComponentRenderWithSchematicBoxDimensions()
+    const manualPlacement =
+      this.getSubcircuit()?._getSchematicManualPlacementForComponent(this)
+
+    if (
+      this.schematic_component_id &&
+      this.props.schX !== undefined &&
+      this.props.schY !== undefined &&
+      manualPlacement
+    ) {
+      if (!this.schematic_component_id) {
+        return
+      }
+
+      const warning = schematic_manual_edit_conflict_warning.parse({
+        type: "schematic_manual_edit_conflict_warning",
+        schematic_manual_edit_conflict_warning_id: `schematic_manual_edit_conflict_${this.source_component_id}`,
+        message: `${this.getString()} has both manual placement and prop coordinates. schX and schY will be used. Remove schX/schY or clear the manual placement.`,
+        schematic_component_id: this.schematic_component_id!,
+        source_component_id: this.source_component_id!,
+        subcircuit_id: this.getSubcircuit()?.subcircuit_id,
+      })
+
+      db.schematic_manual_edit_conflict_warning.insert(warning)
     }
 
     // No schematic symbol or dimensions defined, this could be a board, group
@@ -558,12 +591,16 @@ export class NormalComponent<
       this.props.pcbY !== undefined &&
       manualPlacement
     ) {
-      this.renderError({
-        type: "pcb_manual_edit_conflict_error",
-        message: `${this.getString()} has both manual placement and explicit coordinates. pcbX and pcbY will be used. Remove pcbX/pcbY or clear the manual placement.`,
+      const warning = pcb_manual_edit_conflict_warning.parse({
+        type: "pcb_manual_edit_conflict_warning",
+        pcb_manual_edit_conflict_warning_id: `pcb_manual_edit_conflict_${this.source_component_id}`,
+        message: `${this.getString()} has both manual placement and prop coordinates. pcbX and pcbY will be used. Remove pcbX/pcbY or clear the manual placement.`,
         pcb_component_id: this.pcb_component_id!,
         source_component_id: this.source_component_id!,
+        subcircuit_id: subcircuit.subcircuit_id ?? undefined,
       })
+
+      db.pcb_manual_edit_conflict_warning.insert(warning)
     }
   }
 
