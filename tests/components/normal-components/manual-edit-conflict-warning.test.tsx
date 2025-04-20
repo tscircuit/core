@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("emits schematic warning when both manual placement and explicit coordinates are defined", () => {
+test("emits schematic warning when both manual placement and prop coordinates are defined", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -34,11 +34,11 @@ test("emits schematic warning when both manual placement and explicit coordinate
   expect(warning.source_component_id).toBeDefined()
   expect(warning.subcircuit_id).toBeDefined()
   expect(warning.message).toMatch(
-    /has both manual placement and explicit coordinates/,
+    /has both manual placement and prop coordinates/,
   )
 })
 
-test("emits PCB warning when both manual placement and explicit coordinates are defined", () => {
+test("emits PCB warning when both manual placement and prop coordinates are defined", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -77,6 +77,6 @@ test("emits PCB warning when both manual placement and explicit coordinates are 
   expect(warning.source_component_id).toBeDefined()
   expect(warning.subcircuit_id).toBeDefined()
   expect(warning.message).toMatch(
-    /has both manual placement and explicit coordinates/,
+    /has both manual placement and prop coordinates/,
   )
 })
