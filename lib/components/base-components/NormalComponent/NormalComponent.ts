@@ -411,6 +411,7 @@ export class NormalComponent<
       this.getSubcircuit()?._getSchematicManualPlacementForComponent(this)
 
     if (
+      this.schematic_component_id &&
       this.props.schX !== undefined &&
       this.props.schY !== undefined &&
       manualPlacement
@@ -422,7 +423,7 @@ export class NormalComponent<
       const warning = schematic_manual_edit_conflict_warning.parse({
         type: "schematic_manual_edit_conflict_warning",
         schematic_manual_edit_conflict_warning_id: `schematic_manual_edit_conflict_${this.source_component_id}`,
-        message: `${this.getString()} has both manual placement and explicit coordinates. schX and schY will be used. Remove schX/schY or clear the manual placement.`,
+        message: `${this.getString()} has both manual placement and prop coordinates. schX and schY will be used. Remove schX/schY or clear the manual placement.`,
         schematic_component_id: this.schematic_component_id!,
         source_component_id: this.source_component_id!,
         subcircuit_id: this.getSubcircuit()?.subcircuit_id,
@@ -593,7 +594,7 @@ export class NormalComponent<
       const warning = pcb_manual_edit_conflict_warning.parse({
         type: "pcb_manual_edit_conflict_warning",
         pcb_manual_edit_conflict_warning_id: `pcb_manual_edit_conflict_${this.source_component_id}`,
-        message: `${this.getString()} has both manual placement and explicit coordinates. pcbX and pcbY will be used. Remove pcbX/pcbY or clear the manual placement.`,
+        message: `${this.getString()} has both manual placement and prop coordinates. pcbX and pcbY will be used. Remove pcbX/pcbY or clear the manual placement.`,
         pcb_component_id: this.pcb_component_id!,
         source_component_id: this.source_component_id!,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
