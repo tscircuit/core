@@ -442,7 +442,11 @@ export abstract class PrimitiveComponent<
         isMatchingSelector(component, position.selector) ||
         component.props.name === position.selector
       ) {
-        return position.center as { x: number; y: number }
+        const center = applyToPoint(
+          this.computeSchematicGlobalTransform(),
+          position.center as { x: number; y: number },
+        )
+        return center
       }
     }
 

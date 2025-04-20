@@ -394,8 +394,19 @@ export class NormalComponent<
    */
   doInitialSchematicComponentRender() {
     if (this.root?.schematicDisabled) return
-
     const { db } = this.root!
+
+    const { schematicSymbolName } = this.config
+
+    if (schematicSymbolName) {
+      this._doInitialSchematicComponentRenderWithSymbol()
+    } else {
+      const dimensions = this._getSchematicBoxDimensions()
+      if (dimensions) {
+        this._doInitialSchematicComponentRenderWithSchematicBoxDimensions()
+      }
+    }
+
     const manualPlacement =
       this.getSubcircuit()?._getSchematicManualPlacementForComponent(this)
 
@@ -405,15 +416,7 @@ export class NormalComponent<
       manualPlacement
     ) {
       if (!this.schematic_component_id) {
-        const schematic_component = db.schematic_component.insert({
-          center: this._getGlobalSchematicPositionBeforeLayout(),
-          size: this._getSchematicBoxDimensions()?.getSize() ?? {
-            width: 0,
-            height: 0,
-          },
-          source_component_id: this.source_component_id!,
-        })
-        this.schematic_component_id = schematic_component.schematic_component_id
+        return
       }
 
       const warning = schematic_manual_edit_conflict_warning.parse({
@@ -426,16 +429,6 @@ export class NormalComponent<
       })
 
       db.schematic_manual_edit_conflict_warning.insert(warning)
-    }
-
-    const { schematicSymbolName } = this.config
-    if (schematicSymbolName) {
-      return this._doInitialSchematicComponentRenderWithSymbol()
-    }
-
-    const dimensions = this._getSchematicBoxDimensions()
-    if (dimensions) {
-      return this._doInitialSchematicComponentRenderWithSchematicBoxDimensions()
     }
 
     // No schematic symbol or dimensions defined, this could be a board, group
