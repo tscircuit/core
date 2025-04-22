@@ -151,7 +151,39 @@ export class Board extends Group<typeof boardProps> {
     if (this.root?.pcbDisabled) return
     if (this.getInheritedProperty("routingDisabled")) return
 
+    // run the base class’s DRCs (e.g. trace‐overlap)
     super.doInitialPcbDesignRuleChecks()
+
+    // now our placement check
+    if (!this.pcb_board_id) return
+    const { db } = this.root!
+    const board = db.pcb_board.get(this.pcb_board_id)!
+    const boardMinX = board.center.x - board.width / 2
+    const boardMaxX = board.center.x + board.width / 2
+    const boardMinY = board.center.y - board.height / 2
+    const boardMaxY = board.center.y + board.height / 2
+
+    for (const comp of db.pcb_component.list()) {
+      const minX = comp.center.x - comp.width / 2
+      const maxX = comp.center.x + comp.width / 2
+      const minY = comp.center.y - comp.height / 2
+      const maxY = comp.center.y + comp.height / 2
+
+      if (
+        minX < boardMinX ||
+        maxX > boardMaxX ||
+        minY < boardMinY ||
+        maxY > boardMaxY
+      ) {
+        const sourceComponent = db.source_component.get(
+          comp.source_component_id,
+        )
+        console.log("sourceComponent", sourceComponent)
+        db.pcb_placement_error.insert({
+          message: `Component ${sourceComponent!.name} out of board`,
+        })
+      }
+    }
   }
 
   updatePcbDesignRuleChecks() {
