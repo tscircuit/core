@@ -1,7 +1,5 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
-import { createUseComponent } from "@tscircuit/core"
-import type { CommonLayoutProps } from "@tscircuit/props"
 test("Schematic trace overlaps manufacturer label", async () => {
   const { circuit } = getTestFixture()
 
@@ -11,7 +9,6 @@ test("Schematic trace overlaps manufacturer label", async () => {
       height="30mm"
       autorouter={{
         serverCacheEnabled: false,
-        local: false,
       }}
       schTraceAutoLabelEnabled
       schAutoLayoutEnabled
