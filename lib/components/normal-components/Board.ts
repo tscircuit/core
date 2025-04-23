@@ -148,7 +148,7 @@ export class Board extends Group<typeof boardProps> {
   }
 
   doInitialPcbDesignRuleChecks() {
-  if (this.root?.pcbDisabled) return
+   if (this.root?.pcbDisabled) return
     if (this.getInheritedProperty("routingDisabled")) return
 
     super.doInitialPcbDesignRuleChecks()
