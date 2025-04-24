@@ -12,7 +12,7 @@
         "@tscircuit/math-utils": "^0.0.14",
         "@tscircuit/props": "^0.0.172",
         "@tscircuit/schematic-autolayout": "^0.0.6",
-        "circuit-json": "^0.0.158",
+        "circuit-json": "0.0.158",
         "circuit-json-to-connectivity-map": "^0.0.20",
         "css-select": "^5.1.0",
         "format-si-unit": "^0.0.3",
