@@ -412,9 +412,8 @@ export class NormalComponent<
 
     if (
       this.schematic_component_id &&
-      this.props.schX !== undefined &&
-      this.props.schY !== undefined &&
-      manualPlacement
+      (this.props.schX !== undefined || this.props.schY !== undefined) &&
+      !!manualPlacement
     ) {
       if (!this.schematic_component_id) {
         return
@@ -587,9 +586,8 @@ export class NormalComponent<
       this.getSubcircuit()._getPcbManualPlacementForComponent(this)
 
     if (
-      this.props.pcbX !== undefined &&
-      this.props.pcbY !== undefined &&
-      manualPlacement
+      (this.props.pcbX !== undefined || this.props.pcbY !== undefined) &&
+      !!manualPlacement
     ) {
       const warning = pcb_manual_edit_conflict_warning.parse({
         type: "pcb_manual_edit_conflict_warning",
@@ -599,7 +597,6 @@ export class NormalComponent<
         source_component_id: this.source_component_id!,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
       })
-
       db.pcb_manual_edit_conflict_warning.insert(warning)
     }
   }
