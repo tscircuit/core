@@ -927,10 +927,18 @@ export class Trace
     const adjustedEndPos = {
       x:
         endPos.x +
-        (shouldApplyEndOffset && endDir === "left" ? -endOffset : shouldApplyEndOffset && endDir === "right" ? endOffset : 0),
+        (shouldApplyEndOffset && endDir === "left"
+          ? -endOffset
+          : shouldApplyEndOffset && endDir === "right"
+            ? endOffset
+            : 0),
       y:
         endPos.y +
-        (shouldApplyEndOffset && endDir === "up" ? endOffset : shouldApplyEndOffset && endDir === "down" ? -endOffset : 0),
+        (shouldApplyEndOffset && endDir === "up"
+          ? endOffset
+          : shouldApplyEndOffset && endDir === "down"
+            ? -endOffset
+            : 0),
       layer: "top",
     }
 
