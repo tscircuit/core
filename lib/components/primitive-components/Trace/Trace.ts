@@ -879,10 +879,56 @@ export class Trace
     }
 
     // Add points for autorouter to connect
-    connection.pointsToConnect = portsWithPosition.map(({ position }) => ({
-      ...position,
+    const [startPort, endPort] = portsWithPosition
+    const startDir = startPort.facingDirection
+    const endDir = endPort.facingDirection
+
+    // Calculate the midpoint between ports, adjusted by their facing directions
+    const startPos = startPort.position
+    const endPos = endPort.position
+
+    // Determine if we need to route away from symbol
+    const isStartingFromSymbol =
+      !startPort.port.parent?.config.shouldRenderAsSchematicBox
+
+    // Determine if the trace would go towards the symbol initially
+    const wouldGoTowardsSymbol =
+      isStartingFromSymbol &&
+      ((startDir === "left" && endPos.x > startPos.x) ||
+        (startDir === "right" && endPos.x < startPos.x) ||
+        (startDir === "up" && endPos.y < startPos.y) ||
+        (startDir === "down" && endPos.y > startPos.y))
+
+    // Adjust the start and end points based on port directions
+    const startOffset = 0
+    const adjustedStartPos = {
+      x:
+        startPos.x +
+        (startDir === "left"
+          ? -startOffset
+          : startDir === "right"
+            ? startOffset
+            : 0),
+      y:
+        startPos.y +
+        (startDir === "up"
+          ? startOffset
+          : startDir === "down"
+            ? -startOffset
+            : 0),
       layer: "top",
-    }))
+    }
+
+    const endOffset = 0
+    const adjustedEndPos = {
+      x:
+        endPos.x +
+        (endDir === "left" ? -endOffset : endDir === "right" ? endOffset : 0),
+      y:
+        endPos.y +
+        (endDir === "up" ? endOffset : endDir === "down" ? -endOffset : 0),
+      layer: "top",
+    }
 
     const bounds = computeObstacleBounds(obstacles)
 
@@ -900,6 +946,77 @@ export class Trace
       layerCount: 1,
     }
 
+    // Only use special routing when trace would go towards symbol
+    if (wouldGoTowardsSymbol) {
+      // Prevent the trace from going towards the symbol
+      const straightDistance = 0.5
+      const useStraightDistance =
+        (startDir === "left" &&
+          endPos.x > startPos.x &&
+          Math.abs(endPos.y - startPos.y) < 0.01) ||
+        (startDir === "right" &&
+          endPos.x < startPos.x &&
+          Math.abs(endPos.y - startPos.y) < 0.01) ||
+        (startDir === "up" &&
+          endPos.y < startPos.y &&
+          Math.abs(endPos.x - startPos.x) < 0.01) ||
+        (startDir === "down" &&
+          endPos.y > startPos.y &&
+          Math.abs(endPos.x - startPos.x) < 0.01)
+      const intermediatePoint = {
+        x: useStraightDistance ? straightDistance : adjustedStartPos.x,
+        y: useStraightDistance ? straightDistance : adjustedStartPos.y,
+        layer: "top",
+      }
+
+      // Add a second intermediate point to help with turning
+      const turnPoint = {
+        x:
+          intermediatePoint.x +
+          (startDir === "left" || startDir === "right"
+            ? 0
+            : endPos.x > startPos.x
+              ? 1
+              : -1),
+        y:
+          intermediatePoint.y +
+          (startDir === "up" || startDir === "down"
+            ? 0
+            : endPos.y > startPos.y
+              ? 1
+              : -1),
+        layer: "top",
+      }
+
+      // Create three separate connections to enforce the routing path
+      const firstConnection: SimpleRouteConnection = {
+        name: `${this.source_trace_id!}_1`,
+        pointsToConnect: [adjustedStartPos, intermediatePoint],
+      }
+
+      const secondConnection: SimpleRouteConnection = {
+        name: `${this.source_trace_id!}_2`,
+        pointsToConnect: [intermediatePoint, turnPoint],
+      }
+
+      const thirdConnection: SimpleRouteConnection = {
+        name: `${this.source_trace_id!}_3`,
+        pointsToConnect: [turnPoint, adjustedEndPos],
+      }
+
+      simpleRouteJsonInput.connections = [
+        firstConnection,
+        secondConnection,
+        thirdConnection,
+      ]
+    } else {
+      const connection: SimpleRouteConnection = {
+        name: this.source_trace_id!,
+        pointsToConnect: [adjustedStartPos, adjustedEndPos],
+      }
+      simpleRouteJsonInput.connections = [connection]
+    }
+
     let Autorouter = MultilayerIjump
     let skipOtherTraceInteraction = false
     if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
@@ -915,24 +1032,19 @@ export class Trace
       isShortenPathWithShortcutsEnabled: true,
       marginsWithCosts: [
         {
+          margin: 2,
+          enterCost: wouldGoTowardsSymbol ? 5 : 0,
+          travelCostFactor: wouldGoTowardsSymbol ? 3 : 1,
+        },
+        {
           margin: 1,
+          enterCost: wouldGoTowardsSymbol ? 2 : 0,
+          travelCostFactor: wouldGoTowardsSymbol ? 2 : 1,
+        },
+        {
+          margin: 0.5,
           enterCost: 0,
           travelCostFactor: 1,
-        },
-        {
-          margin: 0.3,
-          enterCost: 0,
-          travelCostFactor: 1,
-        },
-        {
-          margin: 0.2,
-          enterCost: 0,
-          travelCostFactor: 2,
-        },
-        {
-          margin: 0.1,
-          enterCost: 0,
-          travelCostFactor: 3,
         },
       ],
     })
@@ -954,15 +1066,22 @@ export class Trace
       skipOtherTraceInteraction = true
     }
 
-    const [{ route }] = results
+    // Combine routes if we used two connections
+    const combinedRoute = wouldGoTowardsSymbol
+      ? [
+          ...results[0].route.slice(0, -1),
+          ...(results[1] ? results[1].route.slice(0, -1) : []),
+          ...(results[2] ? results[2].route : []),
+        ]
+      : results[0].route
 
     let edges: SchematicTrace["edges"] = []
 
     // Add autorouted path
-    for (let i = 0; i < route.length - 1; i++) {
+    for (let i = 0; i < combinedRoute.length - 1; i++) {
       edges.push({
-        from: route[i],
-        to: route[i + 1],
+        from: combinedRoute[i],
+        to: combinedRoute[i + 1],
       })
     }
 
@@ -998,6 +1117,10 @@ export class Trace
     // The first/last edges sometimes don't connect to the ports because the
     // autorouter is within the "goal box" and doesn't finish the route
     // Add a stub to connect the last point to the end port
+    if (edges.length === 0) {
+      return
+    }
+
     const lastEdge = edges[edges.length - 1]
     const lastEdgePort = portsWithPosition[portsWithPosition.length - 1]
     const lastDominantDirection = getDominantDirection(lastEdge)
