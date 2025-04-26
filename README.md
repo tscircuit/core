@@ -2,7 +2,7 @@
 
 The core logic used to build Circuit JSON from tscircuit React elements.
 
-[tscircuit](https://github.com/tscircuit/tscircuit) &middot; [Development Guide](./docs/DEVELOPMENT.md) &middot; [Core Benchmarks](https://core-benchmarks.tscircuit.com/)
+[tscircuit](https://github.com/tscircuit/tscircuit) &middot; [Development Guide](./docs/DEVELOPMENT.md) &middot; [Core Benchmarks](https://core-benchmarks.tscircuit.com/) &middot; [AI Generated Wiki](https://deepwiki.com/tscircuit/core)
 
 You can use `core` to create [Circuit JSON](https://github.com/tscircuit/circuit-json), which can then
 be converted into Gerbers, viewed online, and much more.
