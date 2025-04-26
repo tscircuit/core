@@ -44,6 +44,7 @@ import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 import { getTraceDisplayName } from "./get-trace-display-name"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
+import { getRelativeDirection } from "lib/utils/get-relative-direction"
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -919,14 +920,17 @@ export class Trace
       layer: "top",
     }
 
-    const endOffset = 0
+    const endOffset = 0.5
+    // Only apply end offset if the trace is going in the direction of endDir
+    const traceDirection = getRelativeDirection(startPos, endPos)
+    const shouldApplyEndOffset = traceDirection === endDir
     const adjustedEndPos = {
       x:
         endPos.x +
-        (endDir === "left" ? -endOffset : endDir === "right" ? endOffset : 0),
+        (shouldApplyEndOffset && endDir === "left" ? -endOffset : shouldApplyEndOffset && endDir === "right" ? endOffset : 0),
       y:
         endPos.y +
-        (endDir === "up" ? endOffset : endDir === "down" ? -endOffset : 0),
+        (shouldApplyEndOffset && endDir === "up" ? endOffset : shouldApplyEndOffset && endDir === "down" ? -endOffset : 0),
       layer: "top",
     }
 
