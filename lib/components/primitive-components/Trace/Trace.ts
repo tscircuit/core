@@ -885,7 +885,7 @@ export class Trace
     const endDir = endPort.facingDirection
 
     // Calculate the midpoint between ports, adjusted by their facing directions
-    const startPos = startPort.position
+    const startPos = { ...startPort.position, layer: "top" }
     const endPos = endPort.position
 
     // Determine if we need to route away from symbol
@@ -899,26 +899,6 @@ export class Trace
         (startDir === "right" && endPos.x < startPos.x) ||
         (startDir === "up" && endPos.y < startPos.y) ||
         (startDir === "down" && endPos.y > startPos.y))
-
-    // Adjust the start and end points based on port directions
-    const startOffset = 0
-    const adjustedStartPos = {
-      x:
-        startPos.x +
-        (startDir === "left"
-          ? -startOffset
-          : startDir === "right"
-            ? startOffset
-            : 0),
-      y:
-        startPos.y +
-        (startDir === "up"
-          ? startOffset
-          : startDir === "down"
-            ? -startOffset
-            : 0),
-      layer: "top",
-    }
 
     const endOffset = 0.5
     // Only apply end offset if the trace is going in the direction of endDir
@@ -976,8 +956,8 @@ export class Trace
           endPos.y > startPos.y &&
           Math.abs(endPos.x - startPos.x) < 0.01)
       const intermediatePoint = {
-        x: useStraightDistance ? straightDistance : adjustedStartPos.x,
-        y: useStraightDistance ? straightDistance : adjustedStartPos.y,
+        x: useStraightDistance ? straightDistance : startPos.x,
+        y: useStraightDistance ? straightDistance : startPos.y,
         layer: "top",
       }
 
@@ -1003,7 +983,7 @@ export class Trace
       // Create three separate connections to enforce the routing path
       const firstConnection: SimpleRouteConnection = {
         name: `${this.source_trace_id!}_1`,
-        pointsToConnect: [adjustedStartPos, intermediatePoint],
+        pointsToConnect: [startPos, intermediatePoint],
       }
 
       const secondConnection: SimpleRouteConnection = {
@@ -1024,7 +1004,7 @@ export class Trace
     } else {
       const connection: SimpleRouteConnection = {
         name: this.source_trace_id!,
-        pointsToConnect: [adjustedStartPos, adjustedEndPos],
+        pointsToConnect: [startPos, adjustedEndPos],
       }
       simpleRouteJsonInput.connections = [connection]
     }
