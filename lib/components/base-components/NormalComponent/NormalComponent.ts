@@ -994,7 +994,8 @@ export class NormalComponent<
   }
 
   doInitialPartsEngineRender(): void {
-    const partsEngine = this.getInheritedProperty("partsEngine") ?? jlcPartsEngine
+    const partsEngine =
+      this.getInheritedProperty("partsEngine") ?? jlcPartsEngine
     if (!partsEngine) return
     const { db } = this.root!
 
