@@ -25,3 +25,21 @@ test("parts engine modifies source component", async () => {
     mouser: ["789-012"],
   })
 })
+
+test("default parts engine with jlc", async () => {
+  if (process.env.CI) {
+    return
+  }
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="20mm" height="20mm">
+      <resistor name="R1" resistance="10k" footprint="0402" />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  const sourceComponent = circuit.db.source_component.list()[0]
+  expect(sourceComponent.supplier_part_numbers).toBeDefined()
+})

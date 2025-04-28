@@ -46,6 +46,7 @@ import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNum
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import type { INormalComponent } from "./INormalComponent"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { jlcPartsEngine } from "@tscircuit/parts-engine"
 
 const debug = Debug("tscircuit:core")
 
@@ -993,7 +994,7 @@ export class NormalComponent<
   }
 
   doInitialPartsEngineRender(): void {
-    const partsEngine = this.getInheritedProperty("partsEngine")
+    const partsEngine = this.getInheritedProperty("partsEngine") ?? jlcPartsEngine
     if (!partsEngine) return
     const { db } = this.root!
 
