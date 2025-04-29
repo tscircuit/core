@@ -44,6 +44,8 @@ import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 import { getTraceDisplayName } from "./get-trace-display-name"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
+import { Board } from "../../normal-components/Board"
+
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -73,6 +75,7 @@ export class Trace
   schematic_trace_id: string | null = null
   _portsRoutedOnPcb: Port[]
   subcircuit_connectivity_map_key: string | null = null
+  _traceConnectionHash: string | null = null
 
   constructor(props: z.input<typeof traceProps>) {
     super(props)
@@ -238,6 +241,37 @@ export class Trace
     createNetsFromProps(this, this.getTracePathNetSelectors())
   }
 
+  _computeTraceConnectionHash(): string | null {
+    const { allPortsFound, ports } = this._findConnectedPorts()
+    if (!allPortsFound || !ports) return null
+
+    // Sort ports by their pcb_port_id to ensure consistent ordering
+    const sortedPorts = [...ports].sort((a, b) =>
+      (a.pcb_port_id || "").localeCompare(b.pcb_port_id || ""),
+    )
+    const allIds = sortedPorts.map((p) => p.pcb_port_id)
+
+    const props = this._parsedProps
+    let direction: string | null = null
+
+    if ("from" in props && "to" in props) {
+      // For explicit from/to connections, use the exact direction
+      direction = `${props.from}->${props.to}`
+    } else if ("path" in props) {
+      // For path connections, use the full path
+      direction = props.path.join("->")
+    } else {
+      // For implicit connections, use the port names
+      const portNames = sortedPorts.map((p) => p.pcb_port_id).join("->")
+      direction = portNames
+    }
+
+    if (!direction) return null
+
+    // Include both the sorted port IDs and the direction in the hash
+    return `${allIds.join(",")}:${direction}`
+  }
+
   doInitialSourceTraceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
@@ -250,6 +284,26 @@ export class Trace
     const { allPortsFound, portsWithSelectors: ports } =
       this._findConnectedPorts()
     if (!allPortsFound) return
+
+    // Compute the connection hash
+    this._traceConnectionHash = this._computeTraceConnectionHash()
+    if (!this._traceConnectionHash) return
+
+    // Check if a trace with this connection hash already exists
+    const existingTraces = db.source_trace.list()
+    const existingTrace = existingTraces.find(
+      (t) =>
+        t.subcircuit_connectivity_map_key ===
+          this.subcircuit_connectivity_map_key &&
+        t.connected_source_port_ids.sort().join(",") ===
+          this._traceConnectionHash,
+    )
+    if (existingTrace) {
+      // If a trace with this connection hash exists, use its ID
+      this.source_trace_id = existingTrace.source_trace_id
+      return
+    }
+
     const nets = this._findConnectedNets().nets
     const displayName = getTraceDisplayName({ ports: ports, nets: nets })
     const trace = db.source_trace.insert({
@@ -829,6 +883,15 @@ export class Trace
 
     if (!allPortsFound) return
 
+    // Check if these ports are already connected in schematic
+    const portIds = connectedPorts.map((p) => p.port.schematic_port_id).sort()
+    const portPairKey = portIds.join(",")
+    const board = this.parent as Board
+    if (board?._connectedSchematicPortPairs)
+      if (board._connectedSchematicPortPairs.has(portPairKey)) {
+        return
+      }
+
     if (
       this.props.schDisplayLabel &&
       (("from" in this.props && "to" in this.props) || "path" in this.props)
@@ -1043,5 +1106,9 @@ export class Trace
       junctions,
     })
     this.schematic_trace_id = trace.schematic_trace_id
+
+    // After successful routing, add the port pair to the set
+    if (board?._connectedSchematicPortPairs)
+      board.getConnectedSchematicPortPairs().add(portPairKey)
   }
 }

@@ -5,7 +5,8 @@ import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
 
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
-  _drcChecksComplete: boolean = false
+  _drcChecksComplete = false
+  _connectedSchematicPortPairs = new Set<string>()
 
   get isSubcircuit() {
     return true
@@ -29,6 +30,10 @@ export class Board extends Group<typeof boardProps> {
   get allLayers() {
     // TODO use the board numLayers prop
     return ["top", "bottom", "inner1", "inner2"]
+  }
+
+  getConnectedSchematicPortPairs(): Set<string> {
+    return this._connectedSchematicPortPairs
   }
 
   doInitialPcbBoardAutoSize(): void {
