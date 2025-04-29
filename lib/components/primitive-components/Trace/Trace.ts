@@ -245,7 +245,6 @@ export class Trace
     const { allPortsFound, ports } = this._findConnectedPorts()
     if (!allPortsFound || !ports) return null
 
-    // Sort ports by their pcb_port_id to ensure consistent ordering
     const sortedPorts = [...ports].sort((a, b) =>
       (a.pcb_port_id || "").localeCompare(b.pcb_port_id || ""),
     )
@@ -255,20 +254,16 @@ export class Trace
     let direction: string | null = null
 
     if ("from" in props && "to" in props) {
-      // For explicit from/to connections, use the exact direction
       direction = `${props.from}->${props.to}`
     } else if ("path" in props) {
-      // For path connections, use the full path
       direction = props.path.join("->")
     } else {
-      // For implicit connections, use the port names
       const portNames = sortedPorts.map((p) => p.pcb_port_id).join("->")
       direction = portNames
     }
 
     if (!direction) return null
 
-    // Include both the sorted port IDs and the direction in the hash
     return `${allIds.join(",")}:${direction}`
   }
 
@@ -285,11 +280,9 @@ export class Trace
       this._findConnectedPorts()
     if (!allPortsFound) return
 
-    // Compute the connection hash
     this._traceConnectionHash = this._computeTraceConnectionHash()
     if (!this._traceConnectionHash) return
 
-    // Check if a trace with this connection hash already exists
     const existingTraces = db.source_trace.list()
     const existingTrace = existingTraces.find(
       (t) =>
@@ -299,7 +292,6 @@ export class Trace
           this._traceConnectionHash,
     )
     if (existingTrace) {
-      // If a trace with this connection hash exists, use its ID
       this.source_trace_id = existingTrace.source_trace_id
       return
     }
@@ -883,7 +875,6 @@ export class Trace
 
     if (!allPortsFound) return
 
-    // Check if these ports are already connected in schematic
     const portIds = connectedPorts.map((p) => p.port.schematic_port_id).sort()
     const portPairKey = portIds.join(",")
     const board = this.parent as Board
@@ -1107,7 +1098,6 @@ export class Trace
     })
     this.schematic_trace_id = trace.schematic_trace_id
 
-    // After successful routing, add the port pair to the set
     if (board?._connectedSchematicPortPairs)
       board.getConnectedSchematicPortPairs().add(portPairKey)
   }
