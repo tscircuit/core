@@ -8,6 +8,7 @@ import { identity, type Matrix } from "transformation-matrix"
 import type { RenderPhase } from "./components/base-components/Renderable"
 import pkgJson from "../package.json"
 import type { RootCircuitEventName } from "./events"
+import type { PlatformConfig } from "@tscircuit/props"
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -26,13 +27,16 @@ export class RootCircuit {
    */
   name?: string
 
+  platform?: PlatformConfig
+
   _hasRenderedAtleastOnce = false
 
-  constructor() {
+  constructor({ platform }: { platform?: PlatformConfig } = {}) {
     this.children = []
     this.db = su([])
     // TODO rename to rootCircuit
     this.root = this
+    this.platform = platform
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
