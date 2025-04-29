@@ -250,21 +250,7 @@ export class Trace
     )
     const allIds = sortedPorts.map((p) => p.pcb_port_id)
 
-    const props = this._parsedProps
-    let direction: string | null = null
-
-    if ("from" in props && "to" in props) {
-      direction = `${props.from}->${props.to}`
-    } else if ("path" in props) {
-      direction = props.path.join("->")
-    } else {
-      const portNames = sortedPorts.map((p) => p.pcb_port_id).join("->")
-      direction = portNames
-    }
-
-    if (!direction) return null
-
-    return `${allIds.join(",")}:${direction}`
+    return allIds.join(",")
   }
 
   doInitialSourceTraceRender(): void {
@@ -281,7 +267,6 @@ export class Trace
     if (!allPortsFound) return
 
     this._traceConnectionHash = this._computeTraceConnectionHash()
-    if (!this._traceConnectionHash) return
 
     const existingTraces = db.source_trace.list()
     const existingTrace = existingTraces.find(
@@ -1099,6 +1084,6 @@ export class Trace
     this.schematic_trace_id = trace.schematic_trace_id
 
     if (board?._connectedSchematicPortPairs)
-      board.getConnectedSchematicPortPairs().add(portPairKey)
+      board._connectedSchematicPortPairs.add(portPairKey)
   }
 }

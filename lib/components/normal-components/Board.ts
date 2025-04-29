@@ -32,10 +32,6 @@ export class Board extends Group<typeof boardProps> {
     return ["top", "bottom", "inner1", "inner2"]
   }
 
-  getConnectedSchematicPortPairs(): Set<string> {
-    return this._connectedSchematicPortPairs
-  }
-
   doInitialPcbBoardAutoSize(): void {
     if (this.root?.pcbDisabled) return
     if (!this.pcb_board_id) return
