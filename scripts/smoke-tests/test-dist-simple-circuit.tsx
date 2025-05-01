@@ -1,3 +1,4 @@
+// @ts-ignore
 import { RootCircuit } from "../../dist"
 import React from "react"
 
