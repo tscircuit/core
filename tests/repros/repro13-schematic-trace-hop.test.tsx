@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
-test("Schematic trace double hop", async () => {
+test("Schematic trace overlaps manufacturer label", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
