@@ -1,12 +1,4 @@
-import {
-  RootCircuit,
-  board,
-  capacitor,
-  resistor,
-  chip,
-  net,
-  trace,
-} from "../../dist"
+import { RootCircuit } from "../../dist"
 import React from "react"
 
 const circuit = new RootCircuit()
