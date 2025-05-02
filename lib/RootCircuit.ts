@@ -55,12 +55,14 @@ export class RootCircuit {
    */
   _getBoard(): PrimitiveComponent & {
     boardThickness: number
+    _connectedSchematicPortPairs: Set<string>
     allLayers: LayerRef[]
   } {
     return this.children.find(
       (c) => c.componentName === "Board",
     ) as PrimitiveComponent & {
       boardThickness: number
+      _connectedSchematicPortPairs: Set<string>
       allLayers: LayerRef[]
     }
   }
