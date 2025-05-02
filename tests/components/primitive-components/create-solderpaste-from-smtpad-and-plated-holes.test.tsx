@@ -13,7 +13,7 @@ test("create solderpaste from smtpad", async () => {
         footprint={"0402"}
       />
       <resistor
-        name="R1"
+        name="R2"
         pcbX={0}
         pcbY={0}
         resistance={1000}
