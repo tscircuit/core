@@ -149,6 +149,21 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
+      if (pcb_smtpad.shape === "rotated_rect")
+        db.pcb_solder_paste.insert({
+          layer: pcb_smtpad.layer,
+          shape: "rotated_rect",
+          // @ts-ignore: no idea why this is triggering
+          width: pcb_smtpad.width * 0.7,
+          height: pcb_smtpad.height * 0.7,
+          x: pcb_smtpad.x,
+          y: pcb_smtpad.y,
+          ccw_rotation: parentRotation,
+          pcb_component_id: pcb_smtpad.pcb_component_id,
+          pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        })
     }
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
