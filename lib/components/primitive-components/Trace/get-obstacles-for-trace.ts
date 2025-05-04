@@ -4,6 +4,8 @@ import type {
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { Trace } from "./Trace"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
+import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import { getObstaclesFromBounds } from "lib/utils/autorouting/getObstaclesFromBounds"
 
 /**
  * Gets the schematic obstacles for a trace.
@@ -23,49 +25,7 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
   const obstacles: Obstacle[] = []
 
   // Add obstacles from components and ports
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity
   for (const elm of db.toArray()) {
-    // Track bounds for border obstacle
-    let cx: number | undefined,
-      cy: number | undefined,
-      w: number | undefined,
-      h: number | undefined
-    if (elm.type === "schematic_component") {
-      cx = elm.center?.x
-      cy = elm.center?.y
-      w = elm.size?.width
-      h = elm.size?.height
-    } else if (elm.type === "schematic_box") {
-      cx = elm.x
-      cy = elm.y
-      w = elm.width
-      h = elm.height
-    } else if (elm.type === "schematic_port") {
-      cx = elm.center?.x
-      cy = elm.center?.y
-      w = 0.2
-      h = 0.2
-    } else if (elm.type === "schematic_text") {
-      cx = elm.position?.x
-      cy = elm.position?.y
-      w = (elm.text?.length ?? 0) * 0.1
-      h = 0.2
-    }
-    if (
-      typeof cx === "number" &&
-      typeof cy === "number" &&
-      typeof w === "number" &&
-      typeof h === "number"
-    ) {
-      minX = Math.min(minX, cx - w / 2)
-      maxX = Math.max(maxX, cx + w / 2)
-      minY = Math.min(minY, cy - h / 2)
-      maxY = Math.max(maxY, cy + h / 2)
-    }
-
     if (elm.type === "schematic_component") {
       // TODO HACK we have to have special handling for components because of
       // a bug in circuit-to-svg where it uses the schematic_component size to
@@ -129,74 +89,11 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
         connectedTo: [],
       })
     }
-    // Schematic symbols don't need obstacles- traces often route through them
-    // we might roll this back later...
-    // if (elm.type === "schematic_net_label" && elm.symbol_name) {
-    //   obstacles.push({
-    //     type: "rect",
-    //     layers: ["top"],
-    //     center: elm.center,
-    //     width: 0.25,
-    //     height: 0.6,
-    //     connectedTo: [],
-    //   })
-    // } else if (elm.type === "schematic_net_label") {
-    //   obstacles.push({
-    //     type: "rect",
-    //     layers: ["top"],
-    //     center: elm.center,
-    //     width: (elm.text?.length ?? 0) * 0.1,
-    //     height: 0.2,
-    //     connectedTo: [],
-    //   })
-    // }
   }
 
   // Add schematic border as four thin rect obstacles (with padding)
-  if (isFinite(minX) && isFinite(maxX) && isFinite(minY) && isFinite(maxY)) {
-    const PADDING = 1
-    const left = minX - PADDING
-    const right = maxX + PADDING
-    const top = maxY + PADDING
-    const bottom = minY - PADDING
-    const thickness = 0.01
-    // Top border (horizontal)
-    obstacles.push({
-      type: "rect",
-      layers: ["top"],
-      center: { x: (left + right) / 2, y: top },
-      width: right - left,
-      height: thickness,
-      connectedTo: [],
-    })
-    // Bottom border (horizontal)
-    obstacles.push({
-      type: "rect",
-      layers: ["top"],
-      center: { x: (left + right) / 2, y: bottom },
-      width: right - left,
-      height: thickness,
-      connectedTo: [],
-    })
-    // Left border (vertical)
-    obstacles.push({
-      type: "rect",
-      layers: ["top"],
-      center: { x: left, y: (top + bottom) / 2 },
-      width: thickness,
-      height: top - bottom,
-      connectedTo: [],
-    })
-    // Right border (vertical)
-    obstacles.push({
-      type: "rect",
-      layers: ["top"],
-      center: { x: right, y: (top + bottom) / 2 },
-      width: thickness,
-      height: top - bottom,
-      connectedTo: [],
-    })
-  }
+  const bounds = getBoundsForSchematic(db.toArray())
+  obstacles.push(...getObstaclesFromBounds(bounds, { padding: 1 }))
 
   return obstacles
 }
