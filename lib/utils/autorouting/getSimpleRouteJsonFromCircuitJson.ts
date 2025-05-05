@@ -33,6 +33,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     throw new Error("db or circuitJson is required")
   }
 
+  const traceHints = db.pcb_trace_hint.list()
+
   const relevantSubcircuitIds: Set<string> | null = subcircuit_id
     ? new Set([subcircuit_id])
     : null
@@ -126,6 +128,30 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       if (connectedPorts.length < 2) return null
 
       // TODO handle trace.connected_source_net_ids
+      const [portA, portB] = connectedPorts
+      const layerA = portA.layers?.[0] ?? "top"
+      const layerB = portB.layers?.[0] ?? "top"
+
+      // Collect all traceHints that apply to either port
+      const matchingHints = traceHints.filter(
+        (hint) =>
+          hint.pcb_port_id === portA.pcb_port_id ||
+          hint.pcb_port_id === portB.pcb_port_id,
+      )
+
+      const hintPoints: { x: number; y: number; layer: string }[] = []
+
+      for (const hint of matchingHints) {
+        const port = db.pcb_port.get(hint.pcb_port_id)
+        const layer = port?.layers?.[0] ?? "top"
+        for (const pt of hint.route) {
+          hintPoints.push({
+            x: pt.x,
+            y: pt.y,
+            layer,
+          })
+        }
+      }
 
       return {
         name:
@@ -133,16 +159,22 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           connMap.getNetConnectedToId(trace.source_trace_id) ??
           "",
         source_trace_id: trace.source_trace_id,
-        pointsToConnect: connectedPorts.map((port) => {
-          return {
-            x: port.x!,
-            y: port.y!,
-            layer: (port.layers?.[0] as any) ?? "top",
-          }
-        }),
+        pointsToConnect: [
+          {
+            x: portA.x!,
+            y: portA.y!,
+            layer: layerA,
+          },
+          ...hintPoints,
+          {
+            x: portB.x!,
+            y: portB.y!,
+            layer: layerB,
+          },
+        ],
       } as SimpleRouteConnection
     })
-    .filter((c: any): c is SimpleRouteConnection => c !== null)
+    .filter((c): c is SimpleRouteConnection => c !== null)
 
   const source_nets = db.source_net
     .list()
