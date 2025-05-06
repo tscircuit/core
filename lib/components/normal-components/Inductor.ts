@@ -39,6 +39,7 @@ export class Inductor extends NormalComponent<
       ftype: FTYPE.simple_inductor,
       inductance: props.inductance,
       supplier_part_numbers: props.supplierPartNumbers,
+      are_pins_interchangeable: true,
     } as SourceSimpleInductor)
     this.source_component_id = source_component.source_component_id
   }

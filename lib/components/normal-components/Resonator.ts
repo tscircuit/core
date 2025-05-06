@@ -36,6 +36,8 @@ export class Resonator extends NormalComponent<typeof resonatorProps> {
       load_capacitance: props.loadCapacitance,
       supplier_part_numbers: props.supplierPartNumbers,
       pin_variant: props.pinVariant || "no_ground",
+      are_pins_interchangeable:
+        (props.pinVariant || "no_ground") === "no_ground",
     } as any)
 
     this.source_component_id = source_component.source_component_id

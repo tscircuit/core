@@ -32,6 +32,19 @@ export class PowerSource extends NormalComponent<
     )
   }
 
+  doInitialSourceRender() {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const source_component = db.source_component.insert({
+      ftype: "simple_power_source",
+      name: props.name,
+      voltage: props.voltage,
+      supplier_part_numbers: props.supplierPartNumbers,
+      are_pins_interchangeable: false,
+    } as any)
+    this.source_component_id = source_component.source_component_id
+  }
+
   pos = this.portMap.pin1
   positive = this.portMap.pin1
   neg = this.portMap.pin2

@@ -43,6 +43,7 @@ export class Switch extends NormalComponent<typeof switchProps> {
       name: props.name,
       switch_type: props.type,
       is_normally_closed: props.isNormallyClosed ?? false,
+      are_pins_interchangeable: this._getSwitchType() === "spst",
     } as any)
 
     this.source_component_id = source_component.source_component_id
