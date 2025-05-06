@@ -1,7 +1,7 @@
 import { it, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("pnp & npn transistor collector & emitter pin mapping", () => {
+it("pnp & npn transistor base pin mapping test", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -30,17 +30,8 @@ it("pnp & npn transistor collector & emitter pin mapping", () => {
         pcbY={-3}
         schX={4}
       />
-      <resistor
-        name="R2"
-        resistance="10k"
-        footprint="0402"
-        schY={-1}
-        schX={0}
-        pcbX={5}
-        pcbY={-3}
-      />
-      <trace from=".Q1 > .collector" to=".R1 > .pin1" />
-      <trace from=".Q2 > .collector" to=".R1 > .pin2" />
+      <trace from=".Q1 > .base" to=".R1 > .pin1" />
+      <trace from=".Q2 > .base" to=".R1 > .pin2" />
     </board>,
   )
 
