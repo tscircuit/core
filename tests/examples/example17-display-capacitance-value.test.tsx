@@ -21,6 +21,7 @@ test("schematic capacitor symbol", () => {
 
   expect(circuit.db.source_component.list()[0]).toMatchInlineSnapshot(`
     {
+      "are_pins_interchangeable": true,
       "capacitance": 0.0001,
       "display_capacitance": "100µF",
       "ftype": "simple_capacitor",

@@ -70,6 +70,7 @@ export class Resistor extends NormalComponent<
 
       resistance: props.resistance,
       display_resistance: this._getSchematicSymbolDisplayValue(),
+      are_pins_interchangeable: true,
     } as SourceSimpleResistorInput)
     this.source_component_id = source_component.source_component_id
   }

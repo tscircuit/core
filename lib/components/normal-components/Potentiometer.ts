@@ -30,11 +30,13 @@ export class Potentiometer extends NormalComponent<typeof potentiometerProps> {
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const pinVariant = props.pinVariant || "two_pin"
     const source_component = db.source_component.insert({
       ftype: "simple_potentiometer",
       name: props.name,
       max_resistance: props.maxResistance,
-      pin_variant: props.pinVariant || "two_pin",
+      pin_variant: pinVariant,
+      are_pins_interchangeable: pinVariant === "two_pin",
     } as any)
     this.source_component_id = source_component.source_component_id
   }

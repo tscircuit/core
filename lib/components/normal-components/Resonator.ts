@@ -29,13 +29,16 @@ export class Resonator extends NormalComponent<typeof resonatorProps> {
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const pinVariant = props.pinVariant || "no_ground"
     const source_component = db.source_component.insert({
       ftype: "simple_resonator",
       name: props.name,
       frequency: props.frequency,
       load_capacitance: props.loadCapacitance,
       supplier_part_numbers: props.supplierPartNumbers,
-      pin_variant: props.pinVariant || "no_ground",
+      pin_variant: pinVariant,
+      are_pins_interchangeable:
+        pinVariant === "no_ground" || pinVariant === "ground_pin",
     } as any)
 
     this.source_component_id = source_component.source_component_id

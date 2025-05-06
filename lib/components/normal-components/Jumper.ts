@@ -32,6 +32,7 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
       name: props.name,
       manufacturer_part_number: props.manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
+      are_pins_interchangeable: true,
     })
     this.source_component_id = source_component.source_component_id!
   }
