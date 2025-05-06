@@ -17,6 +17,8 @@ import { type NormalComponent } from "lib/components/base-components/NormalCompo
 import type { ReactElement, ReactNode } from "react"
 import { catalogue, type Instance } from "./catalogue"
 import { identity } from "transformation-matrix"
+import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import type { RootCircuit } from "lib/RootCircuit"
 
 export type ReactSubtree = {
   element: ReactElement // TODO rename to "reactElement"
@@ -36,6 +38,22 @@ export function prepare<T extends Renderable>(
   }
 
   return object
+}
+
+function createErrorPlaceholderComponent(type: string, props: any, error: any) {
+  const errorComponent =
+    new (class ErrorPlaceholderComponent extends PrimitiveComponent {
+      constructor() {
+        super({})
+        this._parsedProps = {}
+      }
+    })()
+
+  return errorComponent
+}
+
+const CircuitContext = {
+  current: null as RootCircuit | null,
 }
 
 // Define the host config
@@ -69,9 +87,23 @@ const hostConfig: HostConfig<
       )
     }
 
-    const instance = prepare(new target(props) as any, {})
+    try {
+      const instance = prepare(new target(props) as any, {})
+      return instance
+    } catch (error) {
+      const rootCircuit = CircuitContext.current
 
-    return instance
+      if (rootCircuit?.db) {
+        // Add the error to the circuit-json database
+        rootCircuit.db.source_failed_to_create_component_error.insert({
+          type: "source_failed_to_create_component_error",
+          component_type: type,
+          message: error instanceof Error ? error.message : String(error),
+          error_type: "source_failed_to_create_component_error",
+        })
+      }
+      return createErrorPlaceholderComponent(type, props, error)
+    }
   },
   createTextInstance() {
     // We don't need to handle text nodes for this use case
@@ -166,59 +198,70 @@ if (React.version.startsWith("19.")) {
 
 export const createInstanceFromReactElement = (
   reactElm: React.JSX.Element,
+  rootCircuit: RootCircuit,
 ): NormalComponent => {
-  const rootContainer = {
-    children: [] as any[],
-    props: {
-      name: "$root",
-    },
-    add(instance: any) {
-      instance.parent = this
-      this.children.push(instance)
-    },
-    computePcbGlobalTransform() {
-      return identity()
-    },
-  }
-  const containerErrors: Error[] = []
-  const container = reconciler.createContainer(
-    // TODO Replace with store like react-three-fiber
-    // https://github.com/pmndrs/react-three-fiber/blob/a457290856f57741bf8beef4f6ff9dbf4879c0a5/packages/fiber/src/core/index.tsx#L172
-    // https://github.com/pmndrs/react-three-fiber/blob/master/packages/fiber/src/core/store.ts#L168
-    rootContainer,
-    0,
-    null,
-    false,
-    null,
-    "tsci",
-    (error: Error) => {
-      console.log("Error in createContainer")
-      console.error(error)
-      containerErrors.push(error)
-    },
-    null,
-  )
+  const previousCircuit = CircuitContext.current
+  CircuitContext.current = rootCircuit
 
-  if (React.version.startsWith("19.")) {
-    // @ts-expect-error
-    // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
-    reconciler.updateContainerSync(reactElm, container, null, () => {})
-    // @ts-expect-error
-    // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
-    reconciler.flushSyncWork()
-  } else {
-    // React 18 support
-    reconciler.updateContainer(reactElm, container, null, () => {})
-  }
+  try {
+    const rootContainer = {
+      children: [] as any[],
+      props: {
+        name: "$root",
+      },
+      rootCircuit,
+      add(instance: any) {
+        instance.parent = this
+        this.children.push(instance)
+      },
+      computePcbGlobalTransform() {
+        return identity()
+      },
+    }
 
-  // Don't throw here if you want to avoid synchronous errors
-  if (containerErrors.length > 0) {
-    throw containerErrors[0]
-  }
+    const containerErrors: Error[] = []
+    const container = reconciler.createContainer(
+      // TODO Replace with store like react-three-fiber
+      // https://github.com/pmndrs/react-three-fiber/blob/a457290856f57741bf8beef4f6ff9dbf4879c0a5/packages/fiber/src/core/index.tsx#L172
+      // https://github.com/pmndrs/react-three-fiber/blob/master/packages/fiber/src/core/store.ts#L168
+      rootContainer,
+      0,
+      null,
+      false,
+      null,
+      "tsci",
+      (error: Error) => {
+        console.log("Error in createContainer")
+        console.error(error)
+        containerErrors.push(error)
+      },
+      null,
+    )
 
-  const rootInstance = reconciler.getPublicRootInstance(
-    container,
-  ) as NormalComponent
-  if (rootInstance) return rootInstance
-  return rootContainer.children[0] as NormalComponent
+    if (React.version.startsWith("19.")) {
+      // @ts-expect-error
+      // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
+      reconciler.updateContainerSync(reactElm, container, null, () => {})
+      // @ts-expect-error
+      // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
+      reconciler.flushSyncWork()
+    } else {
+      // React 18 support
+      reconciler.updateContainer(reactElm, container, null, () => {})
+    }
+
+    // Don't throw here if you want to avoid synchronous errors
+    if (containerErrors.length > 0) {
+      throw containerErrors[0]
+    }
+
+    const rootInstance = reconciler.getPublicRootInstance(
+      container,
+    ) as NormalComponent
+    if (rootInstance) return rootInstance
+    return rootContainer.children[0] as NormalComponent
+  } finally {
+    // Restore the previous circuit
+    CircuitContext.current = previousCircuit
+  }
 }

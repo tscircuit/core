@@ -43,7 +43,7 @@ export class RootCircuit {
     let component: PrimitiveComponent
     if (isValidElement(componentOrElm)) {
       // TODO store subtree
-      component = createInstanceFromReactElement(componentOrElm)
+      component = createInstanceFromReactElement(componentOrElm, this)
     } else {
       component = componentOrElm as PrimitiveComponent
     }
