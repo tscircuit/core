@@ -1,34 +1,10 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { z } from "zod"
-import type { PcbTraceRoutePoint } from "circuit-json"
+import { pcb_trace_route_point, type PcbTraceRoutePoint } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
 
-const pcbTraceRoutePointWireSchema = z.object({
-  route_type: z.literal("wire"),
-  x: z.number(),
-  y: z.number(),
-  width: z.number(),
-  layer: z.string(),
-  start_pcb_port_id: z.string().optional(),
-  end_pcb_port_id: z.string().optional(),
-})
-
-const pcbTraceRoutePointViaSchema = z.object({
-  route_type: z.literal("via"),
-  x: z.number(),
-  y: z.number(),
-  from_layer: z.string(),
-  to_layer: z.string(),
-})
-
-// Discriminated union for PcbTraceRoutePoint
-const pcbTraceRoutePointSchema = z.discriminatedUnion("route_type", [
-  pcbTraceRoutePointWireSchema,
-  pcbTraceRoutePointViaSchema,
-])
-
 export const pcbTraceProps = z.object({
-  route: z.array(pcbTraceRoutePointSchema),
+  route: z.array(pcb_trace_route_point),
   // If this primitive PcbTrace needs to be associated with a source_trace_id
   // it can be added as a prop here. For footprints, it's often not needed.
   source_trace_id: z.string().optional(),
