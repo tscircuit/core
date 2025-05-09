@@ -20,8 +20,8 @@ it("should render a jumper with pinrow4 footprint", async () => {
         footprint="solderjumper2_bridged12"
         pinCount={2}
         internallyConnectedPins={[["1", "2"]]}
-        pcbX={2}
-        pcbY={2}
+        pcbX={4}
+        pcbY={4}
         schX={2}
         schY={2}
         schRotation={90}
@@ -31,8 +31,8 @@ it("should render a jumper with pinrow4 footprint", async () => {
         footprint="solderjumper3_bridged12"
         pinCount={3}
         internallyConnectedPins={[["1", "2"]]}
-        pcbX={-2}
-        pcbY={-2}
+        pcbX={-4}
+        pcbY={-4}
         schX={-2}
         schY={-2}
       />
@@ -44,8 +44,8 @@ it("should render a jumper with pinrow4 footprint", async () => {
           ["1", "2"],
           ["2", "3"],
         ]}
-        pcbX={2}
-        pcbY={-2}
+        pcbX={4}
+        pcbY={-4}
         schX={2}
         schY={-2}
       />
@@ -55,4 +55,5 @@ it("should render a jumper with pinrow4 footprint", async () => {
   circuit.render()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
