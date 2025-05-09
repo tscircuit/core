@@ -6,12 +6,7 @@ test("missing prop error", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <resistor
-        footprint="0402"
-        name="R1"
-        pcbX={3}
-        schX={6}
-      />
+      <resistor footprint="0402" name="R1" pcbX={3} schX={6} />
     </board>,
   )
 
