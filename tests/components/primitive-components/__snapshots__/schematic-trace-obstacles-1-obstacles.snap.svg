@@ -1,28 +1,28 @@
 <svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
-  <rect data-type="rect" data-label="" data-x="0" data-y="0" x="141.0092451144538" y="259.59580026378177" width="26.846310993874738" height="120.80839947243646" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.2" data-y="-1.0299999999999998" x="141.0092451144538" y="382.41767306075883" width="0" height="13.423155496937397" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.2" data-y="1.0299999999999998" x="134.2976673659851" y="244.15917144230377" width="13.423155496937369" height="13.423155496937397" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="5" data-y="0" x="471.27480127228034" y="306.9489779986931" width="37.47297352509088" height="26.102044002613752" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.7" x="107.4513563721103" y="269.6631668864848" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.49999999999999994" x="107.4513563721103" y="283.0863223834222" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.29999999999999993" x="107.4513563721103" y="296.50947788035955" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.09999999999999987" x="107.4513563721103" y="309.93263337729695" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.10000000000000009" x="107.4513563721103" y="323.35578887423435" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.30000000000000004" x="107.4513563721103" y="336.77894437117175" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.7" x="107.4513563721103" y="363.6252553650465" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.7" x="174.56713385679723" y="363.6252553650465" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.49999999999999994" x="174.56713385679723" y="350.2020998681091" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.29999999999999993" x="174.56713385679723" y="336.77894437117175" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.09999999999999987" x="174.56713385679723" y="323.35578887423435" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.10000000000000009" x="174.56713385679723" y="309.93263337729695" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.30000000000000004" x="174.56713385679723" y="296.50947788035955" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.5" x="174.56713385679723" y="283.0863223834222" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.7" x="174.56713385679723" y="269.6631668864848" width="26.846310993874795" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="4.5662093" data-y="0.045805199999999324" x="447.4739324417618" y="313.5699595149241" width="26.84631099387468" height="6.711577748468699" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="2.46689535" data-y="2.13" x="40.33557888742337" y="176.70781507019345" width="559.3288422251533" height="0.6711577748468471" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="2.46689535" data-y="-2.13" x="40.33557888742337" y="462.62102715495973" width="559.3288422251533" height="0.6711577748468471" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-1.7000000000000002" data-y="0" x="39.99999999999996" y="177.04339395761687" width="0.6711577748468613" height="285.9132120847662" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="6.6337907000000005" data-y="0" x="599.3288422251533" y="177.04339395761687" width="0.6711577748468471" height="285.9132120847662" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0" data-y="0" x="140.58730790351404" y="259.84812151949325" width="26.734168213558576" height="120.3037569610135" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="-0.2" data-y="-1.0299999999999998" x="140.58730790351404" y="382.1569410965236" width="0" height="13.367084106779316" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="-0.2" data-y="1.0299999999999998" x="133.90376585012442" y="244.4759747966971" width="13.367084106779288" height="13.367084106779288" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="5" data-y="0" x="469.47327422798617" y="307.003494907684" width="37.316440903578155" height="25.993010184632" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.7" x="107.16959763656585" y="269.8734345995777" width="26.73416821355856" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.49999999999999994" x="107.16959763656585" y="283.24051870635697" width="26.73416821355856" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.29999999999999993" x="107.16959763656585" y="296.6076028131363" width="26.73416821355856" height="6.683542053389601" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.09999999999999987" x="107.16959763656585" y="309.97468691991554" width="26.73416821355856" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.10000000000000009" x="107.16959763656585" y="323.3417710266948" width="26.73416821355856" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.30000000000000004" x="107.16959763656585" y="336.7088551334741" width="26.73416821355856" height="6.683542053389601" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.7" x="107.16959763656585" y="363.44302334703264" width="26.73416821355856" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.7" x="174.00501817046225" y="363.44302334703264" width="26.734168213558547" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.49999999999999994" x="174.00501817046225" y="350.0759392402534" width="26.734168213558547" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.29999999999999993" x="174.00501817046225" y="336.7088551334741" width="26.734168213558547" height="6.683542053389601" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.09999999999999987" x="174.00501817046225" y="323.3417710266948" width="26.734168213558547" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.10000000000000009" x="174.00501817046225" y="309.97468691991554" width="26.734168213558547" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.30000000000000004" x="174.00501817046225" y="296.6076028131363" width="26.734168213558547" height="6.683542053389601" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.5" x="174.00501817046225" y="283.24051870635697" width="26.734168213558547" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.7" x="174.00501817046225" y="269.8734345995777" width="26.734168213558547" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="4.5662093" data-y="0.045805199999999324" x="445.7718267148026" y="313.596819168666" width="26.734168213558632" height="6.683542053389658" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="2.48439535" data-y="2.13" x="40.33417710266947" y="177.30637716013123" width="559.3316457946611" height="0.6683542053389431" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="2.48439535" data-y="-2.13" x="40.33417710266947" y="462.0252686345298" width="559.3316457946611" height="0.6683542053389715" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="-1.7000000000000002" data-y="0" x="40" y="177.64055426280072" width="0.6683542053389431" height="284.71889147439856" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="6.6687907" data-y="0" x="599.3316457946611" y="177.64055426280072" width="0.6683542053389147" height="284.71889147439856" fill="none" stroke="black" />
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
     <line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5" /><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text>
@@ -51,11 +51,11 @@
 
       // Calculate real coordinates using inverse transformation
       const matrix = {
-        "a": 67.11577748468692,
+        "a": 66.83542053389638,
         "c": 0,
-        "e": 154.43240061139116,
+        "e": 153.95439201029333,
         "b": 0,
-        "d": -67.11577748468692,
+        "d": -66.83542053389638,
         "f": 320
       };
       // Manually invert and apply the affine transform

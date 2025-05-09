@@ -1,5 +1,4 @@
 import type { PrimitiveComponent } from "lib/components"
-import type { Primitive } from "schematic-symbols/drawing/types"
 
 import { isMatchingSelector } from "./is-matching-selector"
 

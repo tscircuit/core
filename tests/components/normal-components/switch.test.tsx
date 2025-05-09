@@ -1,7 +1,7 @@
 import { it, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("should render an switch", async () => {
+it("should render a switch", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">

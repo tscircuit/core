@@ -1,5 +1,4 @@
 import type { PrimitiveComponent } from "lib/components"
-import type { Primitive } from "schematic-symbols/drawing/types"
 
 /**
  * Determines if a component matches a given selector.
