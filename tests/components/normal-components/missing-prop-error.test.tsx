@@ -10,6 +10,7 @@ test("missing prop error", async () => {
         footprint="0402"
         name="R1"
         pcbX={3}
+        schX={6}
       />
     </board>,
   )
@@ -24,9 +25,16 @@ test("missing prop error", async () => {
   expect(sourceMissingPropertyError).toMatchInlineSnapshot(`
     [
       {
-        "component_type": "resistor",
-        "error_type": "source_failed_to_create_component_error",
+        "component_name": "R1",
         "message": "Invalid props for resistor "R1": resistance (Required)",
+        "pcb_center": {
+          "x": 3,
+          "y": 0,
+        },
+        "schematic_center": {
+          "x": 6,
+          "y": 0,
+        },
         "source_failed_to_create_component_error_id": "source_failed_to_create_component_error_0",
         "type": "source_failed_to_create_component_error",
       },
