@@ -31,7 +31,6 @@ it("It should render a jumper with the pinrow4 footprint and rows", async () => 
       <jumper
         name="J1"
         footprint="pinrow6_female_rows2"
-        pcbX={-2}
         pcbY={-2}
         schX={0}
         schY={0}
