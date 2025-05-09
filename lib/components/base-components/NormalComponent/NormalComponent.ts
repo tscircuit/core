@@ -324,7 +324,11 @@ export class NormalComponent<
   }
 
   _addChildrenFromStringFootprint() {
-    const { name: componentName, pcbRotation: componentRotation } = this.props
+    const {
+      name: componentName,
+      pcbRotation: componentRotation,
+      pinLabels,
+    } = this.props
     let { footprint } = this.props
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
@@ -332,7 +336,7 @@ export class NormalComponent<
     if (typeof footprint === "string") {
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromSoup(
-        { componentName, componentRotation },
+        { componentName, componentRotation, footprint, pinLabels },
         fpSoup as any,
       ) // Remove as any when footprinter gets updated
       this.addAll(fpComponents)
