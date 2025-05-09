@@ -6,7 +6,7 @@ export const createPinrowSilkscreenText = ({
   pinLabels,
   readableRotation,
 }: { elm: any; pinLabels: any; readableRotation: number | undefined }) => {
-  const pinNum = (elm.text = elm.text.replace(/[{}]/g, "").toLowerCase())
+  const pinNum = elm.text.replace(/[{}]/g, "").toLowerCase()
 
   let label = pinNum
   if (Array.isArray(pinLabels)) {
