@@ -2,6 +2,7 @@ import type { AnyCircuitElement } from "circuit-json"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
+import { PcbTrace } from "lib/components/primitive-components/PcbTrace"
 import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 import { Keepout } from "lib/components/primitive-components/Keepout"
 import { Hole } from "lib/components/primitive-components/Hole"
@@ -125,6 +126,12 @@ export const createComponentsFromCircuitJson = (
           }),
         )
       }
+    } else if (elm.type === "pcb_trace") {
+      components.push(
+        new PcbTrace({
+          route: elm.route,
+        }),
+      )
     }
   }
   return components
