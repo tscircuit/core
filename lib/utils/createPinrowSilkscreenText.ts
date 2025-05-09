@@ -1,11 +1,16 @@
-import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import type { PinLabelsProp } from "@tscircuit/props"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
+import type { PcbSilkscreenText } from "circuit-json"
 
 export const createPinrowSilkscreenText = ({
   elm,
   pinLabels,
   readableRotation,
-}: { elm: any; pinLabels: any; readableRotation: number | undefined }) => {
+}: {
+  elm: PcbSilkscreenText
+  pinLabels: PinLabelsProp
+  readableRotation: number
+}) => {
   const pinNum = elm.text.replace(/[{}]/g, "").toLowerCase()
 
   let label = pinNum
@@ -18,7 +23,7 @@ export const createPinrowSilkscreenText = ({
 
   return new SilkscreenText({
     anchorAlignment: "center",
-    text: label,
+    text: label ?? pinNum,
     fontSize: elm.font_size + 0.2,
     pcbX: isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
     pcbY: elm.anchor_position.y,

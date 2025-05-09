@@ -7,6 +7,7 @@ import { Keepout } from "lib/components/primitive-components/Keepout"
 import { Hole } from "lib/components/primitive-components/Hole"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
+import type { PinLabelsProp } from "@tscircuit/props"
 
 export const createComponentsFromSoup = (
   {
@@ -18,7 +19,7 @@ export const createComponentsFromSoup = (
     componentName: string
     componentRotation: string
     footprint: string
-    pinLabels: any
+    pinLabels: PinLabelsProp
   },
   soup: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
