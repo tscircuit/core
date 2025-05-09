@@ -21,7 +21,7 @@ import {
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
-import { createComponentsFromSoup } from "lib/utils/createComponentsFromSoup"
+import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import {
   getPinNumberFromLabels,
@@ -335,7 +335,7 @@ export class NormalComponent<
 
     if (typeof footprint === "string") {
       const fpSoup = fp.string(footprint).soup()
-      const fpComponents = createComponentsFromSoup(
+      const fpComponents = createComponentsFromCircuitJson(
         { componentName, componentRotation, footprint, pinLabels },
         fpSoup as any,
       ) // Remove as any when footprinter gets updated

@@ -9,7 +9,7 @@ import { SilkscreenText } from "lib/components/primitive-components/SilkscreenTe
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
 import type { PinLabelsProp } from "@tscircuit/props"
 
-export const createComponentsFromSoup = (
+export const createComponentsFromCircuitJson = (
   {
     componentName,
     componentRotation,
