@@ -6,12 +6,21 @@ import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 import { Keepout } from "lib/components/primitive-components/Keepout"
 import { Hole } from "lib/components/primitive-components/Hole"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
+import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
+import type { PinLabelsProp } from "@tscircuit/props"
 
-export const createComponentsFromSoup = (
+export const createComponentsFromCircuitJson = (
   {
     componentName,
     componentRotation,
-  }: { componentName: string; componentRotation: string },
+    footprint,
+    pinLabels,
+  }: {
+    componentName: string
+    componentRotation: string
+    footprint: string
+    pinLabels: PinLabelsProp
+  },
   soup: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
   const components: PrimitiveComponent[] = []
@@ -96,16 +105,26 @@ export const createComponentsFromSoup = (
       readableRotation = isUpsideDown
         ? (normalizedRotation + 180) % 360
         : normalizedRotation
-      components.push(
-        new SilkscreenText({
-          anchorAlignment: "center",
-          text: componentName,
-          fontSize: elm.font_size + 0.2,
-          pcbX: isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
-          pcbY: elm.anchor_position.y,
-          pcbRotation: readableRotation ?? 0,
-        }),
-      )
+      if (
+        footprint.includes("pinrow") &&
+        elm.text.includes("PIN") &&
+        pinLabels
+      ) {
+        components.push(
+          createPinrowSilkscreenText({ elm, pinLabels, readableRotation }),
+        )
+      } else if (elm.text === "{REF}") {
+        components.push(
+          new SilkscreenText({
+            anchorAlignment: "center",
+            text: componentName,
+            fontSize: elm.font_size + 0.2,
+            pcbX: isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
+            pcbY: elm.anchor_position.y,
+            pcbRotation: readableRotation ?? 0,
+          }),
+        )
+      }
     }
   }
   return components
