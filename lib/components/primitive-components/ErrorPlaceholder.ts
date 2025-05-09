@@ -40,12 +40,6 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
         schematic_center: this._parsedProps.schematic_center,
       })
     }
-
-    return {
-      componentType: this._parsedProps.type,
-      errorMessage: this._parsedProps.message,
-      errorType: "source_failed_to_create_component_error",
-    }
   }
 }
 
