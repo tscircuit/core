@@ -27,7 +27,7 @@ it("should render a jumper with pinrow4 footprint", async () => {
         schRotation={90}
       />
       <jumper
-        name="J2"
+        name="J3"
         footprint="solderjumper3_bridged12"
         pinCount={3}
         internallyConnectedPins={[["1", "2"]]}
@@ -37,7 +37,7 @@ it("should render a jumper with pinrow4 footprint", async () => {
         schY={-2}
       />
       <jumper
-        name="J2"
+        name="J4"
         footprint="solderjumper3_bridged123"
         pinCount={3}
         internallyConnectedPins={[

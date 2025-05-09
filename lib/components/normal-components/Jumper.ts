@@ -16,7 +16,9 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
   schematicDimensions: SchematicBoxDimensions | null = null
 
   get config() {
-    let symbolName = `solderjumper${this.props.pinCount || 2}`
+    let symbolName = ""
+    if (this.props.pinCount)
+      symbolName += `solderjumper${this.props.pinCount || 2}`
     if (
       Array.isArray(this.props.internallyConnectedPins) &&
       this.props.internallyConnectedPins.length > 0
