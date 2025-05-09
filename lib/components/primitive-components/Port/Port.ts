@@ -387,6 +387,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     let bestDisplayPinLabel: string | undefined = undefined
     for (const portHint of sourcePort?.port_hints ?? []) {
       if (portHint.match(/^(pin)?\d+$/)) continue
+      if (
+        portHint.match(/^(left|right)/) &&
+        !sourcePort?.name.match(/^(left|right)/)
+      )
+        continue
       bestDisplayPinLabel = portHint
     }
 
