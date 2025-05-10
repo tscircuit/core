@@ -26,7 +26,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "^1.8.3",
-        "@tscircuit/footprinter": "^0.0.154",
+        "@tscircuit/footprinter": "^0.0.155",
         "@tscircuit/import-snippet": "^0.0.4",
         "@tscircuit/layout": "^0.0.28",
         "@tscircuit/log-soup": "^1.0.2",
@@ -51,7 +51,7 @@
         "tsup": "^8.2.4",
       },
       "peerDependencies": {
-        "@tscircuit/footprinter": "*",
+        "@tscircuit/footprinter": "^0.0.155",
         "typescript": "^5.0.0",
       },
     },
@@ -219,7 +219,7 @@
 
     "@tscircuit/core": ["@tscircuit/core@0.0.325", "", { "dependencies": { "@lume/kiwi": "^0.4.3", "@tscircuit/footprinter": "^0.0.135", "@tscircuit/infgrid-ijump-astar": "^0.0.33", "@tscircuit/math-utils": "^0.0.9", "@tscircuit/props": "^0.0.152", "@tscircuit/schematic-autolayout": "^0.0.6", "@tscircuit/soup-util": "^0.0.41", "circuit-json": "^0.0.139", "circuit-json-to-connectivity-map": "^0.0.17", "format-si-unit": "^0.0.3", "nanoid": "^5.0.7", "performance-now": "^2.1.0", "react-reconciler": "^0.31.0", "react-reconciler-18": "npm:react-reconciler@0.29.2", "schematic-symbols": "^0.0.121", "transformation-matrix": "^2.16.1", "zod": "^3.23.8" }, "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-rhnPwYyEQxkewis/7W+YC+mXwndras6fyFh3syHfaW5Z8zTC3njbXiGkFPWtExrWAV2+AG0g/uL6NfQ+eDCA8Q=="],
 
-    "@tscircuit/footprinter": ["@tscircuit/footprinter@0.0.154", "", { "dependencies": { "@tscircuit/mm": "^0.0.8", "zod": "^3.23.8" }, "peerDependencies": { "circuit-json": "*" } }, "sha512-V6aeZNw/yZG9t1IeSeHswPJOUA92Cd65RW7TntBq6Ers3Wgq0pQN+1FU44y0t5u5d73eagQ3xaD117k+SvsDmw=="],
+    "@tscircuit/footprinter": ["@tscircuit/footprinter@0.0.155", "", { "dependencies": { "@tscircuit/mm": "^0.0.8", "zod": "^3.23.8" }, "peerDependencies": { "circuit-json": "*" } }, "sha512-F9imG3TPYym/kzxGXErnbjOBn1nr/Cb4VoJmC3LwNgRq1N5c4o8ENcCpGvVi12lP8he+GrILALXLL/TUNSJpJg=="],
 
     "@tscircuit/import-snippet": ["@tscircuit/import-snippet@0.0.4", "", { "peerDependencies": { "@tscircuit/core": "*", "@tscircuit/math-utils": "*", "react": "*", "typescript": "^5.0.0" } }, "sha512-zNDp4uuV2Ta3JF8GODWMh5LVV4oxkDdtsNkj7u40WDoztnjLflSd/VvyBOv/rT0Yl4nd/vXIym4jehxqvCIq8w=="],
 
