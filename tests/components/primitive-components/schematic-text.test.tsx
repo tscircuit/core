@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("SilkscreenText rendering", () => {
+test("SchematicText Test", () => {
   const { project } = getTestFixture()
 
   project.add(
