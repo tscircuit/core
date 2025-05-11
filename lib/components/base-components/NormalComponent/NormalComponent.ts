@@ -539,6 +539,7 @@ export class NormalComponent<
           : center.y - (schematic_box_height ?? 0) / 2 - 0.13,
       },
       color: "#006464",
+      font_size: 0.05,
     })
     const component_name_text = db.schematic_text.insert({
       text: props.name ?? "",
@@ -554,6 +555,7 @@ export class NormalComponent<
           : center.y + (schematic_box_height ?? 0) / 2 + 0.13,
       },
       color: "#006464",
+      font_size: 0.05,
     })
     this.schematic_component_id = schematic_component.schematic_component_id
   }

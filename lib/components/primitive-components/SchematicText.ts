@@ -21,6 +21,7 @@ export class SchematicText extends PrimitiveComponent<
     db.schematic_text.insert({
       anchor: props.anchor ?? "center",
       text: props.text,
+      font_size: props.fontSize,
       color: props.color || "#000000",
       position: {
         x: props.schX,
