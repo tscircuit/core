@@ -20,6 +20,7 @@ export const orderedRenderPhases = [
   "SourceTraceRender",
   "SourceAddConnectivityMapKey",
   "SchematicComponentRender",
+  "SchematicPrimitiveRender",
   "SchematicPortRender",
   "SchematicLayout",
   "SchematicTraceRender",
