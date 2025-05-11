@@ -69,4 +69,36 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
 
     this.pcb_component_id = pcb_component.pcb_component_id
   }
+
+  doInitialPcbTraceRender() {
+    const { db } = this.root!
+    const pcb_ports = db.pcb_port.list({
+      pcb_component_id: this.pcb_component_id,
+    })
+    const pinLabelToPortId: Record<string, string> = {}
+    // Map pin labels ("1", "2", etc.) to pcb_port_id
+    for (const port of pcb_ports) {
+      const match = port.source_port_id && port.source_port_id.match(/(\d+)$/)
+      if (match) {
+        const label = (parseInt(match[1], 10) + 1).toString()
+        pinLabelToPortId[label] = port.pcb_port_id
+      }
+    }
+    const traces = db.pcb_trace.list()
+    const updatePortId = (portId: string | undefined) => {
+      if (portId && typeof portId === "string" && portId.startsWith("{PIN")) {
+        const pin = portId.replace("{PIN", "").replace("}", "")
+        return pinLabelToPortId[pin] || portId
+      }
+      return portId
+    }
+    for (const trace of traces) {
+      if (!trace.route) continue
+      for (const segment of trace.route) {
+        if (segment.route_type !== "wire") continue
+        segment.start_pcb_port_id = updatePortId(segment.start_pcb_port_id)
+        segment.end_pcb_port_id = updatePortId(segment.end_pcb_port_id)
+      }
+    }
+  }
 }
