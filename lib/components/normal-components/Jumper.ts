@@ -85,36 +85,19 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
       }
     }
     const traces = db.pcb_trace.list()
+    const updatePortId = (portId: string | undefined) => {
+      if (portId && typeof portId === "string" && portId.startsWith("{PIN")) {
+        const pin = portId.replace("{PIN", "").replace("}", "")
+        return pinLabelToPortId[pin] || portId
+      }
+      return portId
+    }
     for (const trace of traces) {
-      if (trace.route) {
-        for (const segment of trace.route) {
-          if (segment.route_type === "wire") {
-            if (
-              segment.start_pcb_port_id &&
-              typeof segment.start_pcb_port_id === "string" &&
-              segment.start_pcb_port_id.startsWith("{PIN")
-            ) {
-              const pin = segment.start_pcb_port_id
-                .replace("{PIN", "")
-                .replace("}", "")
-              if (pinLabelToPortId[pin]) {
-                segment.start_pcb_port_id = pinLabelToPortId[pin]
-              }
-            }
-            if (
-              segment.end_pcb_port_id &&
-              typeof segment.end_pcb_port_id === "string" &&
-              segment.end_pcb_port_id.startsWith("{PIN")
-            ) {
-              const pin = segment.end_pcb_port_id
-                .replace("{PIN", "")
-                .replace("}", "")
-              if (pinLabelToPortId[pin]) {
-                segment.end_pcb_port_id = pinLabelToPortId[pin]
-              }
-            }
-          }
-        }
+      if (!trace.route) continue
+      for (const segment of trace.route) {
+        if (segment.route_type !== "wire") continue
+        segment.start_pcb_port_id = updatePortId(segment.start_pcb_port_id)
+        segment.end_pcb_port_id = updatePortId(segment.end_pcb_port_id)
       }
     }
   }
