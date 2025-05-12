@@ -17,6 +17,8 @@ import { type NormalComponent } from "lib/components/base-components/NormalCompo
 import type { ReactElement, ReactNode } from "react"
 import { catalogue, type Instance } from "./catalogue"
 import { identity } from "transformation-matrix"
+import type { RootCircuit } from "lib/RootCircuit"
+import { createErrorPlaceholderComponent } from "lib/components/primitive-components/ErrorPlaceholder"
 
 export type ReactSubtree = {
   element: ReactElement // TODO rename to "reactElement"
@@ -69,9 +71,12 @@ const hostConfig: HostConfig<
       )
     }
 
-    const instance = prepare(new target(props) as any, {})
-
-    return instance
+    try {
+      const instance = prepare(new target(props) as any, {})
+      return instance
+    } catch (error) {
+      return createErrorPlaceholderComponent(props, error)
+    }
   },
   createTextInstance() {
     // We don't need to handle text nodes for this use case
