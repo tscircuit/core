@@ -4,7 +4,7 @@ import { schematicTextProps } from "@tscircuit/props"
 export class SchematicText extends PrimitiveComponent<
   typeof schematicTextProps
 > {
-  isPcbPrimitive = true
+  isSchematicPrimitive = true
 
   get config() {
     return {
