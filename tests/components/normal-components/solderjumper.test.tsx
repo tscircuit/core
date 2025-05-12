@@ -24,14 +24,16 @@ it("should render a jumper with pinrow4 footprint", async () => {
         pcbY={4}
         schX={2}
         schY={2}
+        layer={"bottom"}
         schRotation={90}
       />
       <jumper
         name="J3"
-        footprint="solderjumper3_bridged12"
+        footprint="solderjumper3_bridged23"
         pinCount={3}
-        internallyConnectedPins={[["1", "2"]]}
+        internallyConnectedPins={[["3", "2"]]}
         pcbX={-4}
+        layer={"bottom"}
         pcbY={-4}
         schX={-2}
         schY={-2}
