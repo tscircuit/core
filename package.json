@@ -51,7 +51,7 @@
     "@tscircuit/checks": "^0.0.46",
     "@tscircuit/circuit-json-util": "^0.0.47",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
-    "@tscircuit/math-utils": "^0.0.14",
+    "@tscircuit/math-utils": "^0.0.18",
     "@tscircuit/props": "^0.0.178",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "circuit-json-to-connectivity-map": "^0.0.22",
