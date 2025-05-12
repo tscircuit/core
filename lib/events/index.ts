@@ -7,6 +7,7 @@ export type RootCircuitEventName =
   | "renderable:renderLifecycle:anyEvent"
   | `renderable:renderLifecycle:${RenderPhase}:start`
   | `renderable:renderLifecycle:${RenderPhase}:end`
+  | `board:renderPhaseStarted`
   | "external:evalError" // TODO remove
   | "autorouting:start"
   | "autorouting:end"

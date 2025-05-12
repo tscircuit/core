@@ -4,15 +4,23 @@ import type { RenderPhase } from "lib/components/base-components/Renderable"
 
 test("render lifecycle events are emitted", () => {
   const circuit = new RootCircuit()
-  const events: Array<{
+  const lifecycleEvents: Array<{
     type: string
     renderId: string
     componentDisplayName: string
   }> = []
+  const boardPhaseStartedEvents: Array<{
+    type: string
+    renderId: string
+    phase: RenderPhase
+  }> = []
 
   // Listen for all render lifecycle events
   circuit.on("renderable:renderLifecycle:anyEvent", (event) => {
-    events.push(event)
+    lifecycleEvents.push(event)
+  })
+  circuit.on("board:renderPhaseStarted", (event) => {
+    boardPhaseStartedEvents.push(event)
   })
 
   circuit.add(
@@ -32,10 +40,10 @@ test("render lifecycle events are emitted", () => {
   ] as RenderPhase[]
 
   for (const phase of phases) {
-    const startEvent = events.find(
+    const startEvent = lifecycleEvents.find(
       (e) => e.type === `renderable:renderLifecycle:${phase}:start`,
     )
-    const endEvent = events.find(
+    const endEvent = lifecycleEvents.find(
       (e) => e.type === `renderable:renderLifecycle:${phase}:end`,
     )
 
@@ -44,6 +52,8 @@ test("render lifecycle events are emitted", () => {
   }
 
   // Verify events contain component info
-  const firstEvent = events[0]
+  const firstEvent = lifecycleEvents[0]
   expect(firstEvent.componentDisplayName).toBeTruthy()
+
+  expect(boardPhaseStartedEvents.length).toBeGreaterThan(5)
 })

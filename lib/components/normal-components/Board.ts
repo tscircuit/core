@@ -2,6 +2,7 @@ import { boardProps } from "@tscircuit/props"
 import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
 import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
+import type { RenderPhase } from "../base-components/Renderable"
 
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
@@ -169,6 +170,19 @@ export class Board extends Group<typeof boardProps> {
     const errors = checkEachPcbTraceNonOverlapping(db.toArray())
     for (const error of errors) {
       db.pcb_trace_error.insert(error)
+    }
+  }
+
+  override _emitRenderLifecycleEvent(
+    phase: RenderPhase,
+    startOrEnd: "start" | "end",
+  ) {
+    super._emitRenderLifecycleEvent(phase, startOrEnd)
+    if (startOrEnd === "start") {
+      this.root?.emit("board:renderPhaseStarted", {
+        renderId: this._renderId,
+        phase,
+      })
     }
   }
 }
