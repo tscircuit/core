@@ -8,6 +8,9 @@ it("should render a jumper with pinrow4 footprint", async () => {
 
   circuit.add(
     <board width="20mm" height="15mm">
+      <resistor name="R1" footprint={"0402"} resistance={"4k"} />
+      <resistor name="R2" pcbX={3} footprint={"0402"} resistance={"4k"} />
+      <resistor name="R3" pcbY={3} footprint={"0402"} resistance={"4k"} />
       <jumper
         name="J1"
         footprint="solderjumper3_bridged12"
@@ -18,7 +21,8 @@ it("should render a jumper with pinrow4 footprint", async () => {
         schX={-2}
         schY={-2}
       />
-      <resistor name="R1" footprint={"0402"} resistance={"4k"} />
+      <trace from={".R2 > .pin1"} to={".R3 > .pin2"} />
+      <trace from={".R2 > .pin2"} to={".R3 > .pin1"} />
       <trace from={".J1 > .pin1"} to={".R1 > .pin1"} />
       <trace from={".J1 > .pin3"} to={".R1 > .pin2"} />
     </board>,

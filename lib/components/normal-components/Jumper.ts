@@ -77,13 +77,12 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
     })
     const pinLabelToPortId: Record<string, string> = {}
     // Map pin labels ("1", "2", etc.) to pcb_port_id
-    for (const port of pcb_ports) {
-      const match = port.source_port_id && port.source_port_id.match(/(\d+)$/)
-      if (match) {
-        const label = (parseInt(match[1], 10) + 1).toString()
-        pinLabelToPortId[label] = port.pcb_port_id
-      }
+    for (let i = 0; i < pcb_ports.length; i++) {
+      const port = pcb_ports[i]
+      const label = (i + 1).toString()
+      pinLabelToPortId[label] = port.pcb_port_id
     }
+    console.log(pinLabelToPortId)
     const traces = db.pcb_trace.list()
     const updatePortId = (portId: string | undefined) => {
       if (portId && typeof portId === "string" && portId.startsWith("{PIN")) {
