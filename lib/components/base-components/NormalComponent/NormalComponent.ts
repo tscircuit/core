@@ -924,6 +924,7 @@ export class NormalComponent<
 
     const pcb_component = db.pcb_component.get(this.pcb_component_id!)
 
+    if (cadModel === "") return
     if (typeof cadModel === "string") {
       throw new Error("String cadModel not yet implemented")
     }
