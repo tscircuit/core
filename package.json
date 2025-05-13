@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
-    "@tscircuit/footprinter": "^0.0.156",
+    "@tscircuit/footprinter": "^0.0.159",
     "@tscircuit/import-snippet": "^0.0.4",
     "@tscircuit/layout": "^0.0.28",
     "@tscircuit/log-soup": "^1.0.2",
