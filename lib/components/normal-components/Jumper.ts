@@ -80,16 +80,22 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
     for (let i = 0; i < pcb_ports.length; i++) {
       const port = pcb_ports[i]
       const sourcePort = db.source_port.get(port.source_port_id)
-      let label = ""
+      let pinLabel = ""
       if (typeof sourcePort?.pin_number === "number") {
-        label = sourcePort.pin_number.toString()
+        pinLabel = sourcePort.pin_number.toString()
       } else if (Array.isArray(sourcePort?.port_hints)) {
-        const numericHint = sourcePort.port_hints.find((h: string) =>
-          /^\d+$/.test(h),
+        let matchedHint = sourcePort.port_hints.find((h: string) =>
+          /^(pin)?\d+$/.test(h),
         )
-        label = numericHint || (i + 1).toString()
+        if (matchedHint) {
+          if (/^pin\d+$/.test(matchedHint)) {
+            pinLabel = matchedHint.replace(/^pin/, "")
+          } else {
+            pinLabel = matchedHint
+          }
+        }
       }
-      pinLabelToPortId[label] = port.pcb_port_id
+      pinLabelToPortId[pinLabel] = port.pcb_port_id
     }
     const traces = db.pcb_trace.list()
     const updatePortId = (portId: string | undefined) => {
