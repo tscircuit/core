@@ -918,6 +918,7 @@ export class NormalComponent<
 
     if (!this.pcb_component_id) return
     if (!cadModel && !this.props.footprint) return
+    if (cadModel === null) return
 
     // Use post-layout bounds
     const bounds = this._getPcbCircuitJsonBounds()
