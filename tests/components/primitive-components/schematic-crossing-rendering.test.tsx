@@ -5,7 +5,7 @@ test("schematic crossing rendering with reproduced bad crossing (upward)", () =>
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm">
+    <board width="20mm" height="20mm" routingDisabled>
       <chip
         name="U1"
         schX={0}
