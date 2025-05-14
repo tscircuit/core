@@ -6,7 +6,7 @@ test("schematic net symbol", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="22mm" height="22mm">
+    <board width="22mm" height="22mm" routingDisabled>
       <resistor name="R1" resistance="10k" footprint="0402" schX={3} schY={0} />
       <capacitor
         name="C1"

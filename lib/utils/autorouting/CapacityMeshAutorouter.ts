@@ -42,6 +42,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
     this.solver = new CapacityMeshSolver(input as any, {
       capacityDepth,
       targetMinCapacity,
+      cacheProvider: null,
     })
 
     this.stepDelay = stepDelay

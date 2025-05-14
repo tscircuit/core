@@ -6,7 +6,7 @@ test("<pushbutton /> with connections prop", async () => {
 
   // Create a circuit with a pushbutton and a resistor, connecting them via the connections prop
   circuit.add(
-    <board width="30mm" height="20mm">
+    <board width="30mm" height="20mm" routingDisabled>
       <pushbutton
         name="SW1"
         footprint="pushbutton"
