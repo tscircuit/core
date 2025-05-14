@@ -12,10 +12,10 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
       component_name: props.name,
       error_type: "source_failed_to_create_component_error",
       message: error instanceof Error ? error.message : String(error),
-      pcbX: props.pcbX || 0,
-      pcbY: props.pcbY || 0,
-      schX: props.schX || 0,
-      schY: props.schY || 0,
+      pcbX: props.pcbX,
+      pcbY: props.pcbY,
+      schX: props.schX,
+      schY: props.schY,
     }
   }
 
