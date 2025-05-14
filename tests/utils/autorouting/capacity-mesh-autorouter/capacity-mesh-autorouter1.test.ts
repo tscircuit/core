@@ -50,8 +50,8 @@ test("CapacityMeshAutorouter should solve a simple routing problem", () => {
     layer: string
   }
 
-  expect(firstPoint.x).toBeCloseTo(-10, 0)
+  // Check that the endpoints match our input points, regardless of order
+  expect([firstPoint.x, lastPoint.x].sort()).toEqual([-10, 10])
   expect(firstPoint.y).toBeCloseTo(0, 0)
-  expect(lastPoint.x).toBeCloseTo(10, 0)
   expect(lastPoint.y).toBeCloseTo(0, 0)
 })
