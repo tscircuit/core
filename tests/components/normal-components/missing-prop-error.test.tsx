@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("missing prop error", async () => {
+test("(ErrorPlaceholder) - missing prop error", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
