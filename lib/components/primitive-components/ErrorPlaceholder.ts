@@ -1,6 +1,5 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent/PrimitiveComponent"
 import { z } from "zod"
-import { compose, translate } from "transformation-matrix"
 
 class ErrorPlaceholderComponent extends PrimitiveComponent {
   constructor(props: any, error: any) {
