@@ -1,7 +1,11 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { platedHoleProps } from "@tscircuit/props"
 import type { Port } from "./Port"
-import type { PCBPlatedHoleInput, PcbPlatedHoleOval } from "circuit-json"
+import type {
+  PCBPlatedHoleInput,
+  PcbPlatedHoleOval,
+  PcbHoleCircularWithRectPad,
+} from "circuit-json"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
@@ -27,6 +31,9 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     }
     if (props.shape === "oval" || props.shape === "pill") {
       return { width: props.outerWidth, height: props.outerHeight }
+    }
+    if (props.shape === "circularHoleWithRectPad") {
+      return { width: props.rectPadWidth, height: props.rectPadHeight }
     }
     throw new Error(
       `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
@@ -171,6 +178,22 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       })
+    } else if (props.shape === "circularHoleWithRectPad") {
+      const pcb_plated_hole = db.pcb_plated_hole.insert({
+        pcb_component_id,
+        pcb_port_id: this.matchedPort?.pcb_port_id!,
+        hole_diameter: props.holeDiameter,
+        rect_pad_width: props.rectPadWidth,
+        rect_pad_height: props.rectPadHeight,
+        shape: "circular_hole_with_rect_pad" as const,
+        port_hints: this.getNameAndAliases(),
+        x: position.x,
+        y: position.y,
+        layers: ["top", "bottom"],
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+      } as PcbHoleCircularWithRectPad)
+      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     }
   }
 

@@ -55,7 +55,7 @@
     "@tscircuit/props": "^0.0.179",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "circuit-json-to-connectivity-map": "^0.0.22",
-    "circuit-json": "0.0.170",
+    "circuit-json": "^0.0.170",
     "schematic-symbols": "^0.0.132"
   },
   "peerDependencies": {
