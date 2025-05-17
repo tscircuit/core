@@ -90,7 +90,7 @@ test("schematic net symbol", () => {
       <trace schDisplayLabel="GND2" from=".U1 > .pin13" to=".R1 > .pin2" />
       <trace schDisplayLabel="GND2" from=".U1 > .pin20" to=".R1 > .pin2" />
       <trace schDisplayLabel="GND2" from=".U1 > .pin28" to=".R1 > .pin2" />
-      <trace from=".U1 > .pin4" to=".R1 > .pin2" />
+      <trace schDisplayLabel="GND2" from=".U1 > .pin4" to=".R1 > .pin2" />
     </board>,
   )
 
