@@ -48,52 +48,58 @@ export const createDownwardNetLabelGroundSymbol = (
   { db }: { db: CircuitJsonUtilObjects },
 ): void => {
   const offsets = calculateOffsets(port)
+
+  const isLeftOrRight =
+    port.facingDirection === "left" || port.facingDirection === "right"
+
+  const horizontalEndPos = {
+    x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
+    y: anchorPos.y + offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
+  }
+
+  const groundSymbolPos = isLeftOrRight
+    ? {
+        x: horizontalEndPos.x,
+        y: horizontalEndPos.y - 0.5,
+      }
+    : horizontalEndPos
+
   db.schematic_net_label.insert({
     anchor_side: "top",
-    center: {
-      x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
-      y:
-        anchorPos.y +
-        offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
-    },
+    center: groundSymbolPos,
     source_net_id: port.source_port_id!,
     text: schDisplayLabel!,
-    anchor_position: {
-      x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
-      y:
-        anchorPos.y +
-        offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
-    },
+    anchor_position: groundSymbolPos,
     symbol_name: "ground_horz",
   })
 
+  const edges = [
+    {
+      from: { x: anchorPos.x, y: anchorPos.y },
+      to: {
+        x: anchorPos.x,
+        y: anchorPos.y + offsets.handleUp * offsets.schBoxVertOffset,
+      },
+    },
+    {
+      from: { x: anchorPos.x, y: anchorPos.y },
+      to: horizontalEndPos,
+    },
+  ]
+
+  if (isLeftOrRight) {
+    edges.push({
+      from: horizontalEndPos,
+      to: groundSymbolPos,
+    })
+  }
+
+  const junctions = [horizontalEndPos]
+  if (isLeftOrRight) junctions.push(groundSymbolPos)
+
   db.schematic_trace.insert({
-    edges: [
-      {
-        from: { x: anchorPos.x, y: anchorPos.y },
-        to: {
-          x: anchorPos.x,
-          y: anchorPos.y + offsets.handleUp * offsets.schBoxVertOffset,
-        },
-      },
-      {
-        from: { x: anchorPos.x, y: anchorPos.y },
-        to: {
-          x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
-          y:
-            anchorPos.y +
-            offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
-        },
-      },
-    ],
-    junctions: [
-      {
-        x: anchorPos.x + offsets.horzPortDirection * offsets.schBoxHorzOffset,
-        y:
-          anchorPos.y +
-          offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
-      },
-    ],
+    edges,
+    junctions,
     source_trace_id: source_trace_id!,
   })
 }
