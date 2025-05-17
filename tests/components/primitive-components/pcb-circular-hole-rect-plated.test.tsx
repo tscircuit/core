@@ -2,9 +2,9 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("pcb circular hole rect plated", () => {
-  const { project } = getTestFixture()
+  const { circuit } = getTestFixture()
 
-  project.add(
+  circuit.add(
     <board width="10mm" height="10mm">
       <platedhole
         shape="circularHoleWithRectPad"
@@ -17,7 +17,7 @@ test("pcb circular hole rect plated", () => {
     </board>,
   )
 
-  project.render()
+  circuit.render()
 
-  expect(project).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
