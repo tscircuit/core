@@ -125,7 +125,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
             })
           : db.pcb_smtpad.insert({
               pcb_component_id,
-              layer: props.layer ?? "top",
+              layer: maybeFlipLayer(props.layer ?? "top"),
               shape: "rotated_rect",
               ...{ width: props.width, height: props.height },
               x: position.x,
@@ -137,7 +137,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
             } as PcbSmtPad)
       if (pcb_smtpad.shape === "rect")
         db.pcb_solder_paste.insert({
-          layer: pcb_smtpad.layer,
+          layer: maybeFlipLayer(props.layer ?? "top"),
           shape: "rect",
           // @ts-ignore: no idea why this is triggering
           width: pcb_smtpad.width * 0.7,
@@ -151,7 +151,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         })
       if (pcb_smtpad.shape === "rotated_rect")
         db.pcb_solder_paste.insert({
-          layer: pcb_smtpad.layer,
+          layer: maybeFlipLayer(props.layer ?? "top"),
           shape: "rotated_rect",
           // @ts-ignore: no idea why this is triggering
           width: pcb_smtpad.width * 0.7,
