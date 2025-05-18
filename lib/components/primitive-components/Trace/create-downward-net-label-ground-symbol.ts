@@ -94,8 +94,7 @@ export const createDownwardNetLabelGroundSymbol = (
     })
   }
 
-  const junctions = [horizontalEndPos]
-  if (isLeftOrRight) junctions.push(groundSymbolPos)
+  const junctions = [groundSymbolPos]
 
   db.schematic_trace.insert({
     edges,
