@@ -7,7 +7,7 @@ test("pcb circular hole rect plated", () => {
   circuit.add(
     <board width="10mm" height="10mm">
       <platedhole
-        shape="circularHoleWithRectPad"
+        shape="circular_hole_with_rect_pad"
         holeDiameter={2}
         rectPadWidth={4}
         rectPadHeight={4}

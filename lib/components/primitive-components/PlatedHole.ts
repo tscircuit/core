@@ -32,7 +32,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     if (props.shape === "oval" || props.shape === "pill") {
       return { width: props.outerWidth, height: props.outerHeight }
     }
-    if (props.shape === "circularHoleWithRectPad") {
+    if (props.shape === "circular_hole_with_rect_pad") {
       return { width: props.rectPadWidth, height: props.rectPadHeight }
     }
     throw new Error(
@@ -178,7 +178,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       })
-    } else if (props.shape === "circularHoleWithRectPad") {
+    } else if (props.shape === "circular_hole_with_rect_pad") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!,

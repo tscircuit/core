@@ -52,7 +52,7 @@
     "@tscircuit/circuit-json-util": "^0.0.47",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/math-utils": "^0.0.18",
-    "@tscircuit/props": "^0.0.179",
+    "@tscircuit/props": "^0.0.183",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "circuit-json-to-connectivity-map": "^0.0.22",
     "circuit-json": "^0.0.170",
