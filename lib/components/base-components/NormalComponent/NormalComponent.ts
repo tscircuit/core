@@ -965,9 +965,9 @@ export class NormalComponent<
         x: rotationOffset.x,
         y: (computedLayer === "top" ? 0 : 180) + rotationOffset.y,
         z:
-          (pcb_component?.rotation ?? 0) +
-          (computedLayer === "bottom" ? 180 : 0) +
-          rotationOffset.z,
+          computedLayer === "bottom"
+            ? -((pcb_component?.rotation ?? 0) + rotationOffset.z) + 180
+            : (pcb_component?.rotation ?? 0) + rotationOffset.z,
       },
       pcb_component_id: this.pcb_component_id!,
       source_component_id: this.source_component_id!,
