@@ -21,4 +21,4 @@
     L 370.70967741952444,215.806451612732
     L 490.16129032276615,215.806451612732
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="4.83870967742px"/><text class="net-label-text" x="481.4516129034102" y="241.9354838708" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="43.54838709678px" transform="">GND</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="4.83870967742px"/><text class="net-label-text" x="481.4516129034102" y="241.9354838708" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="43.54838709678px" transform="">GND</text></svg>

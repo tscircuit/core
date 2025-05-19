@@ -35,7 +35,7 @@
     "@types/react-reconciler": "^0.28.9",
     "bun-match-svg": "0.0.8",
     "chokidar-cli": "^3.0.0",
-    "circuit-to-svg": "^0.0.113",
+    "circuit-to-svg": "^0.0.127",
     "concurrently": "^9.1.2",
     "debug": "^4.3.6",
     "graphics-debug": "^0.0.4",
@@ -52,10 +52,10 @@
     "@tscircuit/circuit-json-util": "^0.0.47",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/math-utils": "^0.0.18",
-    "@tscircuit/props": "^0.0.183",
+    "@tscircuit/props": "^0.0.184",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "circuit-json-to-connectivity-map": "^0.0.22",
-    "circuit-json": "^0.0.170",
+    "circuit-json": "^0.0.180",
     "schematic-symbols": "^0.0.132"
   },
   "peerDependencies": {

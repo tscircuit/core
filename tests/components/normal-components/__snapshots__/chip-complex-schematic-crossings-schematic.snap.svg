@@ -21,123 +21,123 @@
     L 434.77428571425844,243.24044571432563
     L 495.29999999998284,243.24044571432563
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="492.21428571426804" y="252.49758857147003" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN4</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="492.21428571426804" y="252.49758857147003" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN4</text><path class="net-label" d="
     M 304.3963457142367,342.9039857143422
     L 309.0249171428089,333.6468428571978
     L 369.5506314285333,333.6468428571978
     L 369.5506314285333,352.1611285714866
     L 309.0249171428089,352.1611285714866
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="312.1106314285237" y="342.9039857143422" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN4</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="312.1106314285237" y="342.9039857143422" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN4</text><path class="net-label" d="
     M 499.928571428555,303.92616000005
     L 495.2999999999828,313.1833028571944
     L 434.77428571425844,313.1833028571944
     L 434.77428571425844,294.6690171429056
     L 495.29999999998284,294.6690171429056
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="492.21428571426804" y="303.92616000005" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN7</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="492.21428571426804" y="303.92616000005" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN7</text><path class="net-label" d="
     M 304.3963457142367,171.47541428574215
     L 309.0249171428089,162.21827142859775
     L 369.5506314285333,162.21827142859775
     L 369.5506314285333,180.73255714288655
     L 309.0249171428089,180.73255714288655
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="312.1106314285237" y="171.47541428574215" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN7</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="312.1106314285237" y="171.47541428574215" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN7</text><path class="net-label" d="
     M 499.928571428555,321.06901714291
     L 495.2999999999828,330.3261600000544
     L 434.77428571425844,330.3261600000544
     L 434.77428571425844,311.8118742857656
     L 495.29999999998284,311.8118742857656
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="492.21428571426804" y="321.06901714291" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN8</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="492.21428571426804" y="321.06901714291" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN8</text><path class="net-label" d="
     M 304.3963457142367,85.76112857144216
     L 309.0249171428089,76.50398571429776
     L 369.5506314285333,76.50398571429776
     L 369.5506314285333,95.01827142858656
     L 309.0249171428089,95.01827142858656
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="312.1106314285237" y="85.76112857144216" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN8</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="312.1106314285237" y="85.76112857144216" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_IN8</text><path class="net-label" d="
     M 697.071428571445,252.49758857147
     L 701.7000000000172,243.2404457143256
     L 778.58000000003,243.2404457143256
     L 778.58000000003,261.7547314286144
     L 701.7000000000172,261.7547314286144
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="704.7857142857321" y="252.49758857147" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT5</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="704.7857142857321" y="252.49758857147" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT5</text><path class="net-label" d="
     M 895.6036542857638,342.8571428571994
     L 890.9750828571916,352.1142857143438
     L 814.0950828571788,352.1142857143438
     L 814.0950828571788,333.600000000055
     L 890.9750828571916,333.600000000055
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="887.8893685714768" y="342.8571428571994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT5</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="887.8893685714768" y="342.8571428571994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT5</text><path class="net-label" d="
     M 697.071428571445,303.92616000005
     L 701.7000000000172,294.6690171429056
     L 778.58000000003,294.6690171429056
     L 778.58000000003,313.1833028571944
     L 701.7000000000172,313.1833028571944
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="704.7857142857321" y="303.92616000005" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT2</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="704.7857142857321" y="303.92616000005" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT2</text><path class="net-label" d="
     M 895.6036542857638,171.4285714285994
     L 890.9750828571916,180.6857142857438
     L 814.0950828571788,180.6857142857438
     L 814.0950828571788,162.171428571455
     L 890.9750828571916,162.171428571455
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="887.8893685714768" y="171.4285714285994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT2</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="887.8893685714768" y="171.4285714285994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT2</text><path class="net-label" d="
     M 697.071428571445,321.06901714291
     L 701.7000000000172,311.8118742857656
     L 778.58000000003,311.8118742857656
     L 778.58000000003,330.3261600000544
     L 701.7000000000172,330.3261600000544
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="704.7857142857321" y="321.06901714291" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT1</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="704.7857142857321" y="321.06901714291" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT1</text><path class="net-label" d="
     M 895.6036542857638,85.7142857142994
     L 890.9750828571916,94.9714285714438
     L 814.0950828571788,94.97142857144378
     L 814.0950828571788,76.45714285715498
     L 890.9750828571916,76.45714285715499
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="887.8893685714768" y="85.7142857142994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT1</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="887.8893685714768" y="85.7142857142994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">U1_OUT1</text><path class="net-label" d="
     M 990.1106314286367,85.76112857144216
     L 994.7392028572089,76.50398571429776
     L 1068.5449171429354,76.50398571429776
     L 1068.5449171429354,95.01827142858656
     L 994.7392028572089,95.01827142858656
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="997.8249171429237" y="85.76112857144216" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R12_pin2</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="997.8249171429237" y="85.76112857144216" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R12_pin2</text><path class="net-label" d="
     M 209.88936857136378,514.2857142857995
     L 205.26079714279157,523.5428571429438
     L 131.455082857065,523.5428571429438
     L 131.455082857065,505.0285714286551
     L 205.26079714279157,505.0285714286551
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="202.17508285707677" y="514.2857142857995" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R12_pin2</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="202.17508285707677" y="514.2857142857995" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R12_pin2</text><path class="net-label" d="
     M 990.1106314286367,257.18970000004214
     L 994.7392028572089,247.93255714289774
     L 1068.5449171429354,247.93255714289774
     L 1068.5449171429354,266.44684285718654
     L 994.7392028572089,266.44684285718654
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="997.8249171429237" y="257.18970000004214" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R10_pin2</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="997.8249171429237" y="257.18970000004214" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R10_pin2</text><path class="net-label" d="
     M 209.88936857136378,342.8571428571994
     L 205.26079714279157,352.1142857143438
     L 131.455082857065,352.1142857143438
     L 131.455082857065,333.600000000055
     L 205.26079714279157,333.600000000055
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="202.17508285707677" y="342.8571428571994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R10_pin2</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="202.17508285707677" y="342.8571428571994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R10_pin2</text><path class="net-label" d="
     M 990.1106314286367,428.6182714286422
     L 994.7392028572089,419.3611285714978
     L 1060.1906314286484,419.3611285714978
     L 1060.1906314286484,437.8754142857866
     L 994.7392028572089,437.8754142857866
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="997.8249171429237" y="428.6182714286422" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R8_pin2</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="997.8249171429237" y="428.6182714286422" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R8_pin2</text><path class="net-label" d="
     M 209.88936857136378,171.4285714285994
     L 205.26079714279157,180.6857142857438
     L 139.80936857135208,180.6857142857438
     L 139.80936857135208,162.171428571455
     L 205.26079714279157,162.171428571455
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="202.17508285707677" y="171.4285714285994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R8_pin2</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.7142857142860002px"/><text class="net-label-text" x="202.17508285707677" y="171.4285714285994" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="15.428571428574001px" transform="">R8_pin2</text></svg>

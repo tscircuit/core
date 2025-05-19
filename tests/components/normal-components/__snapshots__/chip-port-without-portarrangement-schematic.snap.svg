@@ -21,18 +21,18 @@
     L 228.40049986243835,198.295092705127
     L 178.2843550540071,198.295092705127
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="2.030089581762px"/><text class="net-label-text" x="181.9385163011787" y="187.3326089636122" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="18.270806235858px" transform="">GND</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="2.030089581762px"/><text class="net-label-text" x="181.9385163011787" y="187.3326089636122" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="18.270806235858px" transform="">GND</text><path class="net-label" d="
     M 334.14483795946154,311.47571830153805
     L 339.62607983021894,300.51323456002325
     L 412.9123137318271,300.51323456002325
     L 412.9123137318271,322.43820204305285
     L 339.62607983021894,322.43820204305285
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="2.030089581762px"/><text class="net-label-text" x="343.28024107739054" y="311.47571830153805" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="18.270806235858px" transform="">MOUT1</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="2.030089581762px"/><text class="net-label-text" x="343.28024107739054" y="311.47571830153805" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="18.270806235858px" transform="">MOUT1</text><path class="net-label" d="
     M 492.23210582625484,438.35631716166307
     L 497.71334769701224,427.39383342014827
     L 570.9995815986205,427.39383342014827
     L 570.9995815986205,449.3188009031779
     L 497.71334769701224,449.3188009031779
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="2.030089581762px"/><text class="net-label-text" x="501.36750894418384" y="438.35631716166307" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="18.270806235858px" transform="">MOUT2</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="2.030089581762px"/><text class="net-label-text" x="501.36750894418384" y="438.35631716166307" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="18.270806235858px" transform="">MOUT2</text></svg>
