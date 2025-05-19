@@ -1,5 +1,7 @@
 # @tscircuit/core Development Guide
 
+## Overview of how core works
+
 When you do...
 
 ```tsx
@@ -61,3 +63,17 @@ phase e.g. `removeSourceRender`
 
 After all the render phases are complete, you can get the full circuit json/soup
 by calling `project.getCircuitJson()` or `project.getSoup()`
+
+## Debugging Performance
+
+You can use `bun run start:benchmarking` to debug the performance of core. The video below
+takes you through each step from creating benchmarking circuits, to using chrome dev tools
+to see the time spent per function call, to making changes and seeing the result
+
+Most performance issues are due to "some dumb thing", not fundamentally time-consuming
+algorithms.
+
+https://github.com/user-attachments/assets/73ae3227-891c-4a01-9f02-3b04f5aa2ac5
+
+
+
