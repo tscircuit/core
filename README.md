@@ -53,3 +53,8 @@ board.add(trace)
 
 circuit.getJson() // [{ type: "board", ...}, { type: "resistor", ...}, ...]
 ```
+
+## Development
+
+- [How does core work?](./docs/DEVELOPMENT.md#overview-of-how-core-works)
+- [How to do benchmarking or debug performance](./docs/DEVELOPMENT.md#debugging-performance)
