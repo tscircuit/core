@@ -21,11 +21,11 @@
     L 342.3232500000028,214.33962264151802
     L 417.11570283018403,214.33962264151802
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.88679245283px"/><text class="net-label-text" x="413.71947641509" y="224.52830188680002" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="16.98113207547px" transform="">U1_VCC</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.88679245283px"/><text class="net-label-text" x="413.71947641509" y="224.52830188680002" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="16.98113207547px" transform="">U1_VCC</text><path class="net-label" d="
     M 777.7899575471291,201.51923584906615
     L 782.8842971697701,191.33055660378415
     L 857.6767499999513,191.33055660378415
     L 857.6767499999513,211.70791509434815
     L 782.8842971697701,211.70791509434815
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="1.88679245283px"/><text class="net-label-text" x="786.2805235848641" y="201.51923584906615" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="16.98113207547px" transform="">U1_VCC</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.88679245283px"/><text class="net-label-text" x="786.2805235848641" y="201.51923584906615" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="16.98113207547px" transform="">U1_VCC</text></svg>

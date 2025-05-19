@@ -21,18 +21,18 @@
     L -38.245614034954315,287.72532565788146
     L 124.47368421063368,287.72532565788146
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="2.6315789473680002px"/><text class="net-label-text" x="119.73684210537128" y="301.93585197366866" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="23.684210526312px" transform="">label2 / label1</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="2.6315789473680002px"/><text class="net-label-text" x="119.73684210537128" y="301.93585197366866" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="23.684210526312px" transform="">label2 / label1</text><path class="net-label" d="
     M 923.3445526315586,298.06414802630104
     L 916.239289473665,312.27467434208825
     L 839.1164824561334,312.27467434208825
     L 839.1164824561334,283.85362171051383
     L 916.239289473665,283.85362171051383
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="2.6315789473680002px"/><text class="net-label-text" x="911.5024473684026" y="298.06414802630104" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="23.684210526312px" transform="">label1</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="2.6315789473680002px"/><text class="net-label-text" x="911.5024473684026" y="298.06414802630104" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="23.684210526312px" transform="">label1</text><path class="net-label" d="
     M 1068.4210526315355,298.1360559210377
     L 1075.5263157894292,283.9255296052505
     L 1152.6491228069606,283.9255296052505
     L 1152.6491228069606,312.34658223682493
     L 1075.5263157894292,312.34658223682493
     Z
-  " fill="#FFFFFF99" stroke="rgb(132, 0, 0)" stroke-width="2.6315789473680002px"/><text class="net-label-text" x="1080.2631578946916" y="298.1360559210377" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="23.684210526312px" transform="">label2</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="2.6315789473680002px"/><text class="net-label-text" x="1080.2631578946916" y="298.1360559210377" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="23.684210526312px" transform="">label2</text></svg>
