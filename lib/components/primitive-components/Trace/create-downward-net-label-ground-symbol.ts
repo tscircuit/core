@@ -68,6 +68,7 @@ export const createDownwardNetLabelGroundSymbol = (
     anchor_side: "top",
     center: groundSymbolPos,
     source_net_id: port.source_port_id!,
+    source_trace_id: source_trace_id!,
     text: schDisplayLabel!,
     anchor_position: groundSymbolPos,
     symbol_name: "ground_horz",
