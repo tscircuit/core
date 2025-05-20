@@ -35,6 +35,7 @@
       "style": {
         "noNonNullAssertion": "off",
         "useImportType": "off",
+        "noUnusedTemplateLiteral": "off",
         "useNumberNamespace": "off",
         "useFilenamingConvention": {
           "level": "error",

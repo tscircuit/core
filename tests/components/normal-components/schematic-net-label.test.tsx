@@ -34,6 +34,7 @@ test("schematic-net-label", async () => {
         },
         "schematic_net_label_id": "schematic_net_label_0",
         "source_net_id": "source_net_0",
+        "source_trace_id": "source_trace_0",
         "text": "GND",
         "type": "schematic_net_label",
       },

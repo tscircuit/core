@@ -800,6 +800,8 @@ export class Trace
         center: toAnchorPos,
         anchor_side:
           getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom",
+        schematic_trace_id: this.schematic_trace_id!,
+        source_trace_id: this.source_trace_id!,
       })
     }
     if (!existingFromNetLabel) {
@@ -810,6 +812,8 @@ export class Trace
         center: fromAnchorPos,
         anchor_side:
           getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom",
+        schematic_trace_id: this.schematic_trace_id!,
+        source_trace_id: this.source_trace_id!,
       })
     }
   }
@@ -905,6 +909,8 @@ export class Trace
         center: anchorPos,
         anchor_side:
           getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom",
+        source_trace_id: this.source_trace_id!,
+        schematic_trace_id: this.schematic_trace_id!,
       })
 
       return
