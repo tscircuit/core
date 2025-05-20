@@ -18,6 +18,8 @@ test("schematic-net-label", async () => {
 
   circuit.render()
 
+  expect(circuit.db.schematic_trace.list()).toMatchInlineSnapshot(`[]`)
+
   expect(circuit.db.schematic_net_label.list()).toMatchInlineSnapshot(`
     [
       {
