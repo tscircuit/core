@@ -2,7 +2,10 @@ import type { LayoutBuilder } from "@tscircuit/layout"
 import type { AnySourceComponent, LayerRef } from "circuit-json"
 import Debug from "debug"
 import { InvalidProps } from "lib/errors/InvalidProps"
-import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import type {
+  SchematicBoxComponentDimensions,
+  SchematicBoxDimensions,
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { isMatchingSelector } from "lib/utils/selector-matching"
 import { type SchSymbol, symbols } from "schematic-symbols"
 import {
@@ -778,6 +781,21 @@ export abstract class PrimitiveComponent<
    */
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     return null
+  }
+
+  _getSchematicBoxComponentDimensions(): SchematicBoxComponentDimensions | null {
+    // Only valid if we don't have a schematic symbol
+    if (this.getSchematicSymbol()) return null
+    if (!this.config.shouldRenderAsSchematicBox) return null
+
+    const { _parsedProps: props } = this
+
+    const dimensions = {
+      schWidth: props.schWidth,
+      schHeight: props.schHeight,
+    }
+
+    return dimensions
   }
 
   // TODO we shouldn't need to override this, errors can be rendered and handled

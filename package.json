@@ -52,11 +52,11 @@
     "@tscircuit/circuit-json-util": "^0.0.47",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/math-utils": "^0.0.18",
-    "@tscircuit/props": "^0.0.184",
+    "@tscircuit/props": "^0.0.186",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "circuit-json-to-connectivity-map": "^0.0.22",
-    "circuit-json": "^0.0.180",
-    "schematic-symbols": "^0.0.139"
+    "schematic-symbols": "^0.0.139",
+    "circuit-json": "^0.0.185"
   },
   "peerDependencies": {
     "typescript": "^5.0.0",
