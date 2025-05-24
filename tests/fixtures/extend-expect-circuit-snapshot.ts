@@ -21,7 +21,7 @@ async function saveSnapshotOfSoup({
 }: {
   soup: AnyCircuitElement[]
   testPath: string
-  mode: "pcb" | "schematic"
+  mode: "pcb" | "schematic" | "simple-3d"
   updateSnapshot: boolean
   options?: any
 }): Promise<MatcherResult> {
@@ -30,10 +30,18 @@ async function saveSnapshotOfSoup({
   const snapshotName = `${path.basename(testPath || "")}-${mode}.snap.svg`
   const filePath = path.join(snapshotDir, snapshotName)
 
-  const svg =
-    mode === "pcb"
-      ? convertCircuitJsonToPcbSvg(soup)
-      : convertCircuitJsonToSchematicSvg(soup, options)
+  let svg: string
+  switch (mode) {
+    case "pcb":
+      svg = convertCircuitJsonToPcbSvg(soup)
+      break
+    case "schematic":
+      svg = convertCircuitJsonToSchematicSvg(soup, options)
+      break
+    case "simple-3d":
+      svg = convertCircuitJsonToSimple3dSvg(soup, options)
+      break
+  }
 
   if (!fs.existsSync(snapshotDir)) {
     fs.mkdirSync(snapshotDir, { recursive: true })
@@ -134,7 +142,7 @@ expect.extend({
     })
   },
 
-  async toMatch3dSnapshot(
+  async toMatchSimple3dSnapshot(
     this: any,
     received: unknown,
     ...args: any[]
@@ -147,62 +155,21 @@ expect.extend({
       circuitJson = received as AnyCircuitElement[]
     }
 
-    // Convert circuit JSON to 3D SVG
-    const svg3d = await convertCircuitJsonToSimple3dSvg(circuitJson, args[1])
-
-    const testPath = args[0]
-    const snapshotDir = path.join(path.dirname(testPath || ""), "__snapshots__")
-    const snapshotName = `${path.basename(testPath || "")}-3d.snap.svg`
-    const filePath = path.join(snapshotDir, snapshotName)
-
-    if (!fs.existsSync(snapshotDir)) {
-      fs.mkdirSync(snapshotDir, { recursive: true })
-    }
-
-    const updateSnapshot =
-      process.argv.includes("--update-snapshots") ||
-      process.argv.includes("-u") ||
-      Boolean(process.env.BUN_UPDATE_SNAPSHOTS)
-
-    if (!fs.existsSync(filePath) || updateSnapshot) {
-      console.log("Creating 3D snapshot at", filePath)
-      fs.writeFileSync(filePath, svg3d)
-      return {
-        message: () => `3D snapshot created at ${filePath}`,
-        pass: true,
-      }
-    }
-
-    const existingSnapshot = fs.readFileSync(filePath, "utf-8")
-
-    const result = await looksSame(
-      Buffer.from(svg3d),
-      Buffer.from(existingSnapshot),
-      {
-        strict: false,
-        tolerance: 2,
+    return saveSnapshotOfSoup({
+      soup: circuitJson,
+      testPath: args[0],
+      mode: "simple-3d",
+      options: args[1] ?? {
+        grid: {
+          cellSize: 1,
+          labelCells: true,
+        },
       },
-    )
-
-    if (result.equal) {
-      return {
-        message: () => "3D snapshot matches",
-        pass: true,
-      }
-    }
-
-    const diffPath = filePath.replace(".snap.svg", ".diff.png")
-    await looksSame.createDiff({
-      reference: Buffer.from(existingSnapshot),
-      current: Buffer.from(svg3d),
-      diff: diffPath,
-      highlightColor: "#ff00ff",
+      updateSnapshot:
+        process.argv.includes("--update-snapshots") ||
+        process.argv.includes("-u") ||
+        Boolean(process.env.BUN_UPDATE_SNAPSHOTS),
     })
-
-    return {
-      message: () => `3D snapshot does not match. Diff saved at ${diffPath}`,
-      pass: false,
-    }
   },
 })
 
@@ -213,7 +180,7 @@ declare module "bun:test" {
       testPath: string,
       options?: Parameters<typeof convertCircuitJsonToSchematicSvg>[1],
     ): Promise<MatcherResult>
-    toMatch3dSnapshot(
+    toMatchSimple3dSnapshot(
       testPath: string,
       options?: Parameters<typeof convertCircuitJsonToSimple3dSvg>[1],
     ): Promise<MatcherResult>
