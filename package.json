@@ -52,6 +52,7 @@
     "howfat": "^0.3.8",
     "live-server": "^1.2.2",
     "looks-same": "^9.0.1",
+    "@tscircuit/simple-3d-svg": "^0.0.6",
     "pkg-pr-new": "^0.0.37",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -75,7 +76,6 @@
   },
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
-    "@tscircuit/simple-3d-svg": "^0.0.6",
     "css-select": "^5.1.0",
     "format-si-unit": "^0.0.3",
     "nanoid": "^5.0.7",
