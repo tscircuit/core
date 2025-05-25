@@ -44,10 +44,12 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const minY = Math.min(...ys)
       const maxY = Math.max(...ys)
 
-      const width = maxX - minX + padding * 2
-      const height = maxY - minY + padding * 2
-      const x = minX - padding
-      const y = minY - padding
+      const rawWidth = maxX - minX
+      const rawHeight = maxY - minY
+      const width = rawWidth === 0 ? padding * 2 : rawWidth + padding * 2
+      const height = rawHeight === 0 ? padding * 2 : rawHeight + padding * 2
+      const x = rawWidth === 0 ? minX - padding : minX - padding
+      const y = rawHeight === 0 ? minY - padding : minY - padding
 
       db.schematic_box.insert({
         height,
