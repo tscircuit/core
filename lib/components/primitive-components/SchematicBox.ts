@@ -49,7 +49,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const rawHeight = maxY - minY
 
       const width = rawWidth + padding
-      const height = rawHeight + padding
+      const height = rawHeight + halfPadding
 
       const x = minX - halfPadding
       const y = minY - halfPadding
