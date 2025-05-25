@@ -30,6 +30,7 @@ test("schematic capacitor symbol", () => {
       "max_voltage_rating": undefined,
       "name": "C1",
       "source_component_id": "source_component_0",
+      "source_group_id": "source_group_0",
       "supplier_part_numbers": undefined,
       "type": "source_component",
     }
