@@ -34,9 +34,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       facingDirection: port.facingDirection,
     }))
     if (portsWithPosition.length > 0) {
-      const padding = 0.6
-      const halfPadding = padding / 2
-
+      const basePadding = 0.6
       const xs = portsWithPosition.map((p) => p.position.x)
       const ys = portsWithPosition.map((p) => p.position.y)
 
@@ -48,11 +46,33 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const rawWidth = maxX - minX
       const rawHeight = maxY - minY
 
-      const width = rawWidth + padding
-      const height = rawHeight + halfPadding
+      let widthPadding: number
+      let heightPadding: number
 
-      const x = minX - halfPadding
-      const y = minY - halfPadding
+      if (rawWidth > rawHeight) {
+        // Horizontal row → more vertical padding
+        widthPadding = basePadding / 2
+        heightPadding = basePadding
+      } else {
+        // Vertical column → more horizontal padding
+        widthPadding = basePadding
+        heightPadding = basePadding / 2
+      }
+
+      const width = rawWidth + widthPadding
+      const height = rawHeight + heightPadding
+
+      const x = minX - widthPadding / 2
+      const y = minY - heightPadding / 2
+
+      db.schematic_box.insert({
+        height,
+        width,
+        x,
+        y,
+        is_dashed: props.strokeStyle === "dashed",
+        schematic_component_id: "",
+      })
 
       console.log({ rawWidth, rawHeight, width, height })
 
