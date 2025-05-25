@@ -34,7 +34,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       facingDirection: port.facingDirection,
     }))
     if (portsWithPosition.length > 0) {
-      const padding = 0.2
+      const padding = 0.6
       const halfPadding = padding / 2
 
       const xs = portsWithPosition.map((p) => p.position.x)
