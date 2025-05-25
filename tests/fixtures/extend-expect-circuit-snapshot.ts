@@ -10,6 +10,7 @@ import * as path from "node:path"
 import looksSame from "looks-same"
 import { RootCircuit } from "lib/RootCircuit"
 import type { AnyCircuitElement } from "circuit-json"
+import { convertCircuitJsonToSimple3dSvg } from "circuit-json-to-simple-3d"
 
 async function saveSnapshotOfSoup({
   soup,
@@ -20,7 +21,7 @@ async function saveSnapshotOfSoup({
 }: {
   soup: AnyCircuitElement[]
   testPath: string
-  mode: "pcb" | "schematic"
+  mode: "pcb" | "schematic" | "simple-3d"
   updateSnapshot: boolean
   options?: any
 }): Promise<MatcherResult> {
@@ -29,10 +30,18 @@ async function saveSnapshotOfSoup({
   const snapshotName = `${path.basename(testPath || "")}-${mode}.snap.svg`
   const filePath = path.join(snapshotDir, snapshotName)
 
-  const svg =
-    mode === "pcb"
-      ? convertCircuitJsonToPcbSvg(soup)
-      : convertCircuitJsonToSchematicSvg(soup, options)
+  let svg: string
+  switch (mode) {
+    case "pcb":
+      svg = convertCircuitJsonToPcbSvg(soup)
+      break
+    case "schematic":
+      svg = convertCircuitJsonToSchematicSvg(soup, options)
+      break
+    case "simple-3d":
+      svg = convertCircuitJsonToSimple3dSvg(soup, options)
+      break
+  }
 
   if (!fs.existsSync(snapshotDir)) {
     fs.mkdirSync(snapshotDir, { recursive: true })
@@ -132,6 +141,36 @@ expect.extend({
         Boolean(process.env.BUN_UPDATE_SNAPSHOTS),
     })
   },
+
+  async toMatchSimple3dSnapshot(
+    this: any,
+    received: unknown,
+    ...args: any[]
+  ): Promise<MatcherResult> {
+    let circuitJson: AnyCircuitElement[]
+    if (received instanceof RootCircuit) {
+      await received.renderUntilSettled()
+      circuitJson = await received.getCircuitJson()
+    } else {
+      circuitJson = received as AnyCircuitElement[]
+    }
+
+    return saveSnapshotOfSoup({
+      soup: circuitJson,
+      testPath: args[0],
+      mode: "simple-3d",
+      options: args[1] ?? {
+        grid: {
+          cellSize: 1,
+          labelCells: true,
+        },
+      },
+      updateSnapshot:
+        process.argv.includes("--update-snapshots") ||
+        process.argv.includes("-u") ||
+        Boolean(process.env.BUN_UPDATE_SNAPSHOTS),
+    })
+  },
 })
 
 declare module "bun:test" {
@@ -140,6 +179,10 @@ declare module "bun:test" {
     toMatchSchematicSnapshot(
       testPath: string,
       options?: Parameters<typeof convertCircuitJsonToSchematicSvg>[1],
+    ): Promise<MatcherResult>
+    toMatchSimple3dSnapshot(
+      testPath: string,
+      options?: Parameters<typeof convertCircuitJsonToSimple3dSvg>[1],
     ): Promise<MatcherResult>
   }
 }
