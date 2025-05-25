@@ -7,17 +7,15 @@ it("Chip with pinrow footprint", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="10mm">
-      <chip name="U1" footprint="pinrow8" />
-      <chip name="U2" footprint="pinrow8" />
-      <trace from=".U1 > .pin1" to=".U2 > .pin1" />
+    <board width="10mm" height="10mm">
+      <chip name="U1" footprint={"soic8"} />
+      <chip name="U2" footprint={"soic8"} schX={2} />
       <schematicbox
-        height={2}
+        height={0}
         width={2}
-        strokeStyle="dashed"
+        overlay={[".U1 > .pin1", ".U1 > .pin2", ".U1 > .pin3", ".U1 > .pin4"]}
         schX={0}
         schY={0}
-        overlay={[".U1 > .pin1", ".U1 > .pin2"]}
       />
     </board>,
   )
