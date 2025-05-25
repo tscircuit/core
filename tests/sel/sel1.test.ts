@@ -28,6 +28,14 @@ test("sel1 - sel.net.VCC = net.VCC", () => {
   expect(sel.net.VCC).toBe("net.VCC")
 })
 
+test("sel1 - sel.net.VIN = net.VIN", () => {
+  expect(sel.net.VIN).toBe("net.VIN")
+})
+
+test("sel1 - sel.net.EN = net.EN", () => {
+  expect(sel.net.EN).toBe("net.EN")
+})
+
 test("sel1 - sel.CN1.pin1 = .CN1 > .pin1", () => {
   expect(sel.CN1.pin1).toBe(".CN1 > .pin1")
 })

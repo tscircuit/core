@@ -54,7 +54,15 @@ type PolarizedSel = Record<
   }
 >
 
-type CommonNetNames = "VCC" | "GND" | "VDD" | "PWR" | "V5" | "V3_3"
+type CommonNetNames =
+  | "VCC"
+  | "GND"
+  | "VDD"
+  | "PWR"
+  | "V5"
+  | "V3_3"
+  | "VIN"
+  | "EN"
 
 type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
 
