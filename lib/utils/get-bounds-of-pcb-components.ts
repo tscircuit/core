@@ -5,6 +5,7 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
   let minY = Infinity
   let maxX = -Infinity
   let maxY = -Infinity
+  let hasValidComponents = false
 
   for (const child of components) {
     if (child.isPcbPrimitive && !child.componentName.startsWith("Silkscreen")) {
@@ -14,13 +15,29 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
       minY = Math.min(minY, y - height / 2)
       maxX = Math.max(maxX, x + width / 2)
       maxY = Math.max(maxY, y + height / 2)
-    } else if (child.componentName === "Footprint") {
+      hasValidComponents = true
+    }
+    // Handle components that contain PCB primitives (like resistors)
+    else if (child.children.length > 0) {
       const childBounds = getBoundsOfPcbComponents(child.children)
+      if (childBounds.width > 0 || childBounds.height > 0) {
+        minX = Math.min(minX, childBounds.minX)
+        minY = Math.min(minY, childBounds.minY)
+        maxX = Math.max(maxX, childBounds.maxX)
+        maxY = Math.max(maxY, childBounds.maxY)
+        hasValidComponents = true
+      }
+    }
+  }
 
-      minX = Math.min(minX, childBounds.minX)
-      minY = Math.min(minY, childBounds.minY)
-      maxX = Math.max(maxX, childBounds.maxX)
-      maxY = Math.max(maxY, childBounds.maxY)
+  if (!hasValidComponents) {
+    return {
+      minX: 0,
+      minY: 0,
+      maxX: 0,
+      maxY: 0,
+      width: 0,
+      height: 0,
     }
   }
 
