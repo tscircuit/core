@@ -16,7 +16,7 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
       maxX = Math.max(maxX, x + width / 2)
       maxY = Math.max(maxY, y + height / 2)
       hasValidComponents = true
-    } 
+    }
     // Handle components that contain PCB primitives (like resistors)
     else if (child.children.length > 0) {
       const childBounds = getBoundsOfPcbComponents(child.children)
