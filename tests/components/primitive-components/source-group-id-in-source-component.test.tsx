@@ -21,12 +21,10 @@ test("group id present in pcb_component, schematic_component and source_componen
     expect(schComponent.schematic_group_id).toBeDefined()
   }
 
-
   const schGroups = circuit.db.schematic_group.list()
   for (const schGroup of schGroups) {
     expect(schGroup.schematic_group_id).toBeDefined()
   }
-
 
   const sourceComponents = circuit.db.source_component.list()
   for (const sourceComponent of sourceComponents) {
