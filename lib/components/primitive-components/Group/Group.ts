@@ -33,6 +33,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   implements ISubcircuit
 {
   pcb_group_id: string | null = null
+  schematic_group_id: string | null = null
   subcircuit_id: string | null = null
 
   _hasStartedAsyncAutorouting = false
@@ -60,6 +61,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     db.source_group.update(source_group.source_group_id, {
       subcircuit_id: this.subcircuit_id!,
     })
+
+    for (const child of this.children) {
+      db.source_component.update(child.source_component_id!, {
+        source_group_id: this.source_group_id!,
+      })
+    }
   }
 
   doInitialSourceParentAttachment() {
@@ -87,6 +94,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       source_group_id: this.source_group_id!,
     })
     this.pcb_group_id = pcb_group.pcb_group_id
+
+    for (const child of this.children) {
+      db.pcb_component.update(child.pcb_component_id!, {
+        pcb_group_id: pcb_group.pcb_group_id,
+      })
+    }
   }
 
   doInitialCreateTraceHintsFromProps(): void {
@@ -610,6 +623,29 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
         }
       }
+    }
+  }
+
+  doInitialSchematicComponentRender() {
+    if (this.root?.schematicDisabled) return
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const schematic_group = db.schematic_group.insert({
+      is_subcircuit: this.isSubcircuit,
+      subcircuit_id: this.subcircuit_id!,
+      name: this._parsedProps.name,
+      center: this._getGlobalSchematicPositionBeforeLayout(),
+      width: 0,
+      height: 0,
+      schematic_component_ids: [],
+      source_group_id: this.source_group_id!,
+    })
+    this.schematic_group_id = schematic_group.schematic_group_id
+
+    for (const child of this.children) {
+      db.schematic_component.update(child.schematic_component_id!, {
+        schematic_group_id: schematic_group.schematic_group_id,
+      })
     }
   }
 
