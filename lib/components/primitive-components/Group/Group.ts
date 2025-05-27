@@ -27,6 +27,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -98,6 +99,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     for (const child of this.children) {
       db.pcb_component.update(child.pcb_component_id!, {
         pcb_group_id: pcb_group.pcb_group_id,
+      })
+    }
+  }
+
+  doInitialPcbPrimitiveRender(): void {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+
+    const bounds = getBoundsOfPcbComponents(this.children)
+
+    if (this.pcb_group_id) {
+      db.pcb_group.update(this.pcb_group_id, {
+        width: bounds.width,
+        height: bounds.height,
+        center: {
+          x: (bounds.minX + bounds.maxX) / 2,
+          y: (bounds.minY + bounds.maxY) / 2,
+        },
       })
     }
   }
