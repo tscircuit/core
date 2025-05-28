@@ -172,6 +172,7 @@ export type CommonPinNames =
   | "VCC"
   | "VDD"
   | "GND"
+  | "SHLD"
   | `D${Nums40}`
   | `GP${Nums40}`
   | `GPIO${Nums40}`
