@@ -184,6 +184,7 @@ export type CommonPinNames =
   | "VIN"
   | "VOUT"
   | "VREF"
+  | "VUSB"
   | "VIN"
   | "VOUT"
   | "VREF"
