@@ -47,6 +47,8 @@ test("sel2 - selU2.CUSTOM_DATA_1 = .U2 > .CUSTOM_DATA_1", () => {
 
   // @ts-expect-error
   sel.U2<"custompin1" | "custompin2">().doesnotexist
+
+  expect(sel.J1<"custompin1">().custompin1.toString()).toBe(".J1 > .custompin1")
 })
 
 test(`sel2 - ChipProps<"custompin1" | "custompin2">`, () => {
