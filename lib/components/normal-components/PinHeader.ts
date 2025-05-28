@@ -53,7 +53,9 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
       return {
         leftSide: {
           direction: schPinArrangement?.leftSide?.direction ?? "top-to-bottom",
-          pins: schPinArrangement?.leftSide?.pins ?? Array.from({ length: pinCount }, (_, i) => `pin${i + 1}`),
+          pins:
+            schPinArrangement?.leftSide?.pins ??
+            Array.from({ length: pinCount }, (_, i) => `pin${i + 1}`),
         },
       }
     }
@@ -61,7 +63,9 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
     return {
       rightSide: {
         direction: schPinArrangement?.rightSide?.direction ?? "top-to-bottom",
-        pins: schPinArrangement?.rightSide?.pins ?? Array.from({ length: pinCount }, (_, i) => `pin${i + 1}`),
+        pins:
+          schPinArrangement?.rightSide?.pins ??
+          Array.from({ length: pinCount }, (_, i) => `pin${i + 1}`),
       },
     }
   }
