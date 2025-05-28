@@ -38,6 +38,26 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
     }
   }
 
+  _getSchematicPortArrangement() {
+    const arrangement = super._getSchematicPortArrangement()
+    if (arrangement) return arrangement
+
+    const pinCount =
+      this._parsedProps.pinCount ??
+      (Array.isArray(this._parsedProps.pinLabels)
+        ? this._parsedProps.pinLabels.length
+        : this._parsedProps.pinLabels
+          ? Object.keys(this._parsedProps.pinLabels).length
+          : this.getPortsFromFootprint().length)
+
+    const direction = this._parsedProps.schDirection ?? "right"
+
+    return {
+      leftSize: direction === "left" ? pinCount : 0,
+      rightSize: direction === "right" ? pinCount : 0,
+    }
+  }
+
   doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
