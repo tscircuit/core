@@ -91,6 +91,7 @@ export class NormalComponent<
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   pcb_missing_footprint_error_id?: string
+  _hasStartedFootprintUrlLoad = false
 
   /**
    * Override this property for component defaults
@@ -323,6 +324,10 @@ export class NormalComponent<
     return null
   }
 
+  _isFootprintUrl(s: string): boolean {
+    return s.startsWith("http://") || s.startsWith("https://")
+  }
+
   _addChildrenFromStringFootprint() {
     const {
       name: componentName,
@@ -334,6 +339,7 @@ export class NormalComponent<
     if (!footprint) return
 
     if (typeof footprint === "string") {
+      if (this._isFootprintUrl(footprint)) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         { componentName, componentRotation, footprint, pinLabels },
@@ -645,6 +651,28 @@ export class NormalComponent<
   }
 
   doInitialReactSubtreesRender(): void {
+    if (
+      typeof this.props.footprint === "string" &&
+      this._isFootprintUrl(this.props.footprint)
+    ) {
+      if (this._hasStartedFootprintUrlLoad) return
+      this._hasStartedFootprintUrlLoad = true
+      const url = this.props.footprint
+      this._queueAsyncEffect("load-footprint-url", async () => {
+        const res = await fetch(url)
+        const soup = await res.json()
+        const { name: componentName, pcbRotation: componentRotation, pinLabels } =
+          this.props
+        const fpComponents = createComponentsFromCircuitJson(
+          { componentName, componentRotation, footprint: url, pinLabels },
+          soup as any,
+        )
+        this.addAll(fpComponents)
+        this.initPorts()
+        this._markDirty("InitializePortsFromChildren")
+      })
+      return
+    }
     if (isReactElement(this.props.footprint)) {
       if (this.reactSubtrees.some((rs) => rs.element === this.props.footprint))
         return
@@ -708,6 +736,7 @@ export class NormalComponent<
     }
 
     if (typeof footprint === "string") {
+      if (this._isFootprintUrl(footprint)) return []
       const fpSoup = fp.string(footprint).soup()
 
       const newPorts: Port[] = []
