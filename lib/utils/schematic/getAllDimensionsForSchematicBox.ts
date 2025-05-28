@@ -69,7 +69,12 @@ type Side = "left" | "right" | "top" | "bottom"
 export function isExplicitPinMappingArrangement(
   arrangement: PortArrangement,
 ): arrangement is ExplicitPinMappingArrangement {
-  return (arrangement as ExplicitPinMappingArrangement).leftSide !== undefined
+  return (
+    (arrangement as ExplicitPinMappingArrangement).leftSide !== undefined ||
+    (arrangement as ExplicitPinMappingArrangement).rightSide !== undefined ||
+    (arrangement as ExplicitPinMappingArrangement).topSide !== undefined ||
+    (arrangement as ExplicitPinMappingArrangement).bottomSide !== undefined
+  )
 }
 
 export interface SchematicBoxDimensions {
