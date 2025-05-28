@@ -999,6 +999,50 @@ export class NormalComponent<
     }cachebust_origin=${encodeURIComponent(origin)}`
   }
 
+  private _getPartsEngineCacheKey(
+    source_component: any,
+    footprinterString?: string,
+  ): string {
+    return JSON.stringify({
+      ftype: source_component.ftype,
+      name: source_component.name,
+      manufacturer_part_number: source_component.manufacturer_part_number,
+      footprinterString,
+    })
+  }
+
+  private async _getSupplierPartNumbers(
+    partsEngine: any,
+    source_component: any,
+    footprinterString: string | undefined,
+  ) {
+    const cacheEngine = this.root?.platform?.localCacheEngine
+    const cacheKey = this._getPartsEngineCacheKey(
+      source_component,
+      footprinterString,
+    )
+    if (cacheEngine) {
+      const cached = await cacheEngine.getItem(cacheKey)
+      if (cached) {
+        try {
+          return JSON.parse(cached)
+        } catch {}
+      }
+    }
+    const result = await Promise.resolve(
+      partsEngine.findPart({
+        sourceComponent: source_component,
+        footprinterString,
+      }),
+    )
+    if (cacheEngine) {
+      try {
+        await cacheEngine.setItem(cacheKey, JSON.stringify(result))
+      } catch {}
+    }
+    return result
+  }
+
   doInitialPartsEngineRender(): void {
     const partsEngine = this.getInheritedProperty("partsEngine")
     if (!partsEngine) return
@@ -1013,12 +1057,12 @@ export class NormalComponent<
       footprinterString = this.props.footprint
     }
 
-    const supplierPartNumbersMaybePromise = partsEngine.findPart({
-      sourceComponent: source_component,
+    const supplierPartNumbersMaybePromise = this._getSupplierPartNumbers(
+      partsEngine,
+      source_component,
       footprinterString,
-    })
+    )
 
-    // Check if it's not a promise
     if (!(supplierPartNumbersMaybePromise instanceof Promise)) {
       db.source_component.update(this.source_component_id!, {
         supplier_part_numbers: supplierPartNumbersMaybePromise,
