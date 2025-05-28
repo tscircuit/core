@@ -58,7 +58,7 @@ it("should render a pinheader with pinrow4 footprint right side", async () => {
         schPinArrangement={{
           leftSide: {
             direction: "bottom-to-top",
-            pins: ["pin1", "pin2", "pin3", "pin4", "pin5"],
+            pins: ["pin5", "pin4", "pin3", "pin2", "pin1"],
           },
         }}
       />
@@ -70,7 +70,5 @@ it("should render a pinheader with pinrow4 footprint right side", async () => {
   const schComponent = circuit.db.schematic_component.get(
     circuit.db.schematic_component.list()[0].schematic_component_id,
   )
-  console.log(schComponent)
-
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

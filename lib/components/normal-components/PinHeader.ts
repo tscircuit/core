@@ -51,17 +51,17 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
 
     if (facingDirection === "left") {
       return {
-        leftSide: schPinArrangement?.leftSide ?? {
-          direction: "top-to-bottom",
-          pins: Array.from({ length: pinCount }, (_, i) => `pin${i + 1}`),
+        leftSide: {
+          direction: schPinArrangement?.leftSide?.direction ?? "top-to-bottom",
+          pins: schPinArrangement?.leftSide?.pins ?? Array.from({ length: pinCount }, (_, i) => `pin${i + 1}`),
         },
       }
     }
 
     return {
-      rightSide: schPinArrangement?.rightSide ?? {
-        direction: "top-to-bottom",
-        pins: Array.from({ length: pinCount }, (_, i) => `pin${i + 1}`),
+      rightSide: {
+        direction: schPinArrangement?.rightSide?.direction ?? "top-to-bottom",
+        pins: schPinArrangement?.rightSide?.pins ?? Array.from({ length: pinCount }, (_, i) => `pin${i + 1}`),
       },
     }
   }
