@@ -39,7 +39,9 @@ test("schematic pins follow direction on single side arrangement", () => {
     .filter((p) => p.schematic_component_id === schChip?.schematic_component_id)
     .sort((a, b) => a.center.y - b.center.y)
 
-  const bottomPortLabel = circuit.db.source_port.get(ports[0]!.source_port_id!)?.name
+  const bottomPortLabel = circuit.db.source_port.get(
+    ports[0]!.source_port_id!,
+  )?.name
   expect(bottomPortLabel).toBe("GND")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
