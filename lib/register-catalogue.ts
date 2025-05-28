@@ -9,4 +9,5 @@ extendCatalogue(Components)
 // Aliases (only when class name is different than the name of the component)
 extendCatalogue({
   Bug: Components.Chip,
+  Fuse: Components.Fuse,
 })
