@@ -198,6 +198,8 @@ export type CommonPinNames =
   | "RESET"
   | "DM"
   | "DP"
+  | "CC1"
+  | "CC2"
   | `A${Nums40}`
   | `B${Nums40}`
   | PinNumbers100
