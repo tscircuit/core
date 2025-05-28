@@ -62,6 +62,7 @@ type CommonNetNames =
   | "V5"
   | "V3_3"
   | "VIN"
+  | "SHLD"
   | "EN"
 
 type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>

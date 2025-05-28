@@ -36,6 +36,14 @@ test("sel1 - sel.net.EN = net.EN", () => {
   expect(sel.net.EN).toBe("net.EN")
 })
 
+test("sel1 - sel.net.SHLD = net.SHLD", () => {
+  expect(sel.net.SHLD).toBe("net.SHLD")
+})
+
+test("sel1 - sel.U1.SHLD = .U1 > .SHLD", () => {
+  expect(sel.U1.SHLD).toBe(".U1 > .SHLD")
+})
+
 test("sel1 - sel.CN1.pin1 = .CN1 > .pin1", () => {
   expect(sel.CN1.pin1).toBe(".CN1 > .pin1")
 })
