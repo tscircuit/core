@@ -661,8 +661,11 @@ export class NormalComponent<
       this._queueAsyncEffect("load-footprint-url", async () => {
         const res = await fetch(url)
         const soup = await res.json()
-        const { name: componentName, pcbRotation: componentRotation, pinLabels } =
-          this.props
+        const {
+          name: componentName,
+          pcbRotation: componentRotation,
+          pinLabels,
+        } = this.props
         const fpComponents = createComponentsFromCircuitJson(
           { componentName, componentRotation, footprint: url, pinLabels },
           soup as any,
