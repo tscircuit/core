@@ -46,6 +46,11 @@ import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNum
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import type { INormalComponent } from "./INormalComponent"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { 
+  isFootprintUrl, 
+  loadFootprintFromUrl 
+} from "lib/utils/async-footprint-loader"
+import type { AnyCircuitElement } from "circuit-json"
 
 const debug = Debug("tscircuit:core")
 
@@ -90,6 +95,7 @@ export class NormalComponent<
   isPrimitiveContainer = true
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
+  _asyncFootprintCircuitJson?: AnyCircuitElement[]
   pcb_missing_footprint_error_id?: string
 
   /**
@@ -334,6 +340,11 @@ export class NormalComponent<
     if (!footprint) return
 
     if (typeof footprint === "string") {
+      // Skip URL footprints - they are handled asynchronously
+      if (isFootprintUrl(footprint)) {
+        return
+      }
+      
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         { componentName, componentRotation, footprint, pinLabels },
@@ -651,6 +662,49 @@ export class NormalComponent<
       const subtree = this._renderReactSubtree(this.props.footprint)
       this.reactSubtrees.push(subtree)
       this.add(subtree.component)
+    } else if (typeof this.props.footprint === "string" && isFootprintUrl(this.props.footprint)) {
+      // Handle async footprint loading
+      this._loadAsyncFootprint(this.props.footprint)
+    }
+  }
+
+  _loadAsyncFootprint(footprintUrl: string): void {
+    this._queueAsyncEffect("load-async-footprint", async () => {
+      try {
+        this._asyncFootprintCircuitJson = await loadFootprintFromUrl(footprintUrl)
+        this._markDirty("ReactSubtreesRender")
+      } catch (error) {
+        debug(`Failed to load async footprint from ${footprintUrl}:`, error)
+        // Continue without the footprint - component should still work
+      }
+    })
+  }
+
+  updateReactSubtreesRender(): void {
+    // Check if async footprint has been loaded and create components from it
+    if (this._asyncFootprintCircuitJson && typeof this.props.footprint === "string" && isFootprintUrl(this.props.footprint)) {
+      // Create components from the loaded circuit JSON
+      const {
+        name: componentName,
+        pcbRotation: componentRotation,
+        pinLabels,
+      } = this.props
+      
+      const components = createComponentsFromCircuitJson(
+        { 
+          componentName: componentName || "AsyncFootprintComponent",
+          componentRotation: componentRotation || "0deg", 
+          footprint: this.props.footprint,
+          pinLabels: pinLabels || {}
+        },
+        this._asyncFootprintCircuitJson,
+      )
+      
+      for (const component of components) {
+        this.add(component)
+      }
+      // Clear the async data to prevent re-adding
+      this._asyncFootprintCircuitJson = undefined
     }
   }
 
@@ -708,6 +762,27 @@ export class NormalComponent<
     }
 
     if (typeof footprint === "string") {
+      // Handle async footprint URLs
+      if (isFootprintUrl(footprint)) {
+        // If async footprint hasn't been loaded yet, return empty array
+        // Ports will be discovered when the footprint loads and components are created
+        const newPorts: Port[] = []
+        
+        // Look for ports in children that might have been created from the async footprint
+        for (const child of this.children) {
+          if (child.props.portHints && child.isPcbPrimitive) {
+            const port = getPortFromHints(child.props.portHints, opts)
+            if (port) {
+              port.originDescription = `footprint:async:${footprint}`
+              newPorts.push(port)
+            }
+          }
+        }
+        
+        return newPorts
+      }
+      
+      // Handle sync string footprints with footprinter
       const fpSoup = fp.string(footprint).soup()
 
       const newPorts: Port[] = []
