@@ -20,7 +20,12 @@ test("capacitor top/bottom connections auto rotate", async () => {
   const schematicComponent = circuit.db.schematic_component.list()[0]
   expect(schematicComponent.symbol_name).toBe("capacitor_up")
 
-  expect(circuit.db.source_trace.list().map((t) => t.display_name).sort()).toMatchInlineSnapshot(`
+  expect(
+    circuit.db.source_trace
+      .list()
+      .map((t) => t.display_name)
+      .sort(),
+  ).toMatchInlineSnapshot(`
     [
       "capacitor.C1 > port.pin1 to net.GND",
       "capacitor.C1 > port.pin2 to net.VCC",

@@ -232,9 +232,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       (this.parent as any)?._parsedProps?.schRotation ??
       0
 
-    const rot = ((typeof parentRotation === "string"
-      ? parseFloat(parentRotation)
-      : parentRotation) % 360 + 360) % 360
+    const rot =
+      (((typeof parentRotation === "string"
+        ? parseFloat(parentRotation)
+        : parentRotation) %
+        360) +
+        360) %
+      360
 
     const rotateSide = (side: string): string => {
       const map: Record<string, Record<number, string>> = {
