@@ -184,6 +184,7 @@ export type CommonPinNames =
   | "VIN"
   | "VOUT"
   | "VREF"
+  | "VUSB"
   | "VIN"
   | "VOUT"
   | "VREF"
@@ -196,6 +197,10 @@ export type CommonPinNames =
   | "THRES"
   | "TRIG"
   | "RESET"
+  | "DM"
+  | "DP"
+  | "CC1"
+  | "CC2"
   | `A${Nums40}`
   | `B${Nums40}`
   | PinNumbers100

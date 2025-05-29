@@ -69,7 +69,7 @@ type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
 
 type JumperSel = Record<
   `J${Nums40}` | `CN${Nums40}`,
-  Record<PinNumbers100 | CommonPinNames, string>
+  Record<PinNumbers100 | CommonPinNames, string> & ChipFnSel
 >
 
 type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string> & ChipFnSel>
