@@ -216,16 +216,43 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
   getNameAndAliases() {
     const { _parsedProps: props } = this
-    return Array.from(
-      new Set([
-        ...(props.aliases ?? []),
-        ...(props.name ? [props.name] : []),
-        ...(typeof props.pinNumber === "number"
-          ? [`pin${props.pinNumber}`, props.pinNumber.toString()]
-          : []),
-        ...(this.externallyAddedAliases ?? []),
-      ]),
-    ) as string[]
+    const baseAliases = [
+      ...(props.aliases ?? []),
+      ...(props.name ? [props.name] : []),
+      ...(typeof props.pinNumber === "number"
+        ? [`pin${props.pinNumber}`, props.pinNumber.toString()]
+        : []),
+      ...(this.externallyAddedAliases ?? []),
+    ]
+
+    const aliases = new Set(baseAliases)
+
+    const parentRotation =
+      (this.parent as any)?._getSchRotationBeforeLayout?.() ??
+      (this.parent as any)?._parsedProps?.schRotation ??
+      0
+
+    const rot = ((typeof parentRotation === "string"
+      ? parseFloat(parentRotation)
+      : parentRotation) % 360 + 360) % 360
+
+    const rotateSide = (side: string): string => {
+      const map: Record<string, Record<number, string>> = {
+        left: { 0: "left", 90: "bottom", 180: "right", 270: "top" },
+        right: { 0: "right", 90: "top", 180: "left", 270: "bottom" },
+        top: { 0: "top", 90: "left", 180: "bottom", 270: "right" },
+        bottom: { 0: "bottom", 90: "right", 180: "top", 270: "left" },
+      }
+      return map[side]?.[rot as 0 | 90 | 180 | 270] ?? side
+    }
+
+    for (const alias of baseAliases) {
+      if (["left", "right", "top", "bottom"].includes(alias)) {
+        aliases.add(rotateSide(alias))
+      }
+    }
+
+    return Array.from(new Set(aliases)) as string[]
   }
   isMatchingPort(port: Port) {
     return this.isMatchingAnyOf(port.getNameAndAliases())

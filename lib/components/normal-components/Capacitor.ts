@@ -14,6 +14,35 @@ export class Capacitor extends NormalComponent<
   typeof capacitorProps,
   PassivePorts
 > {
+  private _hasTopBottom: boolean = false
+  constructor(props: any) {
+    let hasTopBottom = false
+    if (props && props.connections) {
+      hasTopBottom = "top" in props.connections || "bottom" in props.connections
+      const newConns: Record<string, any> = { ...props.connections }
+      if ("top" in newConns) {
+        newConns.pin2 = newConns.top
+        delete newConns.top
+      }
+      if ("bottom" in newConns) {
+        newConns.pin1 = newConns.bottom
+        delete newConns.bottom
+      }
+      props = { ...props, connections: newConns }
+    }
+    super(props)
+    this._hasTopBottom = hasTopBottom
+  }
+
+  _getSchRotationBeforeLayout(): number | string {
+    const { _parsedProps: props } = this
+    const hasPullup = props.pullupFor || props.pullupTo
+    const hasTopBottom = this._hasTopBottom
+
+    if (props.schRotation !== undefined) return props.schRotation
+    if (hasPullup || hasTopBottom) return 90
+    return 0
+  }
   // @ts-ignore (cause the symbolName is string and not fixed)
   get config() {
     return {

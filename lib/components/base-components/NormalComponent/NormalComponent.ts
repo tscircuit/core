@@ -112,6 +112,10 @@ export class NormalComponent<
     this.initPorts()
   }
 
+  _getSchRotationBeforeLayout(): number | string {
+    return this._parsedProps.schRotation ?? 0
+  }
+
   /**
    * Override this method for better control over the auto-discovery of ports.
    *
@@ -502,7 +506,7 @@ export class NormalComponent<
     const schPortArrangement = this._getSchematicPortArrangement()
     const schematic_component = db.schematic_component.insert({
       center,
-      rotation: props.schRotation ?? 0,
+      rotation: this._getSchRotationBeforeLayout(),
       size: dimensions.getSize(),
       // We should be using the full size, but circuit-to-svg incorrectly
       // uses the schematic_component size to draw boxes instead of the

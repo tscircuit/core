@@ -316,24 +316,34 @@ export abstract class PrimitiveComponent<
     )
   }
 
+  _getSchRotationBeforeLayout(): number | string {
+    return this._parsedProps.schRotation ?? 0
+  }
+
   _getSchematicSymbolName(): keyof typeof symbols | undefined {
     const { _parsedProps: props } = this
     const base_symbol_name = this.config
       .schematicSymbolName as keyof typeof symbols
 
     // normalize the rotation
-    let normalizedRotation = props.schRotation
+    let normalizedRotation = this._getSchRotationBeforeLayout()
     if (normalizedRotation === undefined) {
       normalizedRotation = 0
     }
-    // Normalize rotation to be between 0 and 360
-    normalizedRotation = normalizedRotation % 360
+    normalizedRotation =
+      (typeof normalizedRotation === "string"
+        ? parseFloat(normalizedRotation)
+        : normalizedRotation) % 360
     if (normalizedRotation < 0) {
       normalizedRotation += 360
     }
 
     // Validate that rotation is a multiple of 90 degrees
-    if (props.schRotation !== undefined && normalizedRotation % 90 !== 0) {
+    const userRotation =
+      typeof props.schRotation === "string"
+        ? parseFloat(props.schRotation)
+        : props.schRotation
+    if (userRotation !== undefined && userRotation % 90 !== 0) {
       throw new Error(
         `Schematic rotation ${props.schRotation} is not supported for ${this.componentName}`,
       )
