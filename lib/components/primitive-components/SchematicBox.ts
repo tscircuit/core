@@ -18,6 +18,19 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
+    // Use direct width/height if explicitly given
+    if (typeof props.width === "number" && typeof props.height === "number") {
+      db.schematic_box.insert({
+        width: props.width,
+        height: props.height,
+        x: typeof props.schX === "number" ? props.schX : 0,
+        y: typeof props.schY === "number" ? props.schY : 0,
+        is_dashed: props.strokeStyle === "dashed",
+        schematic_component_id: "",
+      })
+      return
+    }
+
     let portsWithSelectors: Array<{ selector: string; port: Port }> = []
     if (props.overlay) {
       portsWithSelectors = props.overlay
@@ -42,8 +55,6 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
 
     if (portsWithPosition.length > 0) {
       const basePadding = 0.6
-
-      // General padding
       const generalPadding =
         typeof props.padding === "number" ? props.padding : 0
 
@@ -57,7 +68,6 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
 
       const rawWidth = maxX - minX
       const rawHeight = maxY - minY
-
       const defaultHorizontalPadding = rawWidth === 0 ? basePadding : 0
       const defaultVerticalPadding = rawHeight === 0 ? basePadding : 0
       const paddingTop =
@@ -80,7 +90,6 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const height =
         rawHeight + defaultVerticalPadding + paddingTop + paddingBottom
 
-      // ↓ adjust origin to account for left and bottom padding (Y increases upward)
       const x = minX - defaultHorizontalPadding / 2 - paddingLeft
       const y = minY - defaultVerticalPadding / 2 - paddingBottom
 
