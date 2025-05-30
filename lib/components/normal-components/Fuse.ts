@@ -18,15 +18,6 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     }
   }
 
-  initPorts() {
-    super.initPorts({
-      additionalAliases: {
-        pin1: ["pin1"],
-        pin2: ["pin2"],
-      },
-    })
-  }
-
   _getSchematicSymbolDisplayValue(): string | undefined {
     const rawCurrent = this._parsedProps.currentRating
     const rawVoltage = this._parsedProps.voltageRating
