@@ -42,6 +42,11 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
 
     if (portsWithPosition.length > 0) {
       const basePadding = 0.6
+
+      // General padding
+      const generalPadding =
+        typeof props.padding === "number" ? props.padding : 0
+
       const xs = portsWithPosition.map((p) => p.position.x)
       const ys = portsWithPosition.map((p) => p.position.y)
 
@@ -55,15 +60,20 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
 
       const defaultHorizontalPadding = rawWidth === 0 ? basePadding : 0
       const defaultVerticalPadding = rawHeight === 0 ? basePadding : 0
-
       const paddingTop =
-        typeof props.paddingTop === "number" ? props.paddingTop : 0
+        typeof props.paddingTop === "number" ? props.paddingTop : generalPadding
       const paddingBottom =
-        typeof props.paddingBottom === "number" ? props.paddingBottom : 0
+        typeof props.paddingBottom === "number"
+          ? props.paddingBottom
+          : generalPadding
       const paddingLeft =
-        typeof props.paddingLeft === "number" ? props.paddingLeft : 0
+        typeof props.paddingLeft === "number"
+          ? props.paddingLeft
+          : generalPadding
       const paddingRight =
-        typeof props.paddingRight === "number" ? props.paddingRight : 0
+        typeof props.paddingRight === "number"
+          ? props.paddingRight
+          : generalPadding
 
       const width =
         rawWidth + defaultHorizontalPadding + paddingLeft + paddingRight
