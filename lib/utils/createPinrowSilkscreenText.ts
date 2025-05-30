@@ -6,10 +6,12 @@ export const createPinrowSilkscreenText = ({
   elm,
   pinLabels,
   readableRotation,
+  anchorAlignment,
 }: {
   elm: PcbSilkscreenText
   pinLabels: PinLabelsProp
   readableRotation: number
+  anchorAlignment?: PcbSilkscreenText["anchor_alignment"]
 }) => {
   const pinNum = elm.text.replace(/[{}]/g, "").toLowerCase()
 
@@ -22,7 +24,7 @@ export const createPinrowSilkscreenText = ({
   }
 
   return new SilkscreenText({
-    anchorAlignment: "center",
+    anchorAlignment: anchorAlignment || "center",
     text: label ?? pinNum,
     fontSize: elm.font_size + 0.2,
     pcbX: isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,

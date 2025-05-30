@@ -10,6 +10,19 @@ import { SilkscreenText } from "lib/components/primitive-components/SilkscreenTe
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
 import type { PinLabelsProp } from "@tscircuit/props"
 
+const calculateCcwRotation = (
+  componentRotationStr: string | undefined | null,
+  elementCcwRotation: number | undefined | null,
+): number => {
+  const componentAngle = parseInt(componentRotationStr || "0", 10)
+  const baseRotation = -componentAngle
+  const totalRotation = baseRotation + (elementCcwRotation ?? 0)
+
+  const normalizedRotation = ((totalRotation % 360) + 360) % 360
+
+  return normalizedRotation
+}
+
 export const createComponentsFromCircuitJson = (
   {
     componentName,
@@ -110,31 +123,28 @@ export const createComponentsFromCircuitJson = (
         }),
       )
     } else if (elm.type === "pcb_silkscreen_text") {
-      let readableRotation = componentRotation ? parseInt(componentRotation) : 0
-      // Normalize the angle between 0 and 360 degrees.
-      const normalizedRotation = ((readableRotation % 360) + 360) % 360
-      // If the angle makes the text upside down, flip it so that it reads correctly.
-      const isUpsideDown = normalizedRotation > 90 && normalizedRotation <= 270
-      readableRotation = isUpsideDown
-        ? (normalizedRotation + 180) % 360
-        : normalizedRotation
-      if (
-        footprint.includes("pinrow") &&
-        elm.text.includes("PIN") &&
-        pinLabels
-      ) {
+      const ccwRotation = calculateCcwRotation(
+        componentRotation,
+        elm.ccw_rotation,
+      )
+      if (footprint.includes("pinrow") && elm.text.includes("PIN")) {
         components.push(
-          createPinrowSilkscreenText({ elm, pinLabels, readableRotation }),
+          createPinrowSilkscreenText({
+            elm,
+            pinLabels,
+            readableRotation: ccwRotation,
+            anchorAlignment: elm.anchor_alignment,
+          }),
         )
-      } else if (elm.text === "{REF}") {
+      } else {
         components.push(
           new SilkscreenText({
-            anchorAlignment: "center",
+            anchorAlignment: elm.anchor_alignment || "center",
             text: componentName,
             fontSize: elm.font_size + 0.2,
             pcbX: isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
             pcbY: elm.anchor_position.y,
-            pcbRotation: readableRotation ?? 0,
+            pcbRotation: ccwRotation ?? 0,
           }),
         )
       }
