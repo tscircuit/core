@@ -46,24 +46,29 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const rawWidth = maxX - minX
       const rawHeight = maxY - minY
 
-      let widthPadding: number
-      let heightPadding: number
+      // Default padding (only if width or height is zero)
+      const defaultHorizontalPadding = rawWidth === 0 ? basePadding : 0
+      const defaultVerticalPadding = rawHeight === 0 ? basePadding : 0
 
-      if (rawWidth > rawHeight) {
-        // Horizontal row → more vertical padding
-        widthPadding = basePadding / 2
-        heightPadding = basePadding
-      } else {
-        // Vertical column → more horizontal padding
-        widthPadding = basePadding
-        heightPadding = basePadding / 2
-      }
+      const paddingTop =
+        typeof props.paddingTop === "number" ? props.paddingTop : 0
+      const paddingBottom =
+        typeof props.paddingBottom === "number" ? props.paddingBottom : 0
+      const paddingLeft =
+        typeof props.paddingLeft === "number" ? props.paddingLeft : 0
+      const paddingRight =
+        typeof props.paddingRight === "number" ? props.paddingRight : 0
 
-      const width = rawWidth + widthPadding
-      const height = rawHeight + heightPadding
+      const totalHorizontalPadding =
+        defaultHorizontalPadding + paddingLeft + paddingRight
+      const totalVerticalPadding =
+        defaultVerticalPadding + paddingTop + paddingBottom
 
-      const x = minX - widthPadding / 2
-      const y = minY - heightPadding / 2
+      const width = rawWidth + totalHorizontalPadding
+      const height = rawHeight + totalVerticalPadding
+
+      const x = minX - defaultHorizontalPadding / 2 - paddingLeft
+      const y = minY - defaultVerticalPadding / 2 - paddingTop
 
       db.schematic_box.insert({
         height,
