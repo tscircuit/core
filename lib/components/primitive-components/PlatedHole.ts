@@ -5,6 +5,7 @@ import type {
   PCBPlatedHoleInput,
   PcbPlatedHoleOval,
   PcbHoleCircularWithRectPad,
+  PcbHolePillWithRectPad,
 } from "circuit-json"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
@@ -33,6 +34,9 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       return { width: props.outerWidth, height: props.outerHeight }
     }
     if (props.shape === "circular_hole_with_rect_pad") {
+      return { width: props.rectPadWidth, height: props.rectPadHeight }
+    }
+    if (props.shape === "pill_hole_with_rect_pad") {
       return { width: props.rectPadWidth, height: props.rectPadHeight }
     }
     throw new Error(
@@ -193,6 +197,23 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbHoleCircularWithRectPad)
+      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+    } else if (props.shape === "pill_hole_with_rect_pad") {
+      const pcb_plated_hole = db.pcb_plated_hole.insert({
+        pcb_component_id,
+        pcb_port_id: this.matchedPort?.pcb_port_id!,
+        hole_width: props.holeWidth,
+        hole_height: props.holeHeight,
+        rect_pad_width: props.rectPadWidth,
+        rect_pad_height: props.rectPadHeight,
+        shape: "pill_hole_with_rect_pad" as const,
+        port_hints: this.getNameAndAliases(),
+        x: position.x,
+        y: position.y,
+        layers: ["top", "bottom"],
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+      } as PcbHolePillWithRectPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     }
   }
