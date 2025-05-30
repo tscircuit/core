@@ -33,7 +33,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
 
   constructor(
     input: SimpleRouteJson,
-    options: CapacityMeshAutoRouterOptions = {}
+    options: CapacityMeshAutoRouterOptions = {},
   ) {
     this.input = input
     const { capacityDepth, targetMinCapacity, stepDelay = 0 } = options
@@ -122,13 +122,13 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       if (this.stepDelay > 0) {
         this.timeoutId = setTimeout(
           () => this.runCycleAndQueueNextCycle(),
-          this.stepDelay
+          this.stepDelay,
         ) as unknown as number
       } else {
         // Use setImmediate or setTimeout with 0 to prevent blocking the event loop
         this.timeoutId = setTimeout(
           () => this.runCycleAndQueueNextCycle(),
-          0
+          0,
         ) as unknown as number
       }
     } catch (error) {
@@ -139,7 +139,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
         // Enhance error message for common issues
         if (error.message.includes("Unexpected numItems value: 0")) {
           enhancedError = new Error(
-            "Autorouting failed: No valid routing space available. This often occurs when components are overlapping or when there are insufficient obstacles for routing. Please check component placement and ensure components are not overlapping."
+            "Autorouting failed: No valid routing space available. This often occurs when components are overlapping or when there are insufficient obstacles for routing. Please check component placement and ensure components are not overlapping.",
           )
         } else {
           enhancedError = error
@@ -177,19 +177,19 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
   on(event: "progress", callback: (ev: AutorouterProgressEvent) => void): void
   on(
     event: "complete" | "error" | "progress",
-    callback: (ev: any) => void
+    callback: (ev: any) => void,
   ): void {
     if (event === "complete") {
       this.eventHandlers.complete.push(
-        callback as (ev: AutorouterCompleteEvent) => void
+        callback as (ev: AutorouterCompleteEvent) => void,
       )
     } else if (event === "error") {
       this.eventHandlers.error.push(
-        callback as (ev: AutorouterErrorEvent) => void
+        callback as (ev: AutorouterErrorEvent) => void,
       )
     } else if (event === "progress") {
       this.eventHandlers.progress.push(
-        callback as (ev: AutorouterProgressEvent) => void
+        callback as (ev: AutorouterProgressEvent) => void,
       )
     }
   }
@@ -227,7 +227,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
         error.message.includes("Unexpected numItems value: 0")
       ) {
         throw new Error(
-          "Autorouting failed: No valid routing space available. This often occurs when components are overlapping or when there are insufficient obstacles for routing. Please check component placement and ensure components are not overlapping."
+          "Autorouting failed: No valid routing space available. This often occurs when components are overlapping or when there are insufficient obstacles for routing. Please check component placement and ensure components are not overlapping.",
         )
       }
       throw error
@@ -237,7 +237,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       const errorMessage = this.solver.error || "Routing failed"
       if (errorMessage.includes("Unexpected numItems value: 0")) {
         throw new Error(
-          "Autorouting failed: No valid routing space available. This often occurs when components are overlapping or when there are insufficient obstacles for routing. Please check component placement and ensure components are not overlapping."
+          "Autorouting failed: No valid routing space available. This often occurs when components are overlapping or when there are insufficient obstacles for routing. Please check component placement and ensure components are not overlapping.",
         )
       }
       throw new Error(errorMessage)
