@@ -65,13 +65,10 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const paddingRight =
         typeof props.paddingRight === "number" ? props.paddingRight : 0
 
-      const totalHorizontalPadding =
-        defaultHorizontalPadding + paddingLeft + paddingRight
-      const totalVerticalPadding =
-        defaultVerticalPadding + paddingTop + paddingBottom
-
-      const width = rawWidth + totalHorizontalPadding
-      const height = rawHeight + totalVerticalPadding
+      const width =
+        rawWidth + defaultHorizontalPadding + paddingLeft + paddingRight
+      const height =
+        rawHeight + defaultVerticalPadding + paddingTop + paddingBottom
 
       const x = minX - defaultHorizontalPadding / 2 - paddingLeft
       const y = minY - defaultVerticalPadding / 2 - paddingTop
