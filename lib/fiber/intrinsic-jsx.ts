@@ -7,6 +7,7 @@ export interface TscircuitElements {
   inductor: Props.InductorProps
   pushbutton: Props.PushButtonProps
   diode: Props.DiodeProps
+  fuse: Props.FuseProps
   led: Props.LedProps
   board: Props.BoardProps
   jumper: Props.JumperProps
