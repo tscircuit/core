@@ -27,7 +27,6 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     })
   }
 
-  // Show both current and voltage for clarity
   _getSchematicSymbolDisplayValue(): string | undefined {
     const rawCurrent = this._parsedProps.currentRating
     const rawVoltage = this._parsedProps.voltageRating
