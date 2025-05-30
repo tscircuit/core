@@ -11,6 +11,7 @@ it("Chip with pinrow footprint", async () => {
       <chip name="U1" footprint={"soic8"} />
       <chip name="U2" footprint={"soic8"} schX={2} />
       <schematicbox
+        paddingTop={0.6}
         height={0}
         width={2}
         overlay={[".U1 > .pin1", ".U1 > .pin2", ".U1 > .pin3", ".U1 > .pin4"]}

@@ -65,13 +65,14 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const paddingRight =
         typeof props.paddingRight === "number" ? props.paddingRight : 0
 
-      const x = minX - defaultHorizontalPadding / 2 - paddingLeft
-      const y = minY - defaultVerticalPadding / 2 - paddingTop
-
       const width =
         rawWidth + defaultHorizontalPadding + paddingLeft + paddingRight
       const height =
         rawHeight + defaultVerticalPadding + paddingTop + paddingBottom
+
+      // ↓ adjust origin to account for left and bottom padding (Y increases upward)
+      const x = minX - defaultHorizontalPadding / 2 - paddingLeft
+      const y = minY - defaultVerticalPadding / 2 - paddingBottom
 
       db.schematic_box.insert({
         height,
