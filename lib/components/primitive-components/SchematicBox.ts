@@ -17,22 +17,29 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+
     let portsWithSelectors: Array<{ selector: string; port: Port }> = []
     if (props.overlay) {
-      portsWithSelectors = props.overlay.map((selector) => ({
-        selector,
-        port:
-          (this.getSubcircuit().selectOne(selector, {
+      portsWithSelectors = props.overlay
+        .map((selector) => ({
+          selector,
+          port: this.getSubcircuit().selectOne(selector, {
             type: "port",
-          }) as Port) ?? null,
-      }))
+          }) as Port | null,
+        }))
+        .filter(({ port }) => port != null) as Array<{
+        selector: string
+        port: Port
+      }>
     }
+
     const portsWithPosition = portsWithSelectors.map(({ port }) => ({
       port,
       position: port._getGlobalSchematicPositionAfterLayout(),
       schematic_port_id: port.schematic_port_id!,
       facingDirection: port.facingDirection,
     }))
+
     if (portsWithPosition.length > 0) {
       const basePadding = 0.6
       const xs = portsWithPosition.map((p) => p.position.x)
@@ -46,7 +53,6 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const rawWidth = maxX - minX
       const rawHeight = maxY - minY
 
-      // Default padding (only if width or height is zero)
       const defaultHorizontalPadding = rawWidth === 0 ? basePadding : 0
       const defaultVerticalPadding = rawHeight === 0 ? basePadding : 0
 
