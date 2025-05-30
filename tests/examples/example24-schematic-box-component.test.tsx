@@ -18,11 +18,29 @@ it("Chip with pinrow footprint", async () => {
         schX={0}
         schY={0}
       />
+      <schematicbox
+        padding={0.2}
+        strokeStyle="dashed"
+        height={0}
+        width={2}
+        overlay={[
+          ".U2 > .pin1",
+          ".U2 > .pin2",
+          ".U2 > .pin3",
+          ".U2 > .pin4",
+          ".U1 > .pin5",
+          ".U1 > .pin6",
+          ".U1 > .pin7",
+          ".U1 > .pin8",
+        ]}
+        schX={0}
+        schY={0}
+      />
     </board>,
   )
 
   circuit.render()
   console.log(
-    circuit.getCircuitJson().find((el) => el.type === "schematic_box"),
+    circuit.getCircuitJson().filter((c) => c.type === "schematic_box"),
   )
 })
