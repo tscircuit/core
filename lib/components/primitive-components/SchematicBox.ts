@@ -78,17 +78,6 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
         is_dashed: props.strokeStyle === "dashed",
         schematic_component_id: "",
       })
-
-      console.log({ rawWidth, rawHeight, width, height })
-
-      db.schematic_box.insert({
-        height,
-        width,
-        x,
-        y,
-        is_dashed: props.strokeStyle === "dashed",
-        schematic_component_id: "",
-      })
     }
   }
 }
