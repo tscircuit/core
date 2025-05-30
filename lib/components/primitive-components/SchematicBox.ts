@@ -19,7 +19,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     const { _parsedProps: props } = this
 
     // Use direct width/height if explicitly given
-    if (typeof props.width === "number" && typeof props.height === "number") {
+    if ("width" in props && "height" in props && !("overlay" in props)) {
       db.schematic_box.insert({
         width: props.width,
         height: props.height,
@@ -32,9 +32,9 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     }
 
     let portsWithSelectors: Array<{ selector: string; port: Port }> = []
-    if (props.overlay) {
-      portsWithSelectors = props.overlay
-        .map((selector) => ({
+    if ("overlay" in props && props.overlay) {
+      portsWithSelectors = (props.overlay as string[])
+        .map((selector: string) => ({
           selector,
           port: this.getSubcircuit().selectOne(selector, {
             type: "port",
