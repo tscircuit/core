@@ -57,7 +57,7 @@ export const createComponentsFromCircuitJson = (
           strokeWidth: elm.stroke_width,
         }),
       )
-    } else if (elm.type === "pcb_plated_hole" && elm.shape === "circle") {
+    } else if (elm.type === "pcb_plated_hole") {
       if (elm.shape === "circle") {
         components.push(
           new PlatedHole({
@@ -66,6 +66,18 @@ export const createComponentsFromCircuitJson = (
             shape: "circle",
             holeDiameter: elm.hole_diameter,
             outerDiameter: elm.outer_diameter,
+            portHints: elm.port_hints,
+          }),
+        )
+      } else if (elm.shape === "circular_hole_with_rect_pad") {
+        components.push(
+          new PlatedHole({
+            pcbX: elm.x,
+            pcbY: elm.y,
+            shape: "circular_hole_with_rect_pad",
+            holeDiameter: elm.hole_diameter,
+            rectPadHeight: elm.rect_pad_height,
+            rectPadWidth: elm.rect_pad_width,
             portHints: elm.port_hints,
           }),
         )
