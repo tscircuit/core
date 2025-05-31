@@ -666,9 +666,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this.schematic_group_id = schematic_group.schematic_group_id
 
     for (const child of this.children) {
-      db.schematic_component.update(child.schematic_component_id!, {
-        schematic_group_id: schematic_group.schematic_group_id,
-      })
+      if (child.schematic_component_id) {
+        db.schematic_component.update(child.schematic_component_id, {
+          schematic_group_id: schematic_group.schematic_group_id,
+        })
+      }
     }
   }
 
@@ -685,7 +687,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSchematicLayout(): void {
     // The schematic_components are rendered in our children
-    if (!this.isSubcircuit) return
     const props = this._parsedProps as SubcircuitGroupProps
 
     const schematicLayoutMode = this._getSchematicLayoutMode()
@@ -698,12 +699,137 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _doInitialSchematicLayoutMatchAdapt(): void {
     const { db } = this.root!
 
+    // Get all schematic components in this group
+    const schematicComponents = db.schematic_component
+      .list()
+      .filter((sc) => sc.schematic_group_id === this.schematic_group_id)
+
+    // If we don't have any components yet, return early
+    if (schematicComponents.length === 0) {
+      return
+    }
+
+    // Create a map of component IDs to their schematic representations
+    const componentMap = new Map<string, SchematicComponent>()
+    const netMap = new Map<string, string>() // net_id -> netId for InputNetlist
+
     // Construct an InputNetlist from all children components
     const inputNetlist: InputNetlist = {
       boxes: [],
       connections: [],
       nets: [],
     }
+
+    // Create boxes from schematic components
+    schematicComponents.forEach((sc) => {
+      componentMap.set(sc.schematic_component_id, sc)
+
+      // Count pins on each side
+      const ports = db.schematic_port
+        .list()
+        .filter((sp) => sp.schematic_component_id === sc.schematic_component_id)
+
+      let leftPinCount = 0
+      let rightPinCount = 0
+      let topPinCount = 0
+      let bottomPinCount = 0
+
+      ports.forEach((port) => {
+        const side = port.side || this._determineSideFromPosition(port, sc)
+        switch (side) {
+          case "left":
+            leftPinCount++
+            break
+          case "right":
+            rightPinCount++
+            break
+          case "top":
+            topPinCount++
+            break
+          case "bottom":
+            bottomPinCount++
+            break
+        }
+      })
+
+      inputNetlist.boxes.push({
+        boxId: sc.schematic_component_id,
+        leftPinCount,
+        rightPinCount,
+        topPinCount,
+        bottomPinCount,
+      })
+    })
+
+    // Create connections from source traces
+    const sourceTraces = db.source_trace.list()
+    const processedConnections = new Set<string>()
+
+    // Map source component IDs to schematic component IDs
+    const sourceToSchematicMap = new Map<string, string>()
+    schematicComponents.forEach((sc) => {
+      if (sc.source_component_id) {
+        sourceToSchematicMap.set(
+          sc.source_component_id,
+          sc.schematic_component_id,
+        )
+      }
+    })
+
+    sourceTraces.forEach((trace) => {
+      // Get all ports connected by this trace
+      const connectedPorts: Array<
+        { boxId: string; pinNumber: number } | { netId: string }
+      > = []
+
+      // Add source ports
+      if (trace.connected_source_port_ids) {
+        trace.connected_source_port_ids.forEach((sourcePortId) => {
+          const sourcePort = db.source_port.get(sourcePortId)
+          if (sourcePort && sourcePort.source_component_id) {
+            const schematicComponentId = sourceToSchematicMap.get(
+              sourcePort.source_component_id,
+            )
+            if (schematicComponentId) {
+              connectedPorts.push({
+                boxId: schematicComponentId,
+                pinNumber: sourcePort.pin_number || 1,
+              })
+            }
+          }
+        })
+      }
+
+      // Check if this trace connects to a net
+      if (
+        trace.connected_source_net_ids &&
+        trace.connected_source_net_ids.length > 0
+      ) {
+        trace.connected_source_net_ids.forEach((netId) => {
+          const net = db.source_net.get(netId)
+          if (net) {
+            let inputNetlistNetId = netMap.get(net.source_net_id)
+            if (!inputNetlistNetId) {
+              inputNetlistNetId = `net_${netMap.size + 1}`
+              netMap.set(net.source_net_id, inputNetlistNetId)
+              inputNetlist.nets.push({ netId: inputNetlistNetId })
+            }
+            connectedPorts.push({ netId: inputNetlistNetId })
+          }
+        })
+      }
+
+      // Create connection if we have at least 2 ports
+      if (connectedPorts.length >= 2) {
+        const connectionKey = JSON.stringify(connectedPorts.sort())
+        if (!processedConnections.has(connectionKey)) {
+          processedConnections.add(connectionKey)
+          inputNetlist.connections.push({
+            connectedPorts,
+          })
+        }
+      }
+    })
 
     // Run the SchematicLayoutPipelineSolver
     const solver = new SchematicLayoutPipelineSolver({
@@ -714,6 +840,102 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const circuitLayout = solver.getLayout()
 
     // Apply the layout to the schematic components
+    // The layout solver may return different box IDs, so we need to map by index
+    circuitLayout.boxes.forEach((laidOutBox, index) => {
+      // Map by index since the solver doesn't preserve our box IDs
+      if (index < schematicComponents.length) {
+        const component = schematicComponents[index]
+        // Update component position
+        db.schematic_component.update(component.schematic_component_id, {
+          center: {
+            x: laidOutBox.centerX,
+            y: laidOutBox.centerY,
+          },
+        })
+
+        // Update port positions
+        laidOutBox.pins.forEach((pin) => {
+          const ports = db.schematic_port
+            .list()
+            .filter(
+              (p) =>
+                p.schematic_component_id === component.schematic_component_id &&
+                p.pin_number === pin.pinNumber,
+            )
+
+          ports.forEach((port) => {
+            db.schematic_port.update(port.schematic_port_id, {
+              center: {
+                x: pin.x,
+                y: pin.y,
+              },
+            })
+          })
+        })
+      }
+    })
+
+    // Update schematic group bounds
+    const bounds = this._calculateSchematicBounds(circuitLayout.boxes)
+    if (this.schematic_group_id) {
+      db.schematic_group.update(this.schematic_group_id, {
+        center: {
+          x: (bounds.minX + bounds.maxX) / 2,
+          y: (bounds.minY + bounds.maxY) / 2,
+        },
+        width: bounds.maxX - bounds.minX,
+        height: bounds.maxY - bounds.minY,
+      })
+    }
+  }
+
+  _determineSideFromPosition(
+    port: SchematicPort,
+    component: SchematicComponent,
+  ): "left" | "right" | "top" | "bottom" {
+    if (!port.center || !component.center) return "left"
+
+    const dx = port.center.x - component.center.x
+    const dy = port.center.y - component.center.y
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return dx > 0 ? "right" : "left"
+    }
+    return dy > 0 ? "bottom" : "top"
+  }
+
+  _calculateSchematicBounds(
+    boxes: Array<{ centerX: number; centerY: number }>,
+  ): {
+    minX: number
+    maxX: number
+    minY: number
+    maxY: number
+  } {
+    if (boxes.length === 0) {
+      return { minX: 0, maxX: 0, minY: 0, maxY: 0 }
+    }
+
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    let maxY = -Infinity
+
+    boxes.forEach((box) => {
+      minX = Math.min(minX, box.centerX)
+      maxX = Math.max(maxX, box.centerX)
+      minY = Math.min(minY, box.centerY)
+      maxY = Math.max(maxY, box.centerY)
+    })
+
+    // Add some padding
+    const padding = 2
+    return {
+      minX: minX - padding,
+      maxX: maxX + padding,
+      minY: minY - padding,
+      maxY: maxY + padding,
+    }
   }
 
   _getAutorouterConfig(): AutorouterConfig {
