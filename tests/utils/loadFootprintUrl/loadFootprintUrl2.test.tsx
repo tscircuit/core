@@ -1,26 +1,37 @@
 import { test, expect } from "bun:test"
 import { loadFootprintUrl } from "lib/utils/loadFootprintUrl"
 import { FakeFootprintServer } from "./FakeFootprintServer"
-import { singlePadTestData } from "./testData"
 
 test("loadFootprintUrl should work without cache engine", async () => {
-  const fakeServer = new FakeFootprintServer(singlePadTestData)
-  const originalFetch = global.fetch
-  global.fetch = fakeServer.handleRequest.bind(fakeServer) as typeof fetch
+  const fakeServer = new FakeFootprintServer()
 
   try {
-    const testUrl = "http://localhost:3000/test-footprint-no-cache.json"
+    await fakeServer.start()
+
+    // Use actual footprint name (SOIC8 IC package)
+    const testUrl = `${fakeServer.getUrl()}/soic8`
     const ctx = {
       // No cacheEngine provided
-      componentName: "TestResistor",
+      componentName: "TestIC",
       componentRotation: 0,
-      pinLabels: { pin1: "1", pin2: "2" },
+      pinLabels: {
+        pin1: "VCC",
+        pin2: "IN+",
+        pin3: "IN-",
+        pin4: "GND",
+        pin5: "REF",
+        pin6: "OUT",
+        pin7: "V+",
+        pin8: "V-",
+      },
     }
 
     const fpComponents = await loadFootprintUrl(testUrl, ctx)
     expect(fpComponents.length).toBeGreaterThan(0)
     expect(fakeServer.getRequestCount()).toBe(1)
+    // SOIC8 should have 8 pads
+    expect(fpComponents.length).toBeGreaterThan(0)
   } finally {
-    global.fetch = originalFetch
+    await fakeServer.stop()
   }
 })

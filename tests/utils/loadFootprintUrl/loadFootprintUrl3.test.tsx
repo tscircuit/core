@@ -2,7 +2,6 @@ import { test, expect } from "bun:test"
 import { loadFootprintUrl } from "lib/utils/loadFootprintUrl"
 import type { LocalCacheEngine } from "lib/local-cache-engine"
 import { FakeFootprintServer } from "./FakeFootprintServer"
-import { singlePadTestData } from "./testData"
 
 test("loadFootprintUrl should handle cache read/write errors gracefully", async () => {
   let getItemCallCount = 0
@@ -20,17 +19,18 @@ test("loadFootprintUrl should handle cache read/write errors gracefully", async 
     },
   }
 
-  const fakeServer = new FakeFootprintServer(singlePadTestData)
-  const originalFetch = global.fetch
-  global.fetch = fakeServer.handleRequest.bind(fakeServer) as typeof fetch
+  const fakeServer = new FakeFootprintServer()
 
   try {
-    const testUrl = "http://localhost:3000/test-footprint-faulty-cache.json"
+    await fakeServer.start()
+
+    // Use actual footprint name (0402) with .json extension to test URL parsing
+    const testUrl = `${fakeServer.getUrl()}/0402.json`
     const ctx = {
       cacheEngine: faultyCacheEngine,
-      componentName: "TestResistor",
+      componentName: "TestCapacitor",
       componentRotation: 0,
-      pinLabels: { pin1: "1", pin2: "2" },
+      pinLabels: { pin1: "+", pin2: "-" },
     }
 
     // Should still work despite cache errors
@@ -39,7 +39,9 @@ test("loadFootprintUrl should handle cache read/write errors gracefully", async 
     expect(getItemCallCount).toBe(1)
     expect(setItemCallCount).toBe(1)
     expect(fakeServer.getRequestCount()).toBe(1)
+    // 0402 should have 2 pads
+    expect(fpComponents.length).toBeGreaterThan(0)
   } finally {
-    global.fetch = originalFetch
+    await fakeServer.stop()
   }
 })
