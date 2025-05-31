@@ -5,7 +5,6 @@ import type {
   PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { Port } from "../primitive-components/Port"
 
 export class Led extends NormalComponent<
   typeof ledProps,
@@ -17,7 +16,7 @@ export class Led extends NormalComponent<
       componentName: "Led",
       schematicSymbolName: this.props.symbolName ?? ("led" as BaseSymbolName),
       zodProps: ledProps,
-      sourceFtype: "simple_diode" as Ftype,
+      sourceFtype: "simple_led" as Ftype,
     }
   }
 
@@ -34,8 +33,10 @@ export class Led extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
-      ftype: "simple_diode",
+      ftype: "simple_led",
       name: props.name,
+      wave_length: props.wavelength,
+      color: props.color,
       // @ts-ignore
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,

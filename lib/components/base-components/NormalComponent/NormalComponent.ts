@@ -1080,12 +1080,16 @@ export class NormalComponent<
         footprinterString,
       }),
     )
+
+    // Convert "Not found" to empty object before caching or returning
+    const supplierPartNumbers = result === "Not found" ? {} : result
+
     if (cacheEngine) {
       try {
-        await cacheEngine.setItem(cacheKey, JSON.stringify(result))
+        await cacheEngine.setItem(cacheKey, JSON.stringify(supplierPartNumbers))
       } catch {}
     }
-    return result
+    return supplierPartNumbers
   }
 
   doInitialPartsEngineRender(): void {
