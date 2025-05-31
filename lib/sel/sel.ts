@@ -64,6 +64,12 @@ type CommonNetNames =
   | "VIN"
   | "SHLD"
   | "EN"
+  | "FLASH_SDO"
+  | "FLASH_SDI"
+  | "FLASH_SCK"
+  | "FLASH_N_CS"
+  | "FLASH_N_WP"
+  | "FLASH_N_HOLD"
 
 type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
 

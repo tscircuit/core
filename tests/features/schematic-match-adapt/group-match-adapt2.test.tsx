@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("Group with match-adapt layout - simple two component circuit", () => {
+test("group-match-adapt2", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

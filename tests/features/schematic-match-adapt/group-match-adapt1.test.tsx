@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { Circuit } from "../../../lib/index"
 import type { SchematicComponent, SchematicPort } from "circuit-json"
 
-test("Group with match-adapt layout - three resistors in triangle configuration", () => {
+test("group-match-adapt1", () => {
   const circuit = new Circuit()
 
   circuit.add(
