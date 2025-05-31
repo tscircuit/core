@@ -1,5 +1,5 @@
-import { test, expect } from "bun:test";
-import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter";
+import { test, expect } from "bun:test"
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 
 test("PROOF: Enhanced error handling works - reproduces issue #763", () => {
   // This test demonstrates that we can reproduce the exact "Unexpected numItems value: 0" error
@@ -19,43 +19,41 @@ test("PROOF: Enhanced error handling works - reproduces issue #763", () => {
       },
     ],
     bounds: { minX: -0.1, maxX: 0.2, minY: -0.1, maxY: 0.2 }, // Bounds too small for trace width
-  };
+  }
 
   console.log(
-    "🧪 Testing scenario that triggers 'Unexpected numItems value: 0' error..."
-  );
+    "🧪 Testing scenario that triggers 'Unexpected numItems value: 0' error...",
+  )
 
-  const autorouter = new CapacityMeshAutorouter(problematicInput);
+  const autorouter = new CapacityMeshAutorouter(problematicInput)
 
   try {
-    const result = autorouter.solveSync();
-    console.log(
-      "✅ Autorouting succeeded (error handling prevented the crash)"
-    );
-    expect(result).toBeDefined();
+    const result = autorouter.solveSync()
+    console.log("✅ Autorouting succeeded (error handling prevented the crash)")
+    expect(result).toBeDefined()
   } catch (error) {
-    console.log("⚠️  Autorouting failed, checking error message...");
-    expect(error).toBeInstanceOf(Error);
-    const errorMessage = (error as Error).message;
+    console.log("⚠️  Autorouting failed, checking error message...")
+    expect(error).toBeInstanceOf(Error)
+    const errorMessage = (error as Error).message
 
-    console.log(`📝 Error message: "${errorMessage}"`);
+    console.log(`📝 Error message: "${errorMessage}"`)
 
     // CRITICAL TEST: The original "Unexpected numItems value: 0" should never appear
-    expect(errorMessage).not.toContain("Unexpected numItems value: 0");
+    expect(errorMessage).not.toContain("Unexpected numItems value: 0")
 
     // If we get our enhanced error message, verify it's helpful
     if (
       errorMessage.includes(
-        "Autorouting failed: No valid routing space available"
+        "Autorouting failed: No valid routing space available",
       )
     ) {
-      console.log("✅ Enhanced error message detected!");
-      expect(errorMessage).toContain("components are overlapping");
-      expect(errorMessage).toContain("Please check component placement");
+      console.log("✅ Enhanced error message detected!")
+      expect(errorMessage).toContain("components are overlapping")
+      expect(errorMessage).toContain("Please check component placement")
     } else {
       console.log(
-        `ℹ️  Got different error (not the target error): ${errorMessage}`
-      );
+        `ℹ️  Got different error (not the target error): ${errorMessage}`,
+      )
     }
   }
-});
+})

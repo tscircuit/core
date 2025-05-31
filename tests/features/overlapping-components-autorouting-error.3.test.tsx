@@ -1,5 +1,5 @@
-import { test, expect } from "bun:test";
-import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter";
+import { test, expect } from "bun:test"
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 
 test("CapacityMeshAutorouter with completely blocked routing space", () => {
   // Create a scenario with a massive obstacle blocking all routing
@@ -27,37 +27,37 @@ test("CapacityMeshAutorouter with completely blocked routing space", () => {
       },
     ],
     bounds: { minX: -10, maxX: 10, minY: -10, maxY: 10 },
-  };
+  }
 
-  const autorouter = new CapacityMeshAutorouter(problematicSimpleRouteJson);
+  const autorouter = new CapacityMeshAutorouter(problematicSimpleRouteJson)
 
   try {
-    const result = autorouter.solveSync();
+    const result = autorouter.solveSync()
 
     // If somehow it succeeded, verify the result at least
-    expect(result).toBeDefined();
+    expect(result).toBeDefined()
   } catch (error) {
     // If it throws an error, verify it's our enhanced error message
-    expect(error).toBeInstanceOf(Error);
-    const errorMessage = (error as Error).message;
+    expect(error).toBeInstanceOf(Error)
+    const errorMessage = (error as Error).message
 
     if (errorMessage.includes("Unexpected numItems value: 0")) {
       // This means our enhancement didn't catch it - this is what we're trying to fix
       throw new Error(
         "The original cryptic error message is still being thrown: " +
-          errorMessage
-      );
+          errorMessage,
+      )
     } else if (
       errorMessage.includes(
-        "Autorouting failed: No valid routing space available"
+        "Autorouting failed: No valid routing space available",
       )
     ) {
       // This is good - our enhanced error message is working
-      expect(errorMessage).toContain("components are overlapping");
-      expect(errorMessage).toContain("Please check component placement");
+      expect(errorMessage).toContain("components are overlapping")
+      expect(errorMessage).toContain("Please check component placement")
     } else {
       // Some other error - let it through for debugging
-      throw error;
+      throw error
     }
   }
-});
+})
