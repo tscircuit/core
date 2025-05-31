@@ -34,6 +34,7 @@ test("render lifecycle events are emitted", () => {
   // Verify events were emitted for each render phase
   const phases = [
     "ReactSubtreesRender",
+    "PcbFootprintStringRender",
     "InitializePortsFromChildren",
     "CreateNetsFromProps",
     "SourceRender",
