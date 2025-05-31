@@ -16,23 +16,9 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
-    const { _parsedProps: props } = this
-
-    // Use direct width/height if explicitly given
-    if ("width" in props && "height" in props && !("overlay" in props)) {
-      db.schematic_box.insert({
-        width: props.width,
-        height: props.height,
-        x: typeof props.schX === "number" ? props.schX : 0,
-        y: typeof props.schY === "number" ? props.schY : 0,
-        is_dashed: props.strokeStyle === "dashed",
-        schematic_component_id: "",
-      })
-      return
-    }
-
+    const props = (this._parsedProps = this.config.zodProps.parse(this.props))
     let portsWithSelectors: Array<{ selector: string; port: Port }> = []
-    if ("overlay" in props && props.overlay) {
+    if (props.overlay) {
       portsWithSelectors = (props.overlay as string[])
         .map((selector: string) => ({
           selector,
@@ -53,54 +39,67 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       facingDirection: port.facingDirection,
     }))
 
-    if (portsWithPosition.length > 0) {
-      const basePadding = 0.6
-      const generalPadding =
-        typeof props.padding === "number" ? props.padding : 0
+    const basePadding = 0.6
+    const generalPadding = typeof props.padding === "number" ? props.padding : 0
+    const paddingTop =
+      typeof props.paddingTop === "number" ? props.paddingTop : generalPadding
+    const paddingBottom =
+      typeof props.paddingBottom === "number"
+        ? props.paddingBottom
+        : generalPadding
+    const paddingLeft =
+      typeof props.paddingLeft === "number" ? props.paddingLeft : generalPadding
+    const paddingRight =
+      typeof props.paddingRight === "number"
+        ? props.paddingRight
+        : generalPadding
 
+    let width: number | undefined
+    let height: number | undefined
+    let centerX: number = typeof props.schX === "number" ? props.schX : 0
+    let centerY: number = typeof props.schY === "number" ? props.schY : 0
+
+    if (portsWithPosition.length > 0) {
       const xs = portsWithPosition.map((p) => p.position.x)
       const ys = portsWithPosition.map((p) => p.position.y)
-
       const minX = Math.min(...xs)
       const maxX = Math.max(...xs)
       const minY = Math.min(...ys)
       const maxY = Math.max(...ys)
-
       const rawWidth = maxX - minX
       const rawHeight = maxY - minY
       const defaultHorizontalPadding = rawWidth === 0 ? basePadding : 0
       const defaultVerticalPadding = rawHeight === 0 ? basePadding : 0
-      const paddingTop =
-        typeof props.paddingTop === "number" ? props.paddingTop : generalPadding
-      const paddingBottom =
-        typeof props.paddingBottom === "number"
-          ? props.paddingBottom
-          : generalPadding
-      const paddingLeft =
-        typeof props.paddingLeft === "number"
-          ? props.paddingLeft
-          : generalPadding
-      const paddingRight =
-        typeof props.paddingRight === "number"
-          ? props.paddingRight
-          : generalPadding
 
-      const width =
+      const computedWidth =
         rawWidth + defaultHorizontalPadding + paddingLeft + paddingRight
-      const height =
+      const computedHeight =
         rawHeight + defaultVerticalPadding + paddingTop + paddingBottom
 
-      const x = minX - defaultHorizontalPadding / 2 - paddingLeft
-      const y = minY - defaultVerticalPadding / 2 - paddingBottom
+      width = props.width ?? computedWidth
+      height = props.height ?? computedHeight
 
-      db.schematic_box.insert({
-        height,
-        width,
-        x,
-        y,
-        is_dashed: props.strokeStyle === "dashed",
-        schematic_component_id: "",
-      })
+      centerX = (minX + maxX) / 2 + centerX
+      centerY = (minY + maxY) / 2 + centerY
+    } else if (props.width && props.height) {
+      width = props.width
+      height = props.height
+      // centerX/Y already default to props.schX/schY or 0
+    } else {
+      // No overlay and no fixed size: skip
+      return
     }
+
+    const x = centerX - width / 2
+    const y = centerY - height / 2
+
+    db.schematic_box.insert({
+      height,
+      width,
+      x,
+      y,
+      is_dashed: props.strokeStyle === "dashed",
+      schematic_component_id: "",
+    })
   }
 }
