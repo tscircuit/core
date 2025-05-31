@@ -34,7 +34,7 @@ export class Board extends Group<typeof boardProps> {
   }
 
   doInitialPcbBoardAutoSize(): void {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     if (!this.pcb_board_id) return
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -94,7 +94,7 @@ export class Board extends Group<typeof boardProps> {
   }
 
   doInitialPcbComponentRender(): void {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -150,14 +150,14 @@ export class Board extends Group<typeof boardProps> {
   }
 
   doInitialPcbDesignRuleChecks() {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     if (this.getInheritedProperty("routingDisabled")) return
 
     super.doInitialPcbDesignRuleChecks()
   }
 
   updatePcbDesignRuleChecks() {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     if (this.getInheritedProperty("routingDisabled")) return
     const { db } = this.root!
 

@@ -15,7 +15,7 @@ export class FabricationNotePath extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     const { db } = this.root!
     const subcircuit = this.getSubcircuit()
     const { _parsedProps: props } = this

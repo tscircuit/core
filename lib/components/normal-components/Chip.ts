@@ -47,7 +47,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   }
 
   doInitialPcbComponentRender() {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 

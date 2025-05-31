@@ -81,7 +81,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbComponentRender() {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const pcb_group = db.pcb_group.insert({
@@ -104,7 +104,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     const { db } = this.root!
 
     const bounds = getBoundsOfPcbComponents(this.children)
@@ -489,7 +489,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   doInitialPcbTraceRender() {
     const debug = Debug("tscircuit:core:doInitialPcbTraceRender")
     if (!this.isSubcircuit) return
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     if (this.getInheritedProperty("routingDisabled")) return
     if (this._shouldUseTraceByTraceRouting()) return
 
@@ -646,7 +646,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicComponentRender() {
-    if (this.root?.schematicDisabled) return
+    if (this.getInheritedProperty("schematicDisabled")) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const schematic_group = db.schematic_group.insert({
@@ -773,7 +773,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbDesignRuleChecks() {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     if (this.getInheritedProperty("routingDisabled")) return
     const { db } = this.root!
 

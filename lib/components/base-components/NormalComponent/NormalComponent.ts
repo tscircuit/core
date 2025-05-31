@@ -133,7 +133,7 @@ export class NormalComponent<
       pinCount?: number
     } = {},
   ) {
-    if (this.root?.schematicDisabled) return
+    if (this.getInheritedProperty("schematicDisabled")) return
     const { config } = this
     const portsToCreate: Port[] = []
 
@@ -403,7 +403,7 @@ export class NormalComponent<
    * You can override this method to do more complicated things.
    */
   doInitialSchematicComponentRender() {
-    if (this.root?.schematicDisabled) return
+    if (this.getInheritedProperty("schematicDisabled")) return
     const { db } = this.root!
 
     const { schematicSymbolName } = this.config
@@ -464,7 +464,7 @@ export class NormalComponent<
   }
 
   _doInitialSchematicComponentRenderWithSymbol() {
-    if (this.root?.schematicDisabled) return
+    if (this.getInheritedProperty("schematicDisabled")) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -489,7 +489,7 @@ export class NormalComponent<
   }
 
   _doInitialSchematicComponentRenderWithSchematicBoxDimensions() {
-    if (this.root?.schematicDisabled) return
+    if (this.getInheritedProperty("schematicDisabled")) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const dimensions = this._getSchematicBoxDimensions()!
@@ -567,7 +567,7 @@ export class NormalComponent<
   }
 
   doInitialPcbComponentRender() {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const subcircuit = this.getSubcircuit()
@@ -618,7 +618,7 @@ export class NormalComponent<
    * the width/height of the component
    */
   doInitialPcbComponentSizeCalculation(): void {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     if (!this.pcb_component_id) return
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -811,7 +811,7 @@ export class NormalComponent<
   }
 
   getPortsFromSchematicSymbol(): Port[] {
-    if (this.root?.schematicDisabled) return []
+    if (this.getInheritedProperty("schematicDisabled")) return []
     const { config } = this
     if (!config.schematicSymbolName) return []
     const symbol: SchSymbol = (symbols as any)[config.schematicSymbolName]
@@ -1093,6 +1093,7 @@ export class NormalComponent<
   }
 
   doInitialPartsEngineRender(): void {
+    if (this.getInheritedProperty("partsEngineDisabled")) return
     const partsEngine = this.getInheritedProperty("partsEngine")
     if (!partsEngine) return
     const { db } = this.root!
@@ -1126,6 +1127,7 @@ export class NormalComponent<
   }
 
   updatePartsEngineRender(): void {
+    if (this.getInheritedProperty("partsEngineDisabled")) return
     const { db } = this.root!
 
     const source_component = db.source_component.get(this.source_component_id!)

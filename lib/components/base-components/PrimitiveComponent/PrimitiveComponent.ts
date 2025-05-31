@@ -79,6 +79,9 @@ export abstract class PrimitiveComponent<
       }
       current = current.parent as PrimitiveComponent<ZodProps> | null // Move up to the parent
     }
+    if (this.root && propertyName in this.root) {
+      return (this.root as any)[propertyName]
+    }
     if (this.root?.platform && propertyName in this.root.platform) {
       return this.root.platform[propertyName as keyof typeof this.root.platform]
     }

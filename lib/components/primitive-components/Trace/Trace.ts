@@ -316,7 +316,7 @@ export class Trace
     }
   }
   doInitialPcbTraceRender(): void {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
     const subcircuit = this.getSubcircuit()
@@ -664,7 +664,7 @@ export class Trace
   }
 
   _doInitialSchematicTraceRenderWithDisplayLabel(): void {
-    if (this.root?.schematicDisabled) return
+    if (this.getInheritedProperty("schematicDisabled")) return
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
 
@@ -847,7 +847,7 @@ export class Trace
   }
 
   doInitialSchematicTraceRender(): void {
-    if (this.root?.schematicDisabled) return
+    if (this.getInheritedProperty("schematicDisabled")) return
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
 

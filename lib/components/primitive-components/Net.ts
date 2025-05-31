@@ -99,7 +99,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
    * This should only run if the autorouter is sequential-trace
    */
   doInitialPcbRouteNetIslands(): void {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     if (this.getSubcircuit()._parsedProps.routingDisabled) return
     if (
       this.getSubcircuit()._getAutorouterConfig().groupMode !==

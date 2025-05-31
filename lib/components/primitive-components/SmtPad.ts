@@ -50,7 +50,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     if (!props.portHints) return
@@ -171,7 +171,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   }
 
   doInitialPcbPortAttachment(): void {
-    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("pcbDisabled")) return
     const { db } = this.root!
     db.pcb_smtpad.update(this.pcb_smtpad_id!, {
       pcb_port_id: this.matchedPort?.pcb_port_id!,

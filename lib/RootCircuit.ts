@@ -18,6 +18,7 @@ export class RootCircuit {
   isRoot = true
   schematicDisabled = false
   pcbDisabled = false
+  partsEngineDisabled = false
   pcbRoutingDisabled = false
 
   /**
@@ -37,6 +38,17 @@ export class RootCircuit {
     // TODO rename to rootCircuit
     this.root = this
     this.platform = platform
+    if (platform) {
+      if (platform.pcbDisabled !== undefined) {
+        this.pcbDisabled = platform.pcbDisabled
+      }
+      if (platform.schematicDisabled !== undefined) {
+        this.schematicDisabled = platform.schematicDisabled
+      }
+      if (platform.partsEngineDisabled !== undefined) {
+        this.partsEngineDisabled = platform.partsEngineDisabled
+      }
+    }
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
