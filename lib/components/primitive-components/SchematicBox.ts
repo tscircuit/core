@@ -79,8 +79,8 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       width = props.width ?? computedWidth
       height = props.height ?? computedHeight
 
-      centerX = (minX + maxX) / 2 + centerX
-      centerY = (minY + maxY) / 2 + centerY
+      centerX = (minX + maxX) / 2 + (props.schX ?? 0)
+      centerY = (minY + maxY) / 2 + (props.schY ?? 0)
     } else if (props.width && props.height) {
       width = props.width
       height = props.height
