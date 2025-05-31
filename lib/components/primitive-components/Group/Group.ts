@@ -28,6 +28,10 @@ import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalA
 import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import {
+  type InputNetlist,
+  SchematicLayoutPipelineSolver,
+} from "@tscircuit/schematic-match-adapt"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -668,44 +672,48 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
+  _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "none" {
+    const props = this._parsedProps as SubcircuitGroupProps
+    if (props.schLayout?.matchAdapt) return "match-adapt"
+    if (props.schLayout?.flex) return "flex"
+    if (props.schLayout?.grid) return "grid"
+    if (props.matchAdapt) return "match-adapt"
+    if (props.flex) return "flex"
+    if (props.grid) return "grid"
+    return "none"
+  }
+
   doInitialSchematicLayout(): void {
     // The schematic_components are rendered in our children
     if (!this.isSubcircuit) return
     const props = this._parsedProps as SubcircuitGroupProps
-    if (!props.schAutoLayoutEnabled) return
+
+    const schematicLayoutMode = this._getSchematicLayoutMode()
+
+    if (schematicLayoutMode === "match-adapt") {
+      this._doInitialSchematicLayoutMatchAdapt()
+    }
+  }
+
+  _doInitialSchematicLayoutMatchAdapt(): void {
     const { db } = this.root!
 
-    const descendants = this.getDescendants()
-
-    const components: SchematicComponent[] = []
-    const ports: SchematicPort[] = []
-    // TODO move subcircuits as a group, don't re-layout subcircuits
-    for (const descendant of descendants) {
-      if ("schematic_component_id" in descendant) {
-        const component = db.schematic_component.get(
-          descendant.schematic_component_id!,
-        )
-        if (component) {
-          // Get all ports associated with this component
-          const schPorts = db.schematic_port
-            .list()
-            .filter(
-              (p) =>
-                p.schematic_component_id === component.schematic_component_id,
-            )
-
-          components.push(component)
-          ports.push(...schPorts)
-        }
-      }
+    // Construct an InputNetlist from all children components
+    const inputNetlist: InputNetlist = {
+      boxes: [],
+      connections: [],
+      nets: [],
     }
 
-    // TODO only move components that belong to this subcircuit
-    const scene = SAL.convertSoupToScene(db.toArray())
+    // Run the SchematicLayoutPipelineSolver
+    const solver = new SchematicLayoutPipelineSolver({
+      inputNetlist,
+    })
+    solver.solve()
 
-    const laidOutScene = SAL.ascendingCentralLrBug1(scene)
+    const circuitLayout = solver.getLayout()
 
-    SAL.mutateSoupForScene(db.toArray(), laidOutScene)
+    // Apply the layout to the schematic components
   }
 
   _getAutorouterConfig(): AutorouterConfig {
