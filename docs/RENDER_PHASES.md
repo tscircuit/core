@@ -3,7 +3,7 @@
 The render phases in @tscircuit/core are defined in the `Renderable` class (`Renderable.ts`) and executed in a specific order. Each phase has a distinct purpose in the rendering process. Here's a description of each render phase:
 
 1. ReactSubtreesRender: Renders React subtrees within components.
-2. FootprintRender: Loads footprints, including from URLs, before ports are initialized.
+2. PcbFootprintStringRender: Loads footprints, including from URLs, before ports are initialized.
 3. InitializePortsFromChildren: Initializes ports based on the component's children.
 
 4. CreateNetsFromProps: Creates nets based on the component's properties.

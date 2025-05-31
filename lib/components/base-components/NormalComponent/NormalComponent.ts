@@ -654,7 +654,7 @@ export class NormalComponent<
     // no-op in NormalComponent; sub-classes may override
   }
 
-  doInitialFootprintRender(): void {
+  doInitialPcbFootprintStringRender(): void {
     let { footprint } = this.props
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
