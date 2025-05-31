@@ -91,6 +91,7 @@ export class NormalComponent<
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   pcb_missing_footprint_error_id?: string
+  _hasStartedFootprintUrlLoad = false
 
   /**
    * Override this property for component defaults
@@ -323,6 +324,10 @@ export class NormalComponent<
     return null
   }
 
+  _isFootprintUrl(s: string): boolean {
+    return s.startsWith("http://") || s.startsWith("https://")
+  }
+
   _addChildrenFromStringFootprint() {
     const {
       name: componentName,
@@ -334,6 +339,7 @@ export class NormalComponent<
     if (!footprint) return
 
     if (typeof footprint === "string") {
+      if (this._isFootprintUrl(footprint)) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         { componentName, componentRotation, footprint, pinLabels },
@@ -645,12 +651,47 @@ export class NormalComponent<
   }
 
   doInitialReactSubtreesRender(): void {
-    if (isReactElement(this.props.footprint)) {
-      if (this.reactSubtrees.some((rs) => rs.element === this.props.footprint))
-        return
-      const subtree = this._renderReactSubtree(this.props.footprint)
+    // no-op in NormalComponent; sub-classes may override
+  }
+
+  doInitialFootprintRender(): void {
+    let { footprint } = this.props
+    footprint ??= this._getImpliedFootprintString?.()
+    if (!footprint) return
+
+    const { name: componentName, pcbRotation: componentRotation, pinLabels } =
+      this.props
+
+    if (typeof footprint === "string" && this._isFootprintUrl(footprint)) {
+      if (this._hasStartedFootprintUrlLoad) return
+      this._hasStartedFootprintUrlLoad = true
+      const url = footprint
+      this._queueAsyncEffect("load-footprint-url", async () => {
+        const res = await fetch(url)
+        const soup = await res.json()
+        const fpComponents = createComponentsFromCircuitJson(
+          { componentName, componentRotation, footprint: url, pinLabels },
+          soup as any,
+        )
+        this.addAll(fpComponents)
+        this._markDirty("InitializePortsFromChildren")
+      })
+      return
+    }
+
+    if (isReactElement(footprint)) {
+      if (this.reactSubtrees.some((rs) => rs.element === footprint)) return
+      const subtree = this._renderReactSubtree(footprint)
       this.reactSubtrees.push(subtree)
       this.add(subtree.component)
+      return
+    }
+
+    if (
+      !isValidElement(footprint) &&
+      (footprint as any).componentName === "Footprint"
+    ) {
+      this.add(footprint as any)
     }
   }
 
@@ -708,6 +749,7 @@ export class NormalComponent<
     }
 
     if (typeof footprint === "string") {
+      if (this._isFootprintUrl(footprint)) return []
       const fpSoup = fp.string(footprint).soup()
 
       const newPorts: Port[] = []

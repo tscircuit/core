@@ -9,6 +9,7 @@ const debug = Debug("tscircuit:renderable")
 
 export const orderedRenderPhases = [
   "ReactSubtreesRender",
+  "FootprintRender",
   "InitializePortsFromChildren",
   "CreateNetsFromProps",
   "CreateTracesFromProps",
