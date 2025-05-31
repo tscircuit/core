@@ -670,8 +670,38 @@ export class NormalComponent<
       this._hasStartedFootprintUrlLoad = true
       const url = footprint
       this._queueAsyncEffect("load-footprint-url", async () => {
-        const res = await fetch(url)
-        const soup = await res.json()
+        const cacheEngine = this.root?.platform?.localCacheEngine
+        const cacheKey = `footprint:${url}`
+        
+        let soup: any
+        
+        // Try to get from cache first
+        if (cacheEngine) {
+          const cached = await cacheEngine.getItem(cacheKey)
+          if (cached) {
+            try {
+              soup = JSON.parse(cached)
+            } catch {
+              // If parsing fails, we'll fetch fresh
+            }
+          }
+        }
+        
+        // If not in cache, fetch from URL
+        if (!soup) {
+          const res = await fetch(url)
+          soup = await res.json()
+          
+          // Cache the result
+          if (cacheEngine) {
+            try {
+              await cacheEngine.setItem(cacheKey, JSON.stringify(soup))
+            } catch {
+              // Ignore cache write errors
+            }
+          }
+        }
+        
         const fpComponents = createComponentsFromCircuitJson(
           { componentName, componentRotation, footprint: url, pinLabels },
           soup as any,
