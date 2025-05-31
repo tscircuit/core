@@ -91,7 +91,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     }
 
     const x = centerX - width / 2
-    const y = centerY + height / 2
+    const y = centerY - height / 2
 
     db.schematic_box.insert({
       height,
