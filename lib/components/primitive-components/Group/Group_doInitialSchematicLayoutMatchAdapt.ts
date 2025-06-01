@@ -37,7 +37,61 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   console.log("netLabels", netLabels)
   console.log("paths", paths)
 
-  // TODO Create schematic net labels
-  // TODO create schematic_trace from paths
-  // TODO move chips to positions as given by boxes
+  // -----------------------------------------------------------------
+  // 1. Move chips (schematic_components) to solver-determined centers
+  for (const box of boxes) {
+    const srcComp = db.source_component.list().find((c) => c.name === box.boxId)
+    if (!srcComp) continue
+
+    const schComp = db.schematic_component
+      .list()
+      .find((sc) => sc.source_component_id === srcComp.source_component_id)
+
+    if (schComp) {
+      db.schematic_component.update(schComp.schematic_component_id, {
+        center: { x: box.centerX, y: box.centerY },
+      })
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // 2. Create schematic net-labels
+  for (const nl of netLabels) {
+    const alreadyExists = db.schematic_net_label
+      .list()
+      .some(
+        (l) =>
+          l.text === nl.netId &&
+          Math.abs(l.anchor_position.x - nl.x) < 0.001 &&
+          Math.abs(l.anchor_position.y - nl.y) < 0.001,
+      )
+    if (alreadyExists) continue
+
+    const srcNet = db.source_net.list().find((n) => n.name === nl.netId)
+
+    db.schematic_net_label.insert({
+      text: nl.netId,
+      source_net_id: srcNet?.source_net_id,
+      anchor_position: { x: nl.x, y: nl.y },
+      center: { x: nl.x, y: nl.y },
+      anchor_side: nl.anchorPosition as any,
+    } as any)
+  }
+
+  // -----------------------------------------------------------------
+  // 3. Create schematic traces from solver paths
+  for (const p of paths) {
+    if (!p.points || p.points.length < 2) continue
+
+    const edges = p.points.slice(0, -1).map((pt, i) => ({
+      from: pt,
+      to: p.points[i + 1],
+    }))
+
+    db.schematic_trace.insert({
+      edges,
+      // Re-use global junction list – solver already de-duped it
+      junctions,
+    } as any)
+  }
 }
