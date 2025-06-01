@@ -32,10 +32,10 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
 
   const { boxes, junctions, netLabels, paths } = solver.getLayout()
 
-  console.log("boxes", boxes)
-  console.log("junctions", junctions)
-  console.log("netLabels", netLabels)
-  console.log("paths", paths)
+  // console.log("boxes", boxes)
+  // console.log("junctions", junctions)
+  // console.log("netLabels", netLabels)
+  // console.log("paths", paths)
 
   // -----------------------------------------------------------------
   // 1. Move chips (schematic_components) to solver-determined centers
@@ -53,20 +53,11 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       })
     }
   }
+  return
 
   // -----------------------------------------------------------------
   // 2. Create schematic net-labels
   for (const nl of netLabels) {
-    const alreadyExists = db.schematic_net_label
-      .list()
-      .some(
-        (l) =>
-          l.text === nl.netId &&
-          Math.abs(l.anchor_position.x - nl.x) < 0.001 &&
-          Math.abs(l.anchor_position.y - nl.y) < 0.001,
-      )
-    if (alreadyExists) continue
-
     const srcNet = db.source_net.list().find((n) => n.name === nl.netId)
 
     db.schematic_net_label.insert({
