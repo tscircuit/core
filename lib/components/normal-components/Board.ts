@@ -13,6 +13,10 @@ export class Board extends Group<typeof boardProps> {
     return true
   }
 
+  get isGroup() {
+    return true
+  }
+
   get config() {
     return {
       componentName: "Board",

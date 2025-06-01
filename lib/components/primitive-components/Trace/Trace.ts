@@ -849,10 +849,6 @@ export class Trace
   doInitialSchematicTraceRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
-    console.log(
-      "doInitialSchematicTraceRender",
-      this.getGroup()?._getSchematicLayoutMode(),
-    )
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
 

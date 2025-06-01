@@ -53,7 +53,6 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       })
     }
   }
-  return
 
   // -----------------------------------------------------------------
   // 2. Create schematic net-labels
