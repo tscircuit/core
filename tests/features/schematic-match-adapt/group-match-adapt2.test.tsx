@@ -9,7 +9,7 @@ test("group-match-adapt2", () => {
       <group matchAdapt name="simple_circuit">
         <resistor name="R1" resistance="1k" />
         <capacitor name="C1" capacitance="10uF" />
-        <trace from=".R1 > .1" to=".C1 > .1" />
+        <trace from=".R1 > .pin1" to=".C1 > .pin1" />
       </group>
     </board>,
   )

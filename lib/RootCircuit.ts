@@ -139,14 +139,25 @@ export class RootCircuit {
     return this.getCircuitJson()
   }
 
-  async getSvg(options: { view: "pcb"; layer?: string }): Promise<string> {
+  async getSvg(options: {
+    view: "pcb" | "schematic"
+    layer?: string
+  }): Promise<string> {
     const circuitToSvg = await import("circuit-to-svg").catch((e) => {
       throw new Error(
         `To use circuit.getSvg, you must install the "circuit-to-svg" package.\n\n"${e.message}"`,
       )
     })
 
-    return circuitToSvg.convertCircuitJsonToPcbSvg(this.getCircuitJson())
+    if (options.view === "pcb") {
+      return circuitToSvg.convertCircuitJsonToPcbSvg(this.getCircuitJson())
+    }
+    if (options.view === "schematic") {
+      return circuitToSvg.convertCircuitJsonToSchematicSvg(
+        this.getCircuitJson(),
+      )
+    }
+    throw new Error(`Invalid view: ${options.view}`)
   }
 
   getCoreVersion(): string {

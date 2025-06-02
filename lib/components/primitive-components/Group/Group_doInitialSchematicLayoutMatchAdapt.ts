@@ -37,9 +37,21 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   const solver = new SchematicLayoutPipelineSolver({
     inputNetlist,
   })
-  solver.solve()
 
-  const { boxes, junctions, netLabels, paths } = solver.getLayout()
+  let solvedLayout: ReturnType<typeof solver.getLayout> | null = null
+  try {
+    solver.solve()
+    solvedLayout = solver.getLayout()
+  } catch (e: any) {
+    db.schematic_layout_error.insert({
+      message: `Match-adapt layout failed: ${e.toString()}`,
+      source_group_id: group.source_group_id!,
+      schematic_group_id: group.schematic_group_id!,
+    })
+    return
+  }
+
+  const { boxes, junctions, netLabels, paths } = solvedLayout!
 
   const layoutConnMap = new ConnectivityMap({})
 
