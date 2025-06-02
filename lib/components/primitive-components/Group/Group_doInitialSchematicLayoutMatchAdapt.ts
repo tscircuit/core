@@ -1,4 +1,8 @@
-import type { SchematicComponent, SchematicPort } from "circuit-json"
+import type {
+  SchematicComponent,
+  SchematicPort,
+  SchematicTrace,
+} from "circuit-json"
 import type { Group } from "./Group"
 import type { z } from "zod"
 import {
@@ -6,10 +10,15 @@ import {
   SchematicLayoutPipelineSolver,
   reorderChipPinsToCcw,
   convertCircuitJsonToInputNetlist,
+  getRefKey,
+  parseRefKey,
 } from "@tscircuit/schematic-match-adapt"
 import { createSchematicTraceCrossingSegments } from "../Trace/create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "../Trace/create-schematic-trace-junctions"
 import { getOtherSchematicTraces } from "../Trace/get-other-schematic-traces"
+import { deriveSourceTraceIdFromMatchAdaptPath } from "lib/utils/schematic/deriveSourceTraceIdFromMatchAdaptPath"
+import { cju } from "@tscircuit/circuit-json-util"
+import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 
 export function Group_doInitialSchematicLayoutMatchAdapt<
   Props extends z.ZodType<any, any, any>,
@@ -32,12 +41,26 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
 
   const { boxes, junctions, netLabels, paths } = solver.getLayout()
 
-  // Bun.write("test.json", JSON.stringify(solver.getLayout(), null, 2))
+  const layoutConnMap = new ConnectivityMap({})
 
-  // console.log("boxes", boxes)
-  // console.log("junctions", junctions)
-  // console.log("netLabels", netLabels)
-  // console.log("paths", paths)
+  for (const path of paths) {
+    layoutConnMap.addConnections([[getRefKey(path.from), getRefKey(path.to)]])
+  }
+  for (const junction of junctions) {
+    for (const path of paths) {
+      for (const pathPoint of path.points) {
+        if (
+          Math.abs(pathPoint.x - junction.x) < 0.001 &&
+          Math.abs(pathPoint.y - junction.y) < 0.001
+        ) {
+          layoutConnMap.addConnections([
+            [getRefKey(path.from), getRefKey(junction)],
+            [getRefKey(path.to), getRefKey(junction)],
+          ])
+        }
+      }
+    }
+  }
 
   // -----------------------------------------------------------------
   // 1. Move chips (schematic_components) to solver-determined centers
@@ -75,6 +98,20 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
         },
       })
     }
+
+    // Update schematic text positions
+    const schematicTexts = db.schematic_text.list({
+      schematic_component_id: schComp.schematic_component_id,
+    })
+
+    for (const schematicText of schematicTexts) {
+      db.schematic_text.update(schematicText.schematic_text_id, {
+        position: {
+          x: schematicText.position.x + schCompMoveDelta.x,
+          y: schematicText.position.y + schCompMoveDelta.y,
+        },
+      })
+    }
   }
 
   // -----------------------------------------------------------------
@@ -93,43 +130,58 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
 
   // -----------------------------------------------------------------
   // 3. Create schematic traces from solver paths
-  // for (const p of paths) {
-  //   if (!p.points || p.points.length < 2) continue
+  for (const path of paths) {
+    if (!path.points || path.points.length < 2) continue
 
-  //   // Get the source trace id for this path
-  //   // We can find the
-  //   const { source_trace_id } = deriveSourceTraceIdFromPath(
-  //     p,
-  //     cju(subtreeCircuitJson),
-  //   )
-  //   console.log("p", p)
+    // Get the source trace id for this path
+    // We can find the
+    const sourceTraceId = deriveSourceTraceIdFromMatchAdaptPath({
+      path: path,
+      db: cju(subtreeCircuitJson),
+      layoutConnMap,
+    })
 
-  //   // Create crossings with traces from different nets
-  //   const otherCrossingEdges = getOtherSchematicTraces({
-  //     db,
-  //     source_trace_id: tempSourceTraceId,
-  //     differentNetOnly: true,
-  //   }).flatMap((t) => t.edges)
+    let edges: SchematicTrace["edges"] = []
 
-  //   if (otherCrossingEdges.length > 0) {
-  //     edges = createSchematicTraceCrossingSegments({
-  //       edges,
-  //       otherEdges: otherCrossingEdges,
-  //     })
-  //   }
+    for (let i = 0; i < path.points.length - 1; i++) {
+      edges.push({
+        from: {
+          x: path.points[i].x,
+          y: path.points[i].y,
+        },
+        to: {
+          x: path.points[i + 1].x,
+          y: path.points[i + 1].y,
+        },
+      })
+    }
 
-  //   // Create junctions with traces from the same net
-  //   // const junctions = createSchematicTraceJunctions({
-  //   //   edges,
-  //   //   db,
-  //   //   source_trace_id: tempSourceTraceId,
-  //   // })
+    // Create crossings with traces from different nets
+    const otherCrossingEdges = getOtherSchematicTraces({
+      db,
+      source_trace_id: sourceTraceId,
+      differentNetOnly: true,
+    }).flatMap((t) => t.edges)
 
-  //   // Insert the schematic trace
-  //   db.schematic_trace.insert({
-  //     source_trace_id: tempSourceTraceId,
-  //     edges,
-  //     junctions: [],
-  //   } as any)
-  // }
+    if (otherCrossingEdges.length > 0) {
+      edges = createSchematicTraceCrossingSegments({
+        edges,
+        otherEdges: otherCrossingEdges,
+      })
+    }
+
+    // Create junctions with traces from the same net
+    const junctions = createSchematicTraceJunctions({
+      edges,
+      db,
+      source_trace_id: sourceTraceId,
+    })
+
+    // Insert the schematic trace
+    db.schematic_trace.insert({
+      source_trace_id: sourceTraceId,
+      edges,
+      junctions,
+    } as any)
+  }
 }
