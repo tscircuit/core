@@ -32,7 +32,10 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
 
       this.root.db.source_failed_to_create_component_error.insert({
         component_name: this._parsedProps.component_name,
-        message: this._parsedProps.message,
+        message:
+          this._parsedProps.error?.formattedError?._errors?.join("; ") ||
+          this._parsedProps.message,
+
         pcb_center: pcbPosition,
         schematic_center: schematicPosition,
       })
