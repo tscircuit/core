@@ -5,7 +5,7 @@ test("source_port and source_net subcircuit_connectivity_map_key are populated",
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm">
+    <board width="20mm" height="20mm" name="board">
       <resistor
         name="R1"
         resistance="10k"
@@ -110,21 +110,21 @@ test("source_port and source_net subcircuit_connectivity_map_key are populated",
 
   // Snapshot the connectivity mapping table
   expect(tableOutput).toMatchInlineSnapshot(`
-    "| Element ID     | Component | Pin/Net Name | Connectivity Map Key                  |
-    |----------------|-----------|--------------|---------------------------------------|
-    | source_trace_0 | -         | -            | unnamedsubcircuit52_connectivity_net0 |
-    | source_trace_1 | -         | -            | unnamedsubcircuit52_connectivity_net0 |
-    | source_trace_2 | -         | -            | unnamedsubcircuit52_connectivity_net1 |
-    | source_trace_3 | -         | -            | unnamedsubcircuit52_connectivity_net0 |
-    | source_trace_4 | -         | -            | unnamedsubcircuit52_connectivity_net1 |
-    | source_port_0  | R1        | pin1         | unnamedsubcircuit52_connectivity_net0 |
-    | source_port_1  | R1        | pin2         | unnamedsubcircuit52_connectivity_net1 |
-    | source_port_2  | R2        | pin1         | unnamedsubcircuit52_connectivity_net0 |
-    | source_port_3  | R2        | pin2         | undefined                             |
-    | source_port_4  | C1        | pin1         | unnamedsubcircuit52_connectivity_net0 |
-    | source_port_5  | C1        | pin2         | unnamedsubcircuit52_connectivity_net1 |
-    | source_net_0   | -         | VCC          | unnamedsubcircuit52_connectivity_net0 |
-    | source_net_1   | -         | GND          | unnamedsubcircuit52_connectivity_net1 |"
+    "| Element ID     | Component | Pin/Net Name | Connectivity Map Key    |
+    |----------------|-----------|--------------|-------------------------|
+    | source_trace_0 | -         | -            | board_connectivity_net0 |
+    | source_trace_1 | -         | -            | board_connectivity_net0 |
+    | source_trace_2 | -         | -            | board_connectivity_net1 |
+    | source_trace_3 | -         | -            | board_connectivity_net0 |
+    | source_trace_4 | -         | -            | board_connectivity_net1 |
+    | source_port_0  | R1        | pin1         | board_connectivity_net0 |
+    | source_port_1  | R1        | pin2         | board_connectivity_net1 |
+    | source_port_2  | R2        | pin1         | board_connectivity_net0 |
+    | source_port_3  | R2        | pin2         | undefined               |
+    | source_port_4  | C1        | pin1         | board_connectivity_net0 |
+    | source_port_5  | C1        | pin2         | board_connectivity_net1 |
+    | source_net_0   | -         | VCC          | board_connectivity_net0 |
+    | source_net_1   | -         | GND          | board_connectivity_net1 |"
   `)
 
   // Verify basic expectations
