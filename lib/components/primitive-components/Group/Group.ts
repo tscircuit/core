@@ -168,17 +168,60 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         .filter((c): c is string[] => c !== null),
     )
 
-    // TODO extend this function to also populate source_port.subcircuit_connectivity_map_key
-    // and source_net.subcircuit_connectivity_map_key
+    const { name: subcircuitName } = this._parsedProps
 
+    // Update source_trace.subcircuit_connectivity_map_key
     for (const trace of traces) {
       if (!trace.source_trace_id) continue
       const connNetId = connMap.getNetConnectedToId(trace.source_trace_id)
       if (!connNetId) continue
-      const { name: subcircuitName } = this._parsedProps
       trace.subcircuit_connectivity_map_key = `${subcircuitName ?? `unnamedsubcircuit${this._renderId}`}_${connNetId}`
       db.source_trace.update(trace.source_trace_id, {
         subcircuit_connectivity_map_key: trace.subcircuit_connectivity_map_key!,
+      })
+    }
+
+    // Update source_port.subcircuit_connectivity_map_key for ports connected to the same net
+    const allSourcePortIds = new Set<string>()
+    for (const trace of traces) {
+      if (!trace.source_trace_id) continue
+      const source_trace = db.source_trace.get(
+        trace.source_trace_id,
+      ) as SourceTrace
+      if (!source_trace) continue
+      source_trace.connected_source_port_ids.forEach((id) =>
+        allSourcePortIds.add(id),
+      )
+    }
+
+    for (const portId of allSourcePortIds) {
+      const connNetId = connMap.getNetConnectedToId(portId)
+      if (!connNetId) continue
+      const connectivityMapKey = `${subcircuitName ?? `unnamedsubcircuit${this._renderId}`}_${connNetId}`
+      db.source_port.update(portId, {
+        subcircuit_connectivity_map_key: connectivityMapKey,
+      })
+    }
+
+    // Update source_net.subcircuit_connectivity_map_key for nets connected to the same net
+    const allSourceNetIds = new Set<string>()
+    for (const trace of traces) {
+      if (!trace.source_trace_id) continue
+      const source_trace = db.source_trace.get(
+        trace.source_trace_id,
+      ) as SourceTrace
+      if (!source_trace) continue
+      for (const source_net_id of source_trace.connected_source_net_ids) {
+        allSourceNetIds.add(source_net_id)
+      }
+    }
+
+    for (const netId of allSourceNetIds) {
+      const connNetId = connMap.getNetConnectedToId(netId)
+      if (!connNetId) continue
+      const connectivityMapKey = `${subcircuitName ?? `unnamedsubcircuit${this._renderId}`}_${connNetId}`
+      db.source_net.update(netId, {
+        subcircuit_connectivity_map_key: connectivityMapKey,
       })
     }
   }
