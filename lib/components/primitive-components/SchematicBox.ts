@@ -7,7 +7,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
 
   get config() {
     return {
-      componentName: "SchematicSection",
+      componentName: "SchematicBox",
       zodProps: schematicBoxProps,
       shouldRenderAsSchematicBox: true,
     }
@@ -16,28 +16,18 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
-    const props = (this._parsedProps = this.config.zodProps.parse(this.props))
-    let portsWithSelectors: Array<{ selector: string; port: Port }> = []
-    if (props.overlay) {
-      portsWithSelectors = (props.overlay as string[])
-        .map((selector: string) => ({
-          selector,
-          port: this.getSubcircuit().selectOne(selector, {
-            type: "port",
-          }) as Port | null,
-        }))
-        .filter(({ port }) => port != null) as Array<{
-        selector: string
-        port: Port
-      }>
+    const { _parsedProps: props } = this
+
+    const result = schematicBoxProps.safeParse(props)
+    if (!result.success) {
+      console.error("Validation failed:", result.error.format())
+      throw result.error
     }
 
-    const portsWithPosition = portsWithSelectors.map(({ port }) => ({
-      port,
-      position: port._getGlobalSchematicPositionAfterLayout(),
-      schematic_port_id: port.schematic_port_id!,
-      facingDirection: port.facingDirection,
-    }))
+    let width: number
+    let height: number
+    let centerX: number = typeof props.schX === "number" ? props.schX : 0
+    let centerY: number = typeof props.schY === "number" ? props.schY : 0
 
     const basePadding = 0.6
     const generalPadding = typeof props.padding === "number" ? props.padding : 0
@@ -54,39 +44,54 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
         ? props.paddingRight
         : generalPadding
 
-    let width: number | undefined
-    let height: number | undefined
-    let centerX: number = typeof props.schX === "number" ? props.schX : 0
-    let centerY: number = typeof props.schY === "number" ? props.schY : 0
+    const hasOverlay = props.overlay && props.overlay.length > 0
+    const hasFixedSize =
+      typeof props.width === "number" && typeof props.height === "number"
 
-    if (portsWithPosition.length > 0) {
+    if (hasOverlay) {
+      const portsWithSelectors = (props.overlay as string[])
+        .map((selector: string) => ({
+          selector,
+          port: this.getSubcircuit().selectOne(selector, {
+            type: "port",
+          }) as Port | null,
+        }))
+        .filter(({ port }) => port != null) as Array<{
+        selector: string
+        port: Port
+      }>
+
+      const portsWithPosition = portsWithSelectors.map(({ port }) => ({
+        port,
+        position: port._getGlobalSchematicPositionAfterLayout(),
+        schematic_port_id: port.schematic_port_id!,
+        facingDirection: port.facingDirection,
+      }))
+
+      if (portsWithPosition.length === 0) return
+
       const xs = portsWithPosition.map((p) => p.position.x)
       const ys = portsWithPosition.map((p) => p.position.y)
       const minX = Math.min(...xs)
       const maxX = Math.max(...xs)
       const minY = Math.min(...ys)
       const maxY = Math.max(...ys)
+
       const rawWidth = maxX - minX
       const rawHeight = maxY - minY
       const defaultHorizontalPadding = rawWidth === 0 ? basePadding : 0
       const defaultVerticalPadding = rawHeight === 0 ? basePadding : 0
 
-      const computedWidth =
-        rawWidth + defaultHorizontalPadding + paddingLeft + paddingRight
-      const computedHeight =
-        rawHeight + defaultVerticalPadding + paddingTop + paddingBottom
-
-      width = props.width ?? computedWidth
-      height = props.height ?? computedHeight
-
+      width = rawWidth + defaultHorizontalPadding + paddingLeft + paddingRight
+      height = rawHeight + defaultVerticalPadding + paddingTop + paddingBottom
       centerX = (minX + maxX) / 2 + (props.schX ?? 0)
       centerY = (minY + maxY) / 2 + (props.schY ?? 0)
-    } else if (props.width && props.height) {
-      width = props.width
-      height = props.height
-      // centerX/Y already default to props.schX/schY or 0
+    } else if (hasFixedSize) {
+      width = props.width!
+      height = props.height!
+      // centerX and centerY already default to schX/schY or 0
     } else {
-      // No overlay and no fixed size: skip
+      // This should not happen due to validation, but we guard anyway
       return
     }
 

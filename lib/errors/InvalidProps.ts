@@ -10,7 +10,6 @@ export class InvalidProps extends Error {
     const propsWithError = Object.keys(formattedError).filter(
       (k) => k !== "_errors",
     )
-
     const propMessage = propsWithError
       .map((k) => {
         if ((formattedError as any)[k]._errors[0]) {
