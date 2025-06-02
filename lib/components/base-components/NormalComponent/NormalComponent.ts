@@ -1061,6 +1061,7 @@ export class NormalComponent<
     source_component: any,
     footprinterString: string | undefined,
   ) {
+    if (this.props.doNotPlace) return {}
     const cacheEngine = this.root?.platform?.localCacheEngine
     const cacheKey = this._getPartsEngineCacheKey(
       source_component,
@@ -1093,6 +1094,7 @@ export class NormalComponent<
   }
 
   doInitialPartsEngineRender(): void {
+    if (this.props.doNotPlace) return
     const partsEngine = this.getInheritedProperty("partsEngine")
     if (!partsEngine) return
     const { db } = this.root!
@@ -1126,6 +1128,7 @@ export class NormalComponent<
   }
 
   updatePartsEngineRender(): void {
+    if (this.props.doNotPlace) return
     const { db } = this.root!
 
     const source_component = db.source_component.get(this.source_component_id!)
