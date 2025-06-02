@@ -63,6 +63,8 @@ expect(circuit).toMatchPcbSnapshot(import.meta.path)
 - Generates `.snap.svg` files for visual regression testing
 - Supports both PCB and schematic view snapshots
 - Special categories: examples, features, repros, subcircuits
+- `BUN_UPDATE_SNAPSHOTS=1 bun test path/to/file.test.ts` to update snapshots
+- Only one test per file, otherwise split into multiple enumerated files e.g. `fn1.test.ts`, `fn2.test.ts`, etc.
 
 ## Component Development
 
@@ -80,6 +82,10 @@ expect(circuit).toMatchPcbSnapshot(import.meta.path)
 circuit.selectAll(".R1 > .pin1") // Find pin1 of resistor R1
 circuit.selectOne("resistor") // Find first resistor
 ```
+
+**Breaking up class files:**
+
+- If a class function is too long, create a file `ClassName_fnName.ts` and call the function from the class file
 
 ## Technology Stack
 
