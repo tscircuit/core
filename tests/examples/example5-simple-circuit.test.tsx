@@ -5,7 +5,7 @@ test("example 5: simple circuit with capacitor, resistor, and pushbutton", async
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm" schAutoLayoutEnabled>
+    <board width="20mm" height="20mm" grid gridGap="1mm">
       <capacitor
         name="C1"
         capacitance="10uF"
