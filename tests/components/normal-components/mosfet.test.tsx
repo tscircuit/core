@@ -5,7 +5,7 @@ it("should render different types of MOSFETs", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm" schAutoLayoutEnabled>
+    <board width="20mm" height="20mm" schAutoLayoutEnabled grid gridGap="1mm">
       <mosfet
         name="M1"
         channelType="n"

@@ -30,6 +30,7 @@ import type { PrimitiveComponent } from "lib/components/base-components/Primitiv
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
+import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -660,10 +661,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (schematicLayoutMode === "match-adapt") {
       this._doInitialSchematicLayoutMatchAdapt()
     }
+    if (schematicLayoutMode === "grid") {
+      this._doInitialSchematicLayoutGrid()
+    }
   }
 
   _doInitialSchematicLayoutMatchAdapt(): void {
     Group_doInitialSchematicLayoutMatchAdapt(this as any)
+  }
+
+  _doInitialSchematicLayoutGrid(): void {
+    Group_doInitialSchematicLayoutGrid(this)
   }
 
   _determineSideFromPosition(
