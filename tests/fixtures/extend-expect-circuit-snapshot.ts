@@ -47,7 +47,7 @@ async function saveSnapshotOfSoup({
     fs.mkdirSync(snapshotDir, { recursive: true })
   }
 
-  if (!fs.existsSync(filePath) || updateSnapshot) {
+  if (!fs.existsSync(filePath)) {
     console.log("Creating snapshot at", filePath)
     fs.writeFileSync(filePath, svg)
     return {
@@ -70,6 +70,15 @@ async function saveSnapshotOfSoup({
   if (result.equal) {
     return {
       message: () => "Snapshot matches",
+      pass: true,
+    }
+  }
+
+  if (!result.equal && updateSnapshot) {
+    console.log("Updating snapshot at", filePath)
+    fs.writeFileSync(filePath, svg)
+    return {
+      message: () => `Snapshot updated at ${filePath}`,
       pass: true,
     }
   }
