@@ -81,6 +81,10 @@ export interface SchematicBoxDimensions {
   getSizeIncludingPins(): { width: number; height: number }
 }
 
+export interface SchematicBoxComponentDimensions {
+  schWidth: number
+  schHeight: number
+}
 /**
  * Get the dimensions of a schematic box based on the provided parameters.
  *
