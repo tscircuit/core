@@ -100,7 +100,6 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
 
     db.schematic_trace.insert({
       edges,
-      // Re-use global junction list – solver already de-duped it
       junctions,
     } as any)
 
