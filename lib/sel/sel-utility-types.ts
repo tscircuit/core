@@ -201,6 +201,15 @@ export type CommonPinNames =
   | "DP"
   | "CC1"
   | "CC2"
+  | "N_CS"
+  | "N_WP"
+  | "N_HOLD"
+  | "SCL"
+  | "SDA"
+  | "MOSI"
+  | "MISO"
+  | "SCK"
+  | "CS"
   | `A${Nums40}`
   | `B${Nums40}`
   | PinNumbers100

@@ -7,7 +7,7 @@ it("should render a jumper with pinrow4 footprint", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="15mm" schAutoLayoutEnabled>
+    <board width="20mm" height="15mm" grid gridGap="1mm">
       <resistor name="R1" footprint={"0402"} resistance={"4k"} />
       <resistor name="R2" pcbX={3} footprint={"0402"} resistance={"4k"} />
       <resistor name="R3" pcbY={3} footprint={"0402"} resistance={"4k"} />

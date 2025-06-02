@@ -28,6 +28,9 @@ import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalA
 import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
+import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
+import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -144,39 +147,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSourceAddConnectivityMapKey(): void {
-    if (!this.isSubcircuit) return
-    const { db } = this.root!
-    // Find all traces that belong to this subcircuit, generate a connectivity
-    // map, and add source_trace.subcircuit_connectivity_map_key
-    const traces = this.selectAll("trace") as TraceI[]
-    const connMap = new ConnectivityMap({})
-    connMap.addConnections(
-      traces
-        .map((t) => {
-          const source_trace = db.source_trace.get(
-            t.source_trace_id!,
-          ) as SourceTrace
-          if (!source_trace) return null
-
-          return [
-            source_trace.source_trace_id,
-            ...source_trace.connected_source_port_ids,
-            ...source_trace.connected_source_net_ids,
-          ]
-        })
-        .filter((c): c is string[] => c !== null),
-    )
-
-    for (const trace of traces) {
-      if (!trace.source_trace_id) continue
-      const connNetId = connMap.getNetConnectedToId(trace.source_trace_id)
-      if (!connNetId) continue
-      const { name: subcircuitName } = this._parsedProps
-      trace.subcircuit_connectivity_map_key = `${subcircuitName ?? `unnamedsubcircuit${this._renderId}`}_${connNetId}`
-      db.source_trace.update(trace.source_trace_id, {
-        subcircuit_connectivity_map_key: trace.subcircuit_connectivity_map_key!,
-      })
-    }
+    Group_doInitialSourceAddConnectivityMapKey(this)
   }
 
   _areChildSubcircuitsRouted(): boolean {
@@ -662,50 +633,94 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this.schematic_group_id = schematic_group.schematic_group_id
 
     for (const child of this.children) {
-      db.schematic_component.update(child.schematic_component_id!, {
-        schematic_group_id: schematic_group.schematic_group_id,
-      })
+      if (child.schematic_component_id) {
+        db.schematic_component.update(child.schematic_component_id, {
+          schematic_group_id: schematic_group.schematic_group_id,
+        })
+      }
     }
+  }
+
+  _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "none" {
+    const props = this._parsedProps as SubcircuitGroupProps
+    if (props.schLayout?.matchAdapt) return "match-adapt"
+    if (props.schLayout?.flex) return "flex"
+    if (props.schLayout?.grid) return "grid"
+    if (props.matchAdapt) return "match-adapt"
+    if (props.flex) return "flex"
+    if (props.grid) return "grid"
+    return "none"
   }
 
   doInitialSchematicLayout(): void {
     // The schematic_components are rendered in our children
-    if (!this.isSubcircuit) return
     const props = this._parsedProps as SubcircuitGroupProps
-    if (!props.schAutoLayoutEnabled) return
-    const { db } = this.root!
 
-    const descendants = this.getDescendants()
+    const schematicLayoutMode = this._getSchematicLayoutMode()
 
-    const components: SchematicComponent[] = []
-    const ports: SchematicPort[] = []
-    // TODO move subcircuits as a group, don't re-layout subcircuits
-    for (const descendant of descendants) {
-      if ("schematic_component_id" in descendant) {
-        const component = db.schematic_component.get(
-          descendant.schematic_component_id!,
-        )
-        if (component) {
-          // Get all ports associated with this component
-          const schPorts = db.schematic_port
-            .list()
-            .filter(
-              (p) =>
-                p.schematic_component_id === component.schematic_component_id,
-            )
+    if (schematicLayoutMode === "match-adapt") {
+      this._doInitialSchematicLayoutMatchAdapt()
+    }
+    if (schematicLayoutMode === "grid") {
+      this._doInitialSchematicLayoutGrid()
+    }
+  }
 
-          components.push(component)
-          ports.push(...schPorts)
-        }
-      }
+  _doInitialSchematicLayoutMatchAdapt(): void {
+    Group_doInitialSchematicLayoutMatchAdapt(this as any)
+  }
+
+  _doInitialSchematicLayoutGrid(): void {
+    Group_doInitialSchematicLayoutGrid(this)
+  }
+
+  _determineSideFromPosition(
+    port: SchematicPort,
+    component: SchematicComponent,
+  ): "left" | "right" | "top" | "bottom" {
+    if (!port.center || !component.center) return "left"
+
+    const dx = port.center.x - component.center.x
+    const dy = port.center.y - component.center.y
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return dx > 0 ? "right" : "left"
+    }
+    return dy > 0 ? "bottom" : "top"
+  }
+
+  _calculateSchematicBounds(
+    boxes: Array<{ centerX: number; centerY: number }>,
+  ): {
+    minX: number
+    maxX: number
+    minY: number
+    maxY: number
+  } {
+    if (boxes.length === 0) {
+      return { minX: 0, maxX: 0, minY: 0, maxY: 0 }
     }
 
-    // TODO only move components that belong to this subcircuit
-    const scene = SAL.convertSoupToScene(db.toArray())
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    let maxY = -Infinity
 
-    const laidOutScene = SAL.ascendingCentralLrBug1(scene)
+    for (const box of boxes) {
+      minX = Math.min(minX, box.centerX)
+      maxX = Math.max(maxX, box.centerX)
+      minY = Math.min(minY, box.centerY)
+      maxY = Math.max(maxY, box.centerY)
+    }
 
-    SAL.mutateSoupForScene(db.toArray(), laidOutScene)
+    // Add some padding
+    const padding = 2
+    return {
+      minX: minX - padding,
+      maxX: maxX + padding,
+      minY: minY - padding,
+      maxY: maxY + padding,
+    }
   }
 
   _getAutorouterConfig(): AutorouterConfig {

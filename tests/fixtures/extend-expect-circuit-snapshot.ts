@@ -12,17 +12,19 @@ import { RootCircuit } from "lib/RootCircuit"
 import type { AnyCircuitElement } from "circuit-json"
 import { convertCircuitJsonToSimple3dSvg } from "circuit-json-to-simple-3d"
 
-async function saveSnapshotOfSoup({
+async function saveSvgSnapshotOfCircuitJson({
   soup,
   testPath,
   mode,
   updateSnapshot,
+  forceUpdateSnapshot,
   options,
 }: {
   soup: AnyCircuitElement[]
   testPath: string
   mode: "pcb" | "schematic" | "simple-3d"
   updateSnapshot: boolean
+  forceUpdateSnapshot: boolean
   options?: any
 }): Promise<MatcherResult> {
   testPath = testPath.replace(/\.test\.tsx?$/, "")
@@ -47,7 +49,7 @@ async function saveSnapshotOfSoup({
     fs.mkdirSync(snapshotDir, { recursive: true })
   }
 
-  if (!fs.existsSync(filePath) || updateSnapshot) {
+  if (!fs.existsSync(filePath) || forceUpdateSnapshot) {
     console.log("Creating snapshot at", filePath)
     fs.writeFileSync(filePath, svg)
     return {
@@ -70,6 +72,15 @@ async function saveSnapshotOfSoup({
   if (result.equal) {
     return {
       message: () => "Snapshot matches",
+      pass: true,
+    }
+  }
+
+  if (!result.equal && updateSnapshot) {
+    console.log("Updating snapshot at", filePath)
+    fs.writeFileSync(filePath, svg)
+    return {
+      message: () => `Snapshot updated at ${filePath}`,
       pass: true,
     }
   }
@@ -102,7 +113,7 @@ expect.extend({
       circuitJson = received as AnyCircuitElement[]
     }
 
-    return saveSnapshotOfSoup({
+    return saveSvgSnapshotOfCircuitJson({
       soup: circuitJson,
       testPath: args[0],
       mode: "pcb",
@@ -110,6 +121,10 @@ expect.extend({
         process.argv.includes("--update-snapshots") ||
         process.argv.includes("-u") ||
         Boolean(process.env.BUN_UPDATE_SNAPSHOTS),
+      forceUpdateSnapshot:
+        process.argv.includes("--force-update-snapshots") ||
+        process.argv.includes("-f") ||
+        Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS),
     })
   },
   async toMatchSchematicSnapshot(
@@ -125,7 +140,7 @@ expect.extend({
       circuitJson = received as AnyCircuitElement[]
     }
 
-    return saveSnapshotOfSoup({
+    return saveSvgSnapshotOfCircuitJson({
       soup: circuitJson,
       testPath: args[0],
       mode: "schematic",
@@ -139,6 +154,10 @@ expect.extend({
         process.argv.includes("--update-snapshots") ||
         process.argv.includes("-u") ||
         Boolean(process.env.BUN_UPDATE_SNAPSHOTS),
+      forceUpdateSnapshot:
+        process.argv.includes("--force-update-snapshots") ||
+        process.argv.includes("-f") ||
+        Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS),
     })
   },
 
@@ -155,7 +174,7 @@ expect.extend({
       circuitJson = received as AnyCircuitElement[]
     }
 
-    return saveSnapshotOfSoup({
+    return saveSvgSnapshotOfCircuitJson({
       soup: circuitJson,
       testPath: args[0],
       mode: "simple-3d",
@@ -169,6 +188,10 @@ expect.extend({
         process.argv.includes("--update-snapshots") ||
         process.argv.includes("-u") ||
         Boolean(process.env.BUN_UPDATE_SNAPSHOTS),
+      forceUpdateSnapshot:
+        process.argv.includes("--force-update-snapshots") ||
+        process.argv.includes("-f") ||
+        Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS),
     })
   },
 })
