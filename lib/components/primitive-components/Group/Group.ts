@@ -168,6 +168,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         .filter((c): c is string[] => c !== null),
     )
 
+    // TODO extend this function to also populate source_port.subcircuit_connectivity_map_key
+    // and source_net.subcircuit_connectivity_map_key
+
     for (const trace of traces) {
       if (!trace.source_trace_id) continue
       const connNetId = connMap.getNetConnectedToId(trace.source_trace_id)

@@ -7,6 +7,9 @@ import {
   reorderChipPinsToCcw,
   convertCircuitJsonToInputNetlist,
 } from "@tscircuit/schematic-match-adapt"
+import { createSchematicTraceCrossingSegments } from "../Trace/create-schematic-trace-crossing-segments"
+import { createSchematicTraceJunctions } from "../Trace/create-schematic-trace-junctions"
+import { getOtherSchematicTraces } from "../Trace/get-other-schematic-traces"
 
 export function Group_doInitialSchematicLayoutMatchAdapt<
   Props extends z.ZodType<any, any, any>,
@@ -90,19 +93,43 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
 
   // -----------------------------------------------------------------
   // 3. Create schematic traces from solver paths
-  for (const p of paths) {
-    if (!p.points || p.points.length < 2) continue
+  // for (const p of paths) {
+  //   if (!p.points || p.points.length < 2) continue
 
-    const edges = p.points.slice(0, -1).map((pt, i) => ({
-      from: pt,
-      to: p.points[i + 1],
-    }))
+  //   // Get the source trace id for this path
+  //   // We can find the
+  //   const { source_trace_id } = deriveSourceTraceIdFromPath(
+  //     p,
+  //     cju(subtreeCircuitJson),
+  //   )
+  //   console.log("p", p)
 
-    db.schematic_trace.insert({
-      edges,
-      junctions,
-    } as any)
+  //   // Create crossings with traces from different nets
+  //   const otherCrossingEdges = getOtherSchematicTraces({
+  //     db,
+  //     source_trace_id: tempSourceTraceId,
+  //     differentNetOnly: true,
+  //   }).flatMap((t) => t.edges)
 
-    // TODO add hops and junctions
-  }
+  //   if (otherCrossingEdges.length > 0) {
+  //     edges = createSchematicTraceCrossingSegments({
+  //       edges,
+  //       otherEdges: otherCrossingEdges,
+  //     })
+  //   }
+
+  //   // Create junctions with traces from the same net
+  //   // const junctions = createSchematicTraceJunctions({
+  //   //   edges,
+  //   //   db,
+  //   //   source_trace_id: tempSourceTraceId,
+  //   // })
+
+  //   // Insert the schematic trace
+  //   db.schematic_trace.insert({
+  //     source_trace_id: tempSourceTraceId,
+  //     edges,
+  //     junctions: [],
+  //   } as any)
+  // }
 }
