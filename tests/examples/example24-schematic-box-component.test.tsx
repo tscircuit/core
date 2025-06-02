@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import "lib/register-catalogue"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("Chip with pinrow footprint", async () => {
+test("Schematic box component", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
