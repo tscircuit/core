@@ -1,12 +1,9 @@
 import type { SchematicComponent, SchematicPort } from "circuit-json"
-import {
-  type InputNetlist,
-  SchematicLayoutPipelineSolver,
-} from "@tscircuit/schematic-match-adapt"
 import type { Group } from "./Group"
 import type { z } from "zod"
 import {
   type InputNetlist,
+  SchematicLayoutPipelineSolver,
   reorderChipPinsToCcw,
   convertCircuitJsonToInputNetlist,
 } from "@tscircuit/schematic-match-adapt"
@@ -32,6 +29,8 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
 
   const { boxes, junctions, netLabels, paths } = solver.getLayout()
 
+  // Bun.write("test.json", JSON.stringify(solver.getLayout(), null, 2))
+
   // console.log("boxes", boxes)
   // console.log("junctions", junctions)
   // console.log("netLabels", netLabels)
@@ -43,13 +42,34 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
     const srcComp = db.source_component.list().find((c) => c.name === box.boxId)
     if (!srcComp) continue
 
-    const schComp = db.schematic_component
-      .list()
-      .find((sc) => sc.source_component_id === srcComp.source_component_id)
+    const schComp = db.schematic_component.getWhere({
+      source_component_id: srcComp.source_component_id,
+    })
 
-    if (schComp) {
-      db.schematic_component.update(schComp.schematic_component_id, {
-        center: { x: box.centerX, y: box.centerY },
+    if (!schComp) continue
+
+    const schCompMoveDelta = {
+      x: box.centerX - schComp.center.x + 0.1, // TODO figure out why +0.1
+      y: box.centerY - schComp.center.y - 0.1,
+    }
+
+    db.schematic_component.update(schComp.schematic_component_id, {
+      center: {
+        x: schComp.center.x + schCompMoveDelta.x,
+        y: schComp.center.y + schCompMoveDelta.y,
+      },
+    })
+    // Update all the pins in the schematic component
+    const schematicPorts = db.schematic_port.list({
+      schematic_component_id: schComp.schematic_component_id,
+    })
+
+    for (const schematicPort of schematicPorts) {
+      db.schematic_port.update(schematicPort.schematic_port_id, {
+        center: {
+          x: schematicPort.center.x + schCompMoveDelta.x,
+          y: schematicPort.center.y + schCompMoveDelta.y,
+        },
       })
     }
   }
@@ -83,5 +103,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       // Re-use global junction list – solver already de-duped it
       junctions,
     } as any)
+
+    // TODO add hops and junctions
   }
 }
