@@ -24,11 +24,6 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       throw result.error
     }
 
-    let width: number
-    let height: number
-    let centerX: number = typeof props.schX === "number" ? props.schX : 0
-    let centerY: number = typeof props.schY === "number" ? props.schY : 0
-
     const basePadding = 0.6
     const generalPadding = typeof props.padding === "number" ? props.padding : 0
     const paddingTop =
@@ -48,6 +43,11 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     const hasFixedSize =
       typeof props.width === "number" && typeof props.height === "number"
 
+    let width: number
+    let height: number
+    let x: number
+    let y: number
+
     if (hasOverlay) {
       const portsWithSelectors = (props.overlay as string[])
         .map((selector: string) => ({
@@ -62,10 +62,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       }>
 
       const portsWithPosition = portsWithSelectors.map(({ port }) => ({
-        port,
         position: port._getGlobalSchematicPositionAfterLayout(),
-        schematic_port_id: port.schematic_port_id!,
-        facingDirection: port.facingDirection,
       }))
 
       if (portsWithPosition.length === 0) return
@@ -82,21 +79,30 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const defaultHorizontalPadding = rawWidth === 0 ? basePadding : 0
       const defaultVerticalPadding = rawHeight === 0 ? basePadding : 0
 
-      width = rawWidth + defaultHorizontalPadding + paddingLeft + paddingRight
-      height = rawHeight + defaultVerticalPadding + paddingTop + paddingBottom
-      centerX = (minX + maxX) / 2 + (props.schX ?? 0)
-      centerY = (minY + maxY) / 2 + (props.schY ?? 0)
+      const finalPaddingLeft = paddingLeft + defaultHorizontalPadding / 2
+      const finalPaddingRight = paddingRight + defaultHorizontalPadding / 2
+      const finalPaddingTop = paddingTop + defaultVerticalPadding / 2
+      const finalPaddingBottom = paddingBottom + defaultVerticalPadding / 2
+
+      const left = minX - finalPaddingLeft
+      const right = maxX + finalPaddingRight
+      const top = minY - finalPaddingBottom
+      const bottom = maxY + finalPaddingTop
+
+      width = right - left
+      height = bottom - top
+      x = left + (props.schX ?? 0)
+      y = top + (props.schY ?? 0)
     } else if (hasFixedSize) {
       width = props.width!
       height = props.height!
-      // centerX and centerY already default to schX/schY or 0
+      const centerX = typeof props.schX === "number" ? props.schX : 0
+      const centerY = typeof props.schY === "number" ? props.schY : 0
+      x = centerX - width / 2
+      y = centerY - height / 2
     } else {
-      // This should not happen due to validation, but we guard anyway
       return
     }
-
-    const x = centerX - width / 2
-    const y = centerY - height / 2
 
     db.schematic_box.insert({
       height,
