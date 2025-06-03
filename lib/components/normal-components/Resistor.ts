@@ -36,6 +36,8 @@ export class Resistor extends NormalComponent<
     this._createNetsFromProps([
       this.props.pullupFor,
       this.props.pullupTo,
+      this.props.pulldownFor,
+      this.props.pulldownTo,
       ...this._getNetsFromConnectionsProp(),
     ])
   }
@@ -52,6 +54,20 @@ export class Resistor extends NormalComponent<
         new Trace({
           from: `${this.getSubcircuitSelector()} > port.2`,
           to: this.props.pullupTo,
+        }),
+      )
+    }
+    if (this.props.pulldownFor && this.props.pulldownTo) {
+      this.add(
+        new Trace({
+          from: `${this.getSubcircuitSelector()} > port.1`,
+          to: this.props.pulldownFor,
+        }),
+      )
+      this.add(
+        new Trace({
+          from: `${this.getSubcircuitSelector()} > port.2`,
+          to: this.props.pulldownTo,
         }),
       )
     }
