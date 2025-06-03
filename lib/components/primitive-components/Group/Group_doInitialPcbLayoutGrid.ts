@@ -116,7 +116,7 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
         .filter((e) => (e as any).pcb_component_id === child.pcb_component_id)
       const moved = transformPCBElements(related as any, mat)
       for (const elm of moved) {
-        const idProp = getPrimaryId(elm)
+        const idProp = getPrimaryId(elm as any)
         // @ts-ignore dynamic index access
         db[elm.type].update((elm as any)[idProp], elm as any)
       }
