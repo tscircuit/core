@@ -31,6 +31,7 @@ import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
+import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -672,6 +673,29 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _doInitialSchematicLayoutGrid(): void {
     Group_doInitialSchematicLayoutGrid(this)
+  }
+
+  _getPcbLayoutMode(): "grid" | "flex" | "match-adapt" | "none" {
+    const props = this._parsedProps as SubcircuitGroupProps
+    if (props.pcbLayout?.matchAdapt) return "match-adapt"
+    if (props.pcbLayout?.flex) return "flex"
+    if (props.pcbLayout?.grid) return "grid"
+    if (props.matchAdapt) return "match-adapt"
+    if (props.flex) return "flex"
+    if (props.grid) return "grid"
+    return "none"
+  }
+
+  doInitialPcbLayout(): void {
+    const pcbLayoutMode = this._getPcbLayoutMode()
+
+    if (pcbLayoutMode === "grid") {
+      this._doInitialPcbLayoutGrid()
+    }
+  }
+
+  _doInitialPcbLayoutGrid(): void {
+    Group_doInitialPcbLayoutGrid(this)
   }
 
   _determineSideFromPosition(
