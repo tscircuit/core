@@ -10,7 +10,6 @@ export class Led extends NormalComponent<
   typeof ledProps,
   PolarizedPassivePorts
 > {
-  // @ts-ignore
   get config() {
     return {
       componentName: "Led",
@@ -29,6 +28,12 @@ export class Led extends NormalComponent<
     })
   }
 
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    return (
+      this._parsedProps.schDisplayValue || this._parsedProps.color || undefined
+    )
+  }
+
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -37,6 +42,7 @@ export class Led extends NormalComponent<
       name: props.name,
       wave_length: props.wavelength,
       color: props.color,
+      symbol_display_value: this._getSchematicSymbolDisplayValue(),
       // @ts-ignore
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
