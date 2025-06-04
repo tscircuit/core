@@ -5,7 +5,11 @@ test("board flex layout positions schematic components in a row", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board schLayout={{ flex: true, flexDirection: "row", gap: 1 }} width="20mm" height="20mm">
+    <board
+      schLayout={{ flex: true, flexDirection: "row", gap: 1 }}
+      width="20mm"
+      height="20mm"
+    >
       <resistor name="R1" resistance="10k" footprint="0402" />
       <resistor name="R2" resistance="10k" footprint="0402" />
       <resistor name="R3" resistance="10k" footprint="0402" />

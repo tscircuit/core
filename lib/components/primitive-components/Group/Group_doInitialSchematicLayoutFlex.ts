@@ -35,7 +35,8 @@ export function Group_doInitialSchematicLayoutFlex(group: Group<any>) {
 
   if (flexDirection === "row") {
     const totalWidth =
-      childSizes.reduce((s, c) => s + c.width, 0) + gap * (childSizes.length - 1)
+      childSizes.reduce((s, c) => s + c.width, 0) +
+      gap * (childSizes.length - 1)
     let currentX = groupCenter.x - totalWidth / 2
     const maxHeight = Math.max(...childSizes.map((s) => s.height))
 
@@ -83,7 +84,8 @@ export function Group_doInitialSchematicLayoutFlex(group: Group<any>) {
     }
   } else {
     const totalHeight =
-      childSizes.reduce((s, c) => s + c.height, 0) + gap * (childSizes.length - 1)
+      childSizes.reduce((s, c) => s + c.height, 0) +
+      gap * (childSizes.length - 1)
     let currentY = groupCenter.y + totalHeight / 2
     const maxWidth = Math.max(...childSizes.map((s) => s.width))
 
