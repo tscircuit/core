@@ -12,6 +12,7 @@ import type { LayerRef } from "circuit-json"
 import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
 import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
+import { rotateSide, type Side } from "lib/utils/rotateSide"
 
 export const portProps = z.object({
   name: z.string().optional(),
@@ -408,6 +409,33 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     })
 
     this.schematic_port_id = schematic_port.schematic_port_id
+
+    // Add orientation-based aliases so selectors like `.top` and `.bottom`
+    // resolve correctly after schematic rotation
+    let baseSide: Side | null = null
+    const existingAliases = schematic_port
+      ? this.getNameAndAliases()
+      : []
+    if (existingAliases.includes('left')) baseSide = 'left'
+    else if (existingAliases.includes('right')) baseSide = 'right'
+    else if (existingAliases.includes('top')) baseSide = 'top'
+    else if (existingAliases.includes('bottom')) baseSide = 'bottom'
+    else if (localPortInfo?.side) {
+      baseSide = localPortInfo.side
+    } else {
+      baseSide = {
+        up: 'top',
+        down: 'bottom',
+        left: 'left',
+        right: 'right',
+      }[getRelativeDirection(containerCenter, portCenter)] as Side
+    }
+
+    if (baseSide) {
+      const rotation = (this.parent as any)?._parsedProps?.schRotation ?? 0
+      const finalSide = rotateSide(baseSide, rotation)
+      this.externallyAddedAliases.push(finalSide)
+    }
   }
 
   _setPositionFromLayout(newCenter: { x: number; y: number }): void {
