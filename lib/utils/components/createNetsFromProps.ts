@@ -12,6 +12,11 @@ export const createNetsFromProps = (
           'Net names cannot contain a period, try using "sel.net..." to autocomplete with conventional net names, e.g. V3_3',
         )
       }
+      if (/net\.[0-9]/.test(prop)) {
+        throw new Error(
+          'Net names cannot start with a number, try using a prefix like "VBUS1"',
+        )
+      }
       const subcircuit = component.getSubcircuit()
       if (!subcircuit.selectOne(prop)) {
         const net = new Net({

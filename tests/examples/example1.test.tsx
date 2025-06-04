@@ -17,7 +17,7 @@ test("example1", async () => {
         footprint="0402"
         resistance="10k"
         pullupFor=".U1 port.2"
-        pullupTo="net.5v"
+        pullupTo="net.V5"
         pcbX={-4}
         pcbY={0}
         pcbRotation={-90}
@@ -34,10 +34,10 @@ test("example1", async () => {
       />
       <jumper pcbX={0} pcbY={-4} name="J1" footprint="pinrow4" />
 
-      <trace from=".U1 .PWR" to="net.5v" />
+      <trace from=".U1 .PWR" to="net.V5" />
       <trace from=".U1 .GND" to="net.gnd" />
 
-      <trace from=".J1 pin.1" to="net.5v" />
+      <trace from=".J1 pin.1" to="net.V5" />
       <trace from=".J1 pin.2" to=".U1 port.2" />
       <trace from=".J1 pin.3" to=".U1 port.3" />
       <trace from=".J1 pin.4" to="net.gnd" />
