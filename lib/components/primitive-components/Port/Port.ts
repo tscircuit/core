@@ -413,21 +413,19 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // Add orientation-based aliases so selectors like `.top` and `.bottom`
     // resolve correctly after schematic rotation
     let baseSide: Side | null = null
-    const existingAliases = schematic_port
-      ? this.getNameAndAliases()
-      : []
-    if (existingAliases.includes('left')) baseSide = 'left'
-    else if (existingAliases.includes('right')) baseSide = 'right'
-    else if (existingAliases.includes('top')) baseSide = 'top'
-    else if (existingAliases.includes('bottom')) baseSide = 'bottom'
+    const existingAliases = schematic_port ? this.getNameAndAliases() : []
+    if (existingAliases.includes("left")) baseSide = "left"
+    else if (existingAliases.includes("right")) baseSide = "right"
+    else if (existingAliases.includes("top")) baseSide = "top"
+    else if (existingAliases.includes("bottom")) baseSide = "bottom"
     else if (localPortInfo?.side) {
       baseSide = localPortInfo.side
     } else {
       baseSide = {
-        up: 'top',
-        down: 'bottom',
-        left: 'left',
-        right: 'right',
+        up: "top",
+        down: "bottom",
+        left: "left",
+        right: "right",
       }[getRelativeDirection(containerCenter, portCenter)] as Side
     }
 
