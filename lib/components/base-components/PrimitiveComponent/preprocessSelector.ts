@@ -4,6 +4,11 @@ export const preprocessSelector = (selector: string) => {
       'Net names cannot contain a period, try using "sel.net..." to autocomplete with conventional net names, e.g. V3_3',
     )
   }
+  if (/net\.[0-9]/.test(selector)) {
+    throw new Error(
+      'Net names cannot start with a number, try using a prefix like "VBUS1"',
+    )
+  }
   return selector
     .replace(/ pin/g, " port")
     .replace(/ subcircuit\./g, " group[isSubcircuit=true]")
