@@ -7,6 +7,11 @@ export const createNetsFromProps = (
 ) => {
   for (const prop of props) {
     if (typeof prop === "string" && prop.startsWith("net.")) {
+      if (/net\.[^\s>]*\./.test(prop)) {
+        throw new Error(
+          'Net names cannot contain a period, try using "sel.net..." to autocomplete with conventional net names, e.g. V3_3',
+        )
+      }
       const subcircuit = component.getSubcircuit()
       if (!subcircuit.selectOne(prop)) {
         const net = new Net({
