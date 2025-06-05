@@ -1,7 +1,10 @@
 import { boardProps } from "@tscircuit/props"
 import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
-import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
+import {
+  checkEachPcbTraceNonOverlapping,
+  checkSameNetViaSpacing,
+} from "@tscircuit/checks"
 import type { RenderPhase } from "../base-components/Renderable"
 
 export class Board extends Group<typeof boardProps> {
@@ -171,9 +174,14 @@ export class Board extends Group<typeof boardProps> {
     if (this._drcChecksComplete) return
     this._drcChecksComplete = true
 
-    const errors = checkEachPcbTraceNonOverlapping(db.toArray())
-    for (const error of errors) {
+    const traceErrors = checkEachPcbTraceNonOverlapping(db.toArray())
+    for (const error of traceErrors) {
       db.pcb_trace_error.insert(error)
+    }
+
+    const placementErrors = checkSameNetViaSpacing(db.toArray())
+    for (const error of placementErrors) {
+      db.pcb_placement_error.insert(error)
     }
   }
 
