@@ -77,47 +77,28 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     if (props.shape === "circle") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
-        pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
+        pcb_port_id: this.matchedPort?.pcb_port_id!,
         layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "circle",
-
         // @ts-ignore: no idea why this is triggering
         radius: props.radius!,
-
         port_hints: props.portHints.map((ph) => ph.toString()),
-
         x: position.x,
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      })
-      db.pcb_solder_paste.insert({
-        layer: pcb_smtpad.layer,
-        shape: "circle",
-        // @ts-ignore: no idea why this is triggering
-        radius: pcb_smtpad.radius * 0.7,
-        x: pcb_smtpad.x,
-        y: pcb_smtpad.y,
-        pcb_component_id: pcb_smtpad.pcb_component_id,
-        pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       })
     } else if (props.shape === "rect") {
       pcb_smtpad =
         parentRotation === 0 || isRotated90
           ? db.pcb_smtpad.insert({
               pcb_component_id,
-              pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
+              pcb_port_id: this.matchedPort?.pcb_port_id!,
               layer: maybeFlipLayer(props.layer ?? "top"),
               shape: "rect",
-
-              ...{
-                width: isRotated90 ? props.height : props.width,
-                height: isRotated90 ? props.width : props.height,
-              },
-
+              // @ts-ignore: no idea why this is triggering
+              width: isRotated90 ? props.height : props.width,
+              height: isRotated90 ? props.width : props.height,
               port_hints: props.portHints.map((ph) => ph.toString()),
-
               x: position.x,
               y: position.y,
               subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -127,7 +108,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
               pcb_component_id,
               layer: maybeFlipLayer(props.layer ?? "top"),
               shape: "rotated_rect",
-              ...{ width: props.width, height: props.height },
+              width: props.width,
+              height: props.height,
               x: position.x,
               y: position.y,
               ccw_rotation: parentRotation,
@@ -135,7 +117,23 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
               subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
               pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
             } as PcbSmtPad)
-      if (pcb_smtpad.shape === "rect")
+    }
+    if (pcb_smtpad) {
+      this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
+      if (pcb_smtpad.shape === "circle") {
+        db.pcb_solder_paste.insert({
+          layer: pcb_smtpad.layer,
+          shape: "circle",
+          // @ts-ignore: no idea why this is triggering
+          radius: pcb_smtpad.radius * 0.7,
+          x: pcb_smtpad.x,
+          y: pcb_smtpad.y,
+          pcb_component_id: pcb_smtpad.pcb_component_id,
+          pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        })
+      } else if (pcb_smtpad.shape === "rect") {
         db.pcb_solder_paste.insert({
           layer: maybeFlipLayer(props.layer ?? "top"),
           shape: "rect",
@@ -149,7 +147,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
-      if (pcb_smtpad.shape === "rotated_rect")
+      } else if (pcb_smtpad.shape === "rotated_rect") {
         db.pcb_solder_paste.insert({
           layer: maybeFlipLayer(props.layer ?? "top"),
           shape: "rotated_rect",
@@ -164,9 +162,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
-    }
-    if (pcb_smtpad) {
-      this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
+      }
     }
   }
 
