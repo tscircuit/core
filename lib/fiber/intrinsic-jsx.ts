@@ -30,6 +30,7 @@ export interface TscircuitElements {
   netalias: Props.NetAliasProps
   net: Props.NetProps
   trace: Props.TraceProps
+  testpoint: Props.TestpointProps
   custom: any
   component: Props.ComponentProps
   crystal: Props.CrystalProps

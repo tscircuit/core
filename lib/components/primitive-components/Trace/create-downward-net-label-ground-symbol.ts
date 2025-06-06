@@ -70,7 +70,7 @@ export const createDownwardNetLabelGroundSymbol = (
     source_net_id: port.source_port_id!,
     text: schDisplayLabel!,
     anchor_position: groundSymbolPos,
-    symbol_name: "ground_horz",
+    symbol_name: "ground_right",
   })
 
   const edges = [

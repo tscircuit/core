@@ -1,4 +1,5 @@
 import * as Components from "./components"
+import { TestPoint } from "./components/normal-components/TestPoint"
 import { extendCatalogue } from "./fiber/catalogue"
 
 // Register all components, generally you don't need to manually
@@ -9,4 +10,5 @@ extendCatalogue(Components)
 // Aliases (only when class name is different than the name of the component)
 extendCatalogue({
   Bug: Components.Chip,
+  TestPoint: TestPoint,
 })
