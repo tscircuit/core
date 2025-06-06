@@ -13,7 +13,7 @@ import {
   getRefKey,
   parseRefKey,
 } from "@tscircuit/schematic-match-adapt"
-import { circuitBuilderFromLayoutJson } from "lib/utils/schematic/circuitBuilderFromLayoutJson"
+import { circuitBuilderFromLayoutJson } from "@tscircuit/schematic-match-adapt"
 import { createSchematicTraceCrossingSegments } from "../Trace/create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "../Trace/create-schematic-trace-junctions"
 import { getOtherSchematicTraces } from "../Trace/get-other-schematic-traces"
