@@ -57,20 +57,18 @@ export const createDownwardNetLabelGroundSymbol = (
     y: anchorPos.y + offsets.vertPortDirectionOffset * offsets.schBoxVertOffset,
   }
 
-  const groundSymbolPos = isLeftOrRight
-    ? {
-        x: horizontalEndPos.x,
-        y: horizontalEndPos.y - 0.5,
-      }
-    : horizontalEndPos
+  const groundSymbolPos = {
+    x: horizontalEndPos.x + 0.22,
+    y: horizontalEndPos.y - 0.24,
+  }
 
   db.schematic_net_label.insert({
-    anchor_side: "top",
+    anchor_side: "right",
     center: groundSymbolPos,
     source_net_id: port.source_port_id!,
     text: schDisplayLabel!,
     anchor_position: groundSymbolPos,
-    symbol_name: "ground_horz",
+    symbol_name: "ground_vert",
   })
 
   const edges = [
@@ -86,13 +84,6 @@ export const createDownwardNetLabelGroundSymbol = (
       to: horizontalEndPos,
     },
   ]
-
-  if (isLeftOrRight) {
-    edges.push({
-      from: horizontalEndPos,
-      to: groundSymbolPos,
-    })
-  }
 
   db.schematic_trace.insert({
     edges,
