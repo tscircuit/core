@@ -28,18 +28,4 @@
     L 216.87058823532635,263.29411764700757
     L 299.2941176470938,263.29411764700757
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.529411764706px"/><text class="net-label-text" x="292.941176470623" y="282.35294117641996" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="31.764705882353997px" transform="">SDA</text><path class="net-label" d="
-    M 485.2941176471,176.47058823523997
-    L 466.2352941176876,166.94117647053378
-    L 466.2352941176876,75.5529411764131
-    L 504.3529411765124,75.5529411764131
-    L 504.3529411765124,166.94117647053378
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.529411764706px"/><text class="net-label-text" x="485.2941176471" y="160.58823529406297" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="31.764705882353997px" transform="rotate(-90 485.2941176471 160.58823529406297)">V3_3</text><path class="net-label" d="
-    M 485.2941176471,423.52941176466
-    L 504.3529411765124,433.0588235293662
-    L 504.3529411765124,520.188235294075
-    L 466.2352941176876,520.188235294075
-    L 466.2352941176876,433.0588235293662
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.529411764706px"/><text class="net-label-text" x="485.2941176471" y="439.41176470583696" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="31.764705882353997px" transform="rotate(90 485.2941176471 439.41176470583696)">GND</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.529411764706px"/><text class="net-label-text" x="292.941176470623" y="282.35294117641996" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="31.764705882353997px" transform="">SDA</text><text x="485.2941176471" y="176.47058823523997" fill="red" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="8.823529411765px">Symbol not found: vcc_up</text><text x="485.2941176471" y="423.52941176466" fill="red" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="8.823529411765px">Symbol not found: ground_down</text></svg>

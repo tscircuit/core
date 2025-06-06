@@ -25,6 +25,7 @@ export const orderedRenderPhases = [
   "SchematicPrimitiveRender",
   "SchematicLayout",
   "SchematicTraceRender",
+  "SchematicReplaceNetLabelsWithSymbols",
   "PcbComponentRender",
   "PcbPrimitiveRender",
   "PcbFootprintLayout",

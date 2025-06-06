@@ -28,21 +28,7 @@
     L 567.0153282636995,494.428721801848
     L 623.317648167026,494.428721801848
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="619.8892254394893" y="504.7139899844584" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="">GND3</text><path class="net-label" d="
-    M 204.7660353462584,271.5397177416687
-    L 215.0513035288688,276.6823518329739
-    L 215.0513035288688,332.98467173630047
-    L 194.480767163648,332.98467173630047
-    L 194.480767163648,276.6823518329739
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="204.7660353462584" y="280.1107745605107" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="rotate(90 204.7660353462584 280.1107745605107)">GND1</text><path class="net-label" d="
-    M 395.2339646538584,271.5397177416687
-    L 405.5192328364688,276.6823518329739
-    L 405.5192328364688,332.98467173630047
-    L 384.948696471248,332.98467173630047
-    L 384.94869647124796,276.6823518329739
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="395.2339646538584" y="280.1107745605107" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="rotate(90 395.2339646538584 280.1107745605107)">GND1</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="619.8892254394893" y="504.7139899844584" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="">GND3</text><text x="204.7660353462584" y="271.5397177416687" fill="red" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="4.761698232690001px">Symbol not found: ground_down</text><text x="395.2339646538584" y="271.5397177416687" fill="red" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="4.761698232690001px">Symbol not found: ground_down</text><path class="net-label" d="
     M 395.2860100155416,166.53651966613137
     L 385.00074183293117,161.39388557482616
     L 385.0007418329312,105.09156567149961
@@ -63,14 +49,7 @@
     L 815.0513035286504,33.78901065932826
     L 815.0513035286504,90.09133056265482
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="804.76603534604" y="86.66290783511802" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="rotate(-90 804.76603534604 86.66290783511802)">GND2</text><path class="net-label" d="
-    M 880.95320706908,342.84227275384
-    L 891.2384752516904,347.9849068451452
-    L 891.2384752516904,404.28722674847177
-    L 870.6679388864696,404.28722674847177
-    L 870.6679388864696,347.9849068451452
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="880.95320706908" y="351.413329572682" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="rotate(90 880.95320706908 351.413329572682)">GND2</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="804.76603534604" y="86.66290783511802" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="rotate(-90 804.76603534604 86.66290783511802)">GND2</text><text x="880.95320706908" y="342.84227275384" fill="red" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="4.761698232690001px">Symbol not found: ground_down</text><path class="net-label" d="
     M 747.62565655376,209.51472223852005
     L 742.4830224624548,219.79999042113045
     L 686.1807025591282,219.79999042113045

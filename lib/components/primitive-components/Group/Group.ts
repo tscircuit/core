@@ -847,4 +847,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
     }
   }
+
+  doInitialSchematicReplaceNetLabelsWithSymbols() {
+    if (this.root?.schematicDisabled) return
+    const { db } = this.root!
+
+    for (const nl of db.schematic_net_label.list()) {
+      const net = db.source_net.get(nl.source_net_id)
+      const text = nl.text || net?.name || ""
+
+      if (nl.anchor_side === "top" && /^gnd/i.test(text)) {
+        db.schematic_net_label.update(nl.schematic_net_label_id, {
+          symbol_name: "ground_down",
+        })
+        continue
+      }
+
+      if (nl.anchor_side === "bottom" && /^v/i.test(text)) {
+        db.schematic_net_label.update(nl.schematic_net_label_id, {
+          symbol_name: "vcc_up",
+        })
+      }
+    }
+  }
 }
