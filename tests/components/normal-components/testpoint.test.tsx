@@ -1,7 +1,7 @@
 import { it, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("<TestPoint/> component with color", async () => {
+it("<TestPoint/> component", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
