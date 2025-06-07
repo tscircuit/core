@@ -132,6 +132,7 @@ export const createComponentsFromCircuitJson = (
           createPinrowSilkscreenText({
             elm,
             pinLabels,
+            layer: elm.layer,
             readableRotation: ccwRotation,
             anchorAlignment: elm.anchor_alignment,
           }),

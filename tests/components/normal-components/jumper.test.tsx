@@ -14,6 +14,20 @@ it("should render a jumper with pinrow4 footprint", async () => {
         schX={0}
         schY={0}
       />
+      <jumper
+        name="J2"
+        footprint="pinrow4_doublesidedpinlabel"
+        pinLabels={{
+          pin1: "ONE",
+          pin2: "TWO",
+          pin3: "THREE",
+          pin4: "FOUR",
+        }}
+        pcbX={0}
+        pcbY={-4}
+        schX={0}
+        schY={-4}
+      />
     </board>,
   )
 
