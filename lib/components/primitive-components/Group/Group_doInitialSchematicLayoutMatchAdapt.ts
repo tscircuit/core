@@ -13,6 +13,7 @@ import {
   getRefKey,
   parseRefKey,
 } from "@tscircuit/schematic-match-adapt"
+import { circuitBuilderFromLayoutJson } from "@tscircuit/schematic-match-adapt"
 import { createSchematicTraceCrossingSegments } from "../Trace/create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "../Trace/create-schematic-trace-junctions"
 import { getOtherSchematicTraces } from "../Trace/get-other-schematic-traces"
@@ -28,14 +29,34 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   // TODO use db.subtree({ source_group_id: ... })
   let subtreeCircuitJson = structuredClone(db.toArray())
 
+  Bun.write(
+    "subtreeCircuitJson1.json",
+    JSON.stringify(subtreeCircuitJson, null, 2),
+  )
+
   // Reorder the pins of the schematic components to be in CCW order
   subtreeCircuitJson = reorderChipPinsToCcw(subtreeCircuitJson)
+
+  Bun.write(
+    "subtreeCircuitJson2.json",
+    JSON.stringify(subtreeCircuitJson, null, 2),
+  )
 
   const inputNetlist = convertCircuitJsonToInputNetlist(subtreeCircuitJson)
 
   // Run the SchematicLayoutPipelineSolver
+  const templateFns = group._parsedProps.matchAdaptTemplate
+    ? [
+        () =>
+          circuitBuilderFromLayoutJson(
+            group._parsedProps.matchAdaptTemplate as any,
+          ),
+      ]
+    : undefined
+
   const solver = new SchematicLayoutPipelineSolver({
     inputNetlist,
+    templateFns,
   })
 
   let solvedLayout: ReturnType<typeof solver.getLayout> | null = null
