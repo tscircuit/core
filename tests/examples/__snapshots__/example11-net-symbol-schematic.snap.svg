@@ -28,21 +28,7 @@
     L 567.0153282636995,494.428721801848
     L 623.317648167026,494.428721801848
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="619.8892254394893" y="504.7139899844584" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="">GND3</text><path class="net-label" d="
-    M 204.7660353462584,271.5397177416687
-    L 215.0513035288688,276.6823518329739
-    L 215.0513035288688,332.98467173630047
-    L 194.480767163648,332.98467173630047
-    L 194.480767163648,276.6823518329739
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="204.7660353462584" y="280.1107745605107" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="rotate(90 204.7660353462584 280.1107745605107)">GND1</text><path class="net-label" d="
-    M 395.2339646538584,271.5397177416687
-    L 405.5192328364688,276.6823518329739
-    L 405.5192328364688,332.98467173630047
-    L 384.948696471248,332.98467173630047
-    L 384.94869647124796,276.6823518329739
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="395.2339646538584" y="280.1107745605107" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="rotate(90 395.2339646538584 280.1107745605107)">GND1</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="619.8892254394893" y="504.7139899844584" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="">GND3</text><rect class="component-overlay" x="182.83936732436746" y="271.4365317409663" width="42.7906488023994" height="46.038898392207784" fill="transparent"/><path d="M 204.66259221385147 271.4365317409663 L 204.66259221385147 302.8288273052782" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><path d="M 182.83936732436746 302.82570363123756 L 225.63001612676686 302.82570363123756" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><path d="M 188.1882019959411 310.15056688220585 L 220.2811814551932 310.15056688220585" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><path d="M 198.88586181569187 317.4754301331741 L 209.58352163544262 317.4754301331741" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><text x="202.6117097382389" y="328.6302701236418" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="hanging" font-size="17.142113637683998px">GND1</text><rect class="component-overlay" x="373.30729663196746" y="271.4365317409663" width="42.7906488023994" height="46.038898392207784" fill="transparent"/><path d="M 395.13052152145144 271.4365317409663 L 395.1305215214515 302.8288273052782" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><path d="M 373.30729663196746 302.82570363123756 L 416.09794543436686 302.82570363123756" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><path d="M 378.65613130354114 310.15056688220585 L 410.7491107627932 310.15056688220585" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><path d="M 389.3537911232919 317.4754301331741 L 400.0514509430426 317.4754301331741" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><text x="393.0796390458389" y="328.6302701236418" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="hanging" font-size="17.142113637683998px">GND1</text><path class="net-label" d="
     M 395.2860100155416,166.53651966613137
     L 385.00074183293117,161.39388557482616
     L 385.0007418329312,105.09156567149961
@@ -63,14 +49,7 @@
     L 815.0513035286504,33.78901065932826
     L 815.0513035286504,90.09133056265482
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="804.76603534604" y="86.66290783511802" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="rotate(-90 804.76603534604 86.66290783511802)">GND2</text><path class="net-label" d="
-    M 880.95320706908,342.84227275384
-    L 891.2384752516904,347.9849068451452
-    L 891.2384752516904,404.28722674847177
-    L 870.6679388864696,404.28722674847177
-    L 870.6679388864696,347.9849068451452
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="880.95320706908" y="351.413329572682" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="rotate(90 880.95320706908 351.413329572682)">GND2</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9046792930760001px"/><text class="net-label-text" x="804.76603534604" y="86.66290783511802" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.142113637683998px" transform="rotate(-90 804.76603534604 86.66290783511802)">GND2</text><rect class="component-overlay" x="859.026539047189" y="342.7390867531376" width="42.79064880239946" height="46.038898392207784" fill="transparent"/><path d="M 880.849763936673 342.7390867531376 L 880.849763936673 374.1313823174495" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><path d="M 859.026539047189 374.12825864340886 L 901.8171878495884 374.12825864340886" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><path d="M 864.3753737187626 381.45312189437715 L 896.4683531780147 381.45312189437715" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><path d="M 875.0730335385134 388.7779851453454 L 885.7706933582641 388.7779851453454" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.9046792930760001px"/><text x="878.7988814610604" y="399.9328251358131" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="hanging" font-size="17.142113637683998px">GND2</text><path class="net-label" d="
     M 747.62565655376,209.51472223852005
     L 742.4830224624548,219.79999042113045
     L 686.1807025591282,219.79999042113045
