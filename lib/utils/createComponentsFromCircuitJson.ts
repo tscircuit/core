@@ -1,4 +1,4 @@
-import type { AnyCircuitElement } from "circuit-json"
+import type { AnyCircuitElement, PcbSilkscreenText } from "circuit-json"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
@@ -132,8 +132,20 @@ export const createComponentsFromCircuitJson = (
           createPinrowSilkscreenText({
             elm,
             pinLabels,
+            layer: "top",
             readableRotation: ccwRotation,
             anchorAlignment: elm.anchor_alignment,
+          }),
+        )
+        components.push(
+          createPinrowSilkscreenText({
+            elm,
+            pinLabels,
+            layer: "bottom",
+            readableRotation: ccwRotation,
+            anchorAlignment: elm.anchor_alignment.replace(/left|right/g, (m) =>
+              m === "left" ? "right" : "left",
+            ) as PcbSilkscreenText["anchor_alignment"],
           }),
         )
       } else {
