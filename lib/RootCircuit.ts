@@ -29,14 +29,20 @@ export class RootCircuit {
 
   platform?: PlatformConfig
 
+  /**
+   * Optional URL where the project can be viewed or downloaded.
+   */
+  projectUrl?: string
+
   _hasRenderedAtleastOnce = false
 
-  constructor({ platform }: { platform?: PlatformConfig } = {}) {
+  constructor({ platform, projectUrl }: { platform?: PlatformConfig; projectUrl?: string } = {}) {
     this.children = []
     this.db = su([])
     // TODO rename to rootCircuit
     this.root = this
     this.platform = platform
+    this.projectUrl = projectUrl
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
@@ -105,10 +111,17 @@ export class RootCircuit {
   }
 
   async renderUntilSettled(): Promise<void> {
-    if (!this.db.source_project_metadata.list()?.[0]) {
+    const existingMetadata = this.db.source_project_metadata.list()?.[0]
+    if (!existingMetadata) {
       this.db.source_project_metadata.insert({
         software_used_string: `@tscircuit/core@${this.getCoreVersion()}`,
+        ...(this.projectUrl ? { project_url: this.projectUrl } : {}),
       })
+    } else if (this.projectUrl && existingMetadata.project_url !== this.projectUrl) {
+      this.db.source_project_metadata.update(
+        (existingMetadata as any).source_project_metadata_id,
+        { project_url: this.projectUrl },
+      )
     }
 
     this.render()
