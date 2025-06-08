@@ -18,12 +18,6 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const result = schematicBoxProps.safeParse(props)
-    if (!result.success) {
-      console.error("Validation failed:", result.error.format())
-      throw result.error
-    }
-
     const basePadding = 0.6
     const generalPadding = typeof props.padding === "number" ? props.padding : 0
     const paddingTop =
@@ -119,27 +113,114 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
 
     if (props.title) {
       const isInside = props.titleInside ?? false
-      let titleX: number
-      let titleY: number
-      if (hasOverlay) {
-        titleX = isInside
-          ? centerX + (props.titleAnchorPosition?.x ?? 0)
-          : x + (props.titleAnchorPosition?.x ?? 0)
-        titleY = isInside
-          ? centerY + (props.titleAnchorPosition?.y ?? 0)
-          : y + height + 0.1 + (props.titleAnchorPosition?.y ?? 0)
-      } else if (hasFixedSize) {
-        titleX = isInside
-          ? props.schX + (props.titleAnchorPosition?.x ?? 0)
-          : x + (props.titleAnchorPosition?.x ?? 0)
-        titleY = isInside
-          ? props.schY + (props.titleAnchorPosition?.y ?? 0)
-          : centerY + height / 2 + 0.1 + (props.titleAnchorPosition?.y ?? 0)
-      } else {
-        return
+
+      const getAnchorPosition = (
+        anchor: string,
+      ): {
+        x: number
+        y: number
+        textAnchor:
+          | "center"
+          | "top_left"
+          | "top_center"
+          | "top_right"
+          | "center_left"
+          | "center"
+          | "center_right"
+          | "bottom_left"
+          | "bottom_center"
+          | "bottom_right"
+      } => {
+        switch (anchor) {
+          case "top_left":
+            return {
+              x: x,
+              y: y + height,
+              textAnchor: isInside ? "top_left" : "bottom_right",
+            }
+          case "top_center":
+            return {
+              x: x + width / 2,
+              y: y + height,
+              textAnchor: isInside ? "top_center" : "bottom_center",
+            }
+          case "top_right":
+            return {
+              x: x + width,
+              y: y + height,
+              textAnchor: isInside ? "top_right" : "bottom_left",
+            }
+          case "center_left":
+            return {
+              x: x,
+              y: y + height / 2,
+              textAnchor: isInside ? "center_left" : "center_right",
+            }
+          case "center":
+            return { x: x + width / 2, y: y + height / 2, textAnchor: "center" }
+          case "center_right":
+            return {
+              x: x + width,
+              y: y + height / 2,
+              textAnchor: isInside ? "center_right" : "center_left",
+            }
+          case "bottom_left":
+            return {
+              x: x,
+              y: y,
+              textAnchor: isInside ? "bottom_left" : "top_right",
+            }
+          case "bottom_center":
+            return {
+              x: x + width / 2,
+              y: y,
+              textAnchor: isInside ? "bottom_center" : "top_center",
+            }
+          case "bottom_right":
+            return {
+              x: x + width,
+              y: y,
+              textAnchor: isInside ? "bottom_right" : "top_left",
+            }
+          default:
+            return { x: x + width / 2, y: y + height, textAnchor: "center" } // fallback: bottom-center
+        }
       }
+
+      const anchor = props.titleAnchorAlignment ?? "bottom_center"
+      const anchorPos = getAnchorPosition(anchor)
+      let titleOffsetY: number
+      let titleOffsetX: number
+      const textAnchor = anchorPos.textAnchor
+      if (isInside) {
+        titleOffsetY = anchor.includes("top")
+          ? -0.15
+          : anchor.includes("bottom")
+            ? 0.15
+            : 0
+        titleOffsetX = anchor.includes("left")
+          ? 0.15
+          : anchor.includes("right")
+            ? -0.15
+            : 0
+      } else {
+        titleOffsetY = anchor.includes("top")
+          ? 0.15
+          : anchor.includes("bottom")
+            ? -0.15
+            : 0
+        titleOffsetX = anchor.includes("left")
+          ? -0.15
+          : anchor.includes("right")
+            ? 0.15
+            : 0
+      }
+
+      const titleX = anchorPos.x + titleOffsetX
+      const titleY = anchorPos.y + titleOffsetY
+
       db.schematic_text.insert({
-        anchor: props.titleAnchorAlignment ?? "center",
+        anchor: textAnchor,
         text: props.title,
         font_size: props.titleFontSize ?? 0.18,
         color: props.titleColor ?? "#000000",
