@@ -67,7 +67,7 @@ test("group match adapt 5", async () => {
           {
             netId: "NET1",
             netLabelId: "loaded-nl-64033ad4-73e8-408b-9375-bd5e993f8bf4-0",
-            anchorPosition: "left",
+            anchorPosition: "top",
             x: -2.4000000000000004,
             y: 0.6000000000000001,
           },
