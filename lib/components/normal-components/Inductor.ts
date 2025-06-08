@@ -24,7 +24,7 @@ export class Inductor extends NormalComponent<
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    return `${formatSiUnit(this._parsedProps.inductance)}H` // Corrected unit to "H"
+    return `${formatSiUnit(this._parsedProps.inductance)}H`
   }
 
   initPorts() {
