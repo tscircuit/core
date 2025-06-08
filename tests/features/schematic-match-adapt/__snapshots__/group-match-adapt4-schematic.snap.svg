@@ -28,18 +28,4 @@
     L 216.87058823532635,263.29411764700757
     L 299.2941176470938,263.29411764700757
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.529411764706px"/><text class="net-label-text" x="292.941176470623" y="282.35294117641996" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="31.764705882353997px" transform="">SDA</text><path class="net-label" d="
-    M 485.2941176471,176.47058823523997
-    L 466.2352941176876,166.94117647053378
-    L 466.2352941176876,75.5529411764131
-    L 504.3529411765124,75.5529411764131
-    L 504.3529411765124,166.94117647053378
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.529411764706px"/><text class="net-label-text" x="485.2941176471" y="160.58823529406297" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="31.764705882353997px" transform="rotate(-90 485.2941176471 160.58823529406297)">V3_3</text><path class="net-label" d="
-    M 485.2941176471,423.52941176466
-    L 504.3529411765124,433.0588235293662
-    L 504.3529411765124,520.188235294075
-    L 466.2352941176876,520.188235294075
-    L 466.2352941176876,433.0588235293662
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.529411764706px"/><text class="net-label-text" x="485.2941176471" y="439.41176470583696" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="31.764705882353997px" transform="rotate(90 485.2941176471 439.41176470583696)">GND</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.529411764706px"/><text class="net-label-text" x="292.941176470623" y="282.35294117641996" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="31.764705882353997px" transform="">SDA</text><rect class="component-overlay" x="468.81432352945234" y="101.55734117641384" width="32.69638235294195" height="72.27562941176726" fill="transparent"/><path d="M 484.90422352945325 101.55734117641384 L 468.81432352945234 135.27569999994446" stroke="rgb(132, 0, 0)" fill="none" stroke-width="3.529411764706px"/><path d="M 485.42080588239406 101.57491764700207 L 501.5107058823943 135.29336470582683" stroke="rgb(132, 0, 0)" fill="none" stroke-width="3.529411764706px"/><path d="M 485.0904176471 102.44705294111984 L 485.0904176471 173.8329705881811" stroke="rgb(132, 0, 0)" fill="none" stroke-width="3.529411764706px"/><text x="484.3010823529821" y="91.21595294111953" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="ideographic" font-size="31.764705882353997px">V3_3</text><rect class="component-overlay" x="444.66352941180446" y="423.338205882307" width="79.29199411764966" height="85.31107058823818" fill="transparent"/><path d="M 485.1024352941589 423.338205882307 L 485.1024352941589 481.5088058823089" stroke="rgb(132, 0, 0)" fill="none" stroke-width="3.529411764706px"/><path d="M 444.66352941180446 481.5030176470149 L 523.9555235294541 481.5030176470149" stroke="rgb(132, 0, 0)" fill="none" stroke-width="3.529411764706px"/><path d="M 454.5750352941579 495.0761470587801 L 514.0440176471008 495.0761470587801" stroke="rgb(132, 0, 0)" fill="none" stroke-width="3.529411764706px"/><path d="M 474.39802941180557 508.6492764705452 L 494.2210235294533 508.6492764705452" stroke="rgb(132, 0, 0)" fill="none" stroke-width="3.529411764706px"/><text x="481.30210588239396" y="529.3194352940752" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="hanging" font-size="31.764705882353997px">GND</text></svg>

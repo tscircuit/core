@@ -117,7 +117,9 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
       }
       pinLabelToPortId[pinLabel] = port.pcb_port_id
     }
-    const traces = db.pcb_trace.list()
+    const traces = db.pcb_trace.list({
+      pcb_component_id: this.pcb_component_id,
+    })
     const updatePortId = (portId: string | undefined) => {
       if (portId && typeof portId === "string" && portId.startsWith("{PIN")) {
         const pin = portId.replace("{PIN", "").replace("}", "")

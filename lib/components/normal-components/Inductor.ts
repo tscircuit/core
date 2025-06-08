@@ -7,6 +7,7 @@ import {
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
+import { formatSiUnit } from "format-si-unit"
 
 export class Inductor extends NormalComponent<
   typeof inductorProps,
@@ -20,6 +21,10 @@ export class Inductor extends NormalComponent<
       zodProps: inductorProps,
       sourceFtype: FTYPE.simple_inductor,
     }
+  }
+
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    return `${formatSiUnit(this._parsedProps.inductance)}H`
   }
 
   initPorts() {

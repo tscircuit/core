@@ -31,6 +31,7 @@ export type Obstacle = {
 
 export interface SimpleRouteConnection {
   name: string
+  source_trace_id?: string
   pointsToConnect: Array<{ x: number; y: number; layer: string }>
 }
 

@@ -35,7 +35,6 @@ import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
 import type { TraceI } from "./TraceI"
 import { getTraceLength } from "./compute-trace-length"
-import { createDownwardNetLabelGroundSymbol } from "./create-downward-net-label-ground-symbol"
 import { createSchematicTraceCrossingSegments } from "./create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "./create-schematic-trace-junctions"
 import { getMaxLengthFromConnectedCapacitors } from "./get-max-length-from-connected-capacitors"
@@ -742,54 +741,6 @@ export class Trace
 
     if (existingToNetLabel && existingToNetLabel?.text !== netLabelText) {
       existingToNetLabel.text = `${netLabelText} / ${existingToNetLabel.text}`
-    }
-
-    if (
-      netLabelText?.toLocaleLowerCase().includes("gnd") ||
-      netLabelText?.toLocaleLowerCase().includes("ground")
-    ) {
-      if (!existingFromNetLabel && !existingToNetLabel) {
-        createDownwardNetLabelGroundSymbol(
-          {
-            port: fromPort,
-            anchorPos: fromAnchorPos,
-            schDisplayLabel: this.props.schDisplayLabel!,
-            source_trace_id: this.source_trace_id!,
-          },
-          { db },
-        )
-
-        createDownwardNetLabelGroundSymbol(
-          {
-            port: toPort,
-            anchorPos: toAnchorPos,
-            schDisplayLabel: this.props.schDisplayLabel!,
-            source_trace_id: this.source_trace_id!,
-          },
-          { db },
-        )
-      } else if (!existingFromNetLabel) {
-        createDownwardNetLabelGroundSymbol(
-          {
-            port: fromPort,
-            anchorPos: fromAnchorPos,
-            schDisplayLabel: this.props.schDisplayLabel!,
-            source_trace_id: this.source_trace_id!,
-          },
-          { db },
-        )
-      } else if (!existingToNetLabel) {
-        createDownwardNetLabelGroundSymbol(
-          {
-            port: toPort,
-            anchorPos: toAnchorPos,
-            schDisplayLabel: this.props.schDisplayLabel!,
-            source_trace_id: this.source_trace_id!,
-          },
-          { db },
-        )
-      }
-      return
     }
 
     if (!existingToNetLabel) {
