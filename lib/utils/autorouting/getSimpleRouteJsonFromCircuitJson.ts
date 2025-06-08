@@ -175,6 +175,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       } as SimpleRouteConnection
     })
     .filter((c): c is SimpleRouteConnection => c !== null)
+  const directTraceConnectionsById = new Map(
+    directTraceConnections.map((c) => [c.source_trace_id, c]),
+  )
 
   const source_nets = db.source_net
     .list()
@@ -207,11 +210,74 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
   }
 
+  const breakoutPoints = db.pcb_breakout_point
+    .list()
+    .filter(
+      (bp) => !subcircuit_id || relevantSubcircuitIds?.has(bp.subcircuit_id!),
+    )
+
+  const connectionsFromBreakoutPoints: SimpleRouteConnection[] = []
+  const breakoutTraceConnectionsById = new Map<string, SimpleRouteConnection>()
+
+  for (const bp of breakoutPoints) {
+    const pt = { x: bp.x, y: bp.y, layer: "top" as const }
+    if (bp.source_trace_id) {
+      const conn =
+        directTraceConnectionsById.get(bp.source_trace_id) ??
+        breakoutTraceConnectionsById.get(bp.source_trace_id)
+      if (conn) {
+        conn.pointsToConnect.push(pt)
+      } else {
+        const newConn: SimpleRouteConnection = {
+          name: bp.source_trace_id,
+          source_trace_id: bp.source_trace_id,
+          pointsToConnect: [pt],
+        }
+        connectionsFromBreakoutPoints.push(newConn)
+        breakoutTraceConnectionsById.set(bp.source_trace_id, newConn)
+      }
+    } else if (bp.source_net_id) {
+      const conn = connectionsFromNets.find((c) => c.name === bp.source_net_id)
+      if (conn) {
+        conn.pointsToConnect.push(pt)
+      } else {
+        connectionsFromBreakoutPoints.push({
+          name: bp.source_net_id,
+          pointsToConnect: [pt],
+        })
+      }
+    } else if ((bp as any).source_port_id) {
+      const pcb_port = db.pcb_port.getWhere({
+        source_port_id: (bp as any).source_port_id,
+      })
+      if (pcb_port) {
+        connectionsFromBreakoutPoints.push({
+          name: (bp as any).source_port_id,
+          // direct connection from port to breakout point
+          source_trace_id: undefined as any,
+          pointsToConnect: [
+            {
+              x: pcb_port.x!,
+              y: pcb_port.y!,
+              layer: (pcb_port.layers?.[0] as any) ?? "top",
+              pcb_port_id: pcb_port.pcb_port_id,
+            },
+            pt,
+          ],
+        })
+      }
+    }
+  }
+
   return {
     simpleRouteJson: {
       bounds,
       obstacles,
-      connections: [...directTraceConnections, ...connectionsFromNets],
+      connections: [
+        ...directTraceConnections,
+        ...connectionsFromNets,
+        ...connectionsFromBreakoutPoints,
+      ],
       // TODO add traces so that we don't run into things routed by another
       // subcircuit
       layerCount: 2,
