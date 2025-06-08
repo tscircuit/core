@@ -47,6 +47,8 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     let height: number
     let x: number
     let y: number
+    let centerX: number
+    let centerY: number
 
     if (hasOverlay) {
       const portsWithSelectors = (props.overlay as string[])
@@ -93,11 +95,13 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       height = bottom - top
       x = left + (props.schX ?? 0)
       y = top + (props.schY ?? 0)
+      centerX = x + width / 2
+      centerY = y + height / 2
     } else if (hasFixedSize) {
       width = props.width!
       height = props.height!
-      const centerX = typeof props.schX === "number" ? props.schX : 0
-      const centerY = typeof props.schY === "number" ? props.schY : 0
+      centerX = typeof props.schX === "number" ? props.schX : 0
+      centerY = typeof props.schY === "number" ? props.schY : 0
       x = centerX - width / 2
       y = centerY - height / 2
     } else {
@@ -112,5 +116,39 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       is_dashed: props.strokeStyle === "dashed",
       schematic_component_id: "",
     })
+
+    if (props.title) {
+      const isInside = props.titleInside ?? false
+      let titleX: number
+      let titleY: number
+      if (hasOverlay) {
+        titleX = isInside
+          ? centerX + (props.titleAnchorPosition?.x ?? 0)
+          : x + (props.titleAnchorPosition?.x ?? 0)
+        titleY = isInside
+          ? centerY + (props.titleAnchorPosition?.y ?? 0)
+          : y + height + 0.1 + (props.titleAnchorPosition?.y ?? 0)
+      } else if (hasFixedSize) {
+        titleX = isInside
+          ? props.schX + (props.titleAnchorPosition?.x ?? 0)
+          : x + (props.titleAnchorPosition?.x ?? 0)
+        titleY = isInside
+          ? props.schY + (props.titleAnchorPosition?.y ?? 0)
+          : centerY + height / 2 + 0.1 + (props.titleAnchorPosition?.y ?? 0)
+      } else {
+        return
+      }
+      db.schematic_text.insert({
+        anchor: props.titleAnchorAlignment ?? "center",
+        text: props.title,
+        font_size: props.titleFontSize ?? 0.18,
+        color: props.titleColor ?? "#000000",
+        position: {
+          x: titleX,
+          y: titleY,
+        },
+        rotation: 0,
+      })
+    }
   }
 }
