@@ -36,7 +36,10 @@ export class RootCircuit {
 
   _hasRenderedAtleastOnce = false
 
-  constructor({ platform, projectUrl }: { platform?: PlatformConfig; projectUrl?: string } = {}) {
+  constructor({
+    platform,
+    projectUrl,
+  }: { platform?: PlatformConfig; projectUrl?: string } = {}) {
     this.children = []
     this.db = su([])
     // TODO rename to rootCircuit
@@ -117,7 +120,10 @@ export class RootCircuit {
         software_used_string: `@tscircuit/core@${this.getCoreVersion()}`,
         ...(this.projectUrl ? { project_url: this.projectUrl } : {}),
       })
-    } else if (this.projectUrl && existingMetadata.project_url !== this.projectUrl) {
+    } else if (
+      this.projectUrl &&
+      existingMetadata.project_url !== this.projectUrl
+    ) {
       this.db.source_project_metadata.update(
         (existingMetadata as any).source_project_metadata_id,
         { project_url: this.projectUrl },
