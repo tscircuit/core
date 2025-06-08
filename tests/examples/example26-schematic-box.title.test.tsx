@@ -2,63 +2,196 @@ import { test, expect } from "bun:test"
 import "lib/register-catalogue"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("Schematic box component - grid layout for all alignments", async () => {
+test("Schematic box component - manual layout for all alignments", async () => {
   const { circuit } = getTestFixture()
 
-  const alignments = [
-    "top_left",
-    "top_center",
-    "top_right",
-    "center_left",
-    "center",
-    "center_right",
-    "bottom_left",
-    "bottom_center",
-    "bottom_right",
-  ] as const
-
-  const boxWidth = 3
-  const boxHeight = 3
-  const columns = 3
-  const spacing = 3
-
-  const getX = (i: number) => (i % columns) * (boxWidth + spacing)
-  const getY = (row: number) => row * (boxHeight + spacing)
-
   circuit.add(
-    <board width="30mm" height="30mm">
-      {alignments.map((alignment, i) => {
-        const col = i % columns
-        const row = Math.floor(i / columns)
+    <board width="60mm" height="40mm">
+      {/* Row 1: Top Alignments */}
+      <schematicbox
+        schX={0}
+        schY={0}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="top_left (in)"
+        titleInside={true}
+        titleAlignment="top_left"
+      />
+      <schematicbox
+        schX={6}
+        schY={0}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="top_center (in)"
+        titleInside={true}
+        titleAlignment="top_center"
+      />
+      <schematicbox
+        schX={12}
+        schY={0}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="top_right (in)"
+        titleInside={true}
+        titleAlignment="top_right"
+      />
+      <schematicbox
+        schX={18}
+        schY={0}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="top_left (out)"
+        titleInside={false}
+        titleAlignment="top_left"
+      />
+      <schematicbox
+        schX={24}
+        schY={0}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="top_center (out)"
+        titleInside={false}
+        titleAlignment="top_center"
+      />
+      <schematicbox
+        schX={30}
+        schY={0}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="top_right (out)"
+        titleInside={false}
+        titleAlignment="top_right"
+      />
 
-        return (
-          <>
-            {/* Title Inside (top half) */}
-            <schematicbox
-              schX={getX(col)}
-              schY={getY(row)}
-              width={boxWidth}
-              height={boxHeight}
-              strokeStyle="solid"
-              title={`${alignment} (in)`}
-              titleInside={true}
-              titleAlignment={alignment}
-            />
+      {/* Row 2: Center Alignments */}
+      <schematicbox
+        schX={0}
+        schY={6}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="center_left (in)"
+        titleInside={true}
+        titleAlignment="center_left"
+      />
+      <schematicbox
+        schX={6}
+        schY={6}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="center (in)"
+        titleInside={true}
+        titleAlignment="center"
+      />
+      <schematicbox
+        schX={12}
+        schY={6}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="center_right (in)"
+        titleInside={true}
+        titleAlignment="center_right"
+      />
+      <schematicbox
+        schX={18}
+        schY={6}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="center_left (out)"
+        titleInside={false}
+        titleAlignment="center_left"
+      />
+      <schematicbox
+        schX={24}
+        schY={6}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="center (out)"
+        titleInside={false}
+        titleAlignment="center"
+      />
+      <schematicbox
+        schX={30}
+        schY={6}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="center_right (out)"
+        titleInside={false}
+        titleAlignment="center_right"
+      />
 
-            {/* Title Outside (bottom half) */}
-            <schematicbox
-              schX={getX(col) + columns * (boxWidth + spacing)}
-              schY={getY(row)}
-              width={boxWidth}
-              height={boxHeight}
-              strokeStyle="solid"
-              title={`${alignment} (out)`}
-              titleInside={false}
-              titleAlignment={alignment}
-            />
-          </>
-        )
-      })}
+      {/* Row 3: Bottom Alignments */}
+      <schematicbox
+        schX={0}
+        schY={12}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="bottom_left (in)"
+        titleInside={true}
+        titleAlignment="bottom_left"
+      />
+      <schematicbox
+        schX={6}
+        schY={12}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="bottom_center (in)"
+        titleInside={true}
+        titleAlignment="bottom_center"
+      />
+      <schematicbox
+        schX={12}
+        schY={12}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="bottom_right (in)"
+        titleInside={true}
+        titleAlignment="bottom_right"
+      />
+      <schematicbox
+        schX={18}
+        schY={12}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="bottom_left (out)"
+        titleInside={false}
+        titleAlignment="bottom_left"
+      />
+      <schematicbox
+        schX={24}
+        schY={12}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="bottom_center (out)"
+        titleInside={false}
+        titleAlignment="bottom_center"
+      />
+      <schematicbox
+        schX={30}
+        schY={12}
+        width={3}
+        height={3}
+        strokeStyle="solid"
+        title="bottom_right (out)"
+        titleInside={false}
+        titleAlignment="bottom_right"
+      />
     </board>,
   )
 

@@ -136,7 +136,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
             return {
               x: x,
               y: y + height,
-              textAnchor: isInside ? "top_left" : "bottom_right",
+              textAnchor: isInside ? "top_left" : "bottom_left",
             }
           case "top_center":
             return {
@@ -148,7 +148,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
             return {
               x: x + width,
               y: y + height,
-              textAnchor: isInside ? "top_right" : "bottom_left",
+              textAnchor: isInside ? "top_right" : "bottom_right",
             }
           case "center_left":
             return {
@@ -168,7 +168,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
             return {
               x: x,
               y: y,
-              textAnchor: isInside ? "bottom_left" : "top_right",
+              textAnchor: isInside ? "bottom_left" : "top_left",
             }
           case "bottom_center":
             return {
@@ -180,7 +180,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
             return {
               x: x + width,
               y: y,
-              textAnchor: isInside ? "bottom_right" : "top_left",
+              textAnchor: isInside ? "bottom_right" : "top_right",
             }
           default:
             return { x: x + width / 2, y: y + height, textAnchor: "center" } // fallback: bottom-center
@@ -209,9 +209,9 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
           : anchor.includes("bottom")
             ? -0.05 * height
             : 0
-        titleOffsetX = anchor.includes("left")
+        titleOffsetX = anchor.includes("center_left")
           ? -0.05 * width
-          : anchor.includes("right")
+          : anchor.includes("center_right")
             ? 0.05 * width
             : 0
       }
