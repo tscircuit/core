@@ -6,6 +6,7 @@ export class Breakout extends Group<typeof breakoutProps> {
   constructor(props: z.input<typeof breakoutProps>) {
     super({
       ...props,
+      // @ts-ignore
       subcircuit: true,
     })
   }

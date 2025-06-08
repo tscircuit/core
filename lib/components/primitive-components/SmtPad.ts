@@ -1,5 +1,5 @@
 import { smtPadProps } from "@tscircuit/props"
-import type { PcbSmtPad } from "circuit-json"
+import type { PcbSmtPad, PcbSmtPadCircle, PcbSmtPadRect } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
@@ -89,7 +89,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         x: position.x,
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      })
+      }) as PcbSmtPadCircle
       db.pcb_solder_paste.insert({
         layer: pcb_smtpad.layer,
         shape: "circle",
@@ -105,16 +105,14 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     } else if (props.shape === "rect") {
       pcb_smtpad =
         parentRotation === 0 || isRotated90
-          ? db.pcb_smtpad.insert({
+          ? (db.pcb_smtpad.insert({
               pcb_component_id,
               pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
               layer: maybeFlipLayer(props.layer ?? "top"),
               shape: "rect",
 
-              ...{
-                width: isRotated90 ? props.height : props.width,
-                height: isRotated90 ? props.width : props.height,
-              },
+              width: isRotated90 ? props.height : props.width,
+              height: isRotated90 ? props.width : props.height,
 
               port_hints: props.portHints.map((ph) => ph.toString()),
 
@@ -122,12 +120,13 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
               y: position.y,
               subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
               pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-            })
+            } as PcbSmtPadRect) as PcbSmtPadRect)
           : db.pcb_smtpad.insert({
               pcb_component_id,
               layer: maybeFlipLayer(props.layer ?? "top"),
               shape: "rotated_rect",
-              ...{ width: props.width, height: props.height },
+              width: props.width,
+              height: props.height,
               x: position.x,
               y: position.y,
               ccw_rotation: parentRotation,

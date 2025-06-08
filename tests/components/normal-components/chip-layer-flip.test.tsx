@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import type { PcbSmtPadRect } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("chip with manual footprint flips when layer is set to bottom", async () => {
@@ -52,7 +53,7 @@ test("chip with manual footprint flips when layer is set to bottom", async () =>
   // Check if all SMT pads are on the bottom layer
   const smtPads = project.db.pcb_smtpad
     .list()
-    .filter((pad) => pad.layer === "bottom")
+    .filter((pad) => pad.layer === "bottom") as PcbSmtPadRect[]
   expect(smtPads.length).toBe(3)
 
   // Check if the positions are mirrored

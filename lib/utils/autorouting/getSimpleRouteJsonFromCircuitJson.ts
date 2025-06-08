@@ -260,6 +260,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
               x: pcb_port.x!,
               y: pcb_port.y!,
               layer: (pcb_port.layers?.[0] as any) ?? "top",
+              // @ts-ignore
               pcb_port_id: pcb_port.pcb_port_id,
             },
             pt,

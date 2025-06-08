@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import type { PcbSmtPadRect } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("footprint layout", () => {
@@ -47,7 +48,7 @@ test("footprint layout", () => {
 
   circuit.render()
 
-  const smtpads = circuit.db.pcb_smtpad.list()
+  const smtpads = circuit.db.pcb_smtpad.list() as PcbSmtPadRect[]
 
   // center to center distance will be 5mm (4mm plus the half widths of the pads)
   expect(Math.abs(smtpads[0].x - smtpads[1].x)).toBeCloseTo(5, 1)

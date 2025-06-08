@@ -59,9 +59,8 @@ export class BreakoutPoint extends PrimitiveComponent<
     if (!group || !group.pcb_group_id) return
     const pcb_breakout_point = db.pcb_breakout_point.insert({
       pcb_group_id: group.pcb_group_id,
-      subcircuit_id: subcircuit?.subcircuit_id,
-      // non-standard field to help routing
-      source_port_id: this.matchedPort?.source_port_id,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      source_port_id: this.matchedPort?.source_port_id ?? undefined,
       source_trace_id: this.matchedPort
         ? this._getSourceTraceIdForPort(this.matchedPort)
         : undefined,
