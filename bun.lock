@@ -65,7 +65,7 @@
         "@tscircuit/schematic-match-adapt": "*",
         "circuit-json": "*",
         "circuit-json-to-connectivity-map": "*",
-        "schematic-symbols": "^0.0.155",
+        "schematic-symbols": "*",
         "typescript": "^5.0.0",
       },
     },
