@@ -29,18 +29,8 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   // TODO use db.subtree({ source_group_id: ... })
   let subtreeCircuitJson = structuredClone(db.toArray())
 
-  Bun.write(
-    "subtreeCircuitJson1.json",
-    JSON.stringify(subtreeCircuitJson, null, 2),
-  )
-
   // Reorder the pins of the schematic components to be in CCW order
   subtreeCircuitJson = reorderChipPinsToCcw(subtreeCircuitJson)
-
-  Bun.write(
-    "subtreeCircuitJson2.json",
-    JSON.stringify(subtreeCircuitJson, null, 2),
-  )
 
   const inputNetlist = convertCircuitJsonToInputNetlist(subtreeCircuitJson)
 
