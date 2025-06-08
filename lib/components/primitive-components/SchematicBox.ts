@@ -194,25 +194,25 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const textAnchor = anchorPos.textAnchor
       if (isInside) {
         titleOffsetY = anchor.includes("top")
-          ? -0.15
+          ? -0.05 * height
           : anchor.includes("bottom")
-            ? 0.15
+            ? 0.05 * height
             : 0
         titleOffsetX = anchor.includes("left")
-          ? 0.15
+          ? 0.05 * width
           : anchor.includes("right")
-            ? -0.15
+            ? -0.05 * width
             : 0
       } else {
         titleOffsetY = anchor.includes("top")
-          ? 0.15
+          ? 0.05 * height
           : anchor.includes("bottom")
-            ? -0.15
+            ? -0.05 * height
             : 0
         titleOffsetX = anchor.includes("left")
-          ? -0.15
+          ? -0.05 * width
           : anchor.includes("right")
-            ? 0.15
+            ? 0.05 * width
             : 0
       }
 
