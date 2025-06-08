@@ -1,6 +1,7 @@
 import { potentiometerProps } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
+import { formatSiUnit } from "format-si-unit"
 
 function getPotentiometerSymbolName(
   variant: string | undefined,
@@ -26,7 +27,9 @@ export class Potentiometer extends NormalComponent<typeof potentiometerProps> {
       shouldRenderAsSchematicBox: false,
     }
   }
-
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    return `${formatSiUnit(this._parsedProps.maxResistance)}Ω`
+  }
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
