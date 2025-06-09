@@ -96,7 +96,7 @@ interface SchematicComponent {
           direction?: "left-to-right" | "right-to-left"
         }
       }
-  port_labels?: Record<string, string>
+  port_labels?: Record<string, string> // when a component has the showPinAliases prop set, each value will include all pin aliases joined by "/"
 }
 
 interface SchematicDebugRect {

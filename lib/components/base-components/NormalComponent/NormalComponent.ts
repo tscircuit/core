@@ -504,6 +504,27 @@ export class NormalComponent<
         primaryPortLabels[port] = Array.isArray(label) ? label[0] : label
       }
     }
+
+    const showPinAliases = (this.props as any).showPinAliases === true
+
+    let portLabels: Record<string, string> = primaryPortLabels
+    if (showPinAliases) {
+      portLabels = {}
+      const ports = this.children.filter(
+        (c) => c.componentName === "Port",
+      ) as Port[]
+      for (const port of ports) {
+        const pn = port._parsedProps.pinNumber
+        if (typeof pn !== "number") continue
+        const allAliases = port
+          .getNameAndAliases()
+          .filter((a) => !/^pin\d+$/i.test(a) && a !== pn.toString())
+        if (allAliases.length === 0 && port.props.name) {
+          allAliases.push(port.props.name)
+        }
+        portLabels[`pin${pn}`] = allAliases.join("/")
+      }
+    }
     const center = this._getGlobalSchematicPositionBeforeLayout()
     const schPortArrangement = this._getSchematicPortArrangement()
     const schematic_component = db.schematic_component.insert({
@@ -522,7 +543,7 @@ export class NormalComponent<
       // @ts-ignore soup needs to support distance for pin_styles
       pin_styles: underscorifyPinStyles(props.schPinStyle, props.pinLabels),
 
-      port_labels: primaryPortLabels,
+      port_labels: portLabels,
 
       source_component_id: this.source_component_id!,
     })
