@@ -39,6 +39,7 @@ test("(ErrorPlaceholder) - missing prop error with parent transform", async () =
       [
         {
           "component_name": "R1",
+          "error_type": "source_failed_to_create_component_error",
           "message": "Invalid props for resistor "R1": resistance (Required)",
           "pcb_center": {
             "x": 3,
