@@ -1,5 +1,10 @@
 import { smtPadProps } from "@tscircuit/props"
-import type { PcbSmtPad, PcbSmtPadCircle, PcbSmtPadRect } from "circuit-json"
+import type {
+  PcbSmtPad,
+  PcbSmtPadCircle,
+  PcbSmtPadRect,
+  PcbSmtPadPolygon,
+} from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
@@ -25,6 +30,16 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     }
     if (props.shape === "rect") {
       return { width: props.width!, height: props.height! }
+    }
+    if (props.shape === "polygon") {
+      const points = props.points!
+      const xs = points.map((p) => p.x)
+      const ys = points.map((p) => p.y)
+      const minX = Math.min(...xs)
+      const maxX = Math.max(...xs)
+      const minY = Math.min(...ys)
+      const maxY = Math.max(...ys)
+      return { width: maxX - minX, height: maxY - minY }
     }
     throw new Error(
       `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
@@ -163,6 +178,20 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         })
+    } else if (props.shape === "polygon") {
+      pcb_smtpad = db.pcb_smtpad.insert({
+        pcb_component_id,
+        pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
+        layer: maybeFlipLayer(props.layer ?? "top"),
+        shape: "polygon",
+        // @ts-ignore: Remove this once circuit-json types include PcbSmtPadPolygon
+        points: props.points.map((p) => ({
+          x: p.x,
+          y: p.y,
+        })),
+        port_hints: props.portHints.map((ph) => ph.toString()),
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      }) as PcbSmtPadPolygon
     }
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
@@ -233,6 +262,27 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         },
         width: smtpad.radius * 2,
         height: smtpad.radius * 2,
+      }
+    }
+    if (smtpad.shape === "polygon") {
+      const points = smtpad.points!
+      const xs = points.map((p) => p.x)
+      const ys = points.map((p) => p.y)
+      const minX = Math.min(...xs)
+      const maxX = Math.max(...xs)
+      const minY = Math.min(...ys)
+      const maxY = Math.max(...ys)
+
+      return {
+        center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
+        bounds: {
+          left: minX,
+          top: maxY,
+          right: maxX,
+          bottom: minY,
+        },
+        width: maxX - minX,
+        height: maxY - minY,
       }
     }
     throw new Error(
