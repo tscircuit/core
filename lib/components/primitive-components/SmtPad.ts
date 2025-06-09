@@ -184,7 +184,6 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
         layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "polygon",
-        // @ts-ignore: Remove this once circuit-json types include PcbSmtPadPolygon
         points: props.points.map((p) => ({
           x: p.x,
           y: p.y,
