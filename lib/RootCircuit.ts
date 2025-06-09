@@ -122,11 +122,6 @@ export class RootCircuit {
         software_used_string: `@tscircuit/core@${this.getCoreVersion()}`,
         ...(this.projectUrl ? { project_url: this.projectUrl } : {}),
       })
-    } else if (this.projectUrl && !existing.project_url) {
-      this.db.source_project_metadata.update(
-        existing.source_project_metadata_id,
-        { project_url: this.projectUrl },
-      )
     }
 
     this.render()
