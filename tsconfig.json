@@ -6,7 +6,6 @@
     "module": "ESNext",
     "moduleDetection": "force",
     "jsx": "react-jsx",
-    "allowJs": true,
 
     "baseUrl": ".",
 
@@ -24,6 +23,7 @@
     "strict": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
+    "incremental": true,
 
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
