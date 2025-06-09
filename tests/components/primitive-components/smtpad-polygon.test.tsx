@@ -3,7 +3,7 @@ import type { PcbSmtPadRect, PcbSmtPadPolygon } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("chip with manual footprint flips when layer is set to bottom", async () => {
-  const { project } = getTestFixture()
+  const { circuit } = getTestFixture()
 
   const footprint = (
     <footprint>
@@ -38,16 +38,12 @@ test("chip with manual footprint flips when layer is set to bottom", async () =>
     </footprint>
   )
 
-  project.add(
+  circuit.add(
     <board width="7mm" height="3mm">
       <chip name="U2" pcbX={2} layer="top" footprint={footprint} />
     </board>,
   )
 
-  project.render()
-
-  // Check if all SMT pads are on the bottom layer
-
-  // Use snapshot to verify the overall layout
-  expect(project).toMatchPcbSnapshot(import.meta.path)
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
