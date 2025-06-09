@@ -320,6 +320,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (job.has_error) {
         db.pcb_autorouting_error.insert({
           pcb_error_id: autorouting_job.autorouting_job_id,
+          error_type: "pcb_autorouting_error",
           message: job.error?.message ?? JSON.stringify(job.error),
         })
         throw new Error(`Autorouting job failed: ${JSON.stringify(job.error)}`)
@@ -425,6 +426,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Record the error
       db.pcb_autorouting_error.insert({
         pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
+        error_type: "pcb_autorouting_error",
         message: error instanceof Error ? error.message : String(error),
       })
 
