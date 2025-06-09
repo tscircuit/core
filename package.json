@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.455",
+  "version": "0.0.456",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -44,7 +44,7 @@
     "@types/react-reconciler": "^0.28.9",
     "bun-match-svg": "0.0.8",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.199",
+    "circuit-json": "^0.0.201",
     "circuit-json-to-connectivity-map": "^0.0.22",
     "circuit-json-to-simple-3d": "^0.0.2",
     "circuit-to-svg": "^0.0.151",

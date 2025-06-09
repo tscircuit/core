@@ -56,6 +56,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   } catch (e: any) {
     db.schematic_layout_error.insert({
       message: `Match-adapt layout failed: ${e.toString()}`,
+      error_type: "schematic_layout_error",
       source_group_id: group.source_group_id!,
       schematic_group_id: group.schematic_group_id!,
     })
