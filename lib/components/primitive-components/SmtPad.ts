@@ -95,7 +95,6 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
         layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "circle",
-
         // @ts-ignore: no idea why this is triggering
         radius: props.radius!,
 
@@ -191,7 +190,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         })),
         port_hints: props.portHints.map((ph) => ph.toString()),
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      }) as PcbSmtPadPolygon
+      } as PcbSmtPadPolygon) as PcbSmtPadPolygon
     }
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
