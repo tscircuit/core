@@ -13,6 +13,10 @@ test("capacitor polarized", () => {
         pcbX={0}
         pcbY={0}
         polarized
+        connections={{
+          pos: "net.POS",
+          neg: "net.NEG",
+        }}
       />
     </board>,
   )
