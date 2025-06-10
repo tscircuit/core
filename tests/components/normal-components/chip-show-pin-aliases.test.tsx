@@ -10,7 +10,6 @@ test("chip shows all pin aliases when showPinAliases is true", () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      {/* @ts-expect-error - showPinAliases is not yet typed */}
       <chip
         name="U1"
         schWidth={4}
