@@ -23,6 +23,7 @@ export interface TscircuitElements {
   schematictext: Props.SchematicTextProps
   smtpad: Props.SmtPadProps
   platedhole: Props.PlatedHoleProps
+  testpoint: Props.TestpointProps
   keepout: Props.PcbKeepoutProps
   hole: Props.HoleProps
   port: Props.PortProps
