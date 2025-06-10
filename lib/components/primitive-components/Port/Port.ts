@@ -384,7 +384,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const sourcePort = db.source_port.get(this.source_port_id!)
 
-    let bestDisplayPinLabel: string | undefined = undefined
+    const labelHints: string[] = []
     for (const portHint of sourcePort?.port_hints ?? []) {
       if (portHint.match(/^(pin)?\d+$/)) continue
       if (
@@ -392,7 +392,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         !sourcePort?.name.match(/^(left|right)/)
       )
         continue
-      bestDisplayPinLabel = portHint
+      labelHints.push(portHint)
+    }
+
+    let bestDisplayPinLabel: string | undefined = undefined
+    const showPinAliases = (this.parent as any)?.props?.showPinAliases
+    if (showPinAliases && labelHints.length > 0) {
+      bestDisplayPinLabel = labelHints.join("/")
+    } else if (labelHints.length > 0) {
+      bestDisplayPinLabel = labelHints[labelHints.length - 1]
     }
 
     const schematic_port = db.schematic_port.insert({
