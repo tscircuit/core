@@ -60,12 +60,13 @@ export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
           y: position.y,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id,
-        }) as PcbSmtPadRect
+        } as PcbSmtPadRect) as PcbSmtPadRect
         this.pcb_smtpad_id = pad.pcb_smtpad_id
       } else {
         const pad = db.pcb_smtpad.insert({
           pcb_component_id,
           shape: "circle",
+          // @ts-ignore - union types
           radius: (props.padDiameter ?? 0) / 2,
           layer: props.layer ?? "top",
           port_hints: [],
@@ -73,7 +74,7 @@ export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
           y: position.y,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id,
-        }) as PcbSmtPad
+        } as PcbSmtPad) as PcbSmtPad
         this.pcb_smtpad_id = pad.pcb_smtpad_id
       }
     } else {

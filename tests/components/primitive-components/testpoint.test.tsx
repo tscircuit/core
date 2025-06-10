@@ -1,6 +1,5 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 
 test("Testpoint primitive pad", () => {
   const { circuit } = getTestFixture()
@@ -18,9 +17,7 @@ test("Testpoint primitive pad", () => {
   expect(pads[0].radius).toBe(0.5)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(
-    convertCircuitJsonToSchematicSvg(circuit.getCircuitJson()),
-  ).toMatchSvgSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
 
 test("Testpoint primitive through hole", () => {
@@ -45,7 +42,5 @@ test("Testpoint primitive through hole", () => {
   expect(holes[0].shape).toBe("circle")
   expect(holes[0].hole_diameter).toBeCloseTo(0.8)
 
-  expect(
-    convertCircuitJsonToSchematicSvg(circuit.getCircuitJson()),
-  ).toMatchSvgSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
