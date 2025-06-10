@@ -49,7 +49,7 @@
         "pkg-pr-new": "^0.0.37",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
-        "schematic-symbols": "^0.0.155",
+        "schematic-symbols": "^0.0.159",
         "ts-expect": "^1.3.0",
         "tsup": "^8.2.4",
       },
@@ -65,7 +65,7 @@
         "@tscircuit/schematic-match-adapt": "*",
         "circuit-json": "*",
         "circuit-json-to-connectivity-map": "*",
-        "schematic-symbols": "*",
+        "schematic-symbols": "^0.0.159",
         "typescript": "^5.0.0",
       },
     },
@@ -903,7 +903,7 @@
 
     "scheduler": ["scheduler@0.26.0", "", {}, "sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA=="],
 
-    "schematic-symbols": ["schematic-symbols@0.0.155", "", { "peerDependencies": { "typescript": "^5.5.4" } }, "sha512-pRPKsHr5ubsk4htLW4xRczKadREhf07S20FXTwKPsWqszlrfYiIPwazosJuDdTyIKy9KQ5yER8p6OP767S1k9Q=="],
+    "schematic-symbols": ["schematic-symbols@0.0.159", "", { "peerDependencies": { "typescript": "^5.5.4" } }, "sha512-7kr+cIe2R5x0iDdTgUIGyBq9ExcPrydtLO3k5oUFPg2dbE/76PNjx+LmYCTWvVhomt6zaBPP24Wo3AwIpwPZ1A=="],
 
     "semver": ["semver@7.7.2", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-RF0Fw+rO5AMf9MAyaRXI4AV0Ulj5lMHqVxxdSgiVbixSCXoEmmX/jk0CuJw4+3SqroYO9VoUh+HcuJivvtJemA=="],
 

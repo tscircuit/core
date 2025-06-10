@@ -21,7 +21,7 @@ it("example 4: kicad theme demo", async () => {
         pcbX={2}
         schX={2}
       />
-      <trace from=".R1 > .pin2" to=".C1 > .anode" />
+      <trace from=".R1 > .pin2" to=".C1 > .pos" />
 
       <chip
         name="U2"
