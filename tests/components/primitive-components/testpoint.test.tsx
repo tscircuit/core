@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import type { PcbSmtPadCircle, PcbPlatedHoleCircle } from "circuit-json"
 
 test("Testpoint primitive pad", () => {
   const { circuit } = getTestFixture()
@@ -14,7 +15,7 @@ test("Testpoint primitive pad", () => {
   const pads = circuit.db.pcb_smtpad.list()
   expect(pads.length).toBe(1)
   expect(pads[0].shape).toBe("circle")
-  expect(pads[0].radius).toBe(0.5)
+  expect((pads[0] as PcbSmtPadCircle).radius).toBe(0.5)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
@@ -40,7 +41,7 @@ test("Testpoint primitive through hole", () => {
   const holes = circuit.db.pcb_plated_hole.list()
   expect(holes.length).toBe(1)
   expect(holes[0].shape).toBe("circle")
-  expect(holes[0].hole_diameter).toBeCloseTo(0.8)
+  expect((holes[0] as PcbPlatedHoleCircle).hole_diameter).toBeCloseTo(0.8)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

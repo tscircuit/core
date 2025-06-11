@@ -4,6 +4,7 @@ import type {
   PcbSmtPad,
   PcbPlatedHoleCircle,
   PcbSmtPadRect,
+  PcbSmtPadCircle,
 } from "circuit-json"
 
 export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
@@ -60,13 +61,12 @@ export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
           y: position.y,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id,
-        } as PcbSmtPadRect) as PcbSmtPadRect
+        } as Omit<PcbSmtPadRect, "type" | "pcb_smtpad_id">) as PcbSmtPadRect
         this.pcb_smtpad_id = pad.pcb_smtpad_id
       } else {
         const pad = db.pcb_smtpad.insert({
           pcb_component_id,
           shape: "circle",
-          // @ts-ignore - union types
           radius: (props.padDiameter ?? 0) / 2,
           layer: props.layer ?? "top",
           port_hints: [],
@@ -74,7 +74,7 @@ export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
           y: position.y,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id,
-        } as PcbSmtPad) as PcbSmtPad
+        } as Omit<PcbSmtPadCircle, "type" | "pcb_smtpad_id">) as PcbSmtPad
         this.pcb_smtpad_id = pad.pcb_smtpad_id
       }
     } else {
@@ -89,62 +89,9 @@ export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
         port_hints: [],
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id,
-      }) as PcbPlatedHoleCircle
+      } as Omit<PcbPlatedHoleCircle, "type" | "pcb_plated_hole_id">) as PcbPlatedHoleCircle
       this.pcb_plated_hole_id = plated.pcb_plated_hole_id
     }
-  }
-
-  _getPcbCircuitJsonBounds(): {
-    center: { x: number; y: number }
-    bounds: { left: number; top: number; right: number; bottom: number }
-    width: number
-    height: number
-  } {
-    const { db } = this.root!
-    if (this.pcb_smtpad_id) {
-      const pad = db.pcb_smtpad.get(this.pcb_smtpad_id)!
-      if (pad.shape === "rect") {
-        return {
-          center: { x: pad.x, y: pad.y },
-          bounds: {
-            left: pad.x - pad.width / 2,
-            right: pad.x + pad.width / 2,
-            top: pad.y - pad.height / 2,
-            bottom: pad.y + pad.height / 2,
-          },
-          width: pad.width,
-          height: pad.height,
-        }
-      }
-      if (pad.shape === "circle") {
-        return {
-          center: { x: pad.x, y: pad.y },
-          bounds: {
-            left: pad.x - pad.radius,
-            right: pad.x + pad.radius,
-            top: pad.y - pad.radius,
-            bottom: pad.y + pad.radius,
-          },
-          width: pad.radius * 2,
-          height: pad.radius * 2,
-        }
-      }
-    }
-    if (this.pcb_plated_hole_id) {
-      const ph = db.pcb_plated_hole.get(this.pcb_plated_hole_id)!
-      return {
-        center: { x: ph.x, y: ph.y },
-        bounds: {
-          left: ph.x - ph.outer_diameter / 2,
-          right: ph.x + ph.outer_diameter / 2,
-          top: ph.y - ph.outer_diameter / 2,
-          bottom: ph.y + ph.outer_diameter / 2,
-        },
-        width: ph.outer_diameter,
-        height: ph.outer_diameter,
-      }
-    }
-    return super._getPcbCircuitJsonBounds()
   }
 
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
