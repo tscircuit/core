@@ -6,7 +6,7 @@ it("should render a jumper with pinrow4 footprint", async () => {
 
   circuit.add(
     <board width="20mm" height="15mm">
-      <jumper
+      <solderjumper
         name="J1"
         footprint="solderjumper2"
         pinCount={2}
@@ -15,11 +15,11 @@ it("should render a jumper with pinrow4 footprint", async () => {
         schX={0}
         schY={0}
       />
-      <jumper
+      <solderjumper
         name="J2"
         footprint="solderjumper2_bridged12"
         pinCount={2}
-        internallyConnectedPins={[["1", "2"]]}
+        bridgedPins={[["1", "2"]]}
         pcbX={4}
         pcbY={4}
         schX={2}
@@ -27,22 +27,22 @@ it("should render a jumper with pinrow4 footprint", async () => {
         layer={"bottom"}
         schRotation={90}
       />
-      <jumper
+      <solderjumper
         name="J3"
         footprint="solderjumper3_bridged23"
         pinCount={3}
-        internallyConnectedPins={[["3", "2"]]}
+        bridgedPins={[["3", "2"]]}
         pcbX={-4}
         layer={"bottom"}
         pcbY={-4}
         schX={-2}
         schY={-2}
       />
-      <jumper
+      <solderjumper
         name="J4"
         footprint="solderjumper3_bridged123"
         pinCount={3}
-        internallyConnectedPins={[
+        bridgedPins={[
           ["1", "2"],
           ["2", "3"],
         ]}

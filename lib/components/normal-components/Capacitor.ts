@@ -6,7 +6,6 @@ import {
   type PassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { formatSiUnit } from "format-si-unit"
 
@@ -24,15 +23,6 @@ export class Capacitor extends NormalComponent<
       zodProps: capacitorProps,
       sourceFtype: FTYPE.simple_capacitor,
     }
-  }
-
-  initPorts() {
-    super.initPorts({
-      additionalAliases: {
-        pin1: ["anode", "pos", "left"],
-        pin2: ["cathode", "neg", "right"],
-      },
-    })
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {

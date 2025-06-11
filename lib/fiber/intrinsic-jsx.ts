@@ -11,6 +11,7 @@ export interface TscircuitElements {
   led: Props.LedProps
   board: Props.BoardProps
   jumper: Props.JumperProps
+  solderjumper: Props.SolderJumperProps
   bug: Props.ChipProps
   potentiometer: Props.PotentiometerProps
   // TODO use ChipProps once it gets merged in @tscircuit/props
@@ -30,6 +31,8 @@ export interface TscircuitElements {
   netalias: Props.NetAliasProps
   net: Props.NetProps
   trace: Props.TraceProps
+  breakout: Props.BreakoutProps
+  breakoutpoint: Props.BreakoutPointProps
   custom: any
   component: Props.ComponentProps
   crystal: Props.CrystalProps

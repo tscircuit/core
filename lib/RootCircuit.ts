@@ -29,14 +29,25 @@ export class RootCircuit {
 
   platform?: PlatformConfig
 
+  /**
+   * Optional URL pointing to where this project is hosted or documented.
+   * When provided it is stored in the source_project_metadata.project_url field
+   * of the generated Circuit JSON.
+   */
+  projectUrl?: string
+
   _hasRenderedAtleastOnce = false
 
-  constructor({ platform }: { platform?: PlatformConfig } = {}) {
+  constructor({
+    platform,
+    projectUrl,
+  }: { platform?: PlatformConfig; projectUrl?: string } = {}) {
     this.children = []
     this.db = su([])
     // TODO rename to rootCircuit
     this.root = this
     this.platform = platform
+    this.projectUrl = projectUrl
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
@@ -105,9 +116,11 @@ export class RootCircuit {
   }
 
   async renderUntilSettled(): Promise<void> {
-    if (!this.db.source_project_metadata.list()?.[0]) {
+    const existing = this.db.source_project_metadata.list()?.[0]
+    if (!existing) {
       this.db.source_project_metadata.insert({
         software_used_string: `@tscircuit/core@${this.getCoreVersion()}`,
+        ...(this.projectUrl ? { project_url: this.projectUrl } : {}),
       })
     }
 

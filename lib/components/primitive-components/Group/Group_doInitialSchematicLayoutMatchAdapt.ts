@@ -13,6 +13,7 @@ import {
   getRefKey,
   parseRefKey,
 } from "@tscircuit/schematic-match-adapt"
+import { circuitBuilderFromLayoutJson } from "@tscircuit/schematic-match-adapt"
 import { createSchematicTraceCrossingSegments } from "../Trace/create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "../Trace/create-schematic-trace-junctions"
 import { getOtherSchematicTraces } from "../Trace/get-other-schematic-traces"
@@ -34,8 +35,18 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   const inputNetlist = convertCircuitJsonToInputNetlist(subtreeCircuitJson)
 
   // Run the SchematicLayoutPipelineSolver
+  const templateFns = group._parsedProps.matchAdaptTemplate
+    ? [
+        () =>
+          circuitBuilderFromLayoutJson(
+            group._parsedProps.matchAdaptTemplate as any,
+          ),
+      ]
+    : undefined
+
   const solver = new SchematicLayoutPipelineSolver({
     inputNetlist,
+    templateFns,
   })
 
   let solvedLayout: ReturnType<typeof solver.getLayout> | null = null
@@ -45,6 +56,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   } catch (e: any) {
     db.schematic_layout_error.insert({
       message: `Match-adapt layout failed: ${e.toString()}`,
+      error_type: "schematic_layout_error",
       source_group_id: group.source_group_id!,
       schematic_group_id: group.schematic_group_id!,
     })
