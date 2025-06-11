@@ -9,7 +9,6 @@ test("circular hole with rect pad creates rectangular obstacle", () => {
     rectPadHeight: 3,
   })
 
-  // Mock the position method
   platedHole._getGlobalPcbPositionBeforeLayout = () => ({ x: 10, y: 20 })
 
   const obstacles = platedHole.getObstacles()
@@ -36,7 +35,6 @@ test("pill hole with rect pad creates rectangular obstacle", () => {
     rectPadHeight: 4,
   })
 
-  // Mock the position method
   platedHole._getGlobalPcbPositionBeforeLayout = () => ({ x: 15, y: 25 })
 
   const obstacles = platedHole.getObstacles()
@@ -59,7 +57,6 @@ test("circular hole creates square obstacle", () => {
     holeDiameter: 2,
   })
 
-  // Mock the position method
   platedHole._getGlobalPcbPositionBeforeLayout = () => ({ x: 30, y: 40 })
 
   const obstacles = platedHole.getObstacles()
@@ -84,7 +81,6 @@ test("oval hole creates rectangular obstacle", () => {
     holeHeight: 4,
   })
 
-  // Mock the position method
   platedHole._getGlobalPcbPositionBeforeLayout = () => ({ x: 50, y: 60 })
 
   const obstacles = platedHole.getObstacles()
@@ -107,10 +103,8 @@ test("connected port is included in obstacle", () => {
     holeDiameter: 2,
   })
 
-  // Mock the position method
   platedHole._getGlobalPcbPositionBeforeLayout = () => ({ x: 30, y: 40 })
 
-  // Mock the matched port
   platedHole.matchedPort = {
     pcb_port_id: "test-port-id",
   } as any
