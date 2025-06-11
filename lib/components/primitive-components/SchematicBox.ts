@@ -114,7 +114,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
 
     if (props.title) {
       const isInside = props.titleInside ?? false
-
+      const TITLE_PADDING = 0.1
       const anchor = props.titleAlignment ?? "bottom_center"
       const anchorPos = getTitleAnchorAndPosition({
         anchor,
@@ -129,25 +129,25 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const textAnchor = anchorPos.textAnchor
       if (isInside) {
         titleOffsetY = anchor.includes("top")
-          ? -0.1
+          ? -TITLE_PADDING
           : anchor.includes("bottom")
-            ? 0.1
+            ? TITLE_PADDING
             : 0
         titleOffsetX = anchor.includes("left")
-          ? 0.1
+          ? TITLE_PADDING
           : anchor.includes("right")
-            ? -0.1
+            ? -TITLE_PADDING
             : 0
       } else {
         titleOffsetY = anchor.includes("top")
-          ? 0.1
+          ? TITLE_PADDING
           : anchor.includes("bottom")
-            ? -0.1
+            ? -TITLE_PADDING
             : 0
         titleOffsetX = anchor.includes("center_left")
-          ? -0.1
+          ? -TITLE_PADDING
           : anchor.includes("center_right")
-            ? 0.1
+            ? TITLE_PADDING
             : 0
       }
 
