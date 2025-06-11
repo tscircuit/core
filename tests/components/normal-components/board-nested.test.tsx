@@ -8,7 +8,7 @@ test("error when board nested inside board", () => {
     circuit.add(
       <board>
         <board>
-          <resistor name="R1" />
+          <resistor name="R1" resistance={100} />
         </board>
       </board>,
     ),
