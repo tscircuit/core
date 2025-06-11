@@ -5,8 +5,10 @@ export const preprocessSelector = (selector: string) => {
     )
   }
   if (/net\.[0-9]/.test(selector)) {
+    const match = selector.match(/net\.([^ >]+)/)
+    const netName = match ? match[1] : ""
     throw new Error(
-      'Net names cannot start with a number, try using a prefix like "VBUS1"',
+      `Net name "${netName}" cannot start with a number, try using a prefix like "VBUS1"`,
     )
   }
   return selector
