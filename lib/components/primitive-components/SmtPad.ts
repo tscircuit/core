@@ -101,7 +101,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         x: position.x,
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      }as PcbSmtPadCircle ) as PcbSmtPadCircle
+      } as PcbSmtPadCircle) as PcbSmtPadCircle
       db.pcb_solder_paste.insert({
         layer: pcb_smtpad.layer,
         shape: "circle",
@@ -172,7 +172,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRotatedRect)
-      } else if (props.shape === "polygon") {
+    } else if (props.shape === "polygon") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
