@@ -515,6 +515,13 @@ export abstract class PrimitiveComponent<
   }
 
   add(component: PrimitiveComponent) {
+    // Disallow nesting boards inside of boards
+    if (
+      this.lowercaseComponentName === "board" &&
+      component.lowercaseComponentName === "board"
+    ) {
+      throw new Error("Nested boards are not supported")
+    }
     if (!component.onAddToParent) {
       throw new Error(
         `Invalid JSX Element: Expected a React component but received "${JSON.stringify(component)}"`,
