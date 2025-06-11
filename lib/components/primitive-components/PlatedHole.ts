@@ -7,6 +7,7 @@ import type {
   PcbHoleCircularWithRectPad,
   PcbHolePillWithRectPad,
 } from "circuit-json"
+import type { Obstacle } from "../../utils/autorouting/SimpleRouteJson"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
@@ -224,5 +225,62 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     db.pcb_plated_hole.update(this.pcb_plated_hole_id!, {
       pcb_port_id: this.matchedPort?.pcb_port_id!,
     })
+  }
+
+  getObstacles(): Obstacle[] {
+    const { _parsedProps: props } = this
+    const position = this._getGlobalPcbPositionBeforeLayout()
+    const layers = this.getAvailablePcbLayers()
+    const connectedTo = this.matchedPort?.pcb_port_id
+      ? [this.matchedPort.pcb_port_id]
+      : []
+
+    // For circular holes with rectangular pads
+    if (
+      props.shape === "circular_hole_with_rect_pad" ||
+      props.shape === "pill_hole_with_rect_pad"
+    ) {
+      return [
+        {
+          type: "rect",
+          layers,
+          center: { x: position.x, y: position.y },
+          width: props.rectPadWidth,
+          height: props.rectPadHeight,
+          connectedTo,
+        },
+      ]
+    }
+
+    // For oval and pill shapes
+    if (props.shape === "oval" || props.shape === "pill") {
+      return [
+        {
+          type: "rect", // Using rect as approximation for oval/pill
+          layers,
+          center: { x: position.x, y: position.y },
+          width: props.outerWidth,
+          height: props.outerHeight,
+          connectedTo,
+        },
+      ]
+    }
+
+    // For circular shapes
+    if (props.shape === "circle") {
+      const diameter = props.outerDiameter
+      return [
+        {
+          type: "rect", // Using rect as approximation for circle
+          layers,
+          center: { x: position.x, y: position.y },
+          width: diameter,
+          height: diameter,
+          connectedTo,
+        },
+      ]
+    }
+
+    return []
   }
 }
