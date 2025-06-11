@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import type { PcbSmtPadCircle, PcbPlatedHoleCircle } from "circuit-json"
 
-test("Testpoint primitive pad", () => {
+test("Testpoint pad", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
@@ -21,7 +21,7 @@ test("Testpoint primitive pad", () => {
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
 
-test("Testpoint primitive through hole", () => {
+test("Testpoint through hole", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">

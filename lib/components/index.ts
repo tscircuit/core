@@ -48,4 +48,4 @@ export { Switch } from "./normal-components/Switch"
 export { SchematicText } from "./primitive-components/SchematicText"
 export { SchematicBox } from "./primitive-components/SchematicBox"
 
-export { Testpoint } from "./primitive-components/Testpoint"
+export { Testpoint } from "./normal-components/Testpoint"

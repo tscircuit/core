@@ -1,22 +1,28 @@
 import { testpointProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { Port } from "../primitive-components/Port"
 import type {
   PcbSmtPad,
   PcbPlatedHoleCircle,
   PcbSmtPadRect,
   PcbSmtPadCircle,
+  SourceSimpleTestPointInput,
 } from "circuit-json"
 
-export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
+export class Testpoint extends NormalComponent<typeof testpointProps> {
+  pcb_component_id: string | null = null
   pcb_smtpad_id: string | null = null
   pcb_plated_hole_id: string | null = null
-  isPcbPrimitive = true
 
   get config() {
     return {
       componentName: "Testpoint",
       zodProps: testpointProps,
     }
+  }
+
+  initPorts() {
+    this.add(new Port({ name: "pin1", pinNumber: 1 }))
   }
 
   getPcbSize(): { width: number; height: number } {
@@ -28,13 +34,45 @@ export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
           height: props.height ?? props.padDiameter ?? 0,
         }
       }
-      // circle pad
       const d = props.padDiameter ?? 0
       return { width: d, height: d }
     }
-    // through hole
     const d = props.padDiameter ?? props.holeDiameter ?? 0
     return { width: d, height: d }
+  }
+
+  doInitialSourceRender(): void {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const source_component = db.source_component.insert({
+      ftype: "simple_test_point",
+      name: props.name,
+      footprint_variant: props.footprintVariant,
+      pad_shape: props.padShape,
+      pad_diameter: props.padDiameter,
+      hole_diameter: props.holeDiameter,
+      width: props.width,
+      height: props.height,
+      are_pins_interchangeable: true,
+    } as SourceSimpleTestPointInput)
+    this.source_component_id = source_component.source_component_id
+  }
+
+  doInitialPcbComponentRender() {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const size = this.getPcbSize()
+    const pcb_component = db.pcb_component.insert({
+      center: { x: props.pcbX ?? 0, y: props.pcbY ?? 0 },
+      width: size.width,
+      height: size.height,
+      layer: props.layer ?? "top",
+      rotation: props.pcbRotation ?? 0,
+      source_component_id: this.source_component_id!,
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+    })
+    this.pcb_component_id = pcb_component.pcb_component_id
   }
 
   doInitialPcbPrimitiveRender(): void {
@@ -45,13 +83,9 @@ export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
     const subcircuit = this.getSubcircuit()
     const pcb_group_id = this.getGroup()?.pcb_group_id ?? undefined
     if (props.footprintVariant === "pad") {
-      const pcb_component_id =
-        this.parent?.pcb_component_id ??
-        this.getPrimitiveContainer()?.pcb_component_id ??
-        undefined
       if (props.padShape === "rect") {
         const pad = db.pcb_smtpad.insert({
-          pcb_component_id,
+          pcb_component_id: this.pcb_component_id!,
           shape: "rect",
           width: props.width ?? props.padDiameter!,
           height: props.height ?? props.padDiameter!,
@@ -65,7 +99,7 @@ export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
         this.pcb_smtpad_id = pad.pcb_smtpad_id
       } else {
         const pad = db.pcb_smtpad.insert({
-          pcb_component_id,
+          pcb_component_id: this.pcb_component_id!,
           shape: "circle",
           radius: (props.padDiameter ?? 0) / 2,
           layer: props.layer ?? "top",
@@ -78,8 +112,8 @@ export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
         this.pcb_smtpad_id = pad.pcb_smtpad_id
       }
     } else {
-      // through_hole
       const plated = db.pcb_plated_hole.insert({
+        pcb_component_id: this.pcb_component_id!,
         shape: "circle" as const,
         outer_diameter: props.padDiameter ?? props.holeDiameter!,
         hole_diameter: props.holeDiameter!,
@@ -96,17 +130,15 @@ export class Testpoint extends PrimitiveComponent<typeof testpointProps> {
 
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
     const { db } = this.root!
+    if (this.pcb_component_id) {
+      db.pcb_component.update(this.pcb_component_id, { center: newCenter })
+    }
     if (this.pcb_smtpad_id) {
-      db.pcb_smtpad.update(this.pcb_smtpad_id, {
-        x: newCenter.x,
-        y: newCenter.y,
-      })
+      db.pcb_smtpad.update(this.pcb_smtpad_id, { x: newCenter.x, y: newCenter.y })
     }
     if (this.pcb_plated_hole_id) {
-      db.pcb_plated_hole.update(this.pcb_plated_hole_id, {
-        x: newCenter.x,
-        y: newCenter.y,
-      })
+      db.pcb_plated_hole.update(this.pcb_plated_hole_id, { x: newCenter.x, y: newCenter.y })
     }
   }
 }
+
