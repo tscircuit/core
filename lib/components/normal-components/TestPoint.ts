@@ -43,11 +43,11 @@ export class TestPoint extends NormalComponent<
     } as any)
     this.source_component_id = source_component.source_component_id
 
-    const pcb_component_id = source_component.source_component_id // Assumed ID
+    const pcb_component_id = source_component.source_component_id
     const port_hints = [props.name ?? "tp1"]
-    const position = { x: 0, y: 0 } // Replace with actual position if available
-    const pcb_group_id = undefined // Replace with real value if applicable
-    const subcircuit = undefined // Replace with actual subcircuit if needed
+    const position = { x: 0, y: 0 }
+    const pcb_group_id = undefined
+    const subcircuit = undefined
 
     if (props.footprintVariant === "pad") {
       if (props.padShape === "rect") {
