@@ -11,11 +11,11 @@ it("should render a jumper with pinrow4 footprint", async () => {
       <resistor name="R1" footprint={"0402"} resistance={"4k"} />
       <resistor name="R2" pcbX={3} footprint={"0402"} resistance={"4k"} />
       <resistor name="R3" pcbY={3} footprint={"0402"} resistance={"4k"} />
-      <jumper
+      <solderjumper
         name="J1"
         footprint="solderjumper3_bridged12"
         pinCount={3}
-        internallyConnectedPins={[["1", "2"]]}
+        bridgedPins={[["1", "2"]]}
         pcbX={-4}
         pcbY={-4}
         schX={-2}
