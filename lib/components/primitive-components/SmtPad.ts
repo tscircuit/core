@@ -4,6 +4,7 @@ import type {
   PcbSmtPadCircle,
   PcbSmtPadRect,
   PcbSmtPadPolygon,
+  PcbSmtPadRotatedRect,
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
@@ -95,19 +96,15 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
         layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "circle",
-        // @ts-ignore: no idea why this is triggering
         radius: props.radius!,
-
         port_hints: props.portHints.map((ph) => ph.toString()),
-
         x: position.x,
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      }) as PcbSmtPadCircle
+      }as PcbSmtPadCircle ) as PcbSmtPadCircle
       db.pcb_solder_paste.insert({
         layer: pcb_smtpad.layer,
         shape: "circle",
-        // @ts-ignore: no idea why this is triggering
         radius: pcb_smtpad.radius * 0.7,
         x: pcb_smtpad.x,
         y: pcb_smtpad.y,
@@ -115,7 +112,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      })
+      } as PcbSmtPadCircle)
     } else if (props.shape === "rect") {
       pcb_smtpad =
         parentRotation === 0 || isRotated90
@@ -152,7 +149,6 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         db.pcb_solder_paste.insert({
           layer: maybeFlipLayer(props.layer ?? "top"),
           shape: "rect",
-          // @ts-ignore: no idea why this is triggering
           width: pcb_smtpad.width * 0.7,
           height: pcb_smtpad.height * 0.7,
           x: pcb_smtpad.x,
@@ -161,12 +157,11 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        })
+        } as PcbSmtPadRect)
       if (pcb_smtpad.shape === "rotated_rect")
         db.pcb_solder_paste.insert({
           layer: maybeFlipLayer(props.layer ?? "top"),
           shape: "rotated_rect",
-          // @ts-ignore: no idea why this is triggering
           width: pcb_smtpad.width * 0.7,
           height: pcb_smtpad.height * 0.7,
           x: pcb_smtpad.x,
@@ -176,14 +171,13 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        })
-    } else if (props.shape === "polygon") {
+        } as PcbSmtPadRotatedRect)
+      } else if (props.shape === "polygon") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
         layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "polygon",
-        // @ts-ignore: no idea why this is triggering
         points: props.points.map((p) => ({
           x: p.x,
           y: p.y,
