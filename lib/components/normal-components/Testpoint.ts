@@ -123,7 +123,10 @@ export class Testpoint extends NormalComponent<typeof testpointProps> {
         port_hints: [],
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id,
-      } as Omit<PcbPlatedHoleCircle, "type" | "pcb_plated_hole_id">) as PcbPlatedHoleCircle
+      } as Omit<
+        PcbPlatedHoleCircle,
+        "type" | "pcb_plated_hole_id"
+      >) as PcbPlatedHoleCircle
       this.pcb_plated_hole_id = plated.pcb_plated_hole_id
     }
   }
@@ -134,11 +137,16 @@ export class Testpoint extends NormalComponent<typeof testpointProps> {
       db.pcb_component.update(this.pcb_component_id, { center: newCenter })
     }
     if (this.pcb_smtpad_id) {
-      db.pcb_smtpad.update(this.pcb_smtpad_id, { x: newCenter.x, y: newCenter.y })
+      db.pcb_smtpad.update(this.pcb_smtpad_id, {
+        x: newCenter.x,
+        y: newCenter.y,
+      })
     }
     if (this.pcb_plated_hole_id) {
-      db.pcb_plated_hole.update(this.pcb_plated_hole_id, { x: newCenter.x, y: newCenter.y })
+      db.pcb_plated_hole.update(this.pcb_plated_hole_id, {
+        x: newCenter.x,
+        y: newCenter.y,
+      })
     }
   }
 }
-
