@@ -33,11 +33,11 @@ test("Jumper internally connected pins mix up between different Jumper component
       <trace from=".R1 > .pin1" to=".JP6 > .pin1" />
       <trace from=".SJ1 > .pin2" to=".JP6 > .pin1" />
       <trace from=".R1 > .pin2" to=".JP6 > .pin2" />
-      <jumper
+      <solderjumper
         cadModel={null}
         name="SJ1"
         pinCount={3}
-        internallyConnectedPins={[
+        bridgedPins={[
           ["1", "2"],
           ["2", "3"],
         ]}

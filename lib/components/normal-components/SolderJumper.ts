@@ -1,5 +1,5 @@
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { jumperProps } from "@tscircuit/props"
+import { solderjumperProps } from "@tscircuit/props"
 import { Port } from "../primitive-components/Port"
 import type { BaseSymbolName } from "lib/utils/constants"
 import {
@@ -9,19 +9,32 @@ import {
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 
-export class Jumper<PinLabels extends string = never> extends NormalComponent<
-  typeof jumperProps,
-  PinLabels
-> {
+export class SolderJumper<
+  PinLabels extends string = never,
+> extends NormalComponent<typeof solderjumperProps, PinLabels> {
   schematicDimensions: SchematicBoxDimensions | null = null
+
+  get defaultInternallyConnectedPinNames(): string[][] {
+    return this._parsedProps.bridgedPins ?? []
+  }
 
   get config() {
     let symbolName = ""
-    if (this.props.pinCount) symbolName += `pinrow${this.props.pinCount || 2}`
+    if (this.props.pinCount)
+      symbolName += `solderjumper${this.props.pinCount || 2}`
+    if (
+      Array.isArray(this.props.bridgedPins) &&
+      this.props.bridgedPins.length > 0
+    ) {
+      const pins = Array.from(new Set(this.props.bridgedPins.flat()))
+        .sort()
+        .join("")
+      symbolName += `_bridged${pins}`
+    }
     return {
       schematicSymbolName: symbolName,
-      componentName: "Jumper",
-      zodProps: jumperProps,
+      componentName: "SolderJumper",
+      zodProps: solderjumperProps,
       shouldRenderAsSchematicBox: true,
     }
   }

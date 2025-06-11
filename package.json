@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.454",
+  "version": "0.0.461",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -35,7 +35,7 @@
     "@tscircuit/math-utils": "^0.0.18",
     "@tscircuit/props": "^0.0.219",
     "@tscircuit/schematic-autolayout": "^0.0.6",
-    "@tscircuit/schematic-match-adapt": "^0.0.9",
+    "@tscircuit/schematic-match-adapt": "^0.0.16",
     "@tscircuit/simple-3d-svg": "^0.0.6",
     "@types/bun": "latest",
     "@types/debug": "^4.1.12",
@@ -57,7 +57,7 @@
     "pkg-pr-new": "^0.0.37",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "schematic-symbols": "^0.0.155",
+    "schematic-symbols": "^0.0.159",
     "ts-expect": "^1.3.0",
     "tsup": "^8.2.4"
   },
