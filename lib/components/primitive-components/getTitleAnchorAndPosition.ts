@@ -1,14 +1,4 @@
-type Anchor =
-  | "top_left"
-  | "top_center"
-  | "top_right"
-  | "center_left"
-  | "center"
-  | "center_right"
-  | "bottom_left"
-  | "bottom_center"
-  | "bottom_right"
-
+import type { NinePointAnchor } from "circuit-json"
 export function getTitleAnchorAndPosition({
   anchor,
   x,
@@ -17,7 +7,7 @@ export function getTitleAnchorAndPosition({
   height,
   isInside,
 }: {
-  anchor: Anchor
+  anchor: NinePointAnchor
   x: number
   y: number
   width: number
@@ -26,7 +16,7 @@ export function getTitleAnchorAndPosition({
 }): {
   x: number
   y: number
-  textAnchor: Anchor
+  textAnchor: NinePointAnchor
 } {
   switch (anchor) {
     case "top_left":

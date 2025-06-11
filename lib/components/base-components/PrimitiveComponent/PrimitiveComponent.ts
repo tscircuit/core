@@ -806,7 +806,8 @@ export abstract class PrimitiveComponent<
       return super.renderError(message)
     }
     // TODO this needs to be cleaned up at some point!
-    this.root?.db.pcb_placement_error.insert(message)
+    if (message.type === "pcb_placement_error")
+      this.root?.db.pcb_placement_error.insert(message)
   }
 
   getString(): string {
