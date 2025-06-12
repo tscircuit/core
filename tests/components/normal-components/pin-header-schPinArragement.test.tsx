@@ -43,7 +43,7 @@ it("should render a pinheader with pinrow4 footprint right side", async () => {
         facingDirection="right"
         schPinArrangement={{
           rightSide: {
-            direction: "top-to-bottom",
+            direction: "bottom-to-top",
             pins: ["pin1", "pin2", "pin3", "pin4", "pin5"],
           },
         }}
