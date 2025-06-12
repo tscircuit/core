@@ -13,8 +13,9 @@ export const createNetsFromProps = (
         )
       }
       if (/net\.[0-9]/.test(prop)) {
+        const netName = prop.split("net.")[1]
         throw new Error(
-          'Net names cannot start with a number, try using a prefix like "VBUS1"',
+          `Net name "${netName}" cannot start with a number, try using a prefix like "VBUS1"`,
         )
       }
       const subcircuit = component.getSubcircuit()
