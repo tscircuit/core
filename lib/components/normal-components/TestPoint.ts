@@ -15,10 +15,11 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
 
   _getImpliedFootprintString(): string | null {
     let {
-      padDiameter,
       padShape,
       holeDiameter,
       footprintVariant,
+      // TODO SMTPAD
+      padDiameter,
       width,
       height,
     } = this._parsedProps
