@@ -8,6 +8,7 @@ import type {
   PcbSmtPadCircle,
   SourceSimpleTestPointInput,
 } from "circuit-json"
+import type { BaseSymbolName } from "lib/utils/constants"
 
 export class Testpoint extends NormalComponent<typeof testpointProps> {
   pcb_component_id: string | null = null
@@ -18,11 +19,17 @@ export class Testpoint extends NormalComponent<typeof testpointProps> {
     return {
       componentName: "Testpoint",
       zodProps: testpointProps,
+      schematicSymbolName:
+        this.props.symbolName ?? ("testpoint" as BaseSymbolName),
     }
   }
 
   initPorts() {
-    this.add(new Port({ name: "pin1", pinNumber: 1 }))
+    super.initPorts({
+      additionalAliases: {
+        pin1: ["pin1"],
+      },
+    })
   }
 
   getPcbSize(): { width: number; height: number } {
