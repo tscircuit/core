@@ -582,7 +582,9 @@ export class NormalComponent<
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
     })
 
-    if (!props.footprint && !this.isGroup) {
+    const footprint = props.footprint ?? this._getImpliedFootprintString()
+
+    if (!footprint && !this.isGroup) {
       const footprint_error = db.pcb_missing_footprint_error.insert({
         message: `No footprint found for component: ${this.getString()}`,
         source_component_id: `${this.source_component_id}`,
