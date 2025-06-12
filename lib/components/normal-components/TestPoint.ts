@@ -7,19 +7,18 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
   get config() {
     return {
       componentName: "TestPoint",
-      schematicSymbolName: (this.props.symbolName ??
-        ("testpoint" as BaseSymbolName)) as BaseSymbolName,
+      schematicSymbolName: this.props.symbolName ?? "testpoint",
       zodProps: testpointProps,
       sourceFtype: FTYPE.simple_test_point,
     }
   }
 
-  initPorts() {
-    super.initPorts({ pinCount: 1 })
-  }
+  // initPorts() {
+  //   super.initPorts({ pinCount: 1 })
+  // }
 
   _getImpliedFootprintString(): string | null {
-    const {
+    let {
       padDiameter,
       padShape,
       holeDiameter,
@@ -27,14 +26,20 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
       width,
       height,
     } = this._parsedProps
-    const parts = ["tp"]
-    if (footprintVariant) parts.push(footprintVariant)
-    if (padShape && footprintVariant === "pad") parts.push(padShape)
-    if (padDiameter) parts.push(`pd${padDiameter}`)
-    if (holeDiameter) parts.push(`hd${holeDiameter}`)
-    if (width) parts.push(`w${width}`)
-    if (height) parts.push(`h${height}`)
-    return parts.join("_")
+
+    if (!footprintVariant && holeDiameter) {
+      footprintVariant = "through_hole"
+    }
+
+    footprintVariant ??= "through_hole"
+    padShape ??= "circle"
+
+    if (footprintVariant === "through_hole") {
+      holeDiameter ??= 0.5
+      return `platedhole_d${holeDiameter}`
+    }
+
+    throw new Error(`Footprint variant "${footprintVariant}" not implemented`)
   }
 
   doInitialSourceRender() {
