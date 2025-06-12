@@ -13,10 +13,6 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
     }
   }
 
-  // initPorts() {
-  //   super.initPorts({ pinCount: 1 })
-  // }
-
   _getImpliedFootprintString(): string | null {
     let {
       padDiameter,
