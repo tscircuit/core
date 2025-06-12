@@ -56,6 +56,7 @@ export interface TscircuitElements {
   transistor: Props.TransistorProps
   switch: Props.SwitchProps
   mosfet: Props.MosfetProps
+  testpoint: Props.TestpointProps
   jscad: any
 }
 
