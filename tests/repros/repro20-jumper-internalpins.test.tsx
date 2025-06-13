@@ -6,7 +6,7 @@ export default test("solderjumper bridging without pinCount", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <solderjumper name="SJ" bridgedPins={[['1','2']]} />
+      <solderjumper name="SJ" bridgedPins={[["1", "2"]]} />
     </board>,
   )
 
