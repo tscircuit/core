@@ -15,18 +15,25 @@ export class SolderJumper<
   schematicDimensions: SchematicBoxDimensions | null = null
 
   get defaultInternallyConnectedPinNames(): string[][] {
-    return this._parsedProps.bridgedPins ?? []
+    return (
+      this._parsedProps.bridgedPins ??
+      this._parsedProps.internallyConnectedPins ??
+      []
+    )
   }
 
   get config() {
     let symbolName = ""
-    if (this.props.pinCount)
-      symbolName += `solderjumper${this.props.pinCount || 2}`
-    if (
-      Array.isArray(this.props.bridgedPins) &&
-      this.props.bridgedPins.length > 0
-    ) {
-      const pins = Array.from(new Set(this.props.bridgedPins.flat()))
+    const bridged =
+      this.props.bridgedPins ?? this.props.internallyConnectedPins
+    const pinCount =
+      this.props.pinCount ??
+      (Array.isArray(bridged) && bridged.flat().length > 2 ? 3 : 2)
+
+    symbolName += `solderjumper${pinCount}`
+
+    if (Array.isArray(bridged) && bridged.length > 0) {
+      const pins = Array.from(new Set(bridged.flat()))
         .sort()
         .join("")
       symbolName += `_bridged${pins}`
