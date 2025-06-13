@@ -86,7 +86,12 @@ type JumperSel = Record<
 
 type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string> & ChipFnSel>
 
-type NetSel = Record<"net", Record<CommonNetNames, string>>
+type NetSelFn<N extends string = CommonNetNames> = (<
+  N2 extends string,
+>() => Record<N | N2, string>) &
+  Record<N, string>
+
+type NetSel<N extends string = CommonNetNames> = Record<"net", NetSelFn<N>>
 
 type ExplicitModuleSel = Record<
   "subcircuit" | "module" | "group",
@@ -190,6 +195,15 @@ export const sel: Sel = new Proxy(
         // - sel.U1(({ selectors: { U1: { GND: "GND", VCC: "VCC" } } }) => ...)
         // - sel.U1(({ connections: { GND: "GND", VCC: "VCC" } }) => ...)
         apply: (target, _, args: any[]) => {
+          if (prop1 === "net") {
+            return new Proxy(
+              {},
+              {
+                get: (_, netName: string) => `net.${netName}`,
+              },
+            )
+          }
+
           return new Proxy(
             {},
             {
