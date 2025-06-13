@@ -86,8 +86,9 @@ type JumperSel = Record<
 
 type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string> & ChipFnSel>
 
-type NetSelFn<N extends string = CommonNetNames> = (<N2 extends string>() =>
-  Record<N | N2, string>) &
+type NetSelFn<N extends string = CommonNetNames> = (<
+  N2 extends string,
+>() => Record<N | N2, string>) &
   Record<N, string>
 
 type NetSel<N extends string = CommonNetNames> = Record<"net", NetSelFn<N>>
