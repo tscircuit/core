@@ -34,8 +34,9 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
     const pinCount =
       this._parsedProps.pinCount ??
       (Array.isArray(this._parsedProps.internallyConnectedPins) &&
-      this._parsedProps.internallyConnectedPins.flat().length > 2
-        ? 3
+      this._parsedProps.internallyConnectedPins.length > 0
+        ? Array.from(new Set(this._parsedProps.internallyConnectedPins.flat()))
+            .length
         : undefined) ??
       (Array.isArray(this._parsedProps.pinLabels)
         ? this._parsedProps.pinLabels.length
