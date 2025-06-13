@@ -28,11 +28,7 @@ export class SolderJumper<
       this.props.pinCount ??
       (Array.isArray(bridged) && bridged.length > 0
         ? Array.from(
-            new Set(
-              bridged
-                .flat()
-                .map((p) => p.replace(/^pin(\d+)$/, "$1"))
-            ),
+            new Set(bridged.flat().map((p) => p.replace(/^pin(\d+)$/, "$1"))),
           ).length
         : 2)
 
@@ -40,11 +36,7 @@ export class SolderJumper<
 
     if (Array.isArray(bridged) && bridged.length > 0) {
       const pins = Array.from(
-        new Set(
-          bridged
-            .flat()
-            .map((p) => p.replace(/^pin(\d+)$/, "$1")),
-        ),
+        new Set(bridged.flat().map((p) => p.replace(/^pin(\d+)$/, "$1"))),
       )
         .sort()
         .join("")
