@@ -40,7 +40,13 @@ export class SolderJumper<
       )
         .sort()
         .join("")
-    return {
+      const allowed: Record<number, string[]> = {
+        2: ["12"],
+        3: ["12", "23", "123"],
+      }
+      if (allowed[pinCount]?.includes(pins)) {
+        symbolName += `_bridged${pins}`
+      }
       schematicSymbolName: symbolName,
       componentName: "SolderJumper",
       zodProps: solderjumperProps,
