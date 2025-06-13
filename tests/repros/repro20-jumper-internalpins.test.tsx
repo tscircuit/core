@@ -8,7 +8,7 @@ export default test("jumper and solderjumper internal pin handling", async () =>
     <board width="10mm" height="10mm">
       <solderjumper name="SJ" bridgedPins={[["1", "2"]]} />
       <jumper name="JP1" internallyConnectedPins={[["1", "2"]]} />
-      <jumper name="JP2" internallyConnectedPins={[["1", "2"]]} />
+      <jumper name="JP2" internallyConnectedPins={[["pin1", "pin2"]]} />
     </board>,
   )
 

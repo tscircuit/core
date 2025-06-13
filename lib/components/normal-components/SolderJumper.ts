@@ -27,13 +27,27 @@ export class SolderJumper<
     const bridged = this.props.bridgedPins ?? this.props.internallyConnectedPins
       this.props.pinCount ??
       (Array.isArray(bridged) && bridged.length > 0
-        ? Array.from(new Set(bridged.flat())).length
+        ? Array.from(
+            new Set(
+              bridged
+                .flat()
+                .map((p) => p.replace(/^pin(\d+)$/, "$1"))
+            ),
+          ).length
         : 2)
 
     symbolName += `solderjumper${pinCount}`
 
     if (Array.isArray(bridged) && bridged.length > 0) {
-      const pins = Array.from(new Set(bridged.flat())).sort().join("")
+      const pins = Array.from(
+        new Set(
+          bridged
+            .flat()
+            .map((p) => p.replace(/^pin(\d+)$/, "$1")),
+        ),
+      )
+        .sort()
+        .join("")
     return {
       schematicSymbolName: symbolName,
       componentName: "SolderJumper",
