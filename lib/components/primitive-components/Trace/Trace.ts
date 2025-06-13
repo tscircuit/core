@@ -819,14 +819,6 @@ export class Trace
         return
       }
 
-    if (
-      this.props.schDisplayLabel &&
-      (("from" in this.props && "to" in this.props) || "path" in this.props)
-    ) {
-      this._doInitialSchematicTraceRenderWithDisplayLabel()
-      return
-    }
-
     const connection: SimpleRouteConnection = {
       name: this.source_trace_id!,
       pointsToConnect: [],
@@ -843,6 +835,30 @@ export class Trace
 
     const isPortAndNetConnection =
       portsWithPosition.length === 1 && netsWithSelectors.length === 1
+
+    if (this.props.schDisplayLabel) {
+      if (isPortAndNetConnection) {
+        const net = netsWithSelectors[0].net
+        const { port, position: anchorPos } = portsWithPosition[0]
+
+        db.schematic_net_label.insert({
+          text: this.props.schDisplayLabel,
+          source_net_id: net.source_net_id!,
+          anchor_position: anchorPos,
+          center: anchorPos,
+          anchor_side:
+            getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom",
+        })
+
+        return
+      } else if (
+        ("from" in this.props && "to" in this.props) ||
+        "path" in this.props
+      ) {
+        this._doInitialSchematicTraceRenderWithDisplayLabel()
+        return
+      }
+    }
 
     if (isPortAndNetConnection) {
       const net = netsWithSelectors[0].net
