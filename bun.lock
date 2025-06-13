@@ -57,7 +57,7 @@
         "@tscircuit/capacity-autorouter": "*",
         "@tscircuit/checks": "*",
         "@tscircuit/circuit-json-util": "*",
-        "@tscircuit/footprinter": "*",
+        "@tscircuit/footprinter": "^0.0.177",
         "@tscircuit/infgrid-ijump-astar": "*",
         "@tscircuit/math-utils": "*",
         "@tscircuit/props": "*",
