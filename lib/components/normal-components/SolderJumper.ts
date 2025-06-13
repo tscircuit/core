@@ -25,7 +25,7 @@ export class SolderJumper<
   get config() {
     let symbolName = ""
     const bridged = this.props.bridgedPins ?? this.props.internallyConnectedPins
-      this.props.pinCount ??
+      const pinCount = this.props.pinCount ??
       (Array.isArray(bridged) && bridged.length > 0
         ? Array.from(
             new Set(bridged.flat().map((p) => p.replace(/^pin(\d+)$/, "$1"))),
