@@ -9,6 +9,7 @@ import type { RenderPhase } from "./components/base-components/Renderable"
 import pkgJson from "../package.json"
 import type { RootCircuitEventName } from "./events"
 import type { PlatformConfig } from "@tscircuit/props"
+import { Group } from "./components/primitive-components/Group"
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -99,9 +100,11 @@ export class RootCircuit {
         return
       }
     }
-    throw new Error(
-      "Not able to guess root component: RootCircuit has multiple children and no board",
-    )
+    // If there's no board, wrap all children in an implicit group so a board is not required
+    const group = new Group({ subcircuit: false })
+    group.addAll(this.children)
+    this.children = [group]
+    this.firstChild = group
   }
 
   render() {
