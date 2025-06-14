@@ -81,24 +81,15 @@ export class RootCircuit {
 
   _guessRootComponent() {
     if (this.firstChild) return
-    if (this.children.length === 1) {
-      this.firstChild = this.children[0]
-      return
-    }
     if (this.children.length === 0) {
       throw new Error(
         "Not able to guess root component: RootCircuit has no children (use circuit.add(...))",
       )
     }
 
-    if (this.children.length > 0) {
-      const board =
-        this.children.find((c) => c.componentName === "Board") ?? null
-
-      if (board) {
-        this.firstChild = board
-        return
-      }
+    if (this.children.length === 1 && this.children[0].isGroup) {
+      this.firstChild = this.children[0]
+      return
     }
 
     const group = new Group({ subcircuit: true })
