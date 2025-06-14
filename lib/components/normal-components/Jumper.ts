@@ -18,6 +18,7 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
   get config() {
     let symbolName = ""
     if (this.props.pinCount) symbolName += `pinrow${this.props.pinCount || 2}`
+
     return {
       schematicSymbolName: symbolName,
       componentName: "Jumper",
@@ -32,6 +33,16 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
 
     const pinCount =
       this._parsedProps.pinCount ??
+      (Array.isArray(this._parsedProps.internallyConnectedPins) &&
+      this._parsedProps.internallyConnectedPins.length > 0
+        ? Array.from(
+            new Set(
+              this._parsedProps.internallyConnectedPins
+                .flat()
+                .map((p) => p.replace(/^pin(\d+)$/, "$1")),
+            ),
+          ).length
+        : undefined) ??
       (Array.isArray(this._parsedProps.pinLabels)
         ? this._parsedProps.pinLabels.length
         : this._parsedProps.pinLabels

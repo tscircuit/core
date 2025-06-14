@@ -1,13 +1,13 @@
-import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solderjumperProps } from "@tscircuit/props"
-import { Port } from "../primitive-components/Port"
+import { NormalComponent } from "lib/components/base-components/NormalComponent"
+import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import type { BaseSymbolName } from "lib/utils/constants"
 import {
-  getAllDimensionsForSchematicBox,
   type SchematicBoxDimensions,
+  getAllDimensionsForSchematicBox,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import { Port } from "../primitive-components/Port"
 
 export class SolderJumper<
   PinLabels extends string = never,
@@ -15,23 +15,38 @@ export class SolderJumper<
   schematicDimensions: SchematicBoxDimensions | null = null
 
   get defaultInternallyConnectedPinNames(): string[][] {
-    return this._parsedProps.bridgedPins ?? []
+    return (
+      this._parsedProps.bridgedPins ??
+      this._parsedProps.internallyConnectedPins ??
+      []
+    )
   }
 
   get config() {
     let symbolName = ""
-    if (this.props.pinCount)
-      symbolName += `solderjumper${this.props.pinCount || 2}`
-    if (
-      Array.isArray(this.props.bridgedPins) &&
-      this.props.bridgedPins.length > 0
-    ) {
-      const pins = Array.from(new Set(this.props.bridgedPins.flat()))
+    const bridged = this.props.bridgedPins ?? this.props.internallyConnectedPins
+      const pinCount = this.props.pinCount ??
+      (Array.isArray(bridged) && bridged.length > 0
+        ? Array.from(
+            new Set(bridged.flat().map((p) => p.replace(/^pin(\d+)$/, "$1"))),
+          ).length
+        : 2)
+
+    symbolName += `solderjumper${pinCount}`
+
+    if (Array.isArray(bridged) && bridged.length > 0) {
+      const pins = Array.from(
+        new Set(bridged.flat().map((p) => p.replace(/^pin(\d+)$/, "$1"))),
+      )
         .sort()
         .join("")
-      symbolName += `_bridged${pins}`
-    }
-    return {
+      const allowed: Record<number, string[]> = {
+        2: ["12"],
+        3: ["12", "23", "123"],
+      }
+      if (allowed[pinCount]?.includes(pins)) {
+        symbolName += `_bridged${pins}`
+      }
       schematicSymbolName: symbolName,
       componentName: "SolderJumper",
       zodProps: solderjumperProps,
@@ -105,7 +120,7 @@ export class SolderJumper<
       if (typeof sourcePort?.pin_number === "number") {
         pinLabel = sourcePort.pin_number.toString()
       } else if (Array.isArray(sourcePort?.port_hints)) {
-        let matchedHint = sourcePort.port_hints.find((h: string) =>
+        const matchedHint = sourcePort.port_hints.find((h: string) =>
           /^(pin)?\d+$/.test(h),
         )
         if (matchedHint) {
