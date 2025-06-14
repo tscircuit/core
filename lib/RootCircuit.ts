@@ -100,8 +100,9 @@ export class RootCircuit {
         return
       }
     }
-    // If there's no board, wrap all children in an implicit group so a board is not required
-    const group = new Group({ subcircuit: false })
+
+    const group = new Group({ subcircuit: true })
+    group.parent = this as any
     group.addAll(this.children)
     this.children = [group]
     this.firstChild = group
