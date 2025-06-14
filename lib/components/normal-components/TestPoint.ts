@@ -40,7 +40,7 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
         const diameter = padDiameter ?? 1.2
         return `smtpad_circle_d${diameter}`
       }
-      
+
       if (padShape === "rect") {
         const w = width ?? 2
         const h = height ?? w // default to square if height not specified
@@ -48,7 +48,9 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
       }
     }
 
-    throw new Error(`Footprint variant "${footprintVariant}" with pad shape "${padShape}" not implemented`)
+    throw new Error(
+      `Footprint variant "${footprintVariant}" with pad shape "${padShape}" not implemented`,
+    )
   }
 
   doInitialSourceRender() {

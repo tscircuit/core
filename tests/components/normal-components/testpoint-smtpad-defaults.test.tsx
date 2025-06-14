@@ -7,11 +7,7 @@ test("<testpoint /> with SMT pad defaults", async () => {
 
   circuit.add(
     <board>
-      <testpoint
-        name="TP1"
-        footprintVariant="pad"
-        padShape="circle"
-      />
+      <testpoint name="TP1" footprintVariant="pad" padShape="circle" />
     </board>,
   )
 
@@ -20,7 +16,9 @@ test("<testpoint /> with SMT pad defaults", async () => {
   expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([])
 
   // Should use default padDiameter of 1.2mm for circle
-  const sourceComponent = circuit.db.source_component.list().find(sc => sc.name === "TP1")
+  const sourceComponent = circuit.db.source_component
+    .list()
+    .find((sc) => sc.name === "TP1")
   expect((sourceComponent as any)?.pad_diameter).toBe(1.2)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
