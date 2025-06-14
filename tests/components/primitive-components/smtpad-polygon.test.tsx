@@ -24,7 +24,7 @@ test("chip with manual footprint flips when layer is set to bottom", async () =>
           { x: 0, y: -0.5 },
           { x: -0.5, y: -0.5 },
         ]}
-        pcbX={1}
+        pcbX={-1}
         pcbY={-1}
         portHints={["2"]}
       />
@@ -40,7 +40,7 @@ test("chip with manual footprint flips when layer is set to bottom", async () =>
 
   circuit.add(
     <board width="7mm" height="3mm">
-      <chip name="U2" pcbX={2} layer="top" footprint={footprint} />
+      <chip name="U2" layer="top" footprint={footprint} />
     </board>,
   )
 

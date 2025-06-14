@@ -179,11 +179,12 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "polygon",
         points: props.points.map((p) => ({
-          x: p.x,
-          y: p.y,
+          x: p.x + position.x,
+          y: p.y + position.y,
         })),
         port_hints: props.portHints.map((ph) => ph.toString()),
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
     }
     if (pcb_smtpad) {
