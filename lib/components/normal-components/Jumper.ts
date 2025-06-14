@@ -32,14 +32,22 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
       }
     }
     let symbolName = ""
-    if (resolvedPinCount) symbolName += `solderjumper${resolvedPinCount}`
-    if (
+    const hasBridgedPins =
       Array.isArray(this.props.internallyConnectedPins) &&
       this.props.internallyConnectedPins.length > 0
-    ) {
+
+    if (resolvedPinCount) {
+      if (hasBridgedPins) {
+        symbolName += `solderjumper${resolvedPinCount}`
+      } else {
+        symbolName += `pinrow${resolvedPinCount}`
+      }
+    }
+
+    if (hasBridgedPins) {
       const pins = Array.from(
         new Set(
-          this.props.internallyConnectedPins
+          (this.props.internallyConnectedPins ?? [])
             .flat()
             .map((p) =>
               typeof p === "string" ? p.replace(/^pin/, "") : String(p),
