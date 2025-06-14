@@ -8,7 +8,7 @@ it("should correctly use selectAll and selectOne methods", () => {
 
   project.add(
     <board width="10mm" height="10mm" minTraceWidth={0.2}>
-      <group name="G1">
+      <group name="G1" pcbX={5}>
         <chip name="U1" />
       </group>
     </board>,
