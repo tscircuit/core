@@ -12,12 +12,14 @@ test("Jumper internallyConnectedPins chooses missing schematic symbol", async ()
       <jumper
         name="JP1"
         internallyConnectedPins={[["1", "2"]]}
+        pinCount={2}
         schX={3}
         schY={0}
       />
       <jumper
         name="JP2"
         internallyConnectedPins={[["pin1", "pin2"]]}
+        pinCount={2}
         schX={6}
         schY={0}
       />

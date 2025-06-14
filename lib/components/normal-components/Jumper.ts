@@ -16,8 +16,40 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
   schematicDimensions: SchematicBoxDimensions | null = null
 
   get config() {
+    let resolvedPinCount = this.props.pinCount
+    if (!resolvedPinCount) {
+      const nums = (this.props.internallyConnectedPins ?? [])
+        .flat()
+        .map((p) => {
+          if (typeof p === "number") return p
+          if (p.startsWith("pin")) return Number(p.slice(3))
+          return Number(p)
+        })
+        .filter((n) => !Number.isNaN(n))
+      const maxPin = nums.length > 0 ? Math.max(...nums) : 0
+      if (maxPin === 2 || maxPin === 3) {
+        resolvedPinCount = maxPin as 2 | 3
+      }
+    }
     let symbolName = ""
-    if (this.props.pinCount) symbolName += `pinrow${this.props.pinCount || 2}`
+    if (resolvedPinCount) symbolName += `solderjumper${resolvedPinCount}`
+    if (
+      Array.isArray(this.props.internallyConnectedPins) &&
+      this.props.internallyConnectedPins.length > 0
+    ) {
+      const pins = Array.from(
+        new Set(
+          this.props.internallyConnectedPins
+            .flat()
+            .map((p) =>
+              typeof p === "string" ? p.replace(/^pin/, "") : String(p),
+            ),
+        ),
+      )
+        .sort()
+        .join("")
+      symbolName += `_bridged${pins}`
+    }
     return {
       schematicSymbolName: symbolName,
       componentName: "Jumper",
