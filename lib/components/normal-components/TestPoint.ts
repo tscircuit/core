@@ -18,7 +18,6 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
       padShape,
       holeDiameter,
       footprintVariant,
-      // TODO SMTPAD
       padDiameter,
       width,
       height,
@@ -36,7 +35,20 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
       return `platedhole_d${holeDiameter}`
     }
 
-    throw new Error(`Footprint variant "${footprintVariant}" not implemented`)
+    if (footprintVariant === "pad") {
+      if (padShape === "circle") {
+        const diameter = padDiameter ?? 1.2
+        return `smtpad_circle_d${diameter}`
+      }
+      
+      if (padShape === "rect") {
+        const w = width ?? 2
+        const h = height ?? w // default to square if height not specified
+        return `smtpad_rect_w${w}_h${h}`
+      }
+    }
+
+    throw new Error(`Footprint variant "${footprintVariant}" with pad shape "${padShape}" not implemented`)
   }
 
   doInitialSourceRender() {
