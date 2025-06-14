@@ -19,9 +19,21 @@ export class SolderJumper<
   }
 
   get config() {
+    let resolvedPinCount = this.props.pinCount
+    if (!resolvedPinCount) {
+      const nums = (this.props.bridgedPins ?? [])
+        .flat()
+        .map((p) => {
+          if (typeof p === "number") return p
+          if (p.startsWith("pin")) return Number(p.slice(3))
+          return Number(p)
+        })
+        .filter((n) => !Number.isNaN(n))
+      const maxPin = nums.length > 0 ? Math.max(...nums) : 0
+      if (maxPin > 0) resolvedPinCount = maxPin
+    }
     let symbolName = ""
-    if (this.props.pinCount)
-      symbolName += `solderjumper${this.props.pinCount || 2}`
+    if (resolvedPinCount) symbolName += `solderjumper${resolvedPinCount}`
     if (
       Array.isArray(this.props.bridgedPins) &&
       this.props.bridgedPins.length > 0
