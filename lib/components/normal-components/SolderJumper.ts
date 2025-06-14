@@ -30,7 +30,9 @@ export class SolderJumper<
         })
         .filter((n) => !Number.isNaN(n))
       const maxPin = nums.length > 0 ? Math.max(...nums) : 0
-      if (maxPin > 0) resolvedPinCount = maxPin
+      if (maxPin === 2 || maxPin === 3) {
+        resolvedPinCount = maxPin as 2 | 3
+      }
     }
     let symbolName = ""
     if (resolvedPinCount) symbolName += `solderjumper${resolvedPinCount}`
