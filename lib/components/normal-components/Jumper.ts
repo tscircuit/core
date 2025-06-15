@@ -28,7 +28,7 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
 
   _getSchematicPortArrangement() {
     const arrangement = super._getSchematicPortArrangement()
-    if (arrangement) return arrangement
+    if (arrangement && Object.keys(arrangement).length > 0) return arrangement
 
     const pinCount =
       this._parsedProps.pinCount ??
