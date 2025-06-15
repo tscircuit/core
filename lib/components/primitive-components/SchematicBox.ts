@@ -110,7 +110,6 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       x,
       y,
       is_dashed: props.strokeStyle === "dashed",
-      schematic_component_id: "",
     })
 
     if (props.title) {
