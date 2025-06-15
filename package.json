@@ -37,7 +37,7 @@
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
     "@tscircuit/simple-3d-svg": "^0.0.6",
-    "@types/bun": "latest",
+    "@types/bun": "^1.2.16",
     "@types/debug": "^4.1.12",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",
