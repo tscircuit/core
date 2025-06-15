@@ -1,4 +1,5 @@
 import { CapacityMeshSolver } from "@tscircuit/capacity-autorouter"
+import { AutorouterError } from "lib/errors/AutorouterError"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import type {
   AutorouterCompleteEvent,
@@ -74,7 +75,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
         if (this.solver.failed) {
           this.emitEvent({
             type: "error",
-            error: new Error(this.solver.error || "Routing failed"),
+            error: new AutorouterError(this.solver.error || "Routing failed"),
           })
         } else {
           this.emitEvent({
@@ -135,7 +136,10 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       // Handle any errors during the step
       this.emitEvent({
         type: "error",
-        error: error instanceof Error ? error : new Error(String(error)),
+        error:
+          error instanceof Error
+            ? new AutorouterError(error.message)
+            : new AutorouterError(String(error)),
       })
       this.isRouting = false
     }
@@ -206,7 +210,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
     this.solver.solve()
 
     if (this.solver.failed) {
-      throw new Error(this.solver.error || "Routing failed")
+      throw new AutorouterError(this.solver.error || "Routing failed")
     }
 
     return this.solver.getOutputSimpleRouteJson().traces || []

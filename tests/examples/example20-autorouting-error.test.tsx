@@ -42,7 +42,7 @@ test("remote-autorouter-1 with legacy solve endpoint", async () => {
     [
       {
         "error_type": "pcb_autorouting_error",
-        "message": "Failed to compute first trace (failInFirstTrace simulated error)",
+        "message": "Autorouting job failed: {\"message\":\"Failed to compute first trace (failInFirstTrace simulated error)\"} (capacity-autorouter@0.0.71)",
         "pcb_autorouting_error_id": "pcb_autorouting_error_0",
         "pcb_error_id": "job_0",
         "type": "pcb_autorouting_error",

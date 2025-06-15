@@ -32,6 +32,7 @@ import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchem
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
+import { AutorouterError } from "lib/errors/AutorouterError"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -318,12 +319,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       if (job.has_error) {
+        const err = new AutorouterError(
+          `Autorouting job failed: ${JSON.stringify(job.error)}`,
+        )
         db.pcb_autorouting_error.insert({
           pcb_error_id: autorouting_job.autorouting_job_id,
           error_type: "pcb_autorouting_error",
-          message: job.error?.message ?? JSON.stringify(job.error),
+          message: err.message,
         })
-        throw new Error(`Autorouting job failed: ${JSON.stringify(job.error)}`)
+        throw err
       }
 
       // Wait before polling again
