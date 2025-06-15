@@ -762,6 +762,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       x: left,
       y: bottom,
       is_dashed: props.border?.dashed ?? false,
+      schematic_component_id: "",
     })
   }
 
