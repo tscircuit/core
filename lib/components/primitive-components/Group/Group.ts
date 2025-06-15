@@ -671,6 +671,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (schematicLayoutMode === "grid") {
       this._doInitialSchematicLayoutGrid()
     }
+
+    this._insertSchematicBorder()
   }
 
   _doInitialSchematicLayoutMatchAdapt(): void {
@@ -702,6 +704,69 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _doInitialPcbLayoutGrid(): void {
     Group_doInitialPcbLayoutGrid(this)
+  }
+
+  _insertSchematicBorder() {
+    if (this.root?.schematicDisabled) return
+    const { db } = this.root!
+    const props = this._parsedProps as SubcircuitGroupProps
+
+    if (!props.border) return
+
+    let width: number | undefined =
+      typeof props.schWidth === "number" ? props.schWidth : undefined
+    let height: number | undefined =
+      typeof props.schHeight === "number" ? props.schHeight : undefined
+
+    const paddingGeneral =
+      typeof props.schPadding === "number" ? props.schPadding : 0
+    const paddingLeft =
+      typeof props.schPaddingLeft === "number"
+        ? props.schPaddingLeft
+        : paddingGeneral
+    const paddingRight =
+      typeof props.schPaddingRight === "number"
+        ? props.schPaddingRight
+        : paddingGeneral
+    const paddingTop =
+      typeof props.schPaddingTop === "number"
+        ? props.schPaddingTop
+        : paddingGeneral
+    const paddingBottom =
+      typeof props.schPaddingBottom === "number"
+        ? props.schPaddingBottom
+        : paddingGeneral
+
+    const schematicGroup = this.schematic_group_id
+      ? db.schematic_group.get(this.schematic_group_id)
+      : null
+    if (schematicGroup) {
+      if (width === undefined && typeof schematicGroup.width === "number") {
+        width = schematicGroup.width
+      }
+      if (height === undefined && typeof schematicGroup.height === "number") {
+        height = schematicGroup.height
+      }
+    }
+
+    if (width === undefined || height === undefined) return
+
+    const center =
+      schematicGroup?.center ?? this._getGlobalSchematicPositionBeforeLayout()
+
+    const left = center.x - width / 2 - paddingLeft
+    const bottom = center.y - height / 2 - paddingBottom
+
+    const finalWidth = width + paddingLeft + paddingRight
+    const finalHeight = height + paddingTop + paddingBottom
+
+    db.schematic_box.insert({
+      width: finalWidth,
+      height: finalHeight,
+      x: left,
+      y: bottom,
+      is_dashed: props.border?.dashed ?? false,
+    })
   }
 
   _determineSideFromPosition(
