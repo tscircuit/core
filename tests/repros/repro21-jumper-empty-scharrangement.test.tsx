@@ -8,7 +8,7 @@ test("Jumper defaults to single-sided schematic layout when schPortArrangement i
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <jumper name="J1" footprint="pinrow4" schPortArrangement={{}} />
+      <jumper name="J1" footprint="pinrow4" />
     </board>,
   )
 
