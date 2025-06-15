@@ -6,7 +6,7 @@
     "module": "ESNext",
     "moduleDetection": "force",
     "jsx": "react-jsx",
-    "allowJs": true,
+    "allowJs": false,
 
     "baseUrl": ".",
 
@@ -30,5 +30,6 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "exclude": ["node_modules", "dist", "benchmarking-dist"]
+  "include": ["index.ts", "lib/**/*"],
+  "exclude": ["node_modules", "dist", "benchmarking-dist", "tests"]
 }
