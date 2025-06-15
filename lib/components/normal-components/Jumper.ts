@@ -31,35 +31,10 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
         resolvedPinCount = maxPin as 2 | 3
       }
     }
-    let symbolName = ""
-    const hasBridgedPins =
-      Array.isArray(this.props.internallyConnectedPins) &&
-      this.props.internallyConnectedPins.length > 0
-
-    if (resolvedPinCount) {
-      if (hasBridgedPins) {
-        symbolName += `solderjumper${resolvedPinCount}`
-      } else {
-        symbolName += `pinrow${resolvedPinCount}`
-      }
-    }
-
-    if (hasBridgedPins) {
-      const pins = Array.from(
-        new Set(
-          (this.props.internallyConnectedPins ?? [])
-            .flat()
-            .map((p) =>
-              typeof p === "string" ? p.replace(/^pin/, "") : String(p),
-            ),
-        ),
-      )
-        .sort()
-        .join("")
-      symbolName += `_bridged${pins}`
-    }
+    // Jumpers always render as generic schematic boxes instead of using
+    // solderjumper-specific symbols.
     return {
-      schematicSymbolName: symbolName,
+      schematicSymbolName: undefined,
       componentName: "Jumper",
       zodProps: jumperProps,
       shouldRenderAsSchematicBox: true,
