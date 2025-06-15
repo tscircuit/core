@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
-test("remote-autorouter-1 with legacy solve endpoint", async () => {
+test("example20", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer({
     failInFirstTrace: true,
   })
@@ -34,15 +34,21 @@ test("remote-autorouter-1 with legacy solve endpoint", async () => {
 
   await circuit.renderUntilSettled()
   const circuitJson = circuit.getCircuitJson()
-  const autoroutingErrors = circuitJson.filter(
-    (el) => el.type === "pcb_autorouting_error",
-  )
+  const autoroutingErrors = circuitJson
+    .filter((el) => el.type === "pcb_autorouting_error")
+    .map((e) => ({
+      ...e,
+      message: e.message.replace(
+        /capacity-autorouter@\d+\.\d+\.\d+/,
+        "capacity-autorouter@X.X.X",
+      ),
+    }))
   // Verify routing request was made
   expect(autoroutingErrors).toMatchInlineSnapshot(`
     [
       {
         "error_type": "pcb_autorouting_error",
-        "message": "Autorouting job failed: {\"message\":\"Failed to compute first trace (failInFirstTrace simulated error)\"} (capacity-autorouter@0.0.71)",
+        "message": "Autorouting job failed: {"message":"Failed to compute first trace (failInFirstTrace simulated error)"} (capacity-autorouter@X.X.X)",
         "pcb_autorouting_error_id": "pcb_autorouting_error_0",
         "pcb_error_id": "job_0",
         "type": "pcb_autorouting_error",
