@@ -924,8 +924,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (!this.isSubcircuit) return
     const { db } = this.root!
 
-    // @ts-expect-error - TODO remove when circuit-json-util is updated
-    const subtree = db.subtree({ subcircuit_id: this.subcircuit_id! })
+    // TODO remove when circuit-json-util supports subtree properly
+    // const subtree = db.subtree({ subcircuit_id: this.subcircuit_id! })
+    const subtree = db
 
     for (const nl of subtree.schematic_net_label.list()) {
       const net = subtree.source_net.get(nl.source_net_id)
