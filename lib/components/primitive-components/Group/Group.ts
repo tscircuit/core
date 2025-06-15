@@ -921,21 +921,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSchematicReplaceNetLabelsWithSymbols() {
     if (this.root?.schematicDisabled) return
+    if (!this.isSubcircuit) return
     const { db } = this.root!
 
-    for (const nl of db.schematic_net_label.list()) {
-      const net = db.source_net.get(nl.source_net_id)
+    // @ts-expect-error - TODO remove when circuit-json-util is updated
+    const subtree = db.subtree({ subcircuit_id: this.subcircuit_id! })
+
+    for (const nl of subtree.schematic_net_label.list()) {
+      const net = subtree.source_net.get(nl.source_net_id)
       const text = nl.text || net?.name || ""
 
       if (nl.anchor_side === "top" && /^gnd/i.test(text)) {
-        db.schematic_net_label.update(nl.schematic_net_label_id, {
+        subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "ground_down",
         })
         continue
       }
 
       if (nl.anchor_side === "bottom" && /^v/i.test(text)) {
-        db.schematic_net_label.update(nl.schematic_net_label_id, {
+        subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "vcc_up",
         })
       }
