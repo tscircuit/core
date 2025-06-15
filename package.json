@@ -47,7 +47,7 @@
     "circuit-json": "^0.0.210",
     "circuit-json-to-connectivity-map": "^0.0.22",
     "circuit-json-to-simple-3d": "^0.0.2",
-    "circuit-to-svg": "^0.0.151",
+    "circuit-to-svg": "^0.0.154",
     "concurrently": "^9.1.2",
     "debug": "^4.3.6",
     "graphics-debug": "^0.0.4",
