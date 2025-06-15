@@ -32,7 +32,12 @@ test("example20", async () => {
     </board>,
   )
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled().catch((e) => {
+    console.log(
+      "Error occurred during rendering, this shouldn't happen, it should just add to the circuit json array",
+    )
+    throw e
+  })
   const circuitJson = circuit.getCircuitJson()
   const autoroutingErrors = circuitJson
     .filter((el) => el.type === "pcb_autorouting_error")
