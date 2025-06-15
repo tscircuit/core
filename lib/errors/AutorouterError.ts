@@ -1,4 +1,6 @@
-import packageJson from "@tscircuit/capacity-autorouter/package.json"
+import packageJson from "@tscircuit/capacity-autorouter/package.json" with {
+  type: "json",
+}
 
 const autorouterVersion = packageJson.version ?? "unknown"
 
