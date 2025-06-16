@@ -2,7 +2,6 @@ import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { Trace } from "lib/components"
 import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
-import { getObstaclesFromSoup } from "@tscircuit/infgrid-ijump-astar"
 import type { AnyCircuitElement } from "circuit-json"
 import { su } from "@tscircuit/circuit-json-util"
 import {
@@ -10,6 +9,7 @@ import {
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
+import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -59,7 +59,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const connMap = getFullConnectivityMapFromCircuitJson(subcircuitElements)
 
-  const obstacles = getObstaclesFromSoup(
+  const obstacles = getObstaclesFromCircuitJson(
     [
       ...db.pcb_component.list(),
       ...db.pcb_smtpad.list(),

@@ -56,7 +56,7 @@
       "peerDependencies": {
         "@tscircuit/capacity-autorouter": "*",
         "@tscircuit/checks": "*",
-        "@tscircuit/circuit-json-util": "^0.0.49",
+        "@tscircuit/circuit-json-util": "*",
         "@tscircuit/footprinter": "*",
         "@tscircuit/infgrid-ijump-astar": "*",
         "@tscircuit/math-utils": "*",
