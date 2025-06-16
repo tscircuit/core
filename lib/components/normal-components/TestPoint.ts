@@ -90,7 +90,7 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
-    
+
     const {
       padShape,
       holeDiameter,
