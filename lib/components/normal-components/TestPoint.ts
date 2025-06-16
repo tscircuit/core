@@ -3,6 +3,12 @@ import type { SourceSimpleTestPoint } from "circuit-json"
 import { FTYPE, type BaseSymbolName } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 
+const TESTPOINT_DEFAULTS = {
+  HOLE_DIAMETER: 0.5,
+  SMT_CIRCLE_DIAMETER: 1.2,
+  SMT_RECT_SIZE: 2,
+} as const
+
 export class TestPoint extends NormalComponent<typeof testpointProps> {
   get config() {
     return {
@@ -13,7 +19,7 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
     }
   }
 
-  _getImpliedFootprintString(): string | null {
+  private _getPropsWithDefaults() {
     let {
       padShape,
       holeDiameter,
@@ -30,21 +36,49 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
     footprintVariant ??= "through_hole"
     padShape ??= "circle"
 
+    // Apply defaults for SMT pads
+    if (footprintVariant === "pad") {
+      if (padShape === "circle") {
+        padDiameter ??= TESTPOINT_DEFAULTS.SMT_CIRCLE_DIAMETER
+      } else if (padShape === "rect") {
+        width ??= TESTPOINT_DEFAULTS.SMT_RECT_SIZE
+        height ??= width
+      }
+    } else if (footprintVariant === "through_hole") {
+      holeDiameter ??= TESTPOINT_DEFAULTS.HOLE_DIAMETER
+    }
+
+    return {
+      padShape,
+      holeDiameter,
+      footprintVariant,
+      padDiameter,
+      width,
+      height,
+    }
+  }
+
+  _getImpliedFootprintString(): string | null {
+    const {
+      padShape,
+      holeDiameter,
+      footprintVariant,
+      padDiameter,
+      width,
+      height,
+    } = this._getPropsWithDefaults()
+
     if (footprintVariant === "through_hole") {
-      holeDiameter ??= 0.5
       return `platedhole_d${holeDiameter}`
     }
 
     if (footprintVariant === "pad") {
       if (padShape === "circle") {
-        const diameter = padDiameter ?? 1.2
-        return `smtpad_circle_d${diameter}`
+        return `smtpad_circle_d${padDiameter}`
       }
 
       if (padShape === "rect") {
-        const w = width ?? 2
-        const h = height ?? w // default to square if height not specified
-        return `smtpad_rect_w${w}_h${h}`
+        return `smtpad_rect_w${width}_h${height}`
       }
     }
 
@@ -57,34 +91,14 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
     
-    // Apply the same defaults as in _getImpliedFootprintString
-    let {
+    const {
       padShape,
       holeDiameter,
       footprintVariant,
       padDiameter,
       width,
       height,
-    } = props
-
-    if (!footprintVariant && holeDiameter) {
-      footprintVariant = "through_hole"
-    }
-
-    footprintVariant ??= "through_hole"
-    padShape ??= "circle"
-
-    // Apply defaults for SMT pads
-    if (footprintVariant === "pad") {
-      if (padShape === "circle") {
-        padDiameter ??= 1.2
-      } else if (padShape === "rect") {
-        width ??= 2
-        height ??= width
-      }
-    } else if (footprintVariant === "through_hole") {
-      holeDiameter ??= 0.5
-    }
+    } = this._getPropsWithDefaults()
 
     const source_component = db.source_component.insert({
       ftype: FTYPE.simple_test_point,
