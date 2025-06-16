@@ -56,16 +56,46 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
+    
+    // Apply the same defaults as in _getImpliedFootprintString
+    let {
+      padShape,
+      holeDiameter,
+      footprintVariant,
+      padDiameter,
+      width,
+      height,
+    } = props
+
+    if (!footprintVariant && holeDiameter) {
+      footprintVariant = "through_hole"
+    }
+
+    footprintVariant ??= "through_hole"
+    padShape ??= "circle"
+
+    // Apply defaults for SMT pads
+    if (footprintVariant === "pad") {
+      if (padShape === "circle") {
+        padDiameter ??= 1.2
+      } else if (padShape === "rect") {
+        width ??= 2
+        height ??= width
+      }
+    } else if (footprintVariant === "through_hole") {
+      holeDiameter ??= 0.5
+    }
+
     const source_component = db.source_component.insert({
       ftype: FTYPE.simple_test_point,
       name: props.name,
       supplier_part_numbers: props.supplierPartNumbers,
-      footprint_variant: props.footprintVariant,
-      pad_shape: props.padShape,
-      pad_diameter: props.padDiameter,
-      hole_diameter: props.holeDiameter,
-      width: props.width,
-      height: props.height,
+      footprint_variant: footprintVariant,
+      pad_shape: padShape,
+      pad_diameter: padDiameter,
+      hole_diameter: holeDiameter,
+      width: width,
+      height: height,
       are_pins_interchangeable: true,
     } as SourceSimpleTestPoint)
     this.source_component_id = source_component.source_component_id
