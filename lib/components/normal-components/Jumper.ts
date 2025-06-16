@@ -16,10 +16,10 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
   schematicDimensions: SchematicBoxDimensions | null = null
 
   get config() {
-    let symbolName = ""
-    if (this.props.pinCount) symbolName += `pinrow${this.props.pinCount || 2}`
+    // Jumpers always render as generic schematic boxes instead of using
+    // solderjumper-specific symbols.
     return {
-      schematicSymbolName: symbolName,
+      schematicSymbolName: undefined,
       componentName: "Jumper",
       zodProps: jumperProps,
       shouldRenderAsSchematicBox: true,
@@ -28,7 +28,7 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
 
   _getSchematicPortArrangement() {
     const arrangement = super._getSchematicPortArrangement()
-    if (arrangement) return arrangement
+    if (arrangement && Object.keys(arrangement).length > 0) return arrangement
 
     const pinCount =
       this._parsedProps.pinCount ??

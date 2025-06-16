@@ -32,6 +32,7 @@ import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchem
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
+import { AutorouterError } from "lib/errors/AutorouterError"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -318,12 +319,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       if (job.has_error) {
+        const err = new AutorouterError(
+          `Autorouting job failed: ${JSON.stringify(job.error)}`,
+        )
         db.pcb_autorouting_error.insert({
           pcb_error_id: autorouting_job.autorouting_job_id,
           error_type: "pcb_autorouting_error",
-          message: job.error?.message ?? JSON.stringify(job.error),
+          message: err.message,
         })
-        throw new Error(`Autorouting job failed: ${JSON.stringify(job.error)}`)
+        throw err
       }
 
       // Wait before polling again
@@ -667,6 +671,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (schematicLayoutMode === "grid") {
       this._doInitialSchematicLayoutGrid()
     }
+
+    this._insertSchematicBorder()
   }
 
   _doInitialSchematicLayoutMatchAdapt(): void {
@@ -698,6 +704,69 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _doInitialPcbLayoutGrid(): void {
     Group_doInitialPcbLayoutGrid(this)
+  }
+
+  _insertSchematicBorder() {
+    if (this.root?.schematicDisabled) return
+    const { db } = this.root!
+    const props = this._parsedProps as SubcircuitGroupProps
+
+    if (!props.border) return
+
+    let width: number | undefined =
+      typeof props.schWidth === "number" ? props.schWidth : undefined
+    let height: number | undefined =
+      typeof props.schHeight === "number" ? props.schHeight : undefined
+
+    const paddingGeneral =
+      typeof props.schPadding === "number" ? props.schPadding : 0
+    const paddingLeft =
+      typeof props.schPaddingLeft === "number"
+        ? props.schPaddingLeft
+        : paddingGeneral
+    const paddingRight =
+      typeof props.schPaddingRight === "number"
+        ? props.schPaddingRight
+        : paddingGeneral
+    const paddingTop =
+      typeof props.schPaddingTop === "number"
+        ? props.schPaddingTop
+        : paddingGeneral
+    const paddingBottom =
+      typeof props.schPaddingBottom === "number"
+        ? props.schPaddingBottom
+        : paddingGeneral
+
+    const schematicGroup = this.schematic_group_id
+      ? db.schematic_group.get(this.schematic_group_id)
+      : null
+    if (schematicGroup) {
+      if (width === undefined && typeof schematicGroup.width === "number") {
+        width = schematicGroup.width
+      }
+      if (height === undefined && typeof schematicGroup.height === "number") {
+        height = schematicGroup.height
+      }
+    }
+
+    if (width === undefined || height === undefined) return
+
+    const center =
+      schematicGroup?.center ?? this._getGlobalSchematicPositionBeforeLayout()
+
+    const left = center.x - width / 2 - paddingLeft
+    const bottom = center.y - height / 2 - paddingBottom
+
+    const finalWidth = width + paddingLeft + paddingRight
+    const finalHeight = height + paddingTop + paddingBottom
+
+    db.schematic_box.insert({
+      width: finalWidth,
+      height: finalHeight,
+      x: left,
+      y: bottom,
+      is_dashed: props.border?.dashed ?? false,
+    })
   }
 
   _determineSideFromPosition(
@@ -852,21 +921,26 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSchematicReplaceNetLabelsWithSymbols() {
     if (this.root?.schematicDisabled) return
+    if (!this.isSubcircuit) return
     const { db } = this.root!
 
-    for (const nl of db.schematic_net_label.list()) {
-      const net = db.source_net.get(nl.source_net_id)
+    // TODO remove when circuit-json-util supports subtree properly
+    // const subtree = db.subtree({ subcircuit_id: this.subcircuit_id! })
+    const subtree = db
+
+    for (const nl of subtree.schematic_net_label.list()) {
+      const net = subtree.source_net.get(nl.source_net_id)
       const text = nl.text || net?.name || ""
 
       if (nl.anchor_side === "top" && /^gnd/i.test(text)) {
-        db.schematic_net_label.update(nl.schematic_net_label_id, {
+        subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "ground_down",
         })
         continue
       }
 
       if (nl.anchor_side === "bottom" && /^v/i.test(text)) {
-        db.schematic_net_label.update(nl.schematic_net_label_id, {
+        subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "vcc_up",
         })
       }

@@ -9,6 +9,7 @@ import type { RenderPhase } from "./components/base-components/Renderable"
 import pkgJson from "../package.json"
 import type { RootCircuitEventName } from "./events"
 import type { PlatformConfig } from "@tscircuit/props"
+import { Group } from "./components/primitive-components/Group"
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -80,28 +81,22 @@ export class RootCircuit {
 
   _guessRootComponent() {
     if (this.firstChild) return
-    if (this.children.length === 1) {
-      this.firstChild = this.children[0]
-      return
-    }
     if (this.children.length === 0) {
       throw new Error(
         "Not able to guess root component: RootCircuit has no children (use circuit.add(...))",
       )
     }
 
-    if (this.children.length > 0) {
-      const board =
-        this.children.find((c) => c.componentName === "Board") ?? null
-
-      if (board) {
-        this.firstChild = board
-        return
-      }
+    if (this.children.length === 1 && this.children[0].isGroup) {
+      this.firstChild = this.children[0]
+      return
     }
-    throw new Error(
-      "Not able to guess root component: RootCircuit has multiple children and no board",
-    )
+
+    const group = new Group({ subcircuit: true })
+    group.parent = this as any
+    group.addAll(this.children)
+    this.children = [group]
+    this.firstChild = group
   }
 
   render() {

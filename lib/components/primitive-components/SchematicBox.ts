@@ -95,8 +95,9 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     } else if (hasFixedSize) {
       width = props.width!
       height = props.height!
-      centerX = typeof props.schX === "number" ? props.schX : 0
-      centerY = typeof props.schY === "number" ? props.schY : 0
+      const center = this._getGlobalSchematicPositionBeforeLayout()
+      centerX = center.x
+      centerY = center.y
       x = centerX - width / 2
       y = centerY - height / 2
     } else {
@@ -109,7 +110,6 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       x,
       y,
       is_dashed: props.strokeStyle === "dashed",
-      schematic_component_id: "",
     })
 
     if (props.title) {
