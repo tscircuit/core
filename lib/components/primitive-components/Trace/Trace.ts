@@ -1,7 +1,4 @@
-import {
-  MultilayerIjump,
-  getObstaclesFromSoup,
-} from "@tscircuit/infgrid-ijump-astar"
+import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { traceProps } from "@tscircuit/props"
 import {
   type LayerRef,
@@ -43,6 +40,7 @@ import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 import { getTraceDisplayName } from "./get-trace-display-name"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
+import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -480,7 +478,7 @@ export class Trace
     // Cache the PCB obstacles, they'll be needed for each segment between
     // ports/hints
     const [obstacles, errGettingObstacles] = tryNow(
-      () => getObstaclesFromSoup(this.root!.db.toArray() as any), // Remove as any when autorouting-dataset gets updated
+      () => getObstaclesFromCircuitJson(this.root!.db.toArray() as any), // Remove as any when autorouting-dataset gets updated
     )
 
     if (errGettingObstacles) {
