@@ -89,10 +89,14 @@ export class Board extends Group<typeof boardProps> {
         : (props.outlineOffsetY ?? 0),
     }
 
-    // Update the board dimensions
+    // Update the board dimensions, preserving any explicit dimension provided
+    // by the user while auto-calculating the missing one.
+    const finalWidth = props.width ?? computedWidth
+    const finalHeight = props.height ?? computedHeight
+
     db.pcb_board.update(this.pcb_board_id, {
-      width: computedWidth,
-      height: computedHeight,
+      width: finalWidth,
+      height: finalHeight,
       center,
     })
   }
