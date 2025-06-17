@@ -7,10 +7,48 @@ it("solderjumper options/variations", async () => {
   circuit.add(
     <board width="15mm" height="30mm">
       <solderjumper
-        name="SJ1"
+        name="SJ_fp_default"
         footprint="solderjumper2"
         pcbX={0}
-        pcbY={0}
+        pcbY={2}
+        schX={0}
+        schY={0}
+      />
+      <solderjumper
+        name="SJ_fp_bridged12"
+        footprint="solderjumper2_bridged12"
+        pcbX={0}
+        pcbY={6}
+        schX={0}
+        schY={1.5}
+      />
+      <solderjumper
+        name="SJ_prop_bridged12"
+        footprint="solderjumper2"
+        bridgedPins={[["1", "2"]]}
+        pcbX={0}
+        pcbY={10}
+        schX={0}
+        schY={3}
+      />
+      <solderjumper
+        name="SJ_fp_count3_bridged13"
+        footprint="solderjumper3_bridged13"
+        pinCount={3}
+        pcbX={0}
+        pcbY={14}
+        schX={0}
+        schY={4.5}
+      />
+      <solderjumper
+        name="SJ_prop_all_bridged"
+        pinCount={3}
+        bridgedPins={[["1", "2", "3"]]}
+        pcbX={0}
+        pcbY={18}
+        schX={0}
+        schY={6}
+      />
         schX={0}
         schY={0}
       />
