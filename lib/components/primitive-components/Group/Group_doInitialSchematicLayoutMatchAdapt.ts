@@ -16,7 +16,11 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   const forceLayoutSolver = new ForceDirectedLayoutSolver({
     graph: bpc,
   })
-  forceLayoutSolver.solve()
+  try {
+    forceLayoutSolver.solve()
+  } catch (e) {
+    console.error(e)
+  }
 
   const newGraph = forceLayoutSolver.graph
 
