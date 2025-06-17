@@ -43,7 +43,10 @@ test("solderjumper symbol selection from props and footprint", () => {
       <solderjumper
         name="SJ5"
         footprint="solderjumper3_bridged23"
-        bridgedPins={[["1", "2"], ["2", "3"]]}
+        bridgedPins={[
+          ["1", "2"],
+          ["2", "3"],
+        ]}
         pcbX={15}
         schX={4}
       />
@@ -63,7 +66,9 @@ test("solderjumper symbol selection from props and footprint", () => {
   const symbols = circuit.db.schematic_component
     .list()
     .filter((c) => c.symbol_name?.startsWith("solderjumper"))
-    .map((c) => (c.symbol_name ?? "").replace(/_(right|left|up|down|horz|vert)$/, ""))
+    .map((c) =>
+      (c.symbol_name ?? "").replace(/_(right|left|up|down|horz|vert)$/, ""),
+    )
 
   expect(symbols).toContain("solderjumper2_bridged12")
   expect(symbols).toContain("solderjumper3_bridged23")
