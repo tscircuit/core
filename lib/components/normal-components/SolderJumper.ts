@@ -113,7 +113,7 @@ export class SolderJumper<
     const arrangement = super._getSchematicPortArrangement()
     if (arrangement && Object.keys(arrangement).length > 0) return arrangement
 
-    let pinCount = this._parsedProps.pinCount
+    let pinCount: number | undefined = this._parsedProps.pinCount
     if (!pinCount) {
       const fpParams = this._parseFootprintParams()
       if (fpParams?.num_pins) pinCount = fpParams.num_pins as 2 | 3
