@@ -2,7 +2,7 @@ import { it, expect } from "bun:test"
 import "lib/register-catalogue"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it.skip("subcircuit having a net label GND makes the circuit fail to use GND in other part of circuit", async () => {
+it("subcircuit having a net label GND makes the circuit fail to use GND in other part of circuit", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

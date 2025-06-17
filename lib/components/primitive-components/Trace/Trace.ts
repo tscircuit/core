@@ -171,16 +171,33 @@ export class Trace
     }
   }
 
+  _resolveNet(selector: string): Net | null {
+    const direct = this.getSubcircuit().selectOne(selector, { type: "net" }) as
+      | Net
+      | null
+    if (direct) return direct
+
+    // Fallback: search all descendants for a net with the same name
+    const match = selector.match(/^net\.(.+)$/)
+    const netName = match ? match[1] : null
+    if (!netName) return null
+
+    const allDescendants = this.root!._getBoard().getDescendants()
+    return (
+      (allDescendants.find(
+        (d) => d.componentName === "Net" && d._parsedProps.name === netName,
+      ) as Net | undefined) || null
+    )
+  }
+
   _findConnectedNets(): {
     nets: Net[]
     netsWithSelectors: Array<{ selector: string; net: Net }>
   } {
-    const netsWithSelectors = this.getTracePathNetSelectors().map(
-      (selector) => ({
-        selector,
-        net: this.getSubcircuit().selectOne(selector, { type: "net" }) as Net,
-      }),
-    )
+    const netsWithSelectors = this.getTracePathNetSelectors().map((selector) => ({
+      selector,
+      net: this._resolveNet(selector) as Net,
+    }))
 
     const undefinedNets = netsWithSelectors.filter((n) => !n.net)
     if (undefinedNets.length > 0) {
