@@ -113,9 +113,9 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     })
 
     if (props.title) {
-      const isInside = props.titleInside ?? false
+      const isInside = props.titleInside
       const TITLE_PADDING = 0.1
-      const anchor = props.titleAlignment ?? "bottom_center"
+      const anchor = props.titleAlignment
       const anchorPos = getTitleAnchorAndPosition({
         anchor,
         x,
