@@ -1,4 +1,5 @@
 import { chipProps } from "@tscircuit/props"
+import { z } from "zod"
 import type { SchematicPortArrangement } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
@@ -13,7 +14,16 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
   PinLabels
 > {
+  static unnamedCounter = 1
   schematicBoxDimensions: SchematicBoxDimensions | null = null
+
+  constructor(props: z.input<typeof chipProps>) {
+    const propsWithName = {
+      name: props?.name ?? `U${Chip.unnamedCounter++}`,
+      ...props,
+    } as z.input<typeof chipProps>
+    super(propsWithName)
+  }
 
   get config() {
     return {
