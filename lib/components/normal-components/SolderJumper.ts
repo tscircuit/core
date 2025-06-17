@@ -1,27 +1,87 @@
-import { NormalComponent } from "lib/components/base-components/NormalComponent"
+import { footprinter as fp } from "@tscircuit/footprinter"
 import { solderjumperProps } from "@tscircuit/props"
-import { Port } from "../primitive-components/Port"
+import { NormalComponent } from "lib/components/base-components/NormalComponent"
+import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import type { BaseSymbolName } from "lib/utils/constants"
 import {
-  getAllDimensionsForSchematicBox,
   type SchematicBoxDimensions,
+  getAllDimensionsForSchematicBox,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import { Port } from "../primitive-components/Port"
 
 export class SolderJumper<
   PinLabels extends string = never,
 > extends NormalComponent<typeof solderjumperProps, PinLabels> {
   schematicDimensions: SchematicBoxDimensions | null = null
 
+  _parseFootprintParams(): { num_pins?: number; bridged?: string } | null {
+    const { footprint } = this.props
+    if (typeof footprint !== "string") return null
+    if (this._isFootprintUrl(footprint)) return null
+    try {
+      const params = fp.string(footprint).params()
+      if (params.fn === "solderjumper") {
+        return {
+          num_pins: params.num_pins,
+          bridged: params.bridged,
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+    return null
+  }
+
+  _getImpliedFootprintString(): string | null {
+    const pinCount = this._parsedProps.pinCount
+    const bridged = this._parsedProps.bridgedPins
+    if (!pinCount) return null
+    let fpStr = `solderjumper${pinCount}`
+    if (bridged && bridged.length > 0) {
+      const pins = Array.from(new Set(bridged.flat())).sort().join("")
+      fpStr += `_bridged${pins}`
+    }
+    return fpStr
+  }
+
   get defaultInternallyConnectedPinNames(): string[][] {
-    return this._parsedProps.bridgedPins ?? []
+    if (this._parsedProps.bridgedPins) return this._parsedProps.bridgedPins
+    const params = this._parseFootprintParams()
+    if (params?.bridged) {
+      const pins = params.bridged.split("")
+      const pairs: string[][] = []
+      for (let i = 0; i < pins.length - 1; i++) {
+        pairs.push([pins[i], pins[i + 1]])
+      }
+      return pairs
+    }
+    return []
   }
 
   get config() {
     let resolvedPinCount = this.props.pinCount
+    let bridgedPins = this.props.bridgedPins
+
+    if (!resolvedPinCount || !bridgedPins) {
+      const fpParams = this._parseFootprintParams()
+      if (!resolvedPinCount && fpParams?.num_pins) {
+        if (fpParams.num_pins === 2 || fpParams.num_pins === 3) {
+          resolvedPinCount = fpParams.num_pins as 2 | 3
+        }
+      }
+      if (!bridgedPins && fpParams?.bridged) {
+        const pins = fpParams.bridged.split("")
+        const pairs: string[][] = []
+        for (let i = 0; i < pins.length - 1; i++) {
+          pairs.push([pins[i], pins[i + 1]])
+        }
+        bridgedPins = pairs
+      }
+    }
+
     if (!resolvedPinCount) {
-      const nums = (this.props.bridgedPins ?? [])
+      const nums = (bridgedPins ?? [])
         .flat()
         .map((p) => {
           if (typeof p === "number") return p
@@ -34,15 +94,11 @@ export class SolderJumper<
         resolvedPinCount = maxPin as 2 | 3
       }
     }
+
     let symbolName = ""
     if (resolvedPinCount) symbolName += `solderjumper${resolvedPinCount}`
-    if (
-      Array.isArray(this.props.bridgedPins) &&
-      this.props.bridgedPins.length > 0
-    ) {
-      const pins = Array.from(new Set(this.props.bridgedPins.flat()))
-        .sort()
-        .join("")
+    if (bridgedPins && bridgedPins.length > 0) {
+      const pins = Array.from(new Set(bridgedPins.flat())).sort().join("")
       symbolName += `_bridged${pins}`
     }
     return {
@@ -57,13 +113,18 @@ export class SolderJumper<
     const arrangement = super._getSchematicPortArrangement()
     if (arrangement && Object.keys(arrangement).length > 0) return arrangement
 
-    const pinCount =
-      this._parsedProps.pinCount ??
-      (Array.isArray(this._parsedProps.pinLabels)
+    let pinCount = this._parsedProps.pinCount
+    if (!pinCount) {
+      const fpParams = this._parseFootprintParams()
+      if (fpParams?.num_pins) pinCount = fpParams.num_pins as 2 | 3
+    }
+    if (!pinCount) {
+      pinCount = Array.isArray(this._parsedProps.pinLabels)
         ? this._parsedProps.pinLabels.length
         : this._parsedProps.pinLabels
           ? Object.keys(this._parsedProps.pinLabels).length
-          : this.getPortsFromFootprint().length)
+          : this.getPortsFromFootprint().length
+    }
 
     const direction = this._parsedProps.schDirection ?? "right"
 
@@ -119,7 +180,7 @@ export class SolderJumper<
       if (typeof sourcePort?.pin_number === "number") {
         pinLabel = sourcePort.pin_number.toString()
       } else if (Array.isArray(sourcePort?.port_hints)) {
-        let matchedHint = sourcePort.port_hints.find((h: string) =>
+        const matchedHint = sourcePort.port_hints.find((h: string) =>
           /^(pin)?\d+$/.test(h),
         )
         if (matchedHint) {
