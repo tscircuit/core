@@ -1,5 +1,6 @@
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solderjumperProps } from "@tscircuit/props"
+import { fp } from "@tscircuit/footprinter"
 import { Port } from "../primitive-components/Port"
 import type { BaseSymbolName } from "lib/utils/constants"
 import {
@@ -14,14 +15,56 @@ export class SolderJumper<
 > extends NormalComponent<typeof solderjumperProps, PinLabels> {
   schematicDimensions: SchematicBoxDimensions | null = null
 
+  _parsedFootprintParams: any | null = null
+
+  _getFootprintParams() {
+    if (this._parsedFootprintParams) return this._parsedFootprintParams
+    const fpStr = this.props.footprint
+    if (typeof fpStr !== "string") return null
+    try {
+      this._parsedFootprintParams = fp.string(fpStr).params()
+      return this._parsedFootprintParams
+    } catch {
+      return null
+    }
+  }
+
+  _getPinCountFromFootprint(): 2 | 3 | undefined {
+    const params = this._getFootprintParams()
+    if (!params) return undefined
+    if (params.num_pins === 2 || params.num_pins === 3) return params.num_pins
+    return undefined
+  }
+
+  _getBridgedPinsFromFootprint(): string[][] | undefined {
+    const params = this._getFootprintParams()
+    if (!params || !params.bridged) return undefined
+    const arr = params.bridged.toString().split("").map((n: string) => n)
+    return arr.length ? [arr] : undefined
+  }
+
+  _getImpliedFootprintString(): string | null {
+    const pinCount = this.props.pinCount ?? this._getPinCountFromFootprint()
+    const bridgedPins = this.props.bridgedPins ?? this._getBridgedPinsFromFootprint()
+    if (!pinCount) return null
+    let fpStr = `solderjumper${pinCount}`
+    if (bridgedPins && bridgedPins.length > 0) {
+      const pins = Array.from(new Set(bridgedPins.flat())).join("")
+      fpStr += `_bridged${pins}`
+    }
+    return fpStr
+  }
+
   get defaultInternallyConnectedPinNames(): string[][] {
-    return this._parsedProps.bridgedPins ?? []
+    return (
+      this._parsedProps.bridgedPins ?? this._getBridgedPinsFromFootprint() ?? []
+    )
   }
 
   get config() {
-    let resolvedPinCount = this.props.pinCount
+    let resolvedPinCount = this.props.pinCount ?? this._getPinCountFromFootprint()
     if (!resolvedPinCount) {
-      const nums = (this.props.bridgedPins ?? [])
+      const nums = (this.props.bridgedPins ?? this._getBridgedPinsFromFootprint() ?? [])
         .flat()
         .map((p) => {
           if (typeof p === "number") return p
@@ -36,11 +79,9 @@ export class SolderJumper<
     }
     let symbolName = ""
     if (resolvedPinCount) symbolName += `solderjumper${resolvedPinCount}`
-    if (
-      Array.isArray(this.props.bridgedPins) &&
-      this.props.bridgedPins.length > 0
-    ) {
-      const pins = Array.from(new Set(this.props.bridgedPins.flat()))
+    const bridgedPins = this.props.bridgedPins ?? this._getBridgedPinsFromFootprint()
+    if (Array.isArray(bridgedPins) && bridgedPins.length > 0) {
+      const pins = Array.from(new Set(bridgedPins.flat()))
         .sort()
         .join("")
       symbolName += `_bridged${pins}`
