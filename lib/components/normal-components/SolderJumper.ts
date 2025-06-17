@@ -1,5 +1,6 @@
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solderjumperProps } from "@tscircuit/props"
+import { fp } from "@tscircuit/footprinter"
 import { Port } from "../primitive-components/Port"
 import type { BaseSymbolName } from "lib/utils/constants"
 import {
@@ -9,19 +10,42 @@ import {
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 
+const parseFootprint = (fpString?: string) => {
+  if (!fpString) return {}
+  const m = fpString.match(/solderjumper(2|3)(?:_bridged(\d+))?/)
+  if (!m) return {}
+  const pinCount = Number(m[1]) as 2 | 3
+  const bridged = m[2]
+  return {
+    pinCount,
+    bridgedPins: bridged ? [bridged.split("")] : undefined,
+  }
+}
+
 export class SolderJumper<
   PinLabels extends string = never,
 > extends NormalComponent<typeof solderjumperProps, PinLabels> {
   schematicDimensions: SchematicBoxDimensions | null = null
 
   get defaultInternallyConnectedPinNames(): string[][] {
-    return this._parsedProps.bridgedPins ?? []
+    if (this._parsedProps.bridgedPins) return this._parsedProps.bridgedPins
+    const fpStr =
+      typeof this.props.footprint === "string"
+        ? this.props.footprint
+        : (this._getImpliedFootprintString() ?? undefined)
+    return parseFootprint(fpStr).bridgedPins ?? []
   }
 
   get config() {
     let resolvedPinCount = this.props.pinCount
+    let resolvedBridgedPins = this.props.bridgedPins
+    const fpInfo =
+      typeof this.props.footprint === "string"
+        ? parseFootprint(this.props.footprint)
+        : {}
+
     if (!resolvedPinCount) {
-      const nums = (this.props.bridgedPins ?? [])
+      const nums = (resolvedBridgedPins ?? [])
         .flat()
         .map((p) => {
           if (typeof p === "number") return p
@@ -32,15 +56,19 @@ export class SolderJumper<
       const maxPin = nums.length > 0 ? Math.max(...nums) : 0
       if (maxPin === 2 || maxPin === 3) {
         resolvedPinCount = maxPin as 2 | 3
+      } else if (fpInfo.pinCount) {
+        resolvedPinCount = fpInfo.pinCount
       }
     }
+
+    if (!resolvedBridgedPins && fpInfo.bridgedPins) {
+      resolvedBridgedPins = fpInfo.bridgedPins
+    }
+
     let symbolName = ""
     if (resolvedPinCount) symbolName += `solderjumper${resolvedPinCount}`
-    if (
-      Array.isArray(this.props.bridgedPins) &&
-      this.props.bridgedPins.length > 0
-    ) {
-      const pins = Array.from(new Set(this.props.bridgedPins.flat()))
+    if (Array.isArray(resolvedBridgedPins) && resolvedBridgedPins.length > 0) {
+      const pins = Array.from(new Set(resolvedBridgedPins.flat()))
         .sort()
         .join("")
       symbolName += `_bridged${pins}`
@@ -51,6 +79,42 @@ export class SolderJumper<
       zodProps: solderjumperProps,
       shouldRenderAsSchematicBox: true,
     }
+  }
+
+  _getImpliedFootprintString(): string | null {
+    let pinCount = this._parsedProps.pinCount
+    let bridgedPins = this._parsedProps.bridgedPins
+
+    const fpInfo = parseFootprint(
+      typeof this.props.footprint === "string"
+        ? this.props.footprint
+        : undefined,
+    )
+
+    if (!pinCount) {
+      if (bridgedPins?.length) {
+        const nums = bridgedPins
+          .flat()
+          .map((p) => Number(String(p).replace(/^pin/, "")))
+          .filter((n) => !Number.isNaN(n))
+        const maxPin = nums.length > 0 ? Math.max(...nums) : 0
+        if (maxPin === 2 || maxPin === 3) pinCount = maxPin as 2 | 3
+      } else if (fpInfo.pinCount) {
+        pinCount = fpInfo.pinCount
+      }
+    }
+
+    if (!bridgedPins && fpInfo.bridgedPins) {
+      bridgedPins = fpInfo.bridgedPins
+    }
+
+    if (!pinCount) return null
+    let result = `solderjumper${pinCount}`
+    if (bridgedPins?.length) {
+      const pins = Array.from(new Set(bridgedPins.flat())).sort().join("")
+      if (pins) result += `_bridged${pins}`
+    }
+    return result
   }
 
   _getSchematicPortArrangement() {
