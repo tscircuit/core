@@ -2,6 +2,7 @@ import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solderjumperProps } from "@tscircuit/props"
 import { fp } from "@tscircuit/footprinter"
 import { Port } from "../primitive-components/Port"
+import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import type { BaseSymbolName } from "lib/utils/constants"
 import {
   getAllDimensionsForSchematicBox,
@@ -17,7 +18,7 @@ export class SolderJumper<
 
   _parsedFootprintParams: any | null = null
 
-  _getFootprintParams() {
+  _getFootprintParamsFromPropsFootprint() {
     if (this._parsedFootprintParams) return this._parsedFootprintParams
     const fpStr = this.props.footprint
     if (typeof fpStr !== "string") return null
@@ -27,6 +28,30 @@ export class SolderJumper<
     } catch {
       return null
     }
+  }
+
+  _getFootprintParams() {
+    const fpStr = this._getEffectiveFootprintString()
+    if (typeof fpStr !== "string") return null
+    try {
+      return fp.string(fpStr).params()
+    } catch {
+      return null
+    }
+  }
+
+  _getPinCountFromPropsFootprint(): 2 | 3 | undefined {
+    const params = this._getFootprintParamsFromPropsFootprint()
+    if (!params) return undefined
+    if (params.num_pins === 2 || params.num_pins === 3) return params.num_pins
+    return undefined
+  }
+
+  _getBridgedPinsFromPropsFootprint(): string[][] | undefined {
+    const params = this._getFootprintParamsFromPropsFootprint()
+    if (!params || !params.bridged) return undefined
+    const arr = params.bridged.toString().split("").map((n: string) => n)
+    return arr.length ? [arr] : undefined
   }
 
   _getPinCountFromFootprint(): 2 | 3 | undefined {
@@ -39,8 +64,73 @@ export class SolderJumper<
   _getBridgedPinsFromFootprint(): string[][] | undefined {
     const params = this._getFootprintParams()
     if (!params || !params.bridged) return undefined
-    const arr = params.bridged
-      .toString()
+  _getEffectiveFootprintString(): string | null {
+    let footprint = this.props.footprint as any
+    const implied = this._getImpliedFootprintString()
+    if (typeof footprint === "string") {
+      try {
+        const params = fp.string(footprint).params()
+        if (
+          this.props.bridgedPins &&
+          (!params || !params.bridged) &&
+          implied
+        ) {
+          footprint = implied
+        }
+      } catch {
+        // ignore parse errors and fall back to given footprint
+      }
+    }
+    return footprint ?? implied ?? null
+  }
+
+    const pinCount = this.props.pinCount ?? this._getPinCountFromPropsFootprint()
+    const bridgedPins =
+      this.props.bridgedPins ?? this._getBridgedPinsFromPropsFootprint()
+  _addChildrenFromStringFootprint(): void {
+    const {
+      name: componentName,
+      pcbRotation: componentRotation,
+      pinLabels,
+    } = this.props
+    const footprint = this._getEffectiveFootprintString()
+    if (!footprint) return
+
+    if (typeof footprint === "string") {
+      if (this._isFootprintUrl(footprint)) return
+      const fpSoup = fp.string(footprint).soup()
+      const fpComponents = createComponentsFromCircuitJson(
+        { componentName, componentRotation, footprint, pinLabels },
+        fpSoup as any,
+      )
+      this.addAll(fpComponents)
+    }
+  }
+
+  doInitialPcbFootprintStringRender(): void {
+    const footprint = this._getEffectiveFootprintString()
+    if (!footprint) return
+
+    const {
+      name: componentName,
+      pcbRotation: componentRotation,
+      pinLabels,
+    } = this.props
+
+    if (typeof footprint === "string") {
+      if (this._isFootprintUrl(footprint)) return
+      const fpSoup = fp.string(footprint).soup()
+      const fpComponents = createComponentsFromCircuitJson(
+        { componentName, componentRotation, footprint, pinLabels },
+        fpSoup as any,
+      )
+      this.addAll(fpComponents)
+      return
+    }
+
+    super.doInitialPcbFootprintStringRender()
+  }
+
       .split("")
       .map((n: string) => n)
     return arr.length ? [arr] : undefined

@@ -10,9 +10,9 @@ it("solderjumper options/variations", async () => {
         name="SJ_fp_default"
         footprint="solderjumper2"
         pcbX={0}
-        pcbY={2}
+        pcbY={4}
         schX={0}
-        schY={0}
+        schY={0.5}
       />
       <solderjumper
         name="SJ_fp_bridged12"
