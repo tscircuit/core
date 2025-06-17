@@ -5,11 +5,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("chip renders with default name when none provided", () => {
   const { circuit } = getTestFixture()
 
-  circuit.add(
-    <board width="10mm" height="10mm">
-      <chip footprint="soic8" />
-    </board>,
-  )
+  circuit.add(<chip footprint="soic8" />)
 
   circuit.render()
 
@@ -23,4 +19,6 @@ test("chip renders with default name when none provided", () => {
   expect(errors.length).toBe(0)
   expect(chip.pcb_component_id).not.toBeNull()
   expect(chip.schematic_component_id).not.toBeNull()
+
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
