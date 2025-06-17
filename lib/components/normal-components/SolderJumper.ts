@@ -53,6 +53,39 @@ export class SolderJumper<
     }
   }
 
+  _getImpliedFootprintString(): string | null {
+    let resolvedPinCount = this._parsedProps.pinCount
+    if (!resolvedPinCount) {
+      const nums = (this._parsedProps.bridgedPins ?? [])
+        .flat()
+        .map((p) => {
+          if (typeof p === "number") return p
+          if (p.startsWith("pin")) return Number(p.slice(3))
+          return Number(p)
+        })
+        .filter((n) => !Number.isNaN(n))
+      const maxPin = nums.length > 0 ? Math.max(...nums) : 0
+      if (maxPin === 2 || maxPin === 3) {
+        resolvedPinCount = maxPin as 2 | 3
+      }
+    }
+    if (!resolvedPinCount) return null
+
+    let fpString = `solderjumper${resolvedPinCount}`
+
+    if (
+      Array.isArray(this._parsedProps.bridgedPins) &&
+      this._parsedProps.bridgedPins.length > 0
+    ) {
+      const pins = Array.from(new Set(this._parsedProps.bridgedPins.flat()))
+        .sort()
+        .join("")
+      fpString += `_bridged${pins}`
+    }
+
+    return fpString
+  }
+
   _getSchematicPortArrangement() {
     const arrangement = super._getSchematicPortArrangement()
     if (arrangement && Object.keys(arrangement).length > 0) return arrangement
