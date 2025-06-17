@@ -39,13 +39,17 @@ export class SolderJumper<
   _getBridgedPinsFromFootprint(): string[][] | undefined {
     const params = this._getFootprintParams()
     if (!params || !params.bridged) return undefined
-    const arr = params.bridged.toString().split("").map((n: string) => n)
+    const arr = params.bridged
+      .toString()
+      .split("")
+      .map((n: string) => n)
     return arr.length ? [arr] : undefined
   }
 
   _getImpliedFootprintString(): string | null {
     const pinCount = this.props.pinCount ?? this._getPinCountFromFootprint()
-    const bridgedPins = this.props.bridgedPins ?? this._getBridgedPinsFromFootprint()
+    const bridgedPins =
+      this.props.bridgedPins ?? this._getBridgedPinsFromFootprint()
     if (!pinCount) return null
     let fpStr = `solderjumper${pinCount}`
     if (bridgedPins && bridgedPins.length > 0) {
@@ -62,9 +66,14 @@ export class SolderJumper<
   }
 
   get config() {
-    let resolvedPinCount = this.props.pinCount ?? this._getPinCountFromFootprint()
+    let resolvedPinCount =
+      this.props.pinCount ?? this._getPinCountFromFootprint()
     if (!resolvedPinCount) {
-      const nums = (this.props.bridgedPins ?? this._getBridgedPinsFromFootprint() ?? [])
+      const nums = (
+        this.props.bridgedPins ??
+        this._getBridgedPinsFromFootprint() ??
+        []
+      )
         .flat()
         .map((p) => {
           if (typeof p === "number") return p
@@ -79,11 +88,10 @@ export class SolderJumper<
     }
     let symbolName = ""
     if (resolvedPinCount) symbolName += `solderjumper${resolvedPinCount}`
-    const bridgedPins = this.props.bridgedPins ?? this._getBridgedPinsFromFootprint()
+    const bridgedPins =
+      this.props.bridgedPins ?? this._getBridgedPinsFromFootprint()
     if (Array.isArray(bridgedPins) && bridgedPins.length > 0) {
-      const pins = Array.from(new Set(bridgedPins.flat()))
-        .sort()
-        .join("")
+      const pins = Array.from(new Set(bridgedPins.flat())).sort().join("")
       symbolName += `_bridged${pins}`
     }
     return {
