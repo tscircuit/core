@@ -28,7 +28,9 @@ export interface TscircuitElements {
   hole: Props.HoleProps
   port: Props.PortProps
   group: Props.GroupProps
+  /** @deprecated Use netlabel instead. */
   netalias: Props.NetAliasProps
+  netlabel: Props.NetLabelProps
   net: Props.NetProps
   trace: Props.TraceProps
   breakout: Props.BreakoutProps

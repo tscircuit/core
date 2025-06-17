@@ -2,6 +2,9 @@ import { netAliasProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Port } from "./Port"
 
+/**
+ * @deprecated Use <netlabel /> instead.
+ */
 export class NetAlias extends PrimitiveComponent<typeof netAliasProps> {
   source_net_alias_id?: string
 

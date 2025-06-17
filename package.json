@@ -33,7 +33,7 @@
     "@tscircuit/layout": "^0.0.28",
     "@tscircuit/log-soup": "^1.0.2",
     "@tscircuit/math-utils": "^0.0.18",
-    "@tscircuit/props": "^0.0.227",
+    "@tscircuit/props": "^0.0.232",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
     "@tscircuit/simple-3d-svg": "^0.0.6",
