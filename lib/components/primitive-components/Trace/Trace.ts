@@ -172,9 +172,9 @@ export class Trace
   }
 
   _resolveNet(selector: string): Net | null {
-    const direct = this.getSubcircuit().selectOne(selector, { type: "net" }) as
-      | Net
-      | null
+    const direct = this.getSubcircuit().selectOne(selector, {
+      type: "net",
+    }) as Net | null
     if (direct) return direct
 
     // Fallback: search all descendants for a net with the same name
@@ -194,10 +194,12 @@ export class Trace
     nets: Net[]
     netsWithSelectors: Array<{ selector: string; net: Net }>
   } {
-    const netsWithSelectors = this.getTracePathNetSelectors().map((selector) => ({
-      selector,
-      net: this._resolveNet(selector) as Net,
-    }))
+    const netsWithSelectors = this.getTracePathNetSelectors().map(
+      (selector) => ({
+        selector,
+        net: this._resolveNet(selector) as Net,
+      }),
+    )
 
     const undefinedNets = netsWithSelectors.filter((n) => !n.net)
     if (undefinedNets.length > 0) {
