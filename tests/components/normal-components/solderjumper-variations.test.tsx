@@ -48,10 +48,12 @@ it("solderjumper options/variations", async () => {
         pcbY={18}
         schX={0}
         schY={6}
-      />
+
+      
         schX={0}
         schY={0}
       />
+
       <solderjumper
         name="SJ2"
         footprint="solderjumper2_bridged12"
