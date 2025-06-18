@@ -30,8 +30,20 @@ test("netlabel connection traces", () => {
           GND: sel.net.GND,
         }}
       />
-      <netlabel schX={-2} net="GND" connection="U1.GND" />
-      <netlabel schX={-3} net="VCC" connection="U1.VCC" />
+      <netlabel
+        schX={-2}
+        schY={-1}
+        anchorSide="top"
+        net="GND"
+        connection="U1.GND"
+      />
+      <netlabel
+        schX={-2}
+        schY={0.8}
+        net="VCC"
+        connection="U1.VCC"
+        anchorSide="bottom"
+      />
     </board>,
   )
 
