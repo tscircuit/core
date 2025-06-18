@@ -7,8 +7,8 @@ test("v net labels become vcc symbols", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm">
-      <netlabel net="VCC" schX={0} schY={0} />
+    <board>
+      <netlabel net="VCC" schX={0} schY={0} anchorSide="bottom" />
     </board>,
   )
 
