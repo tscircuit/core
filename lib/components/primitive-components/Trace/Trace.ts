@@ -28,6 +28,7 @@ import { tryNow } from "lib/utils/try-now"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { Net } from "../Net"
+import type { NetLabel } from "../NetLabel"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
 import type { TraceI } from "./TraceI"
@@ -834,11 +835,41 @@ export class Trace
     const isPortAndNetConnection =
       portsWithPosition.length === 1 && netsWithSelectors.length === 1
 
-    if (this.props.schDisplayLabel) {
-      if (isPortAndNetConnection) {
-        const net = netsWithSelectors[0].net
-        const { port, position: anchorPos } = portsWithPosition[0]
+    if (isPortAndNetConnection) {
+      const net = netsWithSelectors[0].net
+      const { port, position: anchorPos } = portsWithPosition[0]
 
+      const connectedNetLabel = this.getSubcircuit()
+        .selectAll("netlabel")
+        .find((nl: any) => {
+          const conn = nl._parsedProps.connection ?? nl._parsedProps.connectsTo
+          if (!conn) return false
+          const targetPort = this.getSubcircuit().selectOne(conn, {
+            port: true,
+          }) as Port | null
+          return targetPort === port
+        }) as NetLabel | undefined
+
+      if (connectedNetLabel) {
+        const labelPos =
+          connectedNetLabel._getGlobalSchematicPositionBeforeLayout()
+        const edges: SchematicTrace["edges"] = []
+        if (anchorPos.x === labelPos.x || anchorPos.y === labelPos.y) {
+          edges.push({ from: anchorPos, to: labelPos })
+        } else {
+          edges.push({ from: anchorPos, to: { x: labelPos.x, y: anchorPos.y } })
+          edges.push({ from: { x: labelPos.x, y: anchorPos.y }, to: labelPos })
+        }
+        const trace = db.schematic_trace.insert({
+          source_trace_id: this.source_trace_id!,
+          edges,
+          junctions: [],
+        })
+        this.schematic_trace_id = trace.schematic_trace_id
+        return
+      }
+
+      if (this.props.schDisplayLabel) {
         db.schematic_net_label.insert({
           text: this.props.schDisplayLabel,
           source_net_id: net.source_net_id!,
@@ -849,20 +880,8 @@ export class Trace
         })
 
         return
-      } else if (
-        ("from" in this.props && "to" in this.props) ||
-        "path" in this.props
-      ) {
-        this._doInitialSchematicTraceRenderWithDisplayLabel()
-        return
       }
-    }
 
-    if (isPortAndNetConnection) {
-      const net = netsWithSelectors[0].net
-      const { port, position: anchorPos } = portsWithPosition[0]
-
-      // Create a schematic_net_label
       const netLabel = db.schematic_net_label.insert({
         text: net._parsedProps.name,
         source_net_id: net.source_net_id!,
@@ -874,6 +893,16 @@ export class Trace
       })
 
       return
+    }
+
+    if (this.props.schDisplayLabel) {
+      if (
+        ("from" in this.props && "to" in this.props) ||
+        "path" in this.props
+      ) {
+        this._doInitialSchematicTraceRenderWithDisplayLabel()
+        return
+      }
     }
 
     // Ensure there are at least two ports
