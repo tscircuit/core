@@ -617,8 +617,8 @@ export abstract class PrimitiveComponent<
     if (this.isGroup) return
     const name = (this._parsedProps as any).name
     if (name) return
-;(this._parsedProps as any).name = `UNNAMED_${this.getSubcircuit().nextUnnamedComponentId()}`
-      `UNAMED_${this.getSubcircuit().nextUnnamedComponentId()}`
+    ;(this._parsedProps as any).name =
+      `UNNAMED_${this.getSubcircuit().nextUnnamedComponentId()}`
   }
 
   doInitialOptimizeSelectorCache() {
