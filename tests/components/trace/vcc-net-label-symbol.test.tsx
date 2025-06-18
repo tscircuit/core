@@ -8,7 +8,7 @@ test("v net labels become vcc symbols", () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <netalias net="VCC" schX={0} schY={0} />
+      <netlabel net="VCC" schX={0} schY={0} />
     </board>,
   )
 
