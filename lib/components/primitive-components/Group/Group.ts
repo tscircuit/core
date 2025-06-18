@@ -131,19 +131,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const padLeft =
           typeof props.paddingLeft === "number"
             ? props.paddingLeft
-            : paddingX ?? generalPadding
+            : (paddingX ?? generalPadding)
         const padRight =
           typeof props.paddingRight === "number"
             ? props.paddingRight
-            : paddingX ?? generalPadding
+            : (paddingX ?? generalPadding)
         const padTop =
           typeof props.paddingTop === "number"
             ? props.paddingTop
-            : paddingY ?? generalPadding
+            : (paddingY ?? generalPadding)
         const padBottom =
           typeof props.paddingBottom === "number"
             ? props.paddingBottom
-            : paddingY ?? generalPadding
+            : (paddingY ?? generalPadding)
 
         width += padLeft + padRight
         height += padTop + padBottom

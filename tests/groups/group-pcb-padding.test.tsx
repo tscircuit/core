@@ -9,8 +9,20 @@ test("group pcb padding", () => {
   circuit.add(
     <board width="10mm" height="10mm">
       <group name="G1" subcircuit padding={1}>
-        <resistor name="R1" resistance="1k" footprint="0402" pcbX={-2} pcbY={0} />
-        <resistor name="R2" resistance="1k" footprint="0402" pcbX={2} pcbY={0} />
+        <resistor
+          name="R1"
+          resistance="1k"
+          footprint="0402"
+          pcbX={-2}
+          pcbY={0}
+        />
+        <resistor
+          name="R2"
+          resistance="1k"
+          footprint="0402"
+          pcbX={2}
+          pcbY={0}
+        />
       </group>
     </board>,
   )
@@ -24,4 +36,3 @@ test("group pcb padding", () => {
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
-
