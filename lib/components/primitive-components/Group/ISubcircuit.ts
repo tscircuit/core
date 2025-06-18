@@ -7,4 +7,5 @@ export interface ISubcircuit extends PrimitiveComponent {
   _parsedProps: z.infer<typeof subcircuitGroupProps>
   _getAutorouterConfig(): AutorouterConfig
   subcircuit_id: string | null
+  nextUnnamedComponentId(): number
 }

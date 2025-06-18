@@ -613,6 +613,13 @@ export abstract class PrimitiveComponent<
     return this.parent?.getGroup?.() ?? null
   }
 
+  doInitialAssignNameToUnnamedComponents() {
+    if (this.isGroup) return
+    const name = (this._parsedProps as any).name
+    if (name) return
+    ;(this._parsedProps as any).name = `UNAMED_${this.getSubcircuit().nextUnnamedComponentId()}`
+  }
+
   doInitialOptimizeSelectorCache() {
     if (!this.isSubcircuit) return
     const ports = this.selectAll("port")

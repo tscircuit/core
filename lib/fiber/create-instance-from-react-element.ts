@@ -16,6 +16,7 @@ import { type Renderable } from "lib/components/base-components/Renderable"
 import { type NormalComponent } from "lib/components/base-components/NormalComponent"
 import type { ReactElement, ReactNode } from "react"
 import { catalogue, type Instance } from "./catalogue"
+import { InvalidProps } from "lib/errors/InvalidProps"
 import { identity } from "transformation-matrix"
 import type { RootCircuit } from "lib/RootCircuit"
 import { createErrorPlaceholderComponent } from "lib/components/primitive-components/ErrorPlaceholder"
@@ -74,7 +75,23 @@ const hostConfig: HostConfig<
     try {
       const instance = prepare(new target(props) as any, {})
       return instance
-    } catch (error) {
+    } catch (error: any) {
+      if (
+        error instanceof InvalidProps &&
+        (error.formattedError as any)?.name?._errors?.some((e: string) =>
+          e.toLowerCase().includes("required"),
+        )
+      ) {
+        try {
+          const instance = prepare(
+            new target({ ...props, name: "" }) as any,
+            {},
+          )
+          return instance
+        } catch (error2) {
+          return createErrorPlaceholderComponent(props, error2)
+        }
+      }
       return createErrorPlaceholderComponent(props, error)
     }
   },
