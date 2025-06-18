@@ -1,14 +1,14 @@
-import { netAliasProps } from "@tscircuit/props"
+import { netLabelProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Port } from "./Port"
 
-export class NetAlias extends PrimitiveComponent<typeof netAliasProps> {
-  source_net_alias_id?: string
+export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
+  source_net_label_id?: string
 
   get config() {
     return {
-      componentName: "NetAlias",
-      zodProps: netAliasProps,
+      componentName: "NetLabel",
+      zodProps: netLabelProps,
     }
   }
 
@@ -19,7 +19,7 @@ export class NetAlias extends PrimitiveComponent<typeof netAliasProps> {
 
     const anchorPos = { x: props.schX ?? 0, y: props.schY ?? 0 }
 
-    const netAlias = db.schematic_net_label.insert({
+    const netLabel = db.schematic_net_label.insert({
       text: props.net!,
       source_net_id: props.net!,
       anchor_position: anchorPos,
@@ -29,6 +29,6 @@ export class NetAlias extends PrimitiveComponent<typeof netAliasProps> {
       anchor_side: "bottom",
     })
 
-    this.source_net_alias_id = netAlias.source_net_id
+    this.source_net_label_id = netLabel.source_net_id
   }
 }

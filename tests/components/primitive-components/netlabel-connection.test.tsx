@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { sel } from "lib"
 
-test("netalias connection traces", () => {
+test("netlabel connection traces", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -30,8 +30,8 @@ test("netalias connection traces", () => {
           GND: sel.net.GND,
         }}
       />
-      <netalias schX={-2} net="GND" connection="U1.GND" />
-      <netalias schX={-3} net="VCC" connection="U1.VCC" />
+      <netlabel schX={-2} net="GND" connection="U1.GND" />
+      <netlabel schX={-3} net="VCC" connection="U1.VCC" />
     </board>,
   )
 

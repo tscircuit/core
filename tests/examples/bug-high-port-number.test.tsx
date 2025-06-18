@@ -85,19 +85,19 @@ test("bug high port number", async () => {
         schX={4.5}
         schY={2}
       />
-      <netalias net="5V" schX={3} schY={-2} />
-      <netalias net="5V" schX={4.5} schY={-2} />
+      <netlabel net="5V" schX={3} schY={-2} />
+      <netlabel net="5V" schX={4.5} schY={-2} />
       {/* <trace path={[".5V", ".R2 > port.left"]} />
       <trace path={[".5V", ".R1 > port.left"]} /> */}
       <trace path={[".R1 > port.right", ".LED1 > port.left"]} />
       <trace path={[".R2 > port.right", ".LED2 > port.left"]} />
       <trace path={[".LED1 > port.right", ".U1 > .pin20"]} />
       <trace path={[".LED2 > port.right", ".U1 > .pin6"]} />
-      <netalias net="GND" schX={-3} schY={4} schRotation="180deg" />
-      <netalias net="GND" schX={-5} schY={3} schRotation="180deg" />
-      <netalias net="GND" schX={-6} schY={3} schRotation="180deg" />
-      <netalias net="GND" schX={-7} schY={3} schRotation="180deg" />
-      <netalias net="GND" schX={-8} schY={2} schRotation="180deg" />
+      <netlabel net="GND" schX={-3} schY={4} schRotation="180deg" />
+      <netlabel net="GND" schX={-5} schY={3} schRotation="180deg" />
+      <netlabel net="GND" schX={-6} schY={3} schRotation="180deg" />
+      <netlabel net="GND" schX={-7} schY={3} schRotation="180deg" />
+      <netlabel net="GND" schX={-8} schY={2} schRotation="180deg" />
       {/* <component>
       <schematicbox
         name="USB"
