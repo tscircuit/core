@@ -111,16 +111,52 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
+    const props = this._parsedProps as SubcircuitGroupProps
 
     const bounds = getBoundsOfPcbComponents(this.children)
 
     if (this.pcb_group_id) {
+      let width = bounds.width
+      let height = bounds.height
+      let centerX = (bounds.minX + bounds.maxX) / 2
+      let centerY = (bounds.minY + bounds.maxY) / 2
+
+      if (this.isSubcircuit) {
+        const generalPadding =
+          typeof props.padding === "number" ? props.padding : 0
+        const paddingX =
+          typeof props.paddingX === "number" ? props.paddingX : undefined
+        const paddingY =
+          typeof props.paddingY === "number" ? props.paddingY : undefined
+        const padLeft =
+          typeof props.paddingLeft === "number"
+            ? props.paddingLeft
+            : paddingX ?? generalPadding
+        const padRight =
+          typeof props.paddingRight === "number"
+            ? props.paddingRight
+            : paddingX ?? generalPadding
+        const padTop =
+          typeof props.paddingTop === "number"
+            ? props.paddingTop
+            : paddingY ?? generalPadding
+        const padBottom =
+          typeof props.paddingBottom === "number"
+            ? props.paddingBottom
+            : paddingY ?? generalPadding
+
+        width += padLeft + padRight
+        height += padTop + padBottom
+        centerX += (padRight - padLeft) / 2
+        centerY += (padTop - padBottom) / 2
+      }
+
       db.pcb_group.update(this.pcb_group_id, {
-        width: bounds.width,
-        height: bounds.height,
+        width,
+        height,
         center: {
-          x: (bounds.minX + bounds.maxX) / 2,
-          y: (bounds.minY + bounds.maxY) / 2,
+          x: centerX,
+          y: centerY,
         },
       })
     }
