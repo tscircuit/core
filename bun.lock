@@ -60,7 +60,7 @@
         "@tscircuit/footprinter": "*",
         "@tscircuit/infgrid-ijump-astar": "*",
         "@tscircuit/math-utils": "*",
-        "@tscircuit/props": "^0.0.234",
+        "@tscircuit/props": "*",
         "@tscircuit/schematic-autolayout": "*",
         "@tscircuit/schematic-match-adapt": "*",
         "circuit-json": "*",
