@@ -85,8 +85,8 @@ test("bug high port number", async () => {
         schX={4.5}
         schY={2}
       />
-      <netlabel net="5V" schX={3} schY={-2} />
-      <netlabel net="5V" schX={4.5} schY={-2} />
+      <netlabel net="V5" schX={3} schY={-2} />
+      <netlabel net="V5" schX={4.5} schY={-2} />
       {/* <trace path={[".5V", ".R2 > port.left"]} />
       <trace path={[".5V", ".R1 > port.left"]} /> */}
       <trace path={[".R1 > port.right", ".LED1 > port.left"]} />
