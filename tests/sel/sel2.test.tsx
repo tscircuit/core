@@ -60,3 +60,29 @@ test(`sel2 - ChipProps<"custompin1" | "custompin2">`, () => {
 
   expect(sel.U1(MyChip2).custompin1.toString()).toBe(".U1 > .custompin1")
 })
+test("sel2 - sel.J1(MyChip).CUSTOM_DATA_1 = .J1 > .CUSTOM_DATA_1", () => {
+  expect(sel.J1(MyChip).CUSTOM_DATA_1).toBe(".J1 > .CUSTOM_DATA_1")
+
+  // @ts-expect-error
+  expect(sel.J1(MyChip).DOES_NOT_EXIST).toBe(".J1 > .DOES_NOT_EXIST")
+})
+test("sel2 - selJ2.CUSTOM_DATA_1 = .J2 > .CUSTOM_DATA_1", () => {
+  const J2 = (
+    <MyChip
+      name="J2"
+      connections={{
+        CUSTOM_DATA_1: sel.U1.A0,
+      }}
+    />
+  )
+  const selJ2 = sel.J2(MyChip)
+
+  expect(selJ2.CUSTOM_DATA_1).toBe(".J2 > .CUSTOM_DATA_1")
+})
+
+test('sel2 - sel.J1<"custompin1">().custompin1 = .J1 > .custompin1', () => {
+  expect(sel.J1<"custompin1">().custompin1.toString()).toBe(".J1 > .custompin1")
+
+  // @ts-expect-error
+  sel.J1<"custompin1">().doesnotexist
+})
