@@ -111,6 +111,10 @@ export abstract class PrimitiveComponent<
     return this.lowercaseComponentName === "group"
   }
 
+  get name() {
+    return (this._parsedProps as any).name ?? this.fallbackUnassignedName
+  }
+
   /**
    * A primitive container is a component that contains one or more ports and
    * primitive components that are designed to interact.
@@ -128,6 +132,7 @@ export abstract class PrimitiveComponent<
   schematic_component_id: string | null = null
   pcb_component_id: string | null = null
   cad_component_id: string | null = null
+  fallbackUnassignedName?: string
 
   constructor(props: z.input<ZodProps>) {
     super(props)
@@ -544,7 +549,7 @@ export abstract class PrimitiveComponent<
   }
 
   getSubcircuitSelector(): string {
-    const name = this._parsedProps.name
+    const name = this.name
     const endPart = name
       ? `${this.lowercaseComponentName}.${name}`
       : this.lowercaseComponentName
@@ -555,7 +560,7 @@ export abstract class PrimitiveComponent<
   }
 
   getFullPathSelector(): string {
-    const name = this._parsedProps.name
+    const name = this.name
     const endPart = name
       ? `${this.lowercaseComponentName}.${name}`
       : this.lowercaseComponentName
@@ -566,7 +571,7 @@ export abstract class PrimitiveComponent<
 
   getNameAndAliases(): string[] {
     return [
-      this._parsedProps.name,
+      this.name,
       ...(this._parsedProps.portHints ?? []),
     ].filter(Boolean)
   }
@@ -584,7 +589,7 @@ export abstract class PrimitiveComponent<
 
   doesSelectorMatch(selector: string): boolean {
     const myTypeNames = [this.componentName, this.lowercaseComponentName]
-    const myClassNames = [this._parsedProps.name].filter(Boolean)
+    const myClassNames = [this.name].filter(Boolean)
 
     const parts = selector.trim().split(/\> /)[0]
     const firstPart = parts[0]
@@ -614,11 +619,9 @@ export abstract class PrimitiveComponent<
   }
 
   doInitialAssignNameToUnnamedComponents() {
-    if (this.isGroup) return
-    const name = (this._parsedProps as any).name
-    if (name) return
-    ;(this._parsedProps as any).name =
-      `UNNAMED_${this.getSubcircuit().nextUnnamedComponentId()}`
+    if (!this._parsedProps.name) {
+      this.fallbackUnassignedName = `UNNAMED_${this._renderId}`
+    }
   }
 
   doInitialOptimizeSelectorCache() {
