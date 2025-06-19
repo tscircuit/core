@@ -24,8 +24,8 @@ export class SchematicText extends PrimitiveComponent<
       font_size: props.fontSize,
       color: props.color || "#000000",
       position: {
-        x: props.schX,
-        y: props.schY,
+        x: props.schX ?? 0,
+        y: props.schY ?? 0,
       },
       rotation: props.schRotation ?? 0,
     })
