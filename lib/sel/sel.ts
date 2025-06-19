@@ -209,7 +209,7 @@ export const sel: Sel = new Proxy(
             {
               get: (_, pinOrSubComponentName: string) => {
                 const pinResult = `.${prop1} > .${pinOrSubComponentName}`
-                const chipPrefixes = ["U", "J"]
+                const chipPrefixes = ["U", "J", "CN"]
                 if (chipPrefixes.some((p) => prop1.startsWith(p))) {
                   return pinResult
                 }
