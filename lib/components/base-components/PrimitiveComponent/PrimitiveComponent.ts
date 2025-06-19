@@ -570,10 +570,7 @@ export abstract class PrimitiveComponent<
   }
 
   getNameAndAliases(): string[] {
-    return [
-      this.name,
-      ...(this._parsedProps.portHints ?? []),
-    ].filter(Boolean)
+    return [this.name, ...(this._parsedProps.portHints ?? [])].filter(Boolean)
   }
   isMatchingNameOrAlias(name: string) {
     return this.getNameAndAliases().includes(name)
