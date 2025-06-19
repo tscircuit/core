@@ -3,7 +3,6 @@ import {
   type SubcircuitGroupProps,
   groupProps,
 } from "@tscircuit/props"
-import * as SAL from "@tscircuit/schematic-autolayout"
 import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
@@ -12,20 +11,16 @@ import {
   type PcbVia,
   type SchematicComponent,
   type SchematicPort,
-  type SourceTrace,
 } from "circuit-json"
-import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import Debug from "debug"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { Trace } from "../Trace/Trace"
-import type { TraceI } from "../Trace/TraceI"
 import { TraceHint } from "../TraceHint"
 import type { ISubcircuit } from "./ISubcircuit"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
-import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
@@ -122,28 +117,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       let centerY = (bounds.minY + bounds.maxY) / 2
 
       if (this.isSubcircuit) {
-        const generalPadding =
-          typeof props.padding === "number" ? props.padding : 0
-        const paddingX =
-          typeof props.paddingX === "number" ? props.paddingX : undefined
-        const paddingY =
-          typeof props.paddingY === "number" ? props.paddingY : undefined
-        const padLeft =
-          typeof props.paddingLeft === "number"
-            ? props.paddingLeft
-            : (paddingX ?? generalPadding)
-        const padRight =
-          typeof props.paddingRight === "number"
-            ? props.paddingRight
-            : (paddingX ?? generalPadding)
-        const padTop =
-          typeof props.paddingTop === "number"
-            ? props.paddingTop
-            : (paddingY ?? generalPadding)
-        const padBottom =
-          typeof props.paddingBottom === "number"
-            ? props.paddingBottom
-            : (paddingY ?? generalPadding)
+        const { padLeft, padRight, padTop, padBottom } =
+          this._resolvePcbPadding()
 
         width += padLeft + padRight
         height += padTop + padBottom
@@ -160,6 +135,41 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         },
       })
     }
+  }
+
+  _resolvePcbPadding(): {
+    padLeft: number
+    padRight: number
+    padTop: number
+    padBottom: number
+  } {
+    const props = this._parsedProps as SubcircuitGroupProps
+    const layout = props.pcbLayout
+
+    // Helper function to get a padding value from layout or props
+    const getPaddingValue = (key: string): number | undefined => {
+      const layoutValue = layout?.[key as keyof typeof layout] as
+        | number
+        | undefined
+      const propsValue = props[key as keyof typeof props] as number | undefined
+
+      if (typeof layoutValue === "number") return layoutValue
+      if (typeof propsValue === "number") return propsValue
+      return undefined
+    }
+
+    const generalPadding = getPaddingValue("padding") ?? 0
+    const paddingX = getPaddingValue("paddingX")
+    const paddingY = getPaddingValue("paddingY")
+
+    const padLeft = getPaddingValue("paddingLeft") ?? paddingX ?? generalPadding
+    const padRight =
+      getPaddingValue("paddingRight") ?? paddingX ?? generalPadding
+    const padTop = getPaddingValue("paddingTop") ?? paddingY ?? generalPadding
+    const padBottom =
+      getPaddingValue("paddingBottom") ?? paddingY ?? generalPadding
+
+    return { padLeft, padRight, padTop, padBottom }
   }
 
   doInitialCreateTraceHintsFromProps(): void {
