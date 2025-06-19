@@ -12,6 +12,7 @@ it("should render a pinheader with pinrow4 footprint", async () => {
         footprint="pinrow4"
         schRotation={90}
         facingDirection="left"
+        schWidth={2}
       />
     </board>,
   )
