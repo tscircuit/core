@@ -112,7 +112,11 @@ export abstract class PrimitiveComponent<
   }
 
   get name() {
-    return (this._parsedProps as any).name ?? this.fallbackUnassignedName ?? "TODO_REMOVE_THIS"
+    return (
+      (this._parsedProps as any).name ??
+      this.fallbackUnassignedName ??
+      "TODO_REMOVE_THIS"
+    )
   }
 
   /**

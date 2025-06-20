@@ -331,10 +331,7 @@ export class NormalComponent<
   }
 
   _addChildrenFromStringFootprint() {
-    const {
-      pcbRotation: componentRotation,
-      pinLabels,
-    } = this.props
+    const { pcbRotation: componentRotation, pinLabels } = this.props
     let { footprint } = this.props
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
