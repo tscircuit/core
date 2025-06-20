@@ -51,7 +51,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  doInitialSourceRender() {
+  doInitialSourceSubcircuitRender() {
     const { db } = this.root!
     const source_group = db.source_group.insert({
       name: this._parsedProps.name,
@@ -62,6 +62,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     db.source_group.update(source_group.source_group_id, {
       subcircuit_id: this.subcircuit_id!,
     })
+  }
+
+  doInitialSourceRender() {
+    const { db } = this.root!
 
     for (const child of this.children) {
       db.source_component.update(child.source_component_id!, {
