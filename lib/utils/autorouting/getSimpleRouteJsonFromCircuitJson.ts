@@ -112,6 +112,24 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
+  if (subcircuit_id) {
+    const group = db.pcb_group.getWhere({ subcircuit_id })
+    if (group) {
+      const groupBounds = {
+        minX: group.center.x - group.width / 2,
+        maxX: group.center.x + group.width / 2,
+        minY: group.center.y - group.height / 2,
+        maxY: group.center.y + group.height / 2,
+      }
+      bounds = {
+        minX: Math.min(bounds.minX, groupBounds.minX),
+        maxX: Math.max(bounds.maxX, groupBounds.maxX),
+        minY: Math.min(bounds.minY, groupBounds.minY),
+        maxY: Math.max(bounds.maxY, groupBounds.maxY),
+      }
+    }
+  }
+
   // Create connections from traces
   const directTraceConnections = db.source_trace
     .list()
