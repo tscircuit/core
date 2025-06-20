@@ -43,7 +43,7 @@ const cssSelectOptionsInsideSubcircuit: Options<
 export interface BaseComponentConfig {
   componentName: string
   schematicSymbolName?: string | null
-  zodProps: z.ZodObject<any, any, any>
+  zodProps: z.ZodType
   sourceFtype?: Ftype | null
   shouldRenderAsSchematicBox?: boolean
 }
@@ -54,7 +54,7 @@ export interface BaseComponentConfig {
  * has most of the features of a NormalComponent.
  */
 export abstract class PrimitiveComponent<
-  ZodProps extends z.ZodObject<any, any, any> = any,
+  ZodProps extends ZodType = any,
 > extends Renderable {
   parent: PrimitiveComponent | null = null
   children: PrimitiveComponent[]
@@ -146,7 +146,7 @@ export abstract class PrimitiveComponent<
     this.externallyAddedAliases = []
     const zodProps =
       "partial" in this.config.zodProps
-        ? this.config.zodProps.partial({
+        ? (this.config.zodProps as z.ZodObject<any, any, any>).partial({
             name: true,
           })
         : this.config.zodProps
@@ -611,7 +611,7 @@ export abstract class PrimitiveComponent<
 
   doInitialAssignNameToUnnamedComponents() {
     if (!this._parsedProps.name) {
-      this.fallbackUnassignedName = `UNNAMED_${this._renderId}`
+      this.fallbackUnassignedName = `UNNAMED_${this.getSubcircuit()}`
     }
   }
 
