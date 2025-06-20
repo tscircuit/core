@@ -36,9 +36,7 @@ has a specific purpose.
 For each render phase, every single class instance in the project gets a call
 to the `doInitial*` method for each render phase (if it's defined for the class)
 
-For example, one of the early render phases is `SourceSubcircuitRender`,
-followed by `SourceRender`. `SourceSubcircuitRender` creates subcircuits and
-assigns `subcircuit_id` values while `SourceRender` is where
+For example, one of the first render phases is `SourceRender`. This is where
 `source_*` [circuit json/soup elements](https://github.com/tscircuit/soup) are
 added to the projects output.
 

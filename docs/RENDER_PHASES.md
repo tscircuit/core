@@ -10,7 +10,7 @@ The render phases in @tscircuit/core are defined in the `Renderable` class (`Ren
 
 5. CreateTracesFromProps: Creates traces based on the component's properties.
 
-6. SourceSubcircuitRender: Creates the source group for subcircuits and assigns a `subcircuit_id`.
+6. SourceGroupRender: Creates the source group for subcircuits and assigns a `subcircuit_id`.
 
 7. SourceRender: Renders the source component, which is the basic representation of the component.
 

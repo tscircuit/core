@@ -37,7 +37,7 @@ test("render lifecycle events are emitted", () => {
     "PcbFootprintStringRender",
     "InitializePortsFromChildren",
     "CreateNetsFromProps",
-    "SourceSubcircuitRender",
+    "SourceGroupRender",
     "SourceRender",
   ] as RenderPhase[]
 
