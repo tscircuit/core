@@ -143,10 +143,18 @@ type ChipFnSel = <T extends ChipFn<any> | string>(
       : never
 >
 
-export type Sel = ExplicitModuleSel & SelWithoutSubcircuit
+type SelFn = <P extends string>(refdes: string) => Record<P, string>
+
+export type Sel = SelFn & ExplicitModuleSel & SelWithoutSubcircuit
 
 export const sel: Sel = new Proxy(
-  {},
+  (refdes: string) =>
+    new Proxy(
+      {},
+      {
+        get: (_, pin: string) => `.${refdes} > .${pin}`,
+      },
+    ),
   {
     get: (_, prop1: string) => {
       // Create a function that will be our proxy target
