@@ -12,7 +12,9 @@ it("should render a pinheader with pinrow4 footprint", async () => {
         footprint="pinrow4"
         schRotation={90}
         facingDirection="left"
-        schWidth={2}
+        schWidth={0.8}
+        showSilkscreenPinLabels={true}
+        pinLabels={["VCC", "GND", "SDA", "SCL"]}
       />
     </board>,
   )
