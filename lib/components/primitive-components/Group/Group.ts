@@ -958,7 +958,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         if (components.length > 1) {
           db.pcb_trace_error.insert({
             error_type: "pcb_trace_error",
-            message: `Multiple components found with name "${name}" in subcircuit "${this._parsedProps.name || "unnamed"}". Component names must be unique within a subcircuit.`,
+            message: `Multiple components found with name "${name}" in subcircuit "${this.name || "unnamed"}". Component names must be unique within a subcircuit.`,
             source_trace_id: "",
             pcb_trace_id: "",
             pcb_component_ids: components
