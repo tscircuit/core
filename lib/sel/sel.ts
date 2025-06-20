@@ -80,11 +80,14 @@ type CommonNetNames =
 type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
 
 type JumperSel = Record<
-  `J${Nums40}` | `CN${Nums40}`,
+  `J${Nums40}` | `JP${Nums40}` | `CN${Nums40}`,
   Record<PinNumbers100 | CommonPinNames, string> & ChipFnSel
 >
 
-type ChipSel = Record<`U${Nums40}`, Record<CommonPinNames, string> & ChipFnSel>
+type ChipSel = Record<
+  `U${Nums40}` | "USBC",
+  Record<CommonPinNames | PinNumbers100, string> & ChipFnSel
+>
 
 type NetSelFn<N extends string = CommonNetNames> = (<
   N2 extends string,
