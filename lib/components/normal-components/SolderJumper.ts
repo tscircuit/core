@@ -67,8 +67,6 @@ export class SolderJumper<
       if (finalPinCount === 2 || finalPinCount === 3) {
         resolvedPinCount = finalPinCount as 2 | 3
       }
-      // TODO: Consider if pinCount derivation needs to be more generic
-      // if solderjumpers with >3 pins are common and pinCount isn't specified.
     }
 
     let symbolName = ""
