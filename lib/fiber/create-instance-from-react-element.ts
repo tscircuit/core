@@ -84,7 +84,7 @@ const hostConfig: HostConfig<
       ) {
         try {
           const instance = prepare(
-            new target({ ...props, name: "" }) as any,
+            new target({ ...props }) as any,
             {},
           )
           return instance

@@ -43,7 +43,7 @@ const cssSelectOptionsInsideSubcircuit: Options<
 export interface BaseComponentConfig {
   componentName: string
   schematicSymbolName?: string | null
-  zodProps: ZodType
+  zodProps: z.ZodObject<any, any, any>
   sourceFtype?: Ftype | null
   shouldRenderAsSchematicBox?: boolean
 }
@@ -54,7 +54,7 @@ export interface BaseComponentConfig {
  * has most of the features of a NormalComponent.
  */
 export abstract class PrimitiveComponent<
-  ZodProps extends ZodType = any,
+  ZodProps extends z.ZodObject<any, any, any> = any,
 > extends Renderable {
   parent: PrimitiveComponent | null = null
   children: PrimitiveComponent[]
@@ -112,7 +112,7 @@ export abstract class PrimitiveComponent<
   }
 
   get name() {
-    return (this._parsedProps as any).name ?? this.fallbackUnassignedName
+    return (this._parsedProps as any).name ?? this.fallbackUnassignedName ?? "TODO_REMOVE_THIS"
   }
 
   /**
@@ -140,7 +140,13 @@ export abstract class PrimitiveComponent<
     this.childrenPendingRemoval = []
     this.props = props ?? {}
     this.externallyAddedAliases = []
-    const parsePropsResult = this.config.zodProps.safeParse(props ?? {})
+    const zodProps =
+      "partial" in this.config.zodProps
+        ? this.config.zodProps.partial({
+            name: true,
+          })
+        : this.config.zodProps
+    const parsePropsResult = zodProps.safeParse(props ?? {})
     if (parsePropsResult.success) {
       this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
     } else {
@@ -150,22 +156,6 @@ export abstract class PrimitiveComponent<
         parsePropsResult.error.format(),
       )
     }
-  }
-
-  setProps(props: Partial<z.input<ZodProps>>) {
-    const newProps = this.config.zodProps.parse({
-      ...this.props,
-      ...props,
-    }) as z.infer<ZodProps>
-    const oldProps = this.props
-    this.props = newProps
-    this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>
-    this.onPropsChange({
-      oldProps,
-      newProps,
-      changedProps: Object.keys(props),
-    })
-    this.parent?.onChildChanged?.(this)
   }
 
   /**

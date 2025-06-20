@@ -49,11 +49,17 @@ import { Trace } from "lib/components/primitive-components/Trace/Trace"
 
 const debug = Debug("tscircuit:core")
 
-const rotation3 = z.object({
-  x: rotation,
-  y: rotation,
-  z: rotation,
-})
+const rotation3: z.ZodType<{
+  x: number | typeof rotation,
+  y: number | typeof rotation,
+  z: number | typeof rotation,
+}> = z.lazy(() => z.object({
+  x: z.union([z.number(), rotation]),
+  y: z.union([z.number(), rotation]),
+  z: z.union([z.number(), rotation]),
+}))
+
+type RotationType = z.infer<typeof rotation3>
 
 export type PortMap<T extends string> = {
   [K in T]: Port
@@ -78,7 +84,7 @@ export type PortMap<T extends string> = {
  */
 
 export class NormalComponent<
-    ZodProps extends ZodType = any,
+    ZodProps extends z.ZodObject<any, any, any> = any,
     PortNames extends string = never,
   >
   extends PrimitiveComponent<ZodProps>
@@ -330,7 +336,6 @@ export class NormalComponent<
 
   _addChildrenFromStringFootprint() {
     const {
-      name: componentName,
       pcbRotation: componentRotation,
       pinLabels,
     } = this.props
@@ -342,7 +347,12 @@ export class NormalComponent<
       if (this._isFootprintUrl(footprint)) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
-        { componentName, componentRotation, footprint, pinLabels },
+        {
+          componentName: this.name,
+          componentRotation,
+          footprint,
+          pinLabels,
+        },
         fpSoup as any,
       ) // Remove as any when footprinter gets updated
       this.addAll(fpComponents)
@@ -675,7 +685,12 @@ export class NormalComponent<
         const res = await fetch(url)
         const soup = await res.json()
         const fpComponents = createComponentsFromCircuitJson(
-          { componentName, componentRotation, footprint: url, pinLabels },
+          {
+            componentName: this.name,
+            componentRotation,
+            footprint: url,
+            pinLabels,
+          },
           soup as any,
         )
         this.addAll(fpComponents)
