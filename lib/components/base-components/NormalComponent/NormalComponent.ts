@@ -55,8 +55,6 @@ const rotation3 = z.object({
   z: rotation,
 })
 
-type RotationType = z.infer<typeof rotation3>
-
 export type PortMap<T extends string> = {
   [K in T]: Port
 }
@@ -80,7 +78,7 @@ export type PortMap<T extends string> = {
  */
 
 export class NormalComponent<
-    ZodProps extends z.ZodObject<any, any, any> = any,
+    ZodProps extends z.ZodType = any,
     PortNames extends string = never,
   >
   extends PrimitiveComponent<ZodProps>
