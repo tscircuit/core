@@ -14,36 +14,91 @@ export class SolderJumper<
 > extends NormalComponent<typeof solderjumperProps, PinLabels> {
   schematicDimensions: SchematicBoxDimensions | null = null
 
+  _normalizeBridgedPinName(pinName: string): string {
+    if (/^pin\d+$/.test(pinName)) {
+      return pinName.slice(3)
+    }
+    if (/^\d+$/.test(pinName)) {
+      return pinName
+    }
+
+    const pinLabels = (this._parsedProps ?? this.props).pinLabels
+    if (pinLabels) {
+      for (const [pinNumberKey, labelOrLabels] of Object.entries(pinLabels)) {
+        const labels = Array.isArray(labelOrLabels)
+          ? labelOrLabels
+          : [labelOrLabels]
+        if (labels.includes(pinName)) {
+          return pinNumberKey.replace(/^pin/, "")
+        }
+      }
+    }
+
+    return pinName
+  }
+
   get defaultInternallyConnectedPinNames(): string[][] {
-    return this._parsedProps.bridgedPins ?? []
+    return (this._parsedProps.bridgedPins ?? []).map((pair) =>
+      pair.map((pinName) => this._normalizeBridgedPinName(pinName)),
+    )
   }
 
   get config() {
-    let resolvedPinCount = this.props.pinCount
+    const props = this._parsedProps ?? this.props
+    let resolvedPinCount = props.pinCount
     if (!resolvedPinCount) {
-      const nums = (this.props.bridgedPins ?? [])
+      const nums = (props.bridgedPins ?? [])
         .flat()
-        .map((p) => {
-          if (typeof p === "number") return p
-          if (p.startsWith("pin")) return Number(p.slice(3))
-          return Number(p)
+        .map((p_str: string) => {
+          const normalized = this._normalizeBridgedPinName(p_str)
+          if (/^\d+$/.test(normalized)) return Number(normalized)
+          return NaN
         })
-        .filter((n) => !Number.isNaN(n))
-      const maxPin = nums.length > 0 ? Math.max(...nums) : 0
-      if (maxPin === 2 || maxPin === 3) {
-        resolvedPinCount = maxPin as 2 | 3
+        .filter((n: number) => !Number.isNaN(n))
+      const maxPinFromBridged = nums.length > 0 ? Math.max(...nums) : 0
+
+      const pinCountFromLabels = props.pinLabels
+        ? Object.keys(props.pinLabels).length
+        : 0
+
+      const finalPinCount = Math.max(maxPinFromBridged, pinCountFromLabels)
+
+      // This logic is related to available solderjumper2, solderjumper3 symbols
+      if (finalPinCount === 2 || finalPinCount === 3) {
+        resolvedPinCount = finalPinCount as 2 | 3
       }
+      // TODO: Consider if pinCount derivation needs to be more generic
+      // if solderjumpers with >3 pins are common and pinCount isn't specified.
     }
+
     let symbolName = ""
-    if (resolvedPinCount) symbolName += `solderjumper${resolvedPinCount}`
-    if (
-      Array.isArray(this.props.bridgedPins) &&
-      this.props.bridgedPins.length > 0
-    ) {
-      const pins = Array.from(new Set(this.props.bridgedPins.flat()))
-        .sort()
-        .join("")
-      symbolName += `_bridged${pins}`
+    if (resolvedPinCount) {
+      symbolName += `solderjumper${resolvedPinCount}`
+    } else {
+      // Fallback if pinCount couldn't be resolved (e.g. from non-numeric bridgedPins)
+      // This might lead to a generic box if "solderjumper" itself isn't a symbol.
+      symbolName = "solderjumper"
+    }
+
+    if (Array.isArray(props.bridgedPins) && props.bridgedPins.length > 0) {
+      // Normalize pin names (e.g., "pin1" to "1"), then get unique sorted numbers
+      // This is used to form suffixes like "_bridged12"
+      const pinNumbers = Array.from(
+        new Set(
+          (props.bridgedPins as string[][])
+            .flat()
+            .map((pinName) => this._normalizeBridgedPinName(pinName))
+            .filter((name) => /^\d+$/.test(name)) // Keep only numeric names for symbol part
+            .map(Number),
+        ),
+      ).sort((a, b) => a - b)
+
+      if (pinNumbers.length > 0) {
+        symbolName += `_bridged${pinNumbers.join("")}`
+      }
+      // If bridgedPins contains non-numeric names (e.g., [["A", "B"]]),
+      // they won't contribute to this part of the symbol name,
+      // which is fine as standard symbols are numeric (e.g., solderjumper2_bridged12).
     }
     return {
       schematicSymbolName: symbolName,
