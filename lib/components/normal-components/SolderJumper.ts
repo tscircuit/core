@@ -15,29 +15,10 @@ export class SolderJumper<
   schematicDimensions: SchematicBoxDimensions | null = null
 
   _getPinNumberFromBridgedPinName(pinName: string): number | null {
-    if (pinName.startsWith("pin")) {
-      const pinNumber = Number(pinName.slice(3))
-      if (!isNaN(pinNumber)) return pinNumber
-    }
-
-    if (/^\d+$/.test(pinName)) {
-      return Number(pinName)
-    }
-
-    const pinLabels = (this._parsedProps ?? this.props).pinLabels
-    if (pinLabels) {
-      for (const [pinNumberKey, labelOrLabels] of Object.entries(pinLabels)) {
-        const labels = Array.isArray(labelOrLabels)
-          ? labelOrLabels
-          : [labelOrLabels]
-        if (labels.includes(pinName)) {
-          const pinNumber = Number(pinNumberKey.replace(/^pin/, ""))
-          if (!isNaN(pinNumber)) return pinNumber
-        }
-      }
-    }
-
-    return null
+    const port = this.selectOne(`port.${pinName}`, {
+      type: "port",
+    }) as Port | null
+    return port?._parsedProps.pinNumber ?? null
   }
 
   get defaultInternallyConnectedPinNames(): string[][] {
