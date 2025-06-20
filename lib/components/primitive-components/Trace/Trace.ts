@@ -863,6 +863,14 @@ export class Trace
         .find((nl: any) => {
           const conn = nl._parsedProps.connection ?? nl._parsedProps.connectsTo
           if (!conn) return false
+          if (Array.isArray(conn)) {
+            return conn.some((selector: string) => {
+              const targetPort = this.getSubcircuit().selectOne(selector, {
+                port: true,
+              }) as Port | null
+              return targetPort === port
+            })
+          }
           const targetPort = this.getSubcircuit().selectOne(conn, {
             port: true,
           }) as Port | null
