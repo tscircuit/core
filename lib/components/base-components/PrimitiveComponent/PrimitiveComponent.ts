@@ -177,7 +177,7 @@ export abstract class PrimitiveComponent<
     })
     this.parent?.onChildChanged?.(this)
   }
-  
+
   /**
    * Computes a transformation matrix from the props of this component for PCB
    * components
