@@ -6,7 +6,13 @@ test("subcircuit_id not defined when group is not a subcircuit", () => {
   circuit.add(
     <board>
       <group>
-        <resistor name="R1" resistance="1k" footprint="0402" pcbX={-2} pcbY={0} />
+        <resistor
+          name="R1"
+          resistance="1k"
+          footprint="0402"
+          pcbX={-2}
+          pcbY={0}
+        />
       </group>
     </board>,
   )
