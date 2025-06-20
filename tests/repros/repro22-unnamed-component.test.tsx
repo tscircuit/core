@@ -6,8 +6,8 @@ test("chip renders with default name when none provided", () => {
 
   circuit.add(
     <board>
+      {/* @ts-expect-error - name is not required */}
       <resistor
-        // @ts-expect-error - name is not required
         resistance={1000}
         footprint="soic8"
       />
