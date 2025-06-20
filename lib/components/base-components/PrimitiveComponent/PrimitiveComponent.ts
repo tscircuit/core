@@ -627,7 +627,7 @@ export abstract class PrimitiveComponent<
 
   doInitialAssignNameToUnnamedComponents() {
     if (!this._parsedProps.name) {
-      this.fallbackUnassignedName = `UNNAMED_${this.getSubcircuit()}`
+      this.fallbackUnassignedName = `UNNAMED_${this.getSubcircuit().subcircuit_id}`
     }
   }
 

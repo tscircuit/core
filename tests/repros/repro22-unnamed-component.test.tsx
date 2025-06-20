@@ -4,11 +4,20 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("chip renders with default name when none provided", () => {
   const { circuit } = getTestFixture()
 
-  // @ts-expect-error - name is not required
-  circuit.add(<resistor resistance={1000} footprint="soic8" />)
+  circuit.add(
+    <board>
+      <resistor
+        // @ts-expect-error - name is not required
+        resistance={1000}
+        footprint="soic8"
+      />
+    </board>,
+  )
 
   circuit.render()
 
+  console.log(circuit.db.source_component.list())
+  console.log(circuit.db.source_group.list())
   const errors = circuit
     .getCircuitJson()
     .filter((e) => e.type === "source_failed_to_create_component_error")
