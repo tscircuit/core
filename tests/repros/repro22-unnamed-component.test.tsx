@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test"
-import { Chip } from "lib/components/normal-components/Chip"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("chip renders with default name when none provided", () => {
@@ -10,8 +9,6 @@ test("chip renders with default name when none provided", () => {
 
   circuit.render()
 
-  console.log(circuit.db.source_component.list())
-  const chip = circuit.selectOne("chip") as Chip
   const errors = circuit
     .getCircuitJson()
     .filter((e) => e.type === "source_failed_to_create_component_error")

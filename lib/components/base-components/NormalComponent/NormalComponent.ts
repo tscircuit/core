@@ -49,15 +49,11 @@ import { Trace } from "lib/components/primitive-components/Trace/Trace"
 
 const debug = Debug("tscircuit:core")
 
-const rotation3: z.ZodType<{
-  x: number | typeof rotation,
-  y: number | typeof rotation,
-  z: number | typeof rotation,
-}> = z.lazy(() => z.object({
-  x: z.union([z.number(), rotation]),
-  y: z.union([z.number(), rotation]),
-  z: z.union([z.number(), rotation]),
-}))
+const rotation3 = z.object({
+  x: rotation,
+  y: rotation,
+  z: rotation,
+})
 
 type RotationType = z.infer<typeof rotation3>
 

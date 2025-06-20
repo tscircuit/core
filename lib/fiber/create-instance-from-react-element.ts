@@ -76,22 +76,6 @@ const hostConfig: HostConfig<
       const instance = prepare(new target(props) as any, {})
       return instance
     } catch (error: any) {
-      if (
-        error instanceof InvalidProps &&
-        (error.formattedError as any)?.name?._errors?.some((e: string) =>
-          e.toLowerCase().includes("required"),
-        )
-      ) {
-        try {
-          const instance = prepare(
-            new target({ ...props }) as any,
-            {},
-          )
-          return instance
-        } catch (error2) {
-          return createErrorPlaceholderComponent(props, error2)
-        }
-      }
       return createErrorPlaceholderComponent(props, error)
     }
   },
