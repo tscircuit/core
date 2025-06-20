@@ -71,9 +71,6 @@ export class SolderJumper<
       if (pinNumbers.length > 0) {
         symbolName += `_bridged${pinNumbers.join("")}`
       }
-      // If bridgedPins contains non-numeric names (e.g., [["A", "B"]]),
-      // they won't contribute to this part of the symbol name,
-      // which is fine as standard symbols are numeric (e.g., solderjumper2_bridged12).
     }
     return {
       schematicSymbolName: symbolName,
