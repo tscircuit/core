@@ -86,3 +86,7 @@ test('sel2 - sel.J1<"custompin1">().custompin1 = .J1 > .custompin1', () => {
   // @ts-expect-error
   sel.J1<"custompin1">().doesnotexist
 })
+
+test('sel2 - dynamic refdes sel<"custompin">("SJ1")', () => {
+  expect(sel<"custompin">("SJ1").custompin.toString()).toBe(".SJ1 > .custompin")
+})
