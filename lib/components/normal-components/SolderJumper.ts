@@ -14,12 +14,14 @@ export class SolderJumper<
 > extends NormalComponent<typeof solderjumperProps, PinLabels> {
   schematicDimensions: SchematicBoxDimensions | null = null
 
-  _normalizeBridgedPinName(pinName: string): string {
-    if (/^pin\d+$/.test(pinName)) {
-      return pinName.slice(3)
+  _getPinNumberFromBridgedPinName(pinName: string): number | null {
+    if (pinName.startsWith("pin")) {
+      const pinNumber = Number(pinName.slice(3))
+      if (!isNaN(pinNumber)) return pinNumber
     }
+
     if (/^\d+$/.test(pinName)) {
-      return pinName
+      return Number(pinName)
     }
 
     const pinLabels = (this._parsedProps ?? this.props).pinLabels
@@ -29,18 +31,17 @@ export class SolderJumper<
           ? labelOrLabels
           : [labelOrLabels]
         if (labels.includes(pinName)) {
-          return pinNumberKey.replace(/^pin/, "")
+          const pinNumber = Number(pinNumberKey.replace(/^pin/, ""))
+          if (!isNaN(pinNumber)) return pinNumber
         }
       }
     }
 
-    return pinName
+    return null
   }
 
   get defaultInternallyConnectedPinNames(): string[][] {
-    return (this._parsedProps.bridgedPins ?? []).map((pair) =>
-      pair.map((pinName) => this._normalizeBridgedPinName(pinName)),
-    )
+    return this._parsedProps.bridgedPins ?? []
   }
 
   get config() {
@@ -49,12 +50,8 @@ export class SolderJumper<
     if (!resolvedPinCount) {
       const nums = (props.bridgedPins ?? [])
         .flat()
-        .map((p_str: string) => {
-          const normalized = this._normalizeBridgedPinName(p_str)
-          if (/^\d+$/.test(normalized)) return Number(normalized)
-          return NaN
-        })
-        .filter((n: number) => !Number.isNaN(n))
+        .map((p_str: string) => this._getPinNumberFromBridgedPinName(p_str))
+        .filter((n): n is number => n !== null)
       const maxPinFromBridged = nums.length > 0 ? Math.max(...nums) : 0
 
       const pinCountFromLabels = props.pinLabels
@@ -85,9 +82,8 @@ export class SolderJumper<
         new Set(
           (props.bridgedPins as string[][])
             .flat()
-            .map((pinName) => this._normalizeBridgedPinName(pinName))
-            .filter((name) => /^\d+$/.test(name)) // Keep only numeric names for symbol part
-            .map(Number),
+            .map((pinName) => this._getPinNumberFromBridgedPinName(pinName))
+            .filter((n): n is number => n !== null),
         ),
       ).sort((a, b) => a - b)
 
