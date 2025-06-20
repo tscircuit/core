@@ -162,6 +162,22 @@ export abstract class PrimitiveComponent<
     }
   }
 
+  setProps(props: Partial<z.input<ZodProps>>) {
+    const newProps = this.config.zodProps.parse({
+      ...this.props,
+      ...props,
+    }) as z.infer<ZodProps>
+    const oldProps = this.props
+    this.props = newProps
+    this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>
+    this.onPropsChange({
+      oldProps,
+      newProps,
+      changedProps: Object.keys(props),
+    })
+    this.parent?.onChildChanged?.(this)
+  }
+  
   /**
    * Computes a transformation matrix from the props of this component for PCB
    * components
