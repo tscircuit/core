@@ -57,11 +57,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       name: this._parsedProps.name,
       is_subcircuit: this.isSubcircuit,
     })
-    this.subcircuit_id = `subcircuit_${source_group.source_group_id}`
     this.source_group_id = source_group.source_group_id
-    db.source_group.update(source_group.source_group_id, {
-      subcircuit_id: this.subcircuit_id!,
-    })
+    if (this.isSubcircuit) {
+      this.subcircuit_id = `subcircuit_${source_group.source_group_id}` as any
+      db.source_group.update(source_group.source_group_id, {
+        subcircuit_id: this.subcircuit_id!,
+      })
+    }
   }
 
   doInitialSourceRender() {
