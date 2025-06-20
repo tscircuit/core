@@ -628,6 +628,17 @@ export abstract class PrimitiveComponent<
   doInitialAssignNameToUnnamedComponents() {
     if (!this._parsedProps.name) {
       this.fallbackUnassignedName = `UNNAMED_${this.getSubcircuit().subcircuit_id}`
+      const { db } = this.root ?? {}
+      if (this.source_component_id) {
+        db?.source_component.update(this.source_component_id, {
+          name: this.fallbackUnassignedName,
+        })
+      }
+      if (this.source_group_id) {
+        db?.source_group.update(this.source_group_id, {
+          name: this.fallbackUnassignedName,
+        })
+      }
     }
   }
 

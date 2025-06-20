@@ -13,19 +13,13 @@ test("chip renders with default name when none provided", () => {
 
   circuit.render()
 
-  console.log(circuit.db.source_component.list())
-  console.log(circuit.db.source_group.list())
+  const source_component = circuit.db.source_component.list()[0]
+  expect(source_component.name).toMatchInlineSnapshot(
+    `"UNNAMED_subcircuit_source_group_0"`,
+  )
   const errors = circuit
     .getCircuitJson()
     .filter((e) => e.type === "source_failed_to_create_component_error")
-
-  expect(errors).toMatchInlineSnapshot(`[]`)
-  // expect(errors.length).toBe(0)
-  // expect(chip.pcb_component_id).not.toBeNull()
-  // expect(chip.schematic_component_id).not.toBeNull()
-
-  // expect(chip).not.toBeNull()
-  // expect(chip.props.name).toBeDefined()
-
+  expect(errors).toHaveLength(0)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
