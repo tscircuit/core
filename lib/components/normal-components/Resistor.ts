@@ -79,7 +79,7 @@ export class Resistor extends NormalComponent<
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype: "simple_resistor",
-      name: props.name,
+      name: this.name,
       // @ts-ignore
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,

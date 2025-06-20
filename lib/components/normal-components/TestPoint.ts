@@ -102,7 +102,7 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
 
     const source_component = db.source_component.insert({
       ftype: FTYPE.simple_test_point,
-      name: props.name,
+      name: this.name,
       supplier_part_numbers: props.supplierPartNumbers,
       footprint_variant: footprintVariant,
       pad_shape: padShape,

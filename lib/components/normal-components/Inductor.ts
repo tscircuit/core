@@ -40,7 +40,7 @@ export class Inductor extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
-      name: props.name,
+      name: this.name,
       ftype: FTYPE.simple_inductor,
       inductance: props.inductance,
       supplier_part_numbers: props.supplierPartNumbers,

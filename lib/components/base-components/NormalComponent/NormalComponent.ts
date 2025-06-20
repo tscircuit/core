@@ -389,7 +389,7 @@ export class NormalComponent<
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype,
-      name: props.name,
+      name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
     })

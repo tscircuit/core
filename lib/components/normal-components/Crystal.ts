@@ -55,7 +55,7 @@ export class Crystal extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
-      name: props.name,
+      name: this.name,
       ftype: "simple_crystal",
       frequency: props.frequency,
       load_capacitance: props.loadCapacitance,

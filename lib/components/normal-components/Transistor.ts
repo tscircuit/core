@@ -53,7 +53,7 @@ export class Transistor extends NormalComponent<
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype: "simple_transistor",
-      name: props.name,
+      name: this.name,
       transistor_type: props.type,
     } as any)
     this.source_component_id = source_component.source_component_id

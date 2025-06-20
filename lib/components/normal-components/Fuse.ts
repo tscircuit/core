@@ -46,7 +46,7 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
         : props.voltageRating
 
     const source_component = db.source_component.insert({
-      name: props.name,
+      name: this.name,
       ftype: FTYPE.simple_fuse,
       current_rating_amps: currentRating,
       voltage_rating_volts: voltageRating,

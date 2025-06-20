@@ -31,7 +31,7 @@ export class Battery extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
-      name: props.name,
+      name: this.name,
       ftype: "simple_power_source" as Ftype,
       capacity: props.capacity,
       supplier_part_numbers: props.supplierPartNumbers,

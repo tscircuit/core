@@ -79,7 +79,7 @@ export class SolderJumper<
 
     const source_component = db.source_component.insert({
       ftype: "simple_chip", // TODO unknown or jumper
-      name: props.name,
+      name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
