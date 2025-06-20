@@ -34,6 +34,6 @@ test("shorthand selector errors use original selector", () => {
   )
 
   expect(() => circuit.render()).toThrow(
-    /Could not find port for selector "R1\.3"/,
+    /Component "R1" found, but does not have pin "3"/,
   )
 })

@@ -144,18 +144,57 @@ export class Trace
 
     for (const { selector, port } of portsWithSelectors) {
       if (!port) {
-        const parentSelector = selector.replace(/(\> )?[^ ]+$/, "")
-        const targetComponent = this.getSubcircuit().selectOne(parentSelector)
-        if (!targetComponent) {
-          this.renderError(`Could not find port for selector "${selector}"`)
+        let parentSelector: string
+        let portToken: string
+        const dotIndex = selector.lastIndexOf(".")
+        if (dotIndex !== -1 && dotIndex > selector.lastIndexOf(" ")) {
+          parentSelector = selector.slice(0, dotIndex)
+          portToken = selector.slice(dotIndex + 1)
         } else {
+          const match = selector.match(/^(.*[ >])?([^ >]+)$/)
+          parentSelector = match?.[1]?.trim() ?? ""
+          portToken = match?.[2] ?? selector
+        }
+        let targetComponent = parentSelector
+          ? this.getSubcircuit().selectOne(parentSelector)
+          : null
+        if (
+          !targetComponent &&
+          parentSelector &&
+          !/[.#\[]/.test(parentSelector)
+        ) {
+          targetComponent = this.getSubcircuit().selectOne(`.${parentSelector}`)
+        }
+        if (!targetComponent) {
+          if (parentSelector) {
+            this.renderError(
+              `Could not find port for selector "${selector}". Component "${parentSelector}" not found`,
+            )
+          } else {
+            this.renderError(`Could not find port for selector "${selector}"`)
+          }
+        } else {
+          const ports = targetComponent.children.filter(
+            (c) => c.componentName === "Port",
+          ) as Port[]
+          const portLabel = portToken.includes(".")
+            ? (portToken.split(".").pop() ?? "")
+            : portToken
+          const portNames = ports.map((c) => c.getNameAndAliases()).flat()
+          const hasCustomLabels = portNames.some(
+            (n) => !/^(pin\d+|\d+)$/.test(n),
+          )
+          const labelList = Array.from(new Set(portNames)).join(", ")
+          let detail: string
+          if (ports.length === 0) {
+            detail = "It has no ports"
+          } else if (!hasCustomLabels) {
+            detail = `It has ${ports.length} pins and no pinLabels (consider adding pinLabels)`
+          } else {
+            detail = `It has [${labelList}]`
+          }
           this.renderError(
-            `Could not find port for selector "${selector}" (did you forget to include the pin name?)\nsearched component ${targetComponent.getString()}, which has ports: ${targetComponent.children
-              .filter((c) => c.componentName === "Port")
-              .map(
-                (c) => `${c.getString()}(${c.getNameAndAliases().join(",")})`,
-              )
-              .join(" & ")}`,
+            `Could not find port for selector "${selector}". Component "${targetComponent.props.name ?? parentSelector}" found, but does not have pin "${portLabel}". ${detail}`,
           )
         }
       }
