@@ -10,9 +10,11 @@ The render phases in @tscircuit/core are defined in the `Renderable` class (`Ren
 
 5. CreateTracesFromProps: Creates traces based on the component's properties.
 
-6. SourceRender: Renders the source component, which is the basic representation of the component.
+6. SourceGroupRender: Creates the source group for subcircuits and assigns a `subcircuit_id`.
 
-7. SourceParentAttachment: Attaches the source component to its parent.
+7. SourceRender: Renders the source component, which is the basic representation of the component.
+
+8. SourceParentAttachment: Attaches the source component to its parent.
 
 8. PortMatching: Matches ports with their corresponding elements.
 
