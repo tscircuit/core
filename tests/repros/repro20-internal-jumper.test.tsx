@@ -8,7 +8,13 @@ test("Jumper internallyConnectedPins chooses missing schematic symbol", async ()
 
   circuit.add(
     <board width="10mm" height="10mm" schAutoLayoutEnabled>
-      <solderjumper name="SJ" bridgedPins={[["1", "2"]]} schX={0} schY={0} />
+      <solderjumper
+        pinCount={2}
+        name="SJ"
+        bridgedPins={[["1", "2"]]}
+        schX={0}
+        schY={0}
+      />
       <jumper
         name="JP1"
         internallyConnectedPins={[["1", "2"]]}

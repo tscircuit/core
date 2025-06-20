@@ -14,36 +14,63 @@ export class SolderJumper<
 > extends NormalComponent<typeof solderjumperProps, PinLabels> {
   schematicDimensions: SchematicBoxDimensions | null = null
 
+  _getPinNumberFromBridgedPinName(pinName: string): number | null {
+    const port = this.selectOne(`port.${pinName}`, {
+      type: "port",
+    }) as Port | null
+    return port?._parsedProps.pinNumber ?? null
+  }
+
   get defaultInternallyConnectedPinNames(): string[][] {
     return this._parsedProps.bridgedPins ?? []
   }
 
   get config() {
-    let resolvedPinCount = this.props.pinCount
+    const props = this._parsedProps ?? this.props
+    let resolvedPinCount = props.pinCount
     if (!resolvedPinCount) {
-      const nums = (this.props.bridgedPins ?? [])
+      const nums = (props.bridgedPins ?? [])
         .flat()
-        .map((p) => {
-          if (typeof p === "number") return p
-          if (p.startsWith("pin")) return Number(p.slice(3))
-          return Number(p)
-        })
-        .filter((n) => !Number.isNaN(n))
-      const maxPin = nums.length > 0 ? Math.max(...nums) : 0
-      if (maxPin === 2 || maxPin === 3) {
-        resolvedPinCount = maxPin as 2 | 3
+        .map((p_str: string) => this._getPinNumberFromBridgedPinName(p_str))
+        .filter((n): n is number => n !== null)
+      const maxPinFromBridged = nums.length > 0 ? Math.max(...nums) : 0
+
+      const pinCountFromLabels = props.pinLabels
+        ? Object.keys(props.pinLabels).length
+        : 0
+
+      const finalPinCount = Math.max(maxPinFromBridged, pinCountFromLabels)
+
+      // This logic is related to available solderjumper2, solderjumper3 symbols
+      if (finalPinCount === 2 || finalPinCount === 3) {
+        resolvedPinCount = finalPinCount as 2 | 3
       }
     }
+
     let symbolName = ""
-    if (resolvedPinCount) symbolName += `solderjumper${resolvedPinCount}`
-    if (
-      Array.isArray(this.props.bridgedPins) &&
-      this.props.bridgedPins.length > 0
-    ) {
-      const pins = Array.from(new Set(this.props.bridgedPins.flat()))
-        .sort()
-        .join("")
-      symbolName += `_bridged${pins}`
+    if (resolvedPinCount) {
+      symbolName += `solderjumper${resolvedPinCount}`
+    } else {
+      // Fallback if pinCount couldn't be resolved (e.g. from non-numeric bridgedPins)
+      // This might lead to a generic box if "solderjumper" itself isn't a symbol.
+      symbolName = "solderjumper"
+    }
+
+    if (Array.isArray(props.bridgedPins) && props.bridgedPins.length > 0) {
+      // Normalize pin names (e.g., "pin1" to "1"), then get unique sorted numbers
+      // This is used to form suffixes like "_bridged12"
+      const pinNumbers = Array.from(
+        new Set(
+          (props.bridgedPins as string[][])
+            .flat()
+            .map((pinName) => this._getPinNumberFromBridgedPinName(pinName))
+            .filter((n): n is number => n !== null),
+        ),
+      ).sort((a, b) => a - b)
+
+      if (pinNumbers.length > 0) {
+        symbolName += `_bridged${pinNumbers.join("")}`
+      }
     }
     return {
       schematicSymbolName: symbolName,
