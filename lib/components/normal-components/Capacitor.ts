@@ -13,6 +13,15 @@ export class Capacitor extends NormalComponent<
   typeof capacitorProps,
   PassivePorts
 > {
+  initPorts() {
+    super.initPorts({
+      additionalAliases: {
+        pin1: ["anode", "pos", "left"],
+        pin2: ["cathode", "neg", "right"],
+      },
+    })
+  }
+
   // @ts-ignore (cause the symbolName is string and not fixed)
   get config() {
     return {
@@ -80,4 +89,9 @@ export class Capacitor extends NormalComponent<
 
     this.source_component_id = source_component.source_component_id
   }
+
+  pos = this.portMap.pin1
+  anode = this.portMap.pin1
+  neg = this.portMap.pin2
+  cathode = this.portMap.pin2
 }
