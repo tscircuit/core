@@ -110,6 +110,19 @@ export const createSchematicTraceJunctions = ({
       const intersection = getIntersectionPoint(myEdge, otherEdge)
       if (!intersection) continue
 
+      const isEndPoint = (
+        point: { x: number; y: number },
+        edge: SchematicTrace["edges"][number],
+      ) =>
+        (point.x === edge.from.x && point.y === edge.from.y) ||
+        (point.x === edge.to.x && point.y === edge.to.y)
+
+      if (
+        isEndPoint(intersection, myEdge) ||
+        isEndPoint(intersection, otherEdge)
+      )
+        continue
+
       const pointKey = `${intersection.x},${intersection.y}`
       junctions.set(pointKey, intersection)
     }

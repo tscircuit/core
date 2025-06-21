@@ -49,5 +49,11 @@ test("netlabel connection traces", () => {
 
   circuit.render()
 
+  const junctions = circuit.db.schematic_trace
+    .list()
+    .flatMap((t) => t.junctions || [])
+
+  expect(junctions.length).toBe(0)
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
