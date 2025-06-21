@@ -16,7 +16,7 @@ import type {
 } from "./sel-utility-types"
 
 type NonPolarizedSel = Record<
-  `R${Nums40}`,
+  `R${Nums40}` | `F${Nums40}`,
   {
     pin1: string
     pin2: string
