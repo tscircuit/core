@@ -39,7 +39,7 @@ export class Led extends NormalComponent<
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype: "simple_led",
-      name: props.name,
+      name: this.name,
       wave_length: props.wavelength,
       color: props.color,
       symbol_display_value: this._getSchematicSymbolDisplayValue(),

@@ -32,7 +32,7 @@ export class Resonator extends NormalComponent<typeof resonatorProps> {
     const pinVariant = props.pinVariant || "no_ground"
     const source_component = db.source_component.insert({
       ftype: "simple_resonator",
-      name: props.name,
+      name: this.name,
       frequency: props.frequency,
       load_capacitance: props.loadCapacitance,
       supplier_part_numbers: props.supplierPartNumbers,

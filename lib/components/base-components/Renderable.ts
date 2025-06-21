@@ -16,6 +16,7 @@ export const orderedRenderPhases = [
   "CreateTracesFromNetLabels",
   "CreateTraceHintsFromProps",
   "SourceGroupRender",
+  "AssignNameToUnnamedComponents",
   "SourceRender",
   "SourceParentAttachment",
   "PortMatching",

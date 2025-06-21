@@ -78,7 +78,7 @@ export type PortMap<T extends string> = {
  */
 
 export class NormalComponent<
-    ZodProps extends ZodType = any,
+    ZodProps extends z.ZodType = any,
     PortNames extends string = never,
   >
   extends PrimitiveComponent<ZodProps>
@@ -329,11 +329,7 @@ export class NormalComponent<
   }
 
   _addChildrenFromStringFootprint() {
-    const {
-      name: componentName,
-      pcbRotation: componentRotation,
-      pinLabels,
-    } = this.props
+    const { pcbRotation, pinLabels } = this.props
     let { footprint } = this.props
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
@@ -342,7 +338,12 @@ export class NormalComponent<
       if (this._isFootprintUrl(footprint)) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
-        { componentName, componentRotation, footprint, pinLabels },
+        {
+          componentName: this.name,
+          componentRotation: pcbRotation,
+          footprint,
+          pinLabels,
+        },
         fpSoup as any,
       ) // Remove as any when footprinter gets updated
       this.addAll(fpComponents)
@@ -388,7 +389,7 @@ export class NormalComponent<
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype,
-      name: props.name,
+      name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
     })
@@ -661,11 +662,7 @@ export class NormalComponent<
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
 
-    const {
-      name: componentName,
-      pcbRotation: componentRotation,
-      pinLabels,
-    } = this.props
+    const { pcbRotation, pinLabels } = this.props
 
     if (typeof footprint === "string" && this._isFootprintUrl(footprint)) {
       if (this._hasStartedFootprintUrlLoad) return
@@ -675,7 +672,12 @@ export class NormalComponent<
         const res = await fetch(url)
         const soup = await res.json()
         const fpComponents = createComponentsFromCircuitJson(
-          { componentName, componentRotation, footprint: url, pinLabels },
+          {
+            componentName: this.name,
+            componentRotation: pcbRotation,
+            footprint: url,
+            pinLabels,
+          },
           soup as any,
         )
         this.addAll(fpComponents)

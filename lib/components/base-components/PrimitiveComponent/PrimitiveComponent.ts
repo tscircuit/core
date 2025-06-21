@@ -43,7 +43,7 @@ const cssSelectOptionsInsideSubcircuit: Options<
 export interface BaseComponentConfig {
   componentName: string
   schematicSymbolName?: string | null
-  zodProps: ZodType
+  zodProps: z.ZodType
   sourceFtype?: Ftype | null
   shouldRenderAsSchematicBox?: boolean
 }
@@ -111,6 +111,14 @@ export abstract class PrimitiveComponent<
     return this.lowercaseComponentName === "group"
   }
 
+  get name() {
+    return (
+      (this._parsedProps as any).name ??
+      this.fallbackUnassignedName ??
+      "TODO_REMOVE_THIS"
+    )
+  }
+
   /**
    * A primitive container is a component that contains one or more ports and
    * primitive components that are designed to interact.
@@ -128,6 +136,7 @@ export abstract class PrimitiveComponent<
   schematic_component_id: string | null = null
   pcb_component_id: string | null = null
   cad_component_id: string | null = null
+  fallbackUnassignedName?: string
 
   constructor(props: z.input<ZodProps>) {
     super(props)
@@ -135,7 +144,13 @@ export abstract class PrimitiveComponent<
     this.childrenPendingRemoval = []
     this.props = props ?? {}
     this.externallyAddedAliases = []
-    const parsePropsResult = this.config.zodProps.safeParse(props ?? {})
+    const zodProps =
+      "partial" in this.config.zodProps
+        ? (this.config.zodProps as z.ZodObject<any, any, any>).partial({
+            name: true,
+          })
+        : this.config.zodProps
+    const parsePropsResult = zodProps.safeParse(props ?? {})
     if (parsePropsResult.success) {
       this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
     } else {
@@ -544,7 +559,7 @@ export abstract class PrimitiveComponent<
   }
 
   getSubcircuitSelector(): string {
-    const name = this._parsedProps.name
+    const name = this.name
     const endPart = name
       ? `${this.lowercaseComponentName}.${name}`
       : this.lowercaseComponentName
@@ -555,7 +570,7 @@ export abstract class PrimitiveComponent<
   }
 
   getFullPathSelector(): string {
-    const name = this._parsedProps.name
+    const name = this.name
     const endPart = name
       ? `${this.lowercaseComponentName}.${name}`
       : this.lowercaseComponentName
@@ -565,10 +580,7 @@ export abstract class PrimitiveComponent<
   }
 
   getNameAndAliases(): string[] {
-    return [
-      this._parsedProps.name,
-      ...(this._parsedProps.portHints ?? []),
-    ].filter(Boolean)
+    return [this.name, ...(this._parsedProps.portHints ?? [])].filter(Boolean)
   }
   isMatchingNameOrAlias(name: string) {
     return this.getNameAndAliases().includes(name)
@@ -584,7 +596,7 @@ export abstract class PrimitiveComponent<
 
   doesSelectorMatch(selector: string): boolean {
     const myTypeNames = [this.componentName, this.lowercaseComponentName]
-    const myClassNames = [this._parsedProps.name].filter(Boolean)
+    const myClassNames = [this.name].filter(Boolean)
 
     const parts = selector.trim().split(/\> /)[0]
     const firstPart = parts[0]
@@ -611,6 +623,12 @@ export abstract class PrimitiveComponent<
   getGroup(): IGroup | null {
     if (this.isGroup) return this as unknown as IGroup
     return this.parent?.getGroup?.() ?? null
+  }
+
+  doInitialAssignNameToUnnamedComponents() {
+    if (!this._parsedProps.name) {
+      this.fallbackUnassignedName = `UNNAMED_${this.getSubcircuit().subcircuit_id}`
+    }
   }
 
   doInitialOptimizeSelectorCache() {

@@ -36,7 +36,7 @@ export class Potentiometer extends NormalComponent<typeof potentiometerProps> {
     const pinVariant = props.pinVariant || "two_pin"
     const source_component = db.source_component.insert({
       ftype: "simple_potentiometer",
-      name: props.name,
+      name: this.name,
       max_resistance: props.maxResistance,
       pin_variant: pinVariant,
       are_pins_interchangeable: pinVariant === "two_pin",

@@ -37,7 +37,7 @@ export class PowerSource extends NormalComponent<
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype: "simple_power_source",
-      name: props.name,
+      name: this.name,
       voltage: props.voltage,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: false,

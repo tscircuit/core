@@ -54,7 +54,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   doInitialSourceGroupRender() {
     const { db } = this.root!
     const source_group = db.source_group.insert({
-      name: this._parsedProps.name,
+      name: this.name,
       is_subcircuit: this.isSubcircuit,
     })
     this.source_group_id = source_group.source_group_id
@@ -93,7 +93,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const pcb_group = db.pcb_group.insert({
       is_subcircuit: this.isSubcircuit,
       subcircuit_id: this.subcircuit_id!,
-      name: this._parsedProps.name,
+      name: this.name,
       center: this._getGlobalPcbPositionBeforeLayout(),
       width: 0,
       height: 0,
@@ -682,7 +682,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const schematic_group = db.schematic_group.insert({
       is_subcircuit: this.isSubcircuit,
       subcircuit_id: this.subcircuit_id!,
-      name: this._parsedProps.name,
+      name: this.name,
       center: this._getGlobalSchematicPositionBeforeLayout(),
       width: 0,
       height: 0,
@@ -958,7 +958,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         if (components.length > 1) {
           db.pcb_trace_error.insert({
             error_type: "pcb_trace_error",
-            message: `Multiple components found with name "${name}" in subcircuit "${this._parsedProps.name || "unnamed"}". Component names must be unique within a subcircuit.`,
+            message: `Multiple components found with name "${name}" in subcircuit "${this.name || "unnamed"}". Component names must be unique within a subcircuit.`,
             source_trace_id: "",
             pcb_trace_id: "",
             pcb_component_ids: components

@@ -40,7 +40,7 @@ export class Switch extends NormalComponent<typeof switchProps> {
 
     const source_component = db.source_component.insert({
       ftype: "simple_switch",
-      name: props.name,
+      name: this.name,
       switch_type: props.type,
       is_normally_closed: props.isNormallyClosed ?? false,
       are_pins_interchangeable: this._getSwitchType() === "spst",

@@ -43,7 +43,7 @@ export class PushButton extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
-      name: props.name,
+      name: this.name,
       ftype: FTYPE.simple_push_button,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,

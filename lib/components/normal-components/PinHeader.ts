@@ -78,7 +78,7 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
     const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype: "simple_pin_header",
-      name: props.name,
+      name: this.name,
       supplier_part_numbers: props.supplierPartNumbers,
       pin_count: props.pinCount,
       gender: props.gender,
