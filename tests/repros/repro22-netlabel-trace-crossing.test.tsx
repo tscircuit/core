@@ -34,7 +34,7 @@ test("repro22 netlabel trace crossing", () => {
         schX={0}
         schY={-1}
         connectsTo=".R3 > .pin1"
-        anchorSide="bottom"
+        anchorSide="top"
       />
     </board>,
   )
