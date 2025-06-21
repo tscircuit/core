@@ -14,8 +14,8 @@ test("capacitor polarized", () => {
         pcbY={0}
         polarized
         connections={{
-          pos: "net.POS",
-          neg: "net.NEG",
+          pin1: "net.POS",
+          pin2: "net.NEG",
         }}
       />
     </board>,
@@ -33,4 +33,23 @@ test("capacitor polarized", () => {
   expect(capacitors).toHaveLength(1)
   expect(capacitors[0].display_capacitance).toBe("10µF")
   expect(project).toMatchSchematicSnapshot(import.meta.path)
+
+  const source_port1 = project.db.source_port.list({
+    name: "pin1",
+  })[0]
+
+  const source_port2 = project.db.source_port.list({
+    name: "pin2",
+  })[0]
+
+  const pcb_port1 = project.db.pcb_port.list({
+    source_port_id: source_port1.source_port_id,
+  })[0]
+
+  const pcb_port2 = project.db.pcb_port.list({
+    source_port_id: source_port2.source_port_id,
+  })[0]
+
+  // pin1 is on the left side of pin2
+  expect(pcb_port1.x).toBeLessThan(pcb_port2.x)
 })
