@@ -48,5 +48,11 @@ test("repro22 netlabel trace crossing", () => {
   expect(crossingEdges.length).toBe(1)
   expect(crossingEdges[0].is_crossing).toBe(true)
 
+  const junctions = circuit.db.schematic_trace
+    .list()
+    .flatMap((t) => t.junctions || [])
+
+  expect(junctions.length).toBe(0)
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
