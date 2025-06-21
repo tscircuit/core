@@ -48,7 +48,13 @@ export class Crystal extends NormalComponent<
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    return `${formatSiUnit(this._parsedProps.frequency)}Hz`
+    const freqDisplay = `${formatSiUnit(this._parsedProps.frequency)}Hz`
+    if (this._parsedProps.loadCapacitance) {
+      return `${freqDisplay} / ${formatSiUnit(
+        this._parsedProps.loadCapacitance,
+      )}F`
+    }
+    return freqDisplay
   }
 
   doInitialSourceRender() {
