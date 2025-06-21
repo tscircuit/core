@@ -3,7 +3,7 @@ import type { SourceSimpleCapacitorInput } from "circuit-json"
 import {
   FTYPE,
   type BaseSymbolName,
-  type PassivePorts,
+  type PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
@@ -11,14 +11,14 @@ import { formatSiUnit } from "format-si-unit"
 
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
-  PassivePorts
+  PolarizedPassivePorts
 > {
   // @ts-ignore (cause the symbolName is string and not fixed)
   get config() {
     return {
       componentName: "Capacitor",
       schematicSymbolName: this.props.polarized
-        ? "capacitor_polarized"
+        ? "capacitor_polarized_left"
         : (this.props.symbolName ?? ("capacitor" as BaseSymbolName)),
       zodProps: capacitorProps,
       sourceFtype: FTYPE.simple_capacitor,
