@@ -101,17 +101,32 @@ export const createSchematicTraceJunctions = ({
     sameNetOnly: true,
   }).flatMap((t: SchematicTrace) => t.edges)
 
-  const junctions = new Set<string>()
+  const junctions = new Map<string, { x: number; y: number }>()
 
   for (const myEdge of myEdges) {
     for (const otherEdge of otherEdges) {
+      if (!isOrthogonal(myEdge, otherEdge)) continue
+
       const intersection = getIntersectionPoint(myEdge, otherEdge)
-      if (intersection) {
-        const pointKey = `${intersection.x},${intersection.y}`
-        return [{ x: intersection.x, y: intersection.y }]
-      }
+      if (!intersection) continue
+
+      const isEndPoint = (
+        point: { x: number; y: number },
+        edge: SchematicTrace["edges"][number],
+      ) =>
+        (point.x === edge.from.x && point.y === edge.from.y) ||
+        (point.x === edge.to.x && point.y === edge.to.y)
+
+      if (
+        isEndPoint(intersection, myEdge) ||
+        isEndPoint(intersection, otherEdge)
+      )
+        continue
+
+      const pointKey = `${intersection.x},${intersection.y}`
+      junctions.set(pointKey, intersection)
     }
   }
 
-  return []
+  return Array.from(junctions.values())
 }
