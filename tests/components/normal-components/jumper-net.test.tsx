@@ -19,12 +19,12 @@ test("jumper with net connections", () => {
           pin5: sel.net.GND,
         }}
       />
-      <netlabel net="VCC" schX={1} schY={1} />
-      <netlabel net="EN" schX={1} schY={0.5} />
-      <netlabel net="MISO" schX={1} schY={0} />
-      <netlabel net="MOSI" schX={1} schY={-0.5} />
-      <netlabel net="GND" schX={1} schY={-1} />
-    </board>
+      <netlabel net="VCC" connectsTo="U1.pin1" schX={1.4} schY={1} />
+      <netlabel net="EN" schX={2} schY={0.5} />
+      <netlabel net="MISO" schX={2} schY={0} />
+      <netlabel net="MOSI" schX={2} schY={-0.5} />
+      <netlabel net="GND" schX={2} schY={-1} />
+    </board>,
   )
 
   circuit.render()
