@@ -926,10 +926,33 @@ export class Trace
           edges.push({ from: anchorPos, to: { x: labelPos.x, y: anchorPos.y } })
           edges.push({ from: { x: labelPos.x, y: anchorPos.y }, to: labelPos })
         }
+        pushEdgesOfSchematicTraceToPreventOverlap({
+          edges,
+          db,
+          source_trace_id: this.source_trace_id!,
+        })
+
+        const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
+          db,
+          source_trace_id: this.source_trace_id!,
+          differentNetOnly: true,
+        }).flatMap((t: SchematicTrace) => t.edges)
+
+        const edgesWithCrossings = createSchematicTraceCrossingSegments({
+          edges,
+          otherEdges,
+        })
+
+        const junctions = createSchematicTraceJunctions({
+          edges: edgesWithCrossings,
+          db,
+          source_trace_id: this.source_trace_id!,
+        })
+
         const trace = db.schematic_trace.insert({
           source_trace_id: this.source_trace_id!,
-          edges,
-          junctions: [],
+          edges: edgesWithCrossings,
+          junctions,
         })
         this.schematic_trace_id = trace.schematic_trace_id
         return
