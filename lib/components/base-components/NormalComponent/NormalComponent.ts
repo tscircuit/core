@@ -662,11 +662,7 @@ export class NormalComponent<
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
 
-    const {
-      name: componentName,
-      pcbRotation: componentRotation,
-      pinLabels,
-    } = this.props
+    const { pcbRotation, pinLabels } = this.props
 
     if (typeof footprint === "string" && this._isFootprintUrl(footprint)) {
       if (this._hasStartedFootprintUrlLoad) return
@@ -678,7 +674,7 @@ export class NormalComponent<
         const fpComponents = createComponentsFromCircuitJson(
           {
             componentName: this.name,
-            componentRotation,
+            componentRotation: pcbRotation,
             footprint: url,
             pinLabels,
           },
