@@ -18,7 +18,7 @@ export class Capacitor extends NormalComponent<
     return {
       componentName: "Capacitor",
       schematicSymbolName: this.props.polarized
-        ? "capacitor_polarized_left"
+        ? "capacitor_polarized"
         : (this.props.symbolName ?? ("capacitor" as BaseSymbolName)),
       zodProps: capacitorProps,
       sourceFtype: FTYPE.simple_capacitor,
