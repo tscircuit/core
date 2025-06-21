@@ -340,7 +340,7 @@ export class NormalComponent<
       const fpComponents = createComponentsFromCircuitJson(
         {
           componentName: this.name,
-          componentRotation,
+          componentRotation: pcbRotation,
           footprint,
           pinLabels,
         },
