@@ -14,8 +14,8 @@ test("capacitor polarized", () => {
         pcbY={0}
         polarized
         connections={{
-          pin1: "net.POS",
-          pin2: "net.NEG",
+          pos: "net.POS",
+          neg: "net.NEG",
         }}
       />
     </board>,
