@@ -36,8 +36,8 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     const dy = connectedPortPosition.y - anchorPos.y
 
     if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 0) return "left"
-      if (dx < 0) return "right"
+      if (dx > 0) return "right"
+      if (dx < 0) return "left"
     } else {
       if (dy > 0) return "top"
       if (dy < 0) return "bottom"

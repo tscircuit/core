@@ -7,23 +7,12 @@ test("jumper with net connections", () => {
 
   circuit.add(
     <board>
-      <jumper
-        name="U1"
-        manufacturerPartNumber="I2C_SENSOR"
-        footprint="soic5"
-        connections={{
-          pin1: sel.net.VCC,
-          pin2: sel.net.EN,
-          pin3: sel.net.MISO,
-          pin4: sel.net.MOSI,
-          pin5: sel.net.GND,
-        }}
-      />
+      <jumper name="U1" manufacturerPartNumber="I2C_SENSOR" footprint="soic5" />
       <netlabel net="VCC" connectsTo="U1.pin1" schX={1.4} schY={1} />
-      <netlabel net="EN" schX={2} schY={0.5} />
-      <netlabel net="MISO" schX={2} schY={0} />
-      <netlabel net="MOSI" schX={2} schY={-0.5} />
-      <netlabel net="GND" schX={2} schY={-1} />
+      <netlabel net="EN" connectsTo="U1.pin2" schX={2} schY={0.5} />
+      <netlabel net="MISO" connectsTo="U1.pin3" schX={2.2} schY={0} />
+      <netlabel net="MOSI" connectsTo="U1.pin4" schX={2.4} schY={-0.5} />
+      <netlabel net="GND" connectsTo="U1.pin5" schX={1} schY={-1} />
     </board>,
   )
 
