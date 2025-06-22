@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { sel } from "dist"
+import { sel } from "lib/sel"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("ground net labels with schDisplayLabel become symbols", () => {
