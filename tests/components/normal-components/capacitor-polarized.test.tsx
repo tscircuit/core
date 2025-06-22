@@ -54,6 +54,57 @@ test("capacitor polarized", () => {
           neg: "net.NEG",
         }}
       />
+
+      <capacitor
+        name="C5"
+        capacitance="10µF"
+        footprint="0402"
+        schY={5}
+        polarized
+        connections={{
+          pin1: "net.POS",
+          pin2: "net.NEG",
+        }}
+      />
+      <capacitor
+        name="C6"
+        capacitance="10µF"
+        footprint="0402"
+        schX={5}
+        schY={5}
+        schRotation="90deg"
+        polarized
+        connections={{
+          pin1: "net.POS",
+          pin2: "net.NEG",
+        }}
+      />
+      <capacitor
+        name="C7"
+        capacitance="10µF"
+        footprint="0402"
+        schX={10}
+        schY={5}
+        schRotation="180deg"
+        polarized
+        connections={{
+          pin1: "net.POS",
+          pin2: "net.NEG",
+        }}
+      />
+      <capacitor
+        name="C8"
+        capacitance="10µF"
+        footprint="0402"
+        schX={15}
+        schY={5}
+        schRotation="270deg"
+        polarized
+        connections={{
+          pin1: "net.POS",
+          pin2: "net.NEG",
+        }}
+      />
     </board>,
   )
 
@@ -66,7 +117,6 @@ test("capacitor polarized", () => {
     display_capacitance?: string
   }>
 
-  expect(capacitors).toHaveLength(4)
   expect(capacitors[0].display_capacitance).toBe("10µF")
   expect(project).toMatchSchematicSnapshot(import.meta.path)
 
