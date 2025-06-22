@@ -49,6 +49,7 @@ export class RootCircuit {
     this.root = this
     this.platform = platform
     this.projectUrl = projectUrl
+    this.pcbDisabled = platform?.pcbDisabled ?? false
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
