@@ -55,6 +55,13 @@ test("sel1 - sel.CN20.pin10 = .CN20 > .pin10", () => {
 test("sel1 - sel.F1.pin2 = .F1 > .pin2", () => {
   expect(sel.F1.pin2).toBe(".F1 > .pin2")
 })
+test("sel1 - sel.SW1.pin3 = .SW1 > .pin3", () => {
+  expect(sel.SW1.pin3).toBe(".SW1 > .pin3")
+})
+test("sel1 - sel.SW1.pin4 = .SW1 > .pin4", () => {
+  expect(sel.SW1.pin4).toBe(".SW1 > .pin4")
+})
+
 test("sel1 - invalid CN pin number", () => {
   // @ts-expect-error
   const someval = sel.CN1.pin101

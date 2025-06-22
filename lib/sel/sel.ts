@@ -30,6 +30,10 @@ type SwSel = Record<
   {
     pin1: string
     pin2: string
+    pin3: string
+    pin4: string
+    pin5: string
+    pin6: string
     pos: string
     neg: string
     side1: string
