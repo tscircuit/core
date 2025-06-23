@@ -7,7 +7,12 @@ import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import { autoroute } from "@tscircuit/infgrid-ijump-astar"
 
 export const netProps = z.object({
-  name: z.string(),
+  name: z
+    .string()
+    .refine(
+      (val) => !/[+-]/.test(val),
+      'Net names cannot contain "+" or "-", try using underscores instead, e.g. VCC_P',
+    ),
 })
 
 export class Net extends PrimitiveComponent<typeof netProps> {
