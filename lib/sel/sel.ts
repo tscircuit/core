@@ -80,6 +80,7 @@ type CommonNetNames =
   | "FLASH_N_CS"
   | "FLASH_N_WP"
   | "FLASH_N_HOLD"
+  | "INT"
 
 type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
 

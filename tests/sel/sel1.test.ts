@@ -70,3 +70,11 @@ test("sel1 - invalid CN pin number", () => {
 test("sel1 - sel.subcircuit.S1.U1.pin1 = subcircuit.S1 > .pin1", () => {
   expect(sel.subcircuit.S1.U1.pin1).toBe("subcircuit.S1 > .U1 > .pin1")
 })
+
+test("sel1 - sel.net.INT = net.INT", () => {
+  expect(sel.net.INT).toBe("net.INT")
+})
+
+test("sel1 - sel.U1.INT = .U1 > .INT", () => {
+  expect(sel.U1.INT).toBe(".U1 > .INT")
+})
