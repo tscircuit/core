@@ -28,7 +28,11 @@ export class SolderJumper<
   get config() {
     const props = this._parsedProps ?? this.props
     let resolvedPinCount = props.pinCount
-    if (!resolvedPinCount) {
+    if (props.pinCount == null && !props.footprint) {
+      // If neither pinCount nor a footprint is given, assume two pins
+      resolvedPinCount = 2
+    }
+    if (props.pinCount == null) {
       const nums = (props.bridgedPins ?? [])
         .flat()
         .map((p_str: string) => this._getPinNumberFromBridgedPinName(p_str))
@@ -84,13 +88,17 @@ export class SolderJumper<
     const arrangement = super._getSchematicPortArrangement()
     if (arrangement && Object.keys(arrangement).length > 0) return arrangement
 
-    const pinCount =
+    let pinCount =
       this._parsedProps.pinCount ??
       (Array.isArray(this._parsedProps.pinLabels)
         ? this._parsedProps.pinLabels.length
         : this._parsedProps.pinLabels
           ? Object.keys(this._parsedProps.pinLabels).length
           : this.getPortsFromFootprint().length)
+
+    if (pinCount == null && !this._parsedProps.footprint) {
+      pinCount = 2
+    }
 
     const direction = this._parsedProps.schDirection ?? "right"
 
