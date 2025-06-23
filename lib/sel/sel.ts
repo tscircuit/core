@@ -74,6 +74,7 @@ type CommonNetNames =
   | "MISO"
   | "SCK"
   | "CS"
+  | "N_CS"
   | "FLASH_SDO"
   | "FLASH_SDI"
   | "FLASH_SCK"
