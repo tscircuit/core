@@ -78,3 +78,10 @@ test("sel1 - sel.net.INT = net.INT", () => {
 test("sel1 - sel.U1.INT = .U1 > .INT", () => {
   expect(sel.U1.INT).toBe(".U1 > .INT")
 })
+test("common pin name TXD", () => {
+  expect(sel.U1.TXD).toBe(".U1 > .TXD")
+})
+
+test("common pin name D_MINUS", () => {
+  expect(sel.USBC.D_MINUS).toBe(".USBC > .D_MINUS")
+})
