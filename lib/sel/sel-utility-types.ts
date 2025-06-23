@@ -214,4 +214,10 @@ export type CommonPinNames =
   | `B${Nums40}`
   | PinNumbers100
 
-export type TransistorPinNames = "base" | "collector" | "emitter"
+export type TransistorPinNames =
+  | "base"
+  | "collector"
+  | "emitter"
+  | "gate"
+  | "source"
+  | "drain"
