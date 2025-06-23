@@ -210,6 +210,7 @@ export type CommonPinNames =
   | "MISO"
   | "SCK"
   | "CS"
+  | "INT"
   | `A${Nums40}`
   | `B${Nums40}`
   | PinNumbers100
