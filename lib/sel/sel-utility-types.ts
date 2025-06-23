@@ -211,6 +211,7 @@ export type CommonPinNames =
   | "SCK"
   | "CS"
   | "INT"
+  | "N_INT"
   | `A${Nums40}`
   | `B${Nums40}`
   | PinNumbers100
