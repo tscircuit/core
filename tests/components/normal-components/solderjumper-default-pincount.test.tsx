@@ -16,7 +16,7 @@ test("<solderjumper /> defaults pinCount to 2", async () => {
   expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([])
 
   const sc = circuit.db.schematic_component.list()[0]
-  expect(sc.symbol_name.startsWith("solderjumper2")).toBe(true)
+  expect(sc.symbol_name?.startsWith("solderjumper2")).toBe(true)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
