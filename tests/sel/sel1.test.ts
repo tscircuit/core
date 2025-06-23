@@ -78,3 +78,11 @@ test("sel1 - sel.net.INT = net.INT", () => {
 test("sel1 - sel.U1.INT = .U1 > .INT", () => {
   expect(sel.U1.INT).toBe(".U1 > .INT")
 })
+
+test("sel1 - sel.net.N_INT = net.N_INT", () => {
+  expect(sel.net.N_INT).toBe("net.N_INT")
+})
+
+test("sel1 - sel.U1.N_INT = .U1 > .N_INT", () => {
+  expect(sel.U1.N_INT).toBe(".U1 > .N_INT")
+})
