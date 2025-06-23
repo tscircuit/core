@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(493.4210526316,0,0,-493.4210526316,236.7763157895,793.4210526316)"><style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              .trace:hover {
+                filter: invert(1);
+              }
+              .trace:hover .trace-crossing-outline {
+                opacity: 0;
+              }
+              .trace:hover .trace-junction {
+                filter: invert(1);
+              }
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { fill: rgb(0, 100, 100); }
+            </style><rect class="boundary" x="0" y="0" width="1200" height="600"/><g class="grid"><line x1="-256.6447368421" y1="600.0000000000127" x2="-256.6447368421" y2="-1.2846612662542611e-11" stroke="rgb(181, 181, 181)" stroke-width="4.934210526316" stroke-opacity="0.5"/><line x1="236.7763157895" y1="600.0000000000127" x2="236.7763157895" y2="-1.2846612662542611e-11" stroke="rgb(181, 181, 181)" stroke-width="4.934210526316" stroke-opacity="0.5"/><line x1="730.1973684211" y1="600.0000000000127" x2="730.1973684211" y2="-1.2846612662542611e-11" stroke="rgb(181, 181, 181)" stroke-width="4.934210526316" stroke-opacity="0.5"/><line x1="1223.6184210527" y1="600.0000000000127" x2="1223.6184210527" y2="-1.2846612662542611e-11" stroke="rgb(181, 181, 181)" stroke-width="4.934210526316" stroke-opacity="0.5"/><line x1="223.0921052631836" y1="793.4210526316" x2="976.9078947369" y2="793.4210526316" stroke="rgb(181, 181, 181)" stroke-width="4.934210526316" stroke-opacity="0.5"/><line x1="223.0921052631836" y1="300" x2="976.9078947369" y2="300" stroke="rgb(181, 181, 181)" stroke-width="4.934210526316" stroke-opacity="0.5"/><line x1="223.0921052631836" y1="-193.4210526316" x2="976.9078947369" y2="-193.4210526316" stroke="rgb(181, 181, 181)" stroke-width="4.934210526316" stroke-opacity="0.5"/><text x="-259.1447368421" y="788.4210526316" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">-1,0</text><text x="-259.1447368421" y="295" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">-1,1</text><text x="-259.1447368421" y="-198.4210526316" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">-1,2</text><text x="234.2763157895" y="788.4210526316" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">0,0</text><text x="234.2763157895" y="295" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">0,1</text><text x="234.2763157895" y="-198.4210526316" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">0,2</text><text x="727.6973684211" y="788.4210526316" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">1,0</text><text x="727.6973684211" y="295" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">1,1</text><text x="727.6973684211" y="-198.4210526316" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">1,2</text><text x="1221.1184210527" y="788.4210526316" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">2,0</text><text x="1221.1184210527" y="295" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">2,1</text><text x="1221.1184210527" y="-198.4210526316" fill="rgb(181, 181, 181)" font-size="98.68421052632" fill-opacity="0.5" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">2,2</text></g><path class="net-label" d="
+    M 730.1973684211,300
+    L 703.5526315789936,353.2894736842128
+    L 469.80263157898366,353.2894736842128
+    L 469.80263157898366,246.71052631578718
+    L 703.5526315789937,246.7105263157872
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="9.868421052632px"/><text class="net-label-text" x="685.789473684256" y="300" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="88.815789473688px" transform="">VCC</text></svg>

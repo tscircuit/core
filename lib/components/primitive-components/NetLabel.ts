@@ -23,7 +23,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     const anchorPos = { x: props.schX ?? 0, y: props.schY ?? 0 }
 
     const netLabel = db.schematic_net_label.insert({
-      text: props.net!,
+      text: props.text ?? props.net!,
       source_net_id: props.net!,
       anchor_position: anchorPos,
 
