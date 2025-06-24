@@ -22,7 +22,7 @@ export class SolderJumper<
   get config() {
     const props = this._parsedProps ?? this.props
 
-    if(props.symbolName) {
+    if (props.symbolName) {
       return {
         schematicSymbolName: props.symbolName,
         componentName: "SolderJumper",
@@ -30,7 +30,7 @@ export class SolderJumper<
         shouldRenderAsSchematicBox: true,
       }
     }
-    
+
     let resolvedPinCount = props.pinCount
     if (props.pinCount == null && !props.footprint) {
       // If neither pinCount nor a footprint is given, assume two pins
