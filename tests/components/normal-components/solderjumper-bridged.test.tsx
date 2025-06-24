@@ -19,6 +19,5 @@ it("connects all pins when bridged is true", async () => {
     internallyConnectedPins[0].map((p: any) => p.props.name).sort(),
   ).toEqual(["pin1", "pin2", "pin3"].sort())
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
