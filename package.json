@@ -78,6 +78,7 @@
   },
   "dependencies": {
     "@lume/kiwi": "^0.4.3",
+    "calculate-elbow": "^0.0.2",
     "css-select": "^5.1.0",
     "format-si-unit": "^0.0.3",
     "nanoid": "^5.0.7",

@@ -8,6 +8,7 @@ import {
   type SchematicTrace,
 } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import { convertFacingDirectionToXYFacingDirection } from "lib/utils/convertFacingDirectionToXYFacingDirection"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
 import type {
   SimpleRouteConnection,
@@ -42,6 +43,8 @@ import { getTraceDisplayName } from "./get-trace-display-name"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
+import { calculateElbow } from "calculate-elbow"
+import { doesSegmentIntersectRect } from "lib/utils/autorouting/doesSegmentIntersectRect"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -999,70 +1002,110 @@ export class Trace
       layerCount: 1,
     }
 
+    let edges: SchematicTrace["edges"] | null = null
+
+    if (portsWithPosition.length === 2) {
+      const [p1, p2] = portsWithPosition
+      const elbowPoints = calculateElbow(
+        {
+          x: p1.position.x,
+          y: p1.position.y,
+          facingDirection: convertFacingDirectionToXYFacingDirection(
+            p1.facingDirection,
+          ),
+        },
+        {
+          x: p2.position.x,
+          y: p2.position.y,
+          facingDirection: convertFacingDirectionToXYFacingDirection(
+            p2.facingDirection,
+          ),
+        },
+        { overshoot: 0.2 },
+      )
+      const elbowEdges = elbowPoints.slice(0, -1).map((pt, i) => ({
+        from: pt,
+        to: elbowPoints[i + 1],
+      }))
+      const intersects = elbowEdges.some((seg) =>
+        obstacles.some((o) => doesSegmentIntersectRect(seg, o)),
+      )
+      if (!intersects) {
+        edges = elbowEdges
+      }
+    }
+
     let Autorouter = MultilayerIjump
     let skipOtherTraceInteraction = false
-    if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
-      Autorouter = DirectLineRouter as any
-      skipOtherTraceInteraction = true
-    }
 
-    const autorouter = new Autorouter({
-      input: simpleRouteJsonInput,
-      MAX_ITERATIONS: 100,
-      OBSTACLE_MARGIN: 0.1,
-      isRemovePathLoopsEnabled: true,
-      isShortenPathWithShortcutsEnabled: true,
-      marginsWithCosts: [
-        {
-          margin: 1,
-          enterCost: 0,
-          travelCostFactor: 1,
-        },
-        {
-          margin: 0.3,
-          enterCost: 0,
-          travelCostFactor: 1,
-        },
-        {
-          margin: 0.2,
-          enterCost: 0,
-          travelCostFactor: 2,
-        },
-        {
-          margin: 0.1,
-          enterCost: 0,
-          travelCostFactor: 3,
-        },
-      ],
-    })
-    let results = autorouter.solveAndMapToTraces()
-
-    if (results.length === 0) {
-      if (
-        this._isSymbolToChipConnection() ||
-        this._isSymbolToSymbolConnection() ||
-        this._isChipToChipConnection()
-      ) {
-        this._doInitialSchematicTraceRenderWithDisplayLabel()
-        return
+    if (!edges) {
+      if (this.getSubcircuit().props._schDirectLineRoutingEnabled) {
+        Autorouter = DirectLineRouter as any
+        skipOtherTraceInteraction = true
       }
-      const directLineRouter = new DirectLineRouter({
+
+      const autorouter = new Autorouter({
         input: simpleRouteJsonInput,
+        MAX_ITERATIONS: 100,
+        OBSTACLE_MARGIN: 0.1,
+        isRemovePathLoopsEnabled: true,
+        isShortenPathWithShortcutsEnabled: true,
+        marginsWithCosts: [
+          {
+            margin: 1,
+            enterCost: 0,
+            travelCostFactor: 1,
+          },
+          {
+            margin: 0.3,
+            enterCost: 0,
+            travelCostFactor: 1,
+          },
+          {
+            margin: 0.2,
+            enterCost: 0,
+            travelCostFactor: 2,
+          },
+          {
+            margin: 0.1,
+            enterCost: 0,
+            travelCostFactor: 3,
+          },
+        ],
       })
-      results = directLineRouter.solveAndMapToTraces()
-      skipOtherTraceInteraction = true
+      let results = autorouter.solveAndMapToTraces()
+
+      if (results.length === 0) {
+        if (
+          this._isSymbolToChipConnection() ||
+          this._isSymbolToSymbolConnection() ||
+          this._isChipToChipConnection()
+        ) {
+          this._doInitialSchematicTraceRenderWithDisplayLabel()
+          return
+        }
+        const directLineRouter = new DirectLineRouter({
+          input: simpleRouteJsonInput,
+        })
+        results = directLineRouter.solveAndMapToTraces()
+        skipOtherTraceInteraction = true
+      }
+
+      const [{ route }] = results
+
+      edges = []
+
+      for (let i = 0; i < route.length - 1; i++) {
+        edges.push({
+          from: route[i],
+          to: route[i + 1],
+        })
+      }
     }
 
-    const [{ route }] = results
-
-    let edges: SchematicTrace["edges"] = []
-
-    // Add autorouted path
-    for (let i = 0; i < route.length - 1; i++) {
-      edges.push({
-        from: route[i],
-        to: route[i + 1],
-      })
+    if (!edges || edges.length === 0) {
+      this._doInitialSchematicTraceRenderWithDisplayLabel()
+      return
     }
 
     const source_trace_id = this.source_trace_id!
