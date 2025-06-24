@@ -4,6 +4,11 @@ export const preprocessSelector = (selector: string) => {
       'Net names cannot contain a period, try using "sel.net..." to autocomplete with conventional net names, e.g. V3_3',
     )
   }
+  if (/net\.[^\s>]*[+-]/.test(selector)) {
+    throw new Error(
+      'Net names cannot contain "+" or "-", try using underscores instead, e.g. VCC_P',
+    )
+  }
   if (/net\.[0-9]/.test(selector)) {
     const match = selector.match(/net\.([^ >]+)/)
     const netName = match ? match[1] : ""
