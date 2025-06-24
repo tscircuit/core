@@ -45,6 +45,22 @@ import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFro
 import { calculateElbow } from "calculate-elbow"
 import { doesSegmentIntersectRect } from "lib/utils/autorouting/doesSegmentIntersectRect"
 
+const convertFacingDirection = (
+  dir: "up" | "down" | "left" | "right" | null,
+): "x+" | "x-" | "y+" | "y-" | undefined => {
+  switch (dir) {
+    case "up":
+      return "y+"
+    case "down":
+      return "y-"
+    case "left":
+      return "x-"
+    case "right":
+      return "x+"
+  }
+  return undefined
+}
+
 type PcbRouteObjective =
   | RouteHintPoint
   | {
@@ -1009,13 +1025,14 @@ export class Trace
         {
           x: p1.position.x,
           y: p1.position.y,
-          facingDirection: p1.facingDirection,
+          facingDirection: convertFacingDirection(p1.facingDirection),
         },
         {
           x: p2.position.x,
           y: p2.position.y,
-          facingDirection: p2.facingDirection,
+          facingDirection: convertFacingDirection(p2.facingDirection),
         },
+        { overshoot: 0.2 },
       )
       const elbowEdges = elbowPoints.slice(0, -1).map((pt, i) => ({
         from: pt,
