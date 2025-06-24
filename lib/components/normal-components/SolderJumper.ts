@@ -1,13 +1,7 @@
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solderjumperProps } from "@tscircuit/props"
 import { Port } from "../primitive-components/Port"
-import type { BaseSymbolName } from "lib/utils/constants"
-import {
-  getAllDimensionsForSchematicBox,
-  type SchematicBoxDimensions,
-} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 
 export class SolderJumper<
   PinLabels extends string = never,
@@ -27,6 +21,16 @@ export class SolderJumper<
 
   get config() {
     const props = this._parsedProps ?? this.props
+
+    if(props.symbolName) {
+      return {
+        schematicSymbolName: props.symbolName,
+        componentName: "SolderJumper",
+        zodProps: solderjumperProps,
+        shouldRenderAsSchematicBox: true,
+      }
+    }
+    
     let resolvedPinCount = props.pinCount
     if (props.pinCount == null && !props.footprint) {
       // If neither pinCount nor a footprint is given, assume two pins
@@ -154,7 +158,7 @@ export class SolderJumper<
       if (typeof sourcePort?.pin_number === "number") {
         pinLabel = sourcePort.pin_number.toString()
       } else if (Array.isArray(sourcePort?.port_hints)) {
-        let matchedHint = sourcePort.port_hints.find((h: string) =>
+        const matchedHint = sourcePort.port_hints.find((h: string) =>
           /^(pin)?\d+$/.test(h),
         )
         if (matchedHint) {
