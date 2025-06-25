@@ -22,6 +22,12 @@ export class SolderJumper<
   }
 
   get defaultInternallyConnectedPinNames(): string[][] {
+    if (this._parsedProps.bridged) {
+      const pins = this.children
+        .filter((c) => c.componentName === "Port")
+        .map((p) => (p as Port).name)
+      return pins.length > 0 ? [pins] : []
+    }
     return this._parsedProps.bridgedPins ?? []
   }
 
@@ -60,10 +66,10 @@ export class SolderJumper<
       symbolName = "solderjumper"
     }
 
+    let bridgedPinNumbers: number[] = []
     if (Array.isArray(props.bridgedPins) && props.bridgedPins.length > 0) {
       // Normalize pin names (e.g., "pin1" to "1"), then get unique sorted numbers
-      // This is used to form suffixes like "_bridged12"
-      const pinNumbers = Array.from(
+      bridgedPinNumbers = Array.from(
         new Set(
           (props.bridgedPins as string[][])
             .flat()
@@ -71,10 +77,15 @@ export class SolderJumper<
             .filter((n): n is number => n !== null),
         ),
       ).sort((a, b) => a - b)
+    } else if (props.bridged && resolvedPinCount) {
+      bridgedPinNumbers = Array.from(
+        { length: resolvedPinCount },
+        (_, i) => i + 1,
+      )
+    }
 
-      if (pinNumbers.length > 0) {
-        symbolName += `_bridged${pinNumbers.join("")}`
-      }
+    if (bridgedPinNumbers.length > 0) {
+      symbolName += `_bridged${bridgedPinNumbers.join("")}`
     }
     return {
       schematicSymbolName: symbolName,
