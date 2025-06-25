@@ -1,13 +1,7 @@
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { solderjumperProps } from "@tscircuit/props"
 import { Port } from "../primitive-components/Port"
-import type { BaseSymbolName } from "lib/utils/constants"
-import {
-  getAllDimensionsForSchematicBox,
-  type SchematicBoxDimensions,
-} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 
 export class SolderJumper<
   PinLabels extends string = never,
@@ -88,7 +82,7 @@ export class SolderJumper<
       symbolName += `_bridged${bridgedPinNumbers.join("")}`
     }
     return {
-      schematicSymbolName: symbolName,
+      schematicSymbolName: props.symbolName ?? symbolName,
       componentName: "SolderJumper",
       zodProps: solderjumperProps,
       shouldRenderAsSchematicBox: true,
