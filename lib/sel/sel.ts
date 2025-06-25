@@ -83,6 +83,20 @@ type CommonNetNames =
   | "FLASH_N_HOLD"
   | "INT"
   | "N_INT"
+  | "TXLED"
+  | "RXLED"
+  | "CTS"
+  | "SLEEP"
+  | "TXDEN"
+  | "PWREN"
+  | "TXD"
+  | "DTR"
+  | "RTS"
+  | "VCCIO"
+  | "RXD"
+  | "RI"
+  | "DSR"
+  | "DCD"
 
 type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
 

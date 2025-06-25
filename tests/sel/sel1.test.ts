@@ -94,3 +94,59 @@ test("sel1 - sel.net.N_CS = net.N_CS", () => {
 test("sel1 - sel.U1.N_CS = .U1 > .N_CS", () => {
   expect(sel.U1.N_CS).toBe(".U1 > .N_CS")
 })
+
+test("sel1 - sel.net.TXLED = net.TXLED", () => {
+  expect(sel.net.TXLED).toBe("net.TXLED")
+})
+
+test("sel1 - sel.net.RXLED = net.RXLED", () => {
+  expect(sel.net.RXLED).toBe("net.RXLED")
+})
+
+test("sel1 - sel.net.CTS = net.CTS", () => {
+  expect(sel.net.CTS).toBe("net.CTS")
+})
+
+test("sel1 - sel.net.SLEEP = net.SLEEP", () => {
+  expect(sel.net.SLEEP).toBe("net.SLEEP")
+})
+
+test("sel1 - sel.net.TXDEN = net.TXDEN", () => {
+  expect(sel.net.TXDEN).toBe("net.TXDEN")
+})
+
+test("sel1 - sel.net.PWREN = net.PWREN", () => {
+  expect(sel.net.PWREN).toBe("net.PWREN")
+})
+
+test("sel1 - sel.net.TXD = net.TXD", () => {
+  expect(sel.net.TXD).toBe("net.TXD")
+})
+
+test("sel1 - sel.net.DTR = net.DTR", () => {
+  expect(sel.net.DTR).toBe("net.DTR")
+})
+
+test("sel1 - sel.net.RTS = net.RTS", () => {
+  expect(sel.net.RTS).toBe("net.RTS")
+})
+
+test("sel1 - sel.net.VCCIO = net.VCCIO", () => {
+  expect(sel.net.VCCIO).toBe("net.VCCIO")
+})
+
+test("sel1 - sel.net.RXD = net.RXD", () => {
+  expect(sel.net.RXD).toBe("net.RXD")
+})
+
+test("sel1 - sel.net.RI = net.RI", () => {
+  expect(sel.net.RI).toBe("net.RI")
+})
+
+test("sel1 - sel.net.DSR = net.DSR", () => {
+  expect(sel.net.DSR).toBe("net.DSR")
+})
+
+test("sel1 - sel.net.DCD = net.DCD", () => {
+  expect(sel.net.DCD).toBe("net.DCD")
+})
