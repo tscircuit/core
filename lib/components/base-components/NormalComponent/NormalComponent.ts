@@ -1086,8 +1086,9 @@ export class NormalComponent<
       }),
     )
 
-    // Convert "Not found" to empty object before caching or returning
-    const supplierPartNumbers = result === "Not found" ? {} : result
+    // Convert "Not found" or undefined/null to empty object before caching or returning
+    const supplierPartNumbers =
+      result === "Not found" || result == null ? {} : result
 
     if (cacheEngine) {
       try {
