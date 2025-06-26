@@ -15,12 +15,58 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     }
   }
 
-  doInitialSchematicComponentRender(): void {
+  _getAnchorSide(): "top" | "bottom" | "left" | "right" {
+    const { _parsedProps: props } = this
+    if (props.anchorSide) return props.anchorSide
+
+    const connectsTo = this._resolveConnectsTo()
+    if (!connectsTo) return "right"
+
+    // Get relative position of the net label and the thing(s) it connects
+    // to
+    const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
+
+    const connectedPorts = this._getConnectedPorts()
+    if (connectedPorts.length === 0) return "right"
+
+    const connectedPortPosition =
+      connectedPorts[0]._getGlobalSchematicPositionBeforeLayout()
+
+    const dx = connectedPortPosition.x - anchorPos.x
+    const dy = connectedPortPosition.y - anchorPos.y
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) return "right"
+      if (dx < 0) return "left"
+    } else {
+      if (dy > 0) return "top"
+      if (dy < 0) return "bottom"
+    }
+
+    return "right"
+  }
+
+  _getConnectedPorts(): Port[] {
+    const connectsTo = this._resolveConnectsTo()
+    if (!connectsTo) return []
+
+    const connectedPorts: Port[] = []
+    for (const connection of connectsTo) {
+      const port = this.getSubcircuit().selectOne(connection) as Port
+      if (port) {
+        connectedPorts.push(port)
+      }
+    }
+
+    return connectedPorts
+  }
+
+  doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const anchorPos = { x: props.schX ?? 0, y: props.schY ?? 0 }
+    const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
 
     const netLabel = db.schematic_net_label.insert({
       text: props.net!,
@@ -29,7 +75,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
 
       // TODO compute the center based on the text size
       center: anchorPos,
-      anchor_side: props.anchorSide ?? "right",
+      anchor_side: this._getAnchorSide(),
     })
 
     this.source_net_label_id = netLabel.source_net_id
