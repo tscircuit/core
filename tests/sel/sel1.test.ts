@@ -94,3 +94,7 @@ test("sel1 - sel.net.N_CS = net.N_CS", () => {
 test("sel1 - sel.U1.N_CS = .U1 > .N_CS", () => {
   expect(sel.U1.N_CS).toBe(".U1 > .N_CS")
 })
+
+test("sel1 - sel.TP1.pin1 = .TP1 > .pin1", () => {
+  expect(sel.TP1.pin1).toBe(".TP1 > .pin1")
+})

@@ -20,43 +20,43 @@ test("resistor should have subcircuit_id on it's elements", async () => {
   circuit.render()
 
   expect(circuit.db.pcb_smtpad.list()).toMatchInlineSnapshot(`
-[
-  {
-    "height": 0.6000000000000001,
-    "layer": "top",
-    "pcb_component_id": "pcb_component_0",
-    "pcb_group_id": "pcb_group_0",
-    "pcb_port_id": "pcb_port_0",
-    "pcb_smtpad_id": "pcb_smtpad_0",
-    "port_hints": [
-      "1",
-      "left",
-    ],
-    "shape": "rect",
-    "subcircuit_id": "subcircuit_source_group_0",
-    "type": "pcb_smtpad",
-    "width": 0.6000000000000001,
-    "x": 0.5,
-    "y": 1,
-  },
-  {
-    "height": 0.6000000000000001,
-    "layer": "top",
-    "pcb_component_id": "pcb_component_0",
-    "pcb_group_id": "pcb_group_0",
-    "pcb_port_id": "pcb_port_1",
-    "pcb_smtpad_id": "pcb_smtpad_1",
-    "port_hints": [
-      "2",
-      "right",
-    ],
-    "shape": "rect",
-    "subcircuit_id": "subcircuit_source_group_0",
-    "type": "pcb_smtpad",
-    "width": 0.6000000000000001,
-    "x": 1.5,
-    "y": 1,
-  },
-]
-`)
+    [
+      {
+        "height": 0.6,
+        "layer": "top",
+        "pcb_component_id": "pcb_component_0",
+        "pcb_group_id": "pcb_group_0",
+        "pcb_port_id": "pcb_port_0",
+        "pcb_smtpad_id": "pcb_smtpad_0",
+        "port_hints": [
+          "1",
+          "left",
+        ],
+        "shape": "rect",
+        "subcircuit_id": "subcircuit_source_group_0",
+        "type": "pcb_smtpad",
+        "width": 0.6,
+        "x": 0.5,
+        "y": 1,
+      },
+      {
+        "height": 0.6,
+        "layer": "top",
+        "pcb_component_id": "pcb_component_0",
+        "pcb_group_id": "pcb_group_0",
+        "pcb_port_id": "pcb_port_1",
+        "pcb_smtpad_id": "pcb_smtpad_1",
+        "port_hints": [
+          "2",
+          "right",
+        ],
+        "shape": "rect",
+        "subcircuit_id": "subcircuit_source_group_0",
+        "type": "pcb_smtpad",
+        "width": 0.6,
+        "x": 1.5,
+        "y": 1,
+      },
+    ]
+  `)
 })

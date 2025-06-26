@@ -126,6 +126,7 @@ export type GenericConnectionsAndSelectorsSel = Record<
         : never
     : never
 >
+type TestPointSel = Record<`TP${Nums40}`, { pin1: string }>
 
 type SelWithoutSubcircuit = NonPolarizedSel &
   PolarizedSel &
@@ -134,6 +135,7 @@ type SelWithoutSubcircuit = NonPolarizedSel &
   ChipSel &
   SwSel &
   NetSel &
+  TestPointSel &
   GenericConnectionsAndSelectorsSel
 
 type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (

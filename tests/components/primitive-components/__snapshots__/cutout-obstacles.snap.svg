@@ -1,0 +1,83 @@
+<svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+  <rect data-type="rect" data-label="" data-x="-10" data-y="0" x="40" y="264.42748091603056" width="106.87022900763358" height="64.12213740458014" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0" data-y="-1.7" x="284.65661793283385" y="326.412213740458" width="45.037909172500235" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0" data-y="-1.1" x="271.4738773681128" y="313.587786259542" width="71.4033903019423" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0" data-y="-0.5" x="265.78491080389017" y="300.76335877862596" width="82.7813234303876" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0" data-y="0.10000000000000009" x="264.48094946929245" y="287.9389312977099" width="85.38924609958303" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0" data-y="0.6999999999999997" x="267.131310544621" y="275.1145038167939" width="80.08852394892597" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0" data-y="1.2999999999999998" x="274.6898353969482" y="262.29007633587787" width="64.97147424427158" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="0" data-y="1.9" x="293.827485194263" y="249.46564885496184" width="26.69617464964199" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="10" data-y="-4.7" x="518.7786259541986" y="390.5343511450382" width="4.274809160305267" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="10" data-y="-4.1000000000000005" x="514.5038167938931" y="377.7099236641222" width="12.824427480916142" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="10" data-y="-3.5000000000000004" x="510.2290076335878" y="364.88549618320616" width="21.37404580152679" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="10" data-y="-2.9000000000000004" x="505.9541984732825" y="352.06106870229013" width="29.92366412213738" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="10" data-y="-2.3000000000000003" x="501.67938931297715" y="339.2366412213741" width="38.473282442748086" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="10" data-y="-1.7" x="441.83206106870233" y="326.412213740458" width="158.16793893129767" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="10" data-y="-1.0999999999999999" x="454.6564885496183" y="313.587786259542" width="132.51908396946567" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="10" data-y="-0.49999999999999994" x="467.48091603053433" y="300.76335877862596" width="106.87022900763361" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="10" data-y="0.10000000000000003" x="477.4554707379135" y="287.9389312977099" width="86.92111959287524" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="10" data-y="0.7" x="473.18066157760813" y="275.1145038167939" width="95.470737913486" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="8.558333333333334" data-y="1.3" x="468.9058524173028" y="262.29007633587787" width="42.391857506361305" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="11.441666666666666" data-y="1.3" x="530.5343511450382" y="262.29007633587787" width="42.39185750636136" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="8.008333333333333" data-y="1.9000000000000001" x="464.63104325699743" y="249.46564885496184" width="27.430025445292642" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="11.991666666666667" data-y="1.9000000000000001" x="549.7709923664122" y="249.46564885496184" width="27.430025445292586" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="7.458333333333334" data-y="2.5" x="460.35623409669216" y="236.6412213740458" width="12.468193384223866" height="12.824427480916029" fill="none" stroke="black" />
+  <rect data-type="rect" data-label="" data-x="12.541666666666668" data-y="2.5" x="569.0076335877864" y="236.6412213740458" width="12.468193384223923" height="12.824427480916029" fill="none" stroke="black" />
+  <g id="crosshair" style="display: none">
+    <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
+    <line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5" /><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text>
+  </g>
+  <script>
+    <![CDATA[
+    document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const crosshair = svg.getElementById('crosshair');
+      const h = svg.getElementById('crosshair-h');
+      const v = svg.getElementById('crosshair-v');
+      const coords = svg.getElementById('coordinates');
+
+      crosshair.style.display = 'block';
+      h.setAttribute('x1', '0');
+      h.setAttribute('x2', '640');
+      h.setAttribute('y1', y);
+      h.setAttribute('y2', y);
+      v.setAttribute('x1', x);
+      v.setAttribute('x2', x);
+      v.setAttribute('y1', '0');
+      v.setAttribute('y2', '640');
+
+      // Calculate real coordinates using inverse transformation
+      const matrix = {
+        "a": 21.37404580152672,
+        "c": 0,
+        "e": 307.17557251908397,
+        "b": 0,
+        "d": -21.37404580152672,
+        "f": 296.48854961832063
+      };
+      // Manually invert and apply the affine transform
+      // Since we only use translate and scale, we can directly compute:
+      // x' = (x - tx) / sx
+      // y' = (y - ty) / sy
+      const sx = matrix.a;
+      const sy = matrix.d;
+      const tx = matrix.e;
+      const ty = matrix.f;
+      const realPoint = {
+        x: (x - tx) / sx,
+        y: (y - ty) / sy // Flip y back since we used negative scale
+      }
+
+      coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+      coords.setAttribute('x', (x + 5).toString());
+      coords.setAttribute('y', (y - 5).toString());
+    });
+    document.currentScript.parentElement.addEventListener('mouseleave', () => {
+      document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+    });
+    ]]>
+  </script>
+</svg>
