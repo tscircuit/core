@@ -2,9 +2,12 @@ import { RootCircuit } from "lib/RootCircuit"
 import { logSoup } from "@tscircuit/log-soup"
 import "lib/register-catalogue"
 import "./extend-expect-circuit-snapshot"
+import type { PlatformConfig } from "@tscircuit/props"
 
-export const getTestFixture = () => {
-  const circuit = new RootCircuit()
+export const getTestFixture = ({
+  platform,
+}: { platform?: PlatformConfig } = {}) => {
+  const circuit = new RootCircuit({ platform })
 
   return {
     circuit,
