@@ -5,6 +5,8 @@ import {
   generateApproximatingRects,
   type RotatedRect,
 } from "./generateApproximatingRects"
+import { fillPolygonWithRects } from "./fillPolygonWithRects"
+import { fillCircleWithRects } from "./fillCircleWithRects"
 import type { Obstacle } from "./types"
 
 const EVERY_LAYER = ["top", "inner1", "inner2", "bottom"]
@@ -92,6 +94,54 @@ export const getObstaclesFromCircuitJson = (
           height: element.height,
           connectedTo: [],
         })
+      }
+    } else if (element.type === "pcb_cutout") {
+      if (element.shape === "rect") {
+        obstacles.push({
+          type: "rect",
+          layers: EVERY_LAYER,
+          center: {
+            x: element.center.x,
+            y: element.center.y,
+          },
+          width: element.width,
+          height: element.height,
+          connectedTo: [],
+        })
+      } else if (element.shape === "circle") {
+        const approximatingRects = fillCircleWithRects(
+          {
+            center: element.center,
+            radius: element.radius,
+          },
+          { rectHeight: 0.6 },
+        )
+
+        for (const rect of approximatingRects) {
+          obstacles.push({
+            type: "rect",
+            layers: EVERY_LAYER,
+            center: rect.center,
+            width: rect.width,
+            height: rect.height,
+            connectedTo: [],
+          })
+        }
+      } else if (element.shape === "polygon") {
+        const approximatingRects = fillPolygonWithRects(element.points, {
+          rectHeight: 0.6,
+        })
+
+        for (const rect of approximatingRects) {
+          obstacles.push({
+            type: "rect",
+            layers: EVERY_LAYER,
+            center: rect.center,
+            width: rect.width,
+            height: rect.height,
+            connectedTo: [],
+          })
+        }
       }
     } else if (element.type === "pcb_hole") {
       if (element.hole_shape === "oval") {
