@@ -398,8 +398,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const autorouterConfig = this._getAutorouterConfig()
 
     const tracesNeedsRouting = (this.selectAll("trace") as Trace[])
-      .filter(t => !t.pcb_trace_id)  // not yet routed
-      .map(t => t.source_trace_id)
+      .filter((t) => !t.pcb_trace_id) // not yet routed
+      .map((t) => t.source_trace_id)
 
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       db,
@@ -408,8 +408,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
 
     // throw away any connection that is not in our "needs routing" set
-    simpleRouteJson.connections = simpleRouteJson.connections
-      .filter(conn => tracesNeedsRouting.includes(conn.name))
+    simpleRouteJson.connections = simpleRouteJson.connections.filter((conn) =>
+      tracesNeedsRouting.includes(conn.name),
+    )
 
     this.root?.emit("autorouting:start", {
       subcircuit_id: this.subcircuit_id,
