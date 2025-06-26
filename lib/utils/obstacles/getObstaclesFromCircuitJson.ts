@@ -6,6 +6,7 @@ import {
   type RotatedRect,
 } from "./generateApproximatingRects"
 import { fillPolygonWithRects } from "./fillPolygonWithRects"
+import { fillCircleWithRects } from "./fillCircleWithRects"
 import type { Obstacle } from "./types"
 
 const EVERY_LAYER = ["top", "inner1", "inner2", "bottom"]
@@ -108,18 +109,24 @@ export const getObstaclesFromCircuitJson = (
           connectedTo: [],
         })
       } else if (element.shape === "circle") {
-        obstacles.push({
-          // @ts-ignore
-          type: "oval",
-          layers: EVERY_LAYER,
-          center: {
-            x: element.center.x,
-            y: element.center.y,
+        const approximatingRects = fillCircleWithRects(
+          {
+            center: element.center,
+            radius: element.radius,
           },
-          width: element.radius * 2,
-          height: element.radius * 2,
-          connectedTo: [],
-        })
+          { rectHeight: 0.6 },
+        )
+
+        for (const rect of approximatingRects) {
+          obstacles.push({
+            type: "rect",
+            layers: EVERY_LAYER,
+            center: rect.center,
+            width: rect.width,
+            height: rect.height,
+            connectedTo: [],
+          })
+        }
       } else if (element.shape === "polygon") {
         const approximatingRects = fillPolygonWithRects(element.points, {
           rectHeight: 0.6,
