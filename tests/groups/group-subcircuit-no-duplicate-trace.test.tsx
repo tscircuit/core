@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.skip("subcircuit should not have multiple traces between the same pins", async () => {
+test("subcircuit should not have multiple traces between the same pins", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
