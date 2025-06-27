@@ -339,7 +339,7 @@ export class NormalComponent<
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         {
-          componentName: this.name,
+          componentName: this.name ?? this.componentName,
           componentRotation: pcbRotation,
           footprint,
           pinLabels,
