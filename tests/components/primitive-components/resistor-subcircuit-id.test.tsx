@@ -22,7 +22,7 @@ test("resistor should have subcircuit_id on it's elements", async () => {
   expect(circuit.db.pcb_smtpad.list()).toMatchInlineSnapshot(`
     [
       {
-        "height": 0.6000000000000001,
+        "height": 0.6,
         "layer": "top",
         "pcb_component_id": "pcb_component_0",
         "pcb_group_id": "pcb_group_0",
@@ -35,12 +35,12 @@ test("resistor should have subcircuit_id on it's elements", async () => {
         "shape": "rect",
         "subcircuit_id": "subcircuit_source_group_0",
         "type": "pcb_smtpad",
-        "width": 0.6000000000000001,
+        "width": 0.6,
         "x": 0.5,
         "y": 1,
       },
       {
-        "height": 0.6000000000000001,
+        "height": 0.6,
         "layer": "top",
         "pcb_component_id": "pcb_component_0",
         "pcb_group_id": "pcb_group_0",
@@ -53,7 +53,7 @@ test("resistor should have subcircuit_id on it's elements", async () => {
         "shape": "rect",
         "subcircuit_id": "subcircuit_source_group_0",
         "type": "pcb_smtpad",
-        "width": 0.6000000000000001,
+        "width": 0.6,
         "x": 1.5,
         "y": 1,
       },
