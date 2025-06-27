@@ -68,9 +68,13 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
 
     const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
 
+    const net = this.getSubcircuit()!.selectOne(
+      `net.${this._getNetName()!}`,
+    )! as Net
+
     const netLabel = db.schematic_net_label.insert({
       text: props.net!,
-      source_net_id: props.net!,
+      source_net_id: net.source_net_id!,
       anchor_position: anchorPos,
 
       // TODO compute the center based on the text size
