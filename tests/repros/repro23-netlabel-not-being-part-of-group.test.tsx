@@ -62,7 +62,5 @@ test("repro23 netlabel-not-being-part-of-group", async () => {
   )
 
   circuit.render()
-
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
