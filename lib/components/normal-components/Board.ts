@@ -101,6 +101,43 @@ export class Board extends Group<typeof boardProps> {
     })
   }
 
+  /**
+   * Update the board information silkscreen text if platform config is set and
+   * the project name, version, or url is set.
+   */
+  private _addBoardInformationToSilkscreen() {
+    const platform = this.root?.platform
+    if (!platform?.printBoardInformationToSilkscreen) return
+
+    const pcbBoard = this.root!.db.pcb_board.get(this.pcb_board_id!)
+    if (!pcbBoard) return
+
+    const boardInformation: string[] = []
+    if (platform.projectName) boardInformation.push(platform.projectName)
+    if (platform.version) boardInformation.push(`v${platform.version}`)
+    if (platform.url) boardInformation.push(platform.url)
+    if (boardInformation.length === 0) return
+
+    const text = boardInformation.join("\n")
+    const marginX = 0.25
+    const marginY = 1
+    const position = {
+      x: pcbBoard.center.x + pcbBoard.width / 2 - marginX,
+      y: pcbBoard.center.y - pcbBoard.height / 2 + marginY,
+    }
+
+    this.root!.db.pcb_silkscreen_text.insert({
+      pcb_component_id: this.pcb_board_id!,
+      layer: "top",
+      font: "tscircuit2024",
+      font_size: 0.45,
+      text,
+      ccw_rotation: 0,
+      anchor_alignment: "bottom_right",
+      anchor_position: position,
+    })
+  }
+
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -149,6 +186,9 @@ export class Board extends Group<typeof boardProps> {
     })
 
     this.pcb_board_id = pcb_board.pcb_board_id!
+
+    // Add board information silkscreen text
+    this._addBoardInformationToSilkscreen()
   }
 
   removePcbComponentRender(): void {
