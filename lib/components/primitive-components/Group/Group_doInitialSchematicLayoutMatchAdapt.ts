@@ -20,6 +20,7 @@ import { getOtherSchematicTraces } from "../Trace/get-other-schematic-traces"
 import { deriveSourceTraceIdFromMatchAdaptPath } from "lib/utils/schematic/deriveSourceTraceIdFromMatchAdaptPath"
 import { cju } from "@tscircuit/circuit-json-util"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 
 export function Group_doInitialSchematicLayoutMatchAdapt<
   Props extends z.ZodType<any, any, any>,
@@ -147,7 +148,11 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       text: nl.netId,
       source_net_id: srcNet?.source_net_id,
       anchor_position: { x: nl.x, y: nl.y },
-      center: { x: nl.x, y: nl.y },
+      center: computeSchematicNetLabelCenter({
+        anchor_position: { x: nl.x, y: nl.y },
+        anchor_side: nl.anchorPosition as any,
+        text: nl.netId,
+      }),
       anchor_side: nl.anchorPosition as any,
     } as any)
   }

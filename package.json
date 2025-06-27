@@ -42,7 +42,7 @@
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",
     "@types/react-reconciler": "^0.28.9",
-    "bun-match-svg": "0.0.8",
+    "bun-match-svg": "0.0.11",
     "chokidar-cli": "^3.0.0",
     "circuit-json": "^0.0.212",
     "circuit-json-to-connectivity-map": "^0.0.22",

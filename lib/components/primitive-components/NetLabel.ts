@@ -4,6 +4,7 @@ import { Port } from "./Port"
 import { Trace } from "./Trace/Trace"
 import { Net } from "./Net"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
+import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 
 export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   source_net_label_id?: string
@@ -72,13 +73,18 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       `net.${this._getNetName()!}`,
     )! as Net
 
+    const anchorSide = props.anchorSide ?? "right"
+    const center = computeSchematicNetLabelCenter({
+      anchor_position: anchorPos,
+      anchor_side: anchorSide,
+      text: props.net!,
+    })
+
     const netLabel = db.schematic_net_label.insert({
       text: props.net!,
       source_net_id: net.source_net_id!,
       anchor_position: anchorPos,
-
-      // TODO compute the center based on the text size
-      center: anchorPos,
+      center,
       anchor_side: this._getAnchorSide(),
     })
 

@@ -42,6 +42,7 @@ import { getTraceDisplayName } from "./get-trace-display-name"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./push-edges-of-schematic-trace-to-prevent-overlap"
 import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
+import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -801,23 +802,33 @@ export class Trace
     }
 
     if (!existingToNetLabel) {
+      const toSide =
+        getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom"
       db.schematic_net_label.insert({
         text: this.props.schDisplayLabel! ?? pinFullName,
         source_net_id: toPort.source_port_id!,
         anchor_position: toAnchorPos,
-        center: toAnchorPos,
-        anchor_side:
-          getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom",
+        center: computeSchematicNetLabelCenter({
+          anchor_position: toAnchorPos,
+          anchor_side: toSide,
+          text: this.props.schDisplayLabel! ?? pinFullName,
+        }),
+        anchor_side: toSide,
       })
     }
     if (!existingFromNetLabel) {
+      const fromSide =
+        getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom"
       db.schematic_net_label.insert({
         text: this.props.schDisplayLabel! ?? pinFullName,
         source_net_id: fromPort.source_port_id!,
         anchor_position: fromAnchorPos,
-        center: fromAnchorPos,
-        anchor_side:
-          getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom",
+        center: computeSchematicNetLabelCenter({
+          anchor_position: fromAnchorPos,
+          anchor_side: fromSide,
+          text: this.props.schDisplayLabel! ?? pinFullName,
+        }),
+        anchor_side: fromSide,
       })
     }
   }
@@ -936,26 +947,35 @@ export class Trace
       }
 
       if (this.props.schDisplayLabel) {
+        const side =
+          getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
         db.schematic_net_label.insert({
           text: this.props.schDisplayLabel,
           source_net_id: net.source_net_id!,
           anchor_position: anchorPos,
-          center: anchorPos,
-          anchor_side:
-            getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom",
+          center: computeSchematicNetLabelCenter({
+            anchor_position: anchorPos,
+            anchor_side: side,
+            text: this.props.schDisplayLabel,
+          }),
+          anchor_side: side,
         })
 
         return
       }
 
+      const side =
+        getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
       const netLabel = db.schematic_net_label.insert({
         text: net._parsedProps.name,
         source_net_id: net.source_net_id!,
         anchor_position: anchorPos,
-        // TODO compute the center based on the text size
-        center: anchorPos,
-        anchor_side:
-          getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom",
+        center: computeSchematicNetLabelCenter({
+          anchor_position: anchorPos,
+          anchor_side: side,
+          text: net._parsedProps.name,
+        }),
+        anchor_side: side,
       })
 
       return
