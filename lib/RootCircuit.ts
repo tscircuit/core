@@ -1,4 +1,4 @@
-import type { AnyCircuitElement, LayerRef, PcbBoard } from "circuit-json"
+import type { AnyCircuitElement, LayerRef } from "circuit-json"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
@@ -36,10 +36,6 @@ export class RootCircuit {
    */
   projectUrl?: string
 
-  /** Optional version string for the project */
-  version?: string
-  printBoardInformationToSilkscreen?: boolean
-
   _hasRenderedAtleastOnce = false
 
   constructor({
@@ -51,12 +47,8 @@ export class RootCircuit {
     // TODO rename to rootCircuit
     this.root = this
     this.platform = platform
-    this.projectUrl = projectUrl ?? platform?.url
+    this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false
-    this.printBoardInformationToSilkscreen =
-      platform?.printBoardInformationToSilkscreen ?? false
-    this.version = platform?.version ?? undefined
-    this.name = platform?.projectName ?? undefined
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
@@ -77,7 +69,6 @@ export class RootCircuit {
     boardThickness: number
     _connectedSchematicPortPairs: Set<string>
     allLayers: LayerRef[]
-    pcb_board_id?: string | null
   } {
     return this.children.find(
       (c) => c.componentName === "Board",
@@ -135,8 +126,6 @@ export class RootCircuit {
       this.render()
     }
 
-    this._addBoardInformationToSilkscreen()
-
     this.emit("renderComplete")
   }
 
@@ -146,45 +135,6 @@ export class RootCircuit {
       return child.children.some((grandchild) =>
         grandchild._hasIncompleteAsyncEffects(),
       )
-    })
-  }
-
-  /**
-   * Update the board information silkscreen text if the project name, version,
-   * or url is set.
-   */
-  private _addBoardInformationToSilkscreen() {
-    if (!this.platform?.printBoardInformationToSilkscreen) return
-
-    const board = this._getBoard()
-    if (!board?.pcb_board_id) return
-
-    const pcbBoard = this.db.pcb_board.get(board.pcb_board_id)
-    if (!pcbBoard) return
-
-    const boardInformation: string[] = []
-    if (this.name) boardInformation.push(this.name)
-    if (this.version) boardInformation.push(`v${this.version}`)
-    if (this.projectUrl) boardInformation.push(this.projectUrl)
-    if (boardInformation.length === 0) return
-
-    const text = boardInformation.join("\n")
-    const marginX = 0.25
-    const marginY = 1
-    const position = {
-      x: pcbBoard.center.x + pcbBoard.width / 2 - marginX,
-      y: pcbBoard.center.y - pcbBoard.height / 2 + marginY,
-    }
-
-    this.db.pcb_silkscreen_text.insert({
-      pcb_component_id: board.pcb_component_id!,
-      layer: "top",
-      font: "tscircuit2024",
-      font_size: 0.45,
-      text,
-      ccw_rotation: 0,
-      anchor_alignment: "bottom_right",
-      anchor_position: position,
     })
   }
 

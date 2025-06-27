@@ -21,22 +21,20 @@ test("board information silkscreen added from platform config", async () => {
 
   expect(circuit.db.pcb_silkscreen_text.list()[1]).toMatchInlineSnapshot(`
     {
-      "anchor_alignment": "bottom_right",
+      "anchor_alignment": "center",
       "anchor_position": {
-        "x": 4.75,
-        "y": -4,
+        "x": 3,
+        "y": 1.2,
       },
       "ccw_rotation": 0,
       "font": "tscircuit2024",
-      "font_size": 0.45,
+      "font_size": 0.4,
       "layer": "top",
-      "pcb_component_id": null,
+      "pcb_component_id": "pcb_component_0",
+      "pcb_group_id": undefined,
       "pcb_silkscreen_text_id": "pcb_silkscreen_text_1",
-      "text": 
-    "TestProj
-    v1.0.0
-    https://example.com"
-    ,
+      "subcircuit_id": "subcircuit_source_group_0",
+      "text": "R1",
       "type": "pcb_silkscreen_text",
     }
   `)
