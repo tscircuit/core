@@ -110,6 +110,10 @@ export class Board extends Group<typeof boardProps> {
     // They will be updated in PcbBoardAutoSize phase
     let computedWidth = props.width ?? 0
     let computedHeight = props.height ?? 0
+    let center = {
+      x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
+      y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
+    }
 
     // Compute width and height from outline if not provided
     if (props.outline) {
@@ -123,13 +127,14 @@ export class Board extends Group<typeof boardProps> {
 
       computedWidth = maxX - minX
       computedHeight = maxY - minY
+      center = {
+        x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
+        y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
+      }
     }
 
     const pcb_board = db.pcb_board.insert({
-      center: {
-        x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
-        y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
-      },
+      center,
 
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
