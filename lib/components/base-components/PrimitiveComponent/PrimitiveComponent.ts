@@ -334,8 +334,25 @@ export abstract class PrimitiveComponent<
     const base_symbol_name = this.config
       .schematicSymbolName as keyof typeof symbols
 
-    // normalize the rotation
-    let normalizedRotation = props.schRotation
+    // derive rotation from schOrientation if provided
+    const orientationRotationMap: Record<string, number> = {
+      horizontal: 0,
+      pos_left: 0,
+      neg_right: 0,
+      pos_right: 180,
+      neg_left: 180,
+      pos_top: 90,
+      neg_bottom: 90,
+      vertical: 270,
+      pos_bottom: 270,
+      neg_top: 270,
+    }
+
+    let normalizedRotation =
+      props.schOrientation !== undefined
+        ? orientationRotationMap[props.schOrientation]
+        : props.schRotation
+
     if (normalizedRotation === undefined) {
       normalizedRotation = 0
     }
