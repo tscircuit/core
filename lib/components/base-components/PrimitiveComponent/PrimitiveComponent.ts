@@ -26,7 +26,6 @@ import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { Ftype } from "lib/utils/constants"
 import { selectOne, selectAll, type Options } from "css-select"
 import {
-  cssSelectPrimitiveComponentAdapter,
   cssSelectPrimitiveComponentAdapterOnlySubcircuits,
   cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
 } from "./cssSelectPrimitiveComponentAdapter"
