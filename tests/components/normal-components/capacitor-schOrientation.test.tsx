@@ -22,7 +22,7 @@ test("polarized capacitor schOrientation", () => {
       {orientations.map((o, i) => (
         <capacitor
           key={o}
-          name={`C${i + 1}`}
+          name={`C_${o}`}
           capacitance="1uF"
           polarized
           schOrientation={o}
