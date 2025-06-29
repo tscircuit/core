@@ -341,10 +341,10 @@ export abstract class PrimitiveComponent<
       neg_right: 0,
       pos_right: 180,
       neg_left: 180,
-      pos_top: 90,
+      pos_top: 270,
       neg_bottom: 90,
       vertical: 270,
-      pos_bottom: 270,
+      pos_bottom: 90,
       neg_top: 270,
     }
 
