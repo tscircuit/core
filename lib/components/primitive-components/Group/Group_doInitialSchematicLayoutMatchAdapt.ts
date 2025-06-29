@@ -85,6 +85,10 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       continue
     }
 
+    const srcTrace = db.source_trace.getWhere({
+      subcircuit_connectivity_map_key: srcPort?.subcircuit_connectivity_map_key,
+    })
+
     const schematic_net_label_id = `netlabel_for_${sp.schematic_port_id}`
     const source_net = db.source_net.get(srcNet.source_net_id)!
     const schematic_net_label = {
@@ -92,6 +96,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       schematic_net_label_id,
       text: source_net.name,
       source_net_id: srcNet.source_net_id,
+      source_trace_id: srcTrace?.source_trace_id,
       anchor_position: { ...sp.center },
       center: { ...sp.center },
       anchor_side:
@@ -245,7 +250,8 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
         anchor_side: anchorSide,
         symbol_name: symbolName,
         source_net_id: generatedNetLabel.source_net_id,
-      }
+        source_trace_id: generatedNetLabel.source_trace_id,
+      } as SchematicNetLabel
 
       db.schematic_net_label.insert(schematic_net_label)
 
