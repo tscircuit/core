@@ -54,11 +54,14 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       .map((e: any) => `${e.anchor_position?.x},${e.anchor_position?.y}`),
   )
 
-  const sideFromFacing: Record<string, "left" | "right" | "top" | "bottom"> = {
-    left: "left",
-    right: "right",
-    up: "top",
-    down: "bottom",
+  const oppositeSideFromFacing: Record<
+    string,
+    "left" | "right" | "top" | "bottom"
+  > = {
+    left: "right",
+    right: "left",
+    top: "bottom",
+    bottom: "top",
   }
 
   const generatedNetLabels = new Map<
@@ -91,8 +94,9 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       anchor_position: { ...sp.center },
       center: { ...sp.center },
       anchor_side:
-        sideFromFacing[sp.facing_direction as keyof typeof sideFromFacing] ??
-        "right",
+        oppositeSideFromFacing[
+          sp.facing_direction as keyof typeof oppositeSideFromFacing
+        ] ?? "right",
     } as SchematicNetLabel
 
     generatedNetLabels.set(schematic_net_label_id, {
@@ -217,8 +221,8 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
           ? "bottom"
           : color === "gnd"
             ? "top"
-            : (sideFromFacing[
-                schematic_port.facing_direction as keyof typeof sideFromFacing
+            : (oppositeSideFromFacing[
+                schematic_port.facing_direction as keyof typeof oppositeSideFromFacing
               ] ?? "right")
 
       const source_net = db.source_net.get(generatedNetLabel.source_net_id)!
@@ -239,8 +243,6 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
         symbol_name: symbolName,
         source_net_id: generatedNetLabel.source_net_id,
       }
-
-      console.log({ symbolName })
 
       db.schematic_net_label.insert(schematic_net_label)
 
