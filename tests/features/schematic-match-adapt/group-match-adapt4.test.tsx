@@ -18,7 +18,7 @@ test("group-match-adapt4", () => {
           pin4: "GND",
         }}
         schPinArrangement={{
-          leftSide: {
+          rightSide: {
             direction: "top-to-bottom",
             pins: ["SCL", "SDA", "VCC", "GND"],
           },
@@ -34,6 +34,8 @@ test("group-match-adapt4", () => {
   )
 
   circuit.render()
+
+  expect(circuit.db.schematic_net_label.list()).toMatchInlineSnapshot(`[]`)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
