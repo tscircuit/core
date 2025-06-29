@@ -1,5 +1,6 @@
 import type {
   SchematicComponent,
+  SchematicNetLabel,
   SchematicPort,
   SchematicTrace,
 } from "circuit-json"
@@ -39,6 +40,68 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
 
   // TODO use db.subtree({ source_group_id: ... })
   const subtreeCircuitJson = structuredClone(db.toArray())
+
+  // ------------------------------------------------------------------
+  //  Add synthetic schematic_net_label elements for any schematic_port
+  //  that is known to be connected to a net but does not already have a
+  //  schematic_net_label at its position.  These extra labels allow the
+  //  Match-Adapt BPC pipeline to create “boxes” for nets that otherwise
+  //  would be missing.
+  // ------------------------------------------------------------------
+  const existingLabels = new Set(
+    subtreeCircuitJson
+      .filter((e) => e.type === "schematic_net_label")
+      .map((e: any) => `${e.anchor_position?.x},${e.anchor_position?.y}`),
+  )
+
+  const sideFromFacing: Record<string, "left" | "right" | "top" | "bottom"> = {
+    left: "left",
+    right: "right",
+    up: "top",
+    down: "bottom",
+  }
+
+  const generatedNetLabels = new Map<
+    string,
+    { schematic_net_label: SchematicNetLabel; schematic_port: SchematicPort }
+  >()
+
+  for (const sp of subtreeCircuitJson.filter(
+    (e) => e.type === "schematic_port",
+  )) {
+    const key = `${sp.center.x},${sp.center.y}`
+    if (existingLabels.has(key)) continue // already has a label here
+
+    // Try to find a net this port belongs to (falls back to undefined)
+    const srcPort = db.source_port.get(sp.source_port_id)
+    const srcNet = db.source_net.getWhere({
+      subcircuit_connectivity_map_key: srcPort?.subcircuit_connectivity_map_key,
+    })
+    if (!srcNet) {
+      console.error(`No source net found for port: ${sp.source_port_id}`)
+      continue
+    }
+
+    const schematic_net_label_id = `netlabel_for_${sp.schematic_port_id}`
+    const schematic_net_label = {
+      type: "schematic_net_label",
+      schematic_net_label_id,
+      text: "", // no text; just a placeholder box for Match-Adapt
+      source_net_id: srcNet.source_net_id,
+      anchor_position: { ...sp.center },
+      center: { ...sp.center },
+      anchor_side:
+        sideFromFacing[sp.facing_direction as keyof typeof sideFromFacing] ??
+        "right",
+    } as SchematicNetLabel
+
+    generatedNetLabels.set(schematic_net_label_id, {
+      schematic_net_label,
+      schematic_port: sp,
+    })
+
+    subtreeCircuitJson.push(schematic_net_label)
+  }
 
   // Convert the subtree circuit json into a bpc graph
   const targetBpcGraph = convertCircuitJsonToBpc(subtreeCircuitJson)
@@ -133,7 +196,60 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       continue
     }
 
-    console.error(`No schematic element found for box: ${box.boxId}`)
+    if (generatedNetLabels.has(box.boxId)) {
+      const { schematic_net_label: generatedNetLabel, schematic_port } =
+        generatedNetLabels.get(box.boxId)!
+      // Create an approp
+      const pins = adaptedBpcGraphWithPositions.pins.filter(
+        (p) => p.boxId === box.boxId,
+      )
+      const center = pins.find((p) => p.color === "netlabel_center")!
+      const anchor = pins.find((p) => p.color !== "netlabel_center")!
+
+      const color = anchor.color as "vcc" | "gnd" | "normal"
+
+      const symbolName =
+        color === "vcc" ? "vcc" : color === "gnd" ? "gnd" : undefined
+
+      // TODO this should be based on the relative position of center/anchor
+      const anchorSide =
+        color === "vcc"
+          ? "bottom"
+          : color === "gnd"
+            ? "top"
+            : (sideFromFacing[
+                schematic_port.facing_direction as keyof typeof sideFromFacing
+              ] ?? "right")
+
+      const source_net = db.source_net.get(generatedNetLabel.source_net_id)!
+      // Insert a netlabel into the actual db, but map colors to specific symbols
+      const schematic_net_label = {
+        type: "schematic_net_label",
+        schematic_net_label_id: `netlabel_for_${box.boxId}`,
+        text: source_net.name, // no text; just a placeholder box for Match-Adapt
+        anchor_position: {
+          x: box.center.x + center.offset.x,
+          y: box.center.y + center.offset.y,
+        },
+        center: {
+          x: box.center.x + center.offset.x,
+          y: box.center.y + center.offset.y,
+        },
+        anchor_side: anchorSide,
+        symbol_name: symbolName,
+        source_net_id: generatedNetLabel.source_net_id,
+      }
+
+      console.log({ symbolName })
+
+      db.schematic_net_label.insert(schematic_net_label)
+
+      continue
+    }
+
+    console.error(
+      `No schematic element found for box: ${box.boxId}. This is a bug in the matchAdapt binding with @tscircuit/core`,
+    )
   }
 
   // Create schematic traces for any connections
