@@ -1,76 +1,220 @@
 <svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
-  <rect data-type="rect" data-label="" data-x="0" data-y="0" x="175.3885380322357" y="271.3574114854243" width="21.618928228700327" height="97.28517702915144" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.2" data-y="-1.0299999999999998" x="175.3885380322357" y="370.26400813172825" width="0" height="10.809464114350135" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.2" data-y="1.0299999999999998" x="169.98380597506062" y="258.9265277539216" width="10.809464114350163" height="10.809464114350135" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="5" data-y="0" x="441.34639557984804" y="309.490209361658" width="30.176418850983453" height="21.019581276683994" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.7" x="148.3648777463603" y="279.4645095711869" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.49999999999999994" x="148.3648777463603" y="290.2739736855371" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.29999999999999993" x="148.3648777463603" y="301.08343779988724" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.09999999999999987" x="148.3648777463603" y="311.89290191423737" width="21.618928228700327" height="5.404732057175124" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.10000000000000009" x="148.3648777463603" y="322.70236602858756" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.30000000000000004" x="148.3648777463603" y="333.5118301429377" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.7" x="148.3648777463603" y="355.130758371638" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.7" x="202.41219831811108" y="355.130758371638" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.49999999999999994" x="202.41219831811108" y="344.32129425728783" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.29999999999999993" x="202.41219831811108" y="333.5118301429377" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.09999999999999987" x="202.41219831811108" y="322.7023660285875" width="21.618928228700327" height="5.404732057175124" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.10000000000000009" x="202.41219831811108" y="311.89290191423737" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.30000000000000004" x="202.41219831811108" y="301.08343779988724" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.5" x="202.41219831811108" y="290.27397368553704" width="21.618928228700327" height="5.404732057175124" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.7" x="202.41219831811108" y="279.4645095711869" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="4.5487093" data-y="0.0002732499999993365" x="421.2340877570398" y="317.28286554106626" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="2.13" x="94.31755717460952" y="204.60897057931209" width="451.36488565078093" height="0.5404732057174897" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="-2.13" x="94.31755717460952" y="434.8505562149704" width="451.36488565078093" height="0.5404732057174897" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="-1.7000000000000002" data-y="0" x="94.04732057175076" y="204.87920718217083" width="0.5404732057175039" height="230.24158563565834" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="6.6512907" data-y="0" x="545.4122062225317" y="204.87920718217083" width="0.5404732057174897" height="230.24158563565834" fill="none" stroke="black" />
-  <rect data-type="rect" data-label="" data-x="0" data-y="0" x="121.34121746048491" y="217.31009091367352" width="129.71356937220185" height="205.37981817265293" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="0" data-y="0" x="169.98380597506062" y="265.9526794282492" width="32.42839234305046" height="108.09464114350158" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="-0.2" data-y="-1.0299999999999998" x="121.34121746048491" y="316.21668755997746" width="108.09464114350156" height="118.90410525785171" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="-0.2" data-y="-1.0299999999999998" x="169.98380597506062" y="364.8592760745531" width="10.809464114350163" height="21.618928228700327" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="-0.2" data-y="1.0299999999999998" x="115.93648540330983" y="204.87920718217083" width="118.90410525785174" height="118.90410525785171" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="-0.2" data-y="1.0299999999999998" x="164.57907391788552" y="253.52179569674655" width="21.618928228700327" height="21.618928228700327" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="5" data-y="0" x="387.29907500809725" y="255.44288878990724" width="138.27105999448497" height="129.11422242018554" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="5" data-y="0" x="435.9416635226729" y="304.08547730448294" width="40.9858829653337" height="31.82904539103413" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.7" x="94.31755717460952" y="225.41718899943612" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.7" x="142.96014568918523" y="274.05977751401184" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.49999999999999994" x="94.31755717460952" y="236.22665311378628" width="129.71356937220185" height="113.49937320067667" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.49999999999999994" x="142.96014568918523" y="284.869241628362" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.29999999999999993" x="94.31755717460952" y="247.03611722813645" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.29999999999999993" x="142.96014568918523" y="295.67870574271217" width="32.42839234305046" height="16.214196171525202" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.09999999999999987" x="94.31755717460952" y="257.8455813424866" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.09999999999999987" x="142.96014568918523" y="306.4881698570623" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.10000000000000009" x="94.31755717460952" y="268.6550454568368" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.10000000000000009" x="142.96014568918523" y="317.29763397141244" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.30000000000000004" x="94.31755717460952" y="279.4645095711869" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.30000000000000004" x="142.96014568918523" y="328.10709808576263" width="32.42839234305046" height="16.214196171525202" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.7" x="94.31755717460952" y="301.08343779988724" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.7" x="142.96014568918523" y="349.7260263144629" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.7" x="148.36487774636032" y="301.08343779988724" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.7" x="197.007466260936" y="349.7260263144629" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.49999999999999994" x="148.36487774636032" y="290.27397368553704" width="129.71356937220185" height="113.4993732006767" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.49999999999999994" x="197.007466260936" y="338.91656220011276" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.29999999999999993" x="148.36487774636032" y="279.4645095711869" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.29999999999999993" x="197.007466260936" y="328.10709808576263" width="32.42839234305046" height="16.214196171525202" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.09999999999999987" x="148.36487774636032" y="268.6550454568368" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.09999999999999987" x="197.007466260936" y="317.29763397141244" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.10000000000000009" x="148.36487774636032" y="257.8455813424866" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.10000000000000009" x="197.007466260936" y="306.4881698570623" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.30000000000000004" x="148.36487774636032" y="247.03611722813645" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.30000000000000004" x="197.007466260936" y="295.67870574271217" width="32.42839234305046" height="16.214196171525202" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.5" x="148.36487774636032" y="236.22665311378628" width="129.71356937220185" height="113.49937320067667" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.5" x="197.007466260936" y="284.869241628362" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.7" x="148.36487774636032" y="225.41718899943612" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.7" x="197.007466260936" y="274.05977751401184" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="4.5487093" data-y="0.0002732499999993365" x="367.186767185289" y="263.23554496931547" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="4.5487093" data-y="0.0002732499999993365" x="415.82935569986466" y="311.8781334838912" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="2.13" x="40.270236602858745" y="150.56165000756133" width="559.4595267942825" height="108.63511434921904" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="2.13" x="88.91282511743445" y="199.20423852213702" width="462.174349765131" height="11.349937320067653" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="-2.13" x="40.270236602858745" y="380.80323564321964" width="559.4595267942825" height="108.63511434921907" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="-2.13" x="88.91282511743445" y="429.4458241577953" width="462.174349765131" height="11.349937320067681" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="-1.7000000000000002" data-y="0" x="39.99999999999997" y="150.83188661042007" width="108.63511434921907" height="338.3362267791599" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="-1.7000000000000002" data-y="0" x="88.64258851457568" y="199.47447512499576" width="11.349937320067667" height="241.05104975000847" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
-  <rect data-type="rect" data-label="" data-x="6.6512907" data-y="0" x="491.36488565078093" y="150.83188661042007" width="108.63511434921907" height="338.3362267791599" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" />
-  <rect data-type="rect" data-label="" data-x="6.6512907" data-y="0" x="540.0074741653566" y="199.47447512499576" width="11.349937320067738" height="241.05104975000847" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" />
+  <g>
+    <rect data-type="rect" data-label="" data-x="0" data-y="0" x="175.3885380322357" y="271.3574114854243" width="21.618928228700327" height="97.28517702915144" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.2" data-y="-1.0299999999999998" x="175.3885380322357" y="370.26400813172825" width="0" height="10.809464114350135" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.2" data-y="1.0299999999999998" x="169.98380597506062" y="258.9265277539216" width="10.809464114350163" height="10.809464114350135" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="5" data-y="0" x="441.34639557984804" y="309.490209361658" width="30.176418850983453" height="21.019581276683994" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.7" x="148.3648777463603" y="279.4645095711869" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.49999999999999994" x="148.3648777463603" y="290.2739736855371" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.29999999999999993" x="148.3648777463603" y="301.08343779988724" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.09999999999999987" x="148.3648777463603" y="311.89290191423737" width="21.618928228700327" height="5.404732057175124" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.10000000000000009" x="148.3648777463603" y="322.70236602858756" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.30000000000000004" x="148.3648777463603" y="333.5118301429377" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.7" x="148.3648777463603" y="355.130758371638" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.7" x="202.41219831811108" y="355.130758371638" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.49999999999999994" x="202.41219831811108" y="344.32129425728783" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.29999999999999993" x="202.41219831811108" y="333.5118301429377" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.09999999999999987" x="202.41219831811108" y="322.7023660285875" width="21.618928228700327" height="5.404732057175124" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.10000000000000009" x="202.41219831811108" y="311.89290191423737" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.30000000000000004" x="202.41219831811108" y="301.08343779988724" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.5" x="202.41219831811108" y="290.27397368553704" width="21.618928228700327" height="5.404732057175124" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.7" x="202.41219831811108" y="279.4645095711869" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="4.5487093" data-y="0.0002732499999993365" x="421.2340877570398" y="317.28286554106626" width="21.618928228700327" height="5.404732057175067" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="2.13" x="94.31755717460952" y="204.60897057931209" width="451.36488565078093" height="0.5404732057174897" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="-2.13" x="94.31755717460952" y="434.8505562149704" width="451.36488565078093" height="0.5404732057174897" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-1.7000000000000002" data-y="0" x="94.04732057175076" y="204.87920718217083" width="0.5404732057175039" height="230.24158563565834" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="6.6512907" data-y="0" x="545.4122062225317" y="204.87920718217083" width="0.5404732057174897" height="230.24158563565834" fill="none" stroke="black" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0" data-y="0" x="121.34121746048491" y="217.31009091367352" width="129.71356937220185" height="205.37981817265293" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0" data-y="0" x="169.98380597506062" y="265.9526794282492" width="32.42839234305046" height="108.09464114350158" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.2" data-y="-1.0299999999999998" x="121.34121746048491" y="316.21668755997746" width="108.09464114350156" height="118.90410525785171" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.2" data-y="-1.0299999999999998" x="169.98380597506062" y="364.8592760745531" width="10.809464114350163" height="21.618928228700327" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.2" data-y="1.0299999999999998" x="115.93648540330983" y="204.87920718217083" width="118.90410525785174" height="118.90410525785171" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.2" data-y="1.0299999999999998" x="164.57907391788552" y="253.52179569674655" width="21.618928228700327" height="21.618928228700327" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="5" data-y="0" x="387.29907500809725" y="255.44288878990724" width="138.27105999448497" height="129.11422242018554" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="5" data-y="0" x="435.9416635226729" y="304.08547730448294" width="40.9858829653337" height="31.82904539103413" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.7" x="94.31755717460952" y="225.41718899943612" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.7" x="142.96014568918523" y="274.05977751401184" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.49999999999999994" x="94.31755717460952" y="236.22665311378628" width="129.71356937220185" height="113.49937320067667" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.49999999999999994" x="142.96014568918523" y="284.869241628362" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.29999999999999993" x="94.31755717460952" y="247.03611722813645" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.29999999999999993" x="142.96014568918523" y="295.67870574271217" width="32.42839234305046" height="16.214196171525202" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.09999999999999987" x="94.31755717460952" y="257.8455813424866" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="0.09999999999999987" x="142.96014568918523" y="306.4881698570623" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.10000000000000009" x="94.31755717460952" y="268.6550454568368" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.10000000000000009" x="142.96014568918523" y="317.29763397141244" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.30000000000000004" x="94.31755717460952" y="279.4645095711869" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.30000000000000004" x="142.96014568918523" y="328.10709808576263" width="32.42839234305046" height="16.214196171525202" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.7" x="94.31755717460952" y="301.08343779988724" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-0.5000000000000001" data-y="-0.7" x="142.96014568918523" y="349.7260263144629" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.7" x="148.36487774636032" y="301.08343779988724" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.7" x="197.007466260936" y="349.7260263144629" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.49999999999999994" x="148.36487774636032" y="290.27397368553704" width="129.71356937220185" height="113.4993732006767" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.49999999999999994" x="197.007466260936" y="338.91656220011276" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.29999999999999993" x="148.36487774636032" y="279.4645095711869" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.29999999999999993" x="197.007466260936" y="328.10709808576263" width="32.42839234305046" height="16.214196171525202" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.09999999999999987" x="148.36487774636032" y="268.6550454568368" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="-0.09999999999999987" x="197.007466260936" y="317.29763397141244" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.10000000000000009" x="148.36487774636032" y="257.8455813424866" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.10000000000000009" x="197.007466260936" y="306.4881698570623" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.30000000000000004" x="148.36487774636032" y="247.03611722813645" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.30000000000000004" x="197.007466260936" y="295.67870574271217" width="32.42839234305046" height="16.214196171525202" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.5" x="148.36487774636032" y="236.22665311378628" width="129.71356937220185" height="113.49937320067667" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.5" x="197.007466260936" y="284.869241628362" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.7" x="148.36487774636032" y="225.41718899943612" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="0.5000000000000001" data-y="0.7" x="197.007466260936" y="274.05977751401184" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="4.5487093" data-y="0.0002732499999993365" x="367.186767185289" y="263.23554496931547" width="129.71356937220185" height="113.49937320067664" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="4.5487093" data-y="0.0002732499999993365" x="415.82935569986466" y="311.8781334838912" width="32.42839234305046" height="16.21419617152526" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="2.13" x="40.270236602858745" y="150.56165000756133" width="559.4595267942825" height="108.63511434921904" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="2.13" x="88.91282511743445" y="199.20423852213702" width="462.174349765131" height="11.349937320067653" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="-2.13" x="40.270236602858745" y="380.80323564321964" width="559.4595267942825" height="108.63511434921907" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="2.4756453499999997" data-y="-2.13" x="88.91282511743445" y="429.4458241577953" width="462.174349765131" height="11.349937320067681" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-1.7000000000000002" data-y="0" x="39.99999999999997" y="150.83188661042007" width="108.63511434921907" height="338.3362267791599" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-1.7000000000000002" data-y="0" x="88.64258851457568" y="199.47447512499576" width="11.349937320067667" height="241.05104975000847" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="6.6512907" data-y="0" x="491.36488565078093" y="150.83188661042007" width="108.63511434921907" height="338.3362267791599" fill="rgba(0,0,255,0.05)" stroke="rgba(0,0,255,0.05)" stroke-width="0.018502304821428568" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="6.6512907" data-y="0" x="540.0074741653566" y="199.47447512499576" width="11.349937320067738" height="241.05104975000847" fill="rgba(255,0,0,0.2)" stroke="rgba(255,0,0,0.2)" stroke-width="0.018502304821428568" />
+  </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
     <line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5" /><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text>
