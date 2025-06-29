@@ -345,7 +345,7 @@ export abstract class PrimitiveComponent<
       neg_bottom: 90,
       vertical: 270,
       pos_bottom: 90,
-      neg_top: 270,
+      neg_top: 90,
     }
 
     let normalizedRotation =

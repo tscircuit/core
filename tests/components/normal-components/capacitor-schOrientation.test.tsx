@@ -47,7 +47,7 @@ test("polarized capacitor schOrientation", () => {
     "capacitor_polarized_up",
     "capacitor_polarized_right",
     "capacitor_polarized_left",
-    "capacitor_polarized_down",
+    "capacitor_polarized_up",
     "capacitor_polarized_up",
     "capacitor_polarized_left",
     "capacitor_polarized_right",
