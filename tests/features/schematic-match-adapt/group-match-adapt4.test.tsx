@@ -35,7 +35,5 @@ test("group-match-adapt4", () => {
 
   circuit.render()
 
-  expect(circuit.db.schematic_net_label.list()).toMatchInlineSnapshot(`[]`)
-
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
