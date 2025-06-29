@@ -86,10 +86,11 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
     }
 
     const schematic_net_label_id = `netlabel_for_${sp.schematic_port_id}`
+    const source_net = db.source_net.get(srcNet.source_net_id)!
     const schematic_net_label = {
       type: "schematic_net_label",
       schematic_net_label_id,
-      text: "", // no text; just a placeholder box for Match-Adapt
+      text: source_net.name,
       source_net_id: srcNet.source_net_id,
       anchor_position: { ...sp.center },
       center: { ...sp.center },
@@ -123,17 +124,18 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
     boxes: [],
     pins: [],
   }
-  let bestWlDistance = 0
+  let bestWlDistance = Infinity
   let winningBpcGraphName = "empty"
   for (const [candidateBpcGraphName, candidateBpcGraph] of Object.entries(
     corpus,
-  )) {
+  ).sort((a, b) => a[0].localeCompare(b[0]))) {
     const wlDistance = getBpcGraphWlDistance(
       candidateBpcGraph as FixedBpcGraph,
       targetBpcGraph,
     )
+    console.log(candidateBpcGraphName, wlDistance)
 
-    if (wlDistance > bestWlDistance) {
+    if (wlDistance < bestWlDistance) {
       bestMatch = candidateBpcGraph as FixedBpcGraph
       winningBpcGraphName = candidateBpcGraphName
       bestWlDistance = wlDistance
