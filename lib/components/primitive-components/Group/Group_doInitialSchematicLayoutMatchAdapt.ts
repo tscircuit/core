@@ -139,6 +139,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       bestMatch = candidateBpcGraph as FixedBpcGraph
       winningBpcGraphName = candidateBpcGraphName
       bestWlDistance = wlDistance
+      if (wlDistance === 0) break
     }
   }
 
