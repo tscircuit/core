@@ -1,5 +1,6 @@
 import type {
   SchematicComponent,
+  SchematicNetLabel,
   SchematicPort,
   SchematicTrace,
 } from "circuit-json"
@@ -21,6 +22,16 @@ import { deriveSourceTraceIdFromMatchAdaptPath } from "lib/utils/schematic/deriv
 import { cju } from "@tscircuit/circuit-json-util"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import corpus from "@tscircuit/schematic-corpus/dist/bundled-bpc-graphs.json"
+import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
+import {
+  type BpcGraph,
+  assignFloatingBoxPositions,
+  netAdaptBpcGraph,
+  getBpcGraphWlDistance,
+  type FixedBpcGraph,
+} from "bpc-graph"
+import {} from "@tscircuit/circuit-json-util"
 
 export function Group_doInitialSchematicLayoutMatchAdapt<
   Props extends z.ZodType<any, any, any>,
@@ -28,189 +39,231 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   const { db } = group.root!
 
   // TODO use db.subtree({ source_group_id: ... })
-  let subtreeCircuitJson = structuredClone(db.toArray())
+  const subtreeCircuitJson = structuredClone(db.toArray())
 
-  // Reorder the pins of the schematic components to be in CCW order
-  subtreeCircuitJson = reorderChipPinsToCcw(subtreeCircuitJson)
+  // ------------------------------------------------------------------
+  //  Add synthetic schematic_net_label elements for any schematic_port
+  //  that is known to be connected to a net but does not already have a
+  //  schematic_net_label at its position.  These extra labels allow the
+  //  Match-Adapt BPC pipeline to create “boxes” for nets that otherwise
+  //  would be missing.
+  // ------------------------------------------------------------------
+  const existingLabels = new Set(
+    subtreeCircuitJson
+      .filter((e) => e.type === "schematic_net_label")
+      .map((e: any) => `${e.anchor_position?.x},${e.anchor_position?.y}`),
+  )
 
-  const inputNetlist = convertCircuitJsonToInputNetlist(subtreeCircuitJson)
+  const oppositeSideFromFacing: Record<
+    string,
+    "left" | "right" | "top" | "bottom"
+  > = {
+    left: "right",
+    right: "left",
+    top: "bottom",
+    bottom: "top",
+  }
 
-  // Run the SchematicLayoutPipelineSolver
-  const templateFns = group._parsedProps.matchAdaptTemplate
-    ? [
-        () =>
-          circuitBuilderFromLayoutJson(
-            group._parsedProps.matchAdaptTemplate as any,
-          ),
-      ]
-    : undefined
+  const generatedNetLabels = new Map<
+    string,
+    { schematic_net_label: SchematicNetLabel; schematic_port: SchematicPort }
+  >()
 
-  const solver = new SchematicLayoutPipelineSolver({
-    inputNetlist,
-    templateFns,
-  })
+  for (const sp of subtreeCircuitJson.filter(
+    (e) => e.type === "schematic_port",
+  )) {
+    const key = `${sp.center.x},${sp.center.y}`
+    if (existingLabels.has(key)) continue // already has a label here
 
-  let solvedLayout: ReturnType<typeof solver.getLayout> | null = null
-  try {
-    solver.solve()
-    solvedLayout = solver.getLayout()
-  } catch (e: any) {
-    db.schematic_layout_error.insert({
-      message: `Match-adapt layout failed: ${e.toString()}`,
-      error_type: "schematic_layout_error",
-      source_group_id: group.source_group_id!,
-      schematic_group_id: group.schematic_group_id!,
+    // Try to find a net this port belongs to (falls back to undefined)
+    const srcPort = db.source_port.get(sp.source_port_id)
+    const srcNet = db.source_net.getWhere({
+      subcircuit_connectivity_map_key: srcPort?.subcircuit_connectivity_map_key,
     })
-    return
+    if (!srcNet) {
+      console.error(`No source net found for port: ${sp.source_port_id}`)
+      continue
+    }
+
+    const srcTrace = db.source_trace.getWhere({
+      subcircuit_connectivity_map_key: srcPort?.subcircuit_connectivity_map_key,
+    })
+
+    const schematic_net_label_id = `netlabel_for_${sp.schematic_port_id}`
+    const source_net = db.source_net.get(srcNet.source_net_id)!
+    const schematic_net_label = {
+      type: "schematic_net_label",
+      schematic_net_label_id,
+      text: source_net.name,
+      source_net_id: srcNet.source_net_id,
+      source_trace_id: srcTrace?.source_trace_id,
+      anchor_position: { ...sp.center },
+      center: { ...sp.center },
+      anchor_side:
+        oppositeSideFromFacing[
+          sp.facing_direction as keyof typeof oppositeSideFromFacing
+        ] ?? "right",
+    } as SchematicNetLabel
+
+    generatedNetLabels.set(schematic_net_label_id, {
+      schematic_net_label,
+      schematic_port: sp,
+    })
+
+    subtreeCircuitJson.push(schematic_net_label)
   }
 
-  const { boxes, junctions, netLabels, paths } = solvedLayout!
+  // Convert the subtree circuit json into a bpc graph
+  const targetBpcGraph = convertCircuitJsonToBpc(subtreeCircuitJson)
 
-  const layoutConnMap = new ConnectivityMap({})
-
-  for (const path of paths) {
-    layoutConnMap.addConnections([[getRefKey(path.from), getRefKey(path.to)]])
+  // Redundant, but assert that all the boxes are floating
+  for (const box of targetBpcGraph.boxes) {
+    if (box.kind === "fixed" || box.center) {
+      box.kind = "floating"
+      box.center = undefined
+    }
   }
-  for (const junction of junctions) {
-    for (const path of paths) {
-      for (const pathPoint of path.points) {
-        if (
-          Math.abs(pathPoint.x - junction.x) < 0.001 &&
-          Math.abs(pathPoint.y - junction.y) < 0.001
-        ) {
-          layoutConnMap.addConnections([
-            [getRefKey(path.from), getRefKey(junction)],
-            [getRefKey(path.to), getRefKey(junction)],
-          ])
-        }
+
+  // Find the best match in the corpus
+  let bestMatch: BpcGraph = {
+    boxes: [],
+    pins: [],
+  }
+  let bestWlDistance = Infinity
+  let winningBpcGraphName = "empty"
+  for (const [candidateBpcGraphName, candidateBpcGraph] of Object.entries(
+    corpus,
+  ).sort((a, b) => a[0].localeCompare(b[0]))) {
+    const wlDistance = getBpcGraphWlDistance(
+      candidateBpcGraph as FixedBpcGraph,
+      targetBpcGraph,
+    )
+    console.log(candidateBpcGraphName, wlDistance)
+
+    if (wlDistance < bestWlDistance) {
+      bestMatch = candidateBpcGraph as FixedBpcGraph
+      winningBpcGraphName = candidateBpcGraphName
+      bestWlDistance = wlDistance
+      if (wlDistance === 0) break
+    }
+  }
+
+  console.log(`Winning BPC graph: ${winningBpcGraphName}`)
+
+  // Adapt the best match
+  const { adaptedBpcGraph } = netAdaptBpcGraph(
+    bestMatch as FixedBpcGraph,
+    targetBpcGraph,
+  )
+
+  // Assign the floating box positions
+  const adaptedBpcGraphWithPositions =
+    assignFloatingBoxPositions(adaptedBpcGraph)
+
+  // Extract the new positions
+  for (const box of adaptedBpcGraphWithPositions.boxes) {
+    const schematic_component = db.schematic_component.get(box.boxId)
+    if (schematic_component) {
+      const ports = db.schematic_port.list({
+        schematic_component_id: schematic_component.schematic_component_id,
+      })
+      const texts = db.schematic_text.list({
+        schematic_component_id: schematic_component.schematic_component_id,
+      })
+
+      const positionDelta = {
+        x: schematic_component.center.x - box.center.x,
+        y: schematic_component.center.y - box.center.y,
       }
-    }
-  }
 
-  // -----------------------------------------------------------------
-  // 1. Move chips (schematic_components) to solver-determined centers
-  for (const box of boxes) {
-    const srcComp = db.source_component.list().find((c) => c.name === box.boxId)
-    if (!srcComp) continue
+      for (const port of ports) {
+        port.center.x += positionDelta.x
+        port.center.y += positionDelta.y
+      }
 
-    const schComp = db.schematic_component.getWhere({
-      source_component_id: srcComp.source_component_id,
-    })
+      for (const text of texts) {
+        text.position.x += positionDelta.x
+        text.position.y += positionDelta.y
+      }
 
-    if (!schComp) continue
-
-    const schCompMoveDelta = {
-      x: box.centerX - schComp.center.x + 0.1, // TODO figure out why +0.1
-      y: box.centerY - schComp.center.y - 0.1,
+      schematic_component.center.x += positionDelta.x
+      schematic_component.center.y += positionDelta.y
+      continue
     }
 
-    db.schematic_component.update(schComp.schematic_component_id, {
-      center: {
-        x: schComp.center.x + schCompMoveDelta.x,
-        y: schComp.center.y + schCompMoveDelta.y,
-      },
-    })
-    // Update all the pins in the schematic component
-    const schematicPorts = db.schematic_port.list({
-      schematic_component_id: schComp.schematic_component_id,
-    })
+    const schematic_net_label = db.schematic_net_label.get(box.boxId)
 
-    for (const schematicPort of schematicPorts) {
-      db.schematic_port.update(schematicPort.schematic_port_id, {
+    if (schematic_net_label) {
+      const pin = adaptedBpcGraphWithPositions.pins.find(
+        (p) => p.boxId === box.boxId && p.color === "netlabel_center",
+      )
+      if (!pin) {
+        throw new Error(`No pin found for net label: ${box.boxId}`)
+      }
+      schematic_net_label.center = box.center
+      schematic_net_label.anchor_position = {
+        x: box.center.x + pin.offset.x,
+        y: box.center.y + pin.offset.y,
+      }
+      continue
+    }
+
+    if (generatedNetLabels.has(box.boxId)) {
+      const { schematic_net_label: generatedNetLabel, schematic_port } =
+        generatedNetLabels.get(box.boxId)!
+      // Create an approp
+      const pins = adaptedBpcGraphWithPositions.pins.filter(
+        (p) => p.boxId === box.boxId,
+      )
+      const center = pins.find((p) => p.color === "netlabel_center")!
+      const anchor = pins.find((p) => p.color !== "netlabel_center")!
+
+      const color = anchor.color as "vcc" | "gnd" | "normal"
+
+      const symbolName =
+        color === "vcc" ? "vcc" : color === "gnd" ? "gnd" : undefined
+
+      // TODO this should be based on the relative position of center/anchor
+      const anchorSide =
+        color === "vcc"
+          ? "bottom"
+          : color === "gnd"
+            ? "top"
+            : (oppositeSideFromFacing[
+                schematic_port.facing_direction as keyof typeof oppositeSideFromFacing
+              ] ?? "right")
+
+      const source_net = db.source_net.get(generatedNetLabel.source_net_id)!
+      // Insert a netlabel into the actual db, but map colors to specific symbols
+      const schematic_net_label = {
+        type: "schematic_net_label",
+        schematic_net_label_id: `netlabel_for_${box.boxId}`,
+        text: source_net.name, // no text; just a placeholder box for Match-Adapt
+        anchor_position: {
+          x: box.center.x + center.offset.x,
+          y: box.center.y + center.offset.y,
+        },
         center: {
-          x: schematicPort.center.x + schCompMoveDelta.x,
-          y: schematicPort.center.y + schCompMoveDelta.y,
+          x: box.center.x + center.offset.x,
+          y: box.center.y + center.offset.y,
         },
-      })
+        anchor_side: anchorSide,
+        symbol_name: symbolName,
+        source_net_id: generatedNetLabel.source_net_id,
+        source_trace_id: generatedNetLabel.source_trace_id,
+      } as SchematicNetLabel
+
+      db.schematic_net_label.insert(schematic_net_label)
+
+      continue
     }
 
-    // Update schematic text positions
-    const schematicTexts = db.schematic_text.list({
-      schematic_component_id: schComp.schematic_component_id,
-    })
-
-    for (const schematicText of schematicTexts) {
-      db.schematic_text.update(schematicText.schematic_text_id, {
-        position: {
-          x: schematicText.position.x + schCompMoveDelta.x,
-          y: schematicText.position.y + schCompMoveDelta.y,
-        },
-      })
-    }
+    console.error(
+      `No schematic element found for box: ${box.boxId}. This is a bug in the matchAdapt binding with @tscircuit/core`,
+    )
   }
 
-  // -----------------------------------------------------------------
-  // 2. Create schematic net-labels
-  for (const nl of netLabels) {
-    const srcNet = db.source_net.list().find((n) => n.name === nl.netId)
+  // Create schematic traces for any connections
 
-    db.schematic_net_label.insert({
-      text: nl.netId,
-      source_net_id: srcNet?.source_net_id,
-      anchor_position: { x: nl.x, y: nl.y },
-      center: computeSchematicNetLabelCenter({
-        anchor_position: { x: nl.x, y: nl.y },
-        anchor_side: nl.anchorPosition as any,
-        text: nl.netId,
-      }),
-      anchor_side: nl.anchorPosition as any,
-    } as any)
-  }
-
-  // -----------------------------------------------------------------
-  // 3. Create schematic traces from solver paths
-  for (const path of paths) {
-    if (!path.points || path.points.length < 2) continue
-
-    // Get the source trace id for this path
-    // We can find the
-    const sourceTraceId = deriveSourceTraceIdFromMatchAdaptPath({
-      path: path,
-      db: cju(subtreeCircuitJson),
-      layoutConnMap,
-    })
-
-    let edges: SchematicTrace["edges"] = []
-
-    for (let i = 0; i < path.points.length - 1; i++) {
-      edges.push({
-        from: {
-          x: path.points[i].x,
-          y: path.points[i].y,
-        },
-        to: {
-          x: path.points[i + 1].x,
-          y: path.points[i + 1].y,
-        },
-      })
-    }
-
-    // Create crossings with traces from different nets
-    const otherCrossingEdges = getOtherSchematicTraces({
-      db,
-      source_trace_id: sourceTraceId,
-      differentNetOnly: true,
-    }).flatMap((t) => t.edges)
-
-    if (otherCrossingEdges.length > 0) {
-      edges = createSchematicTraceCrossingSegments({
-        edges,
-        otherEdges: otherCrossingEdges,
-      })
-    }
-
-    // Create junctions with traces from the same net
-    const junctions = createSchematicTraceJunctions({
-      edges,
-      db,
-      source_trace_id: sourceTraceId,
-    })
-
-    // Insert the schematic trace
-    db.schematic_trace.insert({
-      source_trace_id: sourceTraceId,
-      edges,
-      junctions,
-    } as any)
-  }
+  // console.dir(adaptedBpcGraphWithPositions, { depth: null })
 }

@@ -5,6 +5,7 @@ import {
   type PcbTrace,
   type PcbTraceRoutePoint,
   type RouteHintPoint,
+  type SchematicNetLabel,
   type SchematicTrace,
 } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
@@ -867,7 +868,7 @@ export class Trace
 
   doInitialSchematicTraceRender(): void {
     if (this.root?.schematicDisabled) return
-    if (this.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
+    // if (this.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
 
@@ -908,7 +909,7 @@ export class Trace
       const net = netsWithSelectors[0].net
       const { port, position: anchorPos } = portsWithPosition[0]
 
-      const connectedNetLabel = this.getSubcircuit()
+      let connectedNetLabel = this.getSubcircuit()
         .selectAll("netlabel")
         .find((nl: any) => {
           const conn = nl._parsedProps.connection ?? nl._parsedProps.connectsTo
@@ -925,11 +926,28 @@ export class Trace
             port: true,
           }) as Port | null
           return targetPort === port
-        }) as NetLabel | undefined
+        }) as NetLabel | undefined | SchematicNetLabel
+
+      if (!connectedNetLabel) {
+        // Schematic Match Adapt inserts directly into the database rather than
+        // creating a proper netlabel, this is hack but we should also consider
+        // net labels that are just "in the database" connected to our
+        // source_trace_id
+
+        const dbNetLabel = db.schematic_net_label.getWhere({
+          source_trace_id: this.source_trace_id,
+        })
+
+        if (dbNetLabel) {
+          connectedNetLabel = dbNetLabel as SchematicNetLabel
+        }
+      }
 
       if (connectedNetLabel) {
         const labelPos =
-          connectedNetLabel._getGlobalSchematicPositionBeforeLayout()
+          "_getGlobalSchematicPositionBeforeLayout" in connectedNetLabel
+            ? connectedNetLabel._getGlobalSchematicPositionBeforeLayout()
+            : connectedNetLabel.anchor_position!
         const edges: SchematicTrace["edges"] = []
         if (anchorPos.x === labelPos.x || anchorPos.y === labelPos.y) {
           edges.push({ from: anchorPos, to: labelPos })

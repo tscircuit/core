@@ -18,7 +18,7 @@ test("group-match-adapt4", () => {
           pin4: "GND",
         }}
         schPinArrangement={{
-          leftSide: {
+          rightSide: {
             direction: "top-to-bottom",
             pins: ["SCL", "SDA", "VCC", "GND"],
           },
