@@ -1006,10 +1006,29 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         continue
       }
 
-      if (/^nc$/i.test(text)) {
+      if (nl.anchor_side === "top" && /^nc$/i.test(text)) {
+        subtree.schematic_net_label.update(nl.schematic_net_label_id, {
+          symbol_name: "not_connected_up",
+        })
+        continue
+      }
+      if (nl.anchor_side === "left" && /^nc$/i.test(text)) {
+        subtree.schematic_net_label.update(nl.schematic_net_label_id, {
+          symbol_name: "not_connected_left",
+        })
+        continue
+      }
+      if (nl.anchor_side === "right" && /^nc$/i.test(text)) {
         subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "not_connected_right",
         })
+        continue
+      }
+      if (nl.anchor_side === "bottom" && /^nc$/i.test(text)) {
+        subtree.schematic_net_label.update(nl.schematic_net_label_id, {
+          symbol_name: "not_connected_down",
+        })
+        continue
       }
     }
   }
