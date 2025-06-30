@@ -1003,6 +1003,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "vcc_up",
         })
+        continue
+      }
+
+      if (/^nc$/i.test(text)) {
+        subtree.schematic_net_label.update(nl.schematic_net_label_id, {
+          symbol_name: "not_connected",
+        })
       }
     }
   }
