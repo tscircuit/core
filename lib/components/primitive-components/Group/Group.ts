@@ -1008,7 +1008,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       if (/^nc$/i.test(text)) {
         subtree.schematic_net_label.update(nl.schematic_net_label_id, {
-          symbol_name: "not_connected",
+          symbol_name: "not_connected_right",
         })
       }
     }
