@@ -167,6 +167,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           }),
         )
 
+        console.log({ sourceNetId, otherTracesOnSameNet, allPortsOnNet })
+
         // If there are other ports on the net, create connections to them
         if (allPortsOnNet.length > 0) {
           const [singlePort] = connectedPorts
