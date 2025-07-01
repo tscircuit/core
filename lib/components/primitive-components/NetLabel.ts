@@ -135,6 +135,10 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     // subcircuit
 
     for (const connection of connectsTo) {
+      console.log("creating trace from netlabel", {
+        from: connection,
+        to: `net.${this._getNetName()}`,
+      })
       this.add(
         new Trace({
           from: connection,
