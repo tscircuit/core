@@ -25,7 +25,7 @@ test("netlabel autorouting creates pcb traces", async () => {
   )
 
   await circuit.renderUntilSettled()
-  console.log(circuit.db.source_trace.list())
+  
   expect(circuit.db.source_trace.list().length).toBeGreaterThan(0)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
 })
