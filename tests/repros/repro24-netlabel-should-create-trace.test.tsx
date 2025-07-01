@@ -41,10 +41,9 @@ test("netlabel autorouting creates pcb traces", async () => {
         .join("\n"),
   ).toMatchInlineSnapshot(`
     "
-    (-2.5, 0)->(-3.5, 0)->(-3.5, 0)
     (-3.5, 0)->(-2.5, 0)->(-2.5, 0)
-    (3.5, 0)->(2.5, 0)->(2.5, 0)
-    (2.5, 0)->(3.5, 0)->(3.5, 0)"
+    (2.5, 0)->(3.5, 0)->(3.5, 0)
+    (2.5, 0)->(-2.5, 0)->(-2.5, 0)"
   `)
 
   expect(circuit.db.source_trace.list().length).toBeGreaterThan(0)

@@ -138,7 +138,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       candidateBpcGraph as FixedBpcGraph,
       targetBpcGraph,
     )
-    console.log(candidateBpcGraphName, wlDistance)
+    // console.log(candidateBpcGraphName, wlDistance)
 
     if (wlDistance < bestWlDistance) {
       bestMatch = candidateBpcGraph as FixedBpcGraph
@@ -148,7 +148,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
     }
   }
 
-  console.log(`Winning BPC graph: ${winningBpcGraphName}`)
+  // console.log(`Winning BPC graph: ${winningBpcGraphName}`)
 
   // Adapt the best match
   const { adaptedBpcGraph } = netAdaptBpcGraph(

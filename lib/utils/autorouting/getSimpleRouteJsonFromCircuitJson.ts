@@ -142,68 +142,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       })
 
-      // Handle port-to-net connections (e.g., from netlabels)
+      // Skip port-to-net connections (e.g., from netlabels)
+      // These will be handled by connectionsFromNets to create a single connection per net
       if (
         connectedPorts.length === 1 &&
         trace.connected_source_net_ids?.length > 0
       ) {
-        const sourceNetId = trace.connected_source_net_ids[0]
-
-        // Find other ports connected to the same net
-        const otherTracesOnSameNet = db.source_trace
-          .list()
-          .filter(
-            (st) =>
-              st.source_trace_id !== trace.source_trace_id &&
-              st.connected_source_net_ids?.includes(sourceNetId),
-          )
-
-        // Get all ports connected to this net
-        const allPortsOnNet = otherTracesOnSameNet.flatMap((st) =>
-          st.connected_source_port_ids.map((id) => {
-            const source_port = db.source_port.get(id)
-            const pcb_port = db.pcb_port.getWhere({ source_port_id: id })
-            return { ...source_port, ...pcb_port }
-          }),
-        )
-
-        console.log({ sourceNetId, otherTracesOnSameNet, allPortsOnNet })
-
-        // If there are other ports on the net, create connections to them
-        if (allPortsOnNet.length > 0) {
-          const [singlePort] = connectedPorts
-          const layerA = singlePort.layers?.[0] ?? "top"
-
-          // Connect to the closest available port on the net
-          const targetPort = allPortsOnNet.reduce((closest, port) => {
-            const distToPort = Math.sqrt(
-              (singlePort.x! - port.x!) ** 2 + (singlePort.y! - port.y!) ** 2,
-            )
-            const distToClosest = Math.sqrt(
-              (singlePort.x! - closest.x!) ** 2 +
-                (singlePort.y! - closest.y!) ** 2,
-            )
-            return distToPort < distToClosest ? port : closest
-          })
-          const layerB = targetPort.layers?.[0] ?? "top"
-
-          return {
-            name: trace.source_trace_id ?? "",
-            source_trace_id: trace.source_trace_id,
-            pointsToConnect: [
-              {
-                x: singlePort.x!,
-                y: singlePort.y!,
-                layer: layerA,
-              },
-              {
-                x: targetPort.x!,
-                y: targetPort.y!,
-                layer: layerB,
-              },
-            ],
-          } as SimpleRouteConnection
-        }
+        return null
       }
 
       if (connectedPorts.length < 2) return null
@@ -270,23 +215,26 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       .list()
       .filter((st) => st.connected_source_net_ids?.includes(net.source_net_id))
 
-    connectionsFromNets.push({
-      name: net.source_net_id ?? connMap.getNetConnectedToId(net.source_net_id),
-      pointsToConnect: connectedSourceTraces.flatMap((st) => {
-        const pcb_ports = db.pcb_port
-          .list()
-          .filter((p) =>
-            st.connected_source_port_ids.includes(p.source_port_id),
-          )
+    const pointsToConnect = connectedSourceTraces.flatMap((st) => {
+      const pcb_ports = db.pcb_port
+        .list()
+        .filter((p) => st.connected_source_port_ids.includes(p.source_port_id))
 
-        return pcb_ports.map((p) => ({
-          x: p.x!,
-          y: p.y!,
-          layer: (p.layers?.[0] as any) ?? "top",
-          pcb_port_id: p.pcb_port_id,
-        }))
-      }),
+      return pcb_ports.map((p) => ({
+        x: p.x!,
+        y: p.y!,
+        layer: (p.layers?.[0] as any) ?? "top",
+        pcb_port_id: p.pcb_port_id,
+      }))
     })
+
+    // Only create a connection if there are at least 2 points to connect
+    if (pointsToConnect.length >= 2) {
+      connectionsFromNets.push({
+        name: net.source_net_id,
+        pointsToConnect,
+      })
+    }
   }
 
   const breakoutPoints = db.pcb_breakout_point
@@ -349,7 +297,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
-  return {
+  const result = {
     simpleRouteJson: {
       bounds,
       obstacles,
@@ -365,4 +313,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     },
     connMap,
   }
+
+  Bun.write("result.json", JSON.stringify(result, null, 2))
+
+  return result
 }
