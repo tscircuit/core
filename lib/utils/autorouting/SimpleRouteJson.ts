@@ -36,10 +36,10 @@ export interface SimpleRouteConnection {
     x: number
     y: number
     layer: string
-    pointId?: string          // NEW – identifier used by the solver
-    pcb_port_id?: string      // (kept for convenience, was already used)
+    pointId?: string // NEW – identifier used by the solver
+    pcb_port_id?: string // (kept for convenience, was already used)
   }>
-  externallyConnectedPointIds?: string[][]   // NEW – groups of pointIds
+  externallyConnectedPointIds?: string[][] // NEW – groups of pointIds
 }
 
 export interface SimpleRouteJson {
