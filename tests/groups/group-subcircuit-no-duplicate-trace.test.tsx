@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// TODO
-test.skip("subcircuit should not have multiple traces between the same pins", async () => {
+test("subcircuit should not have multiple traces between the same pins", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -50,8 +49,8 @@ test.skip("subcircuit should not have multiple traces between the same pins", as
 
   await circuit.renderUntilSettled()
 
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+
   const traces = circuit.db.pcb_trace.list()
   expect(traces).toHaveLength(2)
-
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
