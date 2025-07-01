@@ -182,12 +182,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             x: portA.x!,
             y: portA.y!,
             layer: layerA,
+            pointId: portA.pcb_port_id,
+            pcb_port_id: portA.pcb_port_id,
           },
           ...hintPoints,
           {
             x: portB.x!,
             y: portB.y!,
             layer: layerB,
+            pointId: portB.pcb_port_id,
+            pcb_port_id: portB.pcb_port_id,
           },
         ],
       } as SimpleRouteConnection
@@ -222,6 +226,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           x: p.x!,
           y: p.y!,
           layer: (p.layers?.[0] as any) ?? "top",
+          pointId: p.pcb_port_id,
           pcb_port_id: p.pcb_port_id,
         }))
       }),
@@ -278,6 +283,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
               x: pcb_port.x!,
               y: pcb_port.y!,
               layer: (pcb_port.layers?.[0] as any) ?? "top",
+              pointId: pcb_port.pcb_port_id,
               // @ts-ignore
               pcb_port_id: pcb_port.pcb_port_id,
             },
@@ -288,15 +294,53 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
+  // ----- 1. Gather all connections we are about to return
+  const allConns: SimpleRouteConnection[] = [
+    ...directTraceConnections,
+    ...connectionsFromNets,
+    ...connectionsFromBreakoutPoints,
+  ]
+
+  // ----- 2. Map every pointId -> its parent connection
+  const pointIdToConn = new Map<string, SimpleRouteConnection>()
+  for (const conn of allConns) {
+    for (const pt of conn.pointsToConnect) {
+      if (pt.pointId) pointIdToConn.set(pt.pointId, conn)
+    }
+  }
+
+  // ----- 3. Walk existing pcb_traces to find already-connected port groups
+  const existingTraces = db.pcb_trace
+    .list()
+    .filter(
+      (t) => !subcircuit_id || relevantSubcircuitIds?.has(t.subcircuit_id!),
+    )
+
+  for (const tr of existingTraces) {
+    const tracePortIds = new Set<string>()
+    for (const seg of tr.route as any[]) {
+      if (seg.start_pcb_port_id) tracePortIds.add(seg.start_pcb_port_id)
+      if (seg.end_pcb_port_id) tracePortIds.add(seg.end_pcb_port_id)
+    }
+    if (tracePortIds.size < 2) continue
+
+    const firstId = tracePortIds.values().next().value
+    if (!firstId) continue
+    const conn = pointIdToConn.get(firstId)
+    if (!conn) continue
+    // ensure every port on the trace belongs to the same connection
+    if (![...tracePortIds].every((pid) => pointIdToConn.get(pid) === conn))
+      continue
+
+    conn.externallyConnectedPointIds ??= []
+    conn.externallyConnectedPointIds.push([...tracePortIds])
+  }
+
   return {
     simpleRouteJson: {
       bounds,
       obstacles,
-      connections: [
-        ...directTraceConnections,
-        ...connectionsFromNets,
-        ...connectionsFromBreakoutPoints,
-      ],
+      connections: allConns,
       // TODO add traces so that we don't run into things routed by another
       // subcircuit
       layerCount: 2,

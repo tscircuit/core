@@ -32,7 +32,14 @@ export type Obstacle = {
 export interface SimpleRouteConnection {
   name: string
   source_trace_id?: string
-  pointsToConnect: Array<{ x: number; y: number; layer: string }>
+  pointsToConnect: Array<{
+    x: number
+    y: number
+    layer: string
+    pointId?: string          // NEW – identifier used by the solver
+    pcb_port_id?: string      // (kept for convenience, was already used)
+  }>
+  externallyConnectedPointIds?: string[][]   // NEW – groups of pointIds
 }
 
 export interface SimpleRouteJson {
