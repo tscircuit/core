@@ -18,14 +18,16 @@ export class SchematicText extends PrimitiveComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
 
+    const globalPos = this._getGlobalSchematicPositionBeforeLayout()
+
     db.schematic_text.insert({
       anchor: props.anchor ?? "center",
       text: props.text,
       font_size: props.fontSize,
       color: props.color || "#000000",
       position: {
-        x: props.schX ?? 0,
-        y: props.schY ?? 0,
+        x: globalPos.x,
+        y: globalPos.y,
       },
       rotation: props.schRotation ?? 0,
     })
