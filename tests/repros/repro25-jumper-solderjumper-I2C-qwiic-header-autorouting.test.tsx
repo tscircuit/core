@@ -108,6 +108,7 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
         anchor="center"
         fontSize={0.3}
       />
+
       <capacitor
         name="C1"
         capacitance="100nF"
