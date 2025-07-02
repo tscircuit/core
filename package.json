@@ -23,7 +23,7 @@
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\""
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.3",
+    "@biomejs/biome": "^1.9.4",
     "@tscircuit/capacity-autorouter": "^0.0.89",
     "@tscircuit/checks": "^0.0.52",
     "@tscircuit/circuit-json-util": "^0.0.50",
@@ -38,10 +38,10 @@
     "@tscircuit/schematic-corpus": "^0.0.29",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
     "@tscircuit/simple-3d-svg": "^0.0.6",
-    "@types/bun": "^1.2.16",
+    "@types/bun": "^1.2.17",
     "@types/debug": "^4.1.12",
-    "@types/react": "^19.0.1",
-    "@types/react-dom": "^19.0.2",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
     "@types/react-reconciler": "^0.28.9",
     "bpc-graph": "^0.0.16",
     "bun-match-svg": "0.0.11",
@@ -52,18 +52,18 @@
     "circuit-json-to-connectivity-map": "^0.0.22",
     "circuit-json-to-simple-3d": "^0.0.2",
     "circuit-to-svg": "^0.0.162",
-    "concurrently": "^9.1.2",
-    "debug": "^4.3.6",
+    "concurrently": "^9.2.0",
+    "debug": "^4.4.1",
     "graphics-debug": "^0.0.57",
     "howfat": "^0.3.8",
     "live-server": "^1.2.2",
     "looks-same": "^9.0.1",
     "pkg-pr-new": "^0.0.37",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "schematic-symbols": "^0.0.165",
     "ts-expect": "^1.3.0",
-    "tsup": "^8.2.4"
+    "tsup": "^8.5.0"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -81,13 +81,13 @@
     "circuit-json": "*",
     "circuit-json-to-connectivity-map": "*",
     "schematic-symbols": "*",
-    "typescript": "^5.0.0"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@lume/kiwi": "^0.4.3",
+    "@lume/kiwi": "^0.4.4",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.3",
-    "nanoid": "^5.0.7",
+    "nanoid": "^5.1.5",
     "performance-now": "^2.1.0",
     "react-reconciler": "^0.31.0",
     "react-reconciler-18": "npm:react-reconciler@0.29.2",
