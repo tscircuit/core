@@ -22,7 +22,9 @@ import { deriveSourceTraceIdFromMatchAdaptPath } from "lib/utils/schematic/deriv
 import { cju } from "@tscircuit/circuit-json-util"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import corpus from "@tscircuit/schematic-corpus/dist/bundled-bpc-graphs.json"
+import corpus from "@tscircuit/schematic-corpus/dist/bundled-bpc-graphs.json" with {
+  type: "json",
+}
 import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
 import {
   type BpcGraph,
@@ -31,7 +33,6 @@ import {
   getBpcGraphWlDistance,
   type FixedBpcGraph,
 } from "bpc-graph"
-import {} from "@tscircuit/circuit-json-util"
 
 export function Group_doInitialSchematicLayoutMatchAdapt<
   Props extends z.ZodType<any, any, any>,
