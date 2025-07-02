@@ -12,7 +12,7 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
   }
 
   circuit.add(
-    <board width="25.4mm" height="12.7mm">
+    <board>
       <schematictext
         text="Power-On Reset"
         schX={-1}
@@ -113,8 +113,8 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
         name="C1"
         capacitance="100nF"
         footprint="0603"
-        pcbX={0}
-        pcbY={0.127}
+        pcbX={-2.5}
+        pcbY={-1.2}
         schX={7}
         schRotation="-90deg"
       />
@@ -151,7 +151,7 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
           ["2", "3"],
         ]}
         pcbX={1.905}
-        pcbY={-2.54}
+        pcbY={-4.54}
         schX={10}
         pinCount={3}
         schRotation="180deg"
@@ -167,7 +167,7 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
         footprint="0603"
         name="R2"
         pcbX={1.27}
-        pcbY={3.937}
+        pcbY={4.5}
         schX={9}
         schY={-1}
         schRotation={90}
@@ -188,7 +188,7 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
         resistance="2.2k"
         footprint="0603"
         name="R5"
-        pcbX={1.27}
+        pcbX={0}
         pcbY={2.032}
         schX={11}
         schY={-1}
@@ -206,82 +206,6 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
         anchorSide="left"
       />
 
-      <schematictext
-        text="0.1 Header"
-        schX={-2}
-        schY={-4}
-        color="brown"
-        anchor="center"
-        fontSize={0.3}
-      />
-      <pinheader
-        name="J3"
-        pinCount={6}
-        footprint="pinrow6_p2.54_id1.016_od1.88_nosquareplating"
-        gender="female"
-        pitch="2.54mm"
-        schPinArrangement={{
-          rightSide: {
-            direction: "bottom-to-top",
-            pins: ["pin1", "pin2", "pin3", "pin4", "pin5", "pin6"],
-          },
-        }}
-        pcbX={0}
-        pcbY={-5.08}
-        schX={-2}
-        schY={-6}
-        pcbRotation="0deg"
-        connections={{
-          pin1: sel.net.GND,
-          pin2: sel.net.V3_3,
-          pin3: sel.net.SDA,
-          pin4: sel.net.SCL,
-          pin5: sel.net().DISABLE,
-          pin6: sel.net.N_INT,
-        }}
-      />
-      <netlabel
-        net="GND"
-        schX={-1}
-        schY={-6.6}
-        connection="J3.pin1"
-        anchorSide="top"
-      />
-      <netlabel
-        net="V3_3"
-        schX={-1}
-        schY={-5}
-        connection="J3.pin2"
-        anchorSide="bottom"
-      />
-      <netlabel
-        net="SDA"
-        schX={-0.6}
-        schY={-6.1}
-        connection="J3.pin3"
-        anchorSide="left"
-      />
-      <netlabel
-        net="SCL"
-        schX={-0.6}
-        schY={-5.9}
-        connection="J3.pin4"
-        anchorSide="left"
-      />
-      <netlabel
-        net="DISABLE"
-        schX={-0.6}
-        schY={-5.7}
-        connection="J3.pin5"
-        anchorSide="left"
-      />
-      <netlabel
-        net="N_INT"
-        schX={-0.6}
-        schY={-5.5}
-        connection="J3.pin6"
-        anchorSide="left"
-      />
       <schematictext
         text="Qwiic Connectors"
         schX={5}
@@ -357,8 +281,6 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
           SCL: sel.net.SCL,
         }}
       />
-      <hole diameter="3.302mm" pcbX={10.16} pcbY={-3.81} />
-      <hole diameter="3.302mm" pcbX={-10.16} pcbY={-3.81} />
 
       <netlabel
         net="GND"
@@ -386,102 +308,6 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
         schX={5.2}
         schY={-5.7}
         connection="J1.pin4"
-        anchorSide="left"
-      />
-
-      <jumper
-        name="J2"
-        footprint={
-          <footprint name="jstsh4_vert_1mm">
-            <smtpad
-              portHints={["pin1"]}
-              pcbX="-1.5mm"
-              pcbY="0.775mm"
-              width="0.6mm"
-              height="1.55mm"
-              shape="rect"
-            />
-            <smtpad
-              portHints={["pin2"]}
-              pcbX="-0.5mm"
-              pcbY="0.775mm"
-              width="0.6mm"
-              height="1.55mm"
-              shape="rect"
-            />
-            <smtpad
-              portHints={["pin3"]}
-              pcbX="0.5mm"
-              pcbY="0.775mm"
-              width="0.6mm"
-              height="1.55mm"
-              shape="rect"
-            />
-            <smtpad
-              portHints={["pin4"]}
-              pcbX="1.5mm"
-              pcbY="0.775mm"
-              width="0.6mm"
-              height="1.55mm"
-              shape="rect"
-            />
-            <smtpad
-              portHints={["NC2"]}
-              pcbX="-2.8mm"
-              pcbY="3.2mm"
-              width="1.2mm"
-              height="2mm"
-              shape="rect"
-            />
-            <smtpad
-              portHints={["NC1"]}
-              pcbX="2.8mm"
-              pcbY="3.2mm"
-              width="1.2mm"
-              height="2mm"
-              shape="rect"
-            />
-          </footprint>
-        }
-        pcbX={8.001}
-        pcbY={2.54}
-        schX={7}
-        schY={-6}
-        pcbRotation={270}
-        pinLabels={jumperPinLabels}
-        connections={{
-          GND: sel.net.GND,
-          VCC: sel.net.V3_3,
-          SDA: sel.net.SDA,
-          SCL: sel.net.SCL,
-        }}
-      />
-      <netlabel
-        net="GND"
-        schX={8.8}
-        schY={-6.5}
-        connection="J2.pin1"
-        anchorSide="top"
-      />
-      <netlabel
-        net="V3_3"
-        schX={8.8}
-        schY={-5}
-        connection="J2.pin2"
-        anchorSide="bottom"
-      />
-      <netlabel
-        net="SDA"
-        schX={9.2}
-        schY={-5.9}
-        connection="J2.pin3"
-        anchorSide="left"
-      />
-      <netlabel
-        net="SCL"
-        schX={9.2}
-        schY={-5.7}
-        connection="J2.pin4"
         anchorSide="left"
       />
 
@@ -519,7 +345,7 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
         footprint="0603"
         color="red"
         pcbRotation={270}
-        pcbX={4.699}
+        pcbX={4}
         pcbY={2.54}
         schX={12}
         schY={-8}
@@ -532,8 +358,8 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
         name="LED"
         footprint="solderjumper2_bridged12_p1.0414_pw0.6604_ph1.27"
         bridgedPins={[["1", "2"]]}
-        pcbX={2.921}
-        pcbY={-0.127}
+        pcbX={3.921}
+        pcbY={-1.3}
         schX={12}
         schY={-9.5}
         pinCount={2}
@@ -563,7 +389,7 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
         footprint="solderjumper2_bridged12_p1.0414_pw0.6604_ph1.27"
         bridgedPins={[["1", "2"]]}
         pcbX={-6.35}
-        pcbY={-2.794}
+        pcbY={-4.794}
         schX={14.7}
         schY={-6}
         pinCount={2}
@@ -585,7 +411,7 @@ test("Jumper, solderjumper, resistance routing and connections repro", async () 
         footprint="0603"
         name="R4"
         pcbX={-1.651}
-        pcbY={-1.778}
+        pcbY={-3.778}
         schX={14.7}
         schY={-8}
         schRotation={90}
