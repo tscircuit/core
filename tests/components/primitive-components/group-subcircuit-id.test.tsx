@@ -4,7 +4,9 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("Subcircuit group should have subcircuit_id", async () => {
   const { circuit } = getTestFixture()
-  circuit.add(<group name="G1" subcircuit />)
+  circuit.add(
+    <group name="G1" subcircuit autorouter={{ traceClearance: 0.1 }} />,
+  )
 
   circuit.render()
 
@@ -31,6 +33,9 @@ test("Subcircuit group should have subcircuit_id", async () => {
   expect(circuit.db.pcb_group.list()).toMatchInlineSnapshot(`
 [
   {
+    "autorouter_configuration": {
+      "trace_clearance": 0.1,
+    },
     "center": {
       "x": 0,
       "y": 0,
