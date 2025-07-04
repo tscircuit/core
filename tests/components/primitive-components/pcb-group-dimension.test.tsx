@@ -17,6 +17,7 @@ test("group id present in pcb_component, schematic_component and source_componen
   expect(pcbGroups).toMatchInlineSnapshot(`
     [
       {
+        "autorouter_configuration": undefined,
         "center": {
           "x": 0,
           "y": 0,
