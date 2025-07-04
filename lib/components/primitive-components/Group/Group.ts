@@ -99,6 +99,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       height: 0,
       pcb_component_ids: [],
       source_group_id: this.source_group_id!,
+      autorouter_configuration: {
+        trace_clearance: props.autorouter?.traceClearance,
+      },
     })
     this.pcb_group_id = pcb_group.pcb_group_id
 
