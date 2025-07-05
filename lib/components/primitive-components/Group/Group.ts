@@ -882,7 +882,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
     // Inherit from parent if not set by props
     const autorouter =
-      this._parsedProps.autorouter ?? this.getInheritedProperty("autorouter")
+      this._parsedProps.autorouter ||
+      this._parsedProps.autorouter?.preset ||
+      this.getInheritedProperty("autorouter")
 
     if (typeof autorouter === "object") {
       return {
