@@ -22,15 +22,14 @@ import { deriveSourceTraceIdFromMatchAdaptPath } from "lib/utils/schematic/deriv
 import { cju } from "@tscircuit/circuit-json-util"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import corpus from "@tscircuit/schematic-corpus/dist/bundled-bpc-graphs.json" with {
-  type: "json",
-}
+import corpus from "@tscircuit/schematic-corpus"
 import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
 import {
   type BpcGraph,
   assignFloatingBoxPositions,
   netAdaptBpcGraph,
   getBpcGraphWlDistance,
+  layoutSchematicGraph,
   type FixedBpcGraph,
 } from "bpc-graph"
 
@@ -117,52 +116,59 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   // Convert the subtree circuit json into a bpc graph
   const targetBpcGraph = convertCircuitJsonToBpc(subtreeCircuitJson)
 
-  // Redundant, but assert that all the boxes are floating
-  for (const box of targetBpcGraph.boxes) {
-    if (box.kind === "fixed" || box.center) {
-      box.kind = "floating"
-      box.center = undefined
-    }
-  }
+  // // Redundant, but assert that all the boxes are floating
+  // for (const box of targetBpcGraph.boxes) {
+  //   if (box.kind === "fixed" || box.center) {
+  //     box.kind = "floating"
+  //     box.center = undefined
+  //   }
+  // }
 
-  // Find the best match in the corpus
-  let bestMatch: BpcGraph = {
-    boxes: [],
-    pins: [],
-  }
-  let bestWlDistance = Infinity
-  let winningBpcGraphName = "empty"
-  for (const [candidateBpcGraphName, candidateBpcGraph] of Object.entries(
+  // // Find the best match in the corpus
+  // let bestMatch: BpcGraph = {
+  //   boxes: [],
+  //   pins: [],
+  // }
+  // let bestWlDistance = Infinity
+  // let winningBpcGraphName = "empty"
+  // for (const [candidateBpcGraphName, candidateBpcGraph] of Object.entries(
+  //   corpus,
+  // ).sort((a, b) => a[0].localeCompare(b[0]))) {
+  //   const wlDistance = getBpcGraphWlDistance(
+  //     candidateBpcGraph as FixedBpcGraph,
+  //     targetBpcGraph,
+  //   )
+  //   console.log(candidateBpcGraphName, wlDistance)
+
+  //   if (wlDistance < bestWlDistance) {
+  //     bestMatch = candidateBpcGraph as FixedBpcGraph
+  //     winningBpcGraphName = candidateBpcGraphName
+  //     bestWlDistance = wlDistance
+  //     if (wlDistance === 0) break
+  //   }
+  // }
+
+  // console.log(`Winning BPC graph: ${winningBpcGraphName}`)
+
+  // // Adapt the best match
+  // const { adaptedBpcGraph } = netAdaptBpcGraph(
+  //   bestMatch as FixedBpcGraph,
+  //   targetBpcGraph,
+  // )
+
+  // // Assign the floating box positions
+  // const adaptedBpcGraphWithPositions =
+  //   assignFloatingBoxPositions(adaptedBpcGraph)
+
+  const laidOutBpcGraph = layoutSchematicGraph(targetBpcGraph, {
+    singletonKeys: ["vcc/2", "gnd/2"],
+    centerPinColors: ["netlabel_center", "component_center"],
     corpus,
-  ).sort((a, b) => a[0].localeCompare(b[0]))) {
-    const wlDistance = getBpcGraphWlDistance(
-      candidateBpcGraph as FixedBpcGraph,
-      targetBpcGraph,
-    )
-    console.log(candidateBpcGraphName, wlDistance)
-
-    if (wlDistance < bestWlDistance) {
-      bestMatch = candidateBpcGraph as FixedBpcGraph
-      winningBpcGraphName = candidateBpcGraphName
-      bestWlDistance = wlDistance
-      if (wlDistance === 0) break
-    }
-  }
-
-  console.log(`Winning BPC graph: ${winningBpcGraphName}`)
-
-  // Adapt the best match
-  const { adaptedBpcGraph } = netAdaptBpcGraph(
-    bestMatch as FixedBpcGraph,
-    targetBpcGraph,
-  )
-
-  // Assign the floating box positions
-  const adaptedBpcGraphWithPositions =
-    assignFloatingBoxPositions(adaptedBpcGraph)
+  })
 
   // Extract the new positions
-  for (const box of adaptedBpcGraphWithPositions.boxes) {
+  for (const box of laidOutBpcGraph.boxes) {
+    if (!box.center) continue
     const schematic_component = db.schematic_component.get(box.boxId)
     if (schematic_component) {
       const ports = db.schematic_port.list({
@@ -195,7 +201,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
     const schematic_net_label = db.schematic_net_label.get(box.boxId)
 
     if (schematic_net_label) {
-      const pin = adaptedBpcGraphWithPositions.pins.find(
+      const pin = laidOutBpcGraph.pins.find(
         (p) => p.boxId === box.boxId && p.color === "netlabel_center",
       )
       if (!pin) {
@@ -213,9 +219,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       const { schematic_net_label: generatedNetLabel, schematic_port } =
         generatedNetLabels.get(box.boxId)!
       // Create an approp
-      const pins = adaptedBpcGraphWithPositions.pins.filter(
-        (p) => p.boxId === box.boxId,
-      )
+      const pins = laidOutBpcGraph.pins.filter((p) => p.boxId === box.boxId)
       const center = pins.find((p) => p.color === "netlabel_center")!
       const anchor = pins.find((p) => p.color !== "netlabel_center")!
 
