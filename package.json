@@ -43,7 +43,7 @@
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",
     "@types/react-reconciler": "^0.28.9",
-    "bpc-graph": "^0.0.34",
+    "bpc-graph": "^0.0.46",
     "bun-match-svg": "0.0.11",
     "calculate-elbow": "^0.0.5",
     "chokidar-cli": "^3.0.0",

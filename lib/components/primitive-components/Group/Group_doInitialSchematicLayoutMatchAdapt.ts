@@ -162,12 +162,13 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
 
   const laidOutBpcGraph = layoutSchematicGraph(targetBpcGraph, {
     singletonKeys: ["vcc/2", "gnd/2"],
-    duplicatePinIfColor: ["netlabel_center", "component_center"],
+    centerPinColors: ["netlabel_center", "component_center"],
     corpus,
   })
 
   // Extract the new positions
   for (const box of laidOutBpcGraph.boxes) {
+    if (!box.center) continue
     const schematic_component = db.schematic_component.get(box.boxId)
     if (schematic_component) {
       const ports = db.schematic_port.list({
