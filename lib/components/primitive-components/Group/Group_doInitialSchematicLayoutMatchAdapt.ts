@@ -166,11 +166,19 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
     corpus,
   })
 
+  // Offset returned coordinates by the group's global schematic position so
+  // that match-adapt layouts respect the group's schX/schY props
+  const groupOffset = group._getGlobalSchematicPositionBeforeLayout()
+
   // Extract the new positions
   for (const box of laidOutBpcGraph.boxes) {
     if (!box.center) continue
     const schematic_component = db.schematic_component.get(box.boxId)
     if (schematic_component) {
+      const newCenter = {
+        x: box.center.x + groupOffset.x,
+        y: box.center.y + groupOffset.y,
+      }
       const ports = db.schematic_port.list({
         schematic_component_id: schematic_component.schematic_component_id,
       })
@@ -179,8 +187,8 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       })
 
       const positionDelta = {
-        x: schematic_component.center.x - box.center.x,
-        y: schematic_component.center.y - box.center.y,
+        x: newCenter.x - schematic_component.center.x,
+        y: newCenter.y - schematic_component.center.y,
       }
 
       for (const port of ports) {
@@ -193,8 +201,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
         text.position.y += positionDelta.y
       }
 
-      schematic_component.center.x += positionDelta.x
-      schematic_component.center.y += positionDelta.y
+      schematic_component.center = newCenter
       continue
     }
 
@@ -207,10 +214,14 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       if (!pin) {
         throw new Error(`No pin found for net label: ${box.boxId}`)
       }
-      schematic_net_label.center = box.center
+      const finalCenter = {
+        x: box.center.x + groupOffset.x,
+        y: box.center.y + groupOffset.y,
+      }
+      schematic_net_label.center = finalCenter
       schematic_net_label.anchor_position = {
-        x: box.center.x + pin.offset.x,
-        y: box.center.y + pin.offset.y,
+        x: finalCenter.x + pin.offset.x,
+        y: finalCenter.y + pin.offset.y,
       }
       continue
     }
@@ -245,12 +256,12 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
         schematic_net_label_id: `netlabel_for_${box.boxId}`,
         text: source_net.name, // no text; just a placeholder box for Match-Adapt
         anchor_position: {
-          x: box.center.x + center.offset.x,
-          y: box.center.y + center.offset.y,
+          x: box.center.x + groupOffset.x + center.offset.x,
+          y: box.center.y + groupOffset.y + center.offset.y,
         },
         center: {
-          x: box.center.x + center.offset.x,
-          y: box.center.y + center.offset.y,
+          x: box.center.x + groupOffset.x + center.offset.x,
+          y: box.center.y + groupOffset.y + center.offset.y,
         },
         anchor_side: anchorSide,
         symbol_name: symbolName,
