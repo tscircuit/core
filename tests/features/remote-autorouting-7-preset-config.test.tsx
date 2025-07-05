@@ -1,12 +1,17 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
 test("remote-autorouter-7 with preset config", async () => {
-  if (process.env.CI) return
   const { circuit } = getTestFixture()
+  const { autoroutingServerUrl } = getTestAutoroutingServer()
 
   circuit.add(
-    <board width="20mm" height="20mm" autorouter={{ preset: "auto-cloud" }}>
+    <board
+      width="20mm"
+      height="20mm"
+      autorouter={{ preset: "auto-cloud", serverUrl: autoroutingServerUrl }}
+    >
       <resistor name="R2" pcbX={5} pcbY={0} resistance={100} footprint="0402" />
       <resistor
         name="R1"
