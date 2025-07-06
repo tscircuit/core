@@ -12,13 +12,19 @@ test("pushbutton schematic rotations in grid", async () => {
         ({ center: { x, y }, index }) => (
           <Fragment key={index}>
             <pushbutton
-              name={`PB${index + 1}`}
+              name={`PB${index + 1}_ROT${index * 90}`}
               schX={x}
               schY={y}
               schRotation={index * 90}
             />
-            <trace from={`.PB${index + 1} .pin1`} to="net.PIN1" />
-            <trace from={`.PB${index + 1} .pin2`} to="net.PIN2" />
+            <trace
+              from={`.PB${index + 1}_ROT${index * 90} .pin1`}
+              to="net.PIN1"
+            />
+            <trace
+              from={`.PB${index + 1}_ROT${index * 90} .pin2`}
+              to="net.PIN2"
+            />
           </Fragment>
         ),
       )}
