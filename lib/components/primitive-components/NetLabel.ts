@@ -5,6 +5,12 @@ import { Trace } from "./Trace/Trace"
 import { Net } from "./Net"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import {
+  applyToPoint,
+  identity,
+  translate,
+  type Matrix,
+} from "transformation-matrix"
 
 export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   source_net_label_id?: string
@@ -60,6 +66,25 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     }
 
     return connectedPorts
+  }
+
+  computeSchematicPropsTransform(): Matrix {
+    const { _parsedProps: props } = this
+
+    if (props.schX === undefined && props.schY === undefined) {
+      const connectedPorts = this._getConnectedPorts()
+      if (connectedPorts.length > 0) {
+        const portPos =
+          connectedPorts[0]._getGlobalSchematicPositionBeforeLayout()
+        const parentCenter = applyToPoint(
+          this.parent?.computeSchematicGlobalTransform?.() ?? identity(),
+          { x: 0, y: 0 },
+        )
+        return translate(portPos.x - parentCenter.x, portPos.y - parentCenter.y)
+      }
+    }
+
+    return super.computeSchematicPropsTransform()
   }
 
   doInitialSchematicPrimitiveRender(): void {
