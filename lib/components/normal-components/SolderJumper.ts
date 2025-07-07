@@ -49,6 +49,15 @@ export class SolderJumper<
       if (finalPinCount === 2 || finalPinCount === 3) {
         resolvedPinCount = finalPinCount as 2 | 3
       }
+
+      // Fallback: infer from footprint pin count
+      if (
+        resolvedPinCount == null &&
+        props.footprint &&
+        [2, 3].includes(this.getPortsFromFootprint().length)
+      ) {
+        resolvedPinCount = this.getPortsFromFootprint().length as 2 | 3
+      }
     }
 
     let symbolName = ""
