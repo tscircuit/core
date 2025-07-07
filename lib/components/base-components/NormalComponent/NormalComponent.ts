@@ -929,9 +929,7 @@ export class NormalComponent<
       }
 
       const pinNumbers = Object.keys(pinLabels)
-        .map((k) =>
-          k.startsWith("pin") ? parseInt(k.slice(3)) : parseInt(k),
-        )
+        .map((k) => (k.startsWith("pin") ? parseInt(k.slice(3)) : parseInt(k)))
         .filter((n) => !Number.isNaN(n))
 
       if (pinNumbers.length > 0) {
