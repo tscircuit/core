@@ -916,8 +916,32 @@ export class NormalComponent<
       return pinCountFromSchematicPortArrangement
     }
 
-    // If no schPortArrangement, fall back to footprint ports
-    return this.getPortsFromFootprint().length
+    const portsFromFootprint = this.getPortsFromFootprint()
+    if (portsFromFootprint.length > 0) {
+      return portsFromFootprint.length
+    }
+
+    // If no footprint ports, try to infer from pinLabels
+    const { pinLabels } = this._parsedProps
+    if (pinLabels) {
+      if (Array.isArray(pinLabels)) {
+        return pinLabels.length
+      }
+
+      const pinNumbers = Object.keys(pinLabels)
+        .map((k) =>
+          k.startsWith("pin") ? parseInt(k.slice(3)) : parseInt(k),
+        )
+        .filter((n) => !Number.isNaN(n))
+
+      if (pinNumbers.length > 0) {
+        return Math.max(...pinNumbers)
+      }
+
+      return Object.keys(pinLabels).length
+    }
+
+    return 0
   }
 
   /**
