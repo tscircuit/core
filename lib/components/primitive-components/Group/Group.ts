@@ -874,6 +874,46 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
+  _getPresetConfig(
+    preset: string,
+    defaults: {
+      serverUrl: string
+      serverMode: "job"
+      serverCacheEnabled: boolean
+    },
+  ): AutorouterConfig {
+    switch (preset) {
+      case "auto-local":
+        return {
+          local: true,
+          groupMode: "subcircuit",
+        }
+      case "sequential-trace":
+        return {
+          local: true,
+          groupMode: "sequential-trace",
+        }
+      case "subcircuit":
+        return {
+          local: true,
+          groupMode: "subcircuit",
+        }
+      case "auto-cloud":
+        return {
+          local: false,
+          groupMode: "subcircuit",
+          serverUrl: defaults.serverUrl,
+          serverMode: defaults.serverMode,
+          serverCacheEnabled: true,
+        }
+      default:
+        return {
+          local: true,
+          groupMode: "subcircuit",
+        }
+    }
+  }
+
   _getAutorouterConfig(): AutorouterConfig {
     const defaults = {
       serverUrl: "https://registry-api.tscircuit.com",
@@ -887,6 +927,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this.getInheritedProperty("autorouter")
 
     if (typeof autorouter === "object") {
+      if (autorouter.preset) {
+        // Get base configuration from preset and apply overrides
+        const baseConfig = this._getPresetConfig(autorouter.preset, defaults)
+        const { preset, ...overrides } = autorouter
+
+        return {
+          ...baseConfig,
+          ...overrides,
+          // Recalculate local based on final config
+          local: !(
+            overrides.serverUrl ||
+            overrides.serverMode ||
+            overrides.serverCacheEnabled ||
+            baseConfig.serverUrl ||
+            baseConfig.serverMode ||
+            baseConfig.serverCacheEnabled
+          ),
+        }
+      }
+
+      // No preset, use the original logic
       return {
         local: !(
           autorouter.serverUrl ||
@@ -898,29 +959,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
     }
 
-    if (autorouter === "auto-local")
-      return {
-        local: true,
-        groupMode: "subcircuit",
-      }
-    if (autorouter === "sequential-trace")
-      return {
-        local: true,
-        groupMode: "sequential-trace",
-      }
-    if (autorouter === "subcircuit")
-      return {
-        local: true,
-        groupMode: "subcircuit",
-      }
-    if (autorouter === "auto-cloud")
-      return {
-        local: false,
-        groupMode: "subcircuit",
-        serverUrl: defaults.serverUrl,
-        serverMode: defaults.serverMode,
-        serverCacheEnabled: true,
-      }
+    // Handle string presets
+    if (typeof autorouter === "string") {
+      return this._getPresetConfig(autorouter, defaults)
+    }
+
     return {
       local: true,
       groupMode: "subcircuit",
