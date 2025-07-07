@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { Port } from "lib/components/primitive-components/Port/Port"
+import { su } from "@tscircuit/circuit-json-util"
 
 // Reproduction for netlabel default anchor position when connected to a schematic port
 
@@ -16,8 +16,14 @@ test("netlabel defaults anchor to connected port position", () => {
 
   circuit.render()
 
-  const port = circuit.selectOne("resistor.R1 > port.1") as Port
-  const portPos = port._getGlobalSchematicPositionAfterLayout()
-  const label = circuit.db.schematic_net_label.list()[0]
-  expect(label.anchor_position).toEqual(portPos)
+  const circuitJson = circuit.getCircuitJson()
+  const sourcePort = su(circuitJson).source_port.getWhere({ name: "pin1" })!
+  const schPort = su(circuitJson).schematic_port.getWhere({
+    source_port_id: sourcePort.source_port_id,
+  })!
+  const label = su(circuitJson).schematic_net_label.list()[0]
+
+  expect(label.anchor_position).toEqual(schPort.center)
+
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
