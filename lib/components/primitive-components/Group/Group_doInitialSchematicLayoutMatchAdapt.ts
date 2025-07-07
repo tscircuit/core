@@ -163,6 +163,15 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   const laidOutBpcGraph = layoutSchematicGraph(targetBpcGraph, {
     singletonKeys: ["vcc/2", "gnd/2"],
     centerPinColors: ["netlabel_center", "component_center"],
+    floatingBoxIdsWithMutablePinOffsets: new Set(
+      targetBpcGraph.boxes
+        .filter((b) =>
+          targetBpcGraph.pins.some(
+            (p) => p.boxId === b.boxId && p.color === "netlabel_center",
+          ),
+        )
+        .map((b) => b.boxId),
+    ),
     corpus,
   })
 
