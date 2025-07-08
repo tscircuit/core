@@ -889,27 +889,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const preset =
       typeof autorouter === "object" ? autorouter.preset : autorouter
 
-    if (
-      (typeof autorouter === "object" && preset) ||
-      typeof autorouter === "string"
-    ) {
-      const baseConfig = getPresetAutoroutingConfig(preset)
-      const { preset: _, ...overrides } = autorouter
-      return {
-        ...baseConfig,
-        ...overrides,
-        local: !(
-          overrides.serverUrl ||
-          overrides.serverMode ||
-          overrides.serverCacheEnabled ||
-          baseConfig.serverUrl ||
-          baseConfig.serverMode ||
-          baseConfig.serverCacheEnabled
-        ),
-      }
-    }
-
-    if (typeof autorouter === "object") {
+    if (typeof autorouter === "object" && !preset) {
       return {
         local: !(
           autorouter.serverUrl ||
@@ -921,10 +901,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
     }
 
-    return {
-      local: true,
-      groupMode: "subcircuit",
-    }
+    return getPresetAutoroutingConfig(preset)
   }
   /**
    * Trace-by-trace autorouting is where each trace routes itself in a well-known
