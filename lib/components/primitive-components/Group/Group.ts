@@ -28,6 +28,7 @@ import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSou
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { AutorouterError } from "lib/errors/AutorouterError"
+import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -874,80 +875,41 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _getPresetConfig(
-    preset: string,
-    defaults: {
-      serverUrl: string
-      serverMode: "job"
-      serverCacheEnabled: boolean
-    },
-  ): AutorouterConfig {
-    switch (preset) {
-      case "auto-local":
-        return {
-          local: true,
-          groupMode: "subcircuit",
-        }
-      case "sequential-trace":
-        return {
-          local: true,
-          groupMode: "sequential-trace",
-        }
-      case "subcircuit":
-        return {
-          local: true,
-          groupMode: "subcircuit",
-        }
-      case "auto-cloud":
-        return {
-          local: false,
-          groupMode: "subcircuit",
-          serverUrl: defaults.serverUrl,
-          serverMode: defaults.serverMode,
-          serverCacheEnabled: true,
-        }
-      default:
-        return {
-          local: true,
-          groupMode: "subcircuit",
-        }
-    }
-  }
-
   _getAutorouterConfig(): AutorouterConfig {
     const defaults = {
       serverUrl: "https://registry-api.tscircuit.com",
       serverMode: "job" as const,
       serverCacheEnabled: true,
     }
+
     // Inherit from parent if not set by props
     const autorouter =
-      this._parsedProps.autorouter ||
-      this._parsedProps.autorouter?.preset ||
-      this.getInheritedProperty("autorouter")
+      this._parsedProps.autorouter || this.getInheritedProperty("autorouter")
+
+    const preset =
+      typeof autorouter === "object" ? autorouter.preset : autorouter
+
+    if (
+      (typeof autorouter === "object" && preset) ||
+      typeof autorouter === "string"
+    ) {
+      const baseConfig = getPresetAutoroutingConfig(preset)
+      const { preset: _, ...overrides } = autorouter
+      return {
+        ...baseConfig,
+        ...overrides,
+        local: !(
+          overrides.serverUrl ||
+          overrides.serverMode ||
+          overrides.serverCacheEnabled ||
+          baseConfig.serverUrl ||
+          baseConfig.serverMode ||
+          baseConfig.serverCacheEnabled
+        ),
+      }
+    }
 
     if (typeof autorouter === "object") {
-      if (autorouter.preset) {
-        // Get base configuration from preset and apply overrides
-        const baseConfig = this._getPresetConfig(autorouter.preset, defaults)
-        const { preset, ...overrides } = autorouter
-
-        return {
-          ...baseConfig,
-          ...overrides,
-          // Recalculate local based on final config
-          local: !(
-            overrides.serverUrl ||
-            overrides.serverMode ||
-            overrides.serverCacheEnabled ||
-            baseConfig.serverUrl ||
-            baseConfig.serverMode ||
-            baseConfig.serverCacheEnabled
-          ),
-        }
-      }
-
-      // No preset, use the original logic
       return {
         local: !(
           autorouter.serverUrl ||
@@ -957,11 +919,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         ...defaults,
         ...autorouter,
       }
-    }
-
-    // Handle string presets
-    if (typeof autorouter === "string") {
-      return this._getPresetConfig(autorouter, defaults)
     }
 
     return {
