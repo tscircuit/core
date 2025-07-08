@@ -44,7 +44,7 @@
     "@types/react-dom": "^19.0.2",
     "@types/react-reconciler": "^0.28.9",
     "bpc-graph": "^0.0.50",
-    "bun-match-svg": "0.0.11",
+    "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.5",
     "chokidar-cli": "^3.0.0",
     "circuit-json": "^0.0.215",
