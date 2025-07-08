@@ -10,7 +10,7 @@ import { pairs } from "lib/utils/pairs"
 import { tryNow } from "lib/utils/try-now"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
-import { getTraceLength } from "./compute-trace-length"
+import { getTraceLength } from "./trace-utils/compute-trace-length"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 
 type PcbRouteObjective =
