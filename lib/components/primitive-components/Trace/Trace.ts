@@ -991,7 +991,7 @@ export class Trace
         .find((label) => label.source_net_id === net.source_net_id!)
 
       if (!existingNetLabel) {
-        const netLabel = db.schematic_net_label.insert({
+        db.schematic_net_label.insert({
           text: net._parsedProps.name,
           source_net_id: net.source_net_id!,
           anchor_position: anchorPos,
