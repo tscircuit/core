@@ -28,6 +28,7 @@ import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSou
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { AutorouterError } from "lib/errors/AutorouterError"
+import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -875,56 +876,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _getAutorouterConfig(): AutorouterConfig {
-    const defaults = {
-      serverUrl: "https://registry-api.tscircuit.com",
-      serverMode: "job" as const,
-      serverCacheEnabled: true,
-    }
-    // Inherit from parent if not set by props
     const autorouter =
-      this._parsedProps.autorouter ||
-      this._parsedProps.autorouter?.preset ||
-      this.getInheritedProperty("autorouter")
-
-    if (typeof autorouter === "object") {
-      return {
-        local: !(
-          autorouter.serverUrl ||
-          autorouter.serverMode ||
-          autorouter.serverCacheEnabled
-        ),
-        ...defaults,
-        ...autorouter,
-      }
-    }
-
-    if (autorouter === "auto-local")
-      return {
-        local: true,
-        groupMode: "subcircuit",
-      }
-    if (autorouter === "sequential-trace")
-      return {
-        local: true,
-        groupMode: "sequential-trace",
-      }
-    if (autorouter === "subcircuit")
-      return {
-        local: true,
-        groupMode: "subcircuit",
-      }
-    if (autorouter === "auto-cloud")
-      return {
-        local: false,
-        groupMode: "subcircuit",
-        serverUrl: defaults.serverUrl,
-        serverMode: defaults.serverMode,
-        serverCacheEnabled: true,
-      }
-    return {
-      local: true,
-      groupMode: "subcircuit",
-    }
+      this._parsedProps.autorouter || this.getInheritedProperty("autorouter")
+    return getPresetAutoroutingConfig(autorouter)
   }
   /**
    * Trace-by-trace autorouting is where each trace routes itself in a well-known

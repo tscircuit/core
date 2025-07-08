@@ -3,8 +3,16 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
 test("remote-autorouter-7 with preset config", async () => {
-  const { circuit } = getTestFixture()
   const { autoroutingServerUrl } = getTestAutoroutingServer()
+  const { circuit } = getTestFixture()
+
+  const asyncEffectStartEvents: any[] = []
+  circuit.on("asyncEffect:start", (event) => {
+    asyncEffectStartEvents.push({
+      ...event,
+      componentDisplayName: event.componentDisplayName.replace(/#\d+/, "#"),
+    })
+  })
 
   circuit.add(
     <board
@@ -26,6 +34,16 @@ test("remote-autorouter-7 with preset config", async () => {
 
   await circuit.renderUntilSettled()
 
-  // Verify routing request was made
-  expect(circuit.selectAll("trace").length).toBeGreaterThan(0)
+  expect(asyncEffectStartEvents).toMatchInlineSnapshot(`
+    [
+      {
+        "componentDisplayName": "<board# />",
+        "effectName": "make-http-autorouting-request",
+        "phase": "PcbTraceRender",
+      },
+    ]
+  `)
+
+  const traces = circuit.selectAll("trace")
+  expect(traces.length).toBe(1)
 })
