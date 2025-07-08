@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { createSchematicTraceCrossingSegments } from "lib/components/primitive-components/Trace/create-schematic-trace-crossing-segments"
+import { createSchematicTraceCrossingSegments } from "lib/components/primitive-components/Trace/trace-utils/create-schematic-trace-crossing-segments"
 
 test("repro schematic trace crossing infinite loop 2", () => {
   const inputEdges = [

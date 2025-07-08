@@ -1,4 +1,4 @@
-import type { Port } from "../Port"
+import type { Port } from "../../Port"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 
 export const getMaxLengthFromConnectedCapacitors = (

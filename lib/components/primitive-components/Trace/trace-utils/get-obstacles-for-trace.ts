@@ -2,7 +2,7 @@ import type {
   Obstacle,
   SimpleRouteConnection,
 } from "lib/utils/autorouting/SimpleRouteJson"
-import { Trace } from "./Trace"
+import { Trace } from "../Trace"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 import { getObstaclesFromBounds } from "lib/utils/autorouting/getObstaclesFromBounds"
@@ -19,7 +19,7 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
   const db = trace.root!.db
   const connectedPorts = trace._findConnectedPorts().ports ?? []
   const connectedPortIds = new Set(
-    connectedPorts.map((p) => p.schematic_port_id),
+    connectedPorts.map((p: any) => p.schematic_port_id),
   )
 
   const obstacles: Obstacle[] = []
