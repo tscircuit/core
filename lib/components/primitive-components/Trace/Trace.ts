@@ -45,6 +45,9 @@ import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
+import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
+import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
+import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
 
 export class Trace
   extends PrimitiveComponent<typeof traceProps>
@@ -111,87 +114,7 @@ export class Trace
         ports?: undefined
         portsWithSelectors?: undefined
       } {
-    const { db } = this.root!
-    const { _parsedProps: props, parent } = this
-
-    if (!parent) throw new Error("Trace has no parent")
-
-    const portSelectors = this.getTracePortPathSelectors()
-
-    const portsWithSelectors = portSelectors.map((selector) => ({
-      selector,
-      port:
-        (this.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
-        null,
-    }))
-
-    for (const { selector, port } of portsWithSelectors) {
-      if (!port) {
-        let parentSelector: string
-        let portToken: string
-        const dotIndex = selector.lastIndexOf(".")
-        if (dotIndex !== -1 && dotIndex > selector.lastIndexOf(" ")) {
-          parentSelector = selector.slice(0, dotIndex)
-          portToken = selector.slice(dotIndex + 1)
-        } else {
-          const match = selector.match(/^(.*[ >])?([^ >]+)$/)
-          parentSelector = match?.[1]?.trim() ?? ""
-          portToken = match?.[2] ?? selector
-        }
-        let targetComponent = parentSelector
-          ? this.getSubcircuit().selectOne(parentSelector)
-          : null
-        if (
-          !targetComponent &&
-          parentSelector &&
-          !/[.#\[]/.test(parentSelector)
-        ) {
-          targetComponent = this.getSubcircuit().selectOne(`.${parentSelector}`)
-        }
-        if (!targetComponent) {
-          if (parentSelector) {
-            this.renderError(
-              `Could not find port for selector "${selector}". Component "${parentSelector}" not found`,
-            )
-          } else {
-            this.renderError(`Could not find port for selector "${selector}"`)
-          }
-        } else {
-          const ports = targetComponent.children.filter(
-            (c) => c.componentName === "Port",
-          ) as Port[]
-          const portLabel = portToken.includes(".")
-            ? (portToken.split(".").pop() ?? "")
-            : portToken
-          const portNames = ports.map((c) => c.getNameAndAliases()).flat()
-          const hasCustomLabels = portNames.some(
-            (n) => !/^(pin\d+|\d+)$/.test(n),
-          )
-          const labelList = Array.from(new Set(portNames)).join(", ")
-          let detail: string
-          if (ports.length === 0) {
-            detail = "It has no ports"
-          } else if (!hasCustomLabels) {
-            detail = `It has ${ports.length} pins and no pinLabels (consider adding pinLabels)`
-          } else {
-            detail = `It has [${labelList}]`
-          }
-          this.renderError(
-            `Could not find port for selector "${selector}". Component "${targetComponent.props.name ?? parentSelector}" found, but does not have pin "${portLabel}". ${detail}`,
-          )
-        }
-      }
-    }
-
-    if (portsWithSelectors.some((p) => !p.port)) {
-      return { allPortsFound: false }
-    }
-
-    return {
-      allPortsFound: true,
-      portsWithSelectors,
-      ports: portsWithSelectors.map(({ port }) => port),
-    }
+    return Trace__findConnectedPorts(this)
   }
 
   _resolveNet(selector: string): Net | null {
@@ -356,120 +279,11 @@ export class Trace
   }
 
   doInitialPcbTraceRender(): void {
-    // TODO
+    Trace_doInitialPcbTraceRender(this)
   }
 
   _doInitialSchematicTraceRenderWithDisplayLabel(): void {
-    if (this.root?.schematicDisabled) return
-    const { db } = this.root!
-    const { _parsedProps: props, parent } = this
-
-    if (!parent) throw new Error("Trace has no parent")
-
-    const { allPortsFound, portsWithSelectors: connectedPorts } =
-      this._findConnectedPorts()
-
-    if (!allPortsFound) return
-
-    const portsWithPosition = connectedPorts.map(({ port }) => ({
-      port,
-      position: port._getGlobalSchematicPositionAfterLayout(),
-      schematic_port_id: port.schematic_port_id!,
-      facingDirection: port.facingDirection,
-    }))
-    if (portsWithPosition.length < 2) {
-      throw new Error("Expected at least two ports in portsWithPosition.")
-    }
-
-    let fromPortName: any
-    let toPortName: any
-    const fromAnchorPos = portsWithPosition[0].position
-    const fromPort = portsWithPosition[0].port
-
-    // Validate `path`, `from`, and `to`
-    if ("path" in this.props) {
-      if (this.props.path.length !== 2) {
-        throw new Error("Invalid 'path': Must contain exactly two elements.")
-      }
-      ;[fromPortName, toPortName] = this.props.path
-    } else {
-      if (!("from" in this.props && "to" in this.props)) {
-        throw new Error("Missing 'from' or 'to' properties in props.")
-      }
-      fromPortName = this.props.from
-      toPortName = this.props.to
-    }
-
-    if (!fromPort.source_port_id) {
-      throw new Error(
-        `Missing source_port_id for the 'from' port (${fromPortName}).`,
-      )
-    }
-    const toAnchorPos = portsWithPosition[1].position
-    const toPort = portsWithPosition[1].port
-
-    if (!toPort.source_port_id) {
-      throw new Error(
-        `Missing source_port_id for the 'to' port (${toPortName}).`,
-      )
-    }
-
-    // Handle `from` port label
-    const existingFromNetLabel = db.schematic_net_label
-      .list()
-      .find((label) => label.source_net_id === fromPort.source_port_id)
-
-    const existingToNetLabel = db.schematic_net_label
-      .list()
-      .find((label) => label.source_net_id === toPort.source_port_id)
-
-    const [firstPort, secondPort] = connectedPorts.map(({ port }) => port)
-    const isFirstPortSchematicBox =
-      firstPort.parent?.config.shouldRenderAsSchematicBox
-    const pinFullName = isFirstPortSchematicBox
-      ? `${firstPort?.parent?.props.name}_${firstPort?.props.name}`
-      : `${secondPort?.parent?.props.name}_${secondPort?.props.name}`
-
-    const netLabelText = this.props.schDisplayLabel ?? pinFullName
-
-    if (existingFromNetLabel && existingFromNetLabel.text !== netLabelText) {
-      existingFromNetLabel.text = `${netLabelText} / ${existingFromNetLabel.text}`
-    }
-
-    if (existingToNetLabel && existingToNetLabel?.text !== netLabelText) {
-      existingToNetLabel.text = `${netLabelText} / ${existingToNetLabel.text}`
-    }
-
-    if (!existingToNetLabel) {
-      const toSide =
-        getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom"
-      db.schematic_net_label.insert({
-        text: this.props.schDisplayLabel! ?? pinFullName,
-        source_net_id: toPort.source_port_id!,
-        anchor_position: toAnchorPos,
-        center: computeSchematicNetLabelCenter({
-          anchor_position: toAnchorPos,
-          anchor_side: toSide,
-          text: this.props.schDisplayLabel! ?? pinFullName,
-        }),
-        anchor_side: toSide,
-      })
-    }
-    if (!existingFromNetLabel) {
-      const fromSide =
-        getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom"
-      db.schematic_net_label.insert({
-        text: this.props.schDisplayLabel! ?? pinFullName,
-        source_net_id: fromPort.source_port_id!,
-        anchor_position: fromAnchorPos,
-        center: computeSchematicNetLabelCenter({
-          anchor_position: fromAnchorPos,
-          anchor_side: fromSide,
-          text: this.props.schDisplayLabel! ?? pinFullName,
-        }),
-        anchor_side: fromSide,
-      })
-    }
+    Trace__doInitialSchematicTraceRenderWithDisplayLabel(this)
   }
 
   _isSymbolToChipConnection(): boolean | undefined {
