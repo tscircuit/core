@@ -15,9 +15,9 @@ import {
   parseRefKey,
 } from "@tscircuit/schematic-match-adapt"
 import { circuitBuilderFromLayoutJson } from "@tscircuit/schematic-match-adapt"
-import { createSchematicTraceCrossingSegments } from "../Trace/create-schematic-trace-crossing-segments"
-import { createSchematicTraceJunctions } from "../Trace/create-schematic-trace-junctions"
-import { getOtherSchematicTraces } from "../Trace/get-other-schematic-traces"
+import { createSchematicTraceCrossingSegments } from "../Trace/trace-utils/create-schematic-trace-crossing-segments"
+import { createSchematicTraceJunctions } from "../Trace/trace-utils/create-schematic-trace-junctions"
+import { getOtherSchematicTraces } from "../Trace/trace-utils/get-other-schematic-traces"
 import { deriveSourceTraceIdFromMatchAdaptPath } from "lib/utils/schematic/deriveSourceTraceIdFromMatchAdaptPath"
 import { cju } from "@tscircuit/circuit-json-util"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"

@@ -1,5 +1,5 @@
-import type { Net } from "../Net"
-import type { Port } from "../Port"
+import type { Net } from "../../Net"
+import type { Port } from "../../Port"
 
 export function getTraceDisplayName({
   ports,
