@@ -23,7 +23,10 @@ import { cju } from "@tscircuit/circuit-json-util"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import corpus from "@tscircuit/schematic-corpus"
-import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
+import {
+  convertCircuitJsonToBpc,
+  generateImplicitNetLabels,
+} from "circuit-json-to-bpc"
 import {
   type BpcGraph,
   assignFloatingBoxPositions,
@@ -32,6 +35,17 @@ import {
   layoutSchematicGraph,
   type FixedBpcGraph,
 } from "bpc-graph"
+import { getRelativeDirection } from "lib/utils/get-relative-direction"
+
+const oppositeSideFromFacing: Record<
+  string,
+  "left" | "right" | "top" | "bottom"
+> = {
+  left: "right",
+  right: "left",
+  top: "bottom",
+  bottom: "top",
+}
 
 export function Group_doInitialSchematicLayoutMatchAdapt<
   Props extends z.ZodType<any, any, any>,
@@ -48,73 +62,12 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   //  Match-Adapt BPC pipeline to create “boxes” for nets that otherwise
   //  would be missing.
   // ------------------------------------------------------------------
-  const existingLabels = new Set(
-    subtreeCircuitJson
-      .filter((e) => e.type === "schematic_net_label")
-      .map((e: any) => `${e.anchor_position?.x},${e.anchor_position?.y}`),
-  )
-
-  const oppositeSideFromFacing: Record<
-    string,
-    "left" | "right" | "top" | "bottom"
-  > = {
-    left: "right",
-    right: "left",
-    top: "bottom",
-    bottom: "top",
-  }
-
-  const generatedNetLabels = new Map<
-    string,
-    { schematic_net_label: SchematicNetLabel; schematic_port: SchematicPort }
-  >()
-
-  for (const sp of subtreeCircuitJson.filter(
-    (e) => e.type === "schematic_port",
-  )) {
-    const key = `${sp.center.x},${sp.center.y}`
-    if (existingLabels.has(key)) continue // already has a label here
-
-    // Try to find a net this port belongs to (falls back to undefined)
-    const srcPort = db.source_port.get(sp.source_port_id)
-    const srcNet = db.source_net.getWhere({
-      subcircuit_connectivity_map_key: srcPort?.subcircuit_connectivity_map_key,
-    })
-    if (!srcNet) {
-      console.error(`No source net found for port: ${sp.source_port_id}`)
-      continue
-    }
-
-    const srcTrace = db.source_trace.getWhere({
-      subcircuit_connectivity_map_key: srcPort?.subcircuit_connectivity_map_key,
-    })
-
-    const schematic_net_label_id = `netlabel_for_${sp.schematic_port_id}`
-    const source_net = db.source_net.get(srcNet.source_net_id)!
-    const schematic_net_label = {
-      type: "schematic_net_label",
-      schematic_net_label_id,
-      text: source_net.name,
-      source_net_id: srcNet.source_net_id,
-      source_trace_id: srcTrace?.source_trace_id,
-      anchor_position: { ...sp.center },
-      center: { ...sp.center },
-      anchor_side:
-        oppositeSideFromFacing[
-          sp.facing_direction as keyof typeof oppositeSideFromFacing
-        ] ?? "right",
-    } as SchematicNetLabel
-
-    generatedNetLabels.set(schematic_net_label_id, {
-      schematic_net_label,
-      schematic_port: sp,
-    })
-
-    subtreeCircuitJson.push(schematic_net_label)
-  }
+  const generatedNetLabels = generateImplicitNetLabels(subtreeCircuitJson)
 
   // Convert the subtree circuit json into a bpc graph
-  const targetBpcGraph = convertCircuitJsonToBpc(subtreeCircuitJson)
+  const targetBpcGraph = convertCircuitJsonToBpc(
+    subtreeCircuitJson.concat(generatedNetLabels),
+  )
 
   // // Redundant, but assert that all the boxes are floating
   // for (const box of targetBpcGraph.boxes) {
@@ -214,6 +167,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       continue
     }
 
+    console.log({ boxId: box.boxId })
     const schematic_net_label = db.schematic_net_label.get(box.boxId)
 
     if (schematic_net_label) {
@@ -235,50 +189,86 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       continue
     }
 
-    if (generatedNetLabels.has(box.boxId)) {
-      const { schematic_net_label: generatedNetLabel, schematic_port } =
-        generatedNetLabels.get(box.boxId)!
-      // Create an approp
-      const pins = laidOutBpcGraph.pins.filter((p) => p.boxId === box.boxId)
-      const center = pins.find((p) => p.color === "netlabel_center")!
-      const anchor = pins.find((p) => p.color !== "netlabel_center")!
+    const matchedGeneratedNetLabel = generatedNetLabels.find(
+      (l) => l.schematic_net_label_id === box.boxId,
+    )
 
-      const color = anchor.color as "vcc" | "gnd" | "normal"
+    console.log({ matchedGeneratedNetLabel })
 
-      const symbolName =
-        color === "vcc" ? "vcc" : color === "gnd" ? "gnd" : undefined
+    if (matchedGeneratedNetLabel) {
+      // Check if a schematic net label already exists for this net
+      const existingNetLabel = db.schematic_net_label
+        .list()
+        .find(
+          (label) =>
+            label.source_net_id === matchedGeneratedNetLabel.source_net_id,
+        )
 
-      // TODO this should be based on the relative position of center/anchor
-      const anchorSide =
-        color === "vcc"
-          ? "bottom"
-          : color === "gnd"
-            ? "top"
-            : (oppositeSideFromFacing[
-                schematic_port.facing_direction as keyof typeof oppositeSideFromFacing
-              ] ?? "right")
+      if (existingNetLabel) {
+        // Update existing net label with match-adapt positioning
+        const pins = laidOutBpcGraph.pins.filter((p) => p.boxId === box.boxId)
+        const center = pins.find((p) => p.color === "netlabel_center")!
+        const anchor = pins.find((p) => p.color !== "netlabel_center")!
 
-      const source_net = db.source_net.get(generatedNetLabel.source_net_id)!
-      // Insert a netlabel into the actual db, but map colors to specific symbols
-      const schematic_net_label = {
-        type: "schematic_net_label",
-        schematic_net_label_id: `netlabel_for_${box.boxId}`,
-        text: source_net.name, // no text; just a placeholder box for Match-Adapt
-        anchor_position: {
+        const nlDir = getRelativeDirection(anchor.offset, center.offset)
+        const nlSide = oppositeSideFromFacing[nlDir]
+        const color = anchor.color as "vcc" | "gnd" | "normal"
+        const symbolName =
+          color === "vcc" ? "vcc" : color === "gnd" ? "gnd" : undefined
+        const anchorSide =
+          color === "vcc" ? "bottom" : color === "gnd" ? "top" : nlSide
+
+        // Update the existing net label with match-adapt positioning
+        existingNetLabel.anchor_position = {
           x: box.center.x + groupOffset.x + center.offset.x,
           y: box.center.y + groupOffset.y + center.offset.y,
-        },
-        center: {
+        }
+        existingNetLabel.center = {
           x: box.center.x + groupOffset.x + center.offset.x,
           y: box.center.y + groupOffset.y + center.offset.y,
-        },
-        anchor_side: anchorSide,
-        symbol_name: symbolName,
-        source_net_id: generatedNetLabel.source_net_id,
-        source_trace_id: generatedNetLabel.source_trace_id,
-      } as SchematicNetLabel
+        }
+        existingNetLabel.anchor_side = anchorSide
+        if (symbolName) {
+          existingNetLabel.symbol_name = symbolName
+        }
+      } else {
+        // Create new net label only if none exists
+        const pins = laidOutBpcGraph.pins.filter((p) => p.boxId === box.boxId)
+        const center = pins.find((p) => p.color === "netlabel_center")!
+        const anchor = pins.find((p) => p.color !== "netlabel_center")!
 
-      db.schematic_net_label.insert(schematic_net_label)
+        const nlDir = getRelativeDirection(anchor.offset, center.offset)
+        const nlSide = oppositeSideFromFacing[nlDir]
+        const color = anchor.color as "vcc" | "gnd" | "normal"
+        const symbolName =
+          color === "vcc" ? "vcc" : color === "gnd" ? "gnd" : undefined
+        const anchorSide =
+          color === "vcc" ? "bottom" : color === "gnd" ? "top" : nlSide
+
+        const source_net = db.source_net.get(
+          matchedGeneratedNetLabel.source_net_id,
+        )!
+        // Insert a netlabel into the actual db, but map colors to specific symbols
+        const schematic_net_label = {
+          type: "schematic_net_label",
+          schematic_net_label_id: `netlabel_for_${box.boxId}`,
+          text: source_net.name, // no text; just a placeholder box for Match-Adapt
+          anchor_position: {
+            x: box.center.x + groupOffset.x + center.offset.x,
+            y: box.center.y + groupOffset.y + center.offset.y,
+          },
+          center: {
+            x: box.center.x + groupOffset.x + center.offset.x,
+            y: box.center.y + groupOffset.y + center.offset.y,
+          },
+          anchor_side: anchorSide,
+          symbol_name: symbolName,
+          source_net_id: matchedGeneratedNetLabel.source_net_id,
+          source_trace_id: matchedGeneratedNetLabel.source_trace_id,
+        } as SchematicNetLabel
+
+        db.schematic_net_label.insert(schematic_net_label)
+      }
 
       continue
     }

@@ -984,17 +984,25 @@ export class Trace
 
       const side =
         getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
-      const netLabel = db.schematic_net_label.insert({
-        text: net._parsedProps.name,
-        source_net_id: net.source_net_id!,
-        anchor_position: anchorPos,
-        center: computeSchematicNetLabelCenter({
-          anchor_position: anchorPos,
-          anchor_side: side,
+
+      // Check if a net label already exists for this net (e.g., from match-adapt process)
+      const existingNetLabel = db.schematic_net_label
+        .list()
+        .find((label) => label.source_net_id === net.source_net_id!)
+
+      if (!existingNetLabel) {
+        const netLabel = db.schematic_net_label.insert({
           text: net._parsedProps.name,
-        }),
-        anchor_side: side,
-      })
+          source_net_id: net.source_net_id!,
+          anchor_position: anchorPos,
+          center: computeSchematicNetLabelCenter({
+            anchor_position: anchorPos,
+            anchor_side: side,
+            text: net._parsedProps.name,
+          }),
+          anchor_side: side,
+        })
+      }
 
       return
     }
