@@ -1,13 +1,30 @@
 import type { AutorouterConfig } from "@tscircuit/props"
 
 export function getPresetAutoroutingConfig(
-  preset: AutorouterConfig["preset"],
+  autorouterConfig: AutorouterConfig | undefined,
 ): AutorouterConfig {
   const defaults = {
     serverUrl: "https://registry-api.tscircuit.com",
     serverMode: "job" as const,
     serverCacheEnabled: true,
   }
+
+  if (typeof autorouterConfig === "object" && !autorouterConfig.preset) {
+    return {
+      local: !(
+        autorouterConfig.serverUrl ||
+        autorouterConfig.serverMode ||
+        autorouterConfig.serverCacheEnabled
+      ),
+      ...defaults,
+      ...autorouterConfig,
+    }
+  }
+
+  const preset =
+    typeof autorouterConfig === "object"
+      ? autorouterConfig.preset
+      : autorouterConfig
 
   switch (preset) {
     case "auto-local":

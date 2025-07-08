@@ -876,32 +876,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _getAutorouterConfig(): AutorouterConfig {
-    const defaults = {
-      serverUrl: "https://registry-api.tscircuit.com",
-      serverMode: "job" as const,
-      serverCacheEnabled: true,
-    }
-
-    // Inherit from parent if not set by props
     const autorouter =
       this._parsedProps.autorouter || this.getInheritedProperty("autorouter")
-
-    const preset =
-      typeof autorouter === "object" ? autorouter.preset : autorouter
-
-    if (typeof autorouter === "object" && !preset) {
-      return {
-        local: !(
-          autorouter.serverUrl ||
-          autorouter.serverMode ||
-          autorouter.serverCacheEnabled
-        ),
-        ...defaults,
-        ...autorouter,
-      }
-    }
-
-    return getPresetAutoroutingConfig(preset)
+    return getPresetAutoroutingConfig(autorouter)
   }
   /**
    * Trace-by-trace autorouting is where each trace routes itself in a well-known
