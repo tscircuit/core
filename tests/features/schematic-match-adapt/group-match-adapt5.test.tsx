@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("group match adapt 5", async () => {
+test("group-match-adapt5", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
