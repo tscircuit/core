@@ -22,7 +22,7 @@ import { Trace } from "./Trace"
 
 export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   if (trace.root?.schematicDisabled) return
-  // if (trace.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
+  if (trace.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
   const { db } = trace.root!
   const { _parsedProps: props, parent } = trace
 
