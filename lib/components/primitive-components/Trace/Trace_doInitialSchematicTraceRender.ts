@@ -1,9 +1,12 @@
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { type SchematicNetLabel, type SchematicTrace } from "circuit-json"
+import { calculateElbow } from "calculate-elbow"
+import { doesLineIntersectLine, type Point } from "@tscircuit/math-utils"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
 import type {
   SimpleRouteConnection,
   SimpleRouteJson,
+  Obstacle,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
 import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
@@ -169,6 +172,79 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     return
   }
 
+  const attemptElbowEdges = () => {
+    const elbowEdges: SchematicTrace["edges"] = []
+    for (let i = 0; i < portsWithPosition.length - 1; i++) {
+      const start = portsWithPosition[i]
+      const end = portsWithPosition[i + 1]
+      const path = calculateElbow(
+        {
+          x: start.position.x,
+          y: start.position.y,
+          facingDirection: start.facingDirection as any,
+        },
+        {
+          x: end.position.x,
+          y: end.position.y,
+          facingDirection: end.facingDirection as any,
+        },
+      )
+      for (let j = 0; j < path.length - 1; j++) {
+        elbowEdges.push({ from: path[j], to: path[j + 1] })
+      }
+    }
+    const doesSegmentIntersectRect = (
+      edge: { from: { x: number; y: number }; to: { x: number; y: number } },
+      rect: Obstacle,
+    ) => {
+      const halfW = rect.width / 2
+      const halfH = rect.height / 2
+      const left = rect.center.x - halfW
+      const right = rect.center.x + halfW
+      const top = rect.center.y - halfH
+      const bottom = rect.center.y + halfH
+
+      const inRect = (p: { x: number; y: number }) =>
+        p.x >= left && p.x <= right && p.y >= top && p.y <= bottom
+
+      if (inRect(edge.from) || inRect(edge.to)) return true
+
+      const rectEdges = [
+        [
+          { x: left, y: top },
+          { x: right, y: top },
+        ],
+        [
+          { x: right, y: top },
+          { x: right, y: bottom },
+        ],
+        [
+          { x: right, y: bottom },
+          { x: left, y: bottom },
+        ],
+        [
+          { x: left, y: bottom },
+          { x: left, y: top },
+        ],
+      ] as Array<[Point, Point]>
+      return rectEdges.some((r) =>
+        doesLineIntersectLine([edge.from, edge.to], r, { lineThickness: 0 }),
+      )
+    }
+
+    for (const edge of elbowEdges) {
+      for (const obstacle of obstacles) {
+        if (doesSegmentIntersectRect(edge, obstacle)) {
+          return null
+        }
+      }
+    }
+
+    return elbowEdges
+  }
+
+  let edges: SchematicTrace["edges"] | null = attemptElbowEdges()
+
   // Add points for autorouter to connect
   connection.pointsToConnect = portsWithPosition.map(({ position }) => ({
     ...position,
@@ -198,63 +274,64 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     skipOtherTraceInteraction = true
   }
 
-  const autorouter = new Autorouter({
-    input: simpleRouteJsonInput,
-    MAX_ITERATIONS: 100,
-    OBSTACLE_MARGIN: 0.1,
-    isRemovePathLoopsEnabled: true,
-    isShortenPathWithShortcutsEnabled: true,
-    marginsWithCosts: [
-      {
-        margin: 1,
-        enterCost: 0,
-        travelCostFactor: 1,
-      },
-      {
-        margin: 0.3,
-        enterCost: 0,
-        travelCostFactor: 1,
-      },
-      {
-        margin: 0.2,
-        enterCost: 0,
-        travelCostFactor: 2,
-      },
-      {
-        margin: 0.1,
-        enterCost: 0,
-        travelCostFactor: 3,
-      },
-    ],
-  })
-  let results = autorouter.solveAndMapToTraces()
-
-  if (results.length === 0) {
-    if (
-      trace._isSymbolToChipConnection() ||
-      trace._isSymbolToSymbolConnection() ||
-      trace._isChipToChipConnection()
-    ) {
-      trace._doInitialSchematicTraceRenderWithDisplayLabel()
-      return
-    }
-    const directLineRouter = new DirectLineRouter({
+  if (!edges) {
+    const autorouter = new Autorouter({
       input: simpleRouteJsonInput,
+      MAX_ITERATIONS: 100,
+      OBSTACLE_MARGIN: 0.1,
+      isRemovePathLoopsEnabled: true,
+      isShortenPathWithShortcutsEnabled: true,
+      marginsWithCosts: [
+        {
+          margin: 1,
+          enterCost: 0,
+          travelCostFactor: 1,
+        },
+        {
+          margin: 0.3,
+          enterCost: 0,
+          travelCostFactor: 1,
+        },
+        {
+          margin: 0.2,
+          enterCost: 0,
+          travelCostFactor: 2,
+        },
+        {
+          margin: 0.1,
+          enterCost: 0,
+          travelCostFactor: 3,
+        },
+      ],
     })
-    results = directLineRouter.solveAndMapToTraces()
-    skipOtherTraceInteraction = true
-  }
+    let results = autorouter.solveAndMapToTraces()
 
-  const [{ route }] = results
+    if (results.length === 0) {
+      if (
+        trace._isSymbolToChipConnection() ||
+        trace._isSymbolToSymbolConnection() ||
+        trace._isChipToChipConnection()
+      ) {
+        trace._doInitialSchematicTraceRenderWithDisplayLabel()
+        return
+      }
+      const directLineRouter = new DirectLineRouter({
+        input: simpleRouteJsonInput,
+      })
+      results = directLineRouter.solveAndMapToTraces()
+      skipOtherTraceInteraction = true
+    }
 
-  let edges: SchematicTrace["edges"] = []
+    const [{ route }] = results
 
-  // Add autorouted path
-  for (let i = 0; i < route.length - 1; i++) {
-    edges.push({
-      from: route[i],
-      to: route[i + 1],
-    })
+    edges = []
+    // Add autorouted path
+    for (let i = 0; i < route.length - 1; i++) {
+      edges.push({
+        from: route[i],
+        to: route[i + 1],
+      })
+    }
   }
 
   const source_trace_id = trace.source_trace_id!
