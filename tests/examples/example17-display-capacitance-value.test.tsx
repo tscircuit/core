@@ -23,7 +23,7 @@ test("schematic capacitor symbol", () => {
     {
       "are_pins_interchangeable": true,
       "capacitance": 0.0001,
-      "display_capacitance": "100µF",
+      "display_capacitance": "100uF",
       "ftype": "simple_capacitor",
       "manufacturer_part_number": undefined,
       "max_decoupling_trace_length": undefined,
