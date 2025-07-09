@@ -22,7 +22,7 @@ import { deriveSourceTraceIdFromMatchAdaptPath } from "lib/utils/schematic/deriv
 import { cju } from "@tscircuit/circuit-json-util"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import corpus from "@tscircuit/schematic-corpus"
+import { corpusNoNetLabel } from "@tscircuit/schematic-corpus"
 import {
   convertCircuitJsonToBpc,
   generateImplicitNetLabels,
@@ -173,7 +173,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
 
   // Convert the subtree circuit json into a bpc graph
   const targetBpcGraph = convertCircuitJsonToBpc(
-    subtreeCircuitJson.concat(implicitNetLabels),
+    subtreeCircuitJson, // .concat(implicitNetLabels),
   )
 
   console.log("Writing targetBpcGraph.svg")
@@ -183,6 +183,9 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
       backgroundColor: "white",
     }),
   )
+
+  console.log("Writing targetBpcGraph.json")
+  Bun.write("targetBpcGraph.json", JSON.stringify(targetBpcGraph, null, 2))
 
   console.log("Writing bpcGraphWithoutImplicitNetLabels.svg")
   Bun.write(
@@ -214,7 +217,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
         })
         .map((b) => b.boxId),
     ),
-    corpus,
+    corpus: corpusNoNetLabel,
   })
 
   console.log("Writing laidOutBpcGraph.svg")
