@@ -7,6 +7,7 @@ import type { PlatformConfig } from "@tscircuit/props"
 export const getTestFixture = ({
   platform,
 }: { platform?: PlatformConfig } = {}) => {
+  global.debugGraphics = []
   const circuit = new RootCircuit({ platform })
 
   return {
