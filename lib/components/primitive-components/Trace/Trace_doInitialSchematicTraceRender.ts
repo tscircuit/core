@@ -244,6 +244,9 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   }
 
   let edges: SchematicTrace["edges"] | null = attemptElbowEdges()
+  if (edges && edges.length === 0) {
+    edges = null
+  }
 
   // Add points for autorouter to connect
   connection.pointsToConnect = portsWithPosition.map(({ position }) => ({
@@ -361,6 +364,10 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
       db,
       source_trace_id: trace.source_trace_id!,
     })
+  }
+
+  if (!edges || edges.length === 0) {
+    return
   }
 
   // The first/last edges sometimes don't connect to the ports because the
