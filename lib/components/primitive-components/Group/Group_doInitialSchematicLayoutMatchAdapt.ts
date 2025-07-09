@@ -1,4 +1,4 @@
-import corpusNoNetLabel from "@tscircuit/schematic-corpus"
+import { corpusNoNetLabel } from "@tscircuit/schematic-corpus"
 import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
 import { layoutSchematicGraph, getGraphicsForBpcGraph } from "bpc-graph"
 import Debug from "debug"
