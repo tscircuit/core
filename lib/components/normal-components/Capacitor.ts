@@ -26,12 +26,17 @@ export class Capacitor extends NormalComponent<
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    const capacitanceDisplay = `${formatSiUnit(this._parsedProps.capacitance)}F`
+    const capacitanceDisplay =
+      typeof this.props.capacitance === "string"
+        ? this.props.capacitance
+        : `${formatSiUnit(this._parsedProps.capacitance)}F`
     if (
       this._parsedProps.schShowRatings &&
       this._parsedProps.maxVoltageRating
     ) {
-      return `${capacitanceDisplay}/${formatSiUnit(this._parsedProps.maxVoltageRating)}V`
+      return `${capacitanceDisplay}/${formatSiUnit(
+        this._parsedProps.maxVoltageRating,
+      )}V`
     }
     return capacitanceDisplay
   }
