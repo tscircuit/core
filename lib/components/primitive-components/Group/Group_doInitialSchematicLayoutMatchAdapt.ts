@@ -1,44 +1,9 @@
-import type {
-  SchematicComponent,
-  SchematicNetLabel,
-  SchematicPort,
-  SchematicTrace,
-} from "circuit-json"
+import corpusNoNetLabel from "@tscircuit/schematic-corpus"
+import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
+import { layoutSchematicGraph, getGraphicsForBpcGraph } from "bpc-graph"
+import Debug from "debug"
 import type { Group } from "./Group"
 import type { z } from "zod"
-import {
-  type InputNetlist,
-  SchematicLayoutPipelineSolver,
-  reorderChipPinsToCcw,
-  convertCircuitJsonToInputNetlist,
-  getRefKey,
-  parseRefKey,
-} from "@tscircuit/schematic-match-adapt"
-import { circuitBuilderFromLayoutJson } from "@tscircuit/schematic-match-adapt"
-import { createSchematicTraceCrossingSegments } from "../Trace/trace-utils/create-schematic-trace-crossing-segments"
-import { createSchematicTraceJunctions } from "../Trace/trace-utils/create-schematic-trace-junctions"
-import { getOtherSchematicTraces } from "../Trace/trace-utils/get-other-schematic-traces"
-import { deriveSourceTraceIdFromMatchAdaptPath } from "lib/utils/schematic/deriveSourceTraceIdFromMatchAdaptPath"
-import { cju } from "@tscircuit/circuit-json-util"
-import { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import { corpusNoNetLabel } from "@tscircuit/schematic-corpus"
-import {
-  convertCircuitJsonToBpc,
-  generateImplicitNetLabels,
-} from "circuit-json-to-bpc"
-import {
-  type BpcGraph,
-  assignFloatingBoxPositions,
-  netAdaptBpcGraph,
-  getBpcGraphWlDistance,
-  layoutSchematicGraph,
-  type FixedBpcGraph,
-  getGraphicsForBpcGraph,
-} from "bpc-graph"
-import { getSvgFromGraphicsObject } from "graphics-debug"
-import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
-import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchAdapt")
 
