@@ -23,7 +23,10 @@ import { cju } from "@tscircuit/circuit-json-util"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import corpus from "@tscircuit/schematic-corpus"
-import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
+import {
+  convertCircuitJsonToBpc,
+  generateImplicitNetLabels,
+} from "circuit-json-to-bpc"
 import {
   type BpcGraph,
   assignFloatingBoxPositions,
@@ -31,7 +34,10 @@ import {
   getBpcGraphWlDistance,
   layoutSchematicGraph,
   type FixedBpcGraph,
+  getGraphicsForBpcGraph,
 } from "bpc-graph"
+import { getSvgFromGraphicsObject } from "graphics-debug"
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 
 export function Group_doInitialSchematicLayoutMatchAdapt<
   Props extends z.ZodType<any, any, any>,
@@ -40,6 +46,22 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
 
   // TODO use db.subtree({ source_group_id: ... })
   const subtreeCircuitJson = structuredClone(db.toArray())
+
+  const bpcGraphBeforeGeneratedNetLabels =
+    convertCircuitJsonToBpc(subtreeCircuitJson)
+  console.log("Writing bpcGraphBeforeGeneratedNetLabels.svg")
+  Bun.write(
+    "bpcGraphBeforeGeneratedNetLabels.svg",
+    getSvgFromGraphicsObject(
+      getGraphicsForBpcGraph(bpcGraphBeforeGeneratedNetLabels),
+      {
+        backgroundColor: "white",
+      },
+    ),
+  )
+
+  console.log("subcircuit with generated net labels")
+  subtreeCircuitJson.concat()
 
   // ------------------------------------------------------------------
   //  Add synthetic schematic_net_label elements for any schematic_port
@@ -69,106 +91,161 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
     { schematic_net_label: SchematicNetLabel; schematic_port: SchematicPort }
   >()
 
-  for (const sp of subtreeCircuitJson.filter(
-    (e) => e.type === "schematic_port",
-  )) {
-    const key = `${sp.center.x},${sp.center.y}`
-    if (existingLabels.has(key)) continue // already has a label here
+  const implicitNetLabels = generateImplicitNetLabels(subtreeCircuitJson)
 
-    // Try to find a net this port belongs to (falls back to undefined)
-    const srcPort = db.source_port.get(sp.source_port_id)
-    const srcNet = db.source_net.getWhere({
-      subcircuit_connectivity_map_key: srcPort?.subcircuit_connectivity_map_key,
-    })
-    if (!srcNet) {
-      console.error(`No source net found for port: ${sp.source_port_id}`)
-      continue
+  for (const netLabel of implicitNetLabels) {
+    // @ts-expect-error- waiting for circuit-json to add schematic_port_id to net labels
+    if (!netLabel.schematic_port_id) {
+      throw new Error(
+        `No schematic port id found for net label: ${netLabel.schematic_net_label_id}`,
+      )
     }
-
-    const srcTrace = db.source_trace.getWhere({
-      subcircuit_connectivity_map_key: srcPort?.subcircuit_connectivity_map_key,
+    // @ts-expect-error - waiting for circuit-json to add schematic_port_id to net labels
+    const schematic_port = db.schematic_port.get(netLabel.schematic_port_id)
+    if (!schematic_port) {
+      throw new Error(
+        `No schematic port found for net label: ${netLabel.schematic_net_label_id}`,
+      )
+    }
+    generatedNetLabels.set(netLabel.schematic_net_label_id, {
+      schematic_net_label: netLabel,
+      schematic_port,
     })
-
-    const schematic_net_label_id = `netlabel_for_${sp.schematic_port_id}`
-    const source_net = db.source_net.get(srcNet.source_net_id)!
-    const schematic_net_label = {
-      type: "schematic_net_label",
-      schematic_net_label_id,
-      text: source_net.name,
-      source_net_id: srcNet.source_net_id,
-      source_trace_id: srcTrace?.source_trace_id,
-      anchor_position: { ...sp.center },
-      center: { ...sp.center },
-      anchor_side:
-        oppositeSideFromFacing[
-          sp.facing_direction as keyof typeof oppositeSideFromFacing
-        ] ?? "right",
-    } as SchematicNetLabel
-
-    generatedNetLabels.set(schematic_net_label_id, {
-      schematic_net_label,
-      schematic_port: sp,
-    })
-
-    subtreeCircuitJson.push(schematic_net_label)
   }
 
+  console.log("Writing subtreeCircuitJsonWithInferredNetLabels.svg")
+  Bun.write(
+    "subtreeCircuitJsonWithInferredNetLabels.svg",
+    convertCircuitJsonToSchematicSvg(
+      subtreeCircuitJson.concat(implicitNetLabels),
+    ),
+  )
+
+  // for (const sp of subtreeCircuitJson.filter(
+  //   (e) => e.type === "schematic_port",
+  // )) {
+  //   const key = `${sp.center.x},${sp.center.y}`
+  //   if (existingLabels.has(key)) continue // already has a label here
+
+  //   // Try to find a net this port belongs to (falls back to undefined)
+  //   const srcPort = db.source_port.get(sp.source_port_id)
+  //   const srcNet = db.source_net.getWhere({
+  //     subcircuit_connectivity_map_key: srcPort?.subcircuit_connectivity_map_key,
+  //   })
+  //   if (!srcNet) {
+  //     console.error(`No source net found for port: ${sp.source_port_id}`)
+  //     continue
+  //   }
+
+  //   const srcTrace = db.source_trace.getWhere({
+  //     subcircuit_connectivity_map_key: srcPort?.subcircuit_connectivity_map_key,
+  //   })
+
+  //   const schematic_net_label_id = `netlabel_for_${sp.schematic_port_id}`
+  //   const source_net = db.source_net.get(srcNet.source_net_id)!
+  //   const schematic_net_label = {
+  //     type: "schematic_net_label",
+  //     schematic_net_label_id,
+  //     text: source_net.name,
+  //     source_net_id: srcNet.source_net_id,
+  //     source_trace_id: srcTrace?.source_trace_id,
+  //     anchor_position: { ...sp.center },
+  //     center: { ...sp.center },
+  //     anchor_side:
+  //       oppositeSideFromFacing[
+  //         sp.facing_direction as keyof typeof oppositeSideFromFacing
+  //       ] ?? "right",
+  //   } as SchematicNetLabel
+
+  //   generatedNetLabels.set(schematic_net_label_id, {
+  //     schematic_net_label,
+  //     schematic_port: sp,
+  //   })
+
+  //   subtreeCircuitJson.push(schematic_net_label)
+  // }
+
+  console.log("Writing subtreeCircuitJson.svg")
+  Bun.write(
+    "subtreeCircuitJson.svg",
+    convertCircuitJsonToSchematicSvg(subtreeCircuitJson),
+  )
+
   // Convert the subtree circuit json into a bpc graph
-  const targetBpcGraph = convertCircuitJsonToBpc(subtreeCircuitJson)
+  const targetBpcGraph = convertCircuitJsonToBpc(
+    subtreeCircuitJson.concat(implicitNetLabels),
+  )
 
-  // // Redundant, but assert that all the boxes are floating
-  // for (const box of targetBpcGraph.boxes) {
-  //   if (box.kind === "fixed" || box.center) {
-  //     box.kind = "floating"
-  //     box.center = undefined
-  //   }
-  // }
+  console.log("Writing targetBpcGraph.svg")
+  Bun.write(
+    "targetBpcGraph.svg",
+    getSvgFromGraphicsObject(getGraphicsForBpcGraph(targetBpcGraph), {
+      backgroundColor: "white",
+    }),
+  )
 
-  // // Find the best match in the corpus
-  // let bestMatch: BpcGraph = {
-  //   boxes: [],
-  //   pins: [],
-  // }
-  // let bestWlDistance = Infinity
-  // let winningBpcGraphName = "empty"
-  // for (const [candidateBpcGraphName, candidateBpcGraph] of Object.entries(
-  //   corpus,
-  // ).sort((a, b) => a[0].localeCompare(b[0]))) {
-  //   const wlDistance = getBpcGraphWlDistance(
-  //     candidateBpcGraph as FixedBpcGraph,
-  //     targetBpcGraph,
-  //   )
-  //   console.log(candidateBpcGraphName, wlDistance)
-
-  //   if (wlDistance < bestWlDistance) {
-  //     bestMatch = candidateBpcGraph as FixedBpcGraph
-  //     winningBpcGraphName = candidateBpcGraphName
-  //     bestWlDistance = wlDistance
-  //     if (wlDistance === 0) break
-  //   }
-  // }
-
-  // console.log(`Winning BPC graph: ${winningBpcGraphName}`)
-
-  // // Adapt the best match
-  // const { adaptedBpcGraph } = netAdaptBpcGraph(
-  //   bestMatch as FixedBpcGraph,
-  //   targetBpcGraph,
-  // )
-
-  // // Assign the floating box positions
-  // const adaptedBpcGraphWithPositions =
-  //   assignFloatingBoxPositions(adaptedBpcGraph)
+  console.log("Writing bpcGraphWithoutImplicitNetLabels.svg")
+  Bun.write(
+    "bpcGraphWithoutImplicitNetLabels.svg",
+    getSvgFromGraphicsObject(
+      getGraphicsForBpcGraph(convertCircuitJsonToBpc(subtreeCircuitJson)),
+      {
+        backgroundColor: "white",
+      },
+    ),
+  )
 
   const laidOutBpcGraph = layoutSchematicGraph(targetBpcGraph, {
     singletonKeys: ["vcc/2", "gnd/2"],
     centerPinColors: ["netlabel_center", "component_center"],
+    floatingBoxIdsWithMutablePinOffsets: new Set(
+      targetBpcGraph.boxes
+        .filter((box) => {
+          const boxPins = targetBpcGraph.pins.filter(
+            (p) => p.boxId === box.boxId,
+          )
+          const nonCenterBoxPins = boxPins.filter(
+            (bp) => !bp.color.includes("center"),
+          )
+          if (nonCenterBoxPins.length <= 2) {
+            return true
+          }
+          return false
+        })
+        .map((b) => b.boxId),
+    ),
     corpus,
   })
+
+  console.log("Writing laidOutBpcGraph.svg")
+  Bun.write(
+    "laidOutBpcGraph.svg",
+    getSvgFromGraphicsObject(getGraphicsForBpcGraph(laidOutBpcGraph), {
+      backgroundColor: "white",
+    }),
+  )
 
   // Offset returned coordinates by the group's global schematic position so
   // that match-adapt layouts respect the group's schX/schY props
   const groupOffset = group._getGlobalSchematicPositionBeforeLayout()
+
+  console.table(
+    implicitNetLabels.map((nl) => ({
+      id: nl.schematic_net_label_id,
+      ...nl.center,
+    })),
+  )
+  const implicitNetLabelIds = implicitNetLabels.map(
+    (nl) => nl.schematic_net_label_id,
+  )
+  console.table(
+    laidOutBpcGraph.boxes
+      .filter((b) => implicitNetLabelIds.includes(b.boxId))
+      .map((b) => ({
+        id: b.boxId,
+        ...b.center,
+      })),
+  )
 
   // Extract the new positions
   for (const box of laidOutBpcGraph.boxes) {
