@@ -7,6 +7,8 @@ declare global {
 
 export const writeGlobalDebugGraphics = () => {
   if (!global.debugGraphics) return
+  if (process.env.CI) return
+
   // Delete/recreate the debug-graphics directory
   rmSync("debug-graphics", { recursive: true })
   mkdirSync("debug-graphics")
