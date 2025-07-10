@@ -10,7 +10,7 @@ test("manual trace hints correctly change trace routes", async () => {
       width="10mm"
       height="10mm"
       autorouter="sequential-trace"
-      layout={layout().manualEdits({
+      manualEdits={{
         manual_trace_hints: [
           {
             pcb_port_selector: ".R1 > .pin2",
@@ -28,7 +28,7 @@ test("manual trace hints correctly change trace routes", async () => {
             ],
           },
         ],
-      })}
+      }}
     >
       <resistor
         name="R1"
