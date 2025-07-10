@@ -1,6 +1,5 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { layout } from "@tscircuit/layout"
 
 test("board with manual layout edits", () => {
   const { circuit } = getTestFixture()
@@ -15,7 +14,7 @@ test("board with manual layout edits", () => {
         { x: 10, y: 10 },
         { x: 5, y: 10 },
       ]}
-      layout={layout().manualEdits({
+      manualEdits={{
         pcb_placements: [
           {
             selector: ".R1",
@@ -28,7 +27,7 @@ test("board with manual layout edits", () => {
             relative_to: "group_center",
           },
         ],
-      })}
+      }}
     >
       <resistor name="R1" resistance="10k" footprint="0402" />
       <capacitor name="C1" capacitance="10uF" footprint="0603" />

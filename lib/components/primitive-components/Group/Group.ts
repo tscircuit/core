@@ -192,7 +192,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     if (!this.isSubcircuit) return
 
-    const manualTraceHints = groupProps.layout?.manual_trace_hints
+    const manualTraceHints = groupProps.manualEdits?.manual_trace_hints
 
     if (!manualTraceHints) return
 

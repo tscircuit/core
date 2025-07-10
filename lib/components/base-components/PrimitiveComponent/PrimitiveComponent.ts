@@ -1,4 +1,3 @@
-import type { LayoutBuilder } from "@tscircuit/layout"
 import type { AnySourceComponent, LayerRef } from "circuit-json"
 import Debug from "debug"
 import { InvalidProps } from "lib/errors/InvalidProps"
@@ -430,20 +429,17 @@ export abstract class PrimitiveComponent<
   ): { x: number; y: number } | null {
     if (!this.isSubcircuit) return null
 
-    const layout: LayoutBuilder = this.props.layout
     const manualEdits = this.props.manualEdits
 
-    if (!layout && !manualEdits) return null
+    if (!manualEdits) return null
 
-    const placementConfigPositions =
-      layout?.manual_pcb_placement_config?.positions ||
-      manualEdits?.pcb_placements
+    const placementConfigPositions = manualEdits?.pcb_placements
 
     if (!placementConfigPositions) return null
 
     for (const position of placementConfigPositions) {
       if (
-        (layout && isMatchingSelector(component, position.selector)) ||
+        isMatchingSelector(component, position.selector) ||
         component.props.name === position.selector
       ) {
         const center = applyToPoint(
