@@ -1,9 +1,14 @@
 import { corpusNoNetLabel } from "@tscircuit/schematic-corpus"
 import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
-import { layoutSchematicGraph, getGraphicsForBpcGraph } from "bpc-graph"
+import {
+  layoutSchematicGraph,
+  getGraphicsForBpcGraph,
+  layoutSchematicGraphVariants,
+} from "bpc-graph"
 import Debug from "debug"
 import type { Group } from "./Group"
 import type { z } from "zod"
+import { buildSubtree } from "@tscircuit/circuit-json-util"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchAdapt")
 
@@ -12,12 +17,12 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
 >(group: Group<Props>): void {
   const { db } = group.root!
 
-  // TODO use db.subtree({ source_group_id: ... })
-  const subtreeCircuitJson = structuredClone(db.toArray())
+  const subtreeCircuitJson = buildSubtree(db.toArray(), {
+    source_group_id: group.source_group_id!,
+  })
 
   const bpcGraphBeforeGeneratedNetLabels =
     convertCircuitJsonToBpc(subtreeCircuitJson)
-  console.log("Writing bpcGraphBeforeGeneratedNetLabels.svg")
 
   if (debug.enabled) {
     global.debugGraphics?.push(
@@ -34,31 +39,48 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   // )
 
   // Convert the subtree circuit json into a bpc graph
-  const targetBpcGraph = convertCircuitJsonToBpc(
+  const floatingGraph = convertCircuitJsonToBpc(
     subtreeCircuitJson, // .concat(implicitNetLabels),
   )
 
-  const laidOutBpcGraph = layoutSchematicGraph(targetBpcGraph, {
-    singletonKeys: ["vcc/2", "gnd/2"],
-    centerPinColors: ["netlabel_center", "component_center"],
-    floatingBoxIdsWithMutablePinOffsets: new Set(
-      targetBpcGraph.boxes
-        .filter((box) => {
-          const boxPins = targetBpcGraph.pins.filter(
-            (p) => p.boxId === box.boxId,
-          )
-          const nonCenterBoxPins = boxPins.filter(
-            (bp) => !bp.color.includes("center"),
-          )
-          if (nonCenterBoxPins.length <= 2) {
-            return true
-          }
-          return false
-        })
-        .map((b) => b.boxId),
-    ),
-    corpus: corpusNoNetLabel,
-  })
+  const floatingGraphNoNotConnected = {
+    boxes: floatingGraph.boxes,
+    pins: floatingGraph.pins.map((p) => ({
+      ...p,
+      color: p.color.replace("not_connected", "normal"),
+    })),
+  }
+
+  const { result: laidOutBpcGraph } = layoutSchematicGraphVariants(
+    [
+      { variantName: "default", floatingGraph },
+      {
+        variantName: "noNotConnected",
+        floatingGraph: floatingGraphNoNotConnected,
+      },
+    ],
+    {
+      singletonKeys: ["vcc/2", "gnd/2"],
+      centerPinColors: ["netlabel_center", "component_center"],
+      floatingBoxIdsWithMutablePinOffsets: new Set(
+        floatingGraph.boxes
+          .filter((box) => {
+            const boxPins = floatingGraph.pins.filter(
+              (p) => p.boxId === box.boxId,
+            )
+            const nonCenterBoxPins = boxPins.filter(
+              (bp) => !bp.color.includes("center"),
+            )
+            if (nonCenterBoxPins.length <= 2) {
+              return true
+            }
+            return false
+          })
+          .map((b) => b.boxId),
+      ),
+      corpus: corpusNoNetLabel,
+    },
+  )
 
   if (debug.enabled) {
     global.debugGraphics?.push(
