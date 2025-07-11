@@ -29,11 +29,13 @@ export const createComponentsFromCircuitJson = (
     componentRotation,
     footprint,
     pinLabels,
+    pcbPinLabels,
   }: {
     componentName: string
     componentRotation: string
     footprint: string
     pinLabels: PinLabelsProp
+    pcbPinLabels?: PinLabelsProp
   },
   soup: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
@@ -131,7 +133,7 @@ export const createComponentsFromCircuitJson = (
         components.push(
           createPinrowSilkscreenText({
             elm,
-            pinLabels,
+            pinLabels: pcbPinLabels ?? pinLabels,
             layer: elm.layer,
             readableRotation: ccwRotation,
             anchorAlignment: elm.anchor_alignment,
