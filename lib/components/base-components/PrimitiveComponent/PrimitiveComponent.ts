@@ -125,6 +125,7 @@ export abstract class PrimitiveComponent<
    *
    */
   isPrimitiveContainer = false
+  canHaveTextChildren = false
 
   source_group_id: string | null = null
   source_component_id: string | null = null
@@ -538,6 +539,14 @@ export abstract class PrimitiveComponent<
   }
 
   add(component: PrimitiveComponent) {
+    // The react reconciler will try to add text nodes as children, but
+    // we don't have a text component, so we just ignore them. The text is
+    // passed as a prop to the parent component anyway.
+    if (Object.keys(component).length === 0) {
+      if (this.canHaveTextChildren) {
+        return
+      }
+    }
     // Disallow nesting boards inside of boards
     if (
       this.lowercaseComponentName === "board" &&
@@ -547,7 +556,9 @@ export abstract class PrimitiveComponent<
     }
     if (!component.onAddToParent) {
       throw new Error(
-        `Invalid JSX Element: Expected a React component but received "${JSON.stringify(component)}"`,
+        `Invalid JSX Element: Expected a React component but received "${JSON.stringify(
+          component,
+        )}"`,
       )
     }
     component.onAddToParent(this)
