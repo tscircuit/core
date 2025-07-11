@@ -32,7 +32,7 @@
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/log-soup": "^1.0.2",
     "@tscircuit/math-utils": "^0.0.18",
-    "@tscircuit/props": "^0.0.255",
+    "@tscircuit/props": "^0.0.256",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/schematic-corpus": "^0.0.52",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
