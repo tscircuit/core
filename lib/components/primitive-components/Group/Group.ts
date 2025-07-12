@@ -23,6 +23,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { findOverlappingPads } from "lib/utils/checks/findOverlappingPads"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
@@ -509,6 +510,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _startAsyncAutorouting() {
     if (this._hasStartedAsyncAutorouting) return
+    const { db } = this.root!
+    const overlaps = findOverlappingPads(db.toArray())
+    if (overlaps.length > 0) {
+      const err = new AutorouterError("PCB pads overlap; autorouting aborted")
+      db.pcb_autorouting_error.insert({
+        pcb_error_id: `pcb_pad_overlap_${this.subcircuit_id}`,
+        error_type: "pcb_autorouting_error",
+        message: err.message,
+      })
+      throw err
+    }
     this._hasStartedAsyncAutorouting = true
     if (this._getAutorouterConfig().local) {
       this._queueAsyncEffect("capacity-mesh-autorouting", async () =>
