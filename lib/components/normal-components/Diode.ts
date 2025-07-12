@@ -14,7 +14,9 @@ export class Diode extends NormalComponent<
   // @ts-ignore
   get config() {
     return {
-      schematicSymbolName: this.props.symbolName ?? ("diode" as BaseSymbolName),
+      schematicSymbolName: this.props.schottky
+        ? "schottky_diode"
+        : (this.props.symbolName ?? ("diode" as BaseSymbolName)),
       componentName: "Diode",
       zodProps: diodeProps,
       sourceFtype: "simple_diode" as Ftype,
