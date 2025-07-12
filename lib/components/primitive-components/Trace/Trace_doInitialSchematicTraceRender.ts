@@ -417,6 +417,12 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   })
   trace.schematic_trace_id = dbTrace.schematic_trace_id
 
+  for (const { port } of connectedPorts) {
+    if (port.schematic_port_id) {
+      db.schematic_port.update(port.schematic_port_id, { is_connected: true })
+    }
+  }
+
   if (board?._connectedSchematicPortPairs)
     board._connectedSchematicPortPairs.add(portPairKey)
 }

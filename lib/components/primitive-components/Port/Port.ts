@@ -413,6 +413,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
       display_pin_label: bestDisplayPinLabel,
+      is_connected: false,
     })
 
     this.schematic_port_id = schematic_port.schematic_port_id
