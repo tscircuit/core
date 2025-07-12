@@ -6,7 +6,7 @@ test("diode SVG snapshot", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <diode name="D1" footprint="0603" />
+      <diode schottky name="D1" footprint="0603" />
     </board>,
   )
 
