@@ -13,9 +13,20 @@ export class Diode extends NormalComponent<
 > {
   // @ts-ignore
   get config() {
+    const symbolMap: Record<string, BaseSymbolName> = {
+      schottky: "schottky_diode",
+      avalanche: "avalanche_diode",
+    }
+
+    const variantSymbol = this.props.schottky
+      ? "schottky"
+      : this.props.avalanche
+        ? "avalanche"
+        : null
+
     return {
-      schematicSymbolName: this.props.schottky
-        ? "schottky_diode"
+      schematicSymbolName: variantSymbol
+        ? symbolMap[variantSymbol]
         : (this.props.symbolName ?? ("diode" as BaseSymbolName)),
       componentName: "Diode",
       zodProps: diodeProps,
