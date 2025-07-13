@@ -16,13 +16,19 @@ export class Diode extends NormalComponent<
     const symbolMap: Record<string, BaseSymbolName> = {
       schottky: "schottky_diode",
       avalanche: "avalanche_diode",
+      zener: "zener_diode",
+      photodiode: "photodiode",
     }
 
     const variantSymbol = this.props.schottky
       ? "schottky"
       : this.props.avalanche
         ? "avalanche"
-        : null
+        : this.props.zener
+          ? "zener"
+          : this.props.photo
+            ? "photodiode"
+            : null
 
     return {
       schematicSymbolName: variantSymbol
