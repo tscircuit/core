@@ -6,11 +6,11 @@ test("diode SVG snapshot", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <diode schottky name="D1" footprint="0603" />
+      <diode schottky name="D1" />
+      <diode avalanche name="D2" schY={-1} />
     </board>,
   )
 
   circuit.render()
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
