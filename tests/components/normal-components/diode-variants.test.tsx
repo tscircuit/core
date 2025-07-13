@@ -8,6 +8,8 @@ test("diode SVG snapshot", async () => {
     <board width="10mm" height="10mm">
       <diode schottky name="D1" />
       <diode avalanche name="D2" schY={-1} />
+      <diode zener name="D3" schY={-2} />
+      <diode photo name="D4" schY={-3} />
     </board>,
   )
 
