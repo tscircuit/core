@@ -29,7 +29,7 @@ it("should render a four-pin crystal", async () => {
         loadCapacitance="22pF"
         pinVariant="four_pin"
       />
-        <crystal
+      <crystal
         name="X2"
         frequency="16MHz"
         loadCapacitance="22pF"
@@ -37,14 +37,14 @@ it("should render a four-pin crystal", async () => {
         schRotation={90}
         schY={3}
       />
-        <crystal
+      <crystal
         name="X3"
         frequency="16MHz"
         loadCapacitance="22pF"
         pinVariant="four_pin"
         schRotation={180}
         schY={-3}
-      /> 
+      />
     </board>,
   )
   circuit.render()
