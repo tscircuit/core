@@ -11,9 +11,17 @@ export class Led extends NormalComponent<
   PolarizedPassivePorts
 > {
   get config() {
+    const symbolMap: Record<string, BaseSymbolName> = {
+      laser: "laser_diode",
+    }
+
+    const variantSymbol = this.props.laser ? "laser" : null
+
     return {
+      schematicSymbolName: variantSymbol
+        ? symbolMap[variantSymbol]
+        : (this.props.symbolName ?? ("led" as BaseSymbolName)),
       componentName: "Led",
-      schematicSymbolName: this.props.symbolName ?? ("led" as BaseSymbolName),
       zodProps: ledProps,
       sourceFtype: "simple_led" as Ftype,
     }
