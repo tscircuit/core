@@ -542,10 +542,21 @@ export abstract class PrimitiveComponent<
     // The react reconciler will try to add text nodes as children, but
     // we don't have a text component, so we just ignore them. The text is
     // passed as a prop to the parent component anyway.
-    if (Object.keys(component).length === 0) {
-      if (this.canHaveTextChildren) {
+    const textContent = (component as any).__text
+    if (typeof textContent === "string") {
+      // Components that support text children already receive the text via
+      // their props. Simply ignore the generated text node.
+      if (this.canHaveTextChildren || textContent.trim() === "") {
         return
       }
+      // Otherwise this is likely accidental text in the JSX tree.
+      throw new Error(
+        `Invalid JSX Element: Expected a React component but received text "${textContent}"`,
+      )
+    }
+    if (Object.keys(component).length === 0) {
+      // Ignore empty objects produced by the reconciler in edge cases
+      return
     }
     // Disallow nesting boards inside of boards
     if (
