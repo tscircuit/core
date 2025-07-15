@@ -79,9 +79,13 @@ const hostConfig: HostConfig<
       return createErrorPlaceholderComponent(props, error)
     }
   },
-  createTextInstance() {
-    // We don't need to handle text nodes for this use case
-    return {}
+  createTextInstance(text: string) {
+    // Preserve the raw text so parent components can decide how to handle it.
+    // This allows PrimitiveComponent.add to differentiate between whitespace
+    // (which should be ignored) and meaningful text which should cause an
+    // error. Returning an object mirrors the structure of component instances
+    // created elsewhere in this reconciler.
+    return { __text: text }
   },
   appendInitialChild(parentInstance: any, child: any) {
     parentInstance.add(child)

@@ -31,7 +31,7 @@ it("example 4: kicad theme demo", async () => {
         schHeight={7}
         pinLabels={{
           pin7: "GND",
-          pin8: "-V+",
+          pin8: "N_V_P",
         }}
         schPinStyle={{
           pin22: { topMargin: 0.8 },
