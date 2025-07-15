@@ -24,10 +24,26 @@ it("should render a four-pin crystal", async () => {
   circuit.add(
     <board width="10mm" height="10mm">
       <crystal
+        name="X1"
+        frequency="16MHz"
+        loadCapacitance="22pF"
+        pinVariant="four_pin"
+      />
+      <crystal
         name="X2"
         frequency="16MHz"
         loadCapacitance="22pF"
         pinVariant="four_pin"
+        schRotation={90}
+        schY={3}
+      />
+      <crystal
+        name="X3"
+        frequency="16MHz"
+        loadCapacitance="22pF"
+        pinVariant="four_pin"
+        schRotation={180}
+        schY={-3}
       />
     </board>,
   )
