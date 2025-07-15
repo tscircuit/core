@@ -44,9 +44,18 @@ export class Transistor extends NormalComponent<
       additionalAliases: pinAliases,
     })
   }
+
   emitter = this.portMap.pin1
   collector = this.portMap.pin2
   base = this.portMap.pin3
+
+  doInitialCreateNetsFromProps() {
+    this._createNetsFromProps([...this._getNetsFromConnectionsProp()])
+  }
+
+  doInitialCreateTracesFromProps() {
+    this._createTracesFromConnectionsProp()
+  }
 
   doInitialSourceRender() {
     const { db } = this.root!
@@ -56,6 +65,7 @@ export class Transistor extends NormalComponent<
       name: this.name,
       transistor_type: props.type,
     } as any)
+
     this.source_component_id = source_component.source_component_id
   }
 }

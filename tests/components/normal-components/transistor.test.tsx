@@ -103,3 +103,30 @@ it("should have base, emitter, and collector port mappings", async () => {
   expect(transistorInstance.emitter).toBeDefined()
   expect(transistorInstance.collector).toBeDefined()
 })
+
+it("should render a PNP transistor", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <transistor
+        name="Q2"
+        type="pnp"
+        schRotation={90}
+        connections={{ pin1: "net.pin1", pin2: "net.pin2", pin3: "net.pin3" }}
+      />
+      <transistor
+        name="Q1"
+        type="pnp"
+        schRotation={90}
+        schX={3.5}
+        connections={{
+          pin1: "net.collector",
+          pin2: "net.emitter",
+          pin3: "net.base",
+        }}
+      />
+    </board>,
+  )
+  circuit.render()
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path + ".connection")
+})
