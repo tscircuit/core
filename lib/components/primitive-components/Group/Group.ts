@@ -511,7 +511,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _startAsyncAutorouting() {
     if (this._hasStartedAsyncAutorouting) return
     const { db } = this.root!
-    const overlaps = findOverlappingPads(db.toArray())
+    const overlaps = findOverlappingPads(db)
     if (overlaps.length > 0) {
       const err = new AutorouterError("PCB pads overlap; autorouting aborted")
       db.pcb_autorouting_error.insert({
