@@ -29,8 +29,8 @@ export class Transistor extends NormalComponent<
     const pinAliases =
       this.props.type === "npn"
         ? {
-            pin1: ["emitter", "e"],
-            pin2: ["collector", "c"],
+            pin1: ["collector", "c"],
+            pin2: ["emitter", "e"],
             pin3: ["base", "b"],
           }
         : {
