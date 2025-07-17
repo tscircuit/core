@@ -60,11 +60,10 @@ export class RootCircuit {
   add(componentOrElm: PrimitiveComponent | ReactElement) {
     let component: PrimitiveComponent
     if (isValidElement(componentOrElm)) {
-      if (componentOrElm.$$typeof !== CURRENT_REACT_ELEMENT_SYMBOL) {
+      const elmType = (componentOrElm as any).$$typeof
+      if (elmType !== CURRENT_REACT_ELEMENT_SYMBOL) {
         const otherVersion =
-          componentOrElm.$$typeof === REACT_TRANSITIONAL_SYMBOL
-            ? "19"
-            : "18 or earlier"
+          elmType === REACT_TRANSITIONAL_SYMBOL ? "19" : "18 or earlier"
         throw new ReactVersionMismatchError(otherVersion)
       }
       // TODO store subtree
