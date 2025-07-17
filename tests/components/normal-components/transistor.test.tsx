@@ -120,9 +120,9 @@ it("should render a PNP transistor", async () => {
         schRotation={90}
         schX={3.5}
         connections={{
-          pin1: "net.collector",
-          pin2: "net.emitter",
-          pin3: "net.base",
+          collector: "net.collector",
+          emitter: "net.emitter",
+          base: "net.base",
         }}
       />
     </board>,
