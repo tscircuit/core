@@ -2,13 +2,19 @@ import type { AnyCircuitElement, LayerRef } from "circuit-json"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
-import { isValidElement, type ReactElement } from "react"
+import React, { isValidElement, type ReactElement } from "react"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 import { identity, type Matrix } from "transformation-matrix"
 import pkgJson from "../package.json"
 import type { RootCircuitEventName } from "./events"
 import type { PlatformConfig } from "@tscircuit/props"
 import { Group } from "./components/primitive-components/Group"
+import { ReactVersionMismatchError } from "./errors"
+
+const REACT_TRANSITIONAL_SYMBOL = Symbol.for("react.transitional.element")
+const REACT_ELEMENT_SYMBOL = Symbol.for("react.element")
+
+const CURRENT_REACT_ELEMENT_SYMBOL = React.createElement("div").$$typeof
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -54,8 +60,25 @@ export class RootCircuit {
   add(componentOrElm: PrimitiveComponent | ReactElement) {
     let component: PrimitiveComponent
     if (isValidElement(componentOrElm)) {
+      if (componentOrElm.$$typeof !== CURRENT_REACT_ELEMENT_SYMBOL) {
+        const otherVersion =
+          componentOrElm.$$typeof === REACT_TRANSITIONAL_SYMBOL
+            ? "19"
+            : "18 or earlier"
+        throw new ReactVersionMismatchError(otherVersion)
+      }
       // TODO store subtree
       component = createInstanceFromReactElement(componentOrElm)
+    } else if (
+      componentOrElm &&
+      typeof componentOrElm === "object" &&
+      "$$typeof" in componentOrElm
+    ) {
+      const otherVersion =
+        (componentOrElm as any).$$typeof === REACT_TRANSITIONAL_SYMBOL
+          ? "19"
+          : "18 or earlier"
+      throw new ReactVersionMismatchError(otherVersion)
     } else {
       component = componentOrElm as PrimitiveComponent
     }
