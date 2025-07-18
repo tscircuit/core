@@ -231,6 +231,13 @@ export interface PcbPlacementError {
   message: string
 }
 
+export interface PcbPadOverlapError {
+  type: "pcb_pad_overlap_error"
+  pcb_error_id: string
+  message: string
+  pad_ids: string[]
+}
+
 export interface PcbPort {
   type: "pcb_port"
   pcb_port_id: string
