@@ -13,7 +13,7 @@ test("chip with externally connected pins repro", async () => {
             pins: ["pin1", "pin3"],
           },
           bottomSide: {
-            direction: "left-to-right",
+            direction: "right-to-left",
             pins: ["pin2", "pin4"],
           },
         }}
