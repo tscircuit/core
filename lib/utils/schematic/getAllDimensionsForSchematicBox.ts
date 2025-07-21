@@ -70,9 +70,13 @@ export function isExplicitPinMappingArrangement(
   arrangement: PortArrangement,
 ): arrangement is ExplicitPinMappingArrangement {
   const a = arrangement as ExplicitPinMappingArrangement
-  return a.leftSide !== undefined || a.rightSide !== undefined
+  return (
+    a.leftSide !== undefined ||
+    a.rightSide !== undefined ||
+    a.topSide !== undefined ||
+    a.bottomSide !== undefined
+  )
 }
-
 export interface SchematicBoxDimensions {
   pinCount: number
   getPortPositionByPinNumber(
