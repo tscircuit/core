@@ -7,6 +7,7 @@ import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 import { Keepout } from "lib/components/primitive-components/Keepout"
 import { Hole } from "lib/components/primitive-components/Hole"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
+import { Cutout } from "lib/components/primitive-components/Cutout"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
 import type { PinLabelsProp } from "@tscircuit/props"
 
@@ -124,6 +125,34 @@ export const createComponentsFromCircuitJson = (
           diameter: elm.hole_diameter,
         }),
       )
+    } else if (elm.type === "pcb_cutout") {
+      if (elm.shape === "rect") {
+        components.push(
+          new Cutout({
+            pcbX: elm.center.x,
+            pcbY: elm.center.y,
+            shape: "rect",
+            width: elm.width,
+            height: elm.height,
+          }),
+        )
+      } else if (elm.shape === "circle") {
+        components.push(
+          new Cutout({
+            pcbX: elm.center.x,
+            pcbY: elm.center.y,
+            shape: "circle",
+            radius: elm.radius,
+          }),
+        )
+      } else if (elm.shape === "polygon") {
+        components.push(
+          new Cutout({
+            shape: "polygon",
+            points: elm.points,
+          }),
+        )
+      }
     } else if (elm.type === "pcb_silkscreen_text") {
       const ccwRotation = calculateCcwRotation(
         componentRotation,
@@ -145,7 +174,7 @@ export const createComponentsFromCircuitJson = (
             anchorAlignment: elm.anchor_alignment || "center",
             text: componentName,
             fontSize: elm.font_size + 0.2,
-            pcbX: isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
+            pcbX: Number.isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
             pcbY: elm.anchor_position.y,
             pcbRotation: ccwRotation ?? 0,
           }),
