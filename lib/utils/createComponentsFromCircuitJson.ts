@@ -174,7 +174,9 @@ export const createComponentsFromCircuitJson = (
             anchorAlignment: elm.anchor_alignment || "center",
             text: componentName,
             fontSize: elm.font_size + 0.2,
-            pcbX: Number.isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
+            pcbX: Number.isNaN(elm.anchor_position.x)
+              ? 0
+              : elm.anchor_position.x,
             pcbY: elm.anchor_position.y,
             pcbRotation: ccwRotation ?? 0,
           }),
