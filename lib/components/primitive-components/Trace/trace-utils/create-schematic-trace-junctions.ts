@@ -2,142 +2,93 @@ import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SchematicTrace } from "circuit-json"
 import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 
-const isOrthogonal = (
-  edge1: SchematicTrace["edges"][number],
-  edge2: SchematicTrace["edges"][number],
+const TOLERANCE = 0.001 // 1mm tolerance for floating-point comparisons
+
+// Helper function to check if a point is within an edge's bounds
+const isPointWithinEdge = (
+  point: { x: number; y: number },
+  edge: SchematicTrace["edges"][number]
 ): boolean => {
-  const isVertical1 = edge1.from.x === edge1.to.x
-  const isVertical2 = edge2.from.x === edge2.to.x
-  return isVertical1 !== isVertical2
+  const minX = Math.min(edge.from.x, edge.to.x)
+  const maxX = Math.max(edge.from.x, edge.to.x)
+  const minY = Math.min(edge.from.y, edge.to.y)
+  const maxY = Math.max(edge.from.y, edge.to.y)
+  
+  return point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY
+}
+
+// Helper function to determine edge orientation
+const getEdgeOrientation = (edge: SchematicTrace["edges"][number]): "vertical" | "horizontal" | "diagonal" => {
+  const isVertical = Math.abs(edge.from.x - edge.to.x) < TOLERANCE
+  const isHorizontal = Math.abs(edge.from.y - edge.to.y) < TOLERANCE
+  
+  if (isVertical) return "vertical"
+  if (isHorizontal) return "horizontal"
+  return "diagonal"
 }
 
 const getIntersectionPoint = (
   edge1: SchematicTrace["edges"][number],
   edge2: SchematicTrace["edges"][number],
 ): { x: number; y: number } | null => {
-  const TOLERANCE = 0.001 // 1mm tolerance for floating-point comparisons
+  const orientation1 = getEdgeOrientation(edge1)
+  const orientation2 = getEdgeOrientation(edge2)
 
-  const isVertical1 = Math.abs(edge1.from.x - edge1.to.x) < TOLERANCE
-  const isVertical2 = Math.abs(edge2.from.x - edge2.to.x) < TOLERANCE
-  const isHorizontal1 = Math.abs(edge1.from.y - edge1.to.y) < TOLERANCE
-  const isHorizontal2 = Math.abs(edge2.from.y - edge2.to.y) < TOLERANCE
-
-  // Both edges are vertical - no intersection
-  if (isVertical1 && isVertical2) {
+  // Both edges are vertical or both horizontal - no intersection
+  if (orientation1 === orientation2) {
     return null
   }
 
-  // Both edges are horizontal - no intersection
-  if (isHorizontal1 && isHorizontal2) {
-    return null
+  // Handle vertical-horizontal intersections
+  if ((orientation1 === "vertical" && orientation2 === "horizontal") ||
+      (orientation1 === "horizontal" && orientation2 === "vertical")) {
+    const verticalEdge = orientation1 === "vertical" ? edge1 : edge2
+    const horizontalEdge = orientation1 === "horizontal" ? edge1 : edge2
+    
+    const x = verticalEdge.from.x
+    const y = horizontalEdge.from.y
+    const intersection = { x, y }
+    
+    return isPointWithinEdge(intersection, edge1) && isPointWithinEdge(intersection, edge2) 
+      ? intersection 
+      : null
   }
 
-  // Edge1 is vertical, Edge2 is horizontal
-  if (isVertical1 && isHorizontal2) {
-    const x = edge1.from.x
-    const y = edge2.from.y
-
-    // Check if the intersection point is within both edges
-    if (
-      x >= Math.min(edge2.from.x, edge2.to.x) &&
-      x <= Math.max(edge2.from.x, edge2.to.x) &&
-      y >= Math.min(edge1.from.y, edge1.to.y) &&
-      y <= Math.max(edge1.from.y, edge1.to.y)
-    ) {
-      return { x, y }
-    }
-    return null
+  // Handle vertical-diagonal intersections
+  if (orientation1 === "vertical" || orientation2 === "vertical") {
+    const verticalEdge = orientation1 === "vertical" ? edge1 : edge2
+    const diagonalEdge = orientation1 === "vertical" ? edge2 : edge1
+    
+    const x = verticalEdge.from.x
+    const m = (diagonalEdge.to.y - diagonalEdge.from.y) / (diagonalEdge.to.x - diagonalEdge.from.x)
+    const b = diagonalEdge.from.y - m * diagonalEdge.from.x
+    const y = m * x + b
+    
+    const intersection = { x, y }
+    return isPointWithinEdge(intersection, edge1) && isPointWithinEdge(intersection, edge2) 
+      ? intersection 
+      : null
   }
 
-  // Edge1 is horizontal, Edge2 is vertical
-  if (isHorizontal1 && isVertical2) {
-    const x = edge2.from.x
-    const y = edge1.from.y
-
-    // Check if the intersection point is within both edges
-    if (
-      x >= Math.min(edge1.from.x, edge1.to.x) &&
-      x <= Math.max(edge1.from.x, edge1.to.x) &&
-      y >= Math.min(edge2.from.y, edge2.to.y) &&
-      y <= Math.max(edge2.from.y, edge2.to.y)
-    ) {
-      return { x, y }
-    }
-    return null
-  }
-
-  // Edge1 is vertical, Edge2 is diagonal
-  if (isVertical1) {
-    const x = edge1.from.x
-    const m2 = (edge2.to.y - edge2.from.y) / (edge2.to.x - edge2.from.x)
-    const b2 = edge2.from.y - m2 * edge2.from.x
-    const y = m2 * x + b2
-
-    if (
-      x >= Math.min(edge2.from.x, edge2.to.x) &&
-      x <= Math.max(edge2.from.x, edge2.to.x) &&
-      y >= Math.min(edge2.from.y, edge2.to.y) &&
-      y <= Math.max(edge2.from.y, edge2.to.y) &&
-      y >= Math.min(edge1.from.y, edge1.to.y) &&
-      y <= Math.max(edge1.from.y, edge1.to.y)
-    ) {
-      return { x, y }
-    }
-
-    return null
-  }
-
-  // Edge2 is vertical, Edge1 is diagonal
-  if (isVertical2) {
-    const x = edge2.from.x
-    const m1 = (edge1.to.y - edge1.from.y) / (edge1.to.x - edge1.from.x)
-    const b1 = edge1.from.y - m1 * edge1.from.x
-    const y = m1 * x + b1
-
-    if (
-      x >= Math.min(edge1.from.x, edge1.to.x) &&
-      x <= Math.max(edge1.from.x, edge1.to.x) &&
-      y >= Math.min(edge1.from.y, edge1.to.y) &&
-      y <= Math.max(edge1.from.y, edge1.to.y) &&
-      y >= Math.min(edge2.from.y, edge2.to.y) &&
-      y <= Math.max(edge2.from.y, edge2.to.y)
-    ) {
-      return { x, y }
-    }
-    return null
-  }
-
-  // Both edges are diagonal
+  // Handle diagonal-diagonal intersections
   const m1 = (edge1.to.y - edge1.from.y) / (edge1.to.x - edge1.from.x)
   const b1 = edge1.from.y - m1 * edge1.from.x
 
   const m2 = (edge2.to.y - edge2.from.y) / (edge2.to.x - edge2.from.x)
   const b2 = edge2.from.y - m2 * edge2.from.x
 
+  // Parallel lines - no intersection
   if (Math.abs(m1 - m2) < TOLERANCE) {
     return null
   }
 
   const x = (b2 - b1) / (m1 - m2)
   const y = m1 * x + b1
+  const intersection = { x, y }
 
-  const isWithinEdge1 =
-    x >= Math.min(edge1.from.x, edge1.to.x) &&
-    x <= Math.max(edge1.from.x, edge1.to.x) &&
-    y >= Math.min(edge1.from.y, edge1.to.y) &&
-    y <= Math.max(edge1.from.y, edge1.to.y)
-
-  const isWithinEdge2 =
-    x >= Math.min(edge2.from.x, edge2.to.x) &&
-    x <= Math.max(edge2.from.x, edge2.to.x) &&
-    y >= Math.min(edge2.from.y, edge2.to.y) &&
-    y <= Math.max(edge2.from.y, edge2.to.y)
-
-  if (isWithinEdge1 && isWithinEdge2) {
-    return { x, y }
-  }
-
-  return null
+  return isPointWithinEdge(intersection, edge1) && isPointWithinEdge(intersection, edge2) 
+    ? intersection 
+    : null
 }
 
 export const createSchematicTraceJunctions = ({
@@ -155,21 +106,21 @@ export const createSchematicTraceJunctions = ({
     sameNetOnly: true,
   }).flatMap((t: SchematicTrace) => t.edges)
 
-  const junctions = new Set<string>()
-  const junctionPoints: Array<{ x: number; y: number }> = []
+  // Use a more efficient data structure for deduplication
+  const junctions = new Map<string, { x: number; y: number }>()
 
   for (const myEdge of myEdges) {
     for (const otherEdge of otherEdges) {
       const intersection = getIntersectionPoint(myEdge, otherEdge)
       if (intersection) {
-        const pointKey = `${intersection.x},${intersection.y}`
-        if (!junctions.has(pointKey)) {
-          junctions.add(pointKey)
-          junctionPoints.push({ x: intersection.x, y: intersection.y })
+        // Use a more precise key format to avoid floating-point issues
+        const key = `${intersection.x.toFixed(6)},${intersection.y.toFixed(6)}`
+        if (!junctions.has(key)) {
+          junctions.set(key, intersection)
         }
       }
     }
   }
 
-  return junctionPoints
+  return Array.from(junctions.values())
 }
