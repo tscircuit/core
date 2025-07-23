@@ -29,6 +29,7 @@ import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLa
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -740,14 +741,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     Group_doInitialSchematicLayoutGrid(this)
   }
 
-  _getPcbLayoutMode(): "grid" | "flex" | "match-adapt" | "none" {
+  _getPcbLayoutMode(): "grid" | "flex" | "match-adapt" | "pack" | "none" {
     const props = this._parsedProps as SubcircuitGroupProps
     if (props.pcbLayout?.matchAdapt) return "match-adapt"
     if (props.pcbLayout?.flex) return "flex"
     if (props.pcbLayout?.grid) return "grid"
+    if (props.pcbLayout?.pack) return "pack"
     if (props.matchAdapt) return "match-adapt"
     if (props.flex) return "flex"
     if (props.grid) return "grid"
+    if (props.pack) return "pack"
     return "none"
   }
 
@@ -756,11 +759,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     if (pcbLayoutMode === "grid") {
       this._doInitialPcbLayoutGrid()
+    } else if (pcbLayoutMode === "pack") {
+      this._doInitialPcbLayoutPack()
     }
   }
 
   _doInitialPcbLayoutGrid(): void {
     Group_doInitialPcbLayoutGrid(this)
+  }
+
+  _doInitialPcbLayoutPack(): void {
+    Group_doInitialPcbLayoutPack(this as any)
   }
 
   _insertSchematicBorder() {
