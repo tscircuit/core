@@ -30,6 +30,7 @@ import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack"
+import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -761,6 +762,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this._doInitialPcbLayoutGrid()
     } else if (pcbLayoutMode === "pack") {
       this._doInitialPcbLayoutPack()
+    } else if (pcbLayoutMode === "flex") {
+      this._doInitialPcbLayoutFlex()
     }
   }
 
@@ -770,6 +773,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _doInitialPcbLayoutPack(): void {
     Group_doInitialPcbLayoutPack(this as any)
+  }
+
+  _doInitialPcbLayoutFlex(): void {
+    Group_doInitialPcbLayoutFlex(this as any)
   }
 
   _insertSchematicBorder() {
