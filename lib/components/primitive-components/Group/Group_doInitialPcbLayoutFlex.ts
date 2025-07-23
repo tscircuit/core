@@ -8,11 +8,12 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   const { _parsedProps: props } = group
 
   // Use whole circuit JSON if this group is a board subcircuit, otherwise build subtree
-  const circuitJson = group.lowercaseComponentName === "board"
-    ? db.toArray()
-    : buildSubtree(db.toArray(), {
-        source_group_id: group.source_group_id!,
-      })
+  const circuitJson =
+    group.lowercaseComponentName === "board"
+      ? db.toArray()
+      : buildSubtree(db.toArray(), {
+          source_group_id: group.source_group_id!,
+        })
 
   const modifiedCircuitJson = layoutCircuitJsonWithFlex(circuitJson, {
     justifyContent:
