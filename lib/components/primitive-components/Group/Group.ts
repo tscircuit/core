@@ -750,6 +750,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (props.matchAdapt) return "match-adapt"
     if (props.flex) return "flex"
     if (props.grid) return "grid"
+    if (props.pack) return "pack"
     return "none"
   }
 
@@ -768,7 +769,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _doInitialPcbLayoutPack(): void {
-    Group_doInitialPcbLayoutPack(this)
+    Group_doInitialPcbLayoutPack(this as any)
   }
 
   _insertSchematicBorder() {
