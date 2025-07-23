@@ -170,6 +170,43 @@ export const createSchematicTraceJunctions = ({
     }
   }
 
+  // Add a junction at any point that is an endpoint for more than two edges (star/fork connection)
+  for (const [pointKey, count] of endpointCount.entries()) {
+    if (count > 2) {
+      junctions.add(pointKey)
+    } else if (count === 2) {
+      // Only consider if two or more *distinct* traces meet at this point
+      const [x, y] = pointKey.split(",").map(Number)
+      // Attach a traceId to each edge (use source_trace_id if available, else fallback to schematic_trace_id or a unique object ref)
+      const edgesAtPoint = allEdges.map((edge: any) => ({
+        edge,
+        traceId: edge.source_trace_id || edge.schematic_trace_id || edge._traceId || edge,
+      })).filter(({ edge }) =>
+        (edge.from.x === x && edge.from.y === y) ||
+        (edge.to.x === x && edge.to.y === y)
+      )
+      const uniqueTraceIds = new Set(edgesAtPoint.map(e => e.traceId))
+      if (uniqueTraceIds.size < 2) continue // Only add junction if two or more distinct traces meet
+      if (edgesAtPoint.length === 2) {
+        // Get the vectors for both edges at this point
+        const [e1, e2] = edgesAtPoint.map(e => e.edge)
+        const getVector = (edge: typeof e1) =>
+          edge.from.x === x && edge.from.y === y
+            ? { x: edge.to.x - x, y: edge.to.y - y }
+            : { x: edge.from.x - x, y: edge.from.y - y }
+        const v1 = getVector(e1)
+        const v2 = getVector(e2)
+        // Check if vectors are colinear (cross product == 0 and dot product < 0 for opposite direction)
+        const cross = v1.x * v2.y - v1.y * v2.x
+        const dot = v1.x * v2.x + v1.y * v2.y
+        const isColinear = Math.abs(cross) < 1e-8 && dot < 0
+        if (!isColinear) {
+          junctions.add(pointKey)
+        }
+      }
+    }
+  }
+
   return Array.from(junctions).map((j) => {
     const [x, y] = j.split(",").map(Number)
     return { x, y }
