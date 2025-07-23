@@ -1,12 +1,11 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("group-flex1 space-between", () => {
+test("board-flex2", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <group
-      subcircuit
+    <board
       flex
       width="10mm"
       height="10mm"
@@ -15,7 +14,7 @@ test("group-flex1 space-between", () => {
     >
       <resistor name="R1" resistance="1k" footprint="0402" />
       <resistor name="R2" resistance="1k" footprint="0402" />
-    </group>,
+    </board>,
   )
 
   circuit.render()
