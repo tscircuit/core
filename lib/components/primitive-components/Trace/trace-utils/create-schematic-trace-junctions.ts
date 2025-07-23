@@ -15,11 +15,59 @@ const getIntersectionPoint = (
   edge1: SchematicTrace["edges"][number],
   edge2: SchematicTrace["edges"][number],
 ): { x: number; y: number } | null => {
-  if (edge1.from.x === edge1.to.x && edge2.from.x === edge2.to.x) {
+  const TOLERANCE = 0.001 // 1mm tolerance for floating-point comparisons
+
+  const isVertical1 = Math.abs(edge1.from.x - edge1.to.x) < TOLERANCE
+  const isVertical2 = Math.abs(edge2.from.x - edge2.to.x) < TOLERANCE
+  const isHorizontal1 = Math.abs(edge1.from.y - edge1.to.y) < TOLERANCE
+  const isHorizontal2 = Math.abs(edge2.from.y - edge2.to.y) < TOLERANCE
+
+  // Both edges are vertical - no intersection
+  if (isVertical1 && isVertical2) {
     return null
   }
 
-  if (edge1.from.x === edge1.to.x) {
+  // Both edges are horizontal - no intersection
+  if (isHorizontal1 && isHorizontal2) {
+    return null
+  }
+
+  // Edge1 is vertical, Edge2 is horizontal
+  if (isVertical1 && isHorizontal2) {
+    const x = edge1.from.x
+    const y = edge2.from.y
+
+    // Check if the intersection point is within both edges
+    if (
+      x >= Math.min(edge2.from.x, edge2.to.x) &&
+      x <= Math.max(edge2.from.x, edge2.to.x) &&
+      y >= Math.min(edge1.from.y, edge1.to.y) &&
+      y <= Math.max(edge1.from.y, edge1.to.y)
+    ) {
+      return { x, y }
+    }
+    return null
+  }
+
+  // Edge1 is horizontal, Edge2 is vertical
+  if (isHorizontal1 && isVertical2) {
+    const x = edge2.from.x
+    const y = edge1.from.y
+
+    // Check if the intersection point is within both edges
+    if (
+      x >= Math.min(edge1.from.x, edge1.to.x) &&
+      x <= Math.max(edge1.from.x, edge1.to.x) &&
+      y >= Math.min(edge2.from.y, edge2.to.y) &&
+      y <= Math.max(edge2.from.y, edge2.to.y)
+    ) {
+      return { x, y }
+    }
+    return null
+  }
+
+  // Edge1 is vertical, Edge2 is diagonal
+  if (isVertical1) {
     const x = edge1.from.x
     const m2 = (edge2.to.y - edge2.from.y) / (edge2.to.x - edge2.from.x)
     const b2 = edge2.from.y - m2 * edge2.from.x
@@ -29,7 +77,9 @@ const getIntersectionPoint = (
       x >= Math.min(edge2.from.x, edge2.to.x) &&
       x <= Math.max(edge2.from.x, edge2.to.x) &&
       y >= Math.min(edge2.from.y, edge2.to.y) &&
-      y <= Math.max(edge2.from.y, edge2.to.y)
+      y <= Math.max(edge2.from.y, edge2.to.y) &&
+      y >= Math.min(edge1.from.y, edge1.to.y) &&
+      y <= Math.max(edge1.from.y, edge1.to.y)
     ) {
       return { x, y }
     }
@@ -37,7 +87,8 @@ const getIntersectionPoint = (
     return null
   }
 
-  if (edge2.from.x === edge2.to.x) {
+  // Edge2 is vertical, Edge1 is diagonal
+  if (isVertical2) {
     const x = edge2.from.x
     const m1 = (edge1.to.y - edge1.from.y) / (edge1.to.x - edge1.from.x)
     const b1 = edge1.from.y - m1 * edge1.from.x
@@ -47,20 +98,23 @@ const getIntersectionPoint = (
       x >= Math.min(edge1.from.x, edge1.to.x) &&
       x <= Math.max(edge1.from.x, edge1.to.x) &&
       y >= Math.min(edge1.from.y, edge1.to.y) &&
-      y <= Math.max(edge1.from.y, edge1.to.y)
+      y <= Math.max(edge1.from.y, edge1.to.y) &&
+      y >= Math.min(edge2.from.y, edge2.to.y) &&
+      y <= Math.max(edge2.from.y, edge2.to.y)
     ) {
       return { x, y }
     }
     return null
   }
 
+  // Both edges are diagonal
   const m1 = (edge1.to.y - edge1.from.y) / (edge1.to.x - edge1.from.x)
   const b1 = edge1.from.y - m1 * edge1.from.x
 
   const m2 = (edge2.to.y - edge2.from.y) / (edge2.to.x - edge2.from.x)
   const b2 = edge2.from.y - m2 * edge2.from.x
 
-  if (m1 === m2) {
+  if (Math.abs(m1 - m2) < TOLERANCE) {
     return null
   }
 
@@ -102,16 +156,20 @@ export const createSchematicTraceJunctions = ({
   }).flatMap((t: SchematicTrace) => t.edges)
 
   const junctions = new Set<string>()
+  const junctionPoints: Array<{ x: number; y: number }> = []
 
   for (const myEdge of myEdges) {
     for (const otherEdge of otherEdges) {
       const intersection = getIntersectionPoint(myEdge, otherEdge)
       if (intersection) {
         const pointKey = `${intersection.x},${intersection.y}`
-        return [{ x: intersection.x, y: intersection.y }]
+        if (!junctions.has(pointKey)) {
+          junctions.add(pointKey)
+          junctionPoints.push({ x: intersection.x, y: intersection.y })
+        }
       }
     }
   }
 
-  return []
+  return junctionPoints
 }
