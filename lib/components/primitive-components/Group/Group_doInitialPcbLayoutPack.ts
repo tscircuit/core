@@ -29,8 +29,9 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     ...convertPackOutputToPackInput(
       convertCircuitJsonToPackOutput(subtreeCircuitJson),
     ),
-    orderStrategy: packOrderStrategy,
-    placementStrategy: packPlacementStrategy,
+    orderStrategy: packOrderStrategy ?? "largest_to_smallest",
+    placementStrategy:
+      packPlacementStrategy ?? "shortest_connection_along_outline",
     minGap: gapMm,
   }
 
