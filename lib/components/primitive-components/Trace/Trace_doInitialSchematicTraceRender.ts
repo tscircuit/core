@@ -51,13 +51,15 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   }
   const obstacles = getSchematicObstaclesForTrace(trace)
 
-  // Get port positions for later use
-  const portsWithPosition = connectedPorts.map(({ port }) => ({
-    port,
-    position: port._getGlobalSchematicPositionAfterLayout(),
-    schematic_port_id: port.schematic_port_id ?? undefined,
-    facingDirection: port.facingDirection,
-  }))
+  // Get port positions for later use, filter out ports without schematic representation
+  const portsWithPosition = connectedPorts
+    .filter(({ port }) => port.schematic_port_id !== null)
+    .map(({ port }) => ({
+      port,
+      position: port._getGlobalSchematicPositionAfterLayout(),
+      schematic_port_id: port.schematic_port_id ?? undefined,
+      facingDirection: port.facingDirection,
+    }))
 
   const isPortAndNetConnection =
     portsWithPosition.length === 1 && netsWithSelectors.length === 1
