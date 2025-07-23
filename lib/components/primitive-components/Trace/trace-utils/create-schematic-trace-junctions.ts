@@ -7,21 +7,25 @@ const TOLERANCE = 0.001 // 1mm tolerance for floating-point comparisons
 // Helper function to check if a point is within an edge's bounds
 const isPointWithinEdge = (
   point: { x: number; y: number },
-  edge: SchematicTrace["edges"][number]
+  edge: SchematicTrace["edges"][number],
 ): boolean => {
   const minX = Math.min(edge.from.x, edge.to.x)
   const maxX = Math.max(edge.from.x, edge.to.x)
   const minY = Math.min(edge.from.y, edge.to.y)
   const maxY = Math.max(edge.from.y, edge.to.y)
-  
-  return point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY
+
+  return (
+    point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY
+  )
 }
 
 // Helper function to determine edge orientation
-const getEdgeOrientation = (edge: SchematicTrace["edges"][number]): "vertical" | "horizontal" | "diagonal" => {
+const getEdgeOrientation = (
+  edge: SchematicTrace["edges"][number],
+): "vertical" | "horizontal" | "diagonal" => {
   const isVertical = Math.abs(edge.from.x - edge.to.x) < TOLERANCE
   const isHorizontal = Math.abs(edge.from.y - edge.to.y) < TOLERANCE
-  
+
   if (isVertical) return "vertical"
   if (isHorizontal) return "horizontal"
   return "diagonal"
@@ -40,17 +44,20 @@ const getIntersectionPoint = (
   }
 
   // Handle vertical-horizontal intersections
-  if ((orientation1 === "vertical" && orientation2 === "horizontal") ||
-      (orientation1 === "horizontal" && orientation2 === "vertical")) {
+  if (
+    (orientation1 === "vertical" && orientation2 === "horizontal") ||
+    (orientation1 === "horizontal" && orientation2 === "vertical")
+  ) {
     const verticalEdge = orientation1 === "vertical" ? edge1 : edge2
     const horizontalEdge = orientation1 === "horizontal" ? edge1 : edge2
-    
+
     const x = verticalEdge.from.x
     const y = horizontalEdge.from.y
     const intersection = { x, y }
-    
-    return isPointWithinEdge(intersection, edge1) && isPointWithinEdge(intersection, edge2) 
-      ? intersection 
+
+    return isPointWithinEdge(intersection, edge1) &&
+      isPointWithinEdge(intersection, edge2)
+      ? intersection
       : null
   }
 
@@ -58,15 +65,18 @@ const getIntersectionPoint = (
   if (orientation1 === "vertical" || orientation2 === "vertical") {
     const verticalEdge = orientation1 === "vertical" ? edge1 : edge2
     const diagonalEdge = orientation1 === "vertical" ? edge2 : edge1
-    
+
     const x = verticalEdge.from.x
-    const m = (diagonalEdge.to.y - diagonalEdge.from.y) / (diagonalEdge.to.x - diagonalEdge.from.x)
+    const m =
+      (diagonalEdge.to.y - diagonalEdge.from.y) /
+      (diagonalEdge.to.x - diagonalEdge.from.x)
     const b = diagonalEdge.from.y - m * diagonalEdge.from.x
     const y = m * x + b
-    
+
     const intersection = { x, y }
-    return isPointWithinEdge(intersection, edge1) && isPointWithinEdge(intersection, edge2) 
-      ? intersection 
+    return isPointWithinEdge(intersection, edge1) &&
+      isPointWithinEdge(intersection, edge2)
+      ? intersection
       : null
   }
 
@@ -86,8 +96,9 @@ const getIntersectionPoint = (
   const y = m1 * x + b1
   const intersection = { x, y }
 
-  return isPointWithinEdge(intersection, edge1) && isPointWithinEdge(intersection, edge2) 
-    ? intersection 
+  return isPointWithinEdge(intersection, edge1) &&
+    isPointWithinEdge(intersection, edge2)
+    ? intersection
     : null
 }
 
