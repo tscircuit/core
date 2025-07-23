@@ -107,11 +107,25 @@ export const createSchematicTraceJunctions = ({
     for (const otherEdge of otherEdges) {
       const intersection = getIntersectionPoint(myEdge, otherEdge)
       if (intersection) {
-        const pointKey = `${intersection.x},${intersection.y}`
-        return [{ x: intersection.x, y: intersection.y }]
+        const isEndpointIntersection =
+          (intersection.x === myEdge.from.x &&
+            intersection.y === myEdge.from.y) ||
+          (intersection.x === myEdge.to.x && intersection.y === myEdge.to.y) ||
+          (intersection.x === otherEdge.from.x &&
+            intersection.y === otherEdge.from.y) ||
+          (intersection.x === otherEdge.to.x &&
+            intersection.y === otherEdge.to.y)
+
+        if (!isEndpointIntersection) {
+          const pointKey = `${intersection.x},${intersection.y}`
+          junctions.add(pointKey)
+        }
       }
     }
   }
 
-  return []
+  return Array.from(junctions).map((j) => {
+    const [x, y] = j.split(",").map(Number)
+    return { x, y }
+  })
 }
