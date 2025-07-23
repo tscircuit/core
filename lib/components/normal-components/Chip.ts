@@ -27,31 +27,34 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   initPorts(opts = {}): void {
     // First, call the parent initPorts to create ports normally
     super.initPorts(opts)
-    
+
     // Then, ensure that any pins referenced in externallyConnectedPins have ports created
     const { _parsedProps: props } = this
     if (props.externallyConnectedPins) {
       const requiredPinNumbers = new Set<number>()
-      
+
       // Collect all pin numbers that need ports
       for (const [pin1, pin2] of props.externallyConnectedPins) {
-        const pin1Num = parseInt(pin1.replace('pin', ''))
-        const pin2Num = parseInt(pin2.replace('pin', ''))
+        const pin1Num = parseInt(pin1.replace("pin", ""))
+        const pin2Num = parseInt(pin2.replace("pin", ""))
         if (!isNaN(pin1Num)) requiredPinNumbers.add(pin1Num)
         if (!isNaN(pin2Num)) requiredPinNumbers.add(pin2Num)
       }
-      
+
       // Create ports for any missing pin numbers
       for (const pinNumber of requiredPinNumbers) {
-        const existingPort = this.children.find(child => 
-          child instanceof Port && child._parsedProps.pinNumber === pinNumber
+        const existingPort = this.children.find(
+          (child) =>
+            child instanceof Port && child._parsedProps.pinNumber === pinNumber,
         )
-        
+
         if (!existingPort) {
-          this.add(new Port({ 
-            pinNumber,
-            aliases: [`pin${pinNumber}`]
-          }))
+          this.add(
+            new Port({
+              pinNumber,
+              aliases: [`pin${pinNumber}`],
+            }),
+          )
         }
       }
     }
