@@ -135,8 +135,8 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
 
   if (group.pcb_group_id) {
     db.pcb_group.update(group.pcb_group_id, {
-      width: totalGridWidth,
-      height: totalGridHeight,
+      width: props.width ?? totalGridWidth,
+      height: props.height ?? totalGridHeight,
       center: groupCenter,
     })
   }
