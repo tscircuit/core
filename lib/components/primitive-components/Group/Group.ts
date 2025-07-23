@@ -139,8 +139,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       db.pcb_group.update(this.pcb_group_id, {
-        width,
-        height,
+        width: Number(props.width ?? width),
+        height: Number(props.height ?? height),
         center: {
           x: centerX,
           y: centerY,
