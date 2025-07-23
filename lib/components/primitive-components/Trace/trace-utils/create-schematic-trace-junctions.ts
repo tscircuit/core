@@ -86,6 +86,27 @@ const getIntersectionPoint = (
   return null
 }
 
+const areColinearAndOverlapping = (
+  edge1: SchematicTrace["edges"][number],
+  edge2: SchematicTrace["edges"][number],
+): boolean => {
+  // Check if both edges are vertical
+  if (edge1.from.x === edge1.to.x && edge2.from.x === edge2.to.x && edge1.from.x === edge2.from.x) {
+    // Check for y overlap
+    const y1 = [edge1.from.y, edge1.to.y].sort((a, b) => a - b)
+    const y2 = [edge2.from.y, edge2.to.y].sort((a, b) => a - b)
+    return y1[1] >= y2[0] && y2[1] >= y1[0]
+  }
+  // Check if both edges are horizontal
+  if (edge1.from.y === edge1.to.y && edge2.from.y === edge2.to.y && edge1.from.y === edge2.from.y) {
+    // Check for x overlap
+    const x1 = [edge1.from.x, edge1.to.x].sort((a, b) => a - b)
+    const x2 = [edge2.from.x, edge2.to.x].sort((a, b) => a - b)
+    return x1[1] >= x2[0] && x2[1] >= x1[0]
+  }
+  return false
+}
+
 export const createSchematicTraceJunctions = ({
   edges: myEdges,
   db,
@@ -105,18 +126,21 @@ export const createSchematicTraceJunctions = ({
 
   for (const myEdge of myEdges) {
     for (const otherEdge of otherEdges) {
+      // Skip if colinear and overlapping (not a true intersection)
+      if (areColinearAndOverlapping(myEdge, otherEdge)) continue
       const intersection = getIntersectionPoint(myEdge, otherEdge)
       if (intersection) {
-        const isEndpointIntersection =
-          (intersection.x === myEdge.from.x &&
-            intersection.y === myEdge.from.y) ||
-          (intersection.x === myEdge.to.x && intersection.y === myEdge.to.y) ||
-          (intersection.x === otherEdge.from.x &&
-            intersection.y === otherEdge.from.y) ||
-          (intersection.x === otherEdge.to.x &&
-            intersection.y === otherEdge.to.y)
-
-        if (!isEndpointIntersection) {
+        // Only add if intersection is strictly inside both edges (not at endpoints)
+        const isStrictlyInside =
+          intersection.x > Math.min(myEdge.from.x, myEdge.to.x) &&
+          intersection.x < Math.max(myEdge.from.x, myEdge.to.x) &&
+          intersection.y > Math.min(myEdge.from.y, myEdge.to.y) &&
+          intersection.y < Math.max(myEdge.from.y, myEdge.to.y) &&
+          intersection.x > Math.min(otherEdge.from.x, otherEdge.to.x) &&
+          intersection.x < Math.max(otherEdge.from.x, otherEdge.to.x) &&
+          intersection.y > Math.min(otherEdge.from.y, otherEdge.to.y) &&
+          intersection.y < Math.max(otherEdge.from.y, otherEdge.to.y)
+        if (isStrictlyInside) {
           const pointKey = `${intersection.x},${intersection.y}`
           junctions.add(pointKey)
         }
