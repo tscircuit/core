@@ -419,7 +419,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson as any,
       ) as GraphicsObject
       graphicsObject.title = `autorouting-${this.props.name}`
-      global.debugGraphics?.push(graphicsObject)
+      ;(global as any).debugGraphics?.push(graphicsObject)
     }
 
     this.root?.emit("autorouting:start", {
