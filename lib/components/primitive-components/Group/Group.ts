@@ -4,6 +4,7 @@ import {
   groupProps,
 } from "@tscircuit/props"
 import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import {} from "@tscircuit/capacity-autorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type LayerRef,
@@ -31,6 +32,8 @@ import { AutorouterError } from "lib/errors/AutorouterError"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
+import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
+import type { GraphicsObject } from "graphics-debug"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -410,6 +413,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
       subcircuit_id: this.subcircuit_id,
     })
+
+    if (debug.enabled) {
+      const graphicsObject = convertSrjToGraphicsObject(
+        simpleRouteJson as any,
+      ) as GraphicsObject
+      graphicsObject.title = `autorouting-${this.props.name}`
+      global.debugGraphics?.push(graphicsObject)
+    }
 
     this.root?.emit("autorouting:start", {
       subcircuit_id: this.subcircuit_id,

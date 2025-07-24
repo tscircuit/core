@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
-    "@tscircuit/capacity-autorouter": "^0.0.93",
+    "@tscircuit/capacity-autorouter": "^0.0.100",
     "@tscircuit/checks": "^0.0.56",
     "@tscircuit/circuit-json-flex": "^0.0.1",
     "@tscircuit/circuit-json-util": "^0.0.51",

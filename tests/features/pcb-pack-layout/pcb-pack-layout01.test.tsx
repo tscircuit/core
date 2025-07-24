@@ -6,7 +6,7 @@ test("pcb-pack-layout01", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board pack gap="2mm">
+    <board pack gap="1.5mm">
       <chip footprint="soic8" name="U1" />
       <resistor
         footprint="0402"
