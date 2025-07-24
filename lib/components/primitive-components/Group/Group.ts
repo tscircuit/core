@@ -4,7 +4,6 @@ import {
   groupProps,
 } from "@tscircuit/props"
 import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
-import {} from "@tscircuit/capacity-autorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type LayerRef,
