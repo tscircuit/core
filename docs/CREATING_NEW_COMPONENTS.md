@@ -2,6 +2,8 @@
 
 If you got an error like `Unsupported component type (not registered in @tscircuit/core catalogue)`, you'll probably need to create a new component.
 
+Before creating a new component, double-check that it isn't already provided in the core library. You can browse the list of built-in elements at <https://docs.tscircuit.com/category/built-in-elements>.
+
 ## Steps to creating a new component
 
 - Determine if the component is a normal component or a primitive component
