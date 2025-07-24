@@ -8,15 +8,10 @@ import {
 } from "calculate-packing"
 import { length } from "circuit-json"
 import { transformPCBElements } from "@tscircuit/circuit-json-util"
-import { translate } from "transformation-matrix"
+import { translate, rotate, compose } from "transformation-matrix"
 import Debug from "debug"
 
 const debug = Debug("Group_doInitialPcbLayoutPack")
-
-const sub = (a: { x: number; y: number }, b: { x: number; y: number }) => ({
-  x: a.x - b.x,
-  y: a.y - b.y,
-})
 
 export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const { db } = group.root!
@@ -49,16 +44,24 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   // Apply the pack output to the circuit json
   for (const packedComponent of packOutput.components) {
-    const { center, componentId, pads, ccwRotationOffset } = packedComponent
+    const { center, componentId, ccwRotationOffset } = packedComponent
     const component = db.pcb_component.get(componentId)
     if (!component) continue
-    const delta = sub(center, component.center)
+
+    // Create transformation matrix: translate to origin, rotate, then translate to final position
+    const originalCenter = component.center
+    const transformMatrix = compose(
+      translate(center.x, center.y),
+      rotate(ccwRotationOffset || 0),
+      translate(-originalCenter.x, -originalCenter.y),
+    )
+
     transformPCBElements(
       subtreeCircuitJson.filter(
         (elm) =>
           "pcb_component_id" in elm && elm.pcb_component_id === componentId,
       ),
-      translate(delta.x, delta.y),
+      transformMatrix,
     )
   }
 }
