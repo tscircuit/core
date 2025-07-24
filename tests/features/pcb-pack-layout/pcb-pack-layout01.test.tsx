@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphics"
 
 test("pcb-pack-layout01", async () => {
   const { circuit } = getTestFixture()
@@ -27,4 +28,5 @@ test("pcb-pack-layout01", async () => {
   )
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  writeGlobalDebugGraphics()
 })

@@ -4,10 +4,14 @@ import {
   pack,
   convertCircuitJsonToPackOutput,
   convertPackOutputToPackInput,
+  getGraphicsFromPackOutput,
 } from "calculate-packing"
 import { length } from "circuit-json"
 import { transformPCBElements } from "@tscircuit/circuit-json-util"
 import { translate } from "transformation-matrix"
+import Debug from "debug"
+
+const debug = Debug("Group_doInitialPcbLayoutPack")
 
 const sub = (a: { x: number; y: number }, b: { x: number; y: number }) => ({
   x: a.x - b.x,
@@ -36,6 +40,12 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
 
   const packOutput = pack(packInput)
+
+  if (debug.enabled) {
+    const graphics = getGraphicsFromPackOutput(packOutput)
+    graphics.title = "packOutput"
+    global.debugGraphics?.push(graphics)
+  }
 
   // Apply the pack output to the circuit json
   for (const packedComponent of packOutput.components) {
