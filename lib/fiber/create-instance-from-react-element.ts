@@ -68,7 +68,9 @@ const hostConfig: HostConfig<
         )
       }
       throw new Error(
-        `Unsupported component type (not registered in @tscircuit/core catalogue): "${type}" See CREATING_NEW_COMPONENTS.md`,
+        `Unsupported component type "${type}". No element with this name is registered in the @tscircuit/core catalogue. ` +
+          `Check for typos or see https://docs.tscircuit.com/category/built-in-elements for a list of valid components. ` +
+          `To add your own component, see docs/CREATING_NEW_COMPONENTS.md`,
       )
     }
 
