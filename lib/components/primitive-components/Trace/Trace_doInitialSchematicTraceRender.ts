@@ -22,6 +22,7 @@ import { getOtherSchematicTraces } from "./trace-utils/get-other-schematic-trace
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./trace-utils/push-edges-of-schematic-trace-to-prevent-overlap"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { Trace } from "./Trace"
+import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 
 export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   if (trace.root?.schematicDisabled) return
@@ -181,30 +182,16 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         {
           x: start.position.x,
           y: start.position.y,
-          facingDirection:
-            start.facingDirection === "right"
-              ? "x+"
-              : start.facingDirection === "left"
-                ? "x-"
-                : start.facingDirection === "up"
-                  ? "y+"
-                  : start.facingDirection === "down"
-                    ? "y-"
-                    : undefined,
+          facingDirection: convertFacingDirectionToElbowDirection(
+            start.facingDirection,
+          ),
         },
         {
           x: end.position.x,
           y: end.position.y,
-          facingDirection:
-            end.facingDirection === "right"
-              ? "x+"
-              : end.facingDirection === "left"
-                ? "x-"
-                : end.facingDirection === "up"
-                  ? "y+"
-                  : end.facingDirection === "down"
-                    ? "y-"
-                    : undefined,
+          facingDirection: convertFacingDirectionToElbowDirection(
+            end.facingDirection,
+          ),
         },
       )
       for (let j = 0; j < path.length - 1; j++) {
