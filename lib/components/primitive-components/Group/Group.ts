@@ -724,15 +724,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "none" {
+  _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "relative" {
     const props = this._parsedProps as SubcircuitGroupProps
-    if (props.schLayout?.layoutMode === "none") return "none"
+    if (props.schLayout?.layoutMode === "none") return "relative"
+    if (props.schLayout?.layoutMode === "relative") return "relative"
     if (props.schLayout?.matchAdapt) return "match-adapt"
     if (props.schLayout?.flex) return "flex"
     if (props.schLayout?.grid) return "grid"
     if (props.matchAdapt) return "match-adapt"
     if (props.flex) return "flex"
     if (props.grid) return "grid"
+    if (props.relative) return "relative"
+    if (props.schRelative) return "relative"
     // If no layout method has been defined, fall back to match-adapt
     // unless any direct child defines schX or schY
     const anyChildHasSchCoords = this.children.some((child) => {
@@ -744,7 +747,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       (props.manualEdits?.schematic_placements?.length ?? 0) > 0
     if (!anyChildHasSchCoords && !hasManualEdits && !anyChildIsGroup)
       return "match-adapt"
-    return "none"
+    return "relative"
   }
 
   doInitialSchematicLayout(): void {
