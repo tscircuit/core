@@ -83,6 +83,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSourceParentAttachment() {
     const { db } = this.root!
+    const parentGroup = this.parent?.getGroup?.()
+    if (parentGroup?.source_group_id) {
+      db.source_group.update(this.source_group_id!, {
+        parent_source_group_id: parentGroup.source_group_id,
+      })
+    }
+
     if (!this.isSubcircuit) return
     const parent_subcircuit_id = this.parent?.getSubcircuit?.()?.subcircuit_id
     if (!parent_subcircuit_id) return
@@ -717,25 +724,30 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "none" {
+  _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "relative" {
     const props = this._parsedProps as SubcircuitGroupProps
-    if (props.schLayout?.layoutMode === "none") return "none"
+    if (props.schLayout?.layoutMode === "none") return "relative"
+    if (props.schLayout?.layoutMode === "relative") return "relative"
     if (props.schLayout?.matchAdapt) return "match-adapt"
     if (props.schLayout?.flex) return "flex"
     if (props.schLayout?.grid) return "grid"
     if (props.matchAdapt) return "match-adapt"
     if (props.flex) return "flex"
     if (props.grid) return "grid"
+    if (props.relative) return "relative"
+    if (props.schRelative) return "relative"
     // If no layout method has been defined, fall back to match-adapt
     // unless any direct child defines schX or schY
     const anyChildHasSchCoords = this.children.some((child) => {
       const cProps = (child as any)._parsedProps
       return cProps?.schX !== undefined || cProps?.schY !== undefined
     })
+    const anyChildIsGroup = this.children.some((child) => child.isGroup)
     const hasManualEdits =
       (props.manualEdits?.schematic_placements?.length ?? 0) > 0
-    if (!anyChildHasSchCoords && !hasManualEdits) return "match-adapt"
-    return "none"
+    if (!anyChildHasSchCoords && !hasManualEdits && !anyChildIsGroup)
+      return "match-adapt"
+    return "relative"
   }
 
   doInitialSchematicLayout(): void {
