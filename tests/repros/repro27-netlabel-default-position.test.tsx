@@ -8,7 +8,12 @@ test("netlabel defaults anchor to connected port position", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm" routingDisabled>
+    <board
+      width="10mm"
+      height="10mm"
+      routingDisabled
+      schLayout={{ layoutMode: "none" }}
+    >
       <resistor name="R1" resistance="1k" footprint="0402" />
       <netlabel net="A" connection="R1.pin1" />
     </board>,
