@@ -732,7 +732,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const cProps = (child as any)._parsedProps
       return cProps?.schX !== undefined || cProps?.schY !== undefined
     })
-    const hasManualEdits = props.manualEdits?.schematic_placements?.length > 0
+    const hasManualEdits =
+      (props.manualEdits?.schematic_placements?.length ?? 0) > 0
     if (!anyChildHasSchCoords && !hasManualEdits) return "match-adapt"
     return "none"
   }
