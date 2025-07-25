@@ -181,18 +181,30 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         {
           x: start.position.x,
           y: start.position.y,
-          facingDirection: start.facingDirection === "right" ? "x+" :
-            start.facingDirection === "left" ? "x-" :
-            start.facingDirection === "up" ? "y+" :
-            start.facingDirection === "down" ? "y-" : undefined,
+          facingDirection:
+            start.facingDirection === "right"
+              ? "x+"
+              : start.facingDirection === "left"
+                ? "x-"
+                : start.facingDirection === "up"
+                  ? "y+"
+                  : start.facingDirection === "down"
+                    ? "y-"
+                    : undefined,
         },
         {
           x: end.position.x,
           y: end.position.y,
-          facingDirection: end.facingDirection === "right" ? "x+" :
-            end.facingDirection === "left" ? "x-" :
-            end.facingDirection === "up" ? "y+" :
-            end.facingDirection === "down" ? "y-" : undefined,
+          facingDirection:
+            end.facingDirection === "right"
+              ? "x+"
+              : end.facingDirection === "left"
+                ? "x-"
+                : end.facingDirection === "up"
+                  ? "y+"
+                  : end.facingDirection === "down"
+                    ? "y-"
+                    : undefined,
         },
       )
       for (let j = 0; j < path.length - 1; j++) {

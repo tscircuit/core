@@ -47,7 +47,7 @@ test("example28 fix elbow", async () => {
           }}
         />
       </group>
-    </board>
+    </board>,
   )
 
   circuit.render()
