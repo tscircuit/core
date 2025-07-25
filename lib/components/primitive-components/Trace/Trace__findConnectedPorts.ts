@@ -21,9 +21,7 @@ export function Trace__findConnectedPorts(trace: Trace):
 
   const portsWithSelectors = portSelectors.map((selector) => ({
     selector,
-    port:
-      (trace.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
-      null,
+    port: (trace.root?.selectOne(selector, { port: true }) as Port) ?? null,
   }))
 
   for (const { selector, port } of portsWithSelectors) {

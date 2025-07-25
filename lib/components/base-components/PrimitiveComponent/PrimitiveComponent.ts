@@ -754,6 +754,29 @@ export abstract class PrimitiveComponent<
       cssSelectOptionsInsideSubcircuit,
     ) as T | null
 
+    if (options?.port) {
+      if (result && result.componentName !== "Port") {
+        const ports = (result as PrimitiveComponent).selectAll("port")
+        if (ports.length === 1) {
+          result = ports[0] as T
+        }
+      }
+
+      if (!result && !selector.startsWith(".")) {
+        const comp = selectOne(
+          `.${selector}`,
+          this,
+          cssSelectOptionsInsideSubcircuit,
+        ) as PrimitiveComponent | null
+        if (comp) {
+          const ports = comp.selectAll("port")
+          if (ports.length === 1) {
+            result = ports[0] as T
+          }
+        }
+      }
+    }
+
     if (result) {
       this._cachedSelectOneQueries.set(selectorRaw, result as any)
       return result
