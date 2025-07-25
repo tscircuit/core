@@ -1,6 +1,7 @@
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { type SchematicNetLabel, type SchematicTrace } from "circuit-json"
 import { calculateElbow } from "calculate-elbow"
+import { patchElbowInsideAngles } from "lib/utils/schematic/patchElbowInsideAngles"
 import { doesLineIntersectLine, type Point } from "@tscircuit/math-utils"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
 import type {
@@ -177,7 +178,20 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     for (let i = 0; i < portsWithPosition.length - 1; i++) {
       const start = portsWithPosition[i]
       const end = portsWithPosition[i + 1]
-      const path = calculateElbow(
+      let path = calculateElbow(
+        {
+          x: start.position.x,
+          y: start.position.y,
+          facingDirection: start.facingDirection as any,
+        },
+        {
+          x: end.position.x,
+          y: end.position.y,
+          facingDirection: end.facingDirection as any,
+        },
+      )
+      path = patchElbowInsideAngles(
+        path,
         {
           x: start.position.x,
           y: start.position.y,
