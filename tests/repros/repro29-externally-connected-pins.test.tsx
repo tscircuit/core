@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test.skip("chip with externally connected pins repro", async () => {
+test("chip with externally connected pins repro", async () => {
   const { circuit } = getTestFixture()
   const pinLabels = {
     pin1: ["VDDIO", "V3_3"],
