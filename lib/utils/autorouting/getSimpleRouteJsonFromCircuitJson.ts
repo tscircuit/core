@@ -343,7 +343,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       connections: allConns,
       // TODO add traces so that we don't run into things routed by another
       // subcircuit
-      layerCount: 2,
+      layerCount: board?.num_layers ?? 2,
       minTraceWidth,
     },
     connMap,
