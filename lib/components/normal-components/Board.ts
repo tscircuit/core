@@ -33,8 +33,15 @@ export class Board extends Group<typeof boardProps> {
    * Get all available layers for the board
    */
   get allLayers() {
-    // TODO use the board numLayers prop
-    return ["top", "bottom", "inner1", "inner2"]
+    const layerCount = this._parsedProps.layers ?? 2
+    if (layerCount === 4) {
+      return ["top", "bottom", "inner1", "inner2"] as const
+    }
+    return ["top", "bottom"] as const
+  }
+
+  _getSubcircuitLayerCount(): number {
+    return this._parsedProps.layers ?? 2
   }
 
   doInitialPcbBoardAutoSize(): void {

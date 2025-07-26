@@ -928,6 +928,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this._parsedProps.autorouter || this.getInheritedProperty("autorouter")
     return getPresetAutoroutingConfig(autorouter)
   }
+
+  _getSubcircuitLayerCount(): number {
+    const layers = this.getInheritedProperty("layers")
+    return typeof layers === "number" ? layers : 2
+  }
   /**
    * Trace-by-trace autorouting is where each trace routes itself in a well-known
    * order. It's the most deterministic way to autoroute, because a new trace
