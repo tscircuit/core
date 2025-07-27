@@ -6,6 +6,7 @@ import {
   getPrimaryId,
 } from "@tscircuit/circuit-json-util"
 import { length } from "circuit-json"
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 
 export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   const { db } = group.root!
@@ -22,10 +23,15 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
 
   for (const child of pcbChildren) {
     const pcbComp = db.pcb_component.get(child.pcb_component_id!)
-    if (pcbComp) {
-      maxCellWidth = Math.max(maxCellWidth, pcbComp.width)
-      maxCellHeight = Math.max(maxCellHeight, pcbComp.height)
+    let width = pcbComp?.width ?? 0
+    let height = pcbComp?.height ?? 0
+    if (width === 0 || height === 0) {
+      const bounds = getBoundsOfPcbComponents(child.children)
+      width = Math.max(width, bounds.width)
+      height = Math.max(height, bounds.height)
     }
+    maxCellWidth = Math.max(maxCellWidth, width)
+    maxCellHeight = Math.max(maxCellHeight, height)
   }
 
   if (maxCellWidth === 0 && pcbChildren.length > 0) maxCellWidth = 1
@@ -38,7 +44,7 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   if (props.pcbLayout?.grid) {
     gridColsOption = props.pcbLayout.grid.cols ?? gridColsOption
     gridRowsOption = props.pcbLayout.grid.rows
-    gridGapOption = props.pcbLayout.grid.gap ?? gridGapOption
+    gridGapOption = props.pcbLayout.gridGap ?? gridGapOption
   }
 
   let numCols: number

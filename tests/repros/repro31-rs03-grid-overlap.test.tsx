@@ -142,5 +142,25 @@ test("rs03 grid layout gap string does not cause overlapping holes", () => {
   const unique = new Set(coords)
   expect(unique.size).toBe(holes.length)
 
+  for (let i = 0; i < holes.length; i++) {
+    for (let j = i + 1; j < holes.length; j++) {
+      const h1 = holes[i] as any
+      const h2 = holes[j] as any
+      const dx = h1.x - h2.x
+      const dy = h1.y - h2.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      const h1Size =
+        "outer_diameter" in h1
+          ? h1.outer_diameter
+          : Math.max(h1.outer_width, h1.outer_height)
+      const h2Size =
+        "outer_diameter" in h2
+          ? h2.outer_diameter
+          : Math.max(h2.outer_width, h2.outer_height)
+      const minDistance = Math.max(h1Size, h2Size)
+      expect(distance).toBeGreaterThan(minDistance)
+    }
+  }
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
