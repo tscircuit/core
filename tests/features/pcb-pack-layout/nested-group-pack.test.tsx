@@ -6,7 +6,7 @@ test("nested group pack with various resistors and capacitors", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board routingDisabled width="20mm" height="20mm">
+    <board routingDisabled>
       <group pack gap="1mm" pcbX={-6}>
         <resistor
           name="R1"
