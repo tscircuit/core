@@ -63,11 +63,11 @@ test("board packs nested groups", async () => {
 
   circuit.add(
     <board pack gap="5mm" routingDisabled>
-      <group subcircuit pack gap="1mm" pcbX={-7}>
+      <group subcircuit pack gap="1mm">
         <resistor name="R1" resistance="1k" footprint="0402" />
         <capacitor name="C1" capacitance="10nF" footprint="0402" />
       </group>
-      <group subcircuit pack gap="1mm" pcbX={7}>
+      <group subcircuit pack gap="1mm">
         <resistor name="R2" resistance="1k" footprint="0402" />
         <capacitor name="C2" capacitance="10nF" footprint="0402" />
       </group>

@@ -9,7 +9,7 @@ import {
 import { length } from "circuit-json"
 import {
   transformPCBElements,
-  getCircuitJsonTree,
+  getPrimaryId,
 } from "@tscircuit/circuit-json-util"
 import { translate, rotate, compose } from "transformation-matrix"
 import Debug from "debug"
@@ -46,11 +46,38 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   // Apply the pack output to the circuit json
   for (const packedComponent of packOutput.components) {
     const { center, componentId, ccwRotationOffset } = packedComponent
-    const pcbComponent = db.pcb_component.get(componentId)
-    if (!pcbComponent) continue
 
-    // Create transformation matrix: translate to origin, rotate, then translate to final position
-    const originalCenter = pcbComponent.center
+    const pcbComponent = db.pcb_component.get(componentId)
+    if (pcbComponent) {
+      const originalCenter = pcbComponent.center
+      const transformMatrix = compose(
+        group._computePcbGlobalTransformBeforeLayout(),
+        translate(center.x, center.y),
+        rotate(ccwRotationOffset || 0),
+        translate(-originalCenter.x, -originalCenter.y),
+      )
+
+      const related = db
+        .toArray()
+        .filter(
+          (elm) =>
+            "pcb_component_id" in elm && elm.pcb_component_id === componentId,
+        )
+      const moved = transformPCBElements(related as any, transformMatrix)
+      for (const elm of moved) {
+        const idProp = getPrimaryId(elm as any)
+        // @ts-ignore dynamic index access
+        db[elm.type].update((elm as any)[idProp], elm as any)
+      }
+      continue
+    }
+
+    const pcbGroup = db.pcb_group
+      .list()
+      .find((g) => g.source_group_id === componentId)
+    if (!pcbGroup) continue
+
+    const originalCenter = pcbGroup.center
     const transformMatrix = compose(
       group._computePcbGlobalTransformBeforeLayout(),
       translate(center.x, center.y),
@@ -58,14 +85,13 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       translate(-originalCenter.x, -originalCenter.y),
     )
 
-    transformPCBElements(
-      db
-        .toArray()
-        .filter(
-          (elm) =>
-            "pcb_component_id" in elm && elm.pcb_component_id === componentId,
-        ),
-      transformMatrix,
-    )
+    const subtree = buildSubtree(db.toArray(), { source_group_id: componentId })
+    const moved = transformPCBElements(subtree as any, transformMatrix)
+    for (const elm of moved) {
+      const idProp = getPrimaryId(elm as any)
+      if (!idProp) continue
+      // @ts-ignore dynamic index access
+      db[elm.type].update((elm as any)[idProp], elm as any)
+    }
   }
 }
