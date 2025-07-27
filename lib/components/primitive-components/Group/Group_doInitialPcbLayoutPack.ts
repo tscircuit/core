@@ -7,7 +7,10 @@ import {
   getGraphicsFromPackOutput,
 } from "calculate-packing"
 import { length } from "circuit-json"
-import { transformPCBElements } from "@tscircuit/circuit-json-util"
+import {
+  transformPCBElements,
+  getCircuitJsonTree,
+} from "@tscircuit/circuit-json-util"
 import { translate, rotate, compose } from "transformation-matrix"
 import Debug from "debug"
 
@@ -26,7 +29,9 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const gapMm = length.parse(gap ?? "0mm")
   const packInput = {
     ...convertPackOutputToPackInput(
-      convertCircuitJsonToPackOutput(subtreeCircuitJson),
+      convertCircuitJsonToPackOutput(subtreeCircuitJson, {
+        source_group_id: group.source_group_id!,
+      }),
     ),
     orderStrategy: packOrderStrategy ?? "largest_to_smallest",
     placementStrategy:
@@ -38,7 +43,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   if (debug.enabled) {
     const graphics = getGraphicsFromPackOutput(packOutput)
-    graphics.title = "packOutput"
+    graphics.title = `packOutput-${group.name}`
     global.debugGraphics?.push(graphics)
   }
 

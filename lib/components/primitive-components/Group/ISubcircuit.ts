@@ -3,8 +3,10 @@ import type { AutorouterConfig, subcircuitGroupProps } from "@tscircuit/props"
 import { z } from "zod"
 
 export interface ISubcircuit extends PrimitiveComponent {
+  getNextUnnamedId(): string
   _shouldUseTraceByTraceRouting(): boolean
   _parsedProps: z.infer<typeof subcircuitGroupProps>
   _getAutorouterConfig(): AutorouterConfig
+  getNextAvailableName(elm: PrimitiveComponent): string
   subcircuit_id: string | null
 }

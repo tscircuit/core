@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphics"
 
 test("nested group pack with various resistors and capacitors", () => {
   const { circuit } = getTestFixture()
@@ -52,4 +53,5 @@ test("nested group pack with various resistors and capacitors", () => {
 
   circuit.render()
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  writeGlobalDebugGraphics()
 })

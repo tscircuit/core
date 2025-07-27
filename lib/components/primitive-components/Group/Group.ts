@@ -160,6 +160,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
+  unnamedElementCounter: Record<string, number> = {}
+  getNextAvailableName(elm: PrimitiveComponent): string {
+    this.unnamedElementCounter[elm.lowercaseComponentName] ??= 1
+    return `unnamed_${elm.lowercaseComponentName}${this.unnamedElementCounter[elm.lowercaseComponentName]++}`
+  }
+
   _resolvePcbPadding(): {
     padLeft: number
     padRight: number
