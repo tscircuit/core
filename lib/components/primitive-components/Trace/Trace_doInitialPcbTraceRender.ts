@@ -291,7 +291,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
             ],
           },
         ],
-        layerCount: 2,
+        layerCount: trace.getSubcircuit()._getSubcircuitLayerCount(),
         bounds: {
           minX: Math.min(a.x, b.x) - BOUNDS_MARGIN,
           maxX: Math.max(a.x, b.x) + BOUNDS_MARGIN,
