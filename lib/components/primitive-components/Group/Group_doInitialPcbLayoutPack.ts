@@ -46,11 +46,11 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   // Apply the pack output to the circuit json
   for (const packedComponent of packOutput.components) {
     const { center, componentId, ccwRotationOffset } = packedComponent
-    const component = db.pcb_component.get(componentId)
-    if (!component) continue
+    const pcbComponent = db.pcb_component.get(componentId)
+    if (!pcbComponent) continue
 
     // Create transformation matrix: translate to origin, rotate, then translate to final position
-    const originalCenter = component.center
+    const originalCenter = pcbComponent.center
     const transformMatrix = compose(
       group._computePcbGlobalTransformBeforeLayout(),
       translate(center.x, center.y),
