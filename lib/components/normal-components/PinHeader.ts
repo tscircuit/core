@@ -19,11 +19,16 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
     const holeDiameter = this._parsedProps.holeDiameter
     const platedDiameter = this._parsedProps.platedDiameter
     const pitch = this._parsedProps.pitch
-    if (pinCount > 0 && pitch) {
-      if (!holeDiameter && !platedDiameter) {
-        return `pinrow${pinCount}_p${pitch}`
+    if (pinCount > 0) {
+      if (pitch) {
+        if (!holeDiameter && !platedDiameter) {
+          return `pinrow${pinCount}_p${pitch}`
+        }
+        return `pinrow${pinCount}_p${pitch}_id${holeDiameter}_od${platedDiameter}`
       }
-      return `pinrow${pinCount}_p${pitch}_id${holeDiameter}_od${platedDiameter}`
+      if (!holeDiameter && !platedDiameter) {
+        return `pinrow${pinCount}`
+      }
     }
     return null
   }
