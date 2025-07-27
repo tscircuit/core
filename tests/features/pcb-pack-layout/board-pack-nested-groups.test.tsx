@@ -77,6 +77,7 @@ test("board packs nested groups", async () => {
   await circuit.renderUntilSettled()
 
   const pcbGroups = circuit.db.pcb_group.list()
+  expect(pcbGroups.length).toBe(2)
 
   const pads = circuit.db.pcb_smtpad.list()
   for (let i = 0; i < pads.length; i++) {
