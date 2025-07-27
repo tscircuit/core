@@ -7,7 +7,10 @@ import {
   getGraphicsFromPackOutput,
 } from "calculate-packing"
 import { length } from "circuit-json"
-import { transformPCBElements } from "@tscircuit/circuit-json-util"
+import {
+  transformPCBElements,
+  getCircuitJsonTree,
+} from "@tscircuit/circuit-json-util"
 import { translate, rotate, compose } from "transformation-matrix"
 import Debug from "debug"
 
@@ -19,14 +22,12 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   const { packOrderStrategy, packPlacementStrategy, gap } = props
 
-  const subtreeCircuitJson = buildSubtree(db.toArray(), {
-    source_group_id: group.source_group_id!,
-  })
-
   const gapMm = length.parse(gap ?? "0mm")
   const packInput = {
     ...convertPackOutputToPackInput(
-      convertCircuitJsonToPackOutput(subtreeCircuitJson),
+      convertCircuitJsonToPackOutput(db.toArray(), {
+        source_group_id: group.source_group_id!,
+      }),
     ),
     orderStrategy: packOrderStrategy ?? "largest_to_smallest",
     placementStrategy:
@@ -38,29 +39,32 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   if (debug.enabled) {
     const graphics = getGraphicsFromPackOutput(packOutput)
-    graphics.title = "packOutput"
+    graphics.title = `packOutput-${group.name}`
     global.debugGraphics?.push(graphics)
   }
 
   // Apply the pack output to the circuit json
   for (const packedComponent of packOutput.components) {
     const { center, componentId, ccwRotationOffset } = packedComponent
-    const component = db.pcb_component.get(componentId)
-    if (!component) continue
+    const pcbComponent = db.pcb_component.get(componentId)
+    if (!pcbComponent) continue
 
     // Create transformation matrix: translate to origin, rotate, then translate to final position
-    const originalCenter = component.center
+    const originalCenter = pcbComponent.center
     const transformMatrix = compose(
+      group._computePcbGlobalTransformBeforeLayout(),
       translate(center.x, center.y),
       rotate(ccwRotationOffset || 0),
       translate(-originalCenter.x, -originalCenter.y),
     )
 
     transformPCBElements(
-      subtreeCircuitJson.filter(
-        (elm) =>
-          "pcb_component_id" in elm && elm.pcb_component_id === componentId,
-      ),
+      db
+        .toArray()
+        .filter(
+          (elm) =>
+            "pcb_component_id" in elm && elm.pcb_component_id === componentId,
+        ),
       transformMatrix,
     )
   }
