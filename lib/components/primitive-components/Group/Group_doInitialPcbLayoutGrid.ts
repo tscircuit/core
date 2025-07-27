@@ -5,6 +5,7 @@ import {
   transformPCBElements,
   getPrimaryId,
 } from "@tscircuit/circuit-json-util"
+import { length } from "circuit-json"
 
 export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   const { db } = group.root!
@@ -65,9 +66,15 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   if (typeof gridGapOption === "number") {
     gridGapX = gridGapOption
     gridGapY = gridGapOption
+  } else if (typeof gridGapOption === "string") {
+    const parsed = length.parse(gridGapOption)
+    gridGapX = parsed
+    gridGapY = parsed
   } else if (typeof gridGapOption === "object" && gridGapOption !== null) {
-    gridGapX = gridGapOption.x
-    gridGapY = gridGapOption.y
+    const xRaw = (gridGapOption as any).x
+    const yRaw = (gridGapOption as any).y
+    gridGapX = typeof xRaw === "number" ? xRaw : length.parse(xRaw ?? "0mm")
+    gridGapY = typeof yRaw === "number" ? yRaw : length.parse(yRaw ?? "0mm")
   } else {
     gridGapX = 1
     gridGapY = 1
