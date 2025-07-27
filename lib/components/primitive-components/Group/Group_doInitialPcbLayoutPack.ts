@@ -22,14 +22,10 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   const { packOrderStrategy, packPlacementStrategy, gap } = props
 
-  const subtreeCircuitJson = buildSubtree(db.toArray(), {
-    source_group_id: group.source_group_id!,
-  })
-
   const gapMm = length.parse(gap ?? "0mm")
   const packInput = {
     ...convertPackOutputToPackInput(
-      convertCircuitJsonToPackOutput(subtreeCircuitJson, {
+      convertCircuitJsonToPackOutput(db.toArray(), {
         source_group_id: group.source_group_id!,
       }),
     ),
@@ -49,6 +45,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   // Apply the pack output to the circuit json
   for (const packedComponent of packOutput.components) {
+    console.log("packedComponent", packedComponent)
     const { center, componentId, ccwRotationOffset } = packedComponent
     const component = db.pcb_component.get(componentId)
     if (!component) continue
@@ -56,16 +53,19 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     // Create transformation matrix: translate to origin, rotate, then translate to final position
     const originalCenter = component.center
     const transformMatrix = compose(
+      group._computePcbGlobalTransformBeforeLayout(),
       translate(center.x, center.y),
       rotate(ccwRotationOffset || 0),
       translate(-originalCenter.x, -originalCenter.y),
     )
 
     transformPCBElements(
-      subtreeCircuitJson.filter(
-        (elm) =>
-          "pcb_component_id" in elm && elm.pcb_component_id === componentId,
-      ),
+      db
+        .toArray()
+        .filter(
+          (elm) =>
+            "pcb_component_id" in elm && elm.pcb_component_id === componentId,
+        ),
       transformMatrix,
     )
   }
