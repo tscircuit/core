@@ -36,7 +36,7 @@ export function Group_doInitialSchematicLayoutGrid(group: Group<any>) {
   if (props.schLayout?.grid) {
     gridColsOption = props.schLayout.grid.cols ?? gridColsOption
     gridRowsOption = props.schLayout.grid.rows // New option from schLayout
-    gridGapOption = props.schLayout.grid.gap ?? gridGapOption
+    gridGapOption = props.schLayout.gridGap ?? gridGapOption
   }
 
   let numCols: number
