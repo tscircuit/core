@@ -63,13 +63,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           (elm) =>
             "pcb_component_id" in elm && elm.pcb_component_id === componentId,
         )
-      const moved = transformPCBElements(related as any, transformMatrix)
-      for (const elm of moved) {
-        const idProp = getPrimaryId(elm as any)
-        // @ts-ignore dynamic index access
-        db[elm.type].update((elm as any)[idProp], elm as any)
-      }
-      db.pcb_component.update(componentId, { center })
+      transformPCBElements(related as any, transformMatrix)
       continue
     }
 
@@ -87,12 +81,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     )
 
     const subtree = buildSubtree(db.toArray(), { source_group_id: componentId })
-    const moved = transformPCBElements(subtree as any, transformMatrix)
-    for (const elm of moved) {
-      const idProp = getPrimaryId(elm as any)
-      // @ts-ignore dynamic index access
-      db[elm.type].update((elm as any)[idProp], elm as any)
-    }
+    transformPCBElements(subtree as any, transformMatrix)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 }
