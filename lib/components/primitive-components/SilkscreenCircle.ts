@@ -30,8 +30,11 @@ export class SilkscreenCircle extends PrimitiveComponent<
     const transform = this._computePcbGlobalTransformBeforeLayout()
     const subcircuit = this.getSubcircuit()
 
+    const pcb_component_id =
+      this.parent?.pcb_component_id ??
+      this.getPrimitiveContainer()?.pcb_component_id!
     const pcb_silkscreen_circle = db.pcb_silkscreen_circle.insert({
-      pcb_component_id: this.parent?.pcb_component_id!,
+      pcb_component_id,
       layer,
       center: {
         x: props.pcbX ?? 0,

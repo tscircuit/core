@@ -28,8 +28,11 @@ export class SilkscreenLine extends PrimitiveComponent<
     }
     const subcircuit = this.getSubcircuit()
 
+    const pcb_component_id =
+      this.parent?.pcb_component_id ??
+      this.getPrimitiveContainer()?.pcb_component_id!
     const pcb_silkscreen_line = db.pcb_silkscreen_line.insert({
-      pcb_component_id: this.parent?.pcb_component_id!,
+      pcb_component_id,
       layer,
       x1: props.x1,
       y1: props.y1,

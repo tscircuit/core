@@ -29,8 +29,11 @@ export class FabricationNotePath extends PrimitiveComponent<
 
     const transform = this._computePcbGlobalTransformBeforeLayout()
 
+    const pcb_component_id =
+      this.parent?.pcb_component_id ??
+      this.getPrimitiveContainer()?.pcb_component_id!
     const fabrication_note_path = db.pcb_fabrication_note_path.insert({
-      pcb_component_id: this.parent?.pcb_component_id!,
+      pcb_component_id,
       layer,
       color: props.color,
       route: props.route.map((p) => {
