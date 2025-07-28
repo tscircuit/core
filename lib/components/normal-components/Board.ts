@@ -58,25 +58,32 @@ export class Board extends Group<typeof boardProps> {
     let maxX = -Infinity
     let maxY = -Infinity
 
-    // Get all PCB components from the database
+    // Get all PCB components and groups from the database
     const allPcbComponents = db.pcb_component.list()
+    const allPcbGroups = db.pcb_group.list()
     let hasComponents = false
 
-    // Process all PCB components
-    for (const pcbComponent of allPcbComponents) {
-      const { width, height, center } = pcbComponent
-
-      // Skip components with zero dimensions
-      if (width === 0 || height === 0) continue
-
-      // Track that we found at least one valid component
+    const updateBounds = (
+      center: { x: number; y: number },
+      width: number,
+      height: number,
+    ) => {
+      if (width === 0 || height === 0) return
       hasComponents = true
-
-      // Update bounds
       minX = Math.min(minX, center.x - width / 2)
       minY = Math.min(minY, center.y - height / 2)
       maxX = Math.max(maxX, center.x + width / 2)
       maxY = Math.max(maxY, center.y + height / 2)
+    }
+
+    // Process all PCB components
+    for (const pcbComponent of allPcbComponents) {
+      updateBounds(pcbComponent.center, pcbComponent.width, pcbComponent.height)
+    }
+
+    // Process all PCB groups (for nested subcircuits)
+    for (const pcbGroup of allPcbGroups) {
+      updateBounds(pcbGroup.center, pcbGroup.width, pcbGroup.height)
     }
 
     // Add padding around components

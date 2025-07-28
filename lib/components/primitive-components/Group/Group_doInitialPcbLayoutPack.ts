@@ -82,5 +82,6 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
     const subtree = buildSubtree(db.toArray(), { source_group_id: componentId })
     transformPCBElements(subtree as any, transformMatrix)
+    db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 }
