@@ -37,9 +37,9 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   if (maxCellWidth === 0 && pcbChildren.length > 0) maxCellWidth = 1
   if (maxCellHeight === 0 && pcbChildren.length > 0) maxCellHeight = 1
 
-  let gridColsOption = props.gridCols
-  let gridRowsOption: number | undefined = undefined
-  let gridGapOption = props.gridGap
+  let gridColsOption = props.pcbGridCols ?? props.gridCols
+  let gridRowsOption: number | undefined = props.pcbGridRows
+  let gridGapOption = props.pcbGridGap ?? props.gridGap
 
   if (props.pcbLayout?.grid) {
     gridColsOption = props.pcbLayout.grid.cols ?? gridColsOption
