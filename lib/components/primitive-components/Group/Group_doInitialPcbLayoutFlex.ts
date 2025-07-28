@@ -2,6 +2,7 @@ import type { Group } from "./Group"
 import { buildSubtree } from "@tscircuit/circuit-json-util"
 import { layoutCircuitJsonWithFlex } from "@tscircuit/circuit-json-flex"
 import type { PcbSmtPad, PcbSilkscreenText } from "circuit-json"
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 
 export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   const { db } = group.root!
@@ -56,5 +57,28 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
       silkscreenText.pcb_silkscreen_text_id,
       modifiedElm,
     )
+  }
+
+  /**
+   * After applying flex positioning we need to update the size of the
+   * corresponding pcb_group so that non-subcircuit groups (as well as
+   * subcircuits) report correct width/height.  We simply recompute the bounds
+   * of all child PCB primitives/components now that they have moved.
+   */
+  if (group.pcb_group_id) {
+    const bounds = getBoundsOfPcbComponents(group.children as any)
+
+    if (bounds.width > 0 && bounds.height > 0) {
+      const center = {
+        x: (bounds.minX + bounds.maxX) / 2,
+        y: (bounds.minY + bounds.maxY) / 2,
+      }
+
+      db.pcb_group.update(group.pcb_group_id, {
+        width: bounds.width,
+        height: bounds.height,
+        center,
+      })
+    }
   }
 }

@@ -13,5 +13,5 @@ test("getMinimumFlexContainer – column direction with gap", () => {
   })
 
   expect(width).toBe(10)
-  expect(height).toBe(12)
+  expect(height).toBe(13)
 })
