@@ -30,8 +30,11 @@ export class SilkscreenPath extends PrimitiveComponent<
 
     const transform = this._computePcbGlobalTransformBeforeLayout()
     const subcircuit = this.getSubcircuit()
+    const pcb_component_id =
+      this.parent?.pcb_component_id ??
+      this.getPrimitiveContainer()?.pcb_component_id!
     const pcb_silkscreen_path = db.pcb_silkscreen_path.insert({
-      pcb_component_id: this.parent?.pcb_component_id!,
+      pcb_component_id,
       layer,
       route: props.route.map((p) => {
         const transformedPosition = applyToPoint(transform, {
@@ -50,6 +53,40 @@ export class SilkscreenPath extends PrimitiveComponent<
     })
 
     this.pcb_silkscreen_path_id = pcb_silkscreen_path.pcb_silkscreen_path_id
+  }
+
+  _setPositionFromLayout(newCenter: { x: number; y: number }) {
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+
+    // Get the current silkscreen path from the database
+    const currentPath = db.pcb_silkscreen_path.get(this.pcb_silkscreen_path_id!)
+    if (!currentPath) return
+
+    // Calculate the current center of the route
+    let currentCenterX = 0
+    let currentCenterY = 0
+    for (const point of currentPath.route) {
+      currentCenterX += point.x
+      currentCenterY += point.y
+    }
+    currentCenterX /= currentPath.route.length
+    currentCenterY /= currentPath.route.length
+
+    // Calculate the offset to apply to all points
+    const offsetX = newCenter.x - currentCenterX
+    const offsetY = newCenter.y - currentCenterY
+
+    // Update the route with the new translated positions
+    const newRoute = currentPath.route.map((point) => ({
+      ...point,
+      x: point.x + offsetX,
+      y: point.y + offsetY,
+    }))
+
+    db.pcb_silkscreen_path.update(this.pcb_silkscreen_path_id!, {
+      route: newRoute,
+    })
   }
 
   getPcbSize(): { width: number; height: number } {

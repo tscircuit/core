@@ -29,8 +29,11 @@ export class SilkscreenRect extends PrimitiveComponent<
 
     const subcircuit = this.getSubcircuit()
 
+    const pcb_component_id =
+      this.parent?.pcb_component_id ??
+      this.getPrimitiveContainer()?.pcb_component_id!
     const pcb_silkscreen_rect = db.pcb_silkscreen_rect.insert({
-      pcb_component_id: this.parent?.pcb_component_id!,
+      pcb_component_id,
       layer,
       center: {
         x: props.pcbX ?? 0,
