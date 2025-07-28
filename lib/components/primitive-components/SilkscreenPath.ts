@@ -58,7 +58,7 @@ export class SilkscreenPath extends PrimitiveComponent<
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
     const { db } = this.root!
     const { _parsedProps: props } = this
-    
+
     // Get the current silkscreen path from the database
     const currentPath = db.pcb_silkscreen_path.get(this.pcb_silkscreen_path_id!)
     if (!currentPath) return
