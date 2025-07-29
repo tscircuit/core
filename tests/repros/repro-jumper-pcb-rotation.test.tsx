@@ -7,7 +7,7 @@ test("Jumper with pcbRotation", async () => {
   circuit.add(
     <board>
       <jumper name="J1" footprint="m2host" pcbRotation="-90deg" />
-    </board>
+    </board>,
   )
 
   await circuit.renderUntilSettled()
