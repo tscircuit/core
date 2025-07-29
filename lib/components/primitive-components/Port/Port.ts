@@ -400,7 +400,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (showPinAliases && labelHints.length > 0) {
       bestDisplayPinLabel = labelHints.join("/")
     } else if (labelHints.length > 0) {
-      bestDisplayPinLabel = labelHints[labelHints.length - 1]
+      // show the first label hint
+      bestDisplayPinLabel = labelHints[0]
     }
 
     const schematic_port = db.schematic_port.insert({
