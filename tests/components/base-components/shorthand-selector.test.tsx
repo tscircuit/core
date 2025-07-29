@@ -33,7 +33,14 @@ test("shorthand selector errors use original selector", () => {
     </board>,
   )
 
-  expect(() => circuit.render()).toThrow(
-    /Component "R1" found, but does not have pin "3"/,
+  const circuitJson = circuit.getCircuitJson()
+  const errors = circuitJson.filter(
+    (c: any) => c.type === "source_trace_not_connected",
+  )
+
+  expect(errors.length).toBe(1)
+
+  expect((errors[0] as any).message).toBe(
+    'Could not find port for selector "R1.3". Component "R1" found, but does not have pin "3". It has [pin1, anode, pos, left, 1, pin2, cathode, neg, right, 2]',
   )
 })

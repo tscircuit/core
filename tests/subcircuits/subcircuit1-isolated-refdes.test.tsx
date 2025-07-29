@@ -17,7 +17,13 @@ describe("subcircuit1-isolated-refdes", () => {
       </board>,
     )
 
-    expect(() => circuit.render()).toThrow(
+    const circuitJson = circuit.getCircuitJson()
+    const errors = circuitJson.filter(
+      (c: any) => c.type === "source_trace_not_connected",
+    )
+
+    expect(errors.length).toBe(1)
+    expect((errors[0] as any).message).toContain(
       'Could not find port for selector ".R1"',
     )
   })
