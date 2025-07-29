@@ -54,7 +54,6 @@ export function Trace__findConnectedPorts(trace: Trace):
           ? `Could not find port for selector "${selector}". Component "${parentSelector}" not found`
           : `Could not find port for selector "${selector}"`
 
-        // Create source_failed_to_create_component_error
         const pcbPosition = trace._getGlobalPcbPositionBeforeLayout()
         const schematicPosition =
           trace._getGlobalSchematicPositionBeforeLayout()
