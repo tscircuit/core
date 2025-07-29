@@ -56,12 +56,12 @@ export function Trace__findConnectedPorts(trace: Trace):
 
         const subcircuit = trace.getSubcircuit()
         const sourceGroup = subcircuit.getGroup()
-        ;(db as any).source_trace_not_connected.insert({
+        db.source_trace_not_connected.insert({
           error_type: "source_trace_not_connected",
           message: errorMessage,
-          subcircuit_id: subcircuit.subcircuit_id,
-          source_group_id: sourceGroup?.source_group_id,
-          source_trace_id: trace.source_trace_id,
+          subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+          source_group_id: sourceGroup?.source_group_id ?? undefined,
+          source_trace_id: trace.source_trace_id ?? undefined,
           selectors_not_found: [selector],
         })
       } else {
@@ -87,12 +87,12 @@ export function Trace__findConnectedPorts(trace: Trace):
 
         const subcircuit = trace.getSubcircuit()
         const sourceGroup = subcircuit.getGroup()
-        ;(db as any).source_trace_not_connected.insert({
+        db.source_trace_not_connected.insert({
           error_type: "source_trace_not_connected",
           message: errorMessage,
-          subcircuit_id: subcircuit.subcircuit_id,
-          source_group_id: sourceGroup?.source_group_id,
-          source_trace_id: trace.source_trace_id,
+          subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+          source_group_id: sourceGroup?.source_group_id ?? undefined,
+          source_trace_id: trace.source_trace_id ?? undefined,
           selectors_not_found: [selector],
         })
       }
