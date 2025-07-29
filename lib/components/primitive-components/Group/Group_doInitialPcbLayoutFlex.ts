@@ -25,7 +25,7 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
           ? "flex-end"
           : justify === "stretch"
             ? "space-between"
-            : justify,
+            : (justify ?? "space-between"),
     alignItems:
       align === "start"
         ? "flex-start"
