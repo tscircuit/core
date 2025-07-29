@@ -27,6 +27,10 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
 
     const globalPosition = this._getGlobalPcbPositionBeforeLayout()
 
+    // Get parent rotation like SmtPad does
+    const container = this.getPrimitiveContainer()
+    const parentRotation = container?._parsedProps.pcbRotation ?? 0
+
     let inserted_pcb_cutout:
       | PcbCutoutRect
       | PcbCutoutCircle
@@ -34,16 +38,24 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
       | undefined = undefined
 
     if (props.shape === "rect") {
+      // Handle rotation by swapping width/height for 90-degree rotations
+      const rotationDeg =
+        typeof parentRotation === "string"
+          ? parseInt(parentRotation.replace("deg", ""), 10)
+          : parentRotation
+      const isRotated90 = Math.abs(rotationDeg % 180) === 90
+
       const rectData: Omit<PcbCutoutRect, "type" | "pcb_cutout_id"> = {
         shape: "rect",
         center: globalPosition,
-        width: props.width,
-        height: props.height,
+        width: isRotated90 ? props.height : props.width,
+        height: isRotated90 ? props.width : props.height,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id,
       }
       inserted_pcb_cutout = db.pcb_cutout.insert(rectData)
     } else if (props.shape === "circle") {
+      // Circles don't need dimension changes for rotation
       const circleData: Omit<PcbCutoutCircle, "type" | "pcb_cutout_id"> = {
         shape: "circle",
         center: globalPosition,
