@@ -161,8 +161,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         hole_shape: "rotated_pill",
         pad_shape: "rect",
-        hole_ccw_rotation: props.pcbRotation,
-        rect_ccw_rotation: props.pcbRotation,
+        hole_ccw_rotation: props.pcbRotation ?? 0,
+        rect_ccw_rotation: props.pcbRotation ?? 0,
         rect_pad_width: props.outerWidth,
         rect_pad_height: props.outerHeight,
       } as PcbHoleRotatedPillWithRectPad)
