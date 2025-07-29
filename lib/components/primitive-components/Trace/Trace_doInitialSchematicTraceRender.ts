@@ -23,6 +23,7 @@ import { pushEdgesOfSchematicTraceToPreventOverlap } from "./trace-utils/push-ed
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { Trace } from "./Trace"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
+import { TraceConnectionError } from "../../../errors"
 
 export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   if (trace.root?.schematicDisabled) return
@@ -32,8 +33,21 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
 
   if (!parent) throw new Error("Trace has no parent")
 
-  const { allPortsFound, portsWithSelectors: connectedPorts } =
-    trace._findConnectedPorts()
+  let allPortsFound: boolean
+  let connectedPorts: Array<{ selector: string; port: Port }>
+
+  try {
+    const result = trace._findConnectedPorts()
+    allPortsFound = result.allPortsFound
+    connectedPorts = result.portsWithSelectors ?? []
+  } catch (error) {
+    if (error instanceof TraceConnectionError) {
+      db.source_trace_not_connected.insert(error.errorData)
+      return
+    }
+    throw error
+  }
+
   const { netsWithSelectors } = trace._findConnectedNets()
 
   if (!allPortsFound) return

@@ -1,5 +1,6 @@
 import type { Port } from "../Port/Port"
 import type { Trace } from "./Trace"
+import { TraceConnectionError } from "../../../errors"
 
 export function Trace__findConnectedPorts(trace: Trace):
   | {
@@ -12,7 +13,6 @@ export function Trace__findConnectedPorts(trace: Trace):
       ports?: undefined
       portsWithSelectors?: undefined
     } {
-  const { db } = trace.root!
   const { _parsedProps: props, parent } = trace
 
   if (!parent) throw new Error("Trace has no parent")
@@ -56,38 +56,7 @@ export function Trace__findConnectedPorts(trace: Trace):
 
         const subcircuit = trace.getSubcircuit()
         const sourceGroup = subcircuit.getGroup()
-        db.source_trace_not_connected.insert({
-          error_type: "source_trace_not_connected",
-          message: errorMessage,
-          subcircuit_id: subcircuit.subcircuit_id ?? undefined,
-          source_group_id: sourceGroup?.source_group_id ?? undefined,
-          source_trace_id: trace.source_trace_id ?? undefined,
-          selectors_not_found: [selector],
-        })
-      } else {
-        const ports = targetComponent.children.filter(
-          (c) => c.componentName === "Port",
-        ) as Port[]
-        const portLabel = portToken.includes(".")
-          ? (portToken.split(".").pop() ?? "")
-          : portToken
-        const portNames = ports.flatMap((c) => c.getNameAndAliases())
-        const hasCustomLabels = portNames.some((n) => !/^(pin\d+|\d+)$/.test(n))
-        const labelList = Array.from(new Set(portNames)).join(", ")
-        let detail: string
-        if (ports.length === 0) {
-          detail = "It has no ports"
-        } else if (!hasCustomLabels) {
-          detail = `It has ${ports.length} pins and no pinLabels (consider adding pinLabels)`
-        } else {
-          detail = `It has [${labelList}]`
-        }
-
-        const errorMessage = `Could not find port for selector "${selector}". Component "${targetComponent.props.name ?? parentSelector}" found, but does not have pin "${portLabel}". ${detail}`
-
-        const subcircuit = trace.getSubcircuit()
-        const sourceGroup = subcircuit.getGroup()
-        db.source_trace_not_connected.insert({
+        throw new TraceConnectionError({
           error_type: "source_trace_not_connected",
           message: errorMessage,
           subcircuit_id: subcircuit.subcircuit_id ?? undefined,
@@ -96,6 +65,37 @@ export function Trace__findConnectedPorts(trace: Trace):
           selectors_not_found: [selector],
         })
       }
+
+      const ports = targetComponent.children.filter(
+        (c) => c.componentName === "Port",
+      ) as Port[]
+      const portLabel = portToken.includes(".")
+        ? (portToken.split(".").pop() ?? "")
+        : portToken
+      const portNames = ports.flatMap((c) => c.getNameAndAliases())
+      const hasCustomLabels = portNames.some((n) => !/^(pin\d+|\d+)$/.test(n))
+      const labelList = Array.from(new Set(portNames)).join(", ")
+      let detail: string
+      if (ports.length === 0) {
+        detail = "It has no ports"
+      } else if (!hasCustomLabels) {
+        detail = `It has ${ports.length} pins and no pinLabels (consider adding pinLabels)`
+      } else {
+        detail = `It has [${labelList}]`
+      }
+
+      const errorMessage = `Could not find port for selector "${selector}". Component "${targetComponent.props.name ?? parentSelector}" found, but does not have pin "${portLabel}". ${detail}`
+
+      const subcircuit = trace.getSubcircuit()
+      const sourceGroup = subcircuit.getGroup()
+      throw new TraceConnectionError({
+        error_type: "source_trace_not_connected",
+        message: errorMessage,
+        subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+        source_group_id: sourceGroup?.source_group_id ?? undefined,
+        source_trace_id: trace.source_trace_id ?? undefined,
+        selectors_not_found: [selector],
+      })
     }
   }
 

@@ -42,6 +42,7 @@ import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicT
 import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
+import { TraceConnectionError } from "../../../errors"
 
 export class Trace
   extends PrimitiveComponent<typeof traceProps>
@@ -217,8 +218,21 @@ export class Trace
       return
     }
 
-    const { allPortsFound, portsWithSelectors: ports } =
-      this._findConnectedPorts()
+    let allPortsFound: boolean
+    let ports: Array<{ selector: string; port: Port }>
+
+    try {
+      const result = this._findConnectedPorts()
+      allPortsFound = result.allPortsFound
+      ports = result.portsWithSelectors ?? []
+    } catch (error) {
+      if (error instanceof TraceConnectionError) {
+        db.source_trace_not_connected.insert(error.errorData)
+        return
+      }
+      throw error
+    }
+
     if (!allPortsFound) return
 
     this._traceConnectionHash = this._computeTraceConnectionHash()
