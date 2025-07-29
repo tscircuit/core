@@ -6,6 +6,7 @@ import type {
   PcbPlatedHoleOval,
   PcbHoleCircularWithRectPad,
   PcbHolePillWithRectPad,
+  PcbHoleRotatedPillWithRectPad,
 } from "circuit-json"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
@@ -141,6 +142,34 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       })
+    } else if (props.shape === "pill" && props.rectPad) {
+      const pcb_plated_hole = db.pcb_plated_hole.insert({
+        pcb_component_id,
+        pcb_port_id: this.matchedPort?.pcb_port_id!,
+        outer_width: props.outerWidth,
+        outer_height: props.outerHeight,
+        hole_width: props.holeWidth,
+        hole_height: props.holeHeight,
+        shape: "rotated_pill_hole_with_rect_pad",
+        type: "pcb_plated_hole",
+        port_hints: this.getNameAndAliases(),
+        pcb_plated_hole_id: this.pcb_plated_hole_id,
+        x: position.x,
+        y: position.y,
+        layers: ["top", "bottom"],
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        hole_shape: "rotated_pill",
+        pad_shape: "rect",
+        hole_ccw_rotation: props.pcbRotation ?? 0,
+        rect_ccw_rotation: props.pcbRotation ?? 0,
+        rect_pad_width: props.outerWidth,
+        rect_pad_height: props.outerHeight,
+      } as PcbHoleRotatedPillWithRectPad)
+
+      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+
+      // TODO: add solder paste
     } else if (props.shape === "pill" || props.shape === "oval") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
