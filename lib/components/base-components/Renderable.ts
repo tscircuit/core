@@ -290,7 +290,7 @@ export abstract class Renderable implements IRenderable {
   ) {
     // Collect errors in the database instead of throwing them
     if (typeof message === "string") {
-      // For string messages, create a source trace error
+      // For string messages, create a source_failed_to_create_component_error
       if ("root" in this && (this as any).root?.db) {
         ;(this as any).root.db.source_failed_to_create_component_error.insert({
           component_name: this.getString(),

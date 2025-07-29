@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro31-conn-component-not-detected", async () => {
+test("repro32-conn-component-not-detected", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -19,11 +19,7 @@ test("repro31-conn-component-not-detected", async () => {
 
       <resistor name="R1" resistance="10k" footprint="1206" pcbRotation={180} />
 
-      <trace
-        from=".R1 > .pin2"
-        to=".conn > .pin1"
-        thickness={0.2}
-      />
+      <trace from=".R1 > .pin2" to=".conn > .pin1" thickness={0.2} />
     </board>,
   )
 
@@ -34,7 +30,9 @@ test("repro31-conn-component-not-detected", async () => {
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 
   const circuitJson = circuit.getCircuitJson()
-  const sourceComponents = circuitJson.filter((c: any) => c.type === "source_component")
+  const sourceComponents = circuitJson.filter(
+    (c: any) => c.type === "source_component",
+  )
   const traces = circuitJson.filter((c: any) => c.type === "source_trace")
 
   // Verify expected component states
@@ -44,10 +42,16 @@ test("repro31-conn-component-not-detected", async () => {
 
   // Verify circuit rendered successfully
   expect(circuitJson.length).toBeGreaterThan(0)
-  expect(circuitJson.filter((c: any) => c.type === "schematic_component").length).toBeGreaterThan(0)
-  expect(circuitJson.filter((c: any) => c.type === "pcb_component").length).toBeGreaterThan(0)
+  expect(
+    circuitJson.filter((c: any) => c.type === "schematic_component").length,
+  ).toBeGreaterThan(0)
+  expect(
+    circuitJson.filter((c: any) => c.type === "pcb_component").length,
+  ).toBeGreaterThan(0)
 
   // Check for errors in circuitJson
-  const errorComponents = circuitJson.filter((c: any) => c.type === "source_failed_to_create_component_error")
+  const errorComponents = circuitJson.filter(
+    (c: any) => c.type === "source_failed_to_create_component_error",
+  )
   expect(errorComponents.length).toBeGreaterThan(0)
 })
