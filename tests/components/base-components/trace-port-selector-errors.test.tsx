@@ -19,7 +19,7 @@ test("error when component is missing", () => {
     (c: any) => c.type === "source_trace_not_connected",
   )
 
-  expect(errors.length).toBeGreaterThan(0)
+  expect(errors.length).toBe(1)
   expect((errors[0] as any).message).toBe(
     'Could not find port for selector "R2.1". Component "R2" not found',
   )
@@ -41,7 +41,7 @@ test("error when component has no ports", () => {
     (c: any) => c.type === "source_trace_not_connected",
   )
 
-  expect(errors.length).toBeGreaterThan(0)
+  expect(errors.length).toBe(1)
   expect((errors[0] as any).message).toBe(
     'Could not find port for selector "G1.1". Component "G1" found, but does not have pin "1". It has no ports',
   )
@@ -63,7 +63,7 @@ test("error when component has numeric pins only", () => {
     (c: any) => c.type === "source_trace_not_connected",
   )
 
-  expect(errors.length).toBeGreaterThan(0)
+  expect(errors.length).toBe(1)
   expect((errors[0] as any).message).toBe(
     'Could not find port for selector "J1.3". Component "J1" found, but does not have pin "3". It has 2 pins and no pinLabels (consider adding pinLabels)',
   )
@@ -85,7 +85,7 @@ test("error lists available labeled pins", () => {
     (c: any) => c.type === "source_trace_not_connected",
   )
 
-  expect(errors.length).toBeGreaterThan(0)
+  expect(errors.length).toBe(1)
 
   expect((errors[0] as any).message).toBe(
     'Could not find port for selector "R1.foo". Component "R1" found, but does not have pin "foo". It has [pin1, anode, pos, left, 1, pin2, cathode, neg, right, 2]',

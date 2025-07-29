@@ -54,6 +54,7 @@ export class Trace
   _portsRoutedOnPcb: Port[]
   subcircuit_connectivity_map_key: string | null = null
   _traceConnectionHash: string | null = null
+  _couldNotFindPort?: boolean
 
   constructor(props: z.input<typeof traceProps>) {
     super(props)
@@ -228,6 +229,7 @@ export class Trace
     } catch (error) {
       if (error instanceof TraceConnectionError) {
         db.source_trace_not_connected.insert(error.errorData)
+        this._couldNotFindPort = true
         return
       }
       throw error

@@ -26,6 +26,7 @@ import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/conv
 import { TraceConnectionError } from "../../../errors"
 
 export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
+  if (trace._couldNotFindPort) return
   if (trace.root?.schematicDisabled) return
   // if (trace.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
   const { db } = trace.root!
