@@ -23,7 +23,9 @@ describe("subcircuit1-isolated-refdes", () => {
     )
 
     expect(errors.length).toBeGreaterThan(0)
-    expect((errors[0] as any).message).toContain('Could not find port for selector ".R1"')
+    expect((errors[0] as any).message).toContain(
+      'Could not find port for selector ".R1"',
+    )
   })
 
   test("should be able to connect traces with explicit subcircuit refdes", async () => {
