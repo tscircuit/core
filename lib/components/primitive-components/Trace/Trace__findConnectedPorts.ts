@@ -54,16 +54,15 @@ export function Trace__findConnectedPorts(trace: Trace):
           ? `Could not find port for selector "${selector}". Component "${parentSelector}" not found`
           : `Could not find port for selector "${selector}"`
 
-        const pcbPosition = trace._getGlobalPcbPositionBeforeLayout()
-        const schematicPosition =
-          trace._getGlobalSchematicPositionBeforeLayout()
-
-        db.source_failed_to_create_component_error.insert({
-          component_name: trace.name,
-          error_type: "source_failed_to_create_component_error",
+        const subcircuit = trace.getSubcircuit()
+        const sourceGroup = subcircuit.getGroup()
+        ;(db as any).source_trace_not_connected.insert({
+          error_type: "source_trace_not_connected",
           message: errorMessage,
-          pcb_center: pcbPosition,
-          schematic_center: schematicPosition,
+          subcircuit_id: subcircuit.subcircuit_id,
+          source_group_id: sourceGroup?.source_group_id,
+          source_trace_id: trace.source_trace_id,
+          selectors_not_found: [selector],
         })
       } else {
         const ports = targetComponent.children.filter(
@@ -86,17 +85,17 @@ export function Trace__findConnectedPorts(trace: Trace):
 
         const errorMessage = `Could not find port for selector "${selector}". Component "${targetComponent.props.name ?? parentSelector}" found, but does not have pin "${portLabel}". ${detail}`
 
-        // Create source_failed_to_create_component_error
-        const pcbPosition = trace._getGlobalPcbPositionBeforeLayout()
-        const schematicPosition =
-          trace._getGlobalSchematicPositionBeforeLayout()
+        const subcircuit = trace.getSubcircuit()
+        const sourceGroup = subcircuit.getGroup()
 
-        db.source_failed_to_create_component_error.insert({
-          component_name: trace.name,
-          error_type: "source_failed_to_create_component_error",
+        // Create SourceTraceNotConnected error
+        ;(db as any).source_trace_not_connected.insert({
+          error_type: "source_trace_not_connected",
           message: errorMessage,
-          pcb_center: pcbPosition,
-          schematic_center: schematicPosition,
+          subcircuit_id: subcircuit.subcircuit_id ?? "",
+          source_group_id: sourceGroup?.source_group_id ?? "",
+          source_trace_id: trace.source_trace_id,
+          selectors_not_found: [selector],
         })
       }
     }

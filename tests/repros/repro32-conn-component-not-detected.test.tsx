@@ -54,4 +54,10 @@ test("repro32-conn-component-not-detected", async () => {
     (c: any) => c.type === "source_failed_to_create_component_error",
   )
   expect(errorComponents.length).toBeGreaterThan(0)
+
+  const traceErrors = circuitJson.filter(
+    (c: any) => c.type === "source_trace_not_connected",
+  )
+  expect(traceErrors.length).toBeGreaterThan(0)
+  expect(traceErrors[0].selectors_not_found).toEqual([".conn > .pin1"])
 })
