@@ -288,24 +288,11 @@ export abstract class Renderable implements IRenderable {
       | Omit<PcbPlacementError, "pcb_error_id">
       | Omit<PcbManualEditConflictWarning, "pcb_error_id">,
   ) {
-    // Collect errors in the database instead of throwing them
+    // TODO add to render phase error list and try to add position or
+    // relationships etc
     if (typeof message === "string") {
-      // For string messages, create a source_failed_to_create_component_error
-      if ("root" in this && (this as any).root?.db) {
-        ;(this as any).root.db.source_failed_to_create_component_error.insert({
-          component_name: this.getString(),
-          error_type: "source_failed_to_create_component_error",
-          message: message,
-          pcb_center: { x: 0, y: 0 },
-          schematic_center: { x: 0, y: 0 },
-        })
-
-        return
-      }
-
       throw new Error(message)
     }
-
     throw new Error(JSON.stringify(message, null, 2))
   }
 }

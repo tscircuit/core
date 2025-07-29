@@ -50,13 +50,22 @@ export function Trace__findConnectedPorts(trace: Trace):
         targetComponent = trace.getSubcircuit().selectOne(`.${parentSelector}`)
       }
       if (!targetComponent) {
-        if (parentSelector) {
-          trace.renderError(
-            `Could not find port for selector "${selector}". Component "${parentSelector}" not found`,
-          )
-        } else {
-          trace.renderError(`Could not find port for selector "${selector}"`)
-        }
+        const errorMessage = parentSelector
+          ? `Could not find port for selector "${selector}". Component "${parentSelector}" not found`
+          : `Could not find port for selector "${selector}"`
+
+        // Create source_failed_to_create_component_error
+        const pcbPosition = trace._getGlobalPcbPositionBeforeLayout()
+        const schematicPosition =
+          trace._getGlobalSchematicPositionBeforeLayout()
+
+        db.source_failed_to_create_component_error.insert({
+          component_name: trace.name,
+          error_type: "source_failed_to_create_component_error",
+          message: errorMessage,
+          pcb_center: pcbPosition,
+          schematic_center: schematicPosition,
+        })
       } else {
         const ports = targetComponent.children.filter(
           (c) => c.componentName === "Port",
@@ -75,9 +84,21 @@ export function Trace__findConnectedPorts(trace: Trace):
         } else {
           detail = `It has [${labelList}]`
         }
-        trace.renderError(
-          `Could not find port for selector "${selector}". Component "${targetComponent.props.name ?? parentSelector}" found, but does not have pin "${portLabel}". ${detail}`,
-        )
+
+        const errorMessage = `Could not find port for selector "${selector}". Component "${targetComponent.props.name ?? parentSelector}" found, but does not have pin "${portLabel}". ${detail}`
+
+        // Create source_failed_to_create_component_error
+        const pcbPosition = trace._getGlobalPcbPositionBeforeLayout()
+        const schematicPosition =
+          trace._getGlobalSchematicPositionBeforeLayout()
+
+        db.source_failed_to_create_component_error.insert({
+          component_name: trace.name,
+          error_type: "source_failed_to_create_component_error",
+          message: errorMessage,
+          pcb_center: pcbPosition,
+          schematic_center: schematicPosition,
+        })
       }
     }
   }
