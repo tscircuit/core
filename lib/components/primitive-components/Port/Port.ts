@@ -218,8 +218,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { _parsedProps: props } = this
     return Array.from(
       new Set([
-        ...(props.aliases ?? []),
         ...(props.name ? [props.name] : []),
+        ...(props.aliases ?? []),
         ...(typeof props.pinNumber === "number"
           ? [`pin${props.pinNumber}`, props.pinNumber.toString()]
           : []),
