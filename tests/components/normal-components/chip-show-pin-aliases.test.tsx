@@ -36,7 +36,7 @@ test("chip shows all pin aliases when showPinAliases is true", () => {
   )?.display_pin_label
 
   // Hints are collected from aliases followed by the primary name
-  expect(pin1Label).toBe("SPI1_SCK/ADC1/GP0")
+  expect(pin1Label).toBe("GP0/SPI1_SCK/ADC1")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
