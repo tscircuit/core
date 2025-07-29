@@ -88,6 +88,6 @@ test("error lists available labeled pins", () => {
   expect(errors.length).toBeGreaterThan(0)
 
   expect((errors[0] as any).message).toBe(
-    'Could not find port for selector "R1.foo". Component "R1" found, but does not have pin "foo". It has [anode, pos, left, pin1, 1, cathode, neg, right, pin2, 2]',
+    'Could not find port for selector "R1.foo". Component "R1" found, but does not have pin "foo". It has [pin1, anode, pos, left, 1, pin2, cathode, neg, right, 2]',
   )
 })
