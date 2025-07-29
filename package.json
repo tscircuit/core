@@ -27,7 +27,7 @@
     "@tscircuit/capacity-autorouter": "^0.0.100",
     "@tscircuit/checks": "^0.0.64",
     "@tscircuit/circuit-json-util": "^0.0.61",
-    "@tscircuit/footprinter": "^0.0.204",
+    "@tscircuit/footprinter": "^0.0.208",
     "@tscircuit/import-snippet": "^0.0.4",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/log-soup": "^1.0.2",
