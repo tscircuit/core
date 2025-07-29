@@ -47,7 +47,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.5",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.221",
+    "circuit-json": "^0.0.224",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.22",
     "circuit-json-to-simple-3d": "^0.0.2",

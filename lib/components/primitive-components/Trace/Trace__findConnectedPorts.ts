@@ -87,7 +87,6 @@ export function Trace__findConnectedPorts(trace: Trace):
 
         const subcircuit = trace.getSubcircuit()
         const sourceGroup = subcircuit.getGroup()
-
         ;(db as any).source_trace_not_connected.insert({
           error_type: "source_trace_not_connected",
           message: errorMessage,

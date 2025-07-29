@@ -59,5 +59,10 @@ test("repro32-conn-component-not-detected", async () => {
     (c: any) => c.type === "source_trace_not_connected",
   )
   expect(traceErrors.length).toBeGreaterThan(0)
-  expect(traceErrors[0].selectors_not_found).toEqual([".conn > .pin1"])
+
+  if (traceErrors[0].type === "source_trace_not_connected") {
+    expect(traceErrors[0].selectors_not_found).toEqual([".conn > .pin1"])
+  } else {
+    throw new Error("Unexpected error type")
+  }
 })
