@@ -288,11 +288,53 @@ export abstract class Renderable implements IRenderable {
       | Omit<PcbPlacementError, "pcb_error_id">
       | Omit<PcbManualEditConflictWarning, "pcb_error_id">,
   ) {
-    // TODO add to render phase error list and try to add position or
-    // relationships etc
+    // Collect errors in the database instead of throwing them
     if (typeof message === "string") {
-      throw new Error(message)
+      // For string messages, create a source trace error
+      if ("root" in this && (this as any).root?.db) {
+        ;(this as any).root.db.source_failed_to_create_component_error.insert({
+          component_name: this.getString(),
+          error_type: "source_failed_to_create_component_error",
+          message: message,
+          pcb_center: { x: 0, y: 0 },
+          schematic_center: { x: 0, y: 0 },
+        })
+      } else {
+        // Fallback to console error if no database available
+        console.error(`Error in ${this.getString()}: ${message}`)
+      }
+    } else {
+      // For structured error objects, insert them directly into the appropriate table
+      if ("root" in this && (this as any).root?.db) {
+        if (
+          "error_type" in message &&
+          message.error_type === "pcb_trace_error"
+        ) {
+          ;(this as any).root.db.pcb_trace_error.insert(message as any)
+        } else if (
+          "error_type" in message &&
+          message.error_type === "pcb_placement_error"
+        ) {
+          ;(this as any).root.db.pcb_placement_error.insert(message as any)
+        } else if (
+          "error_type" in message &&
+          message.error_type === "pcb_manual_edit_conflict_warning"
+        ) {
+          ;(this as any).root.db.pcb_manual_edit_conflict_warning.insert(
+            message as any,
+          )
+        } else {
+          // Fallback for unknown error types
+          console.error(
+            `Unknown error type: ${JSON.stringify(message, null, 2)}`,
+          )
+        }
+      } else {
+        // Fallback to console error if no database available
+        console.error(
+          `Error in ${this.getString()}: ${JSON.stringify(message, null, 2)}`,
+        )
+      }
     }
-    throw new Error(JSON.stringify(message, null, 2))
   }
 }
