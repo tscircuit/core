@@ -299,42 +299,13 @@ export abstract class Renderable implements IRenderable {
           pcb_center: { x: 0, y: 0 },
           schematic_center: { x: 0, y: 0 },
         })
-      } else {
-        // Fallback to console error if no database available
-        console.error(`Error in ${this.getString()}: ${message}`)
+
+        return
       }
-    } else {
-      // For structured error objects, insert them directly into the appropriate table
-      if ("root" in this && (this as any).root?.db) {
-        if (
-          "error_type" in message &&
-          message.error_type === "pcb_trace_error"
-        ) {
-          ;(this as any).root.db.pcb_trace_error.insert(message as any)
-        } else if (
-          "error_type" in message &&
-          message.error_type === "pcb_placement_error"
-        ) {
-          ;(this as any).root.db.pcb_placement_error.insert(message as any)
-        } else if (
-          "error_type" in message &&
-          message.error_type === "pcb_manual_edit_conflict_warning"
-        ) {
-          ;(this as any).root.db.pcb_manual_edit_conflict_warning.insert(
-            message as any,
-          )
-        } else {
-          // Fallback for unknown error types
-          console.error(
-            `Unknown error type: ${JSON.stringify(message, null, 2)}`,
-          )
-        }
-      } else {
-        // Fallback to console error if no database available
-        console.error(
-          `Error in ${this.getString()}: ${JSON.stringify(message, null, 2)}`,
-        )
-      }
+
+      throw new Error(message)
     }
+
+    throw new Error(JSON.stringify(message, null, 2))
   }
 }
