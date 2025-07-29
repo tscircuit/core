@@ -33,7 +33,12 @@ test("shorthand selector errors use original selector", () => {
     </board>,
   )
 
-  expect(() => circuit.render()).toThrow(
-    /Component "R1" found, but does not have pin "3"/,
+  const circuitJson = circuit.getCircuitJson()
+  const errors = circuitJson.filter(
+    (c: any) => c.type === "source_trace_not_connected",
   )
+
+  expect(errors.length).toBeGreaterThan(0)
+
+  expect((errors[0] as any).message).toContain("R1.3")
 })
