@@ -22,7 +22,7 @@ describe("subcircuit1-isolated-refdes", () => {
       (c: any) => c.type === "source_trace_not_connected",
     )
 
-    expect(errors.length).toBeGreaterThan(0)
+    expect(errors.length).toBe(1)
     expect((errors[0] as any).message).toContain(
       'Could not find port for selector ".R1"',
     )
