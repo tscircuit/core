@@ -40,5 +40,7 @@ test("shorthand selector errors use original selector", () => {
 
   expect(errors.length).toBeGreaterThan(0)
 
-  expect((errors[0] as any).message).toContain("R1.3")
+  expect((errors[0] as any).message).toBe(
+    'Could not find port for selector "R1.3". Component "R1" found, but does not have pin "3". It has [pin1, anode, pos, left, 1, pin2, cathode, neg, right, 2]',
+  )
 })
