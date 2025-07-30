@@ -3,6 +3,7 @@ import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
 import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
 import type { RenderPhase } from "../base-components/Renderable"
+import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
@@ -59,8 +60,19 @@ export class Board extends Group<typeof boardProps> {
     let maxY = -Infinity
 
     // Get all PCB components and groups from the database
-    const allPcbComponents = db.pcb_component.list()
-    const allPcbGroups = db.pcb_group.list()
+    const descendantIds = getDescendantSubcircuitIds(db, this.subcircuit_id!)
+    const allowedSubcircuitIds = new Set([this.subcircuit_id, ...descendantIds])
+
+    const allPcbComponents = db.pcb_component
+      .list()
+      .filter(
+        (c) => c.subcircuit_id && allowedSubcircuitIds.has(c.subcircuit_id),
+      )
+    const allPcbGroups = db.pcb_group
+      .list()
+      .filter(
+        (g) => g.subcircuit_id && allowedSubcircuitIds.has(g.subcircuit_id),
+      )
     let hasComponents = false
 
     const updateBounds = (
