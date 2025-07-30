@@ -40,11 +40,15 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   let gridColsOption = props.pcbGridCols ?? props.gridCols
   let gridRowsOption: number | undefined = props.pcbGridRows
   let gridGapOption = props.pcbGridGap ?? props.gridGap
+  let gridRowGapOption = props.pcbGridRowGap ?? props.gridRowGap
+  let gridColumnGapOption = props.pcbGridColumnGap ?? props.gridColumnGap
 
   if (props.pcbLayout?.grid) {
     gridColsOption = props.pcbLayout.grid.cols ?? gridColsOption
     gridRowsOption = props.pcbLayout.grid.rows
     gridGapOption = props.pcbLayout.gridGap ?? gridGapOption
+    gridRowGapOption = props.pcbLayout.gridRowGap ?? gridRowGapOption
+    gridColumnGapOption = props.pcbLayout.gridColumnGap ?? gridColumnGapOption
   }
 
   let numCols: number
@@ -69,7 +73,25 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
 
   let gridGapX: number
   let gridGapY: number
-  if (typeof gridGapOption === "number") {
+
+  const parseGap = (val: number | string | undefined): number | undefined => {
+    if (val === undefined) return undefined
+    return typeof val === "number" ? val : length.parse(val)
+  }
+
+  if (gridRowGapOption !== undefined || gridColumnGapOption !== undefined) {
+    const fallbackX =
+      typeof gridGapOption === "object" && gridGapOption !== null
+        ? (gridGapOption as any).x
+        : gridGapOption
+    const fallbackY =
+      typeof gridGapOption === "object" && gridGapOption !== null
+        ? (gridGapOption as any).y
+        : gridGapOption
+
+    gridGapX = parseGap(gridColumnGapOption ?? fallbackX) ?? 1
+    gridGapY = parseGap(gridRowGapOption ?? fallbackY) ?? 1
+  } else if (typeof gridGapOption === "number") {
     gridGapX = gridGapOption
     gridGapY = gridGapOption
   } else if (typeof gridGapOption === "string") {
