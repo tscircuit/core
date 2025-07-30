@@ -48,4 +48,11 @@ test("chip with externally connected pins repro", async () => {
   )
 
   circuit.render()
+
+  // Verify that traces are created for externally connected pins
+  const traces = circuit.selectAll("trace")
+  expect(traces.length).toBeGreaterThanOrEqual(1) // Should have at least 1 trace for pin12-pin13 connection
+
+  // Visual snapshot to verify the traces are rendered correctly
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
