@@ -17,6 +17,9 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
 
   const justify = props.pcbJustifyContent ?? props.justifyContent
   const align = props.pcbAlignItems ?? props.alignItems
+  const gap = props.pcbFlexGap ?? props.pcbGap ?? props.gap
+  const direction = props.pcbFlexDirection ?? "row"
+
   const modifiedCircuitJson = layoutCircuitJsonWithFlex(circuitJson, {
     justifyContent:
       justify === "start"
@@ -32,6 +35,9 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
         : align === "end"
           ? "flex-end"
           : (align ?? "center"),
+    direction: direction,
+    columnGap: typeof gap === "number" ? gap : 0,
+    rowGap: typeof gap === "number" ? gap : 0,
   })
 
   const pcbSmtPads = db.pcb_smtpad.list()
