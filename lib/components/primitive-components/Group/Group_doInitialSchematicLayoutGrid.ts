@@ -32,11 +32,15 @@ export function Group_doInitialSchematicLayoutGrid(group: Group<any>) {
   let gridColsOption = props.gridCols
   let gridRowsOption: number | undefined = undefined // Not directly supported by old props, but can be via schLayout
   let gridGapOption = props.gridGap
+  let gridRowGapOption = props.gridRowGap
+  let gridColumnGapOption = props.gridColumnGap
 
   if (props.schLayout?.grid) {
     gridColsOption = props.schLayout.grid.cols ?? gridColsOption
     gridRowsOption = props.schLayout.grid.rows // New option from schLayout
     gridGapOption = props.schLayout.gridGap ?? gridGapOption
+    gridRowGapOption = props.schLayout.gridRowGap ?? gridRowGapOption
+    gridColumnGapOption = props.schLayout.gridColumnGap ?? gridColumnGapOption
   }
 
   let numCols: number
@@ -63,7 +67,25 @@ export function Group_doInitialSchematicLayoutGrid(group: Group<any>) {
 
   let gridGapX: number
   let gridGapY: number
-  if (typeof gridGapOption === "number") {
+
+  const parseGap = (val: number | string | undefined): number | undefined => {
+    if (val === undefined) return undefined
+    return typeof val === "number" ? val : length.parse(val)
+  }
+
+  if (gridRowGapOption !== undefined || gridColumnGapOption !== undefined) {
+    const fallbackX =
+      typeof gridGapOption === "object" && gridGapOption !== null
+        ? (gridGapOption as any).x
+        : gridGapOption
+    const fallbackY =
+      typeof gridGapOption === "object" && gridGapOption !== null
+        ? (gridGapOption as any).y
+        : gridGapOption
+
+    gridGapX = parseGap(gridColumnGapOption ?? fallbackX) ?? 1
+    gridGapY = parseGap(gridRowGapOption ?? fallbackY) ?? 1
+  } else if (typeof gridGapOption === "number") {
     gridGapX = gridGapOption
     gridGapY = gridGapOption
   } else if (typeof gridGapOption === "string") {

@@ -789,6 +789,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     if (props.pcbFlex) return "flex"
     if (props.pcbGrid) return "grid"
+    if (props.pcbPack) return "pack"
     if (props.pack) return "pack"
     if (props.matchAdapt) return "match-adapt"
 
