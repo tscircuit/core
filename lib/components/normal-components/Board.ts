@@ -59,8 +59,12 @@ export class Board extends Group<typeof boardProps> {
     let maxY = -Infinity
 
     // Get all PCB components and groups from the database
-    const allPcbComponents = db.pcb_component.list()
-    const allPcbGroups = db.pcb_group.list()
+    const allPcbComponents = db.pcb_component
+      .list()
+      .filter((c) => c.subcircuit_id === this.subcircuit_id)
+    const allPcbGroups = db.pcb_group
+      .list()
+      .filter((g) => g.subcircuit_id === this.subcircuit_id)
     let hasComponents = false
 
     const updateBounds = (
