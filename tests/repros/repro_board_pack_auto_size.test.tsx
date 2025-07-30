@@ -8,6 +8,8 @@ function getComponentBounds(circuit: any) {
     minY: Infinity,
     maxX: -Infinity,
     maxY: -Infinity,
+    width: 0,
+    height: 0,
   }
   for (const c of comps) {
     bounds.minX = Math.min(bounds.minX, c.center.x - c.width / 2)
