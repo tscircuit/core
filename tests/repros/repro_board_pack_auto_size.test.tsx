@@ -37,8 +37,6 @@ test("board pack auto size repro", async () => {
 
   const board = circuit.db.pcb_board.list()[0]
   const bounds = getComponentBounds(circuit)
-  console.log("BOARD", board)
-  console.log("BOUNDS", bounds)
   expect(board.width).toBeGreaterThan(bounds.width)
   expect(board.height).toBeGreaterThan(bounds.height)
 })
