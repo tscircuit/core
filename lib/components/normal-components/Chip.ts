@@ -31,30 +31,42 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     // Then, ensure that any pins referenced in externallyConnectedPins have ports created
     const { _parsedProps: props } = this
     if (props.externallyConnectedPins) {
-      const requiredPinNumbers = new Set<number>()
+      const requiredPorts = new Set<string>()
 
-      // Collect all pin numbers that need ports
+      // Collect all pin identifiers that need ports
       for (const [pin1, pin2] of props.externallyConnectedPins) {
-        const pin1Num = parseInt(pin1.replace("pin", ""))
-        const pin2Num = parseInt(pin2.replace("pin", ""))
-        if (!isNaN(pin1Num)) requiredPinNumbers.add(pin1Num)
-        if (!isNaN(pin2Num)) requiredPinNumbers.add(pin2Num)
+        requiredPorts.add(pin1)
+        requiredPorts.add(pin2)
       }
 
-      // Create ports for any missing pin numbers
-      for (const pinNumber of requiredPinNumbers) {
+      // Create ports for any missing pin identifiers
+      for (const pinIdentifier of requiredPorts) {
+        // Check if a port already exists that matches this identifier
         const existingPort = this.children.find(
           (child) =>
-            child instanceof Port && child._parsedProps.pinNumber === pinNumber,
+            child instanceof Port && child.isMatchingAnyOf([pinIdentifier]),
         )
 
         if (!existingPort) {
-          this.add(
-            new Port({
-              pinNumber,
-              aliases: [`pin${pinNumber}`],
-            }),
-          )
+          // Try to parse as a numeric pin (e.g., "pin1" -> pinNumber: 1)
+          const pinMatch = pinIdentifier.match(/^pin(\d+)$/)
+          if (pinMatch) {
+            const pinNumber = parseInt(pinMatch[1])
+            this.add(
+              new Port({
+                pinNumber,
+                aliases: [pinIdentifier],
+              }),
+            )
+          } else {
+            // It's an alias like "VCC", "VDD", etc.
+            this.add(
+              new Port({
+                name: pinIdentifier,
+                aliases: [pinIdentifier],
+              }),
+            )
+          }
         }
       }
     }
