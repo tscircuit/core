@@ -205,4 +205,10 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
       })
     }
   }
+
+  // Set the new group size
+  db.pcb_group.update(group.pcb_group_id!, {
+    width: bounds.width,
+    height: bounds.height,
+  })
 }

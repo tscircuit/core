@@ -62,6 +62,7 @@ export class Board extends Group<typeof boardProps> {
     // Get all PCB components and groups from the database
     const descendantIds = getDescendantSubcircuitIds(db, this.subcircuit_id!)
     const allowedSubcircuitIds = new Set([this.subcircuit_id, ...descendantIds])
+    console.log({ allowedSubcircuitIds })
 
     const allPcbComponents = db.pcb_component
       .list()
@@ -73,6 +74,7 @@ export class Board extends Group<typeof boardProps> {
       .filter(
         (g) => g.subcircuit_id && allowedSubcircuitIds.has(g.subcircuit_id),
       )
+
     let hasComponents = false
 
     const updateBounds = (
