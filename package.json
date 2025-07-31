@@ -63,6 +63,7 @@
     "react-dom": "^19.1.0",
     "schematic-symbols": "^0.0.180",
     "ts-expect": "^1.3.0",
+    "@tscircuit/circuit-json-flex": "^0.0.3",
     "tsup": "^8.2.4"
   },
   "peerDependencies": {
@@ -75,7 +76,7 @@
     "@tscircuit/props": "*",
     "@tscircuit/schematic-autolayout": "*",
     "@tscircuit/schematic-match-adapt": "*",
-    "@tscircuit/circuit-json-flex": "^0.0.3",
+    "@tscircuit/circuit-json-flex": "*",
     "@tscircuit/schematic-corpus": "*",
     "circuit-json-to-bpc": "*",
     "bpc-graph": "*",
