@@ -4,6 +4,7 @@ import type { PcbSmtPad, PcbSilkscreenText, Size } from "circuit-json"
 import {
   getCircuitJsonTree,
   repositionPcbComponentTo,
+  repositionPcbGroupTo,
   type CircuitJsonUtilObjects,
 } from "@tscircuit/circuit-json-util"
 import { RootFlexBox, type Align, type Justify } from "@tscircuit/miniflex"
@@ -151,6 +152,28 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
 
   const allCircuitJson = db.toArray()
 
+  const bounds = {
+    minX: Infinity,
+    minY: Infinity,
+    maxX: -Infinity,
+    maxY: -Infinity,
+    width: 0,
+    height: 0,
+  }
+  for (const child of flexBox.children) {
+    bounds.minX = Math.min(bounds.minX, child.position.x)
+    bounds.minY = Math.min(bounds.minY, child.position.y)
+    bounds.maxX = Math.max(bounds.maxX, child.position.x + child.size.width)
+    bounds.maxY = Math.max(bounds.maxY, child.position.y + child.size.height)
+  }
+  bounds.width = bounds.maxX - bounds.minX
+  bounds.height = bounds.maxY - bounds.minY
+
+  const offset = {
+    x: -bounds.width / 2 + bounds.minX,
+    y: -bounds.height / 2 + bounds.minY,
+  }
+
   for (const child of flexBox.children) {
     const { sourceComponent, sourceGroup } = child.metadata as Pick<
       TreeNode,
@@ -163,8 +186,8 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
       if (!pcbComponent) continue
 
       repositionPcbComponentTo(allCircuitJson, pcbComponent.pcb_component_id, {
-        x: child.position.x + child.size.width / 2,
-        y: child.position.y + child.size.height / 2,
+        x: child.position.x + child.size.width / 2 + offset.x,
+        y: child.position.y + child.size.height / 2 + offset.y,
       })
     }
     if (sourceGroup) {
@@ -172,6 +195,10 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
         source_group_id: sourceGroup.source_group_id,
       })
       if (!pcbGroup) continue
+      repositionPcbGroupTo(allCircuitJson, sourceGroup.source_group_id, {
+        x: child.position.x + child.size.width / 2 + offset.x,
+        y: child.position.y + child.size.height / 2 + offset.y,
+      })
     }
   }
 }
