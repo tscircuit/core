@@ -9,6 +9,7 @@ import {
 } from "@tscircuit/circuit-json-util"
 import { RootFlexBox, type Align, type Justify } from "@tscircuit/miniflex"
 import { getMinimumFlexContainer } from "@tscircuit/circuit-json-flex"
+import { length } from "circuit-json"
 
 type TreeNode = ReturnType<typeof getCircuitJsonTree>
 export const getSizeOfTreeNodeChild = (
@@ -87,6 +88,9 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   } else if (typeof rawGap === "number") {
     rowGap = rawGap
     columnGap = rawGap
+  } else if (typeof rawGap === "string") {
+    rowGap = length.parse(rawGap)
+    columnGap = length.parse(rawGap)
   }
 
   let minFlexContainer: Size | undefined
