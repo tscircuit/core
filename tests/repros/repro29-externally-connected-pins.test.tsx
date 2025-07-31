@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test.skip("chip with externally connected pins repro", async () => {
+test("chip with externally connected pins repro", async () => {
   const { circuit } = getTestFixture()
   const pinLabels = {
     pin1: ["VDDIO", "V3_3"],
@@ -48,4 +48,11 @@ test.skip("chip with externally connected pins repro", async () => {
   )
 
   circuit.render()
+
+  // Verify that traces are created for externally connected pins
+  const traces = circuit.selectAll("trace")
+  expect(traces.length).toBeGreaterThanOrEqual(1) // Should have at least 1 trace for pin12-pin13 connection
+
+  // Visual snapshot to verify the traces are rendered correctly
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

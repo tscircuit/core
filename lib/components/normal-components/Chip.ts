@@ -8,6 +8,7 @@ import {
   getAllDimensionsForSchematicBox,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { Port } from "lib/components/primitive-components/Port"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
@@ -20,6 +21,54 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       componentName: "Chip",
       zodProps: chipProps,
       shouldRenderAsSchematicBox: true,
+    }
+  }
+
+  initPorts(opts = {}): void {
+    // First, call the parent initPorts to create ports normally
+    super.initPorts(opts)
+
+    // Then, ensure that any pins referenced in externallyConnectedPins have ports created
+    const { _parsedProps: props } = this
+    if (props.externallyConnectedPins) {
+      const requiredPorts = new Set<string>()
+
+      // Collect all pin identifiers that need ports
+      for (const [pin1, pin2] of props.externallyConnectedPins) {
+        requiredPorts.add(pin1)
+        requiredPorts.add(pin2)
+      }
+
+      // Create ports for any missing pin identifiers
+      for (const pinIdentifier of requiredPorts) {
+        // Check if a port already exists that matches this identifier
+        const existingPort = this.children.find(
+          (child) =>
+            child instanceof Port && child.isMatchingAnyOf([pinIdentifier]),
+        )
+
+        if (!existingPort) {
+          // Try to parse as a numeric pin (e.g., "pin1" -> pinNumber: 1)
+          const pinMatch = pinIdentifier.match(/^pin(\d+)$/)
+          if (pinMatch) {
+            const pinNumber = parseInt(pinMatch[1])
+            this.add(
+              new Port({
+                pinNumber,
+                aliases: [pinIdentifier],
+              }),
+            )
+          } else {
+            // It's an alias like "VCC", "VDD", etc.
+            this.add(
+              new Port({
+                name: pinIdentifier,
+                aliases: [pinIdentifier],
+              }),
+            )
+          }
+        }
+      }
     }
   }
 
