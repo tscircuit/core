@@ -174,8 +174,8 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   bounds.height = bounds.maxY - bounds.minY
 
   const offset = {
-    x: -bounds.width / 2 + bounds.minX,
-    y: -bounds.height / 2 + bounds.minY,
+    x: -(bounds.maxX + bounds.minX) / 2,
+    y: -(bounds.maxY + bounds.minY) / 2,
   }
 
   for (const child of flexBox.children) {
