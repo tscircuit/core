@@ -104,7 +104,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { _parsedProps: props } = this
     const pcb_group = db.pcb_group.insert({
       is_subcircuit: this.isSubcircuit,
-      subcircuit_id: this.subcircuit_id!,
+      subcircuit_id: this.subcircuit_id ?? this.getSubcircuit()?.subcircuit_id!,
       name: this.name,
       center: this._getGlobalPcbPositionBeforeLayout(),
       width: 0,
