@@ -20,7 +20,16 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const { db } = group.root!
   const { _parsedProps: props } = group
 
-  const { packOrderStrategy, packPlacementStrategy, gap } = props
+  const {
+    packOrderStrategy,
+    packPlacementStrategy,
+    gap: gapProp,
+    pcbGap,
+    // @ts-expect-error remove when props introduces pcbPackGap
+    pcbPackGap,
+  } = props
+
+  const gap = pcbPackGap ?? pcbGap ?? gapProp
 
   const gapMm = length.parse(gap ?? "0mm")
   const packInput = {
