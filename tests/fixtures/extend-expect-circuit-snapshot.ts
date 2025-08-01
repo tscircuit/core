@@ -41,7 +41,7 @@ async function saveSvgSnapshotOfCircuitJson({
       svg = convertCircuitJsonToSchematicSvg(soup, options)
       break
     case "simple-3d":
-      svg = convertCircuitJsonToSimple3dSvg(soup, options)
+      svg = await convertCircuitJsonToSimple3dSvg(soup, options)
       break
   }
 
