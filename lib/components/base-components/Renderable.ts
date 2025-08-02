@@ -23,6 +23,7 @@ export const orderedRenderPhases = [
   "OptimizeSelectorCache",
   "SourceTraceRender",
   "SourceAddConnectivityMapKey",
+  "SimulationRender",
   "SchematicComponentRender",
   "SchematicPortRender",
   "SchematicPrimitiveRender",

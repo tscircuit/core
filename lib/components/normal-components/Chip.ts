@@ -129,4 +129,63 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
 
     this._createTracesFromConnectionsProp()
   }
+
+  doInitialSimulationRender() {
+    const { db } = this.root!
+    const { pinAttributes } = this.props as any
+
+    if (!pinAttributes) return
+
+    let powerPort: Port | null = null
+    let groundPort: Port | null = null
+    let voltage: number | undefined
+
+    const ports = this.selectAll("port") as Port[]
+
+    for (const port of ports) {
+      for (const alias of port.getNameAndAliases()) {
+        if (pinAttributes[alias]) {
+          const attributes = pinAttributes[alias]
+          if (attributes.providesPower) {
+            powerPort = port
+            voltage = attributes.providesVoltage
+          }
+          if (attributes.providesGround) {
+            groundPort = port
+          }
+        }
+      }
+    }
+
+    if (!powerPort || !groundPort || voltage === undefined) {
+      return
+    }
+
+    const powerSourcePort = db.source_port.get(powerPort.source_port_id!)
+    if (!powerSourcePort?.subcircuit_connectivity_map_key) return
+
+    const groundSourcePort = db.source_port.get(groundPort.source_port_id!)
+    if (!groundSourcePort?.subcircuit_connectivity_map_key) return
+
+    const powerNet = db.source_net.getWhere({
+      subcircuit_connectivity_map_key:
+        powerSourcePort.subcircuit_connectivity_map_key,
+    })
+    const groundNet = db.source_net.getWhere({
+      subcircuit_connectivity_map_key:
+        groundSourcePort.subcircuit_connectivity_map_key,
+    })
+
+    if (!powerNet || !groundNet) {
+      return
+    }
+    ;(db as any).simulation_voltage_source.insert({
+      type: "simulation_voltage_source",
+      positive_source_port_id: powerPort.source_port_id!,
+      positive_source_net_id: powerNet.source_net_id,
+      negative_source_port_id: groundPort.source_port_id!,
+      negative_source_net_id: groundNet.source_net_id,
+      voltage: voltage,
+    })
+  }
 }
