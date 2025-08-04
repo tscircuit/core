@@ -131,6 +131,7 @@ export class NormalComponent<
     opts: {
       additionalAliases?: Record<`pin${number}`, string[]>
       pinCount?: number
+      ignoreSymbolPorts?: boolean
     } = {},
   ) {
     if (this.root?.schematicDisabled) return
@@ -219,7 +220,7 @@ export class NormalComponent<
       }
     }
 
-    if (config.schematicSymbolName) {
+    if (config.schematicSymbolName && !opts.ignoreSymbolPorts) {
       const sym = symbols[this._getSchematicSymbolNameOrThrow()]
       if (!sym) return
 

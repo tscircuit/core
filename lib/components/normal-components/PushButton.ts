@@ -26,11 +26,54 @@ export class PushButton extends NormalComponent<
     return []
   }
 
-  override initPorts() {
-    super.initPorts()
+  // getSchematicSymbolPinNumberFromSourcePinNumber(sourcePinNumber: number) {
+  //   // TODO use internallyConnectedPins to determine the correct pin number
+  //   if (sourcePinNumber === 1) {
+  //     return 1
+  //   }
+  //   if (sourcePinNumber === 2) {
+  //     return 1
+  //   }
+  //   if (sourcePinNumber === 3) {
+  //     return 2
+  //   }
+  //   if (sourcePinNumber === 4) {
+  //     return 2
+  //   }
+  //   return sourcePinNumber
+  // }
 
-    // Hmm, are these ports in the correct positions?
-    // const ports = this.selectAll("port")
+  override initPorts() {
+    super.initPorts({
+      ignoreSymbolPorts: true,
+    })
+
+    // // Hmm, are these ports in the correct positions?
+    const ports = this.selectAll("port")
+
+    console.log(ports)
+
+    // const { internallyConnectedPins } = this._parsedProps
+
+    // // If the user has internally connected pin1 and pin2, then that means that
+    // // pin1 and pin2 are BOTH on the left
+
+    // const pin1Port = ports.find((p) => p.props.pinNumber === 1)
+    // const pin2Port = ports.find((p) => p.props.pinNumber === 2)
+    // const pin3Port = ports.find((p) => p.props.pinNumber === 3)
+    // const pin4Port = ports.find((p) => p.props.pinNumber === 4)
+
+    // if (
+    //   internallyConnectedPins?.some(
+    //     ([pin1, pin2]) =>
+    //       // (pin1 === 1 && pin2 === 2) ||
+    //       // (pin1 === 2 && pin2 === 1) ||
+    //       (pin1 === "pin2" && pin2 === "pin1") ||
+    //       (pin1 === "pin2" && pin2 === "pin1"),
+    //   )
+    // ) {
+    //   pin1Port.
+    // }
   }
 
   doInitialSourceRender() {
