@@ -23,19 +23,13 @@ export class PushButton extends NormalComponent<
   }
 
   get defaultInternallyConnectedPinNames(): string[][] {
-    return [
-      ["pin1", "pin4"],
-      ["pin2", "pin3"],
-    ]
+    return []
   }
 
   initPorts() {
     super.initPorts({
       pinCount: 4,
-      additionalAliases: {
-        pin1: ["side1"],
-        pin3: ["side2"],
-      },
+      additionalAliases: {},
     })
   }
 
