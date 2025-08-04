@@ -10,8 +10,34 @@ export class InvalidProps extends Error {
     const propsWithError = Object.keys(formattedError).filter(
       (k) => k !== "_errors",
     )
+
+    const invalidPinLabelMessages: string[] = []
+    const pinLabels = originalProps.pinLabels as
+      | Record<string, string | string[]>
+      | undefined
+    if (pinLabels) {
+      for (const [pin, labelOrLabels] of Object.entries(pinLabels)) {
+        const labels = Array.isArray(labelOrLabels)
+          ? labelOrLabels
+          : [labelOrLabels]
+        for (const label of labels) {
+          if (
+            typeof label === "string" &&
+            (label.startsWith(" ") || label.endsWith(" "))
+          ) {
+            invalidPinLabelMessages.push(
+              `pinLabels.${pin} ("${label}" has leading or trailing spaces)`,
+            )
+          }
+        }
+      }
+    }
+
     const propMessage = propsWithError
       .map((k) => {
+        if (k === "pinLabels" && invalidPinLabelMessages.length > 0) {
+          return invalidPinLabelMessages.join(", ")
+        }
         if ((formattedError as any)[k]._errors[0]) {
           return `${k} (${(formattedError as any)[k]._errors[0]})`
         }
