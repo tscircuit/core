@@ -329,7 +329,8 @@ export class NormalComponent<
   }
 
   _addChildrenFromStringFootprint() {
-    const { pcbRotation, pinLabels, pcbPinLabels } = this.props
+    const { pcbRotation, pinLabels, pcbPinLabels, showSilkscreenPinLabels } =
+      this.props
     let { footprint } = this.props
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
@@ -344,6 +345,7 @@ export class NormalComponent<
           footprint,
           pinLabels,
           pcbPinLabels,
+          showSilkscreenPinLabels,
         },
         fpSoup as any,
       ) // Remove as any when footprinter gets updated
@@ -663,7 +665,8 @@ export class NormalComponent<
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
 
-    const { pcbRotation, pinLabels, pcbPinLabels } = this.props
+    const { pcbRotation, pinLabels, pcbPinLabels, showSilkscreenPinLabels } =
+      this.props
 
     if (typeof footprint === "string" && this._isFootprintUrl(footprint)) {
       if (this._hasStartedFootprintUrlLoad) return
@@ -679,6 +682,7 @@ export class NormalComponent<
             footprint: url,
             pinLabels,
             pcbPinLabels,
+            showSilkscreenPinLabels,
           },
           soup as any,
         )

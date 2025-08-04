@@ -31,12 +31,14 @@ export const createComponentsFromCircuitJson = (
     footprint,
     pinLabels,
     pcbPinLabels,
+    showSilkscreenPinLabels = true,
   }: {
     componentName: string
     componentRotation: string
     footprint: string
     pinLabels: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
+    showSilkscreenPinLabels?: boolean
   },
   soup: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
@@ -158,7 +160,13 @@ export const createComponentsFromCircuitJson = (
         componentRotation,
         elm.ccw_rotation,
       )
+
       if (footprint.includes("pinrow") && elm.text.includes("PIN")) {
+        // Skip pin labels if showSilkscreenPinLabels is false
+        if (showSilkscreenPinLabels === false) {
+          continue
+        }
+
         components.push(
           createPinrowSilkscreenText({
             elm,
