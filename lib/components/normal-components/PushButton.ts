@@ -26,11 +26,11 @@ export class PushButton extends NormalComponent<
     return []
   }
 
-  initPorts() {
-    super.initPorts({
-      pinCount: 4,
-      additionalAliases: {},
-    })
+  override initPorts() {
+    super.initPorts()
+
+    // Hmm, are these ports in the correct positions?
+    // const ports = this.selectAll("port")
   }
 
   doInitialSourceRender() {
