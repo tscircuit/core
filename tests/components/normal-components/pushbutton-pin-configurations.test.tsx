@@ -15,7 +15,13 @@ test("pushbutton pin configurations with different net connections", () => {
   ]
 
   circuit.add(
-    <board width="20mm" height="15mm">
+    <board>
+      <schematictext
+        text="INTERNALLY CONNECTED PINS: 1,2 and 3,4"
+        fontSize={0.2}
+        schX={0}
+        schY={3}
+      />
       {grid({ rows: 2, cols: 3, xSpacing: 3, ySpacing: 3 }).map(
         ({ center: { x, y }, index }) => (
           <pushbutton
@@ -23,6 +29,11 @@ test("pushbutton pin configurations with different net connections", () => {
             name={`PIN${combinations[index][0]}_PIN${combinations[index][1]}`}
             schX={x}
             schY={y}
+            // TODO should accept numbers
+            internallyConnectedPins={[
+              ["pin1", "pin2"],
+              ["pin3", "pin4"],
+            ]}
             connections={{
               [`pin${combinations[index][0]}`]: `net.PIN${combinations[index][0]}`,
               [`pin${combinations[index][1]}`]: `net.PIN${combinations[index][1]}`,
