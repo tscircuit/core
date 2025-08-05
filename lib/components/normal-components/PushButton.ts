@@ -29,6 +29,7 @@ export class PushButton extends NormalComponent<
 
   override initPorts() {
     super.initPorts({
+      pinCount: 2,
       ignoreSymbolPorts: true,
     })
 

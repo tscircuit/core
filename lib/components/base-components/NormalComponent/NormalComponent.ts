@@ -268,9 +268,18 @@ export class NormalComponent<
     // Add ports that we know must exist because we know the pin count and
     // missing pin numbers, and they are inside the pins array of the
     // schPortArrangement
-    for (let pn = 1; pn <= (opts.pinCount ?? this._getPinCount()); pn++) {
-      if (!schPortArrangement) continue
+    const requiredPinCount = opts.pinCount ?? this._getPinCount() ?? 0
+    for (let pn = 1; pn <= requiredPinCount; pn++) {
       if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
+      if (!schPortArrangement) {
+        portsToCreate.push(
+          new Port({
+            pinNumber: pn,
+            aliases: opts.additionalAliases?.[`pin${pn}`] ?? [],
+          }),
+        )
+        continue
+      }
       let explicitlyListedPinNumbersInSchPortArrangement = [
         ...(schPortArrangement.leftSide?.pins ?? []),
         ...(schPortArrangement.rightSide?.pins ?? []),
