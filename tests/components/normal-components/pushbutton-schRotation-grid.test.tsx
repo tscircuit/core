@@ -7,7 +7,7 @@ test("pushbutton schematic rotations in grid", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm">
+    <board width="20mm" height="20mm" routingDisabled>
       {grid({ rows: 2, cols: 2, xSpacing: 6, ySpacing: 6 }).map(
         ({ center: { x, y }, index }) => (
           <Fragment key={index}>
