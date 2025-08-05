@@ -8,7 +8,7 @@ test("<pushbutton /> component 2 - multiple push buttons", async () => {
     <board width="30mm" height="10mm">
       <pushbutton name="SW1" footprint="pushbutton" pcbX={-8} schX={-3} />
       <pushbutton name="SW2" footprint="pushbutton" pcbX={8} schX={3} />
-      <trace from=".SW1 .side1" to=".SW2 .side2" />
+      <trace from=".SW1 .pin2" to=".SW2 .pin1" />
     </board>,
   )
 
