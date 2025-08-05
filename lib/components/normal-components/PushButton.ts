@@ -47,6 +47,10 @@ export class PushButton extends NormalComponent<
 
     pin1Port.schematicSymbolPortDef = symPort1!
 
+    if (!internallyConnectedPins || internallyConnectedPins.length === 0) {
+      pin2Port.schematicSymbolPortDef = symPort2!
+    }
+
     // Find the lowest-numbered pin that's not connected to pin1
     for (const [pn, port] of [
       [2, pin2Port],
