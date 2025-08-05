@@ -25,16 +25,7 @@ export const PushButton = (props: Props) => {
       }}
       pinLabels={pinLabels}
       schPinSpacing={0.75}
-      schPinArrangement={{
-        leftSide: {
-          direction: "top-to-bottom",
-          pins: [1, 3],
-        },
-        rightSide: {
-          direction: "bottom-to-top",
-          pins: [4, 2],
-        },
-      }}
+      internallyConnectedPins={[["pin1", "pin2"]]}
       supplierPartNumbers={{
         jlcpcb: ["C110153"],
       }}
