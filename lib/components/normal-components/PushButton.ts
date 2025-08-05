@@ -7,6 +7,7 @@ import {
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
+import { symbols } from "schematic-symbols"
 
 export class PushButton extends NormalComponent<
   typeof pushButtonProps,
@@ -26,54 +27,48 @@ export class PushButton extends NormalComponent<
     return []
   }
 
-  // getSchematicSymbolPinNumberFromSourcePinNumber(sourcePinNumber: number) {
-  //   // TODO use internallyConnectedPins to determine the correct pin number
-  //   if (sourcePinNumber === 1) {
-  //     return 1
-  //   }
-  //   if (sourcePinNumber === 2) {
-  //     return 1
-  //   }
-  //   if (sourcePinNumber === 3) {
-  //     return 2
-  //   }
-  //   if (sourcePinNumber === 4) {
-  //     return 2
-  //   }
-  //   return sourcePinNumber
-  // }
-
   override initPorts() {
     super.initPorts({
       ignoreSymbolPorts: true,
     })
 
-    // // Hmm, are these ports in the correct positions?
+    const symbol = symbols[this._getSchematicSymbolNameOrThrow()]!
+
+    const symPort1 = symbol.ports.find((p) => p.labels.includes("1"))
+    const symPort2 = symbol.ports.find((p) => p.labels.includes("2"))
+
     const ports = this.selectAll("port")
+    const pin1Port = ports.find((p) => p.props.pinNumber === 1)! as Port
+    const pin2Port = ports.find((p) => p.props.pinNumber === 2)! as Port
+    const pin3Port = ports.find((p) => p.props.pinNumber === 3)! as Port
+    const pin4Port = ports.find((p) => p.props.pinNumber === 4)! as Port
 
-    console.log(ports)
+    const { internallyConnectedPins } = this._parsedProps
 
-    // const { internallyConnectedPins } = this._parsedProps
+    pin1Port.schematicSymbolPortDef = symPort1!
 
-    // // If the user has internally connected pin1 and pin2, then that means that
-    // // pin1 and pin2 are BOTH on the left
-
-    // const pin1Port = ports.find((p) => p.props.pinNumber === 1)
-    // const pin2Port = ports.find((p) => p.props.pinNumber === 2)
-    // const pin3Port = ports.find((p) => p.props.pinNumber === 3)
-    // const pin4Port = ports.find((p) => p.props.pinNumber === 4)
-
-    // if (
-    //   internallyConnectedPins?.some(
-    //     ([pin1, pin2]) =>
-    //       // (pin1 === 1 && pin2 === 2) ||
-    //       // (pin1 === 2 && pin2 === 1) ||
-    //       (pin1 === "pin2" && pin2 === "pin1") ||
-    //       (pin1 === "pin2" && pin2 === "pin1"),
-    //   )
-    // ) {
-    //   pin1Port.
-    // }
+    // Find the lowest-numbered pin that's not connected to pin1
+    for (const [pn, port] of [
+      [2, pin2Port],
+      [3, pin3Port],
+      [4, pin4Port],
+    ] as const) {
+      const internallyConnectedRow = internallyConnectedPins?.find(
+        ([pin1, pin2]) => pin1 === `pin${pn}` || pin2 === `pin${pn}`,
+      )
+      if (!internallyConnectedRow) {
+        port.schematicSymbolPortDef = symPort2!
+        break
+      }
+      const internallyConnectedTo =
+        internallyConnectedRow?.[0] === `pin${pn}`
+          ? internallyConnectedRow[1]
+          : internallyConnectedRow?.[0]
+      if (internallyConnectedTo === "pin1") {
+        continue
+      }
+      port.schematicSymbolPortDef = symPort2!
+    }
   }
 
   doInitialSourceRender() {
