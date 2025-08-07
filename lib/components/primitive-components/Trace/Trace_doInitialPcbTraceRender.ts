@@ -58,6 +58,11 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     return
   }
 
+  // Manual traces are handled in PcbManualTraceRender phase
+  if (props.pcbPath && props.pcbPath.length > 0) {
+    return
+  }
+
   if (!subcircuit._shouldUseTraceByTraceRouting()) {
     return
   }

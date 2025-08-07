@@ -40,6 +40,7 @@ import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFro
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
 import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
+import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualTraceRender"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
 import { TraceConnectionError } from "../../../errors"
@@ -286,6 +287,10 @@ export class Trace
         pcb_port_ids: ports.map((p) => p.pcb_port_id!),
       })
     }
+  }
+
+  doInitialPcbManualTraceRender(): void {
+    Trace_doInitialPcbManualTraceRender(this)
   }
 
   doInitialPcbTraceRender(): void {
