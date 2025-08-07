@@ -6,7 +6,7 @@ export default test("pinheader pinCount default footprint", () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <pinheader name="J1" pinCount={3} />
+      <pinheader name="J1" pinCount={3} showSilkscreenPinLabels={true} />
     </board>,
   )
 
