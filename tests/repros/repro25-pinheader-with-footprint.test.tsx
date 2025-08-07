@@ -22,6 +22,7 @@ test("pinheader with footprint in a group", async () => {
           connections={{
             pin1: sel.net.VCC,
           }}
+          showSilkscreenPinLabels={true}
         />
       </group>
     </board>,
