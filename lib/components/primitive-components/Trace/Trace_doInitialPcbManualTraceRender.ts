@@ -46,7 +46,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     if (!anchorPort) {
       anchorPort = trace.getSubcircuit().selectOne(props.pcbPathRelativeTo) as
         | Port
-        | null
         | undefined
     }
   }
