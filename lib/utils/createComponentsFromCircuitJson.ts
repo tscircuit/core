@@ -31,7 +31,7 @@ export const createComponentsFromCircuitJson = (
     footprint,
     pinLabels,
     pcbPinLabels,
-    showSilkscreenPinLabels = true,
+    showSilkscreenPinLabels = false,
   }: {
     componentName: string
     componentRotation: string
@@ -162,8 +162,8 @@ export const createComponentsFromCircuitJson = (
       )
 
       if (footprint.includes("pinrow") && elm.text.includes("PIN")) {
-        // Skip pin labels if showSilkscreenPinLabels is false
-        if (showSilkscreenPinLabels === false) {
+        // Skip pin labels if showSilkscreenPinLabels is not explicitly true
+        if (showSilkscreenPinLabels !== true) {
           continue
         }
 

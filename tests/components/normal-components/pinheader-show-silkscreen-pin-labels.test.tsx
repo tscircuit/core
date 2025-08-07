@@ -41,7 +41,7 @@ test("pinheader showSilkscreenPinLabels=false should hide pin labels on PCB", ()
   expect(circuit).toMatchPcbSnapshot(import.meta.path + "-showlabels-false")
 })
 
-test("pinheader default behavior (showSilkscreenPinLabels undefined) should show pin labels", () => {
+test("pinheader default behavior (showSilkscreenPinLabels undefined) should hide pin labels", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
