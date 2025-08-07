@@ -3,7 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // ensure Trace with manual pcbPath renders specified route
 
-test("trace with manual pcbPath", () => {
+test("trace with manual pcbPath", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -25,7 +25,7 @@ test("trace with manual pcbPath", () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   const pcbTraces = circuit.db.pcb_trace.list()
   expect(pcbTraces.length).toBe(1)
@@ -36,4 +36,5 @@ test("trace with manual pcbPath", () => {
     { x: 1.5, y: 0 },
   ])
   expect(circuit.db.pcb_trace_error.list().length).toBe(0)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
