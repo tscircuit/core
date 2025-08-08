@@ -19,16 +19,32 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
     const holeDiameter = this._parsedProps.holeDiameter
     const platedDiameter = this._parsedProps.platedDiameter
     const pitch = this._parsedProps.pitch
+    const showSilkscreenPinLabels = this._parsedProps.showSilkscreenPinLabels
+
     if (pinCount > 0) {
+      let footprintString: string
+
       if (pitch) {
         if (!holeDiameter && !platedDiameter) {
-          return `pinrow${pinCount}_p${pitch}`
+          footprintString = `pinrow${pinCount}_p${pitch}`
+        } else {
+          footprintString = `pinrow${pinCount}_p${pitch}_id${holeDiameter}_od${platedDiameter}`
         }
-        return `pinrow${pinCount}_p${pitch}_id${holeDiameter}_od${platedDiameter}`
+      } else {
+        if (!holeDiameter && !platedDiameter) {
+          footprintString = `pinrow${pinCount}`
+        } else {
+          return null
+        }
       }
-      if (!holeDiameter && !platedDiameter) {
-        return `pinrow${pinCount}`
+
+      // Add _nopinlabels by default, only show pin labels if showSilkscreenPinLabels is explicitly true
+      // Default behavior (undefined/false) hides pin labels
+      if (showSilkscreenPinLabels !== true) {
+        footprintString += "_nopinlabels"
       }
+
+      return footprintString
     }
     return null
   }
