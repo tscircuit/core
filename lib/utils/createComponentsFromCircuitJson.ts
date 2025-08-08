@@ -162,8 +162,8 @@ export const createComponentsFromCircuitJson = (
       )
 
       if (footprint.includes("pinrow") && elm.text.includes("PIN")) {
-        // Skip pin labels if showSilkscreenPinLabels is not explicitly true
-        if (showSilkscreenPinLabels !== true) {
+        // Only show pin labels if showSilkscreenPinLabels is true
+        if (!showSilkscreenPinLabels) {
           continue
         }
 

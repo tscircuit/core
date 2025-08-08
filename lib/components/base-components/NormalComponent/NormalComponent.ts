@@ -332,7 +332,7 @@ export class NormalComponent<
     const { pcbRotation, pinLabels, pcbPinLabels, showSilkscreenPinLabels } =
       this.props
     let { footprint } = this.props
-    const isImpliedFootprint = !footprint
+    const isExplicitFootprint = !!footprint
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
 
@@ -346,9 +346,9 @@ export class NormalComponent<
           footprint,
           pinLabels,
           pcbPinLabels,
-          showSilkscreenPinLabels: isImpliedFootprint
-            ? showSilkscreenPinLabels
-            : true,
+          showSilkscreenPinLabels: isExplicitFootprint
+            ? true
+            : showSilkscreenPinLabels,
         },
         fpSoup as any,
       ) // Remove as any when footprinter gets updated
@@ -665,7 +665,6 @@ export class NormalComponent<
 
   doInitialPcbFootprintStringRender(): void {
     let { footprint } = this.props
-    const isImpliedFootprint = !footprint
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
 
@@ -686,9 +685,7 @@ export class NormalComponent<
             footprint: url,
             pinLabels,
             pcbPinLabels,
-            showSilkscreenPinLabels: isImpliedFootprint
-              ? showSilkscreenPinLabels
-              : true,
+            showSilkscreenPinLabels: true, // URL footprints are explicit, always show pin labels
           },
           soup as any,
         )
