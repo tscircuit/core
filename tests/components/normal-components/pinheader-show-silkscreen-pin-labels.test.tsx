@@ -26,7 +26,7 @@ test("pinheader showSilkscreenPinLabels prop behavior - all scenarios", () => {
         pcbY={-5}
       />
 
-      {/* Auto-generated footprint with default behavior (shows pin labels) */}
+      {/* Auto-generated footprint with default behavior (hides pin labels) */}
       <pinheader
         name="P3_auto_showSilkscreenPinLabels_default"
         pinCount={4}

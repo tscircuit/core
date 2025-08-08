@@ -12,6 +12,7 @@ test("header with default pinrow footprint", () => {
         pinLabels={["label1", "label2", "label3", "label4"]}
         pitch="2.54mm"
         gender="male"
+        showSilkscreenPinLabels={true}
       />
     </board>,
   )

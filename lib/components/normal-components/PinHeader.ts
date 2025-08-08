@@ -38,9 +38,9 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
         }
       }
 
-      // Only add _nopinlabels if showSilkscreenPinLabels is explicitly false
-      // Default behavior (undefined/true) shows pin labels
-      if (showSilkscreenPinLabels === false) {
+      // Add _nopinlabels by default, only show pin labels if showSilkscreenPinLabels is explicitly true
+      // Default behavior (undefined/false) hides pin labels
+      if (showSilkscreenPinLabels !== true) {
         footprintString += "_nopinlabels"
       }
 
