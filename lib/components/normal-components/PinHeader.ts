@@ -38,7 +38,7 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
         }
       }
 
-      // Add _hidesilkscreenpinlabels if showSilkscreenPinLabels is false or undefined
+      // Add _nopinlabels if showSilkscreenPinLabels is false or undefined
       if (showSilkscreenPinLabels !== true) {
         footprintString += "_nopinlabels"
       }
