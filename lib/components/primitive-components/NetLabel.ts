@@ -94,23 +94,25 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
 
     const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
 
-    const net = this.getSubcircuit()!.selectOne(
-      `net.${this._getNetName()!}`,
-    )! as Net
+    const netName = props.net
+    const net = netName
+      ? (this.getSubcircuit()!.selectOne(`net.${netName}`) as Net)
+      : undefined
 
     const anchorSide = props.anchorSide ?? "right"
+    const text = netName ?? "<empty>"
     const center = computeSchematicNetLabelCenter({
       anchor_position: anchorPos,
       anchor_side: anchorSide,
-      text: props.net!,
+      text,
     })
 
     const netLabel = db.schematic_net_label.insert({
-      text: props.net!,
-      source_net_id: net.source_net_id!,
+      text,
       anchor_position: anchorPos,
       center,
       anchor_side: this._getAnchorSide(),
+      ...(net ? { source_net_id: net.source_net_id! } : {}),
     })
 
     this.source_net_label_id = netLabel.source_net_id
