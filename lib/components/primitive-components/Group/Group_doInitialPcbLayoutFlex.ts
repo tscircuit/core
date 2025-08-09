@@ -1,14 +1,13 @@
 import type { Group } from "./Group"
-import { layoutCircuitJsonWithFlex } from "@tscircuit/circuit-json-flex"
 import type { PcbSmtPad, PcbSilkscreenText, Size } from "circuit-json"
 import {
   getCircuitJsonTree,
   repositionPcbComponentTo,
   repositionPcbGroupTo,
+  getMinimumFlexContainer,
   type CircuitJsonUtilObjects,
 } from "@tscircuit/circuit-json-util"
 import { RootFlexBox, type Align, type Justify } from "@tscircuit/miniflex"
-import { getMinimumFlexContainer } from "@tscircuit/circuit-json-flex"
 import { length } from "circuit-json"
 
 type TreeNode = ReturnType<typeof getCircuitJsonTree>
