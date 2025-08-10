@@ -1,5 +1,4 @@
 import { CapacityMeshSolver } from "@tscircuit/capacity-autorouter"
-import { AutorouterError } from "lib/errors/AutorouterError"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import type {
   AutorouterCompleteEvent,
@@ -75,7 +74,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
         if (this.solver.failed) {
           this.emitEvent({
             type: "error",
-            error: new AutorouterError(this.solver.error || "Routing failed"),
+            error: new Error(this.solver.error || "Routing failed"),
           })
         } else {
           this.emitEvent({
@@ -134,12 +133,24 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       }
     } catch (error) {
       // Handle any errors during the step
+      let enhancedError: Error
+
+      if (error instanceof Error) {
+        // Enhance error message for common issues
+        if (error.message.includes("Unexpected numItems value: 0")) {
+          enhancedError = new Error(
+            "Autorouting failed: No valid routing space available. This often occurs when components are overlapping or when there are insufficient obstacles for routing. Please check component placement and ensure components are not overlapping.",
+          )
+        } else {
+          enhancedError = error
+        }
+      } else {
+        enhancedError = new Error(String(error))
+      }
+
       this.emitEvent({
         type: "error",
-        error:
-          error instanceof Error
-            ? new AutorouterError(error.message)
-            : new AutorouterError(String(error)),
+        error: enhancedError,
       })
       this.isRouting = false
     }
@@ -207,10 +218,29 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
    * @returns Array of routed traces
    */
   solveSync(): SimplifiedPcbTrace[] {
-    this.solver.solve()
+    try {
+      this.solver.solve()
+    } catch (error) {
+      // Enhance error message for common issues
+      if (
+        error instanceof Error &&
+        error.message.includes("Unexpected numItems value: 0")
+      ) {
+        throw new Error(
+          "Autorouting failed: No valid routing space available. This often occurs when components are overlapping or when there are insufficient obstacles for routing. Please check component placement and ensure components are not overlapping.",
+        )
+      }
+      throw error
+    }
 
     if (this.solver.failed) {
-      throw new AutorouterError(this.solver.error || "Routing failed")
+      const errorMessage = this.solver.error || "Routing failed"
+      if (errorMessage.includes("Unexpected numItems value: 0")) {
+        throw new Error(
+          "Autorouting failed: No valid routing space available. This often occurs when components are overlapping or when there are insufficient obstacles for routing. Please check component placement and ensure components are not overlapping.",
+        )
+      }
+      throw new Error(errorMessage)
     }
 
     return this.solver.getOutputSimpleRouteJson().traces || []
