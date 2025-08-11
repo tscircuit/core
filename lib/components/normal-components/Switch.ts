@@ -28,7 +28,8 @@ export class Switch extends NormalComponent<typeof switchProps> {
 
     return {
       componentName: "Switch",
-      schematicSymbolName: symbolName as BaseSymbolName,
+      schematicSymbolName: (this.props.symbolName ??
+        symbolName) as BaseSymbolName,
       zodProps: switchProps,
       shouldRenderAsSchematicBox: false,
     }
