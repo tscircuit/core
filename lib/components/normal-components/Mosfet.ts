@@ -10,7 +10,8 @@ export class Mosfet extends NormalComponent<typeof mosfetProps> {
 
     return {
       componentName: "Mosfet",
-      schematicSymbolName: baseSymbolName,
+      schematicSymbolName: (this.props.symbolName ??
+        baseSymbolName) as BaseSymbolName,
       zodProps: mosfetProps,
       shouldRenderAsSchematicBox: false,
     }

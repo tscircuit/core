@@ -18,7 +18,8 @@ export class Transistor extends NormalComponent<
 
     return {
       componentName: "Transistor",
-      schematicSymbolName: baseSymbolName,
+      schematicSymbolName: (this.props.symbolName ??
+        baseSymbolName) as BaseSymbolName,
       zodProps: transistorProps,
       sourceFtype: "simple_transistor" as Ftype,
       shouldRenderAsSchematicBox: false,
