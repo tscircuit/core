@@ -6,25 +6,13 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("group schematic matchpack layout", () => {
   const { circuit } = getTestFixture()
-  
+
   circuit.add(
     <board width="20mm" height="20mm">
       <group name="G1" schWidth={8} schHeight={6}>
-        <resistor
-          name="R1"
-          resistance="1k"
-          footprint="0402"
-        />
-        <resistor
-          name="R2"
-          resistance="2.2k"
-          footprint="0402"
-        />
-        <capacitor
-          name="C1"
-          capacitance="100nF"
-          footprint="0402"
-        />
+        <resistor name="R1" resistance="1k" footprint="0402" />
+        <resistor name="R2" resistance="2.2k" footprint="0402" />
+        <capacitor name="C1" capacitance="100nF" footprint="0402" />
         <chip name="U1" footprint="soic8" />
         <trace from=".R1 > .pin2" to=".U1 > .pin1" />
         <trace from=".R2 > .pin1" to=".U1 > .pin2" />
