@@ -1,6 +1,7 @@
 import { resonatorProps } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
+import { formatSiUnit } from "format-si-unit"
 
 function getResonatorSymbolName(variant: string | undefined): BaseSymbolName {
   switch (variant) {
@@ -42,5 +43,13 @@ export class Resonator extends NormalComponent<typeof resonatorProps> {
     } as any)
 
     this.source_component_id = source_component.source_component_id
+  }
+
+  _getSchematicSymbolDisplayValue(): string | undefined {
+    const freqDisplay = `${formatSiUnit(this._parsedProps.frequency)}Hz`
+    if (this._parsedProps.loadCapacitance) {
+      return `${freqDisplay} / ${formatSiUnit(this._parsedProps.loadCapacitance)}F`
+    }
+    return freqDisplay
   }
 }
