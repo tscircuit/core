@@ -62,7 +62,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       const transformMatrix = compose(
         group._computePcbGlobalTransformBeforeLayout(),
         translate(center.x, center.y),
-        rotate(ccwRotationOffset || 0),
+        rotate((ccwRotationOffset || 0) * Math.PI / 180),
         translate(-originalCenter.x, -originalCenter.y),
       )
 
