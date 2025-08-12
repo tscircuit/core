@@ -35,6 +35,7 @@ function rotateDirection(
 function convertTreeToInputProblem(
   tree: CircuitJsonTreeNode,
   db: any,
+  group: Group<any>,
 ): InputProblem {
   const problem: InputProblem = {
     chipMap: {},
@@ -58,6 +59,27 @@ function convertTreeToInputProblem(
 
       if (!schematicComponent) return
 
+      // Find the component instance to access its _parsedProps
+      const component = group.children.find(
+        (groupChild: any) =>
+          groupChild.source_component_id ===
+          child.sourceComponent?.source_component_id,
+      )
+
+      // Determine availableRotations based on component props
+      let availableRotations: (0 | 90 | 180 | 270)[] = [0, 90, 180, 270] // Default: allow all rotations
+
+      if (component?._parsedProps?.schOrientation) {
+        // If explicitly set, only allow the specified rotation, which is a
+        // 0 offset (TODO in the future, we'll allow the "flipped" 180 offset)
+        availableRotations = [0]
+      }
+      if (component?._parsedProps?.schRotation !== undefined) {
+        // If explicitly set, only allow the specified rotation, which is a
+        // 0 offset
+        availableRotations = [0]
+      }
+
       // Create chip entry
       problem.chipMap[chipId] = {
         chipId,
@@ -66,8 +88,7 @@ function convertTreeToInputProblem(
           x: schematicComponent.size?.width || 1,
           y: schematicComponent.size?.height || 1,
         },
-        // TODO determine availableRotations based on the component._parsedProps.schOrientation and component._parsedProps.schRotation (if explicitly defined)
-        // availableRotations: [0, 90, 180, 270]
+        availableRotations,
       }
 
       // Get ports for this component
@@ -210,8 +231,10 @@ export function Group_doInitialSchematicLayoutMatchPack<
     source_group_id: group.source_group_id!,
   })
 
+  if (tree.childNodes.length <= 1) return
+
   debug("Converting circuit tree to InputProblem...")
-  const inputProblem = convertTreeToInputProblem(tree, db)
+  const inputProblem = convertTreeToInputProblem(tree, db, group)
 
   debug("InputProblem:", JSON.stringify(inputProblem, null, 2))
 
