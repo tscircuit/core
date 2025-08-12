@@ -64,7 +64,7 @@
     "schematic-symbols": "^0.0.180",
     "ts-expect": "^1.3.0",
     "tsup": "^8.2.4",
-    "@tscircuit/matchpack": "^0.0.3"
+    "@tscircuit/matchpack": "^0.0.4"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
