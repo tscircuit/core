@@ -19,4 +19,3 @@ test("resonator symbol display value", () => {
   expect(components).toHaveLength(1)
   expect(components[0].symbol_display_value).toBe("8MHz / 15pF")
 })
-
