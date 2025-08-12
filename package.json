@@ -63,7 +63,8 @@
     "react-dom": "^19.1.0",
     "schematic-symbols": "^0.0.180",
     "ts-expect": "^1.3.0",
-    "tsup": "^8.2.4"
+    "tsup": "^8.2.4",
+    "@tscircuit/matchpack": "^0.0.3"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -78,6 +79,7 @@
     "@tscircuit/schematic-corpus": "*",
     "circuit-json-to-bpc": "*",
     "bpc-graph": "*",
+    "@tscircuit/matchpack": "*",
     "circuit-json": "*",
     "circuit-json-to-connectivity-map": "*",
     "schematic-symbols": "*",
@@ -86,7 +88,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "calculate-packing": "0.0.9",
+    "calculate-packing": "0.0.17",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.3",
     "nanoid": "^5.0.7",

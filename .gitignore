@@ -191,3 +191,5 @@ circuit.json
 benchmarking-dist
 .vercel
 debug-graphics
+references
+debug-output
