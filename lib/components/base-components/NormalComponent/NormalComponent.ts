@@ -46,6 +46,7 @@ import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNum
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import type { INormalComponent } from "./INormalComponent"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { TraceHint } from "lib/components/primitive-components/TraceHint"
 
 const debug = Debug("tscircuit:core")
 
@@ -1191,15 +1192,362 @@ export class NormalComponent<
     if (props.connections) {
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
-        for (const targetPath of targets) {
-          this.add(
-            new Trace({
-              from: `${this.getSubcircuitSelector()} > port.${pinName}`,
-              to: targetPath as string,
-            }),
-          )
+        const pinSelector = `${this.getSubcircuitSelector()} > port.${pinName}`
+
+        // Use MSP routing for eligible connections
+        if (this._shouldUseMSPRouting(pinName, targets)) {
+          const mspTraces = this._generateMSPTraces(pinSelector, targets)
+          for (const trace of mspTraces) {
+            this.add(trace)
+          }
+        } else {
+          // Use original star pattern for other connections
+          for (const targetPath of targets) {
+            this.add(
+              new Trace({
+                from: pinSelector,
+                to: targetPath as string,
+              }),
+            )
+          }
         }
       }
+    }
+  }
+
+  /**
+   * Determines if MSP routing should be used for the given connection
+   */
+  _shouldUseMSPRouting(pinName: string, targets: string[]): boolean {
+    // Enable MSP for any connection with multiple component targets (not just capacitors)
+    const componentTargets = targets.filter(
+      (target) =>
+        /^[A-Z]+\d+\.[A-Z0-9]+$/i.test(target) && !target.includes("net."),
+    )
+    const hasMultipleComponentTargets = componentTargets.length >= 3
+
+    // Also enable for power/ground connections even with fewer targets
+    const isPowerPin = /VIN|VCC|VDD|VOUT/i.test(pinName)
+    const isGroundPin = /GND|VSS/i.test(pinName)
+    const isPowerConnection =
+      (isPowerPin || isGroundPin) && componentTargets.length >= 2
+
+    return hasMultipleComponentTargets || isPowerConnection
+  }
+
+  /**
+   * Generates MSP-optimized traces from connections array
+   */
+  _generateMSPTraces(pinSelector: string, targets: string[]): any[] {
+    // Separate component pins from nets (works with any component type: C, R, L, JP, etc.)
+    const componentPins = targets.filter(
+      (target) =>
+        /^[A-Z]+\d+\.[A-Z0-9]+$/i.test(target) && !target.includes("net."),
+    )
+    const netTargets = targets.filter((target) => target.includes("net."))
+
+    if (componentPins.length >= 2) {
+      const traces: any[] = []
+
+      // Generate optimal MSP (Minimum Spanning Path) routing sequence for any components
+      const optimalSequence = this._computeMSPSequence(
+        componentPins,
+        pinSelector,
+      )
+
+      // Convert pin selectors to full component selectors that can be resolved
+      const convertToFullSelector = (pinSelector: string): string => {
+        // Extract component name (e.g., "C2.1" -> "C2")
+        const [componentName, pinName] = pinSelector.split(".")
+
+        // Get the parent group selector, but find the correct scope for the components
+        // The components are in the same parent group as this chip, not inside this chip
+        const currentSelector = this.getSubcircuitSelector()
+        let parentGroupSelector = ""
+
+        if (currentSelector && currentSelector !== "board") {
+          // Extract the parent group from the current selector
+          // e.g., "group > chip.U1" -> "group"
+          const parts = currentSelector.split(" > ")
+          if (parts.length > 1) {
+            parentGroupSelector = parts.slice(0, -1).join(" > ")
+          } else {
+            parentGroupSelector = parts[0]
+          }
+          return `${parentGroupSelector} > .${componentName} > port.${pinName}`
+        } else {
+          return `.${componentName} > port.${pinName}`
+        }
+      }
+
+      // Create MSP tree chain with consistent routing - horizontal bus approach
+      // All MSP traces use the same Y-level for visual alignment
+      const alignmentY = -1.25 // Consistent Y-level for all MSP traces
+
+      for (let i = 0; i < optimalSequence.length - 1; i++) {
+        const fromSelector = convertToFullSelector(optimalSequence[i])
+        const toSelector = convertToFullSelector(optimalSequence[i + 1])
+
+        const trace = new Trace({
+          from: fromSelector,
+          to: toSelector,
+          // Force specific Y-level for horizontal routing alignment
+          schematicRouteHints: [
+            { x: 0, y: alignmentY }, // Force intermediate points at specific Y
+            { x: 1, y: alignmentY },
+          ],
+        })
+        traces.push(trace)
+      }
+
+      // Connect the pin to the first component in the sequence (closest to IC)
+      const firstComponentSelector = convertToFullSelector(optimalSequence[0])
+      const initialTrace = new Trace({
+        from: pinSelector,
+        to: firstComponentSelector,
+        // Force consistent Y-level alignment with target pin
+        schematicRouteHints: [
+          { x: 0, y: alignmentY }, // Force consistent Y-level
+          { x: 1, y: alignmentY }, // Midpoint guidance
+          { x: 2, y: alignmentY }, // Endpoint guidance
+        ],
+      })
+      traces.push(initialTrace)
+
+      // Connect nets directly to the pin (power distribution)
+      for (const netTarget of netTargets) {
+        traces.push(
+          new Trace({
+            from: pinSelector,
+            to: netTarget,
+          }),
+        )
+      }
+
+      return traces
+    }
+
+    // Fallback to star pattern if not enough components for MSP
+    return targets.map(
+      (target) =>
+        new Trace({
+          from: pinSelector,
+          to: target,
+        }),
+    )
+  }
+
+  /**
+   * Computes optimal MSP (Minimum Spanning Path) sequence for any component routing
+   * Works with capacitors, resistors, jumpers, inductors, or any component type
+   */
+  _computeMSPSequence(
+    componentPins: string[],
+    icPinSelector: string,
+  ): string[] {
+    if (componentPins.length === 0) return []
+    if (componentPins.length === 1) return componentPins
+
+    // Extract component information for distance-based routing
+    // Pattern matches: C1.1, R5.2, JP3.A, L2.1, IC4.VCC, etc.
+    const components = componentPins.map((pin) => {
+      const componentMatch = pin.match(/([A-Z]+)(\d+)\.([A-Z0-9]+)/i)
+      return {
+        pin,
+        prefix: componentMatch?.[1] || "",
+        number: parseInt(componentMatch?.[2] || "0"),
+        pinRef: componentMatch?.[3] || "",
+      }
+    })
+
+    // Group components by type (C, R, L, JP, IC, etc.)
+    const componentsByType = components.reduce(
+      (acc, comp) => {
+        if (!acc[comp.prefix]) acc[comp.prefix] = []
+        acc[comp.prefix].push(comp)
+        return acc
+      },
+      {} as Record<string, typeof components>,
+    )
+
+    // For each component type, compute optimal routing sequence
+    let optimalSequence: string[] = []
+
+    for (const [, comps] of Object.entries(componentsByType)) {
+      if (comps.length < 2) {
+        // Single component, add directly
+        optimalSequence.push(...comps.map((c) => c.pin))
+        continue
+      }
+
+      // Sort by component number for consistent ordering
+      comps.sort((a, b) => a.number - b.number)
+
+      // Apply MSP algorithm: create minimal spanning tree
+      // Strategy: Start from one end, find shortest path through all nodes
+      const mspPath = this._computeMinimalSpanningPath(comps, icPinSelector)
+      optimalSequence.push(...mspPath.map((c) => c.pin))
+    }
+
+    return optimalSequence
+  }
+
+  /**
+   * Computes minimal spanning path using actual physical distance between components
+   * Works with any component type - creates tree-like structure that minimizes routing length
+   * Starts from the component closest to the IC and chains outward
+   */
+  _computeMinimalSpanningPath(
+    components: Array<{
+      pin: string
+      number: number
+      pinRef: string
+      prefix: string
+    }>,
+    icPinSelector: string,
+  ): Array<{ pin: string; number: number; pinRef: string; prefix: string }> {
+    if (components.length <= 2) return components
+
+    // Get physical positions of all components
+    const componentsWithPositions = components
+      .map((comp) => {
+        const position = this._getComponentPosition(comp.pin)
+        return { ...comp, position }
+      })
+      .filter((comp) => comp.position !== null)
+
+    if (componentsWithPositions.length !== components.length) {
+      // Fallback to number-based ordering if positions unavailable
+      return components.sort((a, b) => a.number - b.number)
+    }
+
+    // Get the actual IC position from the pin selector
+    const icComponentName =
+      icPinSelector.split(" > port.")[0].split(" > ").pop() ||
+      icPinSelector.split(".")[0]
+    const icComponent = this.getSubcircuit().selectOne(icComponentName)
+    let icPosition = { x: 0, y: 0 } // Default fallback
+
+    // Try to get IC position from various sources
+    if (
+      icComponent &&
+      "_parsedProps" in icComponent &&
+      icComponent._parsedProps
+    ) {
+      const props = icComponent._parsedProps as any
+      if (props.schX !== undefined && props.schY !== undefined) {
+        icPosition = { x: props.schX, y: props.schY }
+      }
+    }
+
+    // If no explicit position found, estimate based on component layout
+    // ICs are typically positioned to the right of passive components
+    if (icPosition.x === 0 && icPosition.y === 0) {
+      // Find the rightmost component position and place IC to the right of it
+      const maxX = Math.max(
+        ...componentsWithPositions.map((c) => c.position?.x || 0),
+      )
+      icPosition = { x: maxX + 2, y: 0 } // Place IC 2 units to the right of rightmost component
+    }
+
+    // Find the component closest to the IC by actual distance calculation
+
+    // Start with the component closest to the IC
+    let startComponent = componentsWithPositions[0]
+    let minDistanceToIC = Math.sqrt(
+      Math.pow(icPosition.x - (startComponent.position?.x || 0), 2) +
+        Math.pow(icPosition.y - (startComponent.position?.y || 0), 2),
+    )
+
+    for (const comp of componentsWithPositions) {
+      const compPos = comp.position!
+      const distanceToIC = Math.sqrt(
+        Math.pow(icPosition.x - compPos.x, 2) +
+          Math.pow(icPosition.y - compPos.y, 2),
+      )
+
+      if (distanceToIC < minDistanceToIC) {
+        minDistanceToIC = distanceToIC
+        startComponent = comp
+      }
+    }
+
+    const unvisited = componentsWithPositions.filter(
+      (c) => c !== startComponent,
+    )
+    const path = [startComponent]
+
+    // Greedy nearest neighbor approach using actual physical distance
+    while (unvisited.length > 0) {
+      const current = path[path.length - 1]
+      const currentPos = current.position!
+
+      // Find nearest unvisited component by Euclidean distance
+      let nearest = unvisited[0]
+      let nearestPos = nearest.position!
+      let minDistance = Math.sqrt(
+        Math.pow(currentPos.x - nearestPos.x, 2) +
+          Math.pow(currentPos.y - nearestPos.y, 2),
+      )
+
+      for (const comp of unvisited) {
+        const compPos = comp.position!
+        const distance = Math.sqrt(
+          Math.pow(currentPos.x - compPos.x, 2) +
+            Math.pow(currentPos.y - compPos.y, 2),
+        )
+        if (distance < minDistance) {
+          minDistance = distance
+          nearest = comp
+        }
+      }
+
+      path.push(nearest)
+      unvisited.splice(unvisited.indexOf(nearest), 1)
+    }
+
+    return path
+  }
+
+  /**
+   * Gets the physical position of a component by its pin selector
+   */
+  _getComponentPosition(pinSelector: string): { x: number; y: number } | null {
+    try {
+      // Extract component name from pin selector (e.g., "C1.1" -> "C1")
+      const componentName = pinSelector.split(".")[0]
+
+      // Find the component in the circuit using CSS-like selector
+      const component = this.getSubcircuit().selectOne(`.${componentName}`)
+      if (!component) {
+        return null
+      }
+
+      // Try to get the position from various properties
+      if ("_parsedProps" in component && component._parsedProps) {
+        const props = component._parsedProps as any
+
+        if (props.pcbX !== undefined && props.pcbY !== undefined) {
+          return { x: props.pcbX, y: props.pcbY }
+        }
+        if (props.schX !== undefined) {
+          const y = props.schY !== undefined ? props.schY : 0
+          return { x: props.schX, y: y }
+        }
+      }
+
+      // Try to get position from component center after layout
+      if (
+        "_getSchematicCenterPosition" in component &&
+        typeof component._getSchematicCenterPosition === "function"
+      ) {
+        const centerPos = component._getSchematicCenterPosition()
+        if (centerPos) return { x: centerPos.x, y: centerPos.y }
+      }
+
+      return null
+    } catch (error) {
+      return null
     }
   }
 }

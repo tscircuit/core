@@ -45,7 +45,7 @@
     "@types/react-reconciler": "^0.28.9",
     "bpc-graph": "^0.0.57",
     "bun-match-svg": "0.0.12",
-    "calculate-elbow": "^0.0.5",
+    "calculate-elbow": "^0.0.9",
     "chokidar-cli": "^3.0.0",
     "circuit-json": "^0.0.226",
     "circuit-json-to-bpc": "^0.0.13",
