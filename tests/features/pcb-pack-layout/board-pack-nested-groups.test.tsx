@@ -82,6 +82,9 @@ test("board packs nested groups", async () => {
   const board = circuit.db.pcb_board.list()[0]
 
   const pads = circuit.db.pcb_smtpad.list()
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+
   for (let i = 0; i < pads.length; i++) {
     for (let j = i + 1; j < pads.length; j++) {
       const pa = pads[i] as any
@@ -95,10 +98,8 @@ test("board packs nested groups", async () => {
         a.bottom > b.top ||
         a.top < b.bottom
       )
-      expect(overlap).toBe(false)
+      expect(overlap, "pads are overlapping").toBe(false)
     }
   }
-
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
   writeGlobalDebugGraphics()
 })
