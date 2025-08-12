@@ -10,6 +10,24 @@ import type { z } from "zod"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchpack")
 
+// Helper function to convert facing direction to side
+function facingDirectionToSide(
+  facingDirection: string | undefined,
+): "x-" | "x+" | "y-" | "y+" {
+  switch (facingDirection) {
+    case "up":
+      return "y+"
+    case "down":
+      return "y-"
+    case "left":
+      return "x-"
+    case "right":
+      return "x+"
+    default:
+      return "y+"
+  }
+}
+
 // Helper function to rotate a facing direction
 function rotateDirection(
   direction: string,
@@ -113,21 +131,7 @@ function convertTreeToInputProblem(
         problem.chipMap[chipId].pins.push(pinId)
 
         // Map facing direction to side
-        let side: "x-" | "x+" | "y-" | "y+" = "y+"
-        switch (port.facing_direction) {
-          case "up":
-            side = "y+"
-            break
-          case "down":
-            side = "y-"
-            break
-          case "left":
-            side = "x-"
-            break
-          case "right":
-            side = "x+"
-            break
-        }
+        const side = facingDirectionToSide(port.facing_direction)
 
         problem.chipPinMap[pinId] = {
           pinId,
@@ -199,21 +203,7 @@ function convertTreeToInputProblem(
             const groupCenter = schematicGroup.center || { x: 0, y: 0 }
             
             // Map facing direction to side
-            let side: "x-" | "x+" | "y-" | "y+" = "y+"
-            switch (port.facing_direction) {
-              case "up":
-                side = "y+"
-                break
-              case "down":
-                side = "y-"
-                break
-              case "left":
-                side = "x-"
-                break
-              case "right":
-                side = "x+"
-                break
-            }
+            const side = facingDirectionToSide(port.facing_direction)
             
             problem.chipPinMap[pinId] = {
               pinId,
