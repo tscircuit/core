@@ -235,74 +235,99 @@ function convertTreeToInputProblem(
     }
   })
 
-  // Create connections based on traces
-  const sourceTraces = db.source_trace.list()
-  const sourceNets = db.source_net.list()
+  // Create connections using subcircuit_connectivity_map_key
+  debug(`[${group.name}] Creating connections using connectivity keys`)
   
-  debug(`[${group.name}] Found ${sourceTraces.length} source traces and ${sourceNets.length} source nets`)
+  // Group pins by their connectivity keys
+  const connectivityGroups = new Map<string, string[]>()
   
-  // Create nets
-  for (const net of sourceNets) {
-    problem.netMap[net.name || net.source_net_id] = {
-      netId: net.name || net.source_net_id,
-    }
-  }
-
-  // Process traces to create connections
-  for (const trace of sourceTraces) {
-    const connectedPorts = trace.connected_source_port_ids || []
-    const connectedNets = trace.connected_source_net_ids || []
-
-    // Find which pins belong to our composite chips
-    const relevantPins: string[] = []
-    for (const portId of connectedPorts) {
-      const sourcePort = db.source_port.get(portId)
-      if (!sourcePort) continue
-
-      // Find which chip this port belongs to
-      for (const [chipId, chip] of Object.entries(problem.chipMap)) {
-        const chipSourceComponent = tree.childNodes.find(
-          (n) => n.sourceComponent?.name === chipId,
-        )?.sourceComponent
-
-        if (chipSourceComponent) {
-          const isPortInComponent = db.source_port
-            .list({
-              source_component_id: chipSourceComponent.source_component_id,
+  for (const [chipId, chip] of Object.entries(problem.chipMap)) {
+    for (const pinId of chip.pins) {
+      // Find the source port for this pin
+      const pinNumber = pinId.split('.').pop() // Extract pin number from chipId.pinNumber
+      
+      // Find the port by looking through all ports in the chip's components
+      const treeNode = tree.childNodes.find((child) => {
+        if (child.nodeType === "component" && child.sourceComponent) {
+          return child.sourceComponent.name === chipId
+        }
+        if (child.nodeType === "group" && child.sourceGroup) {
+          const expectedChipId = `group_${tree.childNodes.indexOf(child)}`
+          return expectedChipId === chipId
+        }
+        return false
+      })
+      
+      if (treeNode?.nodeType === "group" && treeNode.sourceGroup) {
+        const schematicGroup = db.schematic_group?.getWhere?.({
+          source_group_id: treeNode.sourceGroup.source_group_id,
+        })
+        
+        if (schematicGroup) {
+          const groupComponents = db.schematic_component.list({
+            schematic_group_id: schematicGroup.schematic_group_id,
+          })
+          
+          for (const comp of groupComponents) {
+            const sourcePorts = db.source_port.list({
+              source_component_id: comp.source_component_id,
             })
-            .some((p: any) => p.source_port_id === portId)
-
-          if (isPortInComponent) {
-            // Find the exact pin by constructing the expected pin ID
-            const pinNumber = sourcePort.pin_number || sourcePort.name
-            const expectedPinId = `${chipId}.${pinNumber}`
-
-            // Check if this pin ID exists in our chip's pins
-            if (chip.pins.includes(expectedPinId)) {
-              relevantPins.push(expectedPinId)
-            } else {
-              debug(
-                `Warning: Could not find pin ${expectedPinId} in chip ${chipId}`,
-              )
+            
+            for (const sourcePort of sourcePorts) {
+              const portNumber = sourcePort.pin_number || sourcePort.name
+              if (String(portNumber) === String(pinNumber)) {
+                if (sourcePort.subcircuit_connectivity_map_key) {
+                  const connectivityKey = sourcePort.subcircuit_connectivity_map_key
+                  if (!connectivityGroups.has(connectivityKey)) {
+                    connectivityGroups.set(connectivityKey, [])
+                  }
+                  connectivityGroups.get(connectivityKey)!.push(pinId)
+                  debug(`[${group.name}] ✓ Pin ${pinId} has connectivity key: ${connectivityKey}`)
+                } else {
+                  debug(`[${group.name}] Pin ${pinId} has no connectivity key`)
+                }
+              }
             }
+          }
+        }
+      } else if (treeNode?.nodeType === "component" && treeNode.sourceComponent) {
+        // Handle regular component chips
+        const sourcePorts = db.source_port.list({
+          source_component_id: treeNode.sourceComponent.source_component_id,
+        })
+        
+        for (const sourcePort of sourcePorts) {
+          const portNumber = sourcePort.pin_number || sourcePort.name
+          if (String(portNumber) === String(pinNumber) && sourcePort.subcircuit_connectivity_map_key) {
+            const connectivityKey = sourcePort.subcircuit_connectivity_map_key
+            if (!connectivityGroups.has(connectivityKey)) {
+              connectivityGroups.set(connectivityKey, [])
+            }
+            connectivityGroups.get(connectivityKey)!.push(pinId)
+            debug(`[${group.name}] Pin ${pinId} has connectivity key: ${connectivityKey}`)
           }
         }
       }
     }
-
-    // Create strong connections for 2-pin traces without nets
-    if (relevantPins.length === 2 && connectedNets.length === 0) {
-      const [pin1, pin2] = relevantPins
-      problem.pinStrongConnMap[`${pin1}-${pin2}`] = true
-      problem.pinStrongConnMap[`${pin2}-${pin1}`] = true
-    }
-    // Create net connections
-    for (const pinId of relevantPins) {
-      for (const netId of connectedNets) {
-        const net = db.source_net.get(netId)
-        const netName = net?.name || netId
-        problem.netConnMap[`${pinId}-${netName}`] = true
+  }
+  
+  debug(`[${group.name}] Found ${connectivityGroups.size} connectivity groups:`, 
+    Array.from(connectivityGroups.entries()).map(([key, pins]) => ({ key, pins })))
+  
+  // Create connections between pins in the same connectivity group
+  for (const [connectivityKey, pins] of connectivityGroups) {
+    if (pins.length >= 2) {
+      // Create a net for this connectivity group
+      problem.netMap[connectivityKey] = {
+        netId: connectivityKey,
       }
+      
+      // Connect all pins to this net
+      for (const pinId of pins) {
+        problem.netConnMap[`${pinId}-${connectivityKey}`] = true
+      }
+      
+      debug(`[${group.name}] Created net ${connectivityKey} with ${pins.length} pins:`, pins)
     }
   }
 
