@@ -231,6 +231,8 @@ export function Group_doInitialSchematicLayoutMatchPack<
     source_group_id: group.source_group_id!,
   })
 
+  if (tree.childNodes.length <= 1) return
+
   debug("Converting circuit tree to InputProblem...")
   const inputProblem = convertTreeToInputProblem(tree, db, group)
 
