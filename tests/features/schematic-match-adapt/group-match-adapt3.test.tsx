@@ -1,6 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { sel } from "lib"
+import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphics"
 
 test("group-match-adapt3", () => {
   const { circuit } = getTestFixture()
@@ -72,4 +73,5 @@ test("group-match-adapt3", () => {
   circuit.render()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  writeGlobalDebugGraphics()
 })

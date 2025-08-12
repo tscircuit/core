@@ -2,18 +2,33 @@ import {
   getCircuitJsonTree,
   type CircuitJsonTreeNode,
 } from "@tscircuit/circuit-json-util"
-import {
-  LayoutPipelineSolver,
-  type InputProblem,
-  type Chip,
-  type ChipPin,
-  type Net,
-} from "@tscircuit/matchpack"
+import { LayoutPipelineSolver, type InputProblem } from "@tscircuit/matchpack"
 import Debug from "debug"
 import type { Group } from "./Group"
 import type { z } from "zod"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchpack")
+
+// Helper function to rotate a facing direction
+function rotateDirection(
+  direction: string,
+  degrees: number,
+): "up" | "right" | "down" | "left" {
+  const directions: ("up" | "right" | "down" | "left")[] = [
+    "up",
+    "right",
+    "down",
+    "left",
+  ]
+  const currentIndex = directions.indexOf(direction as any)
+  if (currentIndex === -1) return direction as "up" | "right" | "down" | "left"
+
+  // Calculate how many 90-degree steps to rotate
+  const steps = Math.round(degrees / 90)
+  const newIndex = (currentIndex + steps) % 4
+
+  return directions[newIndex < 0 ? newIndex + 4 : newIndex]
+}
 
 // Create conversion function
 function convertTreeToInputProblem(
@@ -144,10 +159,16 @@ function convertTreeToInputProblem(
             .some((p: any) => p.source_port_id === portId)
 
           if (isPortInComponent) {
-            const pinId = chip.pins.find((p) =>
-              p.includes(sourcePort.pin_number || sourcePort.name),
-            )
-            if (pinId) relevantPins.push(pinId)
+            // Find the exact pin by constructing the expected pin ID
+            const pinNumber = sourcePort.pin_number || sourcePort.name
+            const expectedPinId = `${chipId}.${pinNumber}`
+            
+            // Check if this pin ID exists in our chip's pins
+            if (chip.pins.includes(expectedPinId)) {
+              relevantPins.push(expectedPinId)
+            } else {
+              debug(`Warning: Could not find pin ${expectedPinId} in chip ${chipId}`)
+            }
           }
         }
       }
@@ -302,12 +323,49 @@ export function Group_doInitialSchematicLayoutMatchPack<
         // Update component center
         schematicComponent.center = newCenter
 
-        // TODO: Handle rotation if needed
+        // Handle rotation if needed
         if (placement.ccwRotationDegrees !== 0) {
           debug(
             `Component ${chipId} has rotation: ${placement.ccwRotationDegrees}°`,
           )
-          // Rotation handling would go here if supported
+
+          // Rotate ports around the component center
+          const angleRad = (placement.ccwRotationDegrees * Math.PI) / 180
+          const cos = Math.cos(angleRad)
+          const sin = Math.sin(angleRad)
+
+          for (const port of ports) {
+            // Get original offset from center
+            const dx = port.center.x - newCenter.x
+            const dy = port.center.y - newCenter.y
+
+            // Apply rotation matrix
+            const rotatedDx = dx * cos - dy * sin
+            const rotatedDy = dx * sin + dy * cos
+
+            // Update port position
+            port.center.x = newCenter.x + rotatedDx
+            port.center.y = newCenter.y + rotatedDy
+
+            // Update port facing direction based on rotation
+            const originalDirection = port.facing_direction || "right"
+            port.facing_direction = rotateDirection(
+              originalDirection,
+              placement.ccwRotationDegrees,
+            )
+          }
+
+          // Also rotate text positions
+          for (const text of texts) {
+            const dx = text.position.x - newCenter.x
+            const dy = text.position.y - newCenter.y
+
+            const rotatedDx = dx * cos - dy * sin
+            const rotatedDy = dx * sin + dy * cos
+
+            text.position.x = newCenter.x + rotatedDx
+            text.position.y = newCenter.y + rotatedDy
+          }
         }
       }
     } else if (treeNode.nodeType === "group" && treeNode.sourceGroup) {
