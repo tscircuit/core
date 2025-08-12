@@ -49,8 +49,17 @@ function convertTreeToInputProblem(
     partitionGap: 1.2,
   }
 
+  debug(`[${group.name}] Processing ${tree.childNodes.length} child nodes for input problem`)
+
   // Process each top-level child as a "composite chip"
   tree.childNodes.forEach((child, index) => {
+    debug(`[${group.name}] Processing child ${index}: nodeType=${child.nodeType}`)
+    
+    if (child.nodeType === "component") {
+      debug(`[${group.name}] - Component: ${child.sourceComponent?.name}`)
+    } else if (child.nodeType === "group") {
+      debug(`[${group.name}] - Group: ${child.sourceGroup?.name}`)
+    }
     if (child.nodeType === "component" && child.sourceComponent) {
       const chipId = child.sourceComponent.name || `chip_${index}`
       const schematicComponent = db.schematic_component.getWhere({
@@ -132,20 +141,106 @@ function convertTreeToInputProblem(
     } else if (child.nodeType === "group" && child.sourceGroup) {
       // Handle nested groups as composite chips
       const groupId = child.sourceGroup.name || `group_${index}`
+      debug(`[${group.name}] Processing nested group: ${groupId}`)
+      
       const schematicGroup = db.schematic_group?.getWhere?.({
         source_group_id: child.sourceGroup.source_group_id,
       })
 
+      debug(`[${group.name}] Found schematic_group for ${groupId}:`, schematicGroup)
+
       if (schematicGroup) {
-        // For now, treat groups as chips with their bounding box as size
+        // For nested groups, we need to find their actual components and treat the group as a chip
+        debug(`[${group.name}] Treating group ${groupId} as composite chip`)
+        
+        // Get all schematic components within this group
+        const groupComponents = db.schematic_component.list({
+          schematic_group_id: schematicGroup.schematic_group_id,
+        })
+        
+        debug(`[${group.name}] Group ${groupId} has ${groupComponents.length} components:`, groupComponents.map((c: any) => c.source_component_id))
+        
+        // Calculate bounding box of components in the group
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+        let hasValidBounds = false
+        
+        for (const comp of groupComponents) {
+          if (comp.center && comp.size) {
+            hasValidBounds = true
+            const halfWidth = comp.size.width / 2
+            const halfHeight = comp.size.height / 2
+            minX = Math.min(minX, comp.center.x - halfWidth)
+            maxX = Math.max(maxX, comp.center.x + halfWidth)
+            minY = Math.min(minY, comp.center.y - halfHeight)
+            maxY = Math.max(maxY, comp.center.y + halfHeight)
+          }
+        }
+        
+        const groupWidth = hasValidBounds ? maxX - minX : 2
+        const groupHeight = hasValidBounds ? maxY - minY : 2
+        
+        debug(`[${group.name}] Group ${groupId} computed size: ${groupWidth} x ${groupHeight}`)
+        
+        // Collect all schematic ports from components within this group
+        const groupPins: string[] = []
+        for (const comp of groupComponents) {
+          const ports = db.schematic_port.list({
+            schematic_component_id: comp.schematic_component_id,
+          })
+          
+          for (const port of ports) {
+            const sourcePort = db.source_port.get(port.source_port_id)
+            if (!sourcePort) continue
+            
+            const pinId = `${groupId}.${sourcePort.pin_number || sourcePort.name || port.schematic_port_id}`
+            groupPins.push(pinId)
+            
+            // Calculate pin offset relative to group center
+            const groupCenter = schematicGroup.center || { x: 0, y: 0 }
+            
+            // Map facing direction to side
+            let side: "x-" | "x+" | "y-" | "y+" = "y+"
+            switch (port.facing_direction) {
+              case "up":
+                side = "y+"
+                break
+              case "down":
+                side = "y-"
+                break
+              case "left":
+                side = "x-"
+                break
+              case "right":
+                side = "x+"
+                break
+            }
+            
+            problem.chipPinMap[pinId] = {
+              pinId,
+              offset: {
+                x: (port.center?.x || 0) - groupCenter.x,
+                y: (port.center?.y || 0) - groupCenter.y,
+              },
+              side,
+            }
+          }
+        }
+        
+        debug(`[${group.name}] Group ${groupId} has ${groupPins.length} pins:`, groupPins)
+        
+        // Treat groups as chips with their bounding box as size and collected pins
         problem.chipMap[groupId] = {
           chipId: groupId,
-          pins: [],
+          pins: groupPins,
           size: {
-            x: schematicGroup.size?.width || 2,
-            y: schematicGroup.size?.height || 2,
+            x: groupWidth,
+            y: groupHeight,
           },
         }
+        
+        debug(`[${group.name}] Added group ${groupId} to chipMap`)
+      } else {
+        debug(`[${group.name}] Warning: No schematic_group found for group ${groupId}`)
       }
     }
   })
@@ -153,6 +248,9 @@ function convertTreeToInputProblem(
   // Create connections based on traces
   const sourceTraces = db.source_trace.list()
   const sourceNets = db.source_net.list()
+  
+  debug(`[${group.name}] Found ${sourceTraces.length} source traces and ${sourceNets.length} source nets`)
+  
   // Create nets
   for (const net of sourceNets) {
     problem.netMap[net.name || net.source_net_id] = {
@@ -231,7 +329,13 @@ export function Group_doInitialSchematicLayoutMatchPack<
     source_group_id: group.source_group_id!,
   })
 
-  if (tree.childNodes.length <= 1) return
+  debug(`[${group.name}] Starting matchpack layout with ${tree.childNodes.length} children`)
+  debug(`[${group.name}] Tree structure:`, JSON.stringify(tree, null, 2))
+
+  if (tree.childNodes.length <= 1) {
+    debug(`[${group.name}] Only ${tree.childNodes.length} children, skipping layout`)
+    return
+  }
 
   debug("Converting circuit tree to InputProblem...")
   const inputProblem = convertTreeToInputProblem(tree, db, group)
@@ -266,6 +370,9 @@ export function Group_doInitialSchematicLayoutMatchPack<
   // Get the output layout
   const outputLayout = solver.getOutputLayout()
   debug("OutputLayout:", JSON.stringify(outputLayout, null, 2))
+  
+  // Check if solver completed successfully
+  debug("Solver completed successfully:", !solver.failed)
 
   // Add final visualization if debug is enabled
   if (debug.enabled && global.debugGraphics) {
@@ -292,22 +399,38 @@ export function Group_doInitialSchematicLayoutMatchPack<
   debug(`Group offset: x=${groupOffset.x}, y=${groupOffset.y}`)
 
   // Apply the layout results to schematic components
+  debug(`Applying layout results for ${Object.keys(outputLayout.chipPlacements).length} chip placements`)
+  
   for (const [chipId, placement] of Object.entries(
     outputLayout.chipPlacements,
   )) {
+    debug(`Processing placement for chip: ${chipId} at (${placement.x}, ${placement.y})`)
+    
     // Find the corresponding tree node
     const treeNode = tree.childNodes.find((child) => {
       if (child.nodeType === "component" && child.sourceComponent) {
-        return child.sourceComponent.name === chipId
+        const matches = child.sourceComponent.name === chipId
+        debug(`  Checking component ${child.sourceComponent.name}: matches=${matches}`)
+        return matches
       }
       if (child.nodeType === "group" && child.sourceGroup) {
-        return child.sourceGroup.name === chipId
+        // For groups, we created chipId as "group_N" where N is the index
+        const groupName = child.sourceGroup.name
+        const expectedChipId = `group_${tree.childNodes.indexOf(child)}`
+        const matches = expectedChipId === chipId
+        debug(`  Checking group ${groupName} (expected chipId: ${expectedChipId}): matches=${matches}`)
+        return matches
       }
       return false
     })
 
     if (!treeNode) {
       debug(`Warning: No tree node found for chip: ${chipId}`)
+      debug(`Available tree nodes:`, tree.childNodes.map((child, idx) => ({
+        type: child.nodeType,
+        name: child.nodeType === "component" ? child.sourceComponent?.name : child.sourceGroup?.name,
+        expectedChipId: child.nodeType === "group" ? `group_${idx}` : child.sourceComponent?.name
+      })))
       continue
     }
 
@@ -418,10 +541,62 @@ export function Group_doInitialSchematicLayoutMatchPack<
       })
 
       if (schematicGroup) {
-        debug(`Moving group ${chipId} to (${newCenter.x}, ${newCenter.y})`)
+        debug(`Moving group ${chipId} to (${newCenter.x}, ${newCenter.y}) from (${schematicGroup.center?.x}, ${schematicGroup.center?.y})`)
 
-        // TODO schematic group translation
-        // transformSchematicElements(...)
+        // Get all schematic components within this group
+        const groupComponents = db.schematic_component.list({
+          schematic_group_id: schematicGroup.schematic_group_id,
+        })
+        
+        debug(`Group ${chipId} has ${groupComponents.length} components to move`)
+        
+        // Calculate position delta
+        const oldCenter = schematicGroup.center || { x: 0, y: 0 }
+        const positionDelta = {
+          x: newCenter.x - oldCenter.x,
+          y: newCenter.y - oldCenter.y,
+        }
+        
+        debug(`Position delta for group ${chipId}: (${positionDelta.x}, ${positionDelta.y})`)
+
+        // Move all components within the group
+        for (const component of groupComponents) {
+          if (component.center) {
+            const oldComponentCenter = { ...component.center }
+            component.center.x += positionDelta.x
+            component.center.y += positionDelta.y
+            
+            debug(`Moved component ${component.source_component_id} from (${oldComponentCenter.x}, ${oldComponentCenter.y}) to (${component.center.x}, ${component.center.y})`)
+            
+            // Update associated ports and texts
+            const ports = db.schematic_port.list({
+              schematic_component_id: component.schematic_component_id,
+            })
+            const texts = db.schematic_text.list({
+              schematic_component_id: component.schematic_component_id,
+            })
+            
+            // Update port positions
+            for (const port of ports) {
+              if (port.center) {
+                port.center.x += positionDelta.x
+                port.center.y += positionDelta.y
+              }
+            }
+
+            // Update text positions
+            for (const text of texts) {
+              if (text.position) {
+                text.position.x += positionDelta.x
+                text.position.y += positionDelta.y
+              }
+            }
+          }
+        }
+        
+        // Update the group center
+        schematicGroup.center = newCenter
+        debug(`Updated group ${chipId} center to (${newCenter.x}, ${newCenter.y})`)
       }
     }
   }

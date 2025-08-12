@@ -749,18 +749,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const cProps = (child as any)._parsedProps
       return cProps?.schX !== undefined || cProps?.schY !== undefined
     })
-    const anyChildIsGroup = this.children.some((child) => child.isGroup)
     const hasManualEdits =
       (props.manualEdits?.schematic_placements?.length ?? 0) > 0
-    if (!anyChildHasSchCoords && !hasManualEdits && !anyChildIsGroup)
+    
+    // Use match-adapt if no explicit positioning is set, even with group children
+    // This allows nested groups to be laid out properly
+    if (!anyChildHasSchCoords && !hasManualEdits)
       return "match-adapt"
     return "relative"
   }
 
   doInitialSchematicLayout(): void {
     // The schematic_components are rendered in our children
-    const props = this._parsedProps as SubcircuitGroupProps
-
     const schematicLayoutMode = this._getSchematicLayoutMode()
 
     if (schematicLayoutMode === "match-adapt") {
