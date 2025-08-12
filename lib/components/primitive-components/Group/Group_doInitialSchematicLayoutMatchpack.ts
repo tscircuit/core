@@ -44,6 +44,8 @@ function convertTreeToInputProblem(
     netMap: {},
     pinStrongConnMap: {},
     netConnMap: {},
+    chipGap: 0.4,
+    partitionGap: 1.2,
   }
 
   // Process each top-level child as a "composite chip"
