@@ -5,6 +5,7 @@ import {
   convertCircuitJsonToPackOutput,
   convertPackOutputToPackInput,
   getGraphicsFromPackOutput,
+  type PackInput,
 } from "calculate-packing"
 import { length } from "circuit-json"
 import {
@@ -32,18 +33,18 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const gap = pcbPackGap ?? pcbGap ?? gapProp
 
   const gapMm = length.parse(gap ?? "0mm")
-  const packInput = {
+  const packInput: PackInput = {
     ...convertPackOutputToPackInput(
       convertCircuitJsonToPackOutput(db.toArray(), {
         source_group_id: group.source_group_id!,
       }),
     ),
+    // @ts-expect-error we're missing some pack order strategies
     orderStrategy: packOrderStrategy ?? "largest_to_smallest",
     placementStrategy:
-      packPlacementStrategy ?? "shortest_connection_along_outline",
+      packPlacementStrategy ?? "minimum_sum_squared_distance_to_network",
     minGap: gapMm,
   }
-
   const packOutput = pack(packInput)
 
   if (debug.enabled) {
@@ -62,7 +63,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       const transformMatrix = compose(
         group._computePcbGlobalTransformBeforeLayout(),
         translate(center.x, center.y),
-        rotate((ccwRotationOffset || 0) * Math.PI / 180),
+        rotate(((ccwRotationOffset || 0) * Math.PI) / 180),
         translate(-originalCenter.x, -originalCenter.y),
       )
 
