@@ -317,17 +317,51 @@ function convertTreeToInputProblem(
   // Create connections between pins in the same connectivity group
   for (const [connectivityKey, pins] of connectivityGroups) {
     if (pins.length >= 2) {
-      // Create a net for this connectivity group
-      problem.netMap[connectivityKey] = {
-        netId: connectivityKey,
-      }
+      // Check if this connectivity should be a strong connection or net connection
+      // Strong connection: direct port-to-port (connected_source_port_ids >= 2, no nets)
+      // Net connection: involves named nets (connected_source_net_ids > 0)
+      const tracesWithThisKey = db.source_trace.list().filter((trace: any) => 
+        trace.subcircuit_connectivity_map_key === connectivityKey
+      )
       
-      // Connect all pins to this net
-      for (const pinId of pins) {
-        problem.netConnMap[`${pinId}-${connectivityKey}`] = true
-      }
+      // Check if any trace in this connectivity group involves named nets
+      const hasNetConnections = tracesWithThisKey.some((trace: any) => 
+        trace.connected_source_net_ids && trace.connected_source_net_ids.length > 0
+      )
       
-      debug(`[${group.name}] Created net ${connectivityKey} with ${pins.length} pins:`, pins)
+      // Check if any trace has direct port-to-port connections
+      const hasDirectConnections = tracesWithThisKey.some((trace: any) => 
+        trace.connected_source_port_ids && trace.connected_source_port_ids.length >= 2
+      )
+      
+      debug(`[${group.name}] Connectivity ${connectivityKey}: hasNetConnections=${hasNetConnections}, hasDirectConnections=${hasDirectConnections}`)
+      
+      if (hasDirectConnections) {
+        // Prioritize strong connections for direct port-to-port connections
+        for (let i = 0; i < pins.length; i++) {
+          for (let j = i + 1; j < pins.length; j++) {
+            const pin1 = pins[i]
+            const pin2 = pins[j]
+            problem.pinStrongConnMap[`${pin1}-${pin2}`] = true
+            problem.pinStrongConnMap[`${pin2}-${pin1}`] = true
+            debug(`[${group.name}] Created strong connection: ${pin1} <-> ${pin2}`)
+          }
+        }
+      } else if (hasNetConnections) {
+        // Use net connections only when no direct connections exist
+        problem.netMap[connectivityKey] = {
+          netId: connectivityKey,
+        }
+        
+        // Connect all pins to this net
+        for (const pinId of pins) {
+          problem.netConnMap[`${pinId}-${connectivityKey}`] = true
+        }
+        
+        debug(`[${group.name}] Created net ${connectivityKey} with ${pins.length} pins:`, pins)
+      } else {
+        debug(`[${group.name}] No direct or net connections found for connectivity ${connectivityKey}`)
+      }
     }
   }
 

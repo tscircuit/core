@@ -67,7 +67,7 @@ test("voltage-regulator-match-adapt", () => {
 
   circuit.add(
     <board width="20mm" height="15mm" routingDisabled>
-      <VoltageRegulator matchAdapt name="voltage_regulator" />
+      <VoltageRegulator name="voltage_regulator" />
     </board>,
   )
 
