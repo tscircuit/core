@@ -69,15 +69,15 @@ function convertTreeToInputProblem(
       // Determine availableRotations based on component props
       let availableRotations: (0 | 90 | 180 | 270)[] = [0, 90, 180, 270] // Default: allow all rotations
 
-      if (component && component._parsedProps) {
-        const { schOrientation, schRotation } = component._parsedProps
-
-        // If schOrientation or schRotation is explicitly defined, constrain rotations
-        if (schOrientation !== undefined || schRotation !== undefined) {
-          // If explicitly set, only allow the specified rotation
-          const rotation = (schRotation ?? 0) as 0 | 90 | 180 | 270
-          availableRotations = [rotation]
-        }
+      if (component?._parsedProps?.schOrientation) {
+        // If explicitly set, only allow the specified rotation, which is a
+        // 0 offset (TODO in the future, we'll allow the "flipped" 180 offset)
+        availableRotations = [0]
+      }
+      if (component?._parsedProps?.schRotation !== undefined) {
+        // If explicitly set, only allow the specified rotation, which is a
+        // 0 offset
+        availableRotations = [0]
       }
 
       // Create chip entry
