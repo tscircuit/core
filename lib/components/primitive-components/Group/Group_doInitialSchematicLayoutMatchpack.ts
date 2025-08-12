@@ -1,5 +1,6 @@
 import {
   getCircuitJsonTree,
+  transformSchematicElements,
   type CircuitJsonTreeNode,
 } from "@tscircuit/circuit-json-util"
 import { LayoutPipelineSolver, type InputProblem } from "@tscircuit/matchpack"
@@ -162,12 +163,14 @@ function convertTreeToInputProblem(
             // Find the exact pin by constructing the expected pin ID
             const pinNumber = sourcePort.pin_number || sourcePort.name
             const expectedPinId = `${chipId}.${pinNumber}`
-            
+
             // Check if this pin ID exists in our chip's pins
             if (chip.pins.includes(expectedPinId)) {
               relevantPins.push(expectedPinId)
             } else {
-              debug(`Warning: Could not find pin ${expectedPinId} in chip ${chipId}`)
+              debug(
+                `Warning: Could not find pin ${expectedPinId} in chip ${chipId}`,
+              )
             }
           }
         }
@@ -366,6 +369,19 @@ export function Group_doInitialSchematicLayoutMatchPack<
             text.position.x = newCenter.x + rotatedDx
             text.position.y = newCenter.y + rotatedDy
           }
+
+          // Apply rotation to component direction
+          if (schematicComponent.symbol_name) {
+            const schematicSymbolDirection =
+              schematicComponent.symbol_name.match(/_(right|left|up|down)$/)
+            if (schematicSymbolDirection) {
+              schematicComponent.symbol_name =
+                schematicComponent.symbol_name.replace(
+                  schematicSymbolDirection[0],
+                  `_${rotateDirection(schematicSymbolDirection[1], placement.ccwRotationDegrees)}`,
+                )
+            }
+          }
         }
       }
     } else if (treeNode.nodeType === "group" && treeNode.sourceGroup) {
@@ -377,29 +393,8 @@ export function Group_doInitialSchematicLayoutMatchPack<
       if (schematicGroup) {
         debug(`Moving group ${chipId} to (${newCenter.x}, ${newCenter.y})`)
 
-        // Move all elements within the group
-        const groupElements = treeNode.otherChildElements || []
-        const positionDelta = {
-          x: newCenter.x - (schematicGroup.center?.x || 0),
-          y: newCenter.y - (schematicGroup.center?.y || 0),
-        }
-
-        // Update group center if it has one
-        if (schematicGroup.center) {
-          schematicGroup.center = newCenter
-        }
-
-        // Move all child elements within the group
-        groupElements.forEach((element: any) => {
-          if (element.center) {
-            element.center.x += positionDelta.x
-            element.center.y += positionDelta.y
-          }
-          if (element.position) {
-            element.position.x += positionDelta.x
-            element.position.y += positionDelta.y
-          }
-        })
+        // TODO schematic group translation
+        // transformSchematicElements(...)
       }
     }
   }
