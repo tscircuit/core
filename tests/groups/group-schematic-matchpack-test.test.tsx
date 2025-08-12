@@ -30,10 +30,18 @@ test("group schematic matchpack layout", () => {
   const c1SourceComponent = circuit.db.source_component.getWhere({ name: "C1" })
   const u1SourceComponent = circuit.db.source_component.getWhere({ name: "U1" })
 
-  const r1 = circuit.db.schematic_component.getWhere({ source_component_id: r1SourceComponent.source_component_id })
-  const r2 = circuit.db.schematic_component.getWhere({ source_component_id: r2SourceComponent.source_component_id })
-  const c1 = circuit.db.schematic_component.getWhere({ source_component_id: c1SourceComponent.source_component_id })
-  const u1 = circuit.db.schematic_component.getWhere({ source_component_id: u1SourceComponent.source_component_id })
+  const r1 = circuit.db.schematic_component.getWhere({
+    source_component_id: r1SourceComponent!.source_component_id,
+  })
+  const r2 = circuit.db.schematic_component.getWhere({
+    source_component_id: r2SourceComponent!.source_component_id,
+  })
+  const c1 = circuit.db.schematic_component.getWhere({
+    source_component_id: c1SourceComponent!.source_component_id,
+  })
+  const u1 = circuit.db.schematic_component.getWhere({
+    source_component_id: u1SourceComponent!.source_component_id,
+  })
 
   expect(r1).toBeDefined()
   expect(r2).toBeDefined()

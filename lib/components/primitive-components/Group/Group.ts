@@ -24,7 +24,7 @@ import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalA
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
-import { Group_doInitialSchematicLayoutMatchPack as Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchpack"
+import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
