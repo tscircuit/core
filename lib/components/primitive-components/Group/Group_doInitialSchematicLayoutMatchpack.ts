@@ -66,6 +66,8 @@ function convertTreeToInputProblem(
           x: schematicComponent.size?.width || 1,
           y: schematicComponent.size?.height || 1,
         },
+        // TODO determine availableRotations based on the component._parsedProps.schOrientation and component._parsedProps.schRotation (if explicitly defined)
+        // availableRotations: [0, 90, 180, 270]
       }
 
       // Get ports for this component
