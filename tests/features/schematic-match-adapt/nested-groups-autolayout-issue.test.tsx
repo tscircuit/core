@@ -8,7 +8,7 @@ test("nested-groups-autolayout-issue", () => {
 
   circuit.add(
     <board width="20mm" height="20mm" routingDisabled>
-      <group matchAdapt>
+      <group>
         <resistor name="R2" resistance="2.2k" />
       </group>
       <group>
