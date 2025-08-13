@@ -1,12 +1,12 @@
-import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
-import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { AnyCircuitElement } from "circuit-json"
-import {
-  generateApproximatingRects,
-  type RotatedRect,
-} from "./generateApproximatingRects"
-import { fillPolygonWithRects } from "./fillPolygonWithRects"
+import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { fillCircleWithRects } from "./fillCircleWithRects"
+import { fillPolygonWithRects } from "./fillPolygonWithRects"
+import {
+  type RotatedRect,
+  generateApproximatingRects,
+} from "./generateApproximatingRects"
+import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
 import type { Obstacle } from "./types"
 
 const EVERY_LAYER = ["top", "inner1", "inner2", "bottom"]
@@ -22,6 +22,23 @@ export const getObstaclesFromCircuitJson = (
         )
       : idList
   const obstacles: Obstacle[] = []
+
+  const sourceTraceIds = new Set(
+    soup
+      .filter((e) => e.type === "source_trace")
+      .map((e) => (e as any).source_trace_id),
+  )
+  const pcbTraceSourceIds = new Set(
+    soup
+      .filter((e) => e.type === "pcb_trace" && (e as any).source_trace_id)
+      .map((e) => (e as any).source_trace_id as string),
+  )
+
+  for (const id of sourceTraceIds) {
+    if (!pcbTraceSourceIds.has(id)) {
+      throw new Error(`Missing pcb_trace for source_trace ${id}`)
+    }
+  }
   for (const element of soup) {
     if (element.type === "pcb_smtpad") {
       if (element.shape === "circle") {

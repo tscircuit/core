@@ -1,4 +1,3 @@
-import type { Trace } from "./Trace"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
@@ -6,12 +5,13 @@ import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { getClosest } from "lib/utils/getClosest"
+import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { pairs } from "lib/utils/pairs"
 import { tryNow } from "lib/utils/try-now"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
+import type { Trace } from "./Trace"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
-import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -205,7 +205,12 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   // Cache the PCB obstacles, they'll be needed for each segment between
   // ports/hints
   const [obstacles, errGettingObstacles] = tryNow(
-    () => getObstaclesFromCircuitJson(trace.root!.db.toArray() as any), // Remove as any when autorouting-dataset gets updated
+    () =>
+      getObstaclesFromCircuitJson(
+        trace
+          .root!.db.toArray()
+          .filter((e) => e.type !== "source_trace") as any,
+      ), // Remove as any when autorouting-dataset gets updated
   )
 
   if (errGettingObstacles) {
