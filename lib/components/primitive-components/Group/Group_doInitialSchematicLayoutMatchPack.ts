@@ -336,19 +336,62 @@ function convertTreeToInputProblem(
       
       debug(`[${group.name}] Connectivity ${connectivityKey}: hasNetConnections=${hasNetConnections}, hasDirectConnections=${hasDirectConnections}`)
       
+      // Create specific strong connections for direct port-to-port traces
       if (hasDirectConnections) {
-        // Prioritize strong connections for direct port-to-port connections
-        for (let i = 0; i < pins.length; i++) {
-          for (let j = i + 1; j < pins.length; j++) {
-            const pin1 = pins[i]
-            const pin2 = pins[j]
-            problem.pinStrongConnMap[`${pin1}-${pin2}`] = true
-            problem.pinStrongConnMap[`${pin2}-${pin1}`] = true
-            debug(`[${group.name}] Created strong connection: ${pin1} <-> ${pin2}`)
+        // Find specific pairs that have direct connections
+        for (const trace of tracesWithThisKey) {
+          if (trace.connected_source_port_ids && trace.connected_source_port_ids.length >= 2) {
+            // This trace has direct port-to-port connections
+            const directlyConnectedPins: string[] = []
+            
+            for (const portId of trace.connected_source_port_ids) {
+              // Find which pin this port corresponds to
+              for (const pinId of pins) {
+                const pinNumber = pinId.split('.').pop()
+                const sourcePort = db.source_port.get(portId)
+                if (sourcePort && String(sourcePort.pin_number || sourcePort.name) === String(pinNumber)) {
+                  // Check if this port belongs to the right component for this pin
+                  const chipId = pinId.split('.')[0]
+                  const treeNode = tree.childNodes.find((child) => {
+                    if (child.nodeType === "component" && child.sourceComponent) {
+                      return child.sourceComponent.name === chipId
+                    }
+                    if (child.nodeType === "group" && child.sourceGroup) {
+                      const expectedChipId = `group_${tree.childNodes.indexOf(child)}`
+                      return expectedChipId === chipId
+                    }
+                    return false
+                  })
+                  
+                  if (treeNode?.nodeType === "component" && treeNode.sourceComponent) {
+                    const portBelongsToComponent = db.source_port
+                      .list({ source_component_id: treeNode.sourceComponent.source_component_id })
+                      .some((p: any) => p.source_port_id === portId)
+                    
+                    if (portBelongsToComponent) {
+                      directlyConnectedPins.push(pinId)
+                    }
+                  }
+                }
+              }
+            }
+            
+            // Create strong connections between directly connected pins
+            for (let i = 0; i < directlyConnectedPins.length; i++) {
+              for (let j = i + 1; j < directlyConnectedPins.length; j++) {
+                const pin1 = directlyConnectedPins[i]
+                const pin2 = directlyConnectedPins[j]
+                problem.pinStrongConnMap[`${pin1}-${pin2}`] = true
+                problem.pinStrongConnMap[`${pin2}-${pin1}`] = true
+                debug(`[${group.name}] Created strong connection: ${pin1} <-> ${pin2}`)
+              }
+            }
           }
         }
-      } else if (hasNetConnections) {
-        // Use net connections only when no direct connections exist
+      }
+      
+      // Always create net connections for the overall connectivity
+      if (hasNetConnections) {
         problem.netMap[connectivityKey] = {
           netId: connectivityKey,
         }
@@ -359,8 +402,6 @@ function convertTreeToInputProblem(
         }
         
         debug(`[${group.name}] Created net ${connectivityKey} with ${pins.length} pins:`, pins)
-      } else {
-        debug(`[${group.name}] No direct or net connections found for connectivity ${connectivityKey}`)
       }
     }
   }
