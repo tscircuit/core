@@ -18,7 +18,6 @@ test("example27 schematic sel netlabel", async () => {
           },
         }}
       />
-
       <capacitor
         name="C2"
         capacitance="10nf"

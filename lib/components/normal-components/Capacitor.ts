@@ -35,6 +35,8 @@ export class Capacitor extends NormalComponent<
           pin2: ["cathode", "neg"],
         },
       })
+    } else {
+      super.initPorts()
     }
   }
 
