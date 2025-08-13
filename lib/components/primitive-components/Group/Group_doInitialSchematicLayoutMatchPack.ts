@@ -67,12 +67,16 @@ function convertTreeToInputProblem(
     partitionGap: 1.2,
   }
 
-  debug(`[${group.name}] Processing ${tree.childNodes.length} child nodes for input problem`)
+  debug(
+    `[${group.name}] Processing ${tree.childNodes.length} child nodes for input problem`,
+  )
 
   // Process each top-level child as a "composite chip"
   tree.childNodes.forEach((child, index) => {
-    debug(`[${group.name}] Processing child ${index}: nodeType=${child.nodeType}`)
-    
+    debug(
+      `[${group.name}] Processing child ${index}: nodeType=${child.nodeType}`,
+    )
+
     if (child.nodeType === "component") {
       debug(`[${group.name}] - Component: ${child.sourceComponent?.name}`)
     } else if (child.nodeType === "group") {
@@ -146,28 +150,37 @@ function convertTreeToInputProblem(
       // Handle nested groups as composite chips
       const groupId = child.sourceGroup.name || `group_${index}`
       debug(`[${group.name}] Processing nested group: ${groupId}`)
-      
+
       const schematicGroup = db.schematic_group?.getWhere?.({
         source_group_id: child.sourceGroup.source_group_id,
       })
 
-      debug(`[${group.name}] Found schematic_group for ${groupId}:`, schematicGroup)
+      debug(
+        `[${group.name}] Found schematic_group for ${groupId}:`,
+        schematicGroup,
+      )
 
       if (schematicGroup) {
         // For nested groups, we need to find their actual components and treat the group as a chip
         debug(`[${group.name}] Treating group ${groupId} as composite chip`)
-        
+
         // Get all schematic components within this group
         const groupComponents = db.schematic_component.list({
           schematic_group_id: schematicGroup.schematic_group_id,
         })
-        
-        debug(`[${group.name}] Group ${groupId} has ${groupComponents.length} components:`, groupComponents.map((c: any) => c.source_component_id))
-        
+
+        debug(
+          `[${group.name}] Group ${groupId} has ${groupComponents.length} components:`,
+          groupComponents.map((c: any) => c.source_component_id),
+        )
+
         // Calculate bounding box of components in the group
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+        let minX = Infinity,
+          maxX = -Infinity,
+          minY = Infinity,
+          maxY = -Infinity
         let hasValidBounds = false
-        
+
         for (const comp of groupComponents) {
           if (comp.center && comp.size) {
             hasValidBounds = true
@@ -179,32 +192,34 @@ function convertTreeToInputProblem(
             maxY = Math.max(maxY, comp.center.y + halfHeight)
           }
         }
-        
+
         const groupWidth = hasValidBounds ? maxX - minX : 2
         const groupHeight = hasValidBounds ? maxY - minY : 2
-        
-        debug(`[${group.name}] Group ${groupId} computed size: ${groupWidth} x ${groupHeight}`)
-        
+
+        debug(
+          `[${group.name}] Group ${groupId} computed size: ${groupWidth} x ${groupHeight}`,
+        )
+
         // Collect all schematic ports from components within this group
         const groupPins: string[] = []
         for (const comp of groupComponents) {
           const ports = db.schematic_port.list({
             schematic_component_id: comp.schematic_component_id,
           })
-          
+
           for (const port of ports) {
             const sourcePort = db.source_port.get(port.source_port_id)
             if (!sourcePort) continue
-            
+
             const pinId = `${groupId}.${sourcePort.pin_number || sourcePort.name || port.schematic_port_id}`
             groupPins.push(pinId)
-            
+
             // Calculate pin offset relative to group center
             const groupCenter = schematicGroup.center || { x: 0, y: 0 }
-            
+
             // Map facing direction to side
             const side = facingDirectionToSide(port.facing_direction)
-            
+
             problem.chipPinMap[pinId] = {
               pinId,
               offset: {
@@ -215,9 +230,12 @@ function convertTreeToInputProblem(
             }
           }
         }
-        
-        debug(`[${group.name}] Group ${groupId} has ${groupPins.length} pins:`, groupPins)
-        
+
+        debug(
+          `[${group.name}] Group ${groupId} has ${groupPins.length} pins:`,
+          groupPins,
+        )
+
         // Treat groups as chips with their bounding box as size and collected pins
         problem.chipMap[groupId] = {
           chipId: groupId,
@@ -227,25 +245,27 @@ function convertTreeToInputProblem(
             y: groupHeight,
           },
         }
-        
+
         debug(`[${group.name}] Added group ${groupId} to chipMap`)
       } else {
-        debug(`[${group.name}] Warning: No schematic_group found for group ${groupId}`)
+        debug(
+          `[${group.name}] Warning: No schematic_group found for group ${groupId}`,
+        )
       }
     }
   })
 
   // Create connections using subcircuit_connectivity_map_key
   debug(`[${group.name}] Creating connections using connectivity keys`)
-  
+
   // Group pins by their connectivity keys
   const connectivityGroups = new Map<string, string[]>()
-  
+
   for (const [chipId, chip] of Object.entries(problem.chipMap)) {
     for (const pinId of chip.pins) {
       // Find the source port for this pin
-      const pinNumber = pinId.split('.').pop() // Extract pin number from chipId.pinNumber
-      
+      const pinNumber = pinId.split(".").pop() // Extract pin number from chipId.pinNumber
+
       // Find the port by looking through all ports in the chip's components
       const treeNode = tree.childNodes.find((child) => {
         if (child.nodeType === "component" && child.sourceComponent) {
@@ -257,32 +277,35 @@ function convertTreeToInputProblem(
         }
         return false
       })
-      
+
       if (treeNode?.nodeType === "group" && treeNode.sourceGroup) {
         const schematicGroup = db.schematic_group?.getWhere?.({
           source_group_id: treeNode.sourceGroup.source_group_id,
         })
-        
+
         if (schematicGroup) {
           const groupComponents = db.schematic_component.list({
             schematic_group_id: schematicGroup.schematic_group_id,
           })
-          
+
           for (const comp of groupComponents) {
             const sourcePorts = db.source_port.list({
               source_component_id: comp.source_component_id,
             })
-            
+
             for (const sourcePort of sourcePorts) {
               const portNumber = sourcePort.pin_number || sourcePort.name
               if (String(portNumber) === String(pinNumber)) {
                 if (sourcePort.subcircuit_connectivity_map_key) {
-                  const connectivityKey = sourcePort.subcircuit_connectivity_map_key
+                  const connectivityKey =
+                    sourcePort.subcircuit_connectivity_map_key
                   if (!connectivityGroups.has(connectivityKey)) {
                     connectivityGroups.set(connectivityKey, [])
                   }
                   connectivityGroups.get(connectivityKey)!.push(pinId)
-                  debug(`[${group.name}] ✓ Pin ${pinId} has connectivity key: ${connectivityKey}`)
+                  debug(
+                    `[${group.name}] ✓ Pin ${pinId} has connectivity key: ${connectivityKey}`,
+                  )
                 } else {
                   debug(`[${group.name}] Pin ${pinId} has no connectivity key`)
                 }
@@ -290,70 +313,102 @@ function convertTreeToInputProblem(
             }
           }
         }
-      } else if (treeNode?.nodeType === "component" && treeNode.sourceComponent) {
+      } else if (
+        treeNode?.nodeType === "component" &&
+        treeNode.sourceComponent
+      ) {
         // Handle regular component chips
         const sourcePorts = db.source_port.list({
           source_component_id: treeNode.sourceComponent.source_component_id,
         })
-        
+
         for (const sourcePort of sourcePorts) {
           const portNumber = sourcePort.pin_number || sourcePort.name
-          if (String(portNumber) === String(pinNumber) && sourcePort.subcircuit_connectivity_map_key) {
+          if (
+            String(portNumber) === String(pinNumber) &&
+            sourcePort.subcircuit_connectivity_map_key
+          ) {
             const connectivityKey = sourcePort.subcircuit_connectivity_map_key
             if (!connectivityGroups.has(connectivityKey)) {
               connectivityGroups.set(connectivityKey, [])
             }
             connectivityGroups.get(connectivityKey)!.push(pinId)
-            debug(`[${group.name}] Pin ${pinId} has connectivity key: ${connectivityKey}`)
+            debug(
+              `[${group.name}] Pin ${pinId} has connectivity key: ${connectivityKey}`,
+            )
           }
         }
       }
     }
   }
-  
-  debug(`[${group.name}] Found ${connectivityGroups.size} connectivity groups:`, 
-    Array.from(connectivityGroups.entries()).map(([key, pins]) => ({ key, pins })))
-  
+
+  debug(
+    `[${group.name}] Found ${connectivityGroups.size} connectivity groups:`,
+    Array.from(connectivityGroups.entries()).map(([key, pins]) => ({
+      key,
+      pins,
+    })),
+  )
+
   // Create connections between pins in the same connectivity group
   for (const [connectivityKey, pins] of connectivityGroups) {
     if (pins.length >= 2) {
       // Check if this connectivity should be a strong connection or net connection
       // Strong connection: direct port-to-port (connected_source_port_ids >= 2, no nets)
       // Net connection: involves named nets (connected_source_net_ids > 0)
-      const tracesWithThisKey = db.source_trace.list().filter((trace: any) => 
-        trace.subcircuit_connectivity_map_key === connectivityKey
-      )
-      
+      const tracesWithThisKey = db.source_trace
+        .list()
+        .filter(
+          (trace: any) =>
+            trace.subcircuit_connectivity_map_key === connectivityKey,
+        )
+
       // Check if any trace in this connectivity group involves named nets
-      const hasNetConnections = tracesWithThisKey.some((trace: any) => 
-        trace.connected_source_net_ids && trace.connected_source_net_ids.length > 0
+      const hasNetConnections = tracesWithThisKey.some(
+        (trace: any) =>
+          trace.connected_source_net_ids &&
+          trace.connected_source_net_ids.length > 0,
       )
-      
+
       // Check if any trace has direct port-to-port connections
-      const hasDirectConnections = tracesWithThisKey.some((trace: any) => 
-        trace.connected_source_port_ids && trace.connected_source_port_ids.length >= 2
+      const hasDirectConnections = tracesWithThisKey.some(
+        (trace: any) =>
+          trace.connected_source_port_ids &&
+          trace.connected_source_port_ids.length >= 2,
       )
-      
-      debug(`[${group.name}] Connectivity ${connectivityKey}: hasNetConnections=${hasNetConnections}, hasDirectConnections=${hasDirectConnections}`)
-      
+
+      debug(
+        `[${group.name}] Connectivity ${connectivityKey}: hasNetConnections=${hasNetConnections}, hasDirectConnections=${hasDirectConnections}`,
+      )
+
       // Create specific strong connections for direct port-to-port traces
       if (hasDirectConnections) {
         // Find specific pairs that have direct connections
         for (const trace of tracesWithThisKey) {
-          if (trace.connected_source_port_ids && trace.connected_source_port_ids.length >= 2) {
+          if (
+            trace.connected_source_port_ids &&
+            trace.connected_source_port_ids.length >= 2
+          ) {
             // This trace has direct port-to-port connections
             const directlyConnectedPins: string[] = []
-            
+
             for (const portId of trace.connected_source_port_ids) {
               // Find which pin this port corresponds to
               for (const pinId of pins) {
-                const pinNumber = pinId.split('.').pop()
+                const pinNumber = pinId.split(".").pop()
                 const sourcePort = db.source_port.get(portId)
-                if (sourcePort && String(sourcePort.pin_number || sourcePort.name) === String(pinNumber)) {
+                if (
+                  sourcePort &&
+                  String(sourcePort.pin_number || sourcePort.name) ===
+                    String(pinNumber)
+                ) {
                   // Check if this port belongs to the right component for this pin
-                  const chipId = pinId.split('.')[0]
+                  const chipId = pinId.split(".")[0]
                   const treeNode = tree.childNodes.find((child) => {
-                    if (child.nodeType === "component" && child.sourceComponent) {
+                    if (
+                      child.nodeType === "component" &&
+                      child.sourceComponent
+                    ) {
                       return child.sourceComponent.name === chipId
                     }
                     if (child.nodeType === "group" && child.sourceGroup) {
@@ -362,12 +417,18 @@ function convertTreeToInputProblem(
                     }
                     return false
                   })
-                  
-                  if (treeNode?.nodeType === "component" && treeNode.sourceComponent) {
+
+                  if (
+                    treeNode?.nodeType === "component" &&
+                    treeNode.sourceComponent
+                  ) {
                     const portBelongsToComponent = db.source_port
-                      .list({ source_component_id: treeNode.sourceComponent.source_component_id })
+                      .list({
+                        source_component_id:
+                          treeNode.sourceComponent.source_component_id,
+                      })
                       .some((p: any) => p.source_port_id === portId)
-                    
+
                     if (portBelongsToComponent) {
                       directlyConnectedPins.push(pinId)
                     }
@@ -375,7 +436,7 @@ function convertTreeToInputProblem(
                 }
               }
             }
-            
+
             // Create strong connections between directly connected pins
             for (let i = 0; i < directlyConnectedPins.length; i++) {
               for (let j = i + 1; j < directlyConnectedPins.length; j++) {
@@ -383,25 +444,30 @@ function convertTreeToInputProblem(
                 const pin2 = directlyConnectedPins[j]
                 problem.pinStrongConnMap[`${pin1}-${pin2}`] = true
                 problem.pinStrongConnMap[`${pin2}-${pin1}`] = true
-                debug(`[${group.name}] Created strong connection: ${pin1} <-> ${pin2}`)
+                debug(
+                  `[${group.name}] Created strong connection: ${pin1} <-> ${pin2}`,
+                )
               }
             }
           }
         }
       }
-      
+
       // Always create net connections for the overall connectivity
       if (hasNetConnections) {
         problem.netMap[connectivityKey] = {
           netId: connectivityKey,
         }
-        
+
         // Connect all pins to this net
         for (const pinId of pins) {
           problem.netConnMap[`${pinId}-${connectivityKey}`] = true
         }
-        
-        debug(`[${group.name}] Created net ${connectivityKey} with ${pins.length} pins:`, pins)
+
+        debug(
+          `[${group.name}] Created net ${connectivityKey} with ${pins.length} pins:`,
+          pins,
+        )
       }
     }
   }
@@ -419,11 +485,15 @@ export function Group_doInitialSchematicLayoutMatchPack<
     source_group_id: group.source_group_id!,
   })
 
-  debug(`[${group.name}] Starting matchpack layout with ${tree.childNodes.length} children`)
+  debug(
+    `[${group.name}] Starting matchpack layout with ${tree.childNodes.length} children`,
+  )
   debug(`[${group.name}] Tree structure:`, JSON.stringify(tree, null, 2))
 
   if (tree.childNodes.length <= 1) {
-    debug(`[${group.name}] Only ${tree.childNodes.length} children, skipping layout`)
+    debug(
+      `[${group.name}] Only ${tree.childNodes.length} children, skipping layout`,
+    )
     return
   }
 
@@ -460,7 +530,7 @@ export function Group_doInitialSchematicLayoutMatchPack<
   // Get the output layout
   const outputLayout = solver.getOutputLayout()
   debug("OutputLayout:", JSON.stringify(outputLayout, null, 2))
-  
+
   // Check if solver completed successfully
   debug("Solver completed successfully:", !solver.failed)
 
@@ -489,18 +559,24 @@ export function Group_doInitialSchematicLayoutMatchPack<
   debug(`Group offset: x=${groupOffset.x}, y=${groupOffset.y}`)
 
   // Apply the layout results to schematic components
-  debug(`Applying layout results for ${Object.keys(outputLayout.chipPlacements).length} chip placements`)
-  
+  debug(
+    `Applying layout results for ${Object.keys(outputLayout.chipPlacements).length} chip placements`,
+  )
+
   for (const [chipId, placement] of Object.entries(
     outputLayout.chipPlacements,
   )) {
-    debug(`Processing placement for chip: ${chipId} at (${placement.x}, ${placement.y})`)
-    
+    debug(
+      `Processing placement for chip: ${chipId} at (${placement.x}, ${placement.y})`,
+    )
+
     // Find the corresponding tree node
     const treeNode = tree.childNodes.find((child) => {
       if (child.nodeType === "component" && child.sourceComponent) {
         const matches = child.sourceComponent.name === chipId
-        debug(`  Checking component ${child.sourceComponent.name}: matches=${matches}`)
+        debug(
+          `  Checking component ${child.sourceComponent.name}: matches=${matches}`,
+        )
         return matches
       }
       if (child.nodeType === "group" && child.sourceGroup) {
@@ -508,7 +584,9 @@ export function Group_doInitialSchematicLayoutMatchPack<
         const groupName = child.sourceGroup.name
         const expectedChipId = `group_${tree.childNodes.indexOf(child)}`
         const matches = expectedChipId === chipId
-        debug(`  Checking group ${groupName} (expected chipId: ${expectedChipId}): matches=${matches}`)
+        debug(
+          `  Checking group ${groupName} (expected chipId: ${expectedChipId}): matches=${matches}`,
+        )
         return matches
       }
       return false
@@ -516,11 +594,20 @@ export function Group_doInitialSchematicLayoutMatchPack<
 
     if (!treeNode) {
       debug(`Warning: No tree node found for chip: ${chipId}`)
-      debug(`Available tree nodes:`, tree.childNodes.map((child, idx) => ({
-        type: child.nodeType,
-        name: child.nodeType === "component" ? child.sourceComponent?.name : child.sourceGroup?.name,
-        expectedChipId: child.nodeType === "group" ? `group_${idx}` : child.sourceComponent?.name
-      })))
+      debug(
+        `Available tree nodes:`,
+        tree.childNodes.map((child, idx) => ({
+          type: child.nodeType,
+          name:
+            child.nodeType === "component"
+              ? child.sourceComponent?.name
+              : child.sourceGroup?.name,
+          expectedChipId:
+            child.nodeType === "group"
+              ? `group_${idx}`
+              : child.sourceComponent?.name,
+        })),
+      )
       continue
     }
 
@@ -631,23 +718,29 @@ export function Group_doInitialSchematicLayoutMatchPack<
       })
 
       if (schematicGroup) {
-        debug(`Moving group ${chipId} to (${newCenter.x}, ${newCenter.y}) from (${schematicGroup.center?.x}, ${schematicGroup.center?.y})`)
+        debug(
+          `Moving group ${chipId} to (${newCenter.x}, ${newCenter.y}) from (${schematicGroup.center?.x}, ${schematicGroup.center?.y})`,
+        )
 
         // Get all schematic components within this group
         const groupComponents = db.schematic_component.list({
           schematic_group_id: schematicGroup.schematic_group_id,
         })
-        
-        debug(`Group ${chipId} has ${groupComponents.length} components to move`)
-        
+
+        debug(
+          `Group ${chipId} has ${groupComponents.length} components to move`,
+        )
+
         // Calculate position delta
         const oldCenter = schematicGroup.center || { x: 0, y: 0 }
         const positionDelta = {
           x: newCenter.x - oldCenter.x,
           y: newCenter.y - oldCenter.y,
         }
-        
-        debug(`Position delta for group ${chipId}: (${positionDelta.x}, ${positionDelta.y})`)
+
+        debug(
+          `Position delta for group ${chipId}: (${positionDelta.x}, ${positionDelta.y})`,
+        )
 
         // Move all components within the group
         for (const component of groupComponents) {
@@ -655,9 +748,11 @@ export function Group_doInitialSchematicLayoutMatchPack<
             const oldComponentCenter = { ...component.center }
             component.center.x += positionDelta.x
             component.center.y += positionDelta.y
-            
-            debug(`Moved component ${component.source_component_id} from (${oldComponentCenter.x}, ${oldComponentCenter.y}) to (${component.center.x}, ${component.center.y})`)
-            
+
+            debug(
+              `Moved component ${component.source_component_id} from (${oldComponentCenter.x}, ${oldComponentCenter.y}) to (${component.center.x}, ${component.center.y})`,
+            )
+
             // Update associated ports and texts
             const ports = db.schematic_port.list({
               schematic_component_id: component.schematic_component_id,
@@ -665,7 +760,7 @@ export function Group_doInitialSchematicLayoutMatchPack<
             const texts = db.schematic_text.list({
               schematic_component_id: component.schematic_component_id,
             })
-            
+
             // Update port positions
             for (const port of ports) {
               if (port.center) {
@@ -683,10 +778,12 @@ export function Group_doInitialSchematicLayoutMatchPack<
             }
           }
         }
-        
+
         // Update the group center
         schematicGroup.center = newCenter
-        debug(`Updated group ${chipId} center to (${newCenter.x}, ${newCenter.y})`)
+        debug(
+          `Updated group ${chipId} center to (${newCenter.x}, ${newCenter.y})`,
+        )
       }
     }
   }

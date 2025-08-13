@@ -751,11 +751,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
     const hasManualEdits =
       (props.manualEdits?.schematic_placements?.length ?? 0) > 0
-    
+
     // Use match-adapt if no explicit positioning is set, even with group children
     // This allows nested groups to be laid out properly
-    if (!anyChildHasSchCoords && !hasManualEdits)
-      return "match-adapt"
+    if (!anyChildHasSchCoords && !hasManualEdits) return "match-adapt"
     return "relative"
   }
 
