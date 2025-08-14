@@ -69,7 +69,7 @@ test("chip with trace to missing component", () => {
   circuit.render()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  
+
   // Get all traces in the circuit
   const traces = circuit.selectAll("trace")
 
@@ -78,13 +78,13 @@ test("chip with trace to missing component", () => {
   // traces.forEach((trace, index) => {
   //   console.log(`Trace ${index}: ${trace._parsedProps.from} → ${trace._parsedProps.to}`)
   // })
-  
+
   // Test 1: Verify total number of traces (should be 8: MSP chains + other traces)
   expect(traces.length).toBe(6)
-  
+
   // Test 2: Verify MSP routing for VIN pin array connection
   // Should have traces forming C1→C2→C3→U1 chain (3 traces: C1.1→C2.1, C2.1→C3.1, C3.1→U1.VIN)
-  const vinTraces = traces.filter(trace => {
+  const vinTraces = traces.filter((trace) => {
     const from = trace._parsedProps.from
     const to = trace._parsedProps.to
     return (
@@ -95,10 +95,10 @@ test("chip with trace to missing component", () => {
     )
   })
   expect(vinTraces.length).toBe(3)
-  
-  // Test 3: Verify MSP routing for GND pin array connection  
+
+  // Test 3: Verify MSP routing for GND pin array connection
   // Should have traces forming C1→C2→C3→U1 chain for GND (3 traces: C1.2→C2.2, C2.2→C3.2, C3.2→U1.GND)
-  const gndTraces = traces.filter(trace => {
+  const gndTraces = traces.filter((trace) => {
     const from = trace._parsedProps.from
     const to = trace._parsedProps.to
     return (
@@ -108,10 +108,10 @@ test("chip with trace to missing component", () => {
     )
   })
   expect(gndTraces.length).toBe(3)
-  
+
   // Test 4: Verify no duplicate individual traces from capacitors to chip
   // There should be NO direct traces from C6 or C1 to U1 pins (MSP prevents this)
-  const duplicateTraces = traces.filter(trace => {
+  const duplicateTraces = traces.filter((trace) => {
     const from = trace._parsedProps.from
     const to = trace._parsedProps.to
     return (
@@ -120,7 +120,7 @@ test("chip with trace to missing component", () => {
     )
   })
   expect(duplicateTraces.length).toBe(0)
-  
+
   // Test 5: Verify components are properly marked to prevent duplicate routing
   const chipU1 = circuit.selectOne("chip")
   if (chipU1) {
@@ -131,15 +131,15 @@ test("chip with trace to missing component", () => {
 
   // Test 6: Verify that MSP routing is creating optimized trace patterns
   // Count traces that involve capacitor-to-capacitor connections (MSP chains)
-  const capacitorChainTraces = traces.filter(trace => {
+  const capacitorChainTraces = traces.filter((trace) => {
     const from = trace._parsedProps.from
     const to = trace._parsedProps.to
     return (
       (from?.includes("C") && to?.includes("C")) || // C-to-C connections
-      (from?.includes("C") && to?.includes("U1"))    // C-to-chip connections
+      (from?.includes("C") && to?.includes("U1")) // C-to-chip connections
     )
   })
-  
+
   // Should have MSP chain connections: 6 total (3 VIN chain + 3 GND chain)
   expect(capacitorChainTraces.length).toBe(6)
 })
