@@ -32,16 +32,6 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   const { db } = trace.root!
   const { _parsedProps: props, parent } = trace
   
-  // DEBUG: Log all trace debug properties to see what we have
-  if (trace._debugColor || trace._debugLineStyle) {
-    console.log(`🔍 Trace Debug Properties:`, {
-      debugColor: trace._debugColor,
-      debugLineStyle: trace._debugLineStyle,
-      debugTransparency: trace._debugTransparency,
-      debugWidthMultiplier: trace._debugWidthMultiplier,
-      sourceTraceId: trace.source_trace_id
-    })
-  }
 
   if (!parent) throw new Error("Trace has no parent")
 
@@ -459,10 +449,6 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     debug_width_multiplier: trace._debugWidthMultiplier,
   })
   
-  // DEBUG: Log what debug properties we're inserting
-  if (trace._debugColor || trace._debugLineStyle) {
-    console.log(`🎨 DB Trace Insert: ${trace.source_trace_id} - color: ${trace._debugColor}, style: ${trace._debugLineStyle}, transparency: ${trace._debugTransparency}, width: ${trace._debugWidthMultiplier}`)
-  }
   trace.schematic_trace_id = dbTrace.schematic_trace_id
 
   for (const { port } of connectedPorts) {

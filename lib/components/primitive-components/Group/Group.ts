@@ -33,6 +33,7 @@ import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
+import { coordinateSubcircuitMSPRouting } from "lib/utils/schematic/MSPRouting"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -1002,7 +1003,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    */
   doInitialCreateNetsFromProps() {
     // Import and run MSP routing coordination early
-    const { coordinateSubcircuitMSPRouting } = require('lib/utils/schematic/MSPRouting')
     coordinateSubcircuitMSPRouting(this)
   }
 

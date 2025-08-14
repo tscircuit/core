@@ -7,41 +7,39 @@
  * Key Features:
  * - Detects hub patterns (multiple components connecting to same target)
  * - Creates coordinated MSP trace chains (R4→R3→R2→R1 instead of R4→R1, R3→R1, R2→R1)
- * - Visual debugging support with colored traces
  * - Runs once per subcircuit instead of once per component
  */
 
 import type { Group } from "../../components/primitive-components/Group/Group"
 import { Trace } from "../../components/primitive-components/Trace/Trace"
+import type { NormalComponent } from "../../components/base-components/NormalComponent/NormalComponent"
+
+// Type for components that can be MSP routed
+type MSPRoutableComponent = any // TODO: Improve when component types are more specific
 
 /**
  * Hub pattern represents multiple components connecting to the same target
  */
 export interface HubPattern {
   hubTarget: string
-  hubPosition: { x: number, y: number }
+  hubPosition: { x: number; y: number }
   components: Array<{
     name: string
-    component: any
-    position: { x: number, y: number }
+    component: MSPRoutableComponent
+    position: { x: number; y: number }
     distanceToHub: number
     pinName: string
   }>
 }
 
-/**
- * Debug colors and styles for visual trace identification
- */
-const MSP_DEBUG_COLORS = ['#ff0000', '#00ff00', '#0000ff', '#ff00ff', '#ffff00', '#00ffff']
-const MSP_DEBUG_STYLES = ['dashed', 'dashed', 'dashed', 'dotted', 'solid', 'dashed']
 
 /**
  * Main MSP routing coordinator for subcircuits
  */
 export class MSPRoutingCoordinator {
-  private subcircuit: Group
+  private subcircuit: Group<any>
 
-  constructor(subcircuit: Group) {
+  constructor(subcircuit: Group<any>) {
     this.subcircuit = subcircuit
   }
 
@@ -52,7 +50,6 @@ export class MSPRoutingCoordinator {
     if (this.subcircuit.root?.schematicDisabled) return
     if (!this.subcircuit.isSubcircuit) return
     
-    console.log(`🏭 ${this.subcircuit.getString()} starting MSP routing coordination`)
     
     const hubPatterns = this.detectHubPatterns()
     
@@ -60,7 +57,6 @@ export class MSPRoutingCoordinator {
       this.createMSPTracesForHub(hubPattern)
     }
     
-    console.log(`🏭 ${this.subcircuit.getString()} completed MSP routing for ${hubPatterns.length} hub patterns`)
   }
 
   /**
@@ -70,12 +66,11 @@ export class MSPRoutingCoordinator {
     const allComponents = this.subcircuit.selectAll('resistor, capacitor, inductor')
     const hubMap = new Map<string, Array<{
       name: string
-      component: any
-      position: { x: number, y: number }
+      component: MSPRoutableComponent
+      position: { x: number; y: number }
       pinName: string
     }>>()
     
-    console.log(`🔍 ${this.subcircuit.getString()} scanning ${allComponents.length} components for hub patterns...`)
     
     // Group components by their connection targets
     for (const component of allComponents) {
@@ -100,7 +95,6 @@ export class MSPRoutingCoordinator {
           }
         }
       } catch (error) {
-        console.warn(`⚠️  Error processing component ${component.getString()}:`, error)
       }
     }
     
@@ -117,8 +111,8 @@ export class MSPRoutingCoordinator {
         const componentsWithDistances = components.map(comp => ({
           ...comp,
           distanceToHub: Math.sqrt(
-            Math.pow(comp.position.x - hubPosition.x, 2) + 
-            Math.pow(comp.position.y - hubPosition.y, 2)
+            (comp.position.x - hubPosition.x) ** 2 + 
+            (comp.position.y - hubPosition.y) ** 2
           )
         })).sort((a, b) => a.distanceToHub - b.distanceToHub)
         
@@ -128,10 +122,6 @@ export class MSPRoutingCoordinator {
           components: componentsWithDistances
         })
         
-        console.log(`🎯 Found hub pattern: ${componentsWithDistances.length} components → ${hubTarget}`)
-        componentsWithDistances.forEach((comp, i) => {
-          console.log(`   ${i}: ${comp.name} at (${comp.position.x}, ${comp.position.y}), distance: ${comp.distanceToHub.toFixed(3)}`)
-        })
       }
     }
     
@@ -145,7 +135,6 @@ export class MSPRoutingCoordinator {
   private createMSPTracesForHub(hubPattern: HubPattern): void {
     const { hubTarget, hubPosition, components } = hubPattern
     
-    console.log(`🔗 Creating MSP traces for hub ${hubTarget} with ${components.length} components`)
     
     // Skip the closest component (index 0) - it connects directly to the hub
     // Create chain connections for the rest: each connects to the previous in the sorted order
@@ -153,32 +142,21 @@ export class MSPRoutingCoordinator {
       const currentComponent = components[i]
       const previousComponent = components[i - 1]
       
-      const debugColor = this.getMSPDebugColor(i)
-      const debugStyle = this.getMSPDebugStyle(i)
-      
-      console.log(`🔗 ${currentComponent.name} (chain pos ${i}) → ${previousComponent.name} (chain pos ${i-1})`)
-      console.log(`🎨 ${currentComponent.name} debug trace style: color=${debugColor}, style=${debugStyle}`)
-      
       // Create the MSP trace
       const trace = this.createMSPTrace(
         currentComponent,
         previousComponent,
-        hubPosition,
-        i,
-        debugColor,
-        debugStyle
+        hubPosition
       )
       
       // Mark the component so it doesn't create its own trace
-      currentComponent.component._mspRouted = true
+      ;(currentComponent.component as any)._mspRouted = true
       
-      console.log(`✅ ${currentComponent.name} generated hub MSP trace to ${previousComponent.name}!`)
     }
     
     // Mark the closest component (it will use normal routing to the hub)
     if (components.length > 0) {
-      components[0].component._mspRouted = false // Allow normal routing to hub
-      console.log(`❌ ${components[0].name} uses normal routing (closest to hub)`)
+      ;(components[0].component as any)._mspRouted = false // Allow normal routing to hub
     }
   }
 
@@ -186,12 +164,9 @@ export class MSPRoutingCoordinator {
    * Create an MSP trace between two components in the chain
    */
   private createMSPTrace(
-    fromComponent: any,
-    toComponent: any,
-    hubPosition: { x: number, y: number },
-    chainIndex: number,
-    debugColor: string,
-    debugStyle: string
+    fromComponent: HubPattern['components'][0],
+    toComponent: HubPattern['components'][0],
+    hubPosition: { x: number; y: number }
   ): Trace {
     const fromSelector = `${fromComponent.name}.${fromComponent.pinName}`
     const toSelector = `${toComponent.name}.${fromComponent.pinName}`
@@ -207,11 +182,6 @@ export class MSPRoutingCoordinator {
       ]
     })
     
-    // Set debug properties directly on the trace instance for visual debugging
-    trace._debugColor = debugColor
-    trace._debugLineStyle = debugStyle
-    trace._debugWidthMultiplier = 1 + chainIndex * 0.3
-    trace._debugTransparency = 0.8 + chainIndex * 0.05
     
     // Add the trace to the subcircuit
     this.subcircuit.add(trace)
@@ -219,19 +189,6 @@ export class MSPRoutingCoordinator {
     return trace
   }
 
-  /**
-   * Get debug color for MSP trace based on chain index
-   */
-  private getMSPDebugColor(index: number): string {
-    return MSP_DEBUG_COLORS[index % MSP_DEBUG_COLORS.length]
-  }
-
-  /**
-   * Get debug line style for MSP trace based on chain index  
-   */
-  private getMSPDebugStyle(index: number): string {
-    return MSP_DEBUG_STYLES[index % MSP_DEBUG_STYLES.length]
-  }
 
   /**
    * Get component position by selector (e.g., "R1.pin1" → R1's position)
@@ -249,13 +206,11 @@ export class MSPRoutingCoordinator {
         if (altComponent) {
           return altComponent._getGlobalSchematicPositionBeforeLayout()
         }
-        console.warn(`⚠️  Component not found: ${componentName} from selector ${selector}`)
         return null
       }
       
       return component._getGlobalSchematicPositionBeforeLayout()
     } catch (error) {
-      console.warn(`⚠️  Error getting position for ${selector}:`, error)
       return null
     }
   }
@@ -264,7 +219,7 @@ export class MSPRoutingCoordinator {
 /**
  * Utility function to coordinate MSP routing for a subcircuit
  */
-export function coordinateSubcircuitMSPRouting(subcircuit: Group): void {
+export function coordinateSubcircuitMSPRouting(subcircuit: Group<any>): void {
   const coordinator = new MSPRoutingCoordinator(subcircuit)
   coordinator.coordinateMSPRouting()
 }
