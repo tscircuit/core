@@ -362,7 +362,6 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const mergedRoute = mergeRoutes(routes)
 
   const traceLength = getTraceLength(mergedRoute)
-
   const pcb_trace = db.pcb_trace.insert({
     route: mergedRoute,
     source_trace_id: trace.source_trace_id!,

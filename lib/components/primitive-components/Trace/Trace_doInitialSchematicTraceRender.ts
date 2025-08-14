@@ -43,7 +43,10 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     connectedPorts = result.portsWithSelectors ?? []
   } catch (error) {
     if (error instanceof TraceConnectionError) {
-      db.source_trace_not_connected.insert(error.errorData)
+      db.source_trace_not_connected_error.insert({
+        ...error.errorData,
+        error_type: "source_trace_not_connected_error",
+      })
       return
     }
     throw error
@@ -437,7 +440,6 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     edges,
     junctions,
   })
-
   trace.schematic_trace_id = dbTrace.schematic_trace_id
 
   for (const { port } of connectedPorts) {

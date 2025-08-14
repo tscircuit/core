@@ -89,7 +89,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   })
 
   const traceLength = getTraceLength(route)
-
   const pcb_trace = db.pcb_trace.insert({
     route,
     source_trace_id: trace.source_trace_id!,
