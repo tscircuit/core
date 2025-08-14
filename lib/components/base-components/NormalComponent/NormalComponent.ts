@@ -1189,7 +1189,20 @@ export class NormalComponent<
     const { _parsedProps: props } = this
 
     if (props.connections) {
+      // Check if this component has already been MSP routed at the subcircuit level
+      if ((this as any)._mspRouted === true) {
+        // Skip trace creation - already handled by MSP routing algorithm
+        return
+      }
+
+      // Use standard trace creation for all other cases
       for (const [pinName, target] of Object.entries(props.connections)) {
+        // Skip pins that have been handled by MSP routing
+        if ((this as any)._mspRoutedPins?.has(pinName)) {
+          // Skip trace creation - already handled by MSP routing algorithm
+          continue
+        }
+
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
           this.add(
