@@ -56,7 +56,6 @@ export class Trace
   subcircuit_connectivity_map_key: string | null = null
   _traceConnectionHash: string | null = null
   _couldNotFindPort?: boolean
-  
 
   constructor(props: z.input<typeof traceProps>) {
     super(props)

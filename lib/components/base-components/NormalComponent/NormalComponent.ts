@@ -1197,6 +1197,12 @@ export class NormalComponent<
 
       // Use standard trace creation for all other cases
       for (const [pinName, target] of Object.entries(props.connections)) {
+        // Skip pins that have been handled by MSP routing
+        if ((this as any)._mspRoutedPins?.has(pinName)) {
+          // Skip trace creation - already handled by MSP routing algorithm
+          continue
+        }
+
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
           this.add(
@@ -1209,5 +1215,4 @@ export class NormalComponent<
       }
     }
   }
-
 }

@@ -670,7 +670,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if ((pcb_trace as any).connection_name) {
         const sourceTraceId = (pcb_trace as any).connection_name
         pcb_trace.source_trace_id = sourceTraceId
-
       }
 
       db.pcb_trace.insert(pcb_trace)
@@ -998,7 +997,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   /**
-   * Called in CreateNetsFromProps phase to coordinate MSP routing 
+   * Called in CreateNetsFromProps phase to coordinate MSP routing
    * before individual components create their traces
    */
   doInitialCreateNetsFromProps() {

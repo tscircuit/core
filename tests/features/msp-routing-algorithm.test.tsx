@@ -10,7 +10,7 @@ test("MSP routing algorithm creates optimal trace chains", () => {
         {/* Create a hub pattern: multiple resistors connecting to the same VCC pin */}
         <resistor
           name="R1"
-          resistance="1k" 
+          resistance="1k"
           footprint="0402"
           schX={-5}
           schY={2}
@@ -19,13 +19,13 @@ test("MSP routing algorithm creates optimal trace chains", () => {
         <resistor
           name="R2"
           resistance="1k"
-          footprint="0402" 
+          footprint="0402"
           schX={-3}
           schY={2}
           connections={{ pin1: "VCC.pin1", pin2: "net.GND" }}
         />
         <resistor
-          name="R3" 
+          name="R3"
           resistance="1k"
           footprint="0402"
           schX={-1}
@@ -49,7 +49,7 @@ test("MSP routing algorithm creates optimal trace chains", () => {
           schY={0}
         />
       </group>
-    </board>
+    </board>,
   )
 
   circuit.render()
@@ -59,7 +59,7 @@ test("MSP routing algorithm creates optimal trace chains", () => {
 
   // Get all traces created by the circuit
   const allTraces = circuit.db.source_trace.list()
-  
+
   // Check that MSP routing created traces
   // MSP algorithm creates chain traces + normal traces for hub connections
   expect(allTraces.length).toBeGreaterThanOrEqual(4)
@@ -102,14 +102,14 @@ test("MSP routing handles single component gracefully", () => {
           schY={0}
         />
       </group>
-    </board>
+    </board>,
   )
 
   circuit.render()
 
   // Should render without errors
   expect(circuit.db.source_component.list()).toHaveLength(2)
-  
+
   // Should create normal traces, not MSP traces
   const allTraces = circuit.db.source_trace.list()
   expect(allTraces.length).toBeGreaterThan(0)
@@ -165,14 +165,14 @@ test("MSP routing with mixed component types", () => {
           schY={0}
         />
       </group>
-    </board>
+    </board>,
   )
 
   circuit.render()
 
   // Verify all components rendered
   expect(circuit.db.source_component.list()).toHaveLength(5)
-  
+
   // Verify traces were created
   const allTraces = circuit.db.source_trace.list()
   expect(allTraces.length).toBeGreaterThan(0)

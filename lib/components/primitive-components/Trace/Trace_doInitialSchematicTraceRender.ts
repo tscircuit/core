@@ -31,7 +31,6 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   // if (trace.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
   const { db } = trace.root!
   const { _parsedProps: props, parent } = trace
-  
 
   if (!parent) throw new Error("Trace has no parent")
 
@@ -438,7 +437,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     edges,
     junctions,
   })
-  
+
   trace.schematic_trace_id = dbTrace.schematic_trace_id
 
   for (const { port } of connectedPorts) {
