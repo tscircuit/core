@@ -1191,7 +1191,7 @@ export class NormalComponent<
     if (props.connections) {
       // Check if this component has already been MSP routed at the subcircuit level
       if ((this as any)._mspRouted === true) {
-        console.log(`⏭️  ${this.getString()} skipping trace creation - already MSP routed by subcircuit`)
+        // Skip trace creation - already handled by MSP routing algorithm
         return
       }
 
