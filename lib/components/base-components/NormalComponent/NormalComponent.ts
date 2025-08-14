@@ -1190,6 +1190,24 @@ export class NormalComponent<
     const { _parsedProps: props } = this
 
     if (props.connections) {
+      // Check if this component has already been MSP routed at the subcircuit level
+      if ((this as any)._mspRouted === true) {
+        console.log(`⏭️  ${this.getString()} skipping trace creation - already MSP routed by subcircuit`)
+        return
+      }
+
+      // Check if this component should use hub-based MSP routing (fallback for non-subcircuit contexts)
+      const hubMSPTraces = this._tryGenerateHubMSPTraces()
+      if (hubMSPTraces.length > 0) {
+        console.log(`🔗 ${this.getString()} using hub MSP routing with ${hubMSPTraces.length} traces`)
+        for (const trace of hubMSPTraces) {
+          this.add(trace)
+        }
+        // Log the complete MSP chain being built
+        console.log(`⛓️  MSP Chain building: ${this.getString()} contributes to minimum spanning tree`)
+        return // Skip normal routing if hub MSP was applied
+      }
+
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         const pinSelector = `${this.getSubcircuitSelector()} > port.${pinName}`
@@ -1216,6 +1234,156 @@ export class NormalComponent<
   }
 
   /**
+   * Attempts to generate hub-based MSP routing when multiple components connect to the same target.
+   * This handles cases like R2→R1, R3→R1, R4→R1 by creating a chain R4→R3→R2→R1.
+   */
+  _tryGenerateHubMSPTraces(): any[] {
+    const { _parsedProps: props } = this
+    if (!props.connections) return []
+
+    // Look for single-target component connections (potential hub pattern)
+    const singleComponentConnections = Object.entries(props.connections)
+      .filter(([, target]) => {
+        const targets = Array.isArray(target) ? target : [target]
+        return targets.length === 1 && /^[A-Z]+\d+\.[A-Z0-9]+$/i.test(targets[0])
+      })
+
+    console.log(`🎯 ${this.getString()} found ${singleComponentConnections.length} single component connections:`, singleComponentConnections)
+    if (singleComponentConnections.length === 0) return []
+
+    // For each connection, check if we should participate in hub MSP
+    const traces: any[] = []
+    for (const [pinName, target] of singleComponentConnections) {
+      const targetPin = Array.isArray(target) ? target[0] : target
+      console.log(`🔍 ${this.getString()} analyzing connection ${pinName} → ${targetPin}`)
+      const hubMSPTrace = this._generateHubMSPTrace(pinName, targetPin)
+      if (hubMSPTrace) {
+        console.log(`✅ ${this.getString()} generated hub MSP trace!`)
+        traces.push(hubMSPTrace)
+      } else {
+        console.log(`❌ ${this.getString()} no hub MSP trace (closest to hub)`)
+      }
+    }
+
+    return traces
+  }
+
+  /**
+   * Generates a single hub MSP trace by finding the optimal path.
+   * Uses a coordinated approach: one component connects to hub, others form chain.
+   */
+  _generateHubMSPTrace(pinName: string, targetPin: string): any | null {
+    const subcircuit = this.getSubcircuit()
+    if (!subcircuit) return null
+
+    const thisPosition = this._getComponentPosition(`${this._parsedProps.name}.${pinName}`)
+    if (!thisPosition) return null
+
+    // Get the target hub position
+    const targetPosition = this._getComponentPosition(targetPin)
+    if (!targetPosition) return null
+
+    console.log(`📍 ${this.getString()} positions - self: (${thisPosition.x}, ${thisPosition.y}), hub: (${targetPosition.x}, ${targetPosition.y})`)
+
+    // Find all components targeting the same hub (including self)
+    const allComponents = subcircuit.selectAll('resistor, capacitor, inductor')
+    const hubComponents: Array<{name: string, component: any, position: {x: number, y: number}, distanceToHub: number}> = []
+    
+    console.log(`🔍 ${this.getString()} scanning ${allComponents.length} components for hub pattern...`)
+    for (const component of allComponents) {
+      try {
+        const componentProps = component._parsedProps
+        if (componentProps?.connections) {
+          for (const [compPinName, compTarget] of Object.entries(componentProps.connections)) {
+            const compTargets = Array.isArray(compTarget) ? compTarget : [compTarget]
+            if (compTargets.includes(targetPin)) {
+              const componentPosition = this._getComponentPosition(`${componentProps.name}.${compPinName}`)
+              if (componentPosition) {
+                const distanceToHub = Math.sqrt(
+                  Math.pow(targetPosition.x - componentPosition.x, 2) + 
+                  Math.pow(targetPosition.y - componentPosition.y, 2)
+                )
+                console.log(`📏 Found hub component: ${componentProps.name} at (${componentPosition.x}, ${componentPosition.y}), distance to hub: ${distanceToHub.toFixed(3)}`)
+                hubComponents.push({
+                  name: componentProps.name,
+                  component,
+                  position: componentPosition,
+                  distanceToHub
+                })
+              }
+            }
+          }
+        }
+      } catch (error) {
+        continue
+      }
+    }
+
+    if (hubComponents.length <= 1) {
+      console.log(`❌ ${this.getString()} no hub pattern detected (only ${hubComponents.length} components)`)
+      return null
+    }
+
+    // Sort by distance to hub - closest connects directly to hub
+    hubComponents.sort((a, b) => a.distanceToHub - b.distanceToHub)
+    const closestToHub = hubComponents[0]
+    
+    console.log(`🎯 ${this.getString()} hub routing order:`, hubComponents.map((hc, i) => 
+      `${i}: ${hc.name} (dist: ${hc.distanceToHub.toFixed(3)})`
+    ).join(', '))
+    
+    // Find this component in the list
+    const thisComponent = hubComponents.find(hc => hc.name === this._parsedProps.name)
+    if (!thisComponent) return null
+
+    // If this is the closest component to hub, let it use normal routing to hub
+    if (thisComponent === closestToHub) {
+      console.log(`🏆 ${this.getString()} is closest to hub → using normal routing`)
+      return null
+    }
+
+    // Otherwise, connect to the previous component in the sorted chain
+    const thisIndex = hubComponents.indexOf(thisComponent)
+    const targetComponent = hubComponents[thisIndex - 1]
+    
+    console.log(`🔗 ${this.getString()} chain position ${thisIndex} → connecting to ${targetComponent.name} (position ${thisIndex - 1})`)
+
+    // Create trace to the previous component in chain with debug styling
+    const fromSelector = `${this.getSubcircuitSelector()} > port.${pinName}`
+    const toSelector = `${targetComponent.component.getSubcircuitSelector()} > port.pin1`
+    
+    const alignmentY = (thisPosition.y + targetComponent.position.y) / 2 - 0.5
+    
+    // Debug styling info for visual identification
+    const debugColors = ['#ff0000', '#00ff00', '#0000ff', '#ff00ff', '#ffff00', '#00ffff']
+    const debugDashes = ['5,5', '10,3', '15,5,5,5', '20,10', '8,2,2,2', '12,6,2,6']
+    const color = debugColors[thisIndex % debugColors.length]
+    const dashArray = debugDashes[thisIndex % debugDashes.length]
+    
+    console.log(`🎨 ${this.getString()} debug trace style: color=${color}, dash=${dashArray}, width=${3 + thisIndex}`)
+    
+    const trace = new Trace({
+      from: fromSelector,
+      to: toSelector,
+      schematicRouteHints: [
+        { x: targetComponent.position.x, y: alignmentY }
+      ]
+    })
+    
+    // Set debug properties directly on the trace instance
+    // This is a workaround since the props system isn't working properly
+    trace._debugColor = color
+    trace._debugLineStyle = dashArray === '5,5' ? 'dashed' : 
+                           dashArray === '10,3' ? 'dashed' :
+                           dashArray === '15,5,5,5' ? 'dashed' :
+                           dashArray === '2,2' ? 'dotted' : 'solid'
+    trace._debugWidthMultiplier = 1 + thisIndex * 0.3 // Progressively thicker
+    trace._debugTransparency = 0.8 + thisIndex * 0.05 // Progressively more opaque
+    
+    return trace
+  }
+
+  /**
    * Determines if MSP routing should be used for the given connection
    */
   _shouldUseMSPRouting(pinName: string, targets: string[]): boolean {
@@ -1231,7 +1399,11 @@ export class NormalComponent<
     const isGroundPin = /GND|VSS/i.test(pinName)
     const isPowerConnection =
       (isPowerPin || isGroundPin) && componentTargets.length >= 2
-
+      
+    // TODO: Enable MSP for single component target connections (potential hub connections)
+    // This would allow components connecting to the same hub to use coordinated MSP routing
+    // const isSingleComponentConnection = componentTargets.length === 1 && targets.length === 1
+    
     return hasMultipleComponentTargets || isPowerConnection
   }
 
@@ -1246,7 +1418,7 @@ export class NormalComponent<
     )
     const netTargets = targets.filter((target) => target.includes("net."))
 
-    if (componentPins.length >= 2) {
+    if (componentPins.length >= 1) {
       const traces: any[] = []
 
       // Generate optimal MSP (Minimum Spanning Path) routing sequence for any components
@@ -1281,36 +1453,69 @@ export class NormalComponent<
       }
 
       // Create MSP tree chain with consistent routing - horizontal bus approach
-      // All MSP traces use the same Y-level for visual alignment
-      const alignmentY = -1.25 // Consistent Y-level for all MSP traces
+      // Calculate optimal Y-level based on component positions for uniform vertical drops
+      const componentPositions = optimalSequence.map(pinSelector => 
+        this._getComponentPosition(pinSelector)
+      ).filter(pos => pos !== null)
+      
+      // Calculate average Y position of components and offset slightly below for clean routing
+      let alignmentY = -1.25 // Default fallback
+      if (componentPositions.length > 0) {
+        const avgY = componentPositions.reduce((sum, pos) => sum + pos!.y, 0) / componentPositions.length
+        // Position horizontal bus 0.75 units below the average component Y position
+        alignmentY = avgY - 0.75
+      }
 
       for (let i = 0; i < optimalSequence.length - 1; i++) {
         const fromSelector = convertToFullSelector(optimalSequence[i])
         const toSelector = convertToFullSelector(optimalSequence[i + 1])
+        
+        // Get component positions for more precise routing hints
+        const fromPos = this._getComponentPosition(optimalSequence[i])
+        const toPos = this._getComponentPosition(optimalSequence[i + 1])
+        
+        let routeHints: Array<{ x: number; y: number }> = [
+          { x: 0, y: alignmentY }, // Horizontal bus level
+          { x: 1, y: alignmentY }, // Maintain horizontal bus
+        ]
+        
+        // Add specific drop points if we have position info
+        if (fromPos && toPos) {
+          routeHints = [
+            { x: fromPos.x, y: alignmentY }, // Drop from component to bus
+            { x: toPos.x, y: alignmentY },   // Rise from bus to component
+          ]
+        }
 
         const trace = new Trace({
           from: fromSelector,
           to: toSelector,
-          // Force specific Y-level for horizontal routing alignment
-          schematicRouteHints: [
-            { x: 0, y: alignmentY }, // Force intermediate points at specific Y
-            { x: 1, y: alignmentY },
-          ],
+          schematicRouteHints: routeHints,
         })
         traces.push(trace)
       }
 
       // Connect the pin to the first component in the sequence (closest to IC)
       const firstComponentSelector = convertToFullSelector(optimalSequence[0])
+      const firstComponentPos = this._getComponentPosition(optimalSequence[0])
+      
+      let initialRouteHints: Array<{ x: number; y: number }> = [
+        { x: 0, y: alignmentY }, // Force consistent Y-level
+        { x: 1, y: alignmentY }, // Midpoint guidance
+        { x: 2, y: alignmentY }, // Endpoint guidance
+      ]
+      
+      // Use specific routing if we have position info
+      if (firstComponentPos) {
+        initialRouteHints = [
+          { x: firstComponentPos.x, y: alignmentY }, // Drop to horizontal bus level
+        ]
+      }
+      
       const initialTrace = new Trace({
         from: pinSelector,
         to: firstComponentSelector,
-        // Force consistent Y-level alignment with target pin
-        schematicRouteHints: [
-          { x: 0, y: alignmentY }, // Force consistent Y-level
-          { x: 1, y: alignmentY }, // Midpoint guidance
-          { x: 2, y: alignmentY }, // Endpoint guidance
-        ],
+        schematicRouteHints: initialRouteHints,
       })
       traces.push(initialTrace)
 

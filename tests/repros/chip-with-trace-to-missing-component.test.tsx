@@ -28,48 +28,14 @@ const SOIC = (props: ChipProps<typeof soicPinLabels>) => {
 }
 
 const ExampleCircuit = () => (
-  <board width="25.4mm" height="12.7mm" routingDisabled>
-    <group>
-      <capacitor
-        name="C6"
-        schOrientation="vertical"
-        footprint="0402"
-        capacitance="2.2uF"
-        schX={-4}
-      />
-      <capacitor
-        name="C1"
-        schOrientation="vertical"
-        footprint="0402"
-        capacitance="2.2uF"
-        schX={-3.2}
-      />
-      <capacitor
-        name="C2"
-        schOrientation="vertical"
-        footprint="0402"
-        capacitance="2.2uF"
-        schX={-2.4}
-      />
-      <capacitor
-        name="C5"
-        schOrientation="vertical"
-        footprint="0402"
-        capacitance="1uF"
-        schX={2}
-      />
-      <SOIC
-        name="U1"
-        connections={{
-          VIN: ["C6.1", "C1.1", "C2.1", "net.VSYS"],
-          GND: ["C6.2", "C1.2", "C2.2", "net.GND"],
-          EN: "U1.1",
-          VOUT: ["net.V3_3", "C5.1"],
-        }}
-      />
-      <trace from="C4.2" to="net.GND" />
-      <trace from="C5.2" to="net.GND" />
-    </group>
+  <board routingDisabled>
+    
+    <resistor resistance="1k" footprint="0402" name="R1" schX={0} schY={-1} connections={{
+    // pin1: "net.VCC"
+    }} />
+    <resistor resistance="1k" footprint="0402" name="R2" schX={0} schY={-2} connections={{ pin1: "R1.pin1" }} />
+    <resistor resistance="1k" footprint="0402" name="R3" schX={0} schY={-3} connections={{ pin1: "R1.pin1" }} />
+    <resistor resistance="1k" footprint="0402" name="R4" schX={0} schY={-4} connections={{ pin1: "R1.pin1" }} />
   </board>
 )
 

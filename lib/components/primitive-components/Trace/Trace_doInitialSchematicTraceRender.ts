@@ -31,6 +31,17 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   // if (trace.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
   const { db } = trace.root!
   const { _parsedProps: props, parent } = trace
+  
+  // DEBUG: Log all trace debug properties to see what we have
+  if (trace._debugColor || trace._debugLineStyle) {
+    console.log(`🔍 Trace Debug Properties:`, {
+      debugColor: trace._debugColor,
+      debugLineStyle: trace._debugLineStyle,
+      debugTransparency: trace._debugTransparency,
+      debugWidthMultiplier: trace._debugWidthMultiplier,
+      sourceTraceId: trace.source_trace_id
+    })
+  }
 
   if (!parent) throw new Error("Trace has no parent")
 
@@ -135,6 +146,11 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         source_trace_id: trace.source_trace_id!,
         edges,
         junctions: [],
+        // Pass debug styling properties for display label traces too
+        debug_color: trace._debugColor,
+        debug_line_style: trace._debugLineStyle,
+        debug_transparency: trace._debugTransparency,
+        debug_width_multiplier: trace._debugWidthMultiplier,
       })
       trace.schematic_trace_id = dbTrace.schematic_trace_id
       return
@@ -436,7 +452,17 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     source_trace_id: trace.source_trace_id!,
     edges,
     junctions,
+    // Pass debug styling properties
+    debug_color: trace._debugColor,
+    debug_line_style: trace._debugLineStyle,
+    debug_transparency: trace._debugTransparency,
+    debug_width_multiplier: trace._debugWidthMultiplier,
   })
+  
+  // DEBUG: Log what debug properties we're inserting
+  if (trace._debugColor || trace._debugLineStyle) {
+    console.log(`🎨 DB Trace Insert: ${trace.source_trace_id} - color: ${trace._debugColor}, style: ${trace._debugLineStyle}, transparency: ${trace._debugTransparency}, width: ${trace._debugWidthMultiplier}`)
+  }
   trace.schematic_trace_id = dbTrace.schematic_trace_id
 
   for (const { port } of connectedPorts) {

@@ -56,6 +56,12 @@ export class Trace
   subcircuit_connectivity_map_key: string | null = null
   _traceConnectionHash: string | null = null
   _couldNotFindPort?: boolean
+  
+  // Debug styling properties (workaround for props system)
+  _debugColor?: string
+  _debugLineStyle?: "solid" | "dashed" | "dotted"
+  _debugTransparency?: number
+  _debugWidthMultiplier?: number
 
   constructor(props: z.input<typeof traceProps>) {
     super(props)
