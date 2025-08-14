@@ -229,7 +229,10 @@ export class Trace
       ports = result.portsWithSelectors ?? []
     } catch (error) {
       if (error instanceof TraceConnectionError) {
-        db.source_trace_not_connected.insert(error.errorData)
+        db.source_trace_not_connected_error.insert({
+          ...error.errorData,
+          error_type: "source_trace_not_connected_error",
+        })
         this._couldNotFindPort = true
         return
       }

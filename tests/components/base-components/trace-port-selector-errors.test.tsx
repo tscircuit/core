@@ -16,7 +16,7 @@ test("error when component is missing", () => {
 
   const circuitJson = circuit.getCircuitJson()
   const errors = circuitJson.filter(
-    (c: any) => c.type === "source_trace_not_connected",
+    (c: any) => c.type === "source_trace_not_connected_error",
   )
 
   expect(errors.length).toBe(1)
@@ -38,7 +38,7 @@ test("error when component has no ports", () => {
 
   const circuitJson = circuit.getCircuitJson()
   const errors = circuitJson.filter(
-    (c: any) => c.type === "source_trace_not_connected",
+    (c: any) => c.type === "source_trace_not_connected_error",
   )
 
   expect(errors.length).toBe(1)
@@ -60,7 +60,7 @@ test("error when component has numeric pins only", () => {
 
   const circuitJson = circuit.getCircuitJson()
   const errors = circuitJson.filter(
-    (c: any) => c.type === "source_trace_not_connected",
+    (c: any) => c.type === "source_trace_not_connected_error",
   )
 
   expect(errors.length).toBe(1)
@@ -82,7 +82,7 @@ test("error lists available labeled pins", () => {
 
   const circuitJson = circuit.getCircuitJson()
   const errors = circuitJson.filter(
-    (c: any) => c.type === "source_trace_not_connected",
+    (c: any) => c.type === "source_trace_not_connected_error",
   )
 
   expect(errors.length).toBe(1)

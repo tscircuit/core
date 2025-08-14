@@ -57,7 +57,7 @@ export function Trace__findConnectedPorts(trace: Trace):
         const subcircuit = trace.getSubcircuit()
         const sourceGroup = subcircuit.getGroup()
         throw new TraceConnectionError({
-          error_type: "source_trace_not_connected",
+          error_type: "source_trace_not_connected_error",
           message: errorMessage,
           subcircuit_id: subcircuit.subcircuit_id ?? undefined,
           source_group_id: sourceGroup?.source_group_id ?? undefined,
@@ -89,7 +89,7 @@ export function Trace__findConnectedPorts(trace: Trace):
       const subcircuit = trace.getSubcircuit()
       const sourceGroup = subcircuit.getGroup()
       throw new TraceConnectionError({
-        error_type: "source_trace_not_connected",
+        error_type: "source_trace_not_connected_error",
         message: errorMessage,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
         source_group_id: sourceGroup?.source_group_id ?? undefined,
