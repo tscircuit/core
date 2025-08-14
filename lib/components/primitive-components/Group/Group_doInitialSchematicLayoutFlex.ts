@@ -84,7 +84,10 @@ const repositionSchematicComponentTo = (
       portIds.includes(anyElm.from_schematic_port_id)
     )
       return true
-    if (anyElm.to_schematic_port_id && portIds.includes(anyElm.to_schematic_port_id))
+    if (
+      anyElm.to_schematic_port_id &&
+      portIds.includes(anyElm.to_schematic_port_id)
+    )
       return true
     return false
   })
@@ -98,9 +101,13 @@ const repositionSchematicGroupTo = (
   newCenter: { x: number; y: number },
 ) => {
   const subtree = buildSubtree(circuitJson, { source_group_id })
-  const schematicElements = subtree.filter((e) => e.type.startsWith("schematic_"))
+  const schematicElements = subtree.filter((e) =>
+    e.type.startsWith("schematic_"),
+  )
   if (schematicElements.length === 0) return
-  const { center: currentCenter } = findBoundsAndCenter(schematicElements as any)
+  const { center: currentCenter } = findBoundsAndCenter(
+    schematicElements as any,
+  )
   const dx = newCenter.x - currentCenter.x
   const dy = newCenter.y - currentCenter.y
   const matrix = translate(dx, dy)
@@ -241,10 +248,14 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
         source_component_id: sourceComponent.source_component_id,
       })
       if (!schComponent) continue
-      repositionSchematicComponentTo(allCircuitJson, schComponent.schematic_component_id, {
-        x: child.position.x + child.size.width / 2 + offset.x,
-        y: child.position.y + child.size.height / 2 + offset.y,
-      })
+      repositionSchematicComponentTo(
+        allCircuitJson,
+        schComponent.schematic_component_id,
+        {
+          x: child.position.x + child.size.width / 2 + offset.x,
+          y: child.position.y + child.size.height / 2 + offset.y,
+        },
+      )
     }
     if (sourceGroup) {
       const schGroup = db.schematic_group.getWhere({
