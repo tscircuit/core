@@ -92,6 +92,11 @@ export class MSPRoutingCoordinator {
           )) {
             // Handle string targets (existing logic)
             if (typeof compTarget === "string" && compTarget.includes(".")) {
+              // Skip net.* targets - these should not be MSP routed as they go to net labels individually
+              if (compTarget.startsWith("net.")) {
+                continue
+              }
+              
               const targetKey = compTarget
               if (!hubMap.has(targetKey)) {
                 hubMap.set(targetKey, [])
