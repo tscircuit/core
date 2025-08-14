@@ -3,14 +3,12 @@ import type { Size } from "circuit-json"
 import {
   getCircuitJsonTree,
   getMinimumFlexContainer,
-  buildSubtree,
-  transformSchematicElements,
-  findBoundsAndCenter,
+  repositionSchematicComponentTo,
+  repositionSchematicGroupTo,
   type CircuitJsonUtilObjects,
 } from "@tscircuit/circuit-json-util"
 import { RootFlexBox, type Align, type Justify } from "@tscircuit/miniflex"
 import { length } from "circuit-json"
-import { translate } from "transformation-matrix"
 
 type TreeNode = ReturnType<typeof getCircuitJsonTree>
 
@@ -40,78 +38,6 @@ const getSizeOfTreeNodeChild = (
     }
   }
   return null
-}
-
-const repositionSchematicComponentTo = (
-  circuitJson: any[],
-  schematic_component_id: string,
-  newCenter: { x: number; y: number },
-) => {
-  const schComponent = circuitJson.find(
-    (e) =>
-      e.type === "schematic_component" &&
-      e.schematic_component_id === schematic_component_id,
-  )
-  if (!schComponent) return
-  const currentCenter = schComponent.center
-  const dx = newCenter.x - currentCenter.x
-  const dy = newCenter.y - currentCenter.y
-  const portIds = circuitJson
-    .filter(
-      (e) =>
-        e.type === "schematic_port" &&
-        e.schematic_component_id === schematic_component_id,
-    )
-    .map((e) => e.schematic_port_id)
-  const elementsToMove = circuitJson.filter((elm) => {
-    if (elm === schComponent) return true
-    const anyElm: any = elm
-    if (anyElm.schematic_component_id === schematic_component_id) return true
-    if (
-      Array.isArray(anyElm.schematic_component_ids) &&
-      anyElm.schematic_component_ids.includes(schematic_component_id)
-    )
-      return true
-    if (anyElm.schematic_port_id && portIds.includes(anyElm.schematic_port_id))
-      return true
-    if (
-      Array.isArray(anyElm.schematic_port_ids) &&
-      anyElm.schematic_port_ids.some((id: any) => portIds.includes(id))
-    )
-      return true
-    if (
-      anyElm.from_schematic_port_id &&
-      portIds.includes(anyElm.from_schematic_port_id)
-    )
-      return true
-    if (
-      anyElm.to_schematic_port_id &&
-      portIds.includes(anyElm.to_schematic_port_id)
-    )
-      return true
-    return false
-  })
-  const matrix = translate(dx, dy)
-  transformSchematicElements(elementsToMove as any, matrix)
-}
-
-const repositionSchematicGroupTo = (
-  circuitJson: any[],
-  source_group_id: string,
-  newCenter: { x: number; y: number },
-) => {
-  const subtree = buildSubtree(circuitJson, { source_group_id })
-  const schematicElements = subtree.filter((e) =>
-    e.type.startsWith("schematic_"),
-  )
-  if (schematicElements.length === 0) return
-  const { center: currentCenter } = findBoundsAndCenter(
-    schematicElements as any,
-  )
-  const dx = newCenter.x - currentCenter.x
-  const dy = newCenter.y - currentCenter.y
-  const matrix = translate(dx, dy)
-  transformSchematicElements(schematicElements as any, matrix)
 }
 
 export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
