@@ -136,11 +136,6 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         source_trace_id: trace.source_trace_id!,
         edges,
         junctions: [],
-        // Pass debug styling properties for display label traces too
-        debug_color: trace._debugColor,
-        debug_line_style: trace._debugLineStyle,
-        debug_transparency: trace._debugTransparency,
-        debug_width_multiplier: trace._debugWidthMultiplier,
       })
       trace.schematic_trace_id = dbTrace.schematic_trace_id
       return
@@ -442,11 +437,6 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     source_trace_id: trace.source_trace_id!,
     edges,
     junctions,
-    // Pass debug styling properties
-    debug_color: trace._debugColor,
-    debug_line_style: trace._debugLineStyle,
-    debug_transparency: trace._debugTransparency,
-    debug_width_multiplier: trace._debugWidthMultiplier,
   })
   
   trace.schematic_trace_id = dbTrace.schematic_trace_id
