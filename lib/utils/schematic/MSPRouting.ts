@@ -60,9 +60,18 @@ export class MSPRoutingCoordinator {
    * Detect hub patterns in this subcircuit where multiple components connect to the same target
    */
   private detectHubPatterns(): HubPattern[] {
-    const allComponents = this.subcircuit.selectAll(
-      "resistor, capacitor, inductor, chip",
-    )
+    // Use individual selectors to avoid CSS parser issues with combined selectors
+    const allComponents: MSPRoutableComponent[] = []
+    
+    const selectors = ["resistor", "capacitor", "inductor", "chip"]
+    for (const selector of selectors) {
+      try {
+        const found = this.subcircuit.selectAll(selector)
+        allComponents.push(...found)
+      } catch (selectorError) {
+        // Skip failed selectors silently - some component types may not exist in this circuit
+      }
+    }
     const hubMap = new Map<
       string,
       Array<{
