@@ -26,6 +26,9 @@ export function getPresetAutoroutingConfig(
       ? autorouterConfig.preset
       : autorouterConfig
 
+  const providedConfig =
+    typeof autorouterConfig === "object" ? autorouterConfig : {}
+
   switch (preset) {
     case "auto-local":
       return {
@@ -42,14 +45,20 @@ export function getPresetAutoroutingConfig(
         local: true,
         groupMode: "subcircuit",
       }
-    case "auto-cloud":
+    case "auto-cloud": {
+      const {
+        preset: _preset,
+        local: _local,
+        groupMode: _groupMode,
+        ...rest
+      } = providedConfig
       return {
         local: false,
         groupMode: "subcircuit",
-        serverUrl: defaults.serverUrl,
-        serverMode: defaults.serverMode,
-        serverCacheEnabled: true,
+        ...defaults,
+        ...rest,
       }
+    }
     default:
       return {
         local: true,

@@ -1,6 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { sel } from "lib"
+import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphics"
 
 test("group-match-adapt3", () => {
   const { circuit } = getTestFixture()
@@ -47,23 +48,20 @@ test("group-match-adapt3", () => {
       <capacitor
         name="C20"
         capacitance="0.1uF"
-        schRotation="90deg"
         footprint="0402"
-        schX={-3}
+        schOrientation="vertical"
         connections={{
-          pin2: sel.U3.VDD,
-          pin1: sel.U3.GND,
+          pin1: sel.U3.VDD,
+          pin2: sel.U3.GND,
         }}
       />
       <resistor
         name="R11"
         resistance="100k"
-        schX={2}
-        schY={1}
-        schRotation="90deg"
+        schOrientation="vertical"
         connections={{
-          pin2: sel.net.V3_3,
-          pin1: sel.U3.N_CS,
+          pin1: sel.net.V3_3,
+          pin2: sel.U3.N_CS,
         }}
       />
     </board>,
@@ -72,4 +70,5 @@ test("group-match-adapt3", () => {
   circuit.render()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  writeGlobalDebugGraphics()
 })

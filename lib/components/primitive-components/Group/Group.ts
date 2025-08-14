@@ -24,8 +24,10 @@ import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalA
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
+import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
+import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
@@ -738,6 +740,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (props.schLayout?.matchAdapt) return "match-adapt"
     if (props.schLayout?.flex) return "flex"
     if (props.schLayout?.grid) return "grid"
+    if (props.schMatchAdapt) return "match-adapt"
+    if (props.schFlex) return "flex"
+    if (props.schGrid) return "grid"
     if (props.matchAdapt) return "match-adapt"
     if (props.flex) return "flex"
     if (props.grid) return "grid"
@@ -749,25 +754,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const cProps = (child as any)._parsedProps
       return cProps?.schX !== undefined || cProps?.schY !== undefined
     })
-    const anyChildIsGroup = this.children.some((child) => child.isGroup)
     const hasManualEdits =
       (props.manualEdits?.schematic_placements?.length ?? 0) > 0
-    if (!anyChildHasSchCoords && !hasManualEdits && !anyChildIsGroup)
-      return "match-adapt"
+
+    // Use match-adapt if no explicit positioning is set, even with group children
+    // This allows nested groups to be laid out properly
+    if (!anyChildHasSchCoords && !hasManualEdits) return "match-adapt"
     return "relative"
   }
 
   doInitialSchematicLayout(): void {
     // The schematic_components are rendered in our children
-    const props = this._parsedProps as SubcircuitGroupProps
-
     const schematicLayoutMode = this._getSchematicLayoutMode()
 
     if (schematicLayoutMode === "match-adapt") {
-      this._doInitialSchematicLayoutMatchAdapt()
+      this._doInitialSchematicLayoutMatchpack()
     }
     if (schematicLayoutMode === "grid") {
       this._doInitialSchematicLayoutGrid()
+    }
+    if (schematicLayoutMode === "flex") {
+      this._doInitialSchematicLayoutFlex()
     }
 
     this._insertSchematicBorder()
@@ -777,8 +784,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     Group_doInitialSchematicLayoutMatchAdapt(this as any)
   }
 
+  _doInitialSchematicLayoutMatchpack(): void {
+    Group_doInitialSchematicLayoutMatchPack(this as any)
+  }
+
   _doInitialSchematicLayoutGrid(): void {
     Group_doInitialSchematicLayoutGrid(this)
+  }
+
+  _doInitialSchematicLayoutFlex(): void {
+    Group_doInitialSchematicLayoutFlex(this as any)
   }
 
   _getPcbLayoutMode(): "grid" | "flex" | "match-adapt" | "pack" | "none" {

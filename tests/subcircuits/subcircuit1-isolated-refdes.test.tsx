@@ -19,7 +19,7 @@ describe("subcircuit1-isolated-refdes", () => {
 
     const circuitJson = circuit.getCircuitJson()
     const errors = circuitJson.filter(
-      (c: any) => c.type === "source_trace_not_connected",
+      (c: any) => c.type === "source_trace_not_connected_error",
     )
 
     expect(errors.length).toBe(1)
