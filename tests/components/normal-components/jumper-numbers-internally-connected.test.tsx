@@ -32,7 +32,7 @@ test("jumper internallyConnectedPins with numbers should work correctly", async 
         schX={6}
         schY={0}
       />
-    </board>
+    </board>,
   )
 
   await circuit.renderUntilSettled()
@@ -45,17 +45,26 @@ test("jumper internallyConnectedPins with numbers should work correctly", async 
   // Verify internal connections for JP1 (numbers)
   const jp1InternalPins = jp1._getInternallyConnectedPins()
   expect(jp1InternalPins).toHaveLength(1)
-  expect(jp1InternalPins[0].map((p: any) => p.props.name).sort()).toEqual(["pin1", "pin2"])
+  expect(jp1InternalPins[0].map((p: any) => p.props.name).sort()).toEqual([
+    "pin1",
+    "pin2",
+  ])
 
   // Verify internal connections for JP2 (mixed)
   const jp2InternalPins = jp2._getInternallyConnectedPins()
   expect(jp2InternalPins).toHaveLength(1)
-  expect(jp2InternalPins[0].map((p: any) => p.props.name).sort()).toEqual(["pin1", "pin2"])
+  expect(jp2InternalPins[0].map((p: any) => p.props.name).sort()).toEqual([
+    "pin1",
+    "pin2",
+  ])
 
   // Verify internal connections for JP3 (strings)
   const jp3InternalPins = jp3._getInternallyConnectedPins()
   expect(jp3InternalPins).toHaveLength(1)
-  expect(jp3InternalPins[0].map((p: any) => p.props.name).sort()).toEqual(["pin1", "pin2"])
+  expect(jp3InternalPins[0].map((p: any) => p.props.name).sort()).toEqual([
+    "pin1",
+    "pin2",
+  ])
 
   // Verify the internallyConnectedPinNames getter processes numbers correctly
   expect(jp1.internallyConnectedPinNames).toEqual([["pin1", "pin2"]])
