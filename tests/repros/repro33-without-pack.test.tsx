@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("Minimal tilt reproduction with pcbPack group", async () => {
+test("Same components without pcbPack to compare orientation", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board>
-      <group pcbPack>
+    <board width={100} height={100}>
+      <group>
         <chip 
           name="U1"
           footprint="soic8" 
