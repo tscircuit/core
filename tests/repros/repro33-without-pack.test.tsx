@@ -5,7 +5,7 @@ test("Same components without pcbPack to compare orientation", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width={100} height={100}>
+    <board>
       <group>
         <chip 
           name="U1"
