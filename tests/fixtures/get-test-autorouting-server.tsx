@@ -8,10 +8,12 @@ export const getTestAutoroutingServer = ({
   requireDisplayName = false,
   requireServerCacheEnabled = false,
   failInFirstTrace = false,
+  simulateIncompleteAutorouting = false,
 }: {
   requireDisplayName?: boolean
   requireServerCacheEnabled?: boolean
   failInFirstTrace?: boolean
+  simulateIncompleteAutorouting?: boolean
 } = {}) => {
   let currentJobId = 0
   const jobResults = new Map<string, any>()
@@ -183,6 +185,14 @@ export const getTestAutoroutingServer = ({
         const body = await req.json()
         const jobId = body.autorouting_job_id
         const job = jobResults.get(jobId!)
+
+        if (
+          simulateIncompleteAutorouting &&
+          job?.output?.output_pcb_traces?.length > 0
+        ) {
+          // remove the first trace
+          job.output.output_pcb_traces.shift()
+        }
 
         return new Response(
           JSON.stringify({

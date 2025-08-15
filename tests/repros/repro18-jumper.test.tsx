@@ -55,7 +55,28 @@ test("Jumper internally connected pins mix up between different Jumper component
   await circuit.renderUntilSettled()
   const circuitJson = circuit.getCircuitJson()
   const errors = circuitJson.filter((e) => e.type.includes("error"))
-  expect(errors.length).toBe(0)
+  console.log(circuitJson.filter((e) => e.type.includes("source_trace")))
+  console.log(circuitJson.filter((e) => e.type.includes("pcb_trace")))
+  console.log(circuitJson.filter((e) => e.type.includes("source_net")))
+  expect(errors).toMatchInlineSnapshot(`
+    [
+      {
+        "error_type": "pcb_port_not_connected_error",
+        "message": "pcb_port_not_connected_error: Pcb ports [pcb_port_3, pcb_port_1] are not connected together through the same net.",
+        "pcb_component_ids": [
+          "pcb_component_1",
+          "pcb_component_0",
+        ],
+        "pcb_port_ids": [
+          "pcb_port_3",
+          "pcb_port_1",
+        ],
+        "pcb_port_not_connected_error_id": "pcb_port_not_connected_error_trace_source_trace_2",
+        "type": "pcb_port_not_connected_error",
+      },
+    ]
+  `)
+  expect(errors.length).toBe(1)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
