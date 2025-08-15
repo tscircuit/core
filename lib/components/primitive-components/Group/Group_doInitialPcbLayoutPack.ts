@@ -55,7 +55,8 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   // Apply the pack output to the circuit json
   for (const packedComponent of packOutput.components) {
-    const { center, componentId, ccwRotationOffset, ccwRotationDegrees } = packedComponent
+    const { center, componentId, ccwRotationOffset, ccwRotationDegrees } =
+      packedComponent
 
     const pcbComponent = db.pcb_component.get(componentId)
     if (pcbComponent) {

@@ -7,14 +7,14 @@ test("Minimal tilt reproduction with pcbPack group", async () => {
   circuit.add(
     <board>
       <group pcbPack>
-        <chip 
+        <chip
           name="U1"
-          footprint="soic8" 
+          footprint="soic8"
           pinLabels={{ pin1: "VDD", pin2: "GND" }}
         />
         <group schX={2}>
           <resistor
-            name="R1" 
+            name="R1"
             resistance="1k"
             footprint="0402"
             connections={{ pin1: "U1.VDD", pin2: "U1.GND" }}
