@@ -101,9 +101,13 @@ export class NormalComponent<
   }
 
   get internallyConnectedPinNames(): string[][] {
-    return (
+    const rawPins =
       this._parsedProps.internallyConnectedPins ??
       this.defaultInternallyConnectedPinNames
+    return rawPins.map((pinGroup: (string | number)[]) =>
+      pinGroup.map((pin: string | number) =>
+        typeof pin === "number" ? `pin${pin}` : pin,
+      ),
     )
   }
 
