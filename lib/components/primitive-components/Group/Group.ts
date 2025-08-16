@@ -36,6 +36,7 @@ import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
 import { checkEachPcbPortConnectedToPcbTraces } from "@tscircuit/checks"
+import { checkSourceTracePortsConnectedByPcbTraces } from "lib/utils/checks/checkPortConnectivity"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -1009,7 +1010,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
       }
 
-      const pcbPortNotConnectedErrors = checkEachPcbPortConnectedToPcbTraces(
+      const pcbPortNotConnectedErrors = checkSourceTracePortsConnectedByPcbTraces(
         db.toArray(),
       )
       for (const error of pcbPortNotConnectedErrors) {
