@@ -32,8 +32,6 @@ test("check each PCB port is connected", async () => {
 
   const circuitJson = circuit.getCircuitJson()
 
-  Bun.write("circuit.json", JSON.stringify(circuitJson, null, 2))
-
   const pcbTraces = circuitJson.filter((el) => el.type === "pcb_trace")
   expect(pcbTraces).toMatchInlineSnapshot(`
     [
