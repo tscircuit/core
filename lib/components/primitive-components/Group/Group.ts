@@ -35,8 +35,6 @@ import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
-import { checkEachPcbPortConnectedToPcbTraces } from "@tscircuit/checks"
-import { checkSourceTracePortsConnectedByPcbTraces } from "lib/utils/checks/checkPortConnectivity"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -1008,13 +1006,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             pcb_port_ids: [],
           })
         }
-      }
-
-      const pcbPortNotConnectedErrors = checkSourceTracePortsConnectedByPcbTraces(
-        db.toArray(),
-      )
-      for (const error of pcbPortNotConnectedErrors) {
-        db.pcb_port_not_connected_error.insert(error)
       }
     }
   }

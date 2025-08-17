@@ -5,7 +5,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("check each PCB port is connected", async () => {
   const { circuit } = getTestFixture()
   const { autoroutingServerUrl } = getTestAutoroutingServer({
-    // simulateIncompleteAutorouting: true,
+    simulateIncompleteAutorouting: true,
   })
 
   circuit.add(
@@ -43,11 +43,13 @@ test("check each PCB port is connected", async () => {
           {
             "layer": "top",
             "route_type": "wire",
+            "start_pcb_port_id": "pcb_port_3",
             "width": 0.1,
             "x": 5.5,
             "y": 0,
           },
           {
+            "end_pcb_port_id": "pcb_port_4",
             "layer": "top",
             "route_type": "wire",
             "width": 0.1,
@@ -68,7 +70,7 @@ test("check each PCB port is connected", async () => {
     [
       {
         "error_type": "pcb_port_not_connected_error",
-        "message": "pcb_port_not_connected_error: Ports from source trace source_trace_0 are on different components but no PCB traces found to connect them. Missing PCB traces in net connectivity_net0.",
+        "message": "pcb_port_not_connected_error: Pcb ports [pcb_port_0, pcb_port_2] are not connected together through the same net.",
         "pcb_component_ids": [
           "pcb_component_0",
           "pcb_component_1",
@@ -78,20 +80,6 @@ test("check each PCB port is connected", async () => {
           "pcb_port_2",
         ],
         "pcb_port_not_connected_error_id": "pcb_port_not_connected_error_trace_source_trace_0",
-        "type": "pcb_port_not_connected_error",
-      },
-      {
-        "error_type": "pcb_port_not_connected_error",
-        "message": "pcb_port_not_connected_error: Ports from source trace source_trace_1 are on different components but no PCB traces found to connect them. Missing PCB traces in net connectivity_net3.",
-        "pcb_component_ids": [
-          "pcb_component_1",
-          "pcb_component_2",
-        ],
-        "pcb_port_ids": [
-          "pcb_port_3",
-          "pcb_port_4",
-        ],
-        "pcb_port_not_connected_error_id": "pcb_port_not_connected_error_trace_source_trace_1",
         "type": "pcb_port_not_connected_error",
       },
     ]

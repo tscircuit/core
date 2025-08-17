@@ -20,24 +20,7 @@ describe("subcircuit2-independent-render", () => {
     await circuit.renderUntilSettled()
 
     const errors = circuit.db.toArray().filter((e) => e.type.includes("error"))
-    expect(errors).toMatchInlineSnapshot(`
-      [
-        {
-          "error_type": "pcb_port_not_connected_error",
-          "message": "pcb_port_not_connected_error: Pcb ports [pcb_port_1, pcb_port_2] are not connected together through the same net.",
-          "pcb_component_ids": [
-            "pcb_component_0",
-            "pcb_component_1",
-          ],
-          "pcb_port_ids": [
-            "pcb_port_1",
-            "pcb_port_2",
-          ],
-          "pcb_port_not_connected_error_id": "pcb_port_not_connected_error_trace_source_trace_0",
-          "type": "pcb_port_not_connected_error",
-        },
-      ]
-    `)
+    expect(errors.length).toBe(0)
 
     const traces = circuit.db.pcb_trace.list()
     expect(traces.length).toBe(1)

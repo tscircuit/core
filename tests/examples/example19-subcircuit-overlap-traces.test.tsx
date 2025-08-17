@@ -61,6 +61,7 @@ test("Autorouter should inherit if the parent subcircuit has async autorouter en
           {
             "layer": "top",
             "route_type": "wire",
+            "start_pcb_port_id": "pcb_port_0",
             "width": 0.1,
             "x": -2.5,
             "y": 0,
@@ -87,6 +88,7 @@ test("Autorouter should inherit if the parent subcircuit has async autorouter en
             "y": 1.3,
           },
           {
+            "end_pcb_port_id": "pcb_port_2",
             "layer": "top",
             "route_type": "wire",
             "width": 0.1,
