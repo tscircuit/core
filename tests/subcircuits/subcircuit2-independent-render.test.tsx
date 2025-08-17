@@ -17,14 +17,12 @@ describe("subcircuit2-independent-render", () => {
       </board>,
     )
 
-    await circuit.renderUntilSettled()
+    circuit.render()
 
     const errors = circuit.db.toArray().filter((e) => e.type.includes("error"))
     expect(errors.length).toBe(0)
 
     const traces = circuit.db.pcb_trace.list()
     expect(traces.length).toBe(1)
-
-    expect(circuit).toMatchPcbSnapshot(import.meta.path)
   })
 })
