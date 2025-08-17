@@ -1,3 +1,4 @@
+import type { LayerRef } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { silkscreenTextProps } from "@tscircuit/props"
 
@@ -22,22 +23,30 @@ export class SilkscreenText extends PrimitiveComponent<
     const position = this._getGlobalPcbPositionBeforeLayout()
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     const subcircuit = this.getSubcircuit()
-    // TODO handle layer flipping
-    db.pcb_silkscreen_text.insert({
-      anchor_alignment: props.anchorAlignment,
-      anchor_position: {
-        x: position.x,
-        y: position.y,
-      },
-      font: props.font ?? "tscircuit2024",
-      font_size: props.fontSize ?? 1,
-      layer: maybeFlipLayer(props.layer ?? "top") as "top" | "bottom",
-      text: props.text ?? "",
-      ccw_rotation: props.pcbRotation,
-      pcb_component_id: container.pcb_component_id!,
-      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-    })
+
+    const uniqueLayers = new Set(props.layers)
+    if (props.layer) uniqueLayers.add(props.layer)
+
+    const targetLayers: LayerRef[] =
+      uniqueLayers.size > 0 ? Array.from(uniqueLayers) : ["top"]
+
+    for (const layer of targetLayers) {
+      db.pcb_silkscreen_text.insert({
+        anchor_alignment: props.anchorAlignment,
+        anchor_position: {
+          x: position.x,
+          y: position.y,
+        },
+        font: props.font ?? "tscircuit2024",
+        font_size: props.fontSize ?? 1,
+        layer: maybeFlipLayer(layer) as "top" | "bottom",
+        text: props.text ?? "",
+        ccw_rotation: props.pcbRotation,
+        pcb_component_id: container.pcb_component_id!,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+      })
+    }
   }
 
   getPcbSize(): { width: number; height: number } {
