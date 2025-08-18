@@ -1,7 +1,10 @@
 import { boardProps } from "@tscircuit/props"
 import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
-import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
+import {
+  checkEachPcbPortConnectedToPcbTraces,
+  checkEachPcbTraceNonOverlapping,
+} from "@tscircuit/checks"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 
@@ -250,6 +253,13 @@ export class Board extends Group<typeof boardProps> {
     const errors = checkEachPcbTraceNonOverlapping(db.toArray())
     for (const error of errors) {
       db.pcb_trace_error.insert(error)
+    }
+
+    const pcbPortNotConnectedErrors = checkEachPcbPortConnectedToPcbTraces(
+      db.toArray(),
+    )
+    for (const error of pcbPortNotConnectedErrors) {
+      db.pcb_port_not_connected_error.insert(error)
     }
   }
 
