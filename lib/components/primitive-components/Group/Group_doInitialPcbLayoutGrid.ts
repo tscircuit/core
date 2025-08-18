@@ -20,8 +20,8 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   if (pcbChildren.length === 0) return
 
   // Calculate individual component dimensions
-  let maxCellWidth = 0
-  let maxCellHeight = 0
+  let childWidth = 0
+  let childHeight = 0
 
   for (const child of pcbChildren) {
     const pcbComp = db.pcb_component.get(child.pcb_component_id!)
@@ -32,12 +32,12 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
       width = Math.max(width, bounds.width)
       height = Math.max(height, bounds.height)
     }
-    maxCellWidth = Math.max(maxCellWidth, width)
-    maxCellHeight = Math.max(maxCellHeight, height)
+    childWidth = Math.max(childWidth, width)
+    childHeight = Math.max(childHeight, height)
   }
 
-  if (maxCellWidth === 0 && pcbChildren.length > 0) maxCellWidth = 1
-  if (maxCellHeight === 0 && pcbChildren.length > 0) maxCellHeight = 1
+  if (childWidth === 0 && pcbChildren.length > 0) childWidth = 1
+  if (childHeight === 0 && pcbChildren.length > 0) childHeight = 1
 
   // Extract grid configuration from props
   let gridColsOption = props.pcbGridCols ?? props.gridCols
@@ -115,25 +115,27 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
 
   // Calculate total grid dimensions
   const totalGridWidth =
-    numCols * maxCellWidth + Math.max(0, numCols - 1) * gridGapX
+    numCols * childWidth + Math.max(0, numCols - 1) * gridGapX
   const totalGridHeight =
-    numRows * maxCellHeight + Math.max(0, numRows - 1) * gridGapY
+    numRows * childHeight + Math.max(0, numRows - 1) * gridGapY
 
   // Create CssGrid configuration
-  const gridTemplate = `repeat(${numCols}, ${maxCellWidth}px)`
-  const gridRowTemplate = `repeat(${numRows}, ${maxCellHeight}px)`
+  const gridTemplateColumns =
+    props.pcbGridTemplateColumns ?? `repeat(${numCols}, ${childWidth}px)`
+  const gridTemplateRows =
+    props.pcbGridTemplateRows ?? `repeat(${numRows}, ${childHeight}px)`
 
   const gridChildren = pcbChildren.map((child, index) => ({
     key: child.getString() || `child-${index}`,
-    contentWidth: maxCellWidth,
-    contentHeight: maxCellHeight,
+    contentWidth: childWidth,
+    contentHeight: childHeight,
   }))
 
   const cssGrid = new CssGrid({
     containerWidth: totalGridWidth,
     containerHeight: totalGridHeight,
-    gridTemplateColumns: gridTemplate,
-    gridTemplateRows: gridRowTemplate,
+    gridTemplateColumns: gridTemplateColumns,
+    gridTemplateRows: gridTemplateRows,
     gap: [gridGapY, gridGapX], // [rowGap, columnGap]
     children: gridChildren,
   })
