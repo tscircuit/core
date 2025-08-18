@@ -5,11 +5,7 @@ test("pcb-grid2", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board
-      pcbGrid
-      pcbGridGap="3mm"
-      routingDisabled
-    >
+    <board pcbGrid pcbGridGap="3mm" routingDisabled>
       <resistor name="R1" resistance="1k" footprint="0402" />
       <resistor name="R2" resistance="1k" footprint="0402" />
       <resistor name="R3" resistance="1k" footprint="0402" />
