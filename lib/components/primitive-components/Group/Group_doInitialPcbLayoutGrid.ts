@@ -60,8 +60,8 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
     return typeof val === "number" ? val : length.parse(val)
   }
 
-  let gridGapX: number
-  let gridGapY: number
+  let gridGapX = props.pcbGridColumnGap ?? props.gridColumnGap
+  let gridGapY = props.pcbGridRowGap ?? props.gridRowGap
 
   if (gridRowGapOption !== undefined || gridColumnGapOption !== undefined) {
     const fallbackX =
@@ -93,8 +93,8 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   }
 
   // Determine grid dimensions
-  let numCols: number
-  let numRows: number
+  let numCols: number = gridColsOption ?? 0
+  let numRows: number = gridRowsOption ?? 0
 
   if (gridColsOption !== undefined && gridRowsOption !== undefined) {
     numCols = gridColsOption
