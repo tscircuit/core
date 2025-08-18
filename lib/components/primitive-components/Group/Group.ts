@@ -151,10 +151,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         centerY += (padTop - padBottom) / 2
       }
 
+      // Check if the group has explicit pcbX/pcbY positioning
+      // If so, preserve the center position instead of overriding with bounds calculation
+      const currentPcbGroup = db.pcb_group.get(this.pcb_group_id)
+      const hasExplicitPositioning = this._parsedProps.pcbX !== undefined || this._parsedProps.pcbY !== undefined
+      
       db.pcb_group.update(this.pcb_group_id, {
         width: Number(props.width ?? width),
         height: Number(props.height ?? height),
-        center: {
+        center: hasExplicitPositioning && currentPcbGroup ? currentPcbGroup.center : {
           x: centerX,
           y: centerY,
         },

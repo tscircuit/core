@@ -20,6 +20,8 @@ const debug = Debug("Group_doInitialPcbLayoutPack")
 export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const { db } = group.root!
   const { _parsedProps: props } = group
+  
+  debug(`Starting pcbPack for group ${group.name || group.source_group_id}`)
 
   const {
     packOrderStrategy,
@@ -62,12 +64,16 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     if (pcbComponent) {
       const originalCenter = pcbComponent.center
       const rotationDegrees = ccwRotationDegrees ?? ccwRotationOffset ?? 0
+      const globalTransform = group._computePcbGlobalTransformBeforeLayout()
       const transformMatrix = compose(
-        group._computePcbGlobalTransformBeforeLayout(),
+        globalTransform,
         translate(center.x, center.y),
         rotate((rotationDegrees * Math.PI) / 180),
         translate(-originalCenter.x, -originalCenter.y),
       )
+      
+      debug(`pcbComponent transform - center: (${center.x}, ${center.y}), rotation: ${rotationDegrees}, originalCenter: (${originalCenter.x}, ${originalCenter.y})`)
+      debug(`globalTransform:`, globalTransform)
 
       const related = db
         .toArray()
@@ -75,6 +81,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           (elm) =>
             "pcb_component_id" in elm && elm.pcb_component_id === componentId,
         )
+      debug(`Transforming pcb_component ${componentId}, related elements: ${related.length}`)
       transformPCBElements(related as any, transformMatrix)
       continue
     }
@@ -86,14 +93,20 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
     const originalCenter = pcbGroup.center
     const rotationDegrees = ccwRotationDegrees ?? ccwRotationOffset ?? 0
+    const globalTransform = group._computePcbGlobalTransformBeforeLayout()
     const transformMatrix = compose(
-      group._computePcbGlobalTransformBeforeLayout(),
+      globalTransform,
       translate(center.x, center.y),
       rotate((rotationDegrees * Math.PI) / 180),
       translate(-originalCenter.x, -originalCenter.y),
     )
+    
+    debug(`pcbGroup transform - center: (${center.x}, ${center.y}), rotation: ${rotationDegrees}, originalCenter: (${originalCenter.x}, ${originalCenter.y})`)
+    debug(`globalTransform:`, globalTransform)
 
     const subtree = buildSubtree(db.toArray(), { source_group_id: componentId })
+    debug(`Transforming subtree for componentId ${componentId}, subtree size: ${subtree.length}`)
+    
     transformPCBElements(subtree as any, transformMatrix)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
