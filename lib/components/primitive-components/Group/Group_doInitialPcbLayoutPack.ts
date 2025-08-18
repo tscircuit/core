@@ -72,8 +72,6 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         translate(-originalCenter.x, -originalCenter.y),
       )
       
-      debug(`pcbComponent transform - center: (${center.x}, ${center.y}), rotation: ${rotationDegrees}, originalCenter: (${originalCenter.x}, ${originalCenter.y})`)
-      debug(`globalTransform:`, globalTransform)
 
       const related = db
         .toArray()
@@ -101,11 +99,8 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       translate(-originalCenter.x, -originalCenter.y),
     )
     
-    debug(`pcbGroup transform - center: (${center.x}, ${center.y}), rotation: ${rotationDegrees}, originalCenter: (${originalCenter.x}, ${originalCenter.y})`)
-    debug(`globalTransform:`, globalTransform)
 
     const subtree = buildSubtree(db.toArray(), { source_group_id: componentId })
-    debug(`Transforming subtree for componentId ${componentId}, subtree size: ${subtree.length}`)
     
     transformPCBElements(subtree as any, transformMatrix)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
