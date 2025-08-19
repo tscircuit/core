@@ -123,32 +123,71 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       translate(-originalCenter.x, -originalCenter.y),
     )
 
-    // Get all elements related to this group - use direct filtering instead of buildSubtree
-    // to avoid cross-group contamination issues
-    const allDbElements = db.toArray()
-    const filteredSubtree = allDbElements.filter((elm) => {
-      // Include elements that directly belong to this group
-      if ("source_group_id" in elm && elm.source_group_id === componentId) {
-        return true
-      }
+    // Only transform elements that belong to this specific group or its descendants
+    // This prevents cross-group interference while allowing nested group functionality
+    const relatedElements = db.toArray().filter((elm) => {
+      // Check if element belongs to the current group or any of its descendant groups
+      if ("source_group_id" in elm && elm.source_group_id) {
+        // Include if element belongs to the specific group being processed
+        if (elm.source_group_id === componentId) {
+          return true
+        }
 
-      // Include elements that belong to components in this group
-      if ("source_component_id" in elm && elm.source_component_id) {
-        const sourceComponent = db.source_component.get(elm.source_component_id)
-        if (sourceComponent?.source_group_id === componentId) {
+        // Include if element belongs to a descendant group
+        if (isDescendantGroup(db, elm.source_group_id, componentId)) {
           return true
         }
       }
 
-      // Include elements that belong to descendant groups
-      if ("source_group_id" in elm && elm.source_group_id) {
-        return isDescendantGroup(db, elm.source_group_id, componentId)
+      // Check elements that belong to components
+      if ("source_component_id" in elm && elm.source_component_id) {
+        const sourceComponent = db.source_component.get(elm.source_component_id)
+        if (sourceComponent?.source_group_id) {
+          // Include if component belongs to the specific group being processed
+          if (sourceComponent.source_group_id === componentId) {
+            return true
+          }
+
+          // Include if component belongs to a descendant group
+          if (
+            isDescendantGroup(db, sourceComponent.source_group_id, componentId)
+          ) {
+            return true
+          }
+        }
+      }
+
+      // Check pcb elements that reference components
+      if ("pcb_component_id" in elm && elm.pcb_component_id) {
+        const pcbComponent = db.pcb_component.get(elm.pcb_component_id)
+        if (pcbComponent?.source_component_id) {
+          const sourceComponent = db.source_component.get(
+            pcbComponent.source_component_id,
+          )
+          if (sourceComponent?.source_group_id) {
+            // Include if component belongs to the specific group being processed
+            if (sourceComponent.source_group_id === componentId) {
+              return true
+            }
+
+            // Include if component belongs to a descendant group
+            if (
+              isDescendantGroup(
+                db,
+                sourceComponent.source_group_id,
+                componentId,
+              )
+            ) {
+              return true
+            }
+          }
+        }
       }
 
       return false
     })
 
-    transformPCBElements(filteredSubtree as any, transformMatrix)
+    transformPCBElements(relatedElements as any, transformMatrix)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 }
