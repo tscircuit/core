@@ -123,32 +123,33 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       translate(-originalCenter.x, -originalCenter.y),
     )
 
-    // Get all elements related to this group
-    const allSubtreeElements = buildSubtree(db.toArray(), {
-      source_group_id: componentId,
-    })
-
-    // Filter out elements that belong to sibling groups to prevent cross-group interference
-    const filteredSubtree = allSubtreeElements.filter((elm) => {
-      // For elements without source_group_id, check if they belong to a component in a different group
-      if (!("source_group_id" in elm) || !elm.source_group_id) {
-        if ("source_component_id" in elm && elm.source_component_id) {
-          const sourceComponent = db.source_component.get(
-            elm.source_component_id,
-          )
-          if (
-            sourceComponent?.source_group_id &&
-            sourceComponent.source_group_id !== componentId
-          ) {
-            return false // Exclude elements from components in different groups
-          }
-        }
-        return true // Include elements without clear group association
+    // Get all elements related to this group - use direct filtering instead of buildSubtree
+    // to avoid cross-group contamination issues
+    const allDbElements = db.toArray()
+    const allSubtreeElements = allDbElements.filter((elm) => {
+      // Include elements that directly belong to this group
+      if ("source_group_id" in elm && elm.source_group_id === componentId) {
+        return true
       }
 
-      // Include elements from the target group or its descendants
-      return isDescendantGroup(db, elm.source_group_id, componentId)
+      // Include elements that belong to components in this group
+      if ("source_component_id" in elm && elm.source_component_id) {
+        const sourceComponent = db.source_component.get(elm.source_component_id)
+        if (sourceComponent?.source_group_id === componentId) {
+          return true
+        }
+      }
+
+      // Include elements that belong to descendant groups
+      if ("source_group_id" in elm && elm.source_group_id) {
+        return isDescendantGroup(db, elm.source_group_id, componentId)
+      }
+
+      return false
     })
+
+    // Since we're already filtering correctly above, we don't need additional filtering
+    const filteredSubtree = allSubtreeElements
 
     transformPCBElements(filteredSubtree as any, transformMatrix)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
