@@ -321,7 +321,7 @@ test("CO2 pcbPack should not rotate or move FunctionConnector group", async () =
         />
       </group>
 
-      <group name="CO2" schX={10} schY={3} pcbPack>
+      <group name="CO2" schX={10} schY={3}>
         <STC31_C_R3
           name="U5"
           connections={{
