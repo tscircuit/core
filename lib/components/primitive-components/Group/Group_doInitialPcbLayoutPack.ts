@@ -75,12 +75,15 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         componentGroupId !== undefined &&
         componentGroupId !== currentGroupId
       ) {
-        // Check if it's a child group
-        const componentSourceGroup = db.source_group.get(componentGroupId)
-        if (
-          !componentSourceGroup ||
-          componentSourceGroup.parent_source_group_id !== currentGroupId
-        ) {
+        // Check if it's a descendant group (child, grandchild, etc.)
+        const isDescendant = (groupId: string, ancestorId: string): boolean => {
+          const group = db.source_group.get(groupId)
+          if (!group || !group.parent_source_group_id) return false
+          if (group.parent_source_group_id === ancestorId) return true
+          return isDescendant(group.parent_source_group_id, ancestorId)
+        }
+
+        if (!isDescendant(componentGroupId, currentGroupId)) {
           continue
         }
       }
@@ -126,10 +129,15 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       // Only include elements from the target group or its descendants
       if (elm.source_group_id === componentId) return true
 
-      // Check if it's a child of the target group
-      const sourceGroup = db.source_group.get(elm.source_group_id)
-      if (sourceGroup && sourceGroup.parent_source_group_id === componentId)
-        return true
+      // Check if it's a descendant of the target group
+      const isDescendant = (groupId: string, ancestorId: string): boolean => {
+        const group = db.source_group.get(groupId)
+        if (!group || !group.parent_source_group_id) return false
+        if (group.parent_source_group_id === ancestorId) return true
+        return isDescendant(group.parent_source_group_id, ancestorId)
+      }
+
+      if (isDescendant(elm.source_group_id, componentId)) return true
 
       return false
     })
