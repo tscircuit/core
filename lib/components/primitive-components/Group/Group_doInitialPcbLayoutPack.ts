@@ -121,28 +121,59 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       translate(-originalCenter.x, -originalCenter.y),
     )
 
-    // Use manual filtering instead of buildSubtree to prevent cross-group interference
-    // buildSubtree was including elements from sibling groups, causing rotation/positioning issues
-    const filteredElements = db.toArray().filter((elm) => {
-      if (!("source_group_id" in elm) || !elm.source_group_id) return false
+    // Get all elements related to this group
+    const allSubtreeElements = buildSubtree(db.toArray(), {
+      source_group_id: componentId,
+    })
 
-      // Only include elements from the target group or its descendants
-      if (elm.source_group_id === componentId) return true
-
-      // Check if it's a descendant of the target group
-      const isDescendant = (groupId: string, ancestorId: string): boolean => {
-        const group = db.source_group.get(groupId)
-        if (!group || !group.parent_source_group_id) return false
-        if (group.parent_source_group_id === ancestorId) return true
-        return isDescendant(group.parent_source_group_id, ancestorId)
+    // Filter out elements that belong to sibling groups to prevent cross-group interference
+    // but keep elements that don't have source_group_id (PCB primitives) and descendant group elements
+    const filteredSubtree = allSubtreeElements.filter((elm) => {
+      // Check elements without source_group_id more carefully
+      if (!("source_group_id" in elm) || !elm.source_group_id) {
+        // Check if this element belongs to a component in a different group
+        if ("source_component_id" in elm && elm.source_component_id) {
+          const sourceComponent = db.source_component.get(
+            elm.source_component_id,
+          )
+          if (
+            sourceComponent &&
+            sourceComponent.source_group_id &&
+            sourceComponent.source_group_id !== componentId
+          ) {
+            return false // Exclude elements from components in different groups
+          }
+        }
+        return true // Include elements without clear group association
       }
 
-      if (isDescendant(elm.source_group_id, componentId)) return true
+      // Always include elements from the target group itself
+      if (elm.source_group_id === componentId) {
+        return true
+      }
 
+      // For elements with source_group_id, check if it's a descendant of the target group
+      // This allows nested group scenarios to work correctly
+      const isDescendantOfTarget = (
+        groupId: string,
+        targetId: string,
+      ): boolean => {
+        if (groupId === targetId) return true
+        const group = db.source_group.get(groupId)
+        if (!group || !group.parent_source_group_id) return false
+        return isDescendantOfTarget(group.parent_source_group_id, targetId)
+      }
+
+      // Include if it's a descendant of the target group
+      if (isDescendantOfTarget(elm.source_group_id, componentId)) {
+        return true
+      }
+
+      // Exclude elements from sibling groups (this prevents the cross-group interference)
       return false
     })
 
-    transformPCBElements(filteredElements as any, transformMatrix)
+    transformPCBElements(filteredSubtree as any, transformMatrix)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 }
