@@ -126,7 +126,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     // Get all elements related to this group - use direct filtering instead of buildSubtree
     // to avoid cross-group contamination issues
     const allDbElements = db.toArray()
-    const allSubtreeElements = allDbElements.filter((elm) => {
+    const filteredSubtree = allDbElements.filter((elm) => {
       // Include elements that directly belong to this group
       if ("source_group_id" in elm && elm.source_group_id === componentId) {
         return true
@@ -147,9 +147,6 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
       return false
     })
-
-    // Since we're already filtering correctly above, we don't need additional filtering
-    const filteredSubtree = allSubtreeElements
 
     transformPCBElements(filteredSubtree as any, transformMatrix)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
