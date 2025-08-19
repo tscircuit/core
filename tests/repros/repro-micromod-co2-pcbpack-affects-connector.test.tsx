@@ -321,7 +321,7 @@ test("CO2 pcbPack should not rotate or move FunctionConnector group", async () =
         />
       </group>
 
-      <group name="CO2" schX={10} schY={3}>
+      <group name="CO2" schX={10} schY={3} pcbPack>
         <STC31_C_R3
           name="U5"
           connections={{
@@ -396,7 +396,6 @@ test("CO2 pcbPack should not rotate or move FunctionConnector group", async () =
   )
 
   await circuit.renderUntilSettled()
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
   const sourceGroup = circuit.db.source_group
     .list()
@@ -408,4 +407,6 @@ test("CO2 pcbPack should not rotate or move FunctionConnector group", async () =
   // If bug occurs, these will fail due to move/flip
   expect(pcbGroup.center.x).toBeCloseTo(-33, 2)
   expect(pcbGroup.center.y).toBeCloseTo(2, 2)
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
