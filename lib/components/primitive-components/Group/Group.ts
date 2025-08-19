@@ -151,13 +151,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         centerY += (padTop - padBottom) / 2
       }
 
+      // Preserve explicit positioning when pcbX/pcbY are set to prevent pcbPack interference
+      const hasExplicitPositioning =
+        this._parsedProps.pcbX !== undefined ||
+        this._parsedProps.pcbY !== undefined
+
+      const center = hasExplicitPositioning
+        ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
+            x: centerX,
+            y: centerY,
+          })
+        : { x: centerX, y: centerY }
+
       db.pcb_group.update(this.pcb_group_id, {
         width: Number(props.width ?? width),
         height: Number(props.height ?? height),
-        center: {
-          x: centerX,
-          y: centerY,
-        },
+        center,
       })
     }
   }
