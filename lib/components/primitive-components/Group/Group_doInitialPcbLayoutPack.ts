@@ -83,7 +83,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
           return isDescendant(group.parent_source_group_id, ancestorId)
         }
 
-        if (!isDescendant(componentGroupId, currentGroupId)) {
+        if (!isDescendant(componentGroupId, currentGroupId!)) {
           continue
         }
       }
