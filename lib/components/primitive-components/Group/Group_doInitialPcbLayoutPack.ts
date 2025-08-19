@@ -13,9 +13,6 @@ import {
   getPrimaryId,
 } from "@tscircuit/circuit-json-util"
 import { translate, rotate, compose } from "transformation-matrix"
-import Debug from "debug"
-
-const debug = Debug("Group_doInitialPcbLayoutPack")
 
 export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const { db } = group.root!
@@ -47,12 +44,6 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
   const packOutput = pack(packInput)
 
-  if (debug.enabled) {
-    const graphics = getGraphicsFromPackOutput(packOutput)
-    graphics.title = `packOutput-${group.name}`
-    global.debugGraphics?.push(graphics)
-  }
-
   // Apply the pack output to the circuit json
   for (const packedComponent of packOutput.components) {
     const { center, componentId, ccwRotationOffset, ccwRotationDegrees } =
@@ -79,11 +70,8 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         const componentSourceGroup = db.source_group.get(componentGroupId)
         if (
           !componentSourceGroup ||
-          componentSourceGroup.parent_group_id !== currentGroupId
+          componentSourceGroup.parent_source_group_id !== currentGroupId
         ) {
-          debug(
-            `Skipping pcb_component ${componentId} (${sourceComponent?.name}) - belongs to different group ${componentGroupId}`,
-          )
           continue
         }
       }
@@ -131,7 +119,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
       // Check if it's a child of the target group
       const sourceGroup = db.source_group.get(elm.source_group_id)
-      if (sourceGroup && sourceGroup.parent_group_id === componentId)
+      if (sourceGroup && sourceGroup.parent_source_group_id === componentId)
         return true
 
       return false
