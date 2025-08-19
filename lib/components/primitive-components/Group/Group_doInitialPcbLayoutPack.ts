@@ -13,6 +13,9 @@ import {
   getPrimaryId,
 } from "@tscircuit/circuit-json-util"
 import { translate, rotate, compose } from "transformation-matrix"
+import Debug from "debug"
+
+const debug = Debug("Group_doInitialPcbLayoutPack")
 
 export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const { db } = group.root!
@@ -43,6 +46,12 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     minGap: gapMm,
   }
   const packOutput = pack(packInput)
+
+  if (debug.enabled) {
+    const graphics = getGraphicsFromPackOutput(packOutput)
+    graphics.title = `packOutput-${group.name}`
+    global.debugGraphics?.push(graphics)
+  }
 
   // Apply the pack output to the circuit json
   for (const packedComponent of packOutput.components) {
