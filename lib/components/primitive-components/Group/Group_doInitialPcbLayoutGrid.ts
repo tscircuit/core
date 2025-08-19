@@ -1,12 +1,11 @@
-import { translate } from "transformation-matrix"
 import type { Group } from "./Group"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import type { IGroup } from "./IGroup"
 import {
-  transformPCBElements,
-  getPrimaryId,
+  repositionPcbComponentTo,
+  repositionPcbGroupTo,
 } from "@tscircuit/circuit-json-util"
 import { length } from "circuit-json"
-import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { CssGrid } from "minicssgrid"
 
 export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
@@ -14,23 +13,26 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   const props = group._parsedProps
 
   const pcbChildren = group.children.filter(
-    (child) => child.pcb_component_id,
-  ) as PrimitiveComponent[]
+    (child) => child.pcb_component_id || (child as IGroup).pcb_group_id,
+  ) as (PrimitiveComponent | IGroup)[]
 
   if (pcbChildren.length === 0) return
 
-  // Calculate individual component dimensions
   let childWidth = 0
   let childHeight = 0
 
   for (const child of pcbChildren) {
-    const pcbComp = db.pcb_component.get(child.pcb_component_id!)
-    let width = pcbComp?.width ?? 0
-    let height = pcbComp?.height ?? 0
-    if (width === 0 || height === 0) {
-      const bounds = getBoundsOfPcbComponents(child.children)
-      width = Math.max(width, bounds.width)
-      height = Math.max(height, bounds.height)
+    let width = 0
+    let height = 0
+
+    if ((child as IGroup).pcb_group_id) {
+      const pcbGroup = db.pcb_group.get((child as IGroup).pcb_group_id!)
+      width = pcbGroup?.width ?? 0
+      height = pcbGroup?.height ?? 0
+    } else if (child.pcb_component_id) {
+      const pcbComp = db.pcb_component.get(child.pcb_component_id!)
+      width = pcbComp?.width ?? 0
+      height = pcbComp?.height ?? 0
     }
     childWidth = Math.max(childWidth, width)
     childHeight = Math.max(childHeight, height)
@@ -92,44 +94,85 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
     gridGapY = 1
   }
 
-  // Determine grid dimensions
+  // Check if template props are provided
+  const hasTemplateColumns = props.pcbGridTemplateColumns !== undefined
+  const hasTemplateRows = props.pcbGridTemplateRows !== undefined
+
+  let gridTemplateColumns: string
+  let gridTemplateRows: string
   let numCols: number = gridColsOption ?? 0
   let numRows: number = gridRowsOption ?? 0
+  let totalGridWidth: number
+  let totalGridHeight: number
 
-  if (gridColsOption !== undefined && gridRowsOption !== undefined) {
-    numCols = gridColsOption
-    numRows = gridRowsOption
-  } else if (gridColsOption !== undefined) {
-    numCols = gridColsOption
-    numRows = Math.ceil(pcbChildren.length / numCols)
-  } else if (gridRowsOption !== undefined) {
-    numRows = gridRowsOption
-    numCols = Math.ceil(pcbChildren.length / numRows)
+  if (hasTemplateColumns || hasTemplateRows) {
+    // When template props are provided, use them directly without modification
+    gridTemplateColumns = props.pcbGridTemplateColumns ?? ""
+    gridTemplateRows = props.pcbGridTemplateRows ?? ""
+    // For template-based layout, let CssGrid handle the dimensions
+    // We'll estimate dimensions for the group size
+    if (hasTemplateColumns) {
+      const match = gridTemplateColumns.match(/repeat\((\d+),/)
+      numCols = match
+        ? parseInt(match[1])
+        : Math.ceil(Math.sqrt(pcbChildren.length))
+    } else {
+      numCols = Math.ceil(Math.sqrt(pcbChildren.length))
+    }
+
+    if (hasTemplateRows) {
+      const match = gridTemplateRows.match(/repeat\((\d+),/)
+      numRows = match
+        ? parseInt(match[1])
+        : Math.ceil(pcbChildren.length / numCols)
+    } else {
+      numRows = Math.ceil(pcbChildren.length / numCols)
+    }
+
+    totalGridWidth = numCols * childWidth + Math.max(0, numCols - 1) * gridGapX
+    totalGridHeight =
+      numRows * childHeight + Math.max(0, numRows - 1) * gridGapY
   } else {
-    numCols = Math.ceil(Math.sqrt(pcbChildren.length))
-    numRows = Math.ceil(pcbChildren.length / numCols)
+    // Calculate grid dimensions when only pcbGrid is present
+    if (gridColsOption !== undefined && gridRowsOption !== undefined) {
+      numCols = gridColsOption
+      numRows = gridRowsOption
+    } else if (gridColsOption !== undefined) {
+      numCols = gridColsOption
+      numRows = Math.ceil(pcbChildren.length / numCols)
+    } else if (gridRowsOption !== undefined) {
+      numRows = gridRowsOption
+      numCols = Math.ceil(pcbChildren.length / numRows)
+    } else {
+      numCols = Math.ceil(Math.sqrt(pcbChildren.length))
+      numRows = Math.ceil(pcbChildren.length / numCols)
+    }
+
+    if (numCols === 0 && pcbChildren.length > 0) numCols = 1
+    if (numRows === 0 && pcbChildren.length > 0) numRows = pcbChildren.length
+
+    totalGridWidth = numCols * childWidth + Math.max(0, numCols - 1) * gridGapX
+    totalGridHeight =
+      numRows * childHeight + Math.max(0, numRows - 1) * gridGapY
+
+    gridTemplateColumns = `repeat(${numCols}, ${childWidth}px)`
+    gridTemplateRows = `repeat(${numRows}, ${childHeight}px)`
   }
-
-  if (numCols === 0 && pcbChildren.length > 0) numCols = 1
-  if (numRows === 0 && pcbChildren.length > 0) numRows = pcbChildren.length
-
-  // Calculate total grid dimensions
-  const totalGridWidth =
-    numCols * childWidth + Math.max(0, numCols - 1) * gridGapX
-  const totalGridHeight =
-    numRows * childHeight + Math.max(0, numRows - 1) * gridGapY
-
-  // Create CssGrid configuration
-  const gridTemplateColumns =
-    props.pcbGridTemplateColumns ?? `repeat(${numCols}, ${childWidth}px)`
-  const gridTemplateRows =
-    props.pcbGridTemplateRows ?? `repeat(${numRows}, ${childHeight}px)`
 
   const gridChildren = pcbChildren.map((child, index) => ({
     key: child.getString() || `child-${index}`,
     contentWidth: childWidth,
     contentHeight: childHeight,
   }))
+
+  // console.log({
+  //   containerWidth: totalGridWidth,
+  //   containerHeight: totalGridHeight,
+  //   gridTemplateColumns: gridTemplateColumns,
+  //   gridTemplateRows: gridTemplateRows,
+  //   gap: [gridGapY, gridGapX], // [rowGap, columnGap]
+  //   children: gridChildren,
+  // })
 
   const cssGrid = new CssGrid({
     containerWidth: totalGridWidth,
@@ -146,10 +189,10 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   // Get group center for positioning
   const groupCenter = group._getGlobalPcbPositionBeforeLayout()
 
-  // Apply positioning to PCB components using CssGrid results
+  // Apply positioning to PCB components and groups using CssGrid results
   for (let i = 0; i < pcbChildren.length; i++) {
     const child = pcbChildren[i]
-    if (!child.pcb_component_id) continue
+    if (!child.pcb_component_id && !(child as IGroup).pcb_group_id) continue
 
     const childKey = child.getString() || `child-${i}`
     const coordinates = itemCoordinates[childKey]
@@ -166,39 +209,27 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
     const targetCellCenterX =
       groupCenter.x - totalGridWidth / 2 + coordinates.x + coordinates.width / 2
     const targetCellCenterY =
-      groupCenter.y +
-      totalGridHeight / 2 -
-      coordinates.y -
+      groupCenter.y -
+      totalGridHeight / 2 +
+      coordinates.y +
       coordinates.height / 2
 
-    const pcbComp = db.pcb_component.get(child.pcb_component_id!)
-    if (pcbComp) {
-      const oldCenter = pcbComp.center
-      const newCenter = { x: targetCellCenterX, y: targetCellCenterY }
-
-      const deltaX = newCenter.x - oldCenter.x
-      const deltaY = newCenter.y - oldCenter.y
-
-      const mat = translate(deltaX, deltaY)
-      const related = db
-        .toArray()
-        .filter((e) => (e as any).pcb_component_id === child.pcb_component_id)
-      const moved = transformPCBElements(related as any, mat)
-      for (const elm of moved) {
-        const idProp = getPrimaryId(elm as any)
-        // @ts-ignore dynamic index access
-        db[elm.type].update((elm as any)[idProp], elm as any)
+    if (child.pcb_component_id) {
+      repositionPcbComponentTo(db.toArray(), child.pcb_component_id, {
+        x: targetCellCenterX,
+        y: targetCellCenterY,
+      })
+    } else {
+      const groupChild = child as IGroup
+      if (groupChild.pcb_group_id) {
+        const pcbGroup = db.pcb_group.get(groupChild.pcb_group_id!)
+        if (pcbGroup && groupChild.source_group_id) {
+          repositionPcbGroupTo(db.toArray(), groupChild.source_group_id, {
+            x: targetCellCenterX,
+            y: targetCellCenterY,
+          })
+        }
       }
-
-      db.pcb_component.update(child.pcb_component_id, {
-        center: newCenter,
-      })
-
-      child.setProps({
-        ...child.props,
-        pcbX: (child.props.pcbX ?? 0) + deltaX,
-        pcbY: (child.props.pcbY ?? 0) + deltaY,
-      })
     }
   }
 
