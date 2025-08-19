@@ -24,13 +24,3 @@ jobs:
 
       - name: Run tests
         run: bun test --timeout 10000
-
-      - name: Upload snapshot diffs and snapshots (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pcb-snapshots-and-diffs
-          path: |
-            tests/**/__snapshots__/*.diff.png
-            tests/**/__snapshots__/*.snap.svg
-          retention-days: 7
