@@ -7,8 +7,10 @@ test("pcb-grid4", () => {
   circuit.add(
     <board
       pcbGrid
-      pcbGridTemplateColumns="repeat(2, 10mm)"
-      pcbGridTemplateRows="repeat(2, 10mm)"
+      pcbGridTemplateColumns="30% 30%"
+      pcbGridTemplateRows="30% 30%"
+      pcbGridRowGap={"8mm"}
+      pcbGridColumnGap={"8mm"}
       routingDisabled
     >
       <group pcbGrid name="group1">

@@ -90,8 +90,8 @@ function calculateChildDimensions(params: {
   }
 
   return {
-    width: maxWidth || 1,
-    height: maxHeight || 1,
+    width: maxWidth,
+    height: maxHeight,
   }
 }
 
