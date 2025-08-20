@@ -36,25 +36,25 @@ export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   const pcbChildren = getPcbChildren(group)
   if (pcbChildren.length === 0) return
 
-  const childDimensions = calculateChildDimensions(db, pcbChildren)
+  const childDimensions = calculateChildDimensions({ db, pcbChildren })
   const gridConfig = parseGridConfiguration(props)
-  const gridLayout = createGridLayout(
+  const gridLayout = createGridLayout({
     props,
     pcbChildren,
     childDimensions,
     gridConfig,
-  )
+  })
 
-  const cssGrid = createCssGrid(
+  const cssGrid = createCssGrid({
     pcbChildren,
     childDimensions,
     gridLayout,
     gridConfig,
-  )
+  })
   const { itemCoordinates } = cssGrid.layout()
 
-  positionChildren(db, group, pcbChildren, itemCoordinates, gridLayout)
-  updateGroupDimensions(db, group, props, gridLayout)
+  positionChildren({ db, group, pcbChildren, itemCoordinates, gridLayout })
+  updateGroupDimensions({ db, group, props, gridLayout })
 }
 
 function getPcbChildren(group: Group<any>): (PrimitiveComponent | IGroup)[] {
@@ -63,10 +63,11 @@ function getPcbChildren(group: Group<any>): (PrimitiveComponent | IGroup)[] {
   ) as (PrimitiveComponent | IGroup)[]
 }
 
-function calculateChildDimensions(
-  db: any,
-  pcbChildren: (PrimitiveComponent | IGroup)[],
-): ChildDimensions {
+function calculateChildDimensions(params: {
+  db: any
+  pcbChildren: (PrimitiveComponent | IGroup)[]
+}): ChildDimensions {
+  const { db, pcbChildren } = params
   let maxWidth = 0
   let maxHeight = 0
 
@@ -103,9 +104,9 @@ function parseGridConfiguration(props: any): GridConfig {
   const templateRows = props.pcbGridTemplateRows
 
   // Parse gap values with fallback logic
-  const parseGap = (val: number | string | undefined): number => {
-    if (val === undefined) return 1
-    return typeof val === "number" ? val : length.parse(val)
+  const parseGap = (gapValue: number | string | undefined): number => {
+    if (gapValue === undefined) return 1
+    return typeof gapValue === "number" ? gapValue : length.parse(gapValue)
   }
 
   const gridGapOption =
@@ -139,30 +140,33 @@ function parseGridConfiguration(props: any): GridConfig {
   return { cols, rows, gapX, gapY, templateColumns, templateRows }
 }
 
-function createGridLayout(
-  props: any,
-  pcbChildren: any[],
-  childDimensions: ChildDimensions,
-  gridConfig: GridConfig,
-): GridLayout {
+function createGridLayout(params: {
+  props: any
+  pcbChildren: any[]
+  childDimensions: ChildDimensions
+  gridConfig: GridConfig
+}): GridLayout {
+  const { props, pcbChildren, childDimensions, gridConfig } = params
+
   if (props.pcbGridTemplateColumns || props.pcbGridTemplateRows) {
-    return createTemplateBasedLayout(
+    return createTemplateBasedLayout({
       props,
       gridConfig,
       pcbChildren,
       childDimensions,
-    )
+    })
   }
 
-  return createDefaultLayout(gridConfig, pcbChildren, childDimensions)
+  return createDefaultLayout({ gridConfig, pcbChildren, childDimensions })
 }
 
-function createTemplateBasedLayout(
-  props: any,
-  gridConfig: GridConfig,
-  pcbChildren: any[],
-  childDimensions: ChildDimensions,
-): GridLayout {
+function createTemplateBasedLayout(params: {
+  props: any
+  gridConfig: GridConfig
+  pcbChildren: any[]
+  childDimensions: ChildDimensions
+}): GridLayout {
+  const { props, gridConfig, pcbChildren, childDimensions } = params
   const gridTemplateColumns = props.pcbGridTemplateColumns ?? ""
   const gridTemplateRows = props.pcbGridTemplateRows ?? ""
 
@@ -193,11 +197,12 @@ function createTemplateBasedLayout(
   }
 }
 
-function createDefaultLayout(
-  gridConfig: GridConfig,
-  pcbChildren: any[],
-  childDimensions: ChildDimensions,
-): GridLayout {
+function createDefaultLayout(params: {
+  gridConfig: GridConfig
+  pcbChildren: any[]
+  childDimensions: ChildDimensions
+}): GridLayout {
+  const { gridConfig, pcbChildren, childDimensions } = params
   let numCols: number
   let numRows: number
 
@@ -237,12 +242,13 @@ function createDefaultLayout(
   }
 }
 
-function createCssGrid(
-  pcbChildren: any[],
-  childDimensions: ChildDimensions,
-  gridLayout: GridLayout,
-  gridConfig: GridConfig,
-): CssGrid {
+function createCssGrid(params: {
+  pcbChildren: any[]
+  childDimensions: ChildDimensions
+  gridLayout: GridLayout
+  gridConfig: GridConfig
+}): CssGrid {
+  const { pcbChildren, childDimensions, gridLayout, gridConfig } = params
   const gridChildren = pcbChildren.map((child, index) => ({
     key: child.getString() || `child-${index}`,
     contentWidth: childDimensions.width,
@@ -259,13 +265,14 @@ function createCssGrid(
   })
 }
 
-function positionChildren(
-  db: any,
-  group: Group<any>,
-  pcbChildren: (PrimitiveComponent | IGroup)[],
-  itemCoordinates: any,
-  gridLayout: GridLayout,
-) {
+function positionChildren(params: {
+  db: any
+  group: Group<any>
+  pcbChildren: (PrimitiveComponent | IGroup)[]
+  itemCoordinates: any
+  gridLayout: GridLayout
+}) {
+  const { db, group, pcbChildren, itemCoordinates, gridLayout } = params
   const groupCenter = group._getGlobalPcbPositionBeforeLayout()
   const allCircuitJson = db.toArray()
 
@@ -310,12 +317,13 @@ function positionChildren(
   }
 }
 
-function updateGroupDimensions(
-  db: any,
-  group: Group<any>,
-  props: any,
-  gridLayout: GridLayout,
-) {
+function updateGroupDimensions(params: {
+  db: any
+  group: Group<any>
+  props: any
+  gridLayout: GridLayout
+}) {
+  const { db, group, props, gridLayout } = params
   if (group.pcb_group_id) {
     const groupCenter = group._getGlobalPcbPositionBeforeLayout()
     db.pcb_group.update(group.pcb_group_id, {
