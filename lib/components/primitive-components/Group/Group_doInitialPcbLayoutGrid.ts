@@ -288,9 +288,9 @@ function positionChildren(
       coordinates.x +
       coordinates.width / 2
     const targetY =
-      groupCenter.y -
-      gridLayout.containerHeight / 2 +
-      coordinates.y +
+      groupCenter.y +
+      gridLayout.containerHeight / 2 -
+      coordinates.y -
       coordinates.height / 2
 
     if (child.pcb_component_id) {
