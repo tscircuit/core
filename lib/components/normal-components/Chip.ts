@@ -3,7 +3,7 @@ import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
-import { sanitizePinLabels } from "lib/utils/sanitisePinLabels"
+import { sanitizePinLabels } from "lib/utils/sanitizePinLabels"
 import type { z } from "zod"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
