@@ -29,7 +29,7 @@ interface GridLayout {
   containerHeight: number
 }
 
-const MIN_GAP = 3
+const MIN_GAP = 1
 
 export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   const { db } = group.root!
