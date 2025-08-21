@@ -3,7 +3,7 @@ import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
-import { filterValidPinLabels } from "lib/utils/filterValidPinLabels"
+import { sanitizePinLabels } from "lib/utils/filterValidPinLabels"
 import type { z } from "zod"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
@@ -15,7 +15,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   constructor(props: z.input<typeof chipProps>) {
     const filteredProps = { ...props }
     if (filteredProps.pinLabels) {
-      filteredProps.pinLabels = filterValidPinLabels(filteredProps.pinLabels)
+      filteredProps.pinLabels = sanitizePinLabels(filteredProps.pinLabels)
     }
     super(filteredProps)
   }

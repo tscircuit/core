@@ -1,13 +1,14 @@
 import { chipProps } from "@tscircuit/props"
 
 /**
- * Filters out invalid pin labels while preserving valid ones.
- * This allows components to render even if some pin labels are invalid.
+ * Sanitizes pin labels by replacing invalid ones with "INVALID_NAME".
+ * This allows components to render even if some pin labels are invalid,
+ * while providing clear visual feedback about problematic labels.
  *
  * Uses the actual chipProps zod schema to validate pin labels,
  * ensuring consistency with the real validation logic.
  */
-export function filterValidPinLabels(
+export function sanitizePinLabels(
   pinLabels: Record<string, string | string[] | readonly string[]> | undefined,
 ): Record<string, string | string[]> | undefined {
   if (!pinLabels) return pinLabels
@@ -24,16 +25,17 @@ export function filterValidPinLabels(
       if (isValidPinLabel(pin, label)) {
         validLabels.push(label)
       } else {
-        console.warn(`Skipping invalid pin label: ${pin} = "${label}"`)
+        console.warn(
+          `Invalid pin label: ${pin} = "${label}" - replacing with "INVALID_NAME"`,
+        )
+        validLabels.push("INVALID_NAME")
       }
     }
 
-    // Only include this pin if it has at least one valid label
-    if (validLabels.length > 0) {
-      validPinLabels[pin] = Array.isArray(labelOrLabels)
-        ? validLabels
-        : validLabels[0]
-    }
+    // Always include the pin since we replace invalid labels with "INVALID_NAME"
+    validPinLabels[pin] = Array.isArray(labelOrLabels)
+      ? validLabels
+      : validLabels[0]
   }
 
   return Object.keys(validPinLabels).length > 0 ? validPinLabels : undefined

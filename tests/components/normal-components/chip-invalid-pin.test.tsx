@@ -12,7 +12,7 @@ test("chip with invalid pin should render the other pins except the invalid one"
         pinLabels={{
           pin1: "VCC",
           pin2: "VIN",
-          pin3: "INVALID//PIN//LABEL",
+          pin3: "//",
           pin4: "VOUT",
         }}
       />
