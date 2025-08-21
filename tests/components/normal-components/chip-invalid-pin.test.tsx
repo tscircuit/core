@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("chip with invalid pin should render the other pins except the invalid one", async () => {
+test("chip with invalid pin should be skipped", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
