@@ -31,10 +31,42 @@ const getSizeOfTreeNodeChild = (
     const schGroup = db.schematic_group.getWhere({
       source_group_id: sourceGroup?.source_group_id,
     })
-    if (!schGroup) return null
+
+    // If the group already has a calculated size, use it
+    if (schGroup?.width && schGroup?.height) {
+      return {
+        width: schGroup.width,
+        height: schGroup.height,
+      }
+    }
+
+    // Otherwise, calculate the bounding box from components within the group
+    const groupComponents = db.schematic_component.list({
+      schematic_group_id: schGroup?.schematic_group_id,
+    })
+
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    let maxY = -Infinity
+
+    for (const comp of groupComponents) {
+      if (comp.center && comp.size) {
+        const halfWidth = comp.size.width / 2
+        const halfHeight = comp.size.height / 2
+        minX = Math.min(minX, comp.center.x - halfWidth)
+        maxX = Math.max(maxX, comp.center.x + halfWidth)
+        minY = Math.min(minY, comp.center.y - halfHeight)
+        maxY = Math.max(maxY, comp.center.y + halfHeight)
+      }
+    }
+
+    const groupWidth = maxX - minX
+    const groupHeight = maxY - minY
+
     return {
-      width: schGroup.width ?? 0,
-      height: schGroup.height ?? 0,
+      width: groupWidth,
+      height: groupHeight,
     }
   }
   return null
