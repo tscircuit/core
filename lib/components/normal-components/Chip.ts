@@ -1,20 +1,24 @@
 import { chipProps } from "@tscircuit/props"
-import type { SchematicPortArrangement } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
-import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import {
-  type SchematicBoxDimensions,
-  getAllDimensionsForSchematicBox,
-} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
+import { filterValidPinLabels } from "lib/utils/filterValidPinLabels"
+import type { z } from "zod"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
   PinLabels
 > {
   schematicBoxDimensions: SchematicBoxDimensions | null = null
+
+  constructor(props: z.input<typeof chipProps>) {
+    const filteredProps = { ...props }
+    if (filteredProps.pinLabels) {
+      filteredProps.pinLabels = filterValidPinLabels(filteredProps.pinLabels)
+    }
+    super(filteredProps)
+  }
 
   get config() {
     return {
