@@ -29,6 +29,8 @@ interface GridLayout {
   containerHeight: number
 }
 
+const MIN_GAP = 3
+
 export function Group_doInitialPcbLayoutGrid(group: Group<any>) {
   const { db } = group.root!
   const props = group._parsedProps
@@ -105,7 +107,7 @@ function parseGridConfiguration(props: any): GridConfig {
 
   // Parse gap values with fallback logic
   const parseGap = (gapValue: number | string | undefined): number => {
-    if (gapValue === undefined) return 1
+    if (gapValue === undefined) return MIN_GAP
     return typeof gapValue === "number" ? gapValue : length.parse(gapValue)
   }
 
@@ -118,8 +120,8 @@ function parseGridConfiguration(props: any): GridConfig {
     props.gridColumnGap ??
     props.pcbLayout?.gridColumnGap
 
-  let gapX = 1
-  let gapY = 1
+  let gapX = MIN_GAP
+  let gapY = MIN_GAP
 
   if (rowGapOption !== undefined || colGapOption !== undefined) {
     const fallbackX =
