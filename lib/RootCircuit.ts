@@ -239,11 +239,11 @@ export class RootCircuit {
     )
   }
   getClientOrigin(): string {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && window.location) {
       return window.location.origin
     }
-    if (typeof self !== "undefined") {
-      return self.origin
+    if (typeof self !== "undefined" && (self as any).location) {
+      return (self as any).location.origin
     }
     return ""
   }
