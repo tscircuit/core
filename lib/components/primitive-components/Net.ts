@@ -119,23 +119,29 @@ export class Net extends PrimitiveComponent<typeof netProps> {
       (trace) => (trace._portsRoutedOnPcb?.length ?? 0) > 0,
     )
 
-    const islands: Array<{ ports: Port[]; traces: Trace[] }> = []
+    let islands: Array<{ ports: Port[]; traces: Trace[] }> = []
 
-    for (const trace of traces) {
-      const tracePorts = trace._portsRoutedOnPcb
-      const traceIsland = islands.find((island) =>
-        tracePorts.some((port) => island.ports.includes(port)),
-      )
-      if (!traceIsland) {
-        islands.push({ ports: [...tracePorts], traces: [trace] })
-        continue
+    if (traces.length === 0) {
+      const allPorts = this.getSubcircuit().selectAll("port") as Port[]
+      if (allPorts.length === 0) return
+      islands = allPorts.map((port) => ({ ports: [port], traces: [] }))
+    } else {
+      for (const trace of traces) {
+        const tracePorts = trace._portsRoutedOnPcb
+        const traceIsland = islands.find((island) =>
+          tracePorts.some((port) => island.ports.includes(port)),
+        )
+        if (!traceIsland) {
+          islands.push({ ports: [...tracePorts], traces: [trace] })
+          continue
+        }
+        traceIsland.traces.push(trace)
+        traceIsland.ports.push(...tracePorts)
       }
-      traceIsland.traces.push(trace)
-      traceIsland.ports.push(...tracePorts)
-    }
 
-    if (islands.length === 0) {
-      return
+      if (islands.length === 0) {
+        return
+      }
     }
 
     // Connect islands together by looking at each pair of islands and adding
