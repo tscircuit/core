@@ -451,6 +451,88 @@ function convertTreeToInputProblem(
         }
       }
 
+      // If we don't have direct connections but have multiple pins in the same connectivity group,
+      // and they're connected through the same pattern (each pin connects to the same type of net/port),
+      // treat them as strongly connected for layout purposes
+      if (!hasDirectConnections && pins.length >= 2) {
+        // Check if all pins in this group connect to components via similar patterns
+        const pinConnectionPatterns = new Map<string, number>()
+
+        for (const trace of tracesWithThisKey) {
+          if (
+            trace.connected_source_port_ids &&
+            trace.connected_source_port_ids.length === 1
+          ) {
+            // This is a single-port trace - check what it connects to
+            const portId = trace.connected_source_port_ids[0]
+            const sourcePort = db.source_port.get(portId)
+            if (sourcePort) {
+              // Find which pin this port belongs to
+              for (const pinId of pins) {
+                const pinNumber = pinId.split(".").pop()
+                if (
+                  String(sourcePort.pin_number || sourcePort.name) ===
+                  String(pinNumber)
+                ) {
+                  const chipId = pinId.split(".")[0]
+                  const treeNode = tree.childNodes.find((child) => {
+                    if (
+                      child.nodeType === "component" &&
+                      child.sourceComponent
+                    ) {
+                      return child.sourceComponent.name === chipId
+                    }
+                    return false
+                  })
+
+                  if (
+                    treeNode?.nodeType === "component" &&
+                    treeNode.sourceComponent
+                  ) {
+                    const portBelongsToComponent = db.source_port
+                      .list({
+                        source_component_id:
+                          treeNode.sourceComponent.source_component_id,
+                      })
+                      .some((p: any) => p.source_port_id === portId)
+
+                    if (portBelongsToComponent) {
+                      // This pin connects to this port - record the connection pattern
+                      pinConnectionPatterns.set(
+                        pinId,
+                        (pinConnectionPatterns.get(pinId) || 0) + 1,
+                      )
+                      break
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // If most pins have similar connection patterns (connecting via nets), create strong connections
+        const pinsWithConnections = pinConnectionPatterns.size
+        if (pinsWithConnections >= 2 && pinsWithConnections === pins.length) {
+          debug(
+            `[${group.name}] Creating strong connections for ${pins.length} pins with similar connection patterns`,
+          )
+
+          // Create strong connections between all pairs of pins
+          for (let i = 0; i < pins.length; i++) {
+            for (let j = i + 1; j < pins.length; j++) {
+              const pin1 = pins[i]
+              const pin2 = pins[j]
+              problem.pinStrongConnMap[`${pin1}-${pin2}`] = true
+              problem.pinStrongConnMap[`${pin2}-${pin1}`] = true
+              debug(
+                `[${group.name}] Created strong connection: ${pin1} <-> ${pin2}`,
+              )
+            }
+          }
+        }
+      }
+
       // Always create net connections for the overall connectivity
       if (hasNetConnections) {
         problem.netMap[connectivityKey] = {
@@ -593,7 +675,7 @@ export function Group_doInitialSchematicLayoutMatchPack<
     if (!treeNode) {
       debug(`Warning: No tree node found for chip: ${chipId}`)
       debug(
-        `Available tree nodes:`,
+        "Available tree nodes:",
         tree.childNodes.map((child, idx) => ({
           type: child.nodeType,
           name:
