@@ -58,6 +58,8 @@ function convertTreeToInputProblem(
   const problem: InputProblem = {
     chipMap: {},
     chipPinMap: {},
+    groupMap: {},
+    groupPinMap: {},
     netMap: {},
     pinStrongConnMap: {},
     netConnMap: {},
