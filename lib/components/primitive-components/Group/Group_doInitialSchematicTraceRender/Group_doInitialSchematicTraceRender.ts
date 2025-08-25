@@ -173,8 +173,6 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     availableNetLabelOrientations: {},
   }
 
-  console.log(inputProblem)
-
   if (debug.enabled) {
     globalThis.debugOutputs?.add(
       "group-trace-render-input-problem",
