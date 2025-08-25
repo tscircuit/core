@@ -7,12 +7,14 @@ test("Chip not having name messes up the connections, uses the pin of the first 
 
   circuit.add(
     <board>
+      {/* @ts-ignore */}
       <chip
         pinLabels={{
           pin1: "LABEL1",
           pin2: "LABEL2",
         }}
       />
+      {/* @ts-ignore */}
       <chip
         pinLabels={{
           pin1: "LABEL3",
