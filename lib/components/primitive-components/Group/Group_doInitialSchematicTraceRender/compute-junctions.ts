@@ -44,6 +44,31 @@ function dedupePoints(points: Array<{ x: number; y: number }>, tol = TOL) {
   return Array.from(map.values())
 }
 
+function edgeVec(e: Edge) {
+  return { x: e.to.x - e.from.x, y: e.to.y - e.from.y }
+}
+
+function isParallel(e1: Edge, e2: Edge, tol = TOL) {
+  const v1 = edgeVec(e1)
+  const v2 = edgeVec(e2)
+  const L1 = Math.hypot(v1.x, v1.y)
+  const L2 = Math.hypot(v2.x, v2.y)
+  if (L1 < tol || L2 < tol) return true
+  const cross = v1.x * v2.y - v1.y * v2.x
+  // Consider anti-parallel as parallel (no corner)
+  return Math.abs(cross) <= tol * L1 * L2
+}
+
+function incidentEdgesAtPoint(
+  trace: TraceEdges,
+  p: { x: number; y: number },
+  tol = TOL,
+): Edge[] {
+  return trace.edges.filter(
+    (e) => pointEq(e.from, p, tol) || pointEq(e.to, p, tol),
+  )
+}
+
 /**
  * Compute junction points (T or shared endpoints) for a set of traces purely
  * geometrically, without relying on database lookups.
@@ -79,32 +104,47 @@ export function computeJunctions(
       const B = traces[j]
       const BEnds = endpointsByTrace[j]
 
-      // Endpoint-to-endpoint junctions
+      // Endpoint-to-endpoint junctions (only when forming a corner)
       for (const pa of AEnds) {
         for (const pb of BEnds) {
           if (pointEq(pa, pb, tol)) {
-            result[A.id]!.push(pa)
-            if (A.id !== B.id) result[B.id]!.push(pb)
+            const aEdgesAtP = incidentEdgesAtPoint(A, pa, tol)
+            const bEdgesAtP = incidentEdgesAtPoint(B, pb, tol)
+            const hasCorner = aEdgesAtP.some((eA) =>
+              bEdgesAtP.some((eB) => !isParallel(eA, eB, tol)),
+            )
+            if (hasCorner) {
+              result[A.id]!.push(pa)
+              if (A.id !== B.id) result[B.id]!.push(pb)
+            }
           }
         }
       }
 
-      // Endpoint of A touching interior of B
+      // Endpoint of A touching interior of B (only when forming a corner)
       for (const pa of AEnds) {
         for (const eB of B.edges) {
           if (onSegment(pa, eB.from, eB.to, tol)) {
-            result[A.id]!.push(pa)
-            if (A.id !== B.id) result[B.id]!.push(pa)
+            const aEdgesAtP = incidentEdgesAtPoint(A, pa, tol)
+            const hasCorner = aEdgesAtP.some((eA) => !isParallel(eA, eB, tol))
+            if (hasCorner) {
+              result[A.id]!.push(pa)
+              if (A.id !== B.id) result[B.id]!.push(pa)
+            }
           }
         }
       }
 
-      // Endpoint of B touching interior of A
+      // Endpoint of B touching interior of A (only when forming a corner)
       for (const pb of BEnds) {
         for (const eA of A.edges) {
           if (onSegment(pb, eA.from, eA.to, tol)) {
-            result[B.id]!.push(pb)
-            if (A.id !== B.id) result[A.id]!.push(pb)
+            const bEdgesAtP = incidentEdgesAtPoint(B, pb, tol)
+            const hasCorner = bEdgesAtP.some((eB) => !isParallel(eA, eB, tol))
+            if (hasCorner) {
+              result[B.id]!.push(pb)
+              if (A.id !== B.id) result[A.id]!.push(pb)
+            }
           }
         }
       }
