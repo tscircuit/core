@@ -3,7 +3,7 @@ import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
-import { sanitizePinLabels } from "lib/utils/sanitizePinLabels"
+import { filterPinLabels } from "lib/utils/filterPinLabels"
 import type { z } from "zod"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
@@ -11,11 +11,19 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   PinLabels
 > {
   schematicBoxDimensions: SchematicBoxDimensions | null = null
+  private _invalidPinLabelMessages: string[] = []
 
   constructor(props: z.input<typeof chipProps>) {
     const filteredProps = { ...props }
     if (filteredProps.pinLabels) {
-      filteredProps.pinLabels = sanitizePinLabels(filteredProps.pinLabels)
+      const { validPinLabels, invalidPinLabelsMessages } = filterPinLabels(
+        filteredProps.pinLabels,
+      )
+      filteredProps.pinLabels = validPinLabels
+      // super needs to run before we can assign to `this`
+      super(filteredProps)
+      this._invalidPinLabelMessages = invalidPinLabelsMessages
+      return
     }
     super(filteredProps)
   }
@@ -80,6 +88,15 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { _parsedProps: props } = this
     // Early return if noSchematicRepresentation is true
     if (props?.noSchematicRepresentation === true) return
+
+    if (this._invalidPinLabelMessages?.length && this.root?.db) {
+      for (const message of this._invalidPinLabelMessages) {
+        this.root.db.schematic_error.insert({
+          error_type: "schematic_port_not_found",
+          message,
+        })
+      }
+    }
 
     // Continue with normal schematic rendering
     super.doInitialSchematicComponentRender()

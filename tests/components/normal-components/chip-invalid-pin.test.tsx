@@ -21,5 +21,14 @@ test("chip with invalid pin should be skipped", async () => {
 
   await circuit.renderUntilSettled()
 
+  const schematic_error = circuit
+    .getCircuitJson()
+    .filter((el) => el.type === "schematic_error")
+
+  expect(schematic_error).toHaveLength(1)
+  expect(schematic_error[0].message).toContain(
+    "Invalid pin label: pin3 = '//' - excluding from component. Please use a valid pin label.",
+  )
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
