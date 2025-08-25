@@ -87,7 +87,8 @@ function edgeDirectionFromPoint(
   tol = TOL,
 ): "up" | "down" | "left" | "right" | null {
   const other =
-    pointEq(e.from, p, tol) || (nearlyEqual(e.from.x, p.x, tol) && nearlyEqual(e.from.y, p.y, tol))
+    pointEq(e.from, p, tol) ||
+    (nearlyEqual(e.from.x, p.x, tol) && nearlyEqual(e.from.y, p.y, tol))
       ? e.to
       : e.from
   const dx = other.x - p.x

@@ -246,7 +246,11 @@ export function computeCrossings(
         new Set(splittingDistances.map((d) => Number(d.toFixed(6)))),
       ).sort((a, b) => a - b)
 
-      const split = splitEdgeByCrossings(trace.edges[ei]!, uniqueSorted, crossLen)
+      const split = splitEdgeByCrossings(
+        trace.edges[ei]!,
+        uniqueSorted,
+        crossLen,
+      )
       out[ti]!.edges.push(...split)
     }
   }
