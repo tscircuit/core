@@ -9,6 +9,7 @@ import Debug from "debug"
 import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
+import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -146,6 +147,14 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       connKeyToNet.set(net.subcircuit_connectivity_map_key, net)
     }
   }
+  // Map raw connectivity ids (e.g. "connectivity_net7") to source_nets as well.
+  // subcircuit_connectivity_map_key often includes a subcircuit prefix, but
+  // solvers may emit just "connectivity_netX". Normalize for lookup.
+  const normalizedConnKeyToNet = new Map<string, any>()
+  for (const [key, net] of connKeyToNet) {
+    const m = key.match(/connectivity_net\d+/)
+    if (m) normalizedConnKeyToNet.set(m[0], net)
+  }
 
   const connKeyToPinIds = new Map<string, string[]>()
   for (const [schId, srcPortId] of schPortIdToSourcePortId) {
@@ -248,5 +257,95 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   }
 
   // Place net labels
-  console.log(solver.netLabelPlacementSolver!.netLabelPlacements)
+  const netLabelPlacements =
+    solver.netLabelPlacementSolver?.netLabelPlacements ?? []
+  for (const placement of netLabelPlacements as any[]) {
+    const connKey =
+      (placement as any).netId ??
+      (placement as any).globalConnNetId ??
+      (placement as any).dcConnNetId
+
+    const anchor_position =
+      (placement as any).anchorPoint ??
+      (placement as any).anchor_position ??
+      (placement as any).position
+
+    const orientation = (placement as any).orientation as
+      | "x+"
+      | "x-"
+      | "y+"
+      | "y-"
+      | undefined
+
+    const anchor_side =
+      orientation === "x+"
+        ? "left"
+        : orientation === "x-"
+          ? "right"
+          : orientation === "y+"
+            ? "bottom"
+            : orientation === "y-"
+              ? "top"
+              : "right"
+
+    let sourceNet = connKey
+      ? connKeyToNet.get(connKey) || normalizedConnKeyToNet.get(connKey)
+      : undefined
+
+    let source_trace_id: string | undefined
+    if (!sourceNet && connKey) {
+      // Try to resolve by normalized connectivity key, then by direct connection trace
+      const matchBySuffix = (stKey?: string) => {
+        if (!stKey) return false
+        if (stKey === connKey) return true
+        if (stKey.endsWith(`_${connKey}`)) return true
+        const m = stKey.match(/connectivity_net\d+/)
+        return m ? m[0] === connKey : false
+      }
+      const st =
+        db.source_trace
+          .list()
+          .find((st) => matchBySuffix(st.subcircuit_connectivity_map_key)) ??
+        null
+
+      source_trace_id = netIdToSourceTraceId.get(connKey) ?? st?.source_trace_id
+
+      // If we found a trace via connectivity key, try to resolve the net as well
+      if (!sourceNet && st?.subcircuit_connectivity_map_key) {
+        const norm =
+          st.subcircuit_connectivity_map_key.match(
+            /connectivity_net\d+/,
+          )?.[0] ?? ""
+        sourceNet =
+          connKeyToNet.get(st.subcircuit_connectivity_map_key) ||
+          (norm ? normalizedConnKeyToNet.get(norm) : undefined)
+      }
+    }
+
+    const text =
+      sourceNet?.name ??
+      (placement as any).label ??
+      (placement as any).netName ??
+      connKey ??
+      "NET"
+
+    const center =
+      (placement as any).center ??
+      computeSchematicNetLabelCenter({
+        anchor_position,
+        anchor_side: anchor_side as any,
+        text,
+      })
+
+    db.schematic_net_label.insert({
+      text,
+      anchor_position,
+      center,
+      anchor_side: anchor_side as any,
+      ...(sourceNet?.source_net_id
+        ? { source_net_id: sourceNet.source_net_id }
+        : {}),
+      ...(source_trace_id ? { source_trace_id } : {}),
+    })
+  }
 }
