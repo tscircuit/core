@@ -8,12 +8,20 @@ import { chipProps } from "@tscircuit/props"
  * Uses the actual chipProps zod schema to validate pin labels,
  * ensuring consistency with the real validation logic.
  */
-export function sanitizePinLabels(
+export function filterPinLabels(
   pinLabels: Record<string, string | string[] | readonly string[]> | undefined,
-): Record<string, string | string[]> | undefined {
-  if (!pinLabels) return pinLabels
+): {
+  validPinLabels: Record<string, string | string[]> | undefined
+  invalidPinLabelsMessages: string[]
+} {
+  if (!pinLabels)
+    return {
+      validPinLabels: pinLabels as undefined,
+      invalidPinLabelsMessages: [],
+    }
 
   const validPinLabels: Record<string, string | string[]> = {}
+  const invalidPinLabelsMessages: string[] = []
 
   for (const [pin, labelOrLabels] of Object.entries(pinLabels)) {
     const labels: string[] = Array.isArray(labelOrLabels)
@@ -25,10 +33,9 @@ export function sanitizePinLabels(
       if (isValidPinLabel(pin, label)) {
         validLabels.push(label)
       } else {
-        console.warn(
-          `Invalid pin label: ${pin} = "${label}" - excluding from component. Please use a valid pin label.`,
+        invalidPinLabelsMessages.push(
+          `Invalid pin label: ${pin} = '${label}' - excluding from component. Please use a valid pin label.`,
         )
-        // exclude invalid labels entirely
       }
     }
 
@@ -40,7 +47,11 @@ export function sanitizePinLabels(
     }
   }
 
-  return Object.keys(validPinLabels).length > 0 ? validPinLabels : undefined
+  return {
+    validPinLabels:
+      Object.keys(validPinLabels).length > 0 ? validPinLabels : undefined,
+    invalidPinLabelsMessages,
+  }
 }
 
 /**
