@@ -6,6 +6,9 @@ import {
   type InputProblem,
 } from "@tscircuit/schematic-trace-solver"
 import Debug from "debug"
+import type { SchematicTrace } from "circuit-json"
+import { computeCrossings } from "./compute-crossings"
+import { computeJunctions } from "./compute-junctions"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -186,12 +189,14 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
 
   // Use the overlap-corrected traces from the pipeline
   const correctedMap = solver.traceOverlapShiftSolver?.correctedTraceMap ?? {}
+  const pendingTraces: Array<{ id: string; edges: SchematicTrace["edges"] }> =
+    []
 
   for (const solved of Object.values(correctedMap) as any[]) {
     const points = solved?.tracePath as Array<{ x: number; y: number }>
     if (!Array.isArray(points) || points.length < 2) continue
 
-    const edges = []
+    const edges: SchematicTrace["edges"] = []
     for (let i = 0; i < points.length - 1; i++) {
       edges.push({
         from: { x: points[i]!.x, y: points[i]!.y },
@@ -222,10 +227,23 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       source_trace_id = `solver_${solved?.mspPairId!}`
     }
 
-    db.schematic_trace.insert({
-      source_trace_id,
+    pendingTraces.push({
+      id: source_trace_id,
       edges,
-      junctions: [],
+    })
+  }
+
+  // Compute crossings and junctions without relying on DB lookups
+  const withCrossings = computeCrossings(
+    pendingTraces.map((t) => ({ id: t.id, edges: t.edges })),
+  )
+  const junctionsById = computeJunctions(withCrossings)
+
+  for (const t of withCrossings) {
+    db.schematic_trace.insert({
+      source_trace_id: t.id,
+      edges: t.edges,
+      junctions: junctionsById[t.id] ?? [],
     })
   }
 }
