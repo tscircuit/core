@@ -5,6 +5,9 @@ import {
   type InputPin,
   type InputProblem,
 } from "@tscircuit/schematic-trace-solver"
+import Debug from "debug"
+
+const debug = Debug("Group_doInitialSchematicTraceRender")
 
 /**
  * Render all traces within this subcircuit
@@ -29,17 +32,30 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
 
   const chips: InputChip[] = []
 
+  const pinIdToSchematicPortId = new Map<string, string>()
+  const schematicPortIdToPinId = new Map<string, string>()
+
   for (const schematicComponent of schematicComponents) {
     const chipId = schematicComponent.schematic_component_id
 
     const pins: InputPin[] = []
+
+    const sourceComponent = db.source_component.getWhere({
+      source_component_id: schematicComponent.source_component_id,
+    })
 
     const schematicPorts = db.schematic_port.list({
       schematic_component_id: schematicComponent.schematic_component_id,
     })
 
     for (const schematicPort of schematicPorts) {
-      const pinId = schematicPort.schematic_port_id
+      const pinId = `${sourceComponent?.name ?? schematicComponent.schematic_component_id}.${schematicPort.pin_number}`
+      pinIdToSchematicPortId.set(pinId, schematicPort.schematic_port_id)
+      schematicPortIdToPinId.set(schematicPort.schematic_port_id, pinId)
+    }
+
+    for (const schematicPort of schematicPorts) {
+      const pinId = schematicPortIdToPinId.get(schematicPort.schematic_port_id)!
 
       pins.push({
         pinId,
@@ -82,6 +98,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   }
 
   // Compute directConnections from explicit source_traces
+  const netIdToSourceTraceId = new Map<string, string>()
   const directConnections: Array<{ pinIds: [string, string]; netId?: string }> =
     []
   const pairKeyToSourceTraceId = new Map<string, string>()
@@ -101,10 +118,15 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       const pairKey = [a, b].sort().join("::")
       if (!pairKeyToSourceTraceId.has(pairKey)) {
         pairKeyToSourceTraceId.set(pairKey, st.source_trace_id)
+        const netId = st.display_name ?? st.source_trace_id
         directConnections.push({
-          pinIds: [a, b],
-          netId: st.subcircuit_connectivity_map_key || undefined,
+          pinIds: [a, b].map((id) => schematicPortIdToPinId.get(id)!) as [
+            string,
+            string,
+          ],
+          netId,
         })
+        netIdToSourceTraceId.set(netId, st.source_trace_id)
       }
     }
   }
@@ -131,11 +153,16 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     connKeyToPinIds.get(key)!.push(schId)
   }
 
-  for (const [key, pinIds] of connKeyToPinIds) {
+  for (const [key, schematicPortIds] of connKeyToPinIds) {
     const net = connKeyToNet.get(key)
-    if (net && pinIds.length >= 2) {
+    if (net && schematicPortIds.length >= 2) {
       const netId = String(net.name || net.source_net_id || key)
-      netConnections.push({ netId, pinIds })
+      netConnections.push({
+        netId,
+        pinIds: schematicPortIds.map(
+          (portId) => schematicPortIdToPinId.get(portId)!,
+        ),
+      })
     }
   }
 
@@ -147,6 +174,13 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   }
 
   console.log(inputProblem)
+
+  if (debug.enabled) {
+    globalThis.debugOutputs?.add(
+      "group-trace-render-input-problem",
+      JSON.stringify(inputProblem, null, 2),
+    )
+  }
 
   const solver = new SchematicTracePipelineSolver(inputProblem)
 
@@ -170,8 +204,8 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     // Try to associate with an existing source_trace_id when this is a direct connection
     let source_trace_id: string | null = null
     if (Array.isArray(solved?.pins) && solved.pins.length === 2) {
-      const pA = solved.pins[0]?.pinId as string | undefined
-      const pB = solved.pins[1]?.pinId as string | undefined
+      const pA = pinIdToSchematicPortId.get(solved.pins[0]?.pinId!)
+      const pB = pinIdToSchematicPortId.get(solved.pins[1]?.pinId!)
       if (pA && pB) {
         const pairKey = [pA, pB].sort().join("::")
         source_trace_id =
