@@ -337,6 +337,6 @@ export class Trace
   }
 
   doInitialSchematicTraceRender(): void {
-    Trace_doInitialSchematicTraceRender(this)
+    // Trace_doInitialSchematicTraceRender(this)
   }
 }
