@@ -35,7 +35,7 @@ import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
-import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender"
+import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
