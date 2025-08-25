@@ -178,11 +178,37 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     }
   }
 
+  // Build available net label orientations based on source net names:
+  // - Nets with names starting with "V" (e.g. VCC, V5, V3_3, VIN) get only "y+"
+  // - Net named exactly "GND" gets only "y-"
+  const availableNetLabelOrientations: Record<
+    string,
+    Array<"x+" | "x-" | "y+" | "y-">
+  > = (() => {
+    const map: Record<string, Array<"x+" | "x-" | "y+" | "y-">> = {}
+    const presentNetIds = new Set(netConnections.map((nc) => nc.netId))
+    for (const net of db.source_net
+      .list()
+      .filter(
+        (n) => !n.subcircuit_id || allowedSubcircuitIds.has(n.subcircuit_id),
+      )) {
+      if (!net.name) continue
+      if (!presentNetIds.has(net.name)) continue
+      if (net.name === "GND") {
+        map[net.name] = ["y-"]
+      } else if (/^V/.test(net.name)) {
+        map[net.name] = ["y+"]
+      }
+    }
+    return map
+  })()
+
   const inputProblem: InputProblem = {
     chips,
     directConnections,
     netConnections,
-    availableNetLabelOrientations: {},
+    availableNetLabelOrientations,
+    maxMspPairDistance: 2,
   }
 
   if (debug.enabled) {
