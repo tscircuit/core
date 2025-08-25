@@ -69,6 +69,59 @@ function incidentEdgesAtPoint(
   )
 }
 
+function nearestEndpointOnTrace(
+  trace: TraceEdges,
+  p: { x: number; y: number },
+  tol = TOL,
+): { x: number; y: number } | null {
+  for (const e of trace.edges) {
+    if (pointEq(e.from, p, tol)) return e.from
+    if (pointEq(e.to, p, tol)) return e.to
+  }
+  return null
+}
+
+function edgeDirectionFromPoint(
+  e: Edge,
+  p: { x: number; y: number },
+  tol = TOL,
+): "up" | "down" | "left" | "right" | null {
+  const other =
+    pointEq(e.from, p, tol) || (nearlyEqual(e.from.x, p.x, tol) && nearlyEqual(e.from.y, p.y, tol))
+      ? e.to
+      : e.from
+  const dx = other.x - p.x
+  const dy = other.y - p.y
+  if (Math.abs(dx) < tol && Math.abs(dy) < tol) return null
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return dx >= 0 ? "right" : "left"
+  }
+  return dy >= 0 ? "up" : "down"
+}
+
+function getCornerOrientationAtPoint(
+  trace: TraceEdges,
+  p: { x: number; y: number },
+  tol = TOL,
+): `${"up" | "down"}-${"left" | "right"}` | null {
+  const incident = incidentEdgesAtPoint(trace, p, tol)
+  if (incident.length < 2) return null
+  // Collect unique primary directions away from point
+  const dirs = incident.map((e) => edgeDirectionFromPoint(e, p, tol))
+  const hasUp = dirs.includes("up" as any)
+  const hasDown = dirs.includes("down" as any)
+  const hasLeft = dirs.includes("left" as any)
+  const hasRight = dirs.includes("right" as any)
+
+  const vertical = hasUp ? "up" : hasDown ? "down" : null
+  const horizontal = hasRight ? "right" : hasLeft ? "left" : null
+
+  if (vertical && horizontal) {
+    return `${vertical}-${horizontal}` as `${"up" | "down"}-${"left" | "right"}`
+  }
+  return null
+}
+
 /**
  * Compute junction points (T or shared endpoints) for a set of traces purely
  * geometrically, without relying on database lookups.
@@ -113,7 +166,15 @@ export function computeJunctions(
             const hasCorner = aEdgesAtP.some((eA) =>
               bEdgesAtP.some((eB) => !isParallel(eA, eB, tol)),
             )
-            if (hasCorner) {
+
+            // If both traces have a corner at this point and the corner orientation
+            // is the same (e.g. both are "up-right"), do NOT create a junction.
+            const aCorner = getCornerOrientationAtPoint(A, pa, tol)
+            const bCorner = getCornerOrientationAtPoint(B, pb, tol)
+            const sameCornerOrientation =
+              aCorner !== null && bCorner !== null && aCorner === bCorner
+
+            if (hasCorner && !sameCornerOrientation) {
               result[A.id]!.push(pa)
               if (A.id !== B.id) result[B.id]!.push(pb)
             }
@@ -127,7 +188,15 @@ export function computeJunctions(
           if (onSegment(pa, eB.from, eB.to, tol)) {
             const aEdgesAtP = incidentEdgesAtPoint(A, pa, tol)
             const hasCorner = aEdgesAtP.some((eA) => !isParallel(eA, eB, tol))
-            if (hasCorner) {
+            const aCorner = getCornerOrientationAtPoint(A, pa, tol)
+            // If B has a corner very close to this point with the same orientation, skip junction
+            const bEndpointNearPa = nearestEndpointOnTrace(B, pa, tol * 1000)
+            const bCorner = bEndpointNearPa
+              ? getCornerOrientationAtPoint(B, bEndpointNearPa, tol)
+              : null
+            const sameCornerOrientation =
+              aCorner !== null && bCorner !== null && aCorner === bCorner
+            if (hasCorner && !sameCornerOrientation) {
               result[A.id]!.push(pa)
               if (A.id !== B.id) result[B.id]!.push(pa)
             }
@@ -141,7 +210,15 @@ export function computeJunctions(
           if (onSegment(pb, eA.from, eA.to, tol)) {
             const bEdgesAtP = incidentEdgesAtPoint(B, pb, tol)
             const hasCorner = bEdgesAtP.some((eB) => !isParallel(eA, eB, tol))
-            if (hasCorner) {
+            const bCorner = getCornerOrientationAtPoint(B, pb, tol)
+            // If A has a corner very close to this point with the same orientation, skip junction
+            const aEndpointNearPb = nearestEndpointOnTrace(A, pb, tol * 1000)
+            const aCorner = aEndpointNearPb
+              ? getCornerOrientationAtPoint(A, aEndpointNearPb, tol)
+              : null
+            const sameCornerOrientation =
+              aCorner !== null && bCorner !== null && aCorner === bCorner
+            if (hasCorner && !sameCornerOrientation) {
               result[B.id]!.push(pb)
               if (A.id !== B.id) result[A.id]!.push(pb)
             }
