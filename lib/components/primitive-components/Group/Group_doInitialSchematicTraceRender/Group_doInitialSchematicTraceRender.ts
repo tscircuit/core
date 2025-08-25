@@ -246,4 +246,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       junctions: junctionsById[t.id] ?? [],
     })
   }
+
+  // Place net labels
+  console.log(solver.netLabelPlacementSolver!.netLabelPlacements)
 }
