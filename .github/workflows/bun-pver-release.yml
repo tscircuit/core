@@ -8,6 +8,7 @@ on:
       - 'package.json'
       - 'bun.lock'
       - 'README.md'
+  workflow_dispatch:
 jobs:
   publish:
     runs-on: ubuntu-latest
