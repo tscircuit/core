@@ -146,18 +146,14 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     availableNetLabelOrientations: {},
   }
 
+  console.log(inputProblem)
+
   const solver = new SchematicTracePipelineSolver(inputProblem)
-  // Some versions expose a .solve() method; call it if available
-  // @ts-ignore - tolerate different solver interfaces
-  if (typeof (solver as any).solve === "function") {
-    // @ts-ignore
-    ;(solver as any).solve()
-  }
+
+  solver.solve()
 
   // Use the overlap-corrected traces from the pipeline
-  // @ts-ignore - tolerate structure differences across versions
-  const correctedMap =
-    (solver as any).traceOverlapShiftSolver?.correctedTraceMap ?? {}
+  const correctedMap = solver.traceOverlapShiftSolver?.correctedTraceMap ?? {}
 
   for (const solved of Object.values(correctedMap) as any[]) {
     const points = solved?.tracePath as Array<{ x: number; y: number }>
