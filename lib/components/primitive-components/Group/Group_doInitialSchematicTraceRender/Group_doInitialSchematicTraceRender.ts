@@ -380,12 +380,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     const key = sourcePort?.subcircuit_connectivity_map_key
     if (!key) continue
 
-    const normalizedKeyMatch = key.match(/connectivity_net\d+/)
-    const sourceNet =
-      connKeyToNet.get(key) ||
-      (normalizedKeyMatch
-        ? normalizedConnKeyToNet.get(normalizedKeyMatch[0])
-        : undefined)
+    const sourceNet = connKeyToNet.get(key)
 
     if (!sourceNet) continue
 
