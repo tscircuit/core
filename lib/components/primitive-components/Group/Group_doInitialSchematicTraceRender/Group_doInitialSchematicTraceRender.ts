@@ -318,42 +318,13 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       ? connKeyToNet.get(connKey) || normalizedConnKeyToNet.get(connKey)
       : undefined
 
-    let source_trace_id: string | undefined
-    if (!sourceNet && connKey) {
-      // Try to resolve by normalized connectivity key, then by direct connection trace
-      const matchBySuffix = (stKey?: string) => {
-        if (!stKey) return false
-        if (stKey === connKey) return true
-        if (stKey.endsWith(`_${connKey}`)) return true
-        const m = stKey.match(/connectivity_net\d+/)
-        return m ? m[0] === connKey : false
-      }
-      const st =
-        db.source_trace
-          .list()
-          .find((st) => matchBySuffix(st.subcircuit_connectivity_map_key)) ??
-        null
-
-      source_trace_id = netIdToSourceTraceId.get(connKey) ?? st?.source_trace_id
-
-      // If we found a trace via connectivity key, try to resolve the net as well
-      if (!sourceNet && st?.subcircuit_connectivity_map_key) {
-        const norm =
-          st.subcircuit_connectivity_map_key.match(
-            /connectivity_net\d+/,
-          )?.[0] ?? ""
-        sourceNet =
-          connKeyToNet.get(st.subcircuit_connectivity_map_key) ||
-          (norm ? normalizedConnKeyToNet.get(norm) : undefined)
-      }
+    if (!sourceNet) {
+      continue
     }
 
-    const text =
-      sourceNet?.name ??
-      (placement as any).label ??
-      (placement as any).netName ??
-      connKey ??
-      "NET"
+    let source_trace_id: string | undefined
+
+    const text = sourceNet.name
 
     const center =
       (placement as any).center ??
