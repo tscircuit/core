@@ -88,7 +88,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   }
 
   // Build helpful maps for ports within this group (and nested groups)
-  const allSchematicPortIdsInScope = new Set<string>()
+  const allSourceAndSchematicPortIdsInScope = new Set<string>()
   const schPortIdToSourcePortId = new Map<string, string>()
   const sourcePortIdToSchPortId = new Map<string, string>()
   for (const sc of schematicComponents) {
@@ -96,7 +96,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       schematic_component_id: sc.schematic_component_id,
     })
     for (const sp of ports) {
-      allSchematicPortIdsInScope.add(sp.schematic_port_id)
+      allSourceAndSchematicPortIdsInScope.add(sp.schematic_port_id)
       if (sp.source_port_id) {
         schPortIdToSourcePortId.set(sp.schematic_port_id, sp.source_port_id)
         sourcePortIdToSchPortId.set(sp.source_port_id, sp.schematic_port_id)
@@ -126,7 +126,9 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     const connected = (st.connected_source_port_ids ?? [])
       .map((srcId: string) => sourcePortIdToSchPortId.get(srcId))
       .filter(
-        (id): id is string => Boolean(id) && allSchematicPortIdsInScope.has(id),
+        (sourcePortId): sourcePortId is string =>
+          Boolean(sourcePortId) &&
+          allSourceAndSchematicPortIdsInScope.has(sourcePortId!),
       )
 
     if (connected.length >= 2) {
@@ -155,12 +157,9 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     .list()
     .filter((n) => allowedSubcircuitIds.has(n.subcircuit_id!))) {
     if (net.subcircuit_connectivity_map_key) {
-      console.log({ net })
       connKeyToNet.set(net.subcircuit_connectivity_map_key, net)
     }
   }
-  console.log({ connKeyToNet })
-  console.log("\n\n\n\n")
 
   const connKeyToPinIds = new Map<string, string[]>()
   for (const [schId, srcPortId] of schPortIdToSourcePortId) {
@@ -370,7 +369,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   }
 
   // Create net labels for ports connected only to a net (no trace connected)
-  for (const schPortId of Array.from(allSchematicPortIdsInScope)) {
+  for (const schPortId of Array.from(allSourceAndSchematicPortIdsInScope)) {
     const sp = db.schematic_port.get(schPortId)
     if (!sp) continue
     if (sp.is_connected) continue
