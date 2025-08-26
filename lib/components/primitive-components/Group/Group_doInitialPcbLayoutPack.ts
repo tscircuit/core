@@ -15,6 +15,7 @@ import {
 import { translate, rotate, compose } from "transformation-matrix"
 import Debug from "debug"
 
+const MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
 
 // Helper function to check if a group is a descendant of another group
@@ -44,7 +45,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   const gap = pcbPackGap ?? pcbGap ?? gapProp
 
-  const gapMm = length.parse(gap ?? "0mm")
+  const gapMm = length.parse(gap ?? MIN_GAP)
   const packInput: PackInput = {
     ...convertPackOutputToPackInput(
       convertCircuitJsonToPackOutput(db.toArray(), {
