@@ -231,8 +231,20 @@ function addFakeCenterPadsToPackInput(packInput: PackInput, db: any): void {
     const minDim = Math.max(0, Math.min(widthMm ?? 0, heightMm ?? 0))
     // Choose a conservative center pad size: half of the smaller dimension,
     // clamped to a sensible range to avoid over-inflating clearances.
+    const HALF_COMPONENT_SIZE_FACTOR = 0.5
+    const MIN_CENTER_PAD_SIZE_MM = 0.4
+    const DEFAULT_CENTER_PAD_SIZE_MM = 0.6
+
     const side =
-      minDim > 0 ? Math.min(Math.max(minDim * 0.5, 0.4), minDim) : 0.6
+      minDim > 0
+        ? Math.min(
+            Math.max(
+              minDim * HALF_COMPONENT_SIZE_FACTOR,
+              MIN_CENTER_PAD_SIZE_MM,
+            ),
+            minDim,
+          )
+        : DEFAULT_CENTER_PAD_SIZE_MM
 
     // Append a synthetic center pad
     comp.pads = [
