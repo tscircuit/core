@@ -235,7 +235,7 @@ function addFakeCenterPadsToPackInput(packInput: PackInput, db: any): void {
     const MIN_CENTER_PAD_SIZE_MM = 0.4
     const DEFAULT_CENTER_PAD_SIZE_MM = 0.6
 
-    const side =
+    const sideLenghtInMm =
       minDim > 0
         ? Math.min(
             Math.max(
@@ -254,7 +254,7 @@ function addFakeCenterPadsToPackInput(packInput: PackInput, db: any): void {
         networkId: `${comp.componentId}__body`, // unique per component, no cross-attraction
         type: "rect",
         offset: { x: 0, y: 0 },
-        size: { x: side, y: side },
+        size: { x: sideLenghtInMm, y: sideLenghtInMm },
       },
     ]
   }
