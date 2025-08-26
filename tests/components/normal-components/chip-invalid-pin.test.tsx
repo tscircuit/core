@@ -21,12 +21,13 @@ test("chip with invalid pin should be skipped", async () => {
 
   await circuit.renderUntilSettled()
 
-  const schematic_error = circuit
+  const source_property_ignored_warning = circuit
     .getCircuitJson()
     .filter((el) => el.type === "source_property_ignored_warning")
+  console.log(source_property_ignored_warning)
 
-  expect(schematic_error).toHaveLength(1)
-  expect(schematic_error[0].message).toContain(
+  expect(source_property_ignored_warning).toHaveLength(1)
+  expect(source_property_ignored_warning[0].message).toContain(
     "Invalid pin label: pin3 = '//' - excluding from component. Please use a valid pin label.",
   )
 

@@ -92,9 +92,17 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
 
     if (this._invalidPinLabelMessages?.length && this.root?.db) {
       for (const message of this._invalidPinLabelMessages) {
+        let property_name = "pinLabels"
+        const match = message.match(
+          /^Invalid pin label:\s*([^=]+)=\s*'([^']+)'/,
+        )
+        if (match) {
+          const label = match[2]
+          property_name = `pinLabels['${label}']`
+        }
         this.root.db.source_property_ignored_warning.insert({
           source_component_id: this.source_component_id!,
-          property_name: "pinLabels",
+          property_name,
           message,
           error_type: "source_property_ignored_warning",
         })
