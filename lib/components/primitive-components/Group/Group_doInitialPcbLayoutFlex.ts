@@ -66,15 +66,8 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   let width = props.width ?? props.pcbWidth ?? undefined
   let height = props.height ?? props.pcbHeight ?? undefined
 
-  // If not explicitly set, default to existing pcb_group dimensions (e.g., board width/height)
-  if ((width === undefined || height === undefined) && group.pcb_group_id) {
-    const existingGroup = db.pcb_group.get(group.pcb_group_id)
-    if (existingGroup) {
-      width = width ?? existingGroup.width
-      height = height ?? existingGroup.height
-    }
-  }
-
+  // For flex groups, always calculate the container size to include gaps properly
+  // Don't use existing group dimensions as they may not account for current gap settings
   const isInline = Boolean(width === undefined || height === undefined)
 
   if (isInline) {
