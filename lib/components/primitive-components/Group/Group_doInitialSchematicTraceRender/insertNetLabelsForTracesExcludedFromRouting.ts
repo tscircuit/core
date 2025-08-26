@@ -28,6 +28,7 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
           anchor_side: side as any,
           text: label,
         })
+        // @ts-ignore
         db.schematic_net_label.insert({
           text: label,
           anchor_position,

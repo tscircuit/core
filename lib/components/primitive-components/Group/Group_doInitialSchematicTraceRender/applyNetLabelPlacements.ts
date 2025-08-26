@@ -58,6 +58,7 @@ export function applyNetLabelPlacements(args: {
         text,
       })
 
+    // @ts-ignore
     db.schematic_net_label.insert({
       text,
       anchor_position,

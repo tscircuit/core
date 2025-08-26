@@ -52,6 +52,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
       anchor_side: side as any,
       text,
     })
+    // @ts-ignore
     db.schematic_net_label.insert({
       text,
       anchor_position: sp.center,
