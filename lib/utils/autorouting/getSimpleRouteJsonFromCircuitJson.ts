@@ -174,12 +174,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
       return {
         name:
-          trace.display_name ??
-          (trace.connected_source_net_ids?.length
-            ? db!.source_net.get(trace.connected_source_net_ids[0])?.name ||
-              trace.connected_source_net_ids[0]
-            : undefined) ??
           trace.source_trace_id ??
+          connMap.getNetConnectedToId(trace.source_trace_id) ??
           "",
         source_trace_id: trace.source_trace_id,
         pointsToConnect: [
@@ -219,7 +215,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       .filter((st) => st.connected_source_net_ids?.includes(net.source_net_id))
 
     connectionsFromNets.push({
-      name: net.name ?? net.source_net_id,
+      name: net.source_net_id ?? connMap.getNetConnectedToId(net.source_net_id),
       pointsToConnect: connectedSourceTraces.flatMap((st) => {
         const pcb_ports = db.pcb_port
           .list()
@@ -235,10 +231,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           pcb_port_id: p.pcb_port_id,
         }))
       }),
-      // Keep the source_net_id for stable grouping with breakout points
-      // @ts-ignore
-      source_net_id: net.source_net_id,
-    } as any)
+    })
   }
 
   const breakoutPoints = db.pcb_breakout_point
@@ -259,15 +252,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       if (conn) {
         conn.pointsToConnect.push(pt)
       } else {
-        const traceObj = db.source_trace.get(bp.source_trace_id)
-        const friendlyName =
-          traceObj?.display_name ??
-          (traceObj?.connected_source_net_ids?.length
-            ? db.source_net.get(traceObj.connected_source_net_ids[0])?.name ||
-              traceObj.connected_source_net_ids[0]
-            : bp.source_trace_id)
         const newConn: SimpleRouteConnection = {
-          name: friendlyName,
+          name: bp.source_trace_id,
           source_trace_id: bp.source_trace_id,
           pointsToConnect: [pt],
         }
@@ -275,17 +261,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         breakoutTraceConnectionsById.set(bp.source_trace_id, newConn)
       }
     } else if (bp.source_net_id) {
-      const conn = connectionsFromNets.find(
-        (c) => (c as any).source_net_id === bp.source_net_id,
-      )
+      const conn = connectionsFromNets.find((c) => c.name === bp.source_net_id)
       if (conn) {
         conn.pointsToConnect.push(pt)
       } else {
-        const net = db.source_net.get(bp.source_net_id)
         connectionsFromBreakoutPoints.push({
-          name: net?.name ?? bp.source_net_id,
+          name: bp.source_net_id,
           pointsToConnect: [pt],
-        } as any)
+        })
       }
     } else if ((bp as any).source_port_id) {
       const pcb_port = db.pcb_port.getWhere({
