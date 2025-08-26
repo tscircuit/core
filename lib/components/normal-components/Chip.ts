@@ -15,17 +15,18 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
 
   constructor(props: z.input<typeof chipProps>) {
     const filteredProps = { ...props }
+    let invalidPinLabelsMessages: string[] = []
+
     if (filteredProps.pinLabels) {
-      const { validPinLabels, invalidPinLabelsMessages } = filterPinLabels(
-        filteredProps.pinLabels,
-      )
+      const { validPinLabels, invalidPinLabelsMessages: messages } =
+        filterPinLabels(filteredProps.pinLabels)
       filteredProps.pinLabels = validPinLabels
-      // super needs to run before we can assign to `this`
-      super(filteredProps)
-      this._invalidPinLabelMessages = invalidPinLabelsMessages
-      return
+      invalidPinLabelsMessages = messages
     }
+
+    // super needs to run before we can assign to `this`
     super(filteredProps)
+    this._invalidPinLabelMessages = invalidPinLabelsMessages
   }
 
   get config() {
@@ -91,9 +92,11 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
 
     if (this._invalidPinLabelMessages?.length && this.root?.db) {
       for (const message of this._invalidPinLabelMessages) {
-        this.root.db.schematic_error.insert({
-          error_type: "schematic_port_not_found",
+        this.root.db.source_property_ignored_warning.insert({
+          source_component_id: this.source_component_id!,
+          property_name: "pinLabels",
           message,
+          error_type: "source_property_ignored_warning",
         })
       }
     }

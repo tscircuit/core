@@ -14,7 +14,7 @@ test("chip pinLabels should not allow leading or trailing spaces", async () => {
 
   const schematic_errors = circuit
     .getCircuitJson()
-    .filter((e) => e.type === "schematic_error")
+    .filter((e) => e.type === "source_property_ignored_warning")
 
   expect(schematic_errors).toHaveLength(1)
   expect(schematic_errors[0].message).toContain(
