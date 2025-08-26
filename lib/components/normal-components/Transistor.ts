@@ -5,6 +5,8 @@ import {
   type TransistorPorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { Port } from "../primitive-components/Port"
+import { symbols } from "schematic-symbols"
 
 export class Transistor extends NormalComponent<
   typeof transistorProps,
@@ -43,11 +45,49 @@ export class Transistor extends NormalComponent<
     super.initPorts({
       pinCount: 3,
       additionalAliases: pinAliases,
+      ignoreSymbolPorts: true,
     })
+
+    const symbol = symbols[this._getSchematicSymbolNameOrThrow()]
+    if (!symbol) {
+      throw new Error(
+        `Symbol not found: ${this._getSchematicSymbolNameOrThrow()}`
+      )
+    }
+
+    const findPortByLabels = (labels: string[]) =>
+      symbol.ports.find((p) =>
+        labels.some((label) => p.labels.includes(label))
+      )
+
+    const emitterPort = findPortByLabels(["emitter", "e"])
+    const collectorPort = findPortByLabels(["collector", "c"])
+    const basePort = findPortByLabels(["base", "b"])
+
+    if (!emitterPort || !collectorPort || !basePort) {
+      throw new Error(
+        `Required ports not found in symbol: ${this._getSchematicSymbolNameOrThrow()}`
+      )
+    }
+
+    const ports = this.selectAll("port")
+    const pin1Port = ports.find((p) => p.props.pinNumber === 1)! as Port
+    const pin2Port = ports.find((p) => p.props.pinNumber === 2)! as Port
+    const pin3Port = ports.find((p) => p.props.pinNumber === 3)! as Port
+
+    if (this.props.type === "npn") {
+      pin1Port.schematicSymbolPortDef = emitterPort
+      pin2Port.schematicSymbolPortDef = collectorPort
+      pin3Port.schematicSymbolPortDef = basePort
+    } else {
+      pin1Port.schematicSymbolPortDef = collectorPort
+      pin2Port.schematicSymbolPortDef = emitterPort
+      pin3Port.schematicSymbolPortDef = basePort
+    }
   }
 
-  emitter = this.portMap.pin1
-  collector = this.portMap.pin2
+  emitter = this.props.type === "npn" ? this.portMap.pin1 : this.portMap.pin2
+  collector = this.props.type === "npn" ? this.portMap.pin2 : this.portMap.pin1
   base = this.portMap.pin3
 
   doInitialCreateNetsFromProps() {
