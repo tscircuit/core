@@ -61,7 +61,7 @@ function convertTreeToInputProblem(
     netMap: {},
     pinStrongConnMap: {},
     netConnMap: {},
-    chipGap: 0.4,
+    chipGap: 0.6,
     partitionGap: 1.2,
   }
 
