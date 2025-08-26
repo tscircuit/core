@@ -71,18 +71,22 @@ export class Transistor extends NormalComponent<
     }
 
     const ports = this.selectAll("port")
-    const pin1Port = ports.find((p) => p.props.pinNumber === 1)! as Port
-    const pin2Port = ports.find((p) => p.props.pinNumber === 2)! as Port
-    const pin3Port = ports.find((p) => p.props.pinNumber === 3)! as Port
+    const portMap = new Map<number, Port>()
+
+    for (const port of ports) {
+      if (port.props.pinNumber) {
+        portMap.set(port.props.pinNumber, port as Port)
+      }
+    }
 
     if (this.props.type === "npn") {
-      pin1Port.schematicSymbolPortDef = emitterPort
-      pin2Port.schematicSymbolPortDef = collectorPort
-      pin3Port.schematicSymbolPortDef = basePort
+      portMap.get(1)!.schematicSymbolPortDef = emitterPort
+      portMap.get(2)!.schematicSymbolPortDef = collectorPort
+      portMap.get(3)!.schematicSymbolPortDef = basePort
     } else {
-      pin1Port.schematicSymbolPortDef = collectorPort
-      pin2Port.schematicSymbolPortDef = emitterPort
-      pin3Port.schematicSymbolPortDef = basePort
+      portMap.get(1)!.schematicSymbolPortDef = collectorPort
+      portMap.get(2)!.schematicSymbolPortDef = emitterPort
+      portMap.get(3)!.schematicSymbolPortDef = basePort
     }
   }
 
