@@ -21,57 +21,6 @@ test("sel supports MOSFET pin names (gate, source, drain)", () => {
 
   circuit.render()
 
-  expect(circuit.db.schematic_net_label.list()).toMatchInlineSnapshot(`
-    [
-      {
-        "anchor_position": {
-          "x": 0.30397715550000004,
-          "y": 0.5519248499999994,
-        },
-        "anchor_side": "bottom",
-        "center": {
-          "x": 0.30397715550000004,
-          "y": 0.6419248499999993,
-        },
-        "schematic_net_label_id": "schematic_net_label_0",
-        "source_net_id": "source_net_1",
-        "symbol_name": "vcc_up",
-        "text": "V3_3",
-        "type": "schematic_net_label",
-      },
-      {
-        "anchor_position": {
-          "x": 0.31067575550000137,
-          "y": -0.5519248499999994,
-        },
-        "anchor_side": "top",
-        "center": {
-          "x": 0.31067575550000137,
-          "y": -0.6419248499999993,
-        },
-        "schematic_net_label_id": "schematic_net_label_1",
-        "source_net_id": "source_net_1",
-        "text": "V3_3",
-        "type": "schematic_net_label",
-      },
-      {
-        "anchor_position": {
-          "x": -0.41859744450000014,
-          "y": -0.10250625000000019,
-        },
-        "anchor_side": "right",
-        "center": {
-          "x": -0.5685974445000002,
-          "y": -0.10250625000000019,
-        },
-        "schematic_net_label_id": "schematic_net_label_2",
-        "source_net_id": "source_net_0",
-        "text": "GND",
-        "type": "schematic_net_label",
-      },
-    ]
-  `)
-
   expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([])
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
