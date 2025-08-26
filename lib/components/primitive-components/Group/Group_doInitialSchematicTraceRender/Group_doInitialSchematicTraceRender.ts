@@ -11,6 +11,7 @@ import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { getSide, type AxisDirection } from "./getSide"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -24,7 +25,9 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   const { db } = group.root!
 
   const traces = group.selectAll("trace")
-  const displayLabelTraces = traces.filter((t: any) => t._parsedProps?.schDisplayLabel)
+  const displayLabelTraces = traces.filter(
+    (t: any) => t._parsedProps?.schDisplayLabel,
+  )
   const displayLabelSourceTraceIds = new Set(
     displayLabelTraces
       .map((t: any) => t.source_trace_id)
@@ -150,21 +153,14 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   const connKeyToNet = new Map<string, any>()
   for (const net of db.source_net
     .list()
-    .filter(
-      (n) => !n.subcircuit_id || allowedSubcircuitIds.has(n.subcircuit_id),
-    )) {
+    .filter((n) => allowedSubcircuitIds.has(n.subcircuit_id!))) {
     if (net.subcircuit_connectivity_map_key) {
+      console.log({ net })
       connKeyToNet.set(net.subcircuit_connectivity_map_key, net)
     }
   }
-  // Map raw connectivity ids (e.g. "connectivity_net7") to source_nets as well.
-  // subcircuit_connectivity_map_key often includes a subcircuit prefix, but
-  // solvers may emit just "connectivity_netX". Normalize for lookup.
-  const normalizedConnKeyToNet = new Map<string, any>()
-  for (const [key, net] of connKeyToNet) {
-    const m = key.match(/connectivity_net\d+/)
-    if (m) normalizedConnKeyToNet.set(m[0], net)
-  }
+  console.log({ connKeyToNet })
+  console.log("\n\n\n\n")
 
   const connKeyToPinIds = new Map<string, string[]>()
   for (const [schId, srcPortId] of schPortIdToSourcePortId) {
@@ -306,26 +302,12 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       (placement as any).anchor_position ??
       (placement as any).position
 
-    const orientation = (placement as any).orientation as
-      | "x+"
-      | "x-"
-      | "y+"
-      | "y-"
-      | undefined
+    const orientation = (placement as any).orientation as AxisDirection
 
-    const anchor_side =
-      orientation === "x+"
-        ? "left"
-        : orientation === "x-"
-          ? "right"
-          : orientation === "y+"
-            ? "bottom"
-            : orientation === "y-"
-              ? "top"
-              : "right"
+    const anchor_side = getSide(orientation)
 
-    let sourceNet = connKey
-      ? connKeyToNet.get(connKey) || normalizedConnKeyToNet.get(connKey)
+    const sourceNet = connKey
+      ? connKeyToNet.get(connKey) || connKeyToNet.get(connKey)
       : undefined
 
     if (!sourceNet) {
@@ -367,7 +349,8 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       for (const port of ports) {
         const anchor_position = port._getGlobalSchematicPositionAfterLayout()
         const side =
-          getEnteringEdgeFromDirection(port.facingDirection || "right") || "right"
+          getEnteringEdgeFromDirection(port.facingDirection || "right") ||
+          "right"
         const center = computeSchematicNetLabelCenter({
           anchor_position,
           anchor_side: side as any,
@@ -378,7 +361,9 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
           anchor_position,
           center,
           anchor_side: side as any,
-          ...(trace.source_trace_id ? { source_trace_id: trace.source_trace_id } : {}),
+          ...(trace.source_trace_id
+            ? { source_trace_id: trace.source_trace_id }
+            : {}),
         })
       }
     } catch {}
@@ -399,30 +384,29 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     const normalizedKeyMatch = key.match(/connectivity_net\d+/)
     const sourceNet =
       connKeyToNet.get(key) ||
-      (normalizedKeyMatch ? normalizedConnKeyToNet.get(normalizedKeyMatch[0]) : undefined)
+      (normalizedKeyMatch
+        ? normalizedConnKeyToNet.get(normalizedKeyMatch[0])
+        : undefined)
 
     if (!sourceNet) continue
 
     // Avoid duplicate labels at this port anchor position
-    const existingAtPort = db.schematic_net_label
-      .list()
-      .some((nl) => {
-        const samePos =
-          Math.abs(nl.anchor_position.x - sp.center.x) < 1e-6 &&
-          Math.abs(nl.anchor_position.y - sp.center.y) < 1e-6
-        if (!samePos) return false
-        if (sourceNet.source_net_id && nl.source_net_id) {
-          return nl.source_net_id === sourceNet.source_net_id
-        }
-        return nl.text === (sourceNet.name || key)
-      })
+    const existingAtPort = db.schematic_net_label.list().some((nl) => {
+      const samePos =
+        Math.abs(nl.anchor_position.x - sp.center.x) < 1e-6 &&
+        Math.abs(nl.anchor_position.y - sp.center.y) < 1e-6
+      if (!samePos) return false
+      if (sourceNet.source_net_id && nl.source_net_id) {
+        return nl.source_net_id === sourceNet.source_net_id
+      }
+      return nl.text === (sourceNet.name || key)
+    })
     if (existingAtPort) continue
 
     const text = sourceNet.name || sourceNet.source_net_id || key
     const side =
-      getEnteringEdgeFromDirection(
-        (sp.facing_direction as any) || "right",
-      ) || "right"
+      getEnteringEdgeFromDirection((sp.facing_direction as any) || "right") ||
+      "right"
     const center = computeSchematicNetLabelCenter({
       anchor_position: sp.center,
       anchor_side: side as any,
@@ -434,7 +418,9 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       anchor_position: sp.center,
       center,
       anchor_side: side as any,
-      ...(sourceNet.source_net_id ? { source_net_id: sourceNet.source_net_id } : {}),
+      ...(sourceNet.source_net_id
+        ? { source_net_id: sourceNet.source_net_id }
+        : {}),
     })
   }
 }
