@@ -29,10 +29,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
     if (!key) continue
     const sourceNet = connKeyToNet.get(key)
     if (!sourceNet) {
-      console.log("couldn't find source net for port", {
-        schPortId: schOrSrcPortId,
-        key,
-      })
       continue
     }
     // Avoid duplicate labels at this port anchor position
