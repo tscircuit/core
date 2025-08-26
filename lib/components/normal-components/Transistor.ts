@@ -5,8 +5,6 @@ import {
   type TransistorPorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { Port } from "../primitive-components/Port"
-import { symbols } from "schematic-symbols"
 
 export class Transistor extends NormalComponent<
   typeof transistorProps,
@@ -29,69 +27,20 @@ export class Transistor extends NormalComponent<
   }
 
   initPorts() {
-    const pinAliases =
-      this.props.type === "npn"
-        ? {
-            pin1: ["emitter", "e"],
-            pin2: ["collector", "c"],
-            pin3: ["base", "b"],
-          }
-        : {
-            pin1: ["collector", "c"],
-            pin2: ["emitter", "e"],
-            pin3: ["base", "b"],
-          }
+    const pinAliases = {
+      pin1: ["collector", "c"],
+      pin2: ["emitter", "e"],
+      pin3: ["base", "b"],
+    }
 
     super.initPorts({
       pinCount: 3,
       additionalAliases: pinAliases,
-      ignoreSymbolPorts: true,
     })
-
-    const symbol = symbols[this._getSchematicSymbolNameOrThrow()]
-    if (!symbol) {
-      throw new Error(
-        `Symbol not found: ${this._getSchematicSymbolNameOrThrow()}`
-      )
-    }
-
-    const findPortByLabels = (labels: string[]) =>
-      symbol.ports.find((p) =>
-        labels.some((label) => p.labels.includes(label))
-      )
-
-    const emitterPort = findPortByLabels(["emitter", "e"])
-    const collectorPort = findPortByLabels(["collector", "c"])
-    const basePort = findPortByLabels(["base", "b"])
-
-    if (!emitterPort || !collectorPort || !basePort) {
-      throw new Error(
-        `Required ports not found in symbol: ${this._getSchematicSymbolNameOrThrow()}`
-      )
-    }
-
-    const ports = this.selectAll("port")
-    const portMap = new Map<number, Port>()
-
-    for (const port of ports) {
-      if (port.props.pinNumber) {
-        portMap.set(port.props.pinNumber, port as Port)
-      }
-    }
-
-    if (this.props.type === "npn") {
-      portMap.get(1)!.schematicSymbolPortDef = emitterPort
-      portMap.get(2)!.schematicSymbolPortDef = collectorPort
-      portMap.get(3)!.schematicSymbolPortDef = basePort
-    } else {
-      portMap.get(1)!.schematicSymbolPortDef = collectorPort
-      portMap.get(2)!.schematicSymbolPortDef = emitterPort
-      portMap.get(3)!.schematicSymbolPortDef = basePort
-    }
   }
 
-  emitter = this.props.type === "npn" ? this.portMap.pin1 : this.portMap.pin2
-  collector = this.props.type === "npn" ? this.portMap.pin2 : this.portMap.pin1
+  emitter = this.portMap.pin1
+  collector = this.portMap.pin2
   base = this.portMap.pin3
 
   doInitialCreateNetsFromProps() {
