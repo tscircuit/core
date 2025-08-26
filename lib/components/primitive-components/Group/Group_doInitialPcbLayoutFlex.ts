@@ -1,51 +1,21 @@
 import type { Group } from "./Group"
-import type { PcbSmtPad, PcbSilkscreenText, Size } from "circuit-json"
-import {
-  getCircuitJsonTree,
-  repositionPcbComponentTo,
-  repositionPcbGroupTo,
-  getMinimumFlexContainer,
-  type CircuitJsonUtilObjects,
-} from "@tscircuit/circuit-json-util"
+import type { Size } from "circuit-json"
+import { getMinimumFlexContainer } from "@tscircuit/circuit-json-util"
 import { RootFlexBox, type Align, type Justify } from "@tscircuit/miniflex"
 import { length } from "circuit-json"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import type { IGroup } from "./IGroup"
 
-type TreeNode = ReturnType<typeof getCircuitJsonTree>
-export const getSizeOfTreeNodeChild = (
-  db: CircuitJsonUtilObjects,
-  child: TreeNode,
-) => {
-  const { sourceComponent, sourceGroup } = child
-  if (child.nodeType === "component") {
-    const pcbComponent = db.pcb_component.getWhere({
-      source_component_id: sourceComponent?.source_component_id,
-    })
-    if (!pcbComponent) return null
-    return {
-      width: pcbComponent.width,
-      height: pcbComponent.height,
-    }
-  }
-  if (child.nodeType === "group") {
-    const pcbGroup = db.pcb_group.getWhere({
-      source_group_id: sourceGroup?.source_group_id,
-    })
-    if (!pcbGroup) return null
-    return {
-      width: pcbGroup.width,
-      height: pcbGroup.height,
-    }
-  }
-  return null
-}
+type PcbChild = NormalComponent | IGroup
 
 export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   const { db } = group.root!
   const { _parsedProps: props } = group
 
-  const tree = getCircuitJsonTree(db.toArray(), {
-    source_group_id: group.source_group_id!,
-  })
+  // Use group.children to preserve authored order
+  const pcbChildren: PcbChild[] = group.children.filter(
+    (c) => c.pcb_component_id || (c as IGroup).pcb_group_id,
+  ) as PcbChild[]
   const rawJustify = props.pcbJustifyContent ?? props.justifyContent
   const rawAlign = props.pcbAlignItems ?? props.alignItems
   const rawGap = props.pcbFlexGap ?? props.pcbGap ?? props.gap
@@ -95,12 +65,22 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   let minFlexContainer: Size | undefined
   let width = props.width ?? props.pcbWidth ?? undefined
   let height = props.height ?? props.pcbHeight ?? undefined
+
+  // If not explicitly set, default to existing pcb_group dimensions (e.g., board width/height)
+  if ((width === undefined || height === undefined) && group.pcb_group_id) {
+    const existingGroup = db.pcb_group.get(group.pcb_group_id)
+    if (existingGroup) {
+      width = width ?? existingGroup.width
+      height = height ?? existingGroup.height
+    }
+  }
+
   const isInline = Boolean(width === undefined || height === undefined)
 
   if (isInline) {
     minFlexContainer = getMinimumFlexContainer(
-      tree.childNodes
-        .map((child) => getSizeOfTreeNodeChild(db, child))
+      pcbChildren
+        .map((child) => child._getMinimumFlexContainerSize())
         .filter((size) => size !== null),
       {
         alignItems: alignItems as Align,
@@ -122,8 +102,8 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
     columnGap,
   })
 
-  for (const child of tree.childNodes) {
-    const size = getSizeOfTreeNodeChild(db, child)
+  for (const child of pcbChildren) {
+    const size = child._getMinimumFlexContainerSize()
     flexBox.addChild({
       metadata: child,
 
@@ -143,18 +123,6 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
 
   flexBox.build()
 
-  // console.table(
-  //   flexBox.children.map((child) => [
-  //     child.metadata.sourceComponent?.name,
-  //     child.position.x,
-  //     child.position.y,
-  //     child.size.width,
-  //     child.size.height,
-  //   ]),
-  // )
-
-  const allCircuitJson = db.toArray()
-
   const bounds = {
     minX: Infinity,
     minY: Infinity,
@@ -172,42 +140,24 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   bounds.width = bounds.maxX - bounds.minX
   bounds.height = bounds.maxY - bounds.minY
 
+  const groupCenter = group._getGlobalPcbPositionBeforeLayout()
   const offset = {
-    x: -(bounds.maxX + bounds.minX) / 2,
-    y: -(bounds.maxY + bounds.minY) / 2,
+    x: groupCenter.x - (bounds.maxX + bounds.minX) / 2,
+    y: groupCenter.y - (bounds.maxY + bounds.minY) / 2,
   }
 
   for (const child of flexBox.children) {
-    const { sourceComponent, sourceGroup } = child.metadata as Pick<
-      TreeNode,
-      "sourceComponent" | "sourceGroup"
-    >
-    if (sourceComponent) {
-      const pcbComponent = db.pcb_component.getWhere({
-        source_component_id: sourceComponent.source_component_id,
-      })
-      if (!pcbComponent) continue
-
-      repositionPcbComponentTo(allCircuitJson, pcbComponent.pcb_component_id, {
-        x: child.position.x + child.size.width / 2 + offset.x,
-        y: child.position.y + child.size.height / 2 + offset.y,
-      })
-    }
-    if (sourceGroup) {
-      const pcbGroup = db.pcb_group.getWhere({
-        source_group_id: sourceGroup.source_group_id,
-      })
-      if (!pcbGroup) continue
-      repositionPcbGroupTo(allCircuitJson, sourceGroup.source_group_id, {
-        x: child.position.x + child.size.width / 2 + offset.x,
-        y: child.position.y + child.size.height / 2 + offset.y,
-      })
-    }
+    const childMetadata = child.metadata as PcbChild
+    childMetadata._repositionOnPcb({
+      x: child.position.x + child.size.width / 2 + offset.x,
+      y: child.position.y + child.size.height / 2 + offset.y,
+    })
   }
 
   // Set the new group size
   db.pcb_group.update(group.pcb_group_id!, {
     width: bounds.width,
     height: bounds.height,
+    center: groupCenter,
   })
 }

@@ -1046,4 +1046,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
     }
   }
+
+  /**
+   * Get the minimum flex container size for this group on PCB
+   */
+  _getMinimumFlexContainerSize() {
+    return super._getMinimumFlexContainerSize()
+  }
+
+  /**
+   * Reposition this group on the PCB to the specified coordinates
+   */
+  _repositionOnPcb(position: { x: number; y: number }) {
+    return super._repositionOnPcb(position)
+  }
 }

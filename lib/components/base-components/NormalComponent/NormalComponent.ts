@@ -46,6 +46,8 @@ import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNum
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import type { INormalComponent } from "./INormalComponent"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
+import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 
 const debug = Debug("tscircuit:core")
 
@@ -1205,5 +1207,19 @@ export class NormalComponent<
         }
       }
     }
+  }
+
+  /**
+   * Get the minimum flex container size for this component on PCB
+   */
+  _getMinimumFlexContainerSize() {
+    return NormalComponent__getMinimumFlexContainerSize(this)
+  }
+
+  /**
+   * Reposition this component on the PCB to the specified coordinates
+   */
+  _repositionOnPcb(position: { x: number; y: number }) {
+    return NormalComponent__repositionOnPcb(this, position)
   }
 }
