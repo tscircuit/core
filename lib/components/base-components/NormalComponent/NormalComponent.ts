@@ -1185,6 +1185,14 @@ export class NormalComponent<
     }
   }
 
+  doInitialAssignFallbackProps(): void {
+    const { _parsedProps: props } = this
+    if (props.connections && !this.name) {
+      this.fallbackUnassignedName =
+        this.getSubcircuit().getNextAvailableName(this)
+    }
+  }
+
   doInitialCreateTracesFromProps(): void {
     this._createTracesFromConnectionsProp()
   }
@@ -1193,10 +1201,6 @@ export class NormalComponent<
     const { _parsedProps: props } = this
 
     if (props.connections) {
-      if (!this.name) {
-        this.fallbackUnassignedName ??=
-          this.getSubcircuit().getNextAvailableName(this)
-      }
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
