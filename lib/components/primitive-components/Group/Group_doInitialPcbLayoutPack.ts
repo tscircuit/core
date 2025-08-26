@@ -8,10 +8,7 @@ import {
   type PackInput,
 } from "calculate-packing"
 import { length } from "circuit-json"
-import {
-  transformPCBElements,
-  getPrimaryId,
-} from "@tscircuit/circuit-json-util"
+import { transformPCBElements } from "@tscircuit/circuit-json-util"
 import { translate, rotate, compose } from "transformation-matrix"
 import Debug from "debug"
 
@@ -58,6 +55,8 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       packPlacementStrategy ?? "minimum_sum_squared_distance_to_network",
     minGap: gapMm,
   }
+  // Augment pack input with fake center pads
+  addFakeCenterPadsToPackInput(packInput, db)
   const packOutput = pack(packInput)
 
   if (debug.enabled) {
@@ -190,5 +189,61 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
     transformPCBElements(relatedElements as any, transformMatrix)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
+  }
+}
+
+// Add a synthetic center pad to each component in the PackInput to prevent
+// components with sparse pads (e.g., 0402 resistors) from interleaving through
+// the body center of other parts during packing.
+function addFakeCenterPadsToPackInput(packInput: PackInput, db: any): void {
+  for (const comp of (packInput as any).components ?? []) {
+    // Derive a reasonable center pad size from the component or group body size
+    let widthMm: number | undefined
+    let heightMm: number | undefined
+
+    const pcbComp = db.pcb_component.get?.(comp.componentId)
+    if (pcbComp) {
+      widthMm =
+        typeof pcbComp.width === "string"
+          ? length.parse(pcbComp.width)
+          : pcbComp.width
+      heightMm =
+        typeof pcbComp.height === "string"
+          ? length.parse(pcbComp.height)
+          : pcbComp.height
+    } else {
+      // If this pack component corresponds to a pcb_group, use that size
+      const pcbGroup = db.pcb_group
+        ?.list?.()
+        ?.find?.((g: any) => g.source_group_id === comp.componentId)
+      if (pcbGroup) {
+        widthMm =
+          typeof pcbGroup.width === "string"
+            ? length.parse(pcbGroup.width)
+            : pcbGroup.width
+        heightMm =
+          typeof pcbGroup.height === "string"
+            ? length.parse(pcbGroup.height)
+            : pcbGroup.height
+      }
+    }
+
+    const minDim = Math.max(0, Math.min(widthMm ?? 0, heightMm ?? 0))
+    // Choose a conservative center pad size: half of the smaller dimension,
+    // clamped to a sensible range to avoid over-inflating clearances.
+    const side =
+      minDim > 0 ? Math.min(Math.max(minDim * 0.5, 0.4), minDim) : 0.6
+
+    // Append a synthetic center pad
+    comp.pads = [
+      ...(comp.pads ?? []),
+      {
+        padId: `${comp.componentId}__center`,
+        networkId: `${comp.componentId}__body`, // unique per component, no cross-attraction
+        type: "rect",
+        offset: { x: 0, y: 0 },
+        size: { x: side, y: side },
+      },
+    ]
   }
 }
