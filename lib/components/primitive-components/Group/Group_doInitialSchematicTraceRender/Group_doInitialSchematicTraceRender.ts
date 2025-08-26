@@ -10,6 +10,7 @@ import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -23,6 +24,12 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   const { db } = group.root!
 
   const traces = group.selectAll("trace")
+  const displayLabelTraces = traces.filter((t: any) => t._parsedProps?.schDisplayLabel)
+  const displayLabelSourceTraceIds = new Set(
+    displayLabelTraces
+      .map((t: any) => t.source_trace_id)
+      .filter((id: any): id is string => Boolean(id)),
+  )
   const childGroups = group.selectAll("group") as Group<any>[]
 
   const allSchematicGroupIds = [
@@ -107,6 +114,9 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     []
   const pairKeyToSourceTraceId = new Map<string, string>()
   for (const st of db.source_trace.list()) {
+    if (displayLabelSourceTraceIds.has(st.source_trace_id)) {
+      continue
+    }
     if (st.subcircuit_id && !allowedSubcircuitIds.has(st.subcircuit_id)) {
       continue
     }
@@ -344,5 +354,33 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
         : {}),
       ...(source_trace_id ? { source_trace_id } : {}),
     })
+  }
+
+  // Insert net labels for traces that requested schDisplayLabel and were excluded from routing
+  for (const trace of displayLabelTraces as any[]) {
+    const label = trace._parsedProps?.schDisplayLabel
+    if (!label) continue
+    try {
+      const res = trace._findConnectedPorts?.()
+      if (!res?.allPortsFound || !res.ports || res.ports.length < 1) continue
+      const ports = res.ports.slice(0, 2)
+      for (const port of ports) {
+        const anchor_position = port._getGlobalSchematicPositionAfterLayout()
+        const side =
+          getEnteringEdgeFromDirection(port.facingDirection || "right") || "right"
+        const center = computeSchematicNetLabelCenter({
+          anchor_position,
+          anchor_side: side as any,
+          text: label,
+        })
+        db.schematic_net_label.insert({
+          text: label,
+          anchor_position,
+          center,
+          anchor_side: side as any,
+          ...(trace.source_trace_id ? { source_trace_id: trace.source_trace_id } : {}),
+        })
+      }
+    } catch {}
   }
 }
