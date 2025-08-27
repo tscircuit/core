@@ -44,7 +44,7 @@
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/schematic-corpus": "^0.0.110",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
-    "@tscircuit/schematic-trace-solver": "^0.0.15",
+    "@tscircuit/schematic-trace-solver": "^0.0.17",
     "@tscircuit/simple-3d-svg": "^0.0.38",
     "@types/bun": "^1.2.16",
     "@types/debug": "^4.1.12",
