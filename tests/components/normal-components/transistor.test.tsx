@@ -130,3 +130,35 @@ it("should render a PNP transistor", async () => {
   circuit.render()
   expect(circuit).toMatchSchematicSnapshot(import.meta.path + ".connection")
 })
+
+it("should render a PNP and NPN transistor", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <transistor
+        name="Q1"
+        type="npn"
+        schRotation={90}
+        schX={-2}
+        connections={{
+          collector: "net.collector",
+          emitter: "net.emitter",
+          base: "net.base",
+        }}
+      />
+      <transistor
+        name="Q1"
+        type="pnp"
+        schRotation={90}
+        schX={3.5}
+        connections={{
+          collector: "net.collector",
+          emitter: "net.emitter",
+          base: "net.base",
+        }}
+      />
+    </board>,
+  )
+  circuit.render()
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path + ".connection2")
+})
