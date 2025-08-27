@@ -6,6 +6,8 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("netlabel center offset", () => {
   const { circuit } = getTestFixture()
 
+  circuit._featureMspSchematicTraceRouting = true
+
   circuit.add(
     <board routingDisabled>
       <resistor schX={4} name="R1" resistance="1k" />
