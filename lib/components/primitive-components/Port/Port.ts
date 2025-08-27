@@ -420,6 +420,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     this.schematic_port_id = schematic_port.schematic_port_id
   }
 
+  _getSubcircuitConnectivityKey(): string | undefined {
+    return this.root?.db.source_port.get(this.source_port_id!)
+      ?.subcircuit_connectivity_map_key
+  }
+
   _setPositionFromLayout(newCenter: { x: number; y: number }): void {
     const { db } = this.root!
     if (!this.pcb_port_id) return

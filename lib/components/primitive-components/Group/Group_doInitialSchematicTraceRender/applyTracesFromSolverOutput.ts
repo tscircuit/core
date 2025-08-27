@@ -14,12 +14,11 @@ export function applyTracesFromSolverOutput(args: {
   const { db } = group.root!
 
   // Use the overlap-corrected traces from the pipeline
-  const correctedMap = (solver as any).traceOverlapShiftSolver
-    ?.correctedTraceMap
+  const correctedMap = solver.traceOverlapShiftSolver?.correctedTraceMap
   const pendingTraces: Array<{ id: string; edges: SchematicTrace["edges"] }> =
     []
 
-  for (const solved of Object.values(correctedMap ?? {}) as any[]) {
+  for (const solved of Object.values(correctedMap ?? {})) {
     const points = solved?.tracePath as Array<{ x: number; y: number }>
     if (!Array.isArray(points) || points.length < 2) continue
 
