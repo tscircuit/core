@@ -158,7 +158,6 @@ export function createSchematicTraceSolverInputProblem(
     []
   const pairKeyToSourceTraceId = new Map<string, string>()
   for (const st of db.source_trace.list()) {
-    if (displayLabelSourceTraceIds.has(st.source_trace_id)) continue
     if (st.subcircuit_id && !allowedSubcircuitIds.has(st.subcircuit_id)) {
       continue
     }
@@ -246,7 +245,7 @@ export function createSchematicTraceSolverInputProblem(
         )) {
         if (!net.name) continue
         if (!presentNetIds.has(net.name)) continue
-        if (net.name === "GND") {
+        if (net.is_ground || net.name.startsWith("GND")) {
           netToAllowedOrientations[net.name] = ["y-"]
         } else if (/^V/.test(net.name)) {
           netToAllowedOrientations[net.name] = ["y+"]
