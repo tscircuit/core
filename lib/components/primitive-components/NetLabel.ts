@@ -11,6 +11,8 @@ import {
   translate,
   type Matrix,
 } from "transformation-matrix"
+import { calculateElbow } from "calculate-elbow"
+import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 
 export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   source_net_label_id?: string
@@ -159,6 +161,110 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
           to: `net.${this._getNetName()}`,
         }),
       )
+    }
+  }
+
+  doInitialSchematicTraceRender(): void {
+    if (this.root?.schematicDisabled) return
+    const { db } = this.root!
+    const connectsTo = this._resolveConnectsTo()
+    if (!connectsTo || connectsTo.length === 0) return
+
+    // Determine the anchor position and orientation at the net label
+    const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
+    const anchorSide = this._getAnchorSide()
+    const sideToAxisDir: Record<
+      "left" | "right" | "top" | "bottom",
+      "x+" | "x-" | "y+" | "y-"
+    > = {
+      left: "x-",
+      right: "x+",
+      top: "y+",
+      bottom: "y-",
+    }
+    const anchorFacing = sideToAxisDir[anchorSide]
+
+    // Resolve the target net to find a matching source_trace (port <-> net)
+    const net = this.getSubcircuit().selectOne(
+      `net.${this._getNetName()!}`,
+    ) as Net | null
+
+    for (const connection of connectsTo) {
+      const port = this.getSubcircuit().selectOne(connection, {
+        type: "port",
+      }) as Port | null
+      if (!port || !port.schematic_port_id) continue
+
+      // If a schematic trace for this connection already exists, skip
+      let existingTraceForThisConnection = false
+      if (net?.source_net_id) {
+        const candidateSourceTrace = db.source_trace
+          .list()
+          .find(
+            (st) =>
+              st.connected_source_net_ids?.includes(net.source_net_id!) &&
+              st.connected_source_port_ids?.includes(port.source_port_id ?? ""),
+          )
+        if (candidateSourceTrace) {
+          existingTraceForThisConnection = db.schematic_trace
+            .list()
+            .some(
+              (t) => t.source_trace_id === candidateSourceTrace.source_trace_id,
+            )
+        }
+        if (existingTraceForThisConnection) continue
+      }
+
+      const portPos = port._getGlobalSchematicPositionAfterLayout()
+      const portFacing =
+        convertFacingDirectionToElbowDirection(
+          (port.facingDirection as any) ?? "right",
+        ) ?? "x+"
+
+      const path = calculateElbow(
+        {
+          x: portPos.x,
+          y: portPos.y,
+          facingDirection: portFacing,
+        },
+        {
+          x: anchorPos.x,
+          y: anchorPos.y,
+          facingDirection: anchorFacing,
+        },
+      )
+
+      if (!Array.isArray(path) || path.length < 2) continue
+
+      const edges = []
+      for (let i = 0; i < path.length - 1; i++) {
+        edges.push({
+          from: { x: path[i]!.x, y: path[i]!.y },
+          to: { x: path[i + 1]!.x, y: path[i + 1]!.y },
+        })
+      }
+
+      // Try to associate the schematic trace with a matching source_trace (port <-> net)
+      let source_trace_id: string | undefined
+      if (net?.source_net_id && port.source_port_id) {
+        const st = db.source_trace
+          .list()
+          .find(
+            (s) =>
+              s.connected_source_net_ids?.includes(net.source_net_id!) &&
+              s.connected_source_port_ids?.includes(port.source_port_id!),
+          )
+        source_trace_id = st?.source_trace_id
+      }
+
+      db.schematic_trace.insert({
+        source_trace_id: source_trace_id!,
+        edges,
+        junctions: [],
+      })
+
+      // Mark the schematic port as connected
+      db.schematic_port.update(port.schematic_port_id, { is_connected: true })
     }
   }
 }

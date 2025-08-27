@@ -116,6 +116,7 @@ test("Jumper and netlabel connections repro", async () => {
   )
 
   await circuit.renderUntilSettled()
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
