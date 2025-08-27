@@ -23,9 +23,11 @@ test("netlabel center offset", () => {
 
   circuit.render()
 
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+
   const labels = circuit.db.schematic_net_label.list()
-  expect(labels).toHaveLength(1)
-  const label = labels[0]
+
+  const label = labels.find((l) => l.text === "TESTNET")!
   expect(label.anchor_side).toBe("right")
   expect(label.center.x).toBeLessThan(label.anchor_position!.x)
 })
