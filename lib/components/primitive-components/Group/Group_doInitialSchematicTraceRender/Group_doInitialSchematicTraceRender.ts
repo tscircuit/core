@@ -84,11 +84,11 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   })
 
   // Insert labels for traces that explicitly asked for schDisplayLabel
-  insertNetLabelsForTracesExcludedFromRouting({
-    group,
-    solver,
-    displayLabelTraces,
-    pinIdToSchematicPortId,
-    schematicPortIdsWithPreExistingNetLabels,
-  })
+  // insertNetLabelsForTracesExcludedFromRouting({
+  //   group,
+  //   solver,
+  //   displayLabelTraces,
+  //   pinIdToSchematicPortId,
+  //   schematicPortIdsWithPreExistingNetLabels,
+  // })
 }
