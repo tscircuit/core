@@ -7,6 +7,7 @@ import { applyNetLabelPlacements } from "./applyNetLabelPlacements"
 import { insertNetLabelsForTracesExcludedFromRouting } from "./insertNetLabelsForTracesExcludedFromRouting"
 import { insertNetLabelsForPortsMissingTrace } from "./insertNetLabelsForPortsMissingTrace"
 import { getSchematicPortIdsWithAssignedNetLabels } from "./getSchematicPortIdsWithAssignedNetLabels"
+import { getSchematicPortIdsWithRoutedTraces } from "./getSchematicPortIdsWithRoutedTraces"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -46,6 +47,11 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
 
+  const schematicPortIdsWithRoutedTraces = getSchematicPortIdsWithRoutedTraces({
+    solver,
+    pinIdToSchematicPortId,
+  })
+
   // Apply traces
   applyTracesFromSolverOutput({
     group,
@@ -65,6 +71,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     allScks,
     userNetIdToSck,
     schematicPortIdsWithPreExistingNetLabels,
+    schematicPortIdsWithRoutedTraces,
   })
 
   insertNetLabelsForPortsMissingTrace({

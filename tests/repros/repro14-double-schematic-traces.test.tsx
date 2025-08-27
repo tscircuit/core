@@ -3,6 +3,8 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 test("Double schematic traces", async () => {
   const { circuit } = getTestFixture()
 
+  circuit._featureMspSchematicTraceRouting = true
+
   circuit.add(
     <board
       width="25mm"

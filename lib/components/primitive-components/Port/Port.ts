@@ -438,4 +438,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   _hasMatchedPcbPrimitive() {
     return this.matchedComponents.some((c) => c.isPcbPrimitive)
   }
+
+  /**
+   * Return the text that should be used for the net label for this port if a
+   * trace can't be drawn. This net label text usually doesn't appear at this
+   * port, but appears at the port it connects to.
+   */
+  _getNetLabelText(): string | undefined {
+    return `${this.parent?.props.name}_${this.props.name}`
+  }
 }
