@@ -31,6 +31,14 @@ export const insertNetLabelsForPortsMissingTrace = ({
     if (!sourceNet) {
       continue
     }
+    // If a label already exists anywhere for this net, skip adding another
+    const hasLabelForNet = db.schematic_net_label.list().some((nl) => {
+      if (sourceNet.source_net_id && nl.source_net_id) {
+        return nl.source_net_id === sourceNet.source_net_id
+      }
+      return nl.text === (sourceNet.name || key)
+    })
+    if (hasLabelForNet) continue
     // Avoid duplicate labels at this port anchor position
     const existingAtPort = db.schematic_net_label.list().some((nl) => {
       const samePos =
