@@ -4,6 +4,8 @@ import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchem
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { getSide, type AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
+import { Port } from "../../Port"
+import { getNetNameFromPorts } from "./getNetNameFromPorts"
 
 export function applyNetLabelPlacements(args: {
   group: Group<any>
@@ -13,6 +15,9 @@ export function applyNetLabelPlacements(args: {
   allSourceAndSchematicPortIdsInScope: Set<string>
   schPortIdToSourcePortId: Map<string, string>
   allScks: Set<string>
+  pinIdToSchematicPortId: Map<string, string>
+  schematicPortIdsWithPreExistingNetLabels: Set<string>
+  schematicPortIdsWithRoutedTraces: Set<string>
 }) {
   const {
     group,
@@ -22,6 +27,9 @@ export function applyNetLabelPlacements(args: {
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
     userNetIdToSck,
+    pinIdToSchematicPortId,
+    schematicPortIdsWithPreExistingNetLabels,
+    schematicPortIdsWithRoutedTraces,
   } = args
   const { db } = group.root!
 
@@ -45,28 +53,60 @@ export function applyNetLabelPlacements(args: {
       ? sckToSourceNet.get(placementSck)
       : undefined
 
-    if (!sourceNet) {
+    const schPortIds = placement.pinIds.map(
+      (pinId) => pinIdToSchematicPortId.get(pinId)!,
+    )
+
+    if (
+      schPortIds.some((schPortId) =>
+        schematicPortIdsWithPreExistingNetLabels.has(schPortId),
+      )
+    ) {
       continue
     }
 
-    const text = sourceNet.name
+    if (sourceNet) {
+      const text = sourceNet.name
 
-    // Skip inserting if a label for this net (by source_net_id or text) already exists
-    const hasExistingLabelForNet = db.schematic_net_label.list().some((nl) => {
-      if (sourceNet?.source_net_id && nl.source_net_id) {
-        return nl.source_net_id === sourceNet.source_net_id
-      }
-      return nl.text === text
-    })
-    if (hasExistingLabelForNet) continue
-
-    const center =
-      (placement as any).center ??
-      computeSchematicNetLabelCenter({
+      const center = computeSchematicNetLabelCenter({
         anchor_position,
         anchor_side: anchor_side as any,
         text,
       })
+
+      // @ts-ignore
+      db.schematic_net_label.insert({
+        text,
+        anchor_position,
+        center,
+        anchor_side: anchor_side as any,
+        ...(sourceNet?.source_net_id
+          ? { source_net_id: sourceNet.source_net_id }
+          : {}),
+      })
+      return
+    }
+
+    if (
+      schPortIds.some((schPortId) =>
+        schematicPortIdsWithRoutedTraces.has(schPortId),
+      )
+    ) {
+      continue
+    }
+
+    // We don't have a source net, but we have a placement from the algorithm
+    const ports = group
+      .selectAll<Port>("port")
+      .filter((p) => p._getSubcircuitConnectivityKey() === placementSck)
+
+    const text = getNetNameFromPorts(ports)
+
+    const center = computeSchematicNetLabelCenter({
+      anchor_position,
+      anchor_side: anchor_side as any,
+      text,
+    })
 
     // @ts-ignore
     db.schematic_net_label.insert({
@@ -74,9 +114,6 @@ export function applyNetLabelPlacements(args: {
       anchor_position,
       center,
       anchor_side: anchor_side as any,
-      ...(sourceNet?.source_net_id
-        ? { source_net_id: sourceNet.source_net_id }
-        : {}),
     })
   }
 }

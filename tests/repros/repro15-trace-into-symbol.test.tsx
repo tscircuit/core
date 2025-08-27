@@ -3,6 +3,7 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 test("Schematic trace overlaps manufacturer label", async () => {
   const { circuit } = getTestFixture()
 
+  circuit._featureMspSchematicTraceRouting = true
   circuit.add(
     <board width="10mm" height="10mm">
       <resistor resistance="1k" footprint="0402" name="R1" schX={-3} pcbX={3} />

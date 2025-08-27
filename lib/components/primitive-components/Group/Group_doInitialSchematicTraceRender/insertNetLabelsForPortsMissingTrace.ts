@@ -1,3 +1,4 @@
+import type { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { Group } from "lib/components"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
@@ -7,13 +8,18 @@ export const insertNetLabelsForPortsMissingTrace = ({
   group,
   schPortIdToSourcePortId,
   sckToSourceNet: connKeyToNet,
+  pinIdToSchematicPortId,
+  schematicPortIdsWithPreExistingNetLabels,
 }: {
   group: Group<any>
   allSourceAndSchematicPortIdsInScope: Set<string>
   schPortIdToSourcePortId: Map<string, string>
   sckToSourceNet: Map<string, any>
+  pinIdToSchematicPortId: Map<string, string>
+  schematicPortIdsWithPreExistingNetLabels: Set<string>
 }) => {
   const { db } = group.root!
+
   // Create net labels for ports connected only to a net (no trace connected)
   for (const schOrSrcPortId of Array.from(
     allSourceAndSchematicPortIdsInScope,
@@ -31,14 +37,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
     if (!sourceNet) {
       continue
     }
-    // If a label already exists anywhere for this net, skip adding another
-    const hasLabelForNet = db.schematic_net_label.list().some((nl) => {
-      if (sourceNet.source_net_id && nl.source_net_id) {
-        return nl.source_net_id === sourceNet.source_net_id
-      }
-      return nl.text === (sourceNet.name || key)
-    })
-    if (hasLabelForNet) continue
+
     // Avoid duplicate labels at this port anchor position
     const existingAtPort = db.schematic_net_label.list().some((nl) => {
       const samePos =

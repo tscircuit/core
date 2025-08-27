@@ -7,8 +7,15 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   displayLabelTraces: any[]
+  pinIdToSchematicPortId: Map<string, string>
+  schematicPortIdsWithPreExistingNetLabels: Set<string>
 }) {
-  const { group, displayLabelTraces } = args
+  const {
+    group,
+    displayLabelTraces,
+    pinIdToSchematicPortId,
+    schematicPortIdsWithPreExistingNetLabels,
+  } = args
   const { db } = group.root!
 
   for (const trace of displayLabelTraces as any[]) {

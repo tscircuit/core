@@ -16,7 +16,7 @@ import {
   rotate,
   translate,
 } from "transformation-matrix"
-import type { ZodType } from "zod"
+import type { Primitive, ZodType } from "zod"
 import { z } from "zod"
 import type { RootCircuit } from "lib/RootCircuit"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/ISubcircuit"
@@ -696,14 +696,18 @@ export abstract class PrimitiveComponent<
   }
 
   _cachedSelectAllQueries: Map<string, PrimitiveComponent[]> = new Map()
-  selectAll(selectorRaw: string): PrimitiveComponent[] {
+  selectAll<T extends PrimitiveComponent = PrimitiveComponent>(
+    selectorRaw: string,
+  ): T[] {
     if (this._cachedSelectAllQueries.has(selectorRaw)) {
-      return this._cachedSelectAllQueries.get(
-        selectorRaw,
-      ) as PrimitiveComponent[]
+      return this._cachedSelectAllQueries.get(selectorRaw) as T[]
     }
     const selector = preprocessSelector(selectorRaw)
-    const result = selectAll(selector, this, cssSelectOptionsInsideSubcircuit)
+    const result = selectAll(
+      selector,
+      this,
+      cssSelectOptionsInsideSubcircuit,
+    ) as T[]
     if (result.length > 0) {
       this._cachedSelectAllQueries.set(selectorRaw, result)
       return result
@@ -715,7 +719,7 @@ export abstract class PrimitiveComponent<
       adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
     }) as ISubcircuit | null
     if (!subcircuit) return []
-    const result2 = subcircuit.selectAll(rest.join(" "))
+    const result2 = subcircuit.selectAll(rest.join(" ")) as T[]
     this._cachedSelectAllQueries.set(selectorRaw, result2)
     return result2
   }
