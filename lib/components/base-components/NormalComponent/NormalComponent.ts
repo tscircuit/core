@@ -239,17 +239,6 @@ export class NormalComponent<
         if (existingPort) {
           existingPort.schematicSymbolPortDef = symPort
         } else {
-          if (
-            symPort.labels.includes("emitter") &&
-            opts.additionalAliases?.[`pin${pinNumber}`].includes("collector")
-          )
-            symPort.labels.splice(symPort.labels.indexOf("emitter"), 1)
-
-          if (
-            symPort.labels.includes("collector") &&
-            opts.additionalAliases?.[`pin${pinNumber}`].includes("emitter")
-          )
-            symPort.labels.splice(symPort.labels.indexOf("collector"), 1)
           const port = getPortFromHints(
             symPort.labels.concat(
               opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
