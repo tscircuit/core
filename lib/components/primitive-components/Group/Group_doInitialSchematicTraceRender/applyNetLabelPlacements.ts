@@ -50,6 +50,18 @@ export function applyNetLabelPlacements(args: {
     }
 
     const text = sourceNet.name
+
+    // Skip inserting if a label for this net (by source_net_id or text) already exists
+    const hasExistingLabelForNet = db.schematic_net_label
+      .list()
+      .some((nl) => {
+        if (sourceNet?.source_net_id && nl.source_net_id) {
+          return nl.source_net_id === sourceNet.source_net_id
+        }
+        return nl.text === text
+      })
+    if (hasExistingLabelForNet) continue
+
     const center =
       (placement as any).center ??
       computeSchematicNetLabelCenter({

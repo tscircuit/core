@@ -31,32 +31,4 @@
     L 895.1486352085524,311.6145430435344
     L 821.040999005647,311.6145430435344
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.3152834567359997px"/><text class="net-label-text" x="827.0085092277718" y="293.71201237716" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="29.837551110623995px" transform="">SCL</text><path class="net-label" d="
-    M 629.74914355198,393.17051607923986
-    L 638.7004088851671,375.26798541286547
-    L 720.5437064871232,375.26798541286547
-    L 720.5437064871232,411.07304674561425
-    L 638.7004088851671,411.07304674561425
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.3152834567359997px"/><text class="net-label-text" x="644.6679191072919" y="393.17051607923986" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="29.837551110623995px" transform="">GND</text><path class="net-label" d="
-    M 629.74914355198,360.0176815118799
-    L 638.7004088851671,342.1151508455055
-    L 724.544148524918,342.1151508455055
-    L 724.544148524918,377.9202121782543
-    L 638.7004088851671,377.9202121782543
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.3152834567359997px"/><text class="net-label-text" x="644.6679191072919" y="360.0176815118799" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="29.837551110623995px" transform="">V3_3</text><path class="net-label" d="
-    M 629.74914355198,326.86484694451997
-    L 638.7004088851671,308.9623162781456
-    L 716.1233285448085,308.9623162781456
-    L 716.1233285448085,344.76737761089436
-    L 638.7004088851671,344.76737761089436
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.3152834567359997px"/><text class="net-label-text" x="644.6679191072919" y="326.86484694451997" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="29.837551110623995px" transform="">SDA</text><path class="net-label" d="
-    M 629.74914355198,293.71201237716
-    L 638.7004088851671,275.80948171078563
-    L 712.8080450880725,275.80948171078563
-    L 712.8080450880725,311.6145430435344
-    L 638.7004088851671,311.6145430435344
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.3152834567359997px"/><text class="net-label-text" x="644.6679191072919" y="293.71201237716" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="29.837551110623995px" transform="">SCL</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.3152834567359997px"/><text class="net-label-text" x="827.0085092277718" y="293.71201237716" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="29.837551110623995px" transform="">SCL</text></svg>
