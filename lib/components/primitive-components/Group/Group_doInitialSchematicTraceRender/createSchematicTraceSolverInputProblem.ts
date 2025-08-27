@@ -259,7 +259,7 @@ export function createSchematicTraceSolverInputProblem(
     directConnections,
     netConnections,
     availableNetLabelOrientations,
-    maxMspPairDistance: 5,
+    maxMspPairDistance: group._parsedProps.schMaxTraceDistance ?? 5,
   }
 
   return {

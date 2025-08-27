@@ -5,7 +5,7 @@ test("rotated resistor/diode/inductor/led/capacitor schematic", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm">
+    <board width="10mm" height="10mm" schMaxTraceDistance={0.1}>
       <resistor
         name="R1"
         schY={0}
