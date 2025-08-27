@@ -1,8 +1,5 @@
 import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
-import { 
-  getGraphicsForBpcGraph, 
-  layoutSchematicGraphVariants 
-} from "bpc-graph"
+import { getGraphicsForBpcGraph, layoutSchematicGraphVariants } from "bpc-graph"
 import Debug from "debug"
 import type { Group } from "./Group"
 import type { z } from "zod"
