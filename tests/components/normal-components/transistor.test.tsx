@@ -136,8 +136,9 @@ it("should render a PNP and NPN transistor", async () => {
   circuit.add(
     <board width="10mm" height="10mm">
       <transistor
-        name="Q1"
+        name="Q1_NPN"
         type="npn"
+        schRotation={90}
         schX={-2}
         connections={{
           collector: "net.collector",
@@ -146,8 +147,9 @@ it("should render a PNP and NPN transistor", async () => {
         }}
       />
       <transistor
-        name="Q2"
+        name="Q2_PNP"
         type="pnp"
+        schRotation={90}
         schX={3.5}
         connections={{
           collector: "net.collector",
