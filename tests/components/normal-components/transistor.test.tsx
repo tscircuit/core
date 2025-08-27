@@ -138,7 +138,6 @@ it("should render a PNP and NPN transistor", async () => {
       <transistor
         name="Q1"
         type="npn"
-        schRotation={90}
         schX={-2}
         connections={{
           collector: "net.collector",
@@ -147,9 +146,8 @@ it("should render a PNP and NPN transistor", async () => {
         }}
       />
       <transistor
-        name="Q1"
+        name="Q2"
         type="pnp"
-        schRotation={90}
         schX={3.5}
         connections={{
           collector: "net.collector",
