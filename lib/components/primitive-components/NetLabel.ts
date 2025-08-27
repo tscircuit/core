@@ -165,6 +165,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   }
 
   doInitialSchematicTraceRender(): void {
+    if (!this.root?._featureMspSchematicTraceRouting) return
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const connectsTo = this._resolveConnectsTo()
