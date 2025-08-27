@@ -71,5 +71,4 @@ test("group-match-adapt3", () => {
   circuit.render()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  writeGlobalDebugGraphics()
 })

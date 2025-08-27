@@ -6,6 +6,9 @@ import { getSide, type AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
 import { Port } from "../../Port"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
+import Debug from "debug"
+
+const debug = Debug("Group_doInitialSchematicTraceRender")
 
 export function applyNetLabelPlacements(args: {
   group: Group<any>
@@ -39,6 +42,8 @@ export function applyNetLabelPlacements(args: {
   const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
 
   for (const placement of netLabelPlacements) {
+    debug(`processing placement: ${placement.netId}`)
+
     const placementUserNetId = globalConnMap
       .getIdsConnectedToNet(placement.globalConnNetId)
       .find((id) => userNetIdToSck.get(id))
@@ -62,6 +67,9 @@ export function applyNetLabelPlacements(args: {
         schematicPortIdsWithPreExistingNetLabels.has(schPortId),
       )
     ) {
+      debug(
+        `skipping net label placement for "${placement.netId!}" REASON:schematic port has pre-existing net label`,
+      )
       continue
     }
 
@@ -84,7 +92,7 @@ export function applyNetLabelPlacements(args: {
           ? { source_net_id: sourceNet.source_net_id }
           : {}),
       })
-      return
+      continue
     }
 
     if (
@@ -92,6 +100,9 @@ export function applyNetLabelPlacements(args: {
         schematicPortIdsWithRoutedTraces.has(schPortId),
       )
     ) {
+      debug(
+        `skipping net label placement for "${placement.netId!}" REASON:schematic port has routed traces`,
+      )
       continue
     }
 
