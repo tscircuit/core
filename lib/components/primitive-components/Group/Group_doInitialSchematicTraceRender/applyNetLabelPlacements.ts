@@ -95,17 +95,6 @@ export function applyNetLabelPlacements(args: {
       continue
     }
 
-    if (
-      schPortIds.some((schPortId) =>
-        schematicPortIdsWithRoutedTraces.has(schPortId),
-      )
-    ) {
-      debug(
-        `skipping net label placement for "${placement.netId!}" REASON:schematic port has routed traces`,
-      )
-      continue
-    }
-
     // We don't have a source net, but we have a placement from the algorithm
     const ports = group
       .selectAll<Port>("port")
