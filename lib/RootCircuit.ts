@@ -20,6 +20,8 @@ export class RootCircuit {
   pcbDisabled = false
   pcbRoutingDisabled = false
 
+  _featureMspSchematicTraceRouting = false
+
   /**
    * The RootCircuit name is usually set by the platform, it's not required but
    * if supplied can identify the circuit in certain effects, e.g. it is passed

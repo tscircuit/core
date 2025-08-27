@@ -1,9 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// Reproduce issue with pin label containing trailing space
-
-test("chip pinLabels should not allow leading or trailing spaces", () => {
+test("chip pinLabels should not allow leading or trailing spaces", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -12,13 +10,14 @@ test("chip pinLabels should not allow leading or trailing spaces", () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
-  const errors = circuit
+  const schematic_errors = circuit
     .getCircuitJson()
-    .filter((e) => e.type === "source_failed_to_create_component_error")
+    .filter((e) => e.type === "source_property_ignored_warning")
 
-  expect(errors[0].message).toMatch(
-    /pinLabels\.pin1 \("A1 " has leading or trailing spaces\)/,
+  expect(schematic_errors).toHaveLength(1)
+  expect(schematic_errors[0].message).toContain(
+    "Invalid pin label: pin1 = 'A1 ' - excluding from component. Please use a valid pin label.",
   )
 })

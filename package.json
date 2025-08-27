@@ -1,10 +1,16 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.641",
+  "version": "0.0.648",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "files": [
     "dist"
   ],
@@ -25,8 +31,8 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@tscircuit/capacity-autorouter": "^0.0.100",
-    "@tscircuit/circuit-json-util": "^0.0.65",
     "@tscircuit/checks": "^0.0.71",
+    "@tscircuit/circuit-json-util": "^0.0.65",
     "@tscircuit/footprinter": "^0.0.208",
     "@tscircuit/import-snippet": "^0.0.4",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
@@ -38,6 +44,7 @@
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/schematic-corpus": "^0.0.110",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
+    "@tscircuit/schematic-trace-solver": "^0.0.12",
     "@tscircuit/simple-3d-svg": "^0.0.38",
     "@types/bun": "^1.2.16",
     "@types/debug": "^4.1.12",
@@ -48,12 +55,13 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.9",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.232",
+    "circuit-json": "^0.0.233",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.22",
     "circuit-json-to-simple-3d": "^0.0.6",
     "circuit-to-svg": "^0.0.174",
     "concurrently": "^9.1.2",
+    "connectivity-map": "^1.0.0",
     "debug": "^4.3.6",
     "graphics-debug": "^0.0.60",
     "howfat": "^0.3.8",
@@ -95,7 +103,6 @@
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
     "react-reconciler": "^0.32.0",
-    "react-reconciler-18": "npm:react-reconciler@0.29.2",
     "transformation-matrix": "^2.16.1",
     "zod": "^3.25.67"
   }
