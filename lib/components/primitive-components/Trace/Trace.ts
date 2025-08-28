@@ -111,19 +111,7 @@ export class Trace
         ports?: undefined
         portsWithSelectors?: undefined
       } {
-    try {
-      return Trace__findConnectedPorts(this)
-    } catch (error) {
-      if (error instanceof TraceConnectionError) {
-        this.root!.db.source_trace_not_connected_error.insert({
-          ...error.errorData,
-          error_type: "source_trace_not_connected_error",
-        })
-        this._couldNotFindPort = true
-        return { allPortsFound: false }
-      }
-      throw error
-    }
+    return Trace__findConnectedPorts(this)
   }
 
   _resolveNet(selector: string): Net | null {
