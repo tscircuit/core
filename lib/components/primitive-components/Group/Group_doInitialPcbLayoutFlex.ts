@@ -22,9 +22,7 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
     const childProps = (child as any)._parsedProps as
       | { pcbX?: number; pcbY?: number }
       | undefined
-    return (
-      childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
-    )
+    return childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
   })
   if (anyChildHasExplicitPcbPosition) {
     return
