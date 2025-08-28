@@ -248,9 +248,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       "trace",
     ) as Trace[]
 
-    const connectedTraces = allSubcircuitTraces.filter((trace) =>
-      trace._isExplicitlyConnectedToPort(this),
-    )
+    const connectedTraces = allSubcircuitTraces
+      .filter((trace) => !trace._couldNotFindPort)
+      .filter((trace) => trace._isExplicitlyConnectedToPort(this))
 
     return connectedTraces
   }
