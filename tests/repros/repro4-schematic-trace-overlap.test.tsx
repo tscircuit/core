@@ -20,7 +20,7 @@ test("repro4 schematic trace overlap", async () => {
         schX={-2}
         schY={-1}
       />
-      <resistor name="R3" resistance="10k" footprint="0402" schX={0} schY={2} />
+      <resistor name="R3" resistance="10k" footprint="0402" schX={0} schY={1} />
 
       <trace from=".R1 > .pin2" to=".R3 > .pin1" />
       <trace from=".R2 > .pin2" to=".R3 > .pin2" />
@@ -31,6 +31,7 @@ test("repro4 schematic trace overlap", async () => {
 
   // Get the schematic traces
   const traces = circuit.db.schematic_trace.list()
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 
   // Find edges with is_crossing=true
   const crossingEdges = traces.flatMap((trace) =>
@@ -49,6 +50,4 @@ test("repro4 schematic trace overlap", async () => {
       (crossingEdge.to.y - crossingEdge.from.y) ** 2,
   )
   expect(length).toBeCloseTo(0.075, 2)
-
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

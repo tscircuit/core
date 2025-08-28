@@ -5,7 +5,7 @@ test("capacitor polarized", () => {
   const { project } = getTestFixture()
 
   project.add(
-    <board width="10mm" height="10mm">
+    <board width="10mm" height="10mm" schMaxTraceDistance={1}>
       <capacitor
         name="C1"
         capacitance="10µF"

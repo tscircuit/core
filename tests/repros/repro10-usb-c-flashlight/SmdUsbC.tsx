@@ -1,4 +1,4 @@
-import { createUseComponent } from "@tscircuit/core"
+import { createUseComponent } from "lib/hooks/create-use-component"
 import type { ChipProps, CommonLayoutProps } from "@tscircuit/props"
 
 const pinLabels = {

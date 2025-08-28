@@ -6,6 +6,7 @@ import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphic
 test("group-match-adapt3", () => {
   const { circuit } = getTestFixture()
 
+  circuit._featureMspSchematicTraceRouting = true
   circuit.add(
     <board width="10mm" height="10mm" routingDisabled matchAdapt>
       <chip
@@ -70,5 +71,4 @@ test("group-match-adapt3", () => {
   circuit.render()
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  writeGlobalDebugGraphics()
 })

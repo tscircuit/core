@@ -6,6 +6,7 @@ import { sel } from "lib/sel"
 
 test("Jumper and netlabel connections repro", async () => {
   const { circuit } = getTestFixture()
+  circuit._featureMspSchematicTraceRouting = true
   const jumperPinLabels = {
     pin1: "GND",
     pin2: "VCC",
@@ -115,6 +116,7 @@ test("Jumper and netlabel connections repro", async () => {
   )
 
   await circuit.renderUntilSettled()
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

@@ -5,6 +5,8 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("schematic net symbol", () => {
   const { circuit } = getTestFixture()
 
+  circuit._featureMspSchematicTraceRouting = true
+
   circuit.add(
     <board width="22mm" height="22mm" routingDisabled>
       <resistor name="R1" resistance="10k" footprint="0402" schX={3} schY={0} />

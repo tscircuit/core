@@ -65,6 +65,8 @@ const VoltageRegulator = (groupProps: GroupProps) => (
 test("voltage-regulator-match-adapt", () => {
   const { circuit } = getTestFixture()
 
+  circuit._featureMspSchematicTraceRouting = true
+
   circuit.add(
     <board width="20mm" height="15mm" routingDisabled>
       <VoltageRegulator name="voltage_regulator" />

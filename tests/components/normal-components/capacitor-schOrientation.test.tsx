@@ -15,10 +15,10 @@ const orientations = [
 ] as const
 
 test("polarized capacitor schOrientation", () => {
-  const { project } = getTestFixture()
+  const { circuit } = getTestFixture()
 
-  project.add(
-    <board width="30mm" height="10mm">
+  circuit.add(
+    <board width="30mm" height="10mm" schMaxTraceDistance={1}>
       {orientations.map((o, i) => (
         <capacitor
           key={o}
@@ -34,9 +34,9 @@ test("polarized capacitor schOrientation", () => {
     </board>,
   )
 
-  project.render()
+  circuit.render()
 
-  const symbolNames = project.db.schematic_component
+  const symbolNames = circuit.db.schematic_component
     .list()
     .map((c) => c.symbol_name)
 
@@ -53,5 +53,5 @@ test("polarized capacitor schOrientation", () => {
     "capacitor_polarized_right",
   ])
 
-  expect(project).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

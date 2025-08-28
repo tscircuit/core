@@ -4,6 +4,8 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("ground net labels with schDisplayLabel become symbols", () => {
   const { circuit } = getTestFixture()
 
+  circuit._featureMspSchematicTraceRouting = true
+
   circuit.add(
     <board width="10mm" height="10mm">
       <resistor

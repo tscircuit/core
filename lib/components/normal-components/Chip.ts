@@ -1,20 +1,33 @@
 import { chipProps } from "@tscircuit/props"
-import type { SchematicPortArrangement } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
-import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import {
-  type SchematicBoxDimensions,
-  getAllDimensionsForSchematicBox,
-} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
+import { filterPinLabels } from "lib/utils/filterPinLabels"
+import type { z } from "zod"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
   PinLabels
 > {
   schematicBoxDimensions: SchematicBoxDimensions | null = null
+  private _invalidPinLabelMessages: string[] = []
+
+  constructor(props: z.input<typeof chipProps>) {
+    const filteredProps = { ...props }
+    let invalidPinLabelsMessages: string[] = []
+
+    if (filteredProps.pinLabels) {
+      const { validPinLabels, invalidPinLabelsMessages: messages } =
+        filterPinLabels(filteredProps.pinLabels)
+      filteredProps.pinLabels = validPinLabels
+      invalidPinLabelsMessages = messages
+    }
+
+    // super needs to run before we can assign to `this`
+    super(filteredProps)
+    this._invalidPinLabelMessages = invalidPinLabelsMessages
+  }
 
   get config() {
     return {
@@ -76,6 +89,25 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { _parsedProps: props } = this
     // Early return if noSchematicRepresentation is true
     if (props?.noSchematicRepresentation === true) return
+
+    if (this._invalidPinLabelMessages?.length && this.root?.db) {
+      for (const message of this._invalidPinLabelMessages) {
+        let property_name = "pinLabels"
+        const match = message.match(
+          /^Invalid pin label:\s*([^=]+)=\s*'([^']+)'/,
+        )
+        if (match) {
+          const label = match[2]
+          property_name = `pinLabels['${label}']`
+        }
+        this.root.db.source_property_ignored_warning.insert({
+          source_component_id: this.source_component_id!,
+          property_name,
+          message,
+          error_type: "source_property_ignored_warning",
+        })
+      }
+    }
 
     // Continue with normal schematic rendering
     super.doInitialSchematicComponentRender()

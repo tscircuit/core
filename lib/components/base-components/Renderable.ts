@@ -12,6 +12,7 @@ export const orderedRenderPhases = [
   "PcbFootprintStringRender",
   "InitializePortsFromChildren",
   "CreateNetsFromProps",
+  "AssignFallbackProps",
   "CreateTracesFromProps",
   "CreateTracesFromNetLabels",
   "CreateTraceHintsFromProps",

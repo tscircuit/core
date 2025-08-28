@@ -15,7 +15,7 @@ test("pushbutton pin configurations with different net connections", () => {
   ]
 
   circuit.add(
-    <board>
+    <board schMaxTraceDistance={1}>
       <schematictext
         text="INTERNALLY CONNECTED PINS: 1,2 and 3,4"
         fontSize={0.2}

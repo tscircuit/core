@@ -1,10 +1,5 @@
-import { corpusNoNetLabel } from "@tscircuit/schematic-corpus"
 import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
-import {
-  layoutSchematicGraph,
-  getGraphicsForBpcGraph,
-  layoutSchematicGraphVariants,
-} from "bpc-graph"
+import { getGraphicsForBpcGraph, layoutSchematicGraphVariants } from "bpc-graph"
 import Debug from "debug"
 import type { Group } from "./Group"
 import type { z } from "zod"
@@ -78,7 +73,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
           })
           .map((b) => b.boxId),
       ),
-      corpus: corpusNoNetLabel,
+      corpus: {},
     },
   )
 
