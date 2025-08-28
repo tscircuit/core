@@ -16,6 +16,19 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   const pcbChildren: PcbChild[] = group.children.filter(
     (c) => c.pcb_component_id || (c as IGroup).pcb_group_id,
   ) as PcbChild[]
+
+  // If any child has explicit pcbX/pcbY, skip flex layout entirely to honor manual placement
+  const anyChildHasExplicitPcbPosition = pcbChildren.some((child) => {
+    const childProps = (child as any)._parsedProps as
+      | { pcbX?: number; pcbY?: number }
+      | undefined
+    return (
+      childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
+    )
+  })
+  if (anyChildHasExplicitPcbPosition) {
+    return
+  }
   const rawJustify = props.pcbJustifyContent ?? props.justifyContent
   const rawAlign = props.pcbAlignItems ?? props.alignItems
   const rawGap = props.pcbFlexGap ?? props.pcbGap ?? props.gap
