@@ -15,7 +15,12 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
 
   _getImpliedFootprintString(): string | null {
     const pinCount =
-      this._parsedProps.pinCount ?? this._parsedProps.pinLabels?.length ?? 0
+      this._parsedProps.pinCount ??
+      (Array.isArray(this._parsedProps.pinLabels)
+        ? this._parsedProps.pinLabels.length
+        : this._parsedProps.pinLabels
+          ? Object.keys(this._parsedProps.pinLabels).length
+          : 0)
     const holeDiameter = this._parsedProps.holeDiameter
     const platedDiameter = this._parsedProps.platedDiameter
     const pitch = this._parsedProps.pitch
@@ -51,15 +56,21 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
 
   initPorts() {
     const pinCount =
-      this._parsedProps.pinCount ?? this._parsedProps.pinLabels?.length ?? 1
+      this._parsedProps.pinCount ??
+      (Array.isArray(this._parsedProps.pinLabels)
+        ? this._parsedProps.pinLabels.length
+        : this._parsedProps.pinLabels
+          ? Object.keys(this._parsedProps.pinLabels).length
+          : 1)
     for (let i = 1; i <= pinCount; i++) {
+      const label = Array.isArray(this._parsedProps.pinLabels)
+        ? this._parsedProps.pinLabels[i - 1]
+        : this._parsedProps.pinLabels?.[i]
       this.add(
         new Port({
           name: `pin${i}`,
           pinNumber: i,
-          aliases: [this._parsedProps.pinLabels?.[i - 1]].filter(
-            Boolean,
-          ) as string[],
+          aliases: [label].filter(Boolean) as string[],
         }),
       )
     }
