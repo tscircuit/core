@@ -1,7 +1,7 @@
 import { it, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("should render a pinheader with a cad component", async () => {
+test("should render a pinheader with a cad component", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
