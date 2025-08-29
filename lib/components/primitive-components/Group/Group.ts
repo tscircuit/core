@@ -828,8 +828,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Default to pcbPack when no descendants have explicit pcb coordinates and
     // no manual edits are present. This provides sensible automatic placement
     // for simple circuits that omit pcbX/pcbY positions.
-    const groupHasCoords =
-      props.pcbX !== undefined || props.pcbY !== undefined
+    const groupHasCoords = props.pcbX !== undefined || props.pcbY !== undefined
     let descWithoutCoordsCount = 0
     const checkDescendantForCoords = (child: any): boolean => {
       const childProps = child._parsedProps
@@ -837,8 +836,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
       if (!hasCoordinates) descWithoutCoordsCount++
       return (
-        hasCoordinates ||
-        (child.children ?? []).some(checkDescendantForCoords)
+        hasCoordinates || (child.children ?? []).some(checkDescendantForCoords)
       )
     }
 
