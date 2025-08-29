@@ -824,6 +824,36 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     if (props.flex) return "flex"
     if (props.grid) return "grid"
+    // Default to pcbPack when no descendants have explicit pcb coordinates and
+    // no manual edits are present. This provides sensible automatic placement
+    // for simple circuits that omit pcbX/pcbY positions.
+    let descWithoutCoordsCount = 0
+    const checkDescendantForCoords = (child: any): boolean => {
+      const cProps = child._parsedProps
+      const hasCoords =
+        cProps?.pcbX !== undefined || cProps?.pcbY !== undefined
+      if (!hasCoords) descWithoutCoordsCount++
+      return (
+        hasCoords || (child.children ?? []).some(checkDescendantForCoords)
+      )
+    }
+
+    const anyDescendantHasPcbCoords = this.children.some(checkDescendantForCoords)
+    const hasManualEdits =
+      (props.manualEdits?.pcb_placements?.length ?? 0) > 0
+    const isBoard = this.lowercaseComponentName === "board"
+    const hasExplicitBoardDimensions =
+      isBoard &&
+      (props.width !== undefined ||
+        props.height !== undefined ||
+        props.outline !== undefined)
+    if (
+      !anyDescendantHasPcbCoords &&
+      !hasManualEdits &&
+      !hasExplicitBoardDimensions &&
+      descWithoutCoordsCount > 1
+    )
+      return "pack"
     return "none"
   }
 
