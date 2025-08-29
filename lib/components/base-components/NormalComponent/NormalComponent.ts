@@ -1005,9 +1005,10 @@ export class NormalComponent<
     const { db } = this.root!
     const { boardThickness = 0 } = this.root?._getBoard() ?? {}
     const cadModel = this._parsedProps.cadModel as CadModelProp | undefined
+    const footprint = this.props.footprint ?? this._getImpliedFootprintString()
 
     if (!this.pcb_component_id) return
-    if (!cadModel && !this.props.footprint) return
+    if (!cadModel && !footprint) return
     if (cadModel === null) return
 
     // Use post-layout bounds
@@ -1075,9 +1076,7 @@ export class NormalComponent<
           : undefined,
 
       footprinter_string:
-        typeof this.props.footprint === "string" && !cadModel
-          ? this.props.footprint
-          : undefined,
+        typeof footprint === "string" && !cadModel ? footprint : undefined,
     })
   }
 
