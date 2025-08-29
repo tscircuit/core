@@ -50,6 +50,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     ...convertPackOutputToPackInput(
       convertCircuitJsonToPackOutput(db.toArray(), {
         source_group_id: group.source_group_id!,
+        shouldAddInnerObstacles: true,
       }),
     ),
     // @ts-expect-error we're missing some pack order strategies
@@ -58,6 +59,15 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       packPlacementStrategy ?? "minimum_sum_squared_distance_to_network",
     minGap: gapMm,
   }
+
+  if (debug.enabled) {
+    global.debugOutputs?.add(
+      `packInput-circuitjson-${group.name}`,
+      JSON.stringify(db.toArray()),
+    )
+    global.debugOutputs?.add(`packInput-${group.name}`, packInput)
+  }
+
   const packOutput = pack(packInput)
 
   if (debug.enabled) {

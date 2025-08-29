@@ -48,6 +48,7 @@ import type { INormalComponent } from "./INormalComponent"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
+import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 
 const debug = Debug("tscircuit:core")
 
@@ -1215,6 +1216,10 @@ export class NormalComponent<
         }
       }
     }
+  }
+
+  doInitialSourceDesignRuleChecks(): void {
+    NormalComponent_doInitialSourceDesignRuleChecks(this)
   }
 
   /**
