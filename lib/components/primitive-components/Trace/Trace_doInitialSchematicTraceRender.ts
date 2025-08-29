@@ -26,7 +26,106 @@ import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/conv
 import { TraceConnectionError } from "../../../errors"
 
 export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
-  if (trace.root?._featureMspSchematicTraceRouting) return
+  if (trace.root?._featureMspSchematicTraceRouting) {
+    if (trace._couldNotFindPort) return
+    if (trace.root?.schematicDisabled) return
+    const { db } = trace.root!
+    const { parent } = trace
+
+    if (!parent) throw new Error("Trace has no parent")
+
+    let allPortsFound: boolean
+    let connectedPorts: Array<{ selector: string; port: Port }>
+
+    try {
+      const findConnectedPorts = trace._findConnectedPorts()
+      allPortsFound = findConnectedPorts.allPortsFound
+      connectedPorts = findConnectedPorts.portsWithSelectors ?? []
+    } catch (error) {
+      if (error instanceof TraceConnectionError) {
+        db.source_trace_not_connected_error.insert({
+          ...error.errorData,
+          error_type: "source_trace_not_connected_error",
+        })
+        return
+      }
+      throw error
+    }
+
+    const { netsWithSelectors } = trace._findConnectedNets()
+
+    if (!allPortsFound) return
+
+    // Only handle simple port-to-net connections in MSP mode by inserting a net label
+    const portsWithPosition = connectedPorts
+      .filter(({ port }) => port.schematic_port_id !== null)
+      .map(({ port }) => ({
+        port,
+        position: port._getGlobalSchematicPositionAfterLayout(),
+        schematic_port_id: port.schematic_port_id ?? undefined,
+        facingDirection: port.facingDirection,
+      }))
+
+    const isPortAndNetConnection =
+      portsWithPosition.length === 1 && netsWithSelectors.length === 1
+
+    if (!isPortAndNetConnection) return
+
+    const net = netsWithSelectors[0].net
+    const { port, position: anchorPos } = portsWithPosition[0]
+
+    // If a netlabel is already connected to this port for this trace/net, skip
+    let connectedNetLabel = trace
+      .getSubcircuit()
+      .selectAll("netlabel")
+      .find((nl: any) => {
+        const conn = nl._parsedProps.connection ?? nl._parsedProps.connectsTo
+        if (!conn) return false
+        if (Array.isArray(conn)) {
+          return conn.some((selector: string) => {
+            const targetPort = trace.getSubcircuit().selectOne(selector, {
+              port: true,
+            }) as Port | null
+            return targetPort === port
+          })
+        }
+        const targetPort = trace.getSubcircuit().selectOne(conn, {
+          port: true,
+        }) as Port | null
+        return targetPort === port
+      }) as NetLabel | undefined | SchematicNetLabel
+
+    if (!connectedNetLabel) {
+      const dbNetLabel = db.schematic_net_label.getWhere({
+        source_trace_id: trace.source_trace_id,
+      })
+
+      if (dbNetLabel) {
+        connectedNetLabel = dbNetLabel as SchematicNetLabel
+      }
+    }
+
+    if (connectedNetLabel) {
+      // Already has a matching netlabel connection; nothing else to do in MSP mode
+      return
+    }
+
+    // Insert a net label anchored at the port, using schDisplayLabel if provided, else the net name
+    const side = getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
+    db.schematic_net_label.insert({
+      text: trace.props.schDisplayLabel ?? net._parsedProps.name,
+      source_net_id: net.source_net_id!,
+      anchor_position: anchorPos,
+      center: computeSchematicNetLabelCenter({
+        anchor_position: anchorPos,
+        anchor_side: side,
+        text: trace.props.schDisplayLabel ?? net._parsedProps.name,
+      }),
+      anchor_side: side,
+    })
+
+    return
+  }
   if (trace._couldNotFindPort) return
   if (trace.root?.schematicDisabled) return
   // if (trace.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
