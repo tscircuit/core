@@ -18,6 +18,7 @@ export interface VoltageSourceProps extends CommonComponentProps {
   peakToPeakVoltage?: number | string
   waveShape?: WaveShape
   phase?: number | string
+  dutyCycle?: number
 }
 
 export const voltageSourceProps = commonComponentProps.extend({
@@ -26,6 +27,7 @@ export const voltageSourceProps = commonComponentProps.extend({
   peakToPeakVoltage: voltage.optional(),
   waveShape: z.enum(["sinewave", "square", "triangle", "sawtooth"]).optional(),
   phase: rotation.optional(),
+  dutyCycle: z.number().optional(),
 })
 
 export class VoltageSource extends NormalComponent<
@@ -33,9 +35,12 @@ export class VoltageSource extends NormalComponent<
   "terminal1" | "terminal2"
 > {
   get config() {
+    const isSquare = this.props.waveShape === "square"
     return {
       componentName: "VoltageSource",
-      schematicSymbolName: "ac_voltmeter" as BaseSymbolName,
+      schematicSymbolName: (isSquare
+        ? "square_wave"
+        : "ac_voltmeter") as BaseSymbolName,
       zodProps: voltageSourceProps,
       sourceFtype: "simple_voltage_source" as Ftype,
     }
@@ -73,6 +78,7 @@ export class VoltageSource extends NormalComponent<
       peak_to_peak_voltage: props.peakToPeakVoltage,
       wave_shape: props.waveShape,
       phase: props.phase,
+      duty_cycle: props.dutyCycle,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
     } as any)
@@ -95,6 +101,7 @@ export class VoltageSource extends NormalComponent<
       peak_to_peak_voltage: props.peakToPeakVoltage,
       wave_shape: props.waveShape,
       phase: props.phase,
+      duty_cycle: props.dutyCycle,
     } as SimulationAcVoltageSource)
   }
 
