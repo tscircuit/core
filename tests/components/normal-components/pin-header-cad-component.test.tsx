@@ -1,4 +1,4 @@
-import { it, expect } from "bun:test"
+import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("should render a pinheader with a cad component", async () => {
