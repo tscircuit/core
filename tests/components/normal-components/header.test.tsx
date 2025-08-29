@@ -9,7 +9,7 @@ test("header with default pinrow footprint", () => {
       <pinheader
         name="J1"
         pinCount={4}
-        pinLabels={["label1", "label2", "label3", "label4"]}
+        pinLabels={{ 1: "label1", 2: "label2", 3: "label3", 4: "label4" }}
         pitch="2.54mm"
         gender="male"
         showSilkscreenPinLabels={true}
