@@ -825,31 +825,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (props.flex) return "flex"
     if (props.grid) return "grid"
 
-    // Default to pcbPack when no descendants have explicit pcb coordinates and
-    // no manual edits are present. This provides sensible automatic placement
-    // for simple circuits that omit pcbX/pcbY positions.
+    // Default to pcbPack when there are multiple direct children without explicit
+    // pcb coordinates and no manual edits are present. If any direct child has
+    // explicit pcb coords, do not apply pack.
     const groupHasCoords = props.pcbX !== undefined || props.pcbY !== undefined
-    let descWithoutCoordsCount = 0
-    const checkDescendantForCoords = (child: any): boolean => {
-      const childProps = child._parsedProps
-      const hasCoordinates =
-        childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
-      if (!hasCoordinates) descWithoutCoordsCount++
-      return (
-        hasCoordinates || (child.children ?? []).some(checkDescendantForCoords)
-      )
-    }
-
-    const anyDescendantHasPcbCoords = this.children.some(
-      checkDescendantForCoords,
-    )
     const hasManualEdits = (props.manualEdits?.pcb_placements?.length ?? 0) > 0
-    if (
-      !groupHasCoords &&
-      !anyDescendantHasPcbCoords &&
-      !hasManualEdits &&
-      descWithoutCoordsCount > 1
-    )
+
+    const anyDirectChildHasPcbCoords = this.children.some((child) => {
+      const childProps = (child as any)._parsedProps
+      return childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
+    })
+    if (anyDirectChildHasPcbCoords) return "none"
+
+    const unpositionedDirectChildrenCount = this.children.reduce((count, child) => {
+      const childProps = (child as any)._parsedProps
+      const hasCoords = childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
+      return count + (hasCoords ? 0 : 1)
+    }, 0)
+
+    if (!groupHasCoords && !hasManualEdits && unpositionedDirectChildrenCount > 1)
       return "pack"
     return "none"
   }
