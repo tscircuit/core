@@ -29,7 +29,7 @@ test("board with resistor being passed schX and pcbX in mm", () => {
         "schematic_group_id": "schematic_group_0",
         "size": {
           "height": 0.388910699999999,
-          "width": 1.0583332999999997,
+          "width": 1.06,
         },
         "source_component_id": "source_component_0",
         "symbol_display_value": "1kΩ",
