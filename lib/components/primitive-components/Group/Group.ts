@@ -837,13 +837,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
     if (anyDirectChildHasPcbCoords) return "none"
 
-    const unpositionedDirectChildrenCount = this.children.reduce((count, child) => {
-      const childProps = (child as any)._parsedProps
-      const hasCoords = childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
-      return count + (hasCoords ? 0 : 1)
-    }, 0)
+    const unpositionedDirectChildrenCount = this.children.reduce(
+      (count, child) => {
+        const childProps = (child as any)._parsedProps
+        const hasCoords =
+          childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
+        return count + (hasCoords ? 0 : 1)
+      },
+      0,
+    )
 
-    if (!groupHasCoords && !hasManualEdits && unpositionedDirectChildrenCount > 1)
+    if (
+      !groupHasCoords &&
+      !hasManualEdits &&
+      unpositionedDirectChildrenCount > 1
+    )
       return "pack"
     return "none"
   }
