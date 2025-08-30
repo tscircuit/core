@@ -39,17 +39,21 @@ export const insertNetLabelsForPortsMissingTrace = ({
     }
 
     // Avoid duplicate labels at this port anchor position
+    // Use a larger tolerance to account for floating-point precision issues
+    // between solver placements and port positions
     const existingAtPort = db.schematic_net_label.list().some((nl) => {
       const samePos =
-        Math.abs(nl.anchor_position!.x - sp.center.x) < 1e-6 &&
-        Math.abs(nl.anchor_position!.y - sp.center.y) < 1e-6
+        Math.abs(nl.anchor_position!.x - sp.center.x) < 0.1 &&
+        Math.abs(nl.anchor_position!.y - sp.center.y) < 0.1
       if (!samePos) return false
       if (sourceNet.source_net_id && nl.source_net_id) {
         return nl.source_net_id === sourceNet.source_net_id
       }
       return nl.text === (sourceNet.name || key)
     })
-    if (existingAtPort) continue
+    if (existingAtPort) {
+      continue
+    }
     const text = sourceNet.name || sourceNet.source_net_id || key
     const side =
       getEnteringEdgeFromDirection((sp.facing_direction as any) || "right") ||

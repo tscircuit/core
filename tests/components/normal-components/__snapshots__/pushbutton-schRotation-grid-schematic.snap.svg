@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(65.955326259,0,0,-65.955326259,626.49865158,300)" data-software-used-string="@tscircuit/core@0.0.661"><style>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(65.955326259,0,0,-65.955326259,626.49865158,300)" data-software-used-string="@tscircuit/core@0.0.671"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -73,60 +73,4 @@
     L 834.785571905922,428.7096206835632
     L 834.785571905922,461.98628129210397
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.31910652518px"/><text class="net-label-text" x="827.66239666995" y="459.61188954677993" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.87195872662px" transform="rotate(-90 827.66239666995 459.61188954677993)">PIN2</text><path class="net-label" d="
-    M 397.63366946127,105.43178753594998
-    L 394.072081843284,112.55496277192198
-    L 360.79542123474323,112.55496277192198
-    L 360.79542123474323,98.30861229997798
-    L 394.072081843284,98.30861229997798
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.31910652518px"/><text class="net-label-text" x="391.69769009796" y="105.43178753594998" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.87195872662px" transform="">PIN1</text><path class="net-label" d="
-    M 459.63167614472997,105.43178753594998
-    L 463.19326376271596,98.30861229997798
-    L 496.46992437125675,98.30861229997798
-    L 496.46992437125675,112.55496277192198
-    L 463.19326376271596,112.55496277192198
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.31910652518px"/><text class="net-label-text" x="465.56765550804" y="105.43178753594998" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.87195872662px" transform="">PIN2</text><path class="net-label" d="
-    M 827.66239666995,133.13302456472996
-    L 834.785571905922,136.69461218271596
-    L 834.785571905922,169.97127279125675
-    L 820.539221433978,169.97127279125675
-    L 820.539221433978,136.69461218271596
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.31910652518px"/><text class="net-label-text" x="827.66239666995" y="139.06900392803996" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.87195872662px" transform="rotate(90 827.66239666995 139.06900392803996)">PIN1</text><path class="net-label" d="
-    M 827.66239666995,71.13501788127002
-    L 820.539221433978,67.57343026328401
-    L 820.539221433978,34.296769654743215
-    L 834.785571905922,34.296769654743215
-    L 834.785571905922,67.57343026328402
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.31910652518px"/><text class="net-label-text" x="827.66239666995" y="65.19903851796002" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.87195872662px" transform="rotate(-90 827.66239666995 65.19903851796002)">PIN2</text><path class="net-label" d="
-    M 397.63366946127,501.16374508995
-    L 394.072081843284,508.286920325922
-    L 360.79542123474323,508.286920325922
-    L 360.79542123474323,494.040569853978
-    L 394.072081843284,494.040569853978
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.31910652518px"/><text class="net-label-text" x="391.69769009796" y="501.16374508995" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.87195872662px" transform="">PIN1</text><path class="net-label" d="
-    M 459.63167614472997,501.16374508995
-    L 463.19326376271596,494.040569853978
-    L 496.46992437125675,494.040569853978
-    L 496.46992437125675,508.286920325922
-    L 463.19326376271596,508.286920325922
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.31910652518px"/><text class="net-label-text" x="465.56765550804" y="501.16374508995" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.87195872662px" transform="">PIN2</text><path class="net-label" d="
-    M 827.66239666995,528.86498211873
-    L 834.785571905922,532.426569736716
-    L 834.785571905922,565.7032303452569
-    L 820.539221433978,565.7032303452569
-    L 820.539221433978,532.426569736716
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.31910652518px"/><text class="net-label-text" x="827.66239666995" y="534.8009614820401" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.87195872662px" transform="rotate(90 827.66239666995 534.8009614820401)">PIN1</text><path class="net-label" d="
-    M 827.66239666995,466.86697543527004
-    L 820.539221433978,463.30538781728404
-    L 820.539221433978,430.02872720874325
-    L 834.785571905922,430.02872720874325
-    L 834.785571905922,463.30538781728404
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.31910652518px"/><text class="net-label-text" x="827.66239666995" y="460.93099607196" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.87195872662px" transform="rotate(-90 827.66239666995 460.93099607196)">PIN2</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.31910652518px"/><text class="net-label-text" x="827.66239666995" y="459.61188954677993" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.87195872662px" transform="rotate(-90 827.66239666995 459.61188954677993)">PIN2</text></svg>

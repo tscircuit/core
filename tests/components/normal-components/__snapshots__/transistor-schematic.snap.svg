@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(152.5708182882,0,0,-152.5708182882,443.9810812185,290.7236942481)" data-software-used-string="@tscircuit/core@0.0.661"><style>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(152.5708182882,0,0,-152.5708182882,443.9810812185,290.7236942481)" data-software-used-string="@tscircuit/core@0.0.671"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -59,18 +59,4 @@
     L 1123.7145908560885,307.2013426232256
     L 1048.7718049129248,307.2013426232256
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.051416365764px"/><text class="net-label-text" x="1054.2643543713" y="290.7236942481" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="27.462747291876px" transform="">base</text><path class="net-label" d="
-    M 199.86777195737997,290.7236942481
-    L 208.10659614494278,274.2460458729744
-    L 283.0493820881066,274.2460458729744
-    L 283.0493820881066,307.2013426232256
-    L 208.10659614494278,307.2013426232256
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.051416365764px"/><text class="net-label-text" x="213.59914560331796" y="290.7236942481" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="27.462747291876px" transform="">base</text><path class="net-label" d="
-    M 1039.00727254248,290.7236942481
-    L 1047.2460967300428,274.2460458729744
-    L 1122.1888826732065,274.2460458729744
-    L 1122.1888826732065,307.2013426232256
-    L 1047.2460967300428,307.2013426232256
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.051416365764px"/><text class="net-label-text" x="1052.738646188418" y="290.7236942481" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="27.462747291876px" transform="">base</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.051416365764px"/><text class="net-label-text" x="1054.2643543713" y="290.7236942481" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="27.462747291876px" transform="">base</text></svg>
