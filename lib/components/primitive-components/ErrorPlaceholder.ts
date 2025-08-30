@@ -33,9 +33,10 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
       this.root.db.source_failed_to_create_component_error.insert({
         component_name: this._parsedProps.component_name,
         error_type: "source_failed_to_create_component_error",
-        message:
+        message: `${this._parsedProps.componentType ?? "component"}${this._parsedProps.name ? ` "${this._parsedProps.name}"` : ""} ${
           this._parsedProps.error?.formattedError?._errors?.join("; ") ||
-          this._parsedProps.message,
+          this._parsedProps.message
+        }`,
 
         pcb_center: pcbPosition,
         schematic_center: schematicPosition,

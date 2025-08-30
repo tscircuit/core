@@ -76,7 +76,10 @@ const hostConfig: HostConfig<
       const instance = prepare(new target(props) as any, {})
       return instance
     } catch (error: any) {
-      return createErrorPlaceholderComponent(props, error)
+      return createErrorPlaceholderComponent(
+        { ...props, componentType: type },
+        error,
+      )
     }
   },
   createTextInstance(text: string) {
