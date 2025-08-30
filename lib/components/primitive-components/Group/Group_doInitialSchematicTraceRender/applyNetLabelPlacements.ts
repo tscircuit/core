@@ -74,6 +74,27 @@ export function applyNetLabelPlacements(args: {
     }
 
     if (sourceNet) {
+      // Preserve power/ground symbols and their solver-provided orientation/anchor
+      const isPowerOrGround = Boolean(
+        sourceNet?.is_ground ||
+          sourceNet?.name?.startsWith("GND") ||
+          /^V/.test(sourceNet?.name ?? ""),
+      )
+
+      // Skip if routed traces exist only for non-power nets
+      if (!isPowerOrGround) {
+        if (
+          schPortIds.some((schPortId) =>
+            schematicPortIdsWithRoutedTraces.has(schPortId),
+          )
+        ) {
+          debug(
+            `skipping net label placement for "${placement.netId!}" REASON:routed trace exists for associated port(s)`,
+          )
+          continue
+        }
+      }
+
       const text = sourceNet.name
 
       const center = computeSchematicNetLabelCenter({
