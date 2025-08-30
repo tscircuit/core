@@ -153,6 +153,24 @@ export function createSchematicTraceSolverInputProblem(
     if (cg.subcircuit_id) allowedSubcircuitIds.add(cg.subcircuit_id)
   }
 
+  // Find all traces within the current subcircuit and identify any nets they
+  // connect to, even if those nets are in other subcircuits. This is necessary
+  // for traces that cross subcircuit boundaries.
+  const tracesInScope = db.source_trace
+    .list()
+    .filter((st) => st.subcircuit_id === group.subcircuit_id)
+
+  const externalNetIds = tracesInScope.flatMap(
+    (st) => st.connected_source_net_ids,
+  )
+
+  for (const netId of externalNetIds) {
+    const net = db.source_net.get(netId)
+    if (net?.subcircuit_id) {
+      allowedSubcircuitIds.add(net.subcircuit_id)
+    }
+  }
+
   // Direct connections derived from explicit source_traces
   const directConnections: Array<{ pinIds: [string, string]; netId?: string }> =
     []
