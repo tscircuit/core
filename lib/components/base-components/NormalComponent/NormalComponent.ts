@@ -49,6 +49,7 @@ import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
+import { filterPinLabels } from "lib/utils/filterPinLabels"
 
 const debug = Debug("tscircuit:core")
 
@@ -95,6 +96,7 @@ export class NormalComponent<
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false
+  protected _invalidPinLabelMessages: string[] = []
 
   /**
    * Override this property for component defaults
@@ -115,7 +117,19 @@ export class NormalComponent<
   }
 
   constructor(props: z.input<ZodProps>) {
-    super(props)
+    const filteredProps: any = { ...props }
+    let invalidPinLabelMessages: string[] = []
+
+    if (filteredProps.pinLabels) {
+      const { validPinLabels, invalidPinLabelsMessages } = filterPinLabels(
+        filteredProps.pinLabels,
+      )
+      filteredProps.pinLabels = validPinLabels
+      invalidPinLabelMessages = invalidPinLabelsMessages
+    }
+
+    super(filteredProps)
+    this._invalidPinLabelMessages = invalidPinLabelMessages
     this._addChildrenFromStringFootprint()
     this.initPorts()
   }
@@ -424,6 +438,28 @@ export class NormalComponent<
   doInitialSchematicComponentRender() {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
+    const props: any = this._parsedProps
+
+    if (props?.noSchematicRepresentation === true) return
+
+    if (this._invalidPinLabelMessages?.length) {
+      for (const message of this._invalidPinLabelMessages) {
+        let property_name = "pinLabels"
+        const match = message.match(
+          /^Invalid pin label:\s*([^=]+)=\s*'([^']+)'/,
+        )
+        if (match) {
+          const label = match[2]
+          property_name = `pinLabels['${label}']`
+        }
+        db.source_property_ignored_warning.insert({
+          source_component_id: this.source_component_id!,
+          property_name,
+          message,
+          error_type: "source_property_ignored_warning",
+        })
+      }
+    }
 
     const { schematicSymbolName } = this.config
 
