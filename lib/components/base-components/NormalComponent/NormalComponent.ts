@@ -1205,10 +1205,19 @@ export class NormalComponent<
     if (props.connections) {
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
+
+        let resolvedPinName = pinName
+        const port = this.children.find(
+          (c) => c instanceof Port && c.isMatchingNameOrAlias(pinName),
+        ) as Port | undefined
+        if (port?.props.name) {
+          resolvedPinName = port.props.name
+        }
+
         for (const targetPath of targets) {
           this.add(
             new Trace({
-              from: `${this.getSubcircuitSelector()} > port.${pinName}`,
+              from: `${this.getSubcircuitSelector()} > port.${resolvedPinName}`,
               to: targetPath as string,
             }),
           )
