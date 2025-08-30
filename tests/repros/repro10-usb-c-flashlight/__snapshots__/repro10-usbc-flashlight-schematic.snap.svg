@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(98.8022966045,0,0,-98.8022966045,780.8806578037,279.1164879077)" data-software-used-string="@tscircuit/core@0.0.661"><style>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(98.8022966045,0,0,-98.8022966045,780.8806578037,279.1164879077)" data-software-used-string="@tscircuit/core@0.0.671"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -31,18 +31,4 @@
     L 893.3703658978101,492.331843980211
     L 835.617130122593,492.331843980211
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9760459320900001px"/><text class="net-label-text" x="839.1740128003551" y="481.661195946925" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.78441338881px" transform="">VBUS</text><path class="net-label" d="
-    M 834.2338979701301,81.51189469869999
-    L 839.5692219867731,70.84124666541399
-    L 888.3512092303016,70.84124666541399
-    L 888.3512092303016,92.18254273198599
-    L 839.5692219867731,92.18254273198599
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9760459320900001px"/><text class="net-label-text" x="843.1261046645351" y="81.51189469869999" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.78441338881px" transform="">GND</text><path class="net-label" d="
-    M 827.3177372078151,481.661195946925
-    L 832.653061224458,470.990547913639
-    L 890.4062969996751,470.990547913639
-    L 890.4062969996751,492.331843980211
-    L 832.653061224458,492.331843980211
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9760459320900001px"/><text class="net-label-text" x="836.2099439022201" y="481.661195946925" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.78441338881px" transform="">VBUS</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9760459320900001px"/><text class="net-label-text" x="839.1740128003551" y="481.661195946925" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.78441338881px" transform="">VBUS</text></svg>
