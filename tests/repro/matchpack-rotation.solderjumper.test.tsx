@@ -1,11 +1,11 @@
-import { it, expect } from "bun:test";
+import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 /**
  * Repro for Issue #1226:
  * Solderjumpers placed by matchpack should inherit group rotation
  */
-it("matchpack: solderjumper should inherit group rotation", async () => {
+test("matchpack: solderjumper should inherit group rotation", async () => {
   const { circuit } = getTestFixture();
 
   circuit.add(
