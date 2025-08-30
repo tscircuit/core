@@ -6,10 +6,13 @@ export function Group_doInitialSchematicLayoutGrid(group: Group<any>) {
   const { db } = group.root!
   const props = group._parsedProps
 
-  // 1. Identify children with schematic components
-  const schematicChildren = group.children.filter(
-    (child) => child.schematic_component_id,
-  ) as PrimitiveComponent[]
+  // 1. Identify children with schematic components that are not explicitly positioned
+  const schematicChildren = group.children.filter((child: any) => {
+    const isExplicitlyPositioned =
+      child._parsedProps?.schX !== undefined ||
+      child._parsedProps?.schY !== undefined
+    return child.schematic_component_id && !isExplicitlyPositioned
+  }) as PrimitiveComponent[]
 
   if (schematicChildren.length === 0) return
 
