@@ -153,6 +153,28 @@ export function createSchematicTraceSolverInputProblem(
     if (cg.subcircuit_id) allowedSubcircuitIds.add(cg.subcircuit_id)
   }
 
+  // Find all traces that are either in this subcircuit or connected to ports
+  // within this subcircuit. This is necessary for traces that cross subcircuit
+  // boundaries.
+  const tracesInScope = db.source_trace.list().filter((st) => {
+    if (st.subcircuit_id === group.subcircuit_id) return true
+    for (const source_port_id of st.connected_source_port_ids) {
+      if (sourcePortIdToSchPortId.has(source_port_id)) return true
+    }
+    return false
+  })
+
+  const externalNetIds = tracesInScope.flatMap(
+    (st) => st.connected_source_net_ids,
+  )
+
+  for (const netId of externalNetIds) {
+    const net = db.source_net.get(netId)
+    if (net?.subcircuit_id) {
+      allowedSubcircuitIds.add(net.subcircuit_id)
+    }
+  }
+
   // Direct connections derived from explicit source_traces
   const directConnections: Array<{ pinIds: [string, string]; netId?: string }> =
     []
@@ -195,7 +217,9 @@ export function createSchematicTraceSolverInputProblem(
   const netConnections: Array<{ netId: string; pinIds: string[] }> = []
   for (const net of db.source_net
     .list()
-    .filter((n) => allowedSubcircuitIds.has(n.subcircuit_id!))) {
+    .filter(
+      (n) => !n.subcircuit_id || allowedSubcircuitIds.has(n.subcircuit_id!),
+    )) {
     if (net.subcircuit_connectivity_map_key) {
       allScks.add(net.subcircuit_connectivity_map_key)
       sckToSourceNet.set(net.subcircuit_connectivity_map_key, net)
