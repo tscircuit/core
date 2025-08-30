@@ -29,8 +29,13 @@ export default test("pinheader connections using labels", async () => {
 
   await circuit.render()
 
-  const traces = circuit.selectAll("trace")
-  expect(traces.length).toBeGreaterThan(0)
+  const traces = circuit.selectAll("trace").map((t) => ({
+    from: t._parsedProps.from,
+    to: t._parsedProps.to,
+  }))
+  for (const label of ["VCC", "OUT", "GND"]) {
+    expect(traces.some((t) => t.from.includes(`port.${label}`))).toBe(true)
+  }
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

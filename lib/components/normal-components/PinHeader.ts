@@ -63,20 +63,24 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
           ? Object.keys(this._parsedProps.pinLabels).length
           : 1)
     for (let i = 1; i <= pinCount; i++) {
-      const label = Array.isArray(this._parsedProps.pinLabels)
+      const rawLabel = Array.isArray(this._parsedProps.pinLabels)
         ? this._parsedProps.pinLabels[i - 1]
-        : this._parsedProps.pinLabels?.[i]
-      if (label) {
+        : this._parsedProps.pinLabels?.[`pin${i}`]
+      if (rawLabel) {
+        const primaryLabel = Array.isArray(rawLabel) ? rawLabel[0] : rawLabel
+        const otherLabels = Array.isArray(rawLabel) ? rawLabel.slice(1) : []
         this.add(
           new Port({
             pinNumber: i,
-            name: label,
+            name: primaryLabel,
+            aliases: [`pin${i}`, ...otherLabels],
           }),
         )
       } else {
         this.add(
           new Port({
             pinNumber: i,
+            name: `pin${i}`,
           }),
         )
       }
