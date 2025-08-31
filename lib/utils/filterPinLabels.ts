@@ -9,23 +9,51 @@ import { chipProps } from "@tscircuit/props"
  * ensuring consistency with the real validation logic.
  */
 export function filterPinLabels(
-  pinLabels: Record<string, string | string[] | readonly string[]> | undefined,
+  pinLabels:
+    | Record<string, string | string[] | readonly string[]>
+    | string[]
+    | readonly string[]
+    | undefined,
 ): {
-  validPinLabels: Record<string, string | string[]> | undefined
+  validPinLabels: Record<string, string | string[]> | string[] | undefined
   invalidPinLabelsMessages: string[]
 } {
-  if (!pinLabels)
+  if (!pinLabels) {
     return {
       validPinLabels: pinLabels as undefined,
       invalidPinLabelsMessages: [],
     }
+  }
 
-  const validPinLabels: Record<string, string | string[]> = {}
   const invalidPinLabelsMessages: string[] = []
 
+  // Handle array-style pinLabels
+  if (Array.isArray(pinLabels)) {
+    const validLabels: Array<string | undefined> = Array(pinLabels.length)
+    pinLabels.forEach((label, index) => {
+      const pinKey = `pin${index + 1}`
+      if (isValidPinLabel(pinKey, label)) {
+        validLabels[index] = label
+      } else {
+        invalidPinLabelsMessages.push(
+          `Invalid pin label: ${pinKey} = '${label}' - excluding from component. Please use a valid pin label.`,
+        )
+      }
+    })
+
+    return {
+      validPinLabels: validLabels.some(Boolean)
+        ? (validLabels as string[])
+        : undefined,
+      invalidPinLabelsMessages,
+    }
+  }
+
+  // Handle object-style pinLabels
+  const validPinLabels: Record<string, string | string[]> = {}
   for (const [pin, labelOrLabels] of Object.entries(pinLabels)) {
     const labels: string[] = Array.isArray(labelOrLabels)
-      ? (labelOrLabels as string[]).slice() // Convert readonly to mutable
+      ? (labelOrLabels as string[]).slice()
       : [labelOrLabels as string]
     const validLabels: string[] = []
 
@@ -39,7 +67,6 @@ export function filterPinLabels(
       }
     }
 
-    // Only include this pin if it has at least one valid label
     if (validLabels.length > 0) {
       validPinLabels[pin] = Array.isArray(labelOrLabels)
         ? validLabels
