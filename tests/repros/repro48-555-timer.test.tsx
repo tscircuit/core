@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
+import type { SmtPad } from "lib/components"
 
 test("repro48: 555 timer circuit", () => {
   const { circuit } = getTestFixture()
@@ -72,6 +73,16 @@ test("repro48: 555 timer circuit", () => {
   )
 
   circuit.render()
+
+  const r1Smtpads = circuit
+    .selectAll("smtpad")
+    .filter((smtpad) => smtpad.parent!.name === "R1")
+
+  // The smtpad for these elements should be wider than tall, because they're
+  // rotated 90 degrees by the autolayout algorithm (pcbPack)
+  const r1Pad1 = r1Smtpads[0]! as SmtPad
+  const pad1Bounds = r1Pad1._getPcbCircuitJsonBounds()
+  expect(pad1Bounds.width).toBeGreaterThan(pad1Bounds.height)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
