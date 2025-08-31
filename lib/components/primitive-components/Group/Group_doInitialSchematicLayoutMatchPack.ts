@@ -104,9 +104,16 @@ function convertTreeToInputProblem(
         availableRotations = [0]
       }
       if (component?._parsedProps?.schRotation !== undefined) {
-        // If explicitly set, only allow the specified rotation, which is a
-        // 0 offset
-        availableRotations = [0]
+        // If explicitly set, only allow the specified rotation
+        let normalizedRotation = component._parsedProps.schRotation % 360
+        if (normalizedRotation < 0) normalizedRotation += 360
+        // Only allow 0, 90, 180, 270
+        if (![0, 90, 180, 270].includes(normalizedRotation)) {
+          throw new Error(
+            `schRotation must be 0, 90, 180, or 270 (got ${component._parsedProps.schRotation})`,
+          )
+        }
+        availableRotations = [normalizedRotation as 0 | 90 | 180 | 270]
       }
 
       // Create chip entry
