@@ -94,6 +94,8 @@ function convertTreeToInputProblem(
           groupChild.source_component_id ===
           child.sourceComponent?.source_component_id,
       )
+      const cProps = (component as any)?._parsedProps
+      if (cProps?.schX !== undefined || cProps?.schY !== undefined) return
 
       // Determine availableRotations based on component props
       let availableRotations: (0 | 90 | 180 | 270)[] = [0, 90, 180, 270] // Default: allow all rotations
@@ -157,6 +159,13 @@ function convertTreeToInputProblem(
         `[${group.name}] Found schematic_group for ${groupId}:`,
         schematicGroup,
       )
+
+      // Skip nested groups with explicit schematic coordinates
+      const groupInstance = group.children.find(
+        (g: any) => g.source_group_id === child.sourceGroup?.source_group_id,
+      )
+      const gProps = (groupInstance as any)?._parsedProps
+      if (gProps?.schX !== undefined || gProps?.schY !== undefined) return
 
       if (schematicGroup) {
         // For nested groups, we need to find their actual components and treat the group as a chip

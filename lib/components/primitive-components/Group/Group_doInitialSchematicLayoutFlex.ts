@@ -80,6 +80,25 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
     source_group_id: group.source_group_id!,
   })
 
+  // Filter out children with explicit schematic coordinates
+  const treeChildren = tree.childNodes.filter((child) => {
+    if (child.nodeType === "component" && child.sourceComponent) {
+      const instance = group.children.find(
+        (c: any) =>
+          c.source_component_id === child.sourceComponent?.source_component_id,
+      )
+      const cProps = (instance as any)?._parsedProps
+      return cProps?.schX === undefined && cProps?.schY === undefined
+    }
+    if (child.nodeType === "group" && child.sourceGroup) {
+      const instance = group.children.find(
+        (g: any) => g.source_group_id === child.sourceGroup?.source_group_id,
+      )
+      const gProps = (instance as any)?._parsedProps
+      return gProps?.schX === undefined && gProps?.schY === undefined
+    }
+    return true
+  })
   const rawJustify = props.schJustifyContent ?? props.justifyContent
   const rawAlign = props.schAlignItems ?? props.alignItems
   const rawGap = props.schFlexGap ?? props.schGap ?? props.gap
@@ -133,7 +152,7 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
 
   if (isInline) {
     minFlexContainer = getMinimumFlexContainer(
-      tree.childNodes
+      treeChildren
         .map((child) => getSizeOfTreeNodeChild(db, child))
         .filter((size) => size !== null),
       {
@@ -156,7 +175,7 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
     columnGap,
   })
 
-  for (const child of tree.childNodes) {
+  for (const child of treeChildren) {
     const size = getSizeOfTreeNodeChild(db, child)
     flexBox.addChild({
       metadata: child,

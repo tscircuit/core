@@ -8,8 +8,12 @@ export function Group_doInitialSchematicLayoutGrid(group: Group<any>) {
 
   // 1. Identify children with schematic components
   const schematicChildren = group.children.filter(
-    (child) => child.schematic_component_id,
-  ) as PrimitiveComponent[]
+    (child): child is PrimitiveComponent => {
+      if (!child.schematic_component_id) return false
+      const { schX, schY } = child._parsedProps ?? {}
+      return schX === undefined && schY === undefined
+    },
+  )
 
   if (schematicChildren.length === 0) return
 
