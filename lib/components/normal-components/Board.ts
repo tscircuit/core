@@ -231,120 +231,12 @@ export class Board extends Group<typeof boardProps> {
   _computePcbGlobalTransformBeforeLayout(): Matrix {
     return identity()
   }
-  private _adjustPassiveSilkscreenTextPositions() {
-    if (!this.root) return
-    const { db } = this.root
-    const passiveFtypes = new Set([
-      "simple_resistor",
-      "simple_capacitor",
-      "simple_inductor",
-    ])
-    const components = db.pcb_component.list()
 
-    const getAabb = (comp: any) => {
-      const rotation = ((comp.rotation ?? 0) * Math.PI) / 180
-      const width = comp.width ?? 0
-      const height = comp.height ?? 0
-      const wRot =
-        Math.abs(width * Math.cos(rotation)) +
-        Math.abs(height * Math.sin(rotation))
-      const hRot =
-        Math.abs(width * Math.sin(rotation)) +
-        Math.abs(height * Math.cos(rotation))
-      return {
-        left: comp.center.x - wRot / 2,
-        right: comp.center.x + wRot / 2,
-        bottom: comp.center.y - hRot / 2,
-        top: comp.center.y + hRot / 2,
-        width: wRot,
-        height: hRot,
-        center: comp.center,
-      }
-    }
-
-    const componentBounds = new Map<string, any>()
-    for (const comp of components) {
-      componentBounds.set(comp.pcb_component_id, getAabb(comp))
-    }
-
-    const boxesOverlap = (a: any, b: any) =>
-      !(
-        a.right < b.left ||
-        a.left > b.right ||
-        a.top < b.bottom ||
-        a.bottom > b.top
-      )
-
-    const texts = db.pcb_silkscreen_text.list()
-    for (const text of texts) {
-      const comp = db.pcb_component.get(text.pcb_component_id)
-      if (!comp) continue
-      const source = db.source_component.get(comp.source_component_id)
-      if (!source || !passiveFtypes.has(source.ftype)) continue
-
-      const fontSize = text.font_size ?? 1
-      const textWidth = (text.text?.length ?? 0) * fontSize
-      const textHeight = fontSize
-      const currentBounds = {
-        left: text.anchor_position.x - textWidth / 2,
-        right: text.anchor_position.x + textWidth / 2,
-        bottom: text.anchor_position.y - textHeight / 2,
-        top: text.anchor_position.y + textHeight / 2,
-      }
-
-      let overlaps = false
-      for (const other of components) {
-        if (other.pcb_component_id === comp.pcb_component_id) continue
-        const otherBounds = componentBounds.get(other.pcb_component_id)
-        if (boxesOverlap(currentBounds, otherBounds)) {
-          overlaps = true
-          break
-        }
-      }
-      if (!overlaps) continue
-
-      const compBounds = componentBounds.get(comp.pcb_component_id)
-      const margin = 0.2
-      const cx = (compBounds.left + compBounds.right) / 2
-      const cy = (compBounds.top + compBounds.bottom) / 2
-      const candidates = [
-        { x: cx, y: compBounds.top + textHeight / 2 + margin },
-        { x: cx, y: compBounds.bottom - textHeight / 2 - margin },
-        { x: compBounds.right + textWidth / 2 + margin, y: cy },
-        { x: compBounds.left - textWidth / 2 - margin, y: cy },
-      ]
-
-      for (const cand of candidates) {
-        const candBounds = {
-          left: cand.x - textWidth / 2,
-          right: cand.x + textWidth / 2,
-          bottom: cand.y - textHeight / 2,
-          top: cand.y + textHeight / 2,
-        }
-        let candOverlaps = false
-        for (const other of components) {
-          if (other.pcb_component_id === comp.pcb_component_id) continue
-          const otherBounds = componentBounds.get(other.pcb_component_id)
-          if (boxesOverlap(candBounds, otherBounds)) {
-            candOverlaps = true
-            break
-          }
-        }
-        if (!candOverlaps) {
-          db.pcb_silkscreen_text.update(text.pcb_silkscreen_text_id, {
-            anchor_position: { x: cand.x, y: cand.y },
-          })
-          break
-        }
-      }
-    }
-  }
   doInitialPcbDesignRuleChecks() {
     if (this.root?.pcbDisabled) return
     if (this.getInheritedProperty("routingDisabled")) return
 
     super.doInitialPcbDesignRuleChecks()
-    this._adjustPassiveSilkscreenTextPositions()
   }
 
   updatePcbDesignRuleChecks() {
