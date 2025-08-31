@@ -103,6 +103,9 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
       const originalCenter = pcbComponent.center
       const rotationDegrees = ccwRotationDegrees ?? ccwRotationOffset ?? 0
+      const rotationTurns = Math.round(rotationDegrees / 90)
+      const normalized = ((rotationDegrees % 360) + 360) % 360
+      const shouldSwap = rotationTurns % 2 !== 0 && normalized > 180
       const transformMatrix = compose(
         group._computePcbGlobalTransformBeforeLayout(),
         translate(center.x, center.y),
@@ -117,6 +120,15 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
             "pcb_component_id" in elm && elm.pcb_component_id === componentId,
         )
       transformPCBElements(related as any, transformMatrix)
+      if (shouldSwap) {
+        for (const elm of related as any) {
+          if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
+            ;[elm.width, elm.height] = [elm.height, elm.width]
+          } else if (elm.type === "pcb_component") {
+            ;[elm.width, elm.height] = [elm.height, elm.width]
+          }
+        }
+      }
       continue
     }
 
@@ -127,6 +139,9 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
     const originalCenter = pcbGroup.center
     const rotationDegrees = ccwRotationDegrees ?? ccwRotationOffset ?? 0
+    const rotationTurns = Math.round(rotationDegrees / 90)
+    const normalized = ((rotationDegrees % 360) + 360) % 360
+    const shouldSwap = rotationTurns % 2 !== 0 && normalized > 180
     const transformMatrix = compose(
       group._computePcbGlobalTransformBeforeLayout(),
       translate(center.x, center.y),
@@ -199,6 +214,15 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     })
 
     transformPCBElements(relatedElements as any, transformMatrix)
+    if (shouldSwap) {
+      for (const elm of relatedElements as any) {
+        if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
+          ;[elm.width, elm.height] = [elm.height, elm.width]
+        } else if (elm.type === "pcb_component") {
+          ;[elm.width, elm.height] = [elm.height, elm.width]
+        }
+      }
+    }
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 }
