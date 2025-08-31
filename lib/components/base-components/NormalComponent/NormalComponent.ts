@@ -440,8 +440,6 @@ export class NormalComponent<
     const { db } = this.root!
     const props: any = this._parsedProps
 
-    if (props?.noSchematicRepresentation === true) return
-
     if (this._invalidPinLabelMessages?.length) {
       for (const message of this._invalidPinLabelMessages) {
         let property_name = "pinLabels"
@@ -460,6 +458,9 @@ export class NormalComponent<
         })
       }
     }
+
+    if (this.root?.schematicDisabled) return
+    if (props?.noSchematicRepresentation === true) return
 
     const { schematicSymbolName } = this.config
 

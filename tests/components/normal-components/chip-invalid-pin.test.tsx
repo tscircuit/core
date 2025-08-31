@@ -24,7 +24,6 @@ test("chip with invalid pin should be skipped", async () => {
   const source_property_ignored_warning = circuit
     .getCircuitJson()
     .filter((el) => el.type === "source_property_ignored_warning")
-  console.log(source_property_ignored_warning)
 
   expect(source_property_ignored_warning).toHaveLength(1)
   expect(source_property_ignored_warning[0].message).toContain(
