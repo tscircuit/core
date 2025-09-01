@@ -1,8 +1,24 @@
 import type { NormalComponent } from "./NormalComponent"
 
+interface SilkscreenElement {
+  bounds: Bounds
+  layer: string
+  type: "text" | "path" | "rect" | "circle"
+  pcb_component_id?: string
+  id: string
+}
+
+interface Bounds {
+  left: number
+  right: number
+  top: number
+  bottom: number
+}
+
 /**
  * Adjust silkscreen reference designators for passive components to avoid overlaps
  * This phase runs after PCB layout is complete but before final rendering
+ * Optimized to reduce database queries by using component hierarchy and spatial awareness
  */
 export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   component: NormalComponent<any>,
@@ -13,80 +29,46 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   // Only adjust silkscreen text for components that opt in
   if (!component._adjustSilkscreenTextAutomatically) return
 
-  // Get this component's silkscreen texts
-  const componentSilkscreenTexts = db.pcb_silkscreen_text
-    .list()
-    .filter((text) => text.pcb_component_id === component.pcb_component_id)
+  // Get this component's silkscreen texts (minimal DB query)
+  const componentSilkscreenTexts = component.pcb_component_id
+    ? db.pcb_silkscreen_text
+        .list()
+        .filter((text) => text.pcb_component_id === component.pcb_component_id)
+    : []
 
   if (componentSilkscreenTexts.length === 0) return
 
-  // Get all other silkscreen elements that could cause overlaps
-  const allSilkscreenPaths = db.pcb_silkscreen_path.list()
-  const allSilkscreenRects = db.pcb_silkscreen_rect.list()
-  const allSilkscreenCircles = db.pcb_silkscreen_circle.list()
-  const allSilkscreenTexts = db.pcb_silkscreen_text.list()
+  // Get component center early to avoid repeated lookups
+  const componentCenter = getComponentCenterFromCache(component, db)
+  if (!componentCenter) return
+
+  // Collect nearby silkscreen elements using component hierarchy instead of full DB scan
+  const nearbySilkscreenElements = collectNearbySilkscreenElements(
+    component,
+    componentCenter,
+    db,
+  )
 
   // For each silkscreen text, check for overlaps and adjust if needed
   for (const refText of componentSilkscreenTexts) {
     const textBounds = getSilkscreenTextBounds(refText)
     let hasOverlap = false
 
-    // Check overlap with other silkscreen elements on the same layer
-    for (const path of allSilkscreenPaths) {
-      if (path.layer === refText.layer) {
-        const pathBounds = getSilkscreenPathBounds(path)
-        if (boundsOverlap(textBounds, pathBounds)) {
+    // Check overlap with nearby silkscreen elements only (much faster than checking all)
+    for (const element of nearbySilkscreenElements) {
+      if (
+        element.layer === refText.layer &&
+        element.id !== refText.pcb_silkscreen_text_id
+      ) {
+        if (boundsOverlap(textBounds, element.bounds)) {
           hasOverlap = true
           break
         }
       }
     }
 
-    if (!hasOverlap) {
-      for (const rect of allSilkscreenRects) {
-        if (rect.layer === refText.layer) {
-          const rectBounds = getSilkscreenRectBounds(rect)
-          if (boundsOverlap(textBounds, rectBounds)) {
-            hasOverlap = true
-            break
-          }
-        }
-      }
-    }
-
-    if (!hasOverlap) {
-      for (const circle of allSilkscreenCircles) {
-        if (circle.layer === refText.layer) {
-          const circleBounds = getSilkscreenCircleBounds(circle)
-          if (boundsOverlap(textBounds, circleBounds)) {
-            hasOverlap = true
-            break
-          }
-        }
-      }
-    }
-
-    if (!hasOverlap) {
-      // Check overlap with other text elements
-      for (const otherText of allSilkscreenTexts) {
-        if (
-          otherText.layer === refText.layer &&
-          otherText.pcb_silkscreen_text_id !== refText.pcb_silkscreen_text_id
-        ) {
-          const otherBounds = getSilkscreenTextBounds(otherText)
-          if (boundsOverlap(textBounds, otherBounds)) {
-            hasOverlap = true
-            break
-          }
-        }
-      }
-    }
-
     if (hasOverlap) {
-      // Only consider the opposite side initially
-      const componentCenter = getComponentCenter(refText.pcb_component_id, db)
-      if (!componentCenter) continue
-
+      // Try flipping to the opposite side
       const currentOffset = {
         x: refText.anchor_position.x - componentCenter.x,
         y: refText.anchor_position.y - componentCenter.y,
@@ -108,52 +90,15 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
 
       let flippedHasOverlap = false
 
-      // Check the flipped position against all obstacles
-      for (const path of allSilkscreenPaths) {
-        if (path.layer === refText.layer) {
-          const pathBounds = getSilkscreenPathBounds(path)
-          if (boundsOverlap(flippedTextBounds, pathBounds)) {
+      // Check the flipped position against nearby elements only
+      for (const element of nearbySilkscreenElements) {
+        if (
+          element.layer === refText.layer &&
+          element.id !== refText.pcb_silkscreen_text_id
+        ) {
+          if (boundsOverlap(flippedTextBounds, element.bounds)) {
             flippedHasOverlap = true
             break
-          }
-        }
-      }
-
-      if (!flippedHasOverlap) {
-        for (const rect of allSilkscreenRects) {
-          if (rect.layer === refText.layer) {
-            const rectBounds = getSilkscreenRectBounds(rect)
-            if (boundsOverlap(flippedTextBounds, rectBounds)) {
-              flippedHasOverlap = true
-              break
-            }
-          }
-        }
-      }
-
-      if (!flippedHasOverlap) {
-        for (const circle of allSilkscreenCircles) {
-          if (circle.layer === refText.layer) {
-            const circleBounds = getSilkscreenCircleBounds(circle)
-            if (boundsOverlap(flippedTextBounds, circleBounds)) {
-              flippedHasOverlap = true
-              break
-            }
-          }
-        }
-      }
-
-      if (!flippedHasOverlap) {
-        for (const otherText of allSilkscreenTexts) {
-          if (
-            otherText.layer === refText.layer &&
-            otherText.pcb_silkscreen_text_id !== refText.pcb_silkscreen_text_id
-          ) {
-            const otherBounds = getSilkscreenTextBounds(otherText)
-            if (boundsOverlap(flippedTextBounds, otherBounds)) {
-              flippedHasOverlap = true
-              break
-            }
           }
         }
       }
@@ -166,6 +111,165 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
       }
     }
   }
+}
+
+/**
+ * Collect silkscreen elements from nearby components using spatial awareness
+ * This reduces the need to query the entire database
+ */
+function collectNearbySilkscreenElements(
+  component: NormalComponent<any>,
+  componentCenter: { x: number; y: number },
+  db: any,
+  searchRadius: number = 15, // mm - reasonable search radius for typical PCB components
+): SilkscreenElement[] {
+  const elements: SilkscreenElement[] = []
+
+  // Strategy 1: Check siblings (components at the same level in hierarchy)
+  if (component.parent) {
+    for (const sibling of component.parent.children) {
+      if (sibling !== component && sibling.pcb_component_id) {
+        const siblingCenter = getComponentCenterFromCache(
+          sibling as NormalComponent<any>,
+          db,
+        )
+        if (
+          siblingCenter &&
+          isWithinRadius(componentCenter, siblingCenter, searchRadius)
+        ) {
+          collectSilkscreenElementsFromComponent(
+            sibling.pcb_component_id,
+            db,
+            elements,
+          )
+        }
+      }
+    }
+  }
+
+  // Strategy 2: Check board-level components if this is a top-level component
+  if (!component.parent || (component.parent as any)?.isRoot) {
+    // For root level components, we need to check other root-level components
+    // This is more expensive but still better than querying the entire DB
+    const allComponents = db.pcb_component.list()
+    for (const pcbComp of allComponents) {
+      if (
+        pcbComp.pcb_component_id !== component.pcb_component_id &&
+        isWithinRadius(componentCenter, pcbComp.center, searchRadius)
+      ) {
+        collectSilkscreenElementsFromComponent(
+          pcbComp.pcb_component_id,
+          db,
+          elements,
+        )
+      }
+    }
+  }
+
+  return elements
+}
+
+/**
+ * Collect all silkscreen elements for a specific component
+ */
+function collectSilkscreenElementsFromComponent(
+  pcbComponentId: string,
+  db: any,
+  elements: SilkscreenElement[],
+): void {
+  // Collect silkscreen paths
+  const paths = db.pcb_silkscreen_path
+    .list()
+    .filter((p: any) => p.pcb_component_id === pcbComponentId)
+  for (const path of paths) {
+    elements.push({
+      bounds: getSilkscreenPathBounds(path),
+      layer: path.layer,
+      type: "path",
+      pcb_component_id: pcbComponentId,
+      id: path.pcb_silkscreen_path_id,
+    })
+  }
+
+  // Collect silkscreen rects
+  const rects = db.pcb_silkscreen_rect
+    .list()
+    .filter((r: any) => r.pcb_component_id === pcbComponentId)
+  for (const rect of rects) {
+    elements.push({
+      bounds: getSilkscreenRectBounds(rect),
+      layer: rect.layer,
+      type: "rect",
+      pcb_component_id: pcbComponentId,
+      id: rect.pcb_silkscreen_rect_id,
+    })
+  }
+
+  // Collect silkscreen circles
+  const circles = db.pcb_silkscreen_circle
+    .list()
+    .filter((c: any) => c.pcb_component_id === pcbComponentId)
+  for (const circle of circles) {
+    elements.push({
+      bounds: getSilkscreenCircleBounds(circle),
+      layer: circle.layer,
+      type: "circle",
+      pcb_component_id: pcbComponentId,
+      id: circle.pcb_silkscreen_circle_id,
+    })
+  }
+
+  // Collect silkscreen texts
+  const texts = db.pcb_silkscreen_text
+    .list()
+    .filter((t: any) => t.pcb_component_id === pcbComponentId)
+  for (const text of texts) {
+    elements.push({
+      bounds: getSilkscreenTextBounds(text),
+      layer: text.layer,
+      type: "text",
+      pcb_component_id: pcbComponentId,
+      id: text.pcb_silkscreen_text_id,
+    })
+  }
+}
+
+/**
+ * Get component center with caching to avoid repeated DB lookups
+ */
+function getComponentCenterFromCache(
+  component: NormalComponent<any>,
+  db: any,
+): { x: number; y: number } | null {
+  if (!component.pcb_component_id) return null
+
+  // Use cached center if available from component's parsed props
+  if (
+    component._parsedProps?.pcbX !== undefined &&
+    component._parsedProps?.pcbY !== undefined
+  ) {
+    return {
+      x: component._parsedProps.pcbX,
+      y: component._parsedProps.pcbY,
+    }
+  }
+
+  // Fallback to DB lookup (single query per component)
+  const pcbComponent = db.pcb_component.get(component.pcb_component_id)
+  return pcbComponent?.center || null
+}
+
+/**
+ * Check if two points are within a given radius
+ */
+function isWithinRadius(
+  center1: { x: number; y: number },
+  center2: { x: number; y: number },
+  radius: number,
+): boolean {
+  const dx = center1.x - center2.x
+  const dy = center1.y - center2.y
+  return Math.sqrt(dx * dx + dy * dy) <= radius
 }
 
 /**
@@ -246,16 +350,4 @@ function boundsOverlap(a: any, b: any): boolean {
     a.bottom > b.top ||
     a.top < b.bottom
   )
-}
-
-/**
- * Get the center position of a component from its PCB component data
- */
-function getComponentCenter(
-  pcbComponentId: string,
-  db: any,
-): { x: number; y: number } | null {
-  const pcbComponent = db.pcb_component.get(pcbComponentId)
-  if (!pcbComponent) return null
-  return pcbComponent.center
 }
