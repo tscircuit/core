@@ -121,7 +121,7 @@ function collectNearbySilkscreenElements(
   component: NormalComponent<any>,
   componentCenter: { x: number; y: number },
   db: any,
-  searchRadius: number = 15, // mm - reasonable search radius for typical PCB components
+  searchRadius: number = 15,
 ): SilkscreenElement[] {
   const elements: SilkscreenElement[] = []
 
