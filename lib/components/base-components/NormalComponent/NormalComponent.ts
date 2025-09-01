@@ -98,6 +98,11 @@ export class NormalComponent<
   _hasStartedFootprintUrlLoad = false
 
   /**
+   * Whether this component should automatically adjust its silkscreen text to avoid overlaps
+   */
+  _adjustSilkscreenTextAutomatically = false
+
+  /**
    * Override this property for component defaults
    */
   get defaultInternallyConnectedPinNames(): string[][] {

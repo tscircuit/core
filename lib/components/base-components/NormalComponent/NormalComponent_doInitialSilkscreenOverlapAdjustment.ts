@@ -10,16 +10,15 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   if (component.root?.pcbDisabled) return
   const { db } = component.root!
 
-  // Get this component's silkscreen texts that are reference designators
-  const componentSilkscreenTexts = db.pcb_silkscreen_text.list().filter((text) => 
-    text.pcb_component_id === component.pcb_component_id
-  )
-  const passiveReferenceTexts = componentSilkscreenTexts.filter((text) => {
-    // Check if this is a passive component reference designator
-    return /^(R\d+|C\d+|L\d+)$/i.test(text.text)
-  })
+  // Only adjust silkscreen text for components that opt in
+  if (!component._adjustSilkscreenTextAutomatically) return
 
-  if (passiveReferenceTexts.length === 0) return
+  // Get this component's silkscreen texts
+  const componentSilkscreenTexts = db.pcb_silkscreen_text
+    .list()
+    .filter((text) => text.pcb_component_id === component.pcb_component_id)
+
+  if (componentSilkscreenTexts.length === 0) return
 
   // Get all other silkscreen elements that could cause overlaps
   const allSilkscreenPaths = db.pcb_silkscreen_path.list()
@@ -27,8 +26,8 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   const allSilkscreenCircles = db.pcb_silkscreen_circle.list()
   const allSilkscreenTexts = db.pcb_silkscreen_text.list()
 
-  // For each passive reference designator, check for overlaps and adjust if needed
-  for (const refText of passiveReferenceTexts) {
+  // For each silkscreen text, check for overlaps and adjust if needed
+  for (const refText of componentSilkscreenTexts) {
     const textBounds = getSilkscreenTextBounds(refText)
     let hasOverlap = false
 
@@ -87,12 +86,12 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
       // Only consider the opposite side initially
       const componentCenter = getComponentCenter(refText.pcb_component_id, db)
       if (!componentCenter) continue
-      
+
       const currentOffset = {
         x: refText.anchor_position.x - componentCenter.x,
         y: refText.anchor_position.y - componentCenter.y,
       }
-      
+
       const flippedPosition = {
         x: componentCenter.x - currentOffset.x,
         y: componentCenter.y - currentOffset.y,
@@ -108,7 +107,7 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
       }
 
       let flippedHasOverlap = false
-      
+
       // Check the flipped position against all obstacles
       for (const path of allSilkscreenPaths) {
         if (path.layer === refText.layer) {
@@ -252,7 +251,10 @@ function boundsOverlap(a: any, b: any): boolean {
 /**
  * Get the center position of a component from its PCB component data
  */
-function getComponentCenter(pcbComponentId: string, db: any): { x: number; y: number } | null {
+function getComponentCenter(
+  pcbComponentId: string,
+  db: any,
+): { x: number; y: number } | null {
   const pcbComponent = db.pcb_component.get(pcbComponentId)
   if (!pcbComponent) return null
   return pcbComponent.center
