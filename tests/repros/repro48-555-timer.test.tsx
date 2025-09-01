@@ -73,5 +73,6 @@ test("repro48: 555 timer circuit", () => {
 
   circuit.render()
 
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
