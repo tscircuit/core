@@ -49,6 +49,7 @@ import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
+import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 
 const debug = Debug("tscircuit:core")
 
@@ -1219,6 +1220,10 @@ export class NormalComponent<
 
   doInitialSourceDesignRuleChecks(): void {
     NormalComponent_doInitialSourceDesignRuleChecks(this)
+  }
+
+  doInitialSilkscreenOverlapAdjustment(): void {
+    NormalComponent_doInitialSilkscreenOverlapAdjustment(this)
   }
 
   /**

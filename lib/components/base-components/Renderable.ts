@@ -45,6 +45,7 @@ export const orderedRenderPhases = [
   "PcbTraceRender",
   "PcbRouteNetIslands",
   "PcbDesignRuleChecks",
+  "SilkscreenOverlapAdjustment",
   "CadModelRender",
   "PartsEngineRender",
 ] as const
