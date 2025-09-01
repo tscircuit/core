@@ -120,14 +120,38 @@ export const createSchematicTraceJunctions = ({
   // Use a more efficient data structure for deduplication
   const junctions = new Map<string, { x: number; y: number }>()
 
+  // Helper function to check if a point is close to an edge endpoint
+  const isPointCloseToEndpoint = (
+    point: { x: number; y: number },
+    edge: SchematicTrace["edges"][number],
+  ): boolean => {
+    const distanceToFrom = Math.sqrt(
+      Math.pow(point.x - edge.from.x, 2) + Math.pow(point.y - edge.from.y, 2),
+    )
+    const distanceToTo = Math.sqrt(
+      Math.pow(point.x - edge.to.x, 2) + Math.pow(point.y - edge.to.y, 2),
+    )
+    return distanceToFrom < TOLERANCE || distanceToTo < TOLERANCE
+  }
+
   for (const myEdge of myEdges) {
     for (const otherEdge of otherEdges) {
       const intersection = getIntersectionPoint(myEdge, otherEdge)
       if (intersection) {
-        // Use a more precise key format to avoid floating-point issues
-        const key = `${intersection.x.toFixed(6)},${intersection.y.toFixed(6)}`
-        if (!junctions.has(key)) {
-          junctions.set(key, intersection)
+        // Only create junctions for T-intersections where at least one edge
+        // has an endpoint at the intersection point (not X-crossings)
+        const isMyEdgeEndpoint = isPointCloseToEndpoint(intersection, myEdge)
+        const isOtherEdgeEndpoint = isPointCloseToEndpoint(
+          intersection,
+          otherEdge,
+        )
+
+        if (isMyEdgeEndpoint || isOtherEdgeEndpoint) {
+          // Use a more precise key format to avoid floating-point issues
+          const key = `${intersection.x.toFixed(6)},${intersection.y.toFixed(6)}`
+          if (!junctions.has(key)) {
+            junctions.set(key, intersection)
+          }
         }
       }
     }
