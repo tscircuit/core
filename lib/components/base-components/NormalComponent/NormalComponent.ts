@@ -93,6 +93,12 @@ export class NormalComponent<
   isPrimitiveContainer = true
   _isNormalComponent = true
 
+  // Mapping from camelCase attribute names to their lowercase equivalents
+  // This is used by the CSS selector adapter for fast attribute lookups
+  _attributeCamelToLowerNameMap = {
+    _isNormalComponent: "_isnormalcomponent",
+  }
+
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false

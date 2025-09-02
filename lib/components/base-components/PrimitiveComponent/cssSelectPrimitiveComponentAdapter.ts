@@ -42,8 +42,7 @@ export const cssSelectPrimitiveComponentAdapter: Required<
           : null
     }
 
-    // Check for properties directly on the node (css-select converts names to lowercase)
-    // Try both the lowercase name and camelCase variants
+    // Check for properties directly on the node
     if (name in node) {
       const value = (node as any)[name]
       return typeof value === "string"
@@ -53,16 +52,20 @@ export const cssSelectPrimitiveComponentAdapter: Required<
           : null
     }
 
-    // Try to find a camelCase property that matches the lowercase attribute name
-    const nodeKeys = Object.keys(node)
-    const matchingKey = nodeKeys.find((key) => key.toLowerCase() === name)
-    if (matchingKey && matchingKey in node) {
-      const value = (node as any)[matchingKey]
-      return typeof value === "string"
-        ? value
-        : value !== null && value !== undefined
-          ? String(value)
-          : null
+    // Use pre-computed attribute mapping for fast camelCase->lowercase lookups
+    if ("_attributeCamelToLowerNameMap" in node) {
+      const attrMap = (node as any)._attributeCamelToLowerNameMap
+      // Find the camelCase property that maps to this lowercase name
+      for (const [camelCaseName, lowerCaseName] of Object.entries(attrMap)) {
+        if (lowerCaseName === name && camelCaseName in node) {
+          const value = (node as any)[camelCaseName]
+          return typeof value === "string"
+            ? value
+            : value !== null && value !== undefined
+              ? String(value)
+              : null
+        }
+      }
     }
 
     return null
@@ -82,10 +85,17 @@ export const cssSelectPrimitiveComponentAdapter: Required<
     if (name in node) {
       return true
     }
-    // Try to find a camelCase property that matches the lowercase attribute name
-    const nodeKeys = Object.keys(node)
-    const matchingKey = nodeKeys.find((key) => key.toLowerCase() === name)
-    return !!matchingKey && matchingKey in node
+    // Use pre-computed attribute mapping for fast camelCase->lowercase lookups
+    if ("_attributeCamelToLowerNameMap" in node) {
+      const attrMap = (node as any)._attributeCamelToLowerNameMap
+      // Find the camelCase property that maps to this lowercase name
+      for (const [camelCaseName, lowerCaseName] of Object.entries(attrMap)) {
+        if (lowerCaseName === name && camelCaseName in node) {
+          return true
+        }
+      }
+    }
+    return false
   },
 
   // Get the siblings of the node
