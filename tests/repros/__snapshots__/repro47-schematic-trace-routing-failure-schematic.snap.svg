@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(170.1001701002,0,0,-170.1001701002,608.505008505,286.7709142884)" data-software-used-string="@tscircuit/core@0.0.673"><style>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(170.1001701002,0,0,-170.1001701002,608.505008505,286.7709142884)" data-software-used-string="@tscircuit/core@0.0.675"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -38,11 +38,4 @@
     L 1114.9499149499954,418.2583457758546
     L 869.4386694387067,418.2583457758546
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.402003402004px"/><text class="net-label-text" x="875.562275562314" y="399.887527405033" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="30.618030618036px" transform="">R1_pin2/J1_pin3</text><path class="net-label" d="
-    M 526.856926856904,156.64428416174698
-    L 536.0423360423148,138.27346579092537
-    L 781.5535815536034,138.27346579092537
-    L 781.5535815536034,175.0151025325686
-    L 536.0423360423148,175.0151025325686
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.402003402004px"/><text class="net-label-text" x="542.165942165922" y="156.64428416174698" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="30.618030618036px" transform="">R1_pin2/J1_pin3</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.402003402004px"/><text class="net-label-text" x="875.562275562314" y="399.887527405033" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="30.618030618036px" transform="">R1_pin2/J1_pin3</text></svg>
