@@ -98,25 +98,39 @@ function convertTreeToInputProblem(
       // Determine availableRotations based on component props
       let availableRotations: (0 | 90 | 180 | 270)[] = [0, 90, 180, 270] // Default: allow all rotations
 
+      const schRotation = (component?._parsedProps?.schRotation ?? 0) as
+        | 0
+        | 90
+        | 180
+        | 270
+
       if (component?._parsedProps?.schOrientation) {
         // If explicitly set, only allow the specified rotation, which is a
         // 0 offset (TODO in the future, we'll allow the "flipped" 180 offset)
         availableRotations = [0]
       }
-      if (component?._parsedProps?.schRotation !== undefined) {
+      if (schRotation !== 0) {
         // If explicitly set, only allow the specified rotation, which is a
         // 0 offset
         availableRotations = [0]
       }
+      debug(`[${group.name}] component props for ${chipId}`, {
+        props: component?._parsedProps,
+        availableRotations,
+      })
 
       // Create chip entry
+      let chipSize = {
+        x: schematicComponent.size?.width || 1,
+        y: schematicComponent.size?.height || 1,
+      }
+      if (schRotation === 90 || schRotation === 270) {
+        chipSize = { x: chipSize.y, y: chipSize.x }
+      }
       problem.chipMap[chipId] = {
         chipId,
         pins: [],
-        size: {
-          x: schematicComponent.size?.width || 1,
-          y: schematicComponent.size?.height || 1,
-        },
+        size: chipSize,
         availableRotations,
       }
 
@@ -132,15 +146,35 @@ function convertTreeToInputProblem(
         const pinId = `${chipId}.${sourcePort.pin_number || sourcePort.name || port.schematic_port_id}`
         problem.chipMap[chipId].pins.push(pinId)
 
-        // Map facing direction to side
-        const side = facingDirectionToSide(port.facing_direction)
+        let side = facingDirectionToSide(port.facing_direction)
+
+        let offset = {
+          x: (port.center?.x || 0) - (schematicComponent.center.x || 0),
+          y: (port.center?.y || 0) - (schematicComponent.center.y || 0),
+        }
+
+        if (schRotation !== 0) {
+          const angleRad = (schRotation * Math.PI) / 180
+          const cos = Math.cos(angleRad)
+          const sin = Math.sin(angleRad)
+
+          const { x: dx, y: dy } = offset
+          offset = {
+            x: dx * cos - dy * sin,
+            y: dx * sin + dy * cos,
+          }
+
+          const originalDirection = port.facing_direction || "right"
+          const rotatedDirection = rotateDirection(
+            originalDirection,
+            schRotation,
+          )
+          side = facingDirectionToSide(rotatedDirection)
+        }
 
         problem.chipPinMap[pinId] = {
           pinId,
-          offset: {
-            x: (port.center?.x || 0) - (schematicComponent.center.x || 0),
-            y: (port.center?.y || 0) - (schematicComponent.center.y || 0),
-          },
+          offset,
           side,
         }
       }
@@ -560,12 +594,12 @@ export function Group_doInitialSchematicLayoutMatchPack<
   debug(
     `Applying layout results for ${Object.keys(outputLayout.chipPlacements).length} chip placements`,
   )
-
   for (const [chipId, placement] of Object.entries(
     outputLayout.chipPlacements,
   )) {
     debug(
       `Processing placement for chip: ${chipId} at (${placement.x}, ${placement.y})`,
+      placement,
     )
 
     // Find the corresponding tree node
@@ -652,13 +686,24 @@ export function Group_doInitialSchematicLayoutMatchPack<
         schematicComponent.center = newCenter
 
         // Handle rotation if needed
-        if (placement.ccwRotationDegrees !== 0) {
+        const component = group.children.find(
+          (c: any) =>
+            c.source_component_id === schematicComponent.source_component_id,
+        )
+        const schRotation = (component?._parsedProps?.schRotation ?? 0) as
+          | 0
+          | 90
+          | 180
+          | 270
+        const totalRotation = schRotation + placement.ccwRotationDegrees
+
+        if (totalRotation !== 0) {
           debug(
-            `Component ${chipId} has rotation: ${placement.ccwRotationDegrees}°`,
+            `Component ${chipId} has rotation: ${placement.ccwRotationDegrees}° and user rotation: ${schRotation}° -> total: ${totalRotation}°`,
           )
 
           // Rotate ports around the component center
-          const angleRad = (placement.ccwRotationDegrees * Math.PI) / 180
+          const angleRad = (totalRotation * Math.PI) / 180
           const cos = Math.cos(angleRad)
           const sin = Math.sin(angleRad)
 
@@ -679,7 +724,7 @@ export function Group_doInitialSchematicLayoutMatchPack<
             const originalDirection = port.facing_direction || "right"
             port.facing_direction = rotateDirection(
               originalDirection,
-              placement.ccwRotationDegrees,
+              totalRotation,
             )
           }
 
@@ -703,10 +748,12 @@ export function Group_doInitialSchematicLayoutMatchPack<
               schematicComponent.symbol_name =
                 schematicComponent.symbol_name.replace(
                   schematicSymbolDirection[0],
-                  `_${rotateDirection(schematicSymbolDirection[1], placement.ccwRotationDegrees)}`,
+                  `_${rotateDirection(schematicSymbolDirection[1], totalRotation)}`,
                 )
             }
           }
+        } else {
+          debug(`Component ${chipId} has no rotation to apply`)
         }
       }
     } else if (treeNode.nodeType === "group" && treeNode.sourceGroup) {
