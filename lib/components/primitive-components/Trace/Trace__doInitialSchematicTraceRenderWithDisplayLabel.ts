@@ -1,7 +1,6 @@
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import type { Trace } from "./Trace"
- 
 
 export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   trace: Trace,

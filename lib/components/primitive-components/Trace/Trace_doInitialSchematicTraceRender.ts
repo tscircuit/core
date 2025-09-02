@@ -24,7 +24,6 @@ import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchem
 import { Trace } from "./Trace"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { TraceConnectionError } from "../../../errors"
- 
 
 export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   if (trace.root?._featureMspSchematicTraceRouting) return
