@@ -148,7 +148,9 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     if (trace.props.schDisplayLabel) {
       let side = getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
       // Prefer horizontal for non-power display labels
-      const isPowerOrGroundNet = isPowerOrGroundNetLabel(trace.props.schDisplayLabel)
+      const isPowerOrGroundNet = isPowerOrGroundNetLabel(
+        trace.props.schDisplayLabel,
+      )
       if (!isPowerOrGroundNet && (side === "top" || side === "bottom")) {
         side = "right"
       }

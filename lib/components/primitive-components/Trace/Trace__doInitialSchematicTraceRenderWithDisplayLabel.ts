@@ -111,7 +111,10 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
     // Prefer horizontal orientation for non-power labels
     const fromText = trace.props.schDisplayLabel! ?? pinFullName
     const isPowerOrGroundNetFrom = isPowerOrGroundNetLabel(fromText)
-    if (!isPowerOrGroundNetFrom && (fromSide === "top" || fromSide === "bottom")) {
+    if (
+      !isPowerOrGroundNetFrom &&
+      (fromSide === "top" || fromSide === "bottom")
+    ) {
       fromSide = "right"
     }
     db.schematic_net_label.insert({
