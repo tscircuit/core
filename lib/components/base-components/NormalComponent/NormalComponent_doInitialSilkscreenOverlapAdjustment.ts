@@ -13,15 +13,20 @@ interface SilkscreenElementWithBounds {
  * Adjust silkscreen reference designators for passive components to avoid overlaps
  * This phase runs after PCB layout is complete but before final rendering
  *
- * PERFORMANCE OPTIMIZATIONS:
- * 1. Direct silkscreen element access: Uses rootCircuit.selectAll("silkscreen*") to get all elements directly
- * 2. Spatial filtering: Only processes silkscreen elements within search radius
- * 3. Component-aware database access: Direct .get(id) calls for fresh state
+ * APPROACH:
+ * 1. Uses component.selectAll("silkscreentext") to discover silkscreen text components
+ * 2. Links components to database records for position data and update operations
+ * 3. Performs overlap detection and position adjustment as needed
  *
- * Performance improvement: From O(N*M*K) to O(S) where:
- * - S = number of silkscreen component instances (much smaller than total DB records)
- * - No component discovery overhead - get silkscreen elements directly
- * - No complex component hierarchy traversal needed
+ * PERFORMANCE BENEFITS:
+ * - Uses selectAll() for component discovery (avoids database traversal)
+ * - Targeted database queries only for components that exist
+ * - Minimal database access compared to full table scanning approaches
+ *
+ * Note: Some database access is still required because:
+ * - Database records contain the authoritative position data
+ * - Position updates must be written back to the database
+ * - Component-DB linking timing issues require fallback record matching
  */
 export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   component: NormalComponent<any>,
@@ -32,35 +37,62 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   // Only adjust silkscreen text for components that opt in
   if (!component._adjustSilkscreenTextAutomatically) return
 
-  // Get this component's silkscreen texts (minimal DB query)
-  const componentSilkscreenTexts = component.pcb_component_id
-    ? db.pcb_silkscreen_text
-        .list()
-        .filter((text) => text.pcb_component_id === component.pcb_component_id)
-    : []
+  // Use selectAll to find silkscreen text components (avoids database traversal)
+  const silkscreenTextComponents = component.selectAll("silkscreentext")
 
-  if (componentSilkscreenTexts.length === 0) return
+  if (silkscreenTextComponents.length === 0) return
 
   // Get component center early to avoid repeated lookups
   const componentCenter = getComponentCenterFromCache(component, db)
   if (!componentCenter) return
 
-  // Get all silkscreen elements from database (using selectAll for component discovery)
-  const nearbySilkscreenElements = getAllSilkscreenElementsFromDB(
-    component.root,
-    db,
-  )
+  // For each silkscreen text component found, get its database record for processing
+  for (const textComponent of silkscreenTextComponents) {
+    // Skip if this component doesn't have the required data
+    if (!textComponent.props?.text) continue
 
-  // For each silkscreen text, check for overlaps and adjust if needed
-  for (const refText of componentSilkscreenTexts) {
-    const textBounds = getSilkscreenTextBounds(refText)
+    // Get the database record for this specific text component
+    // Note: We need the DB record for accurate position data and update operations
+    let textDbRecord: any = null
+
+    // Try direct ID lookup first (most efficient)
+    if ((textComponent as any).pcb_silkscreen_text_id) {
+      textDbRecord = db.pcb_silkscreen_text.get(
+        (textComponent as any).pcb_silkscreen_text_id,
+      )
+    }
+
+    // If direct lookup fails, we need to find the matching database record
+    // This is necessary because the component-DB linking might not be complete yet
+    if (!textDbRecord && component.pcb_component_id) {
+      // Use a targeted database query (filter by component ID, not full table scan)
+      const candidateTexts = db.pcb_silkscreen_text
+        .list()
+        .filter((t) => t.pcb_component_id === component.pcb_component_id)
+
+      // Match by text content to find the right record
+      textDbRecord = candidateTexts.find(
+        (t) => t.text === textComponent.props.text,
+      )
+    }
+
+    if (!textDbRecord) continue
+
+    const textBounds = getSilkscreenTextBounds(textDbRecord)
+
+    // Get all silkscreen elements from database (using selectAll for component discovery)
+    const nearbySilkscreenElements = getAllSilkscreenElementsFromDB(
+      component.root,
+      db,
+    )
+
     let hasOverlap = false
 
     // Check overlap with nearby silkscreen elements only (much faster than checking all)
     for (const element of nearbySilkscreenElements) {
       if (
-        element.layer === refText.layer &&
-        element.element_id !== refText.pcb_silkscreen_text_id
+        element.layer === textDbRecord.layer &&
+        element.element_id !== textDbRecord.pcb_silkscreen_text_id
       ) {
         if (boundsOverlap(textBounds, element.bounds)) {
           hasOverlap = true
@@ -72,8 +104,8 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
     if (hasOverlap) {
       // Try flipping to the opposite side
       const currentOffset = {
-        x: refText.anchor_position.x - componentCenter.x,
-        y: refText.anchor_position.y - componentCenter.y,
+        x: textDbRecord.anchor_position.x - componentCenter.x,
+        y: textDbRecord.anchor_position.y - componentCenter.y,
       }
 
       const flippedPosition = {
@@ -96,8 +128,8 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
       // Check the flipped position against nearby elements only
       for (const element of nearbySilkscreenElements) {
         if (
-          element.layer === refText.layer &&
-          element.element_id !== refText.pcb_silkscreen_text_id
+          element.layer === textDbRecord.layer &&
+          element.element_id !== textDbRecord.pcb_silkscreen_text_id
         ) {
           if (boundsOverlap(flippedTextBounds, element.bounds)) {
             flippedHasOverlap = true
@@ -108,7 +140,7 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
 
       if (!flippedHasOverlap) {
         // Update to the flipped position
-        db.pcb_silkscreen_text.update(refText.pcb_silkscreen_text_id, {
+        db.pcb_silkscreen_text.update(textDbRecord.pcb_silkscreen_text_id, {
           anchor_position: flippedPosition,
         })
       }
