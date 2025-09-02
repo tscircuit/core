@@ -148,8 +148,8 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     if (trace.props.schDisplayLabel) {
       let side = getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
       // Prefer horizontal for non-power display labels
-      const isPowerNet = isPowerOrGroundNetLabel(trace.props.schDisplayLabel)
-      if (!isPowerNet && (side === "top" || side === "bottom")) {
+      const isPowerOrGroundNet = isPowerOrGroundNetLabel(trace.props.schDisplayLabel)
+      if (!isPowerOrGroundNet && (side === "top" || side === "bottom")) {
         side = "right"
       }
       db.schematic_net_label.insert({
@@ -169,8 +169,8 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
 
     let side = getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
     // Prefer horizontal for non-power nets
-    const isPowerNet = isPowerOrGroundNetLabel(net._parsedProps.name)
-    if (!isPowerNet && (side === "top" || side === "bottom")) {
+    const isPowerOrGroundNet = isPowerOrGroundNetLabel(net._parsedProps.name)
+    if (!isPowerOrGroundNet && (side === "top" || side === "bottom")) {
       side = "right"
     }
     const netLabel = db.schematic_net_label.insert({

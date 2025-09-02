@@ -60,8 +60,8 @@ export const insertNetLabelsForPortsMissingTrace = ({
       "right"
 
     // Prefer horizontal label orientation for non-power nets
-    const isPowerNet = isPowerOrGroundNetLabel(text)
-    if (!isPowerNet && (side === "top" || side === "bottom")) {
+    const isPowerOrGroundNet = isPowerOrGroundNetLabel(text)
+    if (!isPowerOrGroundNet && (side === "top" || side === "bottom")) {
       side = "right"
     }
     const center = computeSchematicNetLabelCenter({

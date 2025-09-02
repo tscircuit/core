@@ -33,8 +33,8 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
           "right"
 
         // Prefer horizontal label orientation for non-power nets
-        const isPowerNet = isPowerOrGroundNetLabel(label)
-        if (!isPowerNet && (side === "top" || side === "bottom")) {
+        const isPowerOrGroundNet = isPowerOrGroundNetLabel(label)
+        if (!isPowerOrGroundNet && (side === "top" || side === "bottom")) {
           side = "right"
         }
         const center = computeSchematicNetLabelCenter({

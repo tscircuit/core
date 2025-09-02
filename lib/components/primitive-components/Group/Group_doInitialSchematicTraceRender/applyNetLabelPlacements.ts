@@ -78,8 +78,8 @@ export function applyNetLabelPlacements(args: {
       const text = sourceNet.name
 
       // Prefer horizontal orientation for non-power nets
-      const isPowerNet = isPowerOrGroundNetLabel(text)
-      if (!isPowerNet && (anchor_side === "top" || anchor_side === "bottom")) {
+      const isPowerOrGroundNet = isPowerOrGroundNetLabel(text)
+      if (!isPowerOrGroundNet && (anchor_side === "top" || anchor_side === "bottom")) {
         anchor_side = "right"
       }
 
@@ -121,8 +121,8 @@ export function applyNetLabelPlacements(args: {
     }
 
     // Prefer horizontal orientation for non-power nets
-    const isPowerNet = isPowerOrGroundNetLabel(text)
-    if (!isPowerNet && (anchor_side === "top" || anchor_side === "bottom")) {
+    const isPowerOrGroundNet = isPowerOrGroundNetLabel(text)
+    if (!isPowerOrGroundNet && (anchor_side === "top" || anchor_side === "bottom")) {
       anchor_side = "right"
     }
 
