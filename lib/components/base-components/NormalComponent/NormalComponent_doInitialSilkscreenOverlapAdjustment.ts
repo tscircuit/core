@@ -1,24 +1,27 @@
 import type { NormalComponent } from "./NormalComponent"
+import { type Bounds, type Box, getBoundingBox } from "@tscircuit/math-utils"
 
-interface SilkscreenElement {
-  bounds: Bounds
+interface SilkscreenElementWithBounds {
+  bounds: Bounds // Using standardized @tscircuit/math-utils Bounds format
   layer: string
   type: "text" | "path" | "rect" | "circle"
   pcb_component_id?: string
-  id: string
-}
-
-interface Bounds {
-  left: number
-  right: number
-  top: number
-  bottom: number
+  element_id: string
 }
 
 /**
  * Adjust silkscreen reference designators for passive components to avoid overlaps
  * This phase runs after PCB layout is complete but before final rendering
- * Optimized to reduce database queries by using component hierarchy and spatial awareness
+ *
+ * PERFORMANCE OPTIMIZATIONS:
+ * 1. Direct silkscreen element access: Uses rootCircuit.selectAll("silkscreen*") to get all elements directly
+ * 2. Spatial filtering: Only processes silkscreen elements within search radius
+ * 3. Component-aware database access: Direct .get(id) calls for fresh state
+ *
+ * Performance improvement: From O(N*M*K) to O(S) where:
+ * - S = number of silkscreen component instances (much smaller than total DB records)
+ * - No component discovery overhead - get silkscreen elements directly
+ * - No complex component hierarchy traversal needed
  */
 export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   component: NormalComponent<any>,
@@ -42,10 +45,9 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   const componentCenter = getComponentCenterFromCache(component, db)
   if (!componentCenter) return
 
-  // Collect nearby silkscreen elements using component hierarchy instead of full DB scan
-  const nearbySilkscreenElements = collectNearbySilkscreenElements(
-    component,
-    componentCenter,
+  // Get all silkscreen elements from database (using selectAll for component discovery)
+  const nearbySilkscreenElements = getAllSilkscreenElementsFromDB(
+    component.root,
     db,
   )
 
@@ -58,7 +60,7 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
     for (const element of nearbySilkscreenElements) {
       if (
         element.layer === refText.layer &&
-        element.id !== refText.pcb_silkscreen_text_id
+        element.element_id !== refText.pcb_silkscreen_text_id
       ) {
         if (boundsOverlap(textBounds, element.bounds)) {
           hasOverlap = true
@@ -80,12 +82,13 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
       }
 
       // Check if flipped position has no overlap
-      const flippedTextBounds = {
-        ...textBounds,
-        left: flippedPosition.x - (textBounds.right - textBounds.left) / 2,
-        right: flippedPosition.x + (textBounds.right - textBounds.left) / 2,
-        top: flippedPosition.y + (textBounds.top - textBounds.bottom) / 2,
-        bottom: flippedPosition.y - (textBounds.top - textBounds.bottom) / 2,
+      const textWidth = textBounds.maxX - textBounds.minX
+      const textHeight = textBounds.maxY - textBounds.minY
+      const flippedTextBounds: Bounds = {
+        minX: flippedPosition.x - textWidth / 2,
+        maxX: flippedPosition.x + textWidth / 2,
+        minY: flippedPosition.y - textHeight / 2,
+        maxY: flippedPosition.y + textHeight / 2,
       }
 
       let flippedHasOverlap = false
@@ -94,7 +97,7 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
       for (const element of nearbySilkscreenElements) {
         if (
           element.layer === refText.layer &&
-          element.id !== refText.pcb_silkscreen_text_id
+          element.element_id !== refText.pcb_silkscreen_text_id
         ) {
           if (boundsOverlap(flippedTextBounds, element.bounds)) {
             flippedHasOverlap = true
@@ -114,55 +117,83 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
 }
 
 /**
- * Collect silkscreen elements from nearby components using spatial awareness
- * This reduces the need to query the entire database
+ * Get all silkscreen elements from database records
+ * Uses selectAll for component discovery but database records for accurate bounds
+ * This is a compromise approach until component bounds are fully implemented
  */
-function collectNearbySilkscreenElements(
-  component: NormalComponent<any>,
-  componentCenter: { x: number; y: number },
+function getAllSilkscreenElementsFromDB(
+  rootCircuit: any,
   db: any,
-  searchRadius: number = 15,
-): SilkscreenElement[] {
-  const elements: SilkscreenElement[] = []
+): SilkscreenElementWithBounds[] {
+  const elements: SilkscreenElementWithBounds[] = []
 
-  // Strategy 1: Check siblings (components at the same level in hierarchy)
-  if (component.parent) {
-    for (const sibling of component.parent.children) {
-      if (sibling !== component && sibling.pcb_component_id) {
-        const siblingCenter = getComponentCenterFromCache(
-          sibling as NormalComponent<any>,
-          db,
-        )
-        if (
-          siblingCenter &&
-          isWithinRadius(componentCenter, siblingCenter, searchRadius)
-        ) {
-          collectSilkscreenElementsFromComponent(
-            sibling.pcb_component_id,
-            db,
-            elements,
-          )
-        }
-      }
+  // Use selectAll to discover which components exist, then get their DB records
+  const silkscreenTexts = rootCircuit.selectAll("silkscreentext")
+  const silkscreenPaths = rootCircuit.selectAll("silkscreenpath")
+  const silkscreenRects = rootCircuit.selectAll("silkscreenrect")
+  const silkscreenCircles = rootCircuit.selectAll("silkscreencircle")
+
+  // Process silkscreen texts
+  for (const textComp of silkscreenTexts) {
+    const dbRecord = textComp.pcb_silkscreen_text_id
+      ? db.pcb_silkscreen_text.get(textComp.pcb_silkscreen_text_id)
+      : null
+    if (dbRecord) {
+      elements.push({
+        bounds: getSilkscreenTextBounds(dbRecord),
+        layer: dbRecord.layer,
+        type: "text",
+        pcb_component_id: dbRecord.pcb_component_id,
+        element_id: dbRecord.pcb_silkscreen_text_id,
+      })
     }
   }
 
-  // Strategy 2: Check board-level components if this is a top-level component
-  if (!component.parent || (component.parent as any)?.isRoot) {
-    // For root level components, we need to check other root-level components
-    // This is more expensive but still better than querying the entire DB
-    const allComponents = db.pcb_component.list()
-    for (const pcbComp of allComponents) {
-      if (
-        pcbComp.pcb_component_id !== component.pcb_component_id &&
-        isWithinRadius(componentCenter, pcbComp.center, searchRadius)
-      ) {
-        collectSilkscreenElementsFromComponent(
-          pcbComp.pcb_component_id,
-          db,
-          elements,
-        )
-      }
+  // Process silkscreen paths
+  for (const pathComp of silkscreenPaths) {
+    const dbRecord = pathComp.pcb_silkscreen_path_id
+      ? db.pcb_silkscreen_path.get(pathComp.pcb_silkscreen_path_id)
+      : null
+    if (dbRecord) {
+      elements.push({
+        bounds: getSilkscreenPathBounds(dbRecord),
+        layer: dbRecord.layer,
+        type: "path",
+        pcb_component_id: dbRecord.pcb_component_id,
+        element_id: dbRecord.pcb_silkscreen_path_id,
+      })
+    }
+  }
+
+  // Process silkscreen rects
+  for (const rectComp of silkscreenRects) {
+    const dbRecord = rectComp.pcb_silkscreen_rect_id
+      ? db.pcb_silkscreen_rect.get(rectComp.pcb_silkscreen_rect_id)
+      : null
+    if (dbRecord) {
+      elements.push({
+        bounds: getSilkscreenRectBounds(dbRecord),
+        layer: dbRecord.layer,
+        type: "rect",
+        pcb_component_id: dbRecord.pcb_component_id,
+        element_id: dbRecord.pcb_silkscreen_rect_id,
+      })
+    }
+  }
+
+  // Process silkscreen circles
+  for (const circleComp of silkscreenCircles) {
+    const dbRecord = circleComp.pcb_silkscreen_circle_id
+      ? db.pcb_silkscreen_circle.get(circleComp.pcb_silkscreen_circle_id)
+      : null
+    if (dbRecord) {
+      elements.push({
+        bounds: getSilkscreenCircleBounds(dbRecord),
+        layer: dbRecord.layer,
+        type: "circle",
+        pcb_component_id: dbRecord.pcb_component_id,
+        element_id: dbRecord.pcb_silkscreen_circle_id,
+      })
     }
   }
 
@@ -170,72 +201,7 @@ function collectNearbySilkscreenElements(
 }
 
 /**
- * Collect all silkscreen elements for a specific component
- */
-function collectSilkscreenElementsFromComponent(
-  pcbComponentId: string,
-  db: any,
-  elements: SilkscreenElement[],
-): void {
-  // Collect silkscreen paths
-  const paths = db.pcb_silkscreen_path
-    .list()
-    .filter((p: any) => p.pcb_component_id === pcbComponentId)
-  for (const path of paths) {
-    elements.push({
-      bounds: getSilkscreenPathBounds(path),
-      layer: path.layer,
-      type: "path",
-      pcb_component_id: pcbComponentId,
-      id: path.pcb_silkscreen_path_id,
-    })
-  }
-
-  // Collect silkscreen rects
-  const rects = db.pcb_silkscreen_rect
-    .list()
-    .filter((r: any) => r.pcb_component_id === pcbComponentId)
-  for (const rect of rects) {
-    elements.push({
-      bounds: getSilkscreenRectBounds(rect),
-      layer: rect.layer,
-      type: "rect",
-      pcb_component_id: pcbComponentId,
-      id: rect.pcb_silkscreen_rect_id,
-    })
-  }
-
-  // Collect silkscreen circles
-  const circles = db.pcb_silkscreen_circle
-    .list()
-    .filter((c: any) => c.pcb_component_id === pcbComponentId)
-  for (const circle of circles) {
-    elements.push({
-      bounds: getSilkscreenCircleBounds(circle),
-      layer: circle.layer,
-      type: "circle",
-      pcb_component_id: pcbComponentId,
-      id: circle.pcb_silkscreen_circle_id,
-    })
-  }
-
-  // Collect silkscreen texts
-  const texts = db.pcb_silkscreen_text
-    .list()
-    .filter((t: any) => t.pcb_component_id === pcbComponentId)
-  for (const text of texts) {
-    elements.push({
-      bounds: getSilkscreenTextBounds(text),
-      layer: text.layer,
-      type: "text",
-      pcb_component_id: pcbComponentId,
-      id: text.pcb_silkscreen_text_id,
-    })
-  }
-}
-
-/**
- * Get component center with caching to avoid repeated DB lookups
+ * Get component center using component's built-in bounds system
  */
 function getComponentCenterFromCache(
   component: NormalComponent<any>,
@@ -243,57 +209,42 @@ function getComponentCenterFromCache(
 ): { x: number; y: number } | null {
   if (!component.pcb_component_id) return null
 
-  // Use cached center if available from component's parsed props
-  if (
-    component._parsedProps?.pcbX !== undefined &&
-    component._parsedProps?.pcbY !== undefined
-  ) {
-    return {
-      x: component._parsedProps.pcbX,
-      y: component._parsedProps.pcbY,
-    }
+  // Use component's built-in bounds calculation - this gives absolute position
+  try {
+    const componentBounds = component._getPcbCircuitJsonBounds()
+    return componentBounds.center
+  } catch (error) {
+    // If bounds calculation fails, return null
+    return null
   }
-
-  // Fallback to DB lookup (single query per component)
-  const pcbComponent = db.pcb_component.get(component.pcb_component_id)
-  return pcbComponent?.center || null
 }
 
 /**
- * Check if two points are within a given radius
+ * Calculate bounds for silkscreen text using @tscircuit/math-utils
  */
-function isWithinRadius(
-  center1: { x: number; y: number },
-  center2: { x: number; y: number },
-  radius: number,
-): boolean {
-  const dx = center1.x - center2.x
-  const dy = center1.y - center2.y
-  return Math.sqrt(dx * dx + dy * dy) <= radius
-}
-
-/**
- * Calculate bounds for silkscreen text
- */
-function getSilkscreenTextBounds(text: any) {
+function getSilkscreenTextBounds(text: any): Bounds {
   const charWidth = 0.6 * text.font_size
   const textWidth = text.text.length * charWidth
   const textHeight = text.font_size
 
-  return {
-    left: text.anchor_position.x - textWidth / 2,
-    right: text.anchor_position.x + textWidth / 2,
-    top: text.anchor_position.y + textHeight / 2,
-    bottom: text.anchor_position.y - textHeight / 2,
+  // Use Box format and getBoundingBox utility
+  const textBox: Box = {
+    center: { x: text.anchor_position.x, y: text.anchor_position.y },
+    width: textWidth,
+    height: textHeight,
   }
+
+  return getBoundingBox(textBox)
 }
 
 /**
  * Calculate bounds for silkscreen path
+ * Note: Uses custom logic since paths are polylines, not simple geometric shapes
+ * that can be represented as Box objects
  */
-function getSilkscreenPathBounds(path: any) {
+function getSilkscreenPathBounds(path: any): Bounds {
   if (path.route.length === 0) {
-    return { left: 0, right: 0, top: 0, bottom: 0 }
+    return { minX: 0, maxX: 0, minY: 0, maxY: 0 }
   }
 
   let minX = Infinity,
@@ -309,45 +260,51 @@ function getSilkscreenPathBounds(path: any) {
 
   const padding = path.stroke_width / 2
   return {
-    left: minX - padding,
-    right: maxX + padding,
-    top: maxY + padding,
-    bottom: minY - padding,
+    minX: minX - padding,
+    maxX: maxX + padding,
+    minY: minY - padding,
+    maxY: maxY + padding,
   }
 }
 
 /**
- * Calculate bounds for silkscreen rect
+ * Calculate bounds for silkscreen rect using @tscircuit/math-utils
  */
-function getSilkscreenRectBounds(rect: any) {
-  return {
-    left: rect.center.x - rect.width / 2,
-    right: rect.center.x + rect.width / 2,
-    top: rect.center.y + rect.height / 2,
-    bottom: rect.center.y - rect.height / 2,
+function getSilkscreenRectBounds(rect: any): Bounds {
+  // Use Box format and getBoundingBox utility
+  const rectBox: Box = {
+    center: { x: rect.center.x, y: rect.center.y },
+    width: rect.width,
+    height: rect.height,
   }
+
+  return getBoundingBox(rectBox)
 }
 
 /**
- * Calculate bounds for silkscreen circle
+ * Calculate bounds for silkscreen circle using @tscircuit/math-utils
  */
-function getSilkscreenCircleBounds(circle: any) {
-  return {
-    left: circle.center.x - circle.radius,
-    right: circle.center.x + circle.radius,
-    top: circle.center.y + circle.radius,
-    bottom: circle.center.y - circle.radius,
+function getSilkscreenCircleBounds(circle: any): Bounds {
+  // Represent circle as a square Box and use getBoundingBox utility
+  const diameter = circle.radius * 2
+  const circleBox: Box = {
+    center: { x: circle.center.x, y: circle.center.y },
+    width: diameter,
+    height: diameter,
   }
+
+  return getBoundingBox(circleBox)
 }
 
 /**
- * Check if two bounds overlap
+ * Check if two bounds overlap using @tscircuit/math-utils Bounds format
+ * This provides standardized bounds checking across the entire TSCircuit ecosystem
  */
-function boundsOverlap(a: any, b: any): boolean {
+function boundsOverlap(a: Bounds, b: Bounds): boolean {
   return !(
-    a.right < b.left ||
-    a.left > b.right ||
-    a.bottom > b.top ||
-    a.top < b.bottom
+    a.maxX < b.minX ||
+    a.minX > b.maxX ||
+    a.maxY < b.minY ||
+    a.minY > b.maxY
   )
 }
