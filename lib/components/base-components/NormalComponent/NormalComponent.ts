@@ -95,8 +95,9 @@ export class NormalComponent<
 
   // Mapping from camelCase attribute names to their lowercase equivalents
   // This is used by the CSS selector adapter for fast attribute lookups
-  _attributeCamelToLowerNameMap = {
-    _isNormalComponent: "_isnormalcomponent",
+  // Reverse mapping from lowercase to camelCase for O(1) lookups
+  _attributeLowerToCamelNameMap = {
+    _isnormalcomponent: "_isNormalComponent",
   }
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers

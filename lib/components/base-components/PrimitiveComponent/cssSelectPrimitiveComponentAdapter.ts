@@ -52,19 +52,17 @@ export const cssSelectPrimitiveComponentAdapter: Required<
           : null
     }
 
-    // Use pre-computed attribute mapping for fast camelCase->lowercase lookups
-    if ("_attributeCamelToLowerNameMap" in node) {
-      const attrMap = (node as any)._attributeCamelToLowerNameMap
-      // Find the camelCase property that maps to this lowercase name
-      for (const [camelCaseName, lowerCaseName] of Object.entries(attrMap)) {
-        if (lowerCaseName === name && camelCaseName in node) {
-          const value = (node as any)[camelCaseName]
-          return typeof value === "string"
-            ? value
-            : value !== null && value !== undefined
-              ? String(value)
-              : null
-        }
+    // Use pre-computed reverse mapping for fast O(1) camelCase lookups
+    const reverseMap = (node as any)._attributeLowerToCamelNameMap
+    if (reverseMap) {
+      const camelCaseName = reverseMap[name]
+      if (camelCaseName && camelCaseName in node) {
+        const value = (node as any)[camelCaseName]
+        return typeof value === "string"
+          ? value
+          : value !== null && value !== undefined
+            ? String(value)
+            : null
       }
     }
 
@@ -85,14 +83,12 @@ export const cssSelectPrimitiveComponentAdapter: Required<
     if (name in node) {
       return true
     }
-    // Use pre-computed attribute mapping for fast camelCase->lowercase lookups
-    if ("_attributeCamelToLowerNameMap" in node) {
-      const attrMap = (node as any)._attributeCamelToLowerNameMap
-      // Find the camelCase property that maps to this lowercase name
-      for (const [camelCaseName, lowerCaseName] of Object.entries(attrMap)) {
-        if (lowerCaseName === name && camelCaseName in node) {
-          return true
-        }
+    // Use pre-computed reverse mapping for fast O(1) camelCase lookups
+    const reverseMap = (node as any)._attributeLowerToCamelNameMap
+    if (reverseMap) {
+      const camelCaseName = reverseMap[name]
+      if (camelCaseName && camelCaseName in node) {
+        return true
       }
     }
     return false
