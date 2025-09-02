@@ -702,9 +702,9 @@ export abstract class PrimitiveComponent<
     if (this._cachedSelectAllQueries.has(selectorRaw)) {
       return this._cachedSelectAllQueries.get(selectorRaw) as T[]
     }
-       if (selectorRaw.trim() === "normalcomponent") {
-      const result = this.getSelectableDescendants().filter((c) =>
-        "_getInternallyConnectedPins" in c
+    if (selectorRaw.trim() === "normalcomponent") {
+      const result = this.getSelectableDescendants().filter(
+        (c) => "_getInternallyConnectedPins" in c,
       ) as T[]
       this._cachedSelectAllQueries.set(selectorRaw, result)
       return result
