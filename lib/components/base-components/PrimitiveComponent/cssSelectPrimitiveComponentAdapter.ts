@@ -30,6 +30,7 @@ export const cssSelectPrimitiveComponentAdapter: Required<
     if (name === "name" && node._parsedProps?.name) {
       return node._parsedProps.name
     }
+
     // Special case for _isnormalcomponent -> _isNormalComponent mapping
     if (name === "_isnormalcomponent" && "_isNormalComponent" in node) {
       const value = (node as any)._isNormalComponent
