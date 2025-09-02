@@ -91,6 +91,7 @@ export class NormalComponent<
   _impliedFootprint?: string | undefined
 
   isPrimitiveContainer = true
+  _isNormalComponent = true
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   pcb_missing_footprint_error_id?: string
