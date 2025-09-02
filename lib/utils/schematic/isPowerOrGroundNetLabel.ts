@@ -1,4 +1,6 @@
-export const isPowerOrGroundNetLabel = (text: string | undefined | null): boolean => {
+export const isPowerOrGroundNetLabel = (
+  text: string | undefined | null,
+): boolean => {
   if (!text) return false
   const s = String(text).trim().toLowerCase()
   if (s.length === 0) return false
@@ -6,4 +8,3 @@ export const isPowerOrGroundNetLabel = (text: string | undefined | null): boolea
   // Examples: GND, GND1, VCC, V_3V3, VBUS, V5, etc.
   return s.startsWith("gnd") || s.startsWith("v")
 }
-
