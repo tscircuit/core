@@ -175,7 +175,11 @@ export function computeJunctions(
             const sameCornerOrientation =
               aCorner !== null && bCorner !== null && aCorner === bCorner
 
-            if (hasCorner && !sameCornerOrientation) {
+            if (
+              hasCorner &&
+              !sameCornerOrientation &&
+              (aCorner !== null || bCorner !== null)
+            ) {
               result[A.id]!.push(pa)
               if (A.id !== B.id) result[B.id]!.push(pb)
             }
@@ -197,7 +201,11 @@ export function computeJunctions(
               : null
             const sameCornerOrientation =
               aCorner !== null && bCorner !== null && aCorner === bCorner
-            if (hasCorner && !sameCornerOrientation) {
+            if (
+              hasCorner &&
+              !sameCornerOrientation &&
+              (aCorner !== null || bCorner !== null)
+            ) {
               result[A.id]!.push(pa)
               if (A.id !== B.id) result[B.id]!.push(pa)
             }
@@ -219,7 +227,11 @@ export function computeJunctions(
               : null
             const sameCornerOrientation =
               aCorner !== null && bCorner !== null && aCorner === bCorner
-            if (hasCorner && !sameCornerOrientation) {
+            if (
+              hasCorner &&
+              !sameCornerOrientation &&
+              (aCorner !== null || bCorner !== null)
+            ) {
               result[B.id]!.push(pb)
               if (A.id !== B.id) result[A.id]!.push(pb)
             }

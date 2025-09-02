@@ -18,6 +18,14 @@ const isPointWithinEdge = (
     point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY
   )
 }
+const isEndpointOfEdge = (
+  point: { x: number; y: number },
+  edge: SchematicTrace["edges"][number],
+) =>
+  (Math.abs(point.x - edge.from.x) < TOLERANCE &&
+    Math.abs(point.y - edge.from.y) < TOLERANCE) ||
+  (Math.abs(point.x - edge.to.x) < TOLERANCE &&
+    Math.abs(point.y - edge.to.y) < TOLERANCE)
 
 // Helper function to determine edge orientation
 const getEdgeOrientation = (
@@ -124,6 +132,10 @@ export const createSchematicTraceJunctions = ({
     for (const otherEdge of otherEdges) {
       const intersection = getIntersectionPoint(myEdge, otherEdge)
       if (intersection) {
+        const touchesEndpoint =
+          isEndpointOfEdge(intersection, myEdge) ||
+          isEndpointOfEdge(intersection, otherEdge)
+        if (!touchesEndpoint) continue
         // Use a more precise key format to avoid floating-point issues
         const key = `${intersection.x.toFixed(6)},${intersection.y.toFixed(6)}`
         if (!junctions.has(key)) {
