@@ -1,6 +1,7 @@
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import type { Trace } from "./Trace"
+import { isPowerOrGroundNetLabel } from "lib/utils/schematic/isPowerOrGroundNetLabel"
 
 export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   trace: Trace,
@@ -84,31 +85,43 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   }
 
   if (!existingToNetLabel) {
-    const toSide =
+    let toSide =
       getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom"
+    // Prefer horizontal orientation for non-power labels
+    const toText = trace.props.schDisplayLabel! ?? pinFullName
+    const isPowerNetTo = isPowerOrGroundNetLabel(toText)
+    if (!isPowerNetTo && (toSide === "top" || toSide === "bottom")) {
+      toSide = "right"
+    }
     db.schematic_net_label.insert({
-      text: trace.props.schDisplayLabel! ?? pinFullName,
+      text: toText,
       source_net_id: toPort.source_port_id!,
       anchor_position: toAnchorPos,
       center: computeSchematicNetLabelCenter({
         anchor_position: toAnchorPos,
         anchor_side: toSide,
-        text: trace.props.schDisplayLabel! ?? pinFullName,
+        text: toText,
       }),
       anchor_side: toSide,
     })
   }
   if (!existingFromNetLabel) {
-    const fromSide =
+    let fromSide =
       getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom"
+    // Prefer horizontal orientation for non-power labels
+    const fromText = trace.props.schDisplayLabel! ?? pinFullName
+    const isPowerNetFrom = isPowerOrGroundNetLabel(fromText)
+    if (!isPowerNetFrom && (fromSide === "top" || fromSide === "bottom")) {
+      fromSide = "right"
+    }
     db.schematic_net_label.insert({
-      text: trace.props.schDisplayLabel! ?? pinFullName,
+      text: fromText,
       source_net_id: fromPort.source_port_id!,
       anchor_position: fromAnchorPos,
       center: computeSchematicNetLabelCenter({
         anchor_position: fromAnchorPos,
         anchor_side: fromSide,
-        text: trace.props.schDisplayLabel! ?? pinFullName,
+        text: fromText,
       }),
       anchor_side: fromSide,
     })

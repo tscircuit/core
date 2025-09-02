@@ -2,6 +2,7 @@ import type { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-so
 import type { Group } from "lib/components"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { isPowerOrGroundNetLabel } from "lib/utils/schematic/isPowerOrGroundNetLabel"
 
 export const insertNetLabelsForPortsMissingTrace = ({
   allSourceAndSchematicPortIdsInScope,
@@ -54,9 +55,15 @@ export const insertNetLabelsForPortsMissingTrace = ({
     if (existingAtPort) continue
 
     const text = sourceNet.name || sourceNet.source_net_id || key
-    const side =
+    let side =
       getEnteringEdgeFromDirection((sp.facing_direction as any) || "right") ||
       "right"
+
+    // Prefer horizontal label orientation for non-power nets
+    const isPowerNet = isPowerOrGroundNetLabel(text)
+    if (!isPowerNet && (side === "top" || side === "bottom")) {
+      side = "right"
+    }
     const center = computeSchematicNetLabelCenter({
       anchor_position: sp.center,
       anchor_side: side as any,

@@ -7,6 +7,7 @@ import { oppositeSide } from "./oppositeSide"
 import { Port } from "../../Port"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import Debug from "debug"
+import { isPowerOrGroundNetLabel } from "lib/utils/schematic/isPowerOrGroundNetLabel"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -52,7 +53,7 @@ export function applyNetLabelPlacements(args: {
     const anchor_position = placement.anchorPoint
 
     const orientation = placement.orientation as AxisDirection
-    const anchor_side = oppositeSide(orientation)
+    let anchor_side = oppositeSide(orientation)
 
     const sourceNet = placementSck
       ? sckToSourceNet.get(placementSck)
@@ -75,6 +76,12 @@ export function applyNetLabelPlacements(args: {
 
     if (sourceNet) {
       const text = sourceNet.name
+
+      // Prefer horizontal orientation for non-power nets
+      const isPowerNet = isPowerOrGroundNetLabel(text)
+      if (!isPowerNet && (anchor_side === "top" || anchor_side === "bottom")) {
+        anchor_side = "right"
+      }
 
       const center = computeSchematicNetLabelCenter({
         anchor_position,
@@ -111,6 +118,12 @@ export function applyNetLabelPlacements(args: {
         `skipping net label placement for "${placement.netId!}" REASON:schematic port has routed traces and no display label`,
       )
       continue
+    }
+
+    // Prefer horizontal orientation for non-power nets
+    const isPowerNet = isPowerOrGroundNetLabel(text)
+    if (!isPowerNet && (anchor_side === "top" || anchor_side === "bottom")) {
+      anchor_side = "right"
     }
 
     const center = computeSchematicNetLabelCenter({

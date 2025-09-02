@@ -2,6 +2,7 @@ import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { isPowerOrGroundNetLabel } from "lib/utils/schematic/isPowerOrGroundNetLabel"
 
 export function insertNetLabelsForTracesExcludedFromRouting(args: {
   group: Group<any>
@@ -27,9 +28,15 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
       const ports = res.ports.slice(0, 2)
       for (const port of ports) {
         const anchor_position = port._getGlobalSchematicPositionAfterLayout()
-        const side =
+        let side =
           getEnteringEdgeFromDirection(port.facingDirection || "right") ||
           "right"
+
+        // Prefer horizontal label orientation for non-power nets
+        const isPowerNet = isPowerOrGroundNetLabel(label)
+        if (!isPowerNet && (side === "top" || side === "bottom")) {
+          side = "right"
+        }
         const center = computeSchematicNetLabelCenter({
           anchor_position,
           anchor_side: side as any,

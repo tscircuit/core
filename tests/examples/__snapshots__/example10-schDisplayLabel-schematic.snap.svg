@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(96.1220108725,0,0,-96.1220108725,248.0588693915,310.8399026498)" data-software-used-string="@tscircuit/core@0.0.661"><style>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(96.1220108725,0,0,-96.1220108725,248.0588693915,310.8399026498)" data-software-used-string="@tscircuit/core@0.0.676"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -33,12 +33,12 @@
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.92244021745px"/><text class="net-label-text" x="186.5407824331" y="406.96191352230005" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.30196195705px" transform="">R2_pin1/C1_pin1</text><path class="net-label" d="
     M 598.904209076125,310.8399026498
-    L 588.523031901895,305.64931406268505
-    L 588.523031901895,228.80297043715035
-    L 609.285386250355,228.80297043715035
-    L 609.2853862503549,305.64931406268505
+    L 593.7136204890099,321.22107982403
+    L 516.8672768634754,321.22107982403
+    L 516.8672768634754,300.45872547557
+    L 593.7136204890099,300.45872547557
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.92244021745px"/><text class="net-label-text" x="598.904209076125" y="302.188921671275" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.30196195705px" transform="rotate(-90 598.904209076125 302.188921671275)">C2_POS</text><path class="net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.92244021745px"/><text class="net-label-text" x="590.2532280976" y="310.8399026498" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.30196195705px" transform="">C2_POS</text><path class="net-label" d="
     M 1069.902062351375,406.96191352230005
     L 1075.09265093849,396.58073634807005
     L 1151.9389945640246,396.58073634807005

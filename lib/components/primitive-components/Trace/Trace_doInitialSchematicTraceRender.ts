@@ -24,6 +24,7 @@ import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchem
 import { Trace } from "./Trace"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { TraceConnectionError } from "../../../errors"
+import { isPowerOrGroundNetLabel } from "lib/utils/schematic/isPowerOrGroundNetLabel"
 
 export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   if (trace.root?._featureMspSchematicTraceRouting) return
@@ -145,8 +146,13 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     }
 
     if (trace.props.schDisplayLabel) {
-      const side =
+      let side =
         getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
+      // Prefer horizontal for non-power display labels
+      const isPowerNet = isPowerOrGroundNetLabel(trace.props.schDisplayLabel)
+      if (!isPowerNet && (side === "top" || side === "bottom")) {
+        side = "right"
+      }
       db.schematic_net_label.insert({
         text: trace.props.schDisplayLabel,
         source_net_id: net.source_net_id!,
@@ -162,7 +168,12 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
       return
     }
 
-    const side = getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
+    let side = getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
+    // Prefer horizontal for non-power nets
+    const isPowerNet = isPowerOrGroundNetLabel(net._parsedProps.name)
+    if (!isPowerNet && (side === "top" || side === "bottom")) {
+      side = "right"
+    }
     const netLabel = db.schematic_net_label.insert({
       text: net._parsedProps.name,
       source_net_id: net.source_net_id!,
