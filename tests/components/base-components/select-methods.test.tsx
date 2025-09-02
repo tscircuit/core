@@ -37,7 +37,12 @@ it("should correctly use selectAll and selectOne methods", () => {
   const nestedResistorAll = board.selectAll("group resistor")
   expect(nestedResistorAll).toHaveLength(1)
   expect(nestedResistorAll.map((r) => r.props.name).sort()).toEqual(["R3"])
-
+  // Test selecting all descendant normal components
+  const allNormalComponents = board.selectAll("[_isNormalComponent=true]")
+  expect(allNormalComponents).toHaveLength(5)
+  expect(allNormalComponents.every((c) => (c as any)._isNormalComponent)).toBe(
+    true,
+  )
   // Test selectOne
   const led = board.selectOne("led")
   expect(led).not.toBeNull()

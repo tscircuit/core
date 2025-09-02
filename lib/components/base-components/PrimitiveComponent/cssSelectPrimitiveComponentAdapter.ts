@@ -40,6 +40,14 @@ export const cssSelectPrimitiveComponentAdapter: Required<
           ? String(value)
           : null
     }
+    if (name in (node as any)) {
+      const value = (node as any)[name]
+      return typeof value === "string"
+        ? value
+        : value !== null && value !== undefined
+          ? String(value)
+          : null
+    }
     return null
   },
 
@@ -50,7 +58,10 @@ export const cssSelectPrimitiveComponentAdapter: Required<
       return !!node._parsedProps?.name
     }
     // Check for other attributes based on props
-    return node._parsedProps && name in node._parsedProps
+    // Check for attributes based on props or direct properties
+    if (node._parsedProps && name in node._parsedProps) return true
+    if (name in (node as any)) return true
+    return false
   },
 
   // Get the siblings of the node

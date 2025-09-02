@@ -37,6 +37,7 @@ const cssSelectOptionsInsideSubcircuit: Options<
 > = {
   adapter: cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
   cacheResults: true,
+  xmlMode: true,
 }
 
 export interface BaseComponentConfig {
@@ -702,28 +703,37 @@ export abstract class PrimitiveComponent<
     if (this._cachedSelectAllQueries.has(selectorRaw)) {
       return this._cachedSelectAllQueries.get(selectorRaw) as T[]
     }
-    if (selectorRaw.trim() === "normalcomponent") {
-      const result = this.getSelectableDescendants().filter(
-        (c) => "_getInternallyConnectedPins" in c,
-      ) as T[]
-      this._cachedSelectAllQueries.set(selectorRaw, result)
-      return result
+    if (selectorRaw === "normalcomponent") {
+      const cached = this._cachedSelectAllQueries.get(selectorRaw)
+      if (cached) return cached as T[]
+      const result = selectAll(
+        "[_isNormalComponent=true]",
+        this,
+        cssSelectOptionsInsideSubcircuit,
+      ) as PrimitiveComponent[]
+      const filtered = result.filter((n) => n !== this) as T[]
+      if (filtered.length > 0)
+        this._cachedSelectAllQueries.set(selectorRaw, filtered)
+      return filtered
     }
+
     const selector = preprocessSelector(selectorRaw)
     const result = selectAll(
       selector,
       this,
       cssSelectOptionsInsideSubcircuit,
-    ) as T[]
-    if (result.length > 0) {
-      this._cachedSelectAllQueries.set(selectorRaw, result)
-      return result
+    ) as PrimitiveComponent[]
+    const filtered = result.filter((n) => n !== this) as T[]
+    if (filtered.length > 0) {
+      this._cachedSelectAllQueries.set(selectorRaw, filtered)
+      return filtered
     }
 
     // If we didn't find anything, check for a subcircuit query
     const [firstpart, ...rest] = selector.split(" ")
     const subcircuit = selectOne(firstpart, this, {
       adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
+      xmlMode: true,
     }) as ISubcircuit | null
     if (!subcircuit) return []
     const result2 = subcircuit.selectAll(rest.join(" ")) as T[]
@@ -775,6 +785,7 @@ export abstract class PrimitiveComponent<
     const [firstpart, ...rest] = selector.split(" ")
     const subcircuit = selectOne(firstpart, this, {
       adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
+      xmlMode: true,
     }) as ISubcircuit | null
 
     if (!subcircuit) return null

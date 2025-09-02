@@ -89,6 +89,7 @@ export class NormalComponent<
 {
   reactSubtrees: Array<ReactSubtree> = []
   _impliedFootprint?: string | undefined
+  _isNormalComponent = true
 
   isPrimitiveContainer = true
 
