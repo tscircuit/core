@@ -31,15 +31,6 @@ export const cssSelectPrimitiveComponentAdapter: Required<
       return node._parsedProps.name
     }
 
-    // Special case for _isnormalcomponent -> _isNormalComponent mapping
-    if (name === "_isnormalcomponent" && "_isNormalComponent" in node) {
-      const value = (node as any)._isNormalComponent
-      return typeof value === "string"
-        ? value
-        : value !== null && value !== undefined
-          ? String(value)
-          : null
-    }
     // Handle other attribute selectors based on props
     if (node._parsedProps && name in node._parsedProps) {
       const value = node._parsedProps[name]
@@ -50,6 +41,30 @@ export const cssSelectPrimitiveComponentAdapter: Required<
           ? String(value)
           : null
     }
+
+    // Check for properties directly on the node (css-select converts names to lowercase)
+    // Try both the lowercase name and camelCase variants
+    if (name in node) {
+      const value = (node as any)[name]
+      return typeof value === "string"
+        ? value
+        : value !== null && value !== undefined
+          ? String(value)
+          : null
+    }
+
+    // Try to find a camelCase property that matches the lowercase attribute name
+    const nodeKeys = Object.keys(node)
+    const matchingKey = nodeKeys.find((key) => key.toLowerCase() === name)
+    if (matchingKey && matchingKey in node) {
+      const value = (node as any)[matchingKey]
+      return typeof value === "string"
+        ? value
+        : value !== null && value !== undefined
+          ? String(value)
+          : null
+    }
+
     return null
   },
 
@@ -60,7 +75,17 @@ export const cssSelectPrimitiveComponentAdapter: Required<
       return !!node._parsedProps?.name
     }
     // Check for other attributes based on props
-    return node._parsedProps && name in node._parsedProps
+    if (node._parsedProps && name in node._parsedProps) {
+      return true
+    }
+    // Check for properties directly on the node
+    if (name in node) {
+      return true
+    }
+    // Try to find a camelCase property that matches the lowercase attribute name
+    const nodeKeys = Object.keys(node)
+    const matchingKey = nodeKeys.find((key) => key.toLowerCase() === name)
+    return !!matchingKey && matchingKey in node
   },
 
   // Get the siblings of the node
