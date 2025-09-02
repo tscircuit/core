@@ -49,6 +49,7 @@ import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
+import { filterPinLabels } from "lib/utils/filterPinLabels"
 
 const debug = Debug("tscircuit:core")
 
@@ -87,6 +88,7 @@ export class NormalComponent<
   extends PrimitiveComponent<ZodProps>
   implements INormalComponent
 {
+  private _invalidPinLabelMessages: string[] = []
   reactSubtrees: Array<ReactSubtree> = []
   _impliedFootprint?: string | undefined
 
@@ -115,7 +117,20 @@ export class NormalComponent<
   }
 
   constructor(props: z.input<ZodProps>) {
-    super(props)
+    const filteredProps = { ...props }
+    let invalidPinLabelsMessages: string[] = []
+
+    if ((filteredProps as any).pinLabels) {
+      const { validPinLabels, invalidPinLabelsMessages: messages } =
+        filterPinLabels((filteredProps as any).pinLabels)
+      ;(filteredProps as any).pinLabels = validPinLabels
+      invalidPinLabelsMessages = messages
+    }
+
+    // super needs to run before we can assign to `this`
+    super(filteredProps)
+    this._invalidPinLabelMessages = invalidPinLabelsMessages
+
     this._addChildrenFromStringFootprint()
     this.initPorts()
   }
@@ -422,6 +437,24 @@ export class NormalComponent<
    * You can override this method to do more complicated things.
    */
   doInitialSchematicComponentRender() {
+    if (this._invalidPinLabelMessages?.length && this.root?.db) {
+      for (const message of this._invalidPinLabelMessages) {
+        let property_name = "pinLabels"
+        const match = message.match(
+          /^Invalid pin label:\s*([^=]+)=\s*'([^']+)'/,
+        )
+        if (match) {
+          const label = match[2]
+          property_name = `pinLabels['${label}']`
+        }
+        this.root.db.source_property_ignored_warning.insert({
+          source_component_id: this.source_component_id!,
+          property_name,
+          message,
+          error_type: "source_property_ignored_warning",
+        })
+      }
+    }
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
 

@@ -157,7 +157,12 @@ test("pinheader with pcbPinLabels should use different labels for PCB vs schemat
         name="P1"
         pinCount={4}
         footprint="pinrow4"
-        pinLabels={["SCL", "SDA", "VCC", "GND"]}
+        pinLabels={{
+          pin1: "SCL",
+          pin2: "SDA",
+          pin3: "VCC",
+          pin4: "GND",
+        }}
         pcbPinLabels={{
           pin1: "SCL_PCB",
           pin2: "SDA_PCB",
@@ -193,7 +198,11 @@ test("pinheader should fallback to pinLabels when pcbPinLabels not provided", as
         name="P2"
         pinCount={3}
         footprint="pinrow3"
-        pinLabels={["MOSI", "MISO", "SS"]}
+        pinLabels={{
+          pin1: "MOSI",
+          pin2: "MISO",
+          pin3: "SS",
+        }}
         schPinArrangement={{
           leftSide: {
             direction: "top-to-bottom",

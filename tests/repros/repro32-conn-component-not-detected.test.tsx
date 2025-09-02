@@ -36,9 +36,9 @@ test("repro32-conn-component-not-detected", async () => {
   const traces = circuitJson.filter((c: any) => c.type === "source_trace")
 
   // Verify expected component states
-  expect(sourceComponents.find((c: any) => c.name === "conn")).toBeUndefined()
+  expect(sourceComponents.find((c: any) => c.name === "conn")).toBeDefined()
   expect(sourceComponents.find((c: any) => c.name === "R1")).toBeDefined()
-  expect(traces.length).toBe(0)
+  expect(traces.length).toBe(1)
 
   // Verify circuit rendered successfully
   expect(circuitJson.length).toBeGreaterThan(0)
@@ -53,16 +53,10 @@ test("repro32-conn-component-not-detected", async () => {
   const errorComponents = circuitJson.filter(
     (c: any) => c.type === "source_failed_to_create_component_error",
   )
-  expect(errorComponents.length).toBeGreaterThan(0)
+  expect(errorComponents.length).toBe(0)
 
   const traceErrors = circuitJson.filter(
     (c: any) => c.type === "source_trace_not_connected_error",
   )
-  expect(traceErrors.length).toBe(1)
-
-  if (traceErrors[0].type === "source_trace_not_connected_error") {
-    expect(traceErrors[0].selectors_not_found).toEqual([".conn > .pin1"])
-  } else {
-    throw new Error("Unexpected error type")
-  }
+  expect(traceErrors.length).toBe(0)
 })
