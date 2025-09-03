@@ -1,20 +1,13 @@
 import type { NormalComponent } from "./NormalComponent"
+import { type Box, type Bounds, getBoundingBox } from "@tscircuit/math-utils"
 
-// Simple rectangle interface for intersection detection
-interface Rectangle {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-// Simple rectangle intersection detection
-function doesRectangleIntersect(rect1: Rectangle, rect2: Rectangle): boolean {
+// Bounds intersection detection
+function doBoundsIntersect(bounds1: Bounds, bounds2: Bounds): boolean {
   return !(
-    rect1.x + rect1.width <= rect2.x ||
-    rect2.x + rect2.width <= rect1.x ||
-    rect1.y + rect1.height <= rect2.y ||
-    rect2.y + rect2.height <= rect1.y
+    bounds1.maxX <= bounds2.minX ||
+    bounds2.maxX <= bounds1.minX ||
+    bounds1.maxY <= bounds2.minY ||
+    bounds2.maxY <= bounds1.minY
   )
 }
 
@@ -66,14 +59,14 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
     .filter((comp) => comp !== component && comp.pcb_component_id)
 
   // Calculate obstacle bounds
-  const obstacleBounds: Rectangle[] = allNormalComponents.map((comp) => {
+  const obstacleBounds: Bounds[] = allNormalComponents.map((comp) => {
     const bounds = comp._getPcbCircuitJsonBounds()
-    return {
-      x: bounds.bounds.left,
-      y: Math.min(bounds.bounds.top, bounds.bounds.bottom), // Use minimum y value as origin
+    const box: Box = {
+      center: bounds.center,
       width: bounds.width,
       height: bounds.height,
     }
+    return getBoundingBox(box)
   })
 
   // Process each silkscreen text element
@@ -85,16 +78,16 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
     const textWidth = silkscreenText.text.length * fontSize * 0.6 // Rough character width
     const textHeight = fontSize
 
-    const textBounds: Rectangle = {
-      x: currentPosition.x - textWidth / 2,
-      y: currentPosition.y - textHeight / 2,
+    const textBox: Box = {
+      center: currentPosition,
       width: textWidth,
       height: textHeight,
     }
+    const textBounds: Bounds = getBoundingBox(textBox)
 
     // Check if current text position intersects with any obstacles
     const hasIntersection = obstacleBounds.some((obstacle) =>
-      doesRectangleIntersect(textBounds, obstacle),
+      doBoundsIntersect(textBounds, obstacle),
     )
 
     if (!hasIntersection) {
@@ -105,16 +98,16 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
     const flippedX = 2 * componentCenter.x - currentPosition.x
     const flippedY = 2 * componentCenter.y - currentPosition.y
 
-    const flippedTextBounds: Rectangle = {
-      x: flippedX - textWidth / 2,
-      y: flippedY - textHeight / 2,
+    const flippedTextBox: Box = {
+      center: { x: flippedX, y: flippedY },
       width: textWidth,
       height: textHeight,
     }
+    const flippedTextBounds: Bounds = getBoundingBox(flippedTextBox)
 
     // Check if flipped position resolves the intersection
     const flippedHasIntersection = obstacleBounds.some((obstacle) =>
-      doesRectangleIntersect(flippedTextBounds, obstacle),
+      doBoundsIntersect(flippedTextBounds, obstacle),
     )
 
     // If flipping resolves the overlap, commit the change
