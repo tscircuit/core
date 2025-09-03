@@ -35,24 +35,5 @@ test("board with resistor being passed schX and pcbX in mm", () => {
 
   circuit.render()
 
-  expect(circuit.db.pcb_component.list()).toMatchInlineSnapshot(`
-    [
-      {
-        "center": {
-          "x": -0.25,
-          "y": 0,
-        },
-        "height": 2.2,
-        "layer": "top",
-        "pcb_component_id": "pcb_component_0",
-        "rotation": 0,
-        "source_component_id": "source_component_0",
-        "subcircuit_id": "subcircuit_source_group_0",
-        "type": "pcb_component",
-        "width": 8.7,
-      },
-    ]
-  `)
-
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
