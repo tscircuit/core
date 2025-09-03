@@ -89,4 +89,13 @@ are hosted on web pages. To get debug inputs for these algorithms:
 3. Run a test that reproduces the issue you're trying to debug, e.g. `bun run test/repros/repro50-rp2040-decoupling-capacitors.test.ts`
 4. In the terminal, you'll see that the relevant inputs to the algorithms are
    written to the `debug-output` directory.
+
+```
+➜  core git:(algo-inputs) bun test tests/repros/repro50-rp2040-decoupling-capacitors.test.tsx
+bun test v1.2.21 (7c45ed97)
+✓ repro50: rp2040 decoupling capacitors [4861.61ms]
+Writing debug output to debug-output/packInput-circuitjson-unnamed_board1.json
+Writing debug output to debug-output/packInput-unnamed_board1.json
+```
+
 5. Copy that input JSON and paste it into the relevant debugger, e.g. [schematic-trace-solver paste input web debugger](https://schematic-trace-solver.vercel.app/?fixture=%7B%22path%22%3A%22site%2FPasteInput.page.tsx%22%7D)
