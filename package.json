@@ -37,7 +37,7 @@
     "@tscircuit/import-snippet": "^0.0.4",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
     "@tscircuit/log-soup": "^1.0.2",
-    "@tscircuit/matchpack": "^0.0.9",
+    "@tscircuit/matchpack": "^0.0.12",
     "@tscircuit/math-utils": "^0.0.18",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/props": "0.0.289",
@@ -95,7 +95,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "calculate-packing": "0.0.29",
+    "calculate-packing": "0.0.31",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.3",
     "nanoid": "^5.0.7",
