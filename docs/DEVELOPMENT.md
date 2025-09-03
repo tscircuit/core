@@ -75,5 +75,18 @@ algorithms.
 
 https://github.com/user-attachments/assets/73ae3227-891c-4a01-9f02-3b04f5aa2ac5
 
+## Getting Inputs for Algorithms
 
+Complex algorithms like the autorouter, pcb packing, schematic trace solving
+etc. have JSON inputs that can be copied into their respective debuggers, which
+are hosted on web pages. To get debug inputs for these algorithms:
 
+1. Find the relevant function call to the algorithm, e.g. you might find that
+   `Group_doInitialSchematicTraceRender.ts` is calling the [schematic-trace-solver](https://github.com/tscircuit/schematic-trace-solver)
+2. Set `export DEBUG=Group_doInitialSchematicTraceRender` in your terminal, this
+   will enable logging of debug files and messages. The `DEBUG` environment
+   variable should be set to whatever `debugOutput` you're trying to enable.
+3. Run a test that reproduces the issue you're trying to debug, e.g. `bun run test/repros/repro50-rp2040-decoupling-capacitors.test.ts`
+4. In the terminal, you'll see that the relevant inputs to the algorithms are
+   written to the `debug-output` directory.
+5. Copy that input JSON and paste it into the relevant debugger, e.g. [schematic-trace-solver paste input web debugger](https://schematic-trace-solver.vercel.app/?fixture=%7B%22path%22%3A%22site%2FPasteInput.page.tsx%22%7D)
