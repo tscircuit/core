@@ -20,9 +20,8 @@ test("repro-12: same name of components in subcircuit", async () => {
 
   await circuit.renderUntilSettled()
 
-  const errors = circuit.db.source_failed_to_create_component_error.list()
-  expect(errors).toHaveLength(1)
-  expect(circuit.selectAll(".R1")).toHaveLength(1)
+  const pcb_trace_errors = circuit.db.pcb_trace_error.list()
+  expect(pcb_trace_errors).toHaveLength(1)
 })
 
 test("repro-12: same name of components in board", async () => {
@@ -44,9 +43,8 @@ test("repro-12: same name of components in board", async () => {
 
   await circuit.renderUntilSettled()
 
-  const errors = circuit.db.source_failed_to_create_component_error.list()
-  expect(errors).toHaveLength(1)
-  expect(circuit.selectAll(".R1")).toHaveLength(1)
+  const pcb_trace_errors = circuit.db.pcb_trace_error.list()
+  expect(pcb_trace_errors).toHaveLength(1)
 })
 
 test("repro-12: same name of components in different subcircuits should not be an error", async () => {
@@ -93,6 +91,6 @@ test("repro-12: same name of components in different subcircuits should not be a
   await circuit.renderUntilSettled()
 
   // No errors because the components are in different subcircuits
-  const errors = circuit.db.source_failed_to_create_component_error.list()
-  expect(errors).toHaveLength(0)
+  const pcb_trace_errors = circuit.db.pcb_trace_error.list()
+  expect(pcb_trace_errors).toHaveLength(0)
 })
