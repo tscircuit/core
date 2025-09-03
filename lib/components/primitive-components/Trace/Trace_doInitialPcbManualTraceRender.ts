@@ -2,7 +2,7 @@ import type { LayerRef, PcbTraceRoutePoint } from "circuit-json"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
-import { applyToPoint, compose, rotate, translate } from "transformation-matrix"
+import { applyToPoint } from "transformation-matrix"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
