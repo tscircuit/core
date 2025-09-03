@@ -49,6 +49,7 @@ import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
+import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
 
 const debug = Debug("tscircuit:core")
@@ -106,6 +107,11 @@ export class NormalComponent<
   _hasStartedFootprintUrlLoad = false
 
   private _invalidPinLabelMessages: string[] = []
+
+  /**
+   * Set to true to enable automatic silkscreen text adjustment when it overlaps with other components
+   */
+  _adjustSilkscreenTextAutomatically = false
 
   /**
    * Override this property for component defaults
@@ -1277,5 +1283,9 @@ export class NormalComponent<
    */
   _repositionOnPcb(position: { x: number; y: number }) {
     return NormalComponent__repositionOnPcb(this, position)
+  }
+
+  doInitialSilkscreenOverlapAdjustment() {
+    return NormalComponent_doInitialSilkscreenOverlapAdjustment(this)
   }
 }
