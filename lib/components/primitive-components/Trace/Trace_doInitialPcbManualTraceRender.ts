@@ -72,7 +72,14 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     start_pcb_port_id: anchorPort.pcb_port_id!,
   })
   const group = trace.getGroup()
-  const transform = group?._computePcbGlobalTransformBeforeLayout?.()!
+  const transform = group?._computePcbGlobalTransformBeforeLayout?.() || {
+    a: 1,
+    b: 0,
+    c: 0,
+    d: 1,
+    e: 0,
+    f: 0,
+  }
   for (const pt of props.pcbPath) {
     const transformed = applyToPoint(transform, {
       x: -pt.x as number,
