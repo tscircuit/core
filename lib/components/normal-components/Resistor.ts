@@ -10,6 +10,8 @@ export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
 > {
+  _adjustSilkscreenTextAutomatically = true
+
   get config() {
     return {
       componentName: "Resistor",

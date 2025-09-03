@@ -13,6 +13,8 @@ export class Inductor extends NormalComponent<
   typeof inductorProps,
   PassivePorts
 > {
+  _adjustSilkscreenTextAutomatically = true
+
   get config() {
     return {
       componentName: "Inductor",
