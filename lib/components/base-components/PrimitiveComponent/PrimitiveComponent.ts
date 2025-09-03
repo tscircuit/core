@@ -30,6 +30,7 @@ import {
   cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
 } from "./cssSelectPrimitiveComponentAdapter"
 import { preprocessSelector } from "./preprocessSelector"
+import { createErrorPlaceholderComponent } from "lib/components/primitive-components/ErrorPlaceholder"
 
 const cssSelectOptionsInsideSubcircuit: Options<
   PrimitiveComponent,
@@ -571,6 +572,26 @@ export abstract class PrimitiveComponent<
           component,
         )}"`,
       )
+    }
+    // Check for component name conflicts
+    if (component._parsedProps?.name && component.componentName !== "Port") {
+      const existingComponent = this.children.find(
+        (c) =>
+          c._parsedProps?.name === component._parsedProps.name &&
+          c.componentName !== "Port",
+      )
+      if (existingComponent) {
+        const errorPlaceholder = createErrorPlaceholderComponent(
+          { ...component.props, componentType: component.componentName },
+          new Error(
+            `Component with name "${component._parsedProps.name}" already exists`,
+          ),
+        )
+        errorPlaceholder.onAddToParent(this)
+        errorPlaceholder.parent = this
+        this.children.push(errorPlaceholder)
+        return
+      }
     }
     component.onAddToParent(this)
     component.parent = this
