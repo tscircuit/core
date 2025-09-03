@@ -2,6 +2,7 @@ import type { LayerRef, PcbTraceRoutePoint } from "circuit-json"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
+import { applyToPoint, compose, rotate, translate } from "transformation-matrix"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -70,21 +71,17 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     layer: layer as LayerRef,
     start_pcb_port_id: anchorPort.pcb_port_id!,
   })
-  // Get group rotation in radians
   const group = trace.getGroup()
-  const rotation = (group?._parsedProps.pcbRotation || 0) * (Math.PI / 180)
-  const cos = Math.cos(rotation)
-  const sin = Math.sin(rotation)
-
+  const transform = group?._computePcbGlobalTransformBeforeLayout?.()!
   for (const pt of props.pcbPath) {
-    // Apply rotation to the point (inverted rotation direction)
-    const x = (pt.x as number) * cos + (pt.y as number) * sin
-    const y = -(pt.x as number) * sin + (pt.y as number) * cos
-
+    const transformed = applyToPoint(transform, {
+      x: -pt.x as number,
+      y: pt.y as number,
+    })
     route.push({
       route_type: "wire",
-      x: anchorPos.x + x,
-      y: anchorPos.y + y,
+      x: transformed.x,
+      y: transformed.y,
       width,
       layer: layer as LayerRef,
     })

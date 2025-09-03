@@ -44,24 +44,26 @@ test("Connector with resistor and solder jumper circuit layout same net not comb
         />
         <trace from="C3.pin1" to="C4.pin1" pcbPath={[{ x: 1, y: 2 }]} />
       </group>
-      <group pcbRotation={-90} pcbX={-4} pcbY={0}>
-        <capacitor
-          name="C5"
-          capacitance="10uF"
-          maxVoltageRating={6}
-          footprint="0402"
-          pcbX={1}
-          pcbY={0}
-        />
-        <capacitor
-          name="C6"
-          capacitance="10uF"
-          maxVoltageRating={6}
-          footprint="0402"
-          pcbX={-1}
-          pcbY={0}
-        />
-        <trace from="C5.pin1" to="C6.pin1" pcbPath={[{ x: 1, y: 2 }]} />
+      <group pcbRotation={-90}>
+        <group pcbRotation={-90} pcbX={-4} pcbY={0}>
+          <capacitor
+            name="C5"
+            capacitance="10uF"
+            maxVoltageRating={6}
+            footprint="0402"
+            pcbX={1}
+            pcbY={0}
+          />
+          <capacitor
+            name="C6"
+            capacitance="10uF"
+            maxVoltageRating={6}
+            footprint="0402"
+            pcbX={-1}
+            pcbY={0}
+          />
+          <trace from="C5.pin1" to="C6.pin1" pcbPath={[{ x: 1, y: 2 }]} />
+        </group>
       </group>
     </board>,
   )
