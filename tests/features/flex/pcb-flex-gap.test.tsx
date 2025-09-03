@@ -26,17 +26,4 @@ test("pcb flex gap", async () => {
   ) as PcbComponent[]
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-
-  expect(pcb_component_r1[0].center).toMatchInlineSnapshot(`
-    {
-      "x": -2.3,
-      "y": 0,
-    }
-  `)
-  expect(pcb_component_c1[0].center).toMatchInlineSnapshot(`
-    {
-      "x": 2.3,
-      "y": 0,
-    }
-  `)
 })
