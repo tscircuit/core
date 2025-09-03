@@ -50,6 +50,7 @@ import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent_
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
+import { filterPinLabels } from "lib/utils/filterPinLabels"
 
 const debug = Debug("tscircuit:core")
 
@@ -92,10 +93,20 @@ export class NormalComponent<
   _impliedFootprint?: string | undefined
 
   isPrimitiveContainer = true
+  _isNormalComponent = true
+
+  // Mapping from camelCase attribute names to their lowercase equivalents
+  // This is used by the CSS selector adapter for fast attribute lookups
+  // Reverse mapping from lowercase to camelCase for O(1) lookups
+  _attributeLowerToCamelNameMap = {
+    _isnormalcomponent: "_isNormalComponent",
+  }
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false
+
+  private _invalidPinLabelMessages: string[] = []
 
   /**
    * Whether this component should automatically adjust its silkscreen text to avoid overlaps
@@ -121,7 +132,20 @@ export class NormalComponent<
   }
 
   constructor(props: z.input<ZodProps>) {
-    super(props)
+    const filteredProps = { ...props }
+    let invalidPinLabelsMessages: string[] = []
+
+    // Apply invalid pin label filtering for object-based pinLabels only
+    // Array-based pinLabels (used by PinHeader) are left unfiltered
+    if (filteredProps.pinLabels && !Array.isArray(filteredProps.pinLabels)) {
+      const { validPinLabels, invalidPinLabelsMessages: messages } =
+        filterPinLabels(filteredProps.pinLabels)
+      filteredProps.pinLabels = validPinLabels
+      invalidPinLabelsMessages = messages
+    }
+
+    super(filteredProps)
+    this._invalidPinLabelMessages = invalidPinLabelsMessages
     this._addChildrenFromStringFootprint()
     this.initPorts()
   }
@@ -430,6 +454,26 @@ export class NormalComponent<
   doInitialSchematicComponentRender() {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
+
+    // Insert warnings for invalid pin labels
+    if (this._invalidPinLabelMessages?.length && this.root?.db) {
+      for (const message of this._invalidPinLabelMessages) {
+        let property_name = "pinLabels"
+        const match = message.match(
+          /^Invalid pin label:\s*([^=]+)=\s*'([^']+)'/,
+        )
+        if (match) {
+          const label = match[2]
+          property_name = `pinLabels['${label}']`
+        }
+        this.root.db.source_property_ignored_warning.insert({
+          source_component_id: this.source_component_id!,
+          property_name,
+          message,
+          error_type: "source_property_ignored_warning",
+        })
+      }
+    }
 
     const { schematicSymbolName } = this.config
 

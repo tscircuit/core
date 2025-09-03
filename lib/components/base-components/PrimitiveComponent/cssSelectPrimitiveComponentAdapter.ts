@@ -30,6 +30,7 @@ export const cssSelectPrimitiveComponentAdapter: Required<
     if (name === "name" && node._parsedProps?.name) {
       return node._parsedProps.name
     }
+
     // Handle other attribute selectors based on props
     if (node._parsedProps && name in node._parsedProps) {
       const value = node._parsedProps[name]
@@ -40,6 +41,31 @@ export const cssSelectPrimitiveComponentAdapter: Required<
           ? String(value)
           : null
     }
+
+    // Check for properties directly on the node
+    if (name in node) {
+      const value = (node as any)[name]
+      return typeof value === "string"
+        ? value
+        : value !== null && value !== undefined
+          ? String(value)
+          : null
+    }
+
+    // Use pre-computed reverse mapping for fast O(1) camelCase lookups
+    const reverseMap = (node as any)._attributeLowerToCamelNameMap
+    if (reverseMap) {
+      const camelCaseName = reverseMap[name]
+      if (camelCaseName && camelCaseName in node) {
+        const value = (node as any)[camelCaseName]
+        return typeof value === "string"
+          ? value
+          : value !== null && value !== undefined
+            ? String(value)
+            : null
+      }
+    }
+
     return null
   },
 
@@ -50,7 +76,22 @@ export const cssSelectPrimitiveComponentAdapter: Required<
       return !!node._parsedProps?.name
     }
     // Check for other attributes based on props
-    return node._parsedProps && name in node._parsedProps
+    if (node._parsedProps && name in node._parsedProps) {
+      return true
+    }
+    // Check for properties directly on the node
+    if (name in node) {
+      return true
+    }
+    // Use pre-computed reverse mapping for fast O(1) camelCase lookups
+    const reverseMap = (node as any)._attributeLowerToCamelNameMap
+    if (reverseMap) {
+      const camelCaseName = reverseMap[name]
+      if (camelCaseName && camelCaseName in node) {
+        return true
+      }
+    }
+    return false
   },
 
   // Get the siblings of the node

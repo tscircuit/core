@@ -269,10 +269,12 @@ export function createSchematicTraceSolverInputProblem(
         )) {
         if (!net.name) continue
         if (!presentNetIds.has(net.name)) continue
-        if (net.is_ground || net.name.startsWith("GND")) {
+        if (net.is_ground || net.name.toLowerCase().startsWith("gnd")) {
           netToAllowedOrientations[net.name] = ["y-"]
-        } else if (/^V/.test(net.name)) {
+        } else if (net.is_power || net.name.toLowerCase().startsWith("v")) {
           netToAllowedOrientations[net.name] = ["y+"]
+        } else {
+          netToAllowedOrientations[net.name] = ["x-", "x+"]
         }
       }
       return netToAllowedOrientations
