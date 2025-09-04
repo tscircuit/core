@@ -6,7 +6,7 @@ test("chip rotation should properly adjust SMT pad positions", () => {
 
   circuit.add(
     <board width="30mm" height="30mm">
-      <chip name="U1" pcbX={0} pcbY={0} footprint={"ms012"} />
+      <chip name="U3" pcbX={0} pcbY={0} footprint={"ms012"} />
       <chip
         name="U1"
         pcbX={-10}
