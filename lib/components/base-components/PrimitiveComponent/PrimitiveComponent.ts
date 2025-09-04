@@ -20,7 +20,10 @@ import type { Primitive, ZodType } from "zod"
 import { z } from "zod"
 import type { RootCircuit } from "lib/RootCircuit"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/ISubcircuit"
-import { Renderable } from "lib/components/base-components/Renderable"
+import {
+  Renderable,
+  type RenderPhase,
+} from "lib/components/base-components/Renderable"
 import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { Ftype } from "lib/utils/constants"
 import { selectOne, selectAll, type Options } from "css-select"
@@ -127,8 +130,37 @@ export abstract class PrimitiveComponent<
   isPrimitiveContainer = false
   canHaveTextChildren = false
 
+  private _source_component_id: string | null = null
+
+  get source_component_id(): string | null {
+    return this._source_component_id
+  }
+
+  /**
+   * Whether this component should be checked for naming conflicts.
+   * Override this in subclasses to enable naming conflict detection.
+   */
+  shouldCheckNamingConflicts = false
+
+  set source_component_id(value: string | null) {
+    const wasNull = this._source_component_id === null
+    this._source_component_id = value
+
+    // Automatically check for naming conflicts when a source component is first created
+    // Only check for components that should be checked and have user-defined names
+    if (
+      wasNull &&
+      value !== null &&
+      this.name &&
+      !this.name.startsWith("unnamed_") &&
+      this.shouldCheckNamingConflicts
+    ) {
+      this._checkNamingConflictAfterSourceCreation()
+    }
+  }
+
   source_group_id: string | null = null
-  source_component_id: string | null = null
+
   schematic_component_id: string | null = null
   pcb_component_id: string | null = null
   cad_component_id: string | null = null
@@ -581,6 +613,64 @@ export abstract class PrimitiveComponent<
     for (const component of components) {
       this.add(component)
     }
+  }
+
+  /**
+   * Automatically check for naming conflicts after source component creation.
+   * This method is called automatically after doInitialSourceRender.
+   */
+  _checkNamingConflictAfterSourceCreation() {
+    // Only check if this component has a name and a source component was created
+    if (
+      this.name &&
+      this.source_component_id &&
+      this._hasNamingConflictInDatabase()
+    ) {
+      this._createNamingConflictError()
+    }
+  }
+
+  /**
+   * Check if there's already a component with the same name in the same subcircuit
+   */
+  _hasNamingConflictInDatabase(): boolean {
+    if (!this.name) return false
+
+    const subcircuit = this.getSubcircuit()
+
+    if (!subcircuit) {
+      return false
+    }
+
+    // Check for other components with the same name in the same subcircuit
+    // Use getSelectableDescendants to get all descendants without crossing subcircuit boundaries
+    const allComponentsInSubcircuit = subcircuit.getSelectableDescendants()
+
+    const componentsWithSameName = allComponentsInSubcircuit.filter(
+      (child) =>
+        child !== this &&
+        child.name === this.name &&
+        child.source_component_id !== null, // Only consider components that have been rendered to the database
+    )
+
+    return componentsWithSameName.length > 0
+  }
+
+  /**
+   * Create a source_failed_to_create_component_error for naming conflict
+   */
+  _createNamingConflictError(): void {
+    const { db } = this.root!
+    const pcbPosition = this._getGlobalPcbPositionBeforeLayout()
+    const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
+
+    db.source_failed_to_create_component_error.insert({
+      component_name: this.name,
+      error_type: "source_failed_to_create_component_error",
+      message: `Failed to create component "${this.name}". A component with the same name already exists in this subcircuit. Component names must be unique within a subcircuit.`,
+      pcb_center: pcbPosition,
+      schematic_center: schematicPosition,
+    })
   }
 
   remove(component: PrimitiveComponent) {

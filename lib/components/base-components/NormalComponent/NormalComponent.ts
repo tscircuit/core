@@ -94,6 +94,7 @@ export class NormalComponent<
 
   isPrimitiveContainer = true
   _isNormalComponent = true
+  shouldCheckNamingConflicts = true // Enable naming conflict detection for all electronic components
 
   // Mapping from camelCase attribute names to their lowercase equivalents
   // This is used by the CSS selector adapter for fast attribute lookups
