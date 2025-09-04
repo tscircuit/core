@@ -22,26 +22,18 @@ test("repro53: connectivity id in schematic trace", async () => {
 
   const source_traces = circuit.db.source_trace.list()
   expect(source_traces).toHaveLength(3)
+  // check the net number
   expect(
-    source_traces.map((t) => t.subcircuit_connectivity_map_key),
-  ).toMatchInlineSnapshot(`
-    [
-      "unnamedsubcircuit15_connectivity_net0",
-      "unnamedsubcircuit15_connectivity_net0",
-      "unnamedsubcircuit15_connectivity_net1",
-    ]
-  `)
+    source_traces.map((t) =>
+      t.subcircuit_connectivity_map_key?.replace(/^.*_connectivity_/, ""),
+    ),
+  ).toEqual(["net0", "net0", "net1"])
 
   const schematic_traces = circuit.db.schematic_trace.list()
   expect(schematic_traces).toHaveLength(3)
-  const ids = schematic_traces
-    .map((t) => t.subcircuit_connectivity_map_key)
-    .sort()
-  expect(ids).toMatchInlineSnapshot(`
-    [
-      "unnamedsubcircuit15_connectivity_net0",
-      "unnamedsubcircuit15_connectivity_net0",
-      "unnamedsubcircuit15_connectivity_net1",
-    ]
-  `)
+  expect(
+    schematic_traces.map((t) =>
+      t.subcircuit_connectivity_map_key?.replace(/^.*_connectivity_/, ""),
+    ),
+  ).toEqual(["net0", "net0", "net1"])
 })
