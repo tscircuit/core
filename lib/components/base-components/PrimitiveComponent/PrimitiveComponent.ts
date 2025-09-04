@@ -575,21 +575,22 @@ export abstract class PrimitiveComponent<
     }
     // Check for component name conflicts
     if (component._parsedProps?.name && component.componentName !== "Port") {
-      const existingComponent = this.children.find(
-        (c) =>
-          c._parsedProps?.name === component._parsedProps.name &&
-          c.componentName !== "Port",
+      const existingComponentsWithSameName = this.getSubcircuit().selectAll(
+        `.${component.name}`,
+        { noCache: true },
       )
-      if (existingComponent) {
-        const errorPlaceholder = createErrorPlaceholderComponent(
-          { ...component.props, componentType: component.componentName },
-          new Error(
-            `Component with name "${component._parsedProps.name}" already exists`,
-          ),
+      if (existingComponentsWithSameName.length > 0) {
+        const errorComponent = createErrorPlaceholderComponent(
+          {
+            ...component.props,
+            name: component.name,
+            componentType: component.lowercaseComponentName,
+          },
+          new Error(`Duplicate component name "${component.name}"`),
         )
-        errorPlaceholder.onAddToParent(this)
-        errorPlaceholder.parent = this
-        this.children.push(errorPlaceholder)
+        errorComponent.onAddToParent(this)
+        errorComponent.parent = this
+        this.children.push(errorComponent)
         return
       }
     }
@@ -719,8 +720,9 @@ export abstract class PrimitiveComponent<
   _cachedSelectAllQueries: Map<string, PrimitiveComponent[]> = new Map()
   selectAll<T extends PrimitiveComponent = PrimitiveComponent>(
     selectorRaw: string,
+    options?: { noCache?: boolean },
   ): T[] {
-    if (this._cachedSelectAllQueries.has(selectorRaw)) {
+    if (!options?.noCache && this._cachedSelectAllQueries.has(selectorRaw)) {
       return this._cachedSelectAllQueries.get(selectorRaw) as T[]
     }
     const selector = preprocessSelector(selectorRaw)
@@ -730,7 +732,9 @@ export abstract class PrimitiveComponent<
       cssSelectOptionsInsideSubcircuit,
     ) as T[]
     if (result.length > 0) {
-      this._cachedSelectAllQueries.set(selectorRaw, result)
+      if (!options?.noCache) {
+        this._cachedSelectAllQueries.set(selectorRaw, result)
+      }
       return result
     }
 
@@ -740,8 +744,10 @@ export abstract class PrimitiveComponent<
       adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
     }) as ISubcircuit | null
     if (!subcircuit) return []
-    const result2 = subcircuit.selectAll(rest.join(" ")) as T[]
-    this._cachedSelectAllQueries.set(selectorRaw, result2)
+    const result2 = subcircuit.selectAll(rest.join(" "), options) as T[]
+    if (!options?.noCache) {
+      this._cachedSelectAllQueries.set(selectorRaw, result2)
+    }
     return result2
   }
 

@@ -200,9 +200,12 @@ export class RootCircuit {
     return identity()
   }
 
-  selectAll(selector: string): PrimitiveComponent[] {
+  selectAll(
+    selector: string,
+    options?: { noCache?: boolean },
+  ): PrimitiveComponent[] {
     this._guessRootComponent()
-    return this.firstChild?.selectAll(selector) ?? []
+    return this.firstChild?.selectAll(selector, options) ?? []
   }
   selectOne(
     selector: string,
