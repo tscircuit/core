@@ -139,6 +139,8 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         source_trace_id: trace.source_trace_id!,
         edges,
         junctions: [],
+        subcircuit_connectivity_map_key:
+          trace.subcircuit_connectivity_map_key ?? undefined,
       })
       trace.schematic_trace_id = dbTrace.schematic_trace_id
       return
@@ -440,6 +442,8 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     source_trace_id: trace.source_trace_id!,
     edges,
     junctions,
+    subcircuit_connectivity_map_key:
+      trace.subcircuit_connectivity_map_key ?? undefined,
   })
   trace.schematic_trace_id = dbTrace.schematic_trace_id
 

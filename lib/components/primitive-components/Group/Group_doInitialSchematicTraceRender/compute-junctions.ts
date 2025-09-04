@@ -1,7 +1,7 @@
 import type { SchematicTrace } from "circuit-json"
 
 type Edge = SchematicTrace["edges"][number]
-type TraceEdges = { id: string; edges: Edge[] }
+type TraceEdges = { source_trace_id: string; edges: Edge[] }
 
 const TOL = 1e-6
 
@@ -140,7 +140,7 @@ export function computeJunctions(
 ): Record<string, Array<{ x: number; y: number }>> {
   const tol = opts.tolerance ?? TOL
   const result: Record<string, Array<{ x: number; y: number }>> = {}
-  for (const t of traces) result[t.id] = []
+  for (const t of traces) result[t.source_trace_id] = []
 
   // Precompute endpoints for each trace
   const endpointsByTrace = traces.map((t) => {
@@ -176,8 +176,9 @@ export function computeJunctions(
               aCorner !== null && bCorner !== null && aCorner === bCorner
 
             if (hasCorner && !sameCornerOrientation) {
-              result[A.id]!.push(pa)
-              if (A.id !== B.id) result[B.id]!.push(pb)
+              result[A.source_trace_id]!.push(pa)
+              if (A.source_trace_id !== B.source_trace_id)
+                result[B.source_trace_id]!.push(pb)
             }
           }
         }
@@ -198,8 +199,9 @@ export function computeJunctions(
             const sameCornerOrientation =
               aCorner !== null && bCorner !== null && aCorner === bCorner
             if (hasCorner && !sameCornerOrientation) {
-              result[A.id]!.push(pa)
-              if (A.id !== B.id) result[B.id]!.push(pa)
+              result[A.source_trace_id]!.push(pa)
+              if (A.source_trace_id !== B.source_trace_id)
+                result[B.source_trace_id]!.push(pa)
             }
           }
         }
@@ -220,8 +222,9 @@ export function computeJunctions(
             const sameCornerOrientation =
               aCorner !== null && bCorner !== null && aCorner === bCorner
             if (hasCorner && !sameCornerOrientation) {
-              result[B.id]!.push(pb)
-              if (A.id !== B.id) result[A.id]!.push(pb)
+              result[B.source_trace_id]!.push(pb)
+              if (A.source_trace_id !== B.source_trace_id)
+                result[A.source_trace_id]!.push(pb)
             }
           }
         }
