@@ -1,6 +1,7 @@
 import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
+import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 
@@ -12,14 +13,7 @@ export function applyTracesFromSolverOutput(args: {
   schPortIdToSourcePortId: Map<string, string>
   userNetIdToSck: Map<string, string>
 }) {
-  const {
-    group,
-    solver,
-    pinIdToSchematicPortId,
-    pairKeyToSourceTraceId,
-    schPortIdToSourcePortId,
-    userNetIdToSck,
-  } = args
+  const { group, solver, pinIdToSchematicPortId, userNetIdToSck } = args
   const { db } = group.root!
 
   // Use the overlap-corrected traces from the pipeline
@@ -30,44 +24,30 @@ export function applyTracesFromSolverOutput(args: {
     subcircuit_connectivity_map_key?: string
   }> = []
 
-  const getSubcircuitConnectivityMapKeyFromSourceTrace = (
-    source_trace_id?: string | null,
-  ) => {
-    if (!source_trace_id) return undefined
-    return db.source_trace.get(source_trace_id)?.subcircuit_connectivity_map_key
-  }
-
   const getSubcircuitConnectivityMapKeyFromMspPair = (
     solvedTracePath: any,
   ): string | undefined => {
-    const globalConnMap: any = solver.mspConnectionPairSolver?.globalConnMap
+    const globalConnMap: ConnectivityMap =
+      solver.mspConnectionPairSolver?.globalConnMap!
     if (!globalConnMap) return undefined
     if (
       !Array.isArray(solvedTracePath?.pins) ||
       solvedTracePath.pins.length === 0
     )
       return undefined
-    // Any pin in the pair is connected to exactly one net in the global map
+
     for (const pin of solvedTracePath.pins) {
-      const userNetId = globalConnMap.getNetConnectedToId?.(pin?.pinId)
-      if (!userNetId) continue
-      const sck = userNetIdToSck.get(String(userNetId))
-      if (sck) return sck
+      const globalConnNetId = globalConnMap.getNetConnectedToId?.(pin?.pinId)
+      if (!globalConnNetId) continue
+
+      const idsOnNet: string[] =
+        globalConnMap.getIdsConnectedToNet?.(globalConnNetId) ?? []
+      const knownUserNetId = idsOnNet.find((id: string) =>
+        userNetIdToSck.has(String(id)),
+      )
+      if (knownUserNetId) return userNetIdToSck.get(String(knownUserNetId))
     }
     return undefined
-  }
-
-  const getSubcircuitConnectivityMapKeyFromTwoPorts = (
-    pA?: string,
-    pB?: string,
-  ) => {
-    if (!pA || !pB) return undefined
-    const srcA = schPortIdToSourcePortId.get(pA)
-    const srcB = schPortIdToSourcePortId.get(pB)
-    if (!srcA || !srcB) return undefined
-    const sckA = db.source_port.get(srcA)?.subcircuit_connectivity_map_key
-    const sckB = db.source_port.get(srcB)?.subcircuit_connectivity_map_key
-    return sckA && sckB && sckA === sckB ? sckA : undefined
   }
 
   for (const solvedTracePath of Object.values(correctedMap ?? {})) {
@@ -92,22 +72,14 @@ export function applyTracesFromSolverOutput(args: {
       const pA = pinIdToSchematicPortId.get(solvedTracePath.pins[0]?.pinId!)
       const pB = pinIdToSchematicPortId.get(solvedTracePath.pins[1]?.pinId!)
       if (pA && pB) {
-        const pairKey = [pA, pB].sort().join("::")
-        source_trace_id =
-          pairKeyToSourceTraceId.get(pairKey) ||
-          `solver_${solvedTracePath.mspPairId || pairKey}`
-
         // Mark ports as connected on schematic
         for (const schPid of [pA, pB]) {
           const existing = db.schematic_port.get(schPid)
           if (existing) db.schematic_port.update(schPid, { is_connected: true })
         }
 
-        // Prefer SCK from MSP/global connection mapping, fallback to source_trace
         subcircuit_connectivity_map_key =
-          getSubcircuitConnectivityMapKeyFromMspPair(solvedTracePath) ||
-          getSubcircuitConnectivityMapKeyFromSourceTrace(source_trace_id) ||
-          getSubcircuitConnectivityMapKeyFromTwoPorts(pA, pB)
+          getSubcircuitConnectivityMapKeyFromMspPair(solvedTracePath)
       }
     }
 
