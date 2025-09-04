@@ -20,10 +20,7 @@ import type { Primitive, ZodType } from "zod"
 import { z } from "zod"
 import type { RootCircuit } from "lib/RootCircuit"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/ISubcircuit"
-import {
-  Renderable,
-  type RenderPhase,
-} from "lib/components/base-components/Renderable"
+import { Renderable } from "lib/components/base-components/Renderable"
 import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { Ftype } from "lib/utils/constants"
 import { selectOne, selectAll, type Options } from "css-select"
