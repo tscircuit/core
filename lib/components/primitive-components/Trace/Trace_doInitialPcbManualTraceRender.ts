@@ -73,7 +73,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   })
   const transform =
     anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
-  console.log(props.pcbPath)
   for (const pt of props.pcbPath) {
     const transformed = applyToPoint(transform, {
       x: pt.x as number,

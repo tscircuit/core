@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("Connector with resistor and solder jumper circuit layout same net not combine", async () => {
+test("Manual path with rotation", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
