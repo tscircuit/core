@@ -1,7 +1,6 @@
 import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
-import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 
@@ -23,20 +22,6 @@ export function applyTracesFromSolverOutput(args: {
     edges: SchematicTrace["edges"]
     subcircuit_connectivity_map_key?: string
   }> = []
-
-  const getSubcircuitConnectivityMapKeyFromMspPair = (
-    solvedTracePath: any,
-  ): string | undefined => {
-    const globalConnMap: ConnectivityMap =
-      solver.mspConnectionPairSolver?.globalConnMap!
-    if (!globalConnMap) return undefined
-    if (
-      !Array.isArray(solvedTracePath?.pins) ||
-      solvedTracePath.pins.length === 0
-    )
-      return undefined
-    return userNetIdToSck.get(String(solvedTracePath.userNetId))
-  }
 
   for (const solvedTracePath of Object.values(correctedMap ?? {})) {
     const points = solvedTracePath?.tracePath as Array<{ x: number; y: number }>
@@ -66,15 +51,17 @@ export function applyTracesFromSolverOutput(args: {
           if (existing) db.schematic_port.update(schPid, { is_connected: true })
         }
 
-        subcircuit_connectivity_map_key =
-          getSubcircuitConnectivityMapKeyFromMspPair(solvedTracePath)
+        subcircuit_connectivity_map_key = userNetIdToSck.get(
+          String(solvedTracePath.userNetId),
+        )
       }
     }
 
     if (!source_trace_id) {
       source_trace_id = `solver_${solvedTracePath?.mspPairId!}`
-      subcircuit_connectivity_map_key =
-        getSubcircuitConnectivityMapKeyFromMspPair(solvedTracePath)
+      subcircuit_connectivity_map_key = userNetIdToSck.get(
+        String(solvedTracePath.userNetId),
+      )
     }
 
     pendingTraces.push({
