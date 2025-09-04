@@ -71,10 +71,22 @@ export function applyTracesFromSolverOutput(args: {
           const src_B = pB ? schPortIdToSourcePortId.get(pB) : undefined
           const source_port_A = src_A ? db.source_port.get(src_A) : undefined
           const source_port_B = src_B ? db.source_port.get(src_B) : undefined
-          const subcircuit_connectivity_map_key_A = source_port_A?.subcircuit_connectivity_map_key
-          const subcircuit_connectivity_map_key_B = source_port_B?.subcircuit_connectivity_map_key
-          if (subcircuit_connectivity_map_key_A && subcircuit_connectivity_map_key_B && subcircuit_connectivity_map_key_A === subcircuit_connectivity_map_key_B) subcircuit_connectivity_map_key = subcircuit_connectivity_map_key_A
-          else subcircuit_connectivity_map_key = subcircuit_connectivity_map_key_A || subcircuit_connectivity_map_key_B || undefined
+          const subcircuit_connectivity_map_key_A =
+            source_port_A?.subcircuit_connectivity_map_key
+          const subcircuit_connectivity_map_key_B =
+            source_port_B?.subcircuit_connectivity_map_key
+          if (
+            subcircuit_connectivity_map_key_A &&
+            subcircuit_connectivity_map_key_B &&
+            subcircuit_connectivity_map_key_A ===
+              subcircuit_connectivity_map_key_B
+          )
+            subcircuit_connectivity_map_key = subcircuit_connectivity_map_key_A
+          else
+            subcircuit_connectivity_map_key =
+              subcircuit_connectivity_map_key_A ||
+              subcircuit_connectivity_map_key_B ||
+              undefined
         }
       }
     }
