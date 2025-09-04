@@ -13,7 +13,7 @@ test("Connector with resistor and solder jumper circuit layout same net not comb
           maxVoltageRating={6}
           footprint="0402"
           pcbX={-1}
-          pcbY={0}
+          pcbY={-2}
         />
         <capacitor
           name="C2"
@@ -21,17 +21,17 @@ test("Connector with resistor and solder jumper circuit layout same net not comb
           maxVoltageRating={6}
           footprint="0402"
           pcbX={1}
-          pcbY={0}
+          pcbY={-2}
         />
         <trace from="C1.pin1" to="C2.pin1" pcbPath={[{ x: 1, y: 2 }]} />
       </group>
-      <group pcbRotation={90} pcbX={4} pcbY={0}>
+      <group pcbRotation={180} pcbX={4} pcbY={0}>
         <capacitor
           name="C3"
           capacitance="10uF"
           maxVoltageRating={6}
           footprint="0402"
-          pcbX={1}
+          pcbX={-1}
           pcbY={0}
         />
         <capacitor
@@ -39,7 +39,7 @@ test("Connector with resistor and solder jumper circuit layout same net not comb
           capacitance="10uF"
           maxVoltageRating={6}
           footprint="0402"
-          pcbX={-1}
+          pcbX={1}
           pcbY={0}
         />
         <trace from="C3.pin1" to="C4.pin1" pcbPath={[{ x: 1, y: 2 }]} />
@@ -51,7 +51,7 @@ test("Connector with resistor and solder jumper circuit layout same net not comb
             capacitance="10uF"
             maxVoltageRating={6}
             footprint="0402"
-            pcbX={1}
+            pcbX={-1}
             pcbY={0}
           />
           <capacitor
@@ -59,7 +59,7 @@ test("Connector with resistor and solder jumper circuit layout same net not comb
             capacitance="10uF"
             maxVoltageRating={6}
             footprint="0402"
-            pcbX={-1}
+            pcbX={1}
             pcbY={0}
           />
           <trace from="C5.pin1" to="C6.pin1" pcbPath={[{ x: 1, y: 2 }]} />

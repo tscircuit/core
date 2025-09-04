@@ -2,7 +2,7 @@ import type { LayerRef, PcbTraceRoutePoint } from "circuit-json"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
-import { applyToPoint } from "transformation-matrix"
+import { applyToPoint, identity } from "transformation-matrix"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -71,18 +71,12 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     layer: layer as LayerRef,
     start_pcb_port_id: anchorPort.pcb_port_id!,
   })
-  const group = trace.getGroup()
-  const transform = group?._computePcbGlobalTransformBeforeLayout?.() || {
-    a: 1,
-    b: 0,
-    c: 0,
-    d: 1,
-    e: 0,
-    f: 0,
-  }
+  const transform =
+    anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
+  console.log(props.pcbPath)
   for (const pt of props.pcbPath) {
     const transformed = applyToPoint(transform, {
-      x: -pt.x as number,
+      x: pt.x as number,
       y: pt.y as number,
     })
     route.push({
