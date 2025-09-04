@@ -42,7 +42,10 @@ export function applyTracesFromSolverOutput(args: {
   ): string | undefined => {
     const globalConnMap: any = solver.mspConnectionPairSolver?.globalConnMap
     if (!globalConnMap) return undefined
-    if (!Array.isArray(solvedTracePath?.pins) || solvedTracePath.pins.length === 0)
+    if (
+      !Array.isArray(solvedTracePath?.pins) ||
+      solvedTracePath.pins.length === 0
+    )
       return undefined
     // Any pin in the pair is connected to exactly one net in the global map
     for (const pin of solvedTracePath.pins) {
