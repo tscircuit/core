@@ -21,7 +21,7 @@ export const getOtherSchematicTraces = ({
     if (otherSchematicTrace.source_trace_id === source_trace_id) continue
     // Check if these traces are connected to the same connectivity map key
     const otherSourceTrace = db.source_trace.get(
-      otherSchematicTrace.source_trace_id,
+      otherSchematicTrace.source_trace_id!,
     )
 
     const isSameNet =

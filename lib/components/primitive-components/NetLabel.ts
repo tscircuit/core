@@ -247,6 +247,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
 
       // Try to associate the schematic trace with a matching source_trace (port <-> net)
       let source_trace_id: string | undefined
+      let subcircuit_connectivity_map_key: string | undefined
       if (net?.source_net_id && port.source_port_id) {
         const st = db.source_trace
           .list()
@@ -256,12 +257,16 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
               s.connected_source_port_ids?.includes(port.source_port_id!),
           )
         source_trace_id = st?.source_trace_id
+        subcircuit_connectivity_map_key =
+          st?.subcircuit_connectivity_map_key ||
+          db.source_net.get(net.source_net_id!)?.subcircuit_connectivity_map_key
       }
 
       db.schematic_trace.insert({
         source_trace_id: source_trace_id!,
         edges,
         junctions: [],
+        subcircuit_connectivity_map_key,
       })
 
       // Mark the schematic port as connected

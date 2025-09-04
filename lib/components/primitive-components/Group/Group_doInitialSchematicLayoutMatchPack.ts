@@ -498,7 +498,12 @@ export function Group_doInitialSchematicLayoutMatchPack<
   debug("Converting circuit tree to InputProblem...")
   const inputProblem = convertTreeToInputProblem(tree, db, group)
 
-  debug("InputProblem:", JSON.stringify(inputProblem, null, 2))
+  if (debug.enabled) {
+    global.debugOutputs?.add(
+      `matchpack-input-problem-${group.name}`,
+      JSON.stringify(inputProblem, null, 2),
+    )
+  }
 
   // Create and run the LayoutPipelineSolver
   const solver = new LayoutPipelineSolver(inputProblem)
