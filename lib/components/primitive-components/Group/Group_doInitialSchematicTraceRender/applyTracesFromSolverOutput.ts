@@ -9,14 +9,24 @@ export function applyTracesFromSolverOutput(args: {
   solver: SchematicTracePipelineSolver
   pinIdToSchematicPortId: Map<string, string>
   pairKeyToSourceTraceId: Map<string, string>
+  schPortIdToSourcePortId: Map<string, string>
 }) {
-  const { group, solver, pinIdToSchematicPortId, pairKeyToSourceTraceId } = args
+  const {
+    group,
+    solver,
+    pinIdToSchematicPortId,
+    pairKeyToSourceTraceId,
+    schPortIdToSourcePortId,
+  } = args
   const { db } = group.root!
 
   // Use the overlap-corrected traces from the pipeline
   const correctedMap = solver.traceOverlapShiftSolver?.correctedTraceMap
-  const pendingTraces: Array<{ id: string; edges: SchematicTrace["edges"] }> =
-    []
+  const pendingTraces: Array<{
+    id: string
+    edges: SchematicTrace["edges"]
+    subcircuit_connectivity_map_key?: string
+  }> = []
 
   for (const solved of Object.values(correctedMap ?? {})) {
     const points = solved?.tracePath as Array<{ x: number; y: number }>
@@ -32,6 +42,7 @@ export function applyTracesFromSolverOutput(args: {
 
     // Try to associate with an existing source_trace_id when this is a direct connection
     let source_trace_id: string | null = null
+    let subcircuit_connectivity_map_key: string | undefined
     if (Array.isArray(solved?.pins) && solved.pins.length === 2) {
       const pA = pinIdToSchematicPortId.get(solved.pins[0]?.pinId!)
       const pB = pinIdToSchematicPortId.get(solved.pins[1]?.pinId!)
@@ -46,6 +57,25 @@ export function applyTracesFromSolverOutput(args: {
           const existing = db.schematic_port.get(schPid)
           if (existing) db.schematic_port.update(schPid, { is_connected: true })
         }
+
+        // Attempt to derive the connectivity key from the matched source_trace
+        const source_trace = source_trace_id
+          ? db.source_trace.get(source_trace_id)
+          : undefined
+        if (source_trace?.subcircuit_connectivity_map_key) {
+          subcircuit_connectivity_map_key =
+            source_trace.subcircuit_connectivity_map_key
+        } else {
+          // Fallback: infer from the connected ports' source_ports
+          const src_A = pA ? schPortIdToSourcePortId.get(pA) : undefined
+          const src_B = pB ? schPortIdToSourcePortId.get(pB) : undefined
+          const source_port_A = src_A ? db.source_port.get(src_A) : undefined
+          const source_port_B = src_B ? db.source_port.get(src_B) : undefined
+          const subcircuit_connectivity_map_key_A = source_port_A?.subcircuit_connectivity_map_key
+          const subcircuit_connectivity_map_key_B = source_port_B?.subcircuit_connectivity_map_key
+          if (subcircuit_connectivity_map_key_A && subcircuit_connectivity_map_key_B && subcircuit_connectivity_map_key_A === subcircuit_connectivity_map_key_B) subcircuit_connectivity_map_key = subcircuit_connectivity_map_key_A
+          else subcircuit_connectivity_map_key = subcircuit_connectivity_map_key_A || subcircuit_connectivity_map_key_B || undefined
+        }
       }
     }
 
@@ -56,6 +86,7 @@ export function applyTracesFromSolverOutput(args: {
     pendingTraces.push({
       id: source_trace_id,
       edges,
+      subcircuit_connectivity_map_key,
     })
   }
 
@@ -70,6 +101,8 @@ export function applyTracesFromSolverOutput(args: {
       source_trace_id: t.id,
       edges: t.edges,
       junctions: junctionsById[t.id] ?? [],
+      subcircuit_connectivity_map_key: pendingTraces.find((p) => p.id === t.id)
+        ?.subcircuit_connectivity_map_key,
     })
   }
 }

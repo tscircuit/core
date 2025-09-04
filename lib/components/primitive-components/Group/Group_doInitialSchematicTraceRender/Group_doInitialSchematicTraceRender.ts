@@ -58,6 +58,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     solver,
     pinIdToSchematicPortId,
     pairKeyToSourceTraceId,
+    schPortIdToSourcePortId,
   })
 
   // Apply net labels (from solver placements and net-only ports)
