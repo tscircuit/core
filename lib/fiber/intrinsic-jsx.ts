@@ -17,6 +17,7 @@ export interface TscircuitElements {
   potentiometer: Props.PotentiometerProps
   // TODO use ChipProps once it gets merged in @tscircuit/props
   chip: Props.ChipProps
+  pinout: Props.PinoutProps
   powersource: Props.PowerSourceProps
   via: Props.ViaProps
   schematicbox: Props.SchematicBoxProps
