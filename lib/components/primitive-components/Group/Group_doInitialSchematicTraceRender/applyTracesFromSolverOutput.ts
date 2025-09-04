@@ -48,8 +48,6 @@ export function applyTracesFromSolverOutput(args: {
     tracesByNet.get(netKey)!.push(st.source_trace_id)
   }
 
-  for (const arr of tracesByNet.values()) arr.sort()
-
   const getNetKeyForEndpoints = (
     endpoints?: [string, string],
   ): string | undefined => {
