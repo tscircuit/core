@@ -8,14 +8,14 @@ test("chip rotation should properly adjust SMT pad positions", () => {
     <board width="30mm" height="30mm">
       <chip name="U1" pcbX={0} pcbY={0} footprint={"ms012"} />
       <chip
-        name="U1"
+        name="U2"
         pcbX={-10}
         pcbY={-10}
         pcbRotation={90}
         footprint={"ms012"}
       />
       <chip
-        name="U2"
+        name="U3"
         pcbX={10}
         pcbY={10}
         pcbRotation={45}

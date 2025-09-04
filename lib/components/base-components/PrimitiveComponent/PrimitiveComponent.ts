@@ -30,6 +30,7 @@ import {
   cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
 } from "./cssSelectPrimitiveComponentAdapter"
 import { preprocessSelector } from "./preprocessSelector"
+import { createErrorPlaceholderComponent } from "lib/components/primitive-components/ErrorPlaceholder"
 
 const cssSelectOptionsInsideSubcircuit: Options<
   PrimitiveComponent,
@@ -623,7 +624,26 @@ export abstract class PrimitiveComponent<
       this.source_component_id &&
       this._hasNamingConflictInDatabase()
     ) {
-      this._createNamingConflictError()
+      // Create ErrorPlaceholder using the same pattern as the fiber
+      const errorPlaceholder = createErrorPlaceholderComponent(
+        { ...this.props, componentType: this.componentName },
+        new Error(
+          `Failed to create component "${this.name}". A component with the same name already exists in this subcircuit. Component names must be unique within a subcircuit.`,
+        ),
+      )
+
+      // Replace this component with the error placeholder in the parent
+      if (this.parent) {
+        const index = this.parent.children.indexOf(this)
+        if (index !== -1) {
+          this.parent.children[index] = errorPlaceholder
+          errorPlaceholder.parent = this.parent
+          this.shouldBeRemoved = true
+
+          // Trigger rendering of the error placeholder
+          errorPlaceholder.doInitialSourceRender()
+        }
+      }
     }
   }
 
@@ -640,34 +660,16 @@ export abstract class PrimitiveComponent<
     }
 
     // Check for other components with the same name in the same subcircuit
-    // Use getSelectableDescendants to get all descendants without crossing subcircuit boundaries
-    const allComponentsInSubcircuit = subcircuit.getSelectableDescendants()
+    // Use selectAll with noCache to get current state and avoid caching issues
+    const componentsWithSameName = subcircuit.selectAll(`.${this.name}`, {
+      noCache: true,
+    })
 
-    const componentsWithSameName = allComponentsInSubcircuit.filter(
-      (child) =>
-        child !== this &&
-        child.name === this.name &&
-        child.source_component_id !== null, // Only consider components that have been rendered to the database
+    const conflictingComponents = componentsWithSameName.filter(
+      (child) => child !== this && child.source_component_id !== null, // Only consider components that have been rendered to the database
     )
 
-    return componentsWithSameName.length > 0
-  }
-
-  /**
-   * Create a source_failed_to_create_component_error for naming conflict
-   */
-  _createNamingConflictError(): void {
-    const { db } = this.root!
-    const pcbPosition = this._getGlobalPcbPositionBeforeLayout()
-    const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
-
-    db.source_failed_to_create_component_error.insert({
-      component_name: this.name,
-      error_type: "source_failed_to_create_component_error",
-      message: `Failed to create component "${this.name}". A component with the same name already exists in this subcircuit. Component names must be unique within a subcircuit.`,
-      pcb_center: pcbPosition,
-      schematic_center: schematicPosition,
-    })
+    return conflictingComponents.length > 0
   }
 
   remove(component: PrimitiveComponent) {
@@ -785,8 +787,9 @@ export abstract class PrimitiveComponent<
   _cachedSelectAllQueries: Map<string, PrimitiveComponent[]> = new Map()
   selectAll<T extends PrimitiveComponent = PrimitiveComponent>(
     selectorRaw: string,
+    options?: { noCache?: boolean },
   ): T[] {
-    if (this._cachedSelectAllQueries.has(selectorRaw)) {
+    if (!options?.noCache && this._cachedSelectAllQueries.has(selectorRaw)) {
       return this._cachedSelectAllQueries.get(selectorRaw) as T[]
     }
     const selector = preprocessSelector(selectorRaw)
@@ -796,7 +799,9 @@ export abstract class PrimitiveComponent<
       cssSelectOptionsInsideSubcircuit,
     ) as T[]
     if (result.length > 0) {
-      this._cachedSelectAllQueries.set(selectorRaw, result)
+      if (!options?.noCache) {
+        this._cachedSelectAllQueries.set(selectorRaw, result)
+      }
       return result
     }
 
@@ -806,8 +811,10 @@ export abstract class PrimitiveComponent<
       adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
     }) as ISubcircuit | null
     if (!subcircuit) return []
-    const result2 = subcircuit.selectAll(rest.join(" ")) as T[]
-    this._cachedSelectAllQueries.set(selectorRaw, result2)
+    const result2 = subcircuit.selectAll(rest.join(" "), options) as T[]
+    if (!options?.noCache) {
+      this._cachedSelectAllQueries.set(selectorRaw, result2)
+    }
     return result2
   }
 
