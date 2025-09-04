@@ -57,8 +57,6 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     group,
     solver,
     pinIdToSchematicPortId,
-    pairKeyToSourceTraceId,
-    schPortIdToSourcePortId,
     userNetIdToSck,
   })
 

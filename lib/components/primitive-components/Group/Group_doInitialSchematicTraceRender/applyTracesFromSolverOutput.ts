@@ -8,8 +8,6 @@ export function applyTracesFromSolverOutput(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   pinIdToSchematicPortId: Map<string, string>
-  pairKeyToSourceTraceId: Map<string, string>
-  schPortIdToSourcePortId: Map<string, string>
   userNetIdToSck: Map<string, string>
 }) {
   const { group, solver, pinIdToSchematicPortId, userNetIdToSck } = args
