@@ -35,19 +35,7 @@ export function applyTracesFromSolverOutput(args: {
       solvedTracePath.pins.length === 0
     )
       return undefined
-
-    for (const pin of solvedTracePath.pins) {
-      const globalConnNetId = globalConnMap.getNetConnectedToId?.(pin?.pinId)
-      if (!globalConnNetId) continue
-
-      const idsOnNet: string[] =
-        globalConnMap.getIdsConnectedToNet?.(globalConnNetId) ?? []
-      const knownUserNetId = idsOnNet.find((id: string) =>
-        userNetIdToSck.has(String(id)),
-      )
-      if (knownUserNetId) return userNetIdToSck.get(String(knownUserNetId))
-    }
-    return undefined
+    return userNetIdToSck.get(String(solvedTracePath.userNetId))
   }
 
   for (const solvedTracePath of Object.values(correctedMap ?? {})) {
@@ -85,7 +73,6 @@ export function applyTracesFromSolverOutput(args: {
 
     if (!source_trace_id) {
       source_trace_id = `solver_${solvedTracePath?.mspPairId!}`
-      // Try MSP/global map even for non-direct cases
       subcircuit_connectivity_map_key =
         getSubcircuitConnectivityMapKeyFromMspPair(solvedTracePath)
     }
