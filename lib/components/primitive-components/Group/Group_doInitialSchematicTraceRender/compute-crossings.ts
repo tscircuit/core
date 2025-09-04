@@ -1,7 +1,7 @@
 import type { SchematicTrace } from "circuit-json"
 
 type Edge = SchematicTrace["edges"][number]
-type TraceEdges = { id: string; edges: Edge[] }
+type TraceEdges = { source_trace_id: string; edges: Edge[] }
 
 const TOL = 1e-6
 
@@ -230,7 +230,10 @@ export function computeCrossings(
   }
 
   // Build new traces with crossings inserted
-  const out: TraceEdges[] = traces.map((t) => ({ id: t.id, edges: [] }))
+  const out: TraceEdges[] = traces.map((t) => ({
+    source_trace_id: t.source_trace_id,
+    edges: [],
+  }))
 
   for (let ti = 0; ti < traces.length; ti++) {
     const trace = traces[ti]

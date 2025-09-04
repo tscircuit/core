@@ -8,18 +8,21 @@ export function applyTracesFromSolverOutput(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   pinIdToSchematicPortId: Map<string, string>
-  pairKeyToSourceTraceId: Map<string, string>
+  userNetIdToSck: Map<string, string>
 }) {
-  const { group, solver, pinIdToSchematicPortId, pairKeyToSourceTraceId } = args
+  const { group, solver, pinIdToSchematicPortId, userNetIdToSck } = args
   const { db } = group.root!
 
   // Use the overlap-corrected traces from the pipeline
   const correctedMap = solver.traceOverlapShiftSolver?.correctedTraceMap
-  const pendingTraces: Array<{ id: string; edges: SchematicTrace["edges"] }> =
-    []
+  const pendingTraces: Array<{
+    source_trace_id: string
+    edges: SchematicTrace["edges"]
+    subcircuit_connectivity_map_key?: string
+  }> = []
 
-  for (const solved of Object.values(correctedMap ?? {})) {
-    const points = solved?.tracePath as Array<{ x: number; y: number }>
+  for (const solvedTracePath of Object.values(correctedMap ?? {})) {
+    const points = solvedTracePath?.tracePath as Array<{ x: number; y: number }>
     if (!Array.isArray(points) || points.length < 2) continue
 
     const edges: SchematicTrace["edges"] = []
@@ -32,44 +35,57 @@ export function applyTracesFromSolverOutput(args: {
 
     // Try to associate with an existing source_trace_id when this is a direct connection
     let source_trace_id: string | null = null
-    if (Array.isArray(solved?.pins) && solved.pins.length === 2) {
-      const pA = pinIdToSchematicPortId.get(solved.pins[0]?.pinId!)
-      const pB = pinIdToSchematicPortId.get(solved.pins[1]?.pinId!)
+    let subcircuit_connectivity_map_key: string | undefined
+    if (
+      Array.isArray(solvedTracePath?.pins) &&
+      solvedTracePath.pins.length === 2
+    ) {
+      const pA = pinIdToSchematicPortId.get(solvedTracePath.pins[0]?.pinId!)
+      const pB = pinIdToSchematicPortId.get(solvedTracePath.pins[1]?.pinId!)
       if (pA && pB) {
-        const pairKey = [pA, pB].sort().join("::")
-        source_trace_id =
-          pairKeyToSourceTraceId.get(pairKey) ||
-          `solver_${solved.mspPairId || pairKey}`
-
         // Mark ports as connected on schematic
         for (const schPid of [pA, pB]) {
           const existing = db.schematic_port.get(schPid)
           if (existing) db.schematic_port.update(schPid, { is_connected: true })
         }
+
+        subcircuit_connectivity_map_key = userNetIdToSck.get(
+          String(solvedTracePath.userNetId),
+        )
       }
     }
 
     if (!source_trace_id) {
-      source_trace_id = `solver_${solved?.mspPairId!}`
+      source_trace_id = `solver_${solvedTracePath?.mspPairId!}`
+      subcircuit_connectivity_map_key = userNetIdToSck.get(
+        String(solvedTracePath.userNetId),
+      )
     }
 
     pendingTraces.push({
-      id: source_trace_id,
+      source_trace_id,
       edges,
+      subcircuit_connectivity_map_key,
     })
   }
 
   // Compute crossings and junctions without relying on DB lookups
   const withCrossings = computeCrossings(
-    pendingTraces.map((t) => ({ id: t.id, edges: t.edges })),
+    pendingTraces.map((t) => ({
+      source_trace_id: t.source_trace_id,
+      edges: t.edges,
+    })),
   )
   const junctionsById = computeJunctions(withCrossings)
 
   for (const t of withCrossings) {
     db.schematic_trace.insert({
-      source_trace_id: t.id,
+      source_trace_id: t.source_trace_id,
       edges: t.edges,
-      junctions: junctionsById[t.id] ?? [],
+      junctions: junctionsById[t.source_trace_id] ?? [],
+      subcircuit_connectivity_map_key: pendingTraces.find(
+        (p) => p.source_trace_id === t.source_trace_id,
+      )?.subcircuit_connectivity_map_key,
     })
   }
 }
