@@ -26,7 +26,7 @@ test("chip with pinAttributes shows correct arrows", async () => {
         }}
         pinAttributes={{
           V_IN: { requiresPower: true },
-          GND_IN: { providesPower: true },
+          GND_IN: { requiresPower: true },
           V_OUT: { providesPower: true },
           GND_OUT: { providesPower: true },
           EN: { requiresPower: true },
