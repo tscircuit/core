@@ -21,7 +21,12 @@ test("chip with jumper and netlabel connectsTo", async () => {
   }
 
   circuit.add(
-    <board width="20mm" height="15mm" routingDisabled={true}>
+    <board
+      width="20mm"
+      height="15mm"
+      routingDisabled={true}
+      schMaxTraceDistance={5}
+    >
       <chip
         pinLabels={pinLabels}
         footprint="soic8"

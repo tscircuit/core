@@ -3,8 +3,6 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 test("Double schematic traces", async () => {
   const { circuit } = getTestFixture()
 
-  circuit._featureMspSchematicTraceRouting = true
-
   circuit.add(
     <board
       width="25mm"
@@ -13,6 +11,7 @@ test("Double schematic traces", async () => {
         serverCacheEnabled: false,
       }}
       schTraceAutoLabelEnabled
+      schMaxTraceDistance={5}
     >
       <resistor
         name="R1"

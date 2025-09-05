@@ -5,7 +5,7 @@ test("Schematic trace overlaps manufacturer label", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width={10} height={10}>
+    <board width={10} height={10} schMaxTraceDistance={5}>
       <chip
         name="U1"
         manufacturerPartNumber="part-number"

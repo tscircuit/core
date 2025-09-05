@@ -2,6 +2,7 @@ import {
   getCircuitJsonTree,
   transformSchematicElements,
   type CircuitJsonTreeNode,
+  type CircuitJsonUtilObjects,
 } from "@tscircuit/circuit-json-util"
 import { LayoutPipelineSolver, type InputProblem } from "@tscircuit/matchpack"
 import Debug from "debug"
@@ -52,7 +53,7 @@ function rotateDirection(
 // Create conversion function
 function convertTreeToInputProblem(
   tree: CircuitJsonTreeNode,
-  db: any,
+  db: CircuitJsonUtilObjects,
   group: Group<any>,
 ): InputProblem {
   const problem: InputProblem = {
@@ -62,6 +63,7 @@ function convertTreeToInputProblem(
     pinStrongConnMap: {},
     netConnMap: {},
     chipGap: 0.6,
+    decouplingCapsGap: 0.4,
     partitionGap: 1.2,
   }
 
@@ -173,10 +175,10 @@ function convertTreeToInputProblem(
         )
 
         // Calculate bounding box of components in the group
-        let minX = Infinity,
-          maxX = -Infinity,
-          minY = Infinity,
-          maxY = -Infinity
+        let minX = Infinity
+        let maxX = -Infinity
+        let minY = Infinity
+        let maxY = -Infinity
         let hasValidBounds = false
 
         for (const comp of groupComponents) {
@@ -453,8 +455,18 @@ function convertTreeToInputProblem(
 
       // Always create net connections for the overall connectivity
       if (hasNetConnections) {
+        // Determine net classification (ground, power) using source_net metadata and naming heuristics
+        const source_net = db.source_net.getWhere({
+          subcircuit_connectivity_map_key: connectivityKey,
+        })
+
+        const isGround = source_net?.is_ground ?? false
+        const isPositiveVoltageSource = source_net?.is_power ?? false
+
         problem.netMap[connectivityKey] = {
           netId: connectivityKey,
+          isGround,
+          isPositiveVoltageSource,
         }
 
         // Connect all pins to this net

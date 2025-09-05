@@ -8,7 +8,7 @@ test("group schematic matchpack layout", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm">
+    <board width="20mm" height="20mm" schMaxTraceDistance={5}>
       <group name="G1" schWidth={8} schHeight={6}>
         <resistor name="R1" resistance="1k" footprint="0402" />
         <resistor name="R2" resistance="2.2k" footprint="0402" />

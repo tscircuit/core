@@ -12,6 +12,7 @@ test("Schematic trace double hop", async () => {
       }}
       schTraceAutoLabelEnabled
       schAutoLayoutEnabled
+      schMaxTraceDistance={5}
     >
       <resistor name="R1" resistance="10k" footprint="1206" schX={0} schY={0} />
       <resistor name="R2" resistance="10k" footprint="1206" schX={3} schY={0} />

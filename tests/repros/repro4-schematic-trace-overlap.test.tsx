@@ -5,7 +5,7 @@ test("repro4 schematic trace overlap", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm">
+    <board width="20mm" height="20mm" schMaxTraceDistance={5}>
       <resistor
         name="R1"
         resistance="10k"

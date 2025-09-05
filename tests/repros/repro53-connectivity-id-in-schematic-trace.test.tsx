@@ -5,7 +5,7 @@ test("repro53: connectivity id in schematic trace", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board>
+    <board schMaxTraceDistance={5}>
       <resistor name="R1" resistance={1000} schX={-2} />
       <resistor name="R2" resistance={1000} schX={2} schY={-1} />
       <capacitor name="C1" capacitance="1uF" schX={2} />

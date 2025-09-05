@@ -33,9 +33,16 @@ export class Net extends PrimitiveComponent<typeof netProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
+    const isGround = props.name.startsWith("GND")
+    const isPositiveVoltageSource = props.name.startsWith("V")
+
     const net = db.source_net.insert({
       name: props.name,
       member_source_group_ids: [],
+      is_ground: isGround,
+      is_power: isPositiveVoltageSource,
+      // @ts-ignore
+      is_positive_voltage_source: isPositiveVoltageSource,
     })
 
     this.source_net_id = net.source_net_id

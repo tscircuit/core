@@ -5,7 +5,7 @@ it("should render a jumper with pinrow4 footprint", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm">
+    <board width="20mm" height="20mm" schMaxTraceDistance={5}>
       <solderjumper
         name="J1"
         footprint="solderjumper2"
