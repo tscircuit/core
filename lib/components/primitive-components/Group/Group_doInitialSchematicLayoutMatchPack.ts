@@ -461,7 +461,7 @@ function convertTreeToInputProblem(
         })
 
         const isGround = source_net?.is_ground ?? false
-        const isPositiveVoltageSource = source_net?.is_power
+        const isPositiveVoltageSource = source_net?.is_power ?? false
 
         problem.netMap[connectivityKey] = {
           netId: connectivityKey,
