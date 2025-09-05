@@ -456,6 +456,9 @@ function convertTreeToInputProblem(
       if (hasNetConnections) {
         problem.netMap[connectivityKey] = {
           netId: connectivityKey,
+          // TODO: determine if this is a ground or power net
+          // isGround: ???
+          // isPositiveVoltageSource: ???
         }
 
         // Connect all pins to this net
