@@ -62,6 +62,7 @@ function convertTreeToInputProblem(
     pinStrongConnMap: {},
     netConnMap: {},
     chipGap: 0.6,
+    decouplingCapsGap: 0.4,
     partitionGap: 1.2,
   }
 
