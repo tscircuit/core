@@ -5,7 +5,7 @@ test("Schematic trace overlaps manufacturer label", async () => {
 
   circuit._featureMspSchematicTraceRouting = true
   circuit.add(
-    <board width="10mm" height="10mm">
+    <board width="10mm" height="10mm" schMaxTraceDistance={5}>
       <resistor resistance="1k" footprint="0402" name="R1" schX={-1} pcbX={3} />
       <capacitor
         capacitance="1000pF"

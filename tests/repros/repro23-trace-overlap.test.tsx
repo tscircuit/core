@@ -64,6 +64,7 @@ test("chip renders with default name when none provided", async () => {
     <board
       width={10}
       height={10}
+      schMaxTraceDistance={5}
       outline={[
         { x: 0, y: 0 },
         { x: 66, y: 0 },
