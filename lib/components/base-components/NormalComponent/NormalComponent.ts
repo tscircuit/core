@@ -150,6 +150,63 @@ export class NormalComponent<
     this.initPorts()
   }
 
+  doInitialSourceNameValidation(): void {
+    // Check for naming conflicts only for explicitly named components (not auto-assigned names)
+    if (this.name && (this._parsedProps as any).name) {
+      const root = this.root!
+
+      // Find all NormalComponent instances with the same name that have already started or completed SourceNameValidation
+      const findEarlierComponentsWithSameName = (
+        component: any,
+        targetName: string,
+      ): any[] => {
+        const matches: any[] = []
+
+        if (
+          component._isNormalComponent &&
+          component.name === targetName &&
+          component !== this &&
+          component.renderPhaseStates.SourceNameValidation.initialized
+        ) {
+          matches.push(component)
+        }
+
+        // Recursively check children
+        if (component.children) {
+          for (const child of component.children) {
+            matches.push(
+              ...findEarlierComponentsWithSameName(child, targetName),
+            )
+          }
+        }
+
+        return matches
+      }
+
+      const conflictingComponents = findEarlierComponentsWithSameName(
+        root,
+        this.name,
+      )
+
+      if (conflictingComponents.length > 0) {
+        // Create naming conflict error
+        const pcbPosition = this._getGlobalPcbPositionBeforeLayout()
+        const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
+
+        root.db.source_failed_to_create_component_error.insert({
+          component_name: this.name,
+          error_type: "source_failed_to_create_component_error",
+          message: `Cannot create component "${this.name}": A component with the same name already exists`,
+          pcb_center: pcbPosition,
+          schematic_center: schematicPosition,
+        })
+
+        // Mark component for removal to prevent downstream issues
+        this.shouldBeRemoved = true
+      }
+    }
+  }
+
   /**
    * Override this method for better control over the auto-discovery of ports.
    *

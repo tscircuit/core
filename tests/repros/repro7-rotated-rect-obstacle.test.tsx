@@ -17,7 +17,7 @@ test("repro7-rotated-rect-obstacle", async () => {
       <trace from=".R1 > .pin2" to=".R2 > .pin1" />
 
       <chip
-        name="obstacle"
+        name="obstacle1"
         pcbX={0}
         pcbY={0}
         pcbRotation={33}
@@ -41,7 +41,7 @@ test("repro7-rotated-rect-obstacle", async () => {
       <trace from=".R3 > .pin2" to=".R4 > .pin1" />
 
       <chip
-        name="obstacle"
+        name="obstacle2"
         pcbX={0}
         pcbY={-10}
         pcbRotation={140}
