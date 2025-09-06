@@ -172,8 +172,8 @@ export const createComponentsFromCircuitJson = (
         components.push(
           new SilkscreenText({
             anchorAlignment: elm.anchor_alignment || "center",
-            text: elm.text,
-            fontSize: elm.font_size,
+            text: componentName,
+            fontSize: elm.font_size + 0.2,
             pcbX: Number.isNaN(elm.anchor_position.x)
               ? 0
               : elm.anchor_position.x,

@@ -3,7 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import external0402Footprint from "tests/fixtures/assets/external-0402-footprint.json"
 import { getTestFootprintServer } from "tests/fixtures/get-test-footprint-server"
 
-test("kicad footprint 1", async () => {
+test("footprint library map 1", async () => {
   const { url: footprintServerUrl } = getTestFootprintServer(
     external0402Footprint,
   )
