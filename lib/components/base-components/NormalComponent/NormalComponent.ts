@@ -52,7 +52,8 @@ import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionO
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
-import type { AnyCircuitElement } from "circuit-json"
+import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
+import { isFootprintUrl, parseLibraryFootprintRef } from "./footprintUtils"
 
 const debug = Debug("tscircuit:core")
 
@@ -416,26 +417,6 @@ export class NormalComponent<
     return null
   }
 
-  _isFootprintUrl(s: string): boolean {
-    return s.startsWith("http://") || s.startsWith("https://")
-  }
-
-  /**
-   * Returns the library prefix and footprintName̦
-   * reference - "<lib>:<footprintName>"
-   */
-  _parseLibraryFootprintRef(
-    s: string,
-  ): { lib: string; footprintName: string } | null {
-    if (this._isFootprintUrl(s)) return null
-    const idx = s.indexOf(":")
-    if (idx <= 0) return null
-    const lib = s.slice(0, idx)
-    const footprintName = s.slice(idx + 1)
-    if (!lib || !footprintName) return null
-    return { lib, footprintName }
-  }
-
   _addChildrenFromStringFootprint() {
     const { pcbRotation, pinLabels, pcbPinLabels } = this.props
     let { footprint } = this.props
@@ -443,8 +424,8 @@ export class NormalComponent<
     if (!footprint) return
 
     if (typeof footprint === "string") {
-      if (this._isFootprintUrl(footprint)) return
-      if (this._parseLibraryFootprintRef(footprint)) return
+      if (isFootprintUrl(footprint)) return
+      if (parseLibraryFootprintRef(footprint)) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         {
@@ -788,111 +769,7 @@ export class NormalComponent<
   }
 
   doInitialPcbFootprintStringRender(): void {
-    let { footprint } = this.props
-    footprint ??= this._getImpliedFootprintString?.()
-    if (!footprint) return
-
-    const { pcbRotation, pinLabels, pcbPinLabels } = this.props
-
-    if (typeof footprint === "string" && this._isFootprintUrl(footprint)) {
-      if (this._hasStartedFootprintUrlLoad) return
-      this._hasStartedFootprintUrlLoad = true
-      const url = footprint
-      this._queueAsyncEffect("load-footprint-url", async () => {
-        const res = await fetch(url)
-        const soup = await res.json()
-        const fpComponents = createComponentsFromCircuitJson(
-          {
-            componentName: this.name,
-            componentRotation: pcbRotation,
-            footprint: url,
-            pinLabels,
-            pcbPinLabels,
-          },
-          soup as any,
-        )
-        this.addAll(fpComponents)
-        this._markDirty("InitializePortsFromChildren")
-      })
-      return
-    }
-
-    // Handle library-style footprint strings via platform.footprintLibraryMap
-    if (typeof footprint === "string") {
-      const libRef = this._parseLibraryFootprintRef(footprint)
-      if (libRef) {
-        if (this._hasStartedFootprintUrlLoad) return
-        this._hasStartedFootprintUrlLoad = true
-
-        const platform = this.root?.platform
-        const libMap = platform?.footprintLibraryMap?.[libRef.lib]
-
-        // Helper to create components from a soup array
-        const addFromFootprintCircuitJson = (
-          circuitJson: AnyCircuitElement[],
-        ) => {
-          const fpComponents = createComponentsFromCircuitJson(
-            {
-              componentName: this.name,
-              componentRotation: pcbRotation,
-              footprint,
-              pinLabels,
-              pcbPinLabels,
-            },
-            circuitJson,
-          )
-          this.addAll(fpComponents)
-          this._markDirty("InitializePortsFromChildren")
-        }
-
-        // Find a default resolver in the library map
-        let resolverFn: ((path: string) => Promise<any>) | undefined
-        if (libMap && typeof libMap === "object") {
-          // Prefer common keys for wildcard/default resolvers
-          const preferredKeys = ["*", "resolve", "default", ""]
-          for (const key of preferredKeys) {
-            if (typeof libMap[key] === "function") {
-              resolverFn = libMap[key]
-              break
-            }
-          }
-          // If still not found, but there's exactly one function value, use it
-          if (!resolverFn) {
-            const fns = Object.values(libMap).filter(
-              (v: any) => typeof v === "function",
-            ) as Array<(path: string) => Promise<any>>
-            if (fns.length === 1) resolverFn = fns[0]
-          }
-        }
-
-        if (resolverFn) {
-          this._queueAsyncEffect("load-lib-footprint", async () => {
-            const footprintCircuitJson = await resolverFn!(libRef.footprintName)
-            if (footprintCircuitJson && Array.isArray(footprintCircuitJson)) {
-              addFromFootprintCircuitJson(footprintCircuitJson)
-              return
-            }
-          })
-          return
-        }
-        return
-      }
-    }
-
-    if (isReactElement(footprint)) {
-      if (this.reactSubtrees.some((rs) => rs.element === footprint)) return
-      const subtree = this._renderReactSubtree(footprint)
-      this.reactSubtrees.push(subtree)
-      this.add(subtree.component)
-      return
-    }
-
-    if (
-      !isValidElement(footprint) &&
-      (footprint as any).componentName === "Footprint"
-    ) {
-      this.add(footprint as any)
-    }
+    NormalComponent_doInitialPcbFootprintStringRender(this)
   }
 
   _hasExistingPortExactly(port1: Port): boolean {
@@ -949,8 +826,8 @@ export class NormalComponent<
     }
 
     if (typeof footprint === "string") {
-      if (this._isFootprintUrl(footprint)) return []
-      if (this._parseLibraryFootprintRef(footprint)) return []
+      if (isFootprintUrl(footprint)) return []
+      if (parseLibraryFootprintRef(footprint)) return []
       const fpSoup = fp.string(footprint).soup()
 
       const newPorts: Port[] = []

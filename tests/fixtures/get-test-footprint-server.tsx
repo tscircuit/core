@@ -16,7 +16,7 @@ export const getTestFootprintServer = (json: any) => {
   })
 
   return {
-    url: `http://localhost:${server.port}/footprint.json`,
+    url: `http://localhost:${server.port}`,
     close: () => server.stop(),
   }
 }
