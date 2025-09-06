@@ -185,6 +185,11 @@ export class NormalComponent<
 
       // Mark component for removal to prevent downstream issues
       this.shouldBeRemoved = true
+      // Remove all children to prevent them from trying to attach to a non-existent parent
+      const childrenToRemove = [...this.children]
+      for (const child of childrenToRemove) {
+        this.remove(child)
+      }
     }
   }
 

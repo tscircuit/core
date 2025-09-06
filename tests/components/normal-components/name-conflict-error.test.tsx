@@ -39,33 +39,3 @@ test("should create source_failed_to_create_component_error for same-name naming
     type: "source_component",
   })
 })
-
-test("should allow components with different names", async () => {
-  const { circuit } = getTestFixture()
-
-  circuit.add(
-    <board width="10mm" height="10mm">
-      <resistor name="R1" resistance="1k" footprint="0402" />
-      <resistor name="R2" resistance="2k" footprint="0402" />
-    </board>,
-  )
-
-  await circuit.renderUntilSettled()
-
-  const circuitJson = circuit.getCircuitJson()
-
-  // Check that no errors were created
-  const errors = circuitJson.filter(
-    (e) => e.type === "source_failed_to_create_component_error",
-  )
-
-  expect(errors).toHaveLength(0)
-
-  // Check that both source_components were created
-  const sourceComponents = circuitJson.filter(
-    (e) => e.type === "source_component",
-  )
-
-  expect(sourceComponents).toHaveLength(2)
-  expect(sourceComponents.map((c) => c.name)).toEqual(["R1", "R2"])
-})

@@ -282,9 +282,6 @@ export abstract class Renderable implements IRenderable {
 
   runRenderPhaseForChildren(phase: RenderPhase): void {
     for (const child of this.children) {
-      // Skip children if this component is marked for removal
-      if (this.shouldBeRemoved) continue
-
       child.runRenderPhaseForChildren(phase)
       child.runRenderPhase(phase)
     }
