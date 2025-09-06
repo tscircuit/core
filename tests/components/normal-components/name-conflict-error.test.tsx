@@ -15,17 +15,6 @@ test("should create source_failed_to_create_component_error for same-name naming
 
   const circuitJson = circuit.getCircuitJson()
 
-  console.log(
-    "Circuit JSON components:",
-    circuitJson.filter((e) => e.type === "source_component"),
-  )
-  console.log(
-    "Circuit JSON errors:",
-    circuitJson.filter(
-      (e) => e.type === "source_failed_to_create_component_error",
-    ),
-  )
-
   // Check that error was created
   const errors = circuitJson.filter(
     (e) => e.type === "source_failed_to_create_component_error",
