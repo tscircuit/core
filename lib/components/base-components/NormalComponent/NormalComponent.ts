@@ -52,6 +52,7 @@ import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionO
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
+import type { AnyCircuitElement } from "circuit-json"
 
 const debug = Debug("tscircuit:core")
 
@@ -419,8 +420,20 @@ export class NormalComponent<
     return s.startsWith("http://") || s.startsWith("https://")
   }
 
-  _isKicadFootprintRef(s: string): boolean {
-    return s.startsWith("kicad:")
+  /**
+   * Returns the library prefix and path if this is a library-style footprint
+   * reference of the form "<lib>:<path>". Excludes http(s) URLs.
+   */
+  _parseLibraryFootprintRef(
+    s: string,
+  ): { lib: string; footprintName: string } | null {
+    if (this._isFootprintUrl(s)) return null
+    const idx = s.indexOf(":")
+    if (idx <= 0) return null
+    const lib = s.slice(0, idx)
+    const footprintName = s.slice(idx + 1)
+    if (!lib || !footprintName) return null
+    return { lib, footprintName }
   }
 
   _addChildrenFromStringFootprint() {
@@ -431,7 +444,7 @@ export class NormalComponent<
 
     if (typeof footprint === "string") {
       if (this._isFootprintUrl(footprint)) return
-      if (this._isKicadFootprintRef(footprint)) return
+      if (this._parseLibraryFootprintRef(footprint)) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         {
@@ -804,32 +817,70 @@ export class NormalComponent<
       return
     }
 
-    if (typeof footprint === "string" && this._isKicadFootprintRef(footprint)) {
-      if (this._hasStartedFootprintUrlLoad) return
-      this._hasStartedFootprintUrlLoad = true
-      const baseUrl = this.root?.platform?.kicadFootprintServerUrl
-      if (!baseUrl) return
-      const kicadPath = footprint.split("kicad:")[1]
-      if (!kicadPath) return
+    // Handle library-style footprint strings via platform.footprintLibraryMap
+    if (typeof footprint === "string") {
+      const libRef = this._parseLibraryFootprintRef(footprint)
+      if (libRef) {
+        if (this._hasStartedFootprintUrlLoad) return
+        this._hasStartedFootprintUrlLoad = true
 
-      const url = `${baseUrl}/${kicadPath}.circuit.json`
-      this._queueAsyncEffect("load-kicad-footprint", async () => {
-        const res = await fetch(url)
-        const soup = await res.json()
-        const fpComponents = createComponentsFromCircuitJson(
-          {
-            componentName: this.name,
-            componentRotation: pcbRotation,
-            footprint: url,
-            pinLabels,
-            pcbPinLabels,
-          },
-          soup as any,
-        )
-        this.addAll(fpComponents)
-        this._markDirty("InitializePortsFromChildren")
-      })
-      return
+        const platform = this.root?.platform
+        const libMap = platform?.footprintLibraryMap?.[libRef.lib]
+
+        // Helper to create components from a soup array
+        const addFromFootprintCircuitJson = (
+          circuitJson: AnyCircuitElement[],
+        ) => {
+          const fpComponents = createComponentsFromCircuitJson(
+            {
+              componentName: this.name,
+              componentRotation: pcbRotation,
+              footprint,
+              pinLabels,
+              pcbPinLabels,
+            },
+            circuitJson,
+          )
+          this.addAll(fpComponents)
+          this._markDirty("InitializePortsFromChildren")
+        }
+
+        // Find a default resolver in the library map
+        let resolverFn: ((path: string) => Promise<any>) | undefined
+        if (libMap && typeof libMap === "object") {
+          // Prefer common keys for wildcard/default resolvers
+          const preferredKeys = ["*", "resolve", "default", ""]
+          for (const key of preferredKeys) {
+            if (typeof libMap[key] === "function") {
+              resolverFn = libMap[key]
+              break
+            }
+          }
+          // If still not found, but there's exactly one function value, use it
+          if (!resolverFn) {
+            const fns = Object.values(libMap).filter(
+              (v: any) => typeof v === "function",
+            ) as Array<(path: string) => Promise<any>>
+            if (fns.length === 1) resolverFn = fns[0]
+          }
+        }
+
+        if (resolverFn) {
+          this._queueAsyncEffect("load-lib-footprint", async () => {
+            const result = await resolverFn!(libRef.footprintName)
+            if (result && Array.isArray(result)) {
+              addFromFootprintCircuitJson(result)
+              return
+            }
+            if (result && Array.isArray(result?.footprintCircuitJson)) {
+              addFromFootprintCircuitJson(result.footprintCircuitJson)
+              return
+            }
+          })
+          return
+        }
+        return
+      }
     }
 
     if (isReactElement(footprint)) {
@@ -903,7 +954,7 @@ export class NormalComponent<
 
     if (typeof footprint === "string") {
       if (this._isFootprintUrl(footprint)) return []
-      if (this._isKicadFootprintRef(footprint)) return []
+      if (this._parseLibraryFootprintRef(footprint)) return []
       const fpSoup = fp.string(footprint).soup()
 
       const newPorts: Port[] = []

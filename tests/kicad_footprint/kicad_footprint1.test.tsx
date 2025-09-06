@@ -1,12 +1,25 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { getTestKicadFootprintServer } from "tests/fixtures/get-test-kicad-footprint-server"
+import external0402Footprint from "tests/fixtures/assets/external-0402-footprint.json"
+import { getTestFootprintServer } from "tests/fixtures/get-test-footprint-server"
 
 test("kicad footprint 1", async () => {
-  const { kicadFootprintServerUrl } = getTestKicadFootprintServer()
+  const { url: footprintServerUrl } = getTestFootprintServer(
+    external0402Footprint,
+  )
   const { circuit } = getTestFixture({
     platform: {
-      kicadFootprintServerUrl: kicadFootprintServerUrl,
+      footprintLibraryMap: {
+        kicad: {
+          // Default resolver for any KiCad path
+          resolve: async (path: string) => {
+            const url = `${footprintServerUrl}/${path}.circuit.json`
+            const res = await fetch(url)
+            const data = await res.json()
+            return { footprintCircuitJson: data }
+          },
+        },
+      },
     },
   })
 
