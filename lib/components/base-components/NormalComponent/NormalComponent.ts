@@ -6,6 +6,7 @@ import type {
   CadModelStl,
   SchematicPortArrangement,
   SupplierPartNumbers,
+  CadModelGltf,
 } from "@tscircuit/props"
 import {
   pcb_manual_edit_conflict_warning,
@@ -1119,6 +1120,10 @@ export class NormalComponent<
       model_obj_url:
         "objUrl" in (cadModel ?? {})
           ? this._addCachebustToModelUrl((cadModel as CadModelObj).objUrl)
+          : undefined,
+      model_gltf_url:
+        "gltfUrl" in (cadModel ?? {})
+          ? this._addCachebustToModelUrl((cadModel as CadModelGltf).gltfUrl)
           : undefined,
       model_jscad:
         "jscad" in (cadModel ?? {})
