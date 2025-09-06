@@ -421,8 +421,8 @@ export class NormalComponent<
   }
 
   /**
-   * Returns the library prefix and path if this is a library-style footprint
-   * reference of the form "<lib>:<path>". Excludes http(s) URLs.
+   * Returns the library prefix and footprintName̦
+   * reference - "<lib>:<footprintName>"
    */
   _parseLibraryFootprintRef(
     s: string,
