@@ -9,6 +9,7 @@ const debug = Debug("tscircuit:renderable")
 
 export const orderedRenderPhases = [
   "ReactSubtreesRender",
+  "SourceNameDuplicateComponentRemoval",
   "PcbFootprintStringRender",
   "InitializePortsFromChildren",
   "CreateNetsFromProps",
@@ -17,7 +18,6 @@ export const orderedRenderPhases = [
   "CreateTracesFromNetLabels",
   "CreateTraceHintsFromProps",
   "SourceGroupRender",
-  "SourceNameValidation",
   "AssignNameToUnnamedComponents",
   "SourceRender",
   "SourceParentAttachment",
