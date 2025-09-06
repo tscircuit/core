@@ -375,6 +375,10 @@ export class NormalComponent<
     return s.startsWith("http://") || s.startsWith("https://")
   }
 
+  _isKicadFootprintRef(s: string): boolean {
+    return s.startsWith("kicad:")
+  }
+
   _addChildrenFromStringFootprint() {
     const { pcbRotation, pinLabels, pcbPinLabels } = this.props
     let { footprint } = this.props
@@ -383,6 +387,7 @@ export class NormalComponent<
 
     if (typeof footprint === "string") {
       if (this._isFootprintUrl(footprint)) return
+      if (this._isKicadFootprintRef(footprint)) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         {
@@ -755,6 +760,34 @@ export class NormalComponent<
       return
     }
 
+    if (typeof footprint === "string" && this._isKicadFootprintRef(footprint)) {
+      if (this._hasStartedFootprintUrlLoad) return
+      this._hasStartedFootprintUrlLoad = true
+      const baseUrl = this.root?.platform?.kicadFootprintServerUrl
+      if (!baseUrl) return
+      const kicadPath = footprint.split("kicad:")[1]
+      if (!kicadPath) return
+
+      const url = `${baseUrl}/${kicadPath}.circuit.json`
+      this._queueAsyncEffect("load-kicad-footprint", async () => {
+        const res = await fetch(url)
+        const soup = await res.json()
+        const fpComponents = createComponentsFromCircuitJson(
+          {
+            componentName: this.name,
+            componentRotation: pcbRotation,
+            footprint: url,
+            pinLabels,
+            pcbPinLabels,
+          },
+          soup as any,
+        )
+        this.addAll(fpComponents)
+        this._markDirty("InitializePortsFromChildren")
+      })
+      return
+    }
+
     if (isReactElement(footprint)) {
       if (this.reactSubtrees.some((rs) => rs.element === footprint)) return
       const subtree = this._renderReactSubtree(footprint)
@@ -826,6 +859,7 @@ export class NormalComponent<
 
     if (typeof footprint === "string") {
       if (this._isFootprintUrl(footprint)) return []
+      if (this._isKicadFootprintRef(footprint)) return []
       const fpSoup = fp.string(footprint).soup()
 
       const newPorts: Port[] = []
