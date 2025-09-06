@@ -11,12 +11,12 @@ test("footprint library map 1", async () => {
     platform: {
       footprintLibraryMap: {
         kicad: {
-          // Default resolver for any KiCad path
+          // Default resolvewr for any KiCad path
           resolve: async (path: string) => {
             const url = `${footprintServerUrl}/${path}.circuit.json`
             const res = await fetch(url)
-            const data = await res.json()
-            return { footprintCircuitJson: data }
+            const footprintCircuitJson = await res.json()
+            return footprintCircuitJson
           },
         },
       },
