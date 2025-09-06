@@ -867,13 +867,9 @@ export class NormalComponent<
 
         if (resolverFn) {
           this._queueAsyncEffect("load-lib-footprint", async () => {
-            const result = await resolverFn!(libRef.footprintName)
-            if (result && Array.isArray(result)) {
-              addFromFootprintCircuitJson(result)
-              return
-            }
-            if (result && Array.isArray(result?.footprintCircuitJson)) {
-              addFromFootprintCircuitJson(result.footprintCircuitJson)
+            const footprintCircuitJson = await resolverFn!(libRef.footprintName)
+            if (footprintCircuitJson && Array.isArray(footprintCircuitJson)) {
+              addFromFootprintCircuitJson(footprintCircuitJson)
               return
             }
           })
