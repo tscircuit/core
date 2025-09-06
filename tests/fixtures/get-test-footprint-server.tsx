@@ -4,10 +4,11 @@ import { afterEach } from "bun:test"
 export const getTestFootprintServer = (json: any) => {
   const server = serve({
     port: 0,
-    fetch: () =>
-      new Response(JSON.stringify(json), {
+    fetch: () => {
+      return new Response(JSON.stringify(json), {
         headers: { "Content-Type": "application/json" },
-      }),
+      })
+    },
   })
 
   afterEach(() => {
