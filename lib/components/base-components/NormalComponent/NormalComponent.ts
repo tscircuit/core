@@ -52,6 +52,9 @@ import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionO
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
+import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
+import { isFootprintUrl } from "./utils/isFoorprintUrl"
+import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 
 const debug = Debug("tscircuit:core")
 
@@ -415,10 +418,6 @@ export class NormalComponent<
     return null
   }
 
-  _isFootprintUrl(s: string): boolean {
-    return s.startsWith("http://") || s.startsWith("https://")
-  }
-
   _addChildrenFromStringFootprint() {
     const { pcbRotation, pinLabels, pcbPinLabels } = this.props
     let { footprint } = this.props
@@ -426,7 +425,8 @@ export class NormalComponent<
     if (!footprint) return
 
     if (typeof footprint === "string") {
-      if (this._isFootprintUrl(footprint)) return
+      if (isFootprintUrl(footprint)) return
+      if (parseLibraryFootprintRef(footprint)) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         {
@@ -770,49 +770,9 @@ export class NormalComponent<
   }
 
   doInitialPcbFootprintStringRender(): void {
-    let { footprint } = this.props
-    footprint ??= this._getImpliedFootprintString?.()
-    if (!footprint) return
-
-    const { pcbRotation, pinLabels, pcbPinLabels } = this.props
-
-    if (typeof footprint === "string" && this._isFootprintUrl(footprint)) {
-      if (this._hasStartedFootprintUrlLoad) return
-      this._hasStartedFootprintUrlLoad = true
-      const url = footprint
-      this._queueAsyncEffect("load-footprint-url", async () => {
-        const res = await fetch(url)
-        const soup = await res.json()
-        const fpComponents = createComponentsFromCircuitJson(
-          {
-            componentName: this.name,
-            componentRotation: pcbRotation,
-            footprint: url,
-            pinLabels,
-            pcbPinLabels,
-          },
-          soup as any,
-        )
-        this.addAll(fpComponents)
-        this._markDirty("InitializePortsFromChildren")
-      })
-      return
-    }
-
-    if (isReactElement(footprint)) {
-      if (this.reactSubtrees.some((rs) => rs.element === footprint)) return
-      const subtree = this._renderReactSubtree(footprint)
-      this.reactSubtrees.push(subtree)
-      this.add(subtree.component)
-      return
-    }
-
-    if (
-      !isValidElement(footprint) &&
-      (footprint as any).componentName === "Footprint"
-    ) {
-      this.add(footprint as any)
-    }
+    NormalComponent_doInitialPcbFootprintStringRender(this, (name, effect) =>
+      this._queueAsyncEffect(name, effect),
+    )
   }
 
   _hasExistingPortExactly(port1: Port): boolean {
@@ -869,7 +829,8 @@ export class NormalComponent<
     }
 
     if (typeof footprint === "string") {
-      if (this._isFootprintUrl(footprint)) return []
+      if (isFootprintUrl(footprint)) return []
+      if (parseLibraryFootprintRef(footprint)) return []
       const fpSoup = fp.string(footprint).soup()
 
       const newPorts: Port[] = []
