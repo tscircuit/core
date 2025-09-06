@@ -2,10 +2,12 @@ import { NormalComponent } from "./NormalComponent"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { isValidElement as isReactElement } from "react"
 import { Footprint } from "lib/components/primitive-components/Footprint"
-import { isFootprintUrl, parseLibraryFootprintRef } from "./footprintUtils"
+import { isFootprintUrl } from "./utils/isFoorprintUrl"
+import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 
 export function NormalComponent_doInitialPcbFootprintStringRender(
   component: NormalComponent<any, any>,
+  queueAsyncEffect: (name: string, effect: () => Promise<void>) => void,
 ) {
   let { footprint } = component.props
   footprint ??= component._getImpliedFootprintString?.()
@@ -17,7 +19,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
     const url = footprint
-    component._queueAsyncEffect("load-footprint-url", async () => {
+    queueAsyncEffect("load-footprint-url", async () => {
       const res = await fetch(url)
       const soup = await res.json()
       const fpComponents = createComponentsFromCircuitJson(
@@ -55,7 +57,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
 
     if (!resolverFn) return
 
-    component._queueAsyncEffect("load-lib-footprint", async () => {
+    queueAsyncEffect("load-lib-footprint", async () => {
       const result = await resolverFn!(libRef.footprintName)
       const circuitJson = Array.isArray(result)
         ? result

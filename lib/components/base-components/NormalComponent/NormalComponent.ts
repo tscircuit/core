@@ -53,7 +53,8 @@ import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalCompone
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
-import { isFootprintUrl, parseLibraryFootprintRef } from "./footprintUtils"
+import { isFootprintUrl } from "./utils/isFoorprintUrl"
+import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 
 const debug = Debug("tscircuit:core")
 
@@ -769,7 +770,9 @@ export class NormalComponent<
   }
 
   doInitialPcbFootprintStringRender(): void {
-    NormalComponent_doInitialPcbFootprintStringRender(this)
+    NormalComponent_doInitialPcbFootprintStringRender(this, (name, effect) =>
+      this._queueAsyncEffect(name, effect),
+    )
   }
 
   _hasExistingPortExactly(port1: Port): boolean {
