@@ -13,11 +13,10 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   constructor(props: z.input<typeof viaProps>) {
     super(props)
     const layers = this._getLayers()
+
     for (const layer of layers) {
-      const port = new Port({ name: layer })
-      port.matchedComponents.push(this)
-      // Restrict available layer for this port to the via layer
-      port.getAvailablePcbLayers = () => [layer] as LayerRef[]
+      const port = new Port({ name: layer, layer })
+      port.registerMatch(this)
       this.add(port)
     }
   }
