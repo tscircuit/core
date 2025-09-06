@@ -92,11 +92,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
     })
 
-    this.source_manually_placed_via_id =
-      source_via.source_manually_placed_via_id
-    // Use source_manually_placed_via_id to satisfy Port's expectation
-    this.source_component_id = this.source_manually_placed_via_id
-    this.source_group_id = group?.source_group_id ?? null
+    this.source_component_id = source_via.source_manually_placed_via_id
   }
 
   doInitialPcbPrimitiveRender(): void {
