@@ -120,6 +120,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
 
     this.pcb_via_id = pcb_via.pcb_via_id
     // Use pcb_via_id to satisfy Port's expectation of a pcb_component_id
-    this.pcb_component_id = this.pcb_via_id
+    this.pcb_component_id = pcb_via.pcb_via_id
   }
 }
