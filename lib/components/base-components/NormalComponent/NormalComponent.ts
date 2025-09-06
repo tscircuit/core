@@ -151,6 +151,49 @@ export class NormalComponent<
     this.initPorts()
   }
 
+  doInitialSourceNameDuplicateComponentRemoval(): void {
+    // Early return if component has no explicit name (auto-assigned names don't conflict)
+    if (!this.name) return
+
+    const root = this.root!
+
+    // Use selector to find all components with the same name in this subcircuit
+    const componentsWithSameName = this.getSubcircuit().selectAll(
+      `.${this.name}`,
+    )
+
+    // Check if any of these components have already been processed (initialized this phase)
+    const conflictingComponents = componentsWithSameName.filter(
+      (component: any) =>
+        component !== this &&
+        component._isNormalComponent &&
+        component.renderPhaseStates?.SourceNameDuplicateComponentRemoval
+          ?.initialized,
+    )
+
+    if (conflictingComponents.length > 0) {
+      // Create naming conflict error
+      const pcbPosition = this._getGlobalPcbPositionBeforeLayout()
+      const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
+
+      root.db.source_failed_to_create_component_error.insert({
+        component_name: this.name,
+        error_type: "source_failed_to_create_component_error",
+        message: `Cannot create component "${this.name}": A component with the same name already exists`,
+        pcb_center: pcbPosition,
+        schematic_center: schematicPosition,
+      })
+
+      // Mark component for removal to prevent downstream issues
+      this.shouldBeRemoved = true
+      // Remove all children to prevent them from trying to attach to a non-existent parent
+      const childrenToRemove = [...this.children]
+      for (const child of childrenToRemove) {
+        this.remove(child)
+      }
+    }
+  }
+
   /**
    * Override this method for better control over the auto-discovery of ports.
    *
