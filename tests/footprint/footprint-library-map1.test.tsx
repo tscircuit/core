@@ -10,8 +10,8 @@ test("footprint library map 1", async () => {
   const { circuit } = getTestFixture({
     platform: {
       footprintLibraryMap: {
-        kicad: async (path: string) => {
-          const url = `${footprintServerUrl}/${path}.circuit.json`
+        kicad: async (footprintName: string) => {
+          const url = `${footprintServerUrl}/${footprintName}.circuit.json`
           const res = await fetch(url)
           return { footprintCircuitJson: await res.json() }
         },
