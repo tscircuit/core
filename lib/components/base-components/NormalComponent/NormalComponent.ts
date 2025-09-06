@@ -156,36 +156,18 @@ export class NormalComponent<
 
     const root = this.root!
 
-    // Find all NormalComponent instances with the same name that have already started or completed SourceNameDuplicateComponentRemoval
-    const findEarlierComponentsWithSameName = (
-      component: any,
-      targetName: string,
-    ): any[] => {
-      const matches: any[] = []
+    // Use selector to find all components with the same name in this subcircuit
+    const componentsWithSameName = this.getSubcircuit().selectAll(
+      `.${this.name}`,
+    )
 
-      if (
-        component._isNormalComponent &&
-        component.name === targetName &&
+    // Check if any of these components have already been processed (initialized this phase)
+    const conflictingComponents = componentsWithSameName.filter(
+      (component: any) =>
         component !== this &&
-        component.renderPhaseStates.SourceNameDuplicateComponentRemoval
-          .initialized
-      ) {
-        matches.push(component)
-      }
-
-      // Recursively check children
-      if (component.children) {
-        for (const child of component.children) {
-          matches.push(...findEarlierComponentsWithSameName(child, targetName))
-        }
-      }
-
-      return matches
-    }
-
-    const conflictingComponents = findEarlierComponentsWithSameName(
-      root,
-      this.name,
+        component._isNormalComponent &&
+        component.renderPhaseStates?.SourceNameDuplicateComponentRemoval
+          ?.initialized,
     )
 
     if (conflictingComponents.length > 0) {
