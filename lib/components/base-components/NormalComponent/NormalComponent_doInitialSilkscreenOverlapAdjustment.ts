@@ -1,15 +1,11 @@
 import type { NormalComponent } from "./NormalComponent"
-import { type Box, type Bounds, getBoundingBox } from "@tscircuit/math-utils"
-
-// Bounds intersection detection
-function doBoundsIntersect(bounds1: Bounds, bounds2: Bounds): boolean {
-  return !(
-    bounds1.maxX <= bounds2.minX ||
-    bounds2.maxX <= bounds1.minX ||
-    bounds1.maxY <= bounds2.minY ||
-    bounds2.maxY <= bounds1.minY
-  )
-}
+import { getPcbTextBounds } from "./utils/getPcbTextBounds"
+import {
+  type Box,
+  type Bounds,
+  getBoundingBox,
+  doBoundsOverlap,
+} from "@tscircuit/math-utils"
 
 /**
  * Automatically adjusts silkscreen reference designator text position for passives
@@ -73,24 +69,25 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
   for (const silkscreenText of silkscreenTexts) {
     const currentPosition = silkscreenText.anchor_position
 
-    // Estimate text bounds (approximate based on font size and text length)
-    const fontSize = silkscreenText.font_size
-    const textWidth = silkscreenText.text.length * fontSize * 0.6 // Rough character width
-    const textHeight = fontSize
+    // Get accurate text bounds based on anchor alignment
+    const textBounds = getPcbTextBounds(silkscreenText)
 
     const textBox: Box = {
-      center: currentPosition,
-      width: textWidth,
-      height: textHeight,
+      center: {
+        x: textBounds.x + textBounds.width / 2,
+        y: textBounds.y + textBounds.height / 2,
+      },
+      width: textBounds.width,
+      height: textBounds.height,
     }
-    const textBounds: Bounds = getBoundingBox(textBox)
+    const textBoundsBox: Bounds = getBoundingBox(textBox)
 
     // Check if current text position intersects with any obstacles
-    const hasIntersection = obstacleBounds.some((obstacle) =>
-      doBoundsIntersect(textBounds, obstacle),
+    const hasOverlap = obstacleBounds.some((obstacle) =>
+      doBoundsOverlap(textBoundsBox, obstacle),
     )
 
-    if (!hasIntersection) {
+    if (!hasOverlap) {
       continue // No overlap, no adjustment needed
     }
 
@@ -100,18 +97,18 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
 
     const flippedTextBox: Box = {
       center: { x: flippedX, y: flippedY },
-      width: textWidth,
-      height: textHeight,
+      width: textBounds.width,
+      height: textBounds.height,
     }
     const flippedTextBounds: Bounds = getBoundingBox(flippedTextBox)
 
     // Check if flipped position resolves the intersection
-    const flippedHasIntersection = obstacleBounds.some((obstacle) =>
-      doBoundsIntersect(flippedTextBounds, obstacle),
+    const flippedHasOverlap = obstacleBounds.some((obstacle) =>
+      doBoundsOverlap(flippedTextBounds, obstacle),
     )
 
     // If flipping resolves the overlap, commit the change
-    if (!flippedHasIntersection) {
+    if (!flippedHasOverlap) {
       db.pcb_silkscreen_text.update(silkscreenText.pcb_silkscreen_text_id, {
         anchor_position: {
           x: flippedX,
