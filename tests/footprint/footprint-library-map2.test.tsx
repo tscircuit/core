@@ -19,13 +19,6 @@ test("footprint library map 2", async () => {
     },
   })
 
-  circuit.on("asyncEffect:start", (e) =>
-    console.log("start", e.effectName, e.phase, e.componentDisplayName),
-  )
-  circuit.on("asyncEffect:end", (e) =>
-    console.log("end", e.effectName, e.phase, e.componentDisplayName, e.error),
-  )
-
   circuit.add(
     <board width="20mm" height="10mm">
       <resistor
