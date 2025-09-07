@@ -51,7 +51,7 @@ test("check each PCB port is connected", async () => {
             "route_type": "wire",
             "start_pcb_port_id": "pcb_port_3",
             "width": 0.1,
-            "x": 5.5,
+            "x": 5.51,
             "y": 0,
           },
           {
@@ -59,7 +59,7 @@ test("check each PCB port is connected", async () => {
             "layer": "top",
             "route_type": "wire",
             "width": 0.1,
-            "x": 9.5,
+            "x": 9.49,
             "y": 0,
           },
         ],

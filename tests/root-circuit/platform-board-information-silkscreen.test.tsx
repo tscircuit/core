@@ -24,7 +24,7 @@ test("board information silkscreen added from platform config", async () => {
       "anchor_alignment": "center",
       "anchor_position": {
         "x": 3,
-        "y": 1.2,
+        "y": 1.22,
       },
       "ccw_rotation": 0,
       "font": "tscircuit2024",
