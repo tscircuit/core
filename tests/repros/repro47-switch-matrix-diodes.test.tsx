@@ -8,7 +8,7 @@ export default test("3x3 switch matrix with diodes", async () => {
   const cols = 3
 
   circuit.add(
-    <board width="60mm" height="60mm" schMaxTraceDistance={5}>
+    <board width="60mm" height="60mm" schMaxTraceDistance={30}>
       <pinheader
         name="J1"
         pinCount={6}
