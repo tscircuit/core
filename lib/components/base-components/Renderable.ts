@@ -53,6 +53,13 @@ export const orderedRenderPhases = [
 
 export type RenderPhase = (typeof orderedRenderPhases)[number]
 
+// Declare async dependencies between phases where later phases should wait for
+// async effects originating in specific earlier phases to complete within the
+// current component's subtree.
+const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
+  PcbTraceRender: ["PcbFootprintStringRender"],
+}
+
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
   | `doInitial${K}`
   | `update${K}`
@@ -204,6 +211,22 @@ export abstract class Renderable implements IRenderable {
     return this._asyncEffects.some((effect) => !effect.complete)
   }
 
+  private _hasIncompleteAsyncEffectsInSubtreeForPhase(
+    phase: RenderPhase,
+  ): boolean {
+    // Check self
+    for (const e of this._asyncEffects) {
+      if (!e.complete && e.phase === phase) return true
+    }
+    // Check children
+    for (const child of this.children) {
+      const renderableChild = child as Renderable
+      if (renderableChild._hasIncompleteAsyncEffectsInSubtreeForPhase(phase))
+        return true
+    }
+    return false
+  }
+
   getCurrentRenderPhase(): RenderPhase | null {
     return this._currentRenderPhase
   }
@@ -260,6 +283,12 @@ export abstract class Renderable implements IRenderable {
         .filter((e) => e.phase === prevPhase)
         .some((e) => !e.complete)
       if (hasIncompleteEffects) return
+    }
+
+    // Check declared async dependencies for this phase within subtree
+    const deps = asyncPhaseDependencies[phase] || []
+    for (const depPhase of deps) {
+      if (this._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) return
     }
 
     this._emitRenderLifecycleEvent(phase, "start")
