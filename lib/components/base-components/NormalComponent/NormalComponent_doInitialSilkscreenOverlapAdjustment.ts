@@ -1,5 +1,5 @@
 import type { NormalComponent } from "./NormalComponent"
-import { getPcbTextBounds } from "./utils/pcbTextBounds"
+import { getPcbTextBounds } from "./utils/getPcbTextBounds"
 import {
   type Box,
   type Bounds,
