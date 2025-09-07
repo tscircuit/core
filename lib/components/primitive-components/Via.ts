@@ -78,7 +78,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     }
     const port = new Port({ name: "pin1" })
     port.registerMatch(this)
-    port.add(port)
+    this.add(port)
   }
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
