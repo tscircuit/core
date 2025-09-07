@@ -18,6 +18,7 @@ export const portProps = z.object({
   pinNumber: z.number().optional(),
   aliases: z.array(z.string()).optional(),
   layer: z.string().optional(),
+  layers: z.array(z.string()).optional(),
 })
 
 export type PortProps = z.infer<typeof portProps>
@@ -236,7 +237,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     return `.${this.parent?.props.name} > port.${this.props.name}`
   }
   getAvailablePcbLayers(): LayerRef[] {
-    const { layer, layers } = this._parsedProps as any
+    const { layer, layers } = this._parsedProps
     if (layers) return layers as LayerRef[]
     if (layer) return [layer as LayerRef]
     return Array.from(

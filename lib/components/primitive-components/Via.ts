@@ -100,17 +100,12 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
-    const position = this._getGlobalPcbPositionBeforeLayout()
     const group = this.getGroup()
     const subcircuit = this.getSubcircuit()
-    const layers = this._getLayers()
 
     const source_via = db.source_manually_placed_via.insert({
       source_group_id: group?.source_group_id!,
       source_net_id: (props as any).net ?? "",
-      x: position.x,
-      y: position.y,
-      layers,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
     })
 
