@@ -3,24 +3,18 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Port } from "./Port"
 import type { LayerRef } from "circuit-json"
 import { z } from "zod"
-
 export class Via extends PrimitiveComponent<typeof viaProps> {
   pcb_via_id: string | null = null
-  source_manually_placed_via_id: string | null = null
   matchedPort: Port | null = null
   isPcbPrimitive = true
+  source_manually_placed_via_id: string | null = null
 
   constructor(props: z.input<typeof viaProps>) {
     super(props)
     const layers = this._getLayers()
-
-    for (const layer of layers) {
-      const port = new Port({ name: layer, layer })
-      port.registerMatch(this)
-      this.add(port)
-    }
+    ;(this._parsedProps as any).layers = layers
+    this.initPorts()
   }
-
   get config() {
     return {
       componentName: "Via",
@@ -68,13 +62,41 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       y: newCenter.y,
     })
   }
-
   _getLayers(): LayerRef[] {
     const { fromLayer = "top", toLayer = "bottom" } = this._parsedProps
     if (fromLayer === toLayer) return [fromLayer]
+    // TODO calculate layers inbetween top and bottom using layer count
     return [fromLayer, toLayer]
   }
 
+  initPorts() {
+    const layers = (this._parsedProps as any).layers as LayerRef[]
+    for (const layer of layers) {
+      const port = new Port({ name: layer, layer })
+      port.registerMatch(this)
+      this.add(port)
+    }
+    const port = new Port({ name: "pin1" })
+    port.registerMatch(this)
+    port.add(port)
+  }
+  doInitialPcbComponentRender(): void {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const position = this._getGlobalPcbPositionBeforeLayout()
+    const subcircuit = this.getSubcircuit()
+    const pcb_component = db.pcb_component.insert({
+      center: position,
+      width: props.outerDiameter,
+      height: props.outerDiameter,
+      layer: props.fromLayer ?? "top",
+      rotation: 0,
+      source_component_id: this.source_component_id!,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+    })
+    this.pcb_component_id = pcb_component.pcb_component_id
+  }
   doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -94,14 +116,12 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
 
     this.source_component_id = source_via.source_manually_placed_via_id
   }
-
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()
-
     const pcb_via = db.pcb_via.insert({
       x: position.x,
       y: position.y,
@@ -113,9 +133,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
     })
-
     this.pcb_via_id = pcb_via.pcb_via_id
-    // Use pcb_via_id to satisfy Port's expectation of a pcb_component_id
-    this.pcb_component_id = pcb_via.pcb_via_id
   }
 }
