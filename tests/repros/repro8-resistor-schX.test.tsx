@@ -46,14 +46,14 @@ test("board with resistor being passed schX and pcbX in mm", () => {
           "x": -2,
           "y": 0,
         },
-        "height": 0.6,
+        "height": 0.64,
         "layer": "top",
         "pcb_component_id": "pcb_component_0",
         "rotation": 0,
         "source_component_id": "source_component_0",
         "subcircuit_id": "subcircuit_source_group_0",
         "type": "pcb_component",
-        "width": 1.5999999999999999,
+        "width": 1.5599999999999998,
       },
     ]
   `)

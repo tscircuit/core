@@ -22,7 +22,7 @@ test("group id present in pcb_component, schematic_component and source_componen
           "x": 0,
           "y": 0,
         },
-        "height": 0.6,
+        "height": 0.64,
         "is_subcircuit": true,
         "name": "G1",
         "pcb_component_ids": [],
@@ -30,7 +30,7 @@ test("group id present in pcb_component, schematic_component and source_componen
         "source_group_id": "source_group_0",
         "subcircuit_id": "subcircuit_source_group_0",
         "type": "pcb_group",
-        "width": 5.6,
+        "width": 5.56,
       },
     ]
   `)

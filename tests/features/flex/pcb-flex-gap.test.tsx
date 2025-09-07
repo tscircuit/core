@@ -29,13 +29,13 @@ test("pcb flex gap", async () => {
 
   expect(pcb_component_r1[0].center).toMatchInlineSnapshot(`
     {
-      "x": -2.3,
+      "x": -2.2800000000000002,
       "y": 0,
     }
   `)
   expect(pcb_component_c1[0].center).toMatchInlineSnapshot(`
     {
-      "x": 2.3,
+      "x": 2.2800000000000002,
       "y": 0,
     }
   `)
