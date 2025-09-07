@@ -24,9 +24,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
   for (const schOrSrcPortId of Array.from(
     allSourceAndSchematicPortIdsInScope,
   )) {
-    const sp = db.schematic_port.get(schOrSrcPortId)
-    if (!sp) continue
-    if (sp.is_connected) continue
+    const schPort = db.schematic_port.get(schOrSrcPortId)
+    if (!schPort) continue
+    if (schPort.is_connected) continue
     const srcPortId = schPortIdToSourcePortId.get(schOrSrcPortId)
     if (!srcPortId) continue
 
@@ -43,8 +43,8 @@ export const insertNetLabelsForPortsMissingTrace = ({
     // different net label algorithms (solver vs port-based placement)
     const existingAtPort = db.schematic_net_label.list().some((nl) => {
       const samePos =
-        Math.abs(nl.anchor_position!.x - sp.center.x) < 0.1 &&
-        Math.abs(nl.anchor_position!.y - sp.center.y) < 0.1
+        Math.abs(nl.anchor_position!.x - schPort.center.x) < 0.1 &&
+        Math.abs(nl.anchor_position!.y - schPort.center.y) < 0.1
       if (!samePos) return false
       if (sourceNet.source_net_id && nl.source_net_id) {
         return nl.source_net_id === sourceNet.source_net_id
@@ -55,17 +55,18 @@ export const insertNetLabelsForPortsMissingTrace = ({
 
     const text = sourceNet.name || sourceNet.source_net_id || key
     const side =
-      getEnteringEdgeFromDirection((sp.facing_direction as any) || "right") ||
-      "right"
+      getEnteringEdgeFromDirection(
+        (schPort.facing_direction as any) || "right",
+      ) || "right"
     const center = computeSchematicNetLabelCenter({
-      anchor_position: sp.center,
+      anchor_position: schPort.center,
       anchor_side: side as any,
       text,
     })
     // @ts-ignore
     db.schematic_net_label.insert({
       text,
-      anchor_position: sp.center,
+      anchor_position: schPort.center,
       center,
       anchor_side: side as any,
       ...(sourceNet.source_net_id
