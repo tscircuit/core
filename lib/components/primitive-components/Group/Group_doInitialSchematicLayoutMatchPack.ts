@@ -35,10 +35,10 @@ function rotateDirection(
   degrees: number,
 ): "up" | "right" | "down" | "left" {
   const directions: ("up" | "right" | "down" | "left")[] = [
-    "up",
     "right",
-    "down",
+    "up",
     "left",
+    "down",
   ]
   const currentIndex = directions.indexOf(direction as any)
   if (currentIndex === -1) return direction as "up" | "right" | "down" | "left"

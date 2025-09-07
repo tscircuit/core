@@ -70,11 +70,6 @@ export function createSchematicTraceSolverInputProblem(
   const displayLabelTraces = traces.filter(
     (t: any) => t._parsedProps?.schDisplayLabel,
   )
-  const displayLabelSourceTraceIds = new Set(
-    displayLabelTraces
-      .map((t: any) => t.source_trace_id)
-      .filter((id: any): id is string => Boolean(id)),
-  )
 
   // Gather all schematic components in scope (this group and child groups)
   const childGroups = group.selectAll("group") as Group<any>[]

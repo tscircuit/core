@@ -3,6 +3,9 @@ import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
+import Debug from "debug"
+
+const debug = Debug("Group_doInitialSchematicTraceRender")
 
 export function applyTracesFromSolverOutput(args: {
   group: Group<any>
@@ -21,9 +24,18 @@ export function applyTracesFromSolverOutput(args: {
     subcircuit_connectivity_map_key?: string
   }> = []
 
+  debug(
+    `Traces inside SchematicTraceSolver output: ${Object.values(correctedMap ?? {}).length}`,
+  )
+
   for (const solvedTracePath of Object.values(correctedMap ?? {})) {
     const points = solvedTracePath?.tracePath as Array<{ x: number; y: number }>
-    if (!Array.isArray(points) || points.length < 2) continue
+    if (!Array.isArray(points) || points.length < 2) {
+      debug(
+        `Skipping trace ${solvedTracePath?.pinIds.join(",")} because it has less than 2 points`,
+      )
+      continue
+    }
 
     const edges: SchematicTrace["edges"] = []
     for (let i = 0; i < points.length - 1; i++) {
@@ -68,6 +80,10 @@ export function applyTracesFromSolverOutput(args: {
       subcircuit_connectivity_map_key,
     })
   }
+
+  debug(
+    `Applying ${pendingTraces.length} traces from SchematicTraceSolver output`,
+  )
 
   // Compute crossings and junctions without relying on DB lookups
   const withCrossings = computeCrossings(
