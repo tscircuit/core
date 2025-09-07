@@ -275,11 +275,14 @@ export abstract class Renderable implements IRenderable {
       return
     }
 
-    // Check for incomplete async effects from previous phase within subtree
+    // Check for incomplete async effects from previous phases
     const prevPhaseIndex = orderedRenderPhases.indexOf(phase) - 1
     if (prevPhaseIndex >= 0) {
       const prevPhase = orderedRenderPhases[prevPhaseIndex]
-      if (this._hasIncompleteAsyncEffectsInSubtreeForPhase(prevPhase)) return
+      const hasIncompleteEffects = this._asyncEffects
+        .filter((e) => e.phase === prevPhase)
+        .some((e) => !e.complete)
+      if (hasIncompleteEffects) return
     }
 
     // Check declared async dependencies for this phase within subtree
