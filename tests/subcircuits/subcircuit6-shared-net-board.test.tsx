@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("subcircuits and board share net", async () => {
+test("subcircuits and board share net — extra GND resistor inside S1", async () => {
   const { circuit } = await getTestFixture()
 
   circuit.add(
@@ -12,9 +12,19 @@ test("subcircuits and board share net", async () => {
           name="R1"
           footprint="0402"
           pcbX={2}
+          pcbY={1}
+          connections={{ pin1: "net.GND" }}
+        />
+        <resistor
+          resistance="100"
+          name="R3"
+          footprint="0402"
+          pcbX={2}
+          pcbY={-1}
           connections={{ pin1: "net.GND" }}
         />
       </subcircuit>
+
       <subcircuit name="S2">
         <resistor
           resistance="100"
@@ -24,6 +34,7 @@ test("subcircuits and board share net", async () => {
           connections={{ pin1: "net.GND" }}
         />
       </subcircuit>
+
       <trace from=".S1 .R1 > .pin1" to=".S2 .R2 > .pin1" />
     </board>,
   )
