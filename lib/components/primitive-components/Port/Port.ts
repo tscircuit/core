@@ -344,6 +344,43 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
   }
 
+  updatePcbPortRender(): void {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+
+    // If pcb_port already exists, nothing to do
+    if (this.pcb_port_id) return
+
+    // Try again if we now have matched PCB primitives
+    const pcbMatches = this.matchedComponents.filter((c) => c.isPcbPrimitive)
+    if (pcbMatches.length === 0) return
+
+    let matchCenter: { x: number; y: number } | null = null
+    if (pcbMatches.length === 1) {
+      matchCenter = pcbMatches[0]._getPcbCircuitJsonBounds().center
+    }
+    if (pcbMatches.length > 1) {
+      try {
+        if (areAllPcbPrimitivesOverlapping(pcbMatches as any)) {
+          matchCenter = getCenterOfPcbPrimitives(pcbMatches as any)
+        }
+      } catch {}
+    }
+
+    if (!matchCenter) return
+
+    const subcircuit = this.getSubcircuit()
+    const pcb_port = db.pcb_port.insert({
+      pcb_component_id: this.parent?.pcb_component_id!,
+      layers: this.getAvailablePcbLayers(),
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+      ...matchCenter,
+      source_port_id: this.source_port_id!,
+    })
+    this.pcb_port_id = pcb_port.pcb_port_id
+  }
+
   doInitialSchematicPortRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
