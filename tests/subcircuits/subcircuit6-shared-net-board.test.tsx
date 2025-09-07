@@ -24,6 +24,7 @@ test("subcircuits and board share net", async () => {
           connections={{ pin1: "net.GND" }}
         />
       </subcircuit>
+      <trace from=".S1 .R1 > .pin1" to=".S2 .R2 > .pin1" />
     </board>,
   )
 
