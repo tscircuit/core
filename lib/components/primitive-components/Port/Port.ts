@@ -375,13 +375,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       source_port_id: this.source_port_id!,
     })
     this.pcb_port_id = pcb_port.pcb_port_id
-
-    // Ask matched pcb primitives to re-attach to the new pcb_port
-    for (const mc of this.matchedComponents) {
-      try {
-        ;(mc as any)._markDirty?.("PcbPortAttachment")
-      } catch {}
-    }
   }
 
   doInitialSchematicPortRender(): void {

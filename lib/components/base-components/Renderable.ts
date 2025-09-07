@@ -57,8 +57,7 @@ export type RenderPhase = (typeof orderedRenderPhases)[number]
 // async effects originating in specific earlier phases to complete within the
 // current component's subtree.
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
-  // Ensure pads/ports are fully realized before routing
-  PcbTraceRender: ["PcbFootprintStringRender", "PcbPortAttachment"],
+  PcbTraceRender: ["PcbFootprintStringRender"],
 }
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
