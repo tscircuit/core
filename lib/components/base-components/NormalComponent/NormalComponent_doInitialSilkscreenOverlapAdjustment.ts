@@ -1,16 +1,11 @@
 import type { NormalComponent } from "./NormalComponent"
 import { getPcbTextBounds } from "./utils/pcbTextBounds"
-import { type Box, type Bounds, getBoundingBox } from "@tscircuit/math-utils"
-
-// Bounds intersection detection
-function doBoundsIntersect(bounds1: Bounds, bounds2: Bounds): boolean {
-  return !(
-    bounds1.maxX <= bounds2.minX ||
-    bounds2.maxX <= bounds1.minX ||
-    bounds1.maxY <= bounds2.minY ||
-    bounds2.maxY <= bounds1.minY
-  )
-}
+import {
+  type Box,
+  type Bounds,
+  getBoundingBox,
+  doBoundsOverlap,
+} from "@tscircuit/math-utils"
 
 /**
  * Automatically adjusts silkscreen reference designator text position for passives
@@ -89,7 +84,7 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
 
     // Check if current text position intersects with any obstacles
     const hasOverlap = obstacleBounds.some((obstacle) =>
-      doBoundsIntersect(textBoundsBox, obstacle),
+      doBoundsOverlap(textBoundsBox, obstacle),
     )
 
     if (!hasOverlap) {
@@ -109,7 +104,7 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
 
     // Check if flipped position resolves the intersection
     const flippedHasOverlap = obstacleBounds.some((obstacle) =>
-      doBoundsIntersect(flippedTextBounds, obstacle),
+      doBoundsOverlap(flippedTextBounds, obstacle),
     )
 
     // If flipping resolves the overlap, commit the change
