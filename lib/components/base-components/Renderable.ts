@@ -53,6 +53,14 @@ export const orderedRenderPhases = [
 
 export type RenderPhase = (typeof orderedRenderPhases)[number]
 
+// Declare async dependencies between phases where later phases should wait for
+// async effects originating in specific earlier phases to complete within the
+// current component's subtree.
+const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
+  // Ensure pads/ports are fully realized before routing
+  PcbTraceRender: ["PcbFootprintStringRender", "PcbPortAttachment"],
+}
+
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
   | `doInitial${K}`
   | `update${K}`
@@ -204,16 +212,18 @@ export abstract class Renderable implements IRenderable {
     return this._asyncEffects.some((effect) => !effect.complete)
   }
 
-  /**
-   * Return true if this component or any of its descendants have
-   * incomplete async effects (e.g., pending footprint fetches).
-   */
-  hasIncompleteAsyncEffectsInSubtree(): boolean {
-    if (this._hasIncompleteAsyncEffects()) return true
+  private _hasIncompleteAsyncEffectsInSubtreeForPhase(
+    phase: RenderPhase,
+  ): boolean {
+    // Check self
+    for (const e of this._asyncEffects) {
+      if (!e.complete && e.phase === phase) return true
+    }
+    // Check children
     for (const child of this.children) {
-      // Children are Renderables at runtime; cast for recursive check
-      const renderableChild = child as unknown as Renderable
-      if (renderableChild.hasIncompleteAsyncEffectsInSubtree()) return true
+      const renderableChild = child as Renderable
+      if (renderableChild._hasIncompleteAsyncEffectsInSubtreeForPhase(phase))
+        return true
     }
     return false
   }
@@ -266,14 +276,17 @@ export abstract class Renderable implements IRenderable {
       return
     }
 
-    // Check for incomplete async effects from previous phases
+    // Check for incomplete async effects from previous phase within subtree
     const prevPhaseIndex = orderedRenderPhases.indexOf(phase) - 1
     if (prevPhaseIndex >= 0) {
       const prevPhase = orderedRenderPhases[prevPhaseIndex]
-      const hasIncompleteEffects = this._asyncEffects
-        .filter((e) => e.phase === prevPhase)
-        .some((e) => !e.complete)
-      if (hasIncompleteEffects) return
+      if (this._hasIncompleteAsyncEffectsInSubtreeForPhase(prevPhase)) return
+    }
+
+    // Check declared async dependencies for this phase within subtree
+    const deps = asyncPhaseDependencies[phase] || []
+    for (const depPhase of deps) {
+      if (this._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) return
     }
 
     this._emitRenderLifecycleEvent(phase, "start")

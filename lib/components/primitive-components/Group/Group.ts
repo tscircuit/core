@@ -565,12 +565,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this.getInheritedProperty("routingDisabled")) return
     if (this._shouldUseTraceByTraceRouting()) return
 
-    // Ensure all pending async effects (e.g., footprint fetches) are complete
-    if (this.hasIncompleteAsyncEffectsInSubtree()) {
-      this._markDirty("PcbTraceRender")
-      return
-    }
-
     if (!this._areChildSubcircuitsRouted()) {
       debug(
         `[${this.getString()}] child subcircuits are not routed, skipping async autorouting until subcircuits routed`,
@@ -598,10 +592,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this._hasTracesToRoute() &&
       !this._hasStartedAsyncAutorouting
     ) {
-      // Avoid starting autorouting until async effects (like footprint loads) finish
-      if (this.hasIncompleteAsyncEffectsInSubtree()) {
-        return
-      }
       if (this._areChildSubcircuitsRouted()) {
         debug(
           `[${this.getString()}] child subcircuits are now routed, starting async autorouting`,
