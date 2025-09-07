@@ -130,10 +130,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       }
     }
   }
+  const routedTraceIds = new Set(
+    db.pcb_trace
+      .list()
+      .map((t) => t.source_trace_id)
+      .filter((id): id is string => Boolean(id)),
+  )
 
   // Create connections from traces
   const directTraceConnections = db.source_trace
     .list()
+    .filter((trace) => !routedTraceIds.has(trace.source_trace_id))
     .map((trace) => {
       const connectedPorts = trace.connected_source_port_ids.map((id) => {
         const source_port = db.source_port.get(id)
