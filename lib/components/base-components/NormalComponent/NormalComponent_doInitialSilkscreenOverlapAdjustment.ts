@@ -108,12 +108,12 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
     const flippedTextBounds: Bounds = getBoundingBox(flippedTextBox)
 
     // Check if flipped position resolves the intersection
-    const flippedhasOverlap = obstacleBounds.some((obstacle) =>
+    const flippedHasOverlap = obstacleBounds.some((obstacle) =>
       doBoundsIntersect(flippedTextBounds, obstacle),
     )
 
     // If flipping resolves the overlap, commit the change
-    if (!flippedhasOverlap) {
+    if (!flippedHasOverlap) {
       db.pcb_silkscreen_text.update(silkscreenText.pcb_silkscreen_text_id, {
         anchor_position: {
           x: flippedX,
