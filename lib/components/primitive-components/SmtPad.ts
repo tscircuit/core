@@ -200,6 +200,19 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     })
   }
 
+  updatePcbPortAttachment(): void {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_smtpad_id) return
+    const smtpad = db.pcb_smtpad.get(this.pcb_smtpad_id)
+    const targetPortId = this.matchedPort?.pcb_port_id
+    if (!targetPortId) return
+    if (smtpad?.pcb_port_id === targetPortId) return
+    db.pcb_smtpad.update(this.pcb_smtpad_id!, {
+      pcb_port_id: targetPortId,
+    })
+  }
+
   _getPcbCircuitJsonBounds(): {
     center: { x: number; y: number }
     bounds: { left: number; top: number; right: number; bottom: number }

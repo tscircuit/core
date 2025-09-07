@@ -76,6 +76,14 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         circuitJson,
       )
       component.addAll(fpComponents)
+      // Ensure existing Ports re-run PcbPortRender now that pads exist
+      try {
+        for (const child of component.children) {
+          if ((child as any).componentName === "Port") {
+            ;(child as any)._markDirty?.("PcbPortRender")
+          }
+        }
+      } catch {}
       component._markDirty("InitializePortsFromChildren")
     })
     return

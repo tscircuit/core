@@ -204,6 +204,20 @@ export abstract class Renderable implements IRenderable {
     return this._asyncEffects.some((effect) => !effect.complete)
   }
 
+  /**
+   * Return true if this component or any of its descendants have
+   * incomplete async effects (e.g., pending footprint fetches).
+   */
+  hasIncompleteAsyncEffectsInSubtree(): boolean {
+    if (this._hasIncompleteAsyncEffects()) return true
+    for (const child of this.children) {
+      // Children are Renderables at runtime; cast for recursive check
+      const renderableChild = child as unknown as Renderable
+      if (renderableChild.hasIncompleteAsyncEffectsInSubtree()) return true
+    }
+    return false
+  }
+
   getCurrentRenderPhase(): RenderPhase | null {
     return this._currentRenderPhase
   }
