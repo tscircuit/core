@@ -131,6 +131,12 @@ export class Board extends Group<typeof boardProps> {
     })
   }
 
+  // Recompute autosize after child components update (e.g., async footprints)
+  updatePcbBoardAutoSize(): void {
+    // Reuse the same logic as initial autosize; it is idempotent
+    this.doInitialPcbBoardAutoSize()
+  }
+
   /**
    * Update the board information silkscreen text if platform config is set and
    * the project name, version, or url is set.

@@ -754,6 +754,10 @@ export class NormalComponent<
     })
   }
 
+  updatePcbComponentSizeCalculation(): void {
+    this.doInitialPcbComponentSizeCalculation()
+  }
+
   _renderReactSubtree(element: ReactElement): ReactSubtree {
     return {
       element,
