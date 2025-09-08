@@ -119,14 +119,20 @@ function convertTreeToInputProblem(
         component?._parsedProps?.schMarginRight ??
         component?._parsedProps?.schMarginX ??
         0
-      const marginTop =
+      let marginTop =
         component?._parsedProps?.schMarginTop ??
         component?._parsedProps?.schMarginY ??
         0
-      const marginBottom =
+      let marginBottom =
         component?._parsedProps?.schMarginBottom ??
         component?._parsedProps?.schMarginY ??
         0
+
+      // If component renders as a schematic box, add extra vertical margin
+      if (component?.config.shouldRenderAsSchematicBox) {
+        marginTop += 0.4
+        marginBottom += 0.4
+      }
 
       const marginXShift = (marginRight - marginLeft) / 2
       const marginYShift = (marginTop - marginBottom) / 2

@@ -12,6 +12,7 @@ export const FlashCircuit = () => (
     />
     <W25Q16JVUXIQ
       name="U2"
+      schMarginX={1}
       connections={{
         CS_N: "net.QSPI_SS_N",
         DO: "net.QSPI_SD1",
