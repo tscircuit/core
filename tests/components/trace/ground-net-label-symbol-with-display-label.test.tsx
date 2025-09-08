@@ -24,7 +24,7 @@ test("ground net labels with schDisplayLabel become symbols", () => {
 
   const labels = circuit.db.schematic_net_label.list()
   expect(labels).toHaveLength(1)
-  expect(labels[0].symbol_name).toBe("ground_down")
+  expect(labels[0].symbol_name).toBe("rail_down")
   expect(labels[0].text).toBe("GND")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
