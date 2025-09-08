@@ -9,6 +9,7 @@ import pkgJson from "../package.json"
 import type { RootCircuitEventName } from "./events"
 import type { PlatformConfig } from "@tscircuit/props"
 import { Group } from "./components/primitive-components/Group"
+import Debug from "debug"
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -240,6 +241,15 @@ export class RootCircuit {
       (l) => l !== listener,
     )
   }
+
+  enableDebug(debug: string | null | false) {
+    if (typeof debug === "string") {
+      Debug.enable(debug)
+    } else if (debug === null || debug === false) {
+      Debug.disable()
+    }
+  }
+
   getClientOrigin(): string {
     if (typeof window !== "undefined" && window.location) {
       return window.location.origin
