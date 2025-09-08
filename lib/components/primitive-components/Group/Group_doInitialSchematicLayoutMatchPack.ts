@@ -111,13 +111,39 @@ function convertTreeToInputProblem(
         availableRotations = [0]
       }
 
-      // Create chip entry
+      const marginLeft =
+        component?._parsedProps?.schMarginLeft ??
+        component?._parsedProps?.schMarginX ??
+        0
+      const marginRight =
+        component?._parsedProps?.schMarginRight ??
+        component?._parsedProps?.schMarginX ??
+        0
+      let marginTop =
+        component?._parsedProps?.schMarginTop ??
+        component?._parsedProps?.schMarginY ??
+        0
+      let marginBottom =
+        component?._parsedProps?.schMarginBottom ??
+        component?._parsedProps?.schMarginY ??
+        0
+
+      // If component renders as a schematic box, add extra vertical margin
+      if (component?.config.shouldRenderAsSchematicBox) {
+        marginTop += 0.4
+        marginBottom += 0.4
+      }
+
+      const marginXShift = (marginRight - marginLeft) / 2
+      const marginYShift = (marginTop - marginBottom) / 2
+
+      // Create chip entry with margins applied to size
       problem.chipMap[chipId] = {
         chipId,
         pins: [],
         size: {
-          x: schematicComponent.size?.width || 1,
-          y: schematicComponent.size?.height || 1,
+          x: (schematicComponent.size?.width || 1) + marginLeft + marginRight,
+          y: (schematicComponent.size?.height || 1) + marginTop + marginBottom,
         },
         availableRotations,
       }
@@ -140,8 +166,14 @@ function convertTreeToInputProblem(
         problem.chipPinMap[pinId] = {
           pinId,
           offset: {
-            x: (port.center?.x || 0) - (schematicComponent.center.x || 0),
-            y: (port.center?.y || 0) - (schematicComponent.center.y || 0),
+            x:
+              (port.center?.x || 0) -
+              (schematicComponent.center.x || 0) +
+              marginXShift,
+            y:
+              (port.center?.y || 0) -
+              (schematicComponent.center.y || 0) +
+              marginYShift,
           },
           side,
         }
@@ -154,6 +186,11 @@ function convertTreeToInputProblem(
       const schematicGroup = db.schematic_group?.getWhere?.({
         source_group_id: child.sourceGroup.source_group_id,
       })
+
+      const groupInstance = group.children.find(
+        (groupChild: any) =>
+          groupChild.source_group_id === child.sourceGroup?.source_group_id,
+      ) as any
 
       debug(
         `[${group.name}] Found schematic_group for ${groupId}:`,
@@ -193,8 +230,30 @@ function convertTreeToInputProblem(
           }
         }
 
-        const groupWidth = hasValidBounds ? maxX - minX : 2
-        const groupHeight = hasValidBounds ? maxY - minY : 2
+        const marginLeft =
+          groupInstance?._parsedProps?.schMarginLeft ??
+          groupInstance?._parsedProps?.schMarginX ??
+          0
+        const marginRight =
+          groupInstance?._parsedProps?.schMarginRight ??
+          groupInstance?._parsedProps?.schMarginX ??
+          0
+        const marginTop =
+          groupInstance?._parsedProps?.schMarginTop ??
+          groupInstance?._parsedProps?.schMarginY ??
+          0
+        const marginBottom =
+          groupInstance?._parsedProps?.schMarginBottom ??
+          groupInstance?._parsedProps?.schMarginY ??
+          0
+
+        const marginXShift = (marginRight - marginLeft) / 2
+        const marginYShift = (marginTop - marginBottom) / 2
+
+        const groupWidth =
+          (hasValidBounds ? maxX - minX : 2) + marginLeft + marginRight
+        const groupHeight =
+          (hasValidBounds ? maxY - minY : 2) + marginTop + marginBottom
 
         debug(
           `[${group.name}] Group ${groupId} computed size: ${groupWidth} x ${groupHeight}`,
@@ -223,8 +282,8 @@ function convertTreeToInputProblem(
             problem.chipPinMap[pinId] = {
               pinId,
               offset: {
-                x: (port.center?.x || 0) - groupCenter.x,
-                y: (port.center?.y || 0) - groupCenter.y,
+                x: (port.center?.x || 0) - groupCenter.x + marginXShift,
+                y: (port.center?.y || 0) - groupCenter.y + marginYShift,
               },
               side,
             }
