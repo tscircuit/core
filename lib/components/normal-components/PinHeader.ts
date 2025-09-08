@@ -5,6 +5,13 @@ import type { SourceSimplePinHeader } from "circuit-json"
 import type { BaseSymbolName } from "lib/utils/constants"
 
 export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
+  _getPcbRotationBeforeLayout(): number | null {
+    const orientationRotation =
+      this.props.pcbOrientation === "vertical" ? -90 : 0
+    const baseRotation = super._getPcbRotationBeforeLayout() ?? 0
+    return baseRotation + orientationRotation
+  }
+
   get config() {
     return {
       componentName: "PinHeader",

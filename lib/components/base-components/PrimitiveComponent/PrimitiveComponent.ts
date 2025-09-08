@@ -174,16 +174,25 @@ export abstract class PrimitiveComponent<
     this.parent?.onChildChanged?.(this)
   }
 
+  _getPcbRotationBeforeLayout(): number | null {
+    const { pcbRotation } = this.props as any
+    if (typeof pcbRotation === "string") {
+      return parseFloat(pcbRotation)
+    }
+    return pcbRotation ?? null
+  }
+
   /**
    * Computes a transformation matrix from the props of this component for PCB
    * components
    */
   computePcbPropsTransform(): Matrix {
     const { _parsedProps: props } = this
+    const rotation = this._getPcbRotationBeforeLayout() ?? 0
 
     const matrix = compose(
       translate(props.pcbX ?? 0, props.pcbY ?? 0),
-      rotate(((props.pcbRotation ?? 0) * Math.PI) / 180),
+      rotate((rotation * Math.PI) / 180),
     )
 
     return matrix
@@ -197,7 +206,6 @@ export abstract class PrimitiveComponent<
    * components positions before layout is applied
    */
   _computePcbGlobalTransformBeforeLayout(): Matrix {
-    const { _parsedProps: props } = this
     const manualPlacement =
       this.getSubcircuit()._getPcbManualPlacementForComponent(this)
 
@@ -207,11 +215,12 @@ export abstract class PrimitiveComponent<
       this.props.pcbX === undefined &&
       this.props.pcbY === undefined
     ) {
+      const rotation = this._getPcbRotationBeforeLayout() ?? 0
       return compose(
         this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
         compose(
           translate(manualPlacement.x, manualPlacement.y),
-          rotate(((props.pcbRotation ?? 0) * Math.PI) / 180),
+          rotate((rotation * Math.PI) / 180),
         ),
       )
     }
@@ -222,15 +231,8 @@ export abstract class PrimitiveComponent<
       const primitiveContainer = this.getPrimitiveContainer()
       if (primitiveContainer) {
         const isFlipped = primitiveContainer._parsedProps.layer === "bottom"
-        const containerCenter =
-          primitiveContainer._getGlobalPcbPositionBeforeLayout()
 
         if (isFlipped) {
-          const flipOperation = compose(
-            translate(containerCenter.x, containerCenter.y),
-            flipY(),
-            translate(-containerCenter.x, -containerCenter.y),
-          )
           return compose(
             this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
             flipY(),
