@@ -45,4 +45,5 @@ test("pcbPack respects component constraints", async () => {
   }
 
   expect(min).toBeGreaterThan(3)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
