@@ -1,9 +1,9 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// Verify that upward-facing V* net labels become vcc_up symbols
+// Verify that upward-facing V* net labels become rail_up symbols
 
-test("v net labels become vcc symbols", () => {
+test("v net labels become rail symbols", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -16,6 +16,6 @@ test("v net labels become vcc symbols", () => {
 
   const labels = circuit.db.schematic_net_label.list()
   expect(labels).toHaveLength(1)
-  expect(labels[0].symbol_name).toBe("vcc_up")
+  expect(labels[0].symbol_name).toBe("rail_up")
   expect(labels[0].text).toBe("VCC")
 })

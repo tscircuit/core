@@ -1069,14 +1069,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       if (nl.anchor_side === "top" && /^gnd/i.test(text)) {
         subtree.schematic_net_label.update(nl.schematic_net_label_id, {
-          symbol_name: "ground_down",
+          symbol_name: "rail_down",
         })
         continue
       }
 
       if (nl.anchor_side === "bottom" && /^v/i.test(text)) {
         subtree.schematic_net_label.update(nl.schematic_net_label_id, {
-          symbol_name: "vcc_up",
+          symbol_name: "rail_up",
         })
       }
     }
