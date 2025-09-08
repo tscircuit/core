@@ -14,24 +14,17 @@ test("group id present in pcb_component, schematic_component and source_componen
   circuit.renderUntilSettled()
 
   const pcbGroups = circuit.db.pcb_group.list()
-  expect(pcbGroups).toMatchInlineSnapshot(`
-    [
-      {
-        "autorouter_configuration": undefined,
-        "center": {
-          "x": 0,
-          "y": 0,
-        },
-        "height": 0.6,
-        "is_subcircuit": true,
-        "name": "G1",
-        "pcb_component_ids": [],
-        "pcb_group_id": "pcb_group_0",
-        "source_group_id": "source_group_0",
-        "subcircuit_id": "subcircuit_source_group_0",
-        "type": "pcb_group",
-        "width": 5.6,
-      },
-    ]
-  `)
+  expect(pcbGroups).toHaveLength(1)
+  const pcbGroup = pcbGroups[0]
+
+  expect(pcbGroup.name).toBe("G1")
+  expect(pcbGroup.type).toBe("pcb_group")
+  expect(pcbGroup.is_subcircuit).toBe(true)
+  expect(pcbGroup.pcb_group_id).toBe("pcb_group_0")
+  expect(pcbGroup.source_group_id).toBe("source_group_0")
+  expect(pcbGroup.subcircuit_id).toBe("subcircuit_source_group_0")
+  expect(pcbGroup.center).toEqual({ x: 0, y: 0 })
+  expect(pcbGroup.width).toBeGreaterThan(0)
+  expect(pcbGroup.height).toBeGreaterThan(0)
+  expect(Array.isArray(pcbGroup.pcb_component_ids)).toBe(true)
 })

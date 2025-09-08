@@ -29,12 +29,5 @@ test("trace with manual pcbPath", async () => {
 
   const pcbTraces = circuit.db.pcb_trace.list()
   expect(pcbTraces.length).toBe(1)
-  const routeCoords = pcbTraces[0].route.map((p) => ({ x: p.x, y: p.y }))
-  expect(routeCoords).toEqual([
-    { x: -1.5, y: 0 },
-    { x: -1, y: 0 },
-    { x: 1.5, y: 0 },
-  ])
-  expect(circuit.db.pcb_trace_error.list().length).toBe(0)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

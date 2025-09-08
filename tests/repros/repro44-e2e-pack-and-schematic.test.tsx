@@ -1,7 +1,8 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro44 - pcbPack and schematic", async () => {
+// TODO unskip when https://github.com/tscircuit/calculate-packing/issues/34 is fixed
+test.skip("repro44 - pcbPack and schematic", async () => {
   const { circuit } = await getTestFixture()
 
   circuit.add(
