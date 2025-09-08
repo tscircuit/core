@@ -31,12 +31,14 @@ export const createComponentsFromCircuitJson = (
     footprint,
     pinLabels,
     pcbPinLabels,
+    allowOnlyRefSilkscreenForImportedFootprint = false,
   }: {
     componentName: string
     componentRotation: string
     footprint: string
     pinLabels: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
+    allowOnlyRefSilkscreenForImportedFootprint?: boolean
   },
   soup: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
@@ -169,18 +171,41 @@ export const createComponentsFromCircuitJson = (
           }),
         )
       } else {
-        components.push(
-          new SilkscreenText({
-            anchorAlignment: elm.anchor_alignment || "center",
-            text: componentName,
-            fontSize: elm.font_size + 0.2,
-            pcbX: Number.isNaN(elm.anchor_position.x)
-              ? 0
-              : elm.anchor_position.x,
-            pcbY: elm.anchor_position.y,
-            pcbRotation: ccwRotation ?? 0,
-          }),
-        )
+        // Behavior differs based on import context:
+        // - Async imported footprints (library/URL): only include REF** as the
+        //   component name, skip other texts like ${REFERENCE} or footprint names.
+        // - Synchronous/inline footprints: preserve legacy behavior of labeling
+        //   with component name regardless of original text.
+        const shouldOnlyIncludeRef = allowOnlyRefSilkscreenForImportedFootprint
+        if (shouldOnlyIncludeRef) {
+          if (elm.text === "REF**") {
+            components.push(
+              new SilkscreenText({
+                anchorAlignment: elm.anchor_alignment || "center",
+                text: componentName,
+                fontSize: elm.font_size + 0.2,
+                pcbX: Number.isNaN(elm.anchor_position.x)
+                  ? 0
+                  : elm.anchor_position.x,
+                pcbY: elm.anchor_position.y,
+                pcbRotation: ccwRotation ?? 0,
+              }),
+            )
+          }
+        } else {
+          components.push(
+            new SilkscreenText({
+              anchorAlignment: elm.anchor_alignment || "center",
+              text: componentName,
+              fontSize: elm.font_size + 0.2,
+              pcbX: Number.isNaN(elm.anchor_position.x)
+                ? 0
+                : elm.anchor_position.x,
+              pcbY: elm.anchor_position.y,
+              pcbRotation: ccwRotation ?? 0,
+            }),
+          )
+        }
       }
     } else if (elm.type === "pcb_trace") {
       components.push(

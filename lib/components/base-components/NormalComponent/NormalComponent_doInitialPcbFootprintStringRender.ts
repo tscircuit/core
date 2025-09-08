@@ -29,6 +29,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           footprint: url,
           pinLabels,
           pcbPinLabels,
+          allowOnlyRefSilkscreenForImportedFootprint: true,
         },
         soup as any,
       )
@@ -72,6 +73,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           footprint,
           pinLabels,
           pcbPinLabels,
+          allowOnlyRefSilkscreenForImportedFootprint: true,
         },
         circuitJson,
       )
