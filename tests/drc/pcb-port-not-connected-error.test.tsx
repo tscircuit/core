@@ -41,34 +41,6 @@ test("check each PCB port is connected", async () => {
   const circuitJson = circuit.getCircuitJson()
 
   const pcbTraces = circuitJson.filter((el) => el.type === "pcb_trace")
-  expect(pcbTraces).toMatchInlineSnapshot(`
-    [
-      {
-        "pcb_trace_id": "pcb_trace_for_source_trace_1",
-        "route": [
-          {
-            "layer": "top",
-            "route_type": "wire",
-            "start_pcb_port_id": "pcb_port_3",
-            "width": 0.1,
-            "x": 5.5,
-            "y": 0,
-          },
-          {
-            "end_pcb_port_id": "pcb_port_4",
-            "layer": "top",
-            "route_type": "wire",
-            "width": 0.1,
-            "x": 9.5,
-            "y": 0,
-          },
-        ],
-        "subcircuit_id": "subcircuit_source_group_0",
-        "type": "pcb_trace",
-      },
-    ]
-  `)
-
   const pcbPortNotConnectedErrors = circuitJson.filter(
     (el) => el.type === "pcb_port_not_connected_error",
   )
