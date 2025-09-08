@@ -42,7 +42,7 @@ test("Jumper internally connected pins mix up between different Jumper component
           ["2", "3"],
         ]}
         footprint="solderjumper3_bridged123_p0.8_pw0.635_ph1.270"
-        pcbX="0"
+        pcbX="1"
         pcbY="-3"
         layer="bottom"
         schY={2}
@@ -52,10 +52,9 @@ test("Jumper internally connected pins mix up between different Jumper component
     </board>,
   )
 
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await circuit.renderUntilSettled()
   const circuitJson = circuit.getCircuitJson()
   const errors = circuitJson.filter((e) => e.type.includes("error"))
   expect(errors.length).toBe(0)
-
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

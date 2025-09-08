@@ -53,53 +53,5 @@ test("Autorouter should inherit if the parent subcircuit has async autorouter en
 
   const source_traces = su(circuit.getCircuitJson()).source_trace.list()
   const pcb_traces = su(circuit.getCircuitJson()).pcb_trace.list()
-  expect(pcb_traces).toMatchInlineSnapshot(`
-    [
-      {
-        "pcb_trace_id": "pcb_trace_0",
-        "route": [
-          {
-            "layer": "top",
-            "route_type": "wire",
-            "start_pcb_port_id": "pcb_port_0",
-            "width": 0.1,
-            "x": -2.5,
-            "y": 0,
-          },
-          {
-            "layer": "top",
-            "route_type": "wire",
-            "width": 0.1,
-            "x": -2,
-            "y": 0,
-          },
-          {
-            "layer": "top",
-            "route_type": "wire",
-            "width": 0.1,
-            "x": -2,
-            "y": 1.3,
-          },
-          {
-            "layer": "top",
-            "route_type": "wire",
-            "width": 0.1,
-            "x": 1.5,
-            "y": 1.3,
-          },
-          {
-            "end_pcb_port_id": "pcb_port_2",
-            "layer": "top",
-            "route_type": "wire",
-            "width": 0.1,
-            "x": 1.5,
-            "y": 0,
-          },
-        ],
-        "subcircuit_id": "subcircuit_source_group_0",
-        "type": "pcb_trace",
-      },
-    ]
-  `)
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

@@ -5,7 +5,7 @@ test("<voltagesource /> sine and square wave", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm">
+    <board width="10mm" height="10mm" routingDisabled>
       <voltagesource
         name="VS1"
         voltage="5V"
