@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y)
 
-test.skip("pcbPack respects component constraints", async () => {
+test("pcbPack respects component constraints", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -45,4 +45,5 @@ test.skip("pcbPack respects component constraints", async () => {
   }
 
   expect(min).toBeGreaterThan(3)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
