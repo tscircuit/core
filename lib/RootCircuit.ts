@@ -250,7 +250,6 @@ export class RootCircuit {
     }
   }
 
-
   getClientOrigin(): string {
     if (typeof window !== "undefined" && window.location) {
       return window.location.origin
