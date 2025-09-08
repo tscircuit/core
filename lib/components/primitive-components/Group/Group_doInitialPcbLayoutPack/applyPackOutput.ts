@@ -1,6 +1,7 @@
 import type { Group } from "../Group"
 import { translate, rotate, compose } from "transformation-matrix"
 import { transformPCBElements } from "@tscircuit/circuit-json-util"
+import type { PackOutput } from "calculate-packing"
 import type { ClusterInfo } from "./applyComponentConstraintClusters"
 
 const isDescendantGroup = (
@@ -16,7 +17,7 @@ const isDescendantGroup = (
 
 export const applyPackOutput = (
   group: Group,
-  packOutput: any,
+  packOutput: PackOutput,
   clusterMap: Record<string, ClusterInfo>,
 ) => {
   const { db } = group.root!
