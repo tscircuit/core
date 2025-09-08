@@ -1,5 +1,5 @@
 import type { Group } from "../Group"
-import type { Constraint } from "../Constraint"
+import type { Constraint } from "../../Constraint"
 import type { PackInput } from "calculate-packing"
 import * as kiwi from "@lume/kiwi"
 
@@ -36,7 +36,7 @@ export const applyComponentConstraintClusters = (
   const getIdFromSelector = (sel: string): string | undefined => {
     const name = sel.startsWith(".") ? sel.slice(1) : sel
     const child = group.children.find((c) => (c as any).name === name)
-    return child?.pcb_component_id
+    return child?.pcb_component_id ?? undefined
   }
 
   for (const constraint of constraints) {
@@ -60,7 +60,7 @@ export const applyComponentConstraintClusters = (
     } else if ("for" in props && Array.isArray(props.for)) {
       const ids = props.for
         .map((s: string) => getIdFromSelector(s))
-        .filter((s): s is string => !!s)
+        .filter((s: string | undefined): s is string => !!s)
       for (const id of ids) makeSet(id)
       for (let i = 1; i < ids.length; i++) union(ids[0], ids[i])
     }
@@ -148,7 +148,7 @@ export const applyComponentConstraintClusters = (
       } else if ("sameX" in props && Array.isArray(props.for)) {
         const ids = props.for
           .map((s: string) => getIdFromSelector(s))
-          .filter((s): s is string => !!s)
+          .filter((s: string | undefined): s is string => !!s)
         if (ids.length > 1) {
           const base = getVar(ids[0], "x")
           for (let i = 1; i < ids.length; i++) {
@@ -165,7 +165,7 @@ export const applyComponentConstraintClusters = (
       } else if ("sameY" in props && Array.isArray(props.for)) {
         const ids = props.for
           .map((s: string) => getIdFromSelector(s))
-          .filter((s): s is string => !!s)
+          .filter((s: string | undefined): s is string => !!s)
         if (ids.length > 1) {
           const base = getVar(ids[0], "y")
           for (let i = 1; i < ids.length; i++) {
