@@ -37,10 +37,11 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
 
   // Optional debug output
   if (debug.enabled) {
-    globalThis.debugOutputs?.add(
-      "group-trace-render-input-problem",
-      JSON.stringify(inputProblem, null, 2),
-    )
+    group.root?.emit("debug:logOutput", {
+      type: "debug:logOutput",
+      name: "group-trace-render-input-problem",
+      content: JSON.stringify(inputProblem, null, 2),
+    })
   }
 
   // Solve routing

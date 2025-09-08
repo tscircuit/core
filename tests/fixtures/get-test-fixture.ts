@@ -22,6 +22,13 @@ export const getTestFixture = ({
   const circuit = new RootCircuit({ platform })
 
   const debugOutputArray: Array<{ name: string; obj: any }> = []
+  
+  // Set up event listener for debug outputs
+  circuit.on("debug:logOutput", (event) => {
+    debugOutputArray.push({ name: event.name, obj: event.content })
+  })
+
+  // Keep globalThis.debugOutputs for backward compatibility during transition
   globalThis.debugOutputs = {
     add: (name, obj) => {
       debugOutputArray.push({ name, obj })

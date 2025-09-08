@@ -511,10 +511,11 @@ export function Group_doInitialSchematicLayoutMatchPack<
   const inputProblem = convertTreeToInputProblem(tree, db, group)
 
   if (debug.enabled) {
-    global.debugOutputs?.add(
-      `matchpack-input-problem-${group.name}`,
-      JSON.stringify(inputProblem, null, 2),
-    )
+    group.root?.emit("debug:logOutput", {
+      type: "debug:logOutput",
+      name: `matchpack-input-problem-${group.name}`,
+      content: JSON.stringify(inputProblem, null, 2),
+    })
   }
 
   // Create and run the LayoutPipelineSolver
