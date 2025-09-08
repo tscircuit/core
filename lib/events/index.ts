@@ -14,6 +14,7 @@ export type RootCircuitEventName =
   | "autorouting:error"
   | "autorouting:progress"
   | "renderComplete"
+  | "debug:logOutput"
 
 export interface AutoroutingStartEvent {
   type: "autorouting:start"
@@ -42,4 +43,10 @@ export interface AutoroutingProgressEvent {
 
 export interface AutoroutingEndEvent {
   type: "autorouting:end"
+}
+
+export interface DebugLogOutputEvent {
+  type: "debug:logOutput"
+  name: string
+  content: any
 }

@@ -61,11 +61,16 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
 
   if (debug.enabled) {
-    global.debugOutputs?.add(
-      `packInput-circuitjson-${group.name}`,
-      JSON.stringify(db.toArray()),
-    )
-    global.debugOutputs?.add(`packInput-${group.name}`, packInput)
+    group.root?.emit("debug:logOutput", {
+      type: "debug:logOutput",
+      name: `packInput-circuitjson-${group.name}`,
+      content: JSON.stringify(db.toArray()),
+    })
+    group.root?.emit("debug:logOutput", {
+      type: "debug:logOutput",
+      name: `packInput-${group.name}`,
+      content: packInput,
+    })
   }
 
   const packOutput = pack(packInput)

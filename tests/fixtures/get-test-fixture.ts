@@ -6,14 +6,6 @@ import "./extend-expect-circuit-snapshot"
 import { preventExternalApiRequests } from "./prevent-external-api-requests"
 import type { PlatformConfig } from "@tscircuit/props"
 
-declare global {
-  var debugOutputs:
-    | {
-        add: (name: string, value: any) => void
-      }
-    | undefined
-}
-
 export const getTestFixture = ({
   platform,
 }: { platform?: PlatformConfig } = {}) => {
@@ -22,14 +14,13 @@ export const getTestFixture = ({
   const circuit = new RootCircuit({ platform })
 
   const debugOutputArray: Array<{ name: string; obj: any }> = []
-  globalThis.debugOutputs = {
-    add: (name, obj) => {
-      debugOutputArray.push({ name, obj })
-    },
-  }
+
+  // Set up event listener for debug outputs
+  circuit.on("debug:logOutput", (event) => {
+    debugOutputArray.push({ name: event.name, obj: event.content })
+  })
 
   afterAll(() => {
-    globalThis.debugOutputs = undefined
     if (debugOutputArray.length > 0) {
       for (const { name, obj } of debugOutputArray) {
         const fileName = `debug-output/${name}.json`
