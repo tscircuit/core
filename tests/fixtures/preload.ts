@@ -1,4 +1,5 @@
 import "bun-match-svg"
+import "./extend-expect-any-svg"
 import "lib/register-catalogue"
 
 declare module "bun:test" {
