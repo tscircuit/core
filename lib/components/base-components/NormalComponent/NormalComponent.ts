@@ -154,6 +154,7 @@ export class NormalComponent<
 
     super(filteredProps)
     this._invalidPinLabelMessages = invalidPinLabelsMessages
+    this._addSymbolFromProp()
     this._addChildrenFromStringFootprint()
     this.initPorts()
   }
@@ -443,6 +444,13 @@ export class NormalComponent<
         fpSoup as any,
       ) // Remove as any when footprinter gets updated
       this.addAll(fpComponents)
+    }
+  }
+
+  _addSymbolFromProp() {
+    const { symbol } = this.props as any
+    if (isReactElement(symbol)) {
+      this.add(symbol)
     }
   }
 
@@ -1038,6 +1046,7 @@ export class NormalComponent<
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     // Only valid if we don't have a schematic symbol
     if (this.getSchematicSymbol()) return null
+    if (this._hasCustomSymbol()) return null
     if (!this.config.shouldRenderAsSchematicBox) return null
 
     const { _parsedProps: props } = this

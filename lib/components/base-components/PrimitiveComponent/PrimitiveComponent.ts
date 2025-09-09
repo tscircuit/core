@@ -845,9 +845,16 @@ export abstract class PrimitiveComponent<
     return null
   }
 
+  _hasCustomSymbol(): boolean {
+    const symbolProp = (this as any).props?.symbol
+    if (symbolProp) return true
+    return this.children.some((c) => c.componentName === "Symbol")
+  }
+
   _getSchematicBoxComponentDimensions(): SchematicBoxComponentDimensions | null {
     // Only valid if we don't have a schematic symbol
     if (this.getSchematicSymbol()) return null
+    if (this._hasCustomSymbol()) return null
     if (!this.config.shouldRenderAsSchematicBox) return null
 
     const { _parsedProps: props } = this
