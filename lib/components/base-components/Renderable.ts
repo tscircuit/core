@@ -58,6 +58,7 @@ export type RenderPhase = (typeof orderedRenderPhases)[number]
 // current component's subtree.
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PcbTraceRender: ["PcbFootprintStringRender"],
+  CadModelRender: ["PcbFootprintStringRender"],
 }
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =

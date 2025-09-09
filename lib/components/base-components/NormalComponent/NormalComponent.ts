@@ -7,6 +7,9 @@ import type {
   SchematicPortArrangement,
   SupplierPartNumbers,
   CadModelGltf,
+  CadModelGlb,
+  CadModelStep,
+  CadModelWrl,
 } from "@tscircuit/props"
 import {
   pcb_manual_edit_conflict_warning,
@@ -107,6 +110,7 @@ export class NormalComponent<
   }
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
+  _asyncFootprintCadModel?: CadModelProp
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false
 
@@ -1063,7 +1067,9 @@ export class NormalComponent<
   doInitialCadModelRender(): void {
     const { db } = this.root!
     const { boardThickness = 0 } = this.root?._getBoard() ?? {}
-    const cadModel = this._parsedProps.cadModel as CadModelProp | undefined
+    const cadModelProp = this._parsedProps.cadModel
+    const cadModel =
+      cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
     const footprint = this.props.footprint ?? this._getImpliedFootprintString()
 
     if (!this.pcb_component_id) return
@@ -1129,9 +1135,25 @@ export class NormalComponent<
         "objUrl" in (cadModel ?? {})
           ? this._addCachebustToModelUrl((cadModel as CadModelObj).objUrl)
           : undefined,
+      model_mtl_url:
+        "mtlUrl" in (cadModel ?? {})
+          ? this._addCachebustToModelUrl((cadModel as CadModelObj).mtlUrl)
+          : undefined,
       model_gltf_url:
         "gltfUrl" in (cadModel ?? {})
           ? this._addCachebustToModelUrl((cadModel as CadModelGltf).gltfUrl)
+          : undefined,
+      model_glb_url:
+        "glbUrl" in (cadModel ?? {})
+          ? this._addCachebustToModelUrl((cadModel as CadModelGlb).glbUrl)
+          : undefined,
+      model_step_url:
+        "stepUrl" in (cadModel ?? {})
+          ? this._addCachebustToModelUrl((cadModel as CadModelStep).stepUrl)
+          : undefined,
+      model_wrl_url:
+        "wrlUrl" in (cadModel ?? {})
+          ? this._addCachebustToModelUrl((cadModel as CadModelWrl).wrlUrl)
           : undefined,
       model_jscad:
         "jscad" in (cadModel ?? {})
@@ -1140,7 +1162,8 @@ export class NormalComponent<
 
       footprinter_string:
         typeof footprint === "string" && !cadModel ? footprint : undefined,
-    })
+    } as any)
+    this.cad_component_id = cad_model.cad_component_id
   }
 
   private _addCachebustToModelUrl(url?: string): string | undefined {
