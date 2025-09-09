@@ -4,7 +4,12 @@ import { isValidElement as isReactElement } from "react"
 import { Footprint } from "lib/components/primitive-components/Footprint"
 import { isFootprintUrl } from "./utils/isFoorprintUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
-import type { FootprintLibraryResult } from "@tscircuit/props"
+import type { CadModelProp } from "@tscircuit/props"
+
+interface FootprintLibraryResult {
+  footprintCircuitJson: any[]
+  cadModel?: CadModelProp
+}
 
 export function NormalComponent_doInitialPcbFootprintStringRender(
   component: NormalComponent<any, any>,
