@@ -251,7 +251,9 @@ export function createSchematicTraceSolverInputProblem(
       // Default font_size is 0.18 and charWidth = 0.1 * (font_size / 0.18)
       const fontSize = 0.18
       const charWidth = 0.1 * (fontSize / 0.18)
-      const netLabelWidth = Number((String(userNetId).length * charWidth).toFixed(2))
+      const netLabelWidth = Number(
+        (String(userNetId).length * charWidth).toFixed(2),
+      )
 
       netConnections.push({
         netId: userNetId,
