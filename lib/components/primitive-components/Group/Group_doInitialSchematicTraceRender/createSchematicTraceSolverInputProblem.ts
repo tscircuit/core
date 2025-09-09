@@ -209,7 +209,11 @@ export function createSchematicTraceSolverInputProblem(
   }
 
   // Net connections derived from named nets (source_net) in-scope
-  const netConnections: Array<{ netId: string; pinIds: string[] }> = []
+  const netConnections: Array<{
+    netId: string
+    pinIds: string[]
+    netLabelWidth?: number
+  }> = []
   for (const net of db.source_net
     .list()
     .filter(
@@ -243,11 +247,20 @@ export function createSchematicTraceSolverInputProblem(
       userNetIdToSck.set(userNetId, subcircuitConnectivityKey)
       sckToUserNetId.set(subcircuitConnectivityKey, userNetId)
 
+      // Estimate net label width using same heuristic as computeSchematicNetLabelCenter
+      // Default font_size is 0.18 and charWidth = 0.1 * (font_size / 0.18)
+      const fontSize = 0.18
+      const charWidth = 0.1 * (fontSize / 0.18)
+      const netLabelWidth = Number(
+        (String(userNetId).length * charWidth).toFixed(2),
+      )
+
       netConnections.push({
         netId: userNetId,
         pinIds: schematicPortIds.map(
           (portId) => schematicPortIdToPinId.get(portId)!,
         ),
+        netLabelWidth,
       })
     }
   }
