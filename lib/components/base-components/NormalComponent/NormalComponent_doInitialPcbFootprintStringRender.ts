@@ -4,6 +4,7 @@ import { isValidElement as isReactElement } from "react"
 import { Footprint } from "lib/components/primitive-components/Footprint"
 import { isFootprintUrl } from "./utils/isFoorprintUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
+import type { FootprintLibraryResult } from "@tscircuit/props"
 
 export function NormalComponent_doInitialPcbFootprintStringRender(
   component: NormalComponent<any, any>,
@@ -50,20 +51,25 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     const libMap = platform?.footprintLibraryMap?.[libRef.footprintLib]
 
     // Find resolver: library can be a function or an object of resolvers
-    let resolverFn: ((path: string) => Promise<any>) | undefined
+    let resolverFn:
+      | ((path: string) => Promise<FootprintLibraryResult | any[]>)
+      | undefined
     if (typeof libMap === "function") {
-      resolverFn = libMap as (path: string) => Promise<any>
+      resolverFn = libMap as (
+        path: string,
+      ) => Promise<FootprintLibraryResult | any[]>
     }
 
     if (!resolverFn) return
 
     queueAsyncEffect("load-lib-footprint", async () => {
       const result = await resolverFn!(libRef.footprintName)
-      const circuitJson = Array.isArray(result)
-        ? result
-        : Array.isArray((result as any)?.footprintCircuitJson)
-          ? (result as any).footprintCircuitJson
-          : null
+      let circuitJson: any[] | null = null
+      if (Array.isArray(result)) {
+        circuitJson = result
+      } else if (Array.isArray(result.footprintCircuitJson)) {
+        circuitJson = result.footprintCircuitJson
+      }
       if (!circuitJson) return
       const fpComponents = createComponentsFromCircuitJson(
         {
@@ -76,6 +82,9 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         circuitJson,
       )
       component.addAll(fpComponents)
+      if (!Array.isArray(result) && result.cadModel) {
+        component._asyncFootprintCadModel = result.cadModel
+      }
       // Ensure existing Ports re-run PcbPortRender now that pads exist
       for (const child of component.children) {
         if (child.componentName === "Port") {
