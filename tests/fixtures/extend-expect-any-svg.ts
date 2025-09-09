@@ -7,10 +7,11 @@ const DIFF_THRESHOLD_PERCENT = 1 // only update snapshot if >1% difference
 
 async function toMatchSvgSnapshot(
   this: any,
-  received: string,
+  received: string | Promise<string>,
   testPathOriginal: string,
   svgName?: string,
 ): Promise<MatcherResult> {
+  const svg = await received
   const testPath = testPathOriginal.replace(/\.test\.tsx?$/, "")
   const snapshotDir = path.join(path.dirname(testPath), "__snapshots__")
   const snapshotName = svgName
@@ -31,7 +32,7 @@ async function toMatchSvgSnapshot(
 
   if (!fileExists) {
     console.log("Writing snapshot to", filePath)
-    fs.writeFileSync(filePath, received)
+    fs.writeFileSync(filePath, svg)
     return {
       message: () => `Snapshot created at ${filePath}`,
       pass: true,
@@ -41,7 +42,7 @@ async function toMatchSvgSnapshot(
   const existingSnapshot = fs.readFileSync(filePath, "utf-8")
 
   const result: any = await looksSame(
-    Buffer.from(received),
+    Buffer.from(svg),
     Buffer.from(existingSnapshot),
     {
       strict: false,
@@ -68,7 +69,7 @@ async function toMatchSvgSnapshot(
       }
     }
     console.log("Updating snapshot at", filePath)
-    fs.writeFileSync(filePath, received)
+    fs.writeFileSync(filePath, svg)
     return {
       message: () => `Snapshot updated at ${filePath}`,
       pass: true,
@@ -85,7 +86,7 @@ async function toMatchSvgSnapshot(
   const diffPath = filePath.replace(".snap.svg", ".diff.png")
   await looksSame.createDiff({
     reference: Buffer.from(existingSnapshot),
-    current: Buffer.from(received),
+    current: Buffer.from(svg),
     diff: diffPath,
     highlightColor: "#ff00ff",
   })
