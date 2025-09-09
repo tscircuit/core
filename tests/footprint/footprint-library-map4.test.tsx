@@ -26,7 +26,11 @@ test("footprint library map 4 - pcbPack", async () => {
         resistance="10k"
         footprint="kicad:Resistor_SMD/R_0402_1005Metric"
       />
-      <resistor name="R2" resistance="20k" footprint="kicad:Resistor_SMD/R_0402_1005Metric" />
+      <resistor
+        name="R2"
+        resistance="20k"
+        footprint="kicad:Resistor_SMD/R_0402_1005Metric"
+      />
       <trace from=".R1 > .pin1" to=".R2 > .pin1" />
     </board>,
   )
