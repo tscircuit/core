@@ -225,6 +225,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         layers: ["top", "bottom"],
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        hole_offset_x: props.pcbHoleOffsetX ?? 0,
+        hole_offset_y: props.pcbHoleOffsetY ?? 0,
       } as PcbHoleCircularWithRectPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     } else if (props.shape === "pill_hole_with_rect_pad") {
