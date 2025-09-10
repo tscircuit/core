@@ -1159,6 +1159,10 @@ export class NormalComponent<
         "jscad" in (cadModel ?? {})
           ? (cadModel as CadModelJscad).jscad
           : undefined,
+      model_unit_to_mm_scale_factor:
+        typeof cadModel?.modelUnitToMmScale === "number"
+          ? cadModel.modelUnitToMmScale
+          : undefined,
 
       footprinter_string:
         typeof footprint === "string" && !cadModel ? footprint : undefined,
