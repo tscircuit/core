@@ -5,7 +5,7 @@ test("pcb circular hole rect plated offset hole", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board>
+    <board width={10} height={10}>
       <platedhole
         shape="circular_hole_with_rect_pad"
         holeDiameter={2}
