@@ -95,6 +95,8 @@ export const createComponentsFromCircuitJson = (
             rectPadHeight: elm.rect_pad_height,
             rectPadWidth: elm.rect_pad_width,
             portHints: elm.port_hints,
+            pcbHoleOffsetX: elm.hole_offset_x,
+            pcbHoleOffsetY: elm.hole_offset_y,
           }),
         )
       }
