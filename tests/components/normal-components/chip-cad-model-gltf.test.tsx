@@ -13,6 +13,7 @@ test("chip with cadModel gltfUrl", () => {
         pcbY={0}
         cadModel={{
           gltfUrl: "https://example.com/chip.gltf",
+          modelUnitToMmScale: 123,
         }}
       />
     </board>,
@@ -26,4 +27,5 @@ test("chip with cadModel gltfUrl", () => {
   expect(cadComponent.model_gltf_url).toBe("https://example.com/chip.gltf")
   expect(cadComponent.model_stl_url).toBeUndefined()
   expect(cadComponent.model_obj_url).toBeUndefined()
+  expect(cadComponent.model_unit_to_mm_scale_factor).toBe(123)
 })
