@@ -2,6 +2,7 @@ import { cadmodelProps, point3 } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { CadModelProps } from "@tscircuit/props"
 import { z } from "zod"
+import type { CadComponent } from "circuit-json"
 
 const rotation = z.union([z.number(), z.string()])
 const rotation3 = z.object({ x: rotation, y: rotation, z: rotation })
@@ -48,8 +49,8 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
 
     const layer = parent.props.layer === "bottom" ? "bottom" : "top"
 
-    const ext = props.modelUrl.split(".").pop()?.toLowerCase()
-    const urlProps: any = {}
+    const ext = new URL(props.modelUrl).pathname.split(".").pop()?.toLowerCase()
+    const urlProps: Partial<CadComponent> = {}
     if (ext === "stl")
       urlProps.model_stl_url = this._addCachebustToModelUrl(props.modelUrl)
     else if (ext === "obj")
