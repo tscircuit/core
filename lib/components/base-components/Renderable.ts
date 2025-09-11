@@ -46,6 +46,7 @@ export const orderedRenderPhases = [
   "PcbTraceRender",
   "PcbRouteNetIslands",
   "PcbDesignRuleChecks",
+  "PcbCopperPourRender",
   "SilkscreenOverlapAdjustment",
   "CadModelRender",
   "PartsEngineRender",
@@ -58,6 +59,7 @@ export type RenderPhase = (typeof orderedRenderPhases)[number]
 // current component's subtree.
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PcbTraceRender: ["PcbFootprintStringRender"],
+  PcbCopperPourRender: ["PcbTraceRender"],
   CadModelRender: ["PcbFootprintStringRender"],
 }
 
@@ -244,6 +246,10 @@ export abstract class Renderable implements IRenderable {
     }
   }
 
+  _getAsyncCheckContext(): Renderable {
+    return this
+  }
+
   runRenderCycle() {
     for (const renderPhase of orderedRenderPhases) {
       this.runRenderPhaseForChildren(renderPhase)
@@ -287,9 +293,13 @@ export abstract class Renderable implements IRenderable {
     }
 
     // Check declared async dependencies for this phase within subtree
+    const asyncCheckContext = this._getAsyncCheckContext()
     const deps = asyncPhaseDependencies[phase] || []
     for (const depPhase of deps) {
-      if (this._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) return
+      if (
+        asyncCheckContext._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)
+      )
+        return
     }
 
     this._emitRenderLifecycleEvent(phase, "start")
