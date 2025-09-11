@@ -43,6 +43,68 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     minGap: gapMm,
   }
 
+  for (const component of packInput.components) {
+    const child = group.children.find(
+      (c: any) =>
+        c.pcb_component_id === component.componentId ||
+        c.source_group_id === component.componentId,
+    ) as any | undefined
+    const childProps = child?._parsedProps ?? {}
+
+    const parseMargin = (value: any) =>
+      typeof value === "string" ? length.parse(value) : (value ?? 0)
+
+    const marginLeft = parseMargin(
+      childProps.pcbMarginLeft ?? childProps.pcbMarginX ?? childProps.pcbMargin,
+    )
+    const marginRight = parseMargin(
+      childProps.pcbMarginRight ??
+        childProps.pcbMarginX ??
+        childProps.pcbMargin,
+    )
+    const marginTop = parseMargin(
+      childProps.pcbMarginTop ?? childProps.pcbMarginY ?? childProps.pcbMargin,
+    )
+    const marginBottom = parseMargin(
+      childProps.pcbMarginBottom ??
+        childProps.pcbMarginY ??
+        childProps.pcbMargin,
+    )
+
+    if (marginLeft || marginRight || marginTop || marginBottom) {
+      let width: number | undefined
+      let height: number | undefined
+
+      const pcbComponent = db.pcb_component.get(component.componentId)
+      if (pcbComponent) {
+        width = pcbComponent.width
+        height = pcbComponent.height
+      } else {
+        const pcbGroup = db.pcb_group
+          .list()
+          .find((g) => g.source_group_id === component.componentId)
+        width = pcbGroup?.width
+        height = pcbGroup?.height
+      }
+
+      if (width !== undefined && height !== undefined) {
+        component.pads.push({
+          padId: `__margin__${component.componentId}`,
+          networkId: `__margin__${component.componentId}`,
+          type: "rect",
+          offset: {
+            x: (marginRight - marginLeft) / 2,
+            y: (marginTop - marginBottom) / 2,
+          },
+          size: {
+            x: width + marginLeft + marginRight,
+            y: height + marginTop + marginBottom,
+          },
+        })
+      }
+    }
+  }
+
   const clusterMap = applyComponentConstraintClusters(group, packInput)
 
   if (debug.enabled) {
