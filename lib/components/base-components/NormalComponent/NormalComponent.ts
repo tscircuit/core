@@ -157,17 +157,6 @@ export class NormalComponent<
 
     super(filteredProps)
 
-    if (filteredProps.cadModel) {
-      const cm = filteredProps.cadModel
-      if (isReactElement(cm)) {
-        console.log("adding cm")
-        this.add(cm)
-        console.log("added cm")
-        console.log(this.children)
-        this._isCadModelChild = true
-      }
-    }
-
     this._invalidPinLabelMessages = invalidPinLabelsMessages
     this._addChildrenFromStringFootprint()
     this.initPorts()
@@ -778,14 +767,10 @@ export class NormalComponent<
   }
 
   _renderReactSubtree(element: ReactElement): ReactSubtree {
-    console.log("rendering subtree", element)
-    console.log(
-      "creating instance from react element",
-      createInstanceFromReactElement(element),
-    )
+    const component = createInstanceFromReactElement(element)
     return {
       element,
-      component: createInstanceFromReactElement(element),
+      component,
     }
   }
 
@@ -794,7 +779,33 @@ export class NormalComponent<
   }
 
   doInitialReactSubtreesRender(): void {
-    // no-op in NormalComponent; sub-classes may override
+    // Add React-based footprint subtree if provided
+    const fpElm = this.props.footprint
+    if (isValidElement(fpElm)) {
+      const hasFootprintChild = this.children.some(
+        (c) => c.componentName === "Footprint",
+      )
+      if (!hasFootprintChild) {
+        this.add(fpElm)
+      }
+    }
+
+    // Add React-based cadModel subtree (CadAssembly or CadModel) if provided
+    const cmElm = this.props.cadModel as any
+    if (isValidElement(cmElm)) {
+      // Mark that CAD will be handled by child elements to avoid parent inserting a CAD model
+      this._isCadModelChild = true
+
+      const hasCadAssemblyChild = this.children.some(
+        (c) => c.componentName === "CadAssembly",
+      )
+      const hasCadModelChild = this.children.some(
+        (c) => c.componentName === "CadModel",
+      )
+      if (!hasCadAssemblyChild && !hasCadModelChild) {
+        this.add(cmElm)
+      }
+    }
   }
 
   doInitialPcbFootprintStringRender(): void {
@@ -819,8 +830,6 @@ export class NormalComponent<
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
     let component: PrimitiveComponent
-    console.log("adding component", componentOrElm)
-    console.log("is react element", isReactElement(componentOrElm))
     if (isReactElement(componentOrElm)) {
       const subtree = this._renderReactSubtree(componentOrElm)
       this.reactSubtrees.push(subtree)
@@ -828,8 +837,6 @@ export class NormalComponent<
     } else {
       component = componentOrElm as PrimitiveComponent
     }
-
-    console.log({ component })
 
     if (component.componentName === "Port") {
       if (this._hasExistingPortExactly(component as Port)) return

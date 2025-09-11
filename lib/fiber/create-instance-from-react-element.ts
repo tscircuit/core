@@ -174,7 +174,6 @@ const reconciler = ReactReconciler(hostConfig as any)
 export const createInstanceFromReactElement = (
   reactElm: React.JSX.Element,
 ): NormalComponent => {
-  console.log("creating instance from react element", reactElm)
   const rootContainer = {
     children: [] as any[],
     props: {
