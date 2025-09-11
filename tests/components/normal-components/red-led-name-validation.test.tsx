@@ -13,13 +13,14 @@ interface Props extends CommonLayoutProps {
   name: string
 }
 
+let staticAssetsServerUrl = ""
+
 const RedLed = (props: Props) => {
   return (
     <chip
       {...props}
       cadModel={{
-        objUrl:
-          "https://modelcdn.tscircuit.com/easyeda_models/download?uuid=d0740cb8891c49a88b6949cb978926f3&pn=C965799",
+        objUrl: `${staticAssetsServerUrl}/models/C965799.obj`,
         rotationOffset: { x: 0, y: 0, z: 0 },
         positionOffset: { x: 0, y: 0, z: 0 },
       }}
@@ -141,7 +142,10 @@ const RedLed = (props: Props) => {
 const useRedLed = createUseComponent(RedLed, pinNames)
 
 test("<RedLed /> component name validation", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit, staticAssetsServerUrl: url } = getTestFixture({
+    withStaticAssetsServer: true,
+  })
+  staticAssetsServerUrl = url!
   const RedLedComp = useRedLed("LED") as typeof RedLed
 
   // Successful case with original name

@@ -2,15 +2,16 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("resistor CAD component position", () => {
-  const { project } = getTestFixture()
+  const { project, staticAssetsServerUrl } = getTestFixture({
+    withStaticAssetsServer: true,
+  })
 
   project.add(
     <board width="10mm" height="10mm">
       <resistor
         resistance="1k"
         cadModel={{
-          objUrl:
-            "https://modelcdn.tscircuit.com/easyeda_models/download?pn=C2889342",
+          objUrl: `${staticAssetsServerUrl}/models/C2889342.obj`,
         }}
         footprint="0402"
         name="R1"

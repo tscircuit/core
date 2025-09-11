@@ -3,7 +3,9 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import "lib/register-catalogue"
 
 it("chip with cadassembly cadmodel react element", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit, staticAssetsServerUrl } = getTestFixture({
+    withStaticAssetsServer: true,
+  })
 
   circuit.add(
     <board width="20mm" height="20mm">
@@ -13,11 +15,11 @@ it("chip with cadassembly cadmodel react element", async () => {
         cadModel={
           <cadassembly>
             <cadmodel
-              modelUrl="https://modelcdn.tscircuit.com/easyeda_models/download.obj?uuid=d0740cb8891c49a88b6949cb978926f3&pn=C965799"
+              modelUrl={`${staticAssetsServerUrl}/models/C965799.obj`}
               pcbX={-2}
             />
             <cadmodel
-              modelUrl="https://modelcdn.tscircuit.com/easyeda_models/download.obj?uuid=a1e5e433dfbd402f854a03c19c373fbf&pn=C7428714"
+              modelUrl={`${staticAssetsServerUrl}/models/C7428714.obj`}
               pcbX={2}
             />
           </cadassembly>

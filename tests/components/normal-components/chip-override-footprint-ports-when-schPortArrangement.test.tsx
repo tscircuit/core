@@ -7,15 +7,16 @@ const pinLabels = {
 } as const
 
 test("Chip override footprint ports when schPortArrangement is defined", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit, staticAssetsServerUrl } = getTestFixture({
+    withStaticAssetsServer: true,
+  })
   circuit.add(
     <board width="20mm" height="20mm">
       <chip
         name="ESP32"
         // {...props}
         cadModel={{
-          objUrl:
-            "https://modelcdn.tscircuit.com/easyeda_models/download?uuid=d0740cb8891c49a88b6949cb978926f3&pn=C965799",
+          objUrl: `${staticAssetsServerUrl}/models/C965799.obj`,
           rotationOffset: { x: 0, y: 0, z: 0 },
           positionOffset: { x: 0, y: 0, z: 0 },
         }}
