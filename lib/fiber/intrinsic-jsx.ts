@@ -34,6 +34,8 @@ export interface TscircuitElements {
   port: Props.PortProps
   group: Props.GroupProps
   netlabel: Props.NetLabelProps
+  cadmodel: Props.CadModelProps
+  cadassembly: Props.CadAssemblyProps
   net: Props.NetProps
   trace: Props.TraceProps
   breakout: Props.BreakoutProps
