@@ -57,6 +57,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       convertCircuitJsonToPackOutput(db.toArray(), {
         source_group_id: group.source_group_id!,
         shouldAddInnerObstacles: true,
+        // @ts-expect-error chip margin option not yet typed
         chipMarginsMap,
       }),
     ),

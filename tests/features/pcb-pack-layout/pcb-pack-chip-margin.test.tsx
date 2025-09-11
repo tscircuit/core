@@ -1,5 +1,6 @@
 import { test, expect, spyOn } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphics"
 import { length } from "circuit-json"
 import * as calc from "calculate-packing"
 
@@ -34,4 +35,18 @@ test("pcbPack forwards component pcbMargin to calculate-packing", () => {
     top: length.parse("3mm"),
     bottom: length.parse("3mm"),
   })
+})
+
+test("pcbPack respects pcbMargin when laying out components", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board pcbPack pcbGap="0mm">
+      <resistor name="R1" resistance="1k" footprint="0402" pcbMarginY="3mm" />
+      <resistor name="R2" resistance="1k" footprint="0402" />
+    </board>,
+  )
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  writeGlobalDebugGraphics()
 })
