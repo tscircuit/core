@@ -28,8 +28,6 @@ it("chip with cadassembly cadmodel react element", async () => {
 
   circuit.render()
 
-  console.log(circuit.db.toArray().filter((c) => c.error_type))
-
   const cad = circuit.db.cad_component.list()
   expect(cad).toHaveLength(2)
   const xs = cad.map((c) => c.position.x).sort((a, b) => a - b)
