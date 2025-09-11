@@ -113,7 +113,7 @@ export class NormalComponent<
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   _asyncFootprintCadModel?: CadModelProp
-  _cadModelPropNode?: any
+  _isCadModelChild?: boolean
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false
 
@@ -145,22 +145,6 @@ export class NormalComponent<
   constructor(props: z.input<ZodProps>) {
     const filteredProps = { ...props }
     let invalidPinLabelsMessages: string[] = []
-    let cadModelNode: any = undefined
-
-    if (filteredProps.cadModel) {
-      const cm = filteredProps.cadModel as any
-      if (
-        isReactElement(cm) ||
-        cm instanceof CadModel ||
-        cm instanceof CadAssembly ||
-        (cm &&
-          (cm.componentName === "CadModel" ||
-            cm.componentName === "CadAssembly"))
-      ) {
-        cadModelNode = cm
-        delete filteredProps.cadModel
-      }
-    }
 
     // Apply invalid pin label filtering for object-based pinLabels only
     // Array-based pinLabels (used by PinHeader) are left unfiltered
@@ -172,7 +156,18 @@ export class NormalComponent<
     }
 
     super(filteredProps)
-    this._cadModelPropNode = cadModelNode
+
+    if (filteredProps.cadModel) {
+      const cm = filteredProps.cadModel
+      if (isReactElement(cm)) {
+        console.log("adding cm")
+        this.add(cm)
+        console.log("added cm")
+        console.log(this.children)
+        this._isCadModelChild = true
+      }
+    }
+
     this._invalidPinLabelMessages = invalidPinLabelsMessages
     this._addChildrenFromStringFootprint()
     this.initPorts()
@@ -783,6 +778,11 @@ export class NormalComponent<
   }
 
   _renderReactSubtree(element: ReactElement): ReactSubtree {
+    console.log("rendering subtree", element)
+    console.log(
+      "creating instance from react element",
+      createInstanceFromReactElement(element),
+    )
     return {
       element,
       component: createInstanceFromReactElement(element),
@@ -819,6 +819,8 @@ export class NormalComponent<
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
     let component: PrimitiveComponent
+    console.log("adding component", componentOrElm)
+    console.log("is react element", isReactElement(componentOrElm))
     if (isReactElement(componentOrElm)) {
       const subtree = this._renderReactSubtree(componentOrElm)
       this.reactSubtrees.push(subtree)
@@ -826,6 +828,8 @@ export class NormalComponent<
     } else {
       component = componentOrElm as PrimitiveComponent
     }
+
+    console.log({ component })
 
     if (component.componentName === "Port") {
       if (this._hasExistingPortExactly(component as Port)) return
@@ -1085,7 +1089,7 @@ export class NormalComponent<
   }
 
   doInitialCadModelRender(): void {
-    if (this._cadModelPropNode !== undefined) return
+    if (this._isCadModelChild) return
     const { db } = this.root!
     const { boardThickness = 0 } = this.root?._getBoard() ?? {}
     const cadModelProp = this._parsedProps.cadModel
