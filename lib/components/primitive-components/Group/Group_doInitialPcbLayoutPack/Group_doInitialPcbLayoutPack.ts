@@ -29,11 +29,35 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   const gap = pcbPackGap ?? pcbGap ?? gapProp
   const gapMm = length.parse(gap ?? DEFAULT_MIN_GAP)
+
+  const chipMarginsMap: Record<
+    string,
+    { left: number; right: number; top: number; bottom: number }
+  > = {}
+
+  const collectMargins = (comp: any) => {
+    if (comp?.pcb_component_id && comp?._parsedProps) {
+      const props = comp._parsedProps
+      const left = length.parse(props.pcbMarginLeft ?? props.pcbMarginX ?? 0)
+      const right = length.parse(props.pcbMarginRight ?? props.pcbMarginX ?? 0)
+      const top = length.parse(props.pcbMarginTop ?? props.pcbMarginY ?? 0)
+      const bottom = length.parse(
+        props.pcbMarginBottom ?? props.pcbMarginY ?? 0,
+      )
+      if (left || right || top || bottom) {
+        chipMarginsMap[comp.pcb_component_id] = { left, right, top, bottom }
+      }
+    }
+    if (comp?.children) comp.children.forEach(collectMargins)
+  }
+
+  collectMargins(group)
   const packInput: PackInput = {
     ...convertPackOutputToPackInput(
       convertCircuitJsonToPackOutput(db.toArray(), {
         source_group_id: group.source_group_id!,
         shouldAddInnerObstacles: true,
+        chipMarginsMap,
       }),
     ),
     // @ts-expect-error we're missing some pack order strategies
