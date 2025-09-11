@@ -18,6 +18,26 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
 ) {
   let { footprint } = component.props
   footprint ??= component._getImpliedFootprintString?.()
+  const cadModelProp = (component as any)._cadModelPropNode
+
+  if (!footprint && !cadModelProp) return
+
+  if (cadModelProp) {
+    const cm = cadModelProp
+    if (isReactElement(cm)) {
+      if (!component.reactSubtrees.some((rs) => rs.element === cm)) {
+        const subtree = component._renderReactSubtree(cm)
+        component.reactSubtrees.push(subtree)
+        component.add(subtree.component)
+      }
+    } else if (
+      (cm as any).componentName === "CadModel" ||
+      (cm as any).componentName === "CadAssembly"
+    ) {
+      component.add(cm as any)
+    }
+  }
+
   if (!footprint) return
 
   const { pcbRotation, pinLabels, pcbPinLabels } = component.props

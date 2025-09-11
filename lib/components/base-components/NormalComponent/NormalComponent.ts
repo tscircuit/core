@@ -45,6 +45,8 @@ import { type SchSymbol, symbols } from "schematic-symbols"
 import { ZodType, z } from "zod"
 import { Footprint } from "../../primitive-components/Footprint"
 import { Port } from "../../primitive-components/Port"
+import { CadModel } from "../../primitive-components/CadModel"
+import { CadAssembly } from "../../primitive-components/CadAssembly"
 import { PrimitiveComponent } from "../PrimitiveComponent"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
@@ -111,6 +113,7 @@ export class NormalComponent<
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   _asyncFootprintCadModel?: CadModelProp
+  _cadModelPropNode?: any
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false
 
@@ -142,6 +145,22 @@ export class NormalComponent<
   constructor(props: z.input<ZodProps>) {
     const filteredProps = { ...props }
     let invalidPinLabelsMessages: string[] = []
+    let cadModelNode: any = undefined
+
+    if (filteredProps.cadModel) {
+      const cm = filteredProps.cadModel as any
+      if (
+        isReactElement(cm) ||
+        cm instanceof CadModel ||
+        cm instanceof CadAssembly ||
+        (cm &&
+          (cm.componentName === "CadModel" ||
+            cm.componentName === "CadAssembly"))
+      ) {
+        cadModelNode = cm
+        delete filteredProps.cadModel
+      }
+    }
 
     // Apply invalid pin label filtering for object-based pinLabels only
     // Array-based pinLabels (used by PinHeader) are left unfiltered
@@ -153,6 +172,7 @@ export class NormalComponent<
     }
 
     super(filteredProps)
+    this._cadModelPropNode = cadModelNode
     this._invalidPinLabelMessages = invalidPinLabelsMessages
     this._addChildrenFromStringFootprint()
     this.initPorts()
@@ -1065,6 +1085,7 @@ export class NormalComponent<
   }
 
   doInitialCadModelRender(): void {
+    if (this._cadModelPropNode !== undefined) return
     const { db } = this.root!
     const { boardThickness = 0 } = this.root?._getBoard() ?? {}
     const cadModelProp = this._parsedProps.cadModel
