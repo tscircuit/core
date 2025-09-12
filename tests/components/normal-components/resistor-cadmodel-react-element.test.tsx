@@ -3,7 +3,9 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import "lib/register-catalogue"
 
 it("resistor with cadmodel react element", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit, staticAssetsServerUrl } = getTestFixture({
+    withStaticAssetsServer: true,
+  })
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -13,7 +15,7 @@ it("resistor with cadmodel react element", async () => {
         footprint="0402"
         cadModel={
           <cadmodel
-            modelUrl="https://modelcdn.tscircuit.com/easyeda_models/download.obj?pn=C2889342"
+            modelUrl={`${staticAssetsServerUrl}/models/C2889342.obj`}
             pcbX={1}
           />
         }
@@ -26,7 +28,7 @@ it("resistor with cadmodel react element", async () => {
   const cadComponents = circuit.db.cad_component.list()
   expect(cadComponents).toHaveLength(1)
   expect(cadComponents[0].model_obj_url).toBe(
-    "https://modelcdn.tscircuit.com/easyeda_models/download.obj?pn=C2889342&cachebust_origin=",
+    `${staticAssetsServerUrl}/models/C2889342.obj`,
   )
   expect(cadComponents[0].position.x).toBeCloseTo(1)
 
