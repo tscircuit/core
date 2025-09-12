@@ -57,8 +57,18 @@ export type RenderPhase = (typeof orderedRenderPhases)[number]
 // async effects originating in specific earlier phases to complete within the
 // current component's subtree.
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
+  PcbFootprintLayout: ["PcbFootprintStringRender"],
+  PcbComponentSizeCalculation: ["PcbFootprintStringRender"],
+  PcbLayout: ["PcbFootprintStringRender"],
+  PcbBoardAutoSize: ["PcbFootprintStringRender"],
+  PcbTraceHintRender: ["PcbFootprintStringRender"],
+  PcbManualTraceRender: ["PcbFootprintStringRender"],
   PcbTraceRender: ["PcbFootprintStringRender"],
+  PcbRouteNetIslands: ["PcbFootprintStringRender"],
+  PcbDesignRuleChecks: ["PcbFootprintStringRender"],
+  SilkscreenOverlapAdjustment: ["PcbFootprintStringRender"],
   CadModelRender: ["PcbFootprintStringRender"],
+  PartsEngineRender: ["PcbFootprintStringRender"],
 }
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =

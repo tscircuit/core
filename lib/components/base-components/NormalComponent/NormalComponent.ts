@@ -45,6 +45,8 @@ import { type SchSymbol, symbols } from "schematic-symbols"
 import { ZodType, z } from "zod"
 import { Footprint } from "../../primitive-components/Footprint"
 import { Port } from "../../primitive-components/Port"
+import { CadModel } from "../../primitive-components/CadModel"
+import { CadAssembly } from "../../primitive-components/CadAssembly"
 import { PrimitiveComponent } from "../PrimitiveComponent"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
@@ -111,6 +113,7 @@ export class NormalComponent<
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   _asyncFootprintCadModel?: CadModelProp
+  _isCadModelChild?: boolean
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false
 
@@ -153,6 +156,7 @@ export class NormalComponent<
     }
 
     super(filteredProps)
+
     this._invalidPinLabelMessages = invalidPinLabelsMessages
     this._addChildrenFromStringFootprint()
     this.initPorts()
@@ -763,9 +767,10 @@ export class NormalComponent<
   }
 
   _renderReactSubtree(element: ReactElement): ReactSubtree {
+    const component = createInstanceFromReactElement(element)
     return {
       element,
-      component: createInstanceFromReactElement(element),
+      component,
     }
   }
 
@@ -774,7 +779,33 @@ export class NormalComponent<
   }
 
   doInitialReactSubtreesRender(): void {
-    // no-op in NormalComponent; sub-classes may override
+    // Add React-based footprint subtree if provided
+    const fpElm = this.props.footprint
+    if (isValidElement(fpElm)) {
+      const hasFootprintChild = this.children.some(
+        (c) => c.componentName === "Footprint",
+      )
+      if (!hasFootprintChild) {
+        this.add(fpElm)
+      }
+    }
+
+    // Add React-based cadModel subtree (CadAssembly or CadModel) if provided
+    const cmElm = this.props.cadModel as any
+    if (isValidElement(cmElm)) {
+      // Mark that CAD will be handled by child elements to avoid parent inserting a CAD model
+      this._isCadModelChild = true
+
+      const hasCadAssemblyChild = this.children.some(
+        (c) => c.componentName === "CadAssembly",
+      )
+      const hasCadModelChild = this.children.some(
+        (c) => c.componentName === "CadModel",
+      )
+      if (!hasCadAssemblyChild && !hasCadModelChild) {
+        this.add(cmElm)
+      }
+    }
   }
 
   doInitialPcbFootprintStringRender(): void {
@@ -1065,6 +1096,7 @@ export class NormalComponent<
   }
 
   doInitialCadModelRender(): void {
+    if (this._isCadModelChild) return
     const { db } = this.root!
     const { boardThickness = 0 } = this.root?._getBoard() ?? {}
     const cadModelProp = this._parsedProps.cadModel

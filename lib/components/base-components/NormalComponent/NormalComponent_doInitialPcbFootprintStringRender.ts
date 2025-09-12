@@ -18,6 +18,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
 ) {
   let { footprint } = component.props
   footprint ??= component._getImpliedFootprintString?.()
+
   if (!footprint) return
 
   const { pcbRotation, pinLabels, pcbPinLabels } = component.props
@@ -144,14 +145,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         throw err
       }
     })
-    return
-  }
-
-  if (isReactElement(footprint)) {
-    if (component.reactSubtrees.some((rs) => rs.element === footprint)) return
-    const subtree = component._renderReactSubtree(footprint)
-    component.reactSubtrees.push(subtree)
-    component.add(subtree.component)
     return
   }
 

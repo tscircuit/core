@@ -11,15 +11,16 @@ const pinLabels = {
 } as const
 
 test("Custom footprint with 4 ports", () => {
-  const { circuit } = getTestFixture()
+  const { circuit, staticAssetsServerUrl } = getTestFixture({
+    withStaticAssetsServer: true,
+  })
 
   circuit.add(
     <board width="10mm" height="10mm">
       <chip
         name="chips"
         cadModel={{
-          objUrl:
-            "https://modelcdn.tscircuit.com/easyeda_models/download?uuid=e80246a9471445bfb635be848806a22e&pn=C6186",
+          objUrl: `${staticAssetsServerUrl}/models/C6186.obj`,
           rotationOffset: { x: 0, y: 0, z: 0 },
           positionOffset: { x: 0, y: 0, z: 0 },
         }}
