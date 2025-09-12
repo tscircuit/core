@@ -7,7 +7,7 @@ import { CrystalCircuit } from "./lib/CrystalCircuit"
 import { RP2040Circuit } from "./lib/RP2040Circuit"
 
 export default () => (
-  <board routingDisabled>
+  <board height="60mm" width="60mm" routingDisabled>
     <VoltageRegulator />
     <PinOutCircuit />
     <LedCircuit />

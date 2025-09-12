@@ -99,6 +99,19 @@ export const createComponentsFromCircuitJson = (
             pcbHoleOffsetY: elm.hole_offset_y,
           }),
         )
+      } else if (elm.shape === "pill" || elm.shape === "oval") {
+        components.push(
+          new PlatedHole({
+            pcbX: elm.x,
+            pcbY: elm.y,
+            shape: elm.shape,
+            holeWidth: elm.hole_width,
+            holeHeight: elm.hole_height,
+            outerWidth: elm.outer_width,
+            outerHeight: elm.outer_height,
+            portHints: elm.port_hints,
+          }),
+        )
       }
     } else if (elm.type === "pcb_keepout" && elm.shape === "circle") {
       components.push(

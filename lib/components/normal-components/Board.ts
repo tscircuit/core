@@ -4,9 +4,63 @@ import { Group } from "../primitive-components/Group/Group"
 import {
   checkEachPcbPortConnectedToPcbTraces,
   checkEachPcbTraceNonOverlapping,
+  checkPcbComponentsOutOfBoard,
 } from "@tscircuit/checks"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
+
+const getRoundedRectOutline = (
+  width: number,
+  height: number,
+  radius: number,
+) => {
+  const r = Math.min(radius, width / 2, height / 2)
+  const segments = Math.max(1, Math.ceil((Math.PI / 2) * r))
+  const step = Math.PI / 2 / segments
+  const w2 = width / 2
+  const h2 = height / 2
+
+  const outline: { x: number; y: number }[] = []
+
+  outline.push({ x: -w2 + r, y: -h2 })
+  outline.push({ x: w2 - r, y: -h2 })
+  for (let i = 1; i <= segments; i++) {
+    const theta = -Math.PI / 2 + i * step
+    outline.push({
+      x: w2 - r + r * Math.cos(theta),
+      y: -h2 + r + r * Math.sin(theta),
+    })
+  }
+
+  outline.push({ x: w2, y: h2 - r })
+  for (let i = 1; i <= segments; i++) {
+    const theta = 0 + i * step
+    outline.push({
+      x: w2 - r + r * Math.cos(theta),
+      y: h2 - r + r * Math.sin(theta),
+    })
+  }
+
+  outline.push({ x: -w2 + r, y: h2 })
+  for (let i = 1; i <= segments; i++) {
+    const theta = Math.PI / 2 + i * step
+    outline.push({
+      x: -w2 + r + r * Math.cos(theta),
+      y: h2 - r + r * Math.sin(theta),
+    })
+  }
+
+  outline.push({ x: -w2, y: -h2 + r })
+  for (let i = 1; i <= segments; i++) {
+    const theta = Math.PI + i * step
+    outline.push({
+      x: -w2 + r + r * Math.cos(theta),
+      y: -h2 + r + r * Math.sin(theta),
+    })
+  }
+
+  return outline
+}
 
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
@@ -124,11 +178,34 @@ export class Board extends Group<typeof boardProps> {
     const finalWidth = props.width ?? computedWidth
     const finalHeight = props.height ?? computedHeight
 
-    db.pcb_board.update(this.pcb_board_id, {
+    let outline = props.outline
+    if (
+      !outline &&
+      props.borderRadius != null &&
+      finalWidth > 0 &&
+      finalHeight > 0
+    ) {
+      outline = getRoundedRectOutline(
+        finalWidth,
+        finalHeight,
+        props.borderRadius,
+      )
+    }
+
+    const update: Record<string, unknown> = {
       width: finalWidth,
       height: finalHeight,
       center,
-    })
+    }
+
+    if (outline) {
+      update.outline = outline.map((point) => ({
+        x: point.x + (props.outlineOffsetX ?? 0),
+        y: point.y + (props.outlineOffsetY ?? 0),
+      }))
+    }
+
+    db.pcb_board.update(this.pcb_board_id, update)
   }
 
   // Recompute autosize after child components update (e.g., async footprints)
@@ -206,6 +283,20 @@ export class Board extends Group<typeof boardProps> {
       }
     }
 
+    let outline = props.outline
+    if (
+      !outline &&
+      props.borderRadius != null &&
+      computedWidth > 0 &&
+      computedHeight > 0
+    ) {
+      outline = getRoundedRectOutline(
+        computedWidth,
+        computedHeight,
+        props.borderRadius,
+      )
+    }
+
     const pcb_board = db.pcb_board.insert({
       center,
 
@@ -214,7 +305,7 @@ export class Board extends Group<typeof boardProps> {
 
       width: computedWidth!,
       height: computedHeight!,
-      outline: props.outline?.map((point) => ({
+      outline: outline?.map((point) => ({
         x: point.x + (props.outlineOffsetX ?? 0),
         y: point.y + (props.outlineOffsetY ?? 0),
       })),
@@ -266,6 +357,11 @@ export class Board extends Group<typeof boardProps> {
     )
     for (const error of pcbPortNotConnectedErrors) {
       db.pcb_port_not_connected_error.insert(error)
+    }
+
+    const pcbComponentOutsideErrors = checkPcbComponentsOutOfBoard(db.toArray())
+    for (const error of pcbComponentOutsideErrors) {
+      db.pcb_component_outside_board_error.insert(error)
     }
   }
 

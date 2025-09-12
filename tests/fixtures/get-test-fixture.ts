@@ -4,14 +4,22 @@ import { logSoup } from "@tscircuit/log-soup"
 import "lib/register-catalogue"
 import "./extend-expect-circuit-snapshot"
 import { preventExternalApiRequests } from "./prevent-external-api-requests"
+import { getTestStaticAssetsServer } from "./get-test-static-assets-server"
 import type { PlatformConfig } from "@tscircuit/props"
 
 export const getTestFixture = ({
   platform,
-}: { platform?: PlatformConfig } = {}) => {
+  withStaticAssetsServer = false,
+}: {
+  platform?: PlatformConfig
+  withStaticAssetsServer?: boolean
+} = {}) => {
   global.debugGraphics = []
   preventExternalApiRequests()
   const circuit = new RootCircuit({ platform })
+  const staticAssetsServerUrl = withStaticAssetsServer
+    ? getTestStaticAssetsServer().url
+    : undefined
 
   const debugOutputArray: Array<{ name: string; obj: any }> = []
 
@@ -46,5 +54,6 @@ export const getTestFixture = ({
       }
       await logSoup(`core_${nameOfTest}`, circuit.getCircuitJson())
     },
+    staticAssetsServerUrl,
   }
 }
