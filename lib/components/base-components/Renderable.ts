@@ -299,9 +299,20 @@ export abstract class Renderable implements IRenderable {
     }
 
     // Check declared async dependencies for this phase within subtree
-    const asyncCheckContext = (
-      "getSubcircuit" in this ? (this as any).getSubcircuit() : this
-    ) as Renderable
+    let asyncCheckContext: Renderable = this
+    if ("getSubcircuit" in this) {
+      try {
+        asyncCheckContext = (this as any).getSubcircuit()
+      } catch (e: any) {
+        // If getSubcircuit fails, it's likely because the component is not yet
+        // in a tree with a subcircuit at its root. This is a valid state
+        // (especially in tests), so we fall back to using the component
+        // itself as the context for checking async dependencies.
+        if (!e.message.includes("is not inside an opaque group")) {
+          throw e // Re-throw unexpected errors
+        }
+      }
+    }
     const deps = asyncPhaseDependencies[phase] || []
     for (const depPhase of deps) {
       if (
