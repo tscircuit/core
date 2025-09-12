@@ -246,10 +246,6 @@ export abstract class Renderable implements IRenderable {
     }
   }
 
-  _getAsyncCheckContext(): Renderable {
-    return this
-  }
-
   runRenderCycle() {
     for (const renderPhase of orderedRenderPhases) {
       this.runRenderPhaseForChildren(renderPhase)
@@ -293,7 +289,9 @@ export abstract class Renderable implements IRenderable {
     }
 
     // Check declared async dependencies for this phase within subtree
-    const asyncCheckContext = this._getAsyncCheckContext()
+    const asyncCheckContext = (
+      "getSubcircuit" in this ? (this as any).getSubcircuit() : this
+    ) as Renderable
     const deps = asyncPhaseDependencies[phase] || []
     for (const depPhase of deps) {
       if (
