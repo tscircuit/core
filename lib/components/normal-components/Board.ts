@@ -4,6 +4,7 @@ import { Group } from "../primitive-components/Group/Group"
 import {
   checkEachPcbPortConnectedToPcbTraces,
   checkEachPcbTraceNonOverlapping,
+  checkPcbComponentsOutOfBoard,
 } from "@tscircuit/checks"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
@@ -356,6 +357,11 @@ export class Board extends Group<typeof boardProps> {
     )
     for (const error of pcbPortNotConnectedErrors) {
       db.pcb_port_not_connected_error.insert(error)
+    }
+
+    const pcbComponentOutsideErrors = checkPcbComponentsOutOfBoard(db.toArray())
+    for (const error of pcbComponentOutsideErrors) {
+      db.pcb_component_outside_board_error.insert(error)
     }
   }
 
