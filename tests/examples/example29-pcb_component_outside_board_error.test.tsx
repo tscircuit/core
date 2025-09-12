@@ -1,4 +1,3 @@
-
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -28,10 +27,12 @@ test("example29: component outside board", async () => {
       />
     </board>,
   )
- await circuit.renderUntilSettled()
- const errors = circuit.getCircuitJson().filter((e) => e.type === "pcb_component_outside_board_error")
- expect(errors.length).toBe(1)
- expect(errors[0].pcb_component_id).toBe("pcb_component_1")
- expect(errors[0].message).toMatch(/extends outside board boundaries/)
+  await circuit.renderUntilSettled()
+  const errors = circuit
+    .getCircuitJson()
+    .filter((e) => e.type === "pcb_component_outside_board_error")
+  expect(errors.length).toBe(1)
+  expect(errors[0].pcb_component_id).toBe("pcb_component_1")
+  expect(errors[0].message).toMatch(/extends outside board boundaries/)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
