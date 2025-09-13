@@ -58,6 +58,7 @@ import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalCompone
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
+import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
 import { isFootprintUrl } from "./utils/isFoorprintUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 
@@ -764,6 +765,14 @@ export class NormalComponent<
 
   updatePcbComponentSizeCalculation(): void {
     this.doInitialPcbComponentSizeCalculation()
+  }
+
+  doInitialPcbComponentAnchorAlignment(): void {
+    NormalComponent_doInitialPcbComponentAnchorAlignment(this)
+  }
+
+  updatePcbComponentAnchorAlignment(): void {
+    this.doInitialPcbComponentAnchorAlignment()
   }
 
   _renderReactSubtree(element: ReactElement): ReactSubtree {
