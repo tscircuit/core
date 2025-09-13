@@ -46,8 +46,8 @@ export const orderedRenderPhases = [
   "PcbManualTraceRender",
   "PcbTraceRender",
   "PcbRouteNetIslands",
-  "PcbDesignRuleChecks",
   "PcbCopperPourRender",
+  "PcbDesignRuleChecks",
   "SilkscreenOverlapAdjustment",
   "CadModelRender",
   "PartsEngineRender",
@@ -65,8 +65,8 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PcbBoardAutoSize: ["PcbFootprintStringRender"],
   PcbTraceHintRender: ["PcbFootprintStringRender"],
   PcbManualTraceRender: ["PcbFootprintStringRender"],
+  PcbCopperPourRender: ["PcbFootprintStringRender", "PcbTraceRender", "PcbRouteNetIslands"],
   PcbTraceRender: ["PcbFootprintStringRender"],
-  PcbCopperPourRender: ["PcbTraceRender"],
   PcbRouteNetIslands: ["PcbFootprintStringRender"],
   PcbDesignRuleChecks: ["PcbFootprintStringRender"],
   SilkscreenOverlapAdjustment: ["PcbFootprintStringRender"],
@@ -301,19 +301,9 @@ export abstract class Renderable implements IRenderable {
     }
 
     // Check declared async dependencies for this phase within subtree
-    let asyncCheckContext: Renderable = this
-    while (
-      asyncCheckContext.parent &&
-      asyncCheckContext.parent instanceof Renderable
-    ) {
-      asyncCheckContext = asyncCheckContext.parent
-    }
     const deps = asyncPhaseDependencies[phase] || []
     for (const depPhase of deps) {
-      if (
-        asyncCheckContext._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)
-      )
-        return
+      if (this._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) return
     }
 
     this._emitRenderLifecycleEvent(phase, "start")
