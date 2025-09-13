@@ -50,6 +50,8 @@ The render phases in @tscircuit/core are defined in the `Renderable` class (`Ren
 
 24. PcbComponentSizeCalculation: Calculates the size of PCB components.
 
-25. CadModelRender: Renders 3D CAD models of components.
+25. PcbComponentAnchorAlignment: Aligns PCB component center based on a specified anchor point.
+
+26. CadModelRender: Renders 3D CAD models of components.
 
 Each of these phases is executed in order for every component in the project during the rendering process. Components can implement specific logic for each phase by defining methods like `doInitial<PhaseName>`, `update<PhaseName>`, or `remove<PhaseName>`.

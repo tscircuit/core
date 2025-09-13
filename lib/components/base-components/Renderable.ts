@@ -39,6 +39,7 @@ export const orderedRenderPhases = [
   "PcbPortRender",
   "PcbPortAttachment",
   "PcbComponentSizeCalculation",
+  "PcbComponentAnchorAlignment",
   "PcbLayout",
   "PcbBoardAutoSize",
   "PcbTraceHintRender",
@@ -71,6 +72,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   SilkscreenOverlapAdjustment: ["PcbFootprintStringRender"],
   CadModelRender: ["PcbFootprintStringRender"],
   PartsEngineRender: ["PcbFootprintStringRender"],
+  PcbComponentAnchorAlignment: ["PcbFootprintStringRender"],
 }
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
