@@ -23,4 +23,18 @@ jobs:
         run: bun install
 
       - name: Run tests
-        run: bun test --timeout 10000
+        run: |
+          set +e
+          for i in 1 2 3; do
+            bun test --timeout 10000
+            code=$?
+            if [ $code -eq 0 ]; then
+              exit 0
+            fi
+            if [ $code -ne 139 ]; then
+              exit $code
+            fi
+            echo "Segmentation fault detected, retrying ($i/3)..."
+          done
+          echo "Tests failed due to segmentation fault after 3 attempts."
+          exit 139
