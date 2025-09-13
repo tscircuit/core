@@ -65,7 +65,11 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PcbBoardAutoSize: ["PcbFootprintStringRender"],
   PcbTraceHintRender: ["PcbFootprintStringRender"],
   PcbManualTraceRender: ["PcbFootprintStringRender"],
-  PcbCopperPourRender: ["PcbFootprintStringRender", "PcbTraceRender", "PcbRouteNetIslands"],
+  PcbCopperPourRender: [
+    "PcbFootprintStringRender",
+    "PcbTraceRender",
+    "PcbRouteNetIslands",
+  ],
   PcbTraceRender: ["PcbFootprintStringRender"],
   PcbRouteNetIslands: ["PcbFootprintStringRender"],
   PcbDesignRuleChecks: ["PcbFootprintStringRender"],
