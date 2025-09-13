@@ -188,3 +188,6 @@ test-artifact-*
 yalc.lock
 
 circuit.json
+.vercel
+benchmarking-dist
+debug-output

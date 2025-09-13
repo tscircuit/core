@@ -29,5 +29,15 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "benchmarking-dist",
+    "debug-output",
+    ".vercel",
+    "**/*.snap.svg",
+    "**/*.diff.png",
+    "**/__snapshots__/**"
+  ]
 }
