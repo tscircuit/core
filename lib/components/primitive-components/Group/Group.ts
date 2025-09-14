@@ -172,10 +172,16 @@ doInitialSchematicRender() {
 
           const mappedPin = props.connections[pinName];
           if (mappedPin) {
-            db.schematic_port.updateByName(mappedPin, {
-              mappedTo: pinName,
-              schematic_group_id: box.id,
-            });
+            // Check if the port exists before updating
+            const portExists = db.schematic_port.existsByName(mappedPin);
+            if (portExists) {
+              db.schematic_port.updateByName(mappedPin, {
+                mappedTo: pinName,
+                schematic_group_id: box.id,
+              });
+            } else {
+              console.warn(`Port with name "${mappedPin}" does not exist in the database.`);
+            }
           }
         });
       }
