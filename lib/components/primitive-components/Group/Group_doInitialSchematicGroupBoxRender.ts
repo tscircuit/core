@@ -37,7 +37,7 @@ export function Group_doInitialSchematicGroupBoxRender(group: any, ctx: any) {
   const db = ctx.db;
 
   // 1) Create the logical schematic component for the box
-  const schematic_component_id = db._newId
+  const schematic_component_id = typeof db._newId === 'function'
     ? db._newId("schematic_component")
     : `schematic_component_${Math.random().toString(36).slice(2)}`;
 
