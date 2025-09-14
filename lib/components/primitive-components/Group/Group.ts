@@ -77,6 +77,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 }
 
+
 removeAllPorts() {
   const portsToRemove = this.children.filter(c => c instanceof Port);
   for (const port of portsToRemove) {
@@ -89,6 +90,7 @@ addAllPorts(ports: Port[]) {
     this.add(port);
   }
 }
+
 
 doInitialSchematicRender() {
   if (this.root?.schematicDisabled) return;
