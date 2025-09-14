@@ -39,33 +39,32 @@ import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicT
 import { Port } from "../../primitive-components/Port/Port"
 
 interface ExtendedGroupProps extends SubcircuitGroupProps {
-  showAsBox?: boolean;
+  showAsBox?: boolean
   schPinArrangement?: {
-    [side: string]: { 
-      pins: string[];
-      direction?: string;
-    };
-  };
-  connections?: { [key: string]: string };
-  schWidth?: number;
-  schHeight?: number;
-  border?: { dashed?: boolean };
+    [side: string]: {
+      pins: string[]
+      direction?: string
+    }
+  }
+  connections?: { [key: string]: string }
+  schWidth?: number
+  schHeight?: number
+  border?: { dashed?: boolean }
 }
 
 interface ExtendedSubcircuitGroupProps extends SubcircuitGroupProps {
-  showAsBox?: boolean;
+  showAsBox?: boolean
   schPinArrangement?: {
-    [side: string]: { 
-      pins: string[];
-      direction?: string;
-    };
-  };
-  connections?: { [key: string]: string };
-  schWidth?: number;
-  schHeight?: number;
-  border?: { dashed?: boolean };
+    [side: string]: {
+      pins: string[]
+      direction?: string
+    }
+  }
+  connections?: { [key: string]: string }
+  schWidth?: number
+  schHeight?: number
+  border?: { dashed?: boolean }
 }
-
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -112,7 +111,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         (info) => info.pins || [],
       )
 
-      const currentPorts = this.children.filter((c) => c instanceof Port) as Port[]
+      const currentPorts = this.children.filter(
+        (c) => c instanceof Port,
+      ) as Port[]
       const currentPinNames = currentPorts.map((port) => port.props.name || "")
       const portsMatch =
         requiredPinNames.length === currentPinNames.length &&
@@ -161,84 +162,87 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-doInitialSchematicRender(): void {
-  if (this.root?.schematicDisabled) return
-  const db = this.root!.db
-  const props = this._parsedProps as Partial<ExtendedGroupProps>
+  doInitialSchematicRender(): void {
+    if (this.root?.schematicDisabled) return
+    const db = this.root!.db
+    const props = this._parsedProps as Partial<ExtendedGroupProps>
 
-  if (props.showAsBox) {
-    const width = Number(props.schWidth) || 5
-    const height = Number(props.schHeight) || 5
-    const center = this._calcCenter()
+    if (props.showAsBox) {
+      const width = Number(props.schWidth) || 5
+      const height = Number(props.schHeight) || 5
+      const center = this._calcCenter()
 
-    const box = db.schematic_box.insert({
-      width,
-      height,
-      x: center.x - width / 2,
-      y: center.y - height / 2,
-      is_dashed: props.border?.dashed ?? false,
-    })
+      const box = db.schematic_box.insert({
+        width,
+        height,
+        x: center.x - width / 2,
+        y: center.y - height / 2,
+        is_dashed: props.border?.dashed ?? false,
+      })
 
-    // Fix the ID access
-    this.schematic_group_id = (box as any).schematic_box_id || (box as any).id
+      // Fix the ID access
+      this.schematic_group_id = (box as any).schematic_box_id || (box as any).id
 
-    if (props.schPinArrangement && props.connections) {
-      for (const [side, info] of Object.entries(props.schPinArrangement)) {
-        const sideInfo = info as { pins: string[]; direction?: string }
-        const pins = sideInfo.pins || []
-        const direction = sideInfo.direction || "forward"
-        const count = pins.length
+      if (props.schPinArrangement && props.connections) {
+        for (const [side, info] of Object.entries(props.schPinArrangement)) {
+          const sideInfo = info as { pins: string[]; direction?: string }
+          const pins = sideInfo.pins || []
+          const direction = sideInfo.direction || "forward"
+          const count = pins.length
 
-        pins.forEach((pinName: string, idx: number) => {
-          let x = center.x
-          let y = center.y
+          pins.forEach((pinName: string, idx: number) => {
+            let x = center.x
+            let y = center.y
 
-          if (side === "left") {
-            x = center.x - width / 2 - 0.2
-            y = center.y + height / 2 - (height / count) * (idx + 0.5)
-          } else if (side === "right") {
-            x = center.x + width / 2 + 0.2
-            y = center.y + height / 2 - (height / count) * (idx + 0.5)
-          } else if (side === "top") {
-            x = center.x - width / 2 + (width / count) * (idx + 0.5)
-            y = center.y + height / 2 + 0.2
-          } else if (side === "bottom") {
-            x = center.x - width / 2 + (width / count) * (idx + 0.5)
-            y = center.y - height / 2 - 0.2
-          }
-
-          db.schematic_port.insert({
-            schematic_box_id: (box as any).schematic_box_id || (box as any).id,
-            name: pinName,
-            position: { x, y },
-            side,
-            direction,
-          } as any)
-
-          const mappedPin = props.connections?.[pinName]
-          if (mappedPin) {
-            try {
-              const ports = db.schematic_port.list()
-              const existingPort = ports.find((p: any) => p.name === mappedPin)
-              if (existingPort) {
-                db.schematic_port.update(existingPort.schematic_port_id, {
-                  mapped_to: pinName,
-                  schematic_box_id: (box as any).schematic_box_id || (box as any).id,
-                } as any)
-              }
-            } catch (error) {
-              console.warn(`Could not update port ${mappedPin}:`, error)
+            if (side === "left") {
+              x = center.x - width / 2 - 0.2
+              y = center.y + height / 2 - (height / count) * (idx + 0.5)
+            } else if (side === "right") {
+              x = center.x + width / 2 + 0.2
+              y = center.y + height / 2 - (height / count) * (idx + 0.5)
+            } else if (side === "top") {
+              x = center.x - width / 2 + (width / count) * (idx + 0.5)
+              y = center.y + height / 2 + 0.2
+            } else if (side === "bottom") {
+              x = center.x - width / 2 + (width / count) * (idx + 0.5)
+              y = center.y - height / 2 - 0.2
             }
-          }
-        })
+
+            db.schematic_port.insert({
+              schematic_box_id:
+                (box as any).schematic_box_id || (box as any).id,
+              name: pinName,
+              position: { x, y },
+              side,
+              direction,
+            } as any)
+
+            const mappedPin = props.connections?.[pinName]
+            if (mappedPin) {
+              try {
+                const ports = db.schematic_port.list()
+                const existingPort = ports.find(
+                  (p: any) => p.name === mappedPin,
+                )
+                if (existingPort) {
+                  db.schematic_port.update(existingPort.schematic_port_id, {
+                    mapped_to: pinName,
+                    schematic_box_id:
+                      (box as any).schematic_box_id || (box as any).id,
+                  } as any)
+                }
+              } catch (error) {
+                console.warn(`Could not update port ${mappedPin}:`, error)
+              }
+            }
+          })
+        }
       }
+      return
     }
-    return
+
+    super.doInitialSchematicRender()
   }
-
-  super.doInitialSchematicRender()
-}
-
 
   doInitialSourceGroupRender(): void {
     const { db } = this.root!
@@ -277,7 +281,8 @@ doInitialSchematicRender(): void {
     }
 
     if (!this.isSubcircuit) return
-    const parent_subcircuit_id = (this.parent as any)?.getSubcircuit?.()?.subcircuit_id
+    const parent_subcircuit_id = (this.parent as any)?.getSubcircuit?.()
+      ?.subcircuit_id
     if (!parent_subcircuit_id) return
     db.source_group.update(this.source_group_id!, {
       parent_subcircuit_id,
@@ -363,7 +368,7 @@ doInitialSchematicRender(): void {
   }
 
   unnamedElementCounter: Record<string, number> = {}
-  
+
   getNextAvailableName(elm: PrimitiveComponent): string {
     const lowercaseName = elm.componentName.toLowerCase()
     this.unnamedElementCounter[lowercaseName] ??= 1
@@ -394,9 +399,11 @@ doInitialSchematicRender(): void {
     const paddingY = getPaddingValue("paddingY")
 
     const padLeft = getPaddingValue("paddingLeft") ?? paddingX ?? generalPadding
-    const padRight = getPaddingValue("paddingRight") ?? paddingX ?? generalPadding
+    const padRight =
+      getPaddingValue("paddingRight") ?? paddingX ?? generalPadding
     const padTop = getPaddingValue("paddingTop") ?? paddingY ?? generalPadding
-    const padBottom = getPaddingValue("paddingBottom") ?? paddingY ?? generalPadding
+    const padBottom =
+      getPaddingValue("paddingBottom") ?? paddingY ?? generalPadding
 
     return { padLeft, padRight, padTop, padBottom }
   }
@@ -467,7 +474,8 @@ doInitialSchematicRender(): void {
     const fetchWithDebug = (url: string, options: RequestInit) => {
       debug("fetching", url)
       if (options.headers) {
-        ;(options.headers as any)["Tscircuit-Core-Version"] = this.root?.getCoreVersion()!
+        ;(options.headers as any)["Tscircuit-Core-Version"] =
+          this.root?.getCoreVersion()!
       }
       return fetch(url, options)
     }
@@ -491,7 +499,8 @@ doInitialSchematicRender(): void {
             body: JSON.stringify({
               input_simple_route_json: getSimpleRouteJsonFromCircuitJson({
                 db,
-                minTraceWidth: (this.props as any).autorouter?.minTraceWidth ?? 0.15,
+                minTraceWidth:
+                  (this.props as any).autorouter?.minTraceWidth ?? 0.15,
                 subcircuit_id: this.subcircuit_id,
               }).simpleRouteJson,
               subcircuit_id: this.subcircuit_id!,
@@ -772,9 +781,7 @@ doInitialSchematicRender(): void {
     const { db } = this.root!
 
     if (this._asyncAutoroutingResult.output_simple_route_json) {
-      debug(
-        `[${this.getString()}] updating PCB traces from simple route json`,
-      )
+      debug(`[${this.getString()}] updating PCB traces from simple route json`)
       this._updatePcbTraceRenderFromSimpleRouteJson()
       return
     }
@@ -1069,7 +1076,8 @@ doInitialSchematicRender(): void {
 
   _getAutorouterConfig(): AutorouterConfig {
     const autorouter =
-      (this._parsedProps as any).autorouter || this.getInheritedProperty("autorouter")
+      (this._parsedProps as any).autorouter ||
+      this.getInheritedProperty("autorouter")
     return getPresetAutoroutingConfig(autorouter)
   }
 
@@ -1096,9 +1104,13 @@ doInitialSchematicRender(): void {
 
         if ((child as any)._parsedProps.name) {
           const components =
-            subcircuitComponentsByName.get((child as any)._parsedProps.name) || []
+            subcircuitComponentsByName.get((child as any)._parsedProps.name) ||
+            []
           components.push(child as PrimitiveComponent)
-          subcircuitComponentsByName.set((child as any)._parsedProps.name, components)
+          subcircuitComponentsByName.set(
+            (child as any)._parsedProps.name,
+            components,
+          )
         }
       }
 
