@@ -37,6 +37,18 @@ import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 
+export interface SubcircuitGroupProps {
+  showAsBox?: boolean;
+  connections?: { [externalPin: string]: string };
+  schPinArrangement?: {
+    [side: string]: { direction: string; pins: string[] };
+  };
+  border?: { dashed?: boolean };
+  schWidth?: number;
+  schHeight?: number;
+}
+
+
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
   implements ISubcircuit
@@ -58,6 +70,91 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       componentName: "Group",
     }
   }
+
+  init() {
+    const props = this._parsedProps as SubcircuitGroupProps
+    if (props.showAsBox && props.schPinArrangement) {
+      this.removeAllPorts()
+      const externalPorts = []
+      for (const [side, info] of Object.entries(props.schPinArrangement)) {
+        for (const pinName of info.pins) {
+          externalPorts.push(new Port({ name: pinName, component: this }))
+        }
+      }
+      this.addAllPorts(externalPorts)
+    } else {
+      super.init()
+    }
+  }
+
+  doInitialSchematicRender() {
+    if (this.root?.schematicDisabled) return
+    const db = this.root!.db
+    const props = this._parsedProps as SubcircuitGroupProps
+
+    if (props.showAsBox) {
+      const width = props.schWidth || 5
+      const height = props.schHeight || 5
+      const center = this._calcCenter()
+
+      const box = db.schematic_box.insert({
+        width,
+        height,
+        x: center.x - width / 2,
+        y: center.y - height / 2,
+        is_dashed: props.border?.dashed ?? false,
+      })
+      this.schematic_group_id = box.id
+
+      if (props.schPinArrangement && props.connections) {
+        for (const [side, info] of Object.entries(props.schPinArrangement)) {
+          const pins = info.pins || []
+          const direction = info.direction || 'forward'
+          const count = pins.length
+          pins.forEach((pinName, idx) => {
+            let x = center.x,
+              y = center.y
+            switch (side) {
+              case "left":
+                x = center.x - width / 2 - 0.2
+                y = center.y - height / count * (idx + 0.5)
+                break
+              case "right":
+                x = center.x + width / 2 + 0.2
+                y = center.y - height / count * (idx + 0.5)
+                break
+              case "top":
+                x = center.x - width / count * (idx + 0.5)
+                y = center.y + height / 2 + 0.2
+                break
+              case "bottom":
+                x = center.x - width / count * (idx + 0.5)
+                y = center.y - height / 2 - 0.2
+                break
+            }
+            db.schematic_port.insert({
+              schematic_component_id: box.id,
+              name: pinName,
+              position: { x, y },
+              side,
+              direction,
+            })
+
+            const mappedPin = props.connections[pinName]
+            if (mappedPin) {
+              db.schematic_port.updateByName(mappedPin, {
+                mappedTo: pinName,
+                schematic_group_id: box.id,
+              })
+            }
+          })
+        }
+      }
+      return // Prevent further default rendering
+    }
+    super.doInitialSchematicRender()
+  }
+
 
   doInitialSourceGroupRender() {
     const { db } = this.root!
