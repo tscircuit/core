@@ -39,18 +39,6 @@ import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicT
 import type { SubcircuitGroupProps } from "lib/components/primitive-components/Group/Subcircuit.ts"
 import { Port } from "../../primitive-components/Port/Port"
 
-export interface SubcircuitGroupProps {
-  showAsBox?: boolean;
-  connections?: { [externalPin: string]: string };
-  schPinArrangement?: {
-    [side: string]: { direction: string; pins: string[] };
-  };
-  border?: { dashed?: boolean };
-  schWidth?: number;
-  schHeight?: number;
-}
-
-
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
   implements ISubcircuit
