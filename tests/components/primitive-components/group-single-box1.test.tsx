@@ -29,7 +29,11 @@ test("should render group as single box with external pins arranged", () => {
   circuit.render();
 
   // Assert schematic box exists with expected dimensions
-  const box = circuit.db.schematic_box.list()[0] // Picking the first or only box
+
+  const boxes = circuit.db.schematic_box.list()
+  expect(boxes.length).toBeGreaterThan(0, "No schematic boxes were created")
+  const box = boxes[0] // Picking the first box after verifying it exists
+
   expect(box).toBeDefined();
   expect(box.width).toBeCloseTo(6);
   expect(box.height).toBeCloseTo(4);
