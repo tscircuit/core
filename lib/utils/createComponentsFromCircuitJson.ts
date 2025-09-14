@@ -52,6 +52,7 @@ export const createComponentsFromCircuitJson = (
           height: elm.height,
           width: elm.width,
           portHints: elm.port_hints,
+          rectBorderRadius: elm.rect_border_radius,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "circle") {
@@ -97,6 +98,7 @@ export const createComponentsFromCircuitJson = (
             portHints: elm.port_hints,
             pcbHoleOffsetX: elm.hole_offset_x,
             pcbHoleOffsetY: elm.hole_offset_y,
+            rectBorderRadius: elm.rect_border_radius,
           }),
         )
       } else if (elm.shape === "pill" || elm.shape === "oval") {
