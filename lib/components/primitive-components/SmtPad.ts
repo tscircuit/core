@@ -98,6 +98,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         shape: "circle",
         radius: props.radius!,
         port_hints: props.portHints.map((ph) => ph.toString()),
+        is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
         x: position.x,
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -127,6 +128,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
 
               port_hints: props.portHints.map((ph) => ph.toString()),
 
+              is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
+
               x: position.x,
               y: position.y,
               subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -142,6 +145,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
               y: position.y,
               ccw_rotation: parentRotation,
               port_hints: props.portHints.map((ph) => ph.toString()),
+              is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
               subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
               pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
             } as PcbSmtPad)
@@ -183,6 +187,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           y: p.y + position.y,
         })),
         port_hints: props.portHints.map((ph) => ph.toString()),
+        is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
