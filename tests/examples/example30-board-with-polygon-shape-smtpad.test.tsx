@@ -6,14 +6,8 @@ test("example30: Board with polygon shape smtpad", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width={35} height={30}>
-      <PolygonSmtpadPinRow name="J1" pcbX={-10} pcbY={-10} />
-      <chip
-        name="U3"
-        footprint="soic8"
-        connections={{ pin1: "J1.pin1", pin7: "J2.pin4" }}
-      />
-      <PolygonSmtpadPinRow name="J2" pcbX={-10} pcbY={10} />
+    <board width={16}>
+      <PolygonSmtpads name="U1" />
     </board>,
   )
 
@@ -21,34 +15,53 @@ test("example30: Board with polygon shape smtpad", async () => {
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
 
-const PolygonSmtpadPinRow = (props: {
+const PolygonSmtpads = (props: {
   name: string
-  pcbX: number
-  pcbY: number
 }) => {
   return (
     <chip
       {...props}
       footprint={
         <footprint>
-          {[1, 2, 3, 4].map((i) => {
-            const offsetX = (i - 1) * 6
-            return (
-              <smtpad
-                shape="polygon"
-                layer="top"
-                portHints={[i.toString()]}
-                points={[
-                  { x: -2 + offsetX, y: 2 },
-                  { x: 1 + offsetX, y: 2 },
-                  { x: 2 + offsetX, y: 1 },
-                  { x: 2 + offsetX, y: -1 },
-                  { x: 1 + offsetX, y: -2 },
-                  { x: -2 + offsetX, y: -2 },
-                ]}
-              />
-            )
-          })}
+          <smtpad
+            shape="polygon"
+            layer="top"
+            portHints={["pin1"]}
+            points={[
+              { x: -4.5, y: 2 },
+              { x: -2.2, y: 2 },
+              { x: -0.4, y: 0 },
+              { x: -2.2, y: -2 },
+              { x: -4.5, y: -2 },
+            ]}
+          />
+
+          <smtpad
+            shape="polygon"
+            layer="top"
+            portHints={["pin2"]}
+            points={[
+              { x: -1.8, y: 2 },
+              { x: 1.8, y: 2 },
+              { x: 3.6, y: 0 },
+              { x: 1.8, y: -2 },
+              { x: -1.8, y: -2 },
+              { x: 0, y: 0 },
+            ]}
+          />
+
+          <smtpad
+            shape="polygon"
+            layer="top"
+            portHints={["pin3"]}
+            points={[
+              { x: 2.2, y: 2 },
+              { x: 6, y: 2 },
+              { x: 6, y: -2 },
+              { x: 2.2, y: -2 },
+              { x: 4, y: 0 },
+            ]}
+          />
         </footprint>
       }
     />
