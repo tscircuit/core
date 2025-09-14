@@ -1,5 +1,6 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent";
 import { platedHoleProps } from "@tscircuit/props";
+
 import type { Port } from "./Port";
 import type {
   PCBPlatedHoleInput,
@@ -28,6 +29,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
 
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this;
+
     if (props.shape === "circle") {
       return { width: props.outerDiameter, height: props.outerDiameter };
     }
@@ -40,6 +42,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     if (props.shape === "pill_hole_with_rect_pad") {
       return { width: props.rectPadWidth, height: props.rectPadHeight };
     }
+
     throw new Error(
       `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
     );
@@ -70,10 +73,12 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
 
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
     const { db } = this.root!;
+
     db.pcb_plated_hole.update(this.pcb_plated_hole_id!, {
       x: newCenter.x,
       y: newCenter.y,
     });
+
     this.matchedPort?._setPositionFromLayout(newCenter);
   }
 
@@ -97,12 +102,15 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
 
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return;
+
     const { db } = this.root!;
     const { _parsedProps: props } = this;
     const position = this._getGlobalPcbPositionBeforeLayout();
+
     const pcb_component_id =
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!;
+
     const subcircuit = this.getSubcircuit();
 
     if (props.shape === "circle") {
@@ -122,6 +130,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       });
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id;
+
       db.pcb_solder_paste.insert({
         layer: "top",
         shape: "circle",
@@ -132,6 +141,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       });
+
       db.pcb_solder_paste.insert({
         layer: "bottom",
         shape: "circle",
@@ -189,6 +199,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       } as PcbPlatedHoleOval);
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id;
+
       db.pcb_solder_paste.insert({
         layer: "top",
         shape: props.shape,
@@ -200,6 +211,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       });
+
       db.pcb_solder_paste.insert({
         layer: "bottom",
         shape: props.shape,
@@ -228,6 +240,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         hole_offset_x: props.pcbHoleOffsetX ?? 0,
         hole_offset_y: props.pcbHoleOffsetY ?? 0,
       } as PcbHoleCircularWithRectPad);
+
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id;
     } else if (props.shape === "pill_hole_with_rect_pad") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
@@ -245,6 +258,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbHolePillWithRectPad);
+
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id;
     } else {
       throw new Error(
@@ -255,6 +269,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
 
   doInitialPcbPortAttachment(): void {
     if (this.root?.pcbDisabled) return;
+
     const { db } = this.root!;
     db.pcb_plated_hole.update(this.pcb_plated_hole_id!, {
       pcb_port_id: this.matchedPort?.pcb_port_id!,
