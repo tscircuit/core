@@ -247,8 +247,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       } as PcbHolePillWithRectPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     } else {
-      // Here, an unsupported shape warning could be logged.
-      throw new Error(`Unsupported plated hole shape ${props.shape}`);
+      
+      throw new Error(`Unsupported plated hole shape ${(props as any).shape}`);
     }
   }
 
