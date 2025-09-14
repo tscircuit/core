@@ -241,7 +241,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return
     }
 
-    super.doInitialSchematicRender()
+    super.doInitialSourceRender()
   }
 
   doInitialSourceGroupRender(): void {
