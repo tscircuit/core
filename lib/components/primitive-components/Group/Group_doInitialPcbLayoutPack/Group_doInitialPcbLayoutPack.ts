@@ -23,7 +23,6 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     packPlacementStrategy,
     gap: gapProp,
     pcbGap,
-    // @ts-expect-error remove when props introduces pcbPackGap
     pcbPackGap,
   } = props
 
