@@ -112,26 +112,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           const direction = info.direction || 'forward'
           const count = pins.length
           pins.forEach((pinName, idx) => {
-            let x = center.x,
-              y = center.y
-            switch (side) {
-              case "left":
-                x = center.x - width / 2 - 0.2
-                y = center.y - height / count * (idx + 0.5)
-                break
-              case "right":
-                x = center.x + width / 2 + 0.2
-                y = center.y - height / count * (idx + 0.5)
-                break
-              case "top":
-                x = center.x - width / count * (idx + 0.5)
-                y = center.y + height / 2 + 0.2
-                break
-              case "bottom":
-                x = center.x - width / count * (idx + 0.5)
-                y = center.y - height / 2 - 0.2
-                break
-            }
+            if (side === "left") {
+            x = center.x - width / 2 - 0.2;
+            y = center.y + height / 2 - height / count * (idx + 0.5);
+            } else if (side === "right") {
+            x = center.x + width / 2 + 0.2;
+            y = center.y + height / 2 - height / count * (idx + 0.5);
+            else if (side === "top") {
+            x = center.x - width / 2 + width / count * (idx + 0.5);
+            y = center.y + height / 2 + 0.2;
+          } else if (side === "bottom") {
+            x = center.x - width / 2 + width / count * (idx + 0.5);
+            y = center.y - height / 2 - 0.2;
+        } 
+
             db.schematic_port.insert({
               schematic_component_id: box.id,
               name: pinName,

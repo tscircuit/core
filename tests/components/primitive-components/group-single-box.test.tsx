@@ -16,7 +16,7 @@ test("should render group as single box with external pins arranged", () => {
       schSpacing={0.25}
       schWidth={6}
       schHeight={4}
-      schPins={{
+      schPinArrangements={{
         left: { pins: ["D1"], direction: "top-to-bottom" },
         right: { pins: ["D2"], direction: "bottom-to-top" }
       }}
