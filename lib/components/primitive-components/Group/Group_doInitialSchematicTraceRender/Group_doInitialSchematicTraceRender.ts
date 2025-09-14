@@ -8,6 +8,7 @@ import { insertNetLabelsForTracesExcludedFromRouting } from "./insertNetLabelsFo
 import { insertNetLabelsForPortsMissingTrace } from "./insertNetLabelsForPortsMissingTrace"
 import { getSchematicPortIdsWithAssignedNetLabels } from "./getSchematicPortIdsWithAssignedNetLabels"
 import { getSchematicPortIdsWithRoutedTraces } from "./getSchematicPortIdsWithRoutedTraces"
+import { Group_doInitialSchematicBoxRender } from "../Group_doInitialSchematicBoxRender"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -18,6 +19,8 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   if (!group.root?._featureMspSchematicTraceRouting) return
   if (!group.isSubcircuit) return
   if (group.root?.schematicDisabled) return
+
+  Group_doInitialSchematicBoxRender(group)
 
   // Prepare the solver input and context
   const {

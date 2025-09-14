@@ -44,7 +44,30 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   pcb_group_id: string | null = null
   schematic_group_id: string | null = null
   subcircuit_id: string | null = null
+  private _isSchematicBox = false
+  private _schConnections: Record<string, string> = {}
+  private _schPinArrangement: any
+  private _schBox: any
 
+  // tiny getters that read on-demand from _parsedProps (no ctor needed)
+  private _pp(): any {
+    return (this as any)._parsedProps ?? {}
+  }
+  isSchematicBox() {
+    return !!this._pp().showAsSchematicBox
+  }
+  getSchConnections() {
+    return (this._pp().connections ?? {}) as Record<string, string>
+  }
+  getSchPinArrangement() {
+    return this._pp().schPinArrangement
+  }
+  getSchBox() {
+    return this._pp().schBox
+  }
+  getBoxTitle() {
+    return this.getSchBox()?.title ?? this.name ?? "Group"
+  }
   _hasStartedAsyncAutorouting = false
 
   _asyncAutoroutingResult: {
