@@ -62,20 +62,46 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   override initPorts() {
-  const props = this._parsedProps as SubcircuitGroupProps;
-  if (props.showAsBox && props.schPinArrangement) {
-    this.removeAllPorts();
-    const externalPorts: Port[] = [];
-    for (const [side, info] of Object.entries(props.schPinArrangement)) {
-      for (const pinName of info.pins) {
-        externalPorts.push(new Port({ name: pinName, component: this }));
-      }
+    const props = this._parsedProps;
+    
+    // Type guard to ensure props has the required properties
+    if (!props || typeof props !== 'object') {
+      super.initPorts();
+      return;
     }
-    this.addAllPorts(externalPorts);
-  } else {
-    super.initPorts();
+    
+    const hasShowAsBox = 'showAsBox' in props && !!props.showAsBox;
+    const hasSchPinArrangement = 'schPinArrangement' in props && !!props.schPinArrangement;
+    
+    if (hasShowAsBox && hasSchPinArrangement) {
+      const schPinArrangement = props.schPinArrangement as Record<string, { pins: string[] }>;
+      
+      // Check if ports already match what we need
+      const requiredPinNames = Object.values(schPinArrangement)
+        .flatMap(info => info.pins);
+      
+      const currentPinNames = this.ports.map(port => port.name);
+      const portsMatch = 
+        requiredPinNames.length === currentPinNames.length &&
+        requiredPinNames.every(pin => currentPinNames.includes(pin));
+      
+      // Only recreate ports if necessary
+      if (!portsMatch) {
+        this.removeAllPorts();
+        const externalPorts: Port[] = [];
+        
+        for (const [side, info] of Object.entries(schPinArrangement)) {
+          for (const pinName of info.pins) {
+            externalPorts.push(new Port({ name: pinName, component: this }));
+          }
+        }
+        
+        this.addAllPorts(externalPorts);
+      }
+    } else {
+      super.initPorts();
+    }
   }
-}
 
 
 removeAllPorts() {
