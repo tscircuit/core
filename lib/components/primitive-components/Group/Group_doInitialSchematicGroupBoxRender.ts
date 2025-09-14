@@ -65,15 +65,29 @@ export function Group_doInitialSchematicGroupBoxRender(group: any, ctx: any) {
   });
 
   // 3) Helper: resolve internal port's SCK via your existing selector plumbing
-  const sckOf = (sel: string): string | undefined => {
-    // core already supports group.selectOne(selector, { type: "port" })
-    const p = group.selectOne(sel, { type: "port" }) as any;
-    return (
-      p?.source_port?.subcircuit_connectivity_map_key ??
-      p?.subcircuit_connectivity_map_key ??
-      undefined
-    );
-  };
+
+const sckOf = (sel: string): string | undefined => {
+  // core already supports group.selectOne(selector, { type: "port" })
+  try {
+    const p = group.selectOne(sel, { type: "port" });
+    if (!p) return undefined;
+    
+    // Check for source_port first, then direct property
+    if (p.source_port && 'subcircuit_connectivity_map_key' in p.source_port) {
+      return p.source_port.subcircuit_connectivity_map_key;
+    }
+    
+    if ('subcircuit_connectivity_map_key' in p) {
+      return p.subcircuit_connectivity_map_key;
+    }
+    
+    return undefined;
+  } catch (error) {
+    console.error(`Error selecting port with selector "${sel}":`, error);
+    return undefined;
+  }
+};
+
 
   // 4) Emit schematic ports for each alias
   const pushPort = (alias: string, side: Side, order_index: number) => {
