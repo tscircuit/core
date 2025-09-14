@@ -12,11 +12,14 @@ export class Subcircuit extends Group {
 }
 
 export interface SubcircuitGroupProps {
-  showAsBox?: boolean // or your chosen prop name
+  showAsBox?: boolean
   connections?: { [key: string]: string }
   schPinArrangement?: { [side: string]: { direction: string; pins: string[] } }
-  border?: { dashed?: boolean }
+  schPinArrangementSize?: { [side: string]: number } // if required
+  schPinSpacing?: number
+  schPinStyle?: object
   schWidth?: number
   schHeight?: number
-  // Include all other needed props and validation schemas
+  border?: { dashed?: boolean }
+  [key: string]: unknown // For any extra props
 }
