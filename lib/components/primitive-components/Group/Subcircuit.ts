@@ -10,3 +10,13 @@ export class Subcircuit extends Group {
     })
   }
 }
+
+export interface SubcircuitGroupProps {
+  showAsBox?: boolean // or your chosen prop name
+  connections?: { [key: string]: string }
+  schPinArrangement?: { [side: string]: { direction: string; pins: string[] } }
+  border?: { dashed?: boolean }
+  schWidth?: number
+  schHeight?: number
+  // Include all other needed props and validation schemas
+}
