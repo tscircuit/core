@@ -74,6 +74,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   schematic_group_id: string | null = null
   subcircuit_id: string | null = null
   source_group_id: string | null = null
+  showAsBox?: boolean;
 
   _hasStartedAsyncAutorouting = false
 
