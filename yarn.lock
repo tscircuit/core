@@ -7,11 +7,6 @@
   resolved "https://registry.npmjs.org/@babel/runtime/-/runtime-7.28.4.tgz"
   integrity sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==
 
-"@babel/standalone@^7.27.2":
-  version "7.28.4"
-  resolved "https://registry.npmjs.org/@babel/standalone/-/standalone-7.28.4.tgz"
-  integrity sha512-Qc1BNCfuJZBKs2SC5lqRmSYOw7Ka0X7urZQ7oVsGIax4eGDUIHX+CDg752N4jDxC2rbBh3li098ReGOtjT0x4g==
-
 "@biomejs/biome@^1.8.3":
   version "1.9.4"
   resolved "https://registry.npmjs.org/@biomejs/biome/-/biome-1.9.4.tgz"
@@ -55,7 +50,7 @@
   resolved "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.25.9.tgz"
   integrity sha512-PPOl1mi6lpLNQxnGoyAfschAodRFYXJ+9fs6WHXz7CSWKbOqiMZsubC+BQsVKuul+3vKLuwTHsS2c2y9EoKwxQ==
 
-"@flatten-js/core@*", "@flatten-js/core@^1.6.2":
+"@flatten-js/core@^1.6.2":
   version "1.6.2"
   resolved "https://registry.npmjs.org/@flatten-js/core/-/core-1.6.2.tgz"
   integrity sha512-NcQMKXlzn9XwEBWskOQfkIKnMLH/FHx1UAAdyq6IibjLESwWDxx4OEpRM7ma0wnsl5IMa/GEGX4+pLqp8UtF4A==
@@ -145,7 +140,7 @@
   resolved "https://registry.npmjs.org/@octokit/auth-token/-/auth-token-4.0.0.tgz"
   integrity sha512-tY/msAuJo6ARbK6SPIxZrPBms3xPbfwBrulZe0Wtr/DIY9lje2HeV1uoebShn6mx7SjCHif6EjMvoREj+gZ+SA==
 
-"@octokit/core@^5.0.0", "@octokit/core@5":
+"@octokit/core@^5.0.0":
   version "5.2.2"
   resolved "https://registry.npmjs.org/@octokit/core/-/core-5.2.2.tgz"
   integrity sha512-/g2d4sW9nUDJOMz3mabVQvOGhVa4e/BN/Um7yca9Bb2XTzPPnfTWHWQg+IsEYO7M3Vx+EXvaM/I2pJWIMun1bg==
@@ -259,7 +254,7 @@
   resolved "https://registry.npmjs.org/@rollup/rollup-win32-x64-msvc/-/rollup-win32-x64-msvc-4.50.1.tgz"
   integrity sha512-StxAO/8ts62KZVRAm4JZYq9+NqNsV7RvimNK+YM7ry//zebEH6meuugqW/P5OFUCjyQgui+9fUxT6d5NShvMvA==
 
-"@tscircuit/capacity-autorouter@*", "@tscircuit/capacity-autorouter@^0.0.107":
+"@tscircuit/capacity-autorouter@^0.0.107":
   version "0.0.107"
   resolved "https://registry.npmjs.org/@tscircuit/capacity-autorouter/-/capacity-autorouter-0.0.107.tgz"
   integrity sha512-b4LTylZnrLrv0YQU615A4yzNJUt+/p5JWLBZgy+9IzIA7Q/ObYhpq+9rX/HLZ074T8rGxj1bV6z1g4cdSvdxFw==
@@ -267,68 +262,19 @@
     fast-json-stable-stringify "^2.1.0"
     object-hash "^3.0.0"
 
-"@tscircuit/checks@*", "@tscircuit/checks@^0.0.75":
+"@tscircuit/checks@^0.0.75":
   version "0.0.75"
   resolved "https://registry.npmjs.org/@tscircuit/checks/-/checks-0.0.75.tgz"
   integrity sha512-fNSQTEW6OdXJqkDBycq65FfnqRXY+08Zx37np71grQb/rCAAQdn59pKc+dJBuiBbN/V56aLnPy2lx+HzXyWKAw==
 
-"@tscircuit/circuit-json-flex@^0.0.3":
-  version "0.0.3"
-  resolved "https://registry.npmjs.org/@tscircuit/circuit-json-flex/-/circuit-json-flex-0.0.3.tgz"
-  integrity sha512-8az7FWP8Y2THen5QYn62Ny2lNvdFeELuN3KPp1BVJ8yn5ClAVqnLh8WL/NMtde50629aus3zQTTvpqYfw1bRpg==
-  dependencies:
-    "@tscircuit/miniflex" "^0.0.3"
-
-"@tscircuit/circuit-json-util@*", "@tscircuit/circuit-json-util@^0.0.67":
+"@tscircuit/circuit-json-util@^0.0.67":
   version "0.0.67"
   resolved "https://registry.npmjs.org/@tscircuit/circuit-json-util/-/circuit-json-util-0.0.67.tgz"
   integrity sha512-ErTCyrW/zOBq+Ulqan8weUNNgcJNpelJ7gIq2G3OZGcI3xUrZBB+BE7oZeritvDtG1ofKrVMgvHTnENdxXjIug==
   dependencies:
     parsel-js "^1.1.2"
 
-"@tscircuit/cli@^0.1.214":
-  version "0.1.214"
-  resolved "https://registry.npmjs.org/@tscircuit/cli/-/cli-0.1.214.tgz"
-  integrity sha512-P1cfsPI1dcRBZL8iGf+UeEq0gLKVYcl2Fh6KOngYWE4wac4SbywUkmgZvbnL9F/HSWDw1UdVRZV/8UCo2EU0aw==
-
-"@tscircuit/core@*":
-  version "0.0.730"
-  resolved "https://registry.npmjs.org/@tscircuit/core/-/core-0.0.730.tgz"
-  integrity sha512-FTlyttfgBlCcsiDJvX3rjw4dnEHa94vPPdYU2xmYnkllJB+HPLeoB7Wks5VaiHg29YuAmpwGIsyTavQ6gWVU6Q==
-  dependencies:
-    "@flatten-js/core" "^1.6.2"
-    "@lume/kiwi" "^0.4.3"
-    calculate-packing "0.0.37"
-    css-select "5.1.0"
-    format-si-unit "^0.0.3"
-    nanoid "^5.0.7"
-    performance-now "^2.1.0"
-    react-reconciler "^0.32.0"
-    transformation-matrix "^2.16.1"
-    zod "^3.25.67"
-
-"@tscircuit/core@^0.0.727":
-  version "0.0.727"
-  resolved "https://registry.npmjs.org/@tscircuit/core/-/core-0.0.727.tgz"
-  integrity sha512-zKjuoc5mc3SOI+o9THKTdCUF2tB9G1fFgSCopM9nfzg+vMeNtekogF4zDGcmRH42n0IpZpvVhIhb4EKxW19PRQ==
-  dependencies:
-    "@flatten-js/core" "^1.6.2"
-    "@lume/kiwi" "^0.4.3"
-    calculate-packing "0.0.37"
-    css-select "5.1.0"
-    format-si-unit "^0.0.3"
-    nanoid "^5.0.7"
-    performance-now "^2.1.0"
-    react-reconciler "^0.32.0"
-    transformation-matrix "^2.16.1"
-    zod "^3.25.67"
-
-"@tscircuit/eval@^0.0.322":
-  version "0.0.322"
-  resolved "https://registry.npmjs.org/@tscircuit/eval/-/eval-0.0.322.tgz"
-  integrity sha512-9MMMDxCHKDhp+pMWvaEIF+tHzGKUz0QuDKaJ1tpEZh/i5BLAZWCv9vI+giR8dcisyq8I1H8D3aYQGydKrBn4ag==
-
-"@tscircuit/footprinter@*", "@tscircuit/footprinter@^0.0.236":
+"@tscircuit/footprinter@^0.0.236":
   version "0.0.236"
   resolved "https://registry.npmjs.org/@tscircuit/footprinter/-/footprinter-0.0.236.tgz"
   integrity sha512-SE03ZCNp9FxzSa3LdbQOMBHjT16Q86ZwN6iLu+RPsAbFrdE1RwtM7dv5lOb6lkh78mL3e7yyuyay+QrERiLcYQ==
@@ -341,7 +287,7 @@
   resolved "https://registry.npmjs.org/@tscircuit/import-snippet/-/import-snippet-0.0.4.tgz"
   integrity sha512-zNDp4uuV2Ta3JF8GODWMh5LVV4oxkDdtsNkj7u40WDoztnjLflSd/VvyBOv/rT0Yl4nd/vXIym4jehxqvCIq8w==
 
-"@tscircuit/infgrid-ijump-astar@*", "@tscircuit/infgrid-ijump-astar@^0.0.33":
+"@tscircuit/infgrid-ijump-astar@^0.0.33":
   version "0.0.33"
   resolved "https://registry.npmjs.org/@tscircuit/infgrid-ijump-astar/-/infgrid-ijump-astar-0.0.33.tgz"
   integrity sha512-tmX4Esp+HqyIGCUD43steVUH8pKRuyBNs21r4NlApGGLu+K1XSrK9FinhVJyMiEsuwJdajLnMTzmVt8vSYSafA==
@@ -353,12 +299,12 @@
   dependencies:
     redaxios "^0.5.1"
 
-"@tscircuit/matchpack@*", "@tscircuit/matchpack@^0.0.16":
+"@tscircuit/matchpack@^0.0.16":
   version "0.0.16"
   resolved "https://registry.npmjs.org/@tscircuit/matchpack/-/matchpack-0.0.16.tgz"
   integrity sha512-F9QX7uQdml88XGKwe7kDkYnwHfG0kykr2cHD+JsnATKlgi32vYwFGuRaOR4tyRrkDGdmzt5T7YYb4Mhi9uncGA==
 
-"@tscircuit/math-utils@*", "@tscircuit/math-utils@^0.0.21":
+"@tscircuit/math-utils@^0.0.21":
   version "0.0.21"
   resolved "https://registry.npmjs.org/@tscircuit/math-utils/-/math-utils-0.0.21.tgz"
   integrity sha512-M1viGlMkOQsYiGfNBEbvsJXxB7DDrMqzA475DzK0QaD/jGueyEk5JgIQsd91SRG0JDtZUH1SvysPjNMJbUOy3Q==
@@ -367,11 +313,6 @@
   version "0.0.9"
   resolved "https://registry.npmjs.org/@tscircuit/math-utils/-/math-utils-0.0.9.tgz"
   integrity sha512-sPzfXndijet8z29X6f5vnSZddiso2tRg7m6rB+268bVj60mxnxUMD14rKuMlLn6n84fMOpD/X7pRTZUfi6M+Tg==
-
-"@tscircuit/miniflex@^0.0.3":
-  version "0.0.3"
-  resolved "https://registry.npmjs.org/@tscircuit/miniflex/-/miniflex-0.0.3.tgz"
-  integrity sha512-oRC0up2psp8dJD1CzXyUiFuhQZUWLdZNl9EAqOf/hHqXDhPKMU6wM79S+XQuaB0gdWNRnwcURHPPaKLw/ka3DQ==
 
 "@tscircuit/miniflex@^0.0.4":
   version "0.0.4"
@@ -383,22 +324,12 @@
   resolved "https://registry.npmjs.org/@tscircuit/mm/-/mm-0.0.8.tgz"
   integrity sha512-nl7nxE7AhARbKuobflI0LUzoir7+wJyvwfPw6bzA/O0Q3YTcH3vBkU/Of+V/fp6ht+AofiCXj7YAH9E446138Q==
 
-"@tscircuit/props@*", "@tscircuit/props@0.0.324":
+"@tscircuit/props@0.0.324":
   version "0.0.324"
   resolved "https://registry.npmjs.org/@tscircuit/props/-/props-0.0.324.tgz"
   integrity sha512-5+T8G/5Dc/TYLQMvEQ1yGKplj3NqgbCitHiRrtiMJPZL5/ygzAXNFU7SMMq4hVQ92D0CGfhewmNEfM5FyEbXTg==
 
-"@tscircuit/props@0.0.321":
-  version "0.0.321"
-  resolved "https://registry.npmjs.org/@tscircuit/props/-/props-0.0.321.tgz"
-  integrity sha512-R9YZc7JKDIpYrF7/9v32bxCSVXCagSnHAGEm+HpcWlnPdiMrEiSr618pCCzw9gc0nqKs+2YUl5K6aoZOOypRZg==
-
-"@tscircuit/runframe@^0.0.932":
-  version "0.0.932"
-  resolved "https://registry.npmjs.org/@tscircuit/runframe/-/runframe-0.0.932.tgz"
-  integrity sha512-szD2f+A6GUt9TtudnjBwQGsS5fALoomSK2RAEeAyIiDXS+bhwM5uueQXgk3v/+e/qYLgETVOfwrGxdalCcAE7A==
-
-"@tscircuit/schematic-autolayout@*", "@tscircuit/schematic-autolayout@^0.0.6":
+"@tscircuit/schematic-autolayout@^0.0.6":
   version "0.0.6"
   resolved "https://registry.npmjs.org/@tscircuit/schematic-autolayout/-/schematic-autolayout-0.0.6.tgz"
   integrity sha512-34cQxtlSylBKyHkzaMBCynaWJgN9c/mWm7cz63StTYIafKmfFs383K8Xoc4QX8HXCvVrHYl1aK15onZua9MxeA==
@@ -406,12 +337,7 @@
     "@tscircuit/soup-util" "^0.0.38"
     transformation-matrix "^2.16.1"
 
-"@tscircuit/schematic-corpus@*":
-  version "0.0.114"
-  resolved "https://registry.npmjs.org/@tscircuit/schematic-corpus/-/schematic-corpus-0.0.114.tgz"
-  integrity sha512-jDQX+XDXP6PklB39X8AwUSuiqGRdn78esy1wD/qG8U3cCXkT5rtE3ousDVaKRxclCeED8FxJlD+ZvRtAe8mw8w==
-
-"@tscircuit/schematic-match-adapt@*", "@tscircuit/schematic-match-adapt@^0.0.16":
+"@tscircuit/schematic-match-adapt@^0.0.16":
   version "0.0.16"
   resolved "https://registry.npmjs.org/@tscircuit/schematic-match-adapt/-/schematic-match-adapt-0.0.16.tgz"
   integrity sha512-85e6Pq58zrhZqivyW4bPVZfGfg8xLBCj3yjHl5LZslwfsDRgtWVob4bjJMhCfNL/mLsPUQKnpiDNnFKl9ugUZw==
@@ -506,7 +432,7 @@
     "@types/history" "^4.7.11"
     "@types/react" "*"
 
-"@types/react@*", "@types/react@^19", "@types/react@^19.0.0", "@types/react@^19.1.8":
+"@types/react@*", "@types/react@^19.1.8":
   version "19.1.13"
   resolved "https://registry.npmjs.org/@types/react/-/react-19.1.13.tgz"
   integrity sha512-hHkbU/eoO3EG5/MZkuFSKmYqPbSVk5byPFa3e7y/8TybHiLMACgI8seVYlicwk7H5K/rI2px9xrQp/C+AUDTiQ==
@@ -650,7 +576,7 @@ balanced-match@^1.0.0:
   resolved "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz"
   integrity sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==
 
-bare-events@*, bare-events@^2.2.0, bare-events@^2.5.4:
+bare-events@^2.2.0, bare-events@^2.5.4:
   version "2.6.1"
   resolved "https://registry.npmjs.org/bare-events/-/bare-events-2.6.1.tgz"
   integrity sha512-AuTJkq9XmE6Vk0FJVNq5QxETrSA/vKHarWVBG5l/JbdCL1prJemiyJqUS0jrlXO0MftuPq4m3YVYhoNc5+aE/g==
@@ -756,7 +682,7 @@ boolbase@^1.0.0:
   resolved "https://registry.npmjs.org/boolbase/-/boolbase-1.0.0.tgz"
   integrity sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==
 
-bpc-graph@*, bpc-graph@^0.0.57:
+bpc-graph@^0.0.57:
   version "0.0.57"
   resolved "https://registry.npmjs.org/bpc-graph/-/bpc-graph-0.0.57.tgz"
   integrity sha512-kgFB+o1D2YM9aJBVVFvSo7Qv0xAiY0/tqPf5wH+tPgEYU5572/YU0xgF1rDfN+4vGsqRzTxEqUaaW7IMe33V7A==
@@ -815,7 +741,7 @@ buffer@^5.5.0:
     base64-js "^1.3.1"
     ieee754 "^1.1.13"
 
-bun-match-svg@^0.0.9, bun-match-svg@0.0.12:
+bun-match-svg@0.0.12:
   version "0.0.12"
   resolved "https://registry.npmjs.org/bun-match-svg/-/bun-match-svg-0.0.12.tgz"
   integrity sha512-qjQtTwRvuqGDe8xza1OEm3OMA4bUEuFDl4i4y1vH9GwdEegqB9x1/H5+AjoRwQUcMmt5kP9bfPdplkBWxmlfWg==
@@ -945,12 +871,12 @@ chownr@^2.0.0:
   resolved "https://registry.npmjs.org/chownr/-/chownr-2.0.0.tgz"
   integrity sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==
 
-circuit-json-to-bpc@*, circuit-json-to-bpc@^0.0.13:
+circuit-json-to-bpc@^0.0.13:
   version "0.0.13"
   resolved "https://registry.npmjs.org/circuit-json-to-bpc/-/circuit-json-to-bpc-0.0.13.tgz"
   integrity sha512-3wSMtPa6tJkiBQN4tsm7f0Mb7Wp90X2c8dNbULoDVE4mGGoFqP1DXqBlyvvZZl+4SjqznzQQ0EioLe2SCQTOcg==
 
-circuit-json-to-connectivity-map@*, circuit-json-to-connectivity-map@^0.0.22:
+circuit-json-to-connectivity-map@^0.0.22:
   version "0.0.22"
   resolved "https://registry.npmjs.org/circuit-json-to-connectivity-map/-/circuit-json-to-connectivity-map-0.0.22.tgz"
   integrity sha512-HN8DiISjZZLTglGEkYNRpKeQ/DMG4dDo5j4Hck0UGSJbpux9aFwtJOGszMf06Inh/gu5oKBrpZJIeWxaNacKUg==
@@ -962,25 +888,10 @@ circuit-json-to-simple-3d@^0.0.8:
   resolved "https://registry.npmjs.org/circuit-json-to-simple-3d/-/circuit-json-to-simple-3d-0.0.8.tgz"
   integrity sha512-ZQJB625ntNUS0hC3dFZtyFS+t2oL4PVysHlNQdGqpJFefwRXLCOjiXj0qS4ihE1SSl8indv+FCoCzJS/Kp6JHw==
 
-circuit-json@*, circuit-json@^0.0.253:
+circuit-json@^0.0.253:
   version "0.0.253"
   resolved "https://registry.npmjs.org/circuit-json/-/circuit-json-0.0.253.tgz"
   integrity sha512-ykpzsU6dPIy/as0lzFNQZKD23fqxoX/2Qd+FvNG26TM6hAACZHyFaB039mjeMVn/Lrd5q/JOaINiiKKpbqFy5A==
-
-circuit-json@^0.0.252:
-  version "0.0.252"
-  resolved "https://registry.npmjs.org/circuit-json/-/circuit-json-0.0.252.tgz"
-  integrity sha512-nUJGGPQSdmcAmplzv4UB/sMuZLDm9GYxikWCwItlDuaG/WmFdpQux2ZG0gsnnivui26Cpq/5Y0m5klcesYECjA==
-
-circuit-to-svg@^0.0.189:
-  version "0.0.189"
-  resolved "https://registry.npmjs.org/circuit-to-svg/-/circuit-to-svg-0.0.189.tgz"
-  integrity sha512-DiALd+wEfOqoPPgsUCudRomGLmAh/P+ghmdYqRBEfFWxd1sasOA+CWuTyFlMpWzrBglymhKOCAHZk8tcvtaDag==
-  dependencies:
-    "@types/node" "^22.5.5"
-    bun-types "^1.1.40"
-    svgson "^5.3.1"
-    transformation-matrix "^2.16.1"
 
 circuit-to-svg@^0.0.191:
   version "0.0.191"
@@ -1082,11 +993,6 @@ colors@1.4.0:
   version "1.4.0"
   resolved "https://registry.npmjs.org/colors/-/colors-1.4.0.tgz"
   integrity sha512-a+UqTh4kgZg/SlGvfbzDHpgRu7AAQOmmqRHJnxhRZICKFUT91brVhNNt58CMWU9PsBbv3PDCZUHbVxuDiH2mtA==
-
-comlink@^4.4.2:
-  version "4.4.2"
-  resolved "https://registry.npmjs.org/comlink/-/comlink-4.4.2.tgz"
-  integrity sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g==
 
 commander@^10.0.0:
   version "10.0.1"
@@ -1404,7 +1310,7 @@ entities@^4.2.0:
   resolved "https://registry.npmjs.org/entities/-/entities-4.5.0.tgz"
   integrity sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==
 
-esbuild@^0.25.0, esbuild@>=0.18:
+esbuild@^0.25.0:
   version "0.25.9"
   resolved "https://registry.npmjs.org/esbuild/-/esbuild-0.25.9.tgz"
   integrity sha512-CRbODhYyQx3qp7ZEwzxOk4JBqmD/seJrzPa/cGjY1VtIn5E09Oi9/dB4JwctnfZ8Q8iT7rioVv5k/FNT/uf54g==
@@ -2061,11 +1967,6 @@ js-graph-algorithms@1.0.18:
   resolved "https://registry.npmjs.org/js-graph-algorithms/-/js-graph-algorithms-1.0.18.tgz"
   integrity sha512-Gu1wtWzXBzGeye/j9BuyplGHscwqKRZodp/0M1vyBc19RJpblSwKGu099KwwaTx9cRIV+Qupk8xUMfEiGfFqSA==
 
-jscad-planner@^0.0.13:
-  version "0.0.13"
-  resolved "https://registry.npmjs.org/jscad-planner/-/jscad-planner-0.0.13.tgz"
-  integrity sha512-Lkx7PDT0s90o25dhENrvcYLlgKRvSmhyX7H7LMMq85Hl5ICzirU4MAPxeveKWLlKrdS+4krybVAuKsJ9uvUppg==
-
 jsonfile@^4.0.0:
   version "4.0.0"
   resolved "https://registry.npmjs.org/jsonfile/-/jsonfile-4.0.0.tgz"
@@ -2625,7 +2526,7 @@ picomatch@^2.2.1:
   resolved "https://registry.npmjs.org/picomatch/-/picomatch-2.3.1.tgz"
   integrity sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==
 
-"picomatch@^3 || ^4", picomatch@^4.0.3:
+picomatch@^4.0.3:
   version "4.0.3"
   resolved "https://registry.npmjs.org/picomatch/-/picomatch-4.0.3.tgz"
   integrity sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==
@@ -2777,7 +2678,7 @@ rc@^1.2.7:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
-react-dom@*, react-dom@^19.1.0, react-dom@>=16.8:
+react-dom@^19.1.0:
   version "19.1.1"
   resolved "https://registry.npmjs.org/react-dom/-/react-dom-19.1.1.tgz"
   integrity sha512-Dlq/5LAZgF0Gaz6yiqZCf6VCcZs1ghAJyrsu84Q/GT0gV+mCxbfmKNoGRKBYMJ8IEdGPqu49YWXD02GCknEDkw==
@@ -2811,7 +2712,7 @@ react-supergrid@^1.0.10:
   resolved "https://registry.npmjs.org/react-supergrid/-/react-supergrid-1.0.10.tgz"
   integrity sha512-dJd9wkH6BJkdfkv62EcRAIBn59e2wj58bJFVXiW/ZHQzxz20qIql63fTU2qFMOujXnBIDaMG0uTod67/mjEGeA==
 
-react@*, react@^18.2.0, react@^19.1.0, react@^19.1.1, react@>=16.8:
+react@^19.1.0:
   version "19.1.1"
   resolved "https://registry.npmjs.org/react/-/react-19.1.1.tgz"
   integrity sha512-w8nqGImo45dmMIfljjMwOGtbmC/mk4CMYhWIicdSflH91J9TyCyczcPFXJzrZ/ZXcgGRFeP6BU0BEJTw6tZdfQ==
@@ -2980,7 +2881,7 @@ scheduler@^0.26.0:
   resolved "https://registry.npmjs.org/scheduler/-/scheduler-0.26.0.tgz"
   integrity sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==
 
-schematic-symbols@*, schematic-symbols@^0.0.201:
+schematic-symbols@^0.0.201:
   version "0.0.201"
   resolved "https://registry.npmjs.org/schematic-symbols/-/schematic-symbols-0.0.201.tgz"
   integrity sha512-+VFXZQvPFdkWPTMhIk6C8tEEzisiJmWa7Nszj7ADN70Y0nn+A9/xkzqVAr1yZttUqu2m2buzqSklt7GYuS7OaA==
@@ -3476,7 +3377,7 @@ tr46@^1.0.1:
   dependencies:
     punycode "^2.1.0"
 
-transformation-matrix@*, transformation-matrix@^2.16.1:
+transformation-matrix@^2.16.1:
   version "2.16.1"
   resolved "https://registry.npmjs.org/transformation-matrix/-/transformation-matrix-2.16.1.tgz"
   integrity sha512-tdtC3wxVEuzU7X/ydL131Q3JU5cPMEn37oqVLITjRDSDsnSHVFzW2JiCLfZLIQEgWzZHdSy3J6bZzvKEN24jGA==
@@ -3500,55 +3401,6 @@ ts-interface-checker@^0.1.9:
   version "0.1.13"
   resolved "https://registry.npmjs.org/ts-interface-checker/-/ts-interface-checker-0.1.13.tgz"
   integrity sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==
-
-tscircuit@*:
-  version "0.0.646"
-  resolved "https://registry.npmjs.org/tscircuit/-/tscircuit-0.0.646.tgz"
-  integrity sha512-BV1vTsY/7xP0tXfxXIrCgwIrGdkmBNj8DCB0Aj9SEOmQ5eRGQHyELhYP0AYx4orcV67ZcqBsLSvSi5qBb9vFXA==
-  dependencies:
-    "@babel/standalone" "^7.27.2"
-    "@flatten-js/core" "^1.6.2"
-    "@lume/kiwi" "^0.4.3"
-    "@tscircuit/capacity-autorouter" "^0.0.107"
-    "@tscircuit/checks" "^0.0.75"
-    "@tscircuit/circuit-json-flex" "^0.0.3"
-    "@tscircuit/circuit-json-util" "^0.0.67"
-    "@tscircuit/cli" "^0.1.214"
-    "@tscircuit/core" "^0.0.727"
-    "@tscircuit/eval" "^0.0.322"
-    "@tscircuit/footprinter" "^0.0.236"
-    "@tscircuit/infgrid-ijump-astar" "^0.0.33"
-    "@tscircuit/matchpack" "^0.0.16"
-    "@tscircuit/math-utils" "^0.0.21"
-    "@tscircuit/miniflex" "^0.0.4"
-    "@tscircuit/props" "0.0.321"
-    "@tscircuit/runframe" "^0.0.932"
-    "@tscircuit/schematic-match-adapt" "^0.0.16"
-    "@tscircuit/schematic-trace-solver" "^0.0.37"
-    "@tscircuit/simple-3d-svg" "^0.0.41"
-    bpc-graph "^0.0.57"
-    calculate-elbow "^0.0.12"
-    calculate-packing "0.0.37"
-    circuit-json "^0.0.252"
-    circuit-json-to-bpc "^0.0.13"
-    circuit-json-to-connectivity-map "^0.0.22"
-    circuit-json-to-simple-3d "^0.0.8"
-    circuit-to-svg "^0.0.189"
-    comlink "^4.4.2"
-    connectivity-map "^1.0.0"
-    css-select "5.1.0"
-    debug "^4.3.6"
-    flatbush "^4.5.0"
-    format-si-unit "^0.0.3"
-    graphics-debug "^0.0.60"
-    jscad-planner "^0.0.13"
-    minicssgrid "^0.0.9"
-    performance-now "^2.1.0"
-    react "^19.1.0"
-    react-dom "^19.1.0"
-    schematic-symbols "^0.0.201"
-    transformation-matrix "^2.16.1"
-    zod "^3.25.67"
 
 tslib@^2.1.0:
   version "2.8.1"
@@ -3589,11 +3441,6 @@ type-detect@^4.0.8:
   version "4.1.0"
   resolved "https://registry.npmjs.org/type-detect/-/type-detect-4.1.0.tgz"
   integrity sha512-Acylog8/luQ8L7il+geoSxhEkazvkslg7PSNKOX59mbB9cOveP5aq9h74Y7YU8yDpJwetzQQrfIwtf4Wp4LKcw==
-
-typescript@^5, typescript@^5.0.0, typescript@^5.5.3, typescript@^5.5.4, typescript@^5.7.3, typescript@>=4.5.0:
-  version "5.9.2"
-  resolved "https://registry.npmjs.org/typescript/-/typescript-5.9.2.tgz"
-  integrity sha512-CWBzXQrc/qOkhidw1OzBTQuYRbfyxDXJMVJ1XNwUHGROVmuaeiEm3OslpZ1RV96d7SKKjZKrSJu3+t/xlw3R9A==
 
 ufo@^1.6.1:
   version "1.6.1"
@@ -3865,7 +3712,7 @@ zod-package-json@^1.0.3:
   dependencies:
     zod "^3.25.64"
 
-zod@*, zod@^3.23.8, zod@^3.25.64, zod@^3.25.67, zod@3:
+zod@^3.23.8, zod@^3.25.64, zod@^3.25.67:
   version "3.25.76"
   resolved "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz"
   integrity sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==
