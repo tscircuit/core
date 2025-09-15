@@ -1,7 +1,7 @@
-import type { CommonLayoutProps } from "@tscircuit/props"
+import type { CommonLayoutProps } from "@tscircuit/props";
 
 interface Props extends CommonLayoutProps {
-  name: string
+  name: string;
 }
 
 const TYPE_C_31_M_12 = (props: Props) => {
@@ -218,23 +218,23 @@ const TYPE_C_31_M_12 = (props: Props) => {
         </footprint>
       }
     />
-  )
-}
+  );
+};
 
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("repro3 usb-port-footprint", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="12mm" height="10mm">
       <TYPE_C_31_M_12 name="U1" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
-import { sel } from "lib/sel"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { sel } from "lib/sel";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("sel supports MOSFET pin names (gate, source, drain)", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board>
@@ -17,12 +17,12 @@ test("sel supports MOSFET pin names (gate, source, drain)", () => {
       <trace from={sel.Q1.source} to={sel.net.V3_3} />
       <trace from={sel.Q1.drain} to={sel.net.V3_3} />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([])
+  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([]);
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

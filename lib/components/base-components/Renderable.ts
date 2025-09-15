@@ -2,10 +2,10 @@ import type {
   PcbManualEditConflictWarning,
   PcbPlacementError,
   PcbTraceError,
-} from "circuit-json"
-import Debug from "debug"
+} from "circuit-json";
+import Debug from "debug";
 
-const debug = Debug("tscircuit:renderable")
+const debug = Debug("tscircuit:renderable");
 
 export const orderedRenderPhases = [
   "ReactSubtreesRender",
@@ -51,9 +51,9 @@ export const orderedRenderPhases = [
   "SilkscreenOverlapAdjustment",
   "CadModelRender",
   "PartsEngineRender",
-] as const
+] as const;
 
-export type RenderPhase = (typeof orderedRenderPhases)[number]
+export type RenderPhase = (typeof orderedRenderPhases)[number];
 
 // Declare async dependencies between phases where later phases should wait for
 // async effects originating in specific earlier phases to complete within the
@@ -77,81 +77,81 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   CadModelRender: ["PcbFootprintStringRender"],
   PartsEngineRender: ["PcbFootprintStringRender"],
   PcbComponentAnchorAlignment: ["PcbFootprintStringRender"],
-}
+};
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
   | `doInitial${K}`
   | `update${K}`
-  | `remove${K}`
+  | `remove${K}`;
 
 export type RenderPhaseStates = Record<
   RenderPhase,
   {
-    initialized: boolean
-    dirty: boolean
+    initialized: boolean;
+    dirty: boolean;
   }
->
+>;
 
 export type AsyncEffect = {
-  effectName: string
-  promise: Promise<void>
-  phase: RenderPhase
-  complete: boolean
-}
+  effectName: string;
+  promise: Promise<void>;
+  phase: RenderPhase;
+  complete: boolean;
+};
 
 export type RenderPhaseFunctions = {
-  [T in RenderPhaseFn]?: () => void
-}
+  [T in RenderPhaseFn]?: () => void;
+};
 
 export type IRenderable = RenderPhaseFunctions & {
-  renderPhaseStates: RenderPhaseStates
-  runRenderPhase(phase: RenderPhase): void
-  runRenderPhaseForChildren(phase: RenderPhase): void
-  shouldBeRemoved: boolean
-  children: IRenderable[]
-  runRenderCycle(): void
-}
+  renderPhaseStates: RenderPhaseStates;
+  runRenderPhase(phase: RenderPhase): void;
+  runRenderPhaseForChildren(phase: RenderPhase): void;
+  shouldBeRemoved: boolean;
+  children: IRenderable[];
+  runRenderCycle(): void;
+};
 
-let globalRenderCounter = 0
+let globalRenderCounter = 0;
 export abstract class Renderable implements IRenderable {
-  renderPhaseStates: RenderPhaseStates
-  shouldBeRemoved = false
-  children: IRenderable[]
+  renderPhaseStates: RenderPhaseStates;
+  shouldBeRemoved = false;
+  children: IRenderable[];
 
   /** PCB-only SMTPads, PlatedHoles, Holes, Silkscreen elements etc. */
-  isPcbPrimitive = false
+  isPcbPrimitive = false;
   /** Schematic-only, lines, boxes, indicators etc. */
-  isSchematicPrimitive = false
+  isSchematicPrimitive = false;
 
-  _renderId: string
-  _currentRenderPhase: RenderPhase | null = null
+  _renderId: string;
+  _currentRenderPhase: RenderPhase | null = null;
 
-  private _asyncEffects: AsyncEffect[] = []
+  private _asyncEffects: AsyncEffect[] = [];
 
-  parent: Renderable | null = null
+  parent: Renderable | null = null;
 
   constructor(props: any) {
-    this._renderId = `${globalRenderCounter++}`
-    this.children = []
-    this.renderPhaseStates = {} as RenderPhaseStates
+    this._renderId = `${globalRenderCounter++}`;
+    this.children = [];
+    this.renderPhaseStates = {} as RenderPhaseStates;
     for (const phase of orderedRenderPhases) {
       this.renderPhaseStates[phase] = {
         initialized: false,
         dirty: false,
-      }
+      };
     }
   }
 
   _markDirty(phase: RenderPhase) {
-    this.renderPhaseStates[phase].dirty = true
+    this.renderPhaseStates[phase].dirty = true;
     // Mark all subsequent phases as dirty
-    const phaseIndex = orderedRenderPhases.indexOf(phase)
+    const phaseIndex = orderedRenderPhases.indexOf(phase);
     for (let i = phaseIndex + 1; i < orderedRenderPhases.length; i++) {
-      this.renderPhaseStates[orderedRenderPhases[i]].dirty = true
+      this.renderPhaseStates[orderedRenderPhases[i]].dirty = true;
     }
 
     if (this.parent?._markDirty) {
-      this.parent._markDirty(phase)
+      this.parent._markDirty(phase);
     }
   }
 
@@ -161,73 +161,73 @@ export abstract class Renderable implements IRenderable {
       phase: this._currentRenderPhase!,
       effectName,
       complete: false,
-    }
-    this._asyncEffects.push(asyncEffect)
+    };
+    this._asyncEffects.push(asyncEffect);
 
     if ("root" in this && this.root) {
-      ;(this.root as any).emit("asyncEffect:start", {
+      (this.root as any).emit("asyncEffect:start", {
         effectName,
         componentDisplayName: this.getString(),
         phase: asyncEffect.phase,
-      })
+      });
     }
 
     // Set up completion handler
     asyncEffect.promise
       .then(() => {
-        asyncEffect.complete = true
+        asyncEffect.complete = true;
         // HACK: emit to the root circuit component that an async effect has completed
         if ("root" in this && this.root) {
-          ;(this.root as any).emit("asyncEffect:end", {
+          (this.root as any).emit("asyncEffect:end", {
             effectName,
             componentDisplayName: this.getString(),
             phase: asyncEffect.phase,
-          })
+          });
         }
       })
       .catch((error) => {
         console.error(
           `Async effect error in ${asyncEffect.phase} "${effectName}":\n${error.stack}`,
-        )
-        asyncEffect.complete = true
+        );
+        asyncEffect.complete = true;
 
         // HACK: emit to the root circuit component that an async effect has completed
         if ("root" in this && this.root) {
-          ;(this.root as any).emit("asyncEffect:end", {
+          (this.root as any).emit("asyncEffect:end", {
             effectName,
             componentDisplayName: this.getString(),
             phase: asyncEffect.phase,
             error: error.toString(),
-          })
+          });
         }
-      })
+      });
   }
 
   protected _emitRenderLifecycleEvent(
     phase: RenderPhase,
     startOrEnd: "start" | "end",
   ) {
-    debug(`${phase}:${startOrEnd} ${this.getString()}`)
-    const granular_event_type = `renderable:renderLifecycle:${phase}:${startOrEnd}`
+    debug(`${phase}:${startOrEnd} ${this.getString()}`);
+    const granular_event_type = `renderable:renderLifecycle:${phase}:${startOrEnd}`;
     const eventPayload = {
       renderId: this._renderId,
       componentDisplayName: this.getString(),
       type: granular_event_type,
-    }
+    };
     if ("root" in this && this.root) {
-      ;(this.root as any).emit(granular_event_type, eventPayload)
-      ;(this.root as any).emit("renderable:renderLifecycle:anyEvent", {
+      (this.root as any).emit(granular_event_type, eventPayload);
+      (this.root as any).emit("renderable:renderLifecycle:anyEvent", {
         ...eventPayload,
         type: granular_event_type,
-      })
+      });
     }
   }
   getString() {
-    return this.constructor.name
+    return this.constructor.name;
   }
 
   _hasIncompleteAsyncEffects(): boolean {
-    return this._asyncEffects.some((effect) => !effect.complete)
+    return this._asyncEffects.some((effect) => !effect.complete);
   }
 
   private _hasIncompleteAsyncEffectsInSubtreeForPhase(
@@ -235,19 +235,19 @@ export abstract class Renderable implements IRenderable {
   ): boolean {
     // Check self
     for (const e of this._asyncEffects) {
-      if (!e.complete && e.phase === phase) return true
+      if (!e.complete && e.phase === phase) return true;
     }
     // Check children
     for (const child of this.children) {
-      const renderableChild = child as Renderable
+      const renderableChild = child as Renderable;
       if (renderableChild._hasIncompleteAsyncEffectsInSubtreeForPhase(phase))
-        return true
+        return true;
     }
-    return false
+    return false;
   }
 
   getCurrentRenderPhase(): RenderPhase | null {
-    return this._currentRenderPhase
+    return this._currentRenderPhase;
   }
 
   getRenderGraph(): Record<string, any> {
@@ -259,13 +259,13 @@ export abstract class Renderable implements IRenderable {
       children: this.children.map((child) =>
         (child as Renderable).getRenderGraph(),
       ),
-    }
+    };
   }
 
   runRenderCycle() {
     for (const renderPhase of orderedRenderPhases) {
-      this.runRenderPhaseForChildren(renderPhase)
-      this.runRenderPhase(renderPhase)
+      this.runRenderPhaseForChildren(renderPhase);
+      this.runRenderPhase(renderPhase);
     }
   }
 
@@ -277,61 +277,61 @@ export abstract class Renderable implements IRenderable {
    *  ...depending on the current state of the component.
    */
   runRenderPhase(phase: RenderPhase) {
-    this._currentRenderPhase = phase
-    const phaseState = this.renderPhaseStates[phase]
-    const isInitialized = phaseState.initialized
-    const isDirty = phaseState.dirty
+    this._currentRenderPhase = phase;
+    const phaseState = this.renderPhaseStates[phase];
+    const isInitialized = phaseState.initialized;
+    const isDirty = phaseState.dirty;
 
     // Skip if component is being removed and not initialized
-    if (!isInitialized && this.shouldBeRemoved) return
+    if (!isInitialized && this.shouldBeRemoved) return;
 
     if (this.shouldBeRemoved && isInitialized) {
-      this._emitRenderLifecycleEvent(phase, "start")
-      ;(this as any)?.[`remove${phase}`]?.()
-      phaseState.initialized = false
-      phaseState.dirty = false
-      this._emitRenderLifecycleEvent(phase, "end")
-      return
+      this._emitRenderLifecycleEvent(phase, "start");
+      (this as any)?.[`remove${phase}`]?.();
+      phaseState.initialized = false;
+      phaseState.dirty = false;
+      this._emitRenderLifecycleEvent(phase, "end");
+      return;
     }
 
     // Check for incomplete async effects from previous phases
-    const prevPhaseIndex = orderedRenderPhases.indexOf(phase) - 1
+    const prevPhaseIndex = orderedRenderPhases.indexOf(phase) - 1;
     if (prevPhaseIndex >= 0) {
-      const prevPhase = orderedRenderPhases[prevPhaseIndex]
+      const prevPhase = orderedRenderPhases[prevPhaseIndex];
       const hasIncompleteEffects = this._asyncEffects
         .filter((e) => e.phase === prevPhase)
-        .some((e) => !e.complete)
-      if (hasIncompleteEffects) return
+        .some((e) => !e.complete);
+      if (hasIncompleteEffects) return;
     }
 
     // Check declared async dependencies for this phase within subtree
-    const deps = asyncPhaseDependencies[phase] || []
+    const deps = asyncPhaseDependencies[phase] || [];
     for (const depPhase of deps) {
-      if (this._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) return
+      if (this._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) return;
     }
 
-    this._emitRenderLifecycleEvent(phase, "start")
+    this._emitRenderLifecycleEvent(phase, "start");
 
     // Handle updates
     if (isInitialized) {
       if (isDirty) {
-        ;(this as any)?.[`update${phase}`]?.()
-        phaseState.dirty = false
+        (this as any)?.[`update${phase}`]?.();
+        phaseState.dirty = false;
       }
-      this._emitRenderLifecycleEvent(phase, "end")
-      return
+      this._emitRenderLifecycleEvent(phase, "end");
+      return;
     }
     // Initial render
-    phaseState.dirty = false
-    ;(this as any)?.[`doInitial${phase}`]?.()
-    phaseState.initialized = true
-    this._emitRenderLifecycleEvent(phase, "end")
+    phaseState.dirty = false;
+    (this as any)?.[`doInitial${phase}`]?.();
+    phaseState.initialized = true;
+    this._emitRenderLifecycleEvent(phase, "end");
   }
 
   runRenderPhaseForChildren(phase: RenderPhase): void {
     for (const child of this.children) {
-      child.runRenderPhaseForChildren(phase)
-      child.runRenderPhase(phase)
+      child.runRenderPhaseForChildren(phase);
+      child.runRenderPhase(phase);
     }
   }
 
@@ -345,8 +345,8 @@ export abstract class Renderable implements IRenderable {
     // TODO add to render phase error list and try to add position or
     // relationships etc
     if (typeof message === "string") {
-      throw new Error(message)
+      throw new Error(message);
     }
-    throw new Error(JSON.stringify(message, null, 2))
+    throw new Error(JSON.stringify(message, null, 2));
   }
 }

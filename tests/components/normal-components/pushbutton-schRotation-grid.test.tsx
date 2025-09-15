@@ -1,10 +1,10 @@
-import { test, expect } from "bun:test"
-import { grid } from "@tscircuit/math-utils"
-import { Fragment } from "react"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { grid } from "@tscircuit/math-utils";
+import { Fragment } from "react";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("pushbutton schematic rotations in grid", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="20mm" height="20mm" routingDisabled>
@@ -29,9 +29,9 @@ test("pushbutton schematic rotations in grid", async () => {
         ),
       )}
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("four 0402 resistors with crossing traces", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -20,9 +20,9 @@ test("four 0402 resistors with crossing traces", async () => {
       <trace from=".R1 pin.1" to=".R2 pin.2" />
       <trace from=".R3 pin.1" to=".R4 pin.2" />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

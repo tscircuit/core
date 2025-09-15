@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("example12-schematic-manual-edits", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
   circuit.add(
     <board
       width="12mm"
@@ -20,9 +20,9 @@ test("example12-schematic-manual-edits", async () => {
       <chip name="U1" footprint="soic8" />
       <trace from=".U1 > .pin1" to="net.GND" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
   expect({
     component_center: circuit.db.schematic_component
@@ -46,7 +46,7 @@ test("example12-schematic-manual-edits", async () => {
     },
   ],
 }
-`)
+`);
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

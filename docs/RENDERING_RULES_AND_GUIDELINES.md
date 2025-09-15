@@ -10,7 +10,6 @@ If your method mutates the database in some way, make sure it's named appropriat
 `compute*` or `get*` should never mutate the `db` because the prefix `compute*` and `get*` implies they
 are immutable.
 
-
 ## 2. Understand beforeLayout transforms
 
 Before a circuit is laid out, positions of components are calculated using `computeSchematicGlobalTransform` (or

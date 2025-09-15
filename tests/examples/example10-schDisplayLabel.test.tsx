@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 
 test("Should not render any schematic components", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width={20} height={20} autorouter="sequential-trace">
@@ -54,9 +54,9 @@ test("Should not render any schematic components", async () => {
         to={".C2 > .pin1"}
       />
     </board>,
-  )
+  );
 
-  circuit.render()
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  circuit.render();
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

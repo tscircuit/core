@@ -1,6 +1,6 @@
-import type { AnyCircuitElement } from "circuit-json"
-import { su } from "@tscircuit/circuit-json-util"
-import type { EditTraceHintEvent } from "@tscircuit/props"
+import type { AnyCircuitElement } from "circuit-json";
+import { su } from "@tscircuit/circuit-json-util";
+import type { EditTraceHintEvent } from "@tscircuit/props";
 
 export const applyTraceHintEditEvent = (
   circuitJson: AnyCircuitElement[],
@@ -8,7 +8,7 @@ export const applyTraceHintEditEvent = (
 ): AnyCircuitElement[] => {
   const existingTraceHint = su(circuitJson).pcb_trace_hint.get(
     edit_event.pcb_trace_hint_id!,
-  )
+  );
 
   if (existingTraceHint) {
     // biome-ignore lint: Parameter reassignment
@@ -19,9 +19,9 @@ export const applyTraceHintEditEvent = (
             route: edit_event.route,
           }
         : e,
-    )
+    );
   } else {
-    const pcbPort = su(circuitJson).pcb_port.get(edit_event.pcb_port_id!)
+    const pcbPort = su(circuitJson).pcb_port.get(edit_event.pcb_port_id!);
     // biome-ignore lint: Parameter reassignment
     circuitJson = circuitJson
       .filter(
@@ -39,8 +39,8 @@ export const applyTraceHintEditEvent = (
           pcb_port_id: edit_event.pcb_port_id!,
           pcb_component_id: pcbPort?.pcb_component_id!,
         },
-      ])
+      ]);
   }
 
-  return circuitJson
-}
+  return circuitJson;
+};

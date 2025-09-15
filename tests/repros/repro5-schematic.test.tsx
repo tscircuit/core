@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 
 test("Schematic trace overlaps manufacturer label", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width={10} height={10} schMaxTraceDistance={5}>
@@ -62,9 +62,9 @@ test("Schematic trace overlaps manufacturer label", async () => {
       />
       <trace path={[".LED1 > port.right", ".U1 > .pin20"]} />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

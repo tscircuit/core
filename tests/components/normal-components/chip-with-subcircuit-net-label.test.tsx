@@ -1,9 +1,9 @@
-import { it, expect } from "bun:test"
-import "lib/register-catalogue"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { it, expect } from "bun:test";
+import "lib/register-catalogue";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 it("subcircuit having a net label GND makes the circuit fail to use GND in other part of circuit", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -21,17 +21,17 @@ it("subcircuit having a net label GND makes the circuit fail to use GND in other
       />
       <trace from=".U1 > .8" to="net.GND" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
   expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(
     import.meta.dir + "-one-chip",
-  )
-})
+  );
+});
 
 it("should keep local nets isolated between adjacent subcircuits", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board
@@ -73,11 +73,11 @@ it("should keep local nets isolated between adjacent subcircuits", async () => {
       <trace from=".SubA > .U_A > .8" to="net.GND" />
       <trace from=".SubB > .U_B > .8" to="net.GND" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
   expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(
     import.meta.dir + "-two-chips",
-  )
-})
+  );
+});

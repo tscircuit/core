@@ -1,9 +1,9 @@
-import { it, expect } from "bun:test"
-import "lib/register-catalogue"
-import { Circuit, createElement } from "../index"
+import { it, expect } from "bun:test";
+import "lib/register-catalogue";
+import { Circuit, createElement } from "../index";
 
 it("should allow usage of createElement without explicit React import", () => {
-  const circuit = new Circuit()
+  const circuit = new Circuit();
   const groupElm = createElement(
     "group",
     {},
@@ -13,12 +13,12 @@ it("should allow usage of createElement without explicit React import", () => {
       resistance: "10k",
       footprint: "0402",
     }),
-  )
+  );
 
-  circuit.add(groupElm)
-  circuit.render()
+  circuit.add(groupElm);
+  circuit.render();
 
   // Check that the circuit has the LED and resistor
-  expect(circuit.db.source_component.select(".LED2")?.name).toBe("LED2")
-  expect(circuit.db.source_component.select(".R1")?.name).toBe("R1")
-})
+  expect(circuit.db.source_component.select(".LED2")?.name).toBe("LED2");
+  expect(circuit.db.source_component.select(".R1")?.name).toBe("R1");
+});

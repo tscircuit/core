@@ -1,5 +1,5 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 
 // Inline minimal Connector and STC31_C_R3 from micromod-board (no commented code)
 const Connector = (props: any) => (
@@ -95,7 +95,7 @@ const Connector = (props: any) => (
     }}
     {...props}
   />
-)
+);
 
 const STC31_C_R3 = (props: any) => (
   <chip
@@ -265,10 +265,10 @@ const STC31_C_R3 = (props: any) => (
     }}
     {...props}
   />
-)
+);
 
 test("CO2 pcbPack should not rotate or move FunctionConnector group", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board routingDisabled width="2550mil" height="1500mil">
@@ -393,20 +393,20 @@ test("CO2 pcbPack should not rotate or move FunctionConnector group", async () =
         </group>
       </group>
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
   const sourceGroup = circuit.db.source_group
     .list()
-    .find((g) => g.name === "FunctionConnector")!
+    .find((g) => g.name === "FunctionConnector")!;
   const pcbGroup = circuit.db.pcb_group
     .list()
-    .find((g) => g.source_group_id === sourceGroup.source_group_id)!
+    .find((g) => g.source_group_id === sourceGroup.source_group_id)!;
 
   // If bug occurs, these will fail due to move/flip
-  expect(pcbGroup.center.x).toBeCloseTo(-33, 2)
-  expect(pcbGroup.center.y).toBeCloseTo(2, 2)
+  expect(pcbGroup.center.x).toBeCloseTo(-33, 2);
+  expect(pcbGroup.center.y).toBeCloseTo(2, 2);
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

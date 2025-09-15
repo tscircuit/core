@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("group-flex1 space-between", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <group
@@ -16,9 +16,9 @@ test("group-flex1 space-between", () => {
       <resistor name="R1" resistance="1k" footprint="0402" />
       <resistor name="R2" resistance="1k" footprint="0402" />
     </group>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

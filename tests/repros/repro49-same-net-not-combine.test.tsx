@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 
 test("Connector with resistor and solder jumper circuit layout same net not combine", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="25mm" height="20mm">
@@ -40,11 +40,11 @@ test("Connector with resistor and solder jumper circuit layout same net not comb
       <trace from=".R1 > .pin2" to=".R1 > .pin1" />
       <trace from=".JP6 > .pin1" to=".JP6 > .pin2" />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
-  const circuitJson = circuit.getCircuitJson()
-  const errors = circuitJson.filter((e) => e.type.includes("error"))
-  expect(errors.length).toBe(0)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  await circuit.renderUntilSettled();
+  const circuitJson = circuit.getCircuitJson();
+  const errors = circuitJson.filter((e) => e.type.includes("error"));
+  expect(errors.length).toBe(0);
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

@@ -1,4 +1,4 @@
-import { fp } from "@tscircuit/footprinter"
+import { fp } from "@tscircuit/footprinter";
 import type {
   CadModelJscad,
   CadModelObj,
@@ -10,69 +10,69 @@ import type {
   CadModelGlb,
   CadModelStep,
   CadModelWrl,
-} from "@tscircuit/props"
+} from "@tscircuit/props";
 import {
   pcb_manual_edit_conflict_warning,
   point3,
   rotation,
   schematic_manual_edit_conflict_warning,
-} from "circuit-json"
-import Debug from "debug"
+} from "circuit-json";
+import Debug from "debug";
 import {
   type ReactSubtree,
   createInstanceFromReactElement,
-} from "lib/fiber/create-instance-from-react-element"
-import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
-import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
-import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
-import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
-import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+} from "lib/fiber/create-instance-from-react-element";
+import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles";
+import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement";
+import { createNetsFromProps } from "lib/utils/components/createNetsFromProps";
+import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson";
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components";
 import {
   getPinNumberFromLabels,
   getPortFromHints,
-} from "lib/utils/getPortFromHints"
+} from "lib/utils/getPortFromHints";
 import {
   type SchematicBoxDimensions,
   getAllDimensionsForSchematicBox,
   isExplicitPinMappingArrangement,
-} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox";
 import {
   type ReactElement,
   isValidElement as isReactElement,
   isValidElement,
-} from "react"
-import { type SchSymbol, symbols } from "schematic-symbols"
-import { ZodType, z } from "zod"
-import { Footprint } from "../../primitive-components/Footprint"
-import { Port } from "../../primitive-components/Port"
-import { CadModel } from "../../primitive-components/CadModel"
-import { CadAssembly } from "../../primitive-components/CadAssembly"
-import { PrimitiveComponent } from "../PrimitiveComponent"
-import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
-import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
-import type { INormalComponent } from "./INormalComponent"
-import { Trace } from "lib/components/primitive-components/Trace/Trace"
-import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
-import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
-import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
-import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
-import { filterPinLabels } from "lib/utils/filterPinLabels"
-import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
-import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
-import { isFootprintUrl } from "./utils/isFoorprintUrl"
-import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
+} from "react";
+import { type SchSymbol, symbols } from "schematic-symbols";
+import { ZodType, z } from "zod";
+import { Footprint } from "../../primitive-components/Footprint";
+import { Port } from "../../primitive-components/Port";
+import { CadModel } from "../../primitive-components/CadModel";
+import { CadAssembly } from "../../primitive-components/CadAssembly";
+import { PrimitiveComponent } from "../PrimitiveComponent";
+import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow";
+import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle";
+import type { INormalComponent } from "./INormalComponent";
+import { Trace } from "lib/components/primitive-components/Trace/Trace";
+import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize";
+import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb";
+import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks";
+import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment";
+import { filterPinLabels } from "lib/utils/filterPinLabels";
+import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender";
+import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment";
+import { isFootprintUrl } from "./utils/isFoorprintUrl";
+import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef";
 
-const debug = Debug("tscircuit:core")
+const debug = Debug("tscircuit:core");
 
 const rotation3 = z.object({
   x: rotation,
   y: rotation,
   z: rotation,
-})
+});
 
 export type PortMap<T extends string> = {
-  [K in T]: Port
-}
+  [K in T]: Port;
+};
 
 /**
  * A NormalComponent is the base class for most components that a user will
@@ -99,80 +99,80 @@ export class NormalComponent<
   extends PrimitiveComponent<ZodProps>
   implements INormalComponent
 {
-  reactSubtrees: Array<ReactSubtree> = []
-  _impliedFootprint?: string | undefined
+  reactSubtrees: Array<ReactSubtree> = [];
+  _impliedFootprint?: string | undefined;
 
-  isPrimitiveContainer = true
-  _isNormalComponent = true
+  isPrimitiveContainer = true;
+  _isNormalComponent = true;
 
   // Mapping from camelCase attribute names to their lowercase equivalents
   // This is used by the CSS selector adapter for fast attribute lookups
   // Reverse mapping from lowercase to camelCase for O(1) lookups
   _attributeLowerToCamelNameMap = {
     _isnormalcomponent: "_isNormalComponent",
-  }
+  };
 
-  _asyncSupplierPartNumbers?: SupplierPartNumbers
-  _asyncFootprintCadModel?: CadModelProp
-  _isCadModelChild?: boolean
-  pcb_missing_footprint_error_id?: string
-  _hasStartedFootprintUrlLoad = false
+  _asyncSupplierPartNumbers?: SupplierPartNumbers;
+  _asyncFootprintCadModel?: CadModelProp;
+  _isCadModelChild?: boolean;
+  pcb_missing_footprint_error_id?: string;
+  _hasStartedFootprintUrlLoad = false;
 
-  private _invalidPinLabelMessages: string[] = []
+  private _invalidPinLabelMessages: string[] = [];
 
   /**
    * Set to true to enable automatic silkscreen text adjustment when it overlaps with other components
    */
-  _adjustSilkscreenTextAutomatically = false
+  _adjustSilkscreenTextAutomatically = false;
 
   /**
    * Override this property for component defaults
    */
   get defaultInternallyConnectedPinNames(): string[][] {
-    return []
+    return [];
   }
 
   get internallyConnectedPinNames(): string[][] {
     const rawPins =
       this._parsedProps.internallyConnectedPins ??
-      this.defaultInternallyConnectedPinNames
+      this.defaultInternallyConnectedPinNames;
     return rawPins.map((pinGroup: (string | number)[]) =>
       pinGroup.map((pin: string | number) =>
         typeof pin === "number" ? `pin${pin}` : pin,
       ),
-    )
+    );
   }
 
   constructor(props: z.input<ZodProps>) {
-    const filteredProps = { ...props }
-    let invalidPinLabelsMessages: string[] = []
+    const filteredProps = { ...props };
+    let invalidPinLabelsMessages: string[] = [];
 
     // Apply invalid pin label filtering for object-based pinLabels only
     // Array-based pinLabels (used by PinHeader) are left unfiltered
     if (filteredProps.pinLabels && !Array.isArray(filteredProps.pinLabels)) {
       const { validPinLabels, invalidPinLabelsMessages: messages } =
-        filterPinLabels(filteredProps.pinLabels)
-      filteredProps.pinLabels = validPinLabels
-      invalidPinLabelsMessages = messages
+        filterPinLabels(filteredProps.pinLabels);
+      filteredProps.pinLabels = validPinLabels;
+      invalidPinLabelsMessages = messages;
     }
 
-    super(filteredProps)
+    super(filteredProps);
 
-    this._invalidPinLabelMessages = invalidPinLabelsMessages
-    this._addChildrenFromStringFootprint()
-    this.initPorts()
+    this._invalidPinLabelMessages = invalidPinLabelsMessages;
+    this._addChildrenFromStringFootprint();
+    this.initPorts();
   }
 
   doInitialSourceNameDuplicateComponentRemoval(): void {
     // Early return if component has no explicit name (auto-assigned names don't conflict)
-    if (!this.name) return
+    if (!this.name) return;
 
-    const root = this.root!
+    const root = this.root!;
 
     // Use selector to find all components with the same name in this subcircuit
     const componentsWithSameName = this.getSubcircuit().selectAll(
       `.${this.name}`,
-    )
+    );
 
     // Check if any of these components have already been processed (initialized this phase)
     const conflictingComponents = componentsWithSameName.filter(
@@ -181,12 +181,12 @@ export class NormalComponent<
         component._isNormalComponent &&
         component.renderPhaseStates?.SourceNameDuplicateComponentRemoval
           ?.initialized,
-    )
+    );
 
     if (conflictingComponents.length > 0) {
       // Create naming conflict error
-      const pcbPosition = this._getGlobalPcbPositionBeforeLayout()
-      const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
+      const pcbPosition = this._getGlobalPcbPositionBeforeLayout();
+      const schematicPosition = this._getGlobalSchematicPositionBeforeLayout();
 
       root.db.source_failed_to_create_component_error.insert({
         component_name: this.name,
@@ -194,14 +194,14 @@ export class NormalComponent<
         message: `Cannot create component "${this.name}": A component with the same name already exists`,
         pcb_center: pcbPosition,
         schematic_center: schematicPosition,
-      })
+      });
 
       // Mark component for removal to prevent downstream issues
-      this.shouldBeRemoved = true
+      this.shouldBeRemoved = true;
       // Remove all children to prevent them from trying to attach to a non-existent parent
-      const childrenToRemove = [...this.children]
+      const childrenToRemove = [...this.children];
       for (const child of childrenToRemove) {
-        this.remove(child)
+        this.remove(child);
       }
     }
   }
@@ -222,26 +222,26 @@ export class NormalComponent<
    */
   initPorts(
     opts: {
-      additionalAliases?: Record<`pin${number}`, string[]>
-      pinCount?: number
-      ignoreSymbolPorts?: boolean
+      additionalAliases?: Record<`pin${number}`, string[]>;
+      pinCount?: number;
+      ignoreSymbolPorts?: boolean;
     } = {},
   ) {
-    if (this.root?.schematicDisabled) return
-    const { config } = this
-    const portsToCreate: Port[] = []
+    if (this.root?.schematicDisabled) return;
+    const { config } = this;
+    const portsToCreate: Port[] = [];
 
     // Handle schPortArrangement
-    const schPortArrangement = this._getSchematicPortArrangement()
+    const schPortArrangement = this._getSchematicPortArrangement();
     if (schPortArrangement && !this._parsedProps.pinLabels) {
       for (const side in schPortArrangement) {
-        const pins = (schPortArrangement as any)[side].pins
+        const pins = (schPortArrangement as any)[side].pins;
         if (Array.isArray(pins)) {
           for (const pinNumberOrLabel of pins) {
             const pinNumber = parsePinNumberFromLabelsOrThrow(
               pinNumberOrLabel,
               this._parsedProps.pinLabels,
-            )
+            );
 
             portsToCreate.push(
               new Port(
@@ -253,16 +253,16 @@ export class NormalComponent<
                   originDescription: `schPortArrangement:${side}`,
                 },
               ),
-            )
+            );
           }
         }
       }
       // Takes care of the case where the user only specifies the size of the
       // sides, and not the pins
-      const sides = ["left", "right", "top", "bottom"]
-      let pinNum = 1
+      const sides = ["left", "right", "top", "bottom"];
+      let pinNum = 1;
       for (const side of sides) {
-        const size = (schPortArrangement as any)[`${side}Size`]
+        const size = (schPortArrangement as any)[`${side}Size`];
         for (let i = 0; i < size; i++) {
           portsToCreate.push(
             new Port(
@@ -274,21 +274,21 @@ export class NormalComponent<
                 originDescription: `schPortArrangement:${side}`,
               },
             ),
-          )
+          );
         }
       }
     }
 
     const pinLabels: Record<string, string | string[]> | undefined =
-      this._parsedProps.pinLabels
+      this._parsedProps.pinLabels;
     if (pinLabels) {
       for (let [pinNumber, label] of Object.entries(pinLabels)) {
-        pinNumber = pinNumber.replace("pin", "")
+        pinNumber = pinNumber.replace("pin", "");
         let existingPort = portsToCreate.find(
           (p) => p._parsedProps.pinNumber === Number(pinNumber),
-        )
-        const primaryLabel = Array.isArray(label) ? label[0] : label
-        const otherLabels = Array.isArray(label) ? label.slice(1) : []
+        );
+        const primaryLabel = Array.isArray(label) ? label[0] : label;
+        const otherLabels = Array.isArray(label) ? label.slice(1) : [];
 
         if (!existingPort) {
           existingPort = new Port(
@@ -304,56 +304,59 @@ export class NormalComponent<
             {
               originDescription: `pinLabels:pin${pinNumber}`,
             },
-          )
-          portsToCreate.push(existingPort)
+          );
+          portsToCreate.push(existingPort);
         } else {
-          existingPort.externallyAddedAliases.push(primaryLabel, ...otherLabels)
-          existingPort.props.name = primaryLabel
+          existingPort.externallyAddedAliases.push(
+            primaryLabel,
+            ...otherLabels,
+          );
+          existingPort.props.name = primaryLabel;
         }
       }
     }
 
     if (config.schematicSymbolName && !opts.ignoreSymbolPorts) {
-      const sym = symbols[this._getSchematicSymbolNameOrThrow()]
-      if (!sym) return
+      const sym = symbols[this._getSchematicSymbolNameOrThrow()];
+      if (!sym) return;
 
       for (const symPort of sym.ports) {
-        const pinNumber = getPinNumberFromLabels(symPort.labels)
-        if (!pinNumber) continue
+        const pinNumber = getPinNumberFromLabels(symPort.labels);
+        if (!pinNumber) continue;
 
         const existingPort = portsToCreate.find(
           (p) => p._parsedProps.pinNumber === Number(pinNumber),
-        )
+        );
 
         if (existingPort) {
-          existingPort.schematicSymbolPortDef = symPort
+          existingPort.schematicSymbolPortDef = symPort;
         } else {
           const port = getPortFromHints(
             symPort.labels.concat(
               opts.additionalAliases?.[`pin${pinNumber}`] ?? [],
             ),
-          )
+          );
 
           if (port) {
-            port.originDescription = `schematicSymbol:labels[0]:${symPort.labels[0]}`
-            port.schematicSymbolPortDef = symPort
-            portsToCreate.push(port)
+            port.originDescription = `schematicSymbol:labels[0]:${symPort.labels[0]}`;
+            port.schematicSymbolPortDef = symPort;
+            portsToCreate.push(port);
           }
         }
       }
 
-      this.addAll(portsToCreate)
+      this.addAll(portsToCreate);
     }
 
     if (!this._getSchematicPortArrangement()) {
-      const portsFromFootprint = this.getPortsFromFootprint(opts)
+      const portsFromFootprint = this.getPortsFromFootprint(opts);
       for (const port of portsFromFootprint) {
         if (
           !portsToCreate.some((p) =>
             p.isMatchingAnyOf(port.getNameAndAliases()),
           )
         ) {
-          portsToCreate.push(port)
+          portsToCreate.push(port);
         }
       }
     }
@@ -361,17 +364,17 @@ export class NormalComponent<
     // Add ports that we know must exist because we know the pin count and
     // missing pin numbers, and they are inside the pins array of the
     // schPortArrangement
-    const requiredPinCount = opts.pinCount ?? this._getPinCount() ?? 0
+    const requiredPinCount = opts.pinCount ?? this._getPinCount() ?? 0;
     for (let pn = 1; pn <= requiredPinCount; pn++) {
-      if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
+      if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue;
       if (!schPortArrangement) {
         portsToCreate.push(
           new Port({
             pinNumber: pn,
             aliases: opts.additionalAliases?.[`pin${pn}`] ?? [],
           }),
-        )
-        continue
+        );
+        continue;
       }
       let explicitlyListedPinNumbersInSchPortArrangement = [
         ...(schPortArrangement.leftSide?.pins ?? []),
@@ -380,7 +383,7 @@ export class NormalComponent<
         ...(schPortArrangement.bottomSide?.pins ?? []),
       ].map((pn) =>
         parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
-      )
+      );
 
       if (
         [
@@ -397,11 +400,11 @@ export class NormalComponent<
         explicitlyListedPinNumbersInSchPortArrangement = Array.from(
           { length: this._getPinCount() },
           (_, i) => i + 1,
-        )
+        );
       }
 
       if (!explicitlyListedPinNumbersInSchPortArrangement.includes(pn)) {
-        continue
+        continue;
       }
 
       portsToCreate.push(
@@ -414,29 +417,29 @@ export class NormalComponent<
             originDescription: `notOtherwiseAddedButDeducedFromPinCount:${pn}`,
           },
         ),
-      )
+      );
     }
 
     // If no ports were created, don't throw an error
     if (portsToCreate.length > 0) {
-      this.addAll(portsToCreate)
+      this.addAll(portsToCreate);
     }
   }
 
   _getImpliedFootprintString(): string | null {
-    return null
+    return null;
   }
 
   _addChildrenFromStringFootprint() {
-    const { pcbRotation, pinLabels, pcbPinLabels } = this.props
-    let { footprint } = this.props
-    footprint ??= this._getImpliedFootprintString?.()
-    if (!footprint) return
+    const { pcbRotation, pinLabels, pcbPinLabels } = this.props;
+    let { footprint } = this.props;
+    footprint ??= this._getImpliedFootprintString?.();
+    if (!footprint) return;
 
     if (typeof footprint === "string") {
-      if (isFootprintUrl(footprint)) return
-      if (parseLibraryFootprintRef(footprint)) return
-      const fpSoup = fp.string(footprint).soup()
+      if (isFootprintUrl(footprint)) return;
+      if (parseLibraryFootprintRef(footprint)) return;
+      const fpSoup = fp.string(footprint).soup();
       const fpComponents = createComponentsFromCircuitJson(
         {
           componentName: this.name ?? this.componentName,
@@ -446,8 +449,8 @@ export class NormalComponent<
           pcbPinLabels,
         },
         fpSoup as any,
-      ) // Remove as any when footprinter gets updated
-      this.addAll(fpComponents)
+      ); // Remove as any when footprinter gets updated
+      this.addAll(fpComponents);
     }
   }
 
@@ -460,7 +463,7 @@ export class NormalComponent<
             (c) =>
               c.componentName === "Port" &&
               (c as Port).isMatchingNameOrAlias(prop as string),
-          )
+          );
           if (!port) {
             throw new Error(
               `There was an issue finding the port "${prop.toString()}" inside of a ${
@@ -468,33 +471,33 @@ export class NormalComponent<
               } component with name: "${
                 this.props.name
               }". This is a bug in @tscircuit/core`,
-            )
+            );
           }
-          return port as Port
+          return port as Port;
         },
       },
-    ) as any
+    ) as any;
   }
 
   getInstanceForReactElement(element: ReactElement): NormalComponent | null {
     for (const subtree of this.reactSubtrees) {
-      if (subtree.element === element) return subtree.component
+      if (subtree.element === element) return subtree.component;
     }
-    return null
+    return null;
   }
 
   doInitialSourceRender() {
-    const ftype = this.config.sourceFtype
-    if (!ftype) return
-    const { db } = this.root!
-    const { _parsedProps: props } = this
+    const ftype = this.config.sourceFtype;
+    if (!ftype) return;
+    const { db } = this.root!;
+    const { _parsedProps: props } = this;
     const source_component = db.source_component.insert({
       ftype,
       name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
-    })
-    this.source_component_id = source_component.source_component_id
+    });
+    this.source_component_id = source_component.source_component_id;
   }
 
   /**
@@ -505,42 +508,42 @@ export class NormalComponent<
    * You can override this method to do more complicated things.
    */
   doInitialSchematicComponentRender() {
-    if (this.root?.schematicDisabled) return
-    const { db } = this.root!
+    if (this.root?.schematicDisabled) return;
+    const { db } = this.root!;
 
     // Insert warnings for invalid pin labels
     if (this._invalidPinLabelMessages?.length && this.root?.db) {
       for (const message of this._invalidPinLabelMessages) {
-        let property_name = "pinLabels"
+        let property_name = "pinLabels";
         const match = message.match(
           /^Invalid pin label:\s*([^=]+)=\s*'([^']+)'/,
-        )
+        );
         if (match) {
-          const label = match[2]
-          property_name = `pinLabels['${label}']`
+          const label = match[2];
+          property_name = `pinLabels['${label}']`;
         }
         this.root.db.source_property_ignored_warning.insert({
           source_component_id: this.source_component_id!,
           property_name,
           message,
           error_type: "source_property_ignored_warning",
-        })
+        });
       }
     }
 
-    const { schematicSymbolName } = this.config
+    const { schematicSymbolName } = this.config;
 
     if (schematicSymbolName) {
-      this._doInitialSchematicComponentRenderWithSymbol()
+      this._doInitialSchematicComponentRenderWithSymbol();
     } else {
-      const dimensions = this._getSchematicBoxDimensions()
+      const dimensions = this._getSchematicBoxDimensions();
       if (dimensions) {
-        this._doInitialSchematicComponentRenderWithSchematicBoxDimensions()
+        this._doInitialSchematicComponentRenderWithSchematicBoxDimensions();
       }
     }
 
     const manualPlacement =
-      this.getSubcircuit()?._getSchematicManualPlacementForComponent(this)
+      this.getSubcircuit()?._getSchematicManualPlacementForComponent(this);
 
     if (
       this.schematic_component_id &&
@@ -548,7 +551,7 @@ export class NormalComponent<
       !!manualPlacement
     ) {
       if (!this.schematic_component_id) {
-        return
+        return;
       }
 
       const warning = schematic_manual_edit_conflict_warning.parse({
@@ -558,9 +561,9 @@ export class NormalComponent<
         schematic_component_id: this.schematic_component_id!,
         source_component_id: this.source_component_id!,
         subcircuit_id: this.getSubcircuit()?.subcircuit_id,
-      })
+      });
 
-      db.schematic_manual_edit_conflict_warning.insert(warning)
+      db.schematic_manual_edit_conflict_warning.insert(warning);
     }
 
     // No schematic symbol or dimensions defined, this could be a board, group
@@ -568,33 +571,33 @@ export class NormalComponent<
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    return undefined
+    return undefined;
   }
 
   _getInternallyConnectedPins(): Port[][] {
-    if (this.internallyConnectedPinNames.length === 0) return []
+    if (this.internallyConnectedPinNames.length === 0) return [];
 
-    const internallyConnectedPorts: Port[][] = []
+    const internallyConnectedPorts: Port[][] = [];
     for (const netPortNames of this.internallyConnectedPinNames) {
-      const ports: Port[] = []
+      const ports: Port[] = [];
       for (const portName of netPortNames) {
-        ports.push(this.portMap[portName as PortNames] as Port)
+        ports.push(this.portMap[portName as PortNames] as Port);
       }
-      internallyConnectedPorts.push(ports)
+      internallyConnectedPorts.push(ports);
     }
-    return internallyConnectedPorts
+    return internallyConnectedPorts;
   }
 
   _doInitialSchematicComponentRenderWithSymbol() {
-    if (this.root?.schematicDisabled) return
-    const { db } = this.root!
-    const { _parsedProps: props } = this
+    if (this.root?.schematicDisabled) return;
+    const { db } = this.root!;
+    const { _parsedProps: props } = this;
 
-    const symbol_name = this._getSchematicSymbolNameOrThrow()
+    const symbol_name = this._getSchematicSymbolNameOrThrow();
 
-    const symbol: SchSymbol | undefined = symbols[symbol_name]
+    const symbol: SchSymbol | undefined = symbols[symbol_name];
 
-    const center = this._getGlobalSchematicPositionBeforeLayout()
+    const center = this._getGlobalSchematicPositionBeforeLayout();
 
     if (symbol) {
       const schematic_component = db.schematic_component.insert({
@@ -605,29 +608,29 @@ export class NormalComponent<
         symbol_name,
 
         symbol_display_value: this._getSchematicSymbolDisplayValue(),
-      })
-      this.schematic_component_id = schematic_component.schematic_component_id
+      });
+      this.schematic_component_id = schematic_component.schematic_component_id;
     }
   }
 
   _doInitialSchematicComponentRenderWithSchematicBoxDimensions() {
-    if (this.root?.schematicDisabled) return
-    const { db } = this.root!
-    const { _parsedProps: props } = this
-    const dimensions = this._getSchematicBoxDimensions()!
+    if (this.root?.schematicDisabled) return;
+    const { db } = this.root!;
+    const { _parsedProps: props } = this;
+    const dimensions = this._getSchematicBoxDimensions()!;
 
-    const primaryPortLabels: Record<string, string> = {}
+    const primaryPortLabels: Record<string, string> = {};
     if (Array.isArray(props.pinLabels)) {
       props.pinLabels.forEach((label: string, index: number) => {
-        primaryPortLabels[String(index + 1)] = label
-      })
+        primaryPortLabels[String(index + 1)] = label;
+      });
     } else {
       for (const [port, label] of Object.entries(props.pinLabels ?? {})) {
-        primaryPortLabels[port] = Array.isArray(label) ? label[0] : label
+        primaryPortLabels[port] = Array.isArray(label) ? label[0] : label;
       }
     }
-    const center = this._getGlobalSchematicPositionBeforeLayout()
-    const schPortArrangement = this._getSchematicPortArrangement()
+    const center = this._getGlobalSchematicPositionBeforeLayout();
+    const schPortArrangement = this._getSchematicPortArrangement();
     const schematic_component = db.schematic_component.insert({
       center,
       rotation: props.schRotation ?? 0,
@@ -647,12 +650,12 @@ export class NormalComponent<
       port_labels: primaryPortLabels,
 
       source_component_id: this.source_component_id!,
-    })
+    });
     const hasTopOrBottomPins =
       schPortArrangement?.topSide !== undefined ||
-      schPortArrangement?.bottomSide !== undefined
-    const schematic_box_width = dimensions?.getSize().width
-    const schematic_box_height = dimensions?.getSize().height
+      schPortArrangement?.bottomSide !== undefined;
+    const schematic_box_width = dimensions?.getSize().width;
+    const schematic_box_height = dimensions?.getSize().height;
     const manufacturer_part_number_schematic_text = db.schematic_text.insert({
       text: props.manufacturerPartNumber ?? "",
       schematic_component_id: schematic_component.schematic_component_id,
@@ -668,7 +671,7 @@ export class NormalComponent<
       },
       color: "#006464",
       font_size: 0.18,
-    })
+    });
     const component_name_text = db.schematic_text.insert({
       text: props.name ?? "",
       schematic_component_id: schematic_component.schematic_component_id,
@@ -684,15 +687,15 @@ export class NormalComponent<
       },
       color: "#006464",
       font_size: 0.18,
-    })
-    this.schematic_component_id = schematic_component.schematic_component_id
+    });
+    this.schematic_component_id = schematic_component.schematic_component_id;
   }
 
   doInitialPcbComponentRender() {
-    if (this.root?.pcbDisabled) return
-    const { db } = this.root!
-    const { _parsedProps: props } = this
-    const subcircuit = this.getSubcircuit()
+    if (this.root?.pcbDisabled) return;
+    const { db } = this.root!;
+    const { _parsedProps: props } = this;
+    const subcircuit = this.getSubcircuit();
     const pcb_component = db.pcb_component.insert({
       center: this._getGlobalPcbPositionBeforeLayout(),
       // width/height are computed in the PcbComponentSizeCalculation phase
@@ -702,24 +705,24 @@ export class NormalComponent<
       rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
-    })
+    });
 
-    const footprint = props.footprint ?? this._getImpliedFootprintString()
+    const footprint = props.footprint ?? this._getImpliedFootprintString();
 
     if (!footprint && !this.isGroup) {
       const footprint_error = db.pcb_missing_footprint_error.insert({
         message: `No footprint found for component: ${this.getString()}`,
         source_component_id: `${this.source_component_id}`,
         error_type: "pcb_missing_footprint_error",
-      })
+      });
 
       this.pcb_missing_footprint_error_id =
-        footprint_error.pcb_missing_footprint_error_id
+        footprint_error.pcb_missing_footprint_error_id;
     }
-    this.pcb_component_id = pcb_component.pcb_component_id
+    this.pcb_component_id = pcb_component.pcb_component_id;
 
     const manualPlacement =
-      this.getSubcircuit()._getPcbManualPlacementForComponent(this)
+      this.getSubcircuit()._getPcbManualPlacementForComponent(this);
 
     if (
       (this.props.pcbX !== undefined || this.props.pcbY !== undefined) &&
@@ -732,8 +735,8 @@ export class NormalComponent<
         pcb_component_id: this.pcb_component_id!,
         source_component_id: this.source_component_id!,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
-      })
-      db.pcb_manual_edit_conflict_warning.insert(warning)
+      });
+      db.pcb_manual_edit_conflict_warning.insert(warning);
     }
   }
 
@@ -742,77 +745,77 @@ export class NormalComponent<
    * the width/height of the component
    */
   doInitialPcbComponentSizeCalculation(): void {
-    if (this.root?.pcbDisabled) return
-    if (!this.pcb_component_id) return
-    const { db } = this.root!
-    const { _parsedProps: props } = this
+    if (this.root?.pcbDisabled) return;
+    if (!this.pcb_component_id) return;
+    const { db } = this.root!;
+    const { _parsedProps: props } = this;
 
-    const bounds = getBoundsOfPcbComponents(this.children)
+    const bounds = getBoundsOfPcbComponents(this.children);
 
-    if (bounds.width === 0 || bounds.height === 0) return
+    if (bounds.width === 0 || bounds.height === 0) return;
 
     const center = {
       x: (bounds.minX + bounds.maxX) / 2,
       y: (bounds.minY + bounds.maxY) / 2,
-    }
+    };
 
     db.pcb_component.update(this.pcb_component_id!, {
       center,
       width: bounds.width,
       height: bounds.height,
-    })
+    });
   }
 
   updatePcbComponentSizeCalculation(): void {
-    this.doInitialPcbComponentSizeCalculation()
+    this.doInitialPcbComponentSizeCalculation();
   }
 
   doInitialPcbComponentAnchorAlignment(): void {
-    NormalComponent_doInitialPcbComponentAnchorAlignment(this)
+    NormalComponent_doInitialPcbComponentAnchorAlignment(this);
   }
 
   updatePcbComponentAnchorAlignment(): void {
-    this.doInitialPcbComponentAnchorAlignment()
+    this.doInitialPcbComponentAnchorAlignment();
   }
 
   _renderReactSubtree(element: ReactElement): ReactSubtree {
-    const component = createInstanceFromReactElement(element)
+    const component = createInstanceFromReactElement(element);
     return {
       element,
       component,
-    }
+    };
   }
 
   doInitialInitializePortsFromChildren(): void {
-    this.initPorts()
+    this.initPorts();
   }
 
   doInitialReactSubtreesRender(): void {
     // Add React-based footprint subtree if provided
-    const fpElm = this.props.footprint
+    const fpElm = this.props.footprint;
     if (isValidElement(fpElm)) {
       const hasFootprintChild = this.children.some(
         (c) => c.componentName === "Footprint",
-      )
+      );
       if (!hasFootprintChild) {
-        this.add(fpElm)
+        this.add(fpElm);
       }
     }
 
     // Add React-based cadModel subtree (CadAssembly or CadModel) if provided
-    const cmElm = this.props.cadModel as any
+    const cmElm = this.props.cadModel as any;
     if (isValidElement(cmElm)) {
       // Mark that CAD will be handled by child elements to avoid parent inserting a CAD model
-      this._isCadModelChild = true
+      this._isCadModelChild = true;
 
       const hasCadAssemblyChild = this.children.some(
         (c) => c.componentName === "CadAssembly",
-      )
+      );
       const hasCadModelChild = this.children.some(
         (c) => c.componentName === "CadModel",
-      )
+      );
       if (!hasCadAssemblyChild && !hasCadModelChild) {
-        this.add(cmElm)
+        this.add(cmElm);
       }
     }
   }
@@ -820,171 +823,171 @@ export class NormalComponent<
   doInitialPcbFootprintStringRender(): void {
     NormalComponent_doInitialPcbFootprintStringRender(this, (name, effect) =>
       this._queueAsyncEffect(name, effect),
-    )
+    );
   }
 
   _hasExistingPortExactly(port1: Port): boolean {
     const existingPorts = this.children.filter(
       (c) => c.componentName === "Port",
-    ) as Port[]
+    ) as Port[];
     return existingPorts.some((port2) => {
-      const aliases1 = port1.getNameAndAliases()
-      const aliases2 = port2.getNameAndAliases()
+      const aliases1 = port1.getNameAndAliases();
+      const aliases2 = port2.getNameAndAliases();
       return (
         aliases1.length === aliases2.length &&
         aliases1.every((alias) => aliases2.includes(alias))
-      )
-    })
+      );
+    });
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
-    let component: PrimitiveComponent
+    let component: PrimitiveComponent;
     if (isReactElement(componentOrElm)) {
-      const subtree = this._renderReactSubtree(componentOrElm)
-      this.reactSubtrees.push(subtree)
-      component = subtree.component
+      const subtree = this._renderReactSubtree(componentOrElm);
+      this.reactSubtrees.push(subtree);
+      component = subtree.component;
     } else {
-      component = componentOrElm as PrimitiveComponent
+      component = componentOrElm as PrimitiveComponent;
     }
 
     if (component.componentName === "Port") {
-      if (this._hasExistingPortExactly(component as Port)) return
+      if (this._hasExistingPortExactly(component as Port)) return;
       // Check if this port is already contained in the children, skip if it's
       // already defined
       const existingPorts = this.children.filter(
         (c) => c.componentName === "Port",
-      ) as Port[]
+      ) as Port[];
       const conflictingPort = existingPorts.find((p) =>
         p.isMatchingAnyOf(component.getNameAndAliases()),
-      )
+      );
       if (conflictingPort) {
         debug(
           `Similar ports added. Port 1: ${conflictingPort}, Port 2: ${component}`,
-        )
+        );
       }
     }
 
-    super.add(component)
+    super.add(component);
   }
 
   getPortsFromFootprint(opts?: {
-    additionalAliases?: Record<string, string[]>
+    additionalAliases?: Record<string, string[]>;
   }): Port[] {
-    let { footprint } = this.props
+    let { footprint } = this.props;
 
     if (!footprint || isValidElement(footprint)) {
-      footprint = this.children.find((c) => c.componentName === "Footprint")
+      footprint = this.children.find((c) => c.componentName === "Footprint");
     }
 
     if (typeof footprint === "string") {
-      if (isFootprintUrl(footprint)) return []
-      if (parseLibraryFootprintRef(footprint)) return []
-      const fpSoup = fp.string(footprint).soup()
+      if (isFootprintUrl(footprint)) return [];
+      if (parseLibraryFootprintRef(footprint)) return [];
+      const fpSoup = fp.string(footprint).soup();
 
-      const newPorts: Port[] = []
+      const newPorts: Port[] = [];
       for (const elm of fpSoup) {
         if ("port_hints" in elm && elm.port_hints) {
-          const newPort = getPortFromHints(elm.port_hints, opts)
-          if (!newPort) continue
-          newPort.originDescription = `footprint:string:${footprint}:port_hints[0]:${elm.port_hints[0]}`
-          newPorts.push(newPort)
+          const newPort = getPortFromHints(elm.port_hints, opts);
+          if (!newPort) continue;
+          newPort.originDescription = `footprint:string:${footprint}:port_hints[0]:${elm.port_hints[0]}`;
+          newPorts.push(newPort);
         }
       }
 
-      return newPorts
+      return newPorts;
     }
     if (
       !isValidElement(footprint) &&
       footprint &&
       footprint.componentName === "Footprint"
     ) {
-      const fp = footprint as Footprint
+      const fp = footprint as Footprint;
 
-      let pinNumber = 1
-      const newPorts: Port[] = []
+      let pinNumber = 1;
+      const newPorts: Port[] = [];
       for (const fpChild of fp.children) {
-        if (!fpChild.props.portHints) continue
+        if (!fpChild.props.portHints) continue;
 
-        let portHintsList = fpChild.props.portHints
+        let portHintsList = fpChild.props.portHints;
         const hasPinPrefix = portHintsList.some((hint: string) =>
           hint.startsWith("pin"),
-        )
+        );
         if (!hasPinPrefix) {
-          portHintsList = [...portHintsList, `pin${pinNumber}`]
+          portHintsList = [...portHintsList, `pin${pinNumber}`];
         }
-        pinNumber++
-        const newPort = getPortFromHints(portHintsList)
-        if (!newPort) continue
-        newPort.originDescription = `footprint:${footprint}`
-        newPorts.push(newPort)
+        pinNumber++;
+        const newPort = getPortFromHints(portHintsList);
+        if (!newPort) continue;
+        newPort.originDescription = `footprint:${footprint}`;
+        newPorts.push(newPort);
       }
 
       // If no ports were found, return an empty array instead of throwing an error
-      return newPorts
+      return newPorts;
     }
 
     // Explore children for possible smtpads etc.
-    const newPorts: Port[] = []
+    const newPorts: Port[] = [];
     if (!footprint) {
       for (const child of this.children) {
         if (child.props.portHints && child.isPcbPrimitive) {
-          const port = getPortFromHints(child.props.portHints)
-          if (port) newPorts.push(port)
+          const port = getPortFromHints(child.props.portHints);
+          if (port) newPorts.push(port);
         }
       }
     }
-    return newPorts
+    return newPorts;
   }
 
   getPortsFromSchematicSymbol(): Port[] {
-    if (this.root?.schematicDisabled) return []
-    const { config } = this
-    if (!config.schematicSymbolName) return []
-    const symbol: SchSymbol = (symbols as any)[config.schematicSymbolName]
-    if (!symbol) return []
-    const newPorts: Port[] = []
+    if (this.root?.schematicDisabled) return [];
+    const { config } = this;
+    if (!config.schematicSymbolName) return [];
+    const symbol: SchSymbol = (symbols as any)[config.schematicSymbolName];
+    if (!symbol) return [];
+    const newPorts: Port[] = [];
     for (const symbolPort of symbol.ports) {
-      const port = getPortFromHints(symbolPort.labels)
+      const port = getPortFromHints(symbolPort.labels);
       if (port) {
-        port.schematicSymbolPortDef = symbolPort
-        newPorts.push(port)
+        port.schematicSymbolPortDef = symbolPort;
+        newPorts.push(port);
       }
     }
-    return newPorts
+    return newPorts;
   }
 
   doInitialCreateNetsFromProps(): void {
-    this._createNetsFromProps(this._getNetsFromConnectionsProp())
+    this._createNetsFromProps(this._getNetsFromConnectionsProp());
   }
 
   _getNetsFromConnectionsProp(): string[] {
-    const { _parsedProps: props } = this
-    const propsWithConnections: string[] = []
+    const { _parsedProps: props } = this;
+    const propsWithConnections: string[] = [];
     if (props.connections) {
       for (const [pinName, target] of Object.entries(props.connections)) {
-        const targets = Array.isArray(target) ? target : [target]
+        const targets = Array.isArray(target) ? target : [target];
         for (const targetPath of targets) {
-          propsWithConnections.push(targetPath)
+          propsWithConnections.push(targetPath);
         }
       }
     }
-    return propsWithConnections
+    return propsWithConnections;
   }
 
   _createNetsFromProps(propsWithConnections: (string | undefined | null)[]) {
-    createNetsFromProps(this, propsWithConnections)
+    createNetsFromProps(this, propsWithConnections);
   }
 
   _getPcbCircuitJsonBounds(): {
-    center: { x: number; y: number }
-    bounds: { left: number; top: number; right: number; bottom: number }
-    width: number
-    height: number
+    center: { x: number; y: number };
+    bounds: { left: number; top: number; right: number; bottom: number };
+    width: number;
+    height: number;
   } {
-    const { db } = this.root!
-    if (!this.pcb_component_id) return super._getPcbCircuitJsonBounds()
+    const { db } = this.root!;
+    if (!this.pcb_component_id) return super._getPcbCircuitJsonBounds();
 
-    const pcb_component = db.pcb_component.get(this.pcb_component_id)!
+    const pcb_component = db.pcb_component.get(this.pcb_component_id)!;
 
     return {
       center: { x: pcb_component.center.x, y: pcb_component.center.y },
@@ -996,15 +999,15 @@ export class NormalComponent<
       },
       width: pcb_component.width,
       height: pcb_component.height,
-    }
+    };
   }
 
   _getPinCountFromSchematicPortArrangement(): number {
-    const schPortArrangement = this._getSchematicPortArrangement()
-    if (!schPortArrangement) return 0
+    const schPortArrangement = this._getSchematicPortArrangement();
+    if (!schPortArrangement) return 0;
 
     const isExplicitPinMapping =
-      isExplicitPinMappingArrangement(schPortArrangement)
+      isExplicitPinMappingArrangement(schPortArrangement);
     if (!isExplicitPinMapping) {
       return (
         (schPortArrangement.leftSize ?? schPortArrangement.leftPinCount ?? 0) +
@@ -1015,53 +1018,53 @@ export class NormalComponent<
         (schPortArrangement.bottomSize ??
           schPortArrangement.bottomPinCount ??
           0)
-      )
+      );
     }
 
-    const { leftSide, rightSide, topSide, bottomSide } = schPortArrangement
+    const { leftSide, rightSide, topSide, bottomSide } = schPortArrangement;
     return Math.max(
       ...(leftSide?.pins ?? []),
       ...(rightSide?.pins ?? []),
       ...(topSide?.pins ?? []),
       ...(bottomSide?.pins ?? []),
-    )
+    );
   }
 
   _getPinCount(): number {
-    const schPortArrangement = this._getSchematicPortArrangement()
+    const schPortArrangement = this._getSchematicPortArrangement();
 
     // If schPortArrangement exists, use only that for pin count
     if (schPortArrangement) {
       const pinCountFromSchematicPortArrangement =
-        this._getPinCountFromSchematicPortArrangement()
+        this._getPinCountFromSchematicPortArrangement();
 
-      return pinCountFromSchematicPortArrangement
+      return pinCountFromSchematicPortArrangement;
     }
 
-    const portsFromFootprint = this.getPortsFromFootprint()
+    const portsFromFootprint = this.getPortsFromFootprint();
     if (portsFromFootprint.length > 0) {
-      return portsFromFootprint.length
+      return portsFromFootprint.length;
     }
 
     // If no footprint ports, try to infer from pinLabels
-    const { pinLabels } = this._parsedProps
+    const { pinLabels } = this._parsedProps;
     if (pinLabels) {
       if (Array.isArray(pinLabels)) {
-        return pinLabels.length
+        return pinLabels.length;
       }
 
       const pinNumbers = Object.keys(pinLabels)
         .map((k) => (k.startsWith("pin") ? parseInt(k.slice(3)) : parseInt(k)))
-        .filter((n) => !Number.isNaN(n))
+        .filter((n) => !Number.isNaN(n));
 
       if (pinNumbers.length > 0) {
-        return Math.max(...pinNumbers)
+        return Math.max(...pinNumbers);
       }
 
-      return Object.keys(pinLabels).length
+      return Object.keys(pinLabels).length;
     }
 
-    return 0
+    return 0;
   }
 
   /**
@@ -1072,19 +1075,19 @@ export class NormalComponent<
     return (
       this._parsedProps.schPinArrangement ??
       this._parsedProps.schPortArrangement
-    )
+    );
   }
 
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     // Only valid if we don't have a schematic symbol
-    if (this.getSchematicSymbol()) return null
-    if (!this.config.shouldRenderAsSchematicBox) return null
+    if (this.getSchematicSymbol()) return null;
+    if (!this.config.shouldRenderAsSchematicBox) return null;
 
-    const { _parsedProps: props } = this
+    const { _parsedProps: props } = this;
 
-    const pinCount = this._getPinCount()
+    const pinCount = this._getPinCount();
 
-    const pinSpacing = props.schPinSpacing ?? 0.2
+    const pinSpacing = props.schPinSpacing ?? 0.2;
 
     const dimensions = getAllDimensionsForSchematicBox({
       schWidth: props.schWidth,
@@ -1099,31 +1102,31 @@ export class NormalComponent<
 
       schPortArrangement: this._getSchematicPortArrangement()!,
       pinLabels: props.pinLabels,
-    })
+    });
 
-    return dimensions
+    return dimensions;
   }
 
   doInitialCadModelRender(): void {
-    if (this._isCadModelChild) return
-    const { db } = this.root!
-    const { boardThickness = 0 } = this.root?._getBoard() ?? {}
-    const cadModelProp = this._parsedProps.cadModel
+    if (this._isCadModelChild) return;
+    const { db } = this.root!;
+    const { boardThickness = 0 } = this.root?._getBoard() ?? {};
+    const cadModelProp = this._parsedProps.cadModel;
     const cadModel =
-      cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
-    const footprint = this.props.footprint ?? this._getImpliedFootprintString()
+      cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp;
+    const footprint = this.props.footprint ?? this._getImpliedFootprintString();
 
-    if (!this.pcb_component_id) return
-    if (!cadModel && !footprint) return
-    if (cadModel === null) return
+    if (!this.pcb_component_id) return;
+    if (!cadModel && !footprint) return;
+    if (cadModel === null) return;
 
     // Use post-layout bounds
-    const bounds = this._getPcbCircuitJsonBounds()
+    const bounds = this._getPcbCircuitJsonBounds();
 
-    const pcb_component = db.pcb_component.get(this.pcb_component_id!)
+    const pcb_component = db.pcb_component.get(this.pcb_component_id!);
 
     if (typeof cadModel === "string") {
-      throw new Error("String cadModel not yet implemented")
+      throw new Error("String cadModel not yet implemented");
     }
 
     const rotationOffset = rotation3.parse({
@@ -1136,7 +1139,7 @@ export class NormalComponent<
       ...(typeof cadModel?.rotationOffset === "object"
         ? (cadModel.rotationOffset ?? {})
         : {}),
-    })
+    });
 
     const positionOffset = point3.parse({
       x: 0,
@@ -1145,9 +1148,9 @@ export class NormalComponent<
       ...(typeof cadModel?.positionOffset === "object"
         ? cadModel.positionOffset
         : {}),
-    })
+    });
 
-    const computedLayer = this.props.layer === "bottom" ? "bottom" : "top"
+    const computedLayer = this.props.layer === "bottom" ? "bottom" : "top";
     const cad_model = db.cad_component.insert({
       // TODO z maybe depends on layer
       position: {
@@ -1207,16 +1210,16 @@ export class NormalComponent<
 
       footprinter_string:
         typeof footprint === "string" && !cadModel ? footprint : undefined,
-    } as any)
-    this.cad_component_id = cad_model.cad_component_id
+    } as any);
+    this.cad_component_id = cad_model.cad_component_id;
   }
 
   private _addCachebustToModelUrl(url?: string): string | undefined {
-    if (!url || !url.includes("modelcdn.tscircuit.com")) return url
-    const origin = this.root?.getClientOrigin() ?? ""
+    if (!url || !url.includes("modelcdn.tscircuit.com")) return url;
+    const origin = this.root?.getClientOrigin() ?? "";
     return `${url}${
       url.includes("?") ? "&" : "?"
-    }cachebust_origin=${encodeURIComponent(origin)}`
+    }cachebust_origin=${encodeURIComponent(origin)}`;
   }
 
   private _getPartsEngineCacheKey(
@@ -1228,7 +1231,7 @@ export class NormalComponent<
       name: source_component.name,
       manufacturer_part_number: source_component.manufacturer_part_number,
       footprinterString,
-    })
+    });
   }
 
   private async _getSupplierPartNumbers(
@@ -1236,17 +1239,17 @@ export class NormalComponent<
     source_component: any,
     footprinterString: string | undefined,
   ) {
-    if (this.props.doNotPlace) return {}
-    const cacheEngine = this.root?.platform?.localCacheEngine
+    if (this.props.doNotPlace) return {};
+    const cacheEngine = this.root?.platform?.localCacheEngine;
     const cacheKey = this._getPartsEngineCacheKey(
       source_component,
       footprinterString,
-    )
+    );
     if (cacheEngine) {
-      const cached = await cacheEngine.getItem(cacheKey)
+      const cached = await cacheEngine.getItem(cacheKey);
       if (cached) {
         try {
-          return JSON.parse(cached)
+          return JSON.parse(cached);
         } catch {}
       }
     }
@@ -1255,118 +1258,121 @@ export class NormalComponent<
         sourceComponent: source_component,
         footprinterString,
       }),
-    )
+    );
 
     // Convert "Not found" to empty object before caching or returning
-    const supplierPartNumbers = result === "Not found" ? {} : result
+    const supplierPartNumbers = result === "Not found" ? {} : result;
 
     if (cacheEngine) {
       try {
-        await cacheEngine.setItem(cacheKey, JSON.stringify(supplierPartNumbers))
+        await cacheEngine.setItem(
+          cacheKey,
+          JSON.stringify(supplierPartNumbers),
+        );
       } catch {}
     }
-    return supplierPartNumbers
+    return supplierPartNumbers;
   }
 
   doInitialPartsEngineRender(): void {
-    if (this.props.doNotPlace) return
-    const partsEngine = this.getInheritedProperty("partsEngine")
-    if (!partsEngine) return
-    const { db } = this.root!
+    if (this.props.doNotPlace) return;
+    const partsEngine = this.getInheritedProperty("partsEngine");
+    if (!partsEngine) return;
+    const { db } = this.root!;
 
-    const source_component = db.source_component.get(this.source_component_id!)
-    if (!source_component) return
-    if (source_component.supplier_part_numbers) return
+    const source_component = db.source_component.get(this.source_component_id!);
+    if (!source_component) return;
+    if (source_component.supplier_part_numbers) return;
 
-    let footprinterString: string | undefined
+    let footprinterString: string | undefined;
     if (this.props.footprint && typeof this.props.footprint === "string") {
-      footprinterString = this.props.footprint
+      footprinterString = this.props.footprint;
     }
 
     const supplierPartNumbersMaybePromise = this._getSupplierPartNumbers(
       partsEngine,
       source_component,
       footprinterString,
-    )
+    );
 
     if (!(supplierPartNumbersMaybePromise instanceof Promise)) {
       db.source_component.update(this.source_component_id!, {
         supplier_part_numbers: supplierPartNumbersMaybePromise,
-      })
-      return
+      });
+      return;
     }
 
     this._queueAsyncEffect("get-supplier-part-numbers", async () => {
-      this._asyncSupplierPartNumbers = await supplierPartNumbersMaybePromise
-      this._markDirty("PartsEngineRender")
-    })
+      this._asyncSupplierPartNumbers = await supplierPartNumbersMaybePromise;
+      this._markDirty("PartsEngineRender");
+    });
   }
 
   updatePartsEngineRender(): void {
-    if (this.props.doNotPlace) return
-    const { db } = this.root!
+    if (this.props.doNotPlace) return;
+    const { db } = this.root!;
 
-    const source_component = db.source_component.get(this.source_component_id!)
-    if (!source_component) return
-    if (source_component.supplier_part_numbers) return
+    const source_component = db.source_component.get(this.source_component_id!);
+    if (!source_component) return;
+    if (source_component.supplier_part_numbers) return;
 
     if (this._asyncSupplierPartNumbers) {
       db.source_component.update(this.source_component_id!, {
         supplier_part_numbers: this._asyncSupplierPartNumbers,
-      })
-      return
+      });
+      return;
     }
   }
 
   doInitialAssignFallbackProps(): void {
-    const { _parsedProps: props } = this
+    const { _parsedProps: props } = this;
     if (props.connections && !this.name) {
       this.fallbackUnassignedName =
-        this.getSubcircuit().getNextAvailableName(this)
+        this.getSubcircuit().getNextAvailableName(this);
     }
   }
 
   doInitialCreateTracesFromProps(): void {
-    this._createTracesFromConnectionsProp()
+    this._createTracesFromConnectionsProp();
   }
 
   _createTracesFromConnectionsProp() {
-    const { _parsedProps: props } = this
+    const { _parsedProps: props } = this;
 
     if (props.connections) {
       for (const [pinName, target] of Object.entries(props.connections)) {
-        const targets = Array.isArray(target) ? target : [target]
+        const targets = Array.isArray(target) ? target : [target];
         for (const targetPath of targets) {
           this.add(
             new Trace({
               from: `${this.getSubcircuitSelector()} > port.${pinName}`,
               to: targetPath as string,
             }),
-          )
+          );
         }
       }
     }
   }
 
   doInitialSourceDesignRuleChecks(): void {
-    NormalComponent_doInitialSourceDesignRuleChecks(this)
+    NormalComponent_doInitialSourceDesignRuleChecks(this);
   }
 
   /**
    * Get the minimum flex container size for this component on PCB
    */
   _getMinimumFlexContainerSize() {
-    return NormalComponent__getMinimumFlexContainerSize(this)
+    return NormalComponent__getMinimumFlexContainerSize(this);
   }
 
   /**
    * Reposition this component on the PCB to the specified coordinates
    */
   _repositionOnPcb(position: { x: number; y: number }) {
-    return NormalComponent__repositionOnPcb(this, position)
+    return NormalComponent__repositionOnPcb(this, position);
   }
 
   doInitialSilkscreenOverlapAdjustment() {
-    return NormalComponent_doInitialSilkscreenOverlapAdjustment(this)
+    return NormalComponent_doInitialSilkscreenOverlapAdjustment(this);
   }
 }

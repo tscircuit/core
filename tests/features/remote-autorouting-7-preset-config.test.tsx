@@ -1,18 +1,18 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server";
 
 test("remote-autorouter-7 with preset config", async () => {
-  const { autoroutingServerUrl } = getTestAutoroutingServer()
-  const { circuit } = getTestFixture()
+  const { autoroutingServerUrl } = getTestAutoroutingServer();
+  const { circuit } = getTestFixture();
 
-  const asyncEffectStartEvents: any[] = []
+  const asyncEffectStartEvents: any[] = [];
   circuit.on("asyncEffect:start", (event) => {
     asyncEffectStartEvents.push({
       ...event,
       componentDisplayName: event.componentDisplayName.replace(/#\d+/, "#"),
-    })
-  })
+    });
+  });
 
   circuit.add(
     <board
@@ -30,9 +30,9 @@ test("remote-autorouter-7 with preset config", async () => {
       />
       <trace from=".R1 > .pin1" to=".R2 > .pin1" />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
   expect(asyncEffectStartEvents).toMatchInlineSnapshot(`
     [
@@ -42,8 +42,8 @@ test("remote-autorouter-7 with preset config", async () => {
         "phase": "PcbTraceRender",
       },
     ]
-  `)
+  `);
 
-  const traces = circuit.selectAll("trace")
-  expect(traces.length).toBe(1)
-})
+  const traces = circuit.selectAll("trace");
+  expect(traces.length).toBe(1);
+});

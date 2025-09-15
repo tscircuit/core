@@ -1,11 +1,11 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
-import { grid } from "@tscircuit/math-utils"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
+import { grid } from "@tscircuit/math-utils";
 
 export default test("3x3 switch matrix with diodes", async () => {
-  const { circuit } = getTestFixture()
-  const rows = 3
-  const cols = 3
+  const { circuit } = getTestFixture();
+  const rows = 3;
+  const cols = 3;
 
   circuit.add(
     <board width="60mm" height="60mm" schMaxTraceDistance={30}>
@@ -36,11 +36,11 @@ export default test("3x3 switch matrix with diodes", async () => {
         offsetX: 8,
         offsetY: 0,
       }).map((cell) => {
-        const n = cell.index + 1
-        const row = cell.row
-        const col = cell.col
-        const swName = `SW${n}`
-        const dName = `D${n}`
+        const n = cell.index + 1;
+        const row = cell.row;
+        const col = cell.col;
+        const swName = `SW${n}`;
+        const dName = `D${n}`;
 
         return (
           <group key={n}>
@@ -65,12 +65,12 @@ export default test("3x3 switch matrix with diodes", async () => {
             <trace from={`.${dName} > .cathode`} to={`.${swName} > .pin1`} />
             <trace from={`.${swName} > .pin3`} to={`net.COL${col}`} />
           </group>
-        )
+        );
       })}
     </board>,
-  )
+  );
 
-  await circuit.render()
+  await circuit.render();
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

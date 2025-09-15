@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { sel } from "lib/sel"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { sel } from "lib/sel";
 
 test("jumper with net connections", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board>
@@ -14,8 +14,8 @@ test("jumper with net connections", () => {
       <netlabel net="MOSI" connectsTo="U1.pin4" schX={2.4} schY={-0.5} />
       <netlabel net="GND" connectsTo="U1.pin5" schX={1} schY={-1} />
     </board>,
-  )
+  );
 
-  circuit.render()
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  circuit.render();
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

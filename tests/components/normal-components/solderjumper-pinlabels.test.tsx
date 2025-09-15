@@ -1,8 +1,8 @@
-import { it, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { it, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 it("should render a solderjumper with pinlabels and bridgedPins using labels", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="20mm" height="20mm">
@@ -21,17 +21,17 @@ it("should render a solderjumper with pinlabels and bridgedPins using labels", a
         schY={0}
       />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  const j1 = circuit.selectOne("solderjumper.SJ1") as any
-  const internallyConnectedPins = j1._getInternallyConnectedPins()
-  expect(internallyConnectedPins).toHaveLength(1)
+  const j1 = circuit.selectOne("solderjumper.SJ1") as any;
+  const internallyConnectedPins = j1._getInternallyConnectedPins();
+  expect(internallyConnectedPins).toHaveLength(1);
   expect(
     internallyConnectedPins[0].map((p: any) => p.props.name).sort(),
-  ).toEqual(["OUT", "SET"].sort())
+  ).toEqual(["OUT", "SET"].sort());
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

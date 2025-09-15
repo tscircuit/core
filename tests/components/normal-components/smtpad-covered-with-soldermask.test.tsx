@@ -1,11 +1,11 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 // ensure smtpad's coveredWithSolderMask prop sets is_covered_with_solder_mask
 // on pcb_smtpad
 
 test("smtpad coveredWithSolderMask sets is_covered_with_solder_mask", () => {
-  const { project } = getTestFixture()
+  const { project } = getTestFixture();
 
   project.add(
     <board width="10mm" height="10mm">
@@ -24,10 +24,10 @@ test("smtpad coveredWithSolderMask sets is_covered_with_solder_mask", () => {
         }
       />
     </board>,
-  )
+  );
 
-  project.render()
+  project.render();
 
-  const pad = project.db.pcb_smtpad.list()[0]
-  expect(pad.is_covered_with_solder_mask).toBe(true)
-})
+  const pad = project.db.pcb_smtpad.list()[0];
+  expect(pad.is_covered_with_solder_mask).toBe(true);
+});

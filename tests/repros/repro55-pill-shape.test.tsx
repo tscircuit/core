@@ -1,21 +1,21 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { getTestFootprintServer } from "tests/fixtures/get-test-footprint-server"
-import jstConnector from "tests/fixtures/assets/external-jst-ph-b2b-footprint.json"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { getTestFootprintServer } from "tests/fixtures/get-test-footprint-server";
+import jstConnector from "tests/fixtures/assets/external-jst-ph-b2b-footprint.json";
 
 test("repro55: pill shape", async () => {
-  const footprintServer = getTestFootprintServer(jstConnector)
+  const footprintServer = getTestFootprintServer(jstConnector);
   const { circuit } = getTestFixture({
     platform: {
       footprintLibraryMap: {
         kicad: async (footprintName: string) => {
-          const url = `${footprintServer.url}/${footprintName}.circuit.json`
-          const res = await fetch(url)
-          return { footprintCircuitJson: await res.json() }
+          const url = `${footprintServer.url}/${footprintName}.circuit.json`;
+          const res = await fetch(url);
+          return { footprintCircuitJson: await res.json() };
         },
       },
     },
-  })
+  });
 
   circuit.add(
     <board>
@@ -32,9 +32,9 @@ test("repro55: pill shape", async () => {
         }}
       />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

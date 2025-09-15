@@ -1,7 +1,7 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
   const pinLabels = {
     1: ["GND1", "A1"],
     2: ["GND2", "B12"],
@@ -19,7 +19,7 @@ test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () =>
     14: ["VBUS2", "B4"],
     15: ["GND1", "A12"],
     16: ["GND2", "B1"],
-  } as const
+  } as const;
   circuit.add(
     <board width={50} height={50} autorouter="sequential-trace">
       <pushbutton name="PB1" footprint={"pushbutton"} pcbX="0" pcbY="10" />
@@ -280,9 +280,9 @@ test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () =>
       {/* <trace from=".PB1 > .pin2" to=".U1 > .GND1" /> */}
       {/* <trace from=".PB1 > .pin2" to=".U1 > .VBUS2" /> */}
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

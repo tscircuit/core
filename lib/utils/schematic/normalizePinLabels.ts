@@ -22,20 +22,22 @@
  */
 export const normalizePinLabels = (inputPinLabels: string[][]): string[][] => {
   // Remove duplicates inside input
-  const unqInputPinLabels = inputPinLabels.map((labels) => [...new Set(labels)])
+  const unqInputPinLabels = inputPinLabels.map((labels) => [
+    ...new Set(labels),
+  ]);
 
-  const result: string[][] = unqInputPinLabels.map(() => [])
+  const result: string[][] = unqInputPinLabels.map(() => []);
 
   /**
    * If the set has a desired number inside of it, we'll put that number in this
    * array without reference to other sets
    */
-  const desiredNumbers: (number | null)[] = unqInputPinLabels.map(() => null)
+  const desiredNumbers: (number | null)[] = unqInputPinLabels.map(() => null);
   for (let i = 0; i < unqInputPinLabels.length; i++) {
     for (const label of unqInputPinLabels[i]) {
       if (/^\d+$/.test(label)) {
-        desiredNumbers[i] = Number.parseInt(label)
-        break
+        desiredNumbers[i] = Number.parseInt(label);
+        break;
       }
     }
   }
@@ -44,46 +46,46 @@ export const normalizePinLabels = (inputPinLabels: string[][]): string[][] => {
    * Where a set desires a number, if that number isn't taken, assign it the
    * number. If it is taken, assign it an "alt" prefix
    */
-  let highestPinNumber = 0
-  const alreadyAcceptedDesiredNumbers: Set<number> = new Set()
+  let highestPinNumber = 0;
+  const alreadyAcceptedDesiredNumbers: Set<number> = new Set();
   for (let i = 0; i < desiredNumbers.length; i++) {
-    const desiredNumber = desiredNumbers[i]
+    const desiredNumber = desiredNumbers[i];
 
     if (desiredNumber === null || desiredNumber < 1) {
-      continue
+      continue;
     }
 
     if (!alreadyAcceptedDesiredNumbers.has(desiredNumber)) {
-      alreadyAcceptedDesiredNumbers.add(desiredNumber)
-      result[i].push(`pin${desiredNumber}`)
-      highestPinNumber = Math.max(highestPinNumber, desiredNumber)
-      continue
+      alreadyAcceptedDesiredNumbers.add(desiredNumber);
+      result[i].push(`pin${desiredNumber}`);
+      highestPinNumber = Math.max(highestPinNumber, desiredNumber);
+      continue;
     }
 
-    let existingAltsForPin = 0
+    let existingAltsForPin = 0;
     for (const label of result[i]) {
       if (label.startsWith(`pin${desiredNumber}_alt`)) {
-        existingAltsForPin++
+        existingAltsForPin++;
       }
     }
 
-    result[i].push(`pin${desiredNumber}_alt${existingAltsForPin + 1}`)
+    result[i].push(`pin${desiredNumber}_alt${existingAltsForPin + 1}`);
   }
 
   // Assign pin numbers to alternate labels
   for (let i = 0; i < result.length; i++) {
-    const firstLabel = result[i][0]
+    const firstLabel = result[i][0];
     if (firstLabel?.includes("_alt")) {
-      highestPinNumber++
-      result[i].unshift(`pin${highestPinNumber}`)
+      highestPinNumber++;
+      result[i].unshift(`pin${highestPinNumber}`);
     }
   }
 
   // Assign pin numbers to unlabeled pins
   for (let i = 0; i < result.length; i++) {
     if (result[i].length === 0) {
-      highestPinNumber++
-      result[i].push(`pin${highestPinNumber}`)
+      highestPinNumber++;
+      result[i].push(`pin${highestPinNumber}`);
     }
   }
 
@@ -91,33 +93,34 @@ export const normalizePinLabels = (inputPinLabels: string[][]): string[][] => {
    * Number of items that have a given label, not including pin number
    * designations
    */
-  const totalLabelCounts: Record<string, number> = {}
+  const totalLabelCounts: Record<string, number> = {};
   for (const inputLabels of unqInputPinLabels) {
     for (const label of inputLabels) {
       if (/^\d+$/.test(label)) {
-        continue
+        continue;
       }
 
-      totalLabelCounts[label] = (totalLabelCounts[label] ?? 0) + 1
+      totalLabelCounts[label] = (totalLabelCounts[label] ?? 0) + 1;
     }
   }
 
-  const incrementalLabelCounts: Record<string, number> = {}
+  const incrementalLabelCounts: Record<string, number> = {};
   for (let i = 0; i < unqInputPinLabels.length; i++) {
-    const inputLabels = unqInputPinLabels[i]
+    const inputLabels = unqInputPinLabels[i];
     for (const label of inputLabels) {
       if (/^\d+$/.test(label)) {
-        continue
+        continue;
       }
 
       if (totalLabelCounts[label] === 1) {
-        result[i].push(label)
+        result[i].push(label);
       } else {
-        incrementalLabelCounts[label] = (incrementalLabelCounts[label] ?? 0) + 1
-        result[i].push(`${label}${incrementalLabelCounts[label]}`)
+        incrementalLabelCounts[label] =
+          (incrementalLabelCounts[label] ?? 0) + 1;
+        result[i].push(`${label}${incrementalLabelCounts[label]}`);
       }
     }
   }
 
-  return result
-}
+  return result;
+};

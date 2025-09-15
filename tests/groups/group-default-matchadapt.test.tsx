@@ -1,10 +1,10 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 // When no layout is specified and children have no schX/schY the group should default to matchAdapt
 
 test("group defaults to matchAdapt schematic layout", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
   circuit.add(
     <board width="10mm" height="10mm" routingDisabled>
       <group name="G1">
@@ -13,8 +13,8 @@ test("group defaults to matchAdapt schematic layout", () => {
         <trace from=".R1 > .pin1" to=".C1 > .pin1" />
       </group>
     </board>,
-  )
+  );
 
-  circuit.render()
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  circuit.render();
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

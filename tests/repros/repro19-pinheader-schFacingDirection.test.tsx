@@ -1,11 +1,11 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 
 // Reproduces issue where schFacingDirection is ignored
 // Expectation: pins should face left when schFacingDirection="left"
 
 export default test("pinheader schFacingDirection left", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -17,16 +17,16 @@ export default test("pinheader schFacingDirection left", async () => {
         schFacingDirection="left"
       />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
   const directions = circuit.db.schematic_port
     .list()
-    .map((p) => p.facing_direction)
+    .map((p) => p.facing_direction);
 
   // pins should all face left
-  expect(new Set(directions)).toEqual(new Set(["left"]))
+  expect(new Set(directions)).toEqual(new Set(["left"]));
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

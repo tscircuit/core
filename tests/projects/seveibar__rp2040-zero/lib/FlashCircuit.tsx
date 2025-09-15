@@ -1,4 +1,4 @@
-import { W25Q16JVUXIQ } from "../imports/W25Q16JVUXIQ"
+import { W25Q16JVUXIQ } from "../imports/W25Q16JVUXIQ";
 
 export const FlashCircuit = () => (
   <group>
@@ -25,4 +25,4 @@ export const FlashCircuit = () => (
       }}
     />
   </group>
-)
+);

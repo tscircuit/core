@@ -1,4 +1,4 @@
-import type { ChipProps } from "@tscircuit/props"
+import type { ChipProps } from "@tscircuit/props";
 
 const pinLabels = {
   pin1: ["IOVDD1"],
@@ -58,7 +58,7 @@ const pinLabels = {
   pin55: ["QSPI_SD1"],
   pin56: ["QSPI_SS_N"],
   pin57: ["GND"],
-} as const
+} as const;
 
 const RP2040 = (props: ChipProps<typeof pinLabels>) => {
   return (
@@ -680,8 +680,8 @@ const RP2040 = (props: ChipProps<typeof pinLabels>) => {
       }}
       {...props}
     />
-  )
-}
+  );
+};
 
 export const Benchmark2Rp2040DecouplingCapacitors = () => (
   <board routingDisabled>
@@ -750,4 +750,4 @@ export const Benchmark2Rp2040DecouplingCapacitors = () => (
       connections={{ pin1: "U3.ADC_AVDD", pin2: "net.GND" }}
     />
   </board>
-)
+);

@@ -1,11 +1,11 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
-import { createBasicAutorouter } from "../fixtures/createBasicAutorouter"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
+import { createBasicAutorouter } from "../fixtures/createBasicAutorouter";
 import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
-} from "lib/utils/autorouting/SimpleRouteJson"
-import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
+} from "lib/utils/autorouting/SimpleRouteJson";
+import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks";
 
 /**
  * Test for the Design Rule Check (DRC) phase
@@ -15,7 +15,7 @@ import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
  * and reports trace overlaps as errors.
  */
 test("design rule check detects crossing traces", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   // Create a circuit with traces that will cross each other on the same layer
   circuit.add(
@@ -72,7 +72,7 @@ test("design rule check detects crossing traces", async () => {
                   },
                 ],
               },
-            ]
+            ];
           },
         ),
       }}
@@ -99,24 +99,24 @@ test("design rule check detects crossing traces", async () => {
       <trace from=".R1 > .pin1" to=".R2 > .pin2" />
       <trace from=".R3 > .pin1" to=".R4 > .pin2" />
     </board>,
-  )
+  );
 
   // Ensure the circuit is fully rendered
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
   // Get the circuit JSON and manually run the DRC check
-  const circuitJson = circuit.getCircuitJson()
+  const circuitJson = circuit.getCircuitJson();
 
   // Run the DRC check function directly
-  const drcErrors = checkEachPcbTraceNonOverlapping(circuitJson)
+  const drcErrors = checkEachPcbTraceNonOverlapping(circuitJson);
 
   // Insert the DRC errors into the database for visualization
   for (const error of drcErrors) {
-    circuit.db.pcb_trace_error.insert(error)
+    circuit.db.pcb_trace_error.insert(error);
   }
 
   // Verify that at least one DRC error was detected
-  expect(drcErrors.length).toBeGreaterThan(0)
+  expect(drcErrors.length).toBeGreaterThan(0);
 
   // Check for trace overlap DRC error
   const traceOverlapError = drcErrors.find(
@@ -124,10 +124,10 @@ test("design rule check detects crossing traces", async () => {
       error.message.includes("overlaps with trace") &&
       error.pcb_trace_id === "trace_horizontal" &&
       error.pcb_trace_error_id === "overlap_trace_horizontal_trace_vertical",
-  )
+  );
 
-  expect(traceOverlapError).toBeDefined()
+  expect(traceOverlapError).toBeDefined();
 
   // Save the rendered PCB with errors as a snapshot
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

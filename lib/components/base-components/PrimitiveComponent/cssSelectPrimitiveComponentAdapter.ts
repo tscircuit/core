@@ -1,5 +1,5 @@
-import { PrimitiveComponent } from "lib/components"
-import type { Options } from "css-select"
+import { PrimitiveComponent } from "lib/components";
+import type { Options } from "css-select";
 
 /**
  * CSS-Select adapter for PrimitiveComponent
@@ -24,88 +24,88 @@ export const cssSelectPrimitiveComponentAdapter: Required<
   getAttributeValue: (node: PrimitiveComponent, name: string) => {
     // Handle class selector based on the component's name prop
     if (name === "class" && "getNameAndAliases" in node) {
-      return node.getNameAndAliases().join(" ")
+      return node.getNameAndAliases().join(" ");
     }
     // Handle attribute selector for 'name' (redundant if class handles it, but safe to keep)
     if (name === "name" && node._parsedProps?.name) {
-      return node._parsedProps.name
+      return node._parsedProps.name;
     }
 
     // Handle other attribute selectors based on props
     if (node._parsedProps && name in node._parsedProps) {
-      const value = node._parsedProps[name]
+      const value = node._parsedProps[name];
       // css-select might expect string values for attributes
       return typeof value === "string"
         ? value
         : value !== null && value !== undefined
           ? String(value)
-          : null
+          : null;
     }
 
     // Check for properties directly on the node
     if (name in node) {
-      const value = (node as any)[name]
+      const value = (node as any)[name];
       return typeof value === "string"
         ? value
         : value !== null && value !== undefined
           ? String(value)
-          : null
+          : null;
     }
 
     // Use pre-computed reverse mapping for fast O(1) camelCase lookups
-    const reverseMap = (node as any)._attributeLowerToCamelNameMap
+    const reverseMap = (node as any)._attributeLowerToCamelNameMap;
     if (reverseMap) {
-      const camelCaseName = reverseMap[name]
+      const camelCaseName = reverseMap[name];
       if (camelCaseName && camelCaseName in node) {
-        const value = (node as any)[camelCaseName]
+        const value = (node as any)[camelCaseName];
         return typeof value === "string"
           ? value
           : value !== null && value !== undefined
             ? String(value)
-            : null
+            : null;
       }
     }
 
-    return null
+    return null;
   },
 
   // Check if a node has an attribute
   hasAttrib: (node: PrimitiveComponent, name: string) => {
     // Check for 'class' based on the component's name prop
     if (name === "class") {
-      return !!node._parsedProps?.name
+      return !!node._parsedProps?.name;
     }
     // Check for other attributes based on props
     if (node._parsedProps && name in node._parsedProps) {
-      return true
+      return true;
     }
     // Check for properties directly on the node
     if (name in node) {
-      return true
+      return true;
     }
     // Use pre-computed reverse mapping for fast O(1) camelCase lookups
-    const reverseMap = (node as any)._attributeLowerToCamelNameMap
+    const reverseMap = (node as any)._attributeLowerToCamelNameMap;
     if (reverseMap) {
-      const camelCaseName = reverseMap[name]
+      const camelCaseName = reverseMap[name];
       if (camelCaseName && camelCaseName in node) {
-        return true
+        return true;
       }
     }
-    return false
+    return false;
   },
 
   // Get the siblings of the node
   getSiblings: (node: PrimitiveComponent) => {
-    if (!node.parent) return []
-    return node.parent.children
+    if (!node.parent) return [];
+    return node.parent.children;
   },
 
   // Get the previous sibling
   prevElementSibling: (node: PrimitiveComponent) => {
-    if (!node.parent) return null
-    const siblings = node.parent.children
-    const idx = siblings.indexOf(node)
-    return idx > 0 ? siblings[idx - 1] : null
+    if (!node.parent) return null;
+    const siblings = node.parent.children;
+    const idx = siblings.indexOf(node);
+    return idx > 0 ? siblings[idx - 1] : null;
   },
 
   // Get the text content
@@ -119,7 +119,7 @@ export const cssSelectPrimitiveComponentAdapter: Required<
           (other, j) =>
             i !== j && other !== node && other.getDescendants().includes(node),
         ),
-    )
+    );
   },
 
   // Determine if element a is a subset of element b
@@ -127,7 +127,7 @@ export const cssSelectPrimitiveComponentAdapter: Required<
     test: (node: PrimitiveComponent) => boolean,
     nodes: PrimitiveComponent[],
   ) => {
-    return nodes.some(test)
+    return nodes.some(test);
   },
 
   // Find all elements matching a selector
@@ -135,23 +135,23 @@ export const cssSelectPrimitiveComponentAdapter: Required<
     test: (node: PrimitiveComponent) => boolean,
     nodes: PrimitiveComponent[],
   ) => {
-    const result: PrimitiveComponent[] = []
+    const result: PrimitiveComponent[] = [];
 
     const recurse = (node: PrimitiveComponent) => {
       if (test(node)) {
-        result.push(node)
+        result.push(node);
       }
 
       for (const child of node.children) {
-        recurse(child)
+        recurse(child);
       }
-    }
+    };
 
     for (const node of nodes) {
-      recurse(node)
+      recurse(node);
     }
 
-    return result
+    return result;
   },
 
   // Find one element matching a selector
@@ -160,28 +160,28 @@ export const cssSelectPrimitiveComponentAdapter: Required<
     nodes: PrimitiveComponent[],
   ): PrimitiveComponent | null => {
     for (const node of nodes) {
-      if (test(node)) return node
+      if (test(node)) return node;
 
-      const children = node.children
+      const children = node.children;
       if (children.length > 0) {
         const result = cssSelectPrimitiveComponentAdapter!.findOne(
           test,
           children,
-        )
-        if (result) return result
+        );
+        if (result) return result;
       }
     }
 
-    return null
+    return null;
   },
 
   equals: (a: PrimitiveComponent, b: PrimitiveComponent) => {
-    return a._renderId === b._renderId
+    return a._renderId === b._renderId;
   },
   isHovered: (elem: PrimitiveComponent<any>): boolean => false,
   isVisited: (elem: PrimitiveComponent<any>): boolean => false,
   isActive: (elem: PrimitiveComponent<any>): boolean => false,
-}
+};
 
 export const cssSelectPrimitiveComponentAdapterWithoutSubcircuits: Required<
   Options<PrimitiveComponent, PrimitiveComponent>["adapter"]
@@ -189,7 +189,7 @@ export const cssSelectPrimitiveComponentAdapterWithoutSubcircuits: Required<
   ...cssSelectPrimitiveComponentAdapter,
   getChildren: (node: PrimitiveComponent) =>
     node.children.filter((c) => !c.isSubcircuit),
-}
+};
 
 export const cssSelectPrimitiveComponentAdapterOnlySubcircuits: Required<
   Options<PrimitiveComponent, PrimitiveComponent>["adapter"]
@@ -197,4 +197,4 @@ export const cssSelectPrimitiveComponentAdapterOnlySubcircuits: Required<
   ...cssSelectPrimitiveComponentAdapter,
   getChildren: (node: PrimitiveComponent) =>
     node.children.filter((c) => c.isSubcircuit),
-}
+};

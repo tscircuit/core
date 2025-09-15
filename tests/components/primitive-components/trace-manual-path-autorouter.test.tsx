@@ -1,10 +1,10 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 // Ensure manual pcbPath does not create duplicate traces when autorouter is enabled
 
 test("manual pcbPath with autorouter does not duplicate traces", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm" autorouter="sequential-trace">
@@ -23,17 +23,17 @@ test("manual pcbPath with autorouter does not duplicate traces", async () => {
         pcbPath={[{ x: 1, y: 0 }]}
       />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  const traces = circuit.db.pcb_trace.list()
-  expect(traces).toHaveLength(1)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  const traces = circuit.db.pcb_trace.list();
+  expect(traces).toHaveLength(1);
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});
 
 test("multiple manual pcbPaths from shared pad do not duplicate traces", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm" autorouter="sequential-trace">
@@ -67,11 +67,11 @@ test("multiple manual pcbPaths from shared pad do not duplicate traces", async (
         <pinheader name="INPUT_GND_PAD" pinCount={1} pcbX={-1} pcbY={-3} />
       </group>
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  const traces = circuit.db.pcb_trace.list()
-  expect(traces).toHaveLength(2)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "multiple-manual")
-})
+  const traces = circuit.db.pcb_trace.list();
+  expect(traces).toHaveLength(2);
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "multiple-manual");
+});

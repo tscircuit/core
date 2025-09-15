@@ -1,13 +1,13 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server";
 
 test("remote-autorouting-6 with caching enabled", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer({
     requireServerCacheEnabled: true,
-  })
+  });
 
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   // Create a basic circuit that needs routing
   circuit.add(
@@ -29,10 +29,10 @@ test("remote-autorouting-6 with caching enabled", async () => {
       />
       <trace from=".U1 > .pin1" to=".R1 > .pin1" />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
   // Verify routing request was made
-  expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
-})
+  expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0);
+});

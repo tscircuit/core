@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("subcircuit should not have multiple traces between the same pins", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="20mm" height="30mm">
@@ -45,12 +45,12 @@ test("subcircuit should not have multiple traces between the same pins", async (
         />
       </subcircuit>
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
 
-  const traces = circuit.db.pcb_trace.list()
-  expect(traces).toHaveLength(2)
-})
+  const traces = circuit.db.pcb_trace.list();
+  expect(traces).toHaveLength(2);
+});

@@ -1,17 +1,20 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 const FlippedChip = ({
   name,
   ...props
-}: { name: string; [key: string]: any }) => (
+}: {
+  name: string;
+  [key: string]: any;
+}) => (
   <group>
     <chip {...props} name={name} layer="bottom" />
   </group>
-)
+);
 
 test("chip with flipped layer should have traces on correct layer", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="20mm" height="20mm" autorouter="sequential-trace">
@@ -49,21 +52,21 @@ test("chip with flipped layer should have traces on correct layer", async () => 
       />
       <trace from=".R1 > .pin2" to=".U1 > .1" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const traces = circuit.db.pcb_trace.list()
+  const traces = circuit.db.pcb_trace.list();
 
   const routeLayers = traces[0].route.flatMap((point) => {
     if ("layer" in point) {
-      return [point.layer]
+      return [point.layer];
     }
-    return [point.to_layer, point.from_layer]
-  })
+    return [point.to_layer, point.from_layer];
+  });
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
 
-  expect(routeLayers).toContain("bottom")
-  expect(routeLayers).toContain("top")
-})
+  expect(routeLayers).toContain("bottom");
+  expect(routeLayers).toContain("top");
+});

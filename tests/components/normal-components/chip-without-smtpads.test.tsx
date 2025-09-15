@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
-import type { PcbHoleCircleOrSquare } from "circuit-json"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import type { PcbHoleCircleOrSquare } from "circuit-json";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("chip without SMT pads", () => {
-  const { project } = getTestFixture()
+  const { project } = getTestFixture();
 
   project.add(
     <board width="10mm" height="10mm">
@@ -16,17 +16,17 @@ test("chip without SMT pads", () => {
         }
       />
     </board>,
-  )
+  );
 
-  project.render()
+  project.render();
 
-  const chip = project.selectOne("chip")
-  expect(chip).not.toBeNull()
+  const chip = project.selectOne("chip");
+  expect(chip).not.toBeNull();
 
-  const hole = project.db.pcb_hole.list()[0]
-  expect(hole).toBeDefined()
-  expect((hole as PcbHoleCircleOrSquare).hole_diameter).toBe(2.5)
+  const hole = project.db.pcb_hole.list()[0];
+  expect(hole).toBeDefined();
+  expect((hole as PcbHoleCircleOrSquare).hole_diameter).toBe(2.5);
 
-  const smtpads = project.db.pcb_smtpad.list()
-  expect(smtpads.length).toBe(0)
-})
+  const smtpads = project.db.pcb_smtpad.list();
+  expect(smtpads.length).toBe(0);
+});

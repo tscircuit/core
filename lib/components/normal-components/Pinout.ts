@@ -1,10 +1,10 @@
-import { pinoutProps } from "@tscircuit/props"
-import { Chip } from "./Chip"
-import type { z } from "zod"
+import { pinoutProps } from "@tscircuit/props";
+import { Chip } from "./Chip";
+import type { z } from "zod";
 
 export class Pinout<PinLabels extends string = never> extends Chip<PinLabels> {
   constructor(props: z.input<typeof pinoutProps>) {
-    super(props)
+    super(props);
   }
 
   get config() {
@@ -12,20 +12,20 @@ export class Pinout<PinLabels extends string = never> extends Chip<PinLabels> {
       ...super.config,
       componentName: "Pinout",
       zodProps: pinoutProps,
-    }
+    };
   }
 
   doInitialSourceRender(): void {
-    const { db } = this.root!
-    const { _parsedProps: props } = this
+    const { db } = this.root!;
+    const { _parsedProps: props } = this;
 
     const source_component = db.source_component.insert({
       ftype: "simple_pinout",
       name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
-    })
+    });
 
-    this.source_component_id = source_component.source_component_id!
+    this.source_component_id = source_component.source_component_id!;
   }
 }

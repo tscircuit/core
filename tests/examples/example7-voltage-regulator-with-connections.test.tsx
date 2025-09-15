@@ -1,8 +1,8 @@
-import { createUseComponent } from "lib/hooks/create-use-component"
-import type { CommonLayoutProps } from "@tscircuit/props"
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { useCapacitor, useLed, useResistor } from "lib/index"
+import { createUseComponent } from "lib/hooks/create-use-component";
+import type { CommonLayoutProps } from "@tscircuit/props";
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { useCapacitor, useLed, useResistor } from "lib/index";
 
 const pinLabels = {
   pin7: ["pin7", "EP"],
@@ -12,10 +12,10 @@ const pinLabels = {
   pin3: ["pin3", "GND"],
   pin2: ["pin2", "FB"],
   pin1: ["pin1", "OUT"],
-} as const
+} as const;
 
 interface Props extends CommonLayoutProps {
-  name: string
+  name: string;
 }
 
 const TPS74601PDRVR = (props: Props) => {
@@ -106,19 +106,19 @@ const TPS74601PDRVR = (props: Props) => {
         </footprint>
       }
     />
-  )
-}
+  );
+};
 
-const useTPS74601PDRVR = createUseComponent(TPS74601PDRVR, pinLabels)
+const useTPS74601PDRVR = createUseComponent(TPS74601PDRVR, pinLabels);
 
 const Reg5vTo3v3 = (props: { name: string } & CommonLayoutProps) => {
-  const PWR1 = useTPS74601PDRVR("PWR1")
-  const R6 = useResistor("R6", { resistance: "1M", footprint: "0402" })
-  const R7 = useResistor("R7", { resistance: "200k", footprint: "0402" })
-  const R8 = useResistor("R8", { resistance: "1k", footprint: "0402" })
-  const C6 = useCapacitor("C6", { footprint: "cap0805", capacitance: "10uF" })
-  const C7 = useCapacitor("C7", { footprint: "cap0805", capacitance: "10uF" })
-  const LED1 = useLed("LED1", { footprint: "0603" })
+  const PWR1 = useTPS74601PDRVR("PWR1");
+  const R6 = useResistor("R6", { resistance: "1M", footprint: "0402" });
+  const R7 = useResistor("R7", { resistance: "200k", footprint: "0402" });
+  const R8 = useResistor("R8", { resistance: "1k", footprint: "0402" });
+  const C6 = useCapacitor("C6", { footprint: "cap0805", capacitance: "10uF" });
+  const C7 = useCapacitor("C7", { footprint: "cap0805", capacitance: "10uF" });
+  const LED1 = useLed("LED1", { footprint: "0603" });
 
   return (
     <group {...props}>
@@ -158,34 +158,34 @@ const Reg5vTo3v3 = (props: { name: string } & CommonLayoutProps) => {
       <trace from={C7.neg} to="net.gnd" />
       <trace from={C7.pos} to="net.v3_3" />
     </group>
-  )
-}
+  );
+};
 
 test("example7 voltage regulator with connections", async () => {
-  const { circuit } = await getTestFixture()
-  const U1 = useTPS74601PDRVR("U1")
+  const { circuit } = await getTestFixture();
+  const U1 = useTPS74601PDRVR("U1");
 
   circuit.add(
     <board width="10mm" height="10mm">
       <Reg5vTo3v3 name="U1" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
   // Get all schematic traces
-  const traces = circuit.db.schematic_trace.list()
+  const traces = circuit.db.schematic_trace.list();
 
   // Get all junctions from traces
-  const junctions = traces.flatMap((trace) => trace.junctions || [])
+  const junctions = traces.flatMap((trace) => trace.junctions || []);
 
   // There should be at least one junction where traces intersect
-  expect(junctions.length).toBeGreaterThanOrEqual(0)
+  expect(junctions.length).toBeGreaterThanOrEqual(0);
 
   // Each junction should have x,y coordinates
   for (const junction of junctions) {
-    expect(junction).toHaveProperty("x")
-    expect(junction).toHaveProperty("y")
+    expect(junction).toHaveProperty("x");
+    expect(junction).toHaveProperty("y");
   }
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
@@ -194,5 +194,5 @@ test("example7 voltage regulator with connections", async () => {
       labelCells: true,
     },
     labeledPoints: junctions.map((a) => ({ ...a, label: "junction" })),
-  })
-})
+  });
+});

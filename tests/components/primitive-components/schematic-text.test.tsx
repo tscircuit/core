@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("SchematicText Test", () => {
-  const { project } = getTestFixture()
+  const { project } = getTestFixture();
 
   project.add(
     <board width="10mm" height="10mm">
@@ -30,17 +30,17 @@ test("SchematicText Test", () => {
       />
       <schematictext text="top" schX={2} schY={3} anchor="top" color="yellow" />
     </board>,
-  )
+  );
 
-  project.render()
+  project.render();
 
-  const schematicTexts = project.db.schematic_text.list()
+  const schematicTexts = project.db.schematic_text.list();
 
-  expect(schematicTexts.length).toBe(5)
-  expect(schematicTexts[0].text).toBe("center")
-  expect(schematicTexts[0].position.x).toBe(2)
-  expect(schematicTexts[0].position.y).toBe(3)
-  expect(schematicTexts[0].anchor).toBe("center")
+  expect(schematicTexts.length).toBe(5);
+  expect(schematicTexts[0].text).toBe("center");
+  expect(schematicTexts[0].position.x).toBe(2);
+  expect(schematicTexts[0].position.y).toBe(3);
+  expect(schematicTexts[0].anchor).toBe("center");
 
-  expect(project).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(project).toMatchSchematicSnapshot(import.meta.path);
+});

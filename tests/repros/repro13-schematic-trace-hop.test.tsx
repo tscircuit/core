@@ -1,7 +1,7 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 test("Schematic trace double hop", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board
@@ -21,9 +21,9 @@ test("Schematic trace double hop", async () => {
       <trace from=".R2 > .pin2" to=".R3 > .pin2" />
       <trace from=".R3 > .pin2" to=".R2 > .pin2" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

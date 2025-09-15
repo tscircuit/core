@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("SchematicTable rendering", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -17,25 +17,25 @@ test("SchematicTable rendering", () => {
         </schematicrow>
       </schematictable>
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const tables = circuit.db.schematic_table.list()
-  expect(tables).toHaveLength(1)
+  const tables = circuit.db.schematic_table.list();
+  expect(tables).toHaveLength(1);
 
-  const cells = circuit.db.schematic_table_cell.list()
-  expect(cells).toHaveLength(4)
-  expect(cells.find((c) => c.text === "A1")).toBeDefined()
-  expect(cells.find((c) => c.text === "B1")).toBeDefined()
-  expect(cells.find((c) => c.text === "A2")).toBeDefined()
-  expect(cells.find((c) => c.text === "B2")).toBeDefined()
+  const cells = circuit.db.schematic_table_cell.list();
+  expect(cells).toHaveLength(4);
+  expect(cells.find((c) => c.text === "A1")).toBeDefined();
+  expect(cells.find((c) => c.text === "B1")).toBeDefined();
+  expect(cells.find((c) => c.text === "A2")).toBeDefined();
+  expect(cells.find((c) => c.text === "B2")).toBeDefined();
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});
 
 test("SchematicTable with spans", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -49,25 +49,25 @@ test("SchematicTable with spans", () => {
         </schematicrow>
       </schematictable>
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const tables = circuit.db.schematic_table.list()
-  expect(tables).toHaveLength(1)
+  const tables = circuit.db.schematic_table.list();
+  expect(tables).toHaveLength(1);
 
-  const cells = circuit.db.schematic_table_cell.list()
-  expect(cells).toHaveLength(3)
-  const spannedCell = cells.find((c) => c.text === "A1-B1")
-  expect(spannedCell).toBeDefined()
-  expect(spannedCell?.start_column_index).toBe(0)
-  expect(spannedCell?.end_column_index).toBe(1)
+  const cells = circuit.db.schematic_table_cell.list();
+  expect(cells).toHaveLength(3);
+  const spannedCell = cells.find((c) => c.text === "A1-B1");
+  expect(spannedCell).toBeDefined();
+  expect(spannedCell?.start_column_index).toBe(0);
+  expect(spannedCell?.end_column_index).toBe(1);
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path + "with-spans")
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path + "with-spans");
+});
 
 test("SchematicTable with text prop", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -78,17 +78,17 @@ test("SchematicTable with text prop", () => {
         </schematicrow>
       </schematictable>
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const tables = circuit.db.schematic_table.list()
-  expect(tables).toHaveLength(1)
+  const tables = circuit.db.schematic_table.list();
+  expect(tables).toHaveLength(1);
 
-  const cells = circuit.db.schematic_table_cell.list()
-  expect(cells).toHaveLength(2)
-  expect(cells.find((c) => c.text === "A1")).toBeDefined()
-  expect(cells.find((c) => c.text === "B1")).toBeDefined()
+  const cells = circuit.db.schematic_table_cell.list();
+  expect(cells).toHaveLength(2);
+  expect(cells.find((c) => c.text === "A1")).toBeDefined();
+  expect(cells.find((c) => c.text === "B1")).toBeDefined();
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path + "with-text-prop")
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path + "with-text-prop");
+});

@@ -1,39 +1,39 @@
-import type { AnyCircuitElement } from "circuit-json"
-import { RootCircuit } from "lib/RootCircuit"
-import React from "react"
+import type { AnyCircuitElement } from "circuit-json";
+import { RootCircuit } from "lib/RootCircuit";
+import React from "react";
 
 export const useRenderedCircuit = (
   reactElements: React.ReactElement,
 ): {
-  isLoading: boolean
-  error?: Error | null
-  circuit?: RootCircuit
-  circuitJson?: AnyCircuitElement[]
+  isLoading: boolean;
+  error?: Error | null;
+  circuit?: RootCircuit;
+  circuitJson?: AnyCircuitElement[];
 } => {
-  const [isLoading, setIsLoading] = React.useState(true)
-  const [error, setError] = React.useState<Error | null>(null)
-  const [circuit, setCircuit] = React.useState<RootCircuit>()
-  const [circuitJson, setCircuitJson] = React.useState<AnyCircuitElement[]>()
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<Error | null>(null);
+  const [circuit, setCircuit] = React.useState<RootCircuit>();
+  const [circuitJson, setCircuitJson] = React.useState<AnyCircuitElement[]>();
 
   React.useEffect(() => {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
     if (reactElements) {
       setTimeout(() => {
         try {
-          const circuit = new RootCircuit()
-          circuit.add(reactElements)
+          const circuit = new RootCircuit();
+          circuit.add(reactElements);
 
-          setCircuit(circuit)
-          setCircuitJson(circuit.toJson())
+          setCircuit(circuit);
+          setCircuitJson(circuit.toJson());
         } catch (error) {
-          setError(error as Error)
+          setError(error as Error);
         }
 
-        setIsLoading(false)
-      }, 1)
+        setIsLoading(false);
+      }, 1);
     }
-  }, [reactElements])
+  }, [reactElements]);
 
-  return { isLoading, error, circuit, circuitJson }
-}
+  return { isLoading, error, circuit, circuitJson };
+};

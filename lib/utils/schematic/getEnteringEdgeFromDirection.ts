@@ -1,4 +1,4 @@
-import type { Direction } from "@tscircuit/props"
+import type { Direction } from "@tscircuit/props";
 
 export const getEnteringEdgeFromDirection = (
   direction: Direction,
@@ -12,5 +12,5 @@ export const getEnteringEdgeFromDirection = (
         right: "left",
       } as const
     )[direction] ?? null
-  )
-}
+  );
+};

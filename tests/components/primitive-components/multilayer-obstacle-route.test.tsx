@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("multilayer obstacle route", async () => {
-  const { circuit, logSoup } = getTestFixture()
+  const { circuit, logSoup } = getTestFixture();
 
   circuit.add(
     <board width="12mm" height="10mm">
@@ -33,14 +33,14 @@ test("multilayer obstacle route", async () => {
         }}
       />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
   await expect(
     await circuit.getSvg({
       view: "pcb",
       layer: "top",
     }),
-  ).toMatchSvgSnapshot(import.meta.path)
-})
+  ).toMatchSvgSnapshot(import.meta.path);
+});

@@ -1,4 +1,4 @@
-import { WS2812B_2020 } from "../imports/WS2812B_2020"
+import { WS2812B_2020 } from "../imports/WS2812B_2020";
 
 export const LedCircuit = () => (
   <group>
@@ -11,4 +11,4 @@ export const LedCircuit = () => (
       }}
     />
   </group>
-)
+);

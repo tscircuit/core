@@ -1,59 +1,59 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { platedHoleProps } from "@tscircuit/props"
-import type { Port } from "./Port"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent";
+import { platedHoleProps } from "@tscircuit/props";
+import type { Port } from "./Port";
 import type {
   PCBPlatedHoleInput,
   PcbPlatedHoleOval,
   PcbHoleCircularWithRectPad,
   PcbHolePillWithRectPad,
   PcbHoleRotatedPillWithRectPad,
-} from "circuit-json"
+} from "circuit-json";
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
-  pcb_plated_hole_id: string | null = null
-  matchedPort: Port | null = null
-  isPcbPrimitive = true
+  pcb_plated_hole_id: string | null = null;
+  matchedPort: Port | null = null;
+  isPcbPrimitive = true;
 
   get config() {
     return {
       componentName: "PlatedHole",
       zodProps: platedHoleProps,
-    }
+    };
   }
 
   getAvailablePcbLayers(): string[] {
     // TODO use project layerCount
-    return ["top", "inner1", "inner2", "bottom"]
+    return ["top", "inner1", "inner2", "bottom"];
   }
 
   getPcbSize(): { width: number; height: number } {
-    const { _parsedProps: props } = this
+    const { _parsedProps: props } = this;
     if (props.shape === "circle") {
-      return { width: props.outerDiameter, height: props.outerDiameter }
+      return { width: props.outerDiameter, height: props.outerDiameter };
     }
     if (props.shape === "oval" || props.shape === "pill") {
-      return { width: props.outerWidth, height: props.outerHeight }
+      return { width: props.outerWidth, height: props.outerHeight };
     }
     if (props.shape === "circular_hole_with_rect_pad") {
-      return { width: props.rectPadWidth, height: props.rectPadHeight }
+      return { width: props.rectPadWidth, height: props.rectPadHeight };
     }
     if (props.shape === "pill_hole_with_rect_pad") {
-      return { width: props.rectPadWidth, height: props.rectPadHeight }
+      return { width: props.rectPadWidth, height: props.rectPadHeight };
     }
     throw new Error(
       `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
-    )
+    );
   }
 
   _getPcbCircuitJsonBounds(): {
-    center: { x: number; y: number }
-    bounds: { left: number; top: number; right: number; bottom: number }
-    width: number
-    height: number
+    center: { x: number; y: number };
+    bounds: { left: number; top: number; right: number; bottom: number };
+    width: number;
+    height: number;
   } {
-    const { db } = this.root!
-    const platedHole = db.pcb_plated_hole.get(this.pcb_plated_hole_id!)!
-    const size = this.getPcbSize()
+    const { db } = this.root!;
+    const platedHole = db.pcb_plated_hole.get(this.pcb_plated_hole_id!)!;
+    const size = this.getPcbSize();
 
     return {
       center: { x: platedHole.x, y: platedHole.y },
@@ -65,45 +65,45 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       },
       width: size.width,
       height: size.height,
-    }
+    };
   }
 
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
-    const { db } = this.root!
+    const { db } = this.root!;
     db.pcb_plated_hole.update(this.pcb_plated_hole_id!, {
       x: newCenter.x,
       y: newCenter.y,
-    })
-    this.matchedPort?._setPositionFromLayout(newCenter)
+    });
+    this.matchedPort?._setPositionFromLayout(newCenter);
   }
 
   doInitialPortMatching(): void {
     const parentPorts = this.getPrimitiveContainer()?.selectAll(
       "port",
-    ) as Port[]
+    ) as Port[];
 
     if (!this.props.portHints) {
-      return
+      return;
     }
 
     for (const port of parentPorts) {
       if (port.isMatchingAnyOf(this.props.portHints)) {
-        this.matchedPort = port
-        port.registerMatch(this)
-        return
+        this.matchedPort = port;
+        port.registerMatch(this);
+        return;
       }
     }
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
-    const { db } = this.root!
-    const { _parsedProps: props } = this
-    const position = this._getGlobalPcbPositionBeforeLayout()
+    if (this.root?.pcbDisabled) return;
+    const { db } = this.root!;
+    const { _parsedProps: props } = this;
+    const position = this._getGlobalPcbPositionBeforeLayout();
     const pcb_component_id =
       this.parent?.pcb_component_id ??
-      this.getPrimitiveContainer()?.pcb_component_id!
-    const subcircuit = this.getSubcircuit()
+      this.getPrimitiveContainer()?.pcb_component_id!;
+    const subcircuit = this.getSubcircuit();
 
     if (props.shape === "circle") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
@@ -119,9 +119,9 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         layers: ["top", "bottom"],
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      })
+      });
 
-      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id;
       db.pcb_solder_paste.insert({
         layer: "top",
         shape: "circle",
@@ -131,7 +131,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      })
+      });
       db.pcb_solder_paste.insert({
         layer: "bottom",
         shape: "circle",
@@ -141,7 +141,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      })
+      });
     } else if (props.shape === "pill" && props.rectPad) {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
@@ -165,9 +165,9 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         rect_ccw_rotation: props.pcbRotation ?? 0,
         rect_pad_width: props.outerWidth,
         rect_pad_height: props.outerHeight,
-      } as PcbHoleRotatedPillWithRectPad)
+      } as PcbHoleRotatedPillWithRectPad);
 
-      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id;
 
       // TODO: add solder paste
     } else if (props.shape === "pill" || props.shape === "oval") {
@@ -186,9 +186,9 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         // NOTE: currently PcbPlatedHoleOval erroneously includes both the shape "pill" and "oval"
-      } as PcbPlatedHoleOval)
+      } as PcbPlatedHoleOval);
 
-      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id;
       db.pcb_solder_paste.insert({
         layer: "top",
         shape: props.shape,
@@ -199,7 +199,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      })
+      });
       db.pcb_solder_paste.insert({
         layer: "bottom",
         shape: props.shape,
@@ -210,7 +210,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      })
+      });
     } else if (props.shape === "circular_hole_with_rect_pad") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
@@ -228,8 +228,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         hole_offset_x: props.pcbHoleOffsetX ?? 0,
         hole_offset_y: props.pcbHoleOffsetY ?? 0,
         rect_border_radius: props.rectBorderRadius ?? 0,
-      } as PcbHoleCircularWithRectPad)
-      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+      } as PcbHoleCircularWithRectPad);
+      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id;
     } else if (props.shape === "pill_hole_with_rect_pad") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
@@ -245,16 +245,16 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         layers: ["top", "bottom"],
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbHolePillWithRectPad)
-      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+      } as PcbHolePillWithRectPad);
+      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id;
     }
   }
 
   doInitialPcbPortAttachment(): void {
-    if (this.root?.pcbDisabled) return
-    const { db } = this.root!
+    if (this.root?.pcbDisabled) return;
+    const { db } = this.root!;
     db.pcb_plated_hole.update(this.pcb_plated_hole_id!, {
       pcb_port_id: this.matchedPort?.pcb_port_id!,
-    })
+    });
   }
 }

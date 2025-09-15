@@ -3,15 +3,15 @@ export const convertFacingDirectionToElbowDirection = (
 ): "x+" | "x-" | "y+" | "y-" | undefined => {
   switch (facingDirection) {
     case "up":
-      return "y+"
+      return "y+";
     case "down":
-      return "y-"
+      return "y-";
     case "left":
-      return "x-"
+      return "x-";
     case "right":
-      return "x+"
+      return "x+";
     default:
   }
-}
+};
 
-export default convertFacingDirectionToElbowDirection
+export default convertFacingDirectionToElbowDirection;

@@ -1,18 +1,18 @@
-import type { CommonLayoutProps } from "@tscircuit/props"
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import type { CommonLayoutProps } from "@tscircuit/props";
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 
 test("example14-shared-port-hints", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="20mm" height="30mm">
       <MyComponent name="U1" />
     </board>,
-  )
+  );
 
-  circuit.render()
-})
+  circuit.render();
+});
 
 const MyComponent = (props: { name: string }) => {
   return (
@@ -39,5 +39,5 @@ const MyComponent = (props: { name: string }) => {
         </footprint>
       }
     />
-  )
-}
+  );
+};

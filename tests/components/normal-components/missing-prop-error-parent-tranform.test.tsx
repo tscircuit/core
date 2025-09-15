@@ -1,8 +1,8 @@
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test";
 
 test("(ErrorPlaceholder) - missing prop error with parent transform", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board
@@ -26,15 +26,15 @@ test("(ErrorPlaceholder) - missing prop error with parent transform", async () =
       {/* @ts-expect-error */}
       <resistor footprint="0402" name="R1" />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  const circuitJson = circuit.getCircuitJson()
+  const circuitJson = circuit.getCircuitJson();
 
   const sourceMissingPropertyError = circuitJson.filter(
     (e) => e.type === "source_failed_to_create_component_error",
-  )
+  );
   expect(sourceMissingPropertyError).toMatchInlineSnapshot(`
       [
         {
@@ -53,5 +53,5 @@ test("(ErrorPlaceholder) - missing prop error with parent transform", async () =
           "type": "source_failed_to_create_component_error",
         },
       ]
-    `)
-})
+    `);
+});

@@ -1,18 +1,18 @@
-import { test, expect } from "bun:test"
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("subcircuit-id property for chip", async () => {
-  const { circuit } = await getTestFixture()
-  const { autoroutingServerUrl } = getTestAutoroutingServer()
+  const { circuit } = await getTestFixture();
+  const { autoroutingServerUrl } = getTestAutoroutingServer();
 
   circuit.add(
     <board width="30mm" height="30mm">
       <chip name="M1" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
   expect(circuit.db.pcb_component.list()[0]).toMatchInlineSnapshot(`
 {
@@ -29,20 +29,20 @@ test("subcircuit-id property for chip", async () => {
   "type": "pcb_component",
   "width": 2,
 }
-`)
-})
+`);
+});
 
 test("subcircuit-id property for jumper", async () => {
-  const { circuit } = await getTestFixture()
-  const { autoroutingServerUrl } = getTestAutoroutingServer()
+  const { circuit } = await getTestFixture();
+  const { autoroutingServerUrl } = getTestAutoroutingServer();
 
   circuit.add(
     <board width="30mm" height="30mm">
       <jumper name="J1" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
   expect(circuit.db.pcb_component.list()[0]).toMatchInlineSnapshot(`
 {
@@ -59,5 +59,5 @@ test("subcircuit-id property for jumper", async () => {
   "type": "pcb_component",
   "width": 2,
 }
-`)
-})
+`);
+});

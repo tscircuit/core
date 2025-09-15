@@ -1,22 +1,22 @@
-export type Side = "left" | "top" | "right" | "bottom"
-export type AxisDirection = "x+" | "x-" | "y+" | "y-"
+export type Side = "left" | "top" | "right" | "bottom";
+export type AxisDirection = "x+" | "x-" | "y+" | "y-";
 export const getSide = (input: AxisDirection | Side): Side => {
   switch (input) {
     case "x+":
-      return "right"
+      return "right";
     case "x-":
-      return "left"
+      return "left";
     case "y+":
-      return "top"
+      return "top";
     case "y-":
-      return "bottom"
+      return "bottom";
     case "left":
-      return "left"
+      return "left";
     case "top":
-      return "top"
+      return "top";
     case "right":
-      return "right"
+      return "right";
     case "bottom":
-      return "bottom"
+      return "bottom";
   }
-}
+};

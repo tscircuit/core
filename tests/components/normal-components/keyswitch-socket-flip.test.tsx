@@ -1,5 +1,5 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 /**
  * A switch shaft you can use to connect a pluggable Kailh socket.
@@ -7,10 +7,10 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
  * Datasheet: https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2211090930_Kailh-CPG151101S11-1_C5184526.pdf
  */
 const KeyswitchSocket = (props: {
-  name: string
-  pcbX?: number
-  pcbY?: number
-  layer?: "top" | "bottom"
+  name: string;
+  pcbX?: number;
+  pcbY?: number;
+  layer?: "top" | "bottom";
 }) => (
   <chip
     {...props}
@@ -50,36 +50,36 @@ const KeyswitchSocket = (props: {
       </footprint>
     }
   />
-)
+);
 
 test("KeyswitchSocket flips correctly when placed on bottom layer", () => {
-  const { project } = getTestFixture()
+  const { project } = getTestFixture();
 
   project.add(
     <board width="40mm" height="40mm">
       <KeyswitchSocket name="SW1" pcbX={-10} pcbY={0} layer="top" />
       <KeyswitchSocket name="SW2" pcbX={10} pcbY={0} layer="bottom" />
     </board>,
-  )
+  );
 
-  project.render()
+  project.render();
 
   // Check SMT pads
-  const smtPads = project.db.pcb_smtpad.list()
-  expect(smtPads.length).toBe(4)
+  const smtPads = project.db.pcb_smtpad.list();
+  expect(smtPads.length).toBe(4);
 
-  const topPads = smtPads.filter((pad) => pad.layer === "top")
-  const bottomPads = smtPads.filter((pad) => pad.layer === "bottom")
+  const topPads = smtPads.filter((pad) => pad.layer === "top");
+  const bottomPads = smtPads.filter((pad) => pad.layer === "bottom");
 
-  expect(topPads.length).toBe(2)
-  expect(bottomPads.length).toBe(2)
+  expect(topPads.length).toBe(2);
+  expect(bottomPads.length).toBe(2);
 
   // Check that bottom pads are mirrored
-  const topPad1 = topPads.find((pad) => pad.port_hints?.includes("pin1"))
-  const bottomPad1 = bottomPads.find((pad) => pad.port_hints?.includes("pin1"))
+  const topPad1 = topPads.find((pad) => pad.port_hints?.includes("pin1"));
+  const bottomPad1 = bottomPads.find((pad) => pad.port_hints?.includes("pin1"));
 
-  expect(topPad1).toBeDefined()
-  expect(bottomPad1).toBeDefined()
+  expect(topPad1).toBeDefined();
+  expect(bottomPad1).toBeDefined();
 
   if (topPad1 && bottomPad1) {
     // expect(topPad1.x).toBeCloseTo(-5.65, 2)
@@ -88,22 +88,22 @@ test("KeyswitchSocket flips correctly when placed on bottom layer", () => {
   }
 
   // Check holes (should not be flipped)
-  const holes = project.db.pcb_hole.list()
-  expect(holes.length).toBe(4)
+  const holes = project.db.pcb_hole.list();
+  expect(holes.length).toBe(4);
 
-  const topHoles = holes.filter((hole) => hole.x < 0) // Assuming 5 is the midpoint between the two switches
-  const bottomHoles = holes.filter((hole) => hole.x > 0)
+  const topHoles = holes.filter((hole) => hole.x < 0); // Assuming 5 is the midpoint between the two switches
+  const bottomHoles = holes.filter((hole) => hole.x > 0);
 
-  expect(topHoles.length).toBe(2)
-  expect(bottomHoles.length).toBe(2)
+  expect(topHoles.length).toBe(2);
+  expect(bottomHoles.length).toBe(2);
 
   // Check that holes maintain their relative positions
-  const topHole1 = topHoles[0]
-  const bottomHole1 = bottomHoles[0]
+  const topHole1 = topHoles[0];
+  const bottomHole1 = bottomHoles[0];
 
   // expect(topHole1.x).toBeCloseTo(bottomHole1.x, 2)
   // expect(topHole1.y).toBeCloseTo(bottomHole1.y - 10, 2) // Accounting for the 10mm Y offset
 
   // Visual check
-  expect(project).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(project).toMatchPcbSnapshot(import.meta.path);
+});

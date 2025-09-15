@@ -1,7 +1,7 @@
 import type {
   ExplicitPinMappingArrangement,
   PortArrangement,
-} from "./getAllDimensionsForSchematicBox"
+} from "./getAllDimensionsForSchematicBox";
 
 export const hasExplicitPinMapping = (
   pa: PortArrangement,
@@ -15,7 +15,7 @@ export const hasExplicitPinMapping = (
     if (side in pa && typeof (pa as any)[side] === "number") {
       throw new Error(
         `A number was specified for "${side}", you probably meant to use "size" not "side"`,
-      )
+      );
     }
   }
   return (
@@ -23,16 +23,16 @@ export const hasExplicitPinMapping = (
     "rightSide" in pa ||
     "topSide" in pa ||
     "bottomSide" in pa
-  )
-}
+  );
+};
 
 export const getSizeOfSidesFromPortArrangement = (
   pa: PortArrangement,
 ): {
-  leftSize: number
-  rightSize: number
-  topSize: number
-  bottomSize: number
+  leftSize: number;
+  rightSize: number;
+  topSize: number;
+  bottomSize: number;
 } => {
   if (hasExplicitPinMapping(pa)) {
     return {
@@ -40,8 +40,13 @@ export const getSizeOfSidesFromPortArrangement = (
       rightSize: pa.rightSide?.pins.length ?? 0,
       topSize: pa.topSide?.pins.length ?? 0,
       bottomSize: pa.bottomSide?.pins.length ?? 0,
-    }
+    };
   }
-  const { leftSize = 0, rightSize = 0, topSize = 0, bottomSize = 0 } = pa as any
-  return { leftSize, rightSize, topSize, bottomSize }
-}
+  const {
+    leftSize = 0,
+    rightSize = 0,
+    topSize = 0,
+    bottomSize = 0,
+  } = pa as any;
+  return { leftSize, rightSize, topSize, bottomSize };
+};

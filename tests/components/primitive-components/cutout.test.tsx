@@ -1,14 +1,14 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 import type {
   PcbCutout,
   PcbCutoutCircle,
   PcbCutoutPolygon,
   PcbCutoutRect,
-} from "circuit-json"
+} from "circuit-json";
 
 test("Cutout component rendering", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="30mm" height="20mm">
@@ -26,36 +26,36 @@ test("Cutout component rendering", () => {
         pcbY="0mm"
       />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const pcbCutouts = circuit.db.pcb_cutout.list() as PcbCutout[]
+  const pcbCutouts = circuit.db.pcb_cutout.list() as PcbCutout[];
 
-  expect(pcbCutouts.length).toBe(3)
+  expect(pcbCutouts.length).toBe(3);
 
   const rectCutout = pcbCutouts.find((c) => c.shape === "rect") as
     | PcbCutoutRect
-    | undefined
-  expect(rectCutout).toBeDefined()
-  expect(rectCutout?.width).toBe(5)
-  expect(rectCutout?.height).toBe(3)
-  expect(rectCutout?.center.x).toBe(-10)
+    | undefined;
+  expect(rectCutout).toBeDefined();
+  expect(rectCutout?.width).toBe(5);
+  expect(rectCutout?.height).toBe(3);
+  expect(rectCutout?.center.x).toBe(-10);
 
   const circleCutout = pcbCutouts.find((c) => c.shape === "circle") as
     | PcbCutoutCircle
-    | undefined
-  expect(circleCutout).toBeDefined()
-  expect(circleCutout?.radius).toBe(2)
-  expect(circleCutout?.center.x).toBe(0)
+    | undefined;
+  expect(circleCutout).toBeDefined();
+  expect(circleCutout?.radius).toBe(2);
+  expect(circleCutout?.center.x).toBe(0);
 
   const polygonCutout = pcbCutouts.find((c) => c.shape === "polygon") as
     | PcbCutoutPolygon
-    | undefined
-  expect(polygonCutout).toBeDefined()
-  expect(polygonCutout?.points.length).toBe(4)
-  expect(polygonCutout?.points[0].x).toBe(10)
-  expect(polygonCutout?.points[0].y).toBe(-2)
+    | undefined;
+  expect(polygonCutout).toBeDefined();
+  expect(polygonCutout?.points.length).toBe(4);
+  expect(polygonCutout?.points[0].x).toBe(10);
+  expect(polygonCutout?.points[0].y).toBe(-2);
 
-  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path);
+});

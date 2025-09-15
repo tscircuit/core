@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("Schematic symbol rotation not a multiple of 90", () => {
-  const { project } = getTestFixture()
+  const { project } = getTestFixture();
 
   try {
     project.add(
@@ -14,11 +14,11 @@ test("Schematic symbol rotation not a multiple of 90", () => {
           schRotation={45}
         />
       </board>,
-    )
+    );
   } catch (e: any) {
-    expect(e).toBeInstanceOf(Error)
+    expect(e).toBeInstanceOf(Error);
     expect(e.message).toMatch(
       "Schematic rotation 45 is not supported for Capacitor",
-    )
+    );
   }
-})
+});

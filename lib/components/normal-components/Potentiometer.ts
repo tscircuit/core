@@ -1,18 +1,18 @@
-import { potentiometerProps } from "@tscircuit/props"
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import type { BaseSymbolName } from "lib/utils/constants"
-import { formatSiUnit } from "format-si-unit"
+import { potentiometerProps } from "@tscircuit/props";
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent";
+import type { BaseSymbolName } from "lib/utils/constants";
+import { formatSiUnit } from "format-si-unit";
 
 function getPotentiometerSymbolName(
   variant: string | undefined,
 ): BaseSymbolName {
   switch (variant) {
     case "three_pin":
-      return "potentiometer3"
+      return "potentiometer3";
     case "two_pin":
-      return "potentiometer2"
+      return "potentiometer2";
     default:
-      return "potentiometer2"
+      return "potentiometer2";
   }
 }
 
@@ -25,22 +25,22 @@ export class Potentiometer extends NormalComponent<typeof potentiometerProps> {
         getPotentiometerSymbolName(this.props.pinVariant),
       zodProps: potentiometerProps,
       shouldRenderAsSchematicBox: false,
-    }
+    };
   }
   _getSchematicSymbolDisplayValue(): string | undefined {
-    return `${formatSiUnit(this._parsedProps.maxResistance)}Ω`
+    return `${formatSiUnit(this._parsedProps.maxResistance)}Ω`;
   }
   doInitialSourceRender() {
-    const { db } = this.root!
-    const { _parsedProps: props } = this
-    const pinVariant = props.pinVariant || "two_pin"
+    const { db } = this.root!;
+    const { _parsedProps: props } = this;
+    const pinVariant = props.pinVariant || "two_pin";
     const source_component = db.source_component.insert({
       ftype: "simple_potentiometer",
       name: this.name,
       max_resistance: props.maxResistance,
       pin_variant: pinVariant,
       are_pins_interchangeable: pinVariant === "two_pin",
-    } as any)
-    this.source_component_id = source_component.source_component_id
+    } as any);
+    this.source_component_id = source_component.source_component_id;
   }
 }

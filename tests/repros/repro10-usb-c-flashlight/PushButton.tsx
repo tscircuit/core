@@ -1,16 +1,16 @@
-import { createUseComponent } from "lib/hooks/create-use-component"
-import type { CommonLayoutProps } from "@tscircuit/props"
+import { createUseComponent } from "lib/hooks/create-use-component";
+import type { CommonLayoutProps } from "@tscircuit/props";
 
 const pinLabels = {
   pin1: "pin1",
   pin2: "pin2",
   pin3: "pin3",
   pin4: "pin4",
-} as const
-const pinNames = Object.values(pinLabels)
+} as const;
+const pinNames = Object.values(pinLabels);
 
 interface Props extends CommonLayoutProps {
-  name: string
+  name: string;
 }
 
 export const PushButton = (props: Props) => {
@@ -90,7 +90,7 @@ export const PushButton = (props: Props) => {
         </footprint>
       }
     />
-  )
-}
+  );
+};
 
-export const usePushButton = createUseComponent(PushButton, pinNames)
+export const usePushButton = createUseComponent(PushButton, pinNames);

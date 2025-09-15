@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("ground net labels become symbols", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -16,12 +16,12 @@ test("ground net labels become symbols", () => {
       />
       <trace from=".R1 > .pin1" to="net.GND" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const labels = circuit.db.schematic_net_label.list()
-  expect(labels).toHaveLength(1)
-  expect(labels[0].symbol_name).toBe("rail_down")
-  expect(labels[0].text).toBe("GND")
-})
+  const labels = circuit.db.schematic_net_label.list();
+  expect(labels).toHaveLength(1);
+  expect(labels[0].symbol_name).toBe("rail_down");
+  expect(labels[0].text).toBe("GND");
+});

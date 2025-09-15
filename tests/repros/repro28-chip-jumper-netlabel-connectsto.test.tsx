@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
-import { sel } from "lib/sel"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
+import { sel } from "lib/sel";
 
 test("chip with jumper and netlabel connectsTo", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   const pinLabels = {
     pin1: "VCC",
@@ -18,7 +18,7 @@ test("chip with jumper and netlabel connectsTo", async () => {
     pin12: "B2",
     pin13: "B1",
     pin14: "VCC",
-  }
+  };
 
   circuit.add(
     <board
@@ -144,9 +144,9 @@ test("chip with jumper and netlabel connectsTo", async () => {
         schY={-1.8}
       />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

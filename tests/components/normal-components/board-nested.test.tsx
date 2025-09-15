@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("error when board nested inside board", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   expect(() =>
     circuit.add(
@@ -12,5 +12,5 @@ test("error when board nested inside board", () => {
         </board>
       </board>,
     ),
-  ).toThrow("Nested boards are not supported")
-})
+  ).toThrow("Nested boards are not supported");
+});

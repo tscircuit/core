@@ -1,15 +1,15 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
-import { getSchematicObstaclesForTrace } from "lib/components/primitive-components/Trace/trace-utils/get-obstacles-for-trace"
-import { getSvgFromGraphicsObject } from "graphics-debug"
-import type { Trace } from "lib/components"
-import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
-import { duplicateObstaclesWithMargins } from "tests/utils/autorouting/duplicateObstaclesWithMargins"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson";
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson";
+import { getSchematicObstaclesForTrace } from "lib/components/primitive-components/Trace/trace-utils/get-obstacles-for-trace";
+import { getSvgFromGraphicsObject } from "graphics-debug";
+import type { Trace } from "lib/components";
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg";
+import { duplicateObstaclesWithMargins } from "tests/utils/autorouting/duplicateObstaclesWithMargins";
 
 test("trace schematic obstacles 1", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="20mm" height="20mm" routingDisabled>
@@ -19,13 +19,13 @@ test("trace schematic obstacles 1", () => {
       <trace from=".U1 > .pin7" to=".R1 > .pin2" />
       {/* <trace from=".U1 > .pin2" to="net.GND" /> */}
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const trace = circuit.selectOne("trace") as Trace
+  const trace = circuit.selectOne("trace") as Trace;
 
-  const schematicObstacles = getSchematicObstaclesForTrace(trace as Trace)
+  const schematicObstacles = getSchematicObstaclesForTrace(trace as Trace);
 
   expect(
     getSvgFromGraphicsObject({
@@ -34,7 +34,7 @@ test("trace schematic obstacles 1", () => {
   ).toMatchSvgSnapshot(
     import.meta.path,
     "schematic-trace-obstacles-1-obstacles",
-  )
+  );
   expect(
     getSvgFromGraphicsObject({
       rects: duplicateObstaclesWithMargins(schematicObstacles),
@@ -42,7 +42,7 @@ test("trace schematic obstacles 1", () => {
   ).toMatchSvgSnapshot(
     import.meta.path,
     "schematic-trace-obstacles-1-obstacles-with-margins",
-  )
+  );
   expect(
     convertCircuitJsonToSchematicSvg(circuit.getCircuitJson(), {
       grid: {
@@ -53,5 +53,5 @@ test("trace schematic obstacles 1", () => {
   ).toMatchSvgSnapshot(
     import.meta.path,
     "schematic-trace-obstacles-1-schematic",
-  )
-})
+  );
+});

@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("manual trace hints correctly change trace routes", async () => {
-  const { circuit, logSoup } = getTestFixture()
+  const { circuit, logSoup } = getTestFixture();
 
   circuit.add(
     <board
@@ -39,23 +39,23 @@ test("manual trace hints correctly change trace routes", async () => {
       <led name="LED1" footprint="0402" pcbX={2} pcbY={0} />
       <trace from=".R1 > .pin2" to=".LED1 > .anode" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit.db.pcb_trace.list().length).toBe(1)
+  expect(circuit.db.pcb_trace.list().length).toBe(1);
 
-  const traceRoute = circuit.db.pcb_trace.list()[0].route
+  const traceRoute = circuit.db.pcb_trace.list()[0].route;
 
   expect(traceRoute.map((p) => ("layer" in p ? p.layer : ""))).toContain(
     "bottom",
-  )
+  );
 
-  expect(circuit.selectAll("tracehint").length).toBe(1)
+  expect(circuit.selectAll("tracehint").length).toBe(1);
 
-  expect(circuit.db.pcb_trace_hint.list().length).toBe(1)
+  expect(circuit.db.pcb_trace_hint.list().length).toBe(1);
 
-  expect(circuit.db.pcb_trace_hint.list()[0].pcb_port_id).toBeTruthy()
+  expect(circuit.db.pcb_trace_hint.list()[0].pcb_port_id).toBeTruthy();
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

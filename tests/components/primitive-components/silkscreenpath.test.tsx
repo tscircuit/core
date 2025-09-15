@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("SilkscreenPath rendering", () => {
-  const { project } = getTestFixture()
+  const { project } = getTestFixture();
 
   project.add(
     <board width="10mm" height="10mm">
@@ -16,23 +16,23 @@ test("SilkscreenPath rendering", () => {
         layer="top"
       />
     </board>,
-  )
+  );
 
-  project.render()
+  project.render();
 
-  const silkscreenPaths = project.db.pcb_silkscreen_path.list()
+  const silkscreenPaths = project.db.pcb_silkscreen_path.list();
 
-  expect(silkscreenPaths.length).toBe(1)
-  expect(silkscreenPaths[0].layer).toBe("top")
-  expect(silkscreenPaths[0].stroke_width).toBe(0.2)
+  expect(silkscreenPaths.length).toBe(1);
+  expect(silkscreenPaths[0].layer).toBe("top");
+  expect(silkscreenPaths[0].stroke_width).toBe(0.2);
 
   expect(silkscreenPaths[0].route).toEqual([
     { x: 0, y: 0 },
     { x: 5, y: 5 },
     { x: 10, y: 0 },
-  ])
+  ]);
 
-  expect(silkscreenPaths[0].pcb_silkscreen_path_id).toBeTruthy()
+  expect(silkscreenPaths[0].pcb_silkscreen_path_id).toBeTruthy();
 
-  expect(project).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(project).toMatchPcbSnapshot(import.meta.path);
+});

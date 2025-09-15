@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphics"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphics";
 
 test("nested group pack with various resistors and capacitors", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board routingDisabled>
@@ -49,9 +49,9 @@ test("nested group pack with various resistors and capacitors", () => {
         />
       </group>
     </board>,
-  )
+  );
 
-  circuit.render()
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  writeGlobalDebugGraphics()
-})
+  circuit.render();
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+  writeGlobalDebugGraphics();
+});

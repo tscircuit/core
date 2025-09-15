@@ -1,81 +1,85 @@
-import type { Trace } from "./Trace"
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
-import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
-import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
-import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
-import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
-import { getClosest } from "lib/utils/getClosest"
-import { pairs } from "lib/utils/pairs"
-import { tryNow } from "lib/utils/try-now"
-import type { Port } from "../Port"
-import type { TraceHint } from "../TraceHint"
-import { getTraceLength } from "./trace-utils/compute-trace-length"
-import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
+import type { Trace } from "./Trace";
+import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar";
+import {
+  type LayerRef,
+  type PcbTrace,
+  type RouteHintPoint,
+} from "circuit-json";
+import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map";
+import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson";
+import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations";
+import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes";
+import { getClosest } from "lib/utils/getClosest";
+import { pairs } from "lib/utils/pairs";
+import { tryNow } from "lib/utils/try-now";
+import type { Port } from "../Port";
+import type { TraceHint } from "../TraceHint";
+import { getTraceLength } from "./trace-utils/compute-trace-length";
+import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson";
 
 type PcbRouteObjective =
   | RouteHintPoint
   | {
-      layers: string[]
-      x: number
-      y: number
-      via?: boolean
-      pcb_port_id?: string
-    }
+      layers: string[];
+      x: number;
+      y: number;
+      via?: boolean;
+      pcb_port_id?: string;
+    };
 
 const portToObjective = (port: Port): PcbRouteObjective => {
-  const portPosition = port._getGlobalPcbPositionAfterLayout()
+  const portPosition = port._getGlobalPcbPositionAfterLayout();
   return {
     ...portPosition,
     layers: port.getAvailablePcbLayers(),
-  }
-}
+  };
+};
 
-const SHOULD_USE_SINGLE_LAYER_ROUTING = false
+const SHOULD_USE_SINGLE_LAYER_ROUTING = false;
 
 export function Trace_doInitialPcbTraceRender(trace: Trace) {
-  if (trace.root?.pcbDisabled) return
-  const { db } = trace.root!
-  const { _parsedProps: props, parent } = trace
-  const subcircuit = trace.getSubcircuit()
+  if (trace.root?.pcbDisabled) return;
+  const { db } = trace.root!;
+  const { _parsedProps: props, parent } = trace;
+  const subcircuit = trace.getSubcircuit();
 
-  if (!parent) throw new Error("Trace has no parent")
+  if (!parent) throw new Error("Trace has no parent");
 
   if (subcircuit._parsedProps.routingDisabled) {
-    return
+    return;
   }
 
   // Check for cached route
-  const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
+  const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces;
   if (cachedRoute) {
     const pcb_trace = db.pcb_trace.insert({
       route: cachedRoute.flatMap((trace) => trace.route),
       source_trace_id: trace.source_trace_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
-    })
-    trace.pcb_trace_id = pcb_trace.pcb_trace_id
-    return
+    });
+    trace.pcb_trace_id = pcb_trace.pcb_trace_id;
+    return;
   }
 
   // Manual traces are handled in PcbManualTraceRender phase
   if (props.pcbPath && props.pcbPath.length > 0) {
-    return
+    return;
   }
 
   if (!subcircuit._shouldUseTraceByTraceRouting()) {
-    return
+    return;
   }
 
-  const { allPortsFound, ports } = trace._findConnectedPorts()
-  const portsConnectedOnPcbViaNet: Port[] = []
+  const { allPortsFound, ports } = trace._findConnectedPorts();
+  const portsConnectedOnPcbViaNet: Port[] = [];
 
-  if (!allPortsFound) return
+  if (!allPortsFound) return;
 
-  const portsWithoutMatchedPcbPrimitive: Port[] = []
+  const portsWithoutMatchedPcbPrimitive: Port[] = [];
   for (const port of ports) {
     if (!port._hasMatchedPcbPrimitive()) {
-      portsWithoutMatchedPcbPrimitive.push(port)
+      portsWithoutMatchedPcbPrimitive.push(port);
     }
   }
 
@@ -89,49 +93,49 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       pcb_port_ids: portsWithoutMatchedPcbPrimitive
         .map((p) => p.pcb_port_id!)
         .filter(Boolean),
-    })
-    return
+    });
+    return;
   }
 
-  const nets = trace._findConnectedNets().netsWithSelectors
+  const nets = trace._findConnectedNets().netsWithSelectors;
 
   if (ports.length === 0 && nets.length === 2) {
     // Find the two optimal points to connect the two nets
     trace.renderError(
       `Trace connects two nets, we haven't implemented a way to route this yet`,
-    )
-    return
+    );
+    return;
     // biome-ignore lint/style/noUselessElse: <explanation>
   } else if (ports.length === 1 && nets.length === 1) {
     // Add a port from the net that is closest to the port
-    const port = ports[0]
-    const portsInNet = nets[0].net.getAllConnectedPorts()
-    const otherPortsInNet = portsInNet.filter((p) => p !== port)
+    const port = ports[0];
+    const portsInNet = nets[0].net.getAllConnectedPorts();
+    const otherPortsInNet = portsInNet.filter((p) => p !== port);
     if (otherPortsInNet.length === 0) {
       console.log(
         "Nothing to connect this port to, the net is empty. TODO should emit a warning!",
-      )
-      return
+      );
+      return;
     }
-    const closestPortInNet = getClosest(port, otherPortsInNet)
+    const closestPortInNet = getClosest(port, otherPortsInNet);
 
-    portsConnectedOnPcbViaNet.push(closestPortInNet)
+    portsConnectedOnPcbViaNet.push(closestPortInNet);
 
-    ports.push(closestPortInNet)
+    ports.push(closestPortInNet);
   } else if (ports.length > 1 && nets.length >= 1) {
     trace.renderError(
       `Trace has more than one port and one or more nets, we don't currently support this type of complex trace routing`,
-    )
-    return
+    );
+    return;
   }
 
   const hints = ports.flatMap((port) =>
     port.matchedComponents.filter((c) => c.componentName === "TraceHint"),
-  ) as TraceHint[]
+  ) as TraceHint[];
 
   const pcbRouteHints = (trace._parsedProps.pcbRouteHints ?? []).concat(
     hints.flatMap((h) => h.getPcbRouteHints()),
-  )
+  );
 
   if (ports.length > 2) {
     trace.renderError(
@@ -140,8 +144,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
         .join(
           ", ",
         )}), routing between more than two ports for a single trace is not implemented`,
-    )
-    return
+    );
+    return;
   }
 
   const alreadyRoutedTraces = trace
@@ -149,7 +153,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     .selectAll("trace")
     .filter(
       (trace) => trace.renderPhaseStates.PcbTraceRender.initialized,
-    ) as Trace[]
+    ) as Trace[];
 
   const isAlreadyRouted = alreadyRoutedTraces.some(
     (trace) =>
@@ -157,19 +161,19 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       trace._portsRoutedOnPcb.every((portRoutedByOtherTrace) =>
         ports.includes(portRoutedByOtherTrace),
       ),
-  )
+  );
 
   if (isAlreadyRouted) {
-    return
+    return;
   }
 
-  let orderedRouteObjectives: PcbRouteObjective[] = []
+  let orderedRouteObjectives: PcbRouteObjective[] = [];
 
   if (pcbRouteHints.length === 0) {
     orderedRouteObjectives = [
       portToObjective(ports[0]),
       portToObjective(ports[1]),
-    ]
+    ];
   } else {
     // When we have hints, we have to order the hints then route between each
     // terminal of the trace and the hints
@@ -178,7 +182,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       portToObjective(ports[0]),
       ...pcbRouteHints,
       portToObjective(ports[1]),
-    ]
+    ];
   }
 
   // Hints can indicate where there should be a via, but the layer is allowed
@@ -186,7 +190,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   // to go to each hint and still route to the start and end points
   const candidateLayerCombinations = findPossibleTraceLayerCombinations(
     orderedRouteObjectives,
-  )
+  );
 
   if (
     SHOULD_USE_SINGLE_LAYER_ROUTING &&
@@ -194,19 +198,19 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   ) {
     trace.renderError(
       `Could not find a common layer (using hints) for trace ${trace.getString()}`,
-    )
-    return
+    );
+    return;
   }
 
   const connMap = getFullConnectivityMapFromCircuitJson(
     trace.root!.db.toArray(),
-  )
+  );
 
   // Cache the PCB obstacles, they'll be needed for each segment between
   // ports/hints
   const [obstacles, errGettingObstacles] = tryNow(
     () => getObstaclesFromCircuitJson(trace.root!.db.toArray() as any), // Remove as any when autorouting-dataset gets updated
-  )
+  );
 
   if (errGettingObstacles) {
     trace.renderError({
@@ -219,26 +223,26 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       pcb_port_ids: ports.map((p) => p.pcb_port_id!),
       pcb_trace_id: trace.pcb_trace_id!,
       pcb_component_ids: [],
-    })
-    return
+    });
+    return;
   }
 
   for (const obstacle of obstacles) {
-    const connectedTo = obstacle.connectedTo
+    const connectedTo = obstacle.connectedTo;
     if (connectedTo.length > 0) {
-      const netId = connMap.getNetConnectedToId(obstacle.connectedTo[0])
+      const netId = connMap.getNetConnectedToId(obstacle.connectedTo[0]);
       if (netId) {
-        obstacle.connectedTo.push(netId)
+        obstacle.connectedTo.push(netId);
       }
     }
   }
 
-  let orderedRoutePoints: PcbRouteObjective[] = []
+  let orderedRoutePoints: PcbRouteObjective[] = [];
   if (candidateLayerCombinations.length === 0) {
-    orderedRoutePoints = orderedRouteObjectives
+    orderedRoutePoints = orderedRouteObjectives;
   } else {
     // TODO explore all candidate layer combinations if one fails
-    const candidateLayerSelections = candidateLayerCombinations[0].layer_path
+    const candidateLayerSelections = candidateLayerCombinations[0].layer_path;
 
     /**
      * Apply the candidate layer selections to the route objectives, now we
@@ -249,35 +253,35 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
         return {
           ...t,
           via_to_layer: candidateLayerSelections[idx],
-        }
+        };
       }
-      return { ...t, layers: [candidateLayerSelections[idx]] }
-    })
+      return { ...t, layers: [candidateLayerSelections[idx]] };
+    });
   }
-  ;(orderedRoutePoints[0] as any).pcb_port_id = ports[0].pcb_port_id
-  ;(orderedRoutePoints[orderedRoutePoints.length - 1] as any).pcb_port_id =
-    ports[1].pcb_port_id
+  (orderedRoutePoints[0] as any).pcb_port_id = ports[0].pcb_port_id;
+  (orderedRoutePoints[orderedRoutePoints.length - 1] as any).pcb_port_id =
+    ports[1].pcb_port_id;
 
-  const routes: PcbTrace["route"][] = []
+  const routes: PcbTrace["route"][] = [];
   for (const [a, b] of pairs(orderedRoutePoints)) {
     const dominantLayer =
-      "via_to_layer" in a ? (a.via_to_layer as LayerRef) : null
-    const BOUNDS_MARGIN = 2 //mm
+      "via_to_layer" in a ? (a.via_to_layer as LayerRef) : null;
+    const BOUNDS_MARGIN = 2; //mm
 
     const aLayer =
       "layers" in a && a.layers.length === 1
         ? a.layers[0]
-        : (dominantLayer ?? "top")
+        : (dominantLayer ?? "top");
     const bLayer =
       "layers" in b && b.layers.length === 1
         ? b.layers[0]
-        : (dominantLayer ?? "top")
+        : (dominantLayer ?? "top");
 
-    const pcbPortA = "pcb_port_id" in a ? a.pcb_port_id : null
-    const pcbPortB = "pcb_port_id" in b ? b.pcb_port_id : null
+    const pcbPortA = "pcb_port_id" in a ? a.pcb_port_id : null;
+    const pcbPortB = "pcb_port_id" in b ? b.pcb_port_id : null;
 
     const minTraceWidth =
-      trace.getSubcircuit()._parsedProps.minTraceWidth ?? 0.16
+      trace.getSubcircuit()._parsedProps.minTraceWidth ?? 0.16;
 
     const ijump = new MultilayerIjump({
       OBSTACLE_MARGIN: minTraceWidth * 2,
@@ -304,10 +308,10 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
           maxY: Math.max(a.y, b.y) + BOUNDS_MARGIN,
         },
       },
-    })
-    let traces: SimplifiedPcbTrace[] | null = null
+    });
+    let traces: SimplifiedPcbTrace[] | null = null;
     try {
-      traces = ijump.solveAndMapToTraces()
+      traces = ijump.solveAndMapToTraces();
     } catch (e: any) {
       trace.renderError({
         type: "pcb_trace_error",
@@ -319,9 +323,9 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
         pcb_port_ids: ports.map((p) => p.pcb_port_id!),
         pcb_trace_id: trace.pcb_trace_id!,
         pcb_component_ids: ports.map((p) => p.pcb_component_id!),
-      })
+      });
     }
-    if (!traces) return
+    if (!traces) return;
     if (traces.length === 0) {
       trace.renderError({
         type: "pcb_trace_error",
@@ -333,43 +337,43 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
         pcb_port_ids: ports.map((p) => p.pcb_port_id!),
         pcb_trace_id: trace.pcb_trace_id!,
         pcb_component_ids: ports.map((p) => p.pcb_component_id!),
-      })
-      return
+      });
+      return;
     }
-    const [autoroutedTrace] = traces as PcbTrace[]
+    const [autoroutedTrace] = traces as PcbTrace[];
 
     // If the autorouter didn't specify a layer, use the dominant layer
     // Some of the single-layer autorouters don't add the layer property
     if (dominantLayer) {
       autoroutedTrace.route = autoroutedTrace.route.map((p) => {
         if (p.route_type === "wire" && !p.layer) {
-          p.layer = dominantLayer
+          p.layer = dominantLayer;
         }
-        return p
-      })
+        return p;
+      });
     }
 
     if (pcbPortA && autoroutedTrace.route[0].route_type === "wire") {
-      autoroutedTrace.route[0].start_pcb_port_id = pcbPortA
+      autoroutedTrace.route[0].start_pcb_port_id = pcbPortA;
     }
     const lastRoutePoint =
-      autoroutedTrace.route[autoroutedTrace.route.length - 1]
+      autoroutedTrace.route[autoroutedTrace.route.length - 1];
     if (pcbPortB && lastRoutePoint.route_type === "wire") {
-      lastRoutePoint.end_pcb_port_id = pcbPortB
+      lastRoutePoint.end_pcb_port_id = pcbPortB;
     }
-    routes.push(autoroutedTrace.route)
+    routes.push(autoroutedTrace.route);
   }
-  const mergedRoute = mergeRoutes(routes)
+  const mergedRoute = mergeRoutes(routes);
 
-  const traceLength = getTraceLength(mergedRoute)
+  const traceLength = getTraceLength(mergedRoute);
   const pcb_trace = db.pcb_trace.insert({
     route: mergedRoute,
     source_trace_id: trace.source_trace_id!,
     subcircuit_id: trace.getSubcircuit()?.subcircuit_id!,
     trace_length: traceLength,
-  })
-  trace._portsRoutedOnPcb = ports
-  trace.pcb_trace_id = pcb_trace.pcb_trace_id
+  });
+  trace._portsRoutedOnPcb = ports;
+  trace.pcb_trace_id = pcb_trace.pcb_trace_id;
 
   for (const point of mergedRoute) {
     if (point.route_type === "via") {
@@ -382,8 +386,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
         layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
         from_layer: point.from_layer as LayerRef,
         to_layer: point.to_layer as LayerRef,
-      })
+      });
     }
   }
-  trace._insertErrorIfTraceIsOutsideBoard(mergedRoute, ports)
+  trace._insertErrorIfTraceIsOutsideBoard(mergedRoute, ports);
 }

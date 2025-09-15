@@ -1,4 +1,4 @@
-import type { ChipProps } from "@tscircuit/props"
+import type { ChipProps } from "@tscircuit/props";
 
 const pinLabels = {
   pin1: ["IOVDD1"],
@@ -58,7 +58,7 @@ const pinLabels = {
   pin55: ["QSPI_SD1"],
   pin56: ["QSPI_SS_N"],
   pin57: ["GND"],
-} as const
+} as const;
 
 export const RP2040 = (props: ChipProps<typeof pinLabels>) => {
   return (
@@ -680,5 +680,5 @@ export const RP2040 = (props: ChipProps<typeof pinLabels>) => {
       }}
       {...props}
     />
-  )
-}
+  );
+};

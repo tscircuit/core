@@ -1,8 +1,8 @@
-import { serve } from "bun"
-import { afterEach } from "bun:test"
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
+import { serve } from "bun";
+import { afterEach } from "bun:test";
+import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar";
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson";
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson";
 
 export const getTestAutoroutingServer = ({
   requireDisplayName = false,
@@ -10,35 +10,35 @@ export const getTestAutoroutingServer = ({
   failInFirstTrace = false,
   simulateIncompleteAutorouting = false,
 }: {
-  requireDisplayName?: boolean
-  requireServerCacheEnabled?: boolean
-  failInFirstTrace?: boolean
-  simulateIncompleteAutorouting?: boolean
+  requireDisplayName?: boolean;
+  requireServerCacheEnabled?: boolean;
+  failInFirstTrace?: boolean;
+  simulateIncompleteAutorouting?: boolean;
 } = {}) => {
-  let currentJobId = 0
-  const jobResults = new Map<string, any>()
+  let currentJobId = 0;
+  const jobResults = new Map<string, any>();
 
   const server = serve({
     port: 0,
     fetch: async (req) => {
       if (req.method !== "POST") {
-        return new Response("Method not allowed", { status: 405 })
+        return new Response("Method not allowed", { status: 405 });
       }
 
-      const url = new URL(req.url)
-      const endpoint = url.pathname
+      const url = new URL(req.url);
+      const endpoint = url.pathname;
 
       // Legacy solve endpoint
       if (endpoint === "/autorouting/solve") {
-        const body = await req.json()
-        let simpleRouteJson: SimpleRouteJson | undefined
+        const body = await req.json();
+        let simpleRouteJson: SimpleRouteJson | undefined;
 
         if (body.input_simple_route_json) {
-          simpleRouteJson = body.input_simple_route_json as SimpleRouteJson
+          simpleRouteJson = body.input_simple_route_json as SimpleRouteJson;
         } else if (body.input_circuit_json) {
           simpleRouteJson = getSimpleRouteJsonFromCircuitJson({
             circuitJson: body.input_circuit_json,
-          }).simpleRouteJson
+          }).simpleRouteJson;
         }
 
         if (!simpleRouteJson) {
@@ -47,15 +47,15 @@ export const getTestAutoroutingServer = ({
               error: { message: "Missing input data" },
             }),
             { status: 400 },
-          )
+          );
         }
 
         const autorouter = new MultilayerIjump({
           input: simpleRouteJson,
           OBSTACLE_MARGIN: 0.2,
-        })
+        });
 
-        const traces = autorouter.solveAndMapToTraces()
+        const traces = autorouter.solveAndMapToTraces();
 
         // Simulate failure in the first trace if the flag is set
         if (failInFirstTrace && traces.length > 0) {
@@ -64,7 +64,7 @@ export const getTestAutoroutingServer = ({
               error: { message: "Failed to compute first trace" },
             }),
             { status: 500 },
-          )
+          );
         }
 
         return new Response(
@@ -77,13 +77,13 @@ export const getTestAutoroutingServer = ({
             },
           }),
           { headers: { "Content-Type": "application/json" } },
-        )
+        );
       }
 
       // New job-based endpoints
       if (endpoint === "/autorouting/jobs/create") {
-        const body = await req.json()
-        const jobId = `job_${currentJobId++}`
+        const body = await req.json();
+        const jobId = `job_${currentJobId++}`;
 
         if (requireDisplayName && !body.display_name) {
           return new Response(
@@ -91,7 +91,7 @@ export const getTestAutoroutingServer = ({
               error: { message: "Missing display_name" },
             }),
             { status: 400 },
-          )
+          );
         }
 
         if (requireServerCacheEnabled && !body.server_cache_enabled) {
@@ -100,19 +100,19 @@ export const getTestAutoroutingServer = ({
               error: { message: "Missing server_cache_enabled" },
             }),
             { status: 400 },
-          )
+          );
         }
 
         const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
           circuitJson: body.input_circuit_json,
-        })
+        });
 
         const autorouter = new MultilayerIjump({
           input: simpleRouteJson as any,
           OBSTACLE_MARGIN: 0.2,
-        })
+        });
 
-        const traces = autorouter.solveAndMapToTraces()
+        const traces = autorouter.solveAndMapToTraces();
 
         // Simulate failure in the first trace if the flag is set
         if (failInFirstTrace && traces.length > 0) {
@@ -125,7 +125,7 @@ export const getTestAutoroutingServer = ({
               message:
                 "Failed to compute first trace (failInFirstTrace simulated error)",
             },
-          })
+          });
 
           return new Response(
             JSON.stringify({
@@ -139,7 +139,7 @@ export const getTestAutoroutingServer = ({
               },
             }),
             { headers: { "Content-Type": "application/json" } },
-          )
+          );
         }
 
         jobResults.set(jobId, {
@@ -147,7 +147,7 @@ export const getTestAutoroutingServer = ({
           is_started: true,
           is_running: true,
           output: { output_pcb_traces: traces },
-        })
+        });
 
         return new Response(
           JSON.stringify({
@@ -158,13 +158,13 @@ export const getTestAutoroutingServer = ({
             },
           }),
           { headers: { "Content-Type": "application/json" } },
-        )
+        );
       }
 
       if (endpoint === "/autorouting/jobs/get") {
-        const body = await req.json()
-        const jobId = body.autorouting_job_id
-        const job = jobResults.get(jobId!)
+        const body = await req.json();
+        const jobId = body.autorouting_job_id;
+        const job = jobResults.get(jobId!);
 
         return new Response(
           JSON.stringify({
@@ -178,20 +178,20 @@ export const getTestAutoroutingServer = ({
             },
           }),
           { headers: { "Content-Type": "application/json" } },
-        )
+        );
       }
 
       if (endpoint === "/autorouting/jobs/get_output") {
-        const body = await req.json()
-        const jobId = body.autorouting_job_id
-        const job = jobResults.get(jobId!)
+        const body = await req.json();
+        const jobId = body.autorouting_job_id;
+        const job = jobResults.get(jobId!);
 
         if (
           simulateIncompleteAutorouting &&
           job?.output?.output_pcb_traces?.length > 0
         ) {
           // remove the first trace
-          job.output.output_pcb_traces.shift()
+          job.output.output_pcb_traces.shift();
         }
 
         return new Response(
@@ -199,19 +199,19 @@ export const getTestAutoroutingServer = ({
             autorouting_job_output: job?.output,
           }),
           { headers: { "Content-Type": "application/json" } },
-        )
+        );
       }
 
-      return new Response("Not found", { status: 404 })
+      return new Response("Not found", { status: 404 });
     },
-  })
+  });
 
   afterEach(() => {
-    server.stop()
-  })
+    server.stop();
+  });
 
   return {
     autoroutingServerUrl: `http://localhost:${server.port}/`,
     close: () => server.stop(),
-  }
-}
+  };
+};
