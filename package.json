@@ -95,6 +95,7 @@
   },
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
+    "bun-match-svg": "0.0.9",
     "@lume/kiwi": "^0.4.3",
     "calculate-packing": "0.0.37",
     "css-select": "5.1.0",
