@@ -1,4 +1,8 @@
-import { type AutorouterConfig, groupProps } from "@tscircuit/props"
+import {
+  type AutorouterConfig,
+  type SubcircuitGroupProps,
+  groupProps,
+} from "@tscircuit/props"
 import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
@@ -29,63 +33,11 @@ import { AutorouterError } from "lib/errors/AutorouterError"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
+import { Group_doInitialSchematicGroupBoxRender } from "./Group_doInitialSchematicGroupBoxRender"
+
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
-import { Group_doInitialSchematicGroupBoxRender } from "lib/components/primitive-components/Group/Group_doInitialSchematicGroupBoxRender.ts"
-
-import { SubcircuitGroupProps } from "@tscircuit/props";
-
-// Put ALL the missing properties here:
-interface ExtendedGroupProps extends SubcircuitGroupProps {
-  width?: number;
-  height?: number;
-  schWidth?: number;
-  schHeight?: number;
-  pcbLayout?: any;
-  pcbRelative?: boolean;
-  pcbX?: number;
-  pcbY?: number;
-  pcbPack?: boolean;
-  pcbGrid?: boolean;
-  pcbFlex?: boolean;
-  schLayout?: any;
-  schSpacing?: number;
-  schMatchAdapt?: boolean;
-  schFlex?: boolean;
-  schGrid?: boolean;
-  schRelative?: boolean;
-  matchAdapt?: boolean;
-  flex?: boolean;
-  grid?: boolean;
-  relative?: boolean;
-  manualEdits?: any;
-  schPadding?: number;
-  schPaddingLeft?: number;
-  schPaddingRight?: number;
-  schPaddingTop?: number;
-  schPaddingBottom?: number;
-  pack?: boolean;
-  connections?: { [key: string]: string };
-  schPinArrangement?: {
-    [side: string]: {
-      pins: string[];
-      direction?: string;
-    };
-  };
-}
-
-
-export interface SubcircuitGroupProps {
-  showAsBox?: boolean
-  connections?: { [externalPin: string]: string }
-  schPinArrangement?: {
-    [side: string]: { direction: string; pins: string[] }
-  }
-  border?: { dashed?: boolean }
-  schWidth?: number
-  schHeight?: number
-}
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -630,8 +582,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicTraceRender() {
-    if (this._parsedProps?.showAsSchematicBox) return
-    Group_doInitialSchematicTraceRender(this)
+    const parsed: any = this._parsedProps
+    if (parsed?.showAsSchematicBox === true) return
+    Group_doInitialSchematicTraceRender(this as any)
   }
 
   updatePcbTraceRender() {
@@ -788,11 +741,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
     this.schematic_group_id = schematic_group.schematic_group_id
 
-    if (this._parsedProps?.showAsSchematicBox) {
+    // NEW — boxed path
+    const parsed: any = this._parsedProps
+    if (parsed?.showAsSchematicBox === true) {
       Group_doInitialSchematicGroupBoxRender(this, { db })
       return
     }
 
+    // else: original behavior
     for (const child of this.children) {
       if (child.schematic_component_id) {
         db.schematic_component.update(child.schematic_component_id, {
