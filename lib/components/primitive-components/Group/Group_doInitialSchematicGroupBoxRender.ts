@@ -1,16 +1,16 @@
 // lib/components/primitive-components/Group/Group_doInitialSchematicGroupBoxRender.ts
 
-type Side = "left" | "right" | "top" | "bottom";
+type Side = "left" | "right" | "top" | "bottom"
 type SideCfg = {
   direction?:
     | "top-to-bottom"
     | "bottom-to-top"
     | "left-to-right"
-    | "right-to-left";
-  pins: string[];
-  gapAfterPins?: string[];
-};
-type SchPinArrangement = Partial<Record<Side, SideCfg>>;
+    | "right-to-left"
+  pins: string[]
+  gapAfterPins?: string[]
+}
+type SchPinArrangement = Partial<Record<Side, SideCfg>>
 
 /**
  * Render a single-box schematic representation for a <group subcircuit ...>.
@@ -28,18 +28,19 @@ export function Group_doInitialSchematicGroupBoxRender(group: any, ctx: any) {
     connections = {},
     schPinArrangement,
     schBox,
-  } = group._parsedProps;
+  } = group._parsedProps
 
-  if (!showAsSchematicBox) return;
-  if (!group.subcircuit_id) return;
-  if (!group.schematic_group_id) return;
+  if (!showAsSchematicBox) return
+  if (!group.subcircuit_id) return
+  if (!group.schematic_group_id) return
 
-  const db = ctx.db;
+  const db = ctx.db
 
   // 1) Create the logical schematic component for the box
-  const schematic_component_id = typeof db._newId === 'function'
-    ? db._newId("schematic_component")
-    : `schematic_component_${Math.random().toString(36).slice(2)}`;
+  const schematic_component_id =
+    typeof db._newId === "function"
+      ? db._newId("schematic_component")
+      : `schematic_component_${Math.random().toString(36).slice(2)}`
 
   db.push({
     type: "schematic_component",
@@ -48,57 +49,57 @@ export function Group_doInitialSchematicGroupBoxRender(group: any, ctx: any) {
     schematic_group_id: group.schematic_group_id, // attach to THIS group's schematic group
     refdes: schBox?.refdes ?? group._parsedProps.name ?? undefined,
     title: schBox?.title ?? group._parsedProps.name ?? undefined,
-    width: schBox?.width,   // optional; your layout pass can place/size later
+    width: schBox?.width, // optional; your layout pass can place/size later
     height: schBox?.height, // optional
-  });
+  })
 
   // 2) Visual rectangle tied to that component
-  const schematic_box_id = typeof db._newId === 'function'
-    ? db._newId("schematic_box")
-    : `schematic_box_${Math.random().toString(36).slice(2)}`;
+  const schematic_box_id =
+    typeof db._newId === "function"
+      ? db._newId("schematic_box")
+      : `schematic_box_${Math.random().toString(36).slice(2)}`
 
   db.push({
     type: "schematic_box",
     schematic_box_id,
     schematic_component_id,
     subcircuit_id: group.subcircuit_id,
-  });
+  })
 
   // 3) Helper: resolve internal port's SCK via your existing selector plumbing
 
-const sckOf = (sel: string): string | undefined => {
-  // core already supports group.selectOne(selector, { type: "port" })
-  try {
-    const p = group.selectOne(sel, { type: "port" });
-    if (!p) return undefined;
-    
-    // Check for source_port first, then direct property
-    if (p.source_port && 'subcircuit_connectivity_map_key' in p.source_port) {
-      return p.source_port.subcircuit_connectivity_map_key;
-    }
-    
-    if ('subcircuit_connectivity_map_key' in p) {
-      return p.subcircuit_connectivity_map_key;
-    }
-    
-    return undefined;
-  } catch (error) {
-    console.error(`Error selecting port with selector "${sel}":`, error);
-    return undefined;
-  }
-};
+  const sckOf = (sel: string): string | undefined => {
+    // core already supports group.selectOne(selector, { type: "port" })
+    try {
+      const p = group.selectOne(sel, { type: "port" })
+      if (!p) return undefined
 
+      // Check for source_port first, then direct property
+      if (p.source_port && "subcircuit_connectivity_map_key" in p.source_port) {
+        return p.source_port.subcircuit_connectivity_map_key
+      }
+
+      if ("subcircuit_connectivity_map_key" in p) {
+        return p.subcircuit_connectivity_map_key
+      }
+
+      return undefined
+    } catch (error) {
+      console.error(`Error selecting port with selector "${sel}":`, error)
+      return undefined
+    }
+  }
 
   // 4) Emit schematic ports for each alias
   const pushPort = (alias: string, side: Side, order_index: number) => {
-    const sel = (connections as Record<string, string>)[alias];
-    if (!sel) return;
-    const sck = sckOf(sel);
-    if (!sck) return; // you could warn here if you want
+    const sel = (connections as Record<string, string>)[alias]
+    if (!sel) return
+    const sck = sckOf(sel)
+    if (!sck) return // you could warn here if you want
 
     const schematic_port_id = db._newId
       ? db._newId("schematic_port")
-      : `schematic_port_${Math.random().toString(36).slice(2)}`;
+      : `schematic_port_${Math.random().toString(36).slice(2)}`
 
     db.push({
       type: "schematic_port",
@@ -109,33 +110,36 @@ const sckOf = (sel: string): string | undefined => {
       side,
       order_index,
       subcircuit_connectivity_map_key: sck,
-    });
-  };
+    })
+  }
 
   // 5) Place arranged pins (left/right/top/bottom + direction)
-  const sides: Side[] = ["left", "right", "top", "bottom"];
-  const placed = new Set<string>();
+  const sides: Side[] = ["left", "right", "top", "bottom"]
+  const placed = new Set<string>()
 
   for (const side of sides) {
-    const cfg = schPinArrangement?.[side] as SideCfg | undefined;
-    if (!cfg) continue;
+    const cfg = schPinArrangement?.[side] as SideCfg | undefined
+    if (!cfg) continue
 
-    let pins = [...cfg.pins];
-    if (cfg.direction === "bottom-to-top" || cfg.direction === "right-to-left") {
-      pins.reverse();
+    let pins = [...cfg.pins]
+    if (
+      cfg.direction === "bottom-to-top" ||
+      cfg.direction === "right-to-left"
+    ) {
+      pins.reverse()
     }
 
-    let idx = 0;
+    let idx = 0
     for (const alias of pins) {
-      pushPort(alias, side, idx++);
-      if (cfg.gapAfterPins?.includes(alias)) idx++; // leave a spacer slot
-      placed.add(alias);
+      pushPort(alias, side, idx++)
+      if (cfg.gapAfterPins?.includes(alias)) idx++ // leave a spacer slot
+      placed.add(alias)
     }
   }
 
   // 6) Any remaining aliases go on the right side
-  let k = 0;
+  let k = 0
   for (const alias of Object.keys(connections)) {
-    if (!placed.has(alias)) pushPort(alias, "right", k++);
+    if (!placed.has(alias)) pushPort(alias, "right", k++)
   }
 }

@@ -33,7 +33,7 @@ import { AutorouterError } from "lib/errors/AutorouterError"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
-import { Group_doInitialSchematicGroupBoxRender } from "./Group_doInitialSchematicGroupBoxRender";
+import { Group_doInitialSchematicGroupBoxRender } from "./Group_doInitialSchematicGroupBoxRender"
 
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
@@ -582,9 +582,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicTraceRender() {
-  if ((this._parsedProps as SubcircuitGroupProps)?.showAsSchematicBox) return
-  Group_doInitialSchematicTraceRender(this as any)
-}
+    if ((this._parsedProps as SubcircuitGroupProps)?.showAsSchematicBox) return
+    Group_doInitialSchematicTraceRender(this as any)
+  }
 
   updatePcbTraceRender() {
     const debug = Debug("tscircuit:core:updatePcbTraceRender")
@@ -741,19 +741,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this.schematic_group_id = schematic_group.schematic_group_id
 
     // If this group wants a single-box schematic, render that now and DO NOT
-// attach child schematic components (hides internals by design).
-if ((this._parsedProps as SubcircuitGroupProps)?.showAsSchematicBox) {
-  Group_doInitialSchematicGroupBoxRender(this, { db })
-} else {
-  // Normal behavior: attach each child's schematic_component to this group
-  for (const child of this.children) {
-    if (child.schematic_component_id) {
-      db.schematic_component.update(child.schematic_component_id, {
-        schematic_group_id: schematic_group.schematic_group_id,
-      })
+    // attach child schematic components (hides internals by design).
+    if ((this._parsedProps as SubcircuitGroupProps)?.showAsSchematicBox) {
+      Group_doInitialSchematicGroupBoxRender(this, { db })
+    } else {
+      // Normal behavior: attach each child's schematic_component to this group
+      for (const child of this.children) {
+        if (child.schematic_component_id) {
+          db.schematic_component.update(child.schematic_component_id, {
+            schematic_group_id: schematic_group.schematic_group_id,
+          })
+        }
+      }
     }
-  }
-}
   }
 
   _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "relative" {
