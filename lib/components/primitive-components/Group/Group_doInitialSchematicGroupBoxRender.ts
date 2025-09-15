@@ -53,7 +53,7 @@ export function Group_doInitialSchematicGroupBoxRender(group: any, ctx: any) {
   });
 
   // 2) Visual rectangle tied to that component
-  const schematic_box_id = db._newId
+  const schematic_box_id = typeof db._newId === 'function'
     ? db._newId("schematic_box")
     : `schematic_box_${Math.random().toString(36).slice(2)}`;
 
