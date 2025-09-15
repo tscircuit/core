@@ -1,9 +1,9 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 test("Schematic trace overlaps manufacturer label", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
-  circuit._featureMspSchematicTraceRouting = true
+  circuit._featureMspSchematicTraceRouting = true;
   circuit.add(
     <board width="10mm" height="10mm" schMaxTraceDistance={5}>
       <resistor resistance="1k" footprint="0402" name="R1" schX={-1} pcbX={3} />
@@ -16,9 +16,9 @@ test("Schematic trace overlaps manufacturer label", async () => {
       />
       <trace from=".R1 > .pin1" to=".C1 > .pin1" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

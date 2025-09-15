@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("chip pcb_port layer matches smtpad layer", () => {
-  const { project } = getTestFixture()
+  const { project } = getTestFixture();
 
   project.add(
     <board width="10mm" height="10mm">
@@ -21,16 +21,16 @@ test("chip pcb_port layer matches smtpad layer", () => {
         }
       />
     </board>,
-  )
+  );
 
-  project.render()
+  project.render();
 
-  const smtpad = project.db.pcb_smtpad.list()[0]
-  expect(smtpad.layer).toBe("bottom")
+  const smtpad = project.db.pcb_smtpad.list()[0];
+  expect(smtpad.layer).toBe("bottom");
 
-  const pcbPort = project.db.pcb_port.list()[0]
-  expect(pcbPort.layers).toContain("bottom")
+  const pcbPort = project.db.pcb_port.list()[0];
+  expect(pcbPort.layers).toContain("bottom");
 
-  const chip = project.selectOne("chip")
-  expect(chip).not.toBeNull()
-})
+  const chip = project.selectOne("chip");
+  expect(chip).not.toBeNull();
+});

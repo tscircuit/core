@@ -1,1 +1,1 @@
-export * from "./NormalComponent"
+export * from "./NormalComponent";

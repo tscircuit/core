@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
-import type { PcbSmtPadRect } from "circuit-json"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import type { PcbSmtPadRect } from "circuit-json";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("chip with manual footprint flips when layer is set to bottom", async () => {
-  const { project } = getTestFixture()
+  const { project } = getTestFixture();
 
   const footprint = (
     <footprint>
@@ -39,29 +39,29 @@ test("chip with manual footprint flips when layer is set to bottom", async () =>
         text="hi"
       />
     </footprint>
-  )
+  );
 
   project.add(
     <board width="7mm" height="3mm">
       <chip name="U1" pcbX={-2} layer="bottom" footprint={footprint} />
       <chip name="U2" pcbX={2} layer="top" footprint={footprint} />
     </board>,
-  )
+  );
 
-  project.render()
+  project.render();
 
   // Check if all SMT pads are on the bottom layer
   const smtPads = project.db.pcb_smtpad
     .list()
-    .filter((pad) => pad.layer === "bottom") as PcbSmtPadRect[]
-  expect(smtPads.length).toBe(3)
+    .filter((pad) => pad.layer === "bottom") as PcbSmtPadRect[];
+  expect(smtPads.length).toBe(3);
 
   // Check if the positions are mirrored
-  const padPositions = smtPads.map((pad) => ({ x: pad.x, y: pad.y }))
-  expect(padPositions).toContainEqual({ x: -3, y: 1 })
-  expect(padPositions).toContainEqual({ x: -3, y: -1 })
+  const padPositions = smtPads.map((pad) => ({ x: pad.x, y: pad.y }));
+  expect(padPositions).toContainEqual({ x: -3, y: 1 });
+  expect(padPositions).toContainEqual({ x: -3, y: -1 });
 
   // Use snapshot to verify the overall layout
-  expect(project).toMatchPcbSnapshot(import.meta.path)
-  expect(project).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(project).toMatchPcbSnapshot(import.meta.path);
+  expect(project).toMatchSchematicSnapshot(import.meta.path);
+});

@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("PCB routing with cutouts", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="50mm" height="30mm" autorouter="sequential-trace">
@@ -42,9 +42,9 @@ test("PCB routing with cutouts", async () => {
         pcbY="5mm"
       />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

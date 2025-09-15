@@ -1,10 +1,10 @@
-import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks"
-import { it, expect } from "bun:test"
-import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { checkEachPcbTraceNonOverlapping } from "@tscircuit/checks";
+import { it, expect } from "bun:test";
+import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 it("should render a jumper with pinrow4 footprint", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board
@@ -30,10 +30,10 @@ it("should render a jumper with pinrow4 footprint", async () => {
       <trace from={".J1 > .pin1"} to={".R1 > .pin1"} />
       <trace from={".J1 > .pin3"} to={".R1 > .pin2"} />
     </board>,
-  )
+  );
 
-  circuit.render()
-  const errors = checkEachPcbTraceNonOverlapping(circuit.getCircuitJson())
-  expect(errors).toHaveLength(0)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  circuit.render();
+  const errors = checkEachPcbTraceNonOverlapping(circuit.getCircuitJson());
+  expect(errors).toHaveLength(0);
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

@@ -5,14 +5,14 @@ export const projectPointInOppositeDirection = (
 ) => {
   switch (direction) {
     case "up":
-      return { x: point.x, y: point.y + distance }
+      return { x: point.x, y: point.y + distance };
     case "down":
-      return { x: point.x, y: point.y - distance }
+      return { x: point.x, y: point.y - distance };
     case "left":
-      return { x: point.x + distance, y: point.y }
+      return { x: point.x + distance, y: point.y };
     case "right":
-      return { x: point.x - distance, y: point.y }
+      return { x: point.x - distance, y: point.y };
     default:
-      throw new Error(`Unknown direction "${direction}"`)
+      throw new Error(`Unknown direction "${direction}"`);
   }
-}
+};

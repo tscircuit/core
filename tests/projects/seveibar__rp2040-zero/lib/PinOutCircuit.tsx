@@ -84,4 +84,4 @@ export const PinOutCircuit = () => (
       GP0: "net.GPIO0",
     }}
   />
-)
+);

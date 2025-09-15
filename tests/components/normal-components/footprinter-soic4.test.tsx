@@ -1,10 +1,10 @@
-import { test, expect } from "bun:test"
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("footprinter-soic4 with autorouter", () => {
-  const { autoroutingServerUrl } = getTestAutoroutingServer()
-  const { circuit } = getTestFixture()
+  const { autoroutingServerUrl } = getTestAutoroutingServer();
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board
@@ -18,18 +18,18 @@ test("footprinter-soic4 with autorouter", () => {
     >
       <pushbutton footprint="soic4" name="U1" schX={3} pcbX={5} />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const pcb_traces = circuit.db.pcb_trace.list()
-  expect(pcb_traces.length).toBe(0)
+  const pcb_traces = circuit.db.pcb_trace.list();
+  expect(pcb_traces.length).toBe(0);
 
-  const source_ports = circuit.db.source_port.list()
-  expect(source_ports.length).toBe(4)
+  const source_ports = circuit.db.source_port.list();
+  expect(source_ports.length).toBe(4);
 
-  const pcb_ports = circuit.db.pcb_port.list()
-  expect(pcb_ports.length).toBe(4)
+  const pcb_ports = circuit.db.pcb_port.list();
+  expect(pcb_ports.length).toBe(4);
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

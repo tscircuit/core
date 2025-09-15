@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
-import "lib/register-catalogue"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import "lib/register-catalogue";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("Schematic box component - manual layout for all alignments", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="60mm" height="40mm">
@@ -193,8 +193,8 @@ test("Schematic box component - manual layout for all alignments", async () => {
         titleAlignment="bottom_right"
       />
     </board>,
-  )
+  );
 
-  circuit.render()
-  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
-})
+  circuit.render();
+  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path);
+});

@@ -1,47 +1,47 @@
-import { runBenchmark } from "benchmarking/benchmark-lib/run-benchmark"
-import { BENCHMARKS } from "benchmarking/all-benchmarks"
-import { RenderTimingsBar } from "./RenderTimingsBar"
-import { useState, useEffect } from "react"
+import { runBenchmark } from "benchmarking/benchmark-lib/run-benchmark";
+import { BENCHMARKS } from "benchmarking/all-benchmarks";
+import { RenderTimingsBar } from "./RenderTimingsBar";
+import { useState, useEffect } from "react";
 
-const STORAGE_KEY = "benchmark_history"
-const MAX_HISTORY_POINTS = 50
+const STORAGE_KEY = "benchmark_history";
+const MAX_HISTORY_POINTS = 50;
 
 interface HistoryDataPoint {
-  timestamp: number
-  totalTime: number
+  timestamp: number;
+  totalTime: number;
 }
 
 export const BenchmarksPage = () => {
-  const benchmarkNames = Object.keys(BENCHMARKS)
+  const benchmarkNames = Object.keys(BENCHMARKS);
   const [benchmarkResults, setBenchmarkResults] = useState<
     Record<string, Record<string, number>>
-  >({})
-  const [isRunningAll, setIsRunningAll] = useState(false)
-  const [history, setHistory] = useState<HistoryDataPoint[]>([])
+  >({});
+  const [isRunningAll, setIsRunningAll] = useState(false);
+  const [history, setHistory] = useState<HistoryDataPoint[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      const parsedHistory = JSON.parse(stored)
+      const parsedHistory = JSON.parse(stored);
       // Only keep the last MAX_HISTORY_POINTS
-      setHistory(parsedHistory.slice(-MAX_HISTORY_POINTS))
+      setHistory(parsedHistory.slice(-MAX_HISTORY_POINTS));
     }
-  }, [])
+  }, []);
 
   const runSingleBenchmark = async (name: string) => {
     const result = await runBenchmark({
       Component: BENCHMARKS[name as keyof typeof BENCHMARKS],
-    })
+    });
     setBenchmarkResults((prev) => ({
       ...prev,
       [name]: result,
-    }))
-  }
+    }));
+  };
 
   const runAllBenchmarks = async () => {
-    setIsRunningAll(true)
+    setIsRunningAll(true);
     for (const name of benchmarkNames) {
-      await runSingleBenchmark(name)
+      await runSingleBenchmark(name);
     }
 
     // Calculate total execution time across all benchmarks
@@ -49,28 +49,28 @@ export const BenchmarksPage = () => {
       (sum, benchmarkResult) =>
         sum + Object.values(benchmarkResult).reduce((a, b) => a + b, 0),
       0,
-    )
+    );
 
     // Record new history point
     const newPoint = {
       timestamp: Date.now(),
       totalTime: totalExecutionTime,
-    }
+    };
 
-    const newHistory = [...history, newPoint].slice(-MAX_HISTORY_POINTS)
-    setHistory(newHistory)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory))
+    const newHistory = [...history, newPoint].slice(-MAX_HISTORY_POINTS);
+    setHistory(newHistory);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
 
-    setIsRunningAll(false)
-  }
+    setIsRunningAll(false);
+  };
 
   const clearHistory = () => {
-    localStorage.removeItem(STORAGE_KEY)
-    setHistory([])
-  }
+    localStorage.removeItem(STORAGE_KEY);
+    setHistory([]);
+  };
 
   const averageTime =
-    history.reduce((sum, h) => sum + h.totalTime, 0) / history.length
+    history.reduce((sum, h) => sum + h.totalTime, 0) / history.length;
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -138,9 +138,9 @@ export const BenchmarksPage = () => {
                   </>
                 )}
                 {history.map((point, i) => {
-                  const maxTime = Math.max(...history.map((h) => h.totalTime))
-                  const x = (i / (history.length - 1)) * 100
-                  const y = (point.totalTime / maxTime) * 100
+                  const maxTime = Math.max(...history.map((h) => h.totalTime));
+                  const x = (i / (history.length - 1)) * 100;
+                  const y = (point.totalTime / maxTime) * 100;
 
                   return i < history.length - 1 ? (
                     <line
@@ -153,13 +153,13 @@ export const BenchmarksPage = () => {
                       stroke="#3B82F6"
                       strokeWidth="2"
                     />
-                  ) : null
+                  ) : null;
                 })}
               </svg>
               {history.map((point, i) => {
-                const maxTime = Math.max(...history.map((h) => h.totalTime))
-                const x = (i / (history.length - 1)) * 100
-                const y = (point.totalTime / maxTime) * 100
+                const maxTime = Math.max(...history.map((h) => h.totalTime));
+                const x = (i / (history.length - 1)) * 100;
+                const y = (point.totalTime / maxTime) * 100;
                 return (
                   <div
                     key={point.timestamp}
@@ -176,7 +176,7 @@ export const BenchmarksPage = () => {
                       Date: {new Date(point.timestamp).toLocaleString()}
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -206,5 +206,5 @@ export const BenchmarksPage = () => {
         ))}
       </div>
     </div>
-  )
-}
+  );
+};

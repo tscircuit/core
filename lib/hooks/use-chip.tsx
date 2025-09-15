@@ -1,5 +1,5 @@
-import type { ChipProps } from "@tscircuit/props"
-import { createUseComponent, type PinLabelSpec } from "./create-use-component"
+import type { ChipProps } from "@tscircuit/props";
+import { createUseComponent, type PinLabelSpec } from "./create-use-component";
 
 export const useChip = <PinLabel extends string>(
   pinLabels: Record<string, PinLabel[]>,
@@ -7,4 +7,4 @@ export const useChip = <PinLabel extends string>(
   createUseComponent(
     (props: ChipProps) => <chip pinLabels={pinLabels} {...props} />,
     pinLabels,
-  )
+  );

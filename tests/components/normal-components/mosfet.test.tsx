@@ -1,8 +1,8 @@
-import { it, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { it, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 it("should render different types of MOSFETs", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="20mm" height="20mm" schAutoLayoutEnabled grid gridGap="1mm">
@@ -34,8 +34,8 @@ it("should render different types of MOSFETs", async () => {
         schRotation={270}
       />
     </board>,
-  )
+  );
 
-  circuit.render()
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  circuit.render();
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

@@ -1,6 +1,6 @@
-import React, { Component, type ComponentProps } from "react"
-import { z } from "zod"
-import { resistorProps, resistorPins } from "@tscircuit/props"
+import React, { Component, type ComponentProps } from "react";
+import { z } from "zod";
+import { resistorProps, resistorPins } from "@tscircuit/props";
 
 export type PinLabelSpec<
   PinLabel extends string,
@@ -8,7 +8,7 @@ export type PinLabelSpec<
 > =
   | readonly PinLabel[]
   | readonly (readonly PinLabel[])[]
-  | Record<PinNumberKey, readonly PinLabel[]>
+  | Record<PinNumberKey, readonly PinLabel[]>;
 
 export type ComponentWithPins<
   Props,
@@ -18,11 +18,11 @@ export type ComponentWithPins<
   (PropsFromHook extends undefined
     ? Omit<Props, "name">
     : Omit<Partial<Props>, "name">) & {
-    [key in PinLabel]?: string
+    [key in PinLabel]?: string;
   }
 > & {
-  [key in PinLabel]: string
-}
+  [key in PinLabel]: string;
+};
 
 type CreateUseComponentConstPinLabels = <
   Props,
@@ -33,7 +33,7 @@ type CreateUseComponentConstPinLabels = <
 ) => <PropsFromHook extends Omit<Props, "name"> | undefined = undefined>(
   name: string,
   props?: PropsFromHook,
-) => ComponentWithPins<Props, PinLabel, PropsFromHook>
+) => ComponentWithPins<Props, PinLabel, PropsFromHook>;
 
 type CreateUseComponentPinLabelMap = <
   Props,
@@ -45,19 +45,19 @@ type CreateUseComponentPinLabelMap = <
 ) => <PropsFromHook extends Omit<Props, "name"> | undefined = undefined>(
   name: string,
   props?: PropsFromHook,
-) => ComponentWithPins<Props, PinLabel | PinNumberKey, PropsFromHook>
+) => ComponentWithPins<Props, PinLabel | PinNumberKey, PropsFromHook>;
 
 export const createUseComponent: CreateUseComponentConstPinLabels &
   CreateUseComponentPinLabelMap = (Component: any, pins: any) => {
   return (name: string, props?: any) => {
-    const pinLabelsFlatArray: string[] = []
+    const pinLabelsFlatArray: string[] = [];
     if (Array.isArray(pins)) {
-      pinLabelsFlatArray.push(...pins.flat())
+      pinLabelsFlatArray.push(...pins.flat());
     } else if (typeof pins === "object") {
       pinLabelsFlatArray.push(
         ...Object.values(pins as Record<string, string[]>).flat(),
         ...(Object.keys(pins) as string[]),
-      )
+      );
     }
     const R: any = (props2: any) => {
       // Explicitly throw an error if names don't match
@@ -65,17 +65,17 @@ export const createUseComponent: CreateUseComponentConstPinLabels &
         throw new Error(
           `Component name mismatch. Hook name: ${name}, ` +
             `Component prop name: ${props2.name}`,
-        )
+        );
       }
 
-      const combinedProps = { ...props, ...props2, name: name }
-      const tracesToCreate: any[] = []
+      const combinedProps = { ...props, ...props2, name: name };
+      const tracesToCreate: any[] = [];
       for (const portLabel of pinLabelsFlatArray) {
         if (combinedProps[portLabel]) {
-          const from = `.${name} > .${portLabel}`
-          const to = combinedProps[portLabel]
-          tracesToCreate.push({ from, to })
-          delete combinedProps[portLabel]
+          const from = `.${name} > .${portLabel}`;
+          const to = combinedProps[portLabel];
+          tracesToCreate.push({ from, to });
+          delete combinedProps[portLabel];
         }
       }
       return (
@@ -86,11 +86,11 @@ export const createUseComponent: CreateUseComponentConstPinLabels &
             <trace key={i} {...trace} />
           ))}
         </>
-      )
-    }
+      );
+    };
     for (const port of pinLabelsFlatArray) {
-      R[port] = `.${name} > .${port}`
+      R[port] = `.${name} > .${port}`;
     }
-    return R
-  }
-}
+    return R;
+  };
+};

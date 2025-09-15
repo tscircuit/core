@@ -6,8 +6,8 @@ When you do...
 
 ```tsx
 createInstanceFromElement(
-  <resistor name="R1" resistance="10k" footprint="0402" />
-)
+  <resistor name="R1" resistance="10k" footprint="0402" />,
+);
 ```
 
 ...you're creating a new [Resistor](../lib/components/normal-components/Resistor.ts)
@@ -18,13 +18,13 @@ Everything you create in React becomes a class instance.
 A project contains react elements and class instances that are added to it:
 
 ```tsx
-const project = new Project()
+const project = new Project();
 
 project.add(
   <board width="10mm" height="10mm">
     <resistor name="R1" resistance="10k" footprint="0402" />
-  </board>
-)
+  </board>,
+);
 ```
 
 when you call `project.render()`, the project will go through a series of
@@ -52,7 +52,7 @@ class Resistor extends NormalComponent<typeof resistorProps> {
       name: "R1",
       manufacturer_part_number: "1234",
       supplier_part_numbers: ["12345"],
-    })
+    });
   }
 }
 ```

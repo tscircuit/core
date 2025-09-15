@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("fabrication note path and text are created", async () => {
-  const { circuit, logSoup } = getTestFixture()
+  const { circuit, logSoup } = getTestFixture();
 
   circuit.add(
     <board width="12mm" height="10mm">
@@ -29,12 +29,12 @@ test("fabrication note path and text are created", async () => {
       />
       <fabricationnotetext text={"hello world!"} />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit.db.pcb_fabrication_note_text.list()).toHaveLength(1)
-  expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(1)
+  expect(circuit.db.pcb_fabrication_note_text.list()).toHaveLength(1);
+  expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(1);
 
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

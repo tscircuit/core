@@ -1,7 +1,7 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 test("Disable cadModel by setting it to null", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -14,16 +14,16 @@ test("Disable cadModel by setting it to null", async () => {
         cadModel={null}
       />
     </board>,
-  )
+  );
 
-  circuit.render()
-  circuit.renderUntilSettled()
+  circuit.render();
+  circuit.renderUntilSettled();
 
   expect(
     circuit.getCircuitJson().filter((x) => x.type === "cad_component").length,
-  ).toBe(1)
+  ).toBe(1);
   expect(
     circuit.getCircuitJson().filter((x) => x.type.includes("component_error"))
       .length,
-  ).toBe(0)
-})
+  ).toBe(0);
+});

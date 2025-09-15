@@ -1,19 +1,19 @@
-import type { SimpleRouteJson } from "./SimpleRouteJson"
-import type { SimplifiedPcbTrace } from "./SimpleRouteJson"
+import type { SimpleRouteJson } from "./SimpleRouteJson";
+import type { SimplifiedPcbTrace } from "./SimpleRouteJson";
 
 export class DirectLineRouter {
-  input: SimpleRouteJson
+  input: SimpleRouteJson;
 
   constructor({ input }: { input: SimpleRouteJson }) {
-    this.input = input
+    this.input = input;
   }
 
   solveAndMapToTraces(): SimplifiedPcbTrace[] {
-    const traces: SimplifiedPcbTrace[] = []
+    const traces: SimplifiedPcbTrace[] = [];
 
     for (const connection of this.input.connections) {
-      if (connection.pointsToConnect.length !== 2) continue
-      const [start, end] = connection.pointsToConnect
+      if (connection.pointsToConnect.length !== 2) continue;
+      const [start, end] = connection.pointsToConnect;
       const trace: SimplifiedPcbTrace = {
         type: "pcb_trace",
         pcb_trace_id: "",
@@ -34,10 +34,10 @@ export class DirectLineRouter {
             width: 0.1,
           },
         ],
-      }
-      traces.push(trace)
+      };
+      traces.push(trace);
     }
 
-    return traces
+    return traces;
   }
 }

@@ -1,11 +1,11 @@
-import { it, expect } from "bun:test"
-import { RootCircuit } from "lib/RootCircuit"
-import { Chip } from "lib/components/normal-components/Chip"
-import "lib/register-catalogue"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { it, expect } from "bun:test";
+import { RootCircuit } from "lib/RootCircuit";
+import { Chip } from "lib/components/normal-components/Chip";
+import "lib/register-catalogue";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 it("should create a Chip component when using the <bug /> alias", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -22,11 +22,11 @@ it("should create a Chip component when using the <bug /> alias", async () => {
         }}
       />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const chip = circuit.selectOne("chip") as Chip
+  const chip = circuit.selectOne("chip") as Chip;
 
-  expect(chip).not.toBeNull()
-})
+  expect(chip).not.toBeNull();
+});

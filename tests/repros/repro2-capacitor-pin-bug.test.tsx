@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("capacitor connection not working", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   const BlinkingLedWith555Timer = () => (
     <board width="40mm" height="30mm" autorouter="sequential-trace">
@@ -50,15 +50,15 @@ test("capacitor connection not working", async () => {
       <trace from=".C1 .pin2" to=".U1 .CTRL" />
       <trace from=".U1 .THRES" to=".U1 .CTRL" />
     </board>
-  )
+  );
 
-  circuit.add(<BlinkingLedWith555Timer />)
+  circuit.add(<BlinkingLedWith555Timer />);
 
-  circuit.render()
+  circuit.render();
 
-  const errors = circuit.db.pcb_trace_error.list()
+  const errors = circuit.db.pcb_trace_error.list();
 
   expect(errors.map((e) => e.message).join("\n\n")).toContain(
     "Some ports did not have a matching PCB primitive",
-  )
-})
+  );
+});

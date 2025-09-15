@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
-import "lib/register-catalogue"
-import { getTestFixture } from "../../fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import "lib/register-catalogue";
+import { getTestFixture } from "../../fixtures/get-test-fixture";
 
 test("pcbFlexGap property works correctly", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board>
@@ -13,9 +13,9 @@ test("pcbFlexGap property works correctly", () => {
         <resistor name="R3" resistance="1k" footprint="0402" />
       </group>
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

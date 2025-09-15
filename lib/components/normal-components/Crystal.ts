@@ -1,12 +1,12 @@
-import { crystalProps } from "@tscircuit/props"
+import { crystalProps } from "@tscircuit/props";
 import {
   type BaseSymbolName,
   type Ftype,
   type PolarizedPassivePorts,
-} from "lib/utils/constants"
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import type { SourceSimpleCrystal } from "circuit-json"
-import { formatSiUnit } from "format-si-unit"
+} from "lib/utils/constants";
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent";
+import type { SourceSimpleCrystal } from "circuit-json";
+import { formatSiUnit } from "format-si-unit";
 
 export class Crystal extends NormalComponent<
   typeof crystalProps,
@@ -18,14 +18,14 @@ export class Crystal extends NormalComponent<
       this.props.symbolName ??
       ((this.props.pinVariant === "four_pin"
         ? "crystal_4pin"
-        : "crystal") as BaseSymbolName)
+        : "crystal") as BaseSymbolName);
 
     return {
       schematicSymbolName: symbolName,
       componentName: "Crystal",
       zodProps: crystalProps,
       sourceFtype: "simple_crystal" as Ftype,
-    }
+    };
   }
 
   initPorts() {
@@ -40,26 +40,26 @@ export class Crystal extends NormalComponent<
         : {
             pin1: ["pos", "left"],
             pin2: ["neg", "right"],
-          }
+          };
 
     super.initPorts({
       additionalAliases,
-    })
+    });
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    const freqDisplay = `${formatSiUnit(this._parsedProps.frequency)}Hz`
+    const freqDisplay = `${formatSiUnit(this._parsedProps.frequency)}Hz`;
     if (this._parsedProps.loadCapacitance) {
       return `${freqDisplay} / ${formatSiUnit(
         this._parsedProps.loadCapacitance,
-      )}F`
+      )}F`;
     }
-    return freqDisplay
+    return freqDisplay;
   }
 
   doInitialSourceRender() {
-    const { db } = this.root!
-    const { _parsedProps: props } = this
+    const { db } = this.root!;
+    const { _parsedProps: props } = this;
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: "simple_crystal",
@@ -67,8 +67,8 @@ export class Crystal extends NormalComponent<
       load_capacitance: props.loadCapacitance,
       pin_variant: props.pinVariant || "two_pin",
       are_pins_interchangeable: (props.pinVariant || "two_pin") === "two_pin",
-    } as any)
+    } as any);
 
-    this.source_component_id = source_component.source_component_id
+    this.source_component_id = source_component.source_component_id;
   }
 }

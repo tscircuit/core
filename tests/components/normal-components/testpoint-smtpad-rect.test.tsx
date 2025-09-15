@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 /** Ensure TestPoint with SMT rectangular pad renders correctly */
 test("<testpoint /> with SMT rectangular pad", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board>
@@ -15,12 +15,12 @@ test("<testpoint /> with SMT rectangular pad", async () => {
         height="1mm"
       />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([])
+  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([]);
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

@@ -1,11 +1,11 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
-import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter";
 
 test("custom autorouting algorithmFn", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
-  let autorouterFinished = false
+  let autorouterFinished = false;
 
   // Create a circuit with two components that need to be connected by a trace
   // The capacity mesh autorouter will be used to find the optimal route
@@ -17,11 +17,11 @@ test("custom autorouting algorithmFn", async () => {
         local: true,
         groupMode: "subcircuit",
         algorithmFn: async (simpleRouteJson) => {
-          const autorouter = new CapacityMeshAutorouter(simpleRouteJson)
+          const autorouter = new CapacityMeshAutorouter(simpleRouteJson);
           autorouter.on("complete", () => {
-            autorouterFinished = true
-          })
-          return autorouter
+            autorouterFinished = true;
+          });
+          return autorouter;
         },
       }}
     >
@@ -43,10 +43,10 @@ test("custom autorouting algorithmFn", async () => {
 
       <trace from=".R1 > .pin2" to=".LED1 > .anode" />
     </board>,
-  )
+  );
 
   // Wait for the render to complete, including autorouting
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  expect(autorouterFinished).toBe(true)
-})
+  expect(autorouterFinished).toBe(true);
+});

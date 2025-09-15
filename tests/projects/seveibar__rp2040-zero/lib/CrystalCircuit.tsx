@@ -1,4 +1,4 @@
-import { ABM8_272_T3 } from "../imports/ABM8_272_T3"
+import { ABM8_272_T3 } from "../imports/ABM8_272_T3";
 
 export const CrystalCircuit = () => (
   <group>
@@ -36,4 +36,4 @@ export const CrystalCircuit = () => (
       }}
     />
   </group>
-)
+);

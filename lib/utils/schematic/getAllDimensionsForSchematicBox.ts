@@ -1,94 +1,94 @@
-import { getSizeOfSidesFromPortArrangement } from "./getSizeOfSidesFromPortArrangement"
-import { parsePinNumberFromLabelsOrThrow } from "./parsePinNumberFromLabelsOrThrow"
+import { getSizeOfSidesFromPortArrangement } from "./getSizeOfSidesFromPortArrangement";
+import { parsePinNumberFromLabelsOrThrow } from "./parsePinNumberFromLabelsOrThrow";
 
 export type VerticalPortSideConfiguration = {
-  direction?: "top-to-bottom" | "bottom-to-top"
-  pins: number[]
-}
+  direction?: "top-to-bottom" | "bottom-to-top";
+  pins: number[];
+};
 export type HorizontalPortSideConfiguration = {
-  direction?: "left-to-right" | "right-to-left"
-  pins: number[]
-}
+  direction?: "left-to-right" | "right-to-left";
+  pins: number[];
+};
 
 export type SchematicBoxPortPositionWithMetadata = {
-  trueIndex: number
-  pinNumber: number
-  side: "left" | "right" | "top" | "bottom"
-  distanceFromOrthogonalEdge: number
-  x: number
-  y: number
-}
+  trueIndex: number;
+  pinNumber: number;
+  side: "left" | "right" | "top" | "bottom";
+  distanceFromOrthogonalEdge: number;
+  x: number;
+  y: number;
+};
 
 export type ExplicitPinMappingArrangement = {
-  leftSide?: VerticalPortSideConfiguration
-  rightSide?: VerticalPortSideConfiguration
-  topSide?: HorizontalPortSideConfiguration
-  bottomSide?: HorizontalPortSideConfiguration
-}
+  leftSide?: VerticalPortSideConfiguration;
+  rightSide?: VerticalPortSideConfiguration;
+  topSide?: HorizontalPortSideConfiguration;
+  bottomSide?: HorizontalPortSideConfiguration;
+};
 /** @deprecated prefer SidePinCounts */
 export interface SideSizes {
-  leftSize?: number
-  rightSize?: number
-  topSize?: number
-  bottomSize?: number
+  leftSize?: number;
+  rightSize?: number;
+  topSize?: number;
+  bottomSize?: number;
 }
 
 export interface SidePinCounts {
-  leftPinCount?: number
-  rightPinCount?: number
-  topPinCount?: number
-  bottomPinCount?: number
+  leftPinCount?: number;
+  rightPinCount?: number;
+  topPinCount?: number;
+  bottomPinCount?: number;
 }
 
 export type PortArrangement =
   | SideSizes
   | SidePinCounts
-  | ExplicitPinMappingArrangement
+  | ExplicitPinMappingArrangement;
 
 interface Params {
-  schWidth?: number
-  schHeight?: number
-  portDistanceFromEdge?: number
-  schPinSpacing: number
+  schWidth?: number;
+  schHeight?: number;
+  portDistanceFromEdge?: number;
+  schPinSpacing: number;
   numericSchPinStyle?: Record<
     `pin${number}` | number | `${number}`,
     {
-      leftMargin?: number
-      rightMargin?: number
-      topMargin?: number
-      bottomMargin?: number
+      leftMargin?: number;
+      rightMargin?: number;
+      topMargin?: number;
+      bottomMargin?: number;
     }
-  >
-  pinCount?: number
-  schPortArrangement?: PortArrangement
-  pinLabels?: Record<string, string>
+  >;
+  pinCount?: number;
+  schPortArrangement?: PortArrangement;
+  pinLabels?: Record<string, string>;
 }
 
-type Side = "left" | "right" | "top" | "bottom"
+type Side = "left" | "right" | "top" | "bottom";
 
 export function isExplicitPinMappingArrangement(
   arrangement: PortArrangement,
 ): arrangement is ExplicitPinMappingArrangement {
-  const a = arrangement as ExplicitPinMappingArrangement
+  const a = arrangement as ExplicitPinMappingArrangement;
   return (
     a.leftSide !== undefined ||
     a.rightSide !== undefined ||
     a.topSide !== undefined ||
     a.bottomSide !== undefined
-  )
+  );
 }
 export interface SchematicBoxDimensions {
-  pinCount: number
+  pinCount: number;
   getPortPositionByPinNumber(
     pinNumber: number,
-  ): SchematicBoxPortPositionWithMetadata | null
-  getSize(): { width: number; height: number }
-  getSizeIncludingPins(): { width: number; height: number }
+  ): SchematicBoxPortPositionWithMetadata | null;
+  getSize(): { width: number; height: number };
+  getSizeIncludingPins(): { width: number; height: number };
 }
 
 export interface SchematicBoxComponentDimensions {
-  schWidth: number
-  schHeight: number
+  schWidth: number;
+  schHeight: number;
 }
 /**
  * Get the dimensions of a schematic box based on the provided parameters.
@@ -107,36 +107,38 @@ export interface SchematicBoxComponentDimensions {
 export const getAllDimensionsForSchematicBox = (
   params: Params,
 ): SchematicBoxDimensions => {
-  const portDistanceFromEdge = params.portDistanceFromEdge ?? 0.4
+  const portDistanceFromEdge = params.portDistanceFromEdge ?? 0.4;
 
   let sidePinCounts = params.schPortArrangement
     ? getSizeOfSidesFromPortArrangement(params.schPortArrangement)
-    : null
+    : null;
   const sideLengths: Record<Side, number> = {
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
-  }
-  let pinCount: number | null = params.pinCount ?? null
+  };
+  let pinCount: number | null = params.pinCount ?? null;
 
   if (pinCount === null) {
     if (sidePinCounts) {
       pinCount =
-        sidePinCounts.leftSize + sidePinCounts.rightSize + sidePinCounts.topSize
+        sidePinCounts.leftSize +
+        sidePinCounts.rightSize +
+        sidePinCounts.topSize;
     } else {
-      throw new Error("Could not determine pin count for the schematic box")
+      throw new Error("Could not determine pin count for the schematic box");
     }
   }
 
   if (pinCount && !sidePinCounts) {
-    const rightSize = Math.floor(pinCount / 2)
+    const rightSize = Math.floor(pinCount / 2);
     sidePinCounts = {
       leftSize: pinCount - rightSize,
       rightSize: rightSize,
       topSize: 0,
       bottomSize: 0,
-    }
+    };
   }
 
   if (!sidePinCounts) {
@@ -145,7 +147,7 @@ export const getAllDimensionsForSchematicBox = (
       rightSize: 0,
       topSize: 0,
       bottomSize: 0,
-    }
+    };
   }
 
   const getPinNumberUsingSideIndex = ({
@@ -153,63 +155,63 @@ export const getAllDimensionsForSchematicBox = (
     sideIndex,
     truePinIndex,
   }: {
-    side: "top" | "bottom" | "left" | "right"
-    sideIndex: number
-    truePinIndex: number
+    side: "top" | "bottom" | "left" | "right";
+    sideIndex: number;
+    truePinIndex: number;
   }) => {
-    if (!params.schPortArrangement) return truePinIndex + 1
+    if (!params.schPortArrangement) return truePinIndex + 1;
     if (!isExplicitPinMappingArrangement(params.schPortArrangement))
-      return truePinIndex + 1
+      return truePinIndex + 1;
 
     const normalCcwDirection = {
       left: "top-to-bottom",
       bottom: "left-to-right",
       right: "bottom-to-top",
       top: "right-to-left",
-    }[side]
+    }[side];
 
     const directionAlongSide =
       params.schPortArrangement?.[`${side}Side`]?.direction ??
-      normalCcwDirection
+      normalCcwDirection;
 
     const pinsDefinitionForSide =
-      params.schPortArrangement?.[`${side}Side`]?.pins!
+      params.schPortArrangement?.[`${side}Side`]?.pins!;
 
-    let sideIndexWithDirectionCorrection: number = sideIndex
+    let sideIndexWithDirectionCorrection: number = sideIndex;
     if (directionAlongSide !== normalCcwDirection) {
       sideIndexWithDirectionCorrection =
-        pinsDefinitionForSide.length - sideIndex - 1
+        pinsDefinitionForSide.length - sideIndex - 1;
     }
 
     return parsePinNumberFromLabelsOrThrow(
       pinsDefinitionForSide[sideIndexWithDirectionCorrection]!,
       params.pinLabels,
-    )
-  }
+    );
+  };
 
   // Map the indices to the sides they correspond to
   const orderedTruePorts: Array<{
-    trueIndex: number
-    pinNumber: number
-    side: "left" | "right" | "top" | "bottom"
-    distanceFromOrthogonalEdge: number
-  }> = []
-  let currentDistanceFromEdge = 0
-  let truePinIndex = 0
+    trueIndex: number;
+    pinNumber: number;
+    side: "left" | "right" | "top" | "bottom";
+    distanceFromOrthogonalEdge: number;
+  }> = [];
+  let currentDistanceFromEdge = 0;
+  let truePinIndex = 0;
   // moving downward from the top-left corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.leftSize; sideIndex++) {
     const pinNumber = getPinNumberUsingSideIndex({
       side: "left",
       sideIndex,
       truePinIndex,
-    })
+    });
 
     const pinStyle =
       params.numericSchPinStyle?.[`pin${pinNumber}`] ??
-      params.numericSchPinStyle?.[pinNumber]
+      params.numericSchPinStyle?.[pinNumber];
 
     if (pinStyle?.topMargin) {
-      currentDistanceFromEdge += pinStyle.topMargin
+      currentDistanceFromEdge += pinStyle.topMargin;
     }
 
     orderedTruePorts.push({
@@ -217,36 +219,36 @@ export const getAllDimensionsForSchematicBox = (
       pinNumber,
       side: "left",
       distanceFromOrthogonalEdge: currentDistanceFromEdge,
-    })
+    });
 
     if (pinStyle?.bottomMargin) {
-      currentDistanceFromEdge += pinStyle.bottomMargin
+      currentDistanceFromEdge += pinStyle.bottomMargin;
     }
 
-    const isLastPinOnSide = sideIndex === sidePinCounts.leftSize - 1
+    const isLastPinOnSide = sideIndex === sidePinCounts.leftSize - 1;
     if (!isLastPinOnSide) {
-      currentDistanceFromEdge += params.schPinSpacing
+      currentDistanceFromEdge += params.schPinSpacing;
     } else {
-      sideLengths.left = currentDistanceFromEdge
+      sideLengths.left = currentDistanceFromEdge;
     }
-    truePinIndex++
+    truePinIndex++;
   }
 
-  currentDistanceFromEdge = 0
+  currentDistanceFromEdge = 0;
   // moving rightward from the left-bottom corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.bottomSize; sideIndex++) {
     const pinNumber = getPinNumberUsingSideIndex({
       side: "bottom",
       sideIndex,
       truePinIndex,
-    })
+    });
 
     const pinStyle =
       params.numericSchPinStyle?.[`pin${pinNumber}`] ??
-      params.numericSchPinStyle?.[pinNumber]
+      params.numericSchPinStyle?.[pinNumber];
 
     if (pinStyle?.leftMargin) {
-      currentDistanceFromEdge += pinStyle.leftMargin
+      currentDistanceFromEdge += pinStyle.leftMargin;
     }
 
     orderedTruePorts.push({
@@ -254,36 +256,36 @@ export const getAllDimensionsForSchematicBox = (
       pinNumber,
       side: "bottom",
       distanceFromOrthogonalEdge: currentDistanceFromEdge,
-    })
+    });
 
     if (pinStyle?.rightMargin) {
-      currentDistanceFromEdge += pinStyle.rightMargin
+      currentDistanceFromEdge += pinStyle.rightMargin;
     }
 
-    const isLastPinOnSide = sideIndex === sidePinCounts.bottomSize - 1
+    const isLastPinOnSide = sideIndex === sidePinCounts.bottomSize - 1;
     if (!isLastPinOnSide) {
-      currentDistanceFromEdge += params.schPinSpacing
+      currentDistanceFromEdge += params.schPinSpacing;
     } else {
-      sideLengths.bottom = currentDistanceFromEdge
+      sideLengths.bottom = currentDistanceFromEdge;
     }
-    truePinIndex++
+    truePinIndex++;
   }
 
-  currentDistanceFromEdge = 0
+  currentDistanceFromEdge = 0;
   // moving upward from the bottom-right corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.rightSize; sideIndex++) {
     const pinNumber = getPinNumberUsingSideIndex({
       side: "right",
       sideIndex,
       truePinIndex,
-    })
+    });
 
     const pinStyle =
       params.numericSchPinStyle?.[`pin${pinNumber}`] ??
-      params.numericSchPinStyle?.[pinNumber]
+      params.numericSchPinStyle?.[pinNumber];
 
     if (pinStyle?.bottomMargin) {
-      currentDistanceFromEdge += pinStyle.bottomMargin
+      currentDistanceFromEdge += pinStyle.bottomMargin;
     }
 
     orderedTruePorts.push({
@@ -291,36 +293,36 @@ export const getAllDimensionsForSchematicBox = (
       pinNumber,
       side: "right",
       distanceFromOrthogonalEdge: currentDistanceFromEdge,
-    })
+    });
 
     if (pinStyle?.topMargin) {
-      currentDistanceFromEdge += pinStyle.topMargin
+      currentDistanceFromEdge += pinStyle.topMargin;
     }
 
-    const isLastPinOnSide = sideIndex === sidePinCounts.rightSize - 1
+    const isLastPinOnSide = sideIndex === sidePinCounts.rightSize - 1;
     if (!isLastPinOnSide) {
-      currentDistanceFromEdge += params.schPinSpacing
+      currentDistanceFromEdge += params.schPinSpacing;
     } else {
-      sideLengths.right = currentDistanceFromEdge
+      sideLengths.right = currentDistanceFromEdge;
     }
-    truePinIndex++
+    truePinIndex++;
   }
 
-  currentDistanceFromEdge = 0
+  currentDistanceFromEdge = 0;
   // moving leftward from the top-right corner
   for (let sideIndex = 0; sideIndex < sidePinCounts.topSize; sideIndex++) {
     const pinNumber = getPinNumberUsingSideIndex({
       side: "top",
       sideIndex,
       truePinIndex,
-    })
+    });
 
     const pinStyle =
       params.numericSchPinStyle?.[`pin${pinNumber}`] ??
-      params.numericSchPinStyle?.[pinNumber]
+      params.numericSchPinStyle?.[pinNumber];
 
     if (pinStyle?.rightMargin) {
-      currentDistanceFromEdge += pinStyle.rightMargin
+      currentDistanceFromEdge += pinStyle.rightMargin;
     }
 
     orderedTruePorts.push({
@@ -328,28 +330,28 @@ export const getAllDimensionsForSchematicBox = (
       pinNumber,
       side: "top",
       distanceFromOrthogonalEdge: currentDistanceFromEdge,
-    })
+    });
 
     if (pinStyle?.leftMargin) {
-      currentDistanceFromEdge += pinStyle.leftMargin
+      currentDistanceFromEdge += pinStyle.leftMargin;
     }
 
-    const isLastPinOnSide = sideIndex === sidePinCounts.topSize - 1
+    const isLastPinOnSide = sideIndex === sidePinCounts.topSize - 1;
     if (!isLastPinOnSide) {
-      currentDistanceFromEdge += params.schPinSpacing
+      currentDistanceFromEdge += params.schPinSpacing;
     } else {
-      sideLengths.top = currentDistanceFromEdge
+      sideLengths.top = currentDistanceFromEdge;
     }
-    truePinIndex++
+    truePinIndex++;
   }
 
   // Use lengths to determine schWidth and schHeight
-  let schWidth = params.schWidth
+  let schWidth = params.schWidth;
   if (schWidth === undefined) {
     schWidth = Math.max(
       sideLengths.top + params.schPinSpacing * 2,
       sideLengths.bottom + params.schPinSpacing * 2,
-    )
+    );
 
     const labelWidth = params.pinLabels
       ? Math.max(
@@ -357,19 +359,19 @@ export const getAllDimensionsForSchematicBox = (
             (label) => label.length * 0.1, // Estimated text width
           ),
         )
-      : 0
+      : 0;
 
     // When label is present, only then add some padding to the width
-    const LABEL_PADDING = labelWidth > 0 ? 1.1 : 0
-    schWidth = Math.max(schWidth, labelWidth + LABEL_PADDING)
+    const LABEL_PADDING = labelWidth > 0 ? 1.1 : 0;
+    schWidth = Math.max(schWidth, labelWidth + LABEL_PADDING);
   }
 
-  let schHeight = params.schHeight
+  let schHeight = params.schHeight;
   if (!schHeight) {
     schHeight = Math.max(
       sideLengths.left + params.schPinSpacing * 2,
       sideLengths.right + params.schPinSpacing * 2,
-    )
+    );
   }
 
   const trueEdgePositions = {
@@ -393,40 +395,40 @@ export const getAllDimensionsForSchematicBox = (
       x: sideLengths.top / 2,
       y: schHeight / 2 + portDistanceFromEdge,
     },
-  }
+  };
 
   const trueEdgeTraversalDirections = {
     left: { x: 0, y: -1 },
     right: { x: 0, y: 1 },
     top: { x: -1, y: 0 },
     bottom: { x: 1, y: 0 },
-  }
+  };
 
   const truePortsWithPositions = orderedTruePorts.map((p) => {
-    const { distanceFromOrthogonalEdge, side } = p
-    const edgePos = trueEdgePositions[side]
-    const edgeDir = trueEdgeTraversalDirections[side]
+    const { distanceFromOrthogonalEdge, side } = p;
+    const edgePos = trueEdgePositions[side];
+    const edgeDir = trueEdgeTraversalDirections[side];
 
     return {
       x: edgePos.x + distanceFromOrthogonalEdge * edgeDir.x,
       y: edgePos.y + distanceFromOrthogonalEdge * edgeDir.y,
       ...p,
-    }
-  })
+    };
+  });
   return {
     getPortPositionByPinNumber(
       pinNumber: number,
     ): SchematicBoxPortPositionWithMetadata | null {
       const port = truePortsWithPositions.find(
         (p) => p.pinNumber.toString() === pinNumber.toString(),
-      )
+      );
       if (!port) {
-        return null
+        return null;
       }
-      return port
+      return port;
     },
     getSize(): { width: number; height: number } {
-      return { width: schWidth, height: schHeight }
+      return { width: schWidth, height: schHeight };
     },
     getSizeIncludingPins(): { width: number; height: number } {
       return {
@@ -436,8 +438,8 @@ export const getAllDimensionsForSchematicBox = (
         height:
           schHeight +
           (sidePinCounts.topSize || sidePinCounts.bottomSize ? 0.4 : 0),
-      }
+      };
     },
     pinCount,
-  }
-}
+  };
+};

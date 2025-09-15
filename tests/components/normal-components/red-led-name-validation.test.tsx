@@ -1,19 +1,19 @@
-import { test, expect } from "bun:test"
-import { createUseComponent } from "lib/hooks/create-use-component"
-import type { CommonLayoutProps } from "@tscircuit/props"
-import { getTestFixture } from "../../fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { createUseComponent } from "lib/hooks/create-use-component";
+import type { CommonLayoutProps } from "@tscircuit/props";
+import { getTestFixture } from "../../fixtures/get-test-fixture";
 
 const pinLabels = {
   "1": "pos",
   "2": "neg",
-} as const
-const pinNames = Object.values(pinLabels)
+} as const;
+const pinNames = Object.values(pinLabels);
 
 interface Props extends CommonLayoutProps {
-  name: string
+  name: string;
 }
 
-let staticAssetsServerUrl = ""
+let staticAssetsServerUrl = "";
 
 const RedLed = (props: Props) => {
   return (
@@ -136,17 +136,17 @@ const RedLed = (props: Props) => {
         </footprint>
       }
     />
-  )
-}
+  );
+};
 
-const useRedLed = createUseComponent(RedLed, pinNames)
+const useRedLed = createUseComponent(RedLed, pinNames);
 
 test("<RedLed /> component name validation", async () => {
   const { circuit, staticAssetsServerUrl: url } = getTestFixture({
     withStaticAssetsServer: true,
-  })
-  staticAssetsServerUrl = url!
-  const RedLedComp = useRedLed("LED") as typeof RedLed
+  });
+  staticAssetsServerUrl = url!;
+  const RedLedComp = useRedLed("LED") as typeof RedLed;
 
   // Successful case with original name
   expect(() => {
@@ -154,27 +154,27 @@ test("<RedLed /> component name validation", async () => {
       <board width="12mm" height="10mm">
         <RedLedComp name="LED" schX={0} />
       </board>,
-    )
-  }).not.toThrow()
+    );
+  }).not.toThrow();
 
   // More explicit error catching
-  let errorThrown = false
+  let errorThrown = false;
   try {
     circuit.add(
       <board width="12mm" height="10mm">
         <RedLedComp name="different_led_name" schX={0} />
       </board>,
-    )
+    );
   } catch (error: unknown) {
-    errorThrown = true
+    errorThrown = true;
     if (error instanceof Error) {
-      expect(error).toBeInstanceOf(Error)
+      expect(error).toBeInstanceOf(Error);
       expect(error.message).toMatch(
         /Component name mismatch. Hook name: LED, Component prop name: different_led_name/,
-      )
+      );
     } else {
-      throw new Error("Unexpected error type")
+      throw new Error("Unexpected error type");
     }
   }
-  expect(errorThrown).toBe(true)
-})
+  expect(errorThrown).toBe(true);
+});

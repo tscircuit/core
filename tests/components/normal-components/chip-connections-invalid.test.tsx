@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { sel } from "lib/sel"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { sel } from "lib/sel";
 
 test("Chip not having name messes up the connections, uses the pin of the first chip", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board>
@@ -25,14 +25,14 @@ test("Chip not having name messes up the connections, uses the pin of the first 
         }}
       />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  const circuitJson = circuit.getCircuitJson()
+  const circuitJson = circuit.getCircuitJson();
   const source_trace_not_connected_errors = circuitJson.filter(
     (item: any) => item.type === "source_trace_not_connected_error",
-  )
+  );
 
   expect(source_trace_not_connected_errors).toMatchInlineSnapshot(`
     [
@@ -49,5 +49,5 @@ test("Chip not having name messes up the connections, uses the pin of the first 
         "type": "source_trace_not_connected_error",
       },
     ]
-  `)
-})
+  `);
+});

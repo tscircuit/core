@@ -1,10 +1,10 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
-import { getSvgFromGraphicsObject } from "graphics-debug"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson";
+import { getSvgFromGraphicsObject } from "graphics-debug";
 
 test("Cutout obstacles generation", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="30mm" height="20mm">
@@ -28,15 +28,15 @@ test("Cutout obstacles generation", () => {
         pcbY="0mm"
       />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const obstacles = getObstaclesFromCircuitJson(circuit.getCircuitJson())
+  const obstacles = getObstaclesFromCircuitJson(circuit.getCircuitJson());
 
   expect(
     getSvgFromGraphicsObject({
       rects: obstacles,
     }),
-  ).toMatchSvgSnapshot(import.meta.path)
-})
+  ).toMatchSvgSnapshot(import.meta.path);
+});

@@ -1,8 +1,8 @@
-import { it, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { it, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 it("should render a jumper with pinrow4 footprint", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="20mm" height="20mm" schMaxTraceDistance={5}>
@@ -62,10 +62,10 @@ it("should render a jumper with pinrow4 footprint", async () => {
         schY={4}
       />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

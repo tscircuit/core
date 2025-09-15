@@ -5,8 +5,8 @@ export const extendAliases = (
   return Array.from(
     new Set(
       aliases.flatMap((alias) => {
-        return [alias, ...(additionalAliases[alias] || [])]
+        return [alias, ...(additionalAliases[alias] || [])];
       }),
     ),
-  )
-}
+  );
+};

@@ -1,12 +1,12 @@
 interface Point {
-  x: number
-  y: number
+  x: number;
+  y: number;
 }
 
 interface Rect {
-  center: { x: number; y: number }
-  width: number
-  height: number
+  center: { x: number; y: number };
+  width: number;
+  height: number;
 }
 
 /**
@@ -17,26 +17,26 @@ interface Rect {
 export function fillPolygonWithRects(
   polygon: Point[],
   options: {
-    rectHeight?: number
+    rectHeight?: number;
   } = {},
 ): Rect[] {
-  if (polygon.length < 3) return []
+  if (polygon.length < 3) return [];
 
-  const { rectHeight = 0.1 } = options
+  const { rectHeight = 0.1 } = options;
 
-  const rects: Rect[] = []
+  const rects: Rect[] = [];
 
-  const yCoords = polygon.map((p) => p.y)
-  const minY = Math.min(...yCoords)
-  const maxY = Math.max(...yCoords)
+  const yCoords = polygon.map((p) => p.y);
+  const minY = Math.min(...yCoords);
+  const maxY = Math.max(...yCoords);
 
   for (let y = minY; y < maxY; y += rectHeight) {
-    const scanlineY = y + rectHeight / 2
-    const intersections: number[] = []
+    const scanlineY = y + rectHeight / 2;
+    const intersections: number[] = [];
 
     for (let i = 0; i < polygon.length; i++) {
-      const p1 = polygon[i]
-      const p2 = polygon[(i + 1) % polygon.length]
+      const p1 = polygon[i];
+      const p2 = polygon[(i + 1) % polygon.length];
 
       // Check if the scanline intersects with the edge
       if (
@@ -44,18 +44,18 @@ export function fillPolygonWithRects(
         (p2.y <= scanlineY && p1.y > scanlineY)
       ) {
         // Calculate intersection point
-        const x = ((scanlineY - p1.y) * (p2.x - p1.x)) / (p2.y - p1.y) + p1.x
-        intersections.push(x)
+        const x = ((scanlineY - p1.y) * (p2.x - p1.x)) / (p2.y - p1.y) + p1.x;
+        intersections.push(x);
       }
     }
 
-    intersections.sort((a, b) => a - b)
+    intersections.sort((a, b) => a - b);
 
     for (let i = 0; i < intersections.length; i += 2) {
       if (i + 1 < intersections.length) {
-        const x1 = intersections[i]
-        const x2 = intersections[i + 1]
-        const width = x2 - x1
+        const x1 = intersections[i];
+        const x2 = intersections[i + 1];
+        const width = x2 - x1;
         if (width > 1e-6) {
           // Avoid creating zero-width rects
           rects.push({
@@ -65,11 +65,11 @@ export function fillPolygonWithRects(
             },
             width,
             height: rectHeight,
-          })
+          });
         }
       }
     }
   }
 
-  return rects
+  return rects;
 }

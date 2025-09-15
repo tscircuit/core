@@ -1,10 +1,10 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 // Ensure pcbPositionAnchor aligns component by specified NinePointAnchor
 
 test("pcbPositionAnchor with NinePointAnchor", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <resistor
@@ -15,13 +15,13 @@ test("pcbPositionAnchor with NinePointAnchor", () => {
       pcbY={20}
       pcbPositionAnchor="top_left"
     />,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const resistor = circuit.selectOne(".R1")
-  const bounds = resistor!._getPcbCircuitJsonBounds().bounds
+  const resistor = circuit.selectOne(".R1");
+  const bounds = resistor!._getPcbCircuitJsonBounds().bounds;
 
-  expect(bounds.left).toBeCloseTo(10)
-  expect(bounds.top).toBeCloseTo(20)
-})
+  expect(bounds.left).toBeCloseTo(10);
+  expect(bounds.top).toBeCloseTo(20);
+});

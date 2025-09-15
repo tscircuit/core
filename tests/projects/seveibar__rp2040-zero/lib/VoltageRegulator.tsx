@@ -1,5 +1,5 @@
-import { RT9013_33GB } from "../imports/RT9013_33GB"
-import type { GroupProps } from "@tscircuit/props"
+import { RT9013_33GB } from "../imports/RT9013_33GB";
+import type { GroupProps } from "@tscircuit/props";
 
 export const VoltageRegulator = (groupProps: GroupProps) => (
   <group {...groupProps}>
@@ -38,4 +38,4 @@ export const VoltageRegulator = (groupProps: GroupProps) => (
     />
     <trace from="C5.2" to="net.GND" />
   </group>
-)
+);

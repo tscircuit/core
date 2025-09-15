@@ -1,16 +1,16 @@
-import { grid } from "@tscircuit/math-utils"
-import { sel } from "lib/sel"
-import type { BoardProps } from "@tscircuit/props"
+import { grid } from "@tscircuit/math-utils";
+import { sel } from "lib/sel";
+import type { BoardProps } from "@tscircuit/props";
 
 export const Benchmark1LedMatrix = ({
   autorouter = undefined,
   routingDisabled = undefined,
 }: {
-  autorouter?: BoardProps["autorouter"]
-  routingDisabled?: boolean
+  autorouter?: BoardProps["autorouter"];
+  routingDisabled?: boolean;
 }) => {
   if (autorouter === undefined && routingDisabled === undefined) {
-    routingDisabled = true
+    routingDisabled = true;
   }
   return (
     <board
@@ -30,8 +30,8 @@ export const Benchmark1LedMatrix = ({
       <trace from={sel.J1.GND} to={sel.net.GND} />
       {grid({ rows: 10, cols: 10, xSpacing: 10, ySpacing: 10 }).map(
         ({ center, index }) => {
-          const ledName = `LED${index}`
-          const resistorName = `R${index}`
+          const ledName = `LED${index}`;
+          const resistorName = `R${index}`;
           return (
             <group key={ledName}>
               <led
@@ -52,9 +52,9 @@ export const Benchmark1LedMatrix = ({
               <trace from={`.${ledName} .neg`} to={`.${resistorName} .pos`} />
               <trace from={`.${resistorName} .neg`} to={sel.net.GND} />
             </group>
-          )
+          );
         },
       )}
     </board>
-  )
-}
+  );
+};

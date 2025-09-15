@@ -1,10 +1,10 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 
 // Ensure that netlabels create traces that the autorouter can use
 
 test("netlabel autorouting creates pcb traces", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board
@@ -25,12 +25,12 @@ test("netlabel autorouting creates pcb traces", async () => {
         connectsTo={["R1.pin1", "R1.pin2", "C1.pin1", "C1.pin2"]}
       />
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
 
-  expect(circuit.db.source_trace.list().length).toBeGreaterThan(0)
-  expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
-})
+  expect(circuit.db.source_trace.list().length).toBeGreaterThan(0);
+  expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0);
+});

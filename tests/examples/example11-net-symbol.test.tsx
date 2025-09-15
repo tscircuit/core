@@ -1,11 +1,11 @@
-import { test, expect } from "bun:test"
-import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 // this test needs core update and  PR to support net symbols
 test("schematic net symbol", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
-  circuit._featureMspSchematicTraceRouting = true
+  circuit._featureMspSchematicTraceRouting = true;
 
   circuit.add(
     <board width="22mm" height="22mm" routingDisabled>
@@ -94,8 +94,8 @@ test("schematic net symbol", () => {
       <trace schDisplayLabel="GND2" from=".U1 > .pin28" to=".R1 > .pin2" />
       <trace from=".U1 > .pin4" to=".R1 > .pin2" />
     </board>,
-  )
+  );
 
-  circuit.render()
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  circuit.render();
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 test("repro1-missing-via", async () => {
-  const { circuit, logSoup } = getTestFixture()
+  const { circuit, logSoup } = getTestFixture();
 
   circuit.add(
     <board width="12mm" height="10mm" autorouter="sequential-trace">
@@ -27,9 +27,9 @@ test("repro1-missing-via", async () => {
         ]}
       />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

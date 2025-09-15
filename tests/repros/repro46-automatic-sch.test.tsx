@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
-import { sel } from "lib/sel"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
+import { sel } from "lib/sel";
 
 export default test("repro46: automatic schematic snapshot", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm" routingDisabled>
@@ -75,8 +75,8 @@ export default test("repro46: automatic schematic snapshot", async () => {
         }}
       />
     </board>,
-  )
+  );
 
-  await circuit.render()
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  await circuit.render();
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

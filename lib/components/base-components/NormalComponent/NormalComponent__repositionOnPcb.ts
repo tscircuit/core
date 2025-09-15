@@ -1,8 +1,8 @@
-import type { NormalComponent } from "./NormalComponent"
+import type { NormalComponent } from "./NormalComponent";
 import {
   repositionPcbComponentTo,
   repositionPcbGroupTo,
-} from "@tscircuit/circuit-json-util"
+} from "@tscircuit/circuit-json-util";
 
 /**
  * Reposition this component on the PCB to the specified coordinates
@@ -11,8 +11,8 @@ export const NormalComponent__repositionOnPcb = (
   component: NormalComponent,
   position: { x: number; y: number },
 ): void => {
-  const { db } = component.root!
-  const allCircuitJson = db.toArray()
+  const { db } = component.root!;
+  const allCircuitJson = db.toArray();
 
   // For regular components, reposition PCB component
   if (component.pcb_component_id) {
@@ -20,8 +20,8 @@ export const NormalComponent__repositionOnPcb = (
       allCircuitJson,
       component.pcb_component_id,
       position,
-    )
-    return
+    );
+    return;
   }
 
   // For groups, reposition PCB group
@@ -30,11 +30,11 @@ export const NormalComponent__repositionOnPcb = (
       allCircuitJson,
       (component as any).source_group_id,
       position,
-    )
-    return
+    );
+    return;
   }
 
   throw new Error(
     `Cannot reposition component ${component.getString()}: no pcb_component_id or source_group_id`,
-  )
-}
+  );
+};

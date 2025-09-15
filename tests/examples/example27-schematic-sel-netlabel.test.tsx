@@ -1,11 +1,11 @@
-import { sel } from "lib/sel"
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { sel } from "lib/sel";
+import { test, expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 // Test for schematic with sel-based netlabel and connections
 
 test("example27 schematic sel netlabel", async () => {
-  const { circuit } = await getTestFixture()
+  const { circuit } = await getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm" routingDisabled>
@@ -89,9 +89,9 @@ test("example27 schematic sel netlabel", async () => {
         schY={-1.6}
       />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
+});

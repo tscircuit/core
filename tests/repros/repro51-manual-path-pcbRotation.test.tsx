@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { expect, test } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 
 test("Manual path with rotation", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="15mm" height="10mm">
@@ -66,8 +66,8 @@ test("Manual path with rotation", async () => {
         </group>
       </group>
     </board>,
-  )
+  );
 
-  await circuit.renderUntilSettled()
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  await circuit.renderUntilSettled();
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

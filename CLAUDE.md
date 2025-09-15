@@ -47,14 +47,14 @@ Components implement specific phase methods like `doInitialSourceRender()`, `doI
 Uses Bun's native test runner with extensive snapshot testing:
 
 ```tsx
-const { circuit } = getTestFixture()
+const { circuit } = getTestFixture();
 circuit.add(
   <board>
     <resistor name="R1" />
-  </board>
-)
-circuit.render()
-expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  </board>,
+);
+circuit.render();
+expect(circuit).toMatchPcbSnapshot(import.meta.path);
 ```
 
 **Test Structure:**
@@ -79,8 +79,8 @@ expect(circuit).toMatchPcbSnapshot(import.meta.path)
 **Selector System:**
 
 ```tsx
-circuit.selectAll(".R1 > .pin1") // Find pin1 of resistor R1
-circuit.selectOne("resistor") // Find first resistor
+circuit.selectAll(".R1 > .pin1"); // Find pin1 of resistor R1
+circuit.selectOne("resistor"); // Find first resistor
 ```
 
 **Breaking up class files:**

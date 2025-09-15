@@ -1,29 +1,29 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { holeProps } from "@tscircuit/props"
-import type { PCBHole } from "circuit-json"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent";
+import { holeProps } from "@tscircuit/props";
+import type { PCBHole } from "circuit-json";
 
 export class Hole extends PrimitiveComponent<typeof holeProps> {
-  pcb_hole_id: string | null = null
-  isPcbPrimitive = true
+  pcb_hole_id: string | null = null;
+  isPcbPrimitive = true;
 
   get config() {
     return {
       componentName: "Hole",
       zodProps: holeProps,
-    }
+    };
   }
 
   getPcbSize(): { width: number; height: number } {
-    const { _parsedProps: props } = this
-    return { width: props.diameter, height: props.diameter }
+    const { _parsedProps: props } = this;
+    return { width: props.diameter, height: props.diameter };
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
-    const { db } = this.root!
-    const { _parsedProps: props } = this
-    const subcircuit = this.getSubcircuit()
-    const position = this._getGlobalPcbPositionBeforeLayout()
+    if (this.root?.pcbDisabled) return;
+    const { db } = this.root!;
+    const { _parsedProps: props } = this;
+    const subcircuit = this.getSubcircuit();
+    const position = this._getGlobalPcbPositionBeforeLayout();
 
     const inserted_hole = db.pcb_hole.insert({
       hole_shape: "circle",
@@ -33,19 +33,19 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       y: position.y,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-    })
-    this.pcb_hole_id = inserted_hole.pcb_hole_id!
+    });
+    this.pcb_hole_id = inserted_hole.pcb_hole_id!;
   }
 
   _getPcbCircuitJsonBounds(): {
-    center: { x: number; y: number }
-    bounds: { left: number; top: number; right: number; bottom: number }
-    width: number
-    height: number
+    center: { x: number; y: number };
+    bounds: { left: number; top: number; right: number; bottom: number };
+    width: number;
+    height: number;
   } {
-    const { db } = this.root!
-    const hole = db.pcb_hole.get(this.pcb_hole_id!)!
-    const size = this.getPcbSize()
+    const { db } = this.root!;
+    const hole = db.pcb_hole.get(this.pcb_hole_id!)!;
+    const size = this.getPcbSize();
 
     return {
       center: { x: hole.x, y: hole.y },
@@ -57,14 +57,14 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       },
       width: size.width,
       height: size.height,
-    }
+    };
   }
 
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
-    const { db } = this.root!
+    const { db } = this.root!;
     db.pcb_hole.update(this.pcb_hole_id!, {
       x: newCenter.x,
       y: newCenter.y,
-    })
+    });
   }
 }

@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 
 test("board with local group autorouter (capacity mesh)", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   // Create a circuit with two components that need to be connected by a trace
   // The capacity mesh autorouter will be used to find the optimal route
@@ -33,15 +33,15 @@ test("board with local group autorouter (capacity mesh)", async () => {
 
       <trace from=".R1 > .pin2" to=".LED1 > .anode" />
     </board>,
-  )
+  );
 
   // Wait for the render to complete, including autorouting
-  await circuit.renderUntilSettled()
+  await circuit.renderUntilSettled();
 
   // Verify that we have PCB traces in the output
-  const traces = circuit.selectAll("trace")
-  expect(traces.length).toBeGreaterThan(0)
+  const traces = circuit.selectAll("trace");
+  expect(traces.length).toBeGreaterThan(0);
 
   // Match against a PCB snapshot to verify routing
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

@@ -1,10 +1,10 @@
-import { expect, it } from "bun:test"
-import { InvalidProps } from "lib/errors/InvalidProps"
-import "lib/register-catalogue"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { expect, it } from "bun:test";
+import { InvalidProps } from "lib/errors/InvalidProps";
+import "lib/register-catalogue";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 it("Chip with pinrow footprint", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="20mm" height="10mm">
@@ -25,11 +25,11 @@ it("Chip with pinrow footprint", async () => {
         }}
       />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  const chip = circuit.selectOne("chip")
-  expect(chip).not.toBeNull()
-  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
-})
+  const chip = circuit.selectOne("chip");
+  expect(chip).not.toBeNull();
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path);
+});

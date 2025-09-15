@@ -1,6 +1,6 @@
-import { test, expect } from "bun:test"
-import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import { test, expect } from "bun:test";
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter";
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson";
 
 // Create a simple route test fixture
 const createTestSimpleRouteJson = (): SimpleRouteJson => ({
@@ -28,30 +28,30 @@ const createTestSimpleRouteJson = (): SimpleRouteJson => ({
     },
   ],
   bounds: { minX: -15, maxX: 15, minY: -15, maxY: 15 },
-})
+});
 
 test("CapacityMeshAutorouter should solve a simple routing problem", () => {
-  const autorouter = new CapacityMeshAutorouter(createTestSimpleRouteJson())
+  const autorouter = new CapacityMeshAutorouter(createTestSimpleRouteJson());
 
   // Execute the sync solve method
-  const traces = autorouter.solveSync()
+  const traces = autorouter.solveSync();
 
   // Validate basic expectations about the result
-  expect(traces.length).toBeGreaterThan(0)
-  expect(traces[0].type).toBe("pcb_trace")
-  expect(traces[0].route.length).toBeGreaterThan(2)
+  expect(traces.length).toBeGreaterThan(0);
+  expect(traces[0].type).toBe("pcb_trace");
+  expect(traces[0].route.length).toBeGreaterThan(2);
 
   // The first and last points should match our input
-  const route = traces[0].route
-  const firstPoint = route[0] as { x: number; y: number; layer: string }
+  const route = traces[0].route;
+  const firstPoint = route[0] as { x: number; y: number; layer: string };
   const lastPoint = route[route.length - 1] as {
-    x: number
-    y: number
-    layer: string
-  }
+    x: number;
+    y: number;
+    layer: string;
+  };
 
   // Check that the endpoints match our input points, regardless of order
-  expect([firstPoint.x, lastPoint.x].sort()).toEqual([-10, 10])
-  expect(firstPoint.y).toBeCloseTo(0, 0)
-  expect(lastPoint.y).toBeCloseTo(0, 0)
-})
+  expect([firstPoint.x, lastPoint.x].sort()).toEqual([-10, 10]);
+  expect(firstPoint.y).toBeCloseTo(0, 0);
+  expect(lastPoint.y).toBeCloseTo(0, 0);
+});

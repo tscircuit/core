@@ -1,5 +1,5 @@
-import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import { Net } from "lib/components/primitive-components/Net"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent";
+import { Net } from "lib/components/primitive-components/Net";
 
 export const createNetsFromProps = (
   component: PrimitiveComponent,
@@ -10,26 +10,26 @@ export const createNetsFromProps = (
       if (/net\.[^\s>]*\./.test(prop)) {
         throw new Error(
           'Net names cannot contain a period, try using "sel.net..." to autocomplete with conventional net names, e.g. V3_3',
-        )
+        );
       }
       if (/net\.[^\s>]*[+-]/.test(prop)) {
         throw new Error(
           'Net names cannot contain "+" or "-", try using underscores instead, e.g. VCC_P',
-        )
+        );
       }
       if (/net\.[0-9]/.test(prop)) {
-        const netName = prop.split("net.")[1]
+        const netName = prop.split("net.")[1];
         throw new Error(
           `Net name "${netName}" cannot start with a number, try using a prefix like "VBUS1"`,
-        )
+        );
       }
-      const subcircuit = component.getSubcircuit()
+      const subcircuit = component.getSubcircuit();
       if (!subcircuit.selectOne(prop)) {
         const net = new Net({
           name: prop.split("net.")[1],
-        })
-        subcircuit.add(net)
+        });
+        subcircuit.add(net);
       }
     }
   }
-}
+};

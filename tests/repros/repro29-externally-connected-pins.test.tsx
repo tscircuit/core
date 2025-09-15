@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { test, expect } from "bun:test";
+import { getTestFixture } from "../fixtures/get-test-fixture";
 
 test("chip with externally connected pins repro", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
   const pinLabels = {
     pin1: ["VDDIO", "V3_3"],
     pin2: ["NC1"],
@@ -20,7 +20,7 @@ test("chip with externally connected pins repro", async () => {
     pin14: ["VS"],
     pin15: ["NC2"],
     pin16: ["GND3"],
-  } as const
+  } as const;
   circuit.add(
     <board width="20mm" height="15mm" routingDisabled={true}>
       <chip
@@ -45,14 +45,14 @@ test("chip with externally connected pins repro", async () => {
         }}
       />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
   // Verify that traces are created for externally connected pins
-  const traces = circuit.selectAll("trace")
-  expect(traces.length).toBeGreaterThanOrEqual(1) // Should have at least 1 trace for pin12-pin13 connection
+  const traces = circuit.selectAll("trace");
+  expect(traces.length).toBeGreaterThanOrEqual(1); // Should have at least 1 trace for pin12-pin13 connection
 
   // Visual snapshot to verify the traces are rendered correctly
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+});

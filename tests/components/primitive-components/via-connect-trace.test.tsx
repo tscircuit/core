@@ -1,8 +1,8 @@
-import { expect, it } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { expect, it } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture";
 
 it("allows traces to connect to via layers", () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture();
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -51,10 +51,10 @@ it("allows traces to connect to via layers", () => {
 
       <trace from="Via1.bottom" to="C1.pin1" />
     </board>,
-  )
+  );
 
-  circuit.render()
+  circuit.render();
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSimple3dSnapshot(import.meta.path)
-})
+  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+  expect(circuit).toMatchSimple3dSnapshot(import.meta.path);
+});
