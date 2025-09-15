@@ -1,6 +1,6 @@
-import { test, expect } from "bun:test"
-import { Circuit } from "lib"
-import { Group } from "lib/components/primitive-components/Group/Group.ts"
+import { test, expect } from "bun:test";
+import { Circuit } from "lib";
+import { Group } from "lib/components/primitive-components/Group/Group.ts";
 
 test("should render group as single box with external pins arranged", () => {
   const circuit = new Circuit();
@@ -15,8 +15,8 @@ test("should render group as single box with external pins arranged", () => {
     schHeight: 4,
     schPinArrangement: {
       left: { pins: ["D1"], direction: "top-to-bottom" },
-      right: { pins: ["D2"], direction: "bottom-to-top" }
-    }
+      right: { pins: ["D2"], direction: "bottom-to-top" },
+    },
   } as any);
 
   circuit.add(group);
