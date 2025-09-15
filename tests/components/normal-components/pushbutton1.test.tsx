@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import Board from '../../lib/components/board';
-import PushButton from '../../lib/components/pushbutton';
+import Board from "../../lib/components/board"
+import PushButton from "../../lib/components/pushbutton"
 
 test("<pushbutton /> component", async () => {
   const { circuit } = getTestFixture()
