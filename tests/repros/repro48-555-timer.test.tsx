@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("repro48: 555 timer circuit", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board pcbPack>
@@ -69,10 +69,10 @@ test("repro48: 555 timer circuit", () => {
       {/* Output to header */}
       <trace from="U1.OUT" to="net.OUT" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

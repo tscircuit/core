@@ -1,5 +1,5 @@
-import type { AnySourceComponent } from "circuit-json";
-import type { BaseSymbolName } from "schematic-symbols";
+import type { AnySourceComponent } from "circuit-json"
+import type { BaseSymbolName } from "schematic-symbols"
 
 /**
  * This is just a proxy to make autocomplete easier, it just returns whatever
@@ -11,32 +11,32 @@ const stringProxy = new Proxy(
   {
     get: (target, prop) => prop,
   },
-) as any;
+) as any
 
-export type Ftype = Extract<AnySourceComponent, { ftype: string }>["ftype"];
+export type Ftype = Extract<AnySourceComponent, { ftype: string }>["ftype"]
 
 export const FTYPE: {
-  [T in Extract<AnySourceComponent, { ftype: string }>["ftype"]]: T;
-} = stringProxy;
+  [T in Extract<AnySourceComponent, { ftype: string }>["ftype"]]: T
+} = stringProxy
 
 export const SYMBOL: {
-  [T in BaseSymbolName]: T;
-} = stringProxy;
+  [T in BaseSymbolName]: T
+} = stringProxy
 
-export type TwoPinPorts = "pin1" | "pin2";
-export type PassivePorts = TwoPinPorts;
+export type TwoPinPorts = "pin1" | "pin2"
+export type PassivePorts = TwoPinPorts
 export type PolarizedPassivePorts =
   | PassivePorts
   | "anode"
   | "cathode"
   | "pos"
-  | "neg";
+  | "neg"
 export type TransistorPorts =
   | "pin1"
   | "pin2"
   | "pin3"
   | "emitter"
   | "collector"
-  | "base";
+  | "base"
 
-export type { BaseSymbolName };
+export type { BaseSymbolName }

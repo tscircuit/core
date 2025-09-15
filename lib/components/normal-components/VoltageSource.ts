@@ -1,24 +1,24 @@
-import { frequency, rotation, voltage } from "circuit-json";
+import { frequency, rotation, voltage } from "circuit-json"
 import {
   commonComponentProps,
   type CommonComponentProps,
-} from "@tscircuit/props";
-import { z } from "zod";
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent";
-import { FTYPE, type BaseSymbolName, type Ftype } from "lib/utils/constants";
-import type { SimulationAcVoltageSource } from "circuit-json";
-import { Port } from "../primitive-components/Port";
-import type { RenderPhase } from "lib/components/base-components/Renderable";
+} from "@tscircuit/props"
+import { z } from "zod"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { FTYPE, type BaseSymbolName, type Ftype } from "lib/utils/constants"
+import type { SimulationAcVoltageSource } from "circuit-json"
+import { Port } from "../primitive-components/Port"
+import type { RenderPhase } from "lib/components/base-components/Renderable"
 
-export type WaveShape = "sinewave" | "square" | "triangle" | "sawtooth";
+export type WaveShape = "sinewave" | "square" | "triangle" | "sawtooth"
 
 export interface VoltageSourceProps extends CommonComponentProps {
-  voltage?: number | string;
-  frequency?: number | string;
-  peakToPeakVoltage?: number | string;
-  waveShape?: WaveShape;
-  phase?: number | string;
-  dutyCycle?: number;
+  voltage?: number | string
+  frequency?: number | string
+  peakToPeakVoltage?: number | string
+  waveShape?: WaveShape
+  phase?: number | string
+  dutyCycle?: number
 }
 
 export const voltageSourceProps = commonComponentProps.extend({
@@ -28,14 +28,14 @@ export const voltageSourceProps = commonComponentProps.extend({
   waveShape: z.enum(["sinewave", "square", "triangle", "sawtooth"]).optional(),
   phase: rotation.optional(),
   dutyCycle: z.number().optional(),
-});
+})
 
 export class VoltageSource extends NormalComponent<
   typeof voltageSourceProps,
   "terminal1" | "terminal2"
 > {
   get config() {
-    const isSquare = this.props.waveShape === "square";
+    const isSquare = this.props.waveShape === "square"
     return {
       componentName: "VoltageSource",
       schematicSymbolName: (isSquare
@@ -43,16 +43,16 @@ export class VoltageSource extends NormalComponent<
         : "ac_voltmeter") as BaseSymbolName,
       zodProps: voltageSourceProps,
       sourceFtype: "simple_voltage_source" as Ftype,
-    };
+    }
   }
 
   runRenderPhaseForChildren(phase: RenderPhase): void {
     if (phase.startsWith("Pcb")) {
-      return;
+      return
     }
     for (const child of this.children) {
-      child.runRenderPhaseForChildren(phase);
-      child.runRenderPhase(phase);
+      child.runRenderPhaseForChildren(phase)
+      child.runRenderPhase(phase)
     }
   }
 
@@ -64,12 +64,12 @@ export class VoltageSource extends NormalComponent<
         pin1: ["terminal1"],
         pin2: ["terminal2"],
       },
-    });
+    })
   }
 
   doInitialSourceRender() {
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
+    const { db } = this.root!
+    const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype: "simple_voltage_source",
       name: this.name,
@@ -81,17 +81,17 @@ export class VoltageSource extends NormalComponent<
       duty_cycle: props.dutyCycle,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
-    } as any);
-    this.source_component_id = source_component.source_component_id;
+    } as any)
+    this.source_component_id = source_component.source_component_id
   }
 
   doInitialSimulationRender() {
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
+    const { db } = this.root!
+    const { _parsedProps: props } = this
 
-    const terminal1Port = this.portMap.terminal1!;
-    const terminal2Port = this.portMap.terminal2!;
-    (db as any).simulation_voltage_source.insert({
+    const terminal1Port = this.portMap.terminal1!
+    const terminal2Port = this.portMap.terminal2!
+    ;(db as any).simulation_voltage_source.insert({
       type: "simulation_voltage_source",
       is_dc_source: false,
       terminal1_source_port_id: terminal1Port.source_port_id,
@@ -102,9 +102,9 @@ export class VoltageSource extends NormalComponent<
       wave_shape: props.waveShape,
       phase: props.phase,
       duty_cycle: props.dutyCycle,
-    } as SimulationAcVoltageSource);
+    } as SimulationAcVoltageSource)
   }
 
-  terminal1 = this.portMap.terminal1;
-  terminal2 = this.portMap.terminal2;
+  terminal1 = this.portMap.terminal1
+  terminal2 = this.portMap.terminal2
 }

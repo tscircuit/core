@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("chip with externally connected pins repro", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board width="20mm" height="15mm" routingDisabled={true}>
       <chip
@@ -20,8 +20,8 @@ test("chip with externally connected pins repro", async () => {
         name="U1"
       />
     </board>,
-  );
+  )
 
-  circuit.render();
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  circuit.render()
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

@@ -1,18 +1,18 @@
-import { resonatorProps } from "@tscircuit/props";
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent";
-import type { BaseSymbolName } from "lib/utils/constants";
-import { formatSiUnit } from "format-si-unit";
+import { resonatorProps } from "@tscircuit/props"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import type { BaseSymbolName } from "lib/utils/constants"
+import { formatSiUnit } from "format-si-unit"
 
 function getResonatorSymbolName(variant: string | undefined): BaseSymbolName {
   switch (variant) {
     case "two_ground_pins":
-      return `crystal_4pin`;
+      return `crystal_4pin`
     case "ground_pin":
-      return "resonator";
+      return "resonator"
     case "no_ground":
-      return "crystal";
+      return "crystal"
     default:
-      return "crystal";
+      return "crystal"
   }
 }
 
@@ -24,13 +24,13 @@ export class Resonator extends NormalComponent<typeof resonatorProps> {
         this.props.symbolName ?? getResonatorSymbolName(this.props.pinVariant),
       zodProps: resonatorProps,
       shouldRenderAsSchematicBox: false,
-    };
+    }
   }
 
   doInitialSourceRender() {
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
-    const pinVariant = props.pinVariant || "no_ground";
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const pinVariant = props.pinVariant || "no_ground"
     const source_component = db.source_component.insert({
       ftype: "simple_resonator",
       name: this.name,
@@ -40,16 +40,16 @@ export class Resonator extends NormalComponent<typeof resonatorProps> {
       pin_variant: pinVariant,
       are_pins_interchangeable:
         pinVariant === "no_ground" || pinVariant === "ground_pin",
-    } as any);
+    } as any)
 
-    this.source_component_id = source_component.source_component_id;
+    this.source_component_id = source_component.source_component_id
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    const freqDisplay = `${formatSiUnit(this._parsedProps.frequency)}Hz`;
+    const freqDisplay = `${formatSiUnit(this._parsedProps.frequency)}Hz`
     if (this._parsedProps.loadCapacitance) {
-      return `${freqDisplay} / ${formatSiUnit(this._parsedProps.loadCapacitance)}F`;
+      return `${freqDisplay} / ${formatSiUnit(this._parsedProps.loadCapacitance)}F`
     }
-    return freqDisplay;
+    return freqDisplay
   }
 }

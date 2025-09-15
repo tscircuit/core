@@ -1,22 +1,22 @@
-import type { AxisDirection, Side } from "./getSide";
+import type { AxisDirection, Side } from "./getSide"
 
 export const oppositeSide = (input: AxisDirection | Side): Side => {
   switch (input) {
     case "x+":
-      return "left";
+      return "left"
     case "x-":
-      return "right";
+      return "right"
     case "y+":
-      return "bottom";
+      return "bottom"
     case "y-":
-      return "top";
+      return "top"
     case "left":
-      return "right";
+      return "right"
     case "top":
-      return "bottom";
+      return "bottom"
     case "right":
-      return "left";
+      return "left"
     case "bottom":
-      return "top";
+      return "top"
   }
-};
+}

@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("pcbPack layout with gap and component chain", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board pcbPack pcbGap="1mm">
@@ -26,9 +26,9 @@ test("pcbPack layout with gap and component chain", () => {
         connections={{ pin1: "C1.pin2" }}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

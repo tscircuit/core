@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("manual edit conflict warning for capacitor is triggered", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   const manualEdits = {
     pcb_placements: [
@@ -15,7 +15,7 @@ test("manual edit conflict warning for capacitor is triggered", () => {
         relative_to: "group_center",
       },
     ],
-  };
+  }
 
   circuit.add(
     <board width="10mm" height="10mm" manualEdits={manualEdits}>
@@ -29,17 +29,17 @@ test("manual edit conflict warning for capacitor is triggered", () => {
       />
       <trace from=".R1 > .pin1" to=".C1 > .pin1" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
   // Verify schematic warning is added to the database
-  const warnings = circuit.db.pcb_manual_edit_conflict_warning.list();
-  expect(warnings).toHaveLength(1);
-});
+  const warnings = circuit.db.pcb_manual_edit_conflict_warning.list()
+  expect(warnings).toHaveLength(1)
+})
 
 test("manual edit conflict warning is triggered", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   const manualEdits = {
     pcb_placements: [
@@ -49,7 +49,7 @@ test("manual edit conflict warning is triggered", () => {
         relative_to: "group_center",
       },
     ],
-  };
+  }
 
   circuit.add(
     <board width="10mm" height="10mm" manualEdits={manualEdits}>
@@ -62,15 +62,15 @@ test("manual edit conflict warning is triggered", () => {
         pcbX={-3}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
-  const warnings = circuit.db.pcb_manual_edit_conflict_warning.list();
-  expect(warnings).toHaveLength(1);
-});
+  circuit.render()
+  const warnings = circuit.db.pcb_manual_edit_conflict_warning.list()
+  expect(warnings).toHaveLength(1)
+})
 
 test("conflict with only pcbY mismatch", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   const manualEdits = {
     pcb_placements: [
@@ -80,7 +80,7 @@ test("conflict with only pcbY mismatch", () => {
         relative_to: "board_center",
       },
     ],
-  };
+  }
 
   circuit.add(
     <board width="10mm" height="10mm" manualEdits={manualEdits}>
@@ -93,16 +93,16 @@ test("conflict with only pcbY mismatch", () => {
         pcbY={0}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const warnings = circuit.db.pcb_manual_edit_conflict_warning.list();
-  expect(warnings).toHaveLength(1);
-});
+  const warnings = circuit.db.pcb_manual_edit_conflict_warning.list()
+  expect(warnings).toHaveLength(1)
+})
 
 test("conflict with both pcbX and pcbY mismatch", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   const manualEdits = {
     pcb_placements: [
@@ -112,7 +112,7 @@ test("conflict with both pcbX and pcbY mismatch", () => {
         relative_to: "board_center",
       },
     ],
-  };
+  }
 
   circuit.add(
     <board width="10mm" height="10mm" manualEdits={manualEdits}>
@@ -124,16 +124,16 @@ test("conflict with both pcbX and pcbY mismatch", () => {
         pcbY={1}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const warnings = circuit.db.pcb_manual_edit_conflict_warning.list();
-  expect(warnings).toHaveLength(1);
-});
+  const warnings = circuit.db.pcb_manual_edit_conflict_warning.list()
+  expect(warnings).toHaveLength(1)
+})
 
 test("no warning if no manual edit provided", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -145,10 +145,10 @@ test("no warning if no manual edit provided", () => {
         pcbY={2}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const warnings = circuit.db.pcb_manual_edit_conflict_warning.list();
-  expect(warnings).toHaveLength(0);
-});
+  const warnings = circuit.db.pcb_manual_edit_conflict_warning.list()
+  expect(warnings).toHaveLength(0)
+})

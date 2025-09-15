@@ -1,15 +1,15 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const pinLabels = {
   "1": "pos",
   "2": "neg",
-} as const;
+} as const
 
 test("Chip override footprint ports when schPortArrangement is defined", async () => {
   const { circuit, staticAssetsServerUrl } = getTestFixture({
     withStaticAssetsServer: true,
-  });
+  })
   circuit.add(
     <board width="20mm" height="20mm">
       <chip
@@ -133,9 +133,9 @@ test("Chip override footprint ports when schPortArrangement is defined", async (
         }
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
+})

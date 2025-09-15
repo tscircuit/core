@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("chip with cadModel positionOffset", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -17,17 +17,17 @@ test("chip with cadModel positionOffset", () => {
         }}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const cadComponent = circuit.db.cad_component.list()[0];
+  const cadComponent = circuit.db.cad_component.list()[0]
 
-  expect(cadComponent).toBeDefined();
-  expect(cadComponent.model_stl_url).toBe("https://example.com/chip.stl");
+  expect(cadComponent).toBeDefined()
+  expect(cadComponent.model_stl_url).toBe("https://example.com/chip.stl")
   expect(cadComponent.position).toEqual({
     x: 1,
     y: 2,
     z: expect.closeTo(3.7, 0.1), // 0.7 is half of the default board thickness
-  });
-});
+  })
+})

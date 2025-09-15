@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("board with nested group flex", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="100mm" height="100mm" routingDisabled>
@@ -17,9 +17,9 @@ test("board with nested group flex", () => {
         <capacitor name="C2" capacitance="10uF" footprint="0603" />
       </group>
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

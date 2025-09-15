@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("complex chip schematic with multiple connections", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="40mm" height="40mm" routingDisabled schMaxTraceDistance={5}>
@@ -52,11 +52,11 @@ test("complex chip schematic with multiple connections", () => {
       <trace from=".R3 > .pin2" to=".U1 > .IN4" />
       <trace from=".R4 > .pin2" to=".U1 > .IN6" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const traces = circuit.db.schematic_trace.list();
+  const traces = circuit.db.schematic_trace.list()
 
   // console.table(
   //   traces.flatMap((t) =>
@@ -72,5 +72,5 @@ test("complex chip schematic with multiple connections", () => {
   //   ),
   // )
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

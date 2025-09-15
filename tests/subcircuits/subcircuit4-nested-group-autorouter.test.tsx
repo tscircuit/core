@@ -1,25 +1,25 @@
-import React from "react";
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server";
+import React from "react"
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
 test("Nested group within a subcircuit triggers autorouter only once", async () => {
-  const { autoroutingServerUrl } = getTestAutoroutingServer();
+  const { autoroutingServerUrl } = getTestAutoroutingServer()
 
   const cloudAutorouterConfig = {
     serverUrl: autoroutingServerUrl,
     serverMode: "solve-endpoint",
     inputFormat: "simplified",
-  } as const;
-  const { circuit } = getTestFixture();
+  } as const
+  const { circuit } = getTestFixture()
 
   // Count the number of times the autorouter is triggered
-  let autorouterCallCount = 0;
+  let autorouterCallCount = 0
   circuit.on("asyncEffect:start", (event) => {
     if (event.effectName === "make-http-autorouting-request") {
-      autorouterCallCount++;
+      autorouterCallCount++
     }
-  });
+  })
 
   // Add a board with autorouter configuration
   circuit.add(
@@ -49,11 +49,11 @@ test("Nested group within a subcircuit triggers autorouter only once", async () 
         </group>
       </subcircuit>
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   // Expect that the autorouter is called only once for the subcircuit,
   // not once for the nested group
-  expect(autorouterCallCount).toBe(1);
-});
+  expect(autorouterCallCount).toBe(1)
+})

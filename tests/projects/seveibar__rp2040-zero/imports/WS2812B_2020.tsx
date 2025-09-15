@@ -1,11 +1,11 @@
-import type { ChipProps } from "@tscircuit/props";
+import type { ChipProps } from "@tscircuit/props"
 
 const pinLabels = {
   pin1: ["DO"],
   pin2: ["GND"],
   pin3: ["DI"],
   pin4: ["VDD"],
-} as const;
+} as const
 
 export const WS2812B_2020 = (props: ChipProps<typeof pinLabels>) => {
   return (
@@ -102,5 +102,5 @@ export const WS2812B_2020 = (props: ChipProps<typeof pinLabels>) => {
       }}
       {...props}
     />
-  );
-};
+  )
+}

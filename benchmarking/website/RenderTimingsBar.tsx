@@ -1,29 +1,29 @@
-import { orderedRenderPhases } from "lib";
-import React from "react";
+import { orderedRenderPhases } from "lib"
+import React from "react"
 
 export const RenderTimingsBar = ({
   phaseTimings,
 }: {
-  phaseTimings?: Record<string, number>;
+  phaseTimings?: Record<string, number>
 }) => {
-  if (!phaseTimings) return null;
+  if (!phaseTimings) return null
   // Generate a color for each phase using HSL to ensure good distribution
   const getPhaseColor = (index: number) => {
-    const hue = (index * 137.5) % 360; // Golden angle approximation
-    return `hsl(${hue}, 70%, 50%)`;
-  };
+    const hue = (index * 137.5) % 360 // Golden angle approximation
+    return `hsl(${hue}, 70%, 50%)`
+  }
 
   const totalTime = Object.values(phaseTimings).reduce(
     (sum, time) => sum + time,
     0,
-  );
+  )
 
   return (
     <div className="space-y-2 w-full px-4">
       <div className="relative h-8 flex rounded-sm">
         {orderedRenderPhases.map((phase, index) => {
-          const time = phaseTimings[phase] || 0;
-          const width = (time / totalTime) * 100;
+          const time = phaseTimings[phase] || 0
+          const width = (time / totalTime) * 100
 
           return (
             <div
@@ -38,14 +38,14 @@ export const RenderTimingsBar = ({
                 {phase}: {time.toFixed(1)}ms
               </div>
             </div>
-          );
+          )
         })}
       </div>
       <div className="text-xs text-gray-500">
         Total: {totalTime.toFixed(2)}ms
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default RenderTimingsBar;
+export default RenderTimingsBar

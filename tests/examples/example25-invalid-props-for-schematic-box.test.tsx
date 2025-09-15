@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test";
-import "lib/register-catalogue";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import "lib/register-catalogue"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("Schematic box with invalid props", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -34,8 +34,8 @@ test("Schematic box with invalid props", async () => {
         schY={0}
       />
     </board>,
-  );
-  circuit.render();
+  )
+  circuit.render()
   expect(
     circuit
       .getCircuitJson()
@@ -75,5 +75,5 @@ test("Schematic box with invalid props", async () => {
         },
       ]
       `,
-  );
-});
+  )
+})

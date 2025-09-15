@@ -1,7 +1,7 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
 test("insert trace error when trace goes out of board", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board
@@ -35,13 +35,13 @@ test("insert trace error when trace goes out of board", async () => {
       <trace from=".R1 > .pin1" to=".C1 > .pin1" />
       <trace from=".R2 > .pin1" to=".C2 > .pin1" />
     </board>,
-  );
+  )
 
-  await circuit.render();
-  const circuitJson = circuit.getCircuitJson();
+  await circuit.render()
+  const circuitJson = circuit.getCircuitJson()
   const pcbTraceErrors = circuitJson.filter(
     (el) => el.type === "pcb_trace_error",
-  );
-  expect(circuitJson).toMatchPcbSnapshot(import.meta.path);
-  expect(pcbTraceErrors.length).toBe(1);
-});
+  )
+  expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
+  expect(pcbTraceErrors.length).toBe(1)
+})

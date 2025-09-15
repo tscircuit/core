@@ -1,13 +1,13 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
 test("example20", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer({
     failInFirstTrace: true,
-  });
+  })
 
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   // Create a basic circuit that needs routing
   circuit.add(
@@ -30,15 +30,15 @@ test("example20", async () => {
       />
       <trace from=".U1 > .pin1" to=".R1 > .pin1" />
     </board>,
-  );
+  )
 
   await circuit.renderUntilSettled().catch((e) => {
     console.log(
       "Error occurred during rendering, this shouldn't happen, it should just add to the circuit json array",
-    );
-    throw e;
-  });
-  const circuitJson = circuit.getCircuitJson();
+    )
+    throw e
+  })
+  const circuitJson = circuit.getCircuitJson()
   const autoroutingErrors = circuitJson
     .filter((el) => el.type === "pcb_autorouting_error")
     .map((e) => ({
@@ -47,7 +47,7 @@ test("example20", async () => {
         /capacity-autorouter@\d+\.\d+\.\d+/,
         "capacity-autorouter@X.X.X",
       ),
-    }));
+    }))
   // Verify routing request was made
   expect(autoroutingErrors).toMatchInlineSnapshot(`
     [
@@ -59,5 +59,5 @@ test("example20", async () => {
         "type": "pcb_autorouting_error",
       },
     ]
-  `);
-});
+  `)
+})

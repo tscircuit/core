@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test";
-import type { PcbHole, PcbHoleCircleOrSquare } from "circuit-json";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import type { PcbHole, PcbHoleCircleOrSquare } from "circuit-json"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("Hole in footprint", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -24,12 +24,12 @@ test("Hole in footprint", () => {
         }
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const hole = circuit.db.pcb_hole.list()[0]!;
+  const hole = circuit.db.pcb_hole.list()[0]!
 
-  expect(hole.hole_shape).toBe("circle");
-  expect((hole as PcbHoleCircleOrSquare).hole_diameter).toBeCloseTo(1);
-});
+  expect(hole.hole_shape).toBe("circle")
+  expect((hole as PcbHoleCircleOrSquare).hole_diameter).toBeCloseTo(1)
+})

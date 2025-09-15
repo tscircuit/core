@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test";
-import { Board, Chip, Footprint, SmtPad } from "lib/index";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { Board, Chip, Footprint, SmtPad } from "lib/index"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("chip footprint determines schematic port arrangement", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -23,14 +23,14 @@ test("chip footprint determines schematic port arrangement", () => {
         }
       />
     </board>,
-  );
-  circuit.render();
+  )
+  circuit.render()
 
-  const schematicComponent = circuit.db.schematic_component.list()[0];
+  const schematicComponent = circuit.db.schematic_component.list()[0]
 
-  expect(schematicComponent).toBeDefined();
+  expect(schematicComponent).toBeDefined()
 
   expect(
     circuit.db.pcb_smtpad.list().every((smtpad) => smtpad.pcb_component_id),
-  ).toBeTruthy();
-});
+  ).toBeTruthy()
+})

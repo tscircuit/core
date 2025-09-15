@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("capacitor pin aliases", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <group>
@@ -14,9 +14,9 @@ test("capacitor pin aliases", () => {
       />
       <resistor name="R1" resistance="1k" footprint="1206" />
     </group>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
+})

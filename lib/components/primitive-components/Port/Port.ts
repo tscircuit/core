@@ -1,17 +1,17 @@
-import { getRelativeDirection } from "lib/utils/get-relative-direction";
+import { getRelativeDirection } from "lib/utils/get-relative-direction"
 import type {
   SchematicBoxDimensions,
   SchematicBoxPortPositionWithMetadata,
-} from "lib/utils/schematic/getAllDimensionsForSchematicBox";
-import { type SchSymbol } from "schematic-symbols";
-import { applyToPoint, compose, translate } from "transformation-matrix";
-import { z } from "zod";
-import { PrimitiveComponent } from "../../base-components/PrimitiveComponent";
-import type { Trace } from "../Trace/Trace";
-import type { LayerRef, SchematicPort } from "circuit-json";
-import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping";
-import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives";
-import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent";
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { type SchSymbol } from "schematic-symbols"
+import { applyToPoint, compose, translate } from "transformation-matrix"
+import { z } from "zod"
+import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import type { Trace } from "../Trace/Trace"
+import type { LayerRef, SchematicPort } from "circuit-json"
+import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
+import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
+import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
 
 export const portProps = z.object({
   name: z.string().optional(),
@@ -19,26 +19,26 @@ export const portProps = z.object({
   aliases: z.array(z.string()).optional(),
   layer: z.string().optional(),
   layers: z.array(z.string()).optional(),
-});
+})
 
-export type PortProps = z.infer<typeof portProps>;
+export type PortProps = z.infer<typeof portProps>
 
 export class Port extends PrimitiveComponent<typeof portProps> {
-  source_port_id: string | null = null;
-  pcb_port_id: string | null = null;
-  schematic_port_id: string | null = null;
+  source_port_id: string | null = null
+  pcb_port_id: string | null = null
+  schematic_port_id: string | null = null
 
-  schematicSymbolPortDef: SchSymbol["ports"][number] | null = null;
-  matchedComponents: PrimitiveComponent[];
-  facingDirection: "up" | "down" | "left" | "right" | null = null;
+  schematicSymbolPortDef: SchSymbol["ports"][number] | null = null
+  matchedComponents: PrimitiveComponent[]
+  facingDirection: "up" | "down" | "left" | "right" | null = null
 
-  originDescription: string | null = null;
+  originDescription: string | null = null
 
   get config() {
     return {
       componentName: "Port",
       zodProps: portProps,
-    };
+    }
   }
 
   constructor(
@@ -46,65 +46,65 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     opts: { originDescription?: string } = {},
   ) {
     if (!props.name && props.pinNumber !== undefined)
-      props.name = `pin${props.pinNumber}`;
+      props.name = `pin${props.pinNumber}`
     if (!props.name) {
-      throw new Error("Port must have a name or a pinNumber");
+      throw new Error("Port must have a name or a pinNumber")
     }
-    super(props);
+    super(props)
     if (opts.originDescription) {
-      this.originDescription = opts.originDescription;
+      this.originDescription = opts.originDescription
     }
-    this.matchedComponents = [];
+    this.matchedComponents = []
   }
 
   _getGlobalPcbPositionBeforeLayout(): { x: number; y: number } {
-    const matchedPcbElm = this.matchedComponents.find((c) => c.isPcbPrimitive);
-    const parentComponent = this.parent;
+    const matchedPcbElm = this.matchedComponents.find((c) => c.isPcbPrimitive)
+    const parentComponent = this.parent
 
     // First check if parent component has a footprint
     if (parentComponent && !parentComponent.props.footprint) {
       throw new Error(
         `${parentComponent.componentName} "${parentComponent.props.name}" does not have a footprint. Add a footprint prop, e.g. <${parentComponent.componentName.toLowerCase()} footprint="..." />`,
-      );
+      )
     }
 
     if (!matchedPcbElm) {
       throw new Error(
         `Port ${this} has no matching PCB primitives. This often means the footprint's pads lack matching port hints.`,
-      );
+      )
     }
 
-    return matchedPcbElm?._getGlobalPcbPositionBeforeLayout() ?? { x: 0, y: 0 };
+    return matchedPcbElm?._getGlobalPcbPositionBeforeLayout() ?? { x: 0, y: 0 }
   }
 
   _getPcbCircuitJsonBounds() {
     if (!this.pcb_port_id) {
-      return super._getPcbCircuitJsonBounds();
+      return super._getPcbCircuitJsonBounds()
     }
-    const { db } = this.root!;
-    const pcb_port = db.pcb_port.get(this.pcb_port_id)!;
+    const { db } = this.root!
+    const pcb_port = db.pcb_port.get(this.pcb_port_id)!
     return {
       center: { x: pcb_port.x, y: pcb_port.y },
       bounds: { left: 0, top: 0, right: 0, bottom: 0 },
       width: 0,
       height: 0,
-    };
+    }
   }
 
   _getGlobalPcbPositionAfterLayout(): { x: number; y: number } {
-    return this._getPcbCircuitJsonBounds().center;
+    return this._getPcbCircuitJsonBounds().center
   }
 
   _getPortsInternallyConnectedToThisPort(): Port[] {
-    const parent = this.parent as unknown as INormalComponent | undefined;
-    if (!parent || !parent._getInternallyConnectedPins) return [];
-    const internallyConnectedPorts = parent._getInternallyConnectedPins();
+    const parent = this.parent as unknown as INormalComponent | undefined
+    if (!parent || !parent._getInternallyConnectedPins) return []
+    const internallyConnectedPorts = parent._getInternallyConnectedPins()
     for (const ports of internallyConnectedPorts) {
       if (ports.some((port) => port === this)) {
-        return ports;
+        return ports
       }
     }
-    return [];
+    return []
   }
 
   /**
@@ -121,91 +121,91 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * are rendered properly.
    */
   _hasSchematicPort() {
-    const symbol = this.parent?.getSchematicSymbol();
+    const symbol = this.parent?.getSchematicSymbol()
     if (symbol) {
-      if (this.schematicSymbolPortDef) return true;
+      if (this.schematicSymbolPortDef) return true
 
       const portsInternallyConnectedToThisPort =
-        this._getPortsInternallyConnectedToThisPort();
+        this._getPortsInternallyConnectedToThisPort()
 
       if (
         portsInternallyConnectedToThisPort.some((p) => p.schematicSymbolPortDef)
       )
-        return true;
+        return true
 
-      return false;
+      return false
     }
 
-    const parentBoxDim = this?.parent?._getSchematicBoxDimensions();
+    const parentBoxDim = this?.parent?._getSchematicBoxDimensions()
     if (parentBoxDim && this.props.pinNumber !== undefined) {
       const localPortPosition = parentBoxDim.getPortPositionByPinNumber(
         this.props.pinNumber!,
-      );
-      if (localPortPosition) return true;
+      )
+      if (localPortPosition) return true
     }
 
-    return false;
+    return false
   }
 
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
-    const symbol = this.parent?.getSchematicSymbol();
+    const symbol = this.parent?.getSchematicSymbol()
     if (symbol) {
-      let schematicSymbolPortDef = this.schematicSymbolPortDef;
+      let schematicSymbolPortDef = this.schematicSymbolPortDef
 
       if (!schematicSymbolPortDef) {
         schematicSymbolPortDef =
           this._getPortsInternallyConnectedToThisPort().find(
             (p) => p.schematicSymbolPortDef,
-          )?.schematicSymbolPortDef ?? null;
+          )?.schematicSymbolPortDef ?? null
         if (!schematicSymbolPortDef) {
           throw new Error(
             `Couldn't find schematicSymbolPortDef for port ${this.getString()}, searched internally connected ports and none had a schematicSymbolPortDef. Why are we trying to get the schematic position of this port?`,
-          );
+          )
         }
       }
 
       const transform = compose(
         this.parent!.computeSchematicGlobalTransform(),
         translate(-symbol.center.x, -symbol.center.y),
-      );
+      )
 
-      return applyToPoint(transform, schematicSymbolPortDef!);
+      return applyToPoint(transform, schematicSymbolPortDef!)
     }
 
-    const parentBoxDim = this?.parent?._getSchematicBoxDimensions();
+    const parentBoxDim = this?.parent?._getSchematicBoxDimensions()
     if (parentBoxDim && this.props.pinNumber !== undefined) {
       const localPortPosition = parentBoxDim.getPortPositionByPinNumber(
         this.props.pinNumber!,
-      );
+      )
       if (!localPortPosition) {
         throw new Error(
           `Couldn't find position for schematic_port for port ${this.getString()} inside of the schematic box`,
-        );
+        )
       }
       return applyToPoint(
         this.parent!.computeSchematicGlobalTransform(),
         localPortPosition,
-      );
+      )
     }
 
     throw new Error(
       `Couldn't find position for schematic_port for port ${this.getString()}`,
-    );
+    )
   }
 
   _getGlobalSchematicPositionAfterLayout(): { x: number; y: number } {
-    const { db } = this.root!;
+    const { db } = this.root!
     if (!this.schematic_port_id) {
       throw new Error(
         `Can't get schematic port position after layout for "${this.getString()}", no schematic_port_id`,
-      );
+      )
     }
-    const schematic_port = db.schematic_port.get(this.schematic_port_id)!;
+    const schematic_port = db.schematic_port.get(this.schematic_port_id)!
     if (!schematic_port)
       throw new Error(
         `Schematic port not found when trying to get post-layout position: ${this.schematic_port_id}`,
-      );
-    return schematic_port.center;
+      )
+    return schematic_port.center
   }
 
   /**
@@ -214,10 +214,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * but everyone registers themselves as a match with their Port.
    */
   registerMatch(component: PrimitiveComponent) {
-    this.matchedComponents.push(component);
+    this.matchedComponents.push(component)
   }
   getNameAndAliases() {
-    const { _parsedProps: props } = this;
+    const { _parsedProps: props } = this
     return Array.from(
       new Set([
         ...(props.name ? [props.name] : []),
@@ -227,22 +227,22 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           : []),
         ...(this.externallyAddedAliases ?? []),
       ]),
-    ) as string[];
+    ) as string[]
   }
   isMatchingPort(port: Port) {
-    return this.isMatchingAnyOf(port.getNameAndAliases());
+    return this.isMatchingAnyOf(port.getNameAndAliases())
   }
   getPortSelector() {
     // TODO this.parent.getSubcircuitSelector() >
-    return `.${this.parent?.props.name} > port.${this.props.name}`;
+    return `.${this.parent?.props.name} > port.${this.props.name}`
   }
   getAvailablePcbLayers(): LayerRef[] {
-    const { layer, layers } = this._parsedProps;
-    if (layers) return layers as LayerRef[];
-    if (layer) return [layer as LayerRef];
+    const { layer, layers } = this._parsedProps
+    if (layers) return layers as LayerRef[]
+    if (layer) return [layer as LayerRef]
     return Array.from(
       new Set(this.matchedComponents.flatMap((c) => c.getAvailablePcbLayers())),
-    ) as LayerRef[];
+    ) as LayerRef[]
   }
 
   /**
@@ -251,20 +251,20 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   _getDirectlyConnectedTraces(): Trace[] {
     const allSubcircuitTraces = this.getSubcircuit().selectAll(
       "trace",
-    ) as Trace[];
+    ) as Trace[]
 
     const connectedTraces = allSubcircuitTraces
       .filter((trace) => !trace._couldNotFindPort)
-      .filter((trace) => trace._isExplicitlyConnectedToPort(this));
+      .filter((trace) => trace._isExplicitlyConnectedToPort(this))
 
-    return connectedTraces;
+    return connectedTraces
   }
 
   doInitialSourceRender(): void {
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
+    const { db } = this.root!
+    const { _parsedProps: props } = this
 
-    const port_hints = this.getNameAndAliases();
+    const port_hints = this.getNameAndAliases()
 
     const source_port = db.source_port.insert({
       name: props.name!,
@@ -272,60 +272,60 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       port_hints,
       source_component_id: this.parent?.source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
-    });
+    })
 
-    this.source_port_id = source_port.source_port_id;
+    this.source_port_id = source_port.source_port_id
   }
 
   doInitialSourceParentAttachment(): void {
-    const { db } = this.root!;
+    const { db } = this.root!
     if (!this.parent?.source_component_id) {
       throw new Error(
         `${this.getString()} has no parent source component (parent: ${this.parent?.getString()})`,
-      );
+      )
     }
 
     db.source_port.update(this.source_port_id!, {
       source_component_id: this.parent?.source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
-    });
+    })
 
-    this.source_component_id = this.parent?.source_component_id;
+    this.source_component_id = this.parent?.source_component_id
   }
 
   doInitialPcbPortRender(): void {
-    if (this.root?.pcbDisabled) return;
-    const { db } = this.root!;
-    const { matchedComponents } = this;
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    const { matchedComponents } = this
 
     if (!this.parent?.pcb_component_id) {
       throw new Error(
         `${this.getString()} has no parent pcb component, cannot render pcb_port (parent: ${this.parent?.getString()})`,
-      );
+      )
     }
 
-    const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive);
+    const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
 
-    if (pcbMatches.length === 0) return;
+    if (pcbMatches.length === 0) return
 
-    let matchCenter: { x: number; y: number } | null = null;
+    let matchCenter: { x: number; y: number } | null = null
 
     if (pcbMatches.length === 1) {
-      matchCenter = pcbMatches[0]._getPcbCircuitJsonBounds().center;
+      matchCenter = pcbMatches[0]._getPcbCircuitJsonBounds().center
     }
 
     if (pcbMatches.length > 1) {
       if (!areAllPcbPrimitivesOverlapping(pcbMatches)) {
         throw new Error(
           `${this.getString()} has multiple non-overlapping pcb matches, unclear how to place pcb_port: ${pcbMatches.map((c) => c.getString()).join(", ")}. (Note: tscircuit core does not currently allow you to specify internally connected pcb primitives with the same port hints, try giving them different port hints and specifying they are connected externally- or file an issue)`,
-        );
+        )
       }
 
-      matchCenter = getCenterOfPcbPrimitives(pcbMatches);
+      matchCenter = getCenterOfPcbPrimitives(pcbMatches)
     }
 
     if (matchCenter) {
-      const subcircuit = this.getSubcircuit();
+      const subcircuit = this.getSubcircuit()
 
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
@@ -335,42 +335,42 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         ...matchCenter,
 
         source_port_id: this.source_port_id!,
-      });
-      this.pcb_port_id = pcb_port.pcb_port_id;
+      })
+      this.pcb_port_id = pcb_port.pcb_port_id
     } else {
-      const pcbMatch: any = pcbMatches[0];
+      const pcbMatch: any = pcbMatches[0]
       throw new Error(
         `${pcbMatch.getString()} does not have a center or _getGlobalPcbPositionBeforeLayout method (needed for pcb_port placement)`,
-      );
+      )
     }
   }
 
   updatePcbPortRender(): void {
-    if (this.root?.pcbDisabled) return;
-    const { db } = this.root!;
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
 
     // If pcb_port already exists, nothing to do
-    if (this.pcb_port_id) return;
+    if (this.pcb_port_id) return
 
     // Try again if we now have matched PCB primitives
-    const pcbMatches = this.matchedComponents.filter((c) => c.isPcbPrimitive);
-    if (pcbMatches.length === 0) return;
+    const pcbMatches = this.matchedComponents.filter((c) => c.isPcbPrimitive)
+    if (pcbMatches.length === 0) return
 
-    let matchCenter: { x: number; y: number } | null = null;
+    let matchCenter: { x: number; y: number } | null = null
     if (pcbMatches.length === 1) {
-      matchCenter = pcbMatches[0]._getPcbCircuitJsonBounds().center;
+      matchCenter = pcbMatches[0]._getPcbCircuitJsonBounds().center
     }
     if (pcbMatches.length > 1) {
       try {
         if (areAllPcbPrimitivesOverlapping(pcbMatches as any)) {
-          matchCenter = getCenterOfPcbPrimitives(pcbMatches as any);
+          matchCenter = getCenterOfPcbPrimitives(pcbMatches as any)
         }
       } catch {}
     }
 
-    if (!matchCenter) return;
+    if (!matchCenter) return
 
-    const subcircuit = this.getSubcircuit();
+    const subcircuit = this.getSubcircuit()
     const pcb_port = db.pcb_port.insert({
       pcb_component_id: this.parent?.pcb_component_id!,
       layers: this.getAvailablePcbLayers(),
@@ -378,26 +378,26 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       ...matchCenter,
       source_port_id: this.source_port_id!,
-    });
-    this.pcb_port_id = pcb_port.pcb_port_id;
+    })
+    this.pcb_port_id = pcb_port.pcb_port_id
   }
 
   doInitialSchematicPortRender(): void {
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
+    const { db } = this.root!
+    const { _parsedProps: props } = this
 
-    const container = this.getPrimitiveContainer();
+    const container = this.getPrimitiveContainer()
 
-    if (!container) return;
-    if (!this._hasSchematicPort()) return;
+    if (!container) return
+    if (!this._hasSchematicPort()) return
 
-    const containerCenter = container._getGlobalSchematicPositionBeforeLayout();
-    const portCenter = this._getGlobalSchematicPositionBeforeLayout();
+    const containerCenter = container._getGlobalSchematicPositionBeforeLayout()
+    const portCenter = this._getGlobalSchematicPositionBeforeLayout()
 
-    let localPortInfo: SchematicBoxPortPositionWithMetadata | null = null;
-    const containerDims = container._getSchematicBoxDimensions();
+    let localPortInfo: SchematicBoxPortPositionWithMetadata | null = null
+    const containerDims = container._getSchematicBoxDimensions()
     if (containerDims && props.pinNumber !== undefined) {
-      localPortInfo = containerDims.getPortPositionByPinNumber(props.pinNumber);
+      localPortInfo = containerDims.getPortPositionByPinNumber(props.pinNumber)
     }
 
     // For each obstacle, create a schematic_debug_object
@@ -410,43 +410,43 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           height: 0.1,
         },
         label: "obstacle",
-      } as any); // TODO issue with discriminated union
+      } as any) // TODO issue with discriminated union
     }
 
     if (!localPortInfo?.side) {
-      this.facingDirection = getRelativeDirection(containerCenter, portCenter);
+      this.facingDirection = getRelativeDirection(containerCenter, portCenter)
     } else {
       this.facingDirection = {
         left: "left",
         right: "right",
         top: "up",
         bottom: "down",
-      }[localPortInfo.side] as "up" | "down" | "left" | "right";
+      }[localPortInfo.side] as "up" | "down" | "left" | "right"
     }
 
-    const sourcePort = db.source_port.get(this.source_port_id!);
+    const sourcePort = db.source_port.get(this.source_port_id!)
 
-    const labelHints: string[] = [];
+    const labelHints: string[] = []
     for (const portHint of sourcePort?.port_hints ?? []) {
-      if (portHint.match(/^(pin)?\d+$/)) continue;
+      if (portHint.match(/^(pin)?\d+$/)) continue
       if (
         portHint.match(/^(left|right)/) &&
         !sourcePort?.name.match(/^(left|right)/)
       )
-        continue;
-      labelHints.push(portHint);
+        continue
+      labelHints.push(portHint)
     }
 
-    let bestDisplayPinLabel: string | undefined = undefined;
-    const showPinAliases = (this.parent as any)?.props?.showPinAliases;
+    let bestDisplayPinLabel: string | undefined = undefined
+    const showPinAliases = (this.parent as any)?.props?.showPinAliases
     if (showPinAliases && labelHints.length > 0) {
-      bestDisplayPinLabel = labelHints.join("/");
+      bestDisplayPinLabel = labelHints.join("/")
     } else if (labelHints.length > 0) {
       // show the first label hint
-      bestDisplayPinLabel = labelHints[0];
+      bestDisplayPinLabel = labelHints[0]
     }
 
-    const pinAttributes = (this.parent as any)?._parsedProps?.pinAttributes;
+    const pinAttributes = (this.parent as any)?._parsedProps?.pinAttributes
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
       schematic_component_id: this.parent?.schematic_component_id!,
@@ -459,44 +459,44 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       true_ccw_index: localPortInfo?.trueIndex,
       display_pin_label: bestDisplayPinLabel,
       is_connected: false,
-    };
+    }
 
     if (pinAttributes) {
       for (const alias of this.getNameAndAliases()) {
         if (pinAttributes[alias]) {
-          const attributes = pinAttributes[alias];
+          const attributes = pinAttributes[alias]
           if (attributes.requiresPower) {
-            schematicPortInsertProps.has_input_arrow = true;
+            schematicPortInsertProps.has_input_arrow = true
           }
           if (attributes.providesPower) {
-            schematicPortInsertProps.has_output_arrow = true;
+            schematicPortInsertProps.has_output_arrow = true
           }
         }
       }
     }
 
-    const schematic_port = db.schematic_port.insert(schematicPortInsertProps);
+    const schematic_port = db.schematic_port.insert(schematicPortInsertProps)
 
-    this.schematic_port_id = schematic_port.schematic_port_id;
+    this.schematic_port_id = schematic_port.schematic_port_id
   }
 
   _getSubcircuitConnectivityKey(): string | undefined {
     return this.root?.db.source_port.get(this.source_port_id!)
-      ?.subcircuit_connectivity_map_key;
+      ?.subcircuit_connectivity_map_key
   }
 
   _setPositionFromLayout(newCenter: { x: number; y: number }): void {
-    const { db } = this.root!;
-    if (!this.pcb_port_id) return;
+    const { db } = this.root!
+    if (!this.pcb_port_id) return
 
     db.pcb_port.update(this.pcb_port_id!, {
       x: newCenter.x,
       y: newCenter.y,
-    });
+    })
   }
 
   _hasMatchedPcbPrimitive() {
-    return this.matchedComponents.some((c) => c.isPcbPrimitive);
+    return this.matchedComponents.some((c) => c.isPcbPrimitive)
   }
 
   /**
@@ -505,6 +505,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * port, but appears at the port it connects to.
    */
   _getNetLabelText(): string | undefined {
-    return `${this.parent?.props.name}_${this.props.name}`;
+    return `${this.parent?.props.name}_${this.props.name}`
   }
 }

@@ -1,4 +1,4 @@
-import type { PrimitiveComponent } from "lib/components";
+import type { PrimitiveComponent } from "lib/components"
 
 /**
  * Determines if a component matches a given selector.
@@ -20,21 +20,21 @@ export function isMatchingSelector(
   selector: string,
 ): boolean {
   // Check for ID selector
-  const idMatch = selector.match(/^#(\w+)/);
+  const idMatch = selector.match(/^#(\w+)/)
   if (idMatch) {
-    return component.props.id === idMatch[1];
+    return component.props.id === idMatch[1]
   }
 
   // Check for class selector
-  const classMatch = selector.match(/^\.(\w+)/);
+  const classMatch = selector.match(/^\.(\w+)/)
   if (classMatch) {
-    return component.isMatchingNameOrAlias(classMatch[1]);
+    return component.isMatchingNameOrAlias(classMatch[1])
   }
 
   // Split the selector into type and conditions
-  let [type, ...conditions] = selector.split(/(?=[#.[])/);
+  let [type, ...conditions] = selector.split(/(?=[#.[])/)
 
-  if (type === "pin") type = "port";
+  if (type === "pin") type = "port"
 
   // Check if the component type matches
   if (
@@ -42,22 +42,22 @@ export function isMatchingSelector(
     type !== "*" &&
     component.lowercaseComponentName !== type.toLowerCase()
   ) {
-    return false;
+    return false
   }
 
   // Check all conditions
   return conditions.every((condition) => {
     if (condition.startsWith("#")) {
-      return component.props.id === condition.slice(1);
+      return component.props.id === condition.slice(1)
     }
     if (condition.startsWith(".")) {
-      return component.isMatchingNameOrAlias(condition.slice(1));
+      return component.isMatchingNameOrAlias(condition.slice(1))
     }
 
     // Check for attribute selector
-    const match = condition.match(/\[(\w+)=['"]?(.+?)['"]?\]/);
-    if (!match) return true;
-    const [, prop, value] = match;
-    return component.props[prop].toString() === value;
-  });
+    const match = condition.match(/\[(\w+)=['"]?(.+?)['"]?\]/)
+    if (!match) return true
+    const [, prop, value] = match
+    return component.props[prop].toString() === value
+  })
 }

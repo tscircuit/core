@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("board with manual layout edits", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board
@@ -32,31 +32,31 @@ test("board with manual layout edits", () => {
       <resistor name="R1" resistance="10k" footprint="0402" />
       <capacitor name="C1" capacitance="10uF" footprint="0603" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const resistor = circuit.selectOne(".R1");
-  const capacitor = circuit.selectOne(".C1");
+  const resistor = circuit.selectOne(".R1")
+  const capacitor = circuit.selectOne(".C1")
 
-  expect(resistor).not.toBeNull();
-  expect(capacitor).not.toBeNull();
+  expect(resistor).not.toBeNull()
+  expect(capacitor).not.toBeNull()
 
-  const resistorPosition = resistor!._getGlobalPcbPositionBeforeLayout();
-  const capacitorPosition = capacitor!._getGlobalPcbPositionBeforeLayout();
+  const resistorPosition = resistor!._getGlobalPcbPositionBeforeLayout()
+  const capacitorPosition = capacitor!._getGlobalPcbPositionBeforeLayout()
 
-  expect(resistorPosition.x).toBeCloseTo(5, 1);
-  expect(resistorPosition.y).toBeCloseTo(5, 1);
+  expect(resistorPosition.x).toBeCloseTo(5, 1)
+  expect(resistorPosition.y).toBeCloseTo(5, 1)
 
-  expect(capacitorPosition.x).toBeCloseTo(-5, 1);
-  expect(capacitorPosition.y).toBeCloseTo(-5, 1);
+  expect(capacitorPosition.x).toBeCloseTo(-5, 1)
+  expect(capacitorPosition.y).toBeCloseTo(-5, 1)
 
   const r1SmtpadPositions = circuit
     .selectAll(".R1 > smtpad")
-    .map((elm) => elm._getGlobalPcbPositionBeforeLayout());
+    .map((elm) => elm._getGlobalPcbPositionBeforeLayout())
 
-  expect(Math.abs(r1SmtpadPositions[0].x - 5)).toBeLessThan(1);
-  expect(Math.abs(r1SmtpadPositions[1].x - 5)).toBeLessThan(1);
+  expect(Math.abs(r1SmtpadPositions[0].x - 5)).toBeLessThan(1)
+  expect(Math.abs(r1SmtpadPositions[1].x - 5)).toBeLessThan(1)
 
-  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
+})

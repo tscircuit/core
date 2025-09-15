@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test";
-import "lib/register-catalogue";
-import { getTestFixture } from "../../fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import "lib/register-catalogue"
+import { getTestFixture } from "../../fixtures/get-test-fixture"
 
 test("nested flex groups with mixed components", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
@@ -16,9 +16,9 @@ test("nested flex groups with mixed components", () => {
         </group>
       </group>
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

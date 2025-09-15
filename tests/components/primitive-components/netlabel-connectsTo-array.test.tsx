@@ -1,10 +1,10 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // Verify netlabel connectsTo accepts an array of selectors
 
 test("netlabel connectsTo array", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board routingDisabled>
@@ -33,18 +33,18 @@ test("netlabel connectsTo array", () => {
         anchorSide="right"
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
   const traces = circuit.db.source_trace
     .list()
     .map((t) => t.display_name)
-    .sort();
+    .sort()
   expect(traces).toMatchInlineSnapshot(`
     [
       "U1.SCL to net.SCL",
       "U1.SDA to net.SCL",
     ]
-  `);
-});
+  `)
+})

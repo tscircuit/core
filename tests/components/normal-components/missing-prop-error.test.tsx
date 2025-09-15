@@ -1,23 +1,23 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("(ErrorPlaceholder) - missing prop error", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
       {/* @ts-expect-error */}
       <resistor footprint="0402" name="R1" pcbX={3} schX={6} />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  const circuitJson = circuit.getCircuitJson();
+  const circuitJson = circuit.getCircuitJson()
 
   const sourceMissingPropertyError = circuitJson.filter(
     (e) => e.type === "source_failed_to_create_component_error",
-  );
+  )
   expect(sourceMissingPropertyError).toMatchInlineSnapshot(`
     [
       {
@@ -36,5 +36,5 @@ test("(ErrorPlaceholder) - missing prop error", async () => {
         "type": "source_failed_to_create_component_error",
       },
     ]
-  `);
-});
+  `)
+})

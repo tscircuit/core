@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("pcb-pack-layout-by-default", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
@@ -24,7 +24,7 @@ test("pcb-pack-layout-by-default", async () => {
         }}
       />
     </board>,
-  );
+  )
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

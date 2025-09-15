@@ -1,6 +1,6 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
-import type { ChipProps, GroupProps } from "@tscircuit/props";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import type { ChipProps, GroupProps } from "@tscircuit/props"
 
 const pinLabels = {
   pin1: ["VIN"],
@@ -8,7 +8,7 @@ const pinLabels = {
   pin3: ["EN"],
   pin4: ["NC"],
   pin5: ["VOUT"],
-} as const;
+} as const
 
 const RT9013_33GB = (props: ChipProps<typeof pinLabels>) => {
   return (
@@ -20,8 +20,8 @@ const RT9013_33GB = (props: ChipProps<typeof pinLabels>) => {
       manufacturerPartNumber="RT9013_33GB"
       {...props}
     />
-  );
-};
+  )
+}
 
 const VoltageRegulator = (groupProps: GroupProps) => (
   <group {...groupProps}>
@@ -60,20 +60,20 @@ const VoltageRegulator = (groupProps: GroupProps) => (
     />
     <trace from="C5.2" to="net.GND" />
   </group>
-);
+)
 
 test("voltage-regulator-match-adapt", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
-  circuit._featureMspSchematicTraceRouting = true;
+  circuit._featureMspSchematicTraceRouting = true
 
   circuit.add(
     <board width="20mm" height="15mm" routingDisabled>
       <VoltageRegulator name="voltage_regulator" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

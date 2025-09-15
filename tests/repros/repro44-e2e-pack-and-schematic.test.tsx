@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("repro44 - pcbPack and schematic", async () => {
-  const { circuit } = await getTestFixture();
+  const { circuit } = await getTestFixture()
 
   circuit.add(
     <board width="20mm" height="20mm" pcbPack>
@@ -59,8 +59,8 @@ test("repro44 - pcbPack and schematic", async () => {
       <trace from="R3.pin2" to="D1.pin1" />
       <trace from="D1.pin2" to="net.GND" />
     </board>,
-  );
+  )
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

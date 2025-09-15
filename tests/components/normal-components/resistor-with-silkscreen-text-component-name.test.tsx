@@ -1,7 +1,7 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("resistor with silkscreen text component name", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="36mm" height="12mm">
@@ -62,9 +62,9 @@ test("resistor with silkscreen text component name", () => {
         pcbRotation={-280}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-  expect(circuit.db.pcb_missing_footprint_error.list()).toHaveLength(0);
-});
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit.db.pcb_missing_footprint_error.list()).toHaveLength(0)
+})

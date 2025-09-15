@@ -1,10 +1,10 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
 test.skip("remote-autorouter-5 with job mode against production server", async () => {
-  if (process.env.CI) return;
-  const { circuit } = getTestFixture();
+  if (process.env.CI) return
+  const { circuit } = getTestFixture()
 
   // Create a basic circuit that needs routing
   circuit.add(
@@ -19,11 +19,11 @@ test.skip("remote-autorouter-5 with job mode against production server", async (
       />
       <trace from=".U1 > .pin1" to=".R1 > .pin1" />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   // Verify routing request was made
-  expect(circuit.selectAll("trace").length).toBeGreaterThan(0);
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit.selectAll("trace").length).toBeGreaterThan(0)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

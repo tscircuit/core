@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "../../fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "../../fixtures/get-test-fixture"
 
 test("chip with pcbPinLabels should use different labels for PCB vs schematic", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -33,20 +33,20 @@ test("chip with pcbPinLabels should use different labels for PCB vs schematic", 
         }}
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   expect(circuit).toMatchPcbSnapshot(
     import.meta.path + "-chip-with-pcbpinlabels",
-  );
+  )
   expect(circuit).toMatchSchematicSnapshot(
     import.meta.path + "-chip-with-pcbpinlabels",
-  );
-});
+  )
+})
 
 test("chip should fallback to pinLabels when pcbPinLabels not provided", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -66,20 +66,20 @@ test("chip should fallback to pinLabels when pcbPinLabels not provided", async (
         }}
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   expect(circuit).toMatchPcbSnapshot(
     import.meta.path + "-chip-fallback-pinlabels",
-  );
+  )
   expect(circuit).toMatchSchematicSnapshot(
     import.meta.path + "-chip-fallback-pinlabels",
-  );
-});
+  )
+})
 
 test("jumper with pcbPinLabels should use different labels for PCB vs schematic", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -104,20 +104,20 @@ test("jumper with pcbPinLabels should use different labels for PCB vs schematic"
         }}
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   expect(circuit).toMatchPcbSnapshot(
     import.meta.path + "-jumper-with-pcbpinlabels",
-  );
+  )
   expect(circuit).toMatchSchematicSnapshot(
     import.meta.path + "-jumper-with-pcbpinlabels",
-  );
-});
+  )
+})
 
 test("jumper should fallback to pinLabels when pcbPinLabels not provided", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -136,20 +136,20 @@ test("jumper should fallback to pinLabels when pcbPinLabels not provided", async
         }}
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   expect(circuit).toMatchPcbSnapshot(
     import.meta.path + "-jumper-fallback-pinlabels",
-  );
+  )
   expect(circuit).toMatchSchematicSnapshot(
     import.meta.path + "-jumper-fallback-pinlabels",
-  );
-});
+  )
+})
 
 test("pinheader with pcbPinLabels should use different labels for PCB vs schematic", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -172,20 +172,20 @@ test("pinheader with pcbPinLabels should use different labels for PCB vs schemat
         }}
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   expect(circuit).toMatchPcbSnapshot(
     import.meta.path + "-pinheader-with-pcbpinlabels",
-  );
+  )
   expect(circuit).toMatchSchematicSnapshot(
     import.meta.path + "-pinheader-with-pcbpinlabels",
-  );
-});
+  )
+})
 
 test("pinheader should fallback to pinLabels when pcbPinLabels not provided", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -202,14 +202,14 @@ test("pinheader should fallback to pinLabels when pcbPinLabels not provided", as
         }}
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   expect(circuit).toMatchPcbSnapshot(
     import.meta.path + "-pinheader-fallback-pinlabels",
-  );
+  )
   expect(circuit).toMatchSchematicSnapshot(
     import.meta.path + "-pinheader-fallback-pinlabels",
-  );
-});
+  )
+})

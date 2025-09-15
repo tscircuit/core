@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("pcb rotation", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width={12} height={4}>
@@ -15,9 +15,9 @@ test("pcb rotation", async () => {
         pcbRotation={90}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
+})

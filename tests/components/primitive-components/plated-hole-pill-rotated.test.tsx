@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("renders rotated pill-shaped platedhole", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   const footprint = (
     <footprint>
@@ -17,14 +17,14 @@ test("renders rotated pill-shaped platedhole", async () => {
         pcbRotation={45}
       />
     </footprint>
-  );
+  )
 
   circuit.add(
     <board>
       <chip name="U2" layer="top" footprint={footprint} />
     </board>,
-  );
+  )
 
-  circuit.render();
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

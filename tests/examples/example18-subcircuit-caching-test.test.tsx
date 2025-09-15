@@ -1,17 +1,17 @@
-import { grid } from "@tscircuit/math-utils";
-import { expect, test } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { grid } from "@tscircuit/math-utils"
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const LedColumns = (props: {
-  numXLeds?: number;
-  numYLeds?: number;
-  pcbX?: number;
-  pcbY?: number;
-  autorouter?: any;
-  name: string;
+  numXLeds?: number
+  numYLeds?: number
+  pcbX?: number
+  pcbY?: number
+  autorouter?: any
+  name: string
 }) => {
-  const numXLeds = props.numXLeds ?? 3;
-  const numYLeds = props.numYLeds ?? 3;
+  const numXLeds = props.numXLeds ?? 3
+  const numYLeds = props.numYLeds ?? 3
   return (
     <subcircuit {...props}>
       {grid({ rows: numYLeds, cols: numXLeds, xSpacing: 8, ySpacing: 4 }).map(
@@ -34,21 +34,21 @@ const LedColumns = (props: {
         ),
       )}
     </subcircuit>
-  );
-};
+  )
+}
 
 test.skip("subcircuit autorouting max traces test", async () => {
-  const { circuit } = getTestFixture();
-  const totalLEDSubcircuits = 25; // Total number of LED column groups
-  const gridSize = Math.ceil(Math.sqrt(totalLEDSubcircuits)); // Calculate grid dimensions (3x3 for 9 columns)
-  const spacing = 30;
+  const { circuit } = getTestFixture()
+  const totalLEDSubcircuits = 25 // Total number of LED column groups
+  const gridSize = Math.ceil(Math.sqrt(totalLEDSubcircuits)) // Calculate grid dimensions (3x3 for 9 columns)
+  const spacing = 30
 
-  const totalWidth = (gridSize - 1) * spacing;
-  const totalHeight = (gridSize - 1) * spacing;
-  const startX = -totalWidth / 2;
-  const startY = -totalHeight / 2;
-  const boardWidth = totalWidth + spacing;
-  const boardHeight = totalHeight + spacing;
+  const totalWidth = (gridSize - 1) * spacing
+  const totalHeight = (gridSize - 1) * spacing
+  const startX = -totalWidth / 2
+  const startY = -totalHeight / 2
+  const boardWidth = totalWidth + spacing
+  const boardHeight = totalHeight + spacing
 
   circuit.add(
     <board
@@ -57,12 +57,12 @@ test.skip("subcircuit autorouting max traces test", async () => {
       autorouter={"auto-cloud"}
     >
       {Array.from({ length: totalLEDSubcircuits }, (_, index) => {
-        const row = Math.floor(index / gridSize);
-        const col = index % gridSize;
-        const columnName = `S${index + 1}`;
-        const pcbX = startX + col * spacing;
-        const pcbY = startY + row * spacing;
-        const prevColumnName = index > 0 ? `S${index}` : null;
+        const row = Math.floor(index / gridSize)
+        const col = index % gridSize
+        const columnName = `S${index + 1}`
+        const pcbX = startX + col * spacing
+        const pcbY = startY + row * spacing
+        const prevColumnName = index > 0 ? `S${index}` : null
 
         return (
           <>
@@ -80,12 +80,12 @@ test.skip("subcircuit autorouting max traces test", async () => {
               />
             )}
           </>
-        );
+        )
       })}
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
+})

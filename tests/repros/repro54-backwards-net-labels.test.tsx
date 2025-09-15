@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("repro53: connectivity id in schematic trace", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
@@ -24,9 +24,9 @@ test("repro53: connectivity id in schematic trace", async () => {
         connections={{ pin1: "R1.pin1", pin4: "C1.pin1" }}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

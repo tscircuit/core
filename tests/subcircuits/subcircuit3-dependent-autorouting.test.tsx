@@ -1,17 +1,17 @@
-import { test, expect } from "bun:test";
-import { Renderable } from "lib/components/base-components/Renderable";
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { Renderable } from "lib/components/base-components/Renderable"
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("subcircuit3-dependent-autorouting", async () => {
-  const { circuit } = await getTestFixture();
-  const { autoroutingServerUrl } = getTestAutoroutingServer();
+  const { circuit } = await getTestFixture()
+  const { autoroutingServerUrl } = getTestAutoroutingServer()
 
   const cloudAutorouterConfig = {
     serverUrl: autoroutingServerUrl,
     serverMode: "solve-endpoint",
     inputFormat: "simplified",
-  } as const;
+  } as const
 
   circuit.add(
     <board width="10mm" height="10mm" autorouter={cloudAutorouterConfig}>
@@ -48,17 +48,17 @@ test("subcircuit3-dependent-autorouting", async () => {
       </subcircuit>
       <trace from=".S1 .R1 > .pin1" to=".S2 .C1 > .pin1" />
     </board>,
-  );
+  )
 
-  const asyncEffectEndEvents: any[] = [];
+  const asyncEffectEndEvents: any[] = []
   circuit.on("asyncEffect:end", (event) => {
     asyncEffectEndEvents.push({
       ...event,
       componentDisplayName: event.componentDisplayName.replace(/#\d+/, "#"),
-    });
-  });
+    })
+  })
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   // Check the order of the async effect, should be S1 then board, and S2 is
   // synchronously routed so has no effect
@@ -75,8 +75,8 @@ test("subcircuit3-dependent-autorouting", async () => {
         "phase": "PcbTraceRender",
       },
     ]
-  `);
+  `)
 
   // Check if the circuit matches the expected PCB snapshot
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

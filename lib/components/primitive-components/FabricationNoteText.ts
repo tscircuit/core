@@ -1,5 +1,5 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent";
-import { fabricationNoteTextProps } from "@tscircuit/props";
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { fabricationNoteTextProps } from "@tscircuit/props"
 
 export class FabricationNoteText extends PrimitiveComponent<
   typeof fabricationNoteTextProps
@@ -8,15 +8,15 @@ export class FabricationNoteText extends PrimitiveComponent<
     return {
       componentName: "FabricationNoteText",
       zodProps: fabricationNoteTextProps,
-    };
+    }
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return;
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
-    const container = this.getPrimitiveContainer()!;
-    const subcircuit = this.getSubcircuit();
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const container = this.getPrimitiveContainer()!
+    const subcircuit = this.getSubcircuit()
     db.pcb_fabrication_note_text.insert({
       anchor_alignment: props.anchorAlignment,
       anchor_position: {
@@ -31,6 +31,6 @@ export class FabricationNoteText extends PrimitiveComponent<
       pcb_component_id: container.pcb_component_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-    });
+    })
   }
 }

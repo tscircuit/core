@@ -1,5 +1,5 @@
-import { createUseComponent } from "lib/hooks/create-use-component";
-import type { ChipProps, CommonLayoutProps } from "@tscircuit/props";
+import { createUseComponent } from "lib/hooks/create-use-component"
+import type { ChipProps, CommonLayoutProps } from "@tscircuit/props"
 
 const pinLabels = {
   1: ["GND1", "A1"],
@@ -18,10 +18,10 @@ const pinLabels = {
   14: ["VBUS2", "B4"],
   15: ["GND1", "A12"],
   16: ["GND2", "B1"],
-} as const;
+} as const
 
 interface Props extends ChipProps {
-  name: string;
+  name: string
 }
 
 /**
@@ -283,7 +283,7 @@ export const SmdUsbC = (props: Props) => {
         </footprint>
       }
     />
-  );
-};
+  )
+}
 
-export const useUsbC = createUseComponent(SmdUsbC, pinLabels);
+export const useUsbC = createUseComponent(SmdUsbC, pinLabels)

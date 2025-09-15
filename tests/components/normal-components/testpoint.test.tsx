@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 /** Ensure TestPoint renders correctly */
 test("<testpoint /> component", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
@@ -13,18 +13,18 @@ test("<testpoint /> component", async () => {
         footprintVariant="through_hole"
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([]);
+  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([])
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})
 
 test("<testpoint /> component with netlabel test", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
@@ -53,13 +53,13 @@ test("<testpoint /> component with netlabel test", async () => {
         connection="TP3.pin1"
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([]);
+  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([])
 
   expect(circuit).toMatchSchematicSnapshot(
     import.meta.path + ".schematic-netlabels",
-  );
-});
+  )
+})

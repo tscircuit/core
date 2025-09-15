@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
-import { grid } from "@tscircuit/math-utils";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { grid } from "@tscircuit/math-utils"
 
 test("pushbutton pin configurations with different net connections", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   const combinations = [
     [1, 2],
@@ -12,7 +12,7 @@ test("pushbutton pin configurations with different net connections", () => {
     [2, 3],
     [2, 4],
     [3, 4],
-  ];
+  ]
 
   circuit.add(
     <board schMaxTraceDistance={1}>
@@ -43,9 +43,9 @@ test("pushbutton pin configurations with different net connections", () => {
         ),
       )}
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

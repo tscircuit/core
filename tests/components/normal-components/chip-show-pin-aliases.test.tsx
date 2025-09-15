@@ -1,12 +1,12 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
-import React from "react";
-import "lib/register-catalogue";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import React from "react"
+import "lib/register-catalogue"
 
 // Test that enabling showPinAliases shows all alias labels in the schematic
 
 test("chip shows all pin aliases when showPinAliases is true", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -26,17 +26,17 @@ test("chip shows all pin aliases when showPinAliases is true", () => {
         }}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const schematicPorts = circuit.db.schematic_port.list();
+  const schematicPorts = circuit.db.schematic_port.list()
   const pin1Label = schematicPorts.find(
     (p) => p.pin_number === 1,
-  )?.display_pin_label;
+  )?.display_pin_label
 
   // Hints are collected from aliases followed by the primary name
-  expect(pin1Label).toBe("GP0/SPI1_SCK/ADC1");
+  expect(pin1Label).toBe("GP0/SPI1_SCK/ADC1")
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("Minimal tilt reproduction with pcbPack group", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
@@ -22,8 +22,8 @@ test("Minimal tilt reproduction with pcbPack group", async () => {
         </group>
       </group>
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  await circuit.renderUntilSettled()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

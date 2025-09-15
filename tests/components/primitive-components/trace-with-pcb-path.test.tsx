@@ -1,10 +1,10 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // ensure Trace with manual pcbPath renders specified route
 
 test("trace with manual pcbPath", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -23,11 +23,11 @@ test("trace with manual pcbPath", async () => {
         pcbPath={[{ x: 1, y: 0 }]}
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  const pcbTraces = circuit.db.pcb_trace.list();
-  expect(pcbTraces.length).toBe(1);
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  const pcbTraces = circuit.db.pcb_trace.list()
+  expect(pcbTraces.length).toBe(1)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

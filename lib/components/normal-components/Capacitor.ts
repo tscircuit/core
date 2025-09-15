@@ -1,19 +1,19 @@
-import { capacitorProps } from "@tscircuit/props";
-import type { SourceSimpleCapacitorInput } from "circuit-json";
+import { capacitorProps } from "@tscircuit/props"
+import type { SourceSimpleCapacitorInput } from "circuit-json"
 import {
   FTYPE,
   type BaseSymbolName,
   type PolarizedPassivePorts,
-} from "lib/utils/constants";
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent";
-import { Trace } from "../primitive-components/Trace/Trace";
-import { formatSiUnit } from "format-si-unit";
+} from "lib/utils/constants"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { Trace } from "../primitive-components/Trace/Trace"
+import { formatSiUnit } from "format-si-unit"
 
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
   PolarizedPassivePorts
 > {
-  _adjustSilkscreenTextAutomatically = true;
+  _adjustSilkscreenTextAutomatically = true
 
   // @ts-ignore (cause the symbolName is string and not fixed)
   get config() {
@@ -24,7 +24,7 @@ export class Capacitor extends NormalComponent<
         : (this.props.symbolName ?? ("capacitor" as BaseSymbolName)),
       zodProps: capacitorProps,
       sourceFtype: FTYPE.simple_capacitor,
-    };
+    }
   }
 
   initPorts() {
@@ -36,26 +36,26 @@ export class Capacitor extends NormalComponent<
           pin1: ["anode", "pos"],
           pin2: ["cathode", "neg"],
         },
-      });
+      })
     } else {
-      super.initPorts();
+      super.initPorts()
     }
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    const inputCapacitance = this.props.capacitance;
+    const inputCapacitance = this.props.capacitance
     const capacitanceDisplay =
       typeof inputCapacitance === "string"
         ? inputCapacitance
-        : `${formatSiUnit(this._parsedProps.capacitance)}F`;
+        : `${formatSiUnit(this._parsedProps.capacitance)}F`
 
     if (
       this._parsedProps.schShowRatings &&
       this._parsedProps.maxVoltageRating
     ) {
-      return `${capacitanceDisplay}/${formatSiUnit(this._parsedProps.maxVoltageRating)}V`;
+      return `${capacitanceDisplay}/${formatSiUnit(this._parsedProps.maxVoltageRating)}V`
     }
-    return capacitanceDisplay;
+    return capacitanceDisplay
   }
 
   doInitialCreateNetsFromProps() {
@@ -63,7 +63,7 @@ export class Capacitor extends NormalComponent<
       this.props.decouplingFor,
       this.props.decouplingTo,
       ...this._getNetsFromConnectionsProp(),
-    ]);
+    ])
   }
 
   doInitialCreateTracesFromProps() {
@@ -73,20 +73,20 @@ export class Capacitor extends NormalComponent<
           from: `${this.getSubcircuitSelector()} > port.1`,
           to: this.props.decouplingFor,
         }),
-      );
+      )
       this.add(
         new Trace({
           from: `${this.getSubcircuitSelector()} > port.2`,
           to: this.props.decouplingTo,
         }),
-      );
+      )
     }
-    this._createTracesFromConnectionsProp();
+    this._createTracesFromConnectionsProp()
   }
 
   doInitialSourceRender() {
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
+    const { db } = this.root!
+    const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype: "simple_capacitor",
       name: this.name,
@@ -98,8 +98,8 @@ export class Capacitor extends NormalComponent<
       max_decoupling_trace_length: props.maxDecouplingTraceLength,
       display_capacitance: this._getSchematicSymbolDisplayValue(),
       are_pins_interchangeable: !props.polarized,
-    } as SourceSimpleCapacitorInput);
+    } as SourceSimpleCapacitorInput)
 
-    this.source_component_id = source_component.source_component_id;
+    this.source_component_id = source_component.source_component_id
   }
 }

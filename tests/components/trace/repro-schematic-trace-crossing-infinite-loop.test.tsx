@@ -1,6 +1,6 @@
-import { test, expect } from "bun:test";
-import { createSchematicTraceCrossingSegments } from "lib/components/primitive-components/Trace/trace-utils/create-schematic-trace-crossing-segments";
-import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg";
+import { test, expect } from "bun:test"
+import { createSchematicTraceCrossingSegments } from "lib/components/primitive-components/Trace/trace-utils/create-schematic-trace-crossing-segments"
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 
 test("repro schematic trace crossing infinite loop", () => {
   const originalEdges = [
@@ -11,7 +11,7 @@ test("repro schematic trace crossing infinite loop", () => {
     { from: { x: 5, y: 2 }, to: { x: 0, y: 2 } },
     { from: { x: 0, y: 2 }, to: { x: 0, y: 0.5 } },
     { from: { x: 0, y: 0.5 }, to: { x: 2, y: 0.5 } },
-  ];
+  ]
   const otherTraceEdges = [
     { from: { x: 0, y: 1 }, to: { x: 1.5, y: 1 } },
     {
@@ -22,12 +22,12 @@ test("repro schematic trace crossing infinite loop", () => {
       from: { x: 1.5, y: 0 },
       to: { x: 0, y: 0 },
     },
-  ];
+  ]
 
   const edgesWithCrossings = createSchematicTraceCrossingSegments({
     edges: originalEdges,
     otherEdges: otherTraceEdges,
-  });
+  })
 
   expect(
     convertCircuitJsonToSchematicSvg(
@@ -54,5 +54,5 @@ test("repro schematic trace crossing infinite loop", () => {
         },
       },
     ),
-  ).toMatchSvgSnapshot(import.meta.path);
-});
+  ).toMatchSvgSnapshot(import.meta.path)
+})

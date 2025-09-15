@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("example 5: simple circuit with capacitor, resistor, and pushbutton", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board
@@ -43,30 +43,30 @@ test("example 5: simple circuit with capacitor, resistor, and pushbutton", async
       <trace from=".R1 > .pin2" to=".SW1 > .pin1" />
       <trace from=".SW1 > .pin2" to="net.GND" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
   // Check if all components are created
-  expect(circuit.selectOne("capacitor")).not.toBeNull();
-  expect(circuit.selectOne("resistor")).not.toBeNull();
-  expect(circuit.selectOne("chip[name='SW1']")).not.toBeNull();
+  expect(circuit.selectOne("capacitor")).not.toBeNull()
+  expect(circuit.selectOne("resistor")).not.toBeNull()
+  expect(circuit.selectOne("chip[name='SW1']")).not.toBeNull()
 
   // Check if nets are created
-  expect(circuit.selectOne("net[name='VCC']")).not.toBeNull();
-  expect(circuit.selectOne("net[name='GND']")).not.toBeNull();
+  expect(circuit.selectOne("net[name='VCC']")).not.toBeNull()
+  expect(circuit.selectOne("net[name='GND']")).not.toBeNull()
 
   const r1SourceComponent = circuit.db.source_component.getWhere({
     name: "R1",
-  });
+  })
   const c1SchematicComponent = circuit.db.schematic_component.getWhere({
     source_component_id: circuit.db.source_component.getWhere({ name: "C1" })
       ?.source_component_id,
-  });
+  })
 
   // Check if traces are created
-  expect(circuit.selectAll("trace").length).toBe(5);
+  expect(circuit.selectAll("trace").length).toBe(5)
 
   // Generate and check PCB snapshot
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

@@ -1,8 +1,8 @@
-import { it, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { it, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("should render a pinheader with pinrow4 footprint", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -15,15 +15,15 @@ it("should render a pinheader with pinrow4 footprint", async () => {
         schWidth={2}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})
 
 it("supports record-style pinLabels", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -34,10 +34,10 @@ it("supports record-style pinLabels", async () => {
         pitch="2.54mm"
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  const platedHoles = circuit.db.pcb_plated_hole.list();
-  expect(platedHoles).toHaveLength(2);
-});
+  const platedHoles = circuit.db.pcb_plated_hole.list()
+  expect(platedHoles).toHaveLength(2)
+})

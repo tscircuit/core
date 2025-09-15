@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("rotated resistor/diode/inductor/led/capacitor schematic", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm" schMaxTraceDistance={0.1}>
@@ -37,19 +37,19 @@ test("rotated resistor/diode/inductor/led/capacitor schematic", () => {
       <trace from=".D2 > .pin2" to="net.GND" />
       <trace from=".D2 > .pin1" to="net.VCC" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
   const symbolNames = circuit.db.schematic_component
     .list()
-    .map((elm) => elm.symbol_name);
+    .map((elm) => elm.symbol_name)
 
-  expect(symbolNames.includes("capacitor_up")).toBeTruthy();
-  expect(symbolNames.includes("inductor_up")).toBeTruthy();
-  expect(symbolNames.includes("led_up")).toBeTruthy();
-  expect(symbolNames.includes("boxresistor_up")).toBeTruthy();
-  expect(symbolNames.includes("diode_up")).toBeTruthy();
+  expect(symbolNames.includes("capacitor_up")).toBeTruthy()
+  expect(symbolNames.includes("inductor_up")).toBeTruthy()
+  expect(symbolNames.includes("led_up")).toBeTruthy()
+  expect(symbolNames.includes("boxresistor_up")).toBeTruthy()
+  expect(symbolNames.includes("diode_up")).toBeTruthy()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

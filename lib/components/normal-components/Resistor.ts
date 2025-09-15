@@ -1,16 +1,16 @@
-import { resistorProps } from "@tscircuit/props";
-import type { SourceSimpleResistorInput } from "circuit-json";
-import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants";
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent";
-import { Port } from "../primitive-components/Port";
-import { Trace } from "../primitive-components/Trace/Trace";
-import { formatSiUnit } from "format-si-unit";
+import { resistorProps } from "@tscircuit/props"
+import type { SourceSimpleResistorInput } from "circuit-json"
+import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { Port } from "../primitive-components/Port"
+import { Trace } from "../primitive-components/Trace/Trace"
+import { formatSiUnit } from "format-si-unit"
 
 export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
 > {
-  _adjustSilkscreenTextAutomatically = true;
+  _adjustSilkscreenTextAutomatically = true
 
   get config() {
     return {
@@ -18,7 +18,7 @@ export class Resistor extends NormalComponent<
       schematicSymbolName: this.props.symbolName ?? "boxresistor",
       zodProps: resistorProps,
       sourceFtype: "simple_resistor" as Ftype,
-    };
+    }
   }
 
   initPorts() {
@@ -27,11 +27,11 @@ export class Resistor extends NormalComponent<
         pin1: ["anode", "pos", "left"],
         pin2: ["cathode", "neg", "right"],
       },
-    });
+    })
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    return `${formatSiUnit(this._parsedProps.resistance)}Ω`;
+    return `${formatSiUnit(this._parsedProps.resistance)}Ω`
   }
 
   doInitialCreateNetsFromProps() {
@@ -41,7 +41,7 @@ export class Resistor extends NormalComponent<
       this.props.pulldownFor,
       this.props.pulldownTo,
       ...this._getNetsFromConnectionsProp(),
-    ]);
+    ])
   }
 
   doInitialCreateTracesFromProps() {
@@ -51,13 +51,13 @@ export class Resistor extends NormalComponent<
           from: `${this.getSubcircuitSelector()} > port.1`,
           to: this.props.pullupFor,
         }),
-      );
+      )
       this.add(
         new Trace({
           from: `${this.getSubcircuitSelector()} > port.2`,
           to: this.props.pullupTo,
         }),
-      );
+      )
     }
     if (this.props.pulldownFor && this.props.pulldownTo) {
       this.add(
@@ -65,20 +65,20 @@ export class Resistor extends NormalComponent<
           from: `${this.getSubcircuitSelector()} > port.1`,
           to: this.props.pulldownFor,
         }),
-      );
+      )
       this.add(
         new Trace({
           from: `${this.getSubcircuitSelector()} > port.2`,
           to: this.props.pulldownTo,
         }),
-      );
+      )
     }
-    this._createTracesFromConnectionsProp();
+    this._createTracesFromConnectionsProp()
   }
 
   doInitialSourceRender() {
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
+    const { db } = this.root!
+    const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype: "simple_resistor",
       name: this.name,
@@ -89,7 +89,7 @@ export class Resistor extends NormalComponent<
       resistance: props.resistance,
       display_resistance: this._getSchematicSymbolDisplayValue(),
       are_pins_interchangeable: true,
-    } as SourceSimpleResistorInput);
-    this.source_component_id = source_component.source_component_id;
+    } as SourceSimpleResistorInput)
+    this.source_component_id = source_component.source_component_id
   }
 }

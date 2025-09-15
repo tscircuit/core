@@ -1,7 +1,7 @@
-import { createUseComponent } from "lib/hooks/create-use-component";
-import type { CommonLayoutProps } from "@tscircuit/props";
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { createUseComponent } from "lib/hooks/create-use-component"
+import type { CommonLayoutProps } from "@tscircuit/props"
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const pinLabels = {
   pin7: ["pin7", "EP"],
@@ -11,10 +11,10 @@ const pinLabels = {
   pin3: ["pin3", "GND"],
   pin2: ["pin2", "FB"],
   pin1: ["pin1", "OUT"],
-} as const;
+} as const
 
 interface Props extends CommonLayoutProps {
-  name: string;
+  name: string
 }
 
 const TPS74601PDRVR = (props: Props) => {
@@ -105,26 +105,26 @@ const TPS74601PDRVR = (props: Props) => {
         </footprint>
       }
     />
-  );
-};
+  )
+}
 
-const useTPS74601PDRVR = createUseComponent(TPS74601PDRVR, pinLabels);
+const useTPS74601PDRVR = createUseComponent(TPS74601PDRVR, pinLabels)
 
 test("example6 voltage regulator", async () => {
-  const { circuit } = await getTestFixture();
-  const U1 = useTPS74601PDRVR("U1");
+  const { circuit } = await getTestFixture()
+  const U1 = useTPS74601PDRVR("U1")
 
   circuit.add(
     <board width="10mm" height="10mm">
       <U1 />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const schematicPorts = circuit.db.schematic_port.list();
+  const schematicPorts = circuit.db.schematic_port.list()
 
-  const displayPinLabels = schematicPorts.map((p) => p.display_pin_label);
+  const displayPinLabels = schematicPorts.map((p) => p.display_pin_label)
 
   expect(displayPinLabels.sort()).toEqual([
     "EN",
@@ -136,5 +136,5 @@ test("example6 voltage regulator", async () => {
     "PG",
     undefined,
     undefined,
-  ]);
-});
+  ])
+})

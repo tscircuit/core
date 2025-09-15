@@ -1,8 +1,8 @@
-import { it, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { it, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("<Led/> component with connections prop", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -16,15 +16,15 @@ it("<Led/> component with connections prop", async () => {
         }}
       />
     </board>,
-  );
+  )
 
-  await circuit.render();
+  await circuit.render()
 
   // Check that traces are created for the connections
-  const traces = circuit.db.source_trace.list();
-  expect(traces.length).toBe(2);
-  expect(traces[0].display_name).toContain("GND");
-  expect(traces[1].display_name).toContain("VCC");
+  const traces = circuit.db.source_trace.list()
+  expect(traces.length).toBe(2)
+  expect(traces[0].display_name).toContain("GND")
+  expect(traces[1].display_name).toContain("VCC")
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path + "-connections");
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path + "-connections")
+})

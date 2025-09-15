@@ -1,10 +1,10 @@
-import { expect, it } from "bun:test";
-import { InvalidProps } from "lib/errors/InvalidProps";
-import "lib/register-catalogue";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, it } from "bun:test"
+import { InvalidProps } from "lib/errors/InvalidProps"
+import "lib/register-catalogue"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("Chip with pin labels as strings and duplicates", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -42,22 +42,22 @@ it("Chip with pin labels as strings and duplicates", async () => {
         }}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const chip = circuit.selectOne("chip");
-  expect(chip).not.toBeNull();
+  const chip = circuit.selectOne("chip")
+  expect(chip).not.toBeNull()
 
   // Check if ports are created correctly in the database
   // const schematicPorts = circuit.db.schematic_port.list()
   // expect(schematicPorts).toHaveLength(8) // 2 pins per side * 4 sides
 
-  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
+})
 
 it.skip("Chip with pin labels as numbers, decimals and duplicates", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   try {
     circuit.add(
@@ -88,16 +88,16 @@ it.skip("Chip with pin labels as numbers, decimals and duplicates", async () => 
           }}
         />
       </board>,
-    );
+    )
   } catch (e: unknown) {
-    expect(e).toBeInstanceOf(InvalidProps);
-    expect((e as InvalidProps).message).toContain("-4");
+    expect(e).toBeInstanceOf(InvalidProps)
+    expect((e as InvalidProps).message).toContain("-4")
   }
-});
+})
 
 // TODO
 it.skip("Chip with pin labels as duplicates", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -123,9 +123,9 @@ it.skip("Chip with pin labels as duplicates", async () => {
         }}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
+})

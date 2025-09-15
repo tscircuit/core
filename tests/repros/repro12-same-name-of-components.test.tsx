@@ -1,8 +1,8 @@
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
-import { test } from "bun:test";
-import { expect } from "bun:test";
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { test } from "bun:test"
+import { expect } from "bun:test"
 test("repro-12: same name of components in subcircuit", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <group subcircuit>
@@ -16,16 +16,16 @@ test("repro-12: same name of components in subcircuit", async () => {
       />
       <trace from=".R1 > .pin1" to=".R1 > .pin1" />
     </group>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  const pcb_trace_errors = circuit.db.pcb_trace_error.list();
-  expect(pcb_trace_errors).toHaveLength(1);
-});
+  const pcb_trace_errors = circuit.db.pcb_trace_error.list()
+  expect(pcb_trace_errors).toHaveLength(1)
+})
 
 test("repro-12: same name of components in board", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -39,16 +39,16 @@ test("repro-12: same name of components in board", async () => {
       />
       <trace from=".R1 > .pin1" to=".R1 > .pin1" />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  const pcb_trace_errors = circuit.db.pcb_trace_error.list();
-  expect(pcb_trace_errors).toHaveLength(1);
-});
+  const pcb_trace_errors = circuit.db.pcb_trace_error.list()
+  expect(pcb_trace_errors).toHaveLength(1)
+})
 
 test("repro-12: same name of components in different subcircuits should not be an error", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <group>
@@ -86,11 +86,11 @@ test("repro-12: same name of components in different subcircuits should not be a
         />
       </subcircuit>
     </group>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   // No errors because the components are in different subcircuits
-  const pcb_trace_errors = circuit.db.pcb_trace_error.list();
-  expect(pcb_trace_errors).toHaveLength(0);
-});
+  const pcb_trace_errors = circuit.db.pcb_trace_error.list()
+  expect(pcb_trace_errors).toHaveLength(0)
+})

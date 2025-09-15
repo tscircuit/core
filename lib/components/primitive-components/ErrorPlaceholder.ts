@@ -1,9 +1,9 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent/PrimitiveComponent";
-import { z } from "zod";
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent/PrimitiveComponent"
+import { z } from "zod"
 
 class ErrorPlaceholderComponent extends PrimitiveComponent {
   constructor(props: any, error: any) {
-    super(props);
+    super(props)
     this._parsedProps = {
       ...props,
       error,
@@ -15,20 +15,20 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
       pcbY: props.pcbY,
       schX: props.schX,
       schY: props.schY,
-    };
+    }
   }
 
   get config() {
     return {
       componentName: "ErrorPlaceholder",
       zodProps: z.object({}).passthrough(),
-    };
+    }
   }
 
   doInitialSourceRender() {
     if (this.root?.db) {
-      const pcbPosition = this._getGlobalPcbPositionBeforeLayout();
-      const schematicPosition = this._getGlobalSchematicPositionBeforeLayout();
+      const pcbPosition = this._getGlobalPcbPositionBeforeLayout()
+      const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
 
       this.root.db.source_failed_to_create_component_error.insert({
         component_name: this._parsedProps.component_name,
@@ -40,11 +40,11 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
 
         pcb_center: pcbPosition,
         schematic_center: schematicPosition,
-      });
+      })
     }
   }
 }
 
 export function createErrorPlaceholderComponent(props: any, error: any) {
-  return new ErrorPlaceholderComponent(props, error);
+  return new ErrorPlaceholderComponent(props, error)
 }

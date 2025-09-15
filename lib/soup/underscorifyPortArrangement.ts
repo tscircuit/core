@@ -1,10 +1,10 @@
-import type { SchematicComponentInput } from "circuit-json";
-import type { PortArrangement } from "lib/utils/schematic/getAllDimensionsForSchematicBox";
+import type { SchematicComponentInput } from "circuit-json"
+import type { PortArrangement } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 
 export const underscorifyPortArrangement = (
   portArrangement?: PortArrangement | undefined,
 ): SchematicComponentInput["port_arrangement"] | undefined => {
-  if (!portArrangement) return undefined;
+  if (!portArrangement) return undefined
   if (
     "leftSide" in portArrangement ||
     "rightSide" in portArrangement ||
@@ -16,7 +16,7 @@ export const underscorifyPortArrangement = (
       right_side: portArrangement.rightSide,
       top_side: portArrangement.topSide,
       bottom_side: portArrangement.bottomSide,
-    };
+    }
   }
 
   if (
@@ -30,7 +30,7 @@ export const underscorifyPortArrangement = (
       right_size: portArrangement.rightPinCount!,
       top_size: portArrangement.topPinCount,
       bottom_size: portArrangement.bottomPinCount,
-    };
+    }
   }
 
   if (
@@ -44,8 +44,8 @@ export const underscorifyPortArrangement = (
       right_size: portArrangement.rightSize!,
       top_size: portArrangement.topSize,
       bottom_size: portArrangement.bottomSize,
-    };
+    }
   }
 
-  return undefined;
-};
+  return undefined
+}

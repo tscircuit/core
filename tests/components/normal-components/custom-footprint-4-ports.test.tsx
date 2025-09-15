@@ -1,19 +1,19 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "../../../tests/fixtures/get-test-fixture";
-import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg";
-import { su } from "@tscircuit/circuit-json-util";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "../../../tests/fixtures/get-test-fixture"
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
+import { su } from "@tscircuit/circuit-json-util"
 
 const pinLabels = {
   pin1: ["pin1", "GND"],
   pin2: ["pin2", "VOUT1"],
   pin3: ["pin3", "VIN"],
   pin4: ["pin4", "VOUT2"],
-} as const;
+} as const
 
 test("Custom footprint with 4 ports", () => {
   const { circuit, staticAssetsServerUrl } = getTestFixture({
     withStaticAssetsServer: true,
-  });
+  })
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -76,12 +76,12 @@ test("Custom footprint with 4 ports", () => {
         }
       />
     </board>,
-  );
+  )
 
-  const circuitJson = circuit.getCircuitJson();
+  const circuitJson = circuit.getCircuitJson()
 
-  const numPorts = su(circuitJson).source_port.list().length;
-  expect(numPorts).toBe(4);
+  const numPorts = su(circuitJson).source_port.list().length
+  expect(numPorts).toBe(4)
 
   expect(
     convertCircuitJsonToSchematicSvg(circuitJson as any, {
@@ -90,5 +90,5 @@ test("Custom footprint with 4 ports", () => {
         labelCells: true,
       },
     }),
-  ).toMatchSvgSnapshot(import.meta.path);
-});
+  ).toMatchSvgSnapshot(import.meta.path)
+})

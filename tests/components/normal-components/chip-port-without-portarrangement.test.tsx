@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("chip without port arrangement", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="40mm" height="25mm" schAutoLayoutEnabled>
@@ -48,17 +48,17 @@ test("chip without port arrangement", async () => {
       <trace from=".U1 .OUT2" to=".D2 .pin1" />
       <trace from=".D2 .pin2" to="net.MOUT2" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit.selectOne("capacitor")).not.toBeNull();
-  expect(circuit.selectOne("diode")).not.toBeNull();
-  expect(circuit.selectOne("chip[name='U1']")).not.toBeNull();
+  expect(circuit.selectOne("capacitor")).not.toBeNull()
+  expect(circuit.selectOne("diode")).not.toBeNull()
+  expect(circuit.selectOne("chip[name='U1']")).not.toBeNull()
 
   // Check if traces are created
-  expect(circuit.selectAll("trace").length).toBe(7);
+  expect(circuit.selectAll("trace").length).toBe(7)
 
   // Generate and check PCB snapshot
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

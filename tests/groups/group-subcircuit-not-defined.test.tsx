@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("subcircuit_id not defined when group is not a subcircuit", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board>
       <group>
@@ -15,10 +15,10 @@ test("subcircuit_id not defined when group is not a subcircuit", () => {
         />
       </group>
     </board>,
-  );
+  )
 
-  circuit.renderUntilSettled();
+  circuit.renderUntilSettled()
 
-  const source_group = circuit.db.source_group.list()[0];
-  expect(source_group.subcircuit_id).toBeUndefined();
-});
+  const source_group = circuit.db.source_group.list()[0]
+  expect(source_group.subcircuit_id).toBeUndefined()
+})

@@ -1,14 +1,14 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
 test("remote-autorouter-4 with job mode", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer({
     requireDisplayName: true,
-  });
+  })
 
-  const { circuit } = getTestFixture();
-  circuit.name = "test-circuit";
+  const { circuit } = getTestFixture()
+  circuit.name = "test-circuit"
 
   // Create a basic circuit that needs routing
   circuit.add(
@@ -30,11 +30,11 @@ test("remote-autorouter-4 with job mode", async () => {
       />
       <trace from=".U1 > .pin1" to=".R1 > .pin1" />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   // Verify routing request was made
-  expect(circuit.selectAll("trace").length).toBeGreaterThan(0);
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit.selectAll("trace").length).toBeGreaterThan(0)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

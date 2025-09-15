@@ -1,5 +1,5 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const orientations = [
   "vertical",
@@ -12,10 +12,10 @@ const orientations = [
   "neg_bottom",
   "neg_left",
   "neg_right",
-] as const;
+] as const
 
 test("polarized capacitor schOrientation", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="30mm" height="10mm" schMaxTraceDistance={1}>
@@ -32,13 +32,13 @@ test("polarized capacitor schOrientation", () => {
         />
       ))}
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
   const symbolNames = circuit.db.schematic_component
     .list()
-    .map((c) => c.symbol_name);
+    .map((c) => c.symbol_name)
 
   expect(symbolNames).toEqual([
     "capacitor_polarized_down",
@@ -51,7 +51,7 @@ test("polarized capacitor schOrientation", () => {
     "capacitor_polarized_up",
     "capacitor_polarized_left",
     "capacitor_polarized_right",
-  ]);
+  ])
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

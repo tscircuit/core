@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test";
-import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("schematic capacitor symbol", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="22mm" height="22mm">
@@ -15,9 +15,9 @@ test("schematic capacitor symbol", () => {
         schY={0}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
   expect(circuit.db.source_component.list()[0]).toMatchInlineSnapshot(`
     {
@@ -34,5 +34,5 @@ test("schematic capacitor symbol", () => {
       "supplier_part_numbers": undefined,
       "type": "source_component",
     }
-  `);
-});
+  `)
+})

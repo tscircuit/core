@@ -1,96 +1,95 @@
-import { smtPadProps } from "@tscircuit/props";
+import { smtPadProps } from "@tscircuit/props"
 import type {
   PcbSmtPad,
   PcbSmtPadCircle,
   PcbSmtPadRect,
   PcbSmtPadPolygon,
   PcbSmtPadRotatedRect,
-} from "circuit-json";
-import { decomposeTSR } from "transformation-matrix";
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent";
-import type { Port } from "./Port";
+} from "circuit-json"
+import { decomposeTSR } from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Port } from "./Port"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
-  pcb_smtpad_id: string | null = null;
+  pcb_smtpad_id: string | null = null
 
-  matchedPort: Port | null = null;
+  matchedPort: Port | null = null
 
-  isPcbPrimitive = true;
+  isPcbPrimitive = true
 
   get config() {
     return {
       componentName: "SmtPad",
       zodProps: smtPadProps,
-    };
+    }
   }
 
   getPcbSize(): { width: number; height: number } {
-    const { _parsedProps: props } = this;
+    const { _parsedProps: props } = this
     if (props.shape === "circle") {
-      return { width: props.radius! * 2, height: props.radius! * 2 };
+      return { width: props.radius! * 2, height: props.radius! * 2 }
     }
     if (props.shape === "rect") {
-      return { width: props.width!, height: props.height! };
+      return { width: props.width!, height: props.height! }
     }
     if (props.shape === "polygon") {
-      const points = props.points!;
-      const xs = points.map((p) => p.x);
-      const ys = points.map((p) => p.y);
-      const minX = Math.min(...xs);
-      const maxX = Math.max(...xs);
-      const minY = Math.min(...ys);
-      const maxY = Math.max(...ys);
-      return { width: maxX - minX, height: maxY - minY };
+      const points = props.points!
+      const xs = points.map((p) => p.x)
+      const ys = points.map((p) => p.y)
+      const minX = Math.min(...xs)
+      const maxX = Math.max(...xs)
+      const minY = Math.min(...ys)
+      const maxY = Math.max(...ys)
+      return { width: maxX - minX, height: maxY - minY }
     }
     throw new Error(
       `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
-    );
+    )
   }
 
   doInitialPortMatching(): void {
     const parentPorts = this.getPrimitiveContainer()?.selectAll(
       "port",
-    ) as Port[];
+    ) as Port[]
 
     if (!this.props.portHints) {
-      return;
+      return
     }
 
     for (const port of parentPorts) {
       if (port.isMatchingAnyOf(this.props.portHints)) {
-        this.matchedPort = port;
-        port.registerMatch(this);
-        return;
+        this.matchedPort = port
+        port.registerMatch(this)
+        return
       }
     }
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return;
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
-    if (!props.portHints) return;
-    const container = this.getPrimitiveContainer();
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    if (!props.portHints) return
+    const container = this.getPrimitiveContainer()
 
-    const subcircuit = this.getSubcircuit();
+    const subcircuit = this.getSubcircuit()
 
-    const position = this._getGlobalPcbPositionBeforeLayout();
-    const containerCenter = container?._getGlobalPcbPositionBeforeLayout();
+    const position = this._getGlobalPcbPositionBeforeLayout()
+    const containerCenter = container?._getGlobalPcbPositionBeforeLayout()
     const decomposedMat = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
-    );
+    )
     const isRotated90 =
-      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) % 180 <
-      0.01;
+      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) % 180 < 0.01
 
-    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers();
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
 
-    const parentRotation = container?._parsedProps.pcbRotation ?? 0;
+    const parentRotation = container?._parsedProps.pcbRotation ?? 0
 
-    let pcb_smtpad: PcbSmtPad | null = null;
+    let pcb_smtpad: PcbSmtPad | null = null
     const pcb_component_id =
       this.parent?.pcb_component_id ??
-      this.getPrimitiveContainer()?.pcb_component_id!;
+      this.getPrimitiveContainer()?.pcb_component_id!
     if (props.shape === "circle") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
@@ -103,7 +102,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         x: position.x,
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      } as PcbSmtPadCircle) as PcbSmtPadCircle;
+      } as PcbSmtPadCircle) as PcbSmtPadCircle
       db.pcb_solder_paste.insert({
         layer: pcb_smtpad.layer,
         shape: "circle",
@@ -114,7 +113,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbSmtPadCircle);
+      } as PcbSmtPadCircle)
     } else if (props.shape === "rect") {
       pcb_smtpad =
         parentRotation === 0 || isRotated90
@@ -149,7 +148,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
               is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
               subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
               pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-            } as PcbSmtPad);
+            } as PcbSmtPad)
       if (pcb_smtpad.shape === "rect")
         db.pcb_solder_paste.insert({
           layer: maybeFlipLayer(props.layer ?? "top"),
@@ -162,7 +161,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadRect);
+        } as PcbSmtPadRect)
       if (pcb_smtpad.shape === "rotated_rect")
         db.pcb_solder_paste.insert({
           layer: maybeFlipLayer(props.layer ?? "top"),
@@ -176,7 +175,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadRotatedRect);
+        } as PcbSmtPadRotatedRect)
     } else if (props.shape === "polygon") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
@@ -191,29 +190,29 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbSmtPadPolygon) as PcbSmtPadPolygon;
+      } as PcbSmtPadPolygon) as PcbSmtPadPolygon
     }
     if (pcb_smtpad) {
-      this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id;
+      this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
     }
   }
 
   doInitialPcbPortAttachment(): void {
-    if (this.root?.pcbDisabled) return;
-    const { db } = this.root!;
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
     db.pcb_smtpad.update(this.pcb_smtpad_id!, {
       pcb_port_id: this.matchedPort?.pcb_port_id!,
-    });
+    })
   }
 
   _getPcbCircuitJsonBounds(): {
-    center: { x: number; y: number };
-    bounds: { left: number; top: number; right: number; bottom: number };
-    width: number;
-    height: number;
+    center: { x: number; y: number }
+    bounds: { left: number; top: number; right: number; bottom: number }
+    width: number
+    height: number
   } {
-    const { db } = this.root!;
-    const smtpad = db.pcb_smtpad.get(this.pcb_smtpad_id!)!;
+    const { db } = this.root!
+    const smtpad = db.pcb_smtpad.get(this.pcb_smtpad_id!)!
 
     if (smtpad.shape === "rect") {
       return {
@@ -226,18 +225,18 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         },
         width: smtpad.width,
         height: smtpad.height,
-      };
+      }
     }
     if (smtpad.shape === "rotated_rect") {
-      const angleRad = (smtpad.ccw_rotation * Math.PI) / 180;
-      const cosAngle = Math.cos(angleRad);
-      const sinAngle = Math.sin(angleRad);
+      const angleRad = (smtpad.ccw_rotation * Math.PI) / 180
+      const cosAngle = Math.cos(angleRad)
+      const sinAngle = Math.sin(angleRad)
 
-      const w2 = smtpad.width / 2;
-      const h2 = smtpad.height / 2;
+      const w2 = smtpad.width / 2
+      const h2 = smtpad.height / 2
 
-      const xExtent = Math.abs(w2 * cosAngle) + Math.abs(h2 * sinAngle);
-      const yExtent = Math.abs(w2 * sinAngle) + Math.abs(h2 * cosAngle);
+      const xExtent = Math.abs(w2 * cosAngle) + Math.abs(h2 * sinAngle)
+      const yExtent = Math.abs(w2 * sinAngle) + Math.abs(h2 * cosAngle)
 
       return {
         center: { x: smtpad.x, y: smtpad.y },
@@ -249,7 +248,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         },
         width: xExtent * 2,
         height: yExtent * 2,
-      };
+      }
     }
     if (smtpad.shape === "circle") {
       return {
@@ -262,16 +261,16 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         },
         width: smtpad.radius * 2,
         height: smtpad.radius * 2,
-      };
+      }
     }
     if (smtpad.shape === "polygon") {
-      const points = smtpad.points!;
-      const xs = points.map((p) => p.x);
-      const ys = points.map((p) => p.y);
-      const minX = Math.min(...xs);
-      const maxX = Math.max(...xs);
-      const minY = Math.min(...ys);
-      const maxY = Math.max(...ys);
+      const points = smtpad.points!
+      const xs = points.map((p) => p.x)
+      const ys = points.map((p) => p.y)
+      const minX = Math.min(...xs)
+      const maxX = Math.max(...xs)
+      const minY = Math.min(...ys)
+      const maxY = Math.max(...ys)
 
       return {
         center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
@@ -283,28 +282,28 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         },
         width: maxX - minX,
         height: maxY - minY,
-      };
+      }
     }
     throw new Error(
       `circuitJson bounds calculation not implemented for shape "${(smtpad as any).shape}"`,
-    );
+    )
   }
 
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
-    const { db } = this.root!;
+    const { db } = this.root!
     db.pcb_smtpad.update(this.pcb_smtpad_id!, {
       x: newCenter.x,
       y: newCenter.y,
-    });
+    })
 
     const solderPaste = db.pcb_solder_paste
       .list()
-      .find((elm) => elm.pcb_smtpad_id === this.pcb_smtpad_id);
+      .find((elm) => elm.pcb_smtpad_id === this.pcb_smtpad_id)
     db.pcb_solder_paste.update(solderPaste?.pcb_solder_paste_id!, {
       x: newCenter.x,
       y: newCenter.y,
-    });
+    })
 
-    this.matchedPort?._setPositionFromLayout(newCenter);
+    this.matchedPort?._setPositionFromLayout(newCenter)
   }
 }

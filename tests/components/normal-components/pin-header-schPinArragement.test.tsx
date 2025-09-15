@@ -1,8 +1,8 @@
-import { it, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { it, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("should render a pinheader with pinrow4 footprint right side", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -63,12 +63,12 @@ it("should render a pinheader with pinrow4 footprint right side", async () => {
         }}
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   const schComponent = circuit.db.schematic_component.get(
     circuit.db.schematic_component.list()[0].schematic_component_id,
-  );
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  )
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

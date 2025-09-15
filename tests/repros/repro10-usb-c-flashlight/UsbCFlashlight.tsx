@@ -1,9 +1,9 @@
-import { usePushButton } from "./PushButton";
-import { SmdUsbC, useUsbC } from "./SmdUsbC";
+import { usePushButton } from "./PushButton"
+import { SmdUsbC, useUsbC } from "./SmdUsbC"
 
 export default () => {
-  const USBC = useUsbC("USBC");
-  const Button = usePushButton("SW1");
+  const USBC = useUsbC("USBC")
+  const Button = usePushButton("SW1")
   return (
     <board width="12mm" height="30mm">
       <SmdUsbC
@@ -24,5 +24,5 @@ export default () => {
       <trace from=".R1 > .neg" to=".LED .pos" />
       <trace from=".LED .neg" to="net.GND" />
     </board>
-  );
-};
+  )
+}

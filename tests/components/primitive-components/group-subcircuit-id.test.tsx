@@ -1,14 +1,14 @@
-import { expect, test } from "bun:test";
-import { su } from "@tscircuit/circuit-json-util";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { su } from "@tscircuit/circuit-json-util"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("Subcircuit group should have subcircuit_id", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <group name="G1" subcircuit autorouter={{ traceClearance: 0.1 }} />,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
   expect(circuit.db.toArray().map((c) => c.type)).toMatchInlineSnapshot(`
 [
@@ -16,7 +16,7 @@ test("Subcircuit group should have subcircuit_id", async () => {
   "schematic_group",
   "pcb_group",
 ]
-`);
+`)
 
   expect(circuit.db.source_group.list()).toMatchInlineSnapshot(`
 [
@@ -28,7 +28,7 @@ test("Subcircuit group should have subcircuit_id", async () => {
     "type": "source_group",
   },
 ]
-`);
+`)
 
   expect(circuit.db.pcb_group.list()).toMatchInlineSnapshot(`
 [
@@ -51,5 +51,5 @@ test("Subcircuit group should have subcircuit_id", async () => {
     "width": 0,
   },
 ]
-`);
-});
+`)
+})
