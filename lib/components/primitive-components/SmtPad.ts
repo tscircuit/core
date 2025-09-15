@@ -5,6 +5,7 @@ import type {
   PcbSmtPadRect,
   PcbSmtPadPolygon,
   PcbSmtPadRotatedRect,
+  PcbSmtPadPill,
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
@@ -41,6 +42,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       const minY = Math.min(...ys)
       const maxY = Math.max(...ys)
       return { width: maxX - minX, height: maxY - minY }
+    }
+    if (props.shape === "pill") {
+      return { width: props.width!, height: props.height! }
     }
     throw new Error(
       `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
@@ -191,6 +195,22 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
+    } else if (props.shape === "pill") {
+      pcb_smtpad = db.pcb_smtpad.insert({
+        pcb_component_id,
+        pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
+        layer: maybeFlipLayer(props.layer ?? "top"),
+        shape: "pill",
+        x: position.x,
+        y: position.y,
+        radius: props.radius!,
+        height: props.height!,
+        width: props.width!,
+        port_hints: props.portHints.map((ph) => ph.toString()),
+        is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+      } as PcbSmtPadPill) as PcbSmtPadPill
     }
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
@@ -282,6 +302,22 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         },
         width: maxX - minX,
         height: maxY - minY,
+      }
+    }
+    if (smtpad.shape === "pill") {
+      // For pill shape, the radius is applied to the shorter dimension
+      const halfWidth = smtpad.width / 2
+      const halfHeight = smtpad.height / 2
+      return {
+        center: { x: smtpad.x, y: smtpad.y },
+        bounds: {
+          left: smtpad.x - halfWidth,
+          top: smtpad.y - halfHeight,
+          right: smtpad.x + halfWidth,
+          bottom: smtpad.y + halfHeight,
+        },
+        width: smtpad.width,
+        height: smtpad.height,
       }
     }
     throw new Error(
