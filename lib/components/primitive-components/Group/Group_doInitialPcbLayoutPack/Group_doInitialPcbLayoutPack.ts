@@ -66,6 +66,17 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     minGap: gapMm,
   }
 
+  if (props.width !== undefined && props.height !== undefined) {
+    const width = length.parse(props.width)
+    const height = length.parse(props.height)
+    packInput.bounds = {
+      minX: -width / 2,
+      minY: -height / 2,
+      maxX: width / 2,
+      maxY: height / 2,
+    }
+  }
+
   const clusterMap = applyComponentConstraintClusters(group, packInput)
 
   if (debug.enabled) {
