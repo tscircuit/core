@@ -22,6 +22,7 @@ export class Potentiometer extends NormalComponent<typeof potentiometerProps> {
       componentName: "Potentiometer",
       schematicSymbolName:
         this.props.symbolName ??
+        this.props.symbol ??
         getPotentiometerSymbolName(this.props.pinVariant),
       zodProps: potentiometerProps,
       shouldRenderAsSchematicBox: false,

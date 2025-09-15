@@ -13,7 +13,8 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
   get config() {
     return {
       componentName: "TestPoint",
-      schematicSymbolName: this.props.symbolName ?? "testpoint",
+      schematicSymbolName:
+        this.props.symbolName ?? this.props.symbol ?? "testpoint",
       zodProps: testpointProps,
       sourceFtype: FTYPE.simple_test_point,
     }

@@ -12,6 +12,7 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     return {
       componentName: "fuse",
       schematicSymbolName: (this.props.symbolName ??
+        this.props.symbol ??
         ("fuse" as BaseSymbolName)) as BaseSymbolName,
       zodProps: fuseProps,
       sourceFtype: FTYPE.simple_fuse,

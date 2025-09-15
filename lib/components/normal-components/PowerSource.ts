@@ -16,7 +16,9 @@ export class PowerSource extends NormalComponent<
     return {
       // TBD in schematic_symbol and replace then
       schematicSymbolName:
-        this.props.symbolName ?? ("power_factor_meter_horz" as BaseSymbolName),
+        this.props.symbolName ??
+        this.props.symbol ??
+        ("power_factor_meter_horz" as BaseSymbolName),
       componentName: "PowerSource",
       zodProps: powerSourceProps,
       sourceFtype: "simple_power_source" as Ftype,

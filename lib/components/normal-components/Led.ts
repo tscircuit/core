@@ -5,13 +5,14 @@ import type {
   PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import type { SymbolProp } from "@tscircuit/props"
 
 export class Led extends NormalComponent<
   typeof ledProps,
   PolarizedPassivePorts
 > {
   get config() {
-    const symbolMap: Record<string, BaseSymbolName> = {
+    const symbolMap: Record<string, BaseSymbolName | SymbolProp> = {
       laser: "laser_diode",
     }
 
@@ -20,7 +21,9 @@ export class Led extends NormalComponent<
     return {
       schematicSymbolName: variantSymbol
         ? symbolMap[variantSymbol]
-        : (this.props.symbolName ?? ("led" as BaseSymbolName)),
+        : ((this.props.symbolName ??
+            this.props.symbol ??
+            ("led" as BaseSymbolName)) as BaseSymbolName),
       componentName: "Led",
       zodProps: ledProps,
       sourceFtype: "simple_led" as Ftype,

@@ -15,7 +15,8 @@ export class Resistor extends NormalComponent<
   get config() {
     return {
       componentName: "Resistor",
-      schematicSymbolName: this.props.symbolName ?? "boxresistor",
+      schematicSymbolName:
+        this.props.symbolName ?? this.props.symbol ?? "boxresistor",
       zodProps: resistorProps,
       sourceFtype: "simple_resistor" as Ftype,
     }

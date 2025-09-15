@@ -21,7 +21,9 @@ export class Resonator extends NormalComponent<typeof resonatorProps> {
     return {
       componentName: "Resonator",
       schematicSymbolName:
-        this.props.symbolName ?? getResonatorSymbolName(this.props.pinVariant),
+        this.props.symbolName ??
+        this.props.symbol ??
+        getResonatorSymbolName(this.props.pinVariant),
       zodProps: resonatorProps,
       shouldRenderAsSchematicBox: false,
     }

@@ -19,6 +19,7 @@ export class Inductor extends NormalComponent<
     return {
       componentName: "Inductor",
       schematicSymbolName: (this.props.symbolName ??
+        this.props.symbol ??
         ("inductor" as BaseSymbolName)) as BaseSymbolName,
       zodProps: inductorProps,
       sourceFtype: FTYPE.simple_inductor,

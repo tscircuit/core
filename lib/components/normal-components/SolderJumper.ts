@@ -91,7 +91,7 @@ export class SolderJumper<
       symbolName += `_bridged${bridgedPinNumbers.join("")}`
     }
     return {
-      schematicSymbolName: props.symbolName ?? symbolName,
+      schematicSymbolName: props.symbolName ?? props.symbol ?? symbolName,
       componentName: "SolderJumper",
       zodProps: solderjumperProps,
       shouldRenderAsSchematicBox: true,

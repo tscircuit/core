@@ -17,6 +17,7 @@ export class PushButton extends NormalComponent<
     return {
       componentName: "PushButton",
       schematicSymbolName: (this.props.symbolName ??
+        this.props.symbol ??
         ("push_button_normally_open_momentary" as BaseSymbolName)) as BaseSymbolName,
       zodProps: pushButtonProps,
       sourceFtype: FTYPE.simple_push_button,

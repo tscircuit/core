@@ -940,7 +940,9 @@ export class NormalComponent<
     if (this.root?.schematicDisabled) return []
     const { config } = this
     if (!config.schematicSymbolName) return []
-    const symbol: SchSymbol = (symbols as any)[config.schematicSymbolName]
+    const symbol: SchSymbol = (symbols as any)[
+      config.schematicSymbolName as string
+    ]
     if (!symbol) return []
     const newPorts: Port[] = []
     for (const symbolPort of symbol.ports) {

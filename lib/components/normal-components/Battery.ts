@@ -4,6 +4,7 @@ import type { SourceSimpleBatteryInput } from "circuit-json"
 import type { BaseSymbolName, Ftype, PassivePorts } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
+import type { SymbolProp } from "@tscircuit/props"
 export class Battery extends NormalComponent<
   typeof batteryProps,
   PassivePorts
@@ -12,6 +13,7 @@ export class Battery extends NormalComponent<
     return {
       componentName: "Battery",
       schematicSymbolName: (this.props.symbolName ??
+        this.props.symbol ??
         ("battery" as BaseSymbolName)) as BaseSymbolName,
       zodProps: batteryProps,
       sourceFtype: "simple_power_source" as Ftype,

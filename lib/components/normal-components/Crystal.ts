@@ -16,6 +16,7 @@ export class Crystal extends NormalComponent<
   get config() {
     const symbolName =
       this.props.symbolName ??
+      this.props.symbol ??
       ((this.props.pinVariant === "four_pin"
         ? "crystal_4pin"
         : "crystal") as BaseSymbolName)

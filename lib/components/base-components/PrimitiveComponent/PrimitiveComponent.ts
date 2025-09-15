@@ -30,6 +30,7 @@ import {
   cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
 } from "./cssSelectPrimitiveComponentAdapter"
 import { preprocessSelector } from "./preprocessSelector"
+import type { SymbolProp } from "@tscircuit/props"
 
 const cssSelectOptionsInsideSubcircuit: Options<
   PrimitiveComponent,
@@ -41,7 +42,7 @@ const cssSelectOptionsInsideSubcircuit: Options<
 
 export interface BaseComponentConfig {
   componentName: string
-  schematicSymbolName?: string | null
+  schematicSymbolName?: SymbolProp | null
   zodProps: z.ZodType
   sourceFtype?: Ftype | null
   shouldRenderAsSchematicBox?: boolean

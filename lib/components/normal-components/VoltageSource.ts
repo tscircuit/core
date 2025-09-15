@@ -38,9 +38,11 @@ export class VoltageSource extends NormalComponent<
     const isSquare = this.props.waveShape === "square"
     return {
       componentName: "VoltageSource",
-      schematicSymbolName: (isSquare
-        ? "square_wave"
-        : "ac_voltmeter") as BaseSymbolName,
+      schematicSymbolName: (this.props.symbolName ??
+        this.props.symbol ??
+        ((isSquare
+          ? "square_wave"
+          : "ac_voltmeter") as BaseSymbolName)) as BaseSymbolName,
       zodProps: voltageSourceProps,
       sourceFtype: "simple_voltage_source" as Ftype,
     }

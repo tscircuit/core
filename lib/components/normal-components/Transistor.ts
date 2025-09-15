@@ -5,13 +5,14 @@ import {
   type TransistorPorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import type { SymbolProp } from "@tscircuit/props"
 
 export class Transistor extends NormalComponent<
   typeof transistorProps,
   TransistorPorts
 > {
   get config() {
-    const baseSymbolName: BaseSymbolName =
+    const baseSymbolName: BaseSymbolName | SymbolProp =
       this.props.type === "npn"
         ? "npn_bipolar_transistor"
         : "pnp_bipolar_transistor"
@@ -19,6 +20,7 @@ export class Transistor extends NormalComponent<
     return {
       componentName: "Transistor",
       schematicSymbolName: (this.props.symbolName ??
+        this.props.symbol ??
         baseSymbolName) as BaseSymbolName,
       zodProps: transistorProps,
       sourceFtype: "simple_transistor" as Ftype,

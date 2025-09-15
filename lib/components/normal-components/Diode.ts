@@ -6,6 +6,7 @@ import {
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
+import type { SymbolProp } from "@tscircuit/props"
 
 export class Diode extends NormalComponent<
   typeof diodeProps,
@@ -13,7 +14,7 @@ export class Diode extends NormalComponent<
 > {
   // @ts-ignore
   get config() {
-    const symbolMap: Record<string, BaseSymbolName> = {
+    const symbolMap: Record<string, BaseSymbolName | SymbolProp> = {
       schottky: "schottky_diode",
       avalanche: "avalanche_diode",
       zener: "zener_diode",
@@ -33,7 +34,9 @@ export class Diode extends NormalComponent<
     return {
       schematicSymbolName: variantSymbol
         ? symbolMap[variantSymbol]
-        : (this.props.symbolName ?? ("diode" as BaseSymbolName)),
+        : ((this.props.symbolName ??
+            this.props.symbol ??
+            ("diode" as BaseSymbolName)) as BaseSymbolName),
       componentName: "Diode",
       zodProps: diodeProps,
       sourceFtype: "simple_diode" as Ftype,

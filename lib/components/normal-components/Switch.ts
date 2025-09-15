@@ -1,6 +1,7 @@
 import { switchProps } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
+import type { SymbolProp } from "@tscircuit/props"
 
 export class Switch extends NormalComponent<typeof switchProps> {
   private _getSwitchType(): "spst" | "spdt" | "dpst" | "dpdt" {
@@ -24,11 +25,13 @@ export class Switch extends NormalComponent<typeof switchProps> {
       dpdt: isNormallyClosed ? "dpdt_normally_closed_switch" : "dpdt_switch",
     }
 
-    const symbolName = baseSymbolNameMap[switchType] ?? "spst_switch"
+    const symbolName: BaseSymbolName | SymbolProp =
+      baseSymbolNameMap[switchType] ?? "spst_switch"
 
     return {
       componentName: "Switch",
       schematicSymbolName: (this.props.symbolName ??
+        this.props.symbol ??
         symbolName) as BaseSymbolName,
       zodProps: switchProps,
       shouldRenderAsSchematicBox: false,
