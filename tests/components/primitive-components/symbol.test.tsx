@@ -1,7 +1,7 @@
 import { expect, it } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("primitive symbol", async () => {
+it("symbol alias", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
