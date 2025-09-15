@@ -23,7 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ steps.check_fork.outputs.is_fork == 'true' && secrets.GITHUB_TOKEN || secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+          token: ${{ steps.check_fork.outputs.is_fork == 'true' && github.token || secrets.GITHUB_TOKEN }}
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
