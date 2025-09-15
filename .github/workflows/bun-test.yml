@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install dependencies
+        run: bun install
+      - name: Build all packages
+        run: bun run build --workspaces
+
       - name: Checkout code
         uses: actions/checkout@v4
 
