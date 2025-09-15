@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("Schematic box four sides and other layouts test", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width={10} height={10}>
@@ -129,9 +129,9 @@ test("Schematic box four sides and other layouts test", async () => {
         footprint="ssop28Db"
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

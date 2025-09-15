@@ -1,10 +1,10 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
 
 // Reproduction for internal connection symbol bug
 
 test("Jumper internallyConnectedPins chooses missing schematic symbol", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm" schAutoLayoutEnabled>
@@ -30,13 +30,13 @@ test("Jumper internallyConnectedPins chooses missing schematic symbol", async ()
         schY={0}
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
   const errors = circuit
     .getCircuitJson()
-    .filter((e) => e.type.includes("error"));
-  expect(errors.length).toBe(0);
+    .filter((e) => e.type.includes("error"))
+  expect(errors.length).toBe(0)
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

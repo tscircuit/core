@@ -1,11 +1,11 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
-import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphics";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphics"
 
 // ensure that matchAdapt groups operate independently
 
 export default test("group-match-adapt7", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm" routingDisabled>
@@ -20,10 +20,10 @@ export default test("group-match-adapt7", () => {
         <trace from=".R2 > .pin1" to=".C2 > .pin1" />
       </group>
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-  writeGlobalDebugGraphics();
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  writeGlobalDebugGraphics()
+})

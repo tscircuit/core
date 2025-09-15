@@ -3,11 +3,11 @@ import type {
   AutorouterErrorEvent,
   AutorouterProgressEvent,
   GenericLocalAutorouter,
-} from "../../lib/utils/autorouting/GenericLocalAutorouter";
+} from "../../lib/utils/autorouting/GenericLocalAutorouter"
 import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
-} from "../../lib/utils/autorouting/SimpleRouteJson";
+} from "../../lib/utils/autorouting/SimpleRouteJson"
 
 /**
  * Creates a basic autorouter for testing purposes
@@ -26,7 +26,7 @@ export function createBasicAutorouter(
       complete: [] as Array<(ev: AutorouterCompleteEvent) => void>,
       error: [] as Array<(ev: AutorouterErrorEvent) => void>,
       progress: [] as Array<(ev: AutorouterProgressEvent) => void>,
-    };
+    }
 
     // Create the autorouter instance
     const autorouter: GenericLocalAutorouter = {
@@ -34,12 +34,12 @@ export function createBasicAutorouter(
       isRouting: false,
 
       async start() {
-        if (this.isRouting) return;
-        this.isRouting = true;
+        if (this.isRouting) return
+        this.isRouting = true
 
         // Generate traces using the provided function
         try {
-          const traces = await routeGeneratorFn(this.input);
+          const traces = await routeGeneratorFn(this.input)
 
           // Emit a progress event
           for (const handler of eventHandlers.progress) {
@@ -48,56 +48,56 @@ export function createBasicAutorouter(
               steps: 1,
               progress: 1,
               phase: "complete",
-            });
+            })
           }
 
           // Emit the complete event with generated traces
           setTimeout(() => {
-            this.isRouting = false;
+            this.isRouting = false
             for (const handler of eventHandlers.complete) {
               handler({
                 type: "complete",
                 traces,
-              });
+              })
             }
-          }, 0);
+          }, 0)
         } catch (error) {
           // Handle any errors
-          this.isRouting = false;
+          this.isRouting = false
           for (const handler of eventHandlers.error) {
             handler({
               type: "error",
               error: error instanceof Error ? error : new Error(String(error)),
-            });
+            })
           }
         }
       },
 
       stop(): void {
-        this.isRouting = false;
+        this.isRouting = false
       },
 
       on(event: "complete" | "error" | "progress", callback: any): void {
         if (event === "complete") {
           eventHandlers.complete.push(
             callback as (ev: AutorouterCompleteEvent) => void,
-          );
+          )
         } else if (event === "error") {
           eventHandlers.error.push(
             callback as (ev: AutorouterErrorEvent) => void,
-          );
+          )
         } else if (event === "progress") {
           eventHandlers.progress.push(
             callback as (ev: AutorouterProgressEvent) => void,
-          );
+          )
         }
       },
 
       solveSync(): SimplifiedPcbTrace[] {
-        throw new Error("Not implemented");
+        throw new Error("Not implemented")
       },
-    };
+    }
 
-    return autorouter;
-  };
+    return autorouter
+  }
 }

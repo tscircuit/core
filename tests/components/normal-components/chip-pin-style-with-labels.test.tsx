@@ -1,17 +1,17 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
-import React from "react";
-import "lib/register-catalogue";
-import "lib/fiber/intrinsic-jsx";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import React from "react"
+import "lib/register-catalogue"
+import "lib/fiber/intrinsic-jsx"
 
 test("Chip should support pin labels in schPinStyle", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   const pinLabels = {
     pin1: ["GND", "A1"],
     pin2: ["VCC", "B12"],
     pin3: ["SIG", "A4"],
-  };
+  }
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -35,12 +35,12 @@ test("Chip should support pin labels in schPinStyle", () => {
         manufacturerPartNumber="TEST-CHIP"
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
   // The schematic component should be created with the correct pin styles
-  const schComponent = circuit.db.schematic_component.list()[0];
+  const schComponent = circuit.db.schematic_component.list()[0]
   expect(schComponent.pin_styles).toMatchInlineSnapshot(`
 {
   "pin1": {
@@ -62,7 +62,7 @@ test("Chip should support pin labels in schPinStyle", () => {
     "top_margin": 0.2,
   },
 }
-`);
+`)
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

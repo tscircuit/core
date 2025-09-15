@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
 
 export default test("pinheader connections using labels", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="20mm">
@@ -25,18 +25,18 @@ export default test("pinheader connections using labels", async () => {
         connections={{ pin1: "net.VCC", pin2: "net.GND" }}
       />
     </board>,
-  );
+  )
 
-  await circuit.render();
+  await circuit.render()
 
   const traces = circuit.selectAll("trace").map((t) => ({
     from: t._parsedProps.from,
     to: t._parsedProps.to,
-  }));
+  }))
   for (const label of ["VCC", "OUT", "GND"]) {
-    expect(traces.some((t) => t.from.includes(`port.${label}`))).toBe(true);
+    expect(traces.some((t) => t.from.includes(`port.${label}`))).toBe(true)
   }
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

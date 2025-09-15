@@ -16,42 +16,42 @@ The render phases in @tscircuit/core are defined in the `Renderable` class (`Ren
 
 8. SourceParentAttachment: Attaches the source component to its parent.
 
-9. PortMatching: Matches ports with their corresponding elements.
+8. PortMatching: Matches ports with their corresponding elements.
 
-10. SourceTraceRender: Renders the source traces, which are the basic representations of connections between components.
+9. SourceTraceRender: Renders the source traces, which are the basic representations of connections between components.
 
-11. SchematicComponentRender: Renders the schematic representation of the component.
+10. SchematicComponentRender: Renders the schematic representation of the component.
 
-12. SchematicLayout: Handles the layout of schematic components.
+11. SchematicLayout: Handles the layout of schematic components.
 
-13. SchematicPortRender: Renders ports in the schematic view.
+12. SchematicPortRender: Renders ports in the schematic view.
 
-14. SchematicTraceRender: Renders traces in the schematic view.
+13. SchematicTraceRender: Renders traces in the schematic view.
 
-15. PcbInsertTraceHints: Inserts trace hints into the PCB from "manual trace hints" or other props that imply trace hints
+14. PcbInsertTraceHints: Inserts trace hints into the PCB from "manual trace hints" or other props that imply trace hints
 
-16. PcbComponentRender: Renders the PCB representation of the component.
+15. PcbComponentRender: Renders the PCB representation of the component.
 
-17. PcbPrimitiveRender: Renders primitive PCB elements (e.g., pads, holes).
+16. PcbPrimitiveRender: Renders primitive PCB elements (e.g., pads, holes).
 
-18. PcbFootprintLayout: Handles the layout of PCB footprints.
+17. PcbFootprintLayout: Handles the layout of PCB footprints.
 
-19. PcbPortRender: Renders ports in the PCB view.
+18. PcbPortRender: Renders ports in the PCB view.
 
-20. PcbPortAttachment: Attaches ports to their corresponding PCB elements.
+19. PcbPortAttachment: Attaches ports to their corresponding PCB elements.
 
-21. PcbLayout: Handles the overall layout of PCB components.
+20. PcbLayout: Handles the overall layout of PCB components.
 
-22. PcbTraceRender: Renders traces in the PCB view.
+21. PcbTraceRender: Renders traces in the PCB view.
 
-23. PcbTraceHintRender: Renders trace hints in the PCB view.
+22. PcbTraceHintRender: Renders trace hints in the PCB view.
 
-24. PcbRouteNetIslands: Routes connections between isolated net islands on the PCB.
+23. PcbRouteNetIslands: Routes connections between isolated net islands on the PCB.
 
-25. PcbComponentSizeCalculation: Calculates the size of PCB components.
+24. PcbComponentSizeCalculation: Calculates the size of PCB components.
 
-26. PcbComponentAnchorAlignment: Aligns PCB component center based on a specified anchor point.
+25. PcbComponentAnchorAlignment: Aligns PCB component center based on a specified anchor point.
 
-27. CadModelRender: Renders 3D CAD models of components.
+26. CadModelRender: Renders 3D CAD models of components.
 
 Each of these phases is executed in order for every component in the project during the rendering process. Components can implement specific logic for each phase by defining methods like `doInitial<PhaseName>`, `update<PhaseName>`, or `remove<PhaseName>`.

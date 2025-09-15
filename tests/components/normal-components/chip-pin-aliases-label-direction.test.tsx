@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("Chip pin aliases labels are shown after the primary pin label", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -19,9 +19,9 @@ test("Chip pin aliases labels are shown after the primary pin label", async () =
         showPinAliases
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
+})

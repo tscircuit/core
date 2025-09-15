@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test";
-import type { PcbSmtPadRect } from "circuit-json";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import type { PcbSmtPadRect } from "circuit-json"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("footprint layout", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -44,31 +44,31 @@ test("footprint layout", () => {
         }
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const smtpads = circuit.db.pcb_smtpad.list() as PcbSmtPadRect[];
+  const smtpads = circuit.db.pcb_smtpad.list() as PcbSmtPadRect[]
 
   // center to center distance will be 5mm (4mm plus the half widths of the pads)
-  expect(Math.abs(smtpads[0].x - smtpads[1].x)).toBeCloseTo(5, 1);
+  expect(Math.abs(smtpads[0].x - smtpads[1].x)).toBeCloseTo(5, 1)
 
   // Should be centered about 0
-  expect(Math.abs(smtpads[0].x + smtpads[1].x) / 2).toBeCloseTo(0, 1);
+  expect(Math.abs(smtpads[0].x + smtpads[1].x) / 2).toBeCloseTo(0, 1)
 
-  const pcbPorts = circuit.db.pcb_port.list();
+  const pcbPorts = circuit.db.pcb_port.list()
 
-  expect(pcbPorts.length).toBe(3);
+  expect(pcbPorts.length).toBe(3)
 
-  const portXPositions = pcbPorts.map((p) => p.x).sort();
+  const portXPositions = pcbPorts.map((p) => p.x).sort()
 
-  expect(portXPositions).toEqual([-2.5, 0, 2.5]);
+  expect(portXPositions).toEqual([-2.5, 0, 2.5])
 
   // Check hole position
-  const hole = circuit.db.pcb_plated_hole.list()[0];
+  const hole = circuit.db.pcb_plated_hole.list()[0]
 
-  expect(hole.x).toBeCloseTo(0, 1);
-  expect(hole.y).toBeCloseTo(-1.25, 1);
+  expect(hole.x).toBeCloseTo(0, 1)
+  expect(hole.y).toBeCloseTo(-1.25, 1)
 
-  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
+})

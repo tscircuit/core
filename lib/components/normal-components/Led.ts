@@ -1,10 +1,10 @@
-import { ledProps } from "@tscircuit/props";
+import { ledProps } from "@tscircuit/props"
 import type {
   BaseSymbolName,
   Ftype,
   PolarizedPassivePorts,
-} from "lib/utils/constants";
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent";
+} from "lib/utils/constants"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 
 export class Led extends NormalComponent<
   typeof ledProps,
@@ -13,9 +13,9 @@ export class Led extends NormalComponent<
   get config() {
     const symbolMap: Record<string, BaseSymbolName> = {
       laser: "laser_diode",
-    };
+    }
 
-    const variantSymbol = this.props.laser ? "laser" : null;
+    const variantSymbol = this.props.laser ? "laser" : null
 
     return {
       schematicSymbolName: variantSymbol
@@ -24,7 +24,7 @@ export class Led extends NormalComponent<
       componentName: "Led",
       zodProps: ledProps,
       sourceFtype: "simple_led" as Ftype,
-    };
+    }
   }
 
   initPorts() {
@@ -33,18 +33,18 @@ export class Led extends NormalComponent<
         pin1: ["anode", "pos", "left"],
         pin2: ["cathode", "neg", "right"],
       },
-    });
+    })
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
     return (
       this._parsedProps.schDisplayValue || this._parsedProps.color || undefined
-    );
+    )
   }
 
   doInitialSourceRender() {
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
+    const { db } = this.root!
+    const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       ftype: "simple_led",
       name: this.name,
@@ -55,12 +55,12 @@ export class Led extends NormalComponent<
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: false,
-    } as any);
-    this.source_component_id = source_component.source_component_id;
+    } as any)
+    this.source_component_id = source_component.source_component_id
   }
 
-  pos = this.portMap.pin1;
-  anode = this.portMap.pin1;
-  neg = this.portMap.pin2;
-  cathode = this.portMap.pin2;
+  pos = this.portMap.pin1
+  anode = this.portMap.pin1
+  neg = this.portMap.pin2
+  cathode = this.portMap.pin2
 }

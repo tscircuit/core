@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test";
-import "lib/register-catalogue";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import "lib/register-catalogue"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("copper pour with board outline", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board
       width="20mm"
@@ -43,15 +43,15 @@ test("copper pour with board outline", async () => {
       />
       <copperpour connectsTo="net.GND" layer="top" />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-outline");
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-outline")
+})
 
 test("multiple copper pours on different layers", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board width="20mm" height="20mm">
       <net name="GND" />
@@ -80,9 +80,9 @@ test("multiple copper pours on different layers", async () => {
       <copperpour connectsTo="net.GND" layer="top" />
       <copperpour connectsTo="net.VCC" layer="bottom" />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-multiple-layers");
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-multiple-layers")
+})

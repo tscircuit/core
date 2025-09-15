@@ -1,11 +1,11 @@
-import React from "react";
-import { expect, test } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import React from "react"
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // Ensure schPadding expands schematic border
 
 test("group schematic border with padding", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
       <group
@@ -26,15 +26,15 @@ test("group schematic border with padding", () => {
         <trace from=".R1 > .pin1" to=".U1 > .pin1" />
       </group>
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const boxes = circuit.db.schematic_box.list();
-  expect(boxes.length).toBe(1);
-  expect(boxes[0].width).toBe(6);
-  expect(boxes[0].height).toBe(5);
-  expect(boxes[0].is_dashed).toBe(false);
+  const boxes = circuit.db.schematic_box.list()
+  expect(boxes.length).toBe(1)
+  expect(boxes[0].width).toBe(6)
+  expect(boxes[0].height).toBe(5)
+  expect(boxes[0].is_dashed).toBe(false)
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

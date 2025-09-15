@@ -20,10 +20,7 @@ Before creating a new component, double-check that it isn't already provided in 
 Component props are defined in `@tscircuit/props` like so:
 
 ```ts
-import {
-  silkscreenPathProps,
-  type SilkscreenPathProps,
-} from "@tscircuit/props";
+import { silkscreenPathProps, type SilkscreenPathProps } from "@tscircuit/props"
 ```
 
 Most components are defined the zod definition for their props.
@@ -41,20 +38,20 @@ Every new component should have a test written for it. This test should be in `t
 Usually a test for a new component has a very simple test definition like this:
 
 ```tsx
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("<mycomponent />", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
       <mycomponent />
-    </board>,
-  );
+    </board>
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})
 ```

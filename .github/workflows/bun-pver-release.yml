@@ -4,10 +4,10 @@ on:
     branches:
       - main
     paths:
-      - "lib/**"
-      - "package.json"
-      - "bun.lock"
-      - "README.md"
+      - 'lib/**'
+      - 'package.json'
+      - 'bun.lock'
+      - 'README.md'
   workflow_dispatch:
 jobs:
   publish:

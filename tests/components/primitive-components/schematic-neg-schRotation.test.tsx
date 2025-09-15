@@ -1,8 +1,8 @@
-import { it, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { it, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("should render rotated versions of capacitors", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="20mm">
@@ -40,8 +40,8 @@ it("should render rotated versions of capacitors", async () => {
 
       <capacitor name="C5_noRotation" schY={3} schX={6} capacitance="10µF" />
     </board>,
-  );
+  )
 
-  circuit.render();
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  circuit.render()
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

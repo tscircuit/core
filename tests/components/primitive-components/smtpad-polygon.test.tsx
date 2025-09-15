@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("renders polygon-shaped smtpad with correct group positioning", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   const footprint = (
     <footprint>
@@ -18,7 +18,7 @@ test("renders polygon-shaped smtpad with correct group positioning", async () =>
         portHints={["1"]}
       />
     </footprint>
-  );
+  )
 
   circuit.add(
     <board width="7mm" height="3mm">
@@ -26,8 +26,8 @@ test("renders polygon-shaped smtpad with correct group positioning", async () =>
         <chip name="U2" layer="top" footprint={footprint} />
       </group>
     </board>,
-  );
+  )
 
-  circuit.render();
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

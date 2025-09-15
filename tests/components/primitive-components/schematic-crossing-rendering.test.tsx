@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("schematic crossing rendering with reproduced bad crossing (upward)", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="20mm" routingDisabled>
@@ -27,9 +27,9 @@ test("schematic crossing rendering with reproduced bad crossing (upward)", () =>
       <trace from=".R2 > .pin2" to=".U1 > .IN1" />
       <trace from=".R3 > .pin2" to=".U1 > .IN2" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

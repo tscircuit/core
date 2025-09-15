@@ -1,9 +1,9 @@
-import { it, expect } from "bun:test";
-import type { TraceHint } from "lib";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { it, expect } from "bun:test"
+import type { TraceHint } from "lib"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("simple trace with trace hint test", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm" autorouter="sequential-trace">
@@ -18,14 +18,14 @@ it("simple trace with trace hint test", async () => {
       <trace from=".R1 > .pin1" to=".LED1 > .anode" />
       <tracehint for=".R1 > .pin1" offset={{ x: 0, y: 1 }} />
     </board>,
-  );
+  )
 
-  circuit.render();
-  const traceHint = circuit.firstChild!.selectOne("tracehint") as TraceHint;
+  circuit.render()
+  const traceHint = circuit.firstChild!.selectOne("tracehint") as TraceHint
 
   // a bit of a look at the internals
-  expect(traceHint.matchedPort).toBeTruthy();
+  expect(traceHint.matchedPort).toBeTruthy()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
   // expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-});
+})

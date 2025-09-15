@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("subcircuits and board share net — extra GND resistor inside S1", async () => {
-  const { circuit } = await getTestFixture();
+  const { circuit } = await getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm" autorouter="sequential-trace">
@@ -37,9 +37,9 @@ test("subcircuits and board share net — extra GND resistor inside S1", async (
 
       <trace from=".S1 .R1 > .pin1" to=".S2 .R2 > .pin1" />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

@@ -1,6 +1,6 @@
-import { expect, test } from "bun:test";
-import { sel } from "lib/sel";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { sel } from "lib/sel"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const QuiicFootprint = () => {
   return (
@@ -54,11 +54,11 @@ const QuiicFootprint = () => {
         shape="rect"
       />
     </footprint>
-  );
-};
+  )
+}
 
 test("chip renders with default name when none provided", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board
@@ -162,10 +162,10 @@ test("chip renders with default name when none provided", async () => {
         }}
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

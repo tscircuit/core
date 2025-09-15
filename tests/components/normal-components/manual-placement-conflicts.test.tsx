@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("component with both manual placement and prop coordinates emits error", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board
       width="20mm"
@@ -19,15 +19,15 @@ test("component with both manual placement and prop coordinates emits error", ()
     >
       <resistor name="R1" resistance="10k" footprint="0402" pcbX={2} pcbY={2} />
     </board>,
-  );
-  circuit.render();
+  )
+  circuit.render()
   // Verify error is added to the database
-  const errors = circuit.db.pcb_manual_edit_conflict_warning.list();
-  expect(errors).toHaveLength(1);
+  const errors = circuit.db.pcb_manual_edit_conflict_warning.list()
+  expect(errors).toHaveLength(1)
   // Check error details
-  const error = errors[0];
-  expect(error.pcb_component_id).toBeDefined();
+  const error = errors[0]
+  expect(error.pcb_component_id).toBeDefined()
   expect(error.message).toMatch(
     /<resistor#\d+ name="\.R1" \/> has both manual placement and prop coordinates\. pcbX and pcbY will be used\. Remove pcbX\/pcbY or clear the manual placement\./,
-  );
-});
+  )
+})

@@ -1,35 +1,34 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent";
-import { pcbKeepoutProps } from "@tscircuit/props";
-import type { RenderPhaseFn } from "../base-components/Renderable";
-import type { PCBKeepout } from "circuit-json";
-import { decomposeTSR } from "transformation-matrix";
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { pcbKeepoutProps } from "@tscircuit/props"
+import type { RenderPhaseFn } from "../base-components/Renderable"
+import type { PCBKeepout } from "circuit-json"
+import { decomposeTSR } from "transformation-matrix"
 
 export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
-  pcb_keepout_id: string | null = null;
+  pcb_keepout_id: string | null = null
 
-  isPcbPrimitive = true;
+  isPcbPrimitive = true
 
   get config() {
     return {
       componentName: "Keepout",
       zodProps: pcbKeepoutProps,
-    };
+    }
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return;
-    const subcircuit = this.getSubcircuit();
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
-    const position = this._getGlobalPcbPositionBeforeLayout();
+    if (this.root?.pcbDisabled) return
+    const subcircuit = this.getSubcircuit()
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const position = this._getGlobalPcbPositionBeforeLayout()
     const decomposedMat = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
-    );
+    )
     const isRotated90 =
-      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) % 180 <
-      0.01;
+      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) % 180 < 0.01
 
-    let pcb_keepout: PCBKeepout | null = null;
+    let pcb_keepout: PCBKeepout | null = null
     if (props.shape === "circle") {
       pcb_keepout = db.pcb_keepout.insert({
         layers: ["top"],
@@ -42,7 +41,7 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
         },
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-      });
+      })
     } else if (props.shape === "rect") {
       pcb_keepout = db.pcb_keepout.insert({
         layers: ["top"],
@@ -57,10 +56,10 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
         },
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
-      });
+      })
     }
     if (pcb_keepout) {
-      this.pcb_keepout_id = pcb_keepout.pcb_keepout_id;
+      this.pcb_keepout_id = pcb_keepout.pcb_keepout_id
     }
   }
 }

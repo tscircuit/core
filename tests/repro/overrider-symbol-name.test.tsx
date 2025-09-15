@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("symbolName should be overridden", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board>
       <transistor
@@ -12,11 +12,11 @@ test("symbolName should be overridden", () => {
         symbolName="npn_bipolar_transistor_horz"
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const symbols = circuit.db.schematic_component.list();
-  expect(symbols.length).toBe(1);
-  expect(symbols[0].symbol_name).toBe("npn_bipolar_transistor_horz");
-});
+  const symbols = circuit.db.schematic_component.list()
+  expect(symbols.length).toBe(1)
+  expect(symbols[0].symbol_name).toBe("npn_bipolar_transistor_horz")
+})

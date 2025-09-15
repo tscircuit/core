@@ -1,4 +1,4 @@
-import type { Obstacle } from "./SimpleRouteJson";
+import type { Obstacle } from "./SimpleRouteJson"
 
 /**
  * Utility to construct border obstacles from bounds
@@ -7,15 +7,15 @@ export function getObstaclesFromBounds(
   bounds: { minX: number; maxX: number; minY: number; maxY: number },
   opts: { padding?: number } = {},
 ): Obstacle[] {
-  const { minX, maxX, minY, maxY } = bounds;
-  const PADDING = opts.padding ?? 1;
+  const { minX, maxX, minY, maxY } = bounds
+  const PADDING = opts.padding ?? 1
   if (!isFinite(minX) || !isFinite(maxX) || !isFinite(minY) || !isFinite(maxY))
-    return [];
-  const left = minX - PADDING;
-  const right = maxX + PADDING;
-  const top = maxY + PADDING;
-  const bottom = minY - PADDING;
-  const thickness = 0.01;
+    return []
+  const left = minX - PADDING
+  const right = maxX + PADDING
+  const top = maxY + PADDING
+  const bottom = minY - PADDING
+  const thickness = 0.01
   return [
     // Top border (horizontal)
     {
@@ -53,5 +53,5 @@ export function getObstaclesFromBounds(
       height: top - bottom,
       connectedTo: [],
     },
-  ];
+  ]
 }

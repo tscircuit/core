@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("Jumper internally connected pins mix up between different Jumper components", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -50,11 +50,11 @@ test("Jumper internally connected pins mix up between different Jumper component
         schRotation={180}
       />
     </board>,
-  );
+  )
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-  await circuit.renderUntilSettled();
-  const circuitJson = circuit.getCircuitJson();
-  const errors = circuitJson.filter((e) => e.type.includes("error"));
-  expect(errors.length).toBe(0);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await circuit.renderUntilSettled()
+  const circuitJson = circuit.getCircuitJson()
+  const errors = circuitJson.filter((e) => e.type.includes("error"))
+  expect(errors.length).toBe(0)
+})

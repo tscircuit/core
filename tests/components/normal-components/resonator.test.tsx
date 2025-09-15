@@ -1,8 +1,8 @@
-import { it, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { it, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("renders resonator symbol variants", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
       <resonator
@@ -33,7 +33,7 @@ it("renders resonator symbol variants", async () => {
         schY={-4}
       />
     </board>,
-  );
-  circuit.render();
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  )
+  circuit.render()
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

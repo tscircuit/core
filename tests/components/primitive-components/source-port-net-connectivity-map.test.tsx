@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("source_port and source_net subcircuit_connectivity_map_key are populated", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="20mm" name="board">
@@ -29,52 +29,51 @@ test("source_port and source_net subcircuit_connectivity_map_key are populated",
       <trace from=".C1 > .pin1" to="net.VCC" />
       <trace from=".C1 > .pin2" to="net.GND" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
   // Create a table showing the connectivity mapping
-  const connectivityTable: string[] = [];
+  const connectivityTable: string[] = []
 
   // Get all elements and their connectivity map keys
-  const sourceTraces = circuit.db.source_trace.list();
-  const sourcePorts = circuit.db.source_port.list();
-  const sourceNets = circuit.db.source_net.list();
+  const sourceTraces = circuit.db.source_trace.list()
+  const sourcePorts = circuit.db.source_port.list()
+  const sourceNets = circuit.db.source_net.list()
 
   // Collect all table rows first to determine column widths
-  const tableRows: Array<[string, string, string, string]> = [];
+  const tableRows: Array<[string, string, string, string]> = []
 
   // Add traces to rows
   for (const trace of sourceTraces.sort((a, b) =>
     a.source_trace_id.localeCompare(b.source_trace_id),
   )) {
-    const connectivityKey =
-      trace.subcircuit_connectivity_map_key || "undefined";
-    tableRows.push([trace.source_trace_id, "-", "-", connectivityKey]);
+    const connectivityKey = trace.subcircuit_connectivity_map_key || "undefined"
+    tableRows.push([trace.source_trace_id, "-", "-", connectivityKey])
   }
 
   // Add ports to rows
   for (const port of sourcePorts.sort((a, b) =>
     a.source_port_id.localeCompare(b.source_port_id),
   )) {
-    const connectivityKey = port.subcircuit_connectivity_map_key || "undefined";
-    const component = circuit.db.source_component.get(port.source_component_id);
-    const componentName = component?.name || "unknown";
-    const pinName = port.name || "unknown";
+    const connectivityKey = port.subcircuit_connectivity_map_key || "undefined"
+    const component = circuit.db.source_component.get(port.source_component_id)
+    const componentName = component?.name || "unknown"
+    const pinName = port.name || "unknown"
     tableRows.push([
       port.source_port_id,
       componentName,
       pinName,
       connectivityKey,
-    ]);
+    ])
   }
 
   // Add nets to rows
   for (const net of sourceNets.sort((a, b) =>
     a.source_net_id.localeCompare(b.source_net_id),
   )) {
-    const connectivityKey = net.subcircuit_connectivity_map_key || "undefined";
-    tableRows.push([net.source_net_id, "-", net.name, connectivityKey]);
+    const connectivityKey = net.subcircuit_connectivity_map_key || "undefined"
+    tableRows.push([net.source_net_id, "-", net.name, connectivityKey])
   }
 
   // Calculate column widths
@@ -83,31 +82,31 @@ test("source_port and source_net subcircuit_connectivity_map_key are populated",
     "Component",
     "Pin/Net Name",
     "Connectivity Map Key",
-  ];
+  ]
   const colWidths = headers.map((header, i) => {
-    const maxContentWidth = Math.max(...tableRows.map((row) => row[i].length));
-    return Math.max(header.length, maxContentWidth);
-  });
+    const maxContentWidth = Math.max(...tableRows.map((row) => row[i].length))
+    return Math.max(header.length, maxContentWidth)
+  })
 
   // Helper function to pad strings
-  const padRight = (str: string, width: number) => str.padEnd(width);
+  const padRight = (str: string, width: number) => str.padEnd(width)
 
   // Add header
   connectivityTable.push(
     `| ${headers.map((header, i) => padRight(header, colWidths[i])).join(" | ")} |`,
-  );
+  )
   connectivityTable.push(
     `|${colWidths.map((width) => "-".repeat(width + 2)).join("|")}|`,
-  );
+  )
 
   // Add all rows with proper padding
   for (const row of tableRows) {
     connectivityTable.push(
       `| ${row.map((cell, i) => padRight(cell, colWidths[i])).join(" | ")} |`,
-    );
+    )
   }
 
-  const tableOutput = connectivityTable.join("\n");
+  const tableOutput = connectivityTable.join("\n")
 
   // Snapshot the connectivity mapping table
   expect(tableOutput).toMatchInlineSnapshot(`
@@ -126,21 +125,21 @@ test("source_port and source_net subcircuit_connectivity_map_key are populated",
     | source_port_5  | C1        | pin2         | board_connectivity_net1 |
     | source_net_0   | -         | VCC          | board_connectivity_net0 |
     | source_net_1   | -         | GND          | board_connectivity_net1 |"
-  `);
+  `)
 
   // Verify basic expectations
-  expect(sourceTraces.length).toBe(5);
-  expect(sourcePorts.length).toBe(6);
-  expect(sourceNets.length).toBe(2);
+  expect(sourceTraces.length).toBe(5)
+  expect(sourcePorts.length).toBe(6)
+  expect(sourceNets.length).toBe(2)
 
   // All traces should have connectivity map keys
   for (const trace of sourceTraces) {
-    expect(trace.subcircuit_connectivity_map_key).toBeTruthy();
+    expect(trace.subcircuit_connectivity_map_key).toBeTruthy()
   }
 
   // All nets should have connectivity map keys
   for (const net of sourceNets) {
-    expect(net.subcircuit_connectivity_map_key).toBeTruthy();
+    expect(net.subcircuit_connectivity_map_key).toBeTruthy()
   }
 
   // Connected ports should have connectivity map keys
@@ -148,9 +147,9 @@ test("source_port and source_net subcircuit_connectivity_map_key are populated",
     sourceTraces.some((trace) =>
       trace.connected_source_port_ids.includes(port.source_port_id),
     ),
-  );
+  )
 
   for (const port of connectedPorts) {
-    expect(port.subcircuit_connectivity_map_key).toBeTruthy();
+    expect(port.subcircuit_connectivity_map_key).toBeTruthy()
   }
-});
+})

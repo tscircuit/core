@@ -5,10 +5,10 @@ export function getRelativeDirection(
   pointA: { x: number; y: number },
   pointB: { x: number; y: number },
 ): "up" | "down" | "left" | "right" {
-  const dx = pointB.x - pointA.x;
-  const dy = pointB.y - pointA.y;
+  const dx = pointB.x - pointA.x
+  const dy = pointB.y - pointA.y
   if (Math.abs(dx) > Math.abs(dy)) {
-    return dx >= 0 ? "right" : "left";
+    return dx >= 0 ? "right" : "left"
   }
-  return dy >= 0 ? "up" : "down";
+  return dy >= 0 ? "up" : "down"
 }

@@ -1,4 +1,4 @@
-import { isFootprintUrl } from "./isFoorprintUrl";
+import { isFootprintUrl } from "./isFoorprintUrl"
 
 /**
  * Parse a library-style footprint reference of the form "<lib>:<footprintName>".
@@ -6,11 +6,11 @@ import { isFootprintUrl } from "./isFoorprintUrl";
 export const parseLibraryFootprintRef = (
   s: string,
 ): { footprintLib: string; footprintName: string } | null => {
-  if (isFootprintUrl(s)) return null;
-  const idx = s.indexOf(":");
-  if (idx <= 0) return null;
-  const footprintLib = s.slice(0, idx);
-  const footprintName = s.slice(idx + 1);
-  if (!footprintLib || !footprintName) return null;
-  return { footprintLib, footprintName };
-};
+  if (isFootprintUrl(s)) return null
+  const idx = s.indexOf(":")
+  if (idx <= 0) return null
+  const footprintLib = s.slice(0, idx)
+  const footprintName = s.slice(idx + 1)
+  if (!footprintLib || !footprintName) return null
+  return { footprintLib, footprintName }
+}

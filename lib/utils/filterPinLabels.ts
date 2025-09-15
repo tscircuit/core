@@ -1,4 +1,4 @@
-import { chipProps } from "@tscircuit/props";
+import { chipProps } from "@tscircuit/props"
 
 /**
  * Filters out invalid pin labels while preserving valid ones.
@@ -11,31 +11,31 @@ import { chipProps } from "@tscircuit/props";
 export function filterPinLabels(
   pinLabels: Record<string, string | string[] | readonly string[]> | undefined,
 ): {
-  validPinLabels: Record<string, string | string[]> | undefined;
-  invalidPinLabelsMessages: string[];
+  validPinLabels: Record<string, string | string[]> | undefined
+  invalidPinLabelsMessages: string[]
 } {
   if (!pinLabels)
     return {
       validPinLabels: pinLabels as undefined,
       invalidPinLabelsMessages: [],
-    };
+    }
 
-  const validPinLabels: Record<string, string | string[]> = {};
-  const invalidPinLabelsMessages: string[] = [];
+  const validPinLabels: Record<string, string | string[]> = {}
+  const invalidPinLabelsMessages: string[] = []
 
   for (const [pin, labelOrLabels] of Object.entries(pinLabels)) {
     const labels: string[] = Array.isArray(labelOrLabels)
       ? (labelOrLabels as string[]).slice() // Convert readonly to mutable
-      : [labelOrLabels as string];
-    const validLabels: string[] = [];
+      : [labelOrLabels as string]
+    const validLabels: string[] = []
 
     for (const label of labels) {
       if (isValidPinLabel(pin, label)) {
-        validLabels.push(label);
+        validLabels.push(label)
       } else {
         invalidPinLabelsMessages.push(
           `Invalid pin label: ${pin} = '${label}' - excluding from component. Please use a valid pin label.`,
-        );
+        )
       }
     }
 
@@ -43,7 +43,7 @@ export function filterPinLabels(
     if (validLabels.length > 0) {
       validPinLabels[pin] = Array.isArray(labelOrLabels)
         ? validLabels
-        : validLabels[0];
+        : validLabels[0]
     }
   }
 
@@ -51,7 +51,7 @@ export function filterPinLabels(
     validPinLabels:
       Object.keys(validPinLabels).length > 0 ? validPinLabels : undefined,
     invalidPinLabelsMessages,
-  };
+  }
 }
 
 /**
@@ -65,11 +65,11 @@ function isValidPinLabel(pin: string, label: string): boolean {
       name: "test",
       footprint: "test",
       pinLabels: { [pin]: label },
-    };
+    }
 
-    const result = chipProps.safeParse(testProps);
-    return result.success;
+    const result = chipProps.safeParse(testProps)
+    return result.success
   } catch (error) {
-    return false;
+    return false
   }
 }

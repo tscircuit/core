@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("should be able to select a pin/port by label on a chip", () => {
-  const { project } = getTestFixture();
+  const { project } = getTestFixture()
   project.add(
     <board width="10mm" height="10mm">
       <chip
@@ -11,10 +11,10 @@ test("should be able to select a pin/port by label on a chip", () => {
         pinLabels={{ pin1: "PWR", pin8: "GND" }}
       />
     </board>,
-  );
+  )
 
-  project.render();
+  project.render()
 
-  const pwr = project.selectOne(".U1 .PWR");
-  expect(pwr).toBeTruthy();
-});
+  const pwr = project.selectOne(".U1 .PWR")
+  expect(pwr).toBeTruthy()
+})

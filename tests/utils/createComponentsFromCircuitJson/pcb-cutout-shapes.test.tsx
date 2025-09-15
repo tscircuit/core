@@ -1,7 +1,7 @@
-import { test, expect } from "bun:test";
-import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson";
-import type { AnyCircuitElement } from "circuit-json";
-import { Cutout } from "lib/components/primitive-components/Cutout";
+import { test, expect } from "bun:test"
+import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
+import type { AnyCircuitElement } from "circuit-json"
+import { Cutout } from "lib/components/primitive-components/Cutout"
 
 test("createComponentsFromCircuitJson handles different cutout shapes", () => {
   // Create test circuit JSON with different cutout shapes
@@ -34,7 +34,7 @@ test("createComponentsFromCircuitJson handles different cutout shapes", () => {
       ],
       subcircuit_id: "test_subcircuit",
     },
-  ];
+  ]
 
   const components = createComponentsFromCircuitJson(
     {
@@ -44,41 +44,41 @@ test("createComponentsFromCircuitJson handles different cutout shapes", () => {
       pinLabels: {},
     },
     testSoup,
-  );
+  )
 
   // Verify all three cutout components were created
   const cutoutComponents = components.filter(
     (comp) => comp instanceof Cutout,
-  ) as Cutout[];
-  expect(cutoutComponents.length).toBe(3);
+  ) as Cutout[]
+  expect(cutoutComponents.length).toBe(3)
 
   // Verify rect cutout
   const rectCutout = cutoutComponents.find(
     (comp) => comp._parsedProps.shape === "rect",
-  );
-  expect(rectCutout).toBeDefined();
-  expect(rectCutout!._parsedProps.pcbX).toBe(0);
-  expect(rectCutout!._parsedProps.pcbY).toBe(0);
-  expect((rectCutout!._parsedProps as any).width).toBe(5);
-  expect((rectCutout!._parsedProps as any).height).toBe(3);
+  )
+  expect(rectCutout).toBeDefined()
+  expect(rectCutout!._parsedProps.pcbX).toBe(0)
+  expect(rectCutout!._parsedProps.pcbY).toBe(0)
+  expect((rectCutout!._parsedProps as any).width).toBe(5)
+  expect((rectCutout!._parsedProps as any).height).toBe(3)
 
   // Verify circle cutout
   const circleCutout = cutoutComponents.find(
     (comp) => comp._parsedProps.shape === "circle",
-  );
-  expect(circleCutout).toBeDefined();
-  expect(circleCutout!._parsedProps.pcbX).toBe(10);
-  expect(circleCutout!._parsedProps.pcbY).toBe(10);
-  expect((circleCutout!._parsedProps as any).radius).toBe(2);
+  )
+  expect(circleCutout).toBeDefined()
+  expect(circleCutout!._parsedProps.pcbX).toBe(10)
+  expect(circleCutout!._parsedProps.pcbY).toBe(10)
+  expect((circleCutout!._parsedProps as any).radius).toBe(2)
 
   // Verify polygon cutout
   const polygonCutout = cutoutComponents.find(
     (comp) => comp._parsedProps.shape === "polygon",
-  );
-  expect(polygonCutout).toBeDefined();
+  )
+  expect(polygonCutout).toBeDefined()
   expect((polygonCutout!._parsedProps as any).points).toEqual([
     { x: 0, y: 0 },
     { x: 2, y: 0 },
     { x: 1, y: 2 },
-  ]);
-});
+  ])
+})

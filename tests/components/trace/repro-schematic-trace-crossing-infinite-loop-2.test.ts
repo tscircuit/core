@@ -1,5 +1,5 @@
-import { test, expect } from "bun:test";
-import { createSchematicTraceCrossingSegments } from "lib/components/primitive-components/Trace/trace-utils/create-schematic-trace-crossing-segments";
+import { test, expect } from "bun:test"
+import { createSchematicTraceCrossingSegments } from "lib/components/primitive-components/Trace/trace-utils/create-schematic-trace-crossing-segments"
 
 test("repro schematic trace crossing infinite loop 2", () => {
   const inputEdges = [
@@ -13,7 +13,7 @@ test("repro schematic trace crossing infinite loop 2", () => {
         layer: "top",
       },
     },
-  ];
+  ]
 
   const otherEdges = [
     {
@@ -26,11 +26,11 @@ test("repro schematic trace crossing infinite loop 2", () => {
         width: 0.1,
       },
     },
-  ];
+  ]
 
   // Try with increasing number of otherEdges until we hit an error
   const edgesWithCrossings = createSchematicTraceCrossingSegments({
     edges: inputEdges,
     otherEdges: otherEdges,
-  });
-});
+  })
+})

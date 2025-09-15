@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("solderjumper infers pinCount from footprint", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -12,10 +12,10 @@ test("solderjumper infers pinCount from footprint", async () => {
         bridgedPins={[["1", "2"]]}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

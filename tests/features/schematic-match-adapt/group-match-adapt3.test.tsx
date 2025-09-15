@@ -1,12 +1,12 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
-import { sel } from "lib";
-import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphics";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { sel } from "lib"
+import { writeGlobalDebugGraphics } from "tests/fixtures/writeGlobalDebugGraphics"
 
 test("group-match-adapt3", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
-  circuit._featureMspSchematicTraceRouting = true;
+  circuit._featureMspSchematicTraceRouting = true
   circuit.add(
     <board width="10mm" height="10mm" routingDisabled matchAdapt>
       <chip
@@ -66,9 +66,9 @@ test("group-match-adapt3", () => {
         }}
       />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("example1", async () => {
-  const { circuit, logSoup } = getTestFixture();
+  const { circuit, logSoup } = getTestFixture()
   circuit.add(
     <board width="12mm" height="10mm" autorouter="sequential-trace">
       <chip
@@ -44,23 +44,23 @@ test("example1", async () => {
 
       <tracehint for=".C1 pin.1" offset={{ x: -2, y: 3 }} />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
   // the PcbPortAttachment phase should configure all the port ids
   expect(
     circuit.db.pcb_smtpad.list().map((smtpad) => smtpad.pcb_port_id),
-  ).not.toContain(null);
+  ).not.toContain(null)
 
   // We should have a cad_component for each component
-  const cadComponents = circuit.db.cad_component.list();
-  expect(cadComponents).toHaveLength(4);
+  const cadComponents = circuit.db.cad_component.list()
+  expect(cadComponents).toHaveLength(4)
 
   await expect(
     circuit.getSvg({
       view: "pcb",
       layer: "top",
     }),
-  ).toMatchSvgSnapshot(import.meta.path, "example1");
-});
+  ).toMatchSvgSnapshot(import.meta.path, "example1")
+})

@@ -1,5 +1,5 @@
-import { serve } from "bun";
-import { afterEach } from "bun:test";
+import { serve } from "bun"
+import { afterEach } from "bun:test"
 
 export const getTestFootprintServer = (json: any) => {
   const server = serve({
@@ -7,16 +7,16 @@ export const getTestFootprintServer = (json: any) => {
     fetch: () => {
       return new Response(JSON.stringify(json), {
         headers: { "Content-Type": "application/json" },
-      });
+      })
     },
-  });
+  })
 
   afterEach(() => {
-    server.stop();
-  });
+    server.stop()
+  })
 
   return {
     url: `http://localhost:${server.port}`,
     close: () => server.stop(),
-  };
-};
+  }
+}

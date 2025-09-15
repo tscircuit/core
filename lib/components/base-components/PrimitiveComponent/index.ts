@@ -1,1 +1,1 @@
-export * from "./PrimitiveComponent";
+export * from "./PrimitiveComponent"

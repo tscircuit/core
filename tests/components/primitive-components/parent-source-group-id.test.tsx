@@ -1,10 +1,10 @@
-import { expect, test } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // Ensure that nested groups correctly populate parent_source_group_id
 
 test("nested group has parent_source_group_id", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
@@ -14,11 +14,11 @@ test("nested group has parent_source_group_id", async () => {
         </group>
       </group>
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const groups = circuit.db.source_group.list();
+  const groups = circuit.db.source_group.list()
   expect(groups).toMatchInlineSnapshot(`
     [
       {
@@ -43,5 +43,5 @@ test("nested group has parent_source_group_id", async () => {
         "type": "source_group",
       },
     ]
-  `);
-});
+  `)
+})

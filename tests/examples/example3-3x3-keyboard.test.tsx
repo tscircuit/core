@@ -1,12 +1,16 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 /**
  * A switch shaft you can use to connect a pluggable Kailh socket.
  *
  * Datasheet: https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2211090930_Kailh-CPG151101S11-1_C5184526.pdf
  */
-const SwitchShaft = (props: { name: string; pcbX?: number; pcbY?: number }) => (
+const SwitchShaft = (props: {
+  name: string
+  pcbX?: number
+  pcbY?: number
+}) => (
   <chip
     {...props}
     footprint={
@@ -42,16 +46,16 @@ const SwitchShaft = (props: { name: string; pcbX?: number; pcbY?: number }) => (
       </footprint>
     }
   />
-);
+)
 
 const Key = (props: {
-  name: string;
-  keyNum: number;
-  pcbX: number;
-  pcbY: number;
+  name: string
+  keyNum: number
+  pcbX: number
+  pcbY: number
 }) => {
-  const shaftName = `SW${props.keyNum}`;
-  const diodeName = `D${props.keyNum}`;
+  const shaftName = `SW${props.keyNum}`
+  const diodeName = `D${props.keyNum}`
   return (
     <>
       <SwitchShaft
@@ -76,13 +80,13 @@ const Key = (props: {
         to={`.${diodeName} .pin1`}
       />
     </>
-  );
-};
+  )
+}
 
 const ArduinoProMicroBreakout = (props: {
-  name: string;
-  pcbX?: number;
-  pcbY?: number;
+  name: string
+  pcbX?: number
+  pcbY?: number
 }) => (
   <chip
     {...props}
@@ -115,7 +119,7 @@ const ArduinoProMicroBreakout = (props: {
       pin24: "RAW",
     }}
   />
-);
+)
 
 const MacroKeypad = () => {
   const keyPositions = Array.from({ length: 9 })
@@ -128,18 +132,18 @@ const MacroKeypad = () => {
       ...p,
       x: p.col * 19.05 - 19.05,
       y: p.row * 19.05 - 19.05,
-    }));
+    }))
 
   const rowToMicroPin = {
     0: "D2",
     1: "D3",
     2: "D4",
-  };
+  }
   const colToMicroPin = {
     0: "D5",
     1: "D6",
     2: "D7",
-  };
+  }
 
   return (
     <board width="120mm" height="80mm" autorouter="sequential-trace">
@@ -170,15 +174,15 @@ const MacroKeypad = () => {
         />
       ))}
     </board>
-  );
-};
+  )
+}
 
 test("example3-2x2-keyboard", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
-  circuit.add(<MacroKeypad />);
+  circuit.add(<MacroKeypad />)
 
-  const circuitJson = circuit.getCircuitJson();
+  const circuitJson = circuit.getCircuitJson()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

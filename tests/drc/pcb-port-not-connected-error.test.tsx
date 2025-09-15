@@ -1,12 +1,12 @@
-import { test, expect } from "bun:test";
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("check each PCB port is connected", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   const { autoroutingServerUrl } = getTestAutoroutingServer({
     simulateIncompleteAutorouting: true,
-  });
+  })
 
   circuit.add(
     <board
@@ -34,16 +34,16 @@ test("check each PCB port is connected", async () => {
       <trace from=".R1 > .pin1" to=".R2 > .pin1" />
       <trace from=".R2 > .pin2" to=".R3 > .pin1" />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  const circuitJson = circuit.getCircuitJson();
+  const circuitJson = circuit.getCircuitJson()
 
-  const pcbTraces = circuitJson.filter((el) => el.type === "pcb_trace");
+  const pcbTraces = circuitJson.filter((el) => el.type === "pcb_trace")
   const pcbPortNotConnectedErrors = circuitJson.filter(
     (el) => el.type === "pcb_port_not_connected_error",
-  );
+  )
   expect(pcbPortNotConnectedErrors).toMatchInlineSnapshot(`
     [
       {
@@ -61,7 +61,7 @@ test("check each PCB port is connected", async () => {
         "type": "pcb_port_not_connected_error",
       },
     ]
-  `);
+  `)
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

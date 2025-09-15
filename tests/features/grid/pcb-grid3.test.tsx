@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("pcb-grid3", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board pcbGrid pcbGridTemplateColumns="repeat(2, 3mm)" routingDisabled>
@@ -23,9 +23,9 @@ test("pcb-grid3", () => {
       <resistor name="R15" resistance="1k" footprint="0402" />
       <resistor name="R16" resistance="1k" footprint="0402" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

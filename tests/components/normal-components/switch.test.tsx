@@ -1,8 +1,8 @@
-import { it, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { it, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("should render a switch", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="10mm">
       <switch name="SW1" type="spst" schX={2} schY={2} />
@@ -13,7 +13,7 @@ it("should render a switch", async () => {
       <switch name="SW6" isNormallyClosed dpdt schX={0} schY={2} />
       <switch name="SW7" isNormallyClosed schX={-1} schY={1} />
     </board>,
-  );
-  circuit.render();
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path);
-});
+  )
+  circuit.render()
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})

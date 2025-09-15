@@ -3,11 +3,11 @@
 This is the basic template for any test:
 
 ```tsx
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("my test name", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="12mm" height="10mm">
@@ -21,10 +21,10 @@ test("my test name", async () => {
           pcbY={0}
         />
       */}
-    </board>,
-  );
+    </board>
+  )
 
-  circuit.render();
+  circuit.render()
 
   // optional: add expect statements that query against classes
   // expect(circuit.selectAll("trace").length).toBe(7)
@@ -33,8 +33,8 @@ test("my test name", async () => {
   // expect(circuit.db.pcb_smtpad.list().map((smtpad) => smtpad.pcb_port_id)).not.toContain(null)
   // expect(circuit.db.pcb_plated_hole.list()[0].hole_diameter).toBe(0.4)
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})
 ```
 
 After running the test the first time, an svg snapshot will be created.

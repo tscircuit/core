@@ -1,7 +1,11 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const SwitchShaft = (props: { name: string; pcbX?: number; pcbY?: number }) => (
+const SwitchShaft = (props: {
+  name: string
+  pcbX?: number
+  pcbY?: number
+}) => (
   <chip
     {...props}
     footprint={
@@ -44,17 +48,17 @@ const SwitchShaft = (props: { name: string; pcbX?: number; pcbY?: number }) => (
       </footprint>
     }
   />
-);
+)
 
 test("example2-switchshaft", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
       <SwitchShaft name="S1" pcbX={0} pcbY={0} />
       <SwitchShaft name="S2" pcbX={0} pcbY={-10} />
     </board>,
-  );
+  )
 
-  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
+})

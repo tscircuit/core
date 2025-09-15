@@ -1,11 +1,11 @@
 import type {
   Obstacle,
   SimpleRouteConnection,
-} from "lib/utils/autorouting/SimpleRouteJson";
-import { Trace } from "../Trace";
-import { getUnitVectorFromDirection } from "@tscircuit/math-utils";
-import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic";
-import { getObstaclesFromBounds } from "lib/utils/autorouting/getObstaclesFromBounds";
+} from "lib/utils/autorouting/SimpleRouteJson"
+import { Trace } from "../Trace"
+import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
+import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import { getObstaclesFromBounds } from "lib/utils/autorouting/getObstaclesFromBounds"
 
 /**
  * Gets the schematic obstacles for a trace.
@@ -16,13 +16,13 @@ import { getObstaclesFromBounds } from "lib/utils/autorouting/getObstaclesFromBo
  * traces within a subcircuit
  */
 export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
-  const db = trace.root!.db;
-  const connectedPorts = trace._findConnectedPorts().ports ?? [];
+  const db = trace.root!.db
+  const connectedPorts = trace._findConnectedPorts().ports ?? []
   const connectedPortIds = new Set(
     connectedPorts.map((p: any) => p.schematic_port_id),
-  );
+  )
 
-  const obstacles: Obstacle[] = [];
+  const obstacles: Obstacle[] = []
 
   // Add obstacles from components and ports
   for (const elm of db.toArray()) {
@@ -34,8 +34,8 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
       // are sized properly but schematic_components are sized incorrectly
       // Use tests/components/primitive-components/trace-schematic-obstacles-1.test.tsx
       // to see the difference and test
-      const isSymbol = Boolean(elm.symbol_name);
-      const dominateAxis = elm.size.width > elm.size.height ? "horz" : "vert";
+      const isSymbol = Boolean(elm.symbol_name)
+      const dominateAxis = elm.size.width > elm.size.height ? "horz" : "vert"
       obstacles.push({
         type: "rect",
         layers: ["top"],
@@ -45,18 +45,18 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
         height:
           elm.size.height + (isSymbol && dominateAxis === "vert" ? -0.5 : 0),
         connectedTo: [],
-      });
+      })
     }
     if (elm.type === "schematic_port") {
       if (connectedPortIds.has(elm.schematic_port_id)) {
-        continue;
+        continue
       }
       const dirVec = elm.facing_direction
         ? getUnitVectorFromDirection(elm.facing_direction)
         : {
             x: 0,
             y: 0,
-          };
+          }
       obstacles.push({
         type: "rect",
         layers: ["top"],
@@ -67,7 +67,7 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
         width: 0.1 + Math.abs(dirVec.x) * 0.3,
         height: 0.1 + Math.abs(dirVec.y) * 0.3,
         connectedTo: [],
-      });
+      })
     }
     if (elm.type === "schematic_text") {
       obstacles.push({
@@ -77,7 +77,7 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
         width: (elm.text?.length ?? 0) * 0.1,
         height: 0.2,
         connectedTo: [],
-      });
+      })
     }
     if (elm.type === "schematic_box") {
       obstacles.push({
@@ -87,13 +87,13 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
         width: elm.width,
         height: elm.height,
         connectedTo: [],
-      });
+      })
     }
   }
 
   // Add schematic border as four thin rect obstacles (with padding)
-  const bounds = getBoundsForSchematic(db.toArray());
-  obstacles.push(...getObstaclesFromBounds(bounds, { padding: 1 }));
+  const bounds = getBoundsForSchematic(db.toArray())
+  obstacles.push(...getObstaclesFromBounds(bounds, { padding: 1 }))
 
-  return obstacles;
-};
+  return obstacles
+}

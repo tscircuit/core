@@ -1,9 +1,9 @@
-import { expect, test } from "bun:test";
-import { su } from "@tscircuit/circuit-json-util";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { expect, test } from "bun:test"
+import { su } from "@tscircuit/circuit-json-util"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("resistor should have subcircuit_id on it's elements", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <group subcircuit name="G1">
@@ -15,15 +15,15 @@ test("resistor should have subcircuit_id on it's elements", async () => {
         pcbY={1}
       />
     </group>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const pcbSmtpads = circuit.db.pcb_smtpad.list();
-  expect(pcbSmtpads).toHaveLength(2);
+  const pcbSmtpads = circuit.db.pcb_smtpad.list()
+  expect(pcbSmtpads).toHaveLength(2)
 
   // Check that both pads have the correct subcircuit_id
   for (const pad of pcbSmtpads) {
-    expect(pad.subcircuit_id).toBe("subcircuit_source_group_0");
+    expect(pad.subcircuit_id).toBe("subcircuit_source_group_0")
   }
-});
+})

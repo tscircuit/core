@@ -1,21 +1,23 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "../fixtures/get-test-fixture";
-import { convertCircuitJsonToPcbSvg } from "circuit-to-svg";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "../fixtures/get-test-fixture"
+import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 
 test("example30: Board with polygon shape smtpad", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width={16}>
       <PolygonSmtpads name="U1" />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+  await circuit.renderUntilSettled()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})
 
-const PolygonSmtpads = (props: { name: string }) => {
+const PolygonSmtpads = (props: {
+  name: string
+}) => {
   return (
     <chip
       {...props}
@@ -63,5 +65,5 @@ const PolygonSmtpads = (props: { name: string }) => {
         </footprint>
       }
     />
-  );
-};
+  )
+}

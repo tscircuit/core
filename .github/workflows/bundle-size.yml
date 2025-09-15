@@ -4,9 +4,9 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "package.json"
-      - "bun.lockb"
-      - ".github/workflows/bundle-size-analysis.yml"
+      - 'package.json'
+      - 'bun.lockb'
+      - '.github/workflows/bundle-size-analysis.yml'
 
 permissions:
   pull-requests: write
@@ -86,7 +86,7 @@ jobs:
           steps.bundle-size-diff.outputs.diff | tonumber >= 10
           or steps.bundle-size-diff.outputs.diff | tonumber <= -10
           or steps.install-size-diff.outputs.diff | tonumber >= 10
-          or steps.install-size-diff.outputs.diff | tonumber <= -10
+          or steps.install-size-diff.outputs.diff | tonumber <= -10 
         uses: mshick/add-pr-comment@v2
         env:
           GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}

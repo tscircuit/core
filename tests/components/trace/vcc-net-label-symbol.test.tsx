@@ -1,21 +1,21 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // Verify that upward-facing V* net labels become vcc_up symbols
 
 test("v net labels become vcc symbols", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
       <netlabel net="VCC" schX={0} schY={0} anchorSide="bottom" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
-  const labels = circuit.db.schematic_net_label.list();
-  expect(labels).toHaveLength(1);
-  expect(labels[0].symbol_name).toBe("rail_up");
-  expect(labels[0].text).toBe("VCC");
-});
+  const labels = circuit.db.schematic_net_label.list()
+  expect(labels).toHaveLength(1)
+  expect(labels[0].symbol_name).toBe("rail_up")
+  expect(labels[0].text).toBe("VCC")
+})

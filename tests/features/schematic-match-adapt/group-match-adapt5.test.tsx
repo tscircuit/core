@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test.skip("group-match-adapt5 - matchAdaptTemplate", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board
@@ -162,9 +162,9 @@ test.skip("group-match-adapt5 - matchAdaptTemplate", async () => {
         }}
       />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
-  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
+})

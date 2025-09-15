@@ -2,175 +2,175 @@ import {
   type AutorouterConfig,
   type SubcircuitGroupProps,
   groupProps,
-} from "@tscircuit/props";
-import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter";
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson";
+} from "@tscircuit/props"
+import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type LayerRef,
   type PcbTrace,
   type PcbVia,
   type SchematicComponent,
   type SchematicPort,
-} from "circuit-json";
-import Debug from "debug";
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson";
-import { z } from "zod";
-import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent";
-import type { Trace } from "../Trace/Trace";
-import { TraceHint } from "../TraceHint";
-import type { ISubcircuit } from "./ISubcircuit";
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports";
-import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter";
-import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent";
-import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components";
-import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt";
-import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack";
-import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey";
-import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid";
-import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex";
-import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid";
-import { AutorouterError } from "lib/errors/AutorouterError";
-import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig";
-import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack";
-import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex";
-import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter";
-import type { GraphicsObject } from "graphics-debug";
-import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender";
-import { Port } from "../../primitive-components/Port/Port";
+} from "circuit-json"
+import Debug from "debug"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import { z } from "zod"
+import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
+import type { Trace } from "../Trace/Trace"
+import { TraceHint } from "../TraceHint"
+import type { ISubcircuit } from "./ISubcircuit"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
+import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
+import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
+import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
+import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
+import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
+import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
+import { AutorouterError } from "lib/errors/AutorouterError"
+import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
+import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
+import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
+import type { GraphicsObject } from "graphics-debug"
+import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
+import { Port } from "../../primitive-components/Port/Port"
 
 interface ExtendedGroupProps extends SubcircuitGroupProps {
-  showAsBox?: boolean;
+  showAsBox?: boolean
   schPinArrangement?: {
     [side: string]: {
-      pins: string[];
-      direction?: string;
-    };
-  };
-  connections?: { [key: string]: string };
-  schWidth?: number;
-  schHeight?: number;
-  border?: { dashed?: boolean };
+      pins: string[]
+      direction?: string
+    }
+  }
+  connections?: { [key: string]: string }
+  schWidth?: number
+  schHeight?: number
+  border?: { dashed?: boolean }
 }
 
 interface ExtendedSubcircuitGroupProps extends SubcircuitGroupProps {
-  showAsBox?: boolean;
+  showAsBox?: boolean
   schPinArrangement?: {
     [side: string]: {
-      pins: string[];
-      direction?: string;
-    };
-  };
-  connections?: { [key: string]: string };
-  schWidth?: number;
-  schHeight?: number;
-  border?: { dashed?: boolean };
+      pins: string[]
+      direction?: string
+    }
+  }
+  connections?: { [key: string]: string }
+  schWidth?: number
+  schHeight?: number
+  border?: { dashed?: boolean }
 }
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
   implements ISubcircuit
 {
-  pcb_group_id: string | null = null;
-  schematic_group_id: string | null = null;
-  subcircuit_id: string | null = null;
-  source_group_id: string | null = null;
+  pcb_group_id: string | null = null
+  schematic_group_id: string | null = null
+  subcircuit_id: string | null = null
+  source_group_id: string | null = null
 
-  _hasStartedAsyncAutorouting = false;
+  _hasStartedAsyncAutorouting = false
 
   _asyncAutoroutingResult: {
-    output_simple_route_json?: SimpleRouteJson;
-    output_pcb_traces?: (PcbTrace | PcbVia)[];
-  } | null = null;
+    output_simple_route_json?: SimpleRouteJson
+    output_pcb_traces?: (PcbTrace | PcbVia)[]
+  } | null = null
 
   get config() {
     return {
       zodProps: groupProps as unknown as Props,
       componentName: "Group",
-    };
+    }
   }
 
   override initPorts(): void {
-    const props = this._parsedProps as Partial<ExtendedGroupProps>;
+    const props = this._parsedProps as Partial<ExtendedGroupProps>
 
     if (!props || typeof props !== "object") {
-      super.initPorts();
-      return;
+      super.initPorts()
+      return
     }
 
-    const hasShowAsBox = Boolean(props.showAsBox);
-    const hasSchPinArrangement = Boolean(props.schPinArrangement);
+    const hasShowAsBox = Boolean(props.showAsBox)
+    const hasSchPinArrangement = Boolean(props.schPinArrangement)
 
     if (hasShowAsBox && hasSchPinArrangement && props.schPinArrangement) {
       const schPinArrangement = props.schPinArrangement as Record<
         string,
         { pins: string[] }
-      >;
+      >
 
       // Check if ports already match what we need
       const requiredPinNames = Object.values(schPinArrangement).flatMap(
         (info) => info.pins || [],
-      );
+      )
 
       const currentPorts = this.children.filter(
         (c) => c instanceof Port,
-      ) as Port[];
-      const currentPinNames = currentPorts.map((port) => port.props.name || "");
+      ) as Port[]
+      const currentPinNames = currentPorts.map((port) => port.props.name || "")
       const portsMatch =
         requiredPinNames.length === currentPinNames.length &&
-        requiredPinNames.every((pin) => currentPinNames.includes(pin));
+        requiredPinNames.every((pin) => currentPinNames.includes(pin))
 
       // Only recreate ports if necessary
       if (!portsMatch) {
-        this.removeAllPorts();
-        const externalPorts: Port[] = [];
+        this.removeAllPorts()
+        const externalPorts: Port[] = []
 
         for (const [side, info] of Object.entries(schPinArrangement)) {
-          const pins = info.pins || [];
+          const pins = info.pins || []
           for (const pinName of pins) {
-            externalPorts.push(new Port({ name: pinName }));
+            externalPorts.push(new Port({ name: pinName }))
           }
         }
 
-        this.addAllPorts(externalPorts);
+        this.addAllPorts(externalPorts)
       }
     } else {
-      super.initPorts();
+      super.initPorts()
     }
   }
 
   removeAllPorts(): void {
-    const portsToRemove = this.children.filter((c) => c instanceof Port);
+    const portsToRemove = this.children.filter((c) => c instanceof Port)
     for (const port of portsToRemove) {
-      this.remove(port);
+      this.remove(port)
     }
   }
 
   addAllPorts(ports: Port[]): void {
     for (const port of ports) {
-      this.add(port);
+      this.add(port)
     }
   }
 
   private _calcCenter(): { x: number; y: number } {
-    const bounds = getBoundsOfPcbComponents(this.children);
+    const bounds = getBoundsOfPcbComponents(this.children)
     if (bounds.width === 0 && bounds.height === 0) {
-      return { x: 0, y: 0 };
+      return { x: 0, y: 0 }
     }
     return {
       x: (bounds.minX + bounds.maxX) / 2,
       y: (bounds.minY + bounds.maxY) / 2,
-    };
+    }
   }
 
   doInitialSchematicRender(): void {
-    if (this.root?.schematicDisabled) return;
-    const db = this.root!.db;
-    const props = this._parsedProps as Partial<ExtendedGroupProps>;
+    if (this.root?.schematicDisabled) return
+    const db = this.root!.db
+    const props = this._parsedProps as Partial<ExtendedGroupProps>
 
     if (props.showAsBox) {
-      const width = Number(props.schWidth) || 5;
-      const height = Number(props.schHeight) || 5;
-      const center = this._calcCenter();
+      const width = Number(props.schWidth) || 5
+      const height = Number(props.schHeight) || 5
+      const center = this._calcCenter()
 
       const box = db.schematic_box.insert({
         width,
@@ -178,35 +178,34 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         x: center.x - width / 2,
         y: center.y - height / 2,
         is_dashed: props.border?.dashed ?? false,
-      });
+      })
 
       // Fix the ID access
-      this.schematic_group_id =
-        (box as any).schematic_box_id || (box as any).id;
+      this.schematic_group_id = (box as any).schematic_box_id || (box as any).id
 
       if (props.schPinArrangement && props.connections) {
         for (const [side, info] of Object.entries(props.schPinArrangement)) {
-          const sideInfo = info as { pins: string[]; direction?: string };
-          const pins = sideInfo.pins || [];
-          const direction = sideInfo.direction || "forward";
-          const count = pins.length;
+          const sideInfo = info as { pins: string[]; direction?: string }
+          const pins = sideInfo.pins || []
+          const direction = sideInfo.direction || "forward"
+          const count = pins.length
 
           pins.forEach((pinName: string, idx: number) => {
-            let x = center.x;
-            let y = center.y;
+            let x = center.x
+            let y = center.y
 
             if (side === "left") {
-              x = center.x - width / 2 - 0.2;
-              y = center.y + height / 2 - (height / count) * (idx + 0.5);
+              x = center.x - width / 2 - 0.2
+              y = center.y + height / 2 - (height / count) * (idx + 0.5)
             } else if (side === "right") {
-              x = center.x + width / 2 + 0.2;
-              y = center.y + height / 2 - (height / count) * (idx + 0.5);
+              x = center.x + width / 2 + 0.2
+              y = center.y + height / 2 - (height / count) * (idx + 0.5)
             } else if (side === "top") {
-              x = center.x - width / 2 + (width / count) * (idx + 0.5);
-              y = center.y + height / 2 + 0.2;
+              x = center.x - width / 2 + (width / count) * (idx + 0.5)
+              y = center.y + height / 2 + 0.2
             } else if (side === "bottom") {
-              x = center.x - width / 2 + (width / count) * (idx + 0.5);
-              y = center.y - height / 2 - 0.2;
+              x = center.x - width / 2 + (width / count) * (idx + 0.5)
+              y = center.y - height / 2 - 0.2
             }
 
             db.schematic_port.insert({
@@ -216,89 +215,89 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               position: { x, y },
               side,
               direction,
-            } as any);
+            } as any)
 
-            const mappedPin = props.connections?.[pinName];
+            const mappedPin = props.connections?.[pinName]
             if (mappedPin) {
               try {
-                const ports = db.schematic_port.list();
+                const ports = db.schematic_port.list()
                 const existingPort = ports.find(
                   (p: any) => p.name === mappedPin,
-                );
+                )
                 if (existingPort) {
                   db.schematic_port.update(existingPort.schematic_port_id, {
                     mapped_to: pinName,
                     schematic_box_id:
                       (box as any).schematic_box_id || (box as any).id,
-                  } as any);
+                  } as any)
                 }
               } catch (error) {
-                console.warn(`Could not update port ${mappedPin}:`, error);
+                console.warn(`Could not update port ${mappedPin}:`, error)
               }
             }
-          });
+          })
         }
       }
-      return;
+      return
     }
 
-    super.doInitialSourceRender();
+    super.doInitialSourceRender()
   }
 
   doInitialSourceGroupRender(): void {
-    const { db } = this.root!;
+    const { db } = this.root!
     const source_group = db.source_group.insert({
       name: this.name,
       is_subcircuit: this.isSubcircuit,
-    });
-    this.source_group_id = source_group.source_group_id;
+    })
+    this.source_group_id = source_group.source_group_id
     if (this.isSubcircuit) {
-      this.subcircuit_id = `subcircuit_${source_group.source_group_id}` as any;
+      this.subcircuit_id = `subcircuit_${source_group.source_group_id}` as any
       db.source_group.update(source_group.source_group_id, {
         subcircuit_id: this.subcircuit_id!,
-      });
+      })
     }
   }
 
   doInitialSourceRender(): void {
-    const { db } = this.root!;
+    const { db } = this.root!
 
     for (const child of this.children) {
       if (child.source_component_id) {
         db.source_component.update(child.source_component_id!, {
           source_group_id: this.source_group_id!,
-        });
+        })
       }
     }
   }
 
   doInitialSourceParentAttachment(): void {
-    const { db } = this.root!;
-    const parentGroup = (this.parent as any)?.getGroup?.();
+    const { db } = this.root!
+    const parentGroup = (this.parent as any)?.getGroup?.()
     if (parentGroup?.source_group_id) {
       db.source_group.update(this.source_group_id!, {
         parent_source_group_id: parentGroup.source_group_id,
-      });
+      })
     }
 
-    if (!this.isSubcircuit) return;
+    if (!this.isSubcircuit) return
     const parent_subcircuit_id = (this.parent as any)?.getSubcircuit?.()
-      ?.subcircuit_id;
-    if (!parent_subcircuit_id) return;
+      ?.subcircuit_id
+    if (!parent_subcircuit_id) return
     db.source_group.update(this.source_group_id!, {
       parent_subcircuit_id,
-    });
+    })
   }
 
   doInitialSourceAddConnectivityMapKey(): void {
-    Group_doInitialSourceAddConnectivityMapKey(this);
+    Group_doInitialSourceAddConnectivityMapKey(this)
   }
 
   doInitialPcbComponentRender(): void {
-    if (this.root?.pcbDisabled) return;
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
-    const subcircuit = this.getSubcircuit();
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const subcircuit = this.getSubcircuit()
     const pcb_group = db.pcb_group.insert({
       is_subcircuit: this.isSubcircuit,
       subcircuit_id: this.subcircuit_id ?? subcircuit?.subcircuit_id!,
@@ -313,112 +312,111 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             trace_clearance: (props as any).autorouter.traceClearance,
           }
         : undefined,
-    });
-    this.pcb_group_id = pcb_group.pcb_group_id;
+    })
+    this.pcb_group_id = pcb_group.pcb_group_id
 
     for (const child of this.children) {
       if (child.pcb_component_id) {
         db.pcb_component.update(child.pcb_component_id!, {
           pcb_group_id: pcb_group.pcb_group_id,
-        });
+        })
       }
     }
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return;
-    const { db } = this.root!;
-    const props = this._parsedProps as Partial<SubcircuitGroupProps>;
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    const props = this._parsedProps as Partial<SubcircuitGroupProps>
 
-    const bounds = getBoundsOfPcbComponents(this.children);
+    const bounds = getBoundsOfPcbComponents(this.children)
 
     if (this.pcb_group_id) {
-      let width = bounds.width;
-      let height = bounds.height;
-      let centerX = (bounds.minX + bounds.maxX) / 2;
-      let centerY = (bounds.minY + bounds.maxY) / 2;
+      let width = bounds.width
+      let height = bounds.height
+      let centerX = (bounds.minX + bounds.maxX) / 2
+      let centerY = (bounds.minY + bounds.maxY) / 2
 
       if (this.isSubcircuit) {
         const { padLeft, padRight, padTop, padBottom } =
-          this._resolvePcbPadding();
+          this._resolvePcbPadding()
 
-        width += padLeft + padRight;
-        height += padTop + padBottom;
-        centerX += (padRight - padLeft) / 2;
-        centerY += (padTop - padBottom) / 2;
+        width += padLeft + padRight
+        height += padTop + padBottom
+        centerX += (padRight - padLeft) / 2
+        centerY += (padTop - padBottom) / 2
       }
 
       // Preserve explicit positioning when pcbX/pcbY are set to prevent pcbPack interference
       const hasExplicitPositioning =
         this._parsedProps.pcbX !== undefined ||
-        this._parsedProps.pcbY !== undefined;
+        this._parsedProps.pcbY !== undefined
 
       const center = hasExplicitPositioning
         ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
             x: centerX,
             y: centerY,
           })
-        : { x: centerX, y: centerY };
+        : { x: centerX, y: centerY }
 
       db.pcb_group.update(this.pcb_group_id, {
         width: Number((props as any).width ?? width),
         height: Number((props as any).height ?? height),
         center,
-      });
+      })
     }
   }
 
-  unnamedElementCounter: Record<string, number> = {};
+  unnamedElementCounter: Record<string, number> = {}
 
   getNextAvailableName(elm: PrimitiveComponent): string {
-    const lowercaseName = elm.componentName.toLowerCase();
-    this.unnamedElementCounter[lowercaseName] ??= 1;
-    return `unnamed_${lowercaseName}${this.unnamedElementCounter[lowercaseName]++}`;
+    const lowercaseName = elm.componentName.toLowerCase()
+    this.unnamedElementCounter[lowercaseName] ??= 1
+    return `unnamed_${lowercaseName}${this.unnamedElementCounter[lowercaseName]++}`
   }
 
   _resolvePcbPadding(): {
-    padLeft: number;
-    padRight: number;
-    padTop: number;
-    padBottom: number;
+    padLeft: number
+    padRight: number
+    padTop: number
+    padBottom: number
   } {
-    const props = this._parsedProps as any;
-    const layout = props.pcbLayout;
+    const props = this._parsedProps as any
+    const layout = props.pcbLayout
 
     // Helper function to get a padding value from layout or props
     const getPaddingValue = (key: string): number | undefined => {
-      const layoutValue = layout?.[key] as number | undefined;
-      const propsValue = props[key] as number | undefined;
+      const layoutValue = layout?.[key] as number | undefined
+      const propsValue = props[key] as number | undefined
 
-      if (typeof layoutValue === "number") return layoutValue;
-      if (typeof propsValue === "number") return propsValue;
-      return undefined;
-    };
+      if (typeof layoutValue === "number") return layoutValue
+      if (typeof propsValue === "number") return propsValue
+      return undefined
+    }
 
-    const generalPadding = getPaddingValue("padding") ?? 0;
-    const paddingX = getPaddingValue("paddingX");
-    const paddingY = getPaddingValue("paddingY");
+    const generalPadding = getPaddingValue("padding") ?? 0
+    const paddingX = getPaddingValue("paddingX")
+    const paddingY = getPaddingValue("paddingY")
 
-    const padLeft =
-      getPaddingValue("paddingLeft") ?? paddingX ?? generalPadding;
+    const padLeft = getPaddingValue("paddingLeft") ?? paddingX ?? generalPadding
     const padRight =
-      getPaddingValue("paddingRight") ?? paddingX ?? generalPadding;
-    const padTop = getPaddingValue("paddingTop") ?? paddingY ?? generalPadding;
+      getPaddingValue("paddingRight") ?? paddingX ?? generalPadding
+    const padTop = getPaddingValue("paddingTop") ?? paddingY ?? generalPadding
     const padBottom =
-      getPaddingValue("paddingBottom") ?? paddingY ?? generalPadding;
+      getPaddingValue("paddingBottom") ?? paddingY ?? generalPadding
 
-    return { padLeft, padRight, padTop, padBottom };
+    return { padLeft, padRight, padTop, padBottom }
   }
 
   doInitialCreateTraceHintsFromProps(): void {
-    const { _parsedProps: props } = this;
-    const groupProps = props as any;
+    const { _parsedProps: props } = this
+    const groupProps = props as any
 
-    if (!this.isSubcircuit) return;
+    if (!this.isSubcircuit) return
 
-    const manualTraceHints = groupProps.manualEdits?.manual_trace_hints;
+    const manualTraceHints = groupProps.manualEdits?.manual_trace_hints
 
-    if (!manualTraceHints) return;
+    if (!manualTraceHints) return
 
     for (const manualTraceHint of manualTraceHints) {
       this.add(
@@ -426,70 +424,70 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           for: manualTraceHint.pcb_port_selector,
           offsets: manualTraceHint.offsets,
         }),
-      );
+      )
     }
   }
 
   _areChildSubcircuitsRouted(): boolean {
     const subcircuitChildren = this.selectAll("group").filter(
       (g: any) => g.isSubcircuit,
-    ) as Group[];
+    ) as Group[]
     for (const subcircuitChild of subcircuitChildren) {
       if (
         subcircuitChild._shouldRouteAsync() &&
         !subcircuitChild._asyncAutoroutingResult
       ) {
-        return false;
+        return false
       }
     }
-    return true;
+    return true
   }
 
   _shouldRouteAsync(): boolean {
-    const autorouter = this._getAutorouterConfig();
-    if (autorouter.groupMode === "sequential-trace") return false;
+    const autorouter = this._getAutorouterConfig()
+    if (autorouter.groupMode === "sequential-trace") return false
     // Local subcircuit mode should use async routing with the CapacityMeshAutorouter
-    if (autorouter.local && autorouter.groupMode === "subcircuit") return true;
+    if (autorouter.local && autorouter.groupMode === "subcircuit") return true
     // Remote autorouting always uses async
-    if (!autorouter.local) return true;
-    return false;
+    if (!autorouter.local) return true
+    return false
   }
 
   _hasTracesToRoute(): boolean {
-    const debug = Debug("tscircuit:core:_hasTracesToRoute");
-    const traces = this.selectAll("trace") as Trace[];
-    debug(`[${this.getString()}] has ${traces.length} traces to route`);
-    return traces.length > 0;
+    const debug = Debug("tscircuit:core:_hasTracesToRoute")
+    const traces = this.selectAll("trace") as Trace[]
+    debug(`[${this.getString()}] has ${traces.length} traces to route`)
+    return traces.length > 0
   }
 
   async _runEffectMakeHttpAutoroutingRequest(): Promise<void> {
-    const { db } = this.root!;
-    const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest");
-    const props = this._parsedProps as any;
+    const { db } = this.root!
+    const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
+    const props = this._parsedProps as any
 
-    const autorouterConfig = this._getAutorouterConfig();
+    const autorouterConfig = this._getAutorouterConfig()
 
     // Remote autorouting
-    const serverUrl = autorouterConfig.serverUrl!;
-    const serverMode = autorouterConfig.serverMode!;
+    const serverUrl = autorouterConfig.serverUrl!
+    const serverMode = autorouterConfig.serverMode!
 
     const fetchWithDebug = (url: string, options: RequestInit) => {
-      debug("fetching", url);
+      debug("fetching", url)
       if (options.headers) {
-        (options.headers as any)["Tscircuit-Core-Version"] =
-          this.root?.getCoreVersion()!;
+        ;(options.headers as any)["Tscircuit-Core-Version"] =
+          this.root?.getCoreVersion()!
       }
-      return fetch(url, options);
-    };
+      return fetch(url, options)
+    }
 
     // Only include source and pcb elements
     const pcbAndSourceCircuitJson = this.root!.db.toArray().filter(
       (element: any) => {
         return (
           element.type.startsWith("source_") || element.type.startsWith("pcb_")
-        );
+        )
       },
-    );
+    )
 
     if (serverMode === "solve-endpoint") {
       // Legacy solve endpoint mode
@@ -511,10 +509,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               "Content-Type": "application/json",
             },
           },
-        ).then((r) => r.json());
-        this._asyncAutoroutingResult = autorouting_result;
-        this._markDirty("PcbTraceRender");
-        return;
+        ).then((r) => r.json())
+        this._asyncAutoroutingResult = autorouting_result
+        this._markDirty("PcbTraceRender")
+        return
       }
 
       const { autorouting_result } = await fetchWithDebug(
@@ -529,10 +527,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             "Content-Type": "application/json",
           },
         },
-      ).then((r) => r.json());
-      this._asyncAutoroutingResult = autorouting_result;
-      this._markDirty("PcbTraceRender");
-      return;
+      ).then((r) => r.json())
+      this._asyncAutoroutingResult = autorouting_result
+      this._markDirty("PcbTraceRender")
+      return
     }
 
     const { autorouting_job } = await fetchWithDebug(
@@ -551,7 +549,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           "Content-Type": "application/json",
         },
       },
-    ).then((r) => r.json());
+    ).then((r) => r.json())
 
     // Poll until job is complete
     while (true) {
@@ -566,18 +564,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         },
       ).then((r) => r.json())) as {
         autorouting_job: {
-          autorouting_job_id: string;
-          is_running: boolean;
-          is_started: boolean;
-          is_finished: boolean;
-          has_error: boolean;
-          error: { message: string } | null;
-          autorouting_provider: "freerouting" | "tscircuit";
-          created_at: string;
-          started_at?: string;
-          finished_at?: string;
-        };
-      };
+          autorouting_job_id: string
+          is_running: boolean
+          is_started: boolean
+          is_finished: boolean
+          has_error: boolean
+          error: { message: string } | null
+          autorouting_provider: "freerouting" | "tscircuit"
+          created_at: string
+          started_at?: string
+          finished_at?: string
+        }
+      }
       if (job.is_finished) {
         const { autorouting_job_output } = await fetchWithDebug(
           `${serverUrl}/autorouting/jobs/get_output`,
@@ -588,29 +586,29 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             }),
             headers: { "Content-Type": "application/json" },
           },
-        ).then((r) => r.json());
+        ).then((r) => r.json())
 
         this._asyncAutoroutingResult = {
           output_pcb_traces: autorouting_job_output.output_pcb_traces,
-        };
-        this._markDirty("PcbTraceRender");
-        break;
+        }
+        this._markDirty("PcbTraceRender")
+        break
       }
 
       if (job.has_error) {
         const err = new AutorouterError(
           `Autorouting job failed: ${JSON.stringify(job.error)}`,
-        );
+        )
         db.pcb_autorouting_error.insert({
           pcb_error_id: autorouting_job.autorouting_job_id,
           error_type: "pcb_autorouting_error",
           message: err.message,
-        });
-        throw err;
+        })
+        throw err
       }
 
       // Wait before polling again
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100))
     }
   }
 
@@ -618,91 +616,91 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    * Run local autorouting using the CapacityMeshAutorouter
    */
   async _runLocalAutorouting(): Promise<void> {
-    const { db } = this.root!;
-    const props = this._parsedProps as any;
-    const debug = Debug("tscircuit:core:_runLocalAutorouting");
-    debug(`[${this.getString()}] starting local autorouting`);
-    const autorouterConfig = this._getAutorouterConfig();
+    const { db } = this.root!
+    const props = this._parsedProps as any
+    const debug = Debug("tscircuit:core:_runLocalAutorouting")
+    debug(`[${this.getString()}] starting local autorouting`)
+    const autorouterConfig = this._getAutorouterConfig()
 
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       db,
       minTraceWidth: props.autorouter?.minTraceWidth ?? 0.15,
       subcircuit_id: this.subcircuit_id,
-    });
+    })
 
     if (debug.enabled) {
       const graphicsObject = convertSrjToGraphicsObject(
         simpleRouteJson as any,
-      ) as GraphicsObject;
-      graphicsObject.title = `autorouting-${props.name}`;
-      (global as any).debugGraphics?.push(graphicsObject);
+      ) as GraphicsObject
+      graphicsObject.title = `autorouting-${props.name}`
+      ;(global as any).debugGraphics?.push(graphicsObject)
     }
 
     this.root?.emit("autorouting:start", {
       subcircuit_id: this.subcircuit_id,
       componentDisplayName: this.getString(),
       simpleRouteJson,
-    });
+    })
 
     // Create the autorouter instance
-    let autorouter: GenericLocalAutorouter;
+    let autorouter: GenericLocalAutorouter
     if (autorouterConfig.algorithmFn) {
-      autorouter = await autorouterConfig.algorithmFn(simpleRouteJson);
+      autorouter = await autorouterConfig.algorithmFn(simpleRouteJson)
     } else {
       autorouter = new CapacityMeshAutorouter(simpleRouteJson, {
         // Optional configuration parameters
         capacityDepth: props.autorouter?.capacityDepth,
         targetMinCapacity: props.autorouter?.targetMinCapacity,
-      });
+      })
     }
 
     // Create a promise that will resolve when autorouting is complete
     const routingPromise = new Promise<SimplifiedPcbTrace[]>(
       (resolve, reject) => {
         autorouter.on("complete", (event: any) => {
-          debug(`[${this.getString()}] local autorouting complete`);
-          resolve(event.traces);
-        });
+          debug(`[${this.getString()}] local autorouting complete`)
+          resolve(event.traces)
+        })
 
         autorouter.on("error", (event: any) => {
           debug(
             `[${this.getString()}] local autorouting error: ${event.error.message}`,
-          );
-          reject(event.error);
-        });
+          )
+          reject(event.error)
+        })
       },
-    );
+    )
 
     autorouter.on("progress", (event: any) => {
       this.root?.emit("autorouting:progress", {
         subcircuit_id: this.subcircuit_id,
         componentDisplayName: this.getString(),
         ...event,
-      });
-    });
+      })
+    })
 
     // Start the autorouting process
-    autorouter.start();
+    autorouter.start()
 
     try {
       // Wait for the autorouting to complete
-      const traces = await routingPromise;
+      const traces = await routingPromise
 
       // Store the result
       this._asyncAutoroutingResult = {
         output_pcb_traces: traces as any,
-      };
+      }
 
       // Mark the component as needing to re-render the PCB traces
-      this._markDirty("PcbTraceRender");
+      this._markDirty("PcbTraceRender")
     } catch (error) {
-      const { db } = this.root!;
+      const { db } = this.root!
       // Record the error
       db.pcb_autorouting_error.insert({
         pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
         error_type: "pcb_autorouting_error",
         message: error instanceof Error ? error.message : String(error),
-      });
+      })
 
       this.root?.emit("autorouting:error", {
         subcircuit_id: this.subcircuit_id,
@@ -711,58 +709,58 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           message: error instanceof Error ? error.message : String(error),
         },
         simpleRouteJson,
-      });
+      })
 
-      throw error;
+      throw error
     } finally {
       // Ensure the autorouter is stopped
-      autorouter.stop();
+      autorouter.stop()
     }
   }
 
   _startAsyncAutorouting(): void {
-    if (this._hasStartedAsyncAutorouting) return;
-    this._hasStartedAsyncAutorouting = true;
+    if (this._hasStartedAsyncAutorouting) return
+    this._hasStartedAsyncAutorouting = true
     if (this._getAutorouterConfig().local) {
       this._queueAsyncEffect("capacity-mesh-autorouting", async () =>
         this._runLocalAutorouting(),
-      );
+      )
     } else {
       this._queueAsyncEffect("make-http-autorouting-request", async () =>
         this._runEffectMakeHttpAutoroutingRequest(),
-      );
+      )
     }
   }
 
   doInitialPcbTraceRender(): void {
-    const debug = Debug("tscircuit:core:doInitialPcbTraceRender");
-    if (!this.isSubcircuit) return;
-    if (this.root?.pcbDisabled) return;
-    if (this.getInheritedProperty("routingDisabled")) return;
-    if (this._shouldUseTraceByTraceRouting()) return;
+    const debug = Debug("tscircuit:core:doInitialPcbTraceRender")
+    if (!this.isSubcircuit) return
+    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("routingDisabled")) return
+    if (this._shouldUseTraceByTraceRouting()) return
 
     if (!this._areChildSubcircuitsRouted()) {
       debug(
         `[${this.getString()}] child subcircuits are not routed, skipping async autorouting until subcircuits routed`,
-      );
-      return;
+      )
+      return
     }
 
     debug(
       `[${this.getString()}] no child subcircuits to wait for, initiating async routing`,
-    );
-    if (!this._hasTracesToRoute()) return;
-    this._startAsyncAutorouting();
+    )
+    if (!this._hasTracesToRoute()) return
+    this._startAsyncAutorouting()
   }
 
   doInitialSchematicTraceRender(): void {
-    Group_doInitialSchematicTraceRender(this as any);
+    Group_doInitialSchematicTraceRender(this as any)
   }
 
   updatePcbTraceRender(): void {
-    const debug = Debug("tscircuit:core:updatePcbTraceRender");
-    debug(`[${this.getString()}] updating...`);
-    if (!this.isSubcircuit) return;
+    const debug = Debug("tscircuit:core:updatePcbTraceRender")
+    debug(`[${this.getString()}] updating...`)
+    if (!this.isSubcircuit) return
     if (
       this._shouldRouteAsync() &&
       this._hasTracesToRoute() &&
@@ -771,38 +769,38 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (this._areChildSubcircuitsRouted()) {
         debug(
           `[${this.getString()}] child subcircuits are now routed, starting async autorouting`,
-        );
-        this._startAsyncAutorouting();
+        )
+        this._startAsyncAutorouting()
       }
-      return;
+      return
     }
 
-    if (!this._asyncAutoroutingResult) return;
-    if (this._shouldUseTraceByTraceRouting()) return;
+    if (!this._asyncAutoroutingResult) return
+    if (this._shouldUseTraceByTraceRouting()) return
 
-    const { db } = this.root!;
+    const { db } = this.root!
 
     if (this._asyncAutoroutingResult.output_simple_route_json) {
-      debug(`[${this.getString()}] updating PCB traces from simple route json`);
-      this._updatePcbTraceRenderFromSimpleRouteJson();
-      return;
+      debug(`[${this.getString()}] updating PCB traces from simple route json`)
+      this._updatePcbTraceRenderFromSimpleRouteJson()
+      return
     }
 
     if (this._asyncAutoroutingResult.output_pcb_traces) {
       debug(
         `[${this.getString()}] updating PCB traces from ${this._asyncAutoroutingResult.output_pcb_traces.length} traces`,
-      );
-      this._updatePcbTraceRenderFromPcbTraces();
-      return;
+      )
+      this._updatePcbTraceRenderFromPcbTraces()
+      return
     }
   }
 
   _updatePcbTraceRenderFromSimpleRouteJson(): void {
-    const { db } = this.root!;
+    const { db } = this.root!
     const { traces: routedTraces } =
-      this._asyncAutoroutingResult!.output_simple_route_json!;
+      this._asyncAutoroutingResult!.output_simple_route_json!
 
-    if (!routedTraces) return;
+    if (!routedTraces) return
 
     // Apply each routed trace to the corresponding circuit trace
     for (const routedTrace of routedTraces) {
@@ -810,34 +808,34 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const pcb_trace = db.pcb_trace.insert({
         subcircuit_id: this.subcircuit_id!,
         route: routedTrace.route as any,
-      });
+      })
     }
   }
 
   _updatePcbTraceRenderFromPcbTraces(): void {
-    const { output_pcb_traces } = this._asyncAutoroutingResult!;
-    if (!output_pcb_traces) return;
+    const { output_pcb_traces } = this._asyncAutoroutingResult!
+    if (!output_pcb_traces) return
 
-    const { db } = this.root!;
+    const { db } = this.root!
 
     // Apply each routed trace to the corresponding circuit trace
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
-      if (pcb_trace.type !== "pcb_trace") continue;
-      (pcb_trace as any).subcircuit_id = this.subcircuit_id!;
+      if (pcb_trace.type !== "pcb_trace") continue
+      ;(pcb_trace as any).subcircuit_id = this.subcircuit_id!
 
       if ((pcb_trace as any).connection_name) {
-        const sourceTraceId = (pcb_trace as any).connection_name;
-        (pcb_trace as any).source_trace_id = sourceTraceId;
+        const sourceTraceId = (pcb_trace as any).connection_name
+        ;(pcb_trace as any).source_trace_id = sourceTraceId
       }
 
-      db.pcb_trace.insert(pcb_trace);
+      db.pcb_trace.insert(pcb_trace)
     }
 
     // Create vias for layer transitions
     for (const pcb_trace of output_pcb_traces) {
       if (pcb_trace.type === "pcb_via") {
-        continue;
+        continue
       }
       if (pcb_trace.type === "pcb_trace") {
         for (const point of pcb_trace.route) {
@@ -854,7 +852,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               ],
               from_layer: point.from_layer as LayerRef,
               to_layer: point.to_layer as LayerRef,
-            });
+            })
           }
         }
       }
@@ -862,8 +860,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicComponentRender(): void {
-    if (this.root?.schematicDisabled) return;
-    const { db } = this.root!;
+    if (this.root?.schematicDisabled) return
+    const { db } = this.root!
     const schematic_group = db.schematic_group.insert({
       is_subcircuit: this.isSubcircuit,
       subcircuit_id: this.subcircuit_id!,
@@ -873,199 +871,199 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       height: 0,
       schematic_component_ids: [],
       source_group_id: this.source_group_id!,
-    });
-    this.schematic_group_id = schematic_group.schematic_group_id;
+    })
+    this.schematic_group_id = schematic_group.schematic_group_id
 
     for (const child of this.children) {
       if ((child as any).schematic_component_id) {
         db.schematic_component.update((child as any).schematic_component_id, {
           schematic_group_id: schematic_group.schematic_group_id,
-        });
+        })
       }
     }
   }
 
   _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "relative" {
-    const props = this._parsedProps as any;
-    if (props.schLayout?.layoutMode === "none") return "relative";
-    if (props.schLayout?.layoutMode === "relative") return "relative";
-    if (props.schLayout?.matchAdapt) return "match-adapt";
-    if (props.schLayout?.flex) return "flex";
-    if (props.schLayout?.grid) return "grid";
-    if (props.schMatchAdapt) return "match-adapt";
-    if (props.schFlex) return "flex";
-    if (props.schGrid) return "grid";
-    if (props.matchAdapt) return "match-adapt";
-    if (props.flex) return "flex";
-    if (props.grid) return "grid";
-    if (props.relative) return "relative";
-    if (props.schRelative) return "relative";
+    const props = this._parsedProps as any
+    if (props.schLayout?.layoutMode === "none") return "relative"
+    if (props.schLayout?.layoutMode === "relative") return "relative"
+    if (props.schLayout?.matchAdapt) return "match-adapt"
+    if (props.schLayout?.flex) return "flex"
+    if (props.schLayout?.grid) return "grid"
+    if (props.schMatchAdapt) return "match-adapt"
+    if (props.schFlex) return "flex"
+    if (props.schGrid) return "grid"
+    if (props.matchAdapt) return "match-adapt"
+    if (props.flex) return "flex"
+    if (props.grid) return "grid"
+    if (props.relative) return "relative"
+    if (props.schRelative) return "relative"
 
     const anyChildHasSchCoords = this.children.some((child: any) => {
-      const cProps = child._parsedProps;
-      return cProps?.schX !== undefined || cProps?.schY !== undefined;
-    });
+      const cProps = child._parsedProps
+      return cProps?.schX !== undefined || cProps?.schY !== undefined
+    })
     const hasManualEdits =
-      (props.manualEdits?.schematic_placements?.length ?? 0) > 0;
+      (props.manualEdits?.schematic_placements?.length ?? 0) > 0
 
-    if (!anyChildHasSchCoords && !hasManualEdits) return "match-adapt";
-    return "relative";
+    if (!anyChildHasSchCoords && !hasManualEdits) return "match-adapt"
+    return "relative"
   }
 
   doInitialSchematicLayout(): void {
-    const schematicLayoutMode = this._getSchematicLayoutMode();
+    const schematicLayoutMode = this._getSchematicLayoutMode()
 
     if (schematicLayoutMode === "match-adapt") {
-      this._doInitialSchematicLayoutMatchpack();
+      this._doInitialSchematicLayoutMatchpack()
     }
     if (schematicLayoutMode === "grid") {
-      this._doInitialSchematicLayoutGrid();
+      this._doInitialSchematicLayoutGrid()
     }
     if (schematicLayoutMode === "flex") {
-      this._doInitialSchematicLayoutFlex();
+      this._doInitialSchematicLayoutFlex()
     }
 
-    this._insertSchematicBorder();
+    this._insertSchematicBorder()
   }
 
   _doInitialSchematicLayoutMatchAdapt(): void {
-    Group_doInitialSchematicLayoutMatchAdapt(this as any);
+    Group_doInitialSchematicLayoutMatchAdapt(this as any)
   }
 
   _doInitialSchematicLayoutMatchpack(): void {
-    Group_doInitialSchematicLayoutMatchPack(this as any);
+    Group_doInitialSchematicLayoutMatchPack(this as any)
   }
 
   _doInitialSchematicLayoutGrid(): void {
-    Group_doInitialSchematicLayoutGrid(this);
+    Group_doInitialSchematicLayoutGrid(this)
   }
 
   _doInitialSchematicLayoutFlex(): void {
-    Group_doInitialSchematicLayoutFlex(this as any);
+    Group_doInitialSchematicLayoutFlex(this as any)
   }
 
   _getPcbLayoutMode(): "grid" | "flex" | "match-adapt" | "pack" | "none" {
-    const props = this._parsedProps as any;
-    if (props.pcbRelative) return "none";
-    if (props.pcbLayout?.matchAdapt) return "match-adapt";
-    if (props.pcbLayout?.flex) return "flex";
-    if (props.pcbLayout?.grid) return "grid";
-    if (props.pcbLayout?.pack) return "pack";
+    const props = this._parsedProps as any
+    if (props.pcbRelative) return "none"
+    if (props.pcbLayout?.matchAdapt) return "match-adapt"
+    if (props.pcbLayout?.flex) return "flex"
+    if (props.pcbLayout?.grid) return "grid"
+    if (props.pcbLayout?.pack) return "pack"
 
-    if (props.pcbFlex) return "flex";
-    if (props.pcbGrid) return "grid";
-    if (props.pcbPack) return "pack";
-    if (props.pack) return "pack";
-    if (props.matchAdapt) return "match-adapt";
+    if (props.pcbFlex) return "flex"
+    if (props.pcbGrid) return "grid"
+    if (props.pcbPack) return "pack"
+    if (props.pack) return "pack"
+    if (props.matchAdapt) return "match-adapt"
 
-    if (props.flex) return "flex";
-    if (props.grid) return "grid";
+    if (props.flex) return "flex"
+    if (props.grid) return "grid"
 
-    const groupHasCoords = props.pcbX !== undefined || props.pcbY !== undefined;
-    const hasManualEdits = (props.manualEdits?.pcb_placements?.length ?? 0) > 0;
+    const groupHasCoords = props.pcbX !== undefined || props.pcbY !== undefined
+    const hasManualEdits = (props.manualEdits?.pcb_placements?.length ?? 0) > 0
 
     const anyDirectChildHasPcbCoords = this.children.some((child: any) => {
-      const childProps = child._parsedProps;
-      return childProps?.pcbX !== undefined || childProps?.pcbY !== undefined;
-    });
-    if (anyDirectChildHasPcbCoords) return "none";
+      const childProps = child._parsedProps
+      return childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
+    })
+    if (anyDirectChildHasPcbCoords) return "none"
 
     const unpositionedDirectChildrenCount = this.children.reduce(
       (count: number, child: any) => {
-        const childProps = child._parsedProps;
+        const childProps = child._parsedProps
         const hasCoords =
-          childProps?.pcbX !== undefined || childProps?.pcbY !== undefined;
-        return count + (hasCoords ? 0 : 1);
+          childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
+        return count + (hasCoords ? 0 : 1)
       },
       0,
-    );
+    )
 
     if (
       !groupHasCoords &&
       !hasManualEdits &&
       unpositionedDirectChildrenCount > 1
     )
-      return "pack";
-    return "none";
+      return "pack"
+    return "none"
   }
 
   doInitialPcbLayout(): void {
-    const pcbLayoutMode = this._getPcbLayoutMode();
+    const pcbLayoutMode = this._getPcbLayoutMode()
 
     if (pcbLayoutMode === "grid") {
-      this._doInitialPcbLayoutGrid();
+      this._doInitialPcbLayoutGrid()
     } else if (pcbLayoutMode === "pack") {
-      this._doInitialPcbLayoutPack();
+      this._doInitialPcbLayoutPack()
     } else if (pcbLayoutMode === "flex") {
-      this._doInitialPcbLayoutFlex();
+      this._doInitialPcbLayoutFlex()
     }
   }
 
   _doInitialPcbLayoutGrid(): void {
-    Group_doInitialPcbLayoutGrid(this);
+    Group_doInitialPcbLayoutGrid(this)
   }
 
   _doInitialPcbLayoutPack(): void {
-    Group_doInitialPcbLayoutPack(this as any);
+    Group_doInitialPcbLayoutPack(this as any)
   }
 
   _doInitialPcbLayoutFlex(): void {
-    Group_doInitialPcbLayoutFlex(this as any);
+    Group_doInitialPcbLayoutFlex(this as any)
   }
 
   _insertSchematicBorder(): void {
-    if (this.root?.schematicDisabled) return;
-    const { db } = this.root!;
-    const props = this._parsedProps as any;
+    if (this.root?.schematicDisabled) return
+    const { db } = this.root!
+    const props = this._parsedProps as any
 
-    if (!props.border) return;
+    if (!props.border) return
 
     let width: number | undefined =
-      typeof props.schWidth === "number" ? props.schWidth : undefined;
+      typeof props.schWidth === "number" ? props.schWidth : undefined
     let height: number | undefined =
-      typeof props.schHeight === "number" ? props.schHeight : undefined;
+      typeof props.schHeight === "number" ? props.schHeight : undefined
 
     const paddingGeneral =
-      typeof props.schPadding === "number" ? props.schPadding : 0;
+      typeof props.schPadding === "number" ? props.schPadding : 0
     const paddingLeft =
       typeof props.schPaddingLeft === "number"
         ? props.schPaddingLeft
-        : paddingGeneral;
+        : paddingGeneral
     const paddingRight =
       typeof props.schPaddingRight === "number"
         ? props.schPaddingRight
-        : paddingGeneral;
+        : paddingGeneral
     const paddingTop =
       typeof props.schPaddingTop === "number"
         ? props.schPaddingTop
-        : paddingGeneral;
+        : paddingGeneral
     const paddingBottom =
       typeof props.schPaddingBottom === "number"
         ? props.schPaddingBottom
-        : paddingGeneral;
+        : paddingGeneral
 
     const schematicGroup = this.schematic_group_id
       ? db.schematic_group.get(this.schematic_group_id)
-      : null;
+      : null
     if (schematicGroup) {
       if (width === undefined && typeof schematicGroup.width === "number") {
-        width = schematicGroup.width;
+        width = schematicGroup.width
       }
       if (height === undefined && typeof schematicGroup.height === "number") {
-        height = schematicGroup.height;
+        height = schematicGroup.height
       }
     }
 
-    if (width === undefined || height === undefined) return;
+    if (width === undefined || height === undefined) return
 
     const center =
-      schematicGroup?.center ?? this._getGlobalSchematicPositionBeforeLayout();
+      schematicGroup?.center ?? this._getGlobalSchematicPositionBeforeLayout()
 
-    const left = center.x - width / 2 - paddingLeft;
-    const bottom = center.y - height / 2 - paddingBottom;
+    const left = center.x - width / 2 - paddingLeft
+    const bottom = center.y - height / 2 - paddingBottom
 
-    const finalWidth = width + paddingLeft + paddingRight;
-    const finalHeight = height + paddingTop + paddingBottom;
+    const finalWidth = width + paddingLeft + paddingRight
+    const finalHeight = height + paddingTop + paddingBottom
 
     db.schematic_box.insert({
       width: finalWidth,
@@ -1073,49 +1071,46 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       x: left,
       y: bottom,
       is_dashed: props.border?.dashed ?? false,
-    });
+    })
   }
 
   _getAutorouterConfig(): AutorouterConfig {
     const autorouter =
       (this._parsedProps as any).autorouter ||
-      this.getInheritedProperty("autorouter");
-    return getPresetAutoroutingConfig(autorouter);
+      this.getInheritedProperty("autorouter")
+    return getPresetAutoroutingConfig(autorouter)
   }
 
   _getSubcircuitLayerCount(): number {
-    const layers = this.getInheritedProperty("layers");
-    return typeof layers === "number" ? layers : 2;
+    const layers = this.getInheritedProperty("layers")
+    return typeof layers === "number" ? layers : 2
   }
 
   _shouldUseTraceByTraceRouting(): boolean {
-    const autorouter = this._getAutorouterConfig();
-    return autorouter.groupMode === "sequential-trace";
+    const autorouter = this._getAutorouterConfig()
+    return autorouter.groupMode === "sequential-trace"
   }
 
   doInitialPcbDesignRuleChecks(): void {
-    if (this.root?.pcbDisabled) return;
-    if (this.getInheritedProperty("routingDisabled")) return;
-    const { db } = this.root!;
+    if (this.root?.pcbDisabled) return
+    if (this.getInheritedProperty("routingDisabled")) return
+    const { db } = this.root!
 
     if (this.isSubcircuit) {
-      const subcircuitComponentsByName = new Map<
-        string,
-        PrimitiveComponent[]
-      >();
+      const subcircuitComponentsByName = new Map<string, PrimitiveComponent[]>()
 
       for (const child of this.children) {
-        if ((child as any).isSubcircuit) continue;
+        if ((child as any).isSubcircuit) continue
 
         if ((child as any)._parsedProps.name) {
           const components =
             subcircuitComponentsByName.get((child as any)._parsedProps.name) ||
-            [];
-          components.push(child as PrimitiveComponent);
+            []
+          components.push(child as PrimitiveComponent)
           subcircuitComponentsByName.set(
             (child as any)._parsedProps.name,
             components,
-          );
+          )
         }
       }
 
@@ -1130,43 +1125,43 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               .map((c: any) => c.pcb_component_id!)
               .filter(Boolean),
             pcb_port_ids: [],
-          });
+          })
         }
       }
     }
   }
 
   doInitialSchematicReplaceNetLabelsWithSymbols(): void {
-    if (this.root?.schematicDisabled) return;
-    if (!this.isSubcircuit) return;
-    const { db } = this.root!;
+    if (this.root?.schematicDisabled) return
+    if (!this.isSubcircuit) return
+    const { db } = this.root!
 
-    const subtree = db;
+    const subtree = db
 
     for (const nl of subtree.schematic_net_label.list()) {
-      const net = subtree.source_net.get(nl.source_net_id);
-      const text = nl.text || net?.name || "";
+      const net = subtree.source_net.get(nl.source_net_id)
+      const text = nl.text || net?.name || ""
 
       if (nl.anchor_side === "top" && /^gnd/i.test(text)) {
         subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "rail_down",
-        });
-        continue;
+        })
+        continue
       }
 
       if (nl.anchor_side === "bottom" && /^v/i.test(text)) {
         subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "rail_up",
-        });
+        })
       }
     }
   }
 
   _getMinimumFlexContainerSize() {
-    return super._getMinimumFlexContainerSize();
+    return super._getMinimumFlexContainerSize()
   }
 
   _repositionOnPcb(position: { x: number; y: number }) {
-    return super._repositionOnPcb(position);
+    return super._repositionOnPcb(position)
   }
 }

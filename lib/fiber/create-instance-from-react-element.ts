@@ -7,22 +7,22 @@
  *
  *
  */
-import React from "react";
-import ReactReconciler, { type HostConfig } from "react-reconciler";
-import { DefaultEventPriority } from "react-reconciler/constants.js";
-import { type Renderable } from "lib/components/base-components/Renderable";
-import { type NormalComponent } from "lib/components/base-components/NormalComponent";
-import type { ReactElement, ReactNode } from "react";
-import { catalogue, type Instance } from "./catalogue";
-import { InvalidProps } from "lib/errors/InvalidProps";
-import { identity } from "transformation-matrix";
-import type { RootCircuit } from "lib/RootCircuit";
-import { createErrorPlaceholderComponent } from "lib/components/primitive-components/ErrorPlaceholder";
+import React from "react"
+import ReactReconciler, { type HostConfig } from "react-reconciler"
+import { DefaultEventPriority } from "react-reconciler/constants.js"
+import { type Renderable } from "lib/components/base-components/Renderable"
+import { type NormalComponent } from "lib/components/base-components/NormalComponent"
+import type { ReactElement, ReactNode } from "react"
+import { catalogue, type Instance } from "./catalogue"
+import { InvalidProps } from "lib/errors/InvalidProps"
+import { identity } from "transformation-matrix"
+import type { RootCircuit } from "lib/RootCircuit"
+import { createErrorPlaceholderComponent } from "lib/components/primitive-components/ErrorPlaceholder"
 
 export type ReactSubtree = {
-  element: ReactElement; // TODO rename to "reactElement"
-  component: NormalComponent;
-};
+  element: ReactElement // TODO rename to "reactElement"
+  component: NormalComponent
+}
 
 // biome-ignore lint/suspicious/noEmptyInterface: TODO when we have local state
 interface LocalState {}
@@ -31,12 +31,12 @@ export function prepare<T extends Renderable>(
   object: T,
   state?: Partial<LocalState>,
 ): Instance {
-  const instance = object as unknown as Instance;
+  const instance = object as unknown as Instance
   instance.__tsci = {
     ...state,
-  };
+  }
 
-  return object;
+  return object
 }
 
 // Define the host config
@@ -57,29 +57,29 @@ const hostConfig: HostConfig<
 > = {
   supportsMutation: true,
   createInstance(type: string, props: any) {
-    const target = catalogue[type];
+    const target = catalogue[type]
 
     if (!target) {
       if (Object.keys(catalogue).length === 0) {
         throw new Error(
           "No components registered in catalogue, did you forget to import lib/register-catalogue in your test file?",
-        );
+        )
       }
       throw new Error(
         `Unsupported component type "${type}". No element with this name is registered in the @tscircuit/core catalogue. ` +
           `Check for typos or see https://docs.tscircuit.com/category/built-in-elements for a list of valid components. ` +
           `To add your own component, see docs/CREATING_NEW_COMPONENTS.md`,
-      );
+      )
     }
 
     try {
-      const instance = prepare(new target(props) as any, {});
-      return instance;
+      const instance = prepare(new target(props) as any, {})
+      return instance
     } catch (error: any) {
       return createErrorPlaceholderComponent(
         { ...props, componentType: type },
         error,
-      );
+      )
     }
   },
   createTextInstance(text: string) {
@@ -88,34 +88,34 @@ const hostConfig: HostConfig<
     // (which should be ignored) and meaningful text which should cause an
     // error. Returning an object mirrors the structure of component instances
     // created elsewhere in this reconciler.
-    return { __text: text };
+    return { __text: text }
   },
   appendInitialChild(parentInstance: any, child: any) {
-    parentInstance.add(child);
+    parentInstance.add(child)
   },
   appendChild(parentInstance: any, child: any) {
-    parentInstance.add(child);
+    parentInstance.add(child)
   },
   appendChildToContainer(container: any, child: any) {
-    container.add(child);
+    container.add(child)
   },
   finalizeInitialChildren() {
-    return false;
+    return false
   },
   prepareUpdate() {
-    return null;
+    return null
   },
   shouldSetTextContent() {
-    return false;
+    return false
   },
   getRootHostContext() {
-    return {};
+    return {}
   },
   getChildHostContext() {
-    return {};
+    return {}
   },
   prepareForCommit() {
-    return null;
+    return null
   },
   resetAfterCommit() {},
   commitMount() {},
@@ -124,36 +124,36 @@ const hostConfig: HostConfig<
   clearContainer() {},
   supportsPersistence: false,
   getPublicInstance(instance: any) {
-    return instance;
+    return instance
   },
   preparePortalMount(containerInfo: any): void {
-    throw new Error("Function not implemented.");
+    throw new Error("Function not implemented.")
   },
   scheduleTimeout(fn: (...args: unknown[]) => unknown, delay?: number) {
-    throw new Error("Function not implemented.");
+    throw new Error("Function not implemented.")
   },
   cancelTimeout(id: any): void {
-    throw new Error("Function not implemented.");
+    throw new Error("Function not implemented.")
   },
   noTimeout: undefined,
   isPrimaryRenderer: false,
   getInstanceFromNode(node: any): ReactReconciler.Fiber | null | undefined {
-    throw new Error("Function not implemented.");
+    throw new Error("Function not implemented.")
   },
   beforeActiveInstanceBlur(): void {
-    throw new Error("Function not implemented.");
+    throw new Error("Function not implemented.")
   },
   afterActiveInstanceBlur(): void {
-    throw new Error("Function not implemented.");
+    throw new Error("Function not implemented.")
   },
   prepareScopeUpdate: (scopeInstance: any, instance: any): void => {
-    throw new Error("Function not implemented.");
+    throw new Error("Function not implemented.")
   },
   getInstanceFromScope: (scopeInstance: any) => {
-    throw new Error("Function not implemented.");
+    throw new Error("Function not implemented.")
   },
   detachDeletedInstance: (node: any): void => {
-    throw new Error("Function not implemented.");
+    throw new Error("Function not implemented.")
   },
 
   // https://github.com/pmndrs/react-three-fiber/pull/2360#discussion_r916356874
@@ -167,9 +167,9 @@ const hostConfig: HostConfig<
   maySuspendCommit: () => false,
 
   supportsHydration: false,
-};
+}
 
-const reconciler = ReactReconciler(hostConfig as any);
+const reconciler = ReactReconciler(hostConfig as any)
 
 export const createInstanceFromReactElement = (
   reactElm: React.JSX.Element,
@@ -180,14 +180,14 @@ export const createInstanceFromReactElement = (
       name: "$root",
     },
     add(instance: any) {
-      instance.parent = this;
-      this.children.push(instance);
+      instance.parent = this
+      this.children.push(instance)
     },
     computePcbGlobalTransform() {
-      return identity();
+      return identity()
     },
-  };
-  const containerErrors: Error[] = [];
+  }
+  const containerErrors: Error[] = []
   const container = reconciler.createContainer(
     // TODO Replace with store like react-three-fiber
     // https://github.com/pmndrs/react-three-fiber/blob/a457290856f57741bf8beef4f6ff9dbf4879c0a5/packages/fiber/src/core/index.tsx#L172
@@ -199,28 +199,28 @@ export const createInstanceFromReactElement = (
     null,
     "tsci",
     (error: Error) => {
-      console.log("Error in createContainer");
-      console.error(error);
-      containerErrors.push(error);
+      console.log("Error in createContainer")
+      console.error(error)
+      containerErrors.push(error)
     },
     null,
-  );
+  )
 
   // @ts-expect-error
   // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
-  reconciler.updateContainerSync(reactElm, container, null, () => {});
+  reconciler.updateContainerSync(reactElm, container, null, () => {})
   // @ts-expect-error
   // https://github.com/diegomura/react-pdf/blob/fabecc56727dfb6d590a3fa1e11f50250ecbbea1/packages/reconciler/src/reconciler-31.js#L78
-  reconciler.flushSyncWork();
+  reconciler.flushSyncWork()
 
   // Don't throw here if you want to avoid synchronous errors
   if (containerErrors.length > 0) {
-    throw containerErrors[0];
+    throw containerErrors[0]
   }
 
   const rootInstance = reconciler.getPublicRootInstance(
     container,
-  ) as NormalComponent;
-  if (rootInstance) return rootInstance;
-  return rootContainer.children[0] as NormalComponent;
-};
+  ) as NormalComponent
+  if (rootInstance) return rootInstance
+  return rootContainer.children[0] as NormalComponent
+}

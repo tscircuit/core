@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { RootCircuit } from "lib/RootCircuit";
-import { useRenderedCircuit } from "lib/hooks/use-rendered-circuit";
-import React from "react";
-import { injectTestHookSystem } from "tests/fixtures/inject-test-hook-system";
+import { test, expect } from "bun:test"
+import { RootCircuit } from "lib/RootCircuit"
+import { useRenderedCircuit } from "lib/hooks/use-rendered-circuit"
+import React from "react"
+import { injectTestHookSystem } from "tests/fixtures/inject-test-hook-system"
 
 test("useRenderedCircuit hook", async () => {
   const { runEffects, renderHook } = injectTestHookSystem(() =>
@@ -11,19 +11,19 @@ test("useRenderedCircuit hook", async () => {
         <resistor name="R1" resistance="10k" footprint="0402" />
       </board>,
     ),
-  );
+  )
 
-  const initialRender = renderHook();
-  runEffects();
+  const initialRender = renderHook()
+  runEffects()
 
-  expect(initialRender.isLoading).toBe(true);
+  expect(initialRender.isLoading).toBe(true)
 
   // Allow the setTimeout in useRenderedCircuit to run
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  await new Promise((resolve) => setTimeout(resolve, 10))
 
-  const secondRender = renderHook();
+  const secondRender = renderHook()
 
-  expect(secondRender.isLoading).toBe(false);
-  expect(secondRender.circuitJson).toBeArray();
-  expect(secondRender.circuit!.db.pcb_component.list().length).toBe(1);
-});
+  expect(secondRender.isLoading).toBe(false)
+  expect(secondRender.circuitJson).toBeArray()
+  expect(secondRender.circuit!.db.pcb_component.list().length).toBe(1)
+})

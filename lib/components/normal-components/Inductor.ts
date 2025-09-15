@@ -1,19 +1,19 @@
-import { inductorProps } from "@tscircuit/props";
-import type { SourceSimpleInductor } from "circuit-json";
+import { inductorProps } from "@tscircuit/props"
+import type { SourceSimpleInductor } from "circuit-json"
 import {
   FTYPE,
   type BaseSymbolName,
   type PassivePorts,
-} from "lib/utils/constants";
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent";
-import { Port } from "../primitive-components/Port";
-import { formatSiUnit } from "format-si-unit";
+} from "lib/utils/constants"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { Port } from "../primitive-components/Port"
+import { formatSiUnit } from "format-si-unit"
 
 export class Inductor extends NormalComponent<
   typeof inductorProps,
   PassivePorts
 > {
-  _adjustSilkscreenTextAutomatically = true;
+  _adjustSilkscreenTextAutomatically = true
 
   get config() {
     return {
@@ -22,11 +22,11 @@ export class Inductor extends NormalComponent<
         ("inductor" as BaseSymbolName)) as BaseSymbolName,
       zodProps: inductorProps,
       sourceFtype: FTYPE.simple_inductor,
-    };
+    }
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    return `${formatSiUnit(this._parsedProps.inductance)}H`;
+    return `${formatSiUnit(this._parsedProps.inductance)}H`
   }
 
   initPorts() {
@@ -35,19 +35,19 @@ export class Inductor extends NormalComponent<
         pin1: ["anode", "pos", "left"],
         pin2: ["cathode", "neg", "right"],
       },
-    });
+    })
   }
 
   doInitialSourceRender() {
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
+    const { db } = this.root!
+    const { _parsedProps: props } = this
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_inductor,
       inductance: props.inductance,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
-    } as SourceSimpleInductor);
-    this.source_component_id = source_component.source_component_id;
+    } as SourceSimpleInductor)
+    this.source_component_id = source_component.source_component_id
   }
 }

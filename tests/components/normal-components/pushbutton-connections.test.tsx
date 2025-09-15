@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("<pushbutton /> with connections prop", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   // Create a circuit with a pushbutton and a resistor, connecting them via the connections prop
   circuit.add(
@@ -21,13 +21,13 @@ test("<pushbutton /> with connections prop", async () => {
       />
       <resistor name="R1" resistance="1k" pcbX={10} pcbY={0} />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   // Get all traces and verify connections were created
-  const traces = circuit.db.source_trace.list();
+  const traces = circuit.db.source_trace.list()
 
   // Should have 2 traces (pin1->R1.pin1 and pin2->R1.pin2)
-  expect(traces.length).toBe(2);
-});
+  expect(traces.length).toBe(2)
+})

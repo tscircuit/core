@@ -1,10 +1,10 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent";
-import { z } from "zod";
-import type { Port } from "./Port";
-import type { Trace } from "./Trace/Trace";
-import { pairs } from "lib/utils/pairs";
-import type { AnyCircuitElement, SourceTrace } from "circuit-json";
-import { autoroute } from "@tscircuit/infgrid-ijump-astar";
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { z } from "zod"
+import type { Port } from "./Port"
+import type { Trace } from "./Trace/Trace"
+import { pairs } from "lib/utils/pairs"
+import type { AnyCircuitElement, SourceTrace } from "circuit-json"
+import { autoroute } from "@tscircuit/infgrid-ijump-astar"
 
 export const netProps = z.object({
   name: z
@@ -13,28 +13,28 @@ export const netProps = z.object({
       (val) => !/[+-]/.test(val),
       'Net names cannot contain "+" or "-", try using underscores instead, e.g. VCC_P',
     ),
-});
+})
 
 export class Net extends PrimitiveComponent<typeof netProps> {
-  source_net_id?: string;
+  source_net_id?: string
 
   get config() {
     return {
       componentName: "Net",
       zodProps: netProps,
-    };
+    }
   }
 
   getPortSelector() {
-    return `net.${this.props.name}`;
+    return `net.${this.props.name}`
   }
 
   doInitialSourceRender(): void {
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
+    const { db } = this.root!
+    const { _parsedProps: props } = this
 
-    const isGround = props.name.startsWith("GND");
-    const isPositiveVoltageSource = props.name.startsWith("V");
+    const isGround = props.name.startsWith("GND")
+    const isPositiveVoltageSource = props.name.startsWith("V")
 
     const net = db.source_net.insert({
       name: props.name,
@@ -43,18 +43,18 @@ export class Net extends PrimitiveComponent<typeof netProps> {
       is_power: isPositiveVoltageSource,
       // @ts-ignore
       is_positive_voltage_source: isPositiveVoltageSource,
-    });
+    })
 
-    this.source_net_id = net.source_net_id;
+    this.source_net_id = net.source_net_id
   }
 
   doInitialSourceParentAttachment(): void {
-    const subcircuit = this.getSubcircuit();
-    if (!subcircuit) return;
-    const { db } = this.root!;
+    const subcircuit = this.getSubcircuit()
+    if (!subcircuit) return
+    const { db } = this.root!
     db.source_net.update(this.source_net_id!, {
       subcircuit_id: subcircuit.subcircuit_id!,
-    });
+    })
   }
 
   /**
@@ -64,21 +64,21 @@ export class Net extends PrimitiveComponent<typeof netProps> {
    * connected to other traces that are in turn connected to the net)
    */
   getAllConnectedPorts(): Port[] {
-    const allPorts = this.getSubcircuit().selectAll("port") as Port[];
-    const connectedPorts: Port[] = [];
+    const allPorts = this.getSubcircuit().selectAll("port") as Port[]
+    const connectedPorts: Port[] = []
 
     for (const port of allPorts) {
-      const traces = port._getDirectlyConnectedTraces();
+      const traces = port._getDirectlyConnectedTraces()
 
       for (const trace of traces) {
         if (trace._isExplicitlyConnectedToNet(this)) {
-          connectedPorts.push(port);
-          break;
+          connectedPorts.push(port)
+          break
         }
       }
     }
 
-    return connectedPorts;
+    return connectedPorts
   }
 
   /**
@@ -86,16 +86,16 @@ export class Net extends PrimitiveComponent<typeof netProps> {
    * this net in their path, from, or to props
    */
   _getAllDirectlyConnectedTraces(): Trace[] {
-    const allTraces = this.getSubcircuit().selectAll("trace") as Trace[];
-    const connectedTraces: Trace[] = [];
+    const allTraces = this.getSubcircuit().selectAll("trace") as Trace[]
+    const connectedTraces: Trace[] = []
 
     for (const trace of allTraces) {
       if (trace._isExplicitlyConnectedToNet(this)) {
-        connectedTraces.push(trace);
+        connectedTraces.push(trace)
       }
     }
 
-    return connectedTraces;
+    return connectedTraces
   }
 
   /**
@@ -111,70 +111,70 @@ export class Net extends PrimitiveComponent<typeof netProps> {
    * This should only run if the autorouter is sequential-trace
    */
   doInitialPcbRouteNetIslands(): void {
-    if (this.root?.pcbDisabled) return;
-    if (this.getSubcircuit()._parsedProps.routingDisabled) return;
+    if (this.root?.pcbDisabled) return
+    if (this.getSubcircuit()._parsedProps.routingDisabled) return
     if (
       this.getSubcircuit()._getAutorouterConfig().groupMode !==
       "sequential-trace"
     )
-      return;
+      return
 
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
+    const { db } = this.root!
+    const { _parsedProps: props } = this
 
     const traces = this._getAllDirectlyConnectedTraces().filter(
       (trace) => (trace._portsRoutedOnPcb?.length ?? 0) > 0,
-    );
+    )
 
-    const islands: Array<{ ports: Port[]; traces: Trace[] }> = [];
+    const islands: Array<{ ports: Port[]; traces: Trace[] }> = []
 
     for (const trace of traces) {
-      const tracePorts = trace._portsRoutedOnPcb;
+      const tracePorts = trace._portsRoutedOnPcb
       const traceIsland = islands.find((island) =>
         tracePorts.some((port) => island.ports.includes(port)),
-      );
+      )
       if (!traceIsland) {
-        islands.push({ ports: [...tracePorts], traces: [trace] });
-        continue;
+        islands.push({ ports: [...tracePorts], traces: [trace] })
+        continue
       }
-      traceIsland.traces.push(trace);
-      traceIsland.ports.push(...tracePorts);
+      traceIsland.traces.push(trace)
+      traceIsland.ports.push(...tracePorts)
     }
 
     if (islands.length === 0) {
-      return;
+      return
     }
 
     // Connect islands together by looking at each pair of islands and adding
     // a trace between them
-    const islandPairs = pairs(islands);
+    const islandPairs = pairs(islands)
     for (const [A, B] of islandPairs) {
       // Find two closest ports on the island
       const Apositions: Array<{ x: number; y: number }> = A.ports.map((port) =>
         port._getGlobalPcbPositionBeforeLayout(),
-      );
+      )
       const Bpositions: Array<{ x: number; y: number }> = B.ports.map((port) =>
         port._getGlobalPcbPositionBeforeLayout(),
-      );
+      )
 
-      let closestDist = Infinity;
-      let closestPair: [number, number] = [-1, -1];
+      let closestDist = Infinity
+      let closestPair: [number, number] = [-1, -1]
       for (let i = 0; i < Apositions.length; i++) {
-        const Apos = Apositions[i];
+        const Apos = Apositions[i]
         for (let j = 0; j < Bpositions.length; j++) {
-          const Bpos = Bpositions[j];
+          const Bpos = Bpositions[j]
           const dist = Math.sqrt(
             (Apos.x - Bpos.x) ** 2 + (Apos.y - Bpos.y) ** 2,
-          );
+          )
           if (dist < closestDist) {
-            closestDist = dist;
-            closestPair = [i, j];
+            closestDist = dist
+            closestPair = [i, j]
           }
         }
       }
 
-      const Aport = A.ports[closestPair[0]];
-      const Bport = B.ports[closestPair[1]];
+      const Aport = A.ports[closestPair[0]]
+      const Bport = B.ports[closestPair[1]]
 
       const pcbElements: AnyCircuitElement[] = db
         .toArray()
@@ -186,7 +186,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
             elm.type === "pcb_hole" ||
             elm.type === "source_port" ||
             elm.type === "pcb_port",
-        );
+        )
 
       const { solution } = autoroute(
         pcbElements.concat([
@@ -199,9 +199,9 @@ export class Net extends PrimitiveComponent<typeof netProps> {
             ],
           } as SourceTrace,
         ]) as any, // Remove as any when autorouting-dataset has been updated
-      );
+      )
 
-      const trace = solution[0];
+      const trace = solution[0]
       if (!trace) {
         this.renderError({
           pcb_trace_error_id: "",
@@ -217,11 +217,11 @@ export class Net extends PrimitiveComponent<typeof netProps> {
           error_type: "pcb_trace_error",
           message: `Failed to route net islands for "${this.getString()}"`,
           source_trace_id: "__net_trace_tmp",
-        });
-        return;
+        })
+        return
       }
 
-      db.pcb_trace.insert(trace as any);
+      db.pcb_trace.insert(trace as any)
     }
   }
 
@@ -229,9 +229,9 @@ export class Net extends PrimitiveComponent<typeof netProps> {
     message: Parameters<typeof PrimitiveComponent.prototype.renderError>[0],
   ) {
     if (typeof message === "string") {
-      return super.renderError(message);
+      return super.renderError(message)
     }
     // TODO this needs to be cleaned up at some point!
-    this.root?.db.pcb_trace_error.insert(message as any);
+    this.root?.db.pcb_trace_error.insert(message as any)
   }
 }

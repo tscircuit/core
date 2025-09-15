@@ -1,24 +1,24 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent";
-import { schematicTextProps } from "@tscircuit/props";
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { schematicTextProps } from "@tscircuit/props"
 
 export class SchematicText extends PrimitiveComponent<
   typeof schematicTextProps
 > {
-  isSchematicPrimitive = true;
+  isSchematicPrimitive = true
 
   get config() {
     return {
       componentName: "SchematicText",
       zodProps: schematicTextProps,
-    };
+    }
   }
 
   doInitialSchematicPrimitiveRender(): void {
-    if (this.root?.schematicDisabled) return;
-    const { db } = this.root!;
-    const { _parsedProps: props } = this;
+    if (this.root?.schematicDisabled) return
+    const { db } = this.root!
+    const { _parsedProps: props } = this
 
-    const globalPos = this._getGlobalSchematicPositionBeforeLayout();
+    const globalPos = this._getGlobalSchematicPositionBeforeLayout()
 
     db.schematic_text.insert({
       anchor: props.anchor ?? "center",
@@ -30,6 +30,6 @@ export class SchematicText extends PrimitiveComponent<
         y: globalPos.y,
       },
       rotation: props.schRotation ?? 0,
-    });
+    })
   }
 }

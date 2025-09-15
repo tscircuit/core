@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("example29: component outside board", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width={6} height={6}>
@@ -26,13 +26,13 @@ test("example29: component outside board", async () => {
         connections={{ pin1: "R1.pin1", pin4: "C1.pin1" }}
       />
     </board>,
-  );
-  await circuit.renderUntilSettled();
+  )
+  await circuit.renderUntilSettled()
   const errors = circuit
     .getCircuitJson()
-    .filter((e) => e.type === "pcb_component_outside_board_error");
-  expect(errors.length).toBe(1);
-  expect(errors[0].pcb_component_id).toBe("pcb_component_1");
-  expect(errors[0].message).toMatch(/extends outside board boundaries/);
-  expect(circuit).toMatchPcbSnapshot(import.meta.path);
-});
+    .filter((e) => e.type === "pcb_component_outside_board_error")
+  expect(errors.length).toBe(1)
+  expect(errors[0].pcb_component_id).toBe("pcb_component_1")
+  expect(errors[0].message).toMatch(/extends outside board boundaries/)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

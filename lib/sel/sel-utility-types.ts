@@ -15,7 +15,7 @@ export type Nums16 =
   | "13"
   | "14"
   | "15"
-  | "16";
+  | "16"
 
 export type Nums40 =
   | "0"
@@ -58,7 +58,7 @@ export type Nums40 =
   | "37"
   | "38"
   | "39"
-  | "40";
+  | "40"
 
 export type PinNumbers100 =
   | "pin0"
@@ -161,7 +161,7 @@ export type PinNumbers100 =
   | "pin97"
   | "pin98"
   | "pin99"
-  | "pin100";
+  | "pin100"
 
 export type CommonPinNames =
   | "pos"
@@ -215,7 +215,7 @@ export type CommonPinNames =
   | "N_INT"
   | `A${Nums40}`
   | `B${Nums40}`
-  | PinNumbers100;
+  | PinNumbers100
 
 export type TransistorPinNames =
   | "base"
@@ -223,4 +223,4 @@ export type TransistorPinNames =
   | "emitter"
   | "gate"
   | "source"
-  | "drain";
+  | "drain"

@@ -1,15 +1,15 @@
-import { getObstaclesFromRoute } from "./getObstaclesFromRoute";
-import type { ConnectivityMap } from "circuit-json-to-connectivity-map";
-import type { AnyCircuitElement } from "circuit-json";
+import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
+import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import type { AnyCircuitElement } from "circuit-json"
 import {
   generateApproximatingRects,
   type RotatedRect,
-} from "./generateApproximatingRects";
-import { fillPolygonWithRects } from "./fillPolygonWithRects";
-import { fillCircleWithRects } from "./fillCircleWithRects";
-import type { Obstacle } from "./types";
+} from "./generateApproximatingRects"
+import { fillPolygonWithRects } from "./fillPolygonWithRects"
+import { fillCircleWithRects } from "./fillCircleWithRects"
+import type { Obstacle } from "./types"
 
-const EVERY_LAYER = ["top", "inner1", "inner2", "bottom"];
+const EVERY_LAYER = ["top", "inner1", "inner2", "bottom"]
 
 export const getObstaclesFromCircuitJson = (
   soup: AnyCircuitElement[],
@@ -20,8 +20,8 @@ export const getObstaclesFromCircuitJson = (
       ? idList.concat(
           idList.map((id) => connMap?.getNetConnectedToId(id)!).filter(Boolean),
         )
-      : idList;
-  const obstacles: Obstacle[] = [];
+      : idList
+  const obstacles: Obstacle[] = []
   for (const element of soup) {
     if (element.type === "pcb_smtpad") {
       if (element.shape === "circle") {
@@ -36,7 +36,7 @@ export const getObstaclesFromCircuitJson = (
           width: element.radius * 2,
           height: element.radius * 2,
           connectedTo: withNetId([element.pcb_smtpad_id]),
-        });
+        })
       } else if (element.shape === "rect") {
         obstacles.push({
           type: "rect",
@@ -48,15 +48,15 @@ export const getObstaclesFromCircuitJson = (
           width: element.width,
           height: element.height,
           connectedTo: withNetId([element.pcb_smtpad_id]),
-        });
+        })
       } else if (element.shape === "rotated_rect") {
         const rotatedRect: RotatedRect = {
           center: { x: element.x, y: element.y },
           width: element.width,
           height: element.height,
           rotation: element.ccw_rotation,
-        };
-        const approximatingRects = generateApproximatingRects(rotatedRect);
+        }
+        const approximatingRects = generateApproximatingRects(rotatedRect)
         for (const rect of approximatingRects) {
           obstacles.push({
             type: "rect",
@@ -65,7 +65,7 @@ export const getObstaclesFromCircuitJson = (
             width: rect.width,
             height: rect.height,
             connectedTo: withNetId([element.pcb_smtpad_id]),
-          });
+          })
         }
       }
     } else if (element.type === "pcb_keepout") {
@@ -81,7 +81,7 @@ export const getObstaclesFromCircuitJson = (
           width: element.radius * 2,
           height: element.radius * 2,
           connectedTo: [],
-        });
+        })
       } else if (element.shape === "rect") {
         obstacles.push({
           type: "rect",
@@ -93,7 +93,7 @@ export const getObstaclesFromCircuitJson = (
           width: element.width,
           height: element.height,
           connectedTo: [],
-        });
+        })
       }
     } else if (element.type === "pcb_cutout") {
       if (element.shape === "rect") {
@@ -107,7 +107,7 @@ export const getObstaclesFromCircuitJson = (
           width: element.width,
           height: element.height,
           connectedTo: [],
-        });
+        })
       } else if (element.shape === "circle") {
         const approximatingRects = fillCircleWithRects(
           {
@@ -115,7 +115,7 @@ export const getObstaclesFromCircuitJson = (
             radius: element.radius,
           },
           { rectHeight: 0.6 },
-        );
+        )
 
         for (const rect of approximatingRects) {
           obstacles.push({
@@ -125,12 +125,12 @@ export const getObstaclesFromCircuitJson = (
             width: rect.width,
             height: rect.height,
             connectedTo: [],
-          });
+          })
         }
       } else if (element.shape === "polygon") {
         const approximatingRects = fillPolygonWithRects(element.points, {
           rectHeight: 0.6,
-        });
+        })
 
         for (const rect of approximatingRects) {
           obstacles.push({
@@ -140,7 +140,7 @@ export const getObstaclesFromCircuitJson = (
             width: rect.width,
             height: rect.height,
             connectedTo: [],
-          });
+          })
         }
       }
     } else if (element.type === "pcb_hole") {
@@ -155,7 +155,7 @@ export const getObstaclesFromCircuitJson = (
           width: element.hole_width,
           height: element.hole_height,
           connectedTo: [],
-        });
+        })
       } else if (element.hole_shape === "square") {
         obstacles.push({
           type: "rect",
@@ -167,7 +167,7 @@ export const getObstaclesFromCircuitJson = (
           width: element.hole_diameter,
           height: element.hole_diameter,
           connectedTo: [],
-        });
+        })
       } else if (
         // @ts-ignore
         element.hole_shape === "round" ||
@@ -183,7 +183,7 @@ export const getObstaclesFromCircuitJson = (
           width: element.hole_diameter,
           height: element.hole_diameter,
           connectedTo: [],
-        });
+        })
       }
     } else if (element.type === "pcb_plated_hole") {
       if (element.shape === "circle") {
@@ -198,7 +198,7 @@ export const getObstaclesFromCircuitJson = (
           width: element.outer_diameter,
           height: element.outer_diameter,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
-        });
+        })
       } else if (element.shape === "circular_hole_with_rect_pad") {
         obstacles.push({
           // @ts-ignore
@@ -211,7 +211,7 @@ export const getObstaclesFromCircuitJson = (
           width: element.rect_pad_width,
           height: element.rect_pad_height,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
-        });
+        })
       } else if (element.shape === "oval" || element.shape === "pill") {
         obstacles.push({
           // @ts-ignore
@@ -224,7 +224,7 @@ export const getObstaclesFromCircuitJson = (
           width: element.outer_width,
           height: element.outer_height,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
-        });
+        })
       }
     } else if (element.type === "pcb_trace") {
       const traceObstacles = getObstaclesFromRoute(
@@ -234,8 +234,8 @@ export const getObstaclesFromCircuitJson = (
           layer: "layer" in rp ? rp.layer : rp.from_layer,
         })),
         element.source_trace_id!,
-      );
-      obstacles.push(...traceObstacles);
+      )
+      obstacles.push(...traceObstacles)
     } else if (element.type === "pcb_via") {
       obstacles.push({
         type: "rect",
@@ -247,8 +247,8 @@ export const getObstaclesFromCircuitJson = (
         connectedTo: [], // TODO we can associate source_ports with this via
         width: element.outer_diameter,
         height: element.outer_diameter,
-      });
+      })
     }
   }
-  return obstacles;
-};
+  return obstacles
+}

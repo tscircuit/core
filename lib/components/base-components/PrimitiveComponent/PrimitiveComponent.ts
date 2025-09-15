@@ -1,12 +1,12 @@
-import type { AnySourceComponent, LayerRef } from "circuit-json";
-import Debug from "debug";
-import { InvalidProps } from "lib/errors/InvalidProps";
+import type { AnySourceComponent, LayerRef } from "circuit-json"
+import Debug from "debug"
+import { InvalidProps } from "lib/errors/InvalidProps"
 import type {
   SchematicBoxComponentDimensions,
   SchematicBoxDimensions,
-} from "lib/utils/schematic/getAllDimensionsForSchematicBox";
-import { isMatchingSelector } from "lib/utils/selector-matching";
-import { type SchSymbol, symbols } from "schematic-symbols";
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { isMatchingSelector } from "lib/utils/selector-matching"
+import { type SchSymbol, symbols } from "schematic-symbols"
 import {
   type Matrix,
   applyToPoint,
@@ -15,21 +15,21 @@ import {
   identity,
   rotate,
   translate,
-} from "transformation-matrix";
-import type { Primitive, ZodType } from "zod";
-import { z } from "zod";
-import type { RootCircuit } from "lib/RootCircuit";
-import type { ISubcircuit } from "lib/components/primitive-components/Group/ISubcircuit";
-import { Renderable } from "lib/components/base-components/Renderable";
-import type { IGroup } from "lib/components/primitive-components/Group/IGroup";
-import type { Ftype } from "lib/utils/constants";
-import { selectOne, selectAll, type Options } from "css-select";
+} from "transformation-matrix"
+import type { Primitive, ZodType } from "zod"
+import { z } from "zod"
+import type { RootCircuit } from "lib/RootCircuit"
+import type { ISubcircuit } from "lib/components/primitive-components/Group/ISubcircuit"
+import { Renderable } from "lib/components/base-components/Renderable"
+import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
+import type { Ftype } from "lib/utils/constants"
+import { selectOne, selectAll, type Options } from "css-select"
 import {
   cssSelectPrimitiveComponentAdapter,
   cssSelectPrimitiveComponentAdapterOnlySubcircuits,
   cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
-} from "./cssSelectPrimitiveComponentAdapter";
-import { preprocessSelector } from "./preprocessSelector";
+} from "./cssSelectPrimitiveComponentAdapter"
+import { preprocessSelector } from "./preprocessSelector"
 
 const cssSelectOptionsInsideSubcircuit: Options<
   PrimitiveComponent,
@@ -37,14 +37,14 @@ const cssSelectOptionsInsideSubcircuit: Options<
 > = {
   adapter: cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
   cacheResults: true,
-};
+}
 
 export interface BaseComponentConfig {
-  componentName: string;
-  schematicSymbolName?: string | null;
-  zodProps: z.ZodType;
-  sourceFtype?: Ftype | null;
-  shouldRenderAsSchematicBox?: boolean;
+  componentName: string
+  schematicSymbolName?: string | null
+  zodProps: z.ZodType
+  sourceFtype?: Ftype | null
+  shouldRenderAsSchematicBox?: boolean
 }
 
 /**
@@ -55,45 +55,43 @@ export interface BaseComponentConfig {
 export abstract class PrimitiveComponent<
   ZodProps extends ZodType = any,
 > extends Renderable {
-  parent: PrimitiveComponent | null = null;
-  children: PrimitiveComponent[];
-  childrenPendingRemoval: PrimitiveComponent[];
+  parent: PrimitiveComponent | null = null
+  children: PrimitiveComponent[]
+  childrenPendingRemoval: PrimitiveComponent[]
 
   get config(): BaseComponentConfig {
     return {
       componentName: "",
       zodProps: z.object({}).passthrough(),
-    };
+    }
   }
 
-  props: z.input<ZodProps>;
-  _parsedProps: z.infer<ZodProps>;
+  props: z.input<ZodProps>
+  _parsedProps: z.infer<ZodProps>
 
   get componentName() {
-    return this.config.componentName;
+    return this.config.componentName
   }
 
   getInheritedProperty(propertyName: string) {
-    let current: PrimitiveComponent<ZodProps> | null = this;
+    let current: PrimitiveComponent<ZodProps> | null = this
     while (current) {
       if (current._parsedProps && propertyName in current._parsedProps) {
-        return current._parsedProps[propertyName];
+        return current._parsedProps[propertyName]
       }
-      current = current.parent as PrimitiveComponent<ZodProps> | null; // Move up to the parent
+      current = current.parent as PrimitiveComponent<ZodProps> | null // Move up to the parent
     }
     if (this.root?.platform && propertyName in this.root.platform) {
-      return this.root.platform[
-        propertyName as keyof typeof this.root.platform
-      ];
+      return this.root.platform[propertyName as keyof typeof this.root.platform]
     }
-    return undefined; // Return undefined if not found
+    return undefined // Return undefined if not found
   }
 
   get lowercaseComponentName() {
-    return this.componentName.toLowerCase();
+    return this.componentName.toLowerCase()
   }
 
-  externallyAddedAliases: string[];
+  externallyAddedAliases: string[]
 
   /**
    * An subcircuit is self-contained. All the selectors inside
@@ -105,15 +103,15 @@ export abstract class PrimitiveComponent<
     return (
       Boolean(this.props.subcircuit) ||
       (this.lowercaseComponentName === "group" && (this?.parent as any)?.isRoot)
-    );
+    )
   }
 
   get isGroup() {
-    return this.lowercaseComponentName === "group";
+    return this.lowercaseComponentName === "group"
   }
 
   get name() {
-    return (this._parsedProps as any).name ?? this.fallbackUnassignedName;
+    return (this._parsedProps as any).name ?? this.fallbackUnassignedName
   }
 
   /**
@@ -126,37 +124,37 @@ export abstract class PrimitiveComponent<
    * the port matching phase.
    *
    */
-  isPrimitiveContainer = false;
-  canHaveTextChildren = false;
+  isPrimitiveContainer = false
+  canHaveTextChildren = false
 
-  source_group_id: string | null = null;
-  source_component_id: string | null = null;
-  schematic_component_id: string | null = null;
-  pcb_component_id: string | null = null;
-  cad_component_id: string | null = null;
-  fallbackUnassignedName?: string;
+  source_group_id: string | null = null
+  source_component_id: string | null = null
+  schematic_component_id: string | null = null
+  pcb_component_id: string | null = null
+  cad_component_id: string | null = null
+  fallbackUnassignedName?: string
 
   constructor(props: z.input<ZodProps>) {
-    super(props);
-    this.children = [];
-    this.childrenPendingRemoval = [];
-    this.props = props ?? {};
-    this.externallyAddedAliases = [];
+    super(props)
+    this.children = []
+    this.childrenPendingRemoval = []
+    this.props = props ?? {}
+    this.externallyAddedAliases = []
     const zodProps =
       "partial" in this.config.zodProps
         ? (this.config.zodProps as z.ZodObject<any, any, any>).partial({
             name: true,
           })
-        : this.config.zodProps;
-    const parsePropsResult = zodProps.safeParse(props ?? {});
+        : this.config.zodProps
+    const parsePropsResult = zodProps.safeParse(props ?? {})
     if (parsePropsResult.success) {
-      this._parsedProps = parsePropsResult.data as z.infer<ZodProps>;
+      this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
     } else {
       throw new InvalidProps(
         this.lowercaseComponentName,
         this.props,
         parsePropsResult.error.format(),
-      );
+      )
     }
   }
 
@@ -164,24 +162,24 @@ export abstract class PrimitiveComponent<
     const newProps = this.config.zodProps.parse({
       ...this.props,
       ...props,
-    }) as z.infer<ZodProps>;
-    const oldProps = this.props;
-    this.props = newProps;
-    this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>;
+    }) as z.infer<ZodProps>
+    const oldProps = this.props
+    this.props = newProps
+    this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>
     this.onPropsChange({
       oldProps,
       newProps,
       changedProps: Object.keys(props),
-    });
-    this.parent?.onChildChanged?.(this);
+    })
+    this.parent?.onChildChanged?.(this)
   }
 
   _getPcbRotationBeforeLayout(): number | null {
-    const { pcbRotation } = this.props as any;
+    const { pcbRotation } = this.props as any
     if (typeof pcbRotation === "string") {
-      return parseFloat(pcbRotation);
+      return parseFloat(pcbRotation)
     }
-    return pcbRotation ?? null;
+    return pcbRotation ?? null
   }
 
   /**
@@ -189,15 +187,15 @@ export abstract class PrimitiveComponent<
    * components
    */
   computePcbPropsTransform(): Matrix {
-    const { _parsedProps: props } = this;
-    const rotation = this._getPcbRotationBeforeLayout() ?? 0;
+    const { _parsedProps: props } = this
+    const rotation = this._getPcbRotationBeforeLayout() ?? 0
 
     const matrix = compose(
       translate(props.pcbX ?? 0, props.pcbY ?? 0),
       rotate((rotation * Math.PI) / 180),
-    );
+    )
 
-    return matrix;
+    return matrix
   }
 
   /**
@@ -209,7 +207,7 @@ export abstract class PrimitiveComponent<
    */
   _computePcbGlobalTransformBeforeLayout(): Matrix {
     const manualPlacement =
-      this.getSubcircuit()._getPcbManualPlacementForComponent(this);
+      this.getSubcircuit()._getPcbManualPlacementForComponent(this)
 
     // pcbX or pcbY will override the manual placement
     if (
@@ -217,29 +215,29 @@ export abstract class PrimitiveComponent<
       this.props.pcbX === undefined &&
       this.props.pcbY === undefined
     ) {
-      const rotation = this._getPcbRotationBeforeLayout() ?? 0;
+      const rotation = this._getPcbRotationBeforeLayout() ?? 0
       return compose(
         this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
         compose(
           translate(manualPlacement.x, manualPlacement.y),
           rotate((rotation * Math.PI) / 180),
         ),
-      );
+      )
     }
 
     // If this is a primitive, and the parent primitive container is flipped,
     // we flip it's position
     if (this.isPcbPrimitive) {
-      const primitiveContainer = this.getPrimitiveContainer();
+      const primitiveContainer = this.getPrimitiveContainer()
       if (primitiveContainer) {
-        const isFlipped = primitiveContainer._parsedProps.layer === "bottom";
+        const isFlipped = primitiveContainer._parsedProps.layer === "bottom"
 
         if (isFlipped) {
           return compose(
             this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
             flipY(),
             this.computePcbPropsTransform(),
-          );
+          )
         }
       }
     }
@@ -247,12 +245,12 @@ export abstract class PrimitiveComponent<
     return compose(
       this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
       this.computePcbPropsTransform(),
-    );
+    )
   }
 
   getPrimitiveContainer(): PrimitiveComponent | null {
-    if (this.isPrimitiveContainer) return this;
-    return this.parent?.getPrimitiveContainer?.() ?? null;
+    if (this.isPrimitiveContainer) return this
+    return this.parent?.getPrimitiveContainer?.() ?? null
   }
 
   /**
@@ -260,17 +258,17 @@ export abstract class PrimitiveComponent<
    * associated with it.
    */
   _getPcbCircuitJsonBounds(): {
-    center: { x: number; y: number };
-    bounds: { left: number; top: number; right: number; bottom: number };
-    width: number;
-    height: number;
+    center: { x: number; y: number }
+    bounds: { left: number; top: number; right: number; bottom: number }
+    width: number
+    height: number
   } {
     return {
       center: { x: 0, y: 0 },
       bounds: { left: 0, top: 0, right: 0, bottom: 0 },
       width: 0,
       height: 0,
-    };
+    }
   }
 
   /**
@@ -281,20 +279,20 @@ export abstract class PrimitiveComponent<
    * relative to the top layer
    */
   _getPcbPrimitiveFlippedHelpers(): {
-    isFlipped: boolean;
-    maybeFlipLayer: (layer: LayerRef) => LayerRef;
+    isFlipped: boolean
+    maybeFlipLayer: (layer: LayerRef) => LayerRef
   } {
-    const container = this.getPrimitiveContainer();
+    const container = this.getPrimitiveContainer()
     const isFlipped = !container
       ? false
-      : container._parsedProps.layer === "bottom";
+      : container._parsedProps.layer === "bottom"
     const maybeFlipLayer = (layer: LayerRef) => {
       if (isFlipped) {
-        return layer === "top" ? "bottom" : "top";
+        return layer === "top" ? "bottom" : "top"
       }
-      return layer;
-    };
-    return { isFlipped, maybeFlipLayer };
+      return layer
+    }
+    return { isFlipped, maybeFlipLayer }
   }
 
   /**
@@ -306,7 +304,7 @@ export abstract class PrimitiveComponent<
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
     throw new Error(
       `_setPositionFromLayout not implemented for ${this.componentName}`,
-    );
+    )
   }
 
   /**
@@ -314,8 +312,8 @@ export abstract class PrimitiveComponent<
    * schematic components
    */
   computeSchematicPropsTransform(): Matrix {
-    const { _parsedProps: props } = this;
-    return compose(translate(props.schX ?? 0, props.schY ?? 0));
+    const { _parsedProps: props } = this
+    return compose(translate(props.schX ?? 0, props.schY ?? 0))
   }
 
   /**
@@ -324,19 +322,19 @@ export abstract class PrimitiveComponent<
    */
   computeSchematicGlobalTransform(): Matrix {
     const manualPlacementTransform =
-      this._getSchematicGlobalManualPlacementTransform(this);
-    if (manualPlacementTransform) return manualPlacementTransform;
+      this._getSchematicGlobalManualPlacementTransform(this)
+    if (manualPlacementTransform) return manualPlacementTransform
 
     return compose(
       this.parent?.computeSchematicGlobalTransform?.() ?? identity(),
       this.computeSchematicPropsTransform(),
-    );
+    )
   }
 
   _getSchematicSymbolName(): keyof typeof symbols | undefined {
-    const { _parsedProps: props } = this;
+    const { _parsedProps: props } = this
     const base_symbol_name = this.config
-      .schematicSymbolName as keyof typeof symbols;
+      .schematicSymbolName as keyof typeof symbols
 
     // derive rotation from schOrientation if provided
     const orientationRotationMap: Record<string, number> = {
@@ -350,79 +348,79 @@ export abstract class PrimitiveComponent<
       vertical: 270,
       pos_bottom: 90,
       neg_top: 90,
-    };
+    }
 
     let normalizedRotation =
       props.schOrientation !== undefined
         ? orientationRotationMap[props.schOrientation]
-        : props.schRotation;
+        : props.schRotation
 
     if (normalizedRotation === undefined) {
-      normalizedRotation = 0;
+      normalizedRotation = 0
     }
     // Normalize rotation to be between 0 and 360
-    normalizedRotation = normalizedRotation % 360;
+    normalizedRotation = normalizedRotation % 360
     if (normalizedRotation < 0) {
-      normalizedRotation += 360;
+      normalizedRotation += 360
     }
 
     // Validate that rotation is a multiple of 90 degrees
     if (props.schRotation !== undefined && normalizedRotation % 90 !== 0) {
       throw new Error(
         `Schematic rotation ${props.schRotation} is not supported for ${this.componentName}`,
-      );
+      )
     }
 
-    const symbol_name_horz = `${base_symbol_name}_horz` as keyof typeof symbols;
-    const symbol_name_vert = `${base_symbol_name}_vert` as keyof typeof symbols;
-    const symbol_name_up = `${base_symbol_name}_up` as keyof typeof symbols;
-    const symbol_name_down = `${base_symbol_name}_down` as keyof typeof symbols;
-    const symbol_name_left = `${base_symbol_name}_left` as keyof typeof symbols;
+    const symbol_name_horz = `${base_symbol_name}_horz` as keyof typeof symbols
+    const symbol_name_vert = `${base_symbol_name}_vert` as keyof typeof symbols
+    const symbol_name_up = `${base_symbol_name}_up` as keyof typeof symbols
+    const symbol_name_down = `${base_symbol_name}_down` as keyof typeof symbols
+    const symbol_name_left = `${base_symbol_name}_left` as keyof typeof symbols
     const symbol_name_right =
-      `${base_symbol_name}_right` as keyof typeof symbols;
+      `${base_symbol_name}_right` as keyof typeof symbols
 
     if (symbol_name_right in symbols && normalizedRotation === 0) {
-      return symbol_name_right;
+      return symbol_name_right
     }
     if (symbol_name_up in symbols && normalizedRotation === 90) {
-      return symbol_name_up;
+      return symbol_name_up
     }
 
     if (symbol_name_left in symbols && normalizedRotation === 180) {
-      return symbol_name_left;
+      return symbol_name_left
     }
 
     if (symbol_name_down in symbols && normalizedRotation === 270) {
-      return symbol_name_down;
+      return symbol_name_down
     }
 
     if (symbol_name_horz in symbols) {
-      if (normalizedRotation === 0) return symbol_name_horz;
-      if (normalizedRotation === 180) return symbol_name_horz;
+      if (normalizedRotation === 0) return symbol_name_horz
+      if (normalizedRotation === 180) return symbol_name_horz
     }
     if (symbol_name_vert in symbols) {
-      if (normalizedRotation === 90) return symbol_name_vert;
-      if (normalizedRotation === 270) return symbol_name_vert;
+      if (normalizedRotation === 90) return symbol_name_vert
+      if (normalizedRotation === 270) return symbol_name_vert
     }
-    if (base_symbol_name in symbols) return base_symbol_name;
+    if (base_symbol_name in symbols) return base_symbol_name
 
-    return undefined;
+    return undefined
   }
 
   _getSchematicSymbolNameOrThrow(): keyof typeof symbols {
-    const symbol_name = this._getSchematicSymbolName();
+    const symbol_name = this._getSchematicSymbolName()
     if (!symbol_name) {
       throw new Error(
         `No schematic symbol found (given: "${this.config.schematicSymbolName}")`,
-      );
+      )
     }
-    return symbol_name;
+    return symbol_name
   }
 
   getSchematicSymbol(): SchSymbol | null {
-    const symbol_name = this._getSchematicSymbolName();
-    if (!symbol_name) return null;
-    return symbols[symbol_name as keyof typeof symbols] ?? null;
+    const symbol_name = this._getSchematicSymbolName()
+    if (!symbol_name) return null
+    return symbols[symbol_name as keyof typeof symbols] ?? null
   }
 
   /**
@@ -432,15 +430,15 @@ export abstract class PrimitiveComponent<
   _getPcbManualPlacementForComponent(
     component: PrimitiveComponent,
   ): { x: number; y: number } | null {
-    if (!this.isSubcircuit) return null;
+    if (!this.isSubcircuit) return null
 
-    const manualEdits = this.props.manualEdits;
+    const manualEdits = this.props.manualEdits
 
-    if (!manualEdits) return null;
+    if (!manualEdits) return null
 
-    const placementConfigPositions = manualEdits?.pcb_placements;
+    const placementConfigPositions = manualEdits?.pcb_placements
 
-    if (!placementConfigPositions) return null;
+    if (!placementConfigPositions) return null
 
     for (const position of placementConfigPositions) {
       if (
@@ -450,26 +448,26 @@ export abstract class PrimitiveComponent<
         const center = applyToPoint(
           this._computePcbGlobalTransformBeforeLayout(),
           position.center as { x: number; y: number },
-        );
-        return center;
+        )
+        return center
       }
     }
 
-    return null;
+    return null
   }
 
   _getSchematicManualPlacementForComponent(
     component: PrimitiveComponent,
   ): { x: number; y: number } | null {
-    if (!this.isSubcircuit) return null;
+    if (!this.isSubcircuit) return null
 
-    const manualEdits = this.props.manualEdits;
+    const manualEdits = this.props.manualEdits
 
-    if (!manualEdits) return null;
+    if (!manualEdits) return null
 
-    const placementConfigPositions = manualEdits.schematic_placements;
+    const placementConfigPositions = manualEdits.schematic_placements
 
-    if (!placementConfigPositions) return null;
+    if (!placementConfigPositions) return null
 
     for (const position of placementConfigPositions) {
       if (
@@ -479,19 +477,19 @@ export abstract class PrimitiveComponent<
         const center = applyToPoint(
           this.computeSchematicGlobalTransform(),
           position.center as { x: number; y: number },
-        );
-        return center;
+        )
+        return center
       }
     }
 
-    return null;
+    return null
   }
 
   _getSchematicGlobalManualPlacementTransform(
     component: PrimitiveComponent,
   ): Matrix | null {
-    const manualEdits = this.getSubcircuit()?._parsedProps.manualEdits;
-    if (!manualEdits) return null;
+    const manualEdits = this.getSubcircuit()?._parsedProps.manualEdits
+    if (!manualEdits) return null
 
     for (const position of manualEdits.schematic_placements ?? []) {
       if (
@@ -502,191 +500,191 @@ export abstract class PrimitiveComponent<
           return compose(
             this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
             translate(position.center.x, position.center.y),
-          );
+          )
         }
       }
     }
 
-    return null;
+    return null
   }
 
   _getGlobalPcbPositionBeforeLayout(): { x: number; y: number } {
     return applyToPoint(this._computePcbGlobalTransformBeforeLayout(), {
       x: 0,
       y: 0,
-    });
+    })
   }
 
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
-    return applyToPoint(this.computeSchematicGlobalTransform(), { x: 0, y: 0 });
+    return applyToPoint(this.computeSchematicGlobalTransform(), { x: 0, y: 0 })
   }
 
   get root(): RootCircuit | null {
-    return this.parent?.root ?? null;
+    return this.parent?.root ?? null
   }
 
   onAddToParent(parent: PrimitiveComponent) {
-    this.parent = parent;
+    this.parent = parent
   }
 
   /**
    * Called whenever the props change
    */
   onPropsChange(params: {
-    oldProps: z.infer<ZodProps>;
-    newProps: z.infer<ZodProps>;
-    changedProps: string[];
+    oldProps: z.infer<ZodProps>
+    newProps: z.infer<ZodProps>
+    changedProps: string[]
   }) {}
 
   onChildChanged(child: PrimitiveComponent) {
-    this.parent?.onChildChanged?.(child);
+    this.parent?.onChildChanged?.(child)
   }
 
   add(component: PrimitiveComponent) {
     // The react reconciler will try to add text nodes as children, but
     // we don't have a text component, so we just ignore them. The text is
     // passed as a prop to the parent component anyway.
-    const textContent = (component as any).__text;
+    const textContent = (component as any).__text
     if (typeof textContent === "string") {
       // Components that support text children already receive the text via
       // their props. Simply ignore the generated text node.
       if (this.canHaveTextChildren || textContent.trim() === "") {
-        return;
+        return
       }
       // Otherwise this is likely accidental text in the JSX tree.
       throw new Error(
         `Invalid JSX Element: Expected a React component but received text "${textContent}"`,
-      );
+      )
     }
     if (Object.keys(component).length === 0) {
       // Ignore empty objects produced by the reconciler in edge cases
-      return;
+      return
     }
     // Disallow nesting boards inside of boards
     if (
       this.lowercaseComponentName === "board" &&
       component.lowercaseComponentName === "board"
     ) {
-      throw new Error("Nested boards are not supported");
+      throw new Error("Nested boards are not supported")
     }
     if (!component.onAddToParent) {
       throw new Error(
         `Invalid JSX Element: Expected a React component but received "${JSON.stringify(
           component,
         )}"`,
-      );
+      )
     }
-    component.onAddToParent(this);
-    component.parent = this;
-    this.children.push(component);
+    component.onAddToParent(this)
+    component.parent = this
+    this.children.push(component)
   }
 
   addAll(components: PrimitiveComponent[]) {
     for (const component of components) {
-      this.add(component);
+      this.add(component)
     }
   }
 
   remove(component: PrimitiveComponent) {
-    this.children = this.children.filter((c) => c !== component);
-    this.childrenPendingRemoval.push(component);
-    component.shouldBeRemoved = true;
+    this.children = this.children.filter((c) => c !== component)
+    this.childrenPendingRemoval.push(component)
+    component.shouldBeRemoved = true
   }
 
   getSubcircuitSelector(): string {
-    const name = this.name;
+    const name = this.name
     const endPart = name
       ? `${this.lowercaseComponentName}.${name}`
-      : this.lowercaseComponentName;
+      : this.lowercaseComponentName
 
-    if (!this.parent) return endPart;
-    if (this.parent.isSubcircuit) return endPart;
-    return `${this.parent.getSubcircuitSelector()} > ${endPart}`;
+    if (!this.parent) return endPart
+    if (this.parent.isSubcircuit) return endPart
+    return `${this.parent.getSubcircuitSelector()} > ${endPart}`
   }
 
   getFullPathSelector(): string {
-    const name = this.name;
+    const name = this.name
     const endPart = name
       ? `${this.lowercaseComponentName}.${name}`
-      : this.lowercaseComponentName;
-    const parentSelector = this.parent?.getFullPathSelector?.();
-    if (!parentSelector) return endPart;
-    return `${parentSelector} > ${endPart}`;
+      : this.lowercaseComponentName
+    const parentSelector = this.parent?.getFullPathSelector?.()
+    if (!parentSelector) return endPart
+    return `${parentSelector} > ${endPart}`
   }
 
   getNameAndAliases(): string[] {
-    return [this.name, ...(this._parsedProps.portHints ?? [])].filter(Boolean);
+    return [this.name, ...(this._parsedProps.portHints ?? [])].filter(Boolean)
   }
   isMatchingNameOrAlias(name: string) {
-    return this.getNameAndAliases().includes(name);
+    return this.getNameAndAliases().includes(name)
   }
   isMatchingAnyOf(aliases: Array<string | number>) {
     return this.getNameAndAliases().some((a) =>
       aliases.map((a) => a.toString()).includes(a),
-    );
+    )
   }
   getPcbSize(): { width: number; height: number } {
-    throw new Error(`getPcbSize not implemented for ${this.componentName}`);
+    throw new Error(`getPcbSize not implemented for ${this.componentName}`)
   }
 
   doesSelectorMatch(selector: string): boolean {
-    const myTypeNames = [this.componentName, this.lowercaseComponentName];
-    const myClassNames = [this.name].filter(Boolean);
+    const myTypeNames = [this.componentName, this.lowercaseComponentName]
+    const myClassNames = [this.name].filter(Boolean)
 
-    const parts = selector.trim().split(/\> /)[0];
-    const firstPart = parts[0];
+    const parts = selector.trim().split(/\> /)[0]
+    const firstPart = parts[0]
 
-    if (parts.length > 1) return false;
-    if (selector === "*") return true;
-    if (selector[0] === "#" && selector.slice(1) === this.props.id) return true;
+    if (parts.length > 1) return false
+    if (selector === "*") return true
+    if (selector[0] === "#" && selector.slice(1) === this.props.id) return true
     if (selector[0] === "." && myClassNames.includes(selector.slice(1)))
-      return true;
+      return true
     if (/^[a-zA-Z0-9_]/.test(firstPart) && myTypeNames.includes(firstPart))
-      return true;
+      return true
 
-    return false;
+    return false
   }
 
   getSubcircuit(): ISubcircuit {
-    if (this.isSubcircuit) return this as unknown as ISubcircuit;
-    const group = this.parent?.getSubcircuit?.();
+    if (this.isSubcircuit) return this as unknown as ISubcircuit
+    const group = this.parent?.getSubcircuit?.()
     if (!group)
-      throw new Error("Component is not inside an opaque group (no board?)");
-    return group;
+      throw new Error("Component is not inside an opaque group (no board?)")
+    return group
   }
 
   getGroup(): IGroup | null {
-    if (this.isGroup) return this as unknown as IGroup;
-    return this.parent?.getGroup?.() ?? null;
+    if (this.isGroup) return this as unknown as IGroup
+    return this.parent?.getGroup?.() ?? null
   }
 
   doInitialAssignNameToUnnamedComponents() {
     if (!this._parsedProps.name) {
       this.fallbackUnassignedName =
-        this.getSubcircuit().getNextAvailableName(this);
+        this.getSubcircuit().getNextAvailableName(this)
     }
   }
 
   doInitialOptimizeSelectorCache() {
-    if (!this.isSubcircuit) return;
-    const ports = this.selectAll("port");
+    if (!this.isSubcircuit) return
+    const ports = this.selectAll("port")
 
     for (const port of ports) {
-      const parentAliases = port.parent?.getNameAndAliases();
-      const portAliases = port.getNameAndAliases();
-      if (!parentAliases) continue;
+      const parentAliases = port.parent?.getNameAndAliases()
+      const portAliases = port.getNameAndAliases()
+      if (!parentAliases) continue
       for (const parentAlias of parentAliases) {
         for (const portAlias of portAliases) {
           const selectors = [
             `.${parentAlias} > .${portAlias}`,
             `.${parentAlias} .${portAlias}`,
-          ];
+          ]
           for (const selector of selectors) {
-            const ar = this._cachedSelectAllQueries.get(selector);
+            const ar = this._cachedSelectAllQueries.get(selector)
             if (ar) {
-              ar.push(port);
+              ar.push(port)
             } else {
-              this._cachedSelectAllQueries.set(selector, [port]);
+              this._cachedSelectAllQueries.set(selector, [port])
             }
           }
         }
@@ -694,109 +692,109 @@ export abstract class PrimitiveComponent<
     }
     for (const [selector, ports] of this._cachedSelectAllQueries.entries()) {
       if (ports.length === 1) {
-        this._cachedSelectOneQueries.set(selector, ports[0]);
+        this._cachedSelectOneQueries.set(selector, ports[0])
       }
     }
   }
 
-  _cachedSelectAllQueries: Map<string, PrimitiveComponent[]> = new Map();
+  _cachedSelectAllQueries: Map<string, PrimitiveComponent[]> = new Map()
   selectAll<T extends PrimitiveComponent = PrimitiveComponent>(
     selectorRaw: string,
   ): T[] {
     if (this._cachedSelectAllQueries.has(selectorRaw)) {
-      return this._cachedSelectAllQueries.get(selectorRaw) as T[];
+      return this._cachedSelectAllQueries.get(selectorRaw) as T[]
     }
-    const selector = preprocessSelector(selectorRaw);
+    const selector = preprocessSelector(selectorRaw)
     const result = selectAll(
       selector,
       this,
       cssSelectOptionsInsideSubcircuit,
-    ) as T[];
+    ) as T[]
     if (result.length > 0) {
-      this._cachedSelectAllQueries.set(selectorRaw, result);
-      return result;
+      this._cachedSelectAllQueries.set(selectorRaw, result)
+      return result
     }
 
     // If we didn't find anything, check for a subcircuit query
-    const [firstpart, ...rest] = selector.split(" ");
+    const [firstpart, ...rest] = selector.split(" ")
     const subcircuit = selectOne(firstpart, this, {
       adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
-    }) as ISubcircuit | null;
-    if (!subcircuit) return [];
-    const result2 = subcircuit.selectAll(rest.join(" ")) as T[];
-    this._cachedSelectAllQueries.set(selectorRaw, result2);
-    return result2;
+    }) as ISubcircuit | null
+    if (!subcircuit) return []
+    const result2 = subcircuit.selectAll(rest.join(" ")) as T[]
+    this._cachedSelectAllQueries.set(selectorRaw, result2)
+    return result2
   }
 
-  _cachedSelectOneQueries: Map<string, PrimitiveComponent | null> = new Map();
+  _cachedSelectOneQueries: Map<string, PrimitiveComponent | null> = new Map()
   selectOne<T = PrimitiveComponent>(
     selectorRaw: string,
     options?: {
-      type?: string;
-      port?: boolean;
-      pcbPrimitive?: boolean;
-      schematicPrimitive?: boolean;
+      type?: string
+      port?: boolean
+      pcbPrimitive?: boolean
+      schematicPrimitive?: boolean
     },
   ): T | null {
     if (this._cachedSelectOneQueries.has(selectorRaw)) {
-      return this._cachedSelectOneQueries.get(selectorRaw) as T | null;
+      return this._cachedSelectOneQueries.get(selectorRaw) as T | null
     }
-    const selector = preprocessSelector(selectorRaw);
+    const selector = preprocessSelector(selectorRaw)
     if (options?.port) {
-      options.type = "port";
+      options.type = "port"
     }
-    let result: T | null = null;
+    let result: T | null = null
     if (options?.type) {
       const allMatching = selectAll(
         selector,
         this,
         cssSelectOptionsInsideSubcircuit,
-      );
+      )
       result = allMatching.find(
         (n) => n.lowercaseComponentName === options.type,
-      ) as T | null;
+      ) as T | null
     }
 
     result ??= selectOne(
       selector,
       this,
       cssSelectOptionsInsideSubcircuit,
-    ) as T | null;
+    ) as T | null
 
     if (result) {
-      this._cachedSelectOneQueries.set(selectorRaw, result as any);
-      return result;
+      this._cachedSelectOneQueries.set(selectorRaw, result as any)
+      return result
     }
 
     // If we didn't find anything, check for a subcircuit query
-    const [firstpart, ...rest] = selector.split(" ");
+    const [firstpart, ...rest] = selector.split(" ")
     const subcircuit = selectOne(firstpart, this, {
       adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
-    }) as ISubcircuit | null;
+    }) as ISubcircuit | null
 
-    if (!subcircuit) return null;
+    if (!subcircuit) return null
 
-    result = subcircuit.selectOne(rest.join(" "), options) as T | null;
-    this._cachedSelectOneQueries.set(selectorRaw, result as any);
-    return result;
+    result = subcircuit.selectOne(rest.join(" "), options) as T | null
+    this._cachedSelectOneQueries.set(selectorRaw, result as any)
+    return result
   }
 
   getAvailablePcbLayers(): string[] {
     if (this.isPcbPrimitive) {
-      const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers();
+      const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
       if ("layer" in this._parsedProps || this.componentName === "SmtPad") {
-        const layer = maybeFlipLayer(this._parsedProps.layer ?? "top");
-        return [layer];
+        const layer = maybeFlipLayer(this._parsedProps.layer ?? "top")
+        return [layer]
       }
       if ("layers" in this._parsedProps) {
-        return this._parsedProps.layers;
+        return this._parsedProps.layers
       }
       if (this.componentName === "PlatedHole") {
-        return this.root?._getBoard()?.allLayers ?? ["top", "bottom"];
+        return this.root?._getBoard()?.allLayers ?? ["top", "bottom"]
       }
-      return [];
+      return []
     }
-    return [];
+    return []
   }
 
   /**
@@ -806,12 +804,12 @@ export abstract class PrimitiveComponent<
    * getSelectableDescendants instead
    */
   getDescendants(): PrimitiveComponent[] {
-    const descendants: PrimitiveComponent[] = [];
+    const descendants: PrimitiveComponent[] = []
     for (const child of this.children) {
-      descendants.push(child);
-      descendants.push(...child.getDescendants());
+      descendants.push(child)
+      descendants.push(...child.getDescendants())
     }
-    return descendants;
+    return descendants
   }
 
   /**
@@ -819,16 +817,16 @@ export abstract class PrimitiveComponent<
    * boundary
    */
   getSelectableDescendants(): PrimitiveComponent[] {
-    const descendants: PrimitiveComponent[] = [];
+    const descendants: PrimitiveComponent[] = []
     for (const child of this.children) {
       if (child.isSubcircuit) {
-        descendants.push(child);
+        descendants.push(child)
       } else {
-        descendants.push(child);
-        descendants.push(...child.getSelectableDescendants());
+        descendants.push(child)
+        descendants.push(...child.getSelectableDescendants())
       }
     }
-    return descendants;
+    return descendants
   }
 
   /**
@@ -836,7 +834,7 @@ export abstract class PrimitiveComponent<
    * NormalComponents
    */
   _getPinCount(): number {
-    return 0;
+    return 0
   }
 
   /**
@@ -844,22 +842,22 @@ export abstract class PrimitiveComponent<
    * dimensions of the box, which allows computing the position of ports etc.
    */
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
-    return null;
+    return null
   }
 
   _getSchematicBoxComponentDimensions(): SchematicBoxComponentDimensions | null {
     // Only valid if we don't have a schematic symbol
-    if (this.getSchematicSymbol()) return null;
-    if (!this.config.shouldRenderAsSchematicBox) return null;
+    if (this.getSchematicSymbol()) return null
+    if (!this.config.shouldRenderAsSchematicBox) return null
 
-    const { _parsedProps: props } = this;
+    const { _parsedProps: props } = this
 
     const dimensions = {
       schWidth: props.schWidth,
       schHeight: props.schHeight,
-    };
+    }
 
-    return dimensions;
+    return dimensions
   }
 
   // TODO we shouldn't need to override this, errors can be rendered and handled
@@ -867,35 +865,35 @@ export abstract class PrimitiveComponent<
   // have access to the database or cleanup
   renderError(message: Parameters<typeof Renderable.prototype.renderError>[0]) {
     if (typeof message === "string") {
-      return super.renderError(message);
+      return super.renderError(message)
     }
     // TODO this needs to be cleaned up at some point!
-    this.root?.db.pcb_placement_error.insert(message as any);
+    this.root?.db.pcb_placement_error.insert(message as any)
   }
 
   getString(): string {
-    const { lowercaseComponentName: cname, _parsedProps: props, parent } = this;
+    const { lowercaseComponentName: cname, _parsedProps: props, parent } = this
     if (props?.pinNumber !== undefined && parent?.props?.name && props?.name) {
-      return `<${cname}#${this._renderId}(pin:${props.pinNumber} .${parent?.props.name}>.${props.name}) />`;
+      return `<${cname}#${this._renderId}(pin:${props.pinNumber} .${parent?.props.name}>.${props.name}) />`
     }
     if (parent?.props?.name && props?.name) {
-      return `<${cname}#${this._renderId}(.${parent?.props.name}>.${props?.name}) />`;
+      return `<${cname}#${this._renderId}(.${parent?.props.name}>.${props?.name}) />`
     }
     if (props?.from && props?.to) {
-      return `<${cname}#${this._renderId}(from:${props.from} to:${props?.to}) />`;
+      return `<${cname}#${this._renderId}(from:${props.from} to:${props?.to}) />`
     }
     if (props?.name) {
-      return `<${cname}#${this._renderId} name=".${props?.name}" />`;
+      return `<${cname}#${this._renderId} name=".${props?.name}" />`
     }
     if (props?.portHints) {
-      return `<${cname}#${this._renderId}(${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`;
+      return `<${cname}#${this._renderId}(${props.portHints.map((ph: string) => `.${ph}`).join(", ")}) />`
     }
-    return `<${cname}#${this._renderId} />`;
+    return `<${cname}#${this._renderId} />`
   }
   get [Symbol.toStringTag](): string {
-    return this.getString();
+    return this.getString()
   }
   [Symbol.for("nodejs.util.inspect.custom")]() {
-    return this.getString();
+    return this.getString()
   }
 }

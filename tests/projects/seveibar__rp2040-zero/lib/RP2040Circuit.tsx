@@ -1,4 +1,4 @@
-import { RP2040 } from "../imports/RP2040";
+import { RP2040 } from "../imports/RP2040"
 
 export const RP2040Circuit = () => (
   <group pcbPack pcbGap={2}>
@@ -74,4 +74,4 @@ export const RP2040Circuit = () => (
       connections={{ pin1: "U3.ADC_AVDD", pin2: "net.GND" }}
     />
   </group>
-);
+)

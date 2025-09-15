@@ -1,10 +1,10 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
-import type { Trace } from "lib/components/primitive-components/Trace/Trace";
-import type { PcbRouteCache } from "@tscircuit/props";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import type { Trace } from "lib/components/primitive-components/Trace/Trace"
+import type { PcbRouteCache } from "@tscircuit/props"
 
 test("trace caching between renders", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   const pcbRouteCache: PcbRouteCache = {
     cacheKey: "test",
@@ -33,7 +33,7 @@ test("trace caching between renders", async () => {
         source_trace_id: "source_trace_0",
       },
     ],
-  };
+  }
 
   circuit.add(
     <board width="10mm" height="10mm" pcbRouteCache={pcbRouteCache}>
@@ -47,7 +47,7 @@ test("trace caching between renders", async () => {
       <resistor name="R2" resistance="10k" footprint="0402" pcbX={2} pcbY={0} />
       <trace from=".R1 > .pin2" to=".R2 > .pin1" />
     </board>,
-  );
+  )
 
-  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path);
-});
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
+})

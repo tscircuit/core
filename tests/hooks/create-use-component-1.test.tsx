@@ -1,19 +1,19 @@
-import { test, expect } from "bun:test";
-import { createUseComponent } from "lib/hooks/create-use-component";
+import { test, expect } from "bun:test"
+import { createUseComponent } from "lib/hooks/create-use-component"
 import {
   resistorProps,
   resistorPins,
   type ResistorProps,
-} from "@tscircuit/props";
-import { RootCircuit } from "lib/RootCircuit";
-import { Resistor } from "lib/components";
-import { expectTypesMatch } from "tests/fixtures/expect-types-match";
+} from "@tscircuit/props"
+import { RootCircuit } from "lib/RootCircuit"
+import { Resistor } from "lib/components"
+import { expectTypesMatch } from "tests/fixtures/expect-types-match"
 
 test("createUseComponent creates a component with correct props and traces", () => {
   const useResistor1 = createUseComponent(
     (props: ResistorProps) => <resistor {...props} />,
     resistorPins,
-  );
+  )
   const useResistor2 = createUseComponent(
     (props: ResistorProps) => <resistor {...props} />,
     {
@@ -22,22 +22,22 @@ test("createUseComponent creates a component with correct props and traces", () 
       pin1: ["pin1", "left"],
       pin2: ["pin2", "right"],
     } as const,
-  );
+  )
   const useResistor3 = createUseComponent(
     (props: ResistorProps) => <resistor {...props} />,
     [],
-  );
+  )
 
-  const circuit = new RootCircuit();
+  const circuit = new RootCircuit()
 
-  const R1 = useResistor1("R1", { resistance: "10k", footprint: "0402" });
-  const R2 = useResistor2("R2", { resistance: "10k", footprint: "0402" });
-  const R3 = useResistor3("R3");
+  const R1 = useResistor1("R1", { resistance: "10k", footprint: "0402" })
+  const R2 = useResistor2("R2", { resistance: "10k", footprint: "0402" })
+  const R3 = useResistor3("R3")
 
-  expectTypesMatch<typeof R1.pin1, string>(true);
+  expectTypesMatch<typeof R1.pin1, string>(true)
 
   // @ts-expect-error
-  const err1 = <R3 />;
+  const err1 = <R3 />
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -45,28 +45,28 @@ test("createUseComponent creates a component with correct props and traces", () 
       <R2 pin1={R1.pin1} pin2="net.GND" />
       <R3 resistance="10k" />
     </board>,
-  );
+  )
 
-  circuit.render();
+  circuit.render()
 
   // Check if the resistor component was created correctly
-  const resistor = circuit.selectOne("resistor");
-  expect(resistor).not.toBeNull();
-  expect(resistor?.props.name).toBe("R1");
-  expect(resistor?.props.resistance).toBe("10k");
-  expect(resistor?.props.footprint).toBe("0402");
+  const resistor = circuit.selectOne("resistor")
+  expect(resistor).not.toBeNull()
+  expect(resistor?.props.name).toBe("R1")
+  expect(resistor?.props.resistance).toBe("10k")
+  expect(resistor?.props.footprint).toBe("0402")
 
   // Check if traces were created correctly
-  const traces = circuit.selectAll("trace");
-  expect(traces.length).toBe(4);
+  const traces = circuit.selectAll("trace")
+  expect(traces.length).toBe(4)
 
-  const trace1 = traces.find((t) => t.props.from === ".R1 > .left");
-  const trace2 = traces.find((t) => t.props.from === ".R1 > .pin2");
-  console.log(trace1?.props);
+  const trace1 = traces.find((t) => t.props.from === ".R1 > .left")
+  const trace2 = traces.find((t) => t.props.from === ".R1 > .pin2")
+  console.log(trace1?.props)
 
-  expect(trace1).not.toBeNull();
-  expect(trace1?.props.to).toBe("net.VCC");
+  expect(trace1).not.toBeNull()
+  expect(trace1?.props.to).toBe("net.VCC")
 
-  expect(trace2).not.toBeNull();
-  expect(trace2?.props.to).toBe("net.GND");
-});
+  expect(trace2).not.toBeNull()
+  expect(trace2?.props.to).toBe("net.GND")
+})

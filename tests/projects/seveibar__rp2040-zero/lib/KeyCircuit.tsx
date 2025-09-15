@@ -1,4 +1,4 @@
-import { TS_1187A_B_A_B } from "../imports/TS_1187A_B_A_B";
+import { TS_1187A_B_A_B } from "../imports/TS_1187A_B_A_B"
 
 export const KeyCircuit = () => (
   <group>
@@ -24,4 +24,4 @@ export const KeyCircuit = () => (
       }}
     />
   </group>
-);
+)

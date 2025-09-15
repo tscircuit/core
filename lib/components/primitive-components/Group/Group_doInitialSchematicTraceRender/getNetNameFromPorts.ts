@@ -1,4 +1,4 @@
-import { Port } from "../../Port";
+import { Port } from "../../Port"
 
 /**
  * Gets a reasonable net name for all the ports. This is used when a schematic
@@ -9,16 +9,16 @@ export const getNetNameFromPorts = (
 ): { name: string; wasAssignedDisplayLabel: boolean } => {
   // Are any of these ports connected to a trace with a display label?
   for (const port of ports) {
-    const traces = port._getDirectlyConnectedTraces();
+    const traces = port._getDirectlyConnectedTraces()
 
     for (const trace of traces) {
-      const displayLabel = trace._parsedProps.schDisplayLabel;
+      const displayLabel = trace._parsedProps.schDisplayLabel
       if (displayLabel) {
-        return { name: displayLabel, wasAssignedDisplayLabel: true };
+        return { name: displayLabel, wasAssignedDisplayLabel: true }
       }
     }
   }
 
-  const netName = ports.map((p) => p._getNetLabelText()).join("/");
-  return { name: netName, wasAssignedDisplayLabel: false };
-};
+  const netName = ports.map((p) => p._getNetLabelText()).join("/")
+  return { name: netName, wasAssignedDisplayLabel: false }
+}

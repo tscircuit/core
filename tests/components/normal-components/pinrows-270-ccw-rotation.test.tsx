@@ -1,9 +1,9 @@
-import { test, expect } from "bun:test";
-import "lib/register-catalogue";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import "lib/register-catalogue"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("pinrow5", () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   const pinLabelStyles = [
     {
@@ -26,7 +26,7 @@ test("pinrow5", () => {
       suffix: "_pinlabeltextalignright",
       isDefaultStyle: false,
     },
-  ];
+  ]
 
   const textOrientationStyles = [
     {
@@ -39,20 +39,20 @@ test("pinrow5", () => {
       suffix: "_pinlabelorthogonal",
       isDefaultOrientation: false,
     },
-  ];
+  ]
 
-  const jumpers = [];
+  const jumpers = []
 
   for (let i = 0; i < pinLabelStyles.length; i++) {
-    const style = pinLabelStyles[i];
+    const style = pinLabelStyles[i]
     for (let j = 0; j < textOrientationStyles.length; j++) {
-      const orientation = textOrientationStyles[j];
-      let def = `pinrow3`;
+      const orientation = textOrientationStyles[j]
+      let def = `pinrow3`
 
       if (!(style.isDefaultStyle && orientation.isDefaultOrientation)) {
-        def += style.suffix;
+        def += style.suffix
       }
-      def += orientation.suffix;
+      def += orientation.suffix
       jumpers.push(
         <jumper
           name={def}
@@ -61,7 +61,7 @@ test("pinrow5", () => {
           pcbY={i * 22 - 30}
           pcbRotation={-90}
         />,
-      );
+      )
     }
   }
 
@@ -69,8 +69,8 @@ test("pinrow5", () => {
     <board width="30mm" height="88mm">
       {jumpers}
     </board>,
-  );
-  circuit.render();
-  const soup = circuit.getCircuitJson();
-  expect(soup).toMatchPcbSnapshot(import.meta.path);
-});
+  )
+  circuit.render()
+  const soup = circuit.getCircuitJson()
+  expect(soup).toMatchPcbSnapshot(import.meta.path)
+})
