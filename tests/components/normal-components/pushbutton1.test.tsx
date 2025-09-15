@@ -8,15 +8,15 @@ test("<pushbutton /> component", async () => {
 
   circuit.add(
     <Board width={12} height={10}>
-      <Pushbutton 
-        name="PB1" 
-        footprint="PUSHBUTTON_THT" 
-        pcbX={0} 
+      <Pushbutton
+        name="PB1"
+        footprint="PUSHBUTTON_THT"
+        pcbX={0}
         pcbY={0}
         pin1="GND"
         pin2="VCC"
       />
-    </Board>
+    </Board>,
   )
 
   await circuit.renderUntilSettled()
