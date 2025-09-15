@@ -582,7 +582,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicTraceRender() {
-    if ((this._parsedProps as SubcircuitGroupProps)?.showAsSchematicBox) return
+    const parsed: any = this._parsedProps
+    if (parsed?.showAsSchematicBox === true) return
     Group_doInitialSchematicTraceRender(this as any)
   }
 
@@ -740,18 +741,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
     this.schematic_group_id = schematic_group.schematic_group_id
 
-    // If this group wants a single-box schematic, render that now and DO NOT
-    // attach child schematic components (hides internals by design).
-    if ((this._parsedProps as SubcircuitGroupProps)?.showAsSchematicBox) {
+    // NEW — boxed path
+    const parsed: any = this._parsedProps
+    if (parsed?.showAsSchematicBox === true) {
       Group_doInitialSchematicGroupBoxRender(this, { db })
-    } else {
-      // Normal behavior: attach each child's schematic_component to this group
-      for (const child of this.children) {
-        if (child.schematic_component_id) {
-          db.schematic_component.update(child.schematic_component_id, {
-            schematic_group_id: schematic_group.schematic_group_id,
-          })
-        }
+      return
+    }
+
+    // else: original behavior
+    for (const child of this.children) {
+      if (child.schematic_component_id) {
+        db.schematic_component.update(child.schematic_component_id, {
+          schematic_group_id: schematic_group.schematic_group_id,
+        })
       }
     }
   }
