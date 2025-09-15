@@ -11,6 +11,7 @@ import type { Trace } from "../Trace/Trace"
 import type { LayerRef, SchematicPort } from "circuit-json"
 import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
+import type { PinAttributeMap } from "@tscircuit/props"
 import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
 
 export const portProps = z.object({
@@ -229,6 +230,30 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       ]),
     ) as string[]
   }
+
+  private _getMatchingPinAttributes(): PinAttributeMap[] {
+    const pinAttributes = (this.parent as any)?._parsedProps?.pinAttributes as
+      | Record<string, PinAttributeMap>
+      | undefined
+
+    if (!pinAttributes) return []
+
+    const matches: PinAttributeMap[] = []
+    for (const alias of this.getNameAndAliases()) {
+      const attributes = pinAttributes[alias]
+      if (attributes) {
+        matches.push(attributes)
+      }
+    }
+
+    return matches
+  }
+
+  private _shouldIncludeInBoardPinout(): boolean {
+    return this._getMatchingPinAttributes().some(
+      (attributes) => attributes.includeInBoardPinout === true,
+    )
+  }
   isMatchingPort(port: Port) {
     return this.isMatchingAnyOf(port.getNameAndAliases())
   }
@@ -326,12 +351,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (matchCenter) {
       const subcircuit = this.getSubcircuit()
+      const isBoardPinout = this._shouldIncludeInBoardPinout()
 
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: this.parent?.pcb_component_id!,
         layers: this.getAvailablePcbLayers(),
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        ...(isBoardPinout ? { is_board_pinout: true } : {}),
         ...matchCenter,
 
         source_port_id: this.source_port_id!,
@@ -371,11 +398,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (!matchCenter) return
 
     const subcircuit = this.getSubcircuit()
+    const isBoardPinout = this._shouldIncludeInBoardPinout()
     const pcb_port = db.pcb_port.insert({
       pcb_component_id: this.parent?.pcb_component_id!,
       layers: this.getAvailablePcbLayers(),
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+      ...(isBoardPinout ? { is_board_pinout: true } : {}),
       ...matchCenter,
       source_port_id: this.source_port_id!,
     })
@@ -446,7 +475,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       bestDisplayPinLabel = labelHints[0]
     }
 
-    const pinAttributes = (this.parent as any)?._parsedProps?.pinAttributes
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
       schematic_component_id: this.parent?.schematic_component_id!,
@@ -461,17 +489,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       is_connected: false,
     }
 
-    if (pinAttributes) {
-      for (const alias of this.getNameAndAliases()) {
-        if (pinAttributes[alias]) {
-          const attributes = pinAttributes[alias]
-          if (attributes.requiresPower) {
-            schematicPortInsertProps.has_input_arrow = true
-          }
-          if (attributes.providesPower) {
-            schematicPortInsertProps.has_output_arrow = true
-          }
-        }
+    for (const attributes of this._getMatchingPinAttributes()) {
+      if (attributes.requiresPower) {
+        schematicPortInsertProps.has_input_arrow = true
+      }
+      if (attributes.providesPower) {
+        schematicPortInsertProps.has_output_arrow = true
       }
     }
 
