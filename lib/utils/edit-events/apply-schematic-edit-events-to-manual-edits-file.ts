@@ -25,6 +25,7 @@ export const applySchematicEditEventsToManualEditsFile = ({
         schematic_component_id,
       )
       if (!schematic_component) continue
+      if (!schematic_component.source_component_id) continue
       const source_component = su(circuitJson).source_component.get(
         schematic_component.source_component_id,
       )
