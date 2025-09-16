@@ -146,52 +146,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
       }
     })
     return
-  } else if (typeof footprint === "object" && footprint !== null) {
-    queueAsyncEffect("load-object-footprint", async () => {
-      try {
-        if (Array.isArray(footprint)) {
-          const fpComponents = createComponentsFromCircuitJson(
-            {
-              componentName: component.name,
-              componentRotation: pcbRotation,
-              footprint: "",
-              pinLabels,
-              pcbPinLabels,
-            },
-            footprint,
-          )
-          component.addAll(fpComponents)
-          for (const child of component.children) {
-            if (child.componentName === "Port") {
-              child._markDirty?.("PcbPortRender")
-            }
-          }
-          component._markDirty("InitializePortsFromChildren")
-        } else {
-          component.add(footprint)
-        }
-      } catch (err) {
-        const db = component.root?.db
-        if (db && component.source_component_id && component.pcb_component_id) {
-          const subcircuit = component.getSubcircuit()
-          const errorMsg =
-            `${component.getString()} failed to load json footprint: ` +
-            (err instanceof Error ? err.message : String(err))
-          const errorObj = external_footprint_load_error.parse({
-            type: "external_footprint_load_error",
-            message: errorMsg,
-            pcb_component_id: component.pcb_component_id,
-            source_component_id: component.source_component_id,
-            subcircuit_id: subcircuit.subcircuit_id ?? undefined,
-            pcb_group_id: component.getGroup()?.pcb_group_id ?? undefined,
-            footprinter_string: "object footprint",
-          })
-          db.external_footprint_load_error.insert(errorObj)
-        }
-        throw err
-      }
-    })
-    return
   }
 
   if (
@@ -199,5 +153,55 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     (footprint as Footprint).componentName === "Footprint"
   ) {
     component.add(footprint as Footprint)
+  }
+
+  if (
+    typeof footprint === "object" &&
+    footprint !== null &&
+    !isReactElement(footprint)
+  ) {
+    try {
+      if (Array.isArray(footprint)) {
+        const fpComponents = createComponentsFromCircuitJson(
+          {
+            componentName: component.name,
+            componentRotation: pcbRotation,
+            footprint: "",
+            pinLabels,
+            pcbPinLabels,
+          },
+          footprint,
+        )
+        component.addAll(fpComponents)
+        for (const child of component.children) {
+          if (child.componentName === "Port") {
+            child._markDirty?.("PcbPortRender")
+          }
+        }
+        component._markDirty("InitializePortsFromChildren")
+      } else {
+        component.add(footprint)
+      }
+    } catch (err) {
+      const db = component.root?.db
+      if (db && component.source_component_id && component.pcb_component_id) {
+        const subcircuit = component.getSubcircuit()
+        const errorMsg =
+          `${component.getString()} failed to load json footprint: ` +
+          (err instanceof Error ? err.message : String(err))
+        const errorObj = external_footprint_load_error.parse({
+          type: "external_footprint_load_error",
+          message: errorMsg,
+          pcb_component_id: component.pcb_component_id,
+          source_component_id: component.source_component_id,
+          subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+          pcb_group_id: component.getGroup()?.pcb_group_id ?? undefined,
+          footprinter_string: "object footprint",
+        })
+        db.external_footprint_load_error.insert(errorObj)
+      }
+      throw err
+    }
+    return
   }
 }
