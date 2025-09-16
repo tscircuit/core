@@ -61,6 +61,7 @@ import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalCompo
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
 import { isFootprintUrl } from "./utils/isFoorprintUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
+import { normalizeSymbolProp } from "../../../utils/schematic/normalizeSymbolProp"
 
 const debug = Debug("tscircuit:core")
 
@@ -597,15 +598,32 @@ export class NormalComponent<
     const center = this._getGlobalSchematicPositionBeforeLayout()
 
     if (symbol) {
-      const schematic_component = db.schematic_component.insert({
+      const symBits = normalizeSymbolProp(this.props.symbol)
+
+      // start with your existing fields
+      const insertPayload: any = {
         center,
         size: symbol.size,
         source_component_id: this.source_component_id!,
-
         symbol_name,
-
         symbol_display_value: this._getSchematicSymbolDisplayValue(),
-      })
+      }
+
+      // add inline symbol if present
+      if ("symbol" in symBits && symBits.symbol) {
+        insertPayload.symbol = symBits.symbol
+      }
+      // otherwise, add alias from symBits if present
+      else if ("symbol_name" in symBits && symBits.symbol_name) {
+        insertPayload.symbol_name = symBits.symbol_name
+      }
+
+      // explicit alias prop (symbolName) only if there is no inline symbol
+      if (typeof this.props.symbolName === "string" && !("symbol" in symBits)) {
+        insertPayload.symbol_name = this.props.symbolName
+      }
+
+      const schematic_component = db.schematic_component.insert(insertPayload)
       this.schematic_component_id = schematic_component.schematic_component_id
     }
   }
