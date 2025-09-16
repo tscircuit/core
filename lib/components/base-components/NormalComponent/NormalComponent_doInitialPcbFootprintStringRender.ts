@@ -146,7 +146,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
       }
     })
     return
-  } else if (typeof footprint === "object") {
+  } else if (typeof footprint === "object" && footprint !== null) {
     queueAsyncEffect("load-object-footprint", async () => {
       try {
         if (Array.isArray(footprint)) {
