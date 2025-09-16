@@ -5,7 +5,10 @@ import { Footprint } from "lib/components/primitive-components/Footprint"
 import { isFootprintUrl } from "./utils/isFoorprintUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 import type { CadModelProp } from "@tscircuit/props"
-import { external_footprint_load_error } from "circuit-json"
+import {
+  circuit_json_footprint_load_error,
+  external_footprint_load_error,
+} from "circuit-json"
 
 interface FootprintLibraryResult {
   footprintCircuitJson: any[]
@@ -156,32 +159,22 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
   }
 
   if (
-    typeof footprint === "object" &&
-    footprint !== null &&
-    !isReactElement(footprint)
+    Array.isArray(footprint) &&
+    !isReactElement(footprint) &&
+    footprint.length > 0
   ) {
     try {
-      if (Array.isArray(footprint)) {
-        const fpComponents = createComponentsFromCircuitJson(
-          {
-            componentName: component.name,
-            componentRotation: pcbRotation,
-            footprint: "",
-            pinLabels,
-            pcbPinLabels,
-          },
-          footprint,
-        )
-        component.addAll(fpComponents)
-        for (const child of component.children) {
-          if (child.componentName === "Port") {
-            child._markDirty?.("PcbPortRender")
-          }
-        }
-        component._markDirty("InitializePortsFromChildren")
-      } else {
-        component.add(footprint)
-      }
+      const fpComponents = createComponentsFromCircuitJson(
+        {
+          componentName: component.name,
+          componentRotation: pcbRotation,
+          footprint: "",
+          pinLabels,
+          pcbPinLabels,
+        },
+        footprint,
+      )
+      component.addAll(fpComponents)
     } catch (err) {
       const db = component.root?.db
       if (db && component.source_component_id && component.pcb_component_id) {
@@ -189,16 +182,15 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         const errorMsg =
           `${component.getString()} failed to load json footprint: ` +
           (err instanceof Error ? err.message : String(err))
-        const errorObj = external_footprint_load_error.parse({
-          type: "external_footprint_load_error",
+        const errorObj = circuit_json_footprint_load_error.parse({
+          type: "circuit_json_footprint_load_error",
           message: errorMsg,
           pcb_component_id: component.pcb_component_id,
           source_component_id: component.source_component_id,
           subcircuit_id: subcircuit.subcircuit_id ?? undefined,
           pcb_group_id: component.getGroup()?.pcb_group_id ?? undefined,
-          footprinter_string: "object footprint",
         })
-        db.external_footprint_load_error.insert(errorObj)
+        db.circuit_json_footprint_load_error.insert(errorObj)
       }
       throw err
     }
