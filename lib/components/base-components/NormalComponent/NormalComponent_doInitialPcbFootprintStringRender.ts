@@ -146,6 +146,28 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
       }
     })
     return
+  } else if (typeof footprint === "object") {
+    if (Array.isArray(footprint)) {
+      const fpComponents = createComponentsFromCircuitJson(
+        {
+          componentName: component.name,
+          componentRotation: pcbRotation,
+          footprint: "",
+          pinLabels,
+          pcbPinLabels,
+        },
+        footprint,
+      )
+      component.addAll(fpComponents)
+      for (const child of component.children) {
+        if (child.componentName === "Port") {
+          child._markDirty?.("PcbPortRender")
+        }
+      }
+      component._markDirty("InitializePortsFromChildren")
+    } else {
+      component.add(footprint)
+    }
   }
 
   if (
