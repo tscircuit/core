@@ -40,9 +40,13 @@ export function applyTracesFromSolverOutput(args: {
 
     const points = [...(rawPoints as Array<{ x: number; y: number }>)]
 
-    if (Array.isArray(solvedTracePath?.pins) && solvedTracePath.pins.length >= 1) {
+    if (
+      Array.isArray(solvedTracePath?.pins) &&
+      solvedTracePath.pins.length >= 1
+    ) {
       const firstPinId = solvedTracePath.pins[0]?.pinId
-      const lastPinId = solvedTracePath.pins[solvedTracePath.pins.length - 1]?.pinId
+      const lastPinId =
+        solvedTracePath.pins[solvedTracePath.pins.length - 1]?.pinId
 
       const applyAnchor = (pinId: string | undefined, index: number) => {
         if (!pinId) return
