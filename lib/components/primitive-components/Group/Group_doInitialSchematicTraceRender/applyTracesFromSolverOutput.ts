@@ -4,6 +4,7 @@ import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import Debug from "debug"
+import { getSchematicPortTraceAnchor } from "lib/utils/schematic/getSchematicPortTraceAnchor"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -29,12 +30,35 @@ export function applyTracesFromSolverOutput(args: {
   )
 
   for (const solvedTracePath of Object.values(correctedMap ?? {})) {
-    const points = solvedTracePath?.tracePath as Array<{ x: number; y: number }>
-    if (!Array.isArray(points) || points.length < 2) {
+    const rawPoints = solvedTracePath?.tracePath
+    if (!Array.isArray(rawPoints) || rawPoints.length < 2) {
       debug(
         `Skipping trace ${solvedTracePath?.pinIds.join(",")} because it has less than 2 points`,
       )
       continue
+    }
+
+    const points = [...(rawPoints as Array<{ x: number; y: number }>)]
+
+    if (Array.isArray(solvedTracePath?.pins) && solvedTracePath.pins.length >= 1) {
+      const firstPinId = solvedTracePath.pins[0]?.pinId
+      const lastPinId = solvedTracePath.pins[solvedTracePath.pins.length - 1]?.pinId
+
+      const applyAnchor = (pinId: string | undefined, index: number) => {
+        if (!pinId) return
+        const schematicPortId = pinIdToSchematicPortId.get(pinId)
+        if (!schematicPortId) return
+        const schematicPort = db.schematic_port.get(schematicPortId)
+        if (!schematicPort) return
+        const anchor = getSchematicPortTraceAnchor({
+          center: schematicPort.center,
+          facingDirection: schematicPort.facing_direction,
+        })
+        points[index] = { x: anchor.x, y: anchor.y }
+      }
+
+      applyAnchor(firstPinId, 0)
+      applyAnchor(lastPinId, points.length - 1)
     }
 
     const edges: SchematicTrace["edges"] = []

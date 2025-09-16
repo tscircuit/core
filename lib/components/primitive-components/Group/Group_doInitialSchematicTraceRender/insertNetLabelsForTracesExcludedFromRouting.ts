@@ -2,6 +2,7 @@ import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { getSchematicPortTraceAnchor } from "lib/utils/schematic/getSchematicPortTraceAnchor"
 
 export function insertNetLabelsForTracesExcludedFromRouting(args: {
   group: Group<any>
@@ -26,7 +27,11 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
       if (!res?.allPortsFound || !res.ports || res.ports.length < 1) continue
       const ports = res.ports.slice(0, 2)
       for (const port of ports) {
-        const anchor_position = port._getGlobalSchematicPositionAfterLayout()
+        const portCenter = port._getGlobalSchematicPositionAfterLayout()
+        const anchor_position = getSchematicPortTraceAnchor({
+          center: portCenter,
+          facingDirection: port.facingDirection,
+        })
         const side =
           getEnteringEdgeFromDirection(port.facingDirection || "right") ||
           "right"

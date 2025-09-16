@@ -1,5 +1,6 @@
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getSchematicPortTraceAnchor } from "lib/utils/schematic/getSchematicPortTraceAnchor"
 import type { Trace } from "./Trace"
 
 export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
@@ -16,12 +17,19 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
 
   if (!allPortsFound) return
 
-  const portsWithPosition = connectedPorts.map(({ port }) => ({
-    port,
-    position: port._getGlobalSchematicPositionAfterLayout(),
-    schematic_port_id: port.schematic_port_id!,
-    facingDirection: port.facingDirection,
-  }))
+  const portsWithPosition = connectedPorts.map(({ port }) => {
+    const center = port._getGlobalSchematicPositionAfterLayout()
+    return {
+      port,
+      center,
+      position: getSchematicPortTraceAnchor({
+        center,
+        facingDirection: port.facingDirection,
+      }),
+      schematic_port_id: port.schematic_port_id!,
+      facingDirection: port.facingDirection,
+    }
+  })
   if (portsWithPosition.length < 2) {
     throw new Error("Expected at least two ports in portsWithPosition.")
   }

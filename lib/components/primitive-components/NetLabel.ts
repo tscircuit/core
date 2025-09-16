@@ -5,6 +5,7 @@ import { Trace } from "./Trace/Trace"
 import { Net } from "./Net"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getSchematicPortTraceAnchor } from "lib/utils/schematic/getSchematicPortTraceAnchor"
 import {
   applyToPoint,
   identity,
@@ -216,7 +217,11 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
         if (existingTraceForThisConnection) continue
       }
 
-      const portPos = port._getGlobalSchematicPositionAfterLayout()
+      const portCenter = port._getGlobalSchematicPositionAfterLayout()
+      const portPos = getSchematicPortTraceAnchor({
+        center: portCenter,
+        facingDirection: port.facingDirection,
+      })
       const portFacing =
         convertFacingDirectionToElbowDirection(
           (port.facingDirection as any) ?? "right",
