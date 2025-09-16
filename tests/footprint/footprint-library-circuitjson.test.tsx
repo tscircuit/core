@@ -7,7 +7,12 @@ test("footprint library map circuitjson", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <resistor name="R1" resistance="10k" footprint={[] as any} pcbX={0} />
+      <resistor
+        name="R1"
+        resistance="10k"
+        footprint={external0402Footprint as any}
+        pcbX={0}
+      />
     </board>,
   )
 
