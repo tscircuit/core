@@ -534,7 +534,7 @@ export class NormalComponent<
 
     // Check if there's a custom symbol JSX prop
     if (props.symbol && isReactElement(props.symbol)) {
-      this._doInitialSchematicComponentRenderWithCustomSymbol(props.symbol)
+      this._doInitialSchematicComponentRenderWithReactSymbol(props.symbol)
     } else if (schematicSymbolName) {
       this._doInitialSchematicComponentRenderWithSymbol()
     } else {
