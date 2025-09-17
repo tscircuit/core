@@ -48,11 +48,13 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   // Check for cached route
   const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
   if (cachedRoute) {
+    const traceColor = trace.props.pcbColor || trace.props.color
     const pcb_trace = db.pcb_trace.insert({
-      route: cachedRoute.flatMap((trace) => trace.route),
+      route: cachedRoute.flatMap((trace: any) => trace.route),
       source_trace_id: trace.source_trace_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+      color: traceColor,
     })
     trace.pcb_trace_id = pcb_trace.pcb_trace_id
     return
@@ -341,7 +343,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     // If the autorouter didn't specify a layer, use the dominant layer
     // Some of the single-layer autorouters don't add the layer property
     if (dominantLayer) {
-      autoroutedTrace.route = autoroutedTrace.route.map((p) => {
+      autoroutedTrace.route = autoroutedTrace.route.map((p: any) => {
         if (p.route_type === "wire" && !p.layer) {
           p.layer = dominantLayer
         }
@@ -362,11 +364,25 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const mergedRoute = mergeRoutes(routes)
 
   const traceLength = getTraceLength(mergedRoute)
+  const traceColor = trace.props.pcbColor || trace.props.color
+  
+  // Apply color to route points
+  const routeWithColor = mergedRoute.map((point: any) => {
+    if (point.route_type === "wire") {
+      return {
+        ...point,
+        color: point.color || traceColor
+      }
+    }
+    return point
+  })
+  
   const pcb_trace = db.pcb_trace.insert({
-    route: mergedRoute,
+    route: routeWithColor,
     source_trace_id: trace.source_trace_id!,
     subcircuit_id: trace.getSubcircuit()?.subcircuit_id!,
     trace_length: traceLength,
+    color: traceColor,
   })
   trace._portsRoutedOnPcb = ports
   trace.pcb_trace_id = pcb_trace.pcb_trace_id
