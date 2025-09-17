@@ -96,9 +96,9 @@ export const createComponentsFromCircuitJson = (
             rectPadHeight: elm.rect_pad_height,
             rectPadWidth: elm.rect_pad_width,
             portHints: elm.port_hints,
-            pcbHoleOffsetX: elm.hole_offset_x,
-            pcbHoleOffsetY: elm.hole_offset_y,
             rectBorderRadius: elm.rect_border_radius,
+            holeOffsetX: elm.hole_offset_x,
+            holeOffsetY: elm.hole_offset_y,
           }),
         )
       } else if (elm.shape === "pill" || elm.shape === "oval") {
@@ -112,6 +112,23 @@ export const createComponentsFromCircuitJson = (
             outerWidth: elm.outer_width,
             outerHeight: elm.outer_height,
             portHints: elm.port_hints,
+          }),
+        )
+      } else if (elm.shape === "pill_hole_with_rect_pad") {
+        components.push(
+          new PlatedHole({
+            pcbX: elm.x,
+            pcbY: elm.y,
+            shape: "pill_hole_with_rect_pad",
+            holeShape: "pill",
+            padShape: "rect",
+            holeWidth: elm.hole_width,
+            holeHeight: elm.hole_height,
+            rectPadWidth: elm.rect_pad_width,
+            rectPadHeight: elm.rect_pad_height,
+            portHints: elm.port_hints,
+            holeOffsetX: elm.hole_offset_x,
+            holeOffsetY: elm.hole_offset_y,
           }),
         )
       }

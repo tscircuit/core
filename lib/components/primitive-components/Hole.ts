@@ -15,7 +15,12 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
 
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
-    return { width: props.diameter, height: props.diameter }
+    const isPill = props.shape === "pill"
+
+    return {
+      width: isPill ? props.width : props.diameter,
+      height: isPill ? props.height : props.diameter,
+    }
   }
 
   doInitialPcbPrimitiveRender(): void {
