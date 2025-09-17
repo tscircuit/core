@@ -36,6 +36,20 @@ export function getBoundsForSchematic(db: any[]): {
       cy = elm.position?.y
       w = (elm.text?.length ?? 0) * 0.1
       h = 0.2
+    } else if (elm.type === "schematic_line") {
+      const x1 = elm.x1 ?? 0
+      const y1 = elm.y1 ?? 0
+      const x2 = elm.x2 ?? 0
+      const y2 = elm.y2 ?? 0
+      cx = (x1 + x2) / 2
+      cy = (y1 + y2) / 2
+      w = Math.abs(x2 - x1)
+      h = Math.abs(y2 - y1)
+    } else if (elm.type === "schematic_rect") {
+      cx = elm.center?.x
+      cy = elm.center?.y
+      w = elm.width
+      h = elm.height
     }
     if (
       typeof cx === "number" &&
