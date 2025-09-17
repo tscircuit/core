@@ -53,15 +53,21 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     const traceColor = p?.pcbColor || p?.color
     const cachedRouteWithColor = cachedRoute
       .flatMap((t) => t.route)
-      .map((point: any) => {
-        if (point.route_type === "wire") {
-          return {
-            ...point,
-            color: point.color || traceColor,
+      .map(
+        (point: {
+          route_type?: string
+          color?: string
+          [key: string]: any
+        }) => {
+          if (point.route_type === "wire") {
+            return {
+              ...point,
+              color: point.color || traceColor,
+            }
           }
-        }
-        return point
-      })
+          return point
+        },
+      )
 
     const pcb_trace = db.pcb_trace.insert({
       route: cachedRouteWithColor as any,
@@ -381,15 +387,17 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const traceColor = p?.pcbColor || p?.color
 
   // Apply color to route points
-  const routeWithColor = mergedRoute.map((point: any) => {
-    if (point.route_type === "wire") {
-      return {
-        ...point,
-        color: point.color || traceColor,
+  const routeWithColor = mergedRoute.map(
+    (point: { route_type?: string; color?: string; [key: string]: any }) => {
+      if (point.route_type === "wire") {
+        return {
+          ...point,
+          color: point.color || traceColor,
+        }
       }
-    }
-    return point
-  })
+      return point
+    },
+  )
 
   const pcb_trace = db.pcb_trace.insert({
     route: routeWithColor as any,
