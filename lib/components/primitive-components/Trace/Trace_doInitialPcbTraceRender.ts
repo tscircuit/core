@@ -48,8 +48,22 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   // Check for cached route
   const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
   if (cachedRoute) {
+    // Apply explicit color to cached routes if provided via props
+    const traceColor = trace.props.pcbColor || trace.props.color
+    const cachedRouteWithColor = cachedRoute
+      .flatMap((t) => t.route)
+      .map((point: any) => {
+        if (point.route_type === "wire") {
+          return {
+            ...point,
+            color: point.color || traceColor,
+          }
+        }
+        return point
+      })
+
     const pcb_trace = db.pcb_trace.insert({
-      route: cachedRoute.flatMap((trace) => trace.route),
+      route: cachedRouteWithColor,
       source_trace_id: trace.source_trace_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
@@ -362,8 +376,21 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const mergedRoute = mergeRoutes(routes)
 
   const traceLength = getTraceLength(mergedRoute)
+  const traceColor = trace.props.pcbColor || trace.props.color
+
+  // Apply color to route points
+  const routeWithColor = mergedRoute.map((point: any) => {
+    if (point.route_type === "wire") {
+      return {
+        ...point,
+        color: point.color || traceColor,
+      }
+    }
+    return point
+  })
+
   const pcb_trace = db.pcb_trace.insert({
-    route: mergedRoute,
+    route: routeWithColor,
     source_trace_id: trace.source_trace_id!,
     subcircuit_id: trace.getSubcircuit()?.subcircuit_id!,
     trace_length: traceLength,
