@@ -378,9 +378,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const mergedRoute = mergeRoutes(routes)
 
   const traceLength = getTraceLength(mergedRoute)
-  const traceColor =
-    (trace as any)._parsedProps?.pcbColor ||
-    (trace as any)._parsedProps?.color
+  const traceColor = (trace as any)._parsedProps?.pcbColor || (trace as any)._parsedProps?.color
 
   // Apply color to route points
   const routeWithColor = mergedRoute.map((point: any) => {
