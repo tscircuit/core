@@ -108,8 +108,8 @@ export class Board extends Group<typeof boardProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    // Skip if width and height are explicitly provided
-    if (props.width && props.height) return
+    // Skip if width and height are explicitly provided and no anchor position is set
+    if (props.width && props.height && !props.boardAnchorPosition) return
 
     let minX = Infinity
     let minY = Infinity
@@ -163,20 +163,43 @@ export class Board extends Group<typeof boardProps> {
     const computedWidth = hasComponents ? maxX - minX + padding * 2 : 0
     const computedHeight = hasComponents ? maxY - minY + padding * 2 : 0
 
-    // Center the board around the components or use (0,0) for empty boards
-    const center = {
-      x: hasComponents
-        ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
-        : (props.outlineOffsetX ?? 0),
-      y: hasComponents
-        ? (minY + maxY) / 2 + (props.outlineOffsetY ?? 0)
-        : (props.outlineOffsetY ?? 0),
+    // Calculate the board dimensions
+    const boardWidth = props.width ?? computedWidth
+    const boardHeight = props.height ?? computedHeight
+
+    // Calculate the center based on anchor position and alignment if specified
+    let center = { x: 0, y: 0 }
+
+    if (props.boardAnchorPosition) {
+      center = { ...props.boardAnchorPosition }
+
+      const alignment = props.boardAnchorAlignment ?? "center"
+      const isLeft = alignment.endsWith("_left")
+      const isRight = alignment.endsWith("_right")
+      const isTop = alignment.startsWith("top_")
+      const isBottom = alignment.startsWith("bottom_")
+
+      if (isLeft) center.x += boardWidth / 2
+      if (isRight) center.x -= boardWidth / 2
+      if (isTop) center.y += boardHeight / 2 // PCB: +Y is down
+      if (isBottom) center.y -= boardHeight / 2
+
+      center.x += props.outlineOffsetX ?? 0
+      center.y += props.outlineOffsetY ?? 0
+    } else if (hasComponents) {
+      center = {
+        x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
+        y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
+      }
+    } else {
+      center = {
+        x: props.outlineOffsetX ?? 0,
+        y: props.outlineOffsetY ?? 0,
+      }
     }
 
-    // Update the board dimensions, preserving any explicit dimension provided
-    // by the user while auto-calculating the missing one.
-    const finalWidth = props.width ?? computedWidth
-    const finalHeight = props.height ?? computedHeight
+    const finalWidth = boardWidth
+    const finalHeight = boardHeight
 
     let outline = props.outline
     if (
