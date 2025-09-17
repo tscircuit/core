@@ -8,14 +8,14 @@ test("board auto-size with grouped components", () => {
     <board>
       <group>
         <resistor
-          name="R1"
+          name="R_5_5"
           resistance="10k"
           footprint="0402"
           pcbX={5}
           pcbY={5}
         />
         <resistor
-          name="R2"
+          name="R_-5_-5"
           resistance="10k"
           footprint="0402"
           pcbX={-5}
@@ -24,7 +24,7 @@ test("board auto-size with grouped components", () => {
       </group>
       <fabricationnotetext text="(0,0)" pcbX={0} pcbY={0} />
       <fabricationnotetext
-        text="top_left"
+        text="top_left(-5.61,5.28)"
         anchorAlignment="top_left"
         pcbX={-5.610576923076923}
         pcbY={5.278846153846154}
@@ -42,7 +42,11 @@ test("board auto-size with grouped components", () => {
 
   const notes = circuit.db.pcb_fabrication_note_text.list()
   const originNote = notes.find((note) => note.text === "(0,0)")
-  const topLeftNote = notes.find((note) => note.text === "top_left")
+  const topLeftNote = notes.find(
+    (note) => note.text === "top_left(-5.61,5.28)",
+  )
+
+  expect(topLeftNote?.text).toBe("top_left(-5.61,5.28)")
 
   expect(originNote?.anchor_position).toEqual({ x: 0, y: 0 })
 
