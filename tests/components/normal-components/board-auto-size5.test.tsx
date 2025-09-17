@@ -15,4 +15,5 @@ test("board auto-size with group is empty", () => {
   const pcb_board = circuit.db.pcb_board.list()[0]
   expect(pcb_board.center.x).toBe(0)
   expect(pcb_board.center.y).toBe(0)
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

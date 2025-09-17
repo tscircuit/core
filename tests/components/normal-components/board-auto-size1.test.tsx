@@ -24,4 +24,5 @@ test("board auto-sizes when no dimensions provided", () => {
   // Board should be larger than component bounds
   expect(pcb_board.width).toBeGreaterThan(10)
   expect(pcb_board.height).toBeGreaterThan(10)
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
