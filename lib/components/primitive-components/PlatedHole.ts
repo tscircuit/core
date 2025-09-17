@@ -165,9 +165,14 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         rect_ccw_rotation: props.pcbRotation ?? 0,
         rect_pad_width: props.outerWidth,
         rect_pad_height: props.outerHeight,
+<<<<<<< HEAD
         PcbHoleRotatedPillWithRectPad: false,
         hole_offset_x: 0,
         hole_offset_y: 0,
+=======
+        hole_offset_x: props.holeOffsetX,
+        hole_offset_y: props.holeOffsetY,
+>>>>>>> eda875c1a7684843244749f311d9d7bc85aa76c3
       } as PcbHoleRotatedPillWithRectPad)
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
@@ -229,8 +234,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         layers: ["top", "bottom"],
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        hole_offset_x: props.pcbHoleOffsetX ?? 0,
-        hole_offset_y: props.pcbHoleOffsetY ?? 0,
+        hole_offset_x: props.holeOffsetX,
+        hole_offset_y: props.holeOffsetY,
         rect_border_radius: props.rectBorderRadius ?? 0,
       } as PcbHoleCircularWithRectPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
@@ -242,6 +247,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         hole_height: props.holeHeight,
         rect_pad_width: props.rectPadWidth,
         rect_pad_height: props.rectPadHeight,
+        hole_offset_x: props.holeOffsetX,
+        hole_offset_y: props.holeOffsetY,
         shape: "pill_hole_with_rect_pad" as const,
         port_hints: this.getNameAndAliases(),
         x: position.x,
