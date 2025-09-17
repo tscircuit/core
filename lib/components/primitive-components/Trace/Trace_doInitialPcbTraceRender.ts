@@ -49,9 +49,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
   if (cachedRoute) {
     // Apply explicit color to cached routes if provided via props
-    const traceColor =
-      (trace as any)._parsedProps?.pcbColor ||
-      (trace as any)._parsedProps?.color
+    const p = (trace as any)._parsedProps
+    const traceColor = p?.pcbColor || p?.color
     const cachedRouteWithColor = cachedRoute
       .flatMap((t) => t.route)
       .map((point: any) => {
@@ -378,9 +377,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const mergedRoute = mergeRoutes(routes)
 
   const traceLength = getTraceLength(mergedRoute)
-  const traceColor =
-    (trace as any)._parsedProps?.pcbColor ||
-    (trace as any)._parsedProps?.color
+  const p = (trace as any)._parsedProps
+  const traceColor = p?.pcbColor || p?.color
 
   // Apply color to route points
   const routeWithColor = mergedRoute.map((point: any) => {
