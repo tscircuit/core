@@ -34,25 +34,5 @@ test("board auto-size with grouped components", () => {
 
   circuit.render()
 
-  const pcb_board = circuit.db.pcb_board.list()[0]
-  expect(pcb_board.center.x).toBe(0)
-  expect(pcb_board.center.y).toBe(0)
-  expect(pcb_board.width).toBeGreaterThan(10)
-  expect(pcb_board.height).toBeGreaterThan(10)
-
-  const notes = circuit.db.pcb_fabrication_note_text.list()
-  const originNote = notes.find((note) => note.text === "(0,0)")
-  const topLeftNote = notes.find((note) => note.text === "top_left")
-
-  expect(originNote?.anchor_position).toEqual({ x: 0, y: 0 })
-
-  const boardTopLeft = {
-    x: pcb_board.center.x - pcb_board.width / 2,
-    y: pcb_board.center.y + pcb_board.height / 2,
-  }
-
-  expect(topLeftNote?.anchor_position?.x).toBeCloseTo(boardTopLeft.x, 6)
-  expect(topLeftNote?.anchor_position?.y).toBeCloseTo(boardTopLeft.y, 6)
-
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

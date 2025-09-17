@@ -30,4 +30,5 @@ test("board auto-sizes with nested components", () => {
   // Should be at least 20mm (component spread) + padding
   expect(pcb_board.width).toBeGreaterThan(22)
   expect(pcb_board.height).toBeGreaterThan(22)
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

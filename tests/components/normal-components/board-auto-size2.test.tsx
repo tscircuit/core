@@ -15,4 +15,5 @@ test("board respects explicit dimensions", () => {
   const pcb_board = circuit.db.pcb_board.list()[0]
   expect(pcb_board.width).toBe(50)
   expect(pcb_board.height).toBe(50)
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

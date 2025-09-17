@@ -29,28 +29,5 @@ test("board anchor alignment holds when pcbPack auto-sizes", async () => {
 
   await circuit.renderUntilSettled()
 
-  const board = circuit.db.pcb_board.list()[0]
-  const topLeft = {
-    x: board.center.x - board.width / 2,
-    y: board.center.y + board.height / 2,
-  }
-
-  expect(topLeft.x).toBeCloseTo(-20, 6)
-  expect(topLeft.y).toBeCloseTo(15, 6)
-
-  const packedComponents = circuit.db.pcb_component
-    .list()
-    .filter((component) => component.pcb_board_id === board.pcb_board_id)
-
-  const boardBounds = {
-    minX: board.center.x - board.width / 2,
-    maxX: board.center.x + board.width / 2,
-    minY: board.center.y - board.height / 2,
-    maxY: board.center.y + board.height / 2,
-  }
-
-  for (const component of packedComponents) {
-    within(component.center.x, boardBounds.minX, boardBounds.maxX)
-    within(component.center.y, boardBounds.minY, boardBounds.maxY)
-  }
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

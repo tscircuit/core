@@ -9,7 +9,13 @@ test("board anchor alignment applies after auto-size", () => {
       boardAnchorAlignment="bottom_right"
       boardAnchorPosition={{ x: 25, y: 30 }}
     >
-      <resistor name="R1" resistance="10k" footprint="0402" pcbX={-5} pcbY={-5} />
+      <resistor
+        name="R1"
+        resistance="10k"
+        footprint="0402"
+        pcbX={-5}
+        pcbY={-5}
+      />
       <resistor name="R2" resistance="10k" footprint="0402" pcbX={5} pcbY={5} />
     </board>,
   )
@@ -24,4 +30,5 @@ test("board anchor alignment applies after auto-size", () => {
 
   expect(bottomRight.x).toBeCloseTo(25, 6)
   expect(bottomRight.y).toBeCloseTo(30, 6)
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

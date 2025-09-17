@@ -23,4 +23,5 @@ test("board anchor alignment adjusts explicit dimensions", () => {
 
   expect(topLeft.x).toBeCloseTo(10, 6)
   expect(topLeft.y).toBeCloseTo(20, 6)
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
