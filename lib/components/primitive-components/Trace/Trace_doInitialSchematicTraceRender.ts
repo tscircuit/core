@@ -129,12 +129,12 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
           ? connectedNetLabel._getGlobalSchematicPositionBeforeLayout()
           : connectedNetLabel.anchor_position!
       const edges: SchematicTrace["edges"] = []
-      const edgeColor = trace.props.schematicColor || trace.props.color
+      const edgeColor = (trace as any)._parsedProps?.schematicColor || (trace as any)._parsedProps?.color
       if (anchorPos.x === labelPos.x || anchorPos.y === labelPos.y) {
-        edges.push({ from: anchorPos, to: labelPos, color: edgeColor })
+        edges.push({ from: anchorPos, to: labelPos })
       } else {
-        edges.push({ from: anchorPos, to: { x: labelPos.x, y: anchorPos.y }, color: edgeColor })
-        edges.push({ from: { x: labelPos.x, y: anchorPos.y }, to: labelPos, color: edgeColor })
+        edges.push({ from: anchorPos, to: { x: labelPos.x, y: anchorPos.y } })
+        edges.push({ from: { x: labelPos.x, y: anchorPos.y }, to: labelPos })
       }
       const dbTrace = db.schematic_trace.insert({
         source_trace_id: trace.source_trace_id!,
@@ -439,16 +439,16 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   }
 
   // Apply explicit color to edges from props
-  const traceColor = trace.props.schematicColor || trace.props.color
+  const traceColor = (trace as any)._parsedProps?.schematicColor || (trace as any)._parsedProps?.color
   const edgesWithColor = edges.map((edge: any) => ({
     ...edge,
-    color: edge.color || traceColor,
+    color: (edge as any).color || traceColor,
   }))
 
   // Insert schematic trace
   const dbTrace = db.schematic_trace.insert({
     source_trace_id: trace.source_trace_id!,
-    edges: edgesWithColor,
+    edges: edgesWithColor as any,
     junctions,
     subcircuit_connectivity_map_key:
       trace.subcircuit_connectivity_map_key ?? undefined,
