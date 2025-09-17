@@ -129,11 +129,12 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
           ? connectedNetLabel._getGlobalSchematicPositionBeforeLayout()
           : connectedNetLabel.anchor_position!
       const edges: SchematicTrace["edges"] = []
+      const edgeColor = trace.props.schematicColor || trace.props.color
       if (anchorPos.x === labelPos.x || anchorPos.y === labelPos.y) {
-        edges.push({ from: anchorPos, to: labelPos })
+        edges.push({ from: anchorPos, to: labelPos, color: edgeColor })
       } else {
-        edges.push({ from: anchorPos, to: { x: labelPos.x, y: anchorPos.y } })
-        edges.push({ from: { x: labelPos.x, y: anchorPos.y }, to: labelPos })
+        edges.push({ from: anchorPos, to: { x: labelPos.x, y: anchorPos.y }, color: edgeColor })
+        edges.push({ from: { x: labelPos.x, y: anchorPos.y }, to: labelPos, color: edgeColor })
       }
       const dbTrace = db.schematic_trace.insert({
         source_trace_id: trace.source_trace_id!,
@@ -141,6 +142,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         junctions: [],
         subcircuit_connectivity_map_key:
           trace.subcircuit_connectivity_map_key ?? undefined,
+        color: trace.props.schematicColor || trace.props.color,
       })
       trace.schematic_trace_id = dbTrace.schematic_trace_id
       return
@@ -438,12 +440,19 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   }
 
   // Insert schematic trace
+  const traceColor = trace.props.schematicColor || trace.props.color
+  const edgesWithColor = edges.map((edge: any) => ({
+    ...edge,
+    color: edge.color || traceColor
+  }))
+  
   const dbTrace = db.schematic_trace.insert({
     source_trace_id: trace.source_trace_id!,
-    edges,
+    edges: edgesWithColor,
     junctions,
     subcircuit_connectivity_map_key:
       trace.subcircuit_connectivity_map_key ?? undefined,
+    color: traceColor,
   })
   trace.schematic_trace_id = dbTrace.schematic_trace_id
 
