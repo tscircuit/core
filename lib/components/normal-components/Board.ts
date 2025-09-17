@@ -62,6 +62,53 @@ const getRoundedRectOutline = (
   return outline
 }
 
+const getCenterFromAnchor = (
+  anchorPosition: { x: number; y: number },
+  anchorAlignment:
+    | "center"
+    | "top_left"
+    | "top_center"
+    | "top_right"
+    | "center_left"
+    | "center_right"
+    | "bottom_left"
+    | "bottom_center"
+    | "bottom_right",
+  width: number,
+  height: number,
+) => {
+  let dx = 0
+  let dy = 0
+
+  // Horizontal offset
+  if (anchorAlignment.endsWith("_left")) dx = width / 2
+  else if (anchorAlignment.endsWith("_right")) dx = -width / 2
+  else if (
+    anchorAlignment === "top_center" ||
+    anchorAlignment === "center" ||
+    anchorAlignment === "bottom_center"
+  )
+    dx = 0
+
+  // Vertical offset
+  if (anchorAlignment.startsWith("top_")) dy = height / 2
+  else if (anchorAlignment.startsWith("bottom_")) dy = -height / 2
+  else if (
+    anchorAlignment === "center_left" ||
+    anchorAlignment === "center" ||
+    anchorAlignment === "center_right"
+  )
+    dy = 0
+
+  // Special-case exact center
+  if (anchorAlignment === "center") {
+    dx = 0
+    dy = 0
+  }
+
+  return { x: anchorPosition.x + dx, y: anchorPosition.y + dy }
+}
+
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
   _drcChecksComplete = false
@@ -163,20 +210,35 @@ export class Board extends Group<typeof boardProps> {
     const computedWidth = hasComponents ? maxX - minX + padding * 2 : 0
     const computedHeight = hasComponents ? maxY - minY + padding * 2 : 0
 
-    // Center the board around the components or use (0,0) for empty boards
-    const center = {
-      x: hasComponents
-        ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
-        : (props.outlineOffsetX ?? 0),
-      y: hasComponents
-        ? (minY + maxY) / 2 + (props.outlineOffsetY ?? 0)
-        : (props.outlineOffsetY ?? 0),
-    }
-
     // Update the board dimensions, preserving any explicit dimension provided
     // by the user while auto-calculating the missing one.
     const finalWidth = props.width ?? computedWidth
     const finalHeight = props.height ?? computedHeight
+
+    // Determine center using anchor if provided; otherwise center on contents
+    let center = {
+      x: hasComponents
+        ? (minX + maxX) / 2
+        : 0,
+      y: hasComponents
+        ? (minY + maxY) / 2
+        : 0,
+    }
+
+    if (props.boardAnchorPosition && props.boardAnchorAlignment) {
+      center = getCenterFromAnchor(
+        props.boardAnchorPosition,
+        props.boardAnchorAlignment,
+        finalWidth,
+        finalHeight,
+      )
+    }
+
+    // Apply outline offsets to center
+    center = {
+      x: center.x + (props.outlineOffsetX ?? 0),
+      y: center.y + (props.outlineOffsetY ?? 0),
+    }
 
     let outline = props.outline
     if (
@@ -261,8 +323,8 @@ export class Board extends Group<typeof boardProps> {
     let computedWidth = props.width ?? 0
     let computedHeight = props.height ?? 0
     let center = {
-      x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
-      y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
+      x: props.pcbX ?? 0,
+      y: props.pcbY ?? 0,
     }
 
     // Compute width and height from outline if not provided
@@ -278,9 +340,30 @@ export class Board extends Group<typeof boardProps> {
       computedWidth = maxX - minX
       computedHeight = maxY - minY
       center = {
-        x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
-        y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
+        x: (minX + maxX) / 2,
+        y: (minY + maxY) / 2,
       }
+    }
+
+    // If anchor position/alignment provided, override center based on dimensions
+    if (
+      props.boardAnchorPosition &&
+      props.boardAnchorAlignment &&
+      (computedWidth ?? 0) >= 0 &&
+      (computedHeight ?? 0) >= 0
+    ) {
+      center = getCenterFromAnchor(
+        props.boardAnchorPosition,
+        props.boardAnchorAlignment,
+        computedWidth,
+        computedHeight,
+      )
+    }
+
+    // Apply outline offsets last
+    center = {
+      x: center.x + (props.outlineOffsetX ?? 0),
+      y: center.y + (props.outlineOffsetY ?? 0),
     }
 
     let outline = props.outline
