@@ -6,7 +6,12 @@ test("board centers at boardAnchorPosition with center alignment", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width={40} height={30} boardAnchorPosition={{ x: 10, y: 20 }} boardAnchorAlignment="center" />,
+    <board
+      width={40}
+      height={30}
+      boardAnchorPosition={{ x: 10, y: 20 }}
+      boardAnchorAlignment="center"
+    />,
   )
 
   circuit.render()
@@ -17,5 +22,3 @@ test("board centers at boardAnchorPosition with center alignment", () => {
   expect(board.center.x).toBe(10)
   expect(board.center.y).toBe(20)
 })
-
-

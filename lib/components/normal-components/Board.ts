@@ -217,12 +217,8 @@ export class Board extends Group<typeof boardProps> {
 
     // Determine center using anchor if provided; otherwise center on contents
     let center = {
-      x: hasComponents
-        ? (minX + maxX) / 2
-        : 0,
-      y: hasComponents
-        ? (minY + maxY) / 2
-        : 0,
+      x: hasComponents ? (minX + maxX) / 2 : 0,
+      y: hasComponents ? (minY + maxY) / 2 : 0,
     }
 
     if (props.boardAnchorPosition && props.boardAnchorAlignment) {

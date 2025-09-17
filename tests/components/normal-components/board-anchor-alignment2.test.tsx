@@ -21,5 +21,3 @@ test("board top_left alignment keeps anchor position fixed", () => {
   expect(board.center.x).toBe(20)
   expect(board.center.y).toBe(15)
 })
-
-

@@ -22,5 +22,3 @@ test("outline offsets are applied after anchor positioning", () => {
   expect(board.center.x).toBe(2)
   expect(board.center.y).toBe(-3)
 })
-
-

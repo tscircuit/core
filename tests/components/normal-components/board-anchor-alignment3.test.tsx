@@ -6,9 +6,24 @@ test("autosized board respects bottom_right anchor position", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board boardAnchorPosition={{ x: 100, y: -50 }} boardAnchorAlignment="bottom_right">
-      <resistor name="R1" resistance="10k" footprint="0402" pcbX={10} pcbY={0} />
-      <resistor name="R2" resistance="10k" footprint="0402" pcbX={-10} pcbY={0} />
+    <board
+      boardAnchorPosition={{ x: 100, y: -50 }}
+      boardAnchorAlignment="bottom_right"
+    >
+      <resistor
+        name="R1"
+        resistance="10k"
+        footprint="0402"
+        pcbX={10}
+        pcbY={0}
+      />
+      <resistor
+        name="R2"
+        resistance="10k"
+        footprint="0402"
+        pcbX={-10}
+        pcbY={0}
+      />
     </board>,
   )
 
@@ -19,5 +34,3 @@ test("autosized board respects bottom_right anchor position", () => {
   expect(board.center.x + board.width / 2).toBe(100)
   expect(board.center.y + board.height / 2).toBe(-50)
 })
-
-
