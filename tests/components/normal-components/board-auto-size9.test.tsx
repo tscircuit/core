@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getAnchorOffsetFromCenter } from "lib/utils/components/get-anchor-offset-from-center"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const within = (value: number, min: number, max: number) => {
@@ -31,13 +32,18 @@ test("board anchor alignment holds when pcbPack auto-sizes", async () => {
   await circuit.renderUntilSettled()
 
   const board = circuit.db.pcb_board.list()[0]
-  const topLeft = {
-    x: board.center.x - board.width / 2,
-    y: board.center.y + board.height / 2,
+  const topLeftOffset = getAnchorOffsetFromCenter(
+    "top_left",
+    board.width,
+    board.height,
+  )
+  const boardTopLeft = {
+    x: board.center.x + topLeftOffset.x,
+    y: board.center.y + topLeftOffset.y,
   }
 
-  expect(topLeft.x).toBeCloseTo(-20, 6)
-  expect(topLeft.y).toBeCloseTo(15, 6)
+  expect(boardTopLeft.x).toBeCloseTo(-20, 6)
+  expect(boardTopLeft.y).toBeCloseTo(15, 6)
 
   const notes = circuit.db.pcb_fabrication_note_text.list()
   const originNote = notes.find((note) => note.text === "(0,0)")

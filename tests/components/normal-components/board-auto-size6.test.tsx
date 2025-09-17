@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getAnchorOffsetFromCenter } from "lib/utils/components/get-anchor-offset-from-center"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("board auto-size with grouped components", () => {
@@ -24,10 +25,10 @@ test("board auto-size with grouped components", () => {
       </group>
       <fabricationnotetext text="(0,0)" pcbX={0} pcbY={0} />
       <fabricationnotetext
-        text="top_left(-5.61,5.28)"
+        text="top_left(-5.61,-5.28)"
         anchorAlignment="top_left"
         pcbX={-5.610576923076923}
-        pcbY={5.278846153846154}
+        pcbY={-5.278846153846154}
       />
     </board>,
   )
@@ -43,16 +44,21 @@ test("board auto-size with grouped components", () => {
   const notes = circuit.db.pcb_fabrication_note_text.list()
   const originNote = notes.find((note) => note.text === "(0,0)")
   const topLeftNote = notes.find(
-    (note) => note.text === "top_left(-5.61,5.28)",
+    (note) => note.text === "top_left(-5.61,-5.28)",
   )
 
-  expect(topLeftNote?.text).toBe("top_left(-5.61,5.28)")
+  expect(topLeftNote?.text).toBe("top_left(-5.61,-5.28)")
 
   expect(originNote?.anchor_position).toEqual({ x: 0, y: 0 })
 
+  const topLeftOffset = getAnchorOffsetFromCenter(
+    "top_left",
+    pcb_board.width,
+    pcb_board.height,
+  )
   const boardTopLeft = {
-    x: pcb_board.center.x - pcb_board.width / 2,
-    y: pcb_board.center.y + pcb_board.height / 2,
+    x: pcb_board.center.x + topLeftOffset.x,
+    y: pcb_board.center.y + topLeftOffset.y,
   }
 
   expect(topLeftNote?.anchor_position?.x).toBeCloseTo(boardTopLeft.x, 6)
