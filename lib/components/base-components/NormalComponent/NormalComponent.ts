@@ -27,6 +27,7 @@ import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangemen
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 import {
   getPinNumberFromLabels,
   getPortFromHints,
@@ -529,8 +530,12 @@ export class NormalComponent<
     }
 
     const { schematicSymbolName } = this.config
+    const { _parsedProps: props } = this
 
-    if (schematicSymbolName) {
+    // Check if there's a custom symbol JSX prop
+    if (props.symbol && isReactElement(props.symbol)) {
+      this._doInitialSchematicComponentRenderWithReactSymbol(props.symbol)
+    } else if (schematicSymbolName) {
       this._doInitialSchematicComponentRenderWithSymbol()
     } else {
       const dimensions = this._getSchematicBoxDimensions()
@@ -608,6 +613,27 @@ export class NormalComponent<
       })
       this.schematic_component_id = schematic_component.schematic_component_id
     }
+  }
+
+  _doInitialSchematicComponentRenderWithReactSymbol(
+    symbolElement: ReactElement,
+  ) {
+    if (this.root?.schematicDisabled) return
+    const { db } = this.root!
+
+    const center = this._getGlobalSchematicPositionBeforeLayout()
+
+    const schematic_component = db.schematic_component.insert({
+      center,
+      // width/height are computed in the SchematicComponentSizeCalculation phase
+      size: { width: 0, height: 0 },
+      source_component_id: this.source_component_id!,
+      symbol_name: "custom_symbol",
+      symbol_display_value: this._getSchematicSymbolDisplayValue(),
+    })
+    this.schematic_component_id = schematic_component.schematic_component_id
+
+    this.add(symbolElement)
   }
 
   _doInitialSchematicComponentRenderWithSchematicBoxDimensions() {
@@ -765,6 +791,78 @@ export class NormalComponent<
 
   updatePcbComponentSizeCalculation(): void {
     this.doInitialPcbComponentSizeCalculation()
+  }
+
+  /**
+   * Calculate and update the size of a custom schematic symbol based on its children
+   */
+  doInitialSchematicComponentSizeCalculation(): void {
+    if (this.root?.schematicDisabled) return
+    if (!this.schematic_component_id) return
+
+    const { db } = this.root!
+    const schematic_component = db.schematic_component.get(
+      this.schematic_component_id,
+    )
+
+    // Only update size for custom symbols (not predefined symbols)
+    if (
+      !schematic_component ||
+      schematic_component.symbol_name !== "custom_symbol"
+    )
+      return
+
+    // Get all schematic primitives from this component's subtree (recursively)
+    const schematicElements: any[] = []
+    const collectSchematicPrimitives = (children: any[]) => {
+      for (const child of children) {
+        if (
+          child.isSchematicPrimitive &&
+          child.componentName === "SchematicLine"
+        ) {
+          const line = db.schematic_line.get((child as any).schematic_line_id)
+          if (line) schematicElements.push(line)
+        }
+        if (
+          child.isSchematicPrimitive &&
+          child.componentName === "SchematicRect"
+        ) {
+          const rect = db.schematic_rect.get((child as any).schematic_rect_id)
+          if (rect) schematicElements.push(rect)
+        }
+        if (
+          child.isSchematicPrimitive &&
+          child.componentName === "SchematicText"
+        ) {
+          const text = db.schematic_text.get((child as any).schematic_text_id)
+          if (text) schematicElements.push(text)
+        }
+        // Recursively check children
+        if (child.children && child.children.length > 0) {
+          collectSchematicPrimitives(child.children)
+        }
+      }
+    }
+    collectSchematicPrimitives(this.children)
+    if (schematicElements.length === 0) return
+
+    const bounds = getBoundsForSchematic(schematicElements)
+    const width = Math.abs(bounds.maxX - bounds.minX)
+    const height = Math.abs(bounds.maxY - bounds.minY)
+
+    if (width === 0 && height === 0) return
+
+    // Update the schematic component with calculated bounds
+    db.schematic_component.update(this.schematic_component_id!, {
+      size: {
+        width,
+        height,
+      },
+    })
+  }
+
+  updateSchematicComponentSizeCalculation(): void {
+    this.doInitialSchematicComponentSizeCalculation()
   }
 
   doInitialPcbComponentAnchorAlignment(): void {
