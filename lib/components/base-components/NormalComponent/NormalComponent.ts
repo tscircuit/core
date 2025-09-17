@@ -615,7 +615,7 @@ export class NormalComponent<
     }
   }
 
-  _doInitialSchematicComponentRenderWithCustomSymbol(
+  _doInitialSchematicComponentRenderWithReactSymbol(
     symbolElement: ReactElement,
   ) {
     if (this.root?.schematicDisabled) return
