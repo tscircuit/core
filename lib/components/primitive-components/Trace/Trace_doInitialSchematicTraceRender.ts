@@ -442,7 +442,11 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     (trace as any)._parsedProps?.schematicColor ||
     (trace as any)._parsedProps?.color
   const edgesWithColor = edges.map(
-    (edge: { from: { x: number; y: number }; to: { x: number; y: number }; color?: string }) => ({
+    (edge: {
+      from: { x: number; y: number }
+      to: { x: number; y: number }
+      color?: string
+    }) => ({
       ...edge,
       color: edge.color || traceColor,
     }),
