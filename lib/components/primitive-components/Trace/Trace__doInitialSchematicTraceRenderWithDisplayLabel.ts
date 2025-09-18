@@ -17,14 +17,32 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
 
   if (!allPortsFound) return
 
+  const componentPinSpacingCache = new Map<string, number | null>()
+  const resolvePinSpacing = (schematicComponentId?: string | null) => {
+    if (!schematicComponentId) return undefined
+    if (!componentPinSpacingCache.has(schematicComponentId)) {
+      const component = db.schematic_component.get(schematicComponentId)
+      componentPinSpacingCache.set(
+        schematicComponentId,
+        component?.pin_spacing ?? null,
+      )
+    }
+    const spacing = componentPinSpacingCache.get(schematicComponentId)
+    return spacing ?? undefined
+  }
+
   const portsWithPosition = connectedPorts.map(({ port }) => {
     const center = port._getGlobalSchematicPositionAfterLayout()
+    const schematicPort = port.schematic_port_id
+      ? db.schematic_port.get(port.schematic_port_id)
+      : undefined
     return {
       port,
       center,
       position: getSchematicPortTraceAnchor({
         center,
         facingDirection: port.facingDirection,
+        pinSpacing: resolvePinSpacing(schematicPort?.schematic_component_id),
       }),
       schematic_port_id: port.schematic_port_id!,
       facingDirection: port.facingDirection,

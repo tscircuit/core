@@ -88,6 +88,20 @@ export function createSchematicTraceSolverInputProblem(
   const pinIdToSchematicPortId = new Map<string, string>()
   const schematicPortIdToPinId = new Map<string, string>()
 
+  const componentPinSpacingCache = new Map<string, number | null>()
+  const resolvePinSpacing = (schematicComponentId?: string | null) => {
+    if (!schematicComponentId) return undefined
+    if (!componentPinSpacingCache.has(schematicComponentId)) {
+      const component = db.schematic_component.get(schematicComponentId)
+      componentPinSpacingCache.set(
+        schematicComponentId,
+        component?.pin_spacing ?? null,
+      )
+    }
+    const spacing = componentPinSpacingCache.get(schematicComponentId)
+    return spacing ?? undefined
+  }
+
   for (const schematicComponent of schematicComponents) {
     const chipId = schematicComponent.schematic_component_id
     const pins: InputPin[] = []
@@ -111,6 +125,9 @@ export function createSchematicTraceSolverInputProblem(
       const anchor = getSchematicPortTraceAnchor({
         center: schematicPort.center,
         facingDirection: schematicPort.facing_direction,
+        pinSpacing: resolvePinSpacing(
+          schematicPort.schematic_component_id,
+        ),
       })
       pins.push({
         pinId,

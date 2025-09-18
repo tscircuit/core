@@ -21,6 +21,20 @@ export const insertNetLabelsForPortsMissingTrace = ({
 }) => {
   const { db } = group.root!
 
+  const componentPinSpacingCache = new Map<string, number | null>()
+  const resolvePinSpacing = (schematicComponentId?: string | null) => {
+    if (!schematicComponentId) return undefined
+    if (!componentPinSpacingCache.has(schematicComponentId)) {
+      const component = db.schematic_component.get(schematicComponentId)
+      componentPinSpacingCache.set(
+        schematicComponentId,
+        component?.pin_spacing ?? null,
+      )
+    }
+    const spacing = componentPinSpacingCache.get(schematicComponentId)
+    return spacing ?? undefined
+  }
+
   // Create net labels for ports connected only to a net (no trace connected)
   for (const schOrSrcPortId of Array.from(
     allSourceAndSchematicPortIdsInScope,
@@ -45,6 +59,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
     const anchor_position = getSchematicPortTraceAnchor({
       center: schPort.center,
       facingDirection: schPort.facing_direction,
+      pinSpacing: resolvePinSpacing(schPort.schematic_component_id),
     })
 
     const existingAtPort = db.schematic_net_label.list().some((nl) => {

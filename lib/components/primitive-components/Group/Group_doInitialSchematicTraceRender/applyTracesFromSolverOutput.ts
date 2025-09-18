@@ -17,6 +17,20 @@ export function applyTracesFromSolverOutput(args: {
   const { group, solver, pinIdToSchematicPortId, userNetIdToSck } = args
   const { db } = group.root!
 
+  const componentPinSpacingCache = new Map<string, number | null>()
+  const resolvePinSpacing = (schematicComponentId?: string | null) => {
+    if (!schematicComponentId) return undefined
+    if (!componentPinSpacingCache.has(schematicComponentId)) {
+      const component = db.schematic_component.get(schematicComponentId)
+      componentPinSpacingCache.set(
+        schematicComponentId,
+        component?.pin_spacing ?? null,
+      )
+    }
+    const spacing = componentPinSpacingCache.get(schematicComponentId)
+    return spacing ?? undefined
+  }
+
   // Use the overlap-corrected traces from the pipeline
   const correctedMap = solver.traceOverlapShiftSolver?.correctedTraceMap
   const pendingTraces: Array<{
@@ -57,6 +71,9 @@ export function applyTracesFromSolverOutput(args: {
         const anchor = getSchematicPortTraceAnchor({
           center: schematicPort.center,
           facingDirection: schematicPort.facing_direction,
+          pinSpacing: resolvePinSpacing(
+            schematicPort.schematic_component_id,
+          ),
         })
         points[index] = { x: anchor.x, y: anchor.y }
       }

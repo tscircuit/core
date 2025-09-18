@@ -19,6 +19,20 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
   } = args
   const { db } = group.root!
 
+  const componentPinSpacingCache = new Map<string, number | null>()
+  const resolvePinSpacing = (schematicComponentId?: string | null) => {
+    if (!schematicComponentId) return undefined
+    if (!componentPinSpacingCache.has(schematicComponentId)) {
+      const component = db.schematic_component.get(schematicComponentId)
+      componentPinSpacingCache.set(
+        schematicComponentId,
+        component?.pin_spacing ?? null,
+      )
+    }
+    const spacing = componentPinSpacingCache.get(schematicComponentId)
+    return spacing ?? undefined
+  }
+
   for (const trace of displayLabelTraces as any[]) {
     const label = trace._parsedProps?.schDisplayLabel
     if (!label) continue
@@ -28,9 +42,15 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
       const ports = res.ports.slice(0, 2)
       for (const port of ports) {
         const portCenter = port._getGlobalSchematicPositionAfterLayout()
+        const schematicPort = port.schematic_port_id
+          ? db.schematic_port.get(port.schematic_port_id)
+          : undefined
         const anchor_position = getSchematicPortTraceAnchor({
           center: portCenter,
           facingDirection: port.facingDirection,
+          pinSpacing: resolvePinSpacing(
+            schematicPort?.schematic_component_id,
+          ),
         })
         const side =
           getEnteringEdgeFromDirection(port.facingDirection || "right") ||
