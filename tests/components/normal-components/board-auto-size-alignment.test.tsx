@@ -12,12 +12,13 @@ test("board respects top_left anchor alignment", () => {
       boardAnchorAlignment="top_left"
     >
       <resistor name="R1" resistance="10k" footprint="0402" pcbX={0} pcbY={0} />
-      <fabricationnotetext text="(0,0)" pcbX={0} pcbY={0} />
+
+      <fabricationnotetext text="boardAnchorPosition (0,0)" pcbX={5} pcbY={4} />
       <fabricationnotetext
-        text="top_left"
+        text="anchorAlignment top_left"
         anchorAlignment="top_left"
-        pcbX={0}
-        pcbY={0}
+        pcbX={5}
+        pcbY={5}
       />
     </board>,
   )
