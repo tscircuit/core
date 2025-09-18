@@ -150,7 +150,7 @@ export function createSchematicTraceSolverInputProblem(
   const allSourceAndSchematicPortIdsInScope = new Set<string>()
   const schPortIdToSourcePortId = new Map<string, string>()
   const sourcePortIdToSchPortId = new Map<string, string>()
-  const userNetIdToSck = new Map<string, string>();
+  const userNetIdToSck = new Map<string, string>()
   for (const sc of schematicComponents) {
     const ports = db.schematic_port.list({
       schematic_component_id: sc.schematic_component_id,
@@ -168,18 +168,18 @@ export function createSchematicTraceSolverInputProblem(
   const allowedSubcircuitIds = new Set<string>()
   if (group.subcircuit_id) allowedSubcircuitIds.add(group.subcircuit_id)
   for (const cg of childGroups) {
-    if (cg.subcircuit_id) allowedSubcircuitIds.add(cg.subcircuit_id);
+    if (cg.subcircuit_id) allowedSubcircuitIds.add(cg.subcircuit_id)
   }
 
   // Find all traces that are either in this subcircuit or connected to ports
   // within this subcircuit. This is necessary for traces that cross subcircuit
   // boundaries.
   const tracesInScope = db.source_trace.list().filter((st) => {
-    if (st.subcircuit_id === group.subcircuit_id) return true;
+    if (st.subcircuit_id === group.subcircuit_id) return true
     for (const source_port_id of st.connected_source_port_ids) {
-      if (sourcePortIdToSchPortId.has(source_port_id)) return true;
+      if (sourcePortIdToSchPortId.has(source_port_id)) return true
     }
-    return false;
+    return false
   });
 
   const externalNetIds = tracesInScope.flatMap(
@@ -207,7 +207,7 @@ export function createSchematicTraceSolverInputProblem(
         (sourcePortId): sourcePortId is string =>
           Boolean(sourcePortId) &&
           allSourceAndSchematicPortIdsInScope.has(sourcePortId!),
-      );
+      )
 
     if (connected.length >= 2) {
       const [a, b] = connected.slice(0, 2);
@@ -256,27 +256,27 @@ export function createSchematicTraceSolverInputProblem(
     const sp = db.source_port.get(srcPortId);
     if (!sp?.subcircuit_connectivity_map_key) continue;
     const sck = sp.subcircuit_connectivity_map_key;
-    allScks.add(sck);
-    if (!sckToPinIds.has(sck)) sckToPinIds.set(sck, []);
-    sckToPinIds.get(sck)!.push(schId);
+    allScks.add(sck)
+    if (!sckToPinIds.has(sck)) sckToPinIds.set(sck, [])
+    sckToPinIds.get(sck)!.push(schId)
   }
 
   for (const [subcircuitConnectivityKey, schematicPortIds] of sckToPinIds) {
-    const sourceNet = sckToSourceNet.get(subcircuitConnectivityKey);
+    const sourceNet = sckToSourceNet.get(subcircuitConnectivityKey)
     if (sourceNet && schematicPortIds.length >= 2) {
       const userNetId = String(
         sourceNet.name || sourceNet.source_net_id || subcircuitConnectivityKey,
-      );
-      userNetIdToSck.set(userNetId, subcircuitConnectivityKey);
-      sckToUserNetId.set(subcircuitConnectivityKey, userNetId);
+      )
+      userNetIdToSck.set(userNetId, subcircuitConnectivityKey)
+      sckToUserNetId.set(subcircuitConnectivityKey, userNetId)
 
       // Estimate net label width using same heuristic as computeSchematicNetLabelCenter
       // Default font_size is 0.18 and charWidth = 0.1 * (font_size / 0.18)
-      const fontSize = 0.18;
-      const charWidth = 0.1 * (fontSize / 0.18);
+      const fontSize = 0.18
+      const charWidth = 0.1 * (fontSize / 0.18)
       const netLabelWidth = Number(
         (String(userNetId).length * charWidth).toFixed(2),
-      );
+      )
 
       netConnections.push({
         netId: userNetId,
@@ -291,25 +291,25 @@ export function createSchematicTraceSolverInputProblem(
   // Available net label orientations from source_net naming conventions
   const availableNetLabelOrientations: Record<string, AxisDirection[]> =
     (() => {
-      const netToAllowedOrientations: Record<string, AxisDirection[]> = {};
-      const presentNetIds = new Set(netConnections.map((nc) => nc.netId));
+      const netToAllowedOrientations: Record<string, AxisDirection[]> = {}
+      const presentNetIds = new Set(netConnections.map((nc) => nc.netId))
       for (const net of db.source_net
         .list()
         .filter(
           (n) => !n.subcircuit_id || allowedSubcircuitIds.has(n.subcircuit_id),
         )) {
-        if (!net.name) continue;
-        if (!presentNetIds.has(net.name)) continue;
+        if (!net.name) continue
+        if (!presentNetIds.has(net.name)) continue
         if (net.is_ground || net.name.toLowerCase().startsWith("gnd")) {
-          netToAllowedOrientations[net.name] = ["y-"];
+          netToAllowedOrientations[net.name] = ["y-"]
         } else if (net.is_power || net.name.toLowerCase().startsWith("v")) {
-          netToAllowedOrientations[net.name] = ["y+"];
+          netToAllowedOrientations[net.name] = ["y+"]
         } else {
-          netToAllowedOrientations[net.name] = ["x-", "x+"];
+          netToAllowedOrientations[net.name] = ["x-", "x+"]
         }
       }
-      return netToAllowedOrientations;
-    })();
+      return netToAllowedOrientations
+    })()
 
   const inputProblem: InputProblem = {
     chips,
@@ -317,7 +317,7 @@ export function createSchematicTraceSolverInputProblem(
     netConnections,
     availableNetLabelOrientations,
     maxMspPairDistance: group._parsedProps.schMaxTraceDistance ?? 2.4,
-  };
+  }
 
   return {
     inputProblem,

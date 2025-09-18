@@ -29,66 +29,66 @@ test("netlabel trace collision avoidance", async () => {
   const traces = circuit.db.schematic_trace.list()
   const netlabels = circuit.db.schematic_net_label.list()
 
-  console.log("DEBUG: Traces found:", traces.length);
-  console.log("DEBUG: Netlabels found:", netlabels.length);
+  console.log("DEBUG: Traces found:", traces.length)
+  console.log("DEBUG: Netlabels found:", netlabels.length)
   netlabels.forEach((label, i) => {
     console.log(
       `DEBUG: Netlabel ${i}:`,
       label.text,
       `at (${label.center.x}, ${label.center.y})`,
     )
-  });
+  })
 
   // Log all traces to understand what's happening
   traces.forEach((trace, i) => {
-    console.log(`DEBUG: Trace ${i} edges:`, trace.edges?.length || 0);
+    console.log(`DEBUG: Trace ${i} edges:`, trace.edges?.length || 0)
     if (trace.edges && trace.edges.length > 0) {
       trace.edges.forEach((edge, j) => {
         console.log(
           `DEBUG: Trace ${i} Edge ${j}:`,
           JSON.stringify(edge, null, 2),
         )
-      });
+      })
     }
-  });
+  })
 
-  expect(traces.length).toBeGreaterThanOrEqual(1);
-  expect(netlabels.length).toBeGreaterThanOrEqual(1); // May vary depending on router behavior
+  expect(traces.length).toBeGreaterThanOrEqual(1)
+  expect(netlabels.length).toBeGreaterThanOrEqual(1) // May vary depending on router behavior
 
-  const trace = traces[0];
-  const netlabel = netlabels[0]; // Use the first netlabel for testing
+  const trace = traces[0]
+  const netlabel = netlabels[0] // Use the first netlabel for testing
 
   // Calculate netlabel bounds using same logic as computeSchematicNetLabelCenter
-  const fontSize = 0.18;
-  const charWidth = 0.1 * (fontSize / 0.18);
-  const netlabelWidth = netlabel.text.length * charWidth;
-  const netlabelHeight = fontSize;
+  const fontSize = 0.18
+  const charWidth = 0.1 * (fontSize / 0.18)
+  const netlabelWidth = netlabel.text.length * charWidth
+  const netlabelHeight = fontSize
 
   const netlabelBounds = {
     left: netlabel.center.x - netlabelWidth / 2,
     right: netlabel.center.x + netlabelWidth / 2,
     top: netlabel.center.y + netlabelHeight / 2,
     bottom: netlabel.center.y - netlabelHeight / 2,
-  };
+  }
 
   // Check that no trace segments pass THROUGH the netlabel bounds
   // Allow endpoints to connect to netlabels (which is expected behavior)
-  let hasCollision = false;
+  let hasCollision = false
   for (const trace of traces) {
     for (const edge of trace.edges) {
       // Check if horizontal line segment intersects netlabel bounds (excluding endpoints)
       if (Math.abs(edge.from.y - edge.to.y) < 0.01) {
         // horizontal segment
-        const segmentY = edge.from.y;
-        const segmentLeft = Math.min(edge.from.x, edge.to.x);
-        const segmentRight = Math.max(edge.from.x, edge.to.x);
+        const segmentY = edge.from.y
+        const segmentLeft = Math.min(edge.from.x, edge.to.x)
+        const segmentRight = Math.max(edge.from.x, edge.to.x)
 
         // Check if segment passes through netlabel interior (not just endpoints)
-        const segmentMiddleX = (segmentLeft + segmentRight) / 2;
+        const segmentMiddleX = (segmentLeft + segmentRight) / 2
         const netlabelMiddleX =
-          (netlabelBounds.left + netlabelBounds.right) / 2;
+          (netlabelBounds.left + netlabelBounds.right) / 2
         const netlabelMiddleY =
-          (netlabelBounds.top + netlabelBounds.bottom) / 2;
+          (netlabelBounds.top + netlabelBounds.bottom) / 2
 
         // Only flag as collision if the segment middle passes through netlabel interior
         if (
@@ -102,22 +102,22 @@ test("netlabel trace collision avoidance", async () => {
           console.log(
             `[NETLABEL COLLISION] COLLISION FOUND: Trace segment middle (${segmentMiddleX}, ${segmentY}) passes through netlabel center`,
           )
-          hasCollision = true;
-          break;
+          hasCollision = true
+          break
         }
       }
 
       // Check if vertical line segment intersects netlabel bounds (excluding endpoints)
       if (Math.abs(edge.from.x - edge.to.x) < 0.01) {
         // vertical segment
-        const segmentX = edge.from.x;
-        const segmentBottom = Math.min(edge.from.y, edge.to.y);
-        const segmentTop = Math.max(edge.from.y, edge.to.y);
-        const segmentMiddleY = (segmentBottom + segmentTop) / 2;
+        const segmentX = edge.from.x
+        const segmentBottom = Math.min(edge.from.y, edge.to.y)
+        const segmentTop = Math.max(edge.from.y, edge.to.y)
+        const segmentMiddleY = (segmentBottom + segmentTop) / 2
         const netlabelMiddleX =
-          (netlabelBounds.left + netlabelBounds.right) / 2;
+          (netlabelBounds.left + netlabelBounds.right) / 2
         const netlabelMiddleY =
-          (netlabelBounds.top + netlabelBounds.bottom) / 2;
+          (netlabelBounds.top + netlabelBounds.bottom) / 2
 
         // Only flag as collision if the segment middle passes through netlabel interior
         if (
@@ -131,16 +131,16 @@ test("netlabel trace collision avoidance", async () => {
           console.log(
             `[NETLABEL COLLISION] COLLISION FOUND: Trace segment middle (${segmentX}, ${segmentMiddleY}) passes through netlabel center`,
           )
-          hasCollision = true;
-          break;
+          hasCollision = true
+          break
         }
       }
     }
-    if (hasCollision) break;
+    if (hasCollision) break
   }
 
   // Test our collision avoidance function directly
-  console.log("DEBUG: Testing collision avoidance function directly...");
+  console.log("DEBUG: Testing collision avoidance function directly...")
 
   // Import and test our function
   const { pushEdgesOfSchematicTraceToPreventOverlap } = await import(
@@ -148,7 +148,7 @@ test("netlabel trace collision avoidance", async () => {
   )
 
   // Create a copy of the first trace's edges for testing
-  const testEdges = JSON.parse(JSON.stringify(trace.edges));
+  const testEdges = JSON.parse(JSON.stringify(trace.edges))
   console.log(
     "DEBUG: Before collision avoidance:",
     JSON.stringify(testEdges[0]),
@@ -159,7 +159,7 @@ test("netlabel trace collision avoidance", async () => {
     edges: testEdges,
     db: circuit.db,
     source_trace_id: trace.source_trace_id!,
-  });
+  })
 
   console.log(
     "DEBUG: After collision avoidance:",
@@ -170,8 +170,8 @@ test("netlabel trace collision avoidance", async () => {
   console.log(
     `[NETLABEL COLLISION] Final collision status: ${hasCollision ? "COLLISION DETECTED" : "NO COLLISION - SUCCESS!"}`,
   )
-  expect(hasCollision).toBe(false); // MSP solver should avoid netlabel
+  expect(hasCollision).toBe(false) // MSP solver should avoid netlabel
 
   // TODO: Re-enable snapshot test once looksSame issue is resolved
   // expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-});
+})

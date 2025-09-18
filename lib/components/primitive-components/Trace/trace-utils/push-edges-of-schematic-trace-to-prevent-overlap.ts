@@ -139,4 +139,4 @@ export const pushEdgesOfSchematicTraceToPreventOverlap = ({
       collidingNetLabel = findCollidingNetLabel()
     }
   }
-};
+}

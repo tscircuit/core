@@ -37,9 +37,9 @@ export const calculateRequiredMovement = (
 ): { direction: "up" | "down" | "left" | "right"; distance: number } | null => {
   // Check if horizontal segment
   if (Math.abs(segment.from.y - segment.to.y) < 0.01) {
-    const segmentY = segment.from.y;
-    const requiredClearanceTop = netlabelBounds.top + clearance;
-    const requiredClearanceBottom = netlabelBounds.bottom - clearance;
+    const segmentY = segment.from.y
+    const requiredClearanceTop = netlabelBounds.top + clearance
+    const requiredClearanceBottom = netlabelBounds.bottom - clearance
 
     if (segmentY > netlabelBounds.top) {
       return {
@@ -53,8 +53,8 @@ export const calculateRequiredMovement = (
       }
     } else {
       // Segment is inside, move to closer boundary
-      const distanceToTop = requiredClearanceTop - segmentY + 0.01;
-      const distanceToBottom = segmentY - requiredClearanceBottom + 0.01;
+      const distanceToTop = requiredClearanceTop - segmentY + 0.01
+      const distanceToBottom = segmentY - requiredClearanceBottom + 0.01
 
       if (distanceToTop < distanceToBottom) {
         return { direction: "up", distance: distanceToTop }
@@ -66,9 +66,9 @@ export const calculateRequiredMovement = (
 
   // Check if vertical segment
   if (Math.abs(segment.from.x - segment.to.x) < 0.01) {
-    const segmentX = segment.from.x;
-    const requiredClearanceRight = netlabelBounds.right + clearance;
-    const requiredClearanceLeft = netlabelBounds.left - clearance;
+    const segmentX = segment.from.x
+    const requiredClearanceRight = netlabelBounds.right + clearance
+    const requiredClearanceLeft = netlabelBounds.left - clearance
 
     if (segmentX > netlabelBounds.right) {
       return {
@@ -82,8 +82,8 @@ export const calculateRequiredMovement = (
       }
     } else {
       // Segment is inside, move to closer boundary
-      const distanceToRight = requiredClearanceRight - segmentX + 0.01;
-      const distanceToLeft = segmentX - requiredClearanceLeft + 0.01;
+      const distanceToRight = requiredClearanceRight - segmentX + 0.01
+      const distanceToLeft = segmentX - requiredClearanceLeft + 0.01
 
       if (distanceToRight < distanceToLeft) {
         return { direction: "right", distance: distanceToRight }
@@ -95,16 +95,16 @@ export const calculateRequiredMovement = (
 
   // Handle diagonal segments
   // For diagonal traces, determine the best perpendicular movement
-  const dx = segment.to.x - segment.from.x;
-  const dy = segment.to.y - segment.from.y;
-  const centerX = (segment.from.x + segment.to.x) / 2;
-  const centerY = (segment.from.y + segment.to.y) / 2;
+  const dx = segment.to.x - segment.from.x
+  const dy = segment.to.y - segment.from.y
+  const centerX = (segment.from.x + segment.to.x) / 2
+  const centerY = (segment.from.y + segment.to.y) / 2
 
   // Calculate distances to all four boundaries
-  const distanceUp = netlabelBounds.top + clearance - centerY + 0.01;
-  const distanceDown = centerY - (netlabelBounds.bottom - clearance) + 0.01;
-  const distanceRight = netlabelBounds.right + clearance - centerX + 0.01;
-  const distanceLeft = centerX - (netlabelBounds.left - clearance) + 0.01;
+  const distanceUp = netlabelBounds.top + clearance - centerY + 0.01
+  const distanceDown = centerY - (netlabelBounds.bottom - clearance) + 0.01
+  const distanceRight = netlabelBounds.right + clearance - centerX + 0.01
+  const distanceLeft = centerX - (netlabelBounds.left - clearance) + 0.01
 
   // Choose movement that's most perpendicular to trace direction
   // and requires least movement
@@ -113,18 +113,18 @@ export const calculateRequiredMovement = (
     { direction: "down", distance: distanceDown },
     { direction: "right", distance: distanceRight },
     { direction: "left", distance: distanceLeft },
-  ].filter((m) => m.distance > 0);
+  ].filter((m) => m.distance > 0)
 
   if (movements.length > 0) {
     // Sort by distance and return smallest
-    movements.sort((a, b) => a.distance - b.distance);
+    movements.sort((a, b) => a.distance - b.distance)
     return movements[0] as {
-      direction: "up" | "down" | "left" | "right";
-      distance: number;
+      direction: "up" | "down" | "left" | "right"
+      distance: number
     }
   }
 
-  return null;
+  return null
 }
 
 /**
@@ -144,9 +144,9 @@ export const doesSegmentIntersectNetLabel = (
 
   // Check if horizontal line segment intersects bounds
   if (Math.abs(segment.from.y - segment.to.y) < 0.01) {
-    const segmentY = segment.from.y;
-    const segmentLeft = Math.min(segment.from.x, segment.to.x);
-    const segmentRight = Math.max(segment.from.x, segment.to.x);
+    const segmentY = segment.from.y
+    const segmentLeft = Math.min(segment.from.x, segment.to.x)
+    const segmentRight = Math.max(segment.from.x, segment.to.x)
 
     // Use strict inequalities for zero clearance to exclude boundary touches
     if (clearance === 0) {
@@ -155,22 +155,22 @@ export const doesSegmentIntersectNetLabel = (
         segmentY < bounds.top &&
         segmentLeft < bounds.right &&
         segmentRight > bounds.left
-      );
+      )
     } else {
       return (
         segmentY >= bounds.bottom &&
         segmentY <= bounds.top &&
         segmentLeft < bounds.right &&
         segmentRight > bounds.left
-      );
+      )
     }
   }
 
   // Check if vertical line segment intersects bounds
   if (Math.abs(segment.from.x - segment.to.x) < 0.01) {
-    const segmentX = segment.from.x;
-    const segmentBottom = Math.min(segment.from.y, segment.to.y);
-    const segmentTop = Math.max(segment.from.y, segment.to.y);
+    const segmentX = segment.from.x
+    const segmentBottom = Math.min(segment.from.y, segment.to.y)
+    const segmentTop = Math.max(segment.from.y, segment.to.y)
 
     // Use strict inequalities for zero clearance to exclude boundary touches
     if (clearance === 0) {
@@ -179,14 +179,14 @@ export const doesSegmentIntersectNetLabel = (
         segmentX < bounds.right &&
         segmentBottom < bounds.top &&
         segmentTop > bounds.bottom
-      );
+      )
     } else {
       return (
         segmentX >= bounds.left &&
         segmentX <= bounds.right &&
         segmentBottom < bounds.top &&
         segmentTop > bounds.bottom
-      );
+      )
     }
   }
 
@@ -209,10 +209,10 @@ export const doesSegmentIntersectNetLabel = (
         ? (x1 > left && x1 < right && y1 > bottom && y1 < top) ||
           (x2 > left && x2 < right && y2 > bottom && y2 < top)
         : (x1 >= left && x1 <= right && y1 >= bottom && y1 <= top) ||
-          (x2 >= left && x2 <= right && y2 >= bottom && y2 <= top);
+          (x2 >= left && x2 <= right && y2 >= bottom && y2 <= top)
 
     if (isEndpointInside) {
-      return true;
+      return true
     }
 
     // Check if line intersects any of the four sides of the rectangle
@@ -226,13 +226,13 @@ export const doesSegmentIntersectNetLabel = (
       bx2: number,
       by2: number,
     ): boolean => {
-      const det = (ax2 - ax1) * (by2 - by1) - (bx2 - bx1) * (ay2 - ay1);
-      if (Math.abs(det) < 0.0001) return false; // Lines are parallel
+      const det = (ax2 - ax1) * (by2 - by1) - (bx2 - bx1) * (ay2 - ay1)
+      if (Math.abs(det) < 0.0001) return false // Lines are parallel
 
-      const t = ((bx1 - ax1) * (by2 - by1) - (by1 - ay1) * (bx2 - bx1)) / det;
-      const u = ((bx1 - ax1) * (ay2 - ay1) - (by1 - ay1) * (ax2 - ax1)) / det;
+      const t = ((bx1 - ax1) * (by2 - by1) - (by1 - ay1) * (bx2 - bx1)) / det
+      const u = ((bx1 - ax1) * (ay2 - ay1) - (by1 - ay1) * (ax2 - ax1)) / det
 
-      return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+      return t >= 0 && t <= 1 && u >= 0 && u <= 1
     }
 
     // Check intersection with each side of the rectangle
@@ -241,7 +241,7 @@ export const doesSegmentIntersectNetLabel = (
       lineIntersectsLine(x1, y1, x2, y2, left, top, right, top) || // Top
       lineIntersectsLine(x1, y1, x2, y2, left, bottom, left, top) || // Left
       lineIntersectsLine(x1, y1, x2, y2, right, bottom, right, top) // Right
-    );
+    )
   }
 
   return lineIntersectsRect(
@@ -253,5 +253,5 @@ export const doesSegmentIntersectNetLabel = (
     bounds.top,
     bounds.right,
     bounds.bottom,
-  );
+  )
 }
