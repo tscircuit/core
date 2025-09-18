@@ -2,6 +2,7 @@ import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { getSchematicPortTraceAnchor } from "lib/utils/schematic/getSchematicPortTraceAnchor"
 
 export function insertNetLabelsForTracesExcludedFromRouting(args: {
   group: Group<any>
@@ -18,6 +19,20 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
   } = args
   const { db } = group.root!
 
+  const componentPinSpacingCache = new Map<string, number | null>()
+  const resolvePinSpacing = (schematicComponentId?: string | null) => {
+    if (!schematicComponentId) return undefined
+    if (!componentPinSpacingCache.has(schematicComponentId)) {
+      const component = db.schematic_component.get(schematicComponentId)
+      componentPinSpacingCache.set(
+        schematicComponentId,
+        component?.pin_spacing ?? null,
+      )
+    }
+    const spacing = componentPinSpacingCache.get(schematicComponentId)
+    return spacing ?? undefined
+  }
+
   for (const trace of displayLabelTraces as any[]) {
     const label = trace._parsedProps?.schDisplayLabel
     if (!label) continue
@@ -26,7 +41,15 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
       if (!res?.allPortsFound || !res.ports || res.ports.length < 1) continue
       const ports = res.ports.slice(0, 2)
       for (const port of ports) {
-        const anchor_position = port._getGlobalSchematicPositionAfterLayout()
+        const portCenter = port._getGlobalSchematicPositionAfterLayout()
+        const schematicPort = port.schematic_port_id
+          ? db.schematic_port.get(port.schematic_port_id)
+          : undefined
+        const anchor_position = getSchematicPortTraceAnchor({
+          center: portCenter,
+          facingDirection: port.facingDirection,
+          pinSpacing: resolvePinSpacing(schematicPort?.schematic_component_id),
+        })
         const side =
           getEnteringEdgeFromDirection(port.facingDirection || "right") ||
           "right"

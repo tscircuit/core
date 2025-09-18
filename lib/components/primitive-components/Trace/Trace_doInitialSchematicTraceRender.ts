@@ -21,6 +21,7 @@ import { getSchematicObstaclesForTrace } from "./trace-utils/get-obstacles-for-t
 import { getOtherSchematicTraces } from "./trace-utils/get-other-schematic-traces"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./trace-utils/push-edges-of-schematic-trace-to-prevent-overlap"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getSchematicPortTraceAnchor } from "lib/utils/schematic/getSchematicPortTraceAnchor"
 import { Trace } from "./Trace"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { TraceConnectionError } from "../../../errors"
@@ -72,14 +73,39 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   const obstacles = getSchematicObstaclesForTrace(trace)
 
   // Get port positions for later use, filter out ports without schematic representation
+  const componentPinSpacingCache = new Map<string, number | null>()
+  const resolvePinSpacing = (schematicComponentId?: string | null) => {
+    if (!schematicComponentId) return undefined
+    if (!componentPinSpacingCache.has(schematicComponentId)) {
+      const component = db.schematic_component.get(schematicComponentId)
+      componentPinSpacingCache.set(
+        schematicComponentId,
+        component?.pin_spacing ?? null,
+      )
+    }
+    const spacing = componentPinSpacingCache.get(schematicComponentId)
+    return spacing ?? undefined
+  }
+
   const portsWithPosition = connectedPorts
     .filter(({ port }) => port.schematic_port_id !== null)
-    .map(({ port }) => ({
-      port,
-      position: port._getGlobalSchematicPositionAfterLayout(),
-      schematic_port_id: port.schematic_port_id ?? undefined,
-      facingDirection: port.facingDirection,
-    }))
+    .map(({ port }) => {
+      const center = port._getGlobalSchematicPositionAfterLayout()
+      const schematicPort = port.schematic_port_id
+        ? db.schematic_port.get(port.schematic_port_id)
+        : undefined
+      return {
+        port,
+        center,
+        position: getSchematicPortTraceAnchor({
+          center,
+          facingDirection: port.facingDirection,
+          pinSpacing: resolvePinSpacing(schematicPort?.schematic_component_id),
+        }),
+        schematic_port_id: port.schematic_port_id ?? undefined,
+        facingDirection: port.facingDirection,
+      }
+    })
 
   const isPortAndNetConnection =
     portsWithPosition.length === 1 && netsWithSelectors.length === 1

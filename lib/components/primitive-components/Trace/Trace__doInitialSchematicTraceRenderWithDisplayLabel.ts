@@ -1,5 +1,6 @@
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getSchematicPortTraceAnchor } from "lib/utils/schematic/getSchematicPortTraceAnchor"
 import type { Trace } from "./Trace"
 
 export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
@@ -16,12 +17,37 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
 
   if (!allPortsFound) return
 
-  const portsWithPosition = connectedPorts.map(({ port }) => ({
-    port,
-    position: port._getGlobalSchematicPositionAfterLayout(),
-    schematic_port_id: port.schematic_port_id!,
-    facingDirection: port.facingDirection,
-  }))
+  const componentPinSpacingCache = new Map<string, number | null>()
+  const resolvePinSpacing = (schematicComponentId?: string | null) => {
+    if (!schematicComponentId) return undefined
+    if (!componentPinSpacingCache.has(schematicComponentId)) {
+      const component = db.schematic_component.get(schematicComponentId)
+      componentPinSpacingCache.set(
+        schematicComponentId,
+        component?.pin_spacing ?? null,
+      )
+    }
+    const spacing = componentPinSpacingCache.get(schematicComponentId)
+    return spacing ?? undefined
+  }
+
+  const portsWithPosition = connectedPorts.map(({ port }) => {
+    const center = port._getGlobalSchematicPositionAfterLayout()
+    const schematicPort = port.schematic_port_id
+      ? db.schematic_port.get(port.schematic_port_id)
+      : undefined
+    return {
+      port,
+      center,
+      position: getSchematicPortTraceAnchor({
+        center,
+        facingDirection: port.facingDirection,
+        pinSpacing: resolvePinSpacing(schematicPort?.schematic_component_id),
+      }),
+      schematic_port_id: port.schematic_port_id!,
+      facingDirection: port.facingDirection,
+    }
+  })
   if (portsWithPosition.length < 2) {
     throw new Error("Expected at least two ports in portsWithPosition.")
   }

@@ -5,6 +5,7 @@ import { Trace } from "./Trace/Trace"
 import { Net } from "./Net"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getSchematicPortTraceAnchor } from "lib/utils/schematic/getSchematicPortTraceAnchor"
 import {
   applyToPoint,
   identity,
@@ -171,6 +172,20 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     const connectsTo = this._resolveConnectsTo()
     if (!connectsTo || connectsTo.length === 0) return
 
+    const componentPinSpacingCache = new Map<string, number | null>()
+    const resolvePinSpacing = (schematicComponentId?: string | null) => {
+      if (!schematicComponentId) return undefined
+      if (!componentPinSpacingCache.has(schematicComponentId)) {
+        const component = db.schematic_component.get(schematicComponentId)
+        componentPinSpacingCache.set(
+          schematicComponentId,
+          component?.pin_spacing ?? null,
+        )
+      }
+      const spacing = componentPinSpacingCache.get(schematicComponentId)
+      return spacing ?? undefined
+    }
+
     // Determine the anchor position and orientation at the net label
     const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
     const anchorSide = this._getAnchorSide()
@@ -216,7 +231,13 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
         if (existingTraceForThisConnection) continue
       }
 
-      const portPos = port._getGlobalSchematicPositionAfterLayout()
+      const portCenter = port._getGlobalSchematicPositionAfterLayout()
+      const schematicPort = db.schematic_port.get(port.schematic_port_id)
+      const portPos = getSchematicPortTraceAnchor({
+        center: portCenter,
+        facingDirection: port.facingDirection,
+        pinSpacing: resolvePinSpacing(schematicPort?.schematic_component_id),
+      })
       const portFacing =
         convertFacingDirectionToElbowDirection(
           (port.facingDirection as any) ?? "right",
