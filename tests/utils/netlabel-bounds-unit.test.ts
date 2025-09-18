@@ -3,32 +3,32 @@
  * This test doesn't require the full tscircuit environment
  */
 
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "bun:test"
 
 // Mock the circuit-json types locally to avoid import issues
 type SchematicNetLabel = {
-  type: "schematic_net_label";
-  schematic_net_label_id: string;
-  source_net_id: string;
-  text: string;
-  center: { x: number; y: number };
-  anchor_position: { x: number; y: number };
-  anchor_side: "top" | "bottom" | "left" | "right";
-};
+  type: "schematic_net_label"
+  schematic_net_label_id: string
+  source_net_id: string
+  text: string
+  center: { x: number; y: number }
+  anchor_position: { x: number; y: number }
+  anchor_side: "top" | "bottom" | "left" | "right"
+}
 
 // Copy the utility functions locally to test them independently
 const getNetLabelBounds = (netlabel: SchematicNetLabel, fontSize = 0.18) => {
-  const charWidth = 0.1 * (fontSize / 0.18);
-  const width = netlabel.text.length * charWidth;
-  const height = fontSize;
+  const charWidth = 0.1 * (fontSize / 0.18)
+  const width = netlabel.text.length * charWidth
+  const height = fontSize
 
   return {
     left: netlabel.center.x - width / 2,
     right: netlabel.center.x + width / 2,
     top: netlabel.center.y + height / 2,
     bottom: netlabel.center.y - height / 2,
-  };
-};
+  }
+}
 
 const doesSegmentIntersectNetLabel = (
   segment: { from: { x: number; y: number }; to: { x: number; y: number } },
@@ -40,13 +40,13 @@ const doesSegmentIntersectNetLabel = (
     right: netlabelBounds.right + clearance,
     top: netlabelBounds.top + clearance,
     bottom: netlabelBounds.bottom - clearance,
-  };
+  }
 
   // Check if horizontal line segment intersects bounds
   if (Math.abs(segment.from.y - segment.to.y) < 0.01) {
-    const segmentY = segment.from.y;
-    const segmentLeft = Math.min(segment.from.x, segment.to.x);
-    const segmentRight = Math.max(segment.from.x, segment.to.x);
+    const segmentY = segment.from.y
+    const segmentLeft = Math.min(segment.from.x, segment.to.x)
+    const segmentRight = Math.max(segment.from.x, segment.to.x)
 
     // Use strict inequalities for zero clearance to exclude boundary touches
     if (clearance === 0) {
@@ -55,22 +55,22 @@ const doesSegmentIntersectNetLabel = (
         segmentY < bounds.top &&
         segmentLeft < bounds.right &&
         segmentRight > bounds.left
-      );
+      )
     } else {
       return (
         segmentY >= bounds.bottom &&
         segmentY <= bounds.top &&
         segmentLeft < bounds.right &&
         segmentRight > bounds.left
-      );
+      )
     }
   }
 
   // Check if vertical line segment intersects bounds
   if (Math.abs(segment.from.x - segment.to.x) < 0.01) {
-    const segmentX = segment.from.x;
-    const segmentBottom = Math.min(segment.from.y, segment.to.y);
-    const segmentTop = Math.max(segment.from.y, segment.to.y);
+    const segmentX = segment.from.x
+    const segmentBottom = Math.min(segment.from.y, segment.to.y)
+    const segmentTop = Math.max(segment.from.y, segment.to.y)
 
     // Use strict inequalities for zero clearance to exclude boundary touches
     if (clearance === 0) {
@@ -79,19 +79,19 @@ const doesSegmentIntersectNetLabel = (
         segmentX < bounds.right &&
         segmentBottom < bounds.top &&
         segmentTop > bounds.bottom
-      );
+      )
     } else {
       return (
         segmentX >= bounds.left &&
         segmentX <= bounds.right &&
         segmentBottom < bounds.top &&
         segmentTop > bounds.bottom
-      );
+      )
     }
   }
 
-  return false;
-};
+  return false
+}
 
 describe("Netlabel Collision Detection Utilities", () => {
   test("getNetLabelBounds calculates correct bounds for VCC label", () => {
@@ -105,7 +105,7 @@ describe("Netlabel Collision Detection Utilities", () => {
       anchor_side: "right",
     };
 
-    const bounds = getNetLabelBounds(netlabel);
+    const bounds = getNetLabelBounds(netlabel)
 
     // For "VCC" (3 chars) with font size 0.18:
     // charWidth = 0.1 * (0.18 / 0.18) = 0.1
@@ -129,7 +129,7 @@ describe("Netlabel Collision Detection Utilities", () => {
       anchor_side: "right",
     };
 
-    const bounds = getNetLabelBounds(netlabel);
+    const bounds = getNetLabelBounds(netlabel)
 
     // For "POWER_SUPPLY" (12 chars):
     // width = 12 * 0.1 = 1.2
@@ -152,7 +152,7 @@ describe("Netlabel Collision Detection Utilities", () => {
       anchor_side: "right",
     };
 
-    const bounds = getNetLabelBounds(netlabel);
+    const bounds = getNetLabelBounds(netlabel)
 
     // Horizontal segment that passes through netlabel center
     const collidingSegment = {
@@ -183,7 +183,7 @@ describe("Netlabel Collision Detection Utilities", () => {
       anchor_side: "right",
     };
 
-    const bounds = getNetLabelBounds(netlabel);
+    const bounds = getNetLabelBounds(netlabel)
 
     // Vertical segment that passes through netlabel center
     const collidingSegment = {
@@ -214,7 +214,7 @@ describe("Netlabel Collision Detection Utilities", () => {
       anchor_side: "right",
     };
 
-    const bounds = getNetLabelBounds(netlabel);
+    const bounds = getNetLabelBounds(netlabel)
 
     // Segment that barely touches netlabel boundary
     const edgeSegment = {

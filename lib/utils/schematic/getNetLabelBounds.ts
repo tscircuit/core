@@ -1,10 +1,10 @@
-import type { SchematicNetLabel } from "circuit-json";
+import type { SchematicNetLabel } from "circuit-json"
 
 export interface NetLabelBounds {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
+  left: number
+  right: number
+  top: number
+  bottom: number
 }
 
 /**
@@ -15,17 +15,17 @@ export const getNetLabelBounds = (
   netlabel: SchematicNetLabel,
   fontSize = 0.18,
 ): NetLabelBounds => {
-  const charWidth = 0.1 * (fontSize / 0.18);
-  const width = netlabel.text.length * charWidth;
-  const height = fontSize;
+  const charWidth = 0.1 * (fontSize / 0.18)
+  const width = netlabel.text.length * charWidth
+  const height = fontSize
 
   return {
     left: netlabel.center.x - width / 2,
     right: netlabel.center.x + width / 2,
     top: netlabel.center.y + height / 2,
     bottom: netlabel.center.y - height / 2,
-  };
-};
+  }
+}
 
 /**
  * Calculate the minimum distance needed to move a segment to clear a netlabel
@@ -45,21 +45,21 @@ export const calculateRequiredMovement = (
       return {
         direction: "up",
         distance: requiredClearanceTop - segmentY + 0.01,
-      };
+      }
     } else if (segmentY < netlabelBounds.bottom) {
       return {
         direction: "down",
         distance: segmentY - requiredClearanceBottom + 0.01,
-      };
+      }
     } else {
       // Segment is inside, move to closer boundary
       const distanceToTop = requiredClearanceTop - segmentY + 0.01;
       const distanceToBottom = segmentY - requiredClearanceBottom + 0.01;
 
       if (distanceToTop < distanceToBottom) {
-        return { direction: "up", distance: distanceToTop };
+        return { direction: "up", distance: distanceToTop }
       } else {
-        return { direction: "down", distance: distanceToBottom };
+        return { direction: "down", distance: distanceToBottom }
       }
     }
   }
@@ -74,21 +74,21 @@ export const calculateRequiredMovement = (
       return {
         direction: "right",
         distance: requiredClearanceRight - segmentX + 0.01,
-      };
+      }
     } else if (segmentX < netlabelBounds.left) {
       return {
         direction: "left",
         distance: segmentX - requiredClearanceLeft + 0.01,
-      };
+      }
     } else {
       // Segment is inside, move to closer boundary
       const distanceToRight = requiredClearanceRight - segmentX + 0.01;
       const distanceToLeft = segmentX - requiredClearanceLeft + 0.01;
 
       if (distanceToRight < distanceToLeft) {
-        return { direction: "right", distance: distanceToRight };
+        return { direction: "right", distance: distanceToRight }
       } else {
-        return { direction: "left", distance: distanceToLeft };
+        return { direction: "left", distance: distanceToLeft }
       }
     }
   }
@@ -121,11 +121,11 @@ export const calculateRequiredMovement = (
     return movements[0] as {
       direction: "up" | "down" | "left" | "right";
       distance: number;
-    };
+    }
   }
 
   return null;
-};
+}
 
 /**
  * Check if a line segment intersects with a netlabel's bounding box
@@ -140,7 +140,7 @@ export const doesSegmentIntersectNetLabel = (
     right: netlabelBounds.right + clearance,
     top: netlabelBounds.top + clearance,
     bottom: netlabelBounds.bottom - clearance,
-  };
+  }
 
   // Check if horizontal line segment intersects bounds
   if (Math.abs(segment.from.y - segment.to.y) < 0.01) {
@@ -233,7 +233,7 @@ export const doesSegmentIntersectNetLabel = (
       const u = ((bx1 - ax1) * (ay2 - ay1) - (by1 - ay1) * (ax2 - ax1)) / det;
 
       return t >= 0 && t <= 1 && u >= 0 && u <= 1;
-    };
+    }
 
     // Check intersection with each side of the rectangle
     return (
@@ -242,7 +242,7 @@ export const doesSegmentIntersectNetLabel = (
       lineIntersectsLine(x1, y1, x2, y2, left, bottom, left, top) || // Left
       lineIntersectsLine(x1, y1, x2, y2, right, bottom, right, top) // Right
     );
-  };
+  }
 
   return lineIntersectsRect(
     segment.from.x,
@@ -254,4 +254,4 @@ export const doesSegmentIntersectNetLabel = (
     bounds.right,
     bounds.bottom,
   );
-};
+}

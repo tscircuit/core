@@ -1,13 +1,13 @@
-import type { SchematicTrace } from "circuit-json";
-import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util";
-import { doesLineIntersectLine } from "@tscircuit/math-utils";
-import { getOtherSchematicTraces } from "./get-other-schematic-traces";
+import type { SchematicTrace } from "circuit-json"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import { doesLineIntersectLine } from "@tscircuit/math-utils"
+import { getOtherSchematicTraces } from "./get-other-schematic-traces"
 import {
   getNetLabelBounds,
   doesSegmentIntersectNetLabel,
   calculateRequiredMovement,
   type NetLabelBounds,
-} from "lib/utils/schematic/getNetLabelBounds";
+} from "lib/utils/schematic/getNetLabelBounds"
 
 /**
  *  Check if these edges run along any other schematic traces or through netlabels,
@@ -18,24 +18,24 @@ export const pushEdgesOfSchematicTraceToPreventOverlap = ({
   db,
   source_trace_id,
 }: {
-  edges: SchematicTrace["edges"];
-  db: CircuitJsonUtilObjects;
-  source_trace_id: string;
+  edges: SchematicTrace["edges"]
+  db: CircuitJsonUtilObjects
+  source_trace_id: string
 }) => {
-  const mySourceTrace = db.source_trace.get(source_trace_id)!;
+  const mySourceTrace = db.source_trace.get(source_trace_id)!
   const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
     db,
     source_trace_id,
     differentNetOnly: true,
-  }).flatMap((t) => t.edges);
+  }).flatMap((t) => t.edges)
 
   const edgeOrientation = (edge: SchematicTrace["edges"][number]) => {
-    const { from, to } = edge;
-    return from.x === to.x ? "vertical" : "horizontal";
-  };
+    const { from, to } = edge
+    return from.x === to.x ? "vertical" : "horizontal"
+  }
 
   // Get all netlabels to check for collisions
-  const netlabels = db.schematic_net_label.list();
+  const netlabels = db.schematic_net_label.list()
   const netlabelBounds = netlabels.map((label) => ({
     label,
     bounds: getNetLabelBounds(label),

@@ -1,17 +1,17 @@
-import type { SourceNet } from "circuit-json";
-import { Group } from "../Group";
+import type { SourceNet } from "circuit-json"
+import { Group } from "../Group"
 import {
   type InputChip,
   type InputPin,
   type InputProblem,
-} from "@tscircuit/schematic-trace-solver";
-import type { AxisDirection } from "./getSide";
-import { getNetLabelBounds } from "lib/utils/schematic/getNetLabelBounds";
+} from "@tscircuit/schematic-trace-solver"
+import type { AxisDirection } from "./getSide"
+import { getNetLabelBounds } from "lib/utils/schematic/getNetLabelBounds"
 
 export type SolverInputContext = {
-  inputProblem: InputProblem;
-  pinIdToSchematicPortId: Map<string, string>;
-  pairKeyToSourceTraceId: Map<string, string>;
+  inputProblem: InputProblem
+  pinIdToSchematicPortId: Map<string, string>
+  pairKeyToSourceTraceId: Map<string, string>
   /**
    * Subcircuit connectivity map key to source_net
    * e.g.
@@ -26,7 +26,7 @@ export type SolverInputContext = {
    *   }, ...
    * )
    */
-  sckToSourceNet: Map<string, SourceNet>;
+  sckToSourceNet: Map<string, SourceNet>
 
   /**
    * Subcircuit connectivity key to user net id
@@ -37,7 +37,7 @@ export type SolverInputContext = {
    *   ...
    * )
    */
-  sckToUserNetId: Map<string, string>;
+  sckToUserNetId: Map<string, string>
 
   /**
    * User net id to subcircuit connectivity key
@@ -48,44 +48,44 @@ export type SolverInputContext = {
    *   ...
    * )
    */
-  userNetIdToSck: Map<string, string>;
+  userNetIdToSck: Map<string, string>
 
-  allSourceAndSchematicPortIdsInScope: Set<string>;
-  schPortIdToSourcePortId: Map<string, string>;
-  displayLabelTraces: any[];
+  allSourceAndSchematicPortIdsInScope: Set<string>
+  schPortIdToSourcePortId: Map<string, string>
+  displayLabelTraces: any[]
 
-  allScks: Set<string>;
-};
+  allScks: Set<string>
+}
 
 export function createSchematicTraceSolverInputProblem(
   group: Group<any>,
 ): SolverInputContext {
-  const { db } = group.root!;
+  const { db } = group.root!
 
-  const sckToSourceNet = new Map<string, any>();
-  const sckToUserNetId = new Map<string, string>();
-  const allScks = new Set<string>();
+  const sckToSourceNet = new Map<string, any>()
+  const sckToUserNetId = new Map<string, string>()
+  const allScks = new Set<string>()
 
   // Traces excluded from routing (only need labels)
-  const traces = group.selectAll("trace");
+  const traces = group.selectAll("trace")
   const displayLabelTraces = traces.filter(
     (t: any) => t._parsedProps?.schDisplayLabel,
-  );
+  )
 
   // Gather all schematic components in scope (this group and child groups)
-  const childGroups = group.selectAll("group") as Group<any>[];
+  const childGroups = group.selectAll("group") as Group<any>[]
   const allSchematicGroupIds = [
     group.schematic_group_id,
     ...childGroups.map((a) => a.schematic_group_id),
-  ];
+  ]
 
   const schematicComponents = db.schematic_component
     .list()
-    .filter((a) => allSchematicGroupIds.includes(a.schematic_group_id!));
+    .filter((a) => allSchematicGroupIds.includes(a.schematic_group_id!))
 
   // Build chips and pinId maps
-  const chips: InputChip[] = [];
-  const pinIdToSchematicPortId = new Map<string, string>();
+  const chips: InputChip[] = []
+  const pinIdToSchematicPortId = new Map<string, string>()
   const schematicPortIdToPinId = new Map<string, string>();
 
   for (const schematicComponent of schematicComponents) {
@@ -330,5 +330,5 @@ export function createSchematicTraceSolverInputProblem(
     schPortIdToSourcePortId,
     displayLabelTraces,
     allScks,
-  };
+  }
 }

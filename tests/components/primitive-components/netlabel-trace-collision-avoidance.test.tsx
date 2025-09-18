@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { getTestFixture } from "tests/fixtures/get-test-fixture";
+import { test, expect } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("netlabel trace collision avoidance", async () => {
-  const { circuit } = getTestFixture();
+  const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="20mm" schMaxTraceDistance={5}>
@@ -21,13 +21,13 @@ test("netlabel trace collision avoidance", async () => {
       {/* Place netlabel on the same net as the trace, positioned in the path */}
       <netlabel net="R1_R2_SIGNAL" connection="R1.pin2" schX={0} schY={0} />
     </board>,
-  );
+  )
 
-  await circuit.renderUntilSettled();
+  await circuit.renderUntilSettled()
 
   // Get the schematic traces and netlabels
-  const traces = circuit.db.schematic_trace.list();
-  const netlabels = circuit.db.schematic_net_label.list();
+  const traces = circuit.db.schematic_trace.list()
+  const netlabels = circuit.db.schematic_net_label.list()
 
   console.log("DEBUG: Traces found:", traces.length);
   console.log("DEBUG: Netlabels found:", netlabels.length);
@@ -36,7 +36,7 @@ test("netlabel trace collision avoidance", async () => {
       `DEBUG: Netlabel ${i}:`,
       label.text,
       `at (${label.center.x}, ${label.center.y})`,
-    );
+    )
   });
 
   // Log all traces to understand what's happening
@@ -47,7 +47,7 @@ test("netlabel trace collision avoidance", async () => {
         console.log(
           `DEBUG: Trace ${i} Edge ${j}:`,
           JSON.stringify(edge, null, 2),
-        );
+        )
       });
     }
   });
@@ -101,7 +101,7 @@ test("netlabel trace collision avoidance", async () => {
         ) {
           console.log(
             `[NETLABEL COLLISION] COLLISION FOUND: Trace segment middle (${segmentMiddleX}, ${segmentY}) passes through netlabel center`,
-          );
+          )
           hasCollision = true;
           break;
         }
@@ -130,7 +130,7 @@ test("netlabel trace collision avoidance", async () => {
         ) {
           console.log(
             `[NETLABEL COLLISION] COLLISION FOUND: Trace segment middle (${segmentX}, ${segmentMiddleY}) passes through netlabel center`,
-          );
+          )
           hasCollision = true;
           break;
         }
@@ -145,14 +145,14 @@ test("netlabel trace collision avoidance", async () => {
   // Import and test our function
   const { pushEdgesOfSchematicTraceToPreventOverlap } = await import(
     "lib/components/primitive-components/Trace/trace-utils/push-edges-of-schematic-trace-to-prevent-overlap"
-  );
+  )
 
   // Create a copy of the first trace's edges for testing
   const testEdges = JSON.parse(JSON.stringify(trace.edges));
   console.log(
     "DEBUG: Before collision avoidance:",
     JSON.stringify(testEdges[0]),
-  );
+  )
 
   // Call our collision avoidance function directly
   pushEdgesOfSchematicTraceToPreventOverlap({
@@ -164,12 +164,12 @@ test("netlabel trace collision avoidance", async () => {
   console.log(
     "DEBUG: After collision avoidance:",
     JSON.stringify(testEdges[0]),
-  );
+  )
 
   // SUCCESS: MSP solver should now avoid netlabel collisions!
   console.log(
     `[NETLABEL COLLISION] Final collision status: ${hasCollision ? "COLLISION DETECTED" : "NO COLLISION - SUCCESS!"}`,
-  );
+  )
   expect(hasCollision).toBe(false); // MSP solver should avoid netlabel
 
   // TODO: Re-enable snapshot test once looksSame issue is resolved
