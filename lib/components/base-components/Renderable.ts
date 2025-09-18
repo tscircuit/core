@@ -30,6 +30,7 @@ export const orderedRenderPhases = [
   "SchematicComponentRender",
   "SchematicPortRender",
   "SchematicPrimitiveRender",
+  "SchematicComponentSizeCalculation",
   "SchematicLayout",
   "SchematicTraceRender",
   "SchematicReplaceNetLabelsWithSymbols",
