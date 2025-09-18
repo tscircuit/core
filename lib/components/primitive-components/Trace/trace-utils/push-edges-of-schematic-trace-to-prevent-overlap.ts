@@ -93,19 +93,19 @@ export const pushEdgesOfSchematicTraceToPreventOverlap = ({
           case "up":
             mySegment.from.y += requiredMovement.distance
             mySegment.to.y += requiredMovement.distance
-            break;
+            break
           case "down":
             mySegment.from.y -= requiredMovement.distance
             mySegment.to.y -= requiredMovement.distance
-            break;
+            break
           case "right":
             mySegment.from.x += requiredMovement.distance
             mySegment.to.x += requiredMovement.distance
-            break;
+            break
           case "left":
             mySegment.from.x -= requiredMovement.distance
             mySegment.to.x -= requiredMovement.distance
-            break;
+            break
         }
       } else {
         // Fallback to old behavior if calculation fails

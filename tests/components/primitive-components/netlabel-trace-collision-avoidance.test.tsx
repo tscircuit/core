@@ -85,10 +85,8 @@ test("netlabel trace collision avoidance", async () => {
 
         // Check if segment passes through netlabel interior (not just endpoints)
         const segmentMiddleX = (segmentLeft + segmentRight) / 2
-        const netlabelMiddleX =
-          (netlabelBounds.left + netlabelBounds.right) / 2
-        const netlabelMiddleY =
-          (netlabelBounds.top + netlabelBounds.bottom) / 2
+        const netlabelMiddleX = (netlabelBounds.left + netlabelBounds.right) / 2
+        const netlabelMiddleY = (netlabelBounds.top + netlabelBounds.bottom) / 2
 
         // Only flag as collision if the segment middle passes through netlabel interior
         if (
@@ -114,10 +112,8 @@ test("netlabel trace collision avoidance", async () => {
         const segmentBottom = Math.min(edge.from.y, edge.to.y)
         const segmentTop = Math.max(edge.from.y, edge.to.y)
         const segmentMiddleY = (segmentBottom + segmentTop) / 2
-        const netlabelMiddleX =
-          (netlabelBounds.left + netlabelBounds.right) / 2
-        const netlabelMiddleY =
-          (netlabelBounds.top + netlabelBounds.bottom) / 2
+        const netlabelMiddleX = (netlabelBounds.left + netlabelBounds.right) / 2
+        const netlabelMiddleY = (netlabelBounds.top + netlabelBounds.bottom) / 2
 
         // Only flag as collision if the segment middle passes through netlabel interior
         if (
@@ -161,10 +157,7 @@ test("netlabel trace collision avoidance", async () => {
     source_trace_id: trace.source_trace_id!,
   })
 
-  console.log(
-    "DEBUG: After collision avoidance:",
-    JSON.stringify(testEdges[0]),
-  )
+  console.log("DEBUG: After collision avoidance:", JSON.stringify(testEdges[0]))
 
   // SUCCESS: MSP solver should now avoid netlabel collisions!
   console.log(

@@ -107,9 +107,7 @@ export function createSchematicTraceSolverInputProblem(
     }
 
     for (const schematicPort of schematicPorts) {
-      const pinId = schematicPortIdToPinId.get(
-        schematicPort.schematic_port_id,
-      )!
+      const pinId = schematicPortIdToPinId.get(schematicPort.schematic_port_id)!
       pins.push({
         pinId,
         x: schematicPort.center.x,
@@ -134,8 +132,8 @@ export function createSchematicTraceSolverInputProblem(
     const netlabelChipId = `netlabel_obstacle_${netlabel.schematic_net_label_id || "unknown"}`
 
     // Calculate width and height from bounds
-    const safeWidth = bounds ? bounds.right - bounds.left : 0.5; // Default 0.5mm width
-    const safeHeight = bounds ? bounds.top - bounds.bottom : 0.18; // Default 0.18mm height (standard font size)
+    const safeWidth = bounds ? bounds.right - bounds.left : 0.5 // Default 0.5mm width
+    const safeHeight = bounds ? bounds.top - bounds.bottom : 0.18 // Default 0.18mm height (standard font size)
 
     chips.push({
       chipId: netlabelChipId,
@@ -180,26 +178,26 @@ export function createSchematicTraceSolverInputProblem(
       if (sourcePortIdToSchPortId.has(source_port_id)) return true
     }
     return false
-  });
+  })
 
   const externalNetIds = tracesInScope.flatMap(
     (st) => st.connected_source_net_ids,
-  );
+  )
 
   for (const netId of externalNetIds) {
-    const net = db.source_net.get(netId);
+    const net = db.source_net.get(netId)
     if (net?.subcircuit_id) {
-      allowedSubcircuitIds.add(net.subcircuit_id);
+      allowedSubcircuitIds.add(net.subcircuit_id)
     }
   }
 
   // Direct connections derived from explicit source_traces
   const directConnections: Array<{ pinIds: [string, string]; netId?: string }> =
-    [];
-  const pairKeyToSourceTraceId = new Map<string, string>();
+    []
+  const pairKeyToSourceTraceId = new Map<string, string>()
   for (const st of db.source_trace.list()) {
     if (st.subcircuit_id && !allowedSubcircuitIds.has(st.subcircuit_id)) {
-      continue;
+      continue
     }
     const connected = (st.connected_source_port_ids ?? [])
       .map((srcId: string) => sourcePortIdToSchPortId.get(srcId))
@@ -210,15 +208,15 @@ export function createSchematicTraceSolverInputProblem(
       )
 
     if (connected.length >= 2) {
-      const [a, b] = connected.slice(0, 2);
-      const pairKey = [a, b].sort().join("::");
+      const [a, b] = connected.slice(0, 2)
+      const pairKey = [a, b].sort().join("::")
       if (!pairKeyToSourceTraceId.has(pairKey)) {
-        pairKeyToSourceTraceId.set(pairKey, st.source_trace_id);
-        const userNetId = st.display_name ?? st.source_trace_id;
+        pairKeyToSourceTraceId.set(pairKey, st.source_trace_id)
+        const userNetId = st.display_name ?? st.source_trace_id
         if (st.subcircuit_connectivity_map_key) {
-          allScks.add(st.subcircuit_connectivity_map_key);
-          userNetIdToSck.set(userNetId, st.subcircuit_connectivity_map_key);
-          sckToUserNetId.set(st.subcircuit_connectivity_map_key, userNetId);
+          allScks.add(st.subcircuit_connectivity_map_key)
+          userNetIdToSck.set(userNetId, st.subcircuit_connectivity_map_key)
+          sckToUserNetId.set(st.subcircuit_connectivity_map_key, userNetId)
         }
         directConnections.push({
           pinIds: [a, b].map((id) => schematicPortIdToPinId.get(id)!) as [
@@ -233,29 +231,29 @@ export function createSchematicTraceSolverInputProblem(
 
   // Net connections derived from named nets (source_net) in-scope
   const netConnections: Array<{
-    netId: string;
-    pinIds: string[];
-    netLabelWidth?: number;
-  }> = [];
+    netId: string
+    pinIds: string[]
+    netLabelWidth?: number
+  }> = []
   for (const net of db.source_net
     .list()
     .filter(
       (n) => !n.subcircuit_id || allowedSubcircuitIds.has(n.subcircuit_id!),
     )) {
     if (net.subcircuit_connectivity_map_key) {
-      allScks.add(net.subcircuit_connectivity_map_key);
-      sckToSourceNet.set(net.subcircuit_connectivity_map_key, net);
+      allScks.add(net.subcircuit_connectivity_map_key)
+      sckToSourceNet.set(net.subcircuit_connectivity_map_key, net)
     }
   }
 
   /**
    * Subcircuit connectivity map key to schematic port ids
    */
-  const sckToPinIds = new Map<string, string[]>();
+  const sckToPinIds = new Map<string, string[]>()
   for (const [schId, srcPortId] of schPortIdToSourcePortId) {
-    const sp = db.source_port.get(srcPortId);
-    if (!sp?.subcircuit_connectivity_map_key) continue;
-    const sck = sp.subcircuit_connectivity_map_key;
+    const sp = db.source_port.get(srcPortId)
+    if (!sp?.subcircuit_connectivity_map_key) continue
+    const sck = sp.subcircuit_connectivity_map_key
     allScks.add(sck)
     if (!sckToPinIds.has(sck)) sckToPinIds.set(sck, [])
     sckToPinIds.get(sck)!.push(schId)

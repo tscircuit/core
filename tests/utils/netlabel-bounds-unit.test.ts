@@ -112,10 +112,10 @@ describe("Netlabel Collision Detection Utilities", () => {
     // width = 3 * 0.1 = 0.3
     // height = 0.18
 
-    expect(bounds.left).toBeCloseTo(-0.15, 3); // center.x - width/2 = 0 - 0.3/2
-    expect(bounds.right).toBeCloseTo(0.15, 3); // center.x + width/2 = 0 + 0.3/2
-    expect(bounds.top).toBeCloseTo(0.09, 3); // center.y + height/2 = 0 + 0.18/2
-    expect(bounds.bottom).toBeCloseTo(-0.09, 3); // center.y - height/2 = 0 - 0.18/2
+    expect(bounds.left).toBeCloseTo(-0.15, 3) // center.x - width/2 = 0 - 0.3/2
+    expect(bounds.right).toBeCloseTo(0.15, 3) // center.x + width/2 = 0 + 0.3/2
+    expect(bounds.top).toBeCloseTo(0.09, 3) // center.y + height/2 = 0 + 0.18/2
+    expect(bounds.bottom).toBeCloseTo(-0.09, 3) // center.y - height/2 = 0 - 0.18/2
   })
 
   test("getNetLabelBounds calculates correct bounds for longer label", () => {
@@ -164,7 +164,7 @@ describe("Netlabel Collision Detection Utilities", () => {
     const nonCollidingSegment = {
       from: { x: -1, y: 0.5 },
       to: { x: 1, y: 0.5 },
-    };
+    }
 
     expect(doesSegmentIntersectNetLabel(collidingSegment, bounds)).toBe(true)
     expect(doesSegmentIntersectNetLabel(nonCollidingSegment, bounds)).toBe(
@@ -189,13 +189,13 @@ describe("Netlabel Collision Detection Utilities", () => {
     const collidingSegment = {
       from: { x: 0, y: -1 },
       to: { x: 0, y: 1 },
-    };
+    }
 
     // Vertical segment that passes to the right of netlabel
     const nonCollidingSegment = {
       from: { x: 0.5, y: -1 },
       to: { x: 0.5, y: 1 },
-    };
+    }
 
     expect(doesSegmentIntersectNetLabel(collidingSegment, bounds)).toBe(true)
     expect(doesSegmentIntersectNetLabel(nonCollidingSegment, bounds)).toBe(
@@ -220,7 +220,7 @@ describe("Netlabel Collision Detection Utilities", () => {
     const edgeSegment = {
       from: { x: -1, y: 0.09 }, // exactly at top boundary
       to: { x: 1, y: 0.09 },
-    };
+    }
 
     // With default clearance (0.05), this should collide
     expect(doesSegmentIntersectNetLabel(edgeSegment, bounds, 0.05)).toBe(true)

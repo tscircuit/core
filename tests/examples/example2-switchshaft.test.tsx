@@ -1,11 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const SwitchShaft = (props: {
-  name: string
-  pcbX?: number
-  pcbY?: number
-}) => (
+const SwitchShaft = (props: { name: string; pcbX?: number; pcbY?: number }) => (
   <chip
     {...props}
     footprint={

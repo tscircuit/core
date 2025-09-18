@@ -4,7 +4,10 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 const FlippedChip = ({
   name,
   ...props
-}: { name: string; [key: string]: any }) => (
+}: {
+  name: string
+  [key: string]: any
+}) => (
   <group>
     <chip {...props} name={name} layer="bottom" />
   </group>
