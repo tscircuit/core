@@ -43,7 +43,7 @@
     "@tscircuit/props": "0.0.335",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
-    "@tscircuit/schematic-trace-solver": "^0.0.37",
+    "@tscircuit/schematic-trace-solver": "^0.0.38",
     "@tscircuit/simple-3d-svg": "^0.0.41",
     "@types/bun": "^1.2.16",
     "@types/debug": "^4.1.12",
