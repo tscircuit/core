@@ -103,7 +103,7 @@ describe("Netlabel Collision Detection Utilities", () => {
       center: { x: 0, y: 0 },
       anchor_position: { x: 0, y: 0 },
       anchor_side: "right",
-    };
+    }
 
     const bounds = getNetLabelBounds(netlabel)
 
@@ -116,7 +116,7 @@ describe("Netlabel Collision Detection Utilities", () => {
     expect(bounds.right).toBeCloseTo(0.15, 3); // center.x + width/2 = 0 + 0.3/2
     expect(bounds.top).toBeCloseTo(0.09, 3); // center.y + height/2 = 0 + 0.18/2
     expect(bounds.bottom).toBeCloseTo(-0.09, 3); // center.y - height/2 = 0 - 0.18/2
-  });
+  })
 
   test("getNetLabelBounds calculates correct bounds for longer label", () => {
     const netlabel: SchematicNetLabel = {
@@ -127,7 +127,7 @@ describe("Netlabel Collision Detection Utilities", () => {
       center: { x: 1, y: 1 },
       anchor_position: { x: 1, y: 1 },
       anchor_side: "right",
-    };
+    }
 
     const bounds = getNetLabelBounds(netlabel)
 
@@ -135,11 +135,11 @@ describe("Netlabel Collision Detection Utilities", () => {
     // width = 12 * 0.1 = 1.2
     // height = 0.18
 
-    expect(bounds.left).toBeCloseTo(0.4, 3); // 1 - 1.2/2
-    expect(bounds.right).toBeCloseTo(1.6, 3); // 1 + 1.2/2
-    expect(bounds.top).toBeCloseTo(1.09, 3); // 1 + 0.18/2
-    expect(bounds.bottom).toBeCloseTo(0.91, 3); // 1 - 0.18/2
-  });
+    expect(bounds.left).toBeCloseTo(0.4, 3) // 1 - 1.2/2
+    expect(bounds.right).toBeCloseTo(1.6, 3) // 1 + 1.2/2
+    expect(bounds.top).toBeCloseTo(1.09, 3) // 1 + 0.18/2
+    expect(bounds.bottom).toBeCloseTo(0.91, 3) // 1 - 0.18/2
+  })
 
   test("doesSegmentIntersectNetLabel detects horizontal collision", () => {
     const netlabel: SchematicNetLabel = {
@@ -150,7 +150,7 @@ describe("Netlabel Collision Detection Utilities", () => {
       center: { x: 0, y: 0 },
       anchor_position: { x: 0, y: 0 },
       anchor_side: "right",
-    };
+    }
 
     const bounds = getNetLabelBounds(netlabel)
 
@@ -158,7 +158,7 @@ describe("Netlabel Collision Detection Utilities", () => {
     const collidingSegment = {
       from: { x: -1, y: 0 },
       to: { x: 1, y: 0 },
-    };
+    }
 
     // Horizontal segment that passes above netlabel
     const nonCollidingSegment = {
@@ -166,11 +166,11 @@ describe("Netlabel Collision Detection Utilities", () => {
       to: { x: 1, y: 0.5 },
     };
 
-    expect(doesSegmentIntersectNetLabel(collidingSegment, bounds)).toBe(true);
+    expect(doesSegmentIntersectNetLabel(collidingSegment, bounds)).toBe(true)
     expect(doesSegmentIntersectNetLabel(nonCollidingSegment, bounds)).toBe(
       false,
-    );
-  });
+    )
+  })
 
   test("doesSegmentIntersectNetLabel detects vertical collision", () => {
     const netlabel: SchematicNetLabel = {
@@ -181,7 +181,7 @@ describe("Netlabel Collision Detection Utilities", () => {
       center: { x: 0, y: 0 },
       anchor_position: { x: 0, y: 0 },
       anchor_side: "right",
-    };
+    }
 
     const bounds = getNetLabelBounds(netlabel)
 
@@ -197,11 +197,11 @@ describe("Netlabel Collision Detection Utilities", () => {
       to: { x: 0.5, y: 1 },
     };
 
-    expect(doesSegmentIntersectNetLabel(collidingSegment, bounds)).toBe(true);
+    expect(doesSegmentIntersectNetLabel(collidingSegment, bounds)).toBe(true)
     expect(doesSegmentIntersectNetLabel(nonCollidingSegment, bounds)).toBe(
       false,
-    );
-  });
+    )
+  })
 
   test("collision detection respects clearance parameter", () => {
     const netlabel: SchematicNetLabel = {
@@ -212,7 +212,7 @@ describe("Netlabel Collision Detection Utilities", () => {
       center: { x: 0, y: 0 },
       anchor_position: { x: 0, y: 0 },
       anchor_side: "right",
-    };
+    }
 
     const bounds = getNetLabelBounds(netlabel)
 
@@ -223,9 +223,9 @@ describe("Netlabel Collision Detection Utilities", () => {
     };
 
     // With default clearance (0.05), this should collide
-    expect(doesSegmentIntersectNetLabel(edgeSegment, bounds, 0.05)).toBe(true);
+    expect(doesSegmentIntersectNetLabel(edgeSegment, bounds, 0.05)).toBe(true)
 
     // With zero clearance, this should not collide
-    expect(doesSegmentIntersectNetLabel(edgeSegment, bounds, 0)).toBe(false);
-  });
-});
+    expect(doesSegmentIntersectNetLabel(edgeSegment, bounds, 0)).toBe(false)
+  })
+})

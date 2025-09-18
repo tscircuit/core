@@ -86,35 +86,35 @@ export function createSchematicTraceSolverInputProblem(
   // Build chips and pinId maps
   const chips: InputChip[] = []
   const pinIdToSchematicPortId = new Map<string, string>()
-  const schematicPortIdToPinId = new Map<string, string>();
+  const schematicPortIdToPinId = new Map<string, string>()
 
   for (const schematicComponent of schematicComponents) {
-    const chipId = schematicComponent.schematic_component_id;
-    const pins: InputPin[] = [];
+    const chipId = schematicComponent.schematic_component_id
+    const pins: InputPin[] = []
 
     const sourceComponent = db.source_component.getWhere({
       source_component_id: schematicComponent.source_component_id,
-    });
+    })
 
     const schematicPorts = db.schematic_port.list({
       schematic_component_id: schematicComponent.schematic_component_id,
-    });
+    })
 
     for (const schematicPort of schematicPorts) {
-      const pinId = `${sourceComponent?.name ?? schematicComponent.schematic_component_id}.${schematicPort.pin_number}`;
-      pinIdToSchematicPortId.set(pinId, schematicPort.schematic_port_id);
-      schematicPortIdToPinId.set(schematicPort.schematic_port_id, pinId);
+      const pinId = `${sourceComponent?.name ?? schematicComponent.schematic_component_id}.${schematicPort.pin_number}`
+      pinIdToSchematicPortId.set(pinId, schematicPort.schematic_port_id)
+      schematicPortIdToPinId.set(schematicPort.schematic_port_id, pinId)
     }
 
     for (const schematicPort of schematicPorts) {
       const pinId = schematicPortIdToPinId.get(
         schematicPort.schematic_port_id,
-      )!;
+      )!
       pins.push({
         pinId,
         x: schematicPort.center.x,
         y: schematicPort.center.y,
-      });
+      })
     }
 
     chips.push({
@@ -123,15 +123,15 @@ export function createSchematicTraceSolverInputProblem(
       width: schematicComponent.size.width,
       height: schematicComponent.size.height,
       pins,
-    });
+    })
   }
 
   // Add existing netlabels as virtual obstacle chips to prevent trace collisions
-  const existingNetLabels = db.schematic_net_label.list();
+  const existingNetLabels = db.schematic_net_label.list()
 
   for (const netlabel of existingNetLabels) {
-    const bounds = getNetLabelBounds(netlabel);
-    const netlabelChipId = `netlabel_obstacle_${netlabel.schematic_net_label_id || "unknown"}`;
+    const bounds = getNetLabelBounds(netlabel)
+    const netlabelChipId = `netlabel_obstacle_${netlabel.schematic_net_label_id || "unknown"}`
 
     // Calculate width and height from bounds
     const safeWidth = bounds ? bounds.right - bounds.left : 0.5; // Default 0.5mm width
@@ -143,30 +143,30 @@ export function createSchematicTraceSolverInputProblem(
       width: safeWidth,
       height: safeHeight,
       pins: [], // No pins for netlabel obstacles
-    });
+    })
   }
 
   // Maps for ports within this scope
-  const allSourceAndSchematicPortIdsInScope = new Set<string>();
-  const schPortIdToSourcePortId = new Map<string, string>();
-  const sourcePortIdToSchPortId = new Map<string, string>();
+  const allSourceAndSchematicPortIdsInScope = new Set<string>()
+  const schPortIdToSourcePortId = new Map<string, string>()
+  const sourcePortIdToSchPortId = new Map<string, string>()
   const userNetIdToSck = new Map<string, string>();
   for (const sc of schematicComponents) {
     const ports = db.schematic_port.list({
       schematic_component_id: sc.schematic_component_id,
-    });
+    })
     for (const sp of ports) {
-      allSourceAndSchematicPortIdsInScope.add(sp.schematic_port_id);
+      allSourceAndSchematicPortIdsInScope.add(sp.schematic_port_id)
       if (sp.source_port_id) {
-        schPortIdToSourcePortId.set(sp.schematic_port_id, sp.source_port_id);
-        sourcePortIdToSchPortId.set(sp.source_port_id, sp.schematic_port_id);
+        schPortIdToSourcePortId.set(sp.schematic_port_id, sp.source_port_id)
+        sourcePortIdToSchPortId.set(sp.source_port_id, sp.schematic_port_id)
       }
     }
   }
 
   // Determine allowed subcircuits (this group and its child groups)
-  const allowedSubcircuitIds = new Set<string>();
-  if (group.subcircuit_id) allowedSubcircuitIds.add(group.subcircuit_id);
+  const allowedSubcircuitIds = new Set<string>()
+  if (group.subcircuit_id) allowedSubcircuitIds.add(group.subcircuit_id)
   for (const cg of childGroups) {
     if (cg.subcircuit_id) allowedSubcircuitIds.add(cg.subcircuit_id);
   }
@@ -226,7 +226,7 @@ export function createSchematicTraceSolverInputProblem(
             string,
           ],
           netId: userNetId,
-        });
+        })
       }
     }
   }
@@ -284,7 +284,7 @@ export function createSchematicTraceSolverInputProblem(
           (portId) => schematicPortIdToPinId.get(portId)!,
         ),
         netLabelWidth,
-      });
+      })
     }
   }
 
