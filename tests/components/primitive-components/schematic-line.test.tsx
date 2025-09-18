@@ -30,6 +30,7 @@ test("SchematicLine Test", () => {
           "x": 0,
           "y": 0,
         },
+        "is_box_with_pins": false,
         "schematic_component_id": "schematic_component_0",
         "schematic_group_id": "schematic_group_0",
         "size": {
@@ -38,7 +39,6 @@ test("SchematicLine Test", () => {
         },
         "source_component_id": "source_component_0",
         "symbol_display_value": undefined,
-        "symbol_name": "custom_symbol",
         "type": "schematic_component",
       },
     ]

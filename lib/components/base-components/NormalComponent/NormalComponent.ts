@@ -606,7 +606,7 @@ export class NormalComponent<
         center,
         size: symbol.size,
         source_component_id: this.source_component_id!,
-
+        is_box_with_pins: true,
         symbol_name,
 
         symbol_display_value: this._getSchematicSymbolDisplayValue(),
@@ -628,8 +628,8 @@ export class NormalComponent<
       // width/height are computed in the SchematicComponentSizeCalculation phase
       size: { width: 0, height: 0 },
       source_component_id: this.source_component_id!,
-      symbol_name: "custom_symbol",
       symbol_display_value: this._getSchematicSymbolDisplayValue(),
+      is_box_with_pins: false,
     })
     this.schematic_component_id = schematic_component.schematic_component_id
 
@@ -806,11 +806,7 @@ export class NormalComponent<
     )
 
     // Only update size for custom symbols (not predefined symbols)
-    if (
-      !schematic_component ||
-      schematic_component.symbol_name !== "custom_symbol"
-    )
-      return
+    if (!schematic_component) return
 
     // Get all schematic primitives from this component's subtree (recursively)
     const schematicElements: any[] = []
