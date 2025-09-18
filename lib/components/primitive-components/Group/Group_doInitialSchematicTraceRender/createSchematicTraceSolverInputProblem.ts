@@ -125,9 +125,7 @@ export function createSchematicTraceSolverInputProblem(
       const anchor = getSchematicPortTraceAnchor({
         center: schematicPort.center,
         facingDirection: schematicPort.facing_direction,
-        pinSpacing: resolvePinSpacing(
-          schematicPort.schematic_component_id,
-        ),
+        pinSpacing: resolvePinSpacing(schematicPort.schematic_component_id),
       })
       pins.push({
         pinId,

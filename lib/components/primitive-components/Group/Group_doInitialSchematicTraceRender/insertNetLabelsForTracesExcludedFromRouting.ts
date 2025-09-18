@@ -48,9 +48,7 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
         const anchor_position = getSchematicPortTraceAnchor({
           center: portCenter,
           facingDirection: port.facingDirection,
-          pinSpacing: resolvePinSpacing(
-            schematicPort?.schematic_component_id,
-          ),
+          pinSpacing: resolvePinSpacing(schematicPort?.schematic_component_id),
         })
         const side =
           getEnteringEdgeFromDirection(port.facingDirection || "right") ||
