@@ -5,7 +5,10 @@ import { Footprint } from "lib/components/primitive-components/Footprint"
 import { isFootprintUrl } from "./utils/isFoorprintUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 import type { CadModelProp } from "@tscircuit/props"
-import { external_footprint_load_error } from "circuit-json"
+import {
+  circuit_json_footprint_load_error,
+  external_footprint_load_error,
+} from "circuit-json"
 
 interface FootprintLibraryResult {
   footprintCircuitJson: any[]
@@ -153,5 +156,44 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     (footprint as Footprint).componentName === "Footprint"
   ) {
     component.add(footprint as Footprint)
+  }
+
+  if (
+    Array.isArray(footprint) &&
+    !isReactElement(footprint) &&
+    footprint.length > 0
+  ) {
+    try {
+      const fpComponents = createComponentsFromCircuitJson(
+        {
+          componentName: component.name,
+          componentRotation: pcbRotation,
+          footprint: "",
+          pinLabels,
+          pcbPinLabels,
+        },
+        footprint,
+      )
+      component.addAll(fpComponents)
+    } catch (err) {
+      const db = component.root?.db
+      if (db && component.source_component_id && component.pcb_component_id) {
+        const subcircuit = component.getSubcircuit()
+        const errorMsg =
+          `${component.getString()} failed to load json footprint: ` +
+          (err instanceof Error ? err.message : String(err))
+        const errorObj = circuit_json_footprint_load_error.parse({
+          type: "circuit_json_footprint_load_error",
+          message: errorMsg,
+          pcb_component_id: component.pcb_component_id,
+          source_component_id: component.source_component_id,
+          subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+          pcb_group_id: component.getGroup()?.pcb_group_id ?? undefined,
+        })
+        db.circuit_json_footprint_load_error.insert(errorObj)
+      }
+      throw err
+    }
+    return
   }
 }
