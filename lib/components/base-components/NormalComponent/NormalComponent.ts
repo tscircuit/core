@@ -828,6 +828,22 @@ export class NormalComponent<
         }
         if (
           child.isSchematicPrimitive &&
+          child.componentName === "SchematicCircle"
+        ) {
+          const circle = db.schematic_circle.get(
+            (child as any).schematic_circle_id,
+          )
+          if (circle) schematicElements.push(circle)
+        }
+        if (
+          child.isSchematicPrimitive &&
+          child.componentName === "SchematicArc"
+        ) {
+          const arc = db.schematic_arc.get((child as any).schematic_arc_id)
+          if (arc) schematicElements.push(arc)
+        }
+        if (
+          child.isSchematicPrimitive &&
           child.componentName === "SchematicText"
         ) {
           const text = db.schematic_text.get((child as any).schematic_text_id)
