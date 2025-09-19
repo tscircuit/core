@@ -5,9 +5,7 @@ import {
   SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
 } from "lib/utils/constants"
 
-export class SchematicArc extends PrimitiveComponent<
-  typeof schematicArcProps
-> {
+export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
   isSchematicPrimitive = true
 
   get config() {

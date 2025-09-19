@@ -25,9 +25,9 @@ function isAngleBetween(
   return angle <= start || angle >= end
 }
 
-function getArcBounds(elm: any):
-  | { minX: number; maxX: number; minY: number; maxY: number }
-  | null {
+function getArcBounds(
+  elm: any,
+): { minX: number; maxX: number; minY: number; maxY: number } | null {
   const center = elm.center
   const radius = elm.radius
   const startAngle = elm.start_angle_degrees
