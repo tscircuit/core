@@ -57,7 +57,7 @@
     "circuit-json": "^0.0.261",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.22",
-    "circuit-json-to-simple-3d": "^0.0.8",
+    "circuit-json-to-simple-3d": "^0.0.9",
     "circuit-to-svg": "^0.0.197",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.0",
