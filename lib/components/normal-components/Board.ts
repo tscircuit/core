@@ -62,6 +62,94 @@ const getRoundedRectOutline = (
   return outline
 }
 
+type AnchorPoint = { x: number; y: number }
+
+const computeCenterFromAnchor = (
+  anchor: AnchorPoint,
+  alignment: string,
+  width: number,
+  height: number,
+): AnchorPoint => {
+  const halfWidth = width / 2
+  const halfHeight = height / 2
+
+  switch (alignment) {
+    case "top_left":
+      return { x: anchor.x + halfWidth, y: anchor.y - halfHeight }
+    case "top_center":
+      return { x: anchor.x, y: anchor.y - halfHeight }
+    case "top_right":
+      return { x: anchor.x - halfWidth, y: anchor.y - halfHeight }
+    case "left_center":
+      return { x: anchor.x + halfWidth, y: anchor.y }
+    case "right_center":
+      return { x: anchor.x - halfWidth, y: anchor.y }
+    case "bottom_left":
+      return { x: anchor.x + halfWidth, y: anchor.y + halfHeight }
+    case "bottom_center":
+      return { x: anchor.x, y: anchor.y + halfHeight }
+    case "bottom_right":
+      return { x: anchor.x - halfWidth, y: anchor.y + halfHeight }
+    case "center":
+    default:
+      return anchor
+  }
+}
+
+const computeAutoWidthForAlignment = (
+  alignment: string,
+  anchorX: number,
+  paddedMinX: number,
+  paddedMaxX: number,
+) => {
+  switch (alignment) {
+    case "top_left":
+    case "left_center":
+    case "bottom_left":
+      return Math.max(paddedMaxX - anchorX, 0)
+    case "top_right":
+    case "right_center":
+    case "bottom_right":
+      return Math.max(anchorX - paddedMinX, 0)
+    case "top_center":
+    case "bottom_center":
+    case "center":
+    default: {
+      const leftSpan = anchorX - paddedMinX
+      const rightSpan = paddedMaxX - anchorX
+      const span = Math.max(leftSpan, rightSpan, 0)
+      return span > 0 ? span * 2 : 0
+    }
+  }
+}
+
+const computeAutoHeightForAlignment = (
+  alignment: string,
+  anchorY: number,
+  paddedMinY: number,
+  paddedMaxY: number,
+) => {
+  switch (alignment) {
+    case "top_left":
+    case "top_center":
+    case "top_right":
+      return Math.max(anchorY - paddedMinY, 0)
+    case "bottom_left":
+    case "bottom_center":
+    case "bottom_right":
+      return Math.max(paddedMaxY - anchorY, 0)
+    case "left_center":
+    case "right_center":
+    case "center":
+    default: {
+      const bottomSpan = anchorY - paddedMinY
+      const topSpan = paddedMaxY - anchorY
+      const span = Math.max(bottomSpan, topSpan, 0)
+      return span > 0 ? span * 2 : 0
+    }
+  }
+}
+
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
   _drcChecksComplete = false
@@ -156,27 +244,65 @@ export class Board extends Group<typeof boardProps> {
       updateBounds(pcbGroup.center, pcbGroup.width, pcbGroup.height)
     }
 
-    // Add padding around components
     const padding = 2
+    const outlineOffsetX = props.outlineOffsetX ?? 0
+    const outlineOffsetY = props.outlineOffsetY ?? 0
+    const anchorAlignment = props.boardAnchorAlignment ?? "center"
+    const anchorPosition = props.boardAnchorPosition
+      ? {
+          x: props.boardAnchorPosition.x + outlineOffsetX,
+          y: props.boardAnchorPosition.y + outlineOffsetY,
+        }
+      : null
 
-    // Use dimensions of 0,0 when no components are found
-    const computedWidth = hasComponents ? maxX - minX + padding * 2 : 0
-    const computedHeight = hasComponents ? maxY - minY + padding * 2 : 0
+    let computedWidth = 0
+    let computedHeight = 0
 
-    // Center the board around the components or use (0,0) for empty boards
-    const center = {
-      x: hasComponents
-        ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
-        : (props.outlineOffsetX ?? 0),
-      y: hasComponents
-        ? (minY + maxY) / 2 + (props.outlineOffsetY ?? 0)
-        : (props.outlineOffsetY ?? 0),
+    if (anchorPosition) {
+      if (hasComponents) {
+        const paddedMinX = minX - padding
+        const paddedMaxX = maxX + padding
+        const paddedMinY = minY - padding
+        const paddedMaxY = maxY + padding
+
+        computedWidth = computeAutoWidthForAlignment(
+          anchorAlignment,
+          anchorPosition.x,
+          paddedMinX,
+          paddedMaxX,
+        )
+        computedHeight = computeAutoHeightForAlignment(
+          anchorAlignment,
+          anchorPosition.y,
+          paddedMinY,
+          paddedMaxY,
+        )
+      }
+    } else {
+      computedWidth = hasComponents ? maxX - minX + padding * 2 : 0
+      computedHeight = hasComponents ? maxY - minY + padding * 2 : 0
     }
 
     // Update the board dimensions, preserving any explicit dimension provided
     // by the user while auto-calculating the missing one.
     const finalWidth = props.width ?? computedWidth
     const finalHeight = props.height ?? computedHeight
+
+    const center = anchorPosition
+      ? computeCenterFromAnchor(
+          anchorPosition,
+          anchorAlignment,
+          finalWidth,
+          finalHeight,
+        )
+      : {
+          x: hasComponents
+            ? (minX + maxX) / 2 + outlineOffsetX
+            : outlineOffsetX,
+          y: hasComponents
+            ? (minY + maxY) / 2 + outlineOffsetY
+            : outlineOffsetY,
+        }
 
     let outline = props.outline
     if (
@@ -260,10 +386,26 @@ export class Board extends Group<typeof boardProps> {
     // They will be updated in PcbBoardAutoSize phase
     let computedWidth = props.width ?? 0
     let computedHeight = props.height ?? 0
-    let center = {
-      x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
-      y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
-    }
+    const outlineOffsetX = props.outlineOffsetX ?? 0
+    const outlineOffsetY = props.outlineOffsetY ?? 0
+    const anchorAlignment = props.boardAnchorAlignment ?? "center"
+    const anchorPosition = props.boardAnchorPosition
+      ? {
+          x: props.boardAnchorPosition.x + outlineOffsetX,
+          y: props.boardAnchorPosition.y + outlineOffsetY,
+        }
+      : null
+    let center = anchorPosition
+      ? computeCenterFromAnchor(
+          anchorPosition,
+          anchorAlignment,
+          computedWidth,
+          computedHeight,
+        )
+      : {
+          x: (props.pcbX ?? 0) + outlineOffsetX,
+          y: (props.pcbY ?? 0) + outlineOffsetY,
+        }
 
     // Compute width and height from outline if not provided
     if (props.outline) {
@@ -277,10 +419,17 @@ export class Board extends Group<typeof boardProps> {
 
       computedWidth = maxX - minX
       computedHeight = maxY - minY
-      center = {
-        x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
-        y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
-      }
+      center = anchorPosition
+        ? computeCenterFromAnchor(
+            anchorPosition,
+            anchorAlignment,
+            computedWidth,
+            computedHeight,
+          )
+        : {
+            x: (minX + maxX) / 2 + outlineOffsetX,
+            y: (minY + maxY) / 2 + outlineOffsetY,
+          }
     }
 
     let outline = props.outline
