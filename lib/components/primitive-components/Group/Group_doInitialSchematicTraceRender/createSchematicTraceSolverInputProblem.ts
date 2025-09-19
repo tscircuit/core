@@ -6,6 +6,7 @@ import {
   type InputProblem,
 } from "@tscircuit/schematic-trace-solver"
 import type { AxisDirection } from "./getSide"
+import { getNetLabelBounds } from "lib/utils/schematic/getNetLabelBounds"
 
 export type SolverInputContext = {
   inputProblem: InputProblem
@@ -120,6 +121,26 @@ export function createSchematicTraceSolverInputProblem(
       width: schematicComponent.size.width,
       height: schematicComponent.size.height,
       pins,
+    })
+  }
+
+  // Add existing netlabels as virtual obstacle chips to prevent trace collisions
+  const existingNetLabels = db.schematic_net_label.list()
+
+  for (const netlabel of existingNetLabels) {
+    const bounds = getNetLabelBounds(netlabel)
+    const netlabelChipId = `netlabel_obstacle_${netlabel.schematic_net_label_id || "unknown"}`
+
+    // Calculate width and height from bounds
+    const safeWidth = bounds ? bounds.right - bounds.left : 0.5 // Default 0.5mm width
+    const safeHeight = bounds ? bounds.top - bounds.bottom : 0.18 // Default 0.18mm height (standard font size)
+
+    chips.push({
+      chipId: netlabelChipId,
+      center: netlabel.center,
+      width: safeWidth,
+      height: safeHeight,
+      pins: [], // No pins for netlabel obstacles
     })
   }
 

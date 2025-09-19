@@ -3,7 +3,9 @@ import React from "react"
 
 export const RenderTimingsBar = ({
   phaseTimings,
-}: { phaseTimings?: Record<string, number> }) => {
+}: {
+  phaseTimings?: Record<string, number>
+}) => {
   if (!phaseTimings) return null
   // Generate a color for each phase using HSL to ensure good distribution
   const getPhaseColor = (index: number) => {
