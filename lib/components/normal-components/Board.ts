@@ -6,6 +6,7 @@ import {
   checkEachPcbTraceNonOverlapping,
   checkPcbComponentsOutOfBoard,
 } from "@tscircuit/checks"
+import type { NinePointAnchor } from "circuit-json"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 
@@ -63,20 +64,10 @@ const getRoundedRectOutline = (
 }
 
 type AnchorPoint = { x: number; y: number }
-type AnchorAlignment =
-  | "top_left"
-  | "top_center"
-  | "top_right"
-  | "left_center"
-  | "center"
-  | "right_center"
-  | "bottom_left"
-  | "bottom_center"
-  | "bottom_right"
 
 const computeCenterFromAnchor = (
   anchor: AnchorPoint,
-  config: { alignment: AnchorAlignment; width: number; height: number },
+  config: { alignment: NinePointAnchor; width: number; height: number },
 ): AnchorPoint => {
   const { alignment, width, height } = config
   const halfWidth = width / 2
@@ -89,10 +80,6 @@ const computeCenterFromAnchor = (
       return { x: anchor.x, y: anchor.y - halfHeight }
     case "top_right":
       return { x: anchor.x - halfWidth, y: anchor.y - halfHeight }
-    case "left_center":
-      return { x: anchor.x + halfWidth, y: anchor.y }
-    case "right_center":
-      return { x: anchor.x - halfWidth, y: anchor.y }
     case "bottom_left":
       return { x: anchor.x + halfWidth, y: anchor.y + halfHeight }
     case "bottom_center":
@@ -106,17 +93,15 @@ const computeCenterFromAnchor = (
 }
 
 const computeAutoWidthForAlignment = (
-  alignment: AnchorAlignment,
+  alignment: NinePointAnchor,
   bounds: { anchor: number; min: number; max: number },
 ) => {
   const { anchor, min, max } = bounds
   switch (alignment) {
     case "top_left":
-    case "left_center":
     case "bottom_left":
       return Math.max(max - anchor, 0)
     case "top_right":
-    case "right_center":
     case "bottom_right":
       return Math.max(anchor - min, 0)
     case "top_center":
@@ -132,7 +117,7 @@ const computeAutoWidthForAlignment = (
 }
 
 const computeAutoHeightForAlignment = (
-  alignment: AnchorAlignment,
+  alignment: NinePointAnchor,
   bounds: { anchor: number; min: number; max: number },
 ) => {
   const { anchor, min, max } = bounds
@@ -145,8 +130,6 @@ const computeAutoHeightForAlignment = (
     case "bottom_center":
     case "bottom_right":
       return Math.max(max - anchor, 0)
-    case "left_center":
-    case "right_center":
     case "center":
     default: {
       const bottomSpan = anchor - min
@@ -255,7 +238,7 @@ export class Board extends Group<typeof boardProps> {
     const outlineOffsetX = props.outlineOffsetX ?? 0
     const outlineOffsetY = props.outlineOffsetY ?? 0
     const anchorAlignment = (props.boardAnchorAlignment ??
-      "center") as AnchorAlignment
+      "center") as NinePointAnchor
     const anchorPosition = props.boardAnchorPosition
       ? {
           x: props.boardAnchorPosition.x + outlineOffsetX,
@@ -394,7 +377,7 @@ export class Board extends Group<typeof boardProps> {
     const outlineOffsetX = props.outlineOffsetX ?? 0
     const outlineOffsetY = props.outlineOffsetY ?? 0
     const anchorAlignment = (props.boardAnchorAlignment ??
-      "center") as AnchorAlignment
+      "center") as NinePointAnchor
     const anchorPosition = props.boardAnchorPosition
       ? {
           x: props.boardAnchorPosition.x + outlineOffsetX,
