@@ -1,4 +1,5 @@
 import { boardProps } from "@tscircuit/props"
+import type { NinePointAnchor } from "circuit-json"
 import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
 import {
@@ -62,10 +63,74 @@ const getRoundedRectOutline = (
   return outline
 }
 
+const getAnchorOffsetFromCenter = (
+  alignment: NinePointAnchor,
+  width: number,
+  height: number,
+) => {
+  const halfWidth = width / 2
+  const halfHeight = height / 2
+
+  switch (alignment) {
+    case "top_left":
+      return { x: -halfWidth, y: -halfHeight }
+    case "top_center":
+      return { x: 0, y: -halfHeight }
+    case "top_right":
+      return { x: halfWidth, y: -halfHeight }
+    case "center_left":
+      return { x: -halfWidth, y: 0 }
+    case "center":
+      return { x: 0, y: 0 }
+    case "center_right":
+      return { x: halfWidth, y: 0 }
+    case "bottom_left":
+      return { x: -halfWidth, y: halfHeight }
+    case "bottom_center":
+      return { x: 0, y: halfHeight }
+    case "bottom_right":
+      return { x: halfWidth, y: halfHeight }
+    default:
+      return { x: 0, y: 0 }
+  }
+}
+
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
   _drcChecksComplete = false
   _connectedSchematicPortPairs = new Set<string>()
+
+  private _applyBoardAnchorAlignment(
+    center: { x: number; y: number },
+    width: number,
+    height: number,
+  ) {
+    const {
+      boardAnchorAlignment,
+      boardAnchorPosition,
+    }: {
+      boardAnchorAlignment?: NinePointAnchor
+      boardAnchorPosition?: { x: number; y: number }
+    } = this._parsedProps as any
+
+    if (!boardAnchorPosition) return center
+    if (
+      typeof boardAnchorPosition.x !== "number" ||
+      typeof boardAnchorPosition.y !== "number"
+    ) {
+      return center
+    }
+
+    if (!Number.isFinite(width) || !Number.isFinite(height)) return center
+
+    const alignment = (boardAnchorAlignment ?? "center") as NinePointAnchor
+    const offset = getAnchorOffsetFromCenter(alignment, width, height)
+
+    return {
+      x: boardAnchorPosition.x - offset.x,
+      y: boardAnchorPosition.y - offset.y,
+    }
+  }
 
   get isSubcircuit() {
     return true
@@ -178,6 +243,12 @@ export class Board extends Group<typeof boardProps> {
     const finalWidth = props.width ?? computedWidth
     const finalHeight = props.height ?? computedHeight
 
+    const alignedCenter = this._applyBoardAnchorAlignment(
+      center,
+      finalWidth,
+      finalHeight,
+    )
+
     let outline = props.outline
     if (
       !outline &&
@@ -195,7 +266,7 @@ export class Board extends Group<typeof boardProps> {
     const update: Record<string, unknown> = {
       width: finalWidth,
       height: finalHeight,
-      center,
+      center: alignedCenter,
     }
 
     if (outline) {
@@ -297,8 +368,14 @@ export class Board extends Group<typeof boardProps> {
       )
     }
 
-    const pcb_board = db.pcb_board.insert({
+    const alignedCenter = this._applyBoardAnchorAlignment(
       center,
+      computedWidth ?? 0,
+      computedHeight ?? 0,
+    )
+
+    const pcb_board = db.pcb_board.insert({
+      center: alignedCenter,
 
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
