@@ -254,7 +254,8 @@ export class Board extends Group<typeof boardProps> {
     const padding = 2
     const outlineOffsetX = props.outlineOffsetX ?? 0
     const outlineOffsetY = props.outlineOffsetY ?? 0
-    const anchorAlignment = (props.boardAnchorAlignment ?? "center") as AnchorAlignment
+    const anchorAlignment = (props.boardAnchorAlignment ??
+      "center") as AnchorAlignment
     const anchorPosition = props.boardAnchorPosition
       ? {
           x: props.boardAnchorPosition.x + outlineOffsetX,
@@ -392,7 +393,8 @@ export class Board extends Group<typeof boardProps> {
     let computedHeight = props.height ?? 0
     const outlineOffsetX = props.outlineOffsetX ?? 0
     const outlineOffsetY = props.outlineOffsetY ?? 0
-    const anchorAlignment = (props.boardAnchorAlignment ?? "center") as AnchorAlignment
+    const anchorAlignment = (props.boardAnchorAlignment ??
+      "center") as AnchorAlignment
     const anchorPosition = props.boardAnchorPosition
       ? {
           x: props.boardAnchorPosition.x + outlineOffsetX,
