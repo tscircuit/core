@@ -17,6 +17,7 @@ import {
   rotation,
   schematic_manual_edit_conflict_warning,
 } from "circuit-json"
+import { decomposeTSR } from "transformation-matrix"
 import Debug from "debug"
 import {
   type ReactSubtree,
@@ -1242,6 +1243,12 @@ export class NormalComponent<
     })
 
     const computedLayer = this.props.layer === "bottom" ? "bottom" : "top"
+
+    // Get the accumulated rotation from the global transform
+    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
+    const decomposedTransform = decomposeTSR(globalTransform)
+    const accumulatedRotation = (decomposedTransform.rotation.angle * 180) / Math.PI
+
     const cad_model = db.cad_component.insert({
       // TODO z maybe depends on layer
       position: {
@@ -1257,8 +1264,8 @@ export class NormalComponent<
         y: (computedLayer === "top" ? 0 : 180) + rotationOffset.y,
         z:
           computedLayer === "bottom"
-            ? -((pcb_component?.rotation ?? 0) + rotationOffset.z) + 180
-            : (pcb_component?.rotation ?? 0) + rotationOffset.z,
+            ? -(accumulatedRotation + rotationOffset.z) + 180
+            : accumulatedRotation + rotationOffset.z,
       },
       pcb_component_id: this.pcb_component_id!,
       source_component_id: this.source_component_id!,
