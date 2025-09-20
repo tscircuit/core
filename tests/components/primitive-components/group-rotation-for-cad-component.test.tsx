@@ -10,7 +10,7 @@ test("group rotation on the cad model", async () => {
         name="U1"
         footprint="soic8"
         cadModel={{
-          stlUrl: "https://example.com/test.stl"
+          stlUrl: "https://example.com/test.stl",
         }}
       />
     </group>,
@@ -47,5 +47,4 @@ test("group rotation on the cad model", async () => {
       "type": "cad_component",
     }
   `)
-
 })

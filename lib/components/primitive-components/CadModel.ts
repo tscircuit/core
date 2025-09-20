@@ -34,7 +34,8 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
     // Get the accumulated rotation from the parent's global transform
     const parentTransform = parent._computePcbGlobalTransformBeforeLayout()
     const decomposedTransform = decomposeTSR(parentTransform)
-    const accumulatedRotation = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const accumulatedRotation =
+      (decomposedTransform.rotation.angle * 180) / Math.PI
 
     const rotationOffset = rotation3.parse({ x: 0, y: 0, z: 0 })
     if (typeof props.rotationOffset === "number") {

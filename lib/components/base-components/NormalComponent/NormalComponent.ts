@@ -1247,7 +1247,8 @@ export class NormalComponent<
     // Get the accumulated rotation from the global transform
     const globalTransform = this._computePcbGlobalTransformBeforeLayout()
     const decomposedTransform = decomposeTSR(globalTransform)
-    const accumulatedRotation = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const accumulatedRotation =
+      (decomposedTransform.rotation.angle * 180) / Math.PI
 
     const cad_model = db.cad_component.insert({
       // TODO z maybe depends on layer
