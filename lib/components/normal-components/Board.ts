@@ -8,6 +8,7 @@ import {
 } from "@tscircuit/checks"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
+import type { NinePointAnchor } from "circuit-json"
 
 const getRoundedRectOutline = (
   width: number,
@@ -108,8 +109,8 @@ export class Board extends Group<typeof boardProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    // Skip if width and height are explicitly provided
-    if (props.width && props.height) return
+    // Skip if width and height are explicitly provided and no anchor position is set
+    if (props.width && props.height && !props.boardAnchorPosition) return
 
     let minX = Infinity
     let minY = Infinity
@@ -163,20 +164,55 @@ export class Board extends Group<typeof boardProps> {
     const computedWidth = hasComponents ? maxX - minX + padding * 2 : 0
     const computedHeight = hasComponents ? maxY - minY + padding * 2 : 0
 
-    // Center the board around the components or use (0,0) for empty boards
-    const center = {
-      x: hasComponents
-        ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
-        : (props.outlineOffsetX ?? 0),
-      y: hasComponents
-        ? (minY + maxY) / 2 + (props.outlineOffsetY ?? 0)
-        : (props.outlineOffsetY ?? 0),
+    // Calculate the board dimensions
+    const boardWidth = props.width ?? computedWidth
+    const boardHeight = props.height ?? computedHeight
+
+    // Normalized anchor offsets (-0.5 to 0.5 in both axes)
+    const anchorOffsets: Record<NinePointAnchor, [number, number]> = {
+      top_left: [-0.5, -0.5],
+      top_center: [0, -0.5],
+      top_right: [0.5, -0.5],
+      center_left: [-0.5, 0],
+      center: [0, 0],
+      center_right: [0.5, 0],
+      bottom_left: [-0.5, 0.5],
+      bottom_center: [0, 0.5],
+      bottom_right: [0.5, 0.5],
     }
 
-    // Update the board dimensions, preserving any explicit dimension provided
-    // by the user while auto-calculating the missing one.
-    const finalWidth = props.width ?? computedWidth
-    const finalHeight = props.height ?? computedHeight
+    // Compute board center
+    let center: { x: number; y: number }
+
+    if (props.boardAnchorPosition) {
+      if (props.outlineOffsetX || props.outlineOffsetY) {
+        throw new Error(
+          "Cannot use outlineOffsetX/outlineOffsetY with boardAnchorPosition. They are incompatible.",
+        )
+      }
+
+      const alignment = (props.boardAnchorAlignment ??
+        "center") as NinePointAnchor
+      const [ox, oy] = anchorOffsets[alignment] ?? [0, 0]
+
+      center = {
+        x: props.boardAnchorPosition.x - ox * boardWidth,
+        y: props.boardAnchorPosition.y - oy * boardHeight,
+      }
+    } else if (hasComponents) {
+      center = {
+        x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
+        y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
+      }
+    } else {
+      center = {
+        x: props.outlineOffsetX ?? 0,
+        y: props.outlineOffsetY ?? 0,
+      }
+    }
+
+    const finalWidth = boardWidth
+    const finalHeight = boardHeight
 
     let outline = props.outline
     if (
