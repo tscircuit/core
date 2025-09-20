@@ -3,6 +3,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { CadModelProps } from "@tscircuit/props"
 import { z } from "zod"
 import type { CadComponent } from "circuit-json"
+import { decomposeTSR } from "transformation-matrix"
 
 const rotation = z.union([z.number(), z.string()])
 const rotation3 = z.object({ x: rotation, y: rotation, z: rotation })
@@ -29,6 +30,12 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
     const props = this._parsedProps as CadModelProps
 
     if (!props || typeof props.modelUrl !== "string") return
+
+    // Get the accumulated rotation from the parent's global transform
+    const parentTransform = parent._computePcbGlobalTransformBeforeLayout()
+    const decomposedTransform = decomposeTSR(parentTransform)
+    const accumulatedRotation =
+      (decomposedTransform.rotation.angle * 180) / Math.PI
 
     const rotationOffset = rotation3.parse({ x: 0, y: 0, z: 0 })
     if (typeof props.rotationOffset === "number") {
@@ -78,8 +85,8 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
         y: (layer === "top" ? 0 : 180) + Number(rotationOffset.y),
         z:
           layer === "bottom"
-            ? -((pcb_component?.rotation ?? 0) + Number(rotationOffset.z)) + 180
-            : (pcb_component?.rotation ?? 0) + Number(rotationOffset.z),
+            ? -(accumulatedRotation + Number(rotationOffset.z)) + 180
+            : accumulatedRotation + Number(rotationOffset.z),
       },
       pcb_component_id: parent.pcb_component_id,
       source_component_id: parent.source_component_id,
