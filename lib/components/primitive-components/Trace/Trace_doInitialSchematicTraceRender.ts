@@ -437,10 +437,25 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     return
   }
 
+  // Apply explicit color to edges from props
+  const traceColor =
+    (trace as any)._parsedProps?.schematicColor ||
+    (trace as any)._parsedProps?.color
+  const edgesWithColor = edges.map(
+    (edge: {
+      from: { x: number; y: number }
+      to: { x: number; y: number }
+      color?: string
+    }) => ({
+      ...edge,
+      color: edge.color || traceColor,
+    }),
+  )
+
   // Insert schematic trace
   const dbTrace = db.schematic_trace.insert({
     source_trace_id: trace.source_trace_id!,
-    edges,
+    edges: edgesWithColor as any,
     junctions,
     subcircuit_connectivity_map_key:
       trace.subcircuit_connectivity_map_key ?? undefined,
