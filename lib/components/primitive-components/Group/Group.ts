@@ -33,6 +33,8 @@ import { AutorouterError } from "lib/errors/AutorouterError"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
+import { Group_doInitialSchematicGroupBoxRender } from "./Group_doInitialSchematicGroupBoxRender"
+
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
@@ -580,6 +582,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicTraceRender() {
+    const parsed: any = this._parsedProps
+    if (parsed?.showAsSchematicBox === true) return
     Group_doInitialSchematicTraceRender(this as any)
   }
 
@@ -737,6 +741,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
     this.schematic_group_id = schematic_group.schematic_group_id
 
+    // NEW — boxed path
+    const parsed: any = this._parsedProps
+    if (parsed?.showAsSchematicBox === true) {
+      Group_doInitialSchematicGroupBoxRender(this, { db })
+      return
+    }
+
+    // else: original behavior
     for (const child of this.children) {
       if (child.schematic_component_id) {
         db.schematic_component.update(child.schematic_component_id, {
