@@ -63,13 +63,22 @@ const getRoundedRectOutline = (
 }
 
 type AnchorPoint = { x: number; y: number }
+type AnchorAlignment =
+  | "top_left"
+  | "top_center"
+  | "top_right"
+  | "left_center"
+  | "center"
+  | "right_center"
+  | "bottom_left"
+  | "bottom_center"
+  | "bottom_right"
 
 const computeCenterFromAnchor = (
   anchor: AnchorPoint,
-  alignment: string,
-  width: number,
-  height: number,
+  config: { alignment: AnchorAlignment; width: number; height: number },
 ): AnchorPoint => {
+  const { alignment, width, height } = config
   const halfWidth = width / 2
   const halfHeight = height / 2
 
@@ -97,26 +106,25 @@ const computeCenterFromAnchor = (
 }
 
 const computeAutoWidthForAlignment = (
-  alignment: string,
-  anchorX: number,
-  paddedMinX: number,
-  paddedMaxX: number,
+  alignment: AnchorAlignment,
+  bounds: { anchor: number; min: number; max: number },
 ) => {
+  const { anchor, min, max } = bounds
   switch (alignment) {
     case "top_left":
     case "left_center":
     case "bottom_left":
-      return Math.max(paddedMaxX - anchorX, 0)
+      return Math.max(max - anchor, 0)
     case "top_right":
     case "right_center":
     case "bottom_right":
-      return Math.max(anchorX - paddedMinX, 0)
+      return Math.max(anchor - min, 0)
     case "top_center":
     case "bottom_center":
     case "center":
     default: {
-      const leftSpan = anchorX - paddedMinX
-      const rightSpan = paddedMaxX - anchorX
+      const leftSpan = anchor - min
+      const rightSpan = max - anchor
       const span = Math.max(leftSpan, rightSpan, 0)
       return span > 0 ? span * 2 : 0
     }
@@ -124,26 +132,25 @@ const computeAutoWidthForAlignment = (
 }
 
 const computeAutoHeightForAlignment = (
-  alignment: string,
-  anchorY: number,
-  paddedMinY: number,
-  paddedMaxY: number,
+  alignment: AnchorAlignment,
+  bounds: { anchor: number; min: number; max: number },
 ) => {
+  const { anchor, min, max } = bounds
   switch (alignment) {
     case "top_left":
     case "top_center":
     case "top_right":
-      return Math.max(anchorY - paddedMinY, 0)
+      return Math.max(anchor - min, 0)
     case "bottom_left":
     case "bottom_center":
     case "bottom_right":
-      return Math.max(paddedMaxY - anchorY, 0)
+      return Math.max(max - anchor, 0)
     case "left_center":
     case "right_center":
     case "center":
     default: {
-      const bottomSpan = anchorY - paddedMinY
-      const topSpan = paddedMaxY - anchorY
+      const bottomSpan = anchor - min
+      const topSpan = max - anchor
       const span = Math.max(bottomSpan, topSpan, 0)
       return span > 0 ? span * 2 : 0
     }
@@ -247,7 +254,7 @@ export class Board extends Group<typeof boardProps> {
     const padding = 2
     const outlineOffsetX = props.outlineOffsetX ?? 0
     const outlineOffsetY = props.outlineOffsetY ?? 0
-    const anchorAlignment = props.boardAnchorAlignment ?? "center"
+    const anchorAlignment = (props.boardAnchorAlignment ?? "center") as AnchorAlignment
     const anchorPosition = props.boardAnchorPosition
       ? {
           x: props.boardAnchorPosition.x + outlineOffsetX,
@@ -265,18 +272,16 @@ export class Board extends Group<typeof boardProps> {
         const paddedMinY = minY - padding
         const paddedMaxY = maxY + padding
 
-        computedWidth = computeAutoWidthForAlignment(
-          anchorAlignment,
-          anchorPosition.x,
-          paddedMinX,
-          paddedMaxX,
-        )
-        computedHeight = computeAutoHeightForAlignment(
-          anchorAlignment,
-          anchorPosition.y,
-          paddedMinY,
-          paddedMaxY,
-        )
+        computedWidth = computeAutoWidthForAlignment(anchorAlignment, {
+          anchor: anchorPosition.x,
+          min: paddedMinX,
+          max: paddedMaxX,
+        })
+        computedHeight = computeAutoHeightForAlignment(anchorAlignment, {
+          anchor: anchorPosition.y,
+          min: paddedMinY,
+          max: paddedMaxY,
+        })
       }
     } else {
       computedWidth = hasComponents ? maxX - minX + padding * 2 : 0
@@ -289,12 +294,11 @@ export class Board extends Group<typeof boardProps> {
     const finalHeight = props.height ?? computedHeight
 
     const center = anchorPosition
-      ? computeCenterFromAnchor(
-          anchorPosition,
-          anchorAlignment,
-          finalWidth,
-          finalHeight,
-        )
+      ? computeCenterFromAnchor(anchorPosition, {
+          alignment: anchorAlignment,
+          width: finalWidth,
+          height: finalHeight,
+        })
       : {
           x: hasComponents
             ? (minX + maxX) / 2 + outlineOffsetX
@@ -388,7 +392,7 @@ export class Board extends Group<typeof boardProps> {
     let computedHeight = props.height ?? 0
     const outlineOffsetX = props.outlineOffsetX ?? 0
     const outlineOffsetY = props.outlineOffsetY ?? 0
-    const anchorAlignment = props.boardAnchorAlignment ?? "center"
+    const anchorAlignment = (props.boardAnchorAlignment ?? "center") as AnchorAlignment
     const anchorPosition = props.boardAnchorPosition
       ? {
           x: props.boardAnchorPosition.x + outlineOffsetX,
@@ -396,12 +400,11 @@ export class Board extends Group<typeof boardProps> {
         }
       : null
     let center = anchorPosition
-      ? computeCenterFromAnchor(
-          anchorPosition,
-          anchorAlignment,
-          computedWidth,
-          computedHeight,
-        )
+      ? computeCenterFromAnchor(anchorPosition, {
+          alignment: anchorAlignment,
+          width: computedWidth,
+          height: computedHeight,
+        })
       : {
           x: (props.pcbX ?? 0) + outlineOffsetX,
           y: (props.pcbY ?? 0) + outlineOffsetY,
@@ -420,12 +423,11 @@ export class Board extends Group<typeof boardProps> {
       computedWidth = maxX - minX
       computedHeight = maxY - minY
       center = anchorPosition
-        ? computeCenterFromAnchor(
-            anchorPosition,
-            anchorAlignment,
-            computedWidth,
-            computedHeight,
-          )
+        ? computeCenterFromAnchor(anchorPosition, {
+            alignment: anchorAlignment,
+            width: computedWidth,
+            height: computedHeight,
+          })
         : {
             x: (minX + maxX) / 2 + outlineOffsetX,
             y: (minY + maxY) / 2 + outlineOffsetY,
