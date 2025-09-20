@@ -79,16 +79,23 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const subcircuit = this.getSubcircuit()
 
     const position = this._getGlobalPcbPositionBeforeLayout()
-    const containerCenter = container?._getGlobalPcbPositionBeforeLayout()
     const decomposedMat = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
     )
+    const rotationDeg = (decomposedMat.rotation.angle * 180) / Math.PI
+    const normalizedRotation = ((rotationDeg % 360) + 360) % 360
+    const angleEpsilon = 0.01
+    const isAxisAligned =
+      Math.abs(normalizedRotation) < angleEpsilon ||
+      Math.abs(normalizedRotation - 180) < angleEpsilon ||
+      Math.abs(normalizedRotation - 360) < angleEpsilon
     const isRotated90 =
-      Math.abs(decomposedMat.rotation.angle * (180 / Math.PI) - 90) % 180 < 0.01
+      Math.abs(normalizedRotation - 90) < angleEpsilon ||
+      Math.abs(normalizedRotation - 270) < angleEpsilon
+    const rotationForStorage =
+      Math.abs(normalizedRotation - 360) < angleEpsilon ? 0 : normalizedRotation
 
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
-
-    const parentRotation = container?._parsedProps.pcbRotation ?? 0
 
     let pcb_smtpad: PcbSmtPad | null = null
     const pcb_component_id =
@@ -120,7 +127,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       } as PcbSmtPadCircle)
     } else if (props.shape === "rect") {
       pcb_smtpad =
-        parentRotation === 0 || isRotated90
+        isAxisAligned || isRotated90
           ? (db.pcb_smtpad.insert({
               pcb_component_id,
               pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
@@ -147,7 +154,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
               height: props.height,
               x: position.x,
               y: position.y,
-              ccw_rotation: parentRotation,
+              ccw_rotation: rotationForStorage,
               port_hints: props.portHints.map((ph) => ph.toString()),
               is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
               subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -174,7 +181,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           height: pcb_smtpad.height * 0.7,
           x: pcb_smtpad.x,
           y: pcb_smtpad.y,
-          ccw_rotation: parentRotation,
+          ccw_rotation: rotationForStorage,
           pcb_component_id: pcb_smtpad.pcb_component_id,
           pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
