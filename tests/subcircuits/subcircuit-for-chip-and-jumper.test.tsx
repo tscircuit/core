@@ -15,21 +15,22 @@ test("subcircuit-id property for chip", async () => {
   circuit.render()
 
   expect(circuit.db.pcb_component.list()[0]).toMatchInlineSnapshot(`
-{
-  "center": {
-    "x": 0,
-    "y": 0,
-  },
-  "height": 3,
-  "layer": "top",
-  "pcb_component_id": "pcb_component_0",
-  "rotation": 0,
-  "source_component_id": "source_component_0",
-  "subcircuit_id": "subcircuit_source_group_0",
-  "type": "pcb_component",
-  "width": 2,
-}
-`)
+    {
+      "center": {
+        "x": 0,
+        "y": 0,
+      },
+      "do_not_place": false,
+      "height": 3,
+      "layer": "top",
+      "pcb_component_id": "pcb_component_0",
+      "rotation": 0,
+      "source_component_id": "source_component_0",
+      "subcircuit_id": "subcircuit_source_group_0",
+      "type": "pcb_component",
+      "width": 2,
+    }
+  `)
 })
 
 test("subcircuit-id property for jumper", async () => {
@@ -45,19 +46,20 @@ test("subcircuit-id property for jumper", async () => {
   circuit.render()
 
   expect(circuit.db.pcb_component.list()[0]).toMatchInlineSnapshot(`
-{
-  "center": {
-    "x": 0,
-    "y": 0,
-  },
-  "height": 3,
-  "layer": "top",
-  "pcb_component_id": "pcb_component_0",
-  "rotation": 0,
-  "source_component_id": "source_component_0",
-  "subcircuit_id": "subcircuit_source_group_0",
-  "type": "pcb_component",
-  "width": 2,
-}
-`)
+    {
+      "center": {
+        "x": 0,
+        "y": 0,
+      },
+      "do_not_place": false,
+      "height": 3,
+      "layer": "top",
+      "pcb_component_id": "pcb_component_0",
+      "rotation": 0,
+      "source_component_id": "source_component_0",
+      "subcircuit_id": "subcircuit_source_group_0",
+      "type": "pcb_component",
+      "width": 2,
+    }
+  `)
 })
