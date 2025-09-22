@@ -17,7 +17,11 @@ export function applyTracesFromSolverOutput(args: {
   const { db } = group.root!
 
   // Use the overlap-corrected traces from the pipeline
-  const correctedMap = solver.traceOverlapShiftSolver?.correctedTraceMap
+  const res = solver.getOuput()
+  if (!res) {
+    return
+  }
+  const correctedMap = res.traceMap
   const pendingTraces: Array<{
     source_trace_id: string
     edges: SchematicTrace["edges"]
