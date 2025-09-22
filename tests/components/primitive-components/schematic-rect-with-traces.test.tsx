@@ -17,7 +17,7 @@ test("SchematicRect with traces", async () => {
               height={2}
               isFilled={false}
             />
-            <port name="pin1" direction="up" schX={1} schY={0} />
+            <port name="pin1" direction="right" schX={1} schY={0} />
           </symbol>
         }
       />
@@ -31,7 +31,7 @@ test("SchematicRect with traces", async () => {
               height={2}
               isFilled={false}
             />
-            <port name="pin1" direction="up" schX={4} schY={0} />
+            <port name="pin1" direction="left" schX={4} schY={0} />
           </symbol>
         }
       />
@@ -41,8 +41,10 @@ test("SchematicRect with traces", async () => {
 
   await circuit.renderUntilSettled()
 
-  //   const schematic_trace = circuit.getCircuitJson().filter((c) => c.type === "schematic_trace")
-  //   expect(schematic_trace.length).toBe(1)
+  const schematic_trace = circuit
+    .getCircuitJson()
+    .filter((c) => c.type === "schematic_trace")
+  expect(schematic_trace.length).toBe(1)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
