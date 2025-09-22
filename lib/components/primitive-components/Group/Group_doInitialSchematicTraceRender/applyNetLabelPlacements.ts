@@ -36,14 +36,13 @@ export function applyNetLabelPlacements(args: {
   } = args
   const { db } = group.root!
 
-  const res = solver.getOuput()
+  const res = solver.getOutput()
   if (!res) {
     return
   }
 
   // Place net labels suggested by the solver
-  const netLabelPlacements =
-    res.netLabelPlacements ?? []
+  const netLabelPlacements = res.netLabelPlacements ?? []
   const globalConnMap = res.globalConnMap
 
   for (const placement of netLabelPlacements) {

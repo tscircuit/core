@@ -17,7 +17,7 @@ export function applyTracesFromSolverOutput(args: {
   const { db } = group.root!
 
   // Use the overlap-corrected traces from the pipeline
-  const res = solver.getOuput()
+  const res = solver.getOutput()
   if (!res) {
     return
   }
