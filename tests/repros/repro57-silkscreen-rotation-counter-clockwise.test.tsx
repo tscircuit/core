@@ -22,8 +22,43 @@ test("rotate silkscreen text ccw", async () => {
 
   const circuitJson = circuit.getCircuitJson()
 
-  const pcb_silkscreen_text = circuitJson.filter((c) => c.type === "pcb_silkscreen_text")[2]
+  const pcb_silkscreen_text = circuitJson.filter((c) => c.type === "pcb_silkscreen_text")
   expect(pcb_silkscreen_text).toMatchInlineSnapshot(`
+    [
+      {
+        "anchor_alignment": "center_left",
+        "anchor_position": {
+          "x": 1.41,
+          "y": -1.27,
+        },
+        "ccw_rotation": 90,
+        "font": "tscircuit2024",
+        "font_size": 0.5760000000000001,
+        "layer": "top",
+        "pcb_component_id": "pcb_component_0",
+        "pcb_group_id": undefined,
+        "pcb_silkscreen_text_id": "pcb_silkscreen_text_0",
+        "subcircuit_id": "subcircuit_source_group_0",
+        "text": "GND",
+        "type": "pcb_silkscreen_text",
+      },
+      {
+        "anchor_alignment": "center_left",
+        "anchor_position": {
+          "x": 1.41,
+          "y": 1.27,
+        },
+        "ccw_rotation": 90,
+        "font": "tscircuit2024",
+        "font_size": 0.5760000000000001,
+        "layer": "top",
+        "pcb_component_id": "pcb_component_0",
+        "pcb_group_id": undefined,
+        "pcb_silkscreen_text_id": "pcb_silkscreen_text_1",
+        "subcircuit_id": "subcircuit_source_group_0",
+        "text": "VOUT",
+        "type": "pcb_silkscreen_text",
+      },
       {
         "anchor_alignment": "center",
         "anchor_position": {
@@ -40,7 +75,8 @@ test("rotate silkscreen text ccw", async () => {
         "subcircuit_id": "subcircuit_source_group_0",
         "text": "JP6",
         "type": "pcb_silkscreen_text",
-      }
+      },
+    ]
   `)
   
   expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
