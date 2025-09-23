@@ -94,7 +94,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       rotation: 0,
       source_component_id: this.source_component_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      do_not_place: false,
     })
     this.pcb_component_id = pcb_component.pcb_component_id
   }
