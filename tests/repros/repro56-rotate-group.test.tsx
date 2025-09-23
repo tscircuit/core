@@ -27,5 +27,79 @@ test("rotate group and have traces", async () => {
   const pcb_trace = circuitJson.filter((c) => c.type === "pcb_trace")
   expect(pcb_trace.length).toBe(1)
 
+  const pcb_silkscreen_text = circuitJson.filter((c) => c.type === "pcb_silkscreen_text")
+  expect(pcb_silkscreen_text).toMatchInlineSnapshot(`
+    [
+      {
+        "anchor_alignment": "center",
+        "anchor_position": {
+          "x": -19,
+          "y": 1.22,
+        },
+        "ccw_rotation": 0,
+        "font": "tscircuit2024",
+        "font_size": 0.4,
+        "layer": "top",
+        "pcb_component_id": "pcb_component_0",
+        "pcb_group_id": "pcb_group_0",
+        "pcb_silkscreen_text_id": "pcb_silkscreen_text_0",
+        "subcircuit_id": "subcircuit_source_group_2",
+        "text": "R1",
+        "type": "pcb_silkscreen_text",
+      },
+      {
+        "anchor_alignment": "center",
+        "anchor_position": {
+          "x": -17,
+          "y": 1.22,
+        },
+        "ccw_rotation": 0,
+        "font": "tscircuit2024",
+        "font_size": 0.4,
+        "layer": "top",
+        "pcb_component_id": "pcb_component_1",
+        "pcb_group_id": "pcb_group_0",
+        "pcb_silkscreen_text_id": "pcb_silkscreen_text_1",
+        "subcircuit_id": "subcircuit_source_group_2",
+        "text": "R2",
+        "type": "pcb_silkscreen_text",
+      },
+      {
+        "anchor_alignment": "center",
+        "anchor_position": {
+          "x": -1.5697770542341356,
+          "y": 0.15556349186104057,
+        },
+        "ccw_rotation": 0,
+        "font": "tscircuit2024",
+        "font_size": 0.4,
+        "layer": "top",
+        "pcb_component_id": "pcb_component_2",
+        "pcb_group_id": "pcb_group_1",
+        "pcb_silkscreen_text_id": "pcb_silkscreen_text_2",
+        "subcircuit_id": "subcircuit_source_group_2",
+        "text": "R3",
+        "type": "pcb_silkscreen_text",
+      },
+      {
+        "anchor_alignment": "center",
+        "anchor_position": {
+          "x": -0.15556349186104035,
+          "y": 1.5697770542341356,
+        },
+        "ccw_rotation": 0,
+        "font": "tscircuit2024",
+        "font_size": 0.4,
+        "layer": "top",
+        "pcb_component_id": "pcb_component_3",
+        "pcb_group_id": "pcb_group_1",
+        "pcb_silkscreen_text_id": "pcb_silkscreen_text_3",
+        "subcircuit_id": "subcircuit_source_group_2",
+        "text": "R4",
+        "type": "pcb_silkscreen_text",
+      },
+    ]
+  `)
+  
   expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
 })

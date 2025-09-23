@@ -720,13 +720,19 @@ export class NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
     const subcircuit = this.getSubcircuit()
+
+    // Calculate accumulated rotation from parent transforms
+    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
+    const decomposedTransform = decomposeTSR(globalTransform)
+    const accumulatedRotation = (decomposedTransform.rotation.angle * 180) / Math.PI
+
     const pcb_component = db.pcb_component.insert({
       center: this._getGlobalPcbPositionBeforeLayout(),
       // width/height are computed in the PcbComponentSizeCalculation phase
       width: 0,
       height: 0,
       layer: props.layer ?? "top",
-      rotation: props.pcbRotation ?? 0,
+      rotation: props.pcbRotation ?? accumulatedRotation,
       source_component_id: this.source_component_id!,
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
       do_not_place: props.doNotPlace ?? false,
