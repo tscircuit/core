@@ -724,7 +724,8 @@ export class NormalComponent<
     // Calculate accumulated rotation from parent transforms
     const globalTransform = this._computePcbGlobalTransformBeforeLayout()
     const decomposedTransform = decomposeTSR(globalTransform)
-    const accumulatedRotation = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const accumulatedRotation =
+      (decomposedTransform.rotation.angle * 180) / Math.PI
 
     const pcb_component = db.pcb_component.insert({
       center: this._getGlobalPcbPositionBeforeLayout(),

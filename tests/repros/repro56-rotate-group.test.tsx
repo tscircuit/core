@@ -27,7 +27,5 @@ test("rotate group and have traces", async () => {
   const pcb_trace = circuitJson.filter((c) => c.type === "pcb_trace")
   expect(pcb_trace.length).toBe(1)
 
-
-  
   expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
 })
