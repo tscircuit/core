@@ -729,6 +729,7 @@ export class NormalComponent<
       rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+      do_not_place: props.doNotPlace ?? false,
     })
 
     const footprint = props.footprint ?? this._getImpliedFootprintString()
