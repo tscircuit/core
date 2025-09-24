@@ -49,6 +49,23 @@ export class SilkscreenText extends PrimitiveComponent<
       uniqueLayers.size > 0 ? Array.from(uniqueLayers) : ["top"]
 
     for (const layer of targetLayers) {
+      let knockout_padding = undefined
+      if (props.isKnockout && (
+        props.knockoutPadding ||
+        props.knockoutPaddingLeft ||
+        props.knockoutPaddingRight ||
+        props.knockoutPaddingTop ||
+        props.knockoutPaddingBottom
+      )) {
+        const defaultPadding = props.knockoutPadding ?? "0.2mm"
+        knockout_padding = {
+          left: props.knockoutPaddingLeft ?? defaultPadding,
+          right: props.knockoutPaddingRight ?? defaultPadding,
+          top: props.knockoutPaddingTop ?? defaultPadding,
+          bottom: props.knockoutPaddingBottom ?? defaultPadding,
+        }
+      }
+
       db.pcb_silkscreen_text.insert({
         anchor_alignment: props.anchorAlignment,
         anchor_position: {
@@ -63,6 +80,11 @@ export class SilkscreenText extends PrimitiveComponent<
         pcb_component_id: container.pcb_component_id!,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        is_knockout: props.isKnockout ?? false,
+        knockout_padding,
+        ...(props.knockoutCornerRadius && { knockout_corner_radius: props.knockoutCornerRadius }),
+        ...(props.knockoutBorderWidth && { knockout_border_width: props.knockoutBorderWidth }),
+        ...(props.knockoutColor && { knockout_color: props.knockoutColor }),
       })
     }
   }
