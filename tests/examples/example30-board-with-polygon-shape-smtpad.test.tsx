@@ -15,9 +15,7 @@ test("example30: Board with polygon shape smtpad", async () => {
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
 
-const PolygonSmtpads = (props: {
-  name: string
-}) => {
+const PolygonSmtpads = (props: { name: string }) => {
   return (
     <chip
       {...props}

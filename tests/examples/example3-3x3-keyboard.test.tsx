@@ -6,11 +6,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
  *
  * Datasheet: https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2211090930_Kailh-CPG151101S11-1_C5184526.pdf
  */
-const SwitchShaft = (props: {
-  name: string
-  pcbX?: number
-  pcbY?: number
-}) => (
+const SwitchShaft = (props: { name: string; pcbX?: number; pcbY?: number }) => (
   <chip
     {...props}
     footprint={
