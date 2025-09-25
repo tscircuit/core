@@ -63,14 +63,7 @@ export class SilkscreenText extends PrimitiveComponent<
 
     for (const layer of targetLayers) {
       let knockoutPadding = undefined
-      if (
-        props.isKnockout &&
-        (props.knockoutPadding ||
-          props.knockoutPaddingLeft ||
-          props.knockoutPaddingRight ||
-          props.knockoutPaddingTop ||
-          props.knockoutPaddingBottom)
-      ) {
+      if (props.isKnockout) {
         const defaultPadding = props.knockoutPadding ?? "0.2mm"
         knockoutPadding = {
           left: convertToMm(props.knockoutPaddingLeft ?? defaultPadding),
