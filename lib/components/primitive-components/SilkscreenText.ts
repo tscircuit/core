@@ -3,6 +3,19 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { silkscreenTextProps } from "@tscircuit/props"
 import { decomposeTSR } from "transformation-matrix"
 
+/**
+ * Convert a string unit (like "0.5mm", "2mm", "1") to millimeters
+ */
+function convertToMm(value: string | number): number {
+  if (typeof value === "number") return value
+  if (typeof value === "string") {
+    // Remove "mm" suffix and parse as float
+    const numValue = parseFloat(value.replace(/mm$/, ""))
+    return isNaN(numValue) ? 0 : numValue
+  }
+  return 0
+}
+
 export class SilkscreenText extends PrimitiveComponent<
   typeof silkscreenTextProps
 > {
@@ -49,20 +62,21 @@ export class SilkscreenText extends PrimitiveComponent<
       uniqueLayers.size > 0 ? Array.from(uniqueLayers) : ["top"]
 
     for (const layer of targetLayers) {
-      let knockout_padding = undefined
-      if (props.isKnockout && (
-        props.knockoutPadding ||
-        props.knockoutPaddingLeft ||
-        props.knockoutPaddingRight ||
-        props.knockoutPaddingTop ||
-        props.knockoutPaddingBottom
-      )) {
+      let knockoutPadding = undefined
+      if (
+        props.isKnockout &&
+        (props.knockoutPadding ||
+          props.knockoutPaddingLeft ||
+          props.knockoutPaddingRight ||
+          props.knockoutPaddingTop ||
+          props.knockoutPaddingBottom)
+      ) {
         const defaultPadding = props.knockoutPadding ?? "0.2mm"
-        knockout_padding = {
-          left: props.knockoutPaddingLeft ?? defaultPadding,
-          right: props.knockoutPaddingRight ?? defaultPadding,
-          top: props.knockoutPaddingTop ?? defaultPadding,
-          bottom: props.knockoutPaddingBottom ?? defaultPadding,
+        knockoutPadding = {
+          left: convertToMm(props.knockoutPaddingLeft ?? defaultPadding),
+          right: convertToMm(props.knockoutPaddingRight ?? defaultPadding),
+          top: convertToMm(props.knockoutPaddingTop ?? defaultPadding),
+          bottom: convertToMm(props.knockoutPaddingBottom ?? defaultPadding),
         }
       }
 
@@ -81,10 +95,11 @@ export class SilkscreenText extends PrimitiveComponent<
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         is_knockout: props.isKnockout ?? false,
-        knockout_padding,
-        ...(props.knockoutCornerRadius && { knockout_corner_radius: props.knockoutCornerRadius }),
-        ...(props.knockoutBorderWidth && { knockout_border_width: props.knockoutBorderWidth }),
-        ...(props.knockoutColor && { knockout_color: props.knockoutColor }),
+        knockout_padding: knockoutPadding,
+        // TODO: Add these properties to @tscircuit/props package
+        // ...(props.knockoutCornerRadius && { knockout_corner_radius: props.knockoutCornerRadius }),
+        // ...(props.knockoutBorderWidth && { knockout_border_width: props.knockoutBorderWidth }),
+        // ...(props.knockoutColor && { knockout_color: props.knockoutColor }),
       })
     }
   }
