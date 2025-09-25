@@ -3,6 +3,19 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { silkscreenTextProps } from "@tscircuit/props"
 import { decomposeTSR } from "transformation-matrix"
 
+/**
+ * Convert a string unit (like "0.5mm", "2mm", "1") to millimeters
+ */
+function convertToMm(value: string | number): number {
+  if (typeof value === "number") return value
+  if (typeof value === "string") {
+    // Remove "mm" suffix and parse as float
+    const numValue = parseFloat(value.replace(/mm$/, ""))
+    return isNaN(numValue) ? 0 : numValue
+  }
+  return 0
+}
+
 export class SilkscreenText extends PrimitiveComponent<
   typeof silkscreenTextProps
 > {
@@ -49,6 +62,17 @@ export class SilkscreenText extends PrimitiveComponent<
       uniqueLayers.size > 0 ? Array.from(uniqueLayers) : ["top"]
 
     for (const layer of targetLayers) {
+      let knockoutPadding = undefined
+      if (props.isKnockout) {
+        const defaultPadding = props.knockoutPadding ?? "0.2mm"
+        knockoutPadding = {
+          left: convertToMm(props.knockoutPaddingLeft ?? defaultPadding),
+          right: convertToMm(props.knockoutPaddingRight ?? defaultPadding),
+          top: convertToMm(props.knockoutPaddingTop ?? defaultPadding),
+          bottom: convertToMm(props.knockoutPaddingBottom ?? defaultPadding),
+        }
+      }
+
       db.pcb_silkscreen_text.insert({
         anchor_alignment: props.anchorAlignment,
         anchor_position: {
@@ -63,6 +87,12 @@ export class SilkscreenText extends PrimitiveComponent<
         pcb_component_id: container.pcb_component_id!,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        is_knockout: props.isKnockout ?? false,
+        knockout_padding: knockoutPadding,
+        // TODO: Add these properties to @tscircuit/props package
+        // ...(props.knockoutCornerRadius && { knockout_corner_radius: props.knockoutCornerRadius }),
+        // ...(props.knockoutBorderWidth && { knockout_border_width: props.knockoutBorderWidth }),
+        // ...(props.knockoutColor && { knockout_color: props.knockoutColor }),
       })
     }
   }
