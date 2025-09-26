@@ -40,7 +40,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     const url = footprint
     queueAsyncEffect("load-footprint-from-platform-parser", async () => {
       try {
-        console.log("here")
         const result = await footprintParser.loadFromUrl(url)
         const fpComponents = createComponentsFromCircuitJson(
           {
