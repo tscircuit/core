@@ -40,13 +40,8 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     const url = footprint
     queueAsyncEffect("load-footprint-from-platform-parser", async () => {
       try {
-        const res = await fetch(url)
-        if (!res.ok) {
-          throw new Error(`Failed to fetch footprint: ${res.status}`)
-        }
-        const content = await res.text()
-        const contentUrl = `data:text/plain;base64,${btoa(content)}`
-        const result = await footprintParser.loadFromUrl(contentUrl)
+        console.log("here")
+        const result = await footprintParser.loadFromUrl(url)
         const fpComponents = createComponentsFromCircuitJson(
           {
             componentName: component.name,

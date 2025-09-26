@@ -10,8 +10,9 @@ it("should correctly load and render a KiCad footprint from a given URL", async 
       footprintFileParserMap: {
         kicad_mod: {
           loadFromUrl: async (url: string) => {
-            const content = atob(url.replace("data:text/plain;base64,", ""))
-            expect(content).toBeDefined()
+            expect(url).toBe(
+              `https://gitlab.com/kicad/libraries/kicad-footprints/-/raw/master/Resistor_SMD.pretty/R_0402_1005Metric.kicad_mod`,
+            )
             return {
               footprintCircuitJson: kicadModJson,
             }
