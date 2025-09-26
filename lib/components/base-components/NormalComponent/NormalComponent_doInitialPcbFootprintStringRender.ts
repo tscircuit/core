@@ -9,7 +9,6 @@ import {
   circuit_json_footprint_load_error,
   external_footprint_load_error,
 } from "circuit-json"
-import { fp } from "@tscircuit/footprinter"
 import { getFileExtension } from "./utils/getFileExtention"
 
 interface FootprintLibraryResult {
