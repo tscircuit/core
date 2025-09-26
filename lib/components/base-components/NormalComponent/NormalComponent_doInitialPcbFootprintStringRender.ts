@@ -38,7 +38,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
     const url = footprint
-    queueAsyncEffect("load-footprint-from-platform-parser", async () => {
+    queueAsyncEffect("load-footprint-from-platform-file-parser", async () => {
       try {
         const result = await footprintParser.loadFromUrl(url)
         const fpComponents = createComponentsFromCircuitJson(
