@@ -26,7 +26,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
   if (!footprint) return
 
   const { pcbRotation, pinLabels, pcbPinLabels } = component.props
-  const fileExtension = getFileExtension(footprint)
+  const fileExtension = getFileExtension(String(footprint))
   const footprintParser = fileExtension
     ? component.root?.platform?.footprintFileParserMap?.[fileExtension]
     : null
