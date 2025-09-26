@@ -28,6 +28,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
   pcb_port_id: string | null = null
   schematic_port_id: string | null = null
+  subcircuit_connectivity_map_key: string | null = null
 
   schematicSymbolPortDef: SchSymbol["ports"][number] | null = null
   matchedComponents: PrimitiveComponent[]

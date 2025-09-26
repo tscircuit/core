@@ -1,6 +1,7 @@
 import type { Port } from "../Port/Port"
 import type { Trace } from "./Trace"
 import { TraceConnectionError } from "../../../errors"
+import { resolvePortFromSelector } from "lib/utils/resolvePortFromSelector"
 
 export function Trace__findConnectedPorts(trace: Trace):
   | {
@@ -19,11 +20,11 @@ export function Trace__findConnectedPorts(trace: Trace):
 
   const portSelectors = trace.getTracePortPathSelectors()
 
+  const subcircuitScope = trace.getSubcircuit()
+
   const portsWithSelectors = portSelectors.map((selector) => ({
     selector,
-    port:
-      (trace.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
-      null,
+    port: resolvePortFromSelector(subcircuitScope, selector),
   }))
 
   for (const { selector, port } of portsWithSelectors) {
@@ -105,7 +106,10 @@ export function Trace__findConnectedPorts(trace: Trace):
 
   return {
     allPortsFound: true,
-    portsWithSelectors,
-    ports: portsWithSelectors.map(({ port }) => port),
+    portsWithSelectors: portsWithSelectors as Array<{
+      selector: string
+      port: Port
+    }>,
+    ports: portsWithSelectors.map(({ port }) => port) as Port[],
   }
 }

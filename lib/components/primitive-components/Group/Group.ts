@@ -36,6 +36,16 @@ import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
+import { GroupInterfacePort } from "./GroupInterfacePort"
+import {
+  getAllDimensionsForSchematicBox,
+  type SchematicBoxDimensions,
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
+import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
+import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import type { Port } from "../Port/Port"
+import { resolvePortFromSelector } from "lib/utils/resolvePortFromSelector"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -44,6 +54,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   pcb_group_id: string | null = null
   schematic_group_id: string | null = null
   subcircuit_id: string | null = null
+
+  private _interfacePorts: GroupInterfacePort[] = []
+  private _interfacePinLabels: Record<string, string> | null = null
 
   _hasStartedAsyncAutorouting = false
 
@@ -56,6 +69,62 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return {
       zodProps: groupProps as unknown as Props,
       componentName: "Group",
+      shouldRenderAsSchematicBox: Boolean(
+        (this._parsedProps as any)?.showAsSchematicBox ??
+          (this.props as any)?.showAsSchematicBox ??
+          false,
+      ),
+    }
+  }
+
+  private _isShowAsSchematicBoxEnabled(): boolean {
+    return Boolean(this._parsedProps.showAsSchematicBox)
+  }
+
+  override initPorts(
+    opts: Parameters<NormalComponent<any>["initPorts"]>[0] = {},
+  ) {
+    if (!this._isShowAsSchematicBoxEnabled()) {
+      super.initPorts(opts)
+      return
+    }
+
+    this._interfacePorts = []
+    this._interfacePinLabels = {}
+
+    const connections = ((this._parsedProps as SubcircuitGroupProps)
+      .connections ?? {}) as Record<string, string | string[] | undefined>
+
+    let pinNumber = 1
+    for (const [label, target] of Object.entries(connections)) {
+      if (!target) continue
+      const targetSelectors = Array.isArray(target) ? target : [target]
+
+      const resolvedPorts = targetSelectors
+        .map((selector) =>
+          selector.startsWith("net.")
+            ? null
+            : resolvePortFromSelector(this, selector),
+        )
+        .filter((port): port is Port => port !== null)
+
+      if (resolvedPorts.length === 0) continue
+
+      const groupPort = new GroupInterfacePort(
+        {
+          name: label,
+          pinNumber,
+        },
+        {
+          targetPorts: resolvedPorts,
+          targetSelectors,
+        },
+      )
+
+      this.add(groupPort)
+      this._interfacePorts.push(groupPort)
+      this._interfacePinLabels[`pin${pinNumber}`] = label
+      pinNumber++
     }
   }
 
@@ -233,6 +302,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }),
       )
     }
+  }
+
+  override doInitialCreateTracesFromProps(): void {
+    if (this._isShowAsSchematicBoxEnabled()) return
+    super.doInitialCreateTracesFromProps()
   }
 
   doInitialSourceAddConnectivityMapKey(): void {
@@ -580,6 +654,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicTraceRender() {
+    if (this._isShowAsSchematicBoxEnabled()) return
     Group_doInitialSchematicTraceRender(this as any)
   }
 
@@ -744,6 +819,111 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         })
       }
     }
+
+    if (this._isShowAsSchematicBoxEnabled()) {
+      this._renderAsSchematicBoxComponent()
+    }
+  }
+
+  private _renderAsSchematicBoxComponent() {
+    if (!this._interfacePinLabels) {
+      this._interfacePinLabels = {}
+    }
+
+    const dimensions = this._getSchematicBoxDimensions()
+    if (!dimensions) return
+
+    const { db } = this.root!
+    const props = this._parsedProps
+
+    const primaryPortLabels: Record<string, string> = {}
+    for (const [pinKey, label] of Object.entries(this._interfacePinLabels)) {
+      const pinNumber = pinKey.replace("pin", "")
+      primaryPortLabels[pinNumber] = label
+    }
+
+    const center = this._getGlobalSchematicPositionBeforeLayout()
+    const schPortArrangement = this._getSchematicPortArrangement()
+
+    const schematic_component = db.schematic_component.insert({
+      center,
+      rotation: props.schRotation ?? 0,
+      size: dimensions.getSize(),
+      port_arrangement: schPortArrangement
+        ? underscorifyPortArrangement(schPortArrangement)
+        : undefined,
+      pin_spacing: props.schPinSpacing ?? 0.2,
+      pin_styles: underscorifyPinStyles(
+        props.schPinStyle,
+        this._interfacePinLabels,
+      ),
+      port_labels: primaryPortLabels,
+      source_component_id: undefined,
+      schematic_group_id: this.schematic_group_id!,
+      is_box_with_pins: true,
+      is_schematic_group: true,
+    } as any)
+
+    this.schematic_component_id = schematic_component.schematic_component_id
+
+    const hasTopOrBottomPins =
+      schPortArrangement?.topSide !== undefined ||
+      schPortArrangement?.bottomSide !== undefined
+    const schematic_box_width = dimensions.getSize().width
+    const schematic_box_height = dimensions.getSize().height
+
+    if (props.name) {
+      db.schematic_text.insert({
+        text: props.name,
+        schematic_component_id: schematic_component.schematic_component_id,
+        anchor: "left",
+        rotation: 0,
+        position: {
+          x: hasTopOrBottomPins
+            ? center.x + (schematic_box_width ?? 0) / 2 + 0.1
+            : center.x - (schematic_box_width ?? 0) / 2,
+          y: hasTopOrBottomPins
+            ? center.y + (schematic_box_height ?? 0) / 2 + 0.55
+            : center.y + (schematic_box_height ?? 0) / 2 + 0.13,
+        },
+        color: "#006464",
+        font_size: 0.18,
+      })
+    }
+  }
+
+  override _getPinCount(): number {
+    if (this._isShowAsSchematicBoxEnabled()) {
+      return this._interfacePorts.length
+    }
+    return super._getPinCount()
+  }
+
+  override _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
+    if (!this._isShowAsSchematicBoxEnabled()) {
+      return super._getSchematicBoxDimensions()
+    }
+
+    if (!this._interfacePinLabels) return null
+
+    const props = this._parsedProps
+    const pinCount = this._interfacePorts.length
+    if (pinCount === 0) return null
+
+    const pinSpacing = props.schPinSpacing ?? 0.2
+
+    return getAllDimensionsForSchematicBox({
+      schWidth: props.schWidth,
+      schHeight: props.schHeight,
+      schPinSpacing: pinSpacing,
+      numericSchPinStyle: getNumericSchPinStyle(
+        props.schPinStyle,
+        this._interfacePinLabels,
+      ),
+      pinCount,
+      schPortArrangement: this._getSchematicPortArrangement()!,
+      pinLabels: this._interfacePinLabels,
+    })
   }
 
   _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "relative" {
@@ -777,6 +957,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicLayout(): void {
+    if (this._isShowAsSchematicBoxEnabled()) return
     // The schematic_components are rendered in our children
     const schematicLayoutMode = this._getSchematicLayoutMode()
 
@@ -883,6 +1064,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _insertSchematicBorder() {
     if (this.root?.schematicDisabled) return
+    if (this._isShowAsSchematicBoxEnabled()) return
     const { db } = this.root!
     const props = this._parsedProps as SubcircuitGroupProps
 
