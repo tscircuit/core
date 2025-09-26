@@ -9,7 +9,7 @@ import {
   circuit_json_footprint_load_error,
   external_footprint_load_error,
 } from "circuit-json"
-import { getFileExtension } from "./utils/getFileExtention"
+import { getFileExtension } from "./utils/getFileExtension"
 
 interface FootprintLibraryResult {
   footprintCircuitJson: any[]
