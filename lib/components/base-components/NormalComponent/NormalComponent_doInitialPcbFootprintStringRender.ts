@@ -37,10 +37,10 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
   ) {
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
-    const url = new URL(footprint)
+    const url = footprint
     queueAsyncEffect("load-footprint-from-platform-parser", async () => {
       try {
-        const res = await fetch(url.href)
+        const res = await fetch(url)
         if (!res.ok) {
           throw new Error(`Failed to fetch footprint: ${res.status}`)
         }
@@ -51,7 +51,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           {
             componentName: component.name,
             componentRotation: pcbRotation,
-            footprint: url.href,
+            footprint: url,
             pinLabels,
             pcbPinLabels,
           },
