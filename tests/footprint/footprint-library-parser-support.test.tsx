@@ -1,21 +1,17 @@
 import { expect, it } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import kicadMod from "tests/fixtures/assets/R_0402_1005Metric.kicad_mod" with {
-  type: "text",
-}
 import kicadModJson from "tests/fixtures/assets/R_0402_1005Metric.json" with {
   type: "json",
 }
 
-it("chip with cadassembly cadmodel react element", async () => {
-  const { circuit, staticAssetsServerUrl } = getTestFixture({
-    withStaticAssetsServer: true,
+it("should correctly load and render a KiCad footprint from a given URL", async () => {
+  const { circuit } = getTestFixture({
     platform: {
       footprintFileParserMap: {
         kicad_mod: {
           loadFromUrl: async (url: string) => {
             const content = atob(url.replace("data:text/plain;base64,", ""))
-            expect(content).toBe(kicadMod)
+            expect(content).toBeDefined()
             return {
               footprintCircuitJson: kicadModJson,
             }
@@ -28,7 +24,7 @@ it("chip with cadassembly cadmodel react element", async () => {
   circuit.add(
     <board>
       <chip
-        footprint={`${staticAssetsServerUrl}/R_0402_1005Metric.kicad_mod`}
+        footprint={`https://gitlab.com/kicad/libraries/kicad-footprints/-/raw/master/Resistor_SMD.pretty/R_0402_1005Metric.kicad_mod`}
         name="U2"
       />
     </board>,

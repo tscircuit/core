@@ -10,6 +10,7 @@ import {
   external_footprint_load_error,
 } from "circuit-json"
 import { fp } from "@tscircuit/footprinter"
+import { getFileExtension } from "./utils/getFileExtention"
 
 interface FootprintLibraryResult {
   footprintCircuitJson: any[]
@@ -26,26 +27,27 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
   if (!footprint) return
 
   const { pcbRotation, pinLabels, pcbPinLabels } = component.props
-  const kicadFootprintParser =
-    component.root?.platform?.footprintFileParserMap?.["kicad_mod"]
+  const fileExtension = getFileExtension(footprint)
+  const footprintParser = fileExtension
+    ? component.root?.platform?.footprintFileParserMap?.[fileExtension]
+    : null
   if (
     typeof footprint === "string" &&
     isFootprintUrl(footprint) &&
-    footprint.endsWith(".kicad_mod") &&
-    kicadFootprintParser
+    footprintParser
   ) {
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
     const url = footprint
-    queueAsyncEffect("load-kicad-footprint-url", async () => {
+    queueAsyncEffect("load-footprint-from-platform-parser", async () => {
       try {
         const res = await fetch(url)
         if (!res.ok) {
-          throw new Error(`Failed to fetch KiCad footprint: ${res.status}`)
+          throw new Error(`Failed to fetch footprint: ${res.status}`)
         }
-        const kicadText = await res.text()
-        const contentUrl = `data:text/plain;base64,${btoa(kicadText)}`
-        const result = await kicadFootprintParser.loadFromUrl(contentUrl)
+        const content = await res.text()
+        const contentUrl = `data:text/plain;base64,${btoa(content)}`
+        const result = await footprintParser.loadFromUrl(contentUrl)
         const fpComponents = createComponentsFromCircuitJson(
           {
             componentName: component.name,
@@ -63,7 +65,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         if (db && component.source_component_id && component.pcb_component_id) {
           const subcircuit = component.getSubcircuit()
           const errorMsg =
-            `${component.getString()} failed to load KiCad footprint "${url}": ` +
+            `${component.getString()} failed to load footprint "${url}": ` +
             (err instanceof Error ? err.message : String(err))
           const errorObj = external_footprint_load_error.parse({
             type: "external_footprint_load_error",
@@ -81,7 +83,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     })
     return
   }
-
   if (typeof footprint === "string" && isFootprintUrl(footprint)) {
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
