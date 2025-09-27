@@ -79,6 +79,7 @@ export class Board extends Group<typeof boardProps> {
     return {
       componentName: "Board",
       zodProps: boardProps,
+      shouldRenderAsSchematicBox: false,
     }
   }
 

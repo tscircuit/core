@@ -507,6 +507,7 @@ export class NormalComponent<
    * You can override this method to do more complicated things.
    */
   doInitialSchematicComponentRender() {
+    if (this._isParentGroupShownAsSchematicBox) return
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
 
@@ -619,6 +620,7 @@ export class NormalComponent<
   _doInitialSchematicComponentRenderWithReactSymbol(
     symbolElement: ReactElement,
   ) {
+    if (this._isParentGroupShownAsSchematicBox) return
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
 
@@ -638,6 +640,7 @@ export class NormalComponent<
   }
 
   _doInitialSchematicComponentRenderWithSchematicBoxDimensions() {
+    if (this._isParentGroupShownAsSchematicBox) return
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this

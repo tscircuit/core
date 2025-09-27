@@ -40,7 +40,7 @@
     "@tscircuit/matchpack": "^0.0.16",
     "@tscircuit/math-utils": "^0.0.21",
     "@tscircuit/miniflex": "^0.0.4",
-    "@tscircuit/props": "0.0.335",
+    "@tscircuit/props": "0.0.337",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
     "@tscircuit/schematic-trace-solver": "^0.0.38",
@@ -96,7 +96,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "calculate-packing": "0.0.37",
+    "calculate-packing": "0.0.40",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.3",
     "nanoid": "^5.0.7",

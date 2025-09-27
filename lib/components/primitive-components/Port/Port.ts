@@ -28,6 +28,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
   pcb_port_id: string | null = null
   schematic_port_id: string | null = null
+  subcircuit_connectivity_map_key: string | null = null
 
   schematicSymbolPortDef: SchSymbol["ports"][number] | null = null
   matchedComponents: PrimitiveComponent[]
@@ -134,6 +135,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * are rendered properly.
    */
   _hasSchematicPort() {
+    // Check if this port is inside a group with showAsSchematicBox enabled
+    // If so, the group will handle schematic port rendering, not the individual port
+    const parentGroup = this.getGroup()
+    if (parentGroup && (parentGroup as any)._isShowAsSchematicBoxEnabled?.()) {
+      return false
+    }
+
     const symbol = this.parent?.getSchematicSymbol()
     if (symbol) {
       if (this.schematicSymbolPortDef) return true

@@ -87,6 +87,25 @@ export abstract class PrimitiveComponent<
     return undefined // Return undefined if not found
   }
 
+  get _isParentGroupShownAsSchematicBox(): boolean {
+    let current: PrimitiveComponent | null = this
+
+    while (current) {
+      if (
+        current.parent?.isGroup &&
+        current.parent?._parsedProps?.showAsSchematicBox
+      ) {
+        return true
+      }
+      // Stop if we reach the root (parent is null or parent is root)
+      if (!current.parent || (current.parent as any)?.isRoot) {
+        break
+      }
+      current = current.parent
+    }
+
+    return false
+  }
   get lowercaseComponentName() {
     return this.componentName.toLowerCase()
   }
