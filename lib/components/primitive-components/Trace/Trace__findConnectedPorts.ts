@@ -67,6 +67,21 @@ export function Trace__findConnectedPorts(trace: Trace):
         })
       }
 
+      // Try to use the component's selectOne method for port resolution first
+      // This handles cases like Groups that implement custom port resolution
+      const resolvedPort = targetComponent.selectOne(`.${portToken}`, {
+        port: true,
+      })
+      if (resolvedPort && resolvedPort.componentName === "Port") {
+        portsWithSelectors[
+          portsWithSelectors.findIndex((p) => p.selector === selector)
+        ] = {
+          selector,
+          port: resolvedPort as Port,
+        }
+        continue
+      }
+
       const ports = targetComponent.children.filter(
         (c) => c.componentName === "Port",
       ) as Port[]

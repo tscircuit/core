@@ -15,8 +15,9 @@ import {
 import Debug from "debug"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { z } from "zod"
+import { applyToPoint } from "transformation-matrix"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
-import type { Trace } from "../Trace/Trace"
+import { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
 import type { ISubcircuit } from "./ISubcircuit"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
@@ -36,7 +37,6 @@ import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
-import { GroupInterfacePort } from "./GroupInterfacePort"
 import {
   getAllDimensionsForSchematicBox,
   type SchematicBoxDimensions,
@@ -44,7 +44,7 @@ import {
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
-import type { Port } from "../Port/Port"
+import { Port } from "../Port/Port"
 import { resolvePortFromSelector } from "lib/utils/resolvePortFromSelector"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
@@ -55,7 +55,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   schematic_group_id: string | null = null
   subcircuit_id: string | null = null
 
-  private _interfacePorts: GroupInterfacePort[] = []
+  private _interfacePorts: Port[] = []
   private _interfacePinLabels: Record<string, string> | null = null
 
   _hasStartedAsyncAutorouting = false
@@ -110,19 +110,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       if (resolvedPorts.length === 0) continue
 
-      const groupPort = new GroupInterfacePort(
-        {
-          name: label,
-          pinNumber,
-        },
-        {
-          targetPorts: resolvedPorts,
-          targetSelectors,
-        },
-      )
-
-      this.add(groupPort)
-      this._interfacePorts.push(groupPort)
+      // Store the first resolved port as the interface port
+      // (In showAsSchematicBox mode, we map interface labels to existing child ports)
+      this._interfacePorts.push(resolvedPorts[0])
       this._interfacePinLabels[`pin${pinNumber}`] = label
       pinNumber++
     }
@@ -311,6 +301,59 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSourceAddConnectivityMapKey(): void {
     Group_doInitialSourceAddConnectivityMapKey(this)
+  }
+
+  override getNameAndAliases(): string[] {
+    const baseNames = super.getNameAndAliases()
+
+    // In showAsSchematicBox mode, add interface port names as aliases
+    if (this._isShowAsSchematicBoxEnabled()) {
+      const connections = ((this._parsedProps as SubcircuitGroupProps)
+        .connections ?? {}) as Record<string, string | string[] | undefined>
+
+      const interfacePortNames = Object.keys(connections)
+      return [...baseNames, ...interfacePortNames]
+    }
+
+    return baseNames
+  }
+
+  override selectOne<T = PrimitiveComponent>(
+    selectorRaw: string,
+    options?: {
+      type?: string
+      port?: boolean
+      pcbPrimitive?: boolean
+      schematicPrimitive?: boolean
+    },
+  ): T | null {
+    // In showAsSchematicBox mode, handle interface port resolution
+    if (this._isShowAsSchematicBoxEnabled() && options?.port) {
+      const connections = ((this._parsedProps as SubcircuitGroupProps)
+        .connections ?? {}) as Record<string, string | string[] | undefined>
+
+      // Check if this is a direct interface port lookup (e.g., ".D1")
+      if (selectorRaw.startsWith(".") && selectorRaw.indexOf(".", 1) === -1) {
+        const interfaceLabel = selectorRaw.substring(1) // Remove the leading dot
+        const targetSelectors = connections[interfaceLabel]
+
+        if (targetSelectors) {
+          const targets = Array.isArray(targetSelectors)
+            ? targetSelectors
+            : [targetSelectors]
+          for (const target of targets) {
+            if (!target.startsWith("net.")) {
+              const resolvedPort = resolvePortFromSelector(this, target)
+              if (resolvedPort) {
+                return resolvedPort as T
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return super.selectOne(selectorRaw, options)
   }
 
   _areChildSubcircuitsRouted(): boolean {
@@ -865,6 +908,32 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     } as any)
 
     this.schematic_component_id = schematic_component.schematic_component_id
+
+    // Create schematic ports for each interface port
+    this._interfacePorts.forEach((interfacePort, index) => {
+      const pinNumber = index + 1
+      const label = this._interfacePinLabels![`pin${pinNumber}`]
+
+      const localPortInfo = dimensions.getPortPositionByPinNumber(pinNumber)
+      if (!localPortInfo) return
+
+      const portCenter = applyToPoint(
+        this.computeSchematicGlobalTransform(),
+        localPortInfo,
+      )
+
+      db.schematic_port.insert({
+        schematic_component_id: schematic_component.schematic_component_id,
+        center: portCenter,
+        source_port_id: interfacePort.source_port_id!,
+        distance_from_component_edge: 0.4,
+        side_of_component: localPortInfo.side,
+        pin_number: pinNumber,
+        true_ccw_index: localPortInfo.trueIndex,
+        display_pin_label: label,
+        is_connected: false,
+      })
+    })
 
     const hasTopOrBottomPins =
       schPortArrangement?.topSide !== undefined ||

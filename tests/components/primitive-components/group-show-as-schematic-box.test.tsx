@@ -69,6 +69,17 @@ test("group showAsSchematicBox renders single schematic component", async () => 
   expect(j1Port).toBeTruthy()
   expect(j2Port).toBeTruthy()
 
+  // Get all schematic ports for verification
+  const allSchematicPorts = circuit.db.schematic_port.list()
+  const j1SchematicPorts = allSchematicPorts.filter(
+    (p) => p.source_port_id === j1Port?.source_port_id,
+  )
+  const j2SchematicPorts = allSchematicPorts.filter(
+    (p) => p.source_port_id === j2Port?.source_port_id,
+  )
+  const j1SchematicPort = j1SchematicPorts[0] || null
+  const j2SchematicPort = j2SchematicPorts[0] || null
+
   const schematicPortIds = schematicPorts.map((port) => port.source_port_id)
 
   expect(schematicPortIds).toContain(j1Port?.source_port_id!)
@@ -79,6 +90,44 @@ test("group showAsSchematicBox renders single schematic component", async () => 
   })
 
   expect(pinHeaderSchematicComponents).toHaveLength(0)
+
+  // Check trace connectivity
+  const sourceTraces = circuit.db.source_trace.list()
+  const schematicTraces = circuit.db.schematic_trace.list()
+
+  // Verify that both J1.pin1 and J2.pin1 are connected via traces
+  const j1Connected = sourceTraces.some((trace) =>
+    trace.connected_source_port_ids.includes(j1Port?.source_port_id!),
+  )
+  const j2Connected = sourceTraces.some((trace) =>
+    trace.connected_source_port_ids.includes(j2Port?.source_port_id!),
+  )
+
+  expect(j1Connected).toBe(true) // J1.pin1 should be connected via trace
+  expect(j2Connected).toBe(true) // J2.pin1 should be connected via trace
+  expect(sourceTraces).toHaveLength(2) // Should have 2 traces (R1.pin1->Shield.D2, R1.pin2->Shield.D1)
+  expect(schematicTraces).toHaveLength(2) // Should have 2 schematic traces
+
+  // Verify that group creates brand new schematic ports (unique IDs)
+  expect(allSchematicPorts).toHaveLength(4) // 2 group ports + 2 R1 ports
+
+  // Verify each port has a unique schematic_port_id
+  const allSchematicPortIds = allSchematicPorts.map((p) => p.schematic_port_id)
+  const uniqueIds = new Set(allSchematicPortIds)
+  expect(uniqueIds.size).toBe(4) // All IDs should be unique
+
+  // Verify group ports have different IDs than any potential child ports
+  const groupPortIds = schematicPorts.map((p) => p.schematic_port_id)
+  expect(groupPortIds).toHaveLength(2)
+  expect(groupPortIds[0]).not.toBe(groupPortIds[1]) // Group ports have different IDs
+
+  // Verify that only one schematic port exists per source_port_id
+  expect(j1SchematicPorts).toHaveLength(1) // Only one schematic port for J1.pin1
+  expect(j2SchematicPorts).toHaveLength(1) // Only one schematic port for J2.pin1
+
+  // Verify the group ports reference the correct source ports
+  expect(groupPortIds).toContain(j1SchematicPort?.schematic_port_id!)
+  expect(groupPortIds).toContain(j2SchematicPort?.schematic_port_id!)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
