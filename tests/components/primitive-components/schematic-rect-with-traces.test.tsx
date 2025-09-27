@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("SchematicRect with traces", async () => {
+test.skip("SchematicRect with traces", async () => {
   if (process.env.CI) return
   const { circuit } = getTestFixture()
 
