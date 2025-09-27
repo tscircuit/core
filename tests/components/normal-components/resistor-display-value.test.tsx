@@ -2,17 +2,17 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("resistor display_value property", () => {
-  const { project } = getTestFixture()
+  const { circuit } = getTestFixture()
 
-  project.add(
+  circuit.add(
     <board width="10mm" height="10mm">
       <resistor name="R1" resistance="10k" footprint="0402" pcbX={0} pcbY={0} />
     </board>,
   )
 
-  project.render()
+  circuit.render()
 
-  const resistors = project.db.source_component.list({
+  const resistors = circuit.db.source_component.list({
     ftype: "simple_resistor",
   }) as Array<{
     ftype: "simple_resistor"
