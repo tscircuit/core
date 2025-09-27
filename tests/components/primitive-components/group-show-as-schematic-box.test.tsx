@@ -129,6 +129,19 @@ test("group showAsSchematicBox renders single schematic component", async () => 
   expect(groupPortIds).toContain(j1SchematicPort?.schematic_port_id!)
   expect(groupPortIds).toContain(j2SchematicPort?.schematic_port_id!)
 
+  // Verify group ports are positioned where child ports would have been
+  // (Child ports don't actually render, but we can verify the positions match)
+  const groupPortForJ1 = schematicPorts.find(
+    (p) => p.source_port_id === j1Port?.source_port_id,
+  )
+  const groupPortForJ2 = schematicPorts.find(
+    (p) => p.source_port_id === j2Port?.source_port_id,
+  )
+
+  // The group ports should be at the same positions as the child ports would have been
+  expect(groupPortForJ1?.center).toEqual(j1SchematicPort?.center)
+  expect(groupPortForJ2?.center).toEqual(j2SchematicPort?.center)
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
