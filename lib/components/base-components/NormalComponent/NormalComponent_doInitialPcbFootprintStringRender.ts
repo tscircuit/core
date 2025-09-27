@@ -9,6 +9,7 @@ import {
   circuit_json_footprint_load_error,
   external_footprint_load_error,
 } from "circuit-json"
+import { getFileExtension } from "./utils/getFileExtension"
 
 interface FootprintLibraryResult {
   footprintCircuitJson: any[]
@@ -25,7 +26,56 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
   if (!footprint) return
 
   const { pcbRotation, pinLabels, pcbPinLabels } = component.props
-
+  const fileExtension = getFileExtension(String(footprint))
+  const footprintParser = fileExtension
+    ? component.root?.platform?.footprintFileParserMap?.[fileExtension]
+    : null
+  if (
+    typeof footprint === "string" &&
+    isFootprintUrl(footprint) &&
+    footprintParser
+  ) {
+    if (component._hasStartedFootprintUrlLoad) return
+    component._hasStartedFootprintUrlLoad = true
+    const url = footprint
+    queueAsyncEffect("load-footprint-from-platform-file-parser", async () => {
+      try {
+        const result = await footprintParser.loadFromUrl(url)
+        const fpComponents = createComponentsFromCircuitJson(
+          {
+            componentName: component.name,
+            componentRotation: pcbRotation,
+            footprint: url,
+            pinLabels,
+            pcbPinLabels,
+          },
+          result.footprintCircuitJson,
+        )
+        component.addAll(fpComponents)
+        component._markDirty("InitializePortsFromChildren")
+      } catch (err) {
+        const db = component.root?.db
+        if (db && component.source_component_id && component.pcb_component_id) {
+          const subcircuit = component.getSubcircuit()
+          const errorMsg =
+            `${component.getString()} failed to load footprint "${url}": ` +
+            (err instanceof Error ? err.message : String(err))
+          const errorObj = external_footprint_load_error.parse({
+            type: "external_footprint_load_error",
+            message: errorMsg,
+            pcb_component_id: component.pcb_component_id,
+            source_component_id: component.source_component_id,
+            subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+            pcb_group_id: component.getGroup()?.pcb_group_id ?? undefined,
+            footprinter_string: url,
+          })
+          db.external_footprint_load_error.insert(errorObj)
+        }
+        throw err
+      }
+    })
+    return
+  }
   if (typeof footprint === "string" && isFootprintUrl(footprint)) {
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
