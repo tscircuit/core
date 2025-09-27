@@ -32,6 +32,16 @@ export const resolvePortFromSelector = (
   }
   if (!parentComponent) return null
 
+  // Try the component's custom selectOne method first
+  // This handles cases like Groups that implement custom port resolution
+  const customResolved = parentComponent.selectOne(`.${portToken}`, {
+    port: true,
+  })
+  if (customResolved && customResolved.componentName === "Port") {
+    return customResolved as Port
+  }
+
+  // Fall back to direct children search for normal components
   const ports = parentComponent.children.filter(
     (child) => child.componentName === "Port",
   ) as Port[]
