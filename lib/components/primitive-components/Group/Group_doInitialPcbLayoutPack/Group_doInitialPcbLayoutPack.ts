@@ -27,6 +27,17 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     pcbPackGap,
   } = props
 
+  const children = group.children
+
+  // My children can either be components or groups
+  // - Some components (from parent groups) are already placed because they
+  // have relative positions, so their position is known pre-layout
+  //    - Even though their position is known pre-layout, it is maybe only known
+  //      relative to the group
+  // - they can also have constraints that cluster them together
+  // When we're creating the pack input, we want to map the pack input
+  // chips to clusters
+
   // const gap = pcbPackGap ?? pcbGap ?? gapProp
   // const gapMm = length.parse(gap ?? DEFAULT_MIN_GAP)
 
