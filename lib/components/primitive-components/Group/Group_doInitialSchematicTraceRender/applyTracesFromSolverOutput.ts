@@ -17,18 +17,18 @@ export function applyTracesFromSolverOutput(args: {
   const { db } = group.root!
 
   // Use the overlap-corrected traces from the pipeline
-  const correctedMap = solver.traceOverlapShiftSolver?.correctedTraceMap
+  const traces =
+    solver.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
+    solver.schematicTraceLinesSolver?.solvedTracePaths
   const pendingTraces: Array<{
     source_trace_id: string
     edges: SchematicTrace["edges"]
     subcircuit_connectivity_map_key?: string
   }> = []
 
-  debug(
-    `Traces inside SchematicTraceSolver output: ${Object.values(correctedMap ?? {}).length}`,
-  )
+  debug(`Traces inside SchematicTraceSolver output: ${(traces ?? []).length}`)
 
-  for (const solvedTracePath of Object.values(correctedMap ?? {})) {
+  for (const solvedTracePath of traces ?? []) {
     const points = solvedTracePath?.tracePath as Array<{ x: number; y: number }>
     if (!Array.isArray(points) || points.length < 2) {
       debug(
