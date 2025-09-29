@@ -21,24 +21,9 @@ export const getTestFixture = ({
     ? getTestStaticAssetsServer().url
     : undefined
 
-  const debugOutputArray: Array<{ name: string; obj: any }> = []
-
   // Set up event listener for debug outputs
   circuit.on("debug:logOutput", (event) => {
-    debugOutputArray.push({ name: event.name, obj: event.content })
-  })
-
-  afterAll(() => {
-    if (debugOutputArray.length > 0) {
-      for (const { name, obj } of debugOutputArray) {
-        const fileName = `debug-output/${name}.json`
-        console.log(`Writing debug output to ${fileName}`)
-        Bun.write(
-          fileName,
-          typeof obj === "string" ? obj : JSON.stringify(obj, null, 2),
-        )
-      }
-    }
+    global.debugOutputArray?.push({ name: event.name, obj: event.content })
   })
 
   return {
