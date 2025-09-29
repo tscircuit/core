@@ -11,8 +11,9 @@ export const getTestFootprintServer = (json: any) => {
     },
   })
 
-  afterEach(() => {
-    server.stop()
+  global.servers?.push({
+    url: `http://localhost:${server.port}/`,
+    close: () => server.stop(),
   })
 
   return {

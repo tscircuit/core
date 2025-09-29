@@ -1,6 +1,8 @@
 import "bun-match-svg"
 import "./extend-expect-any-svg"
 import "lib/register-catalogue"
+import "./preload-debug-output-dump"
+import "./preload-server-cleanup"
 
 declare module "bun:test" {
   interface Matchers<T = unknown> {

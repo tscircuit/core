@@ -32,6 +32,7 @@ test("do not place part should be skipped", async () => {
         "do_not_place": true,
         "height": 4.41,
         "layer": "top",
+        "obstructs_within_bounds": true,
         "pcb_component_id": "pcb_component_0",
         "rotation": 0,
         "source_component_id": "source_component_0",
