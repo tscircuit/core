@@ -73,6 +73,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
+    const shouldCreateSolderPaste = !isCoveredWithSolderMask
     if (!props.portHints) return
 
     const subcircuit = this.getSubcircuit()
@@ -110,22 +112,23 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         shape: "circle",
         radius: props.radius!,
         port_hints: props.portHints.map((ph) => ph.toString()),
-        is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
         x: position.x,
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       } as PcbSmtPadCircle) as PcbSmtPadCircle
-      db.pcb_solder_paste.insert({
-        layer: pcb_smtpad.layer,
-        shape: "circle",
-        radius: pcb_smtpad.radius * 0.7,
-        x: pcb_smtpad.x,
-        y: pcb_smtpad.y,
-        pcb_component_id: pcb_smtpad.pcb_component_id,
-        pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbSmtPadCircle)
+      if (shouldCreateSolderPaste)
+        db.pcb_solder_paste.insert({
+          layer: pcb_smtpad.layer,
+          shape: "circle",
+          radius: pcb_smtpad.radius * 0.7,
+          x: pcb_smtpad.x,
+          y: pcb_smtpad.y,
+          pcb_component_id: pcb_smtpad.pcb_component_id,
+          pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        } as PcbSmtPadCircle)
     } else if (props.shape === "rect") {
       pcb_smtpad =
         isAxisAligned || isRotated90Degrees
@@ -139,9 +142,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
               height: isRotated90Degrees ? props.width : props.height,
 
               port_hints: props.portHints.map((ph) => ph.toString()),
-
-              is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
-
+              is_covered_with_solder_mask: isCoveredWithSolderMask,
               x: position.x,
               y: position.y,
               subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -157,11 +158,11 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
               y: position.y,
               ccw_rotation: finalRotationDegrees,
               port_hints: props.portHints.map((ph) => ph.toString()),
-              is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
+              is_covered_with_solder_mask: isCoveredWithSolderMask,
               subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
               pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
             } as PcbSmtPad)
-      if (pcb_smtpad.shape === "rect")
+      if (shouldCreateSolderPaste && pcb_smtpad.shape === "rect")
         db.pcb_solder_paste.insert({
           layer: maybeFlipLayer(props.layer ?? "top"),
           shape: "rect",
@@ -174,7 +175,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRect)
-      if (pcb_smtpad.shape === "rotated_rect")
+      if (shouldCreateSolderPaste && pcb_smtpad.shape === "rotated_rect")
         db.pcb_solder_paste.insert({
           layer: maybeFlipLayer(props.layer ?? "top"),
           shape: "rotated_rect",
@@ -199,7 +200,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           y: p.y + position.y,
         })),
         port_hints: props.portHints.map((ph) => ph.toString()),
-        is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
@@ -215,7 +216,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         height: props.height!,
         width: props.width!,
         port_hints: props.portHints.map((ph) => ph.toString()),
-        is_covered_with_solder_mask: props.coveredWithSolderMask ?? false,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPill) as PcbSmtPadPill
@@ -343,10 +344,12 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const solderPaste = db.pcb_solder_paste
       .list()
       .find((elm) => elm.pcb_smtpad_id === this.pcb_smtpad_id)
-    db.pcb_solder_paste.update(solderPaste?.pcb_solder_paste_id!, {
-      x: newCenter.x,
-      y: newCenter.y,
-    })
+    if (solderPaste) {
+      db.pcb_solder_paste.update(solderPaste.pcb_solder_paste_id, {
+        x: newCenter.x,
+        y: newCenter.y,
+      })
+    }
 
     this.matchedPort?._setPositionFromLayout(newCenter)
   }

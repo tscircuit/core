@@ -30,4 +30,5 @@ test("smtpad coveredWithSolderMask sets is_covered_with_solder_mask", () => {
 
   const pad = project.db.pcb_smtpad.list()[0]
   expect(pad.is_covered_with_solder_mask).toBe(true)
+  expect(project.db.pcb_solder_paste.list()).toHaveLength(0)
 })
