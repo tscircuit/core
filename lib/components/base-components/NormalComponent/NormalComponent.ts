@@ -1374,25 +1374,65 @@ export class NormalComponent<
       if (cached) {
         try {
           return JSON.parse(cached)
-        } catch {}
+        } catch (error) {
+          console.warn(
+            `Failed to parse cached parts engine result for ${source_component.name}:`,
+            error,
+          )
+        }
       }
     }
-    const result = await Promise.resolve(
-      partsEngine.findPart({
-        sourceComponent: source_component,
-        footprinterString,
-      }),
-    )
 
-    // Convert "Not found" to empty object before caching or returning
-    const supplierPartNumbers = result === "Not found" ? {} : result
+    try {
+      const result = await Promise.resolve(
+        partsEngine.findPart({
+          sourceComponent: source_component,
+          footprinterString,
+        }),
+      )
 
-    if (cacheEngine) {
-      try {
-        await cacheEngine.setItem(cacheKey, JSON.stringify(supplierPartNumbers))
-      } catch {}
+      // Validate that the result is a valid object and not HTML
+      if (typeof result === "string" && result.trim().startsWith("<!DOCTYPE")) {
+        console.warn(
+          `Parts engine returned HTML error page for ${source_component.name}, using empty part numbers`,
+        )
+        return {}
+      }
+
+      // Convert "Not found" to empty object before caching or returning
+      const supplierPartNumbers = result === "Not found" ? {} : result
+
+      // Validate that we got a proper object
+      if (
+        supplierPartNumbers &&
+        typeof supplierPartNumbers === "object" &&
+        !Array.isArray(supplierPartNumbers)
+      ) {
+        if (cacheEngine) {
+          try {
+            await cacheEngine.setItem(
+              cacheKey,
+              JSON.stringify(supplierPartNumbers),
+            )
+          } catch (error) {
+            console.warn(
+              `Failed to cache parts engine result for ${source_component.name}:`,
+              error,
+            )
+          }
+        }
+        return supplierPartNumbers
+      } else {
+        console.warn(
+          `Parts engine returned invalid result format for ${source_component.name}:`,
+          result,
+        )
+        return {}
+      }
+    } catch (error) {
+      console.warn(`Parts engine error for ${source_component.name}:`, error)
+      return {}
     }
-    return supplierPartNumbers
   }
 
   doInitialPartsEngineRender(): void {
