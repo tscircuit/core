@@ -23,8 +23,9 @@ export const getTestStaticAssetsServer = () => {
     },
   })
 
-  afterEach(() => {
-    server.stop()
+  global.servers?.push({
+    url: `http://localhost:${server.port}/`,
+    close: () => server.stop(),
   })
 
   return { url: `http://localhost:${server.port}`, close: () => server.stop() }
