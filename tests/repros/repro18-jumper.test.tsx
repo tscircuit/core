@@ -12,18 +12,16 @@ test("Jumper internally connected pins mix up between different Jumper component
           pin1: ["GND"],
           pin2: ["VOUT"],
         }}
-        footprint="pinrow2_p2.54_id1.016_od1.88_nosquareplating_pinlabeltextalignleft_pinlabelorthogonal"
+        footprint="pinrow2_p2.54_id1.016_od1.88_nosquareplating_pinlabeltextalignbottom"
         pcbX={-2}
         pcbY={2}
-        pcbRotation={90}
-        schY={0.2}
-        schX={-3}
+        schY={0}
+        schX={0}
       />
       <resistor
         resistance="4.7k"
         name="R1"
-        pcbRotation={270}
-        pcbY={2}
+        pcbY={0}
         pcbX={3}
         footprint="0603"
         schY={1}
