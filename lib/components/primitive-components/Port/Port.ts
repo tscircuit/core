@@ -316,18 +316,31 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   doInitialSourceParentAttachment(): void {
     const { db } = this.root!
-    if (!this.parent?.source_component_id) {
+    const parentWithSourceComponent = this._findParentWithSourceComponent()
+    if (!parentWithSourceComponent?.source_component_id) {
       throw new Error(
         `${this.getString()} has no parent source component (parent: ${this.parent?.getString()})`,
       )
     }
 
     db.source_port.update(this.source_port_id!, {
-      source_component_id: this.parent?.source_component_id!,
+      source_component_id: parentWithSourceComponent.source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
     })
 
-    this.source_component_id = this.parent?.source_component_id
+    this.source_component_id = parentWithSourceComponent.source_component_id
+  }
+
+  private _findParentWithPcbComponent(): any {
+    let p: any = this.parent
+    while (p && !p.pcb_component_id) p = p.parent
+    return p
+  }
+
+  private _findParentWithSourceComponent(): any {
+    let p: any = this.parent
+    while (p && !p.source_component_id) p = p.parent
+    return p
   }
 
   doInitialPcbPortRender(): void {
@@ -335,7 +348,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { db } = this.root!
     const { matchedComponents } = this
 
-    if (!this.parent?.pcb_component_id) {
+    const parentWithPcbComponent = this._findParentWithPcbComponent()
+    if (!parentWithPcbComponent?.pcb_component_id) {
       throw new Error(
         `${this.getString()} has no parent pcb component, cannot render pcb_port (parent: ${this.parent?.getString()})`,
       )
@@ -410,10 +424,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (!matchCenter) return
 
+    const parentWithPcbComponent = this._findParentWithPcbComponent()
+    if (!parentWithPcbComponent?.pcb_component_id) return
+
     const subcircuit = this.getSubcircuit()
     const isBoardPinout = this._shouldIncludeInBoardPinout()
     const pcb_port = db.pcb_port.insert({
-      pcb_component_id: this.parent?.pcb_component_id!,
+      pcb_component_id: parentWithPcbComponent.pcb_component_id!,
       layers: this.getAvailablePcbLayers(),
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
