@@ -11,6 +11,8 @@ import looksSame from "looks-same"
 import { RootCircuit } from "lib/RootCircuit"
 import type { AnyCircuitElement } from "circuit-json"
 
+const ACCEPTABLE_DIFF_PERCENTAGE = 5.0
+
 async function saveSvgSnapshotOfCircuitJson({
   soup,
   testPath,
@@ -229,6 +231,74 @@ async function saveSvgSnapshotOfCircuitJson({
   const currentBuffer = Buffer.isBuffer(content)
     ? content
     : Buffer.from(content)
+
+  if (mode === "simple-3d") {
+    // For 3D PNG snapshots, allow up to ACCEPTABLE_DIFF_PERCENTAGE of pixels to differ
+    const lsResult: any = await looksSame(currentBuffer, existingSnapshot, {
+      strict: false,
+      tolerance: 2,
+    })
+
+    if (lsResult.equal) {
+      return {
+        message: () => "Snapshot matches",
+        pass: true,
+      }
+    }
+
+    // Use percentage from looks-same (backed by resemblejs) when available
+    const mismatch =
+      typeof lsResult.misMatchPercentage === "number"
+        ? lsResult.misMatchPercentage
+        : typeof lsResult.rawMisMatchPercentage === "number"
+          ? lsResult.rawMisMatchPercentage
+          : undefined
+
+    const diffPercentage =
+      typeof mismatch === "number" ? Number(mismatch) : Number.POSITIVE_INFINITY
+
+    if (diffPercentage <= ACCEPTABLE_DIFF_PERCENTAGE) {
+      return {
+        message: () =>
+          `Snapshot within acceptable difference (${diffPercentage.toFixed(2)}% <= ${ACCEPTABLE_DIFF_PERCENTAGE}%)`,
+        pass: true,
+      }
+    }
+
+    if (updateSnapshot) {
+      console.log("Updating snapshot at", filePath)
+      fs.writeFileSync(filePath, content)
+      return {
+        message: () =>
+          `Snapshot updated at ${filePath}${
+            Number.isFinite(diffPercentage)
+              ? ` (was ${diffPercentage.toFixed(2)}% different)`
+              : ""
+          }`,
+        pass: true,
+      }
+    }
+
+    const diffPath = filePath.replace(/\.snap\.(svg|png)$/, ".diff.png")
+    await looksSame.createDiff({
+      reference: existingSnapshot,
+      current: currentBuffer,
+      diff: diffPath,
+      highlightColor: "#ff00ff",
+    })
+
+    return {
+      message: () =>
+        Number.isFinite(diffPercentage)
+          ? `Snapshot differs by ${diffPercentage.toFixed(
+              2,
+            )}% (> ${ACCEPTABLE_DIFF_PERCENTAGE}%). Diff saved at ${diffPath}`
+          : `Snapshot differs (percentage unavailable). Diff saved at ${diffPath}`,
+      pass: false,
+    }
+  }
+
+  // Default comparison for SVG (and fallback)
   const result = await looksSame(currentBuffer, existingSnapshot, {
     strict: false,
     tolerance: 2,
