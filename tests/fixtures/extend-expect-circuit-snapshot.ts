@@ -10,6 +10,16 @@ import * as path from "node:path"
 import looksSame from "looks-same"
 import { RootCircuit } from "lib/RootCircuit"
 import type { AnyCircuitElement } from "circuit-json"
+import {
+  renderGLTFToPNGBufferFromGLBBuffer,
+  bufferFromDataURI,
+  createSceneFromGLTF,
+  decodeImageFromBuffer,
+  computeWorldAABB,
+  pureImageFactory,
+  renderSceneFromGLTF,
+  encodePNGToBuffer,
+} from "poppygl"
 
 const ACCEPTABLE_DIFF_PERCENTAGE = 5.0
 
@@ -53,18 +63,6 @@ async function saveSvgSnapshotOfCircuitJson({
         )
       }
       const gltfOrGlb = await toGltf(soup, options?.gltf)
-
-      const poppy: any = await import("poppygl")
-      const {
-        renderGLTFToPNGBufferFromGLBBuffer,
-        bufferFromDataURI,
-        createSceneFromGLTF,
-        decodeImageFromBuffer,
-        computeWorldAABB,
-        pureImageFactory,
-        renderSceneFromGLTF,
-        encodePNGToBuffer,
-      } = poppy
 
       // If we got a GLB buffer, render directly
       if (gltfOrGlb instanceof Uint8Array || Buffer.isBuffer(gltfOrGlb)) {
@@ -256,8 +254,6 @@ async function saveSvgSnapshotOfCircuitJson({
     // Fallback: if looks-same didn't provide a percentage, estimate from PNGs directly
     if (!Number.isFinite(diffPercentage)) {
       try {
-        const poppy: any = await import("poppygl")
-        const { decodeImageFromBuffer } = poppy
         const refImg = await decodeImageFromBuffer(
           existingSnapshot,
           "image/png",
