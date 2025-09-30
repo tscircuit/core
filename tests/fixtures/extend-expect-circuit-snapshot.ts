@@ -247,15 +247,11 @@ async function saveSvgSnapshotOfCircuitJson({
     }
 
     // Use percentage from looks-same (backed by resemblejs) when available
-    const mismatch =
-      typeof lsResult.misMatchPercentage === "number"
-        ? lsResult.misMatchPercentage
-        : typeof lsResult.rawMisMatchPercentage === "number"
-          ? lsResult.rawMisMatchPercentage
-          : undefined
+    const mismatchRaw =
+      lsResult?.misMatchPercentage ?? lsResult?.rawMisMatchPercentage
 
     const diffPercentage =
-      typeof mismatch === "number" ? Number(mismatch) : Number.POSITIVE_INFINITY
+      mismatchRaw != null ? Number(mismatchRaw) : Number.POSITIVE_INFINITY
 
     if (diffPercentage <= ACCEPTABLE_DIFF_PERCENTAGE) {
       return {
