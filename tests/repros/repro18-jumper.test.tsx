@@ -15,8 +15,8 @@ test("Jumper internally connected pins mix up between different Jumper component
         footprint="pinrow2_p2.54_id1.016_od1.88_nosquareplating_pinlabeltextalignbottom"
         pcbX={-2}
         pcbY={2}
-        schY={0}
-        schX={0}
+        schY={0.2}
+        schX={-3}
       />
       <resistor
         resistance="4.7k"
