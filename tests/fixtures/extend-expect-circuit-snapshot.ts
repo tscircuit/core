@@ -12,7 +12,12 @@ import { RootCircuit } from "lib/RootCircuit"
 import type { AnyCircuitElement } from "circuit-json"
 import { convertCircuitJsonToSimple3dSvg } from "circuit-json-to-simple-3d"
 import { convertCircuitJsonToGltf } from "circuit-json-to-gltf"
-import { renderSceneFromGLTF, createSceneFromGLTF, encodePNGToBuffer, pureImageFactory } from "poppygl"
+import {
+  renderSceneFromGLTF,
+  createSceneFromGLTF,
+  encodePNGToBuffer,
+  pureImageFactory,
+} from "poppygl"
 
 async function saveSvgSnapshotOfCircuitJson({
   soup,
@@ -47,19 +52,30 @@ async function saveSvgSnapshotOfCircuitJson({
       output = await convertCircuitJsonToSimple3dSvg(soup, options)
       break
     case "3d-png": {
-      const gltf = await convertCircuitJsonToGltf(soup, options) as any
+      const gltf = (await convertCircuitJsonToGltf(soup, options)) as any
       const scene = createSceneFromGLTF(gltf, {
-        buffers: gltf.buffers?.map((b: any) => b.uri ? Buffer.from(b.uri.split(',')[1], 'base64') : Buffer.alloc(0)) || [],
+        buffers:
+          gltf.buffers?.map((b: any) =>
+            b.uri
+              ? Buffer.from(b.uri.split(",")[1], "base64")
+              : Buffer.alloc(0),
+          ) || [],
         images: []
       })
-      const renderResult = await renderSceneFromGLTF(scene, undefined, pureImageFactory) as any
+      const renderResult = (
+        await renderSceneFromGLTF(
+          scene,
+          undefined,
+          pureImageFactory,
+        )
+      ) as any
       const bitmap = renderResult?.bitmap
-      console.log('Bitmap type:', typeof bitmap, 'constructor:', bitmap?.constructor?.name)
-      if (Buffer.isBuffer(bitmap) || bitmap instanceof (globalThis as any).Uint8Array) {
-        console.log('Using bitmap directly')
+      if (
+        Buffer.isBuffer(bitmap) ||
+        bitmap instanceof (globalThis as any).Uint8Array
+      ) {
         output = bitmap
       } else {
-        console.log('Converting bitmap to PNG buffer')
         output = await encodePNGToBuffer(bitmap)
       }
       break
@@ -88,14 +104,10 @@ async function saveSvgSnapshotOfCircuitJson({
 
   const currentBuffer = Buffer.isBuffer(output) ? output : Buffer.from(output)
 
-  const result = await looksSame(
-    currentBuffer,
-    existingSnapshot,
-    {
-      strict: false,
-      tolerance: 2,
-    },
-  )
+  const result = await looksSame(currentBuffer, existingSnapshot, {
+    strict: false,
+    tolerance: 2,
+  })
 
   if (result.equal) {
     return {
