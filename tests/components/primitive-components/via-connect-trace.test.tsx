@@ -56,5 +56,5 @@ it("allows traces to connect to via layers", () => {
   circuit.render()
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSimple3dSnapshot(import.meta.path)
+  expect(circuit).toMatchPng3dSnapshot(import.meta.path)
 })

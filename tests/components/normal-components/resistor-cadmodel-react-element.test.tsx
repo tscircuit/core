@@ -32,5 +32,5 @@ it("resistor with cadmodel react element", async () => {
   )
   expect(cadComponents[0].position.x).toBeCloseTo(1)
 
-  await expect(circuit).toMatchSimple3dSnapshot(import.meta.path)
+  await expect(circuit).toMatchPng3dSnapshot(import.meta.path)
 })

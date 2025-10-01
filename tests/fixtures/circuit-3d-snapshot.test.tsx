@@ -10,5 +10,5 @@ it("should be able to create a 3D snapshot of a circuit", async () => {
     </board>,
   )
   circuit.render()
-  await expect(circuit).toMatchSimple3dSnapshot(import.meta.path)
+  await expect(circuit).toMatchPng3dSnapshot(import.meta.path)
 })

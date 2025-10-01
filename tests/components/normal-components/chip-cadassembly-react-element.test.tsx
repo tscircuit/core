@@ -36,5 +36,5 @@ it("chip with cadassembly cadmodel react element", async () => {
   expect(xs[0]).toBeLessThan(0)
   expect(xs[1]).toBeGreaterThan(0)
 
-  await expect(circuit).toMatchSimple3dSnapshot(import.meta.path)
+  await expect(circuit).toMatchPng3dSnapshot(import.meta.path)
 })
