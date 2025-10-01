@@ -145,7 +145,35 @@ async function saveSvgSnapshotOfCircuitJson({
       mismatchRaw != null ? Number(mismatchRaw) : Number.POSITIVE_INFINITY
 
     if (!Number.isFinite(diffPercentage)) {
-      diffPercentage = Infinity
+      try {
+        const refImg = await decodeImageFromBuffer(
+          existingSnapshot,
+          "image/png",
+        )
+        const curImg = await decodeImageFromBuffer(currentBuffer, "image/png")
+        if (
+          refImg?.width === curImg?.width &&
+          refImg?.height === curImg?.height
+        ) {
+          const totalPixels = refImg.width * refImg.height
+          let different = 0
+          const ref = refImg.data
+          const cur = curImg.data
+          // RGBA stride = 4
+          for (let i = 0; i < totalPixels; i++) {
+            const idx = i * 4
+            if (
+              ref[idx] !== cur[idx] ||
+              ref[idx + 1] !== cur[idx + 1] ||
+              ref[idx + 2] !== cur[idx + 2] ||
+              ref[idx + 3] !== cur[idx + 3]
+            ) {
+              different++
+            }
+          }
+          diffPercentage = (different / totalPixels) * 100
+        }
+      } catch {}
     }
 
     if (
