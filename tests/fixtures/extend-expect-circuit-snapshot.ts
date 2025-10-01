@@ -60,15 +60,13 @@ async function saveSvgSnapshotOfCircuitJson({
               ? Buffer.from(b.uri.split(",")[1], "base64")
               : Buffer.alloc(0),
           ) || [],
-        images: []
+        images: [],
       })
-      const renderResult = (
-        await renderSceneFromGLTF(
-          scene,
-          undefined,
-          pureImageFactory,
-        )
-      ) as any
+      const renderResult = (await renderSceneFromGLTF(
+        scene,
+        undefined,
+        pureImageFactory,
+      )) as any
       const bitmap = renderResult?.bitmap
       if (
         Buffer.isBuffer(bitmap) ||
