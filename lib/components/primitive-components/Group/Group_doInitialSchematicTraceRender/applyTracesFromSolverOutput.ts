@@ -29,10 +29,15 @@ export function applyTracesFromSolverOutput(args: {
   debug(`Traces inside SchematicTraceSolver output: ${(traces ?? []).length}`)
 
   for (const solvedTracePath of traces ?? []) {
-    const points = solvedTracePath?.tracePath as Array<{ x: number; y: number }>
+    const points = solvedTracePath?.tracePath as Array<{
+      x: number
+      y: number
+    }>
     if (!Array.isArray(points) || points.length < 2) {
       debug(
-        `Skipping trace ${solvedTracePath?.pinIds.join(",")} because it has less than 2 points`,
+        `Skipping trace ${solvedTracePath?.pinIds.join(
+          ",",
+        )} because it has less than 2 points`,
       )
       continue
     }
@@ -92,7 +97,16 @@ export function applyTracesFromSolverOutput(args: {
       edges: t.edges,
     })),
   )
-  const junctionsById = computeJunctions(withCrossings)
+
+  const junctionsById = computeJunctions(
+    withCrossings.map((t) => ({
+      source_trace_id: t.source_trace_id,
+      edges: t.edges,
+      subcircuit_connectivity_map_key: pendingTraces.find(
+        (p) => p.source_trace_id === t.source_trace_id,
+      )?.subcircuit_connectivity_map_key,
+    })),
+  )
 
   for (const t of withCrossings) {
     db.schematic_trace.insert({

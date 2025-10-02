@@ -1,7 +1,11 @@
 import type { SchematicTrace } from "circuit-json"
 
 type Edge = SchematicTrace["edges"][number]
-type TraceEdges = { source_trace_id: string; edges: Edge[] }
+type TraceEdges = {
+  source_trace_id: string
+  edges: Edge[]
+  subcircuit_connectivity_map_key?: string
+}
 
 const TOL = 1e-6
 
@@ -157,6 +161,13 @@ export function computeJunctions(
     for (let j = i + 1; j < traces.length; j++) {
       const B = traces[j]
       const BEnds = endpointsByTrace[j]
+
+      // Skip junction creation if traces are on the same electrical network
+      const sameNet =
+        A.subcircuit_connectivity_map_key &&
+        B.subcircuit_connectivity_map_key &&
+        A.subcircuit_connectivity_map_key === B.subcircuit_connectivity_map_key
+      if (sameNet) continue
 
       // Endpoint-to-endpoint junctions (only when forming a corner)
       for (const pa of AEnds) {
