@@ -1,14 +1,14 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { RaspberryPiHatBoard } from "../RaspberryPiHat"
+import { MicroModBoard } from "../fixtures/MicroModBoard"
+import GreenpillBoard from "../fixtures/greenpill"
 
 test("repro1-packing-imported-board", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <RaspberryPiHatBoard name="RaspberryPiHat">
-      <resistor name="R1" resistance="1k" footprint="0402" />
-      <resistor name="R2" resistance="1k" footprint="0402" />
-    </RaspberryPiHatBoard>,
+    <MicroModBoard name="MicroMod">
+      <GreenpillBoard name="Greenpill" />
+    </MicroModBoard>,
   )
   await circuit.renderUntilSettled()
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
