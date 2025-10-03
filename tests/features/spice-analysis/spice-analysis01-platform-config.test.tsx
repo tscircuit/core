@@ -36,22 +36,24 @@ test("spice-analysis01-platform-config", async () => {
   }
 
   circuit.add(
-    <board>
+    <board schMaxTraceDistance={10}>
       <voltagesource
         name="VS1"
         peakToPeakVoltage="3V"
         frequency="1kHz"
         waveShape="square"
       />
+      <switch name="SW1" spst />
+      <trace from="VS1.1" to="SW1.1" />
       <capacitor
         name="C1"
         capacitance="10uF"
-        connections={{ pos: "VS1.1", neg: "VS1.2" }}
+        connections={{ pos: "SW1.2", neg: "VS1.2" }}
       />
       <resistor
         name="R1"
         resistance="1k"
-        connections={{ pin1: "VS1.1", pin2: "VS1.2" }}
+        connections={{ pin1: "SW1.2", pin2: "VS1.2" }}
       />
     </board>,
   )
