@@ -52,6 +52,7 @@ export const orderedRenderPhases = [
   "SilkscreenOverlapAdjustment",
   "CadModelRender",
   "PartsEngineRender",
+  "SpiceEngineRender",
 ] as const
 
 export type RenderPhase = (typeof orderedRenderPhases)[number]
