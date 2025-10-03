@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import type { SimulationTransientVoltageGraph } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("spice-analysis01-platform-config", async () => {
@@ -9,7 +10,21 @@ test("spice-analysis01-platform-config", async () => {
       spicey: {
         async simulate(spiceString: string) {
           return {
-            simulationResultCircuitJson: [],
+            simulationResultCircuitJson: [
+              {
+                type: "simulation_transient_voltage_graph",
+                simulation_experiment_id: "1",
+                voltage_levels: [
+                  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1,
+                ],
+                start_time_ms: 0,
+                end_time_ms: 10,
+                time_per_step: 0.001,
+                simulation_transient_voltage_graph_id:
+                  "simulation-transient-voltage-graph-1",
+                name: "simulation-transient-voltage-graph-1",
+              } as SimulationTransientVoltageGraph,
+            ],
           }
         },
       },
