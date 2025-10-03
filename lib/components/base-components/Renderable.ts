@@ -157,7 +157,7 @@ export abstract class Renderable implements IRenderable {
     }
   }
 
-  protected _queueAsyncEffect(effectName: string, effect: () => Promise<void>) {
+  _queueAsyncEffect(effectName: string, effect: () => Promise<void>) {
     const asyncEffect: AsyncEffect = {
       promise: effect(), // TODO don't start effects until end of render cycle
       phase: this._currentRenderPhase!,

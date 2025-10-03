@@ -12,6 +12,10 @@ test("spice-analysis01-platform-config", async () => {
           return {
             simulationResultCircuitJson: [
               {
+                type: "simulation_experiment",
+                simulation_experiment_id: "1",
+              } as any,
+              {
                 type: "simulation_transient_voltage_graph",
                 simulation_experiment_id: "1",
                 voltage_levels: [
@@ -39,14 +43,22 @@ test("spice-analysis01-platform-config", async () => {
         frequency="1kHz"
         waveShape="square"
       />
-      <capacitor name="C1" capacitance="10uF" />
-      <resistor name="R1" resistance="1k" />
+      <capacitor
+        name="C1"
+        capacitance="10uF"
+        connections={{ pos: "VS1.1", neg: "VS1.2" }}
+      />
+      <resistor
+        name="R1"
+        resistance="1k"
+        connections={{ pin1: "VS1.1", pin2: "VS1.2" }}
+      />
     </board>,
   )
 
   await circuit.renderUntilSettled()
 
-  const circuitJson = await circuit.getCircuitJson()
+  const circuitJson = circuit.getCircuitJson()
 
   expect(
     circuitJson.some((el) => el.type === "simulation_transient_voltage_graph"),
