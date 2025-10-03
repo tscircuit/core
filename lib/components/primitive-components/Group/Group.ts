@@ -36,6 +36,7 @@ import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
+import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -1087,6 +1088,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         })
       }
     }
+  }
+
+  doInitialSimulationSpiceEngineRender() {
+    Group_doInitialSimulationSpiceEngineRender(this)
   }
 
   /**
