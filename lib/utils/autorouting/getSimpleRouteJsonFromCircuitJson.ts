@@ -84,20 +84,22 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   // Calculate bounds
-  const allPoints = obstacles.flatMap((o) => [
-    {
-      x: o.center.x - o.width / 2,
-      y: o.center.y - o.height / 2,
-    },
-    {
-      x: o.center.x + o.width / 2,
-      y: o.center.y + o.height / 2,
-    },
-  ])
+  const allPoints = obstacles
+    .flatMap((o) => [
+      {
+        x: o.center.x - o.width / 2,
+        y: o.center.y - o.height / 2,
+      },
+      {
+        x: o.center.x + o.width / 2,
+        y: o.center.y + o.height / 2,
+      },
+    ])
+    .concat(board?.outline ?? [])
 
   let bounds: { minX: number; maxX: number; minY: number; maxY: number }
 
-  if (board) {
+  if (board && !board.outline) {
     bounds = {
       minX: board.center.x - board.width / 2,
       maxX: board.center.x + board.width / 2,
@@ -353,6 +355,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       // subcircuit
       layerCount: board?.num_layers ?? 2,
       minTraceWidth,
+      outline: board?.outline?.map((point) => ({ ...point })),
     },
     connMap,
   }

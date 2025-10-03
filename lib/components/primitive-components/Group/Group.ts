@@ -439,6 +439,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
 
     if (debug.enabled) {
+      ;(global as any).debugOutputArray?.push({
+        name: `simpleroutejson-${this.props.name}.json`,
+        obj: simpleRouteJson,
+      })
+    }
+
+    if (debug.enabled) {
       const graphicsObject = convertSrjToGraphicsObject(
         simpleRouteJson as any,
       ) as GraphicsObject
