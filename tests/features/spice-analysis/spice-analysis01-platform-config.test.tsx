@@ -5,11 +5,13 @@ test("spice-analysis01-platform-config", async () => {
   const { circuit } = getTestFixture()
 
   circuit.platform = {
-    spiceEngine: {
-      async simulate(spiceString: string) {
-        return {
-          simulationResultCircuitJson: [],
-        }
+    spiceEngineMap: {
+      spicey: {
+        async simulate(spiceString: string) {
+          return {
+            simulationResultCircuitJson: [],
+          }
+        },
       },
     },
   }
