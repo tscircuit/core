@@ -46,7 +46,11 @@ test("spice-analysis01-platform-config", async () => {
 
   await circuit.renderUntilSettled()
 
-  console.log(circuit.getCircuitJson())
+  const circuitJson = await circuit.getCircuitJson()
+
+  expect(
+    circuitJson.some((el) => el.type === "simulation_transient_voltage_graph"),
+  ).toBe(true)
 
   expect(circuit).toMatchSimulationSnapshot(import.meta.path)
 })
