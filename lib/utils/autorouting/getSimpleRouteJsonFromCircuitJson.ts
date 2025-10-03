@@ -353,6 +353,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       // subcircuit
       layerCount: board?.num_layers ?? 2,
       minTraceWidth,
+      outline: board?.outline?.map((point) => ({ ...point })),
     },
     connMap,
   }
