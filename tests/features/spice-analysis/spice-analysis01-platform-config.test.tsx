@@ -28,4 +28,8 @@ test("spice-analysis01-platform-config", async () => {
   )
 
   await circuit.renderUntilSettled()
+
+  console.log(circuit.getCircuitJson())
+
+  expect(circuit).toMatchSimulationSnapshot(import.meta.path)
 })
