@@ -48,6 +48,8 @@ export interface SimpleRouteJson {
   obstacles: Obstacle[]
   connections: Array<SimpleRouteConnection>
   bounds: { minX: number; maxX: number; minY: number; maxY: number }
+  // Optional board outline polygon
+  outline?: Array<{ x: number; y: number }>
   // NOTE: this is only present after an autorouter solves the input
   traces?: SimplifiedPcbTrace[]
 }
