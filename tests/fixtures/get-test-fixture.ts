@@ -2,7 +2,7 @@ import { afterAll } from "bun:test"
 import { RootCircuit } from "lib/RootCircuit"
 import { logSoup } from "@tscircuit/log-soup"
 import "lib/register-catalogue"
-import "./extend-expect-circuit-snapshot"
+// import "./extend-expect-circuit-snapshot"  // Temporarily disabled due to sharp dependency
 import { preventExternalApiRequests } from "./prevent-external-api-requests"
 import { getTestStaticAssetsServer } from "./get-test-static-assets-server"
 import type { PlatformConfig } from "@tscircuit/props"
