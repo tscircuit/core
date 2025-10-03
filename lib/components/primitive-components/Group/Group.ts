@@ -439,7 +439,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
 
     if (debug.enabled) {
-      global.debugOutputArray?.push({
+      ;(global as any).debugOutputArray?.push({
         name: `simpleroutejson-${this.props.name}.json`,
         obj: simpleRouteJson,
       })
