@@ -11,6 +11,12 @@ it("loads and renders footprint from relative URL accurately", async () => {
       footprintFileParserMap: {
         kicad_mod: {
           loadFromUrl: async (url: string) => {
+            if (url.startsWith("/api/files/static/footprint.kicad_mod")) {
+              throw new Error("Failed to fetch")
+            }
+            expect(url).toBe(
+              "http://localhost:3020/api/files/static/footprint.kicad_mod",
+            )
             return {
               footprintCircuitJson: kicadModJson,
             }
