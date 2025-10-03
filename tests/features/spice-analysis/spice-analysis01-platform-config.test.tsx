@@ -15,8 +15,15 @@ test("spice-analysis01-platform-config", async () => {
   }
 
   circuit.add(
-    <board width="10mm" height="10mm">
-      <capacitor name="C1" capacitance="10uF" footprint="0805" />
+    <board>
+      <voltagesource
+        name="VS1"
+        peakToPeakVoltage="3V"
+        frequency="1kHz"
+        waveShape="square"
+      />
+      <capacitor name="C1" capacitance="10uF" />
+      <resistor name="R1" resistance="1k" />
     </board>,
   )
 
