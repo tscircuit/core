@@ -1377,12 +1377,18 @@ export class NormalComponent<
         } catch {}
       }
     }
-    const result = await Promise.resolve(
-      partsEngine.findPart({
-        sourceComponent: source_component,
-        footprinterString,
-      }),
-    )
+    let result
+    try {
+      result = await Promise.resolve(
+        partsEngine.findPart({
+          sourceComponent: source_component,
+          footprinterString,
+        }),
+      )
+    } catch (e) {
+      console.error(`Error while finding part: ${e.toString()}`)
+      result = {}
+    }
 
     // Convert "Not found" to empty object before caching or returning
     const supplierPartNumbers = result === "Not found" ? {} : result
