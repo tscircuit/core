@@ -54,6 +54,8 @@ test(
 
     await circuit.renderUntilSettled()
 
+    expect(circuit).toMatchPcbSnapshot(import.meta.path)
+
     const board = circuit.db.pcb_board.list()[0]
     expect(board.num_layers).toBe(4)
 
