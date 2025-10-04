@@ -2,6 +2,7 @@ import type { Group } from "./Group"
 import { circuitJsonToSpice } from "circuit-json-to-spice"
 import Debug from "debug"
 import { getSpiceyEngine } from "../../../spice/get-spicey-engine"
+import type { AnalogSimulation } from "../AnalogSimulation"
 
 const debug = Debug("tscircuit:core:Group_doInitialSimulationSpiceEngineRender")
 
