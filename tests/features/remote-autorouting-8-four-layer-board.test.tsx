@@ -1,22 +1,11 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 
-test("remote autorouter handles four-layer board", async () => {
-  const { autoroutingServerUrl } = getTestAutoroutingServer()
+test("builtin autorouter handles four-layer board", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board
-      width="40mm"
-      height="40mm"
-      layers={4}
-      autorouter={{
-        serverUrl: autoroutingServerUrl,
-        serverMode: "solve-endpoint",
-        inputFormat: "simplified",
-      }}
-    >
+    <board width="40mm" height="40mm" layers={4} autorouter="auto-local">
       <chip name="U1" footprint="soic8" pcbX={-10} pcbY={10} />
       <chip name="U2" footprint="soic8" pcbX={10} pcbY={-10} />
       <chip name="U3" footprint="soic8" pcbX={12} pcbY={10} />
