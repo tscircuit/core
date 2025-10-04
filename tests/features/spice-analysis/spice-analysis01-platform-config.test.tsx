@@ -24,6 +24,7 @@ test("spice-analysis01-platform-config", async () => {
         resistance="1k"
         connections={{ pin1: "SW1.2", pin2: "VS1.2" }}
       />
+      <analogsimulation />
     </board>,
   )
 
