@@ -13,7 +13,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   const { root } = group
   if (!root) return
 
-  const analogSims = group.selectAll(".analogsimulation") as AnalogSimulation[]
+  const analogSims = group.selectAll("analogsimulation") as AnalogSimulation[]
 
   if (analogSims.length === 0) return
 
