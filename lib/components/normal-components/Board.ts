@@ -165,13 +165,65 @@ export class Board extends Group<typeof boardProps> {
     const computedHeight = hasComponents ? maxY - minY + padding * 2 : 0
 
     // Center the board around the components or use (0,0) for empty boards
-    const center = {
+    let center = {
       x: hasComponents
         ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
         : (props.outlineOffsetX ?? 0),
       y: hasComponents
         ? (minY + maxY) / 2 + (props.outlineOffsetY ?? 0)
         : (props.outlineOffsetY ?? 0),
+    }
+
+    const { boardAnchorPosition, boardAnchorAlignment } = props as any
+
+    if (boardAnchorPosition) {
+      const [ax, ay] = boardAnchorPosition
+      const W = props.width ?? computedWidth
+      const H = props.height ?? computedHeight
+
+      let cx = ax
+      let cy = ay
+
+      switch (boardAnchorAlignment) {
+        case "top-left":
+          cx = ax + W / 2
+          cy = ay - H / 2
+          break
+        case "top-right":
+          cx = ax - W / 2
+          cy = ay - H / 2
+          break
+        case "bottom-left":
+          cx = ax + W / 2
+          cy = ay + H / 2
+          break
+        case "bottom-right":
+          cx = ax - W / 2
+          cy = ay + H / 2
+          break
+        case "top":
+          cx = ax
+          cy = ay - H / 2
+          break
+        case "bottom":
+          cx = ax
+          cy = ay + H / 2
+          break
+        case "left":
+          cx = ax + W / 2
+          cy = ay
+          break
+        case "right":
+          cx = ax - W / 2
+          cy = ay
+          break
+        case "center":
+        default:
+          // center is the default
+          break
+      }
+
+      center = { x: cx, y: cy }
     }
 
     // Update the board dimensions, preserving any explicit dimension provided
