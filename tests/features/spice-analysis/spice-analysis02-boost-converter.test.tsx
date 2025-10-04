@@ -3,7 +3,7 @@ import type { SimulationTransientVoltageGraph } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test(
-  "spice-analysis01-platform-config",
+  "spice-analysis02-boost-converter",
   async () => {
     const { circuit } = getTestFixture()
 
