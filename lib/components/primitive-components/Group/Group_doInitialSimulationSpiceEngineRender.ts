@@ -1,6 +1,7 @@
 import type { Group } from "./Group"
 import { circuitJsonToSpice } from "circuit-json-to-spice"
 import Debug from "debug"
+import { getSpiceyEngine } from "../../../spice/get-spicey-engine"
 
 const debug = Debug("tscircuit:core:Group_doInitialSimulationSpiceEngineRender")
 
@@ -11,11 +12,10 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   const { root } = group
   if (!root) return
 
-  // Check if there are any spice engines configured
-  const spiceEngineMap = root.platform?.spiceEngineMap
-  if (!spiceEngineMap || Object.keys(spiceEngineMap).length === 0) {
-    debug("No spice engines configured, skipping simulation")
-    return
+  // Check if there are any spice engines configured, or use default
+  const spiceEngineMap = { ...root.platform?.spiceEngineMap }
+  if (!spiceEngineMap.spicey) {
+    spiceEngineMap.spicey = getSpiceyEngine()
   }
 
   // Get circuit JSON for this subcircuit
