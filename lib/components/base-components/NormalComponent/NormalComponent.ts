@@ -61,6 +61,7 @@ import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalCo
 import { filterPinLabels } from "lib/utils/filterPinLabels"
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
+import { unknown_parts_engine_error } from "../../../errors/UnknownPartsEngineError"
 import { isFootprintUrl } from "./utils/isFoorprintUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 
@@ -1386,7 +1387,11 @@ export class NormalComponent<
         }),
       )
     } catch (e: any) {
-      console.error(`Error while finding part: ${e.toString()}`)
+      this.root!.db.source_failed_to_create_component_error.insert({
+        error_type: "source_failed_to_create_component_error",
+        message: `Parts engine error: ${e.toString()}`,
+        parent_source_component_id: source_component.source_component_id,
+      })
       result = {}
     }
 
