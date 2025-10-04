@@ -1,12 +1,12 @@
+import { describe, it, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
 describe("Board Anchor", () => {
   it("should anchor the board to the center", async () => {
     const { circuit } = getTestFixture()
-    // @ts-ignore
     const board = (
-      <board boardAnchorPosition={[5, 5]} boardAnchorAlignment="center">
-        <resistor name="R1" resistance="10k" center={[2, 2]} />
+      <board boardAnchorPosition={{x: 5, y: 5}} boardAnchorAlignment="center">
+        <resistor name="R1" resistance="10k" />
       </board>
     )
 
@@ -14,6 +14,6 @@ describe("Board Anchor", () => {
 
     await circuit.render()
 
-    expect(circuit).toMatchPcbSnapshot(import.meta.path, "center")
+    expect(circuit).toMatchPcbSnapshot(import.meta.path)
   })
 })
