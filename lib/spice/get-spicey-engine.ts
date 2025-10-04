@@ -1,10 +1,10 @@
 import type { SpiceEngine } from "@tscircuit/props"
 import type { SimulationExperiment } from "circuit-json"
+import { simulate, spiceyTranToVGraphs } from "spicey"
 
 export const getSpiceyEngine = (): SpiceEngine => {
   return {
     async simulate(spiceString: string) {
-      const { simulate, spiceyTranToVGraphs } = await import("spicey")
       const simulation_experiment_id = "spice-experiment-1"
 
       // Add .tran directive before .END if not present
