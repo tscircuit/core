@@ -1385,7 +1385,7 @@ export class NormalComponent<
           footprinterString,
         }),
       )
-    } catch (e) {
+    } catch (e: any) {
       console.error(`Error while finding part: ${e.toString()}`)
       result = {}
     }
