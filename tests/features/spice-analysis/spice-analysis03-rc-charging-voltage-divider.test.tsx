@@ -9,7 +9,7 @@ test(
     const { circuit } = getTestFixture()
 
     circuit.add(
-      <board width={16} height={16}>
+      <board width={16} height={16} schMaxTraceDistance={5}>
         <chip
           name="V1"
           footprint="sot23"

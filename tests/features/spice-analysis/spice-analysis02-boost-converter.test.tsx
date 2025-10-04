@@ -8,7 +8,7 @@ test(
     const { circuit } = getTestFixture()
 
     circuit.add(
-      <board width={30} height={30}>
+      <board width={30} height={30} schMaxTraceDistance={5}>
         <voltagesource
           name="V1"
           voltage={"5V"}
