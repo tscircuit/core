@@ -874,8 +874,17 @@ export class NormalComponent<
 
     if (width === 0 && height === 0) return
 
-    // Update the schematic component with calculated bounds
+    // Calculate the center of the bounds
+    // The schematic_component center should be centered around its contents
+    const centerX = (bounds.minX + bounds.maxX) / 2
+    const centerY = (bounds.minY + bounds.maxY) / 2
+
+    // Update the schematic component with calculated bounds and center
     db.schematic_component.update(this.schematic_component_id!, {
+      center: {
+        x: centerX,
+        y: centerY,
+      },
       size: {
         width,
         height,

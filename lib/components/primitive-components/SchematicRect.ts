@@ -31,8 +31,8 @@ export class SchematicRect extends PrimitiveComponent<
 
     const schematic_rect = db.schematic_rect.insert({
       center: {
-        x: props.center.x + globalPos.x,
-        y: props.center.y + globalPos.y,
+        x: globalPos.x,
+        y: globalPos.y,
       },
       width: props.width,
       height: props.height,
