@@ -13,7 +13,7 @@ test(
           name="J1"
           pinCount={12}
           footprint="pinrow12_p2.54"
-          pcbX={-22}
+          pcbX={-21.5}
           pcbY={0}
           pcbRotation={90}
         />
@@ -21,7 +21,7 @@ test(
           name="J2"
           pinCount={12}
           footprint="pinrow12_p2.54"
-          pcbX={22}
+          pcbX={21.5}
           pcbY={0}
           pcbRotation={-90}
         />
