@@ -177,7 +177,7 @@ export class Board extends Group<typeof boardProps> {
     const { boardAnchorPosition, boardAnchorAlignment } = props as any
 
     if (boardAnchorPosition) {
-      const [ax, ay] = boardAnchorPosition
+      const { x: ax, y: ay } = boardAnchorPosition as any
       const W = props.width ?? computedWidth
       const H = props.height ?? computedHeight
 
@@ -185,19 +185,19 @@ export class Board extends Group<typeof boardProps> {
       let cy = ay
 
       switch (boardAnchorAlignment) {
-        case "top-left":
+        case "top_left":
           cx = ax + W / 2
           cy = ay - H / 2
           break
-        case "top-right":
+        case "top_right":
           cx = ax - W / 2
           cy = ay - H / 2
           break
-        case "bottom-left":
+        case "bottom_left":
           cx = ax + W / 2
           cy = ay + H / 2
           break
-        case "bottom-right":
+        case "bottom_right":
           cx = ax - W / 2
           cy = ay + H / 2
           break

@@ -5,7 +5,7 @@ describe("Board Anchor", () => {
   it("should anchor the board to the center", async () => {
     const { circuit } = getTestFixture()
     const board = (
-      <board boardAnchorPosition={{x: 5, y: 5}} boardAnchorAlignment="center">
+      <board boardAnchorPosition={{ x: 5, y: 5 }} boardAnchorAlignment="center">
         <resistor name="R1" resistance="10k" />
       </board>
     )

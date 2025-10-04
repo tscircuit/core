@@ -5,7 +5,10 @@ describe("Board Anchor", () => {
   it("should anchor the board to the top-left", async () => {
     const { circuit } = getTestFixture()
     const board = (
-      <board boardAnchorPosition={{x: 0, y: 0}} boardAnchorAlignment="top_left">
+      <board
+        boardAnchorPosition={{ x: 0, y: 0 }}
+        boardAnchorAlignment="top_left"
+      >
         <resistor name="R1" resistance="10k" />
       </board>
     )
