@@ -1,6 +1,7 @@
 import { test, expect } from "bun:test"
-import type { SimulationTransientVoltageGraph } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { simulate, spiceyTranToVGraphs } from "spicey"
+import type { SimulationExperiment } from "circuit-json"
 
 test("spice-analysis01-platform-config", async () => {
   const { circuit } = getTestFixture()
@@ -9,25 +10,34 @@ test("spice-analysis01-platform-config", async () => {
     spiceEngineMap: {
       spicey: {
         async simulate(spiceString: string) {
+          const simulation_experiment_id = "spice-experiment-1"
+
+          // Add .tran directive before .END if not present
+          let spiceNetlist = spiceString
+          if (!spiceNetlist.includes(".tran")) {
+            spiceNetlist = spiceNetlist.replace(
+              /\.END/i,
+              ".tran 1us 10ms\n.END",
+            )
+          }
+
+          // Run spicey simulation
+          const { circuit: parsedCircuit, tran } = simulate(spiceNetlist)
+
+          // Convert transient results to voltage graphs
+          const voltageGraphs = spiceyTranToVGraphs(
+            tran,
+            parsedCircuit,
+            simulation_experiment_id,
+          )
+
           return {
             simulationResultCircuitJson: [
               {
                 type: "simulation_experiment",
-                simulation_experiment_id: "1",
-              } as any,
-              {
-                type: "simulation_transient_voltage_graph",
-                simulation_experiment_id: "1",
-                voltage_levels: [
-                  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1,
-                ],
-                start_time_ms: 0,
-                end_time_ms: 10,
-                time_per_step: 0.001,
-                simulation_transient_voltage_graph_id:
-                  "simulation-transient-voltage-graph-1",
-                name: "simulation-transient-voltage-graph-1",
-              } as SimulationTransientVoltageGraph,
+                simulation_experiment_id,
+              } as SimulationExperiment,
+              ...voltageGraphs,
             ],
           }
         },
