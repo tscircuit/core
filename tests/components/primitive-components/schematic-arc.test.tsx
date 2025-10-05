@@ -33,7 +33,7 @@ test("SchematicArc Test", () => {
       {
         "center": {
           "x": 0,
-          "y": 0,
+          "y": 2.5,
         },
         "is_box_with_pins": false,
         "schematic_component_id": "schematic_component_0",

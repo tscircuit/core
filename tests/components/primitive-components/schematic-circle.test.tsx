@@ -27,8 +27,8 @@ test("SchematicCircle Test", () => {
     [
       {
         "center": {
-          "x": 0,
-          "y": 0,
+          "x": 1,
+          "y": 2,
         },
         "is_box_with_pins": false,
         "schematic_component_id": "schematic_component_0",

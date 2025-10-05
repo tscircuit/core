@@ -11,7 +11,8 @@ test.skip("SchematicRect with traces", async () => {
         symbol={
           <symbol>
             <schematicrect
-              center={{ x: 0, y: 0 }}
+              schX={0}
+              schY={0}
               width={2}
               height={2}
               isFilled={false}
@@ -25,7 +26,8 @@ test.skip("SchematicRect with traces", async () => {
         symbol={
           <symbol>
             <schematicrect
-              center={{ x: 5, y: 0 }}
+              schX={5}
+              schY={0}
               width={2}
               height={2}
               isFilled={false}
