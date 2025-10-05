@@ -227,6 +227,8 @@ export class Board extends Group<typeof boardProps> {
     if (!pcbBoard) return
 
     const boardInformation: string[] = []
+    if ((this.props as any).title)
+      boardInformation.push((this.props as any).title)
     if (platform.projectName) boardInformation.push(platform.projectName)
     if (platform.version) boardInformation.push(`v${platform.version}`)
     if (platform.url) boardInformation.push(platform.url)
