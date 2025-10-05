@@ -15,6 +15,20 @@ const isDescendantGroup = (
   return isDescendantGroup(db, group.parent_source_group_id, ancestorId)
 }
 
+const findComponentBySourceGroupId = (
+  component: any | null | undefined,
+  sourceGroupId: string,
+): any | null => {
+  if (!component) return null
+  if (component.source_group_id === sourceGroupId) return component
+  if (!component.children) return null
+  for (const child of component.children) {
+    const found = findComponentBySourceGroupId(child, sourceGroupId)
+    if (found) return found
+  }
+  return null
+}
+
 export const applyPackOutput = (
   group: Group,
   packOutput: PackOutput,
@@ -97,6 +111,31 @@ export const applyPackOutput = (
 
     const originalCenter = pcbGroup.center
     const rotationDegrees = ccwRotationDegrees ?? ccwRotationOffset ?? 0
+
+    let componentInstance: any | null = null
+    if (group.root) {
+      const rootComponent =
+        group.root.firstChild ?? group.root.children?.[0] ?? null
+      componentInstance = findComponentBySourceGroupId(
+        rootComponent,
+        componentId,
+      )
+    }
+    const boardsForGroup: any[] = []
+    let parent = componentInstance?.parent ?? null
+    let hasBoardAncestor = false
+    while (parent) {
+      if (parent.componentName === "Board" && parent.pcb_board_id) {
+        const board = db.pcb_board.get(parent.pcb_board_id)
+        if (board) boardsForGroup.push(board)
+        hasBoardAncestor = true
+      }
+      parent = parent.parent ?? null
+    }
+    if (hasBoardAncestor) {
+      continue
+    }
+
     const transformMatrix = compose(
       group._computePcbGlobalTransformBeforeLayout(),
       translate(center.x, center.y),
@@ -147,7 +186,18 @@ export const applyPackOutput = (
       return false
     })
 
-    transformPCBElements(relatedElements as any, transformMatrix)
+    const transformedElements = transformPCBElements(
+      [...relatedElements, ...boardsForGroup] as any,
+      transformMatrix,
+    )
+    for (const transformed of transformedElements) {
+      if (transformed.type === "pcb_board") {
+        db.pcb_board.update(transformed.pcb_board_id, {
+          center: transformed.center,
+          outline: transformed.outline,
+        })
+      }
+    }
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 }
