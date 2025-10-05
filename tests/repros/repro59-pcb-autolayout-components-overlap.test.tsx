@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { sel } from "tscircuit"
+import { sel } from "lib/sel"
 
 test("pcb autolayout components overlap", async () => {
   const { circuit } = getTestFixture()

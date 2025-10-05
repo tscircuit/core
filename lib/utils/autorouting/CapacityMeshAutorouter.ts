@@ -1,4 +1,4 @@
-import { CapacityMeshSolver } from "@tscircuit/capacity-autorouter"
+import { AutoroutingPipelineSolver } from "@tscircuit/capacity-autorouter"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import type {
@@ -18,7 +18,7 @@ export interface CapacityMeshAutoRouterOptions {
 export class CapacityMeshAutorouter implements GenericLocalAutorouter {
   input: SimpleRouteJson
   isRouting = false
-  private solver: CapacityMeshSolver
+  private solver: AutoroutingPipelineSolver
   private eventHandlers: {
     complete: Array<(ev: AutorouterCompleteEvent) => void>
     error: Array<(ev: AutorouterErrorEvent) => void>
@@ -40,7 +40,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
     const { capacityDepth, targetMinCapacity, stepDelay = 0 } = options
 
     // Initialize the solver with input and optional configuration
-    this.solver = new CapacityMeshSolver(input as any, {
+    this.solver = new AutoroutingPipelineSolver(input as any, {
       capacityDepth,
       targetMinCapacity,
       cacheProvider: null,
