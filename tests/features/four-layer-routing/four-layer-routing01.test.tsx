@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../../fixtures/get-test-fixture"
-import { sel } from "tscircuit"
+import { sel } from "lib/sel"
 
 test(
   "autorouter uses inner layers on a four-layer board with dense crossings",

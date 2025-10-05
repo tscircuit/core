@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
-    "@tscircuit/capacity-autorouter": "^0.0.123",
+    "@tscircuit/capacity-autorouter": "^0.0.129",
     "@tscircuit/checks": "^0.0.79",
     "@tscircuit/circuit-json-util": "^0.0.67",
     "@tscircuit/footprinter": "^0.0.236",
@@ -59,7 +59,7 @@
     "circuit-json-to-gltf": "^0.0.7",
     "circuit-json-to-simple-3d": "^0.0.9",
     "circuit-json-to-spice": "^0.0.10",
-    "circuit-to-svg": "^0.0.220",
+    "circuit-to-svg": "^0.0.221",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.0",
     "debug": "^4.3.6",
