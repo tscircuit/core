@@ -29,8 +29,20 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   // Convert circuit JSON to SPICE string
   let spiceString: string
   try {
-    const spiceNetlist = circuitJsonToSpice(circuitJson)
-    spiceString = spiceNetlist.toSpiceString()
+    // Get simulation parameters from AnalogSimulation component
+    const simulationProps = analogSims[0]?._parsedProps
+    const duration = simulationProps?.duration ?? "10ms"
+    const timePerStep = simulationProps?.timePerStep ?? "1us"
+
+    let spiceNetlistStr = circuitJsonToSpice(circuitJson).toSpiceString()
+
+    if (!spiceNetlistStr.includes(".tran")) {
+      spiceNetlistStr = spiceNetlistStr.replace(
+        /\.END/i,
+        `.tran ${timePerStep} ${duration}\n.END`,
+      )
+    }
+    spiceString = spiceNetlistStr
     debug(`Generated SPICE string:\n${spiceString}`)
   } catch (error) {
     debug(`Failed to convert circuit JSON to SPICE: ${error}`)
