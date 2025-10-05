@@ -104,12 +104,24 @@ export const applyPackOutput = (
       translate(-originalCenter.x, -originalCenter.y),
     )
 
+    const componentGroup = db.source_group.get(componentId)
+    const parentGroupId = componentGroup?.parent_source_group_id
+    const parentGroup = parentGroupId
+      ? db.source_group.get(parentGroupId)
+      : undefined
+
     const relatedElements = db.toArray().filter((elm) => {
       if ("source_group_id" in elm && elm.source_group_id) {
         if (elm.source_group_id === componentId) {
           return true
         }
         if (isDescendantGroup(db, elm.source_group_id, componentId)) {
+          return true
+        }
+        if (
+          parentGroup?.is_subcircuit &&
+          elm.source_group_id === parentGroupId
+        ) {
           return true
         }
       }

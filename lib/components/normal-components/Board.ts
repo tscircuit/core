@@ -311,7 +311,12 @@ export class Board extends Group<typeof boardProps> {
         y: point.y + (props.outlineOffsetY ?? 0),
       })),
       material: props.material,
-    })
+      is_subcircuit: this.isSubcircuit,
+      subcircuit_id: this.subcircuit_id ?? this.getSubcircuit()?.subcircuit_id,
+      // Associate the board outline with the board's source group so it can
+      // follow pack transformations applied to child groups.
+      source_group_id: this.source_group_id!,
+    } as any)
 
     this.pcb_board_id = pcb_board.pcb_board_id!
 
