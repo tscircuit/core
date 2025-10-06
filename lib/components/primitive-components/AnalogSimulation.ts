@@ -1,11 +1,9 @@
-import { analogSimulationProps as baseAnalogSimulationProps } from "@tscircuit/props"
+import {
+  analogSimulationProps,
+  analogSimulationProps as baseAnalogSimulationProps,
+} from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { z } from "zod"
-
-const analogSimulationProps = baseAnalogSimulationProps.extend({
-  duration: z.union([z.string(), z.number()]).optional(),
-  timePerStep: z.union([z.string(), z.number()]).optional(),
-})
 
 export class AnalogSimulation extends PrimitiveComponent<
   typeof analogSimulationProps
@@ -17,8 +15,18 @@ export class AnalogSimulation extends PrimitiveComponent<
     }
   }
 
-  doInitialSourceRender(): void {
-    // AnalogSimulation is a configuration component that doesn't
-    // render circuit elements but configures simulation parameters
+  doInitialSimulationRender(): void {
+    const { db } = this.root!
+    const { duration, timePerStep } = this._parsedProps
+
+    const durationMs = duration || 10 // ms
+    const timePerStepMs = timePerStep || 0.01 // ms
+
+    db.simulation_experiment.insert({
+      name: `spice_transient_analysis_${this._renderId}`,
+      experiment_type: "spice_transient_analysis" as const,
+      end_time_ms: durationMs,
+      time_per_step: timePerStepMs,
+    })
   }
 }

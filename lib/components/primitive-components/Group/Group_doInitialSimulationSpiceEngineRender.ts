@@ -29,20 +29,8 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   // Convert circuit JSON to SPICE string
   let spiceString: string
   try {
-    // Get simulation parameters from AnalogSimulation component
-    const simulationProps = analogSims[0]?._parsedProps
-    const duration = simulationProps?.duration ?? "10ms"
-    const timePerStep = simulationProps?.timePerStep ?? "1us"
-
-    let spiceNetlistStr = circuitJsonToSpice(circuitJson).toSpiceString()
-
-    if (!spiceNetlistStr.includes(".tran")) {
-      spiceNetlistStr = spiceNetlistStr.replace(
-        /\.END/i,
-        `.tran ${timePerStep} ${duration}\n.END`,
-      )
-    }
-    spiceString = spiceNetlistStr
+    const spiceNetlist = circuitJsonToSpice(circuitJson as any)
+    spiceString = spiceNetlist.toSpiceString()
     debug(`Generated SPICE string:\n${spiceString}`)
   } catch (error) {
     debug(`Failed to convert circuit JSON to SPICE: ${error}`)
@@ -62,8 +50,19 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
           `Simulation completed, received ${result.simulationResultCircuitJson.length} elements`,
         )
 
+        const simulationExperiment = root.db.simulation_experiment.list()[0]
+        if (!simulationExperiment) {
+          debug("No simulation experiment found, skipping result insertion")
+          return
+        }
+
         // Add simulation results to the database
         for (const element of result.simulationResultCircuitJson) {
+          if (element.type === "simulation_transient_voltage_graph") {
+            element.simulation_experiment_id =
+              simulationExperiment.simulation_experiment_id
+          }
+
           // Insert the simulation result into the database
           const elementType = element.type
           if (elementType && (root.db as any)[elementType]) {
