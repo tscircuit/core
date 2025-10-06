@@ -868,7 +868,22 @@ export abstract class PrimitiveComponent<
       return super.renderError(message)
     }
     // TODO this needs to be cleaned up at some point!
-    this.root?.db.pcb_placement_error.insert(message as any)
+    switch (message.type) {
+      case "pcb_placement_error":
+        this.root?.db.pcb_placement_error.insert(message as any)
+        break
+      case "pcb_via_clearance_error":
+        this.root?.db.pcb_via_clearance_error.insert(message as any)
+        break
+      case "pcb_trace_error":
+        this.root?.db.pcb_trace_error.insert(message as any)
+        break
+      case "pcb_manual_edit_conflict_warning":
+        this.root?.db.pcb_manual_edit_conflict_warning.insert(message as any)
+        break
+      default:
+        this.root?.db.pcb_placement_error.insert(message as any) // fallback
+    }
   }
 
   getString(): string {

@@ -6,6 +6,8 @@ import {
   checkEachPcbTraceNonOverlapping,
   checkPcbComponentsOutOfBoard,
   checkPcbTracesOutOfBoard,
+  checkDifferentNetViaSpacing,
+  checkSameNetViaSpacing,
 } from "@tscircuit/checks"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
@@ -368,6 +370,16 @@ export class Board extends Group<typeof boardProps> {
     const pcbTracesOutOfBoardErrors = checkPcbTracesOutOfBoard(db.toArray())
     for (const error of pcbTracesOutOfBoardErrors) {
       db.pcb_trace_error.insert(error)
+    }
+
+    const differentNetViaErrors = checkDifferentNetViaSpacing(db.toArray())
+    for (const error of differentNetViaErrors) {
+      db.pcb_via_clearance_error.insert(error)
+    }
+
+    const sameNetViaErrors = checkSameNetViaSpacing(db.toArray())
+    for (const error of sameNetViaErrors) {
+      db.pcb_via_clearance_error.insert(error)
     }
   }
 

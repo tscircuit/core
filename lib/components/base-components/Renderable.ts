@@ -2,6 +2,7 @@ import type {
   PcbManualEditConflictWarning,
   PcbPlacementError,
   PcbTraceError,
+  PcbViaClearanceError,
 } from "circuit-json"
 import Debug from "debug"
 
@@ -342,7 +343,8 @@ export abstract class Renderable implements IRenderable {
       | string
       | Omit<PcbTraceError, "pcb_error_id">
       | Omit<PcbPlacementError, "pcb_error_id">
-      | Omit<PcbManualEditConflictWarning, "pcb_error_id">,
+      | Omit<PcbManualEditConflictWarning, "pcb_error_id">
+      | Omit<PcbViaClearanceError, "pcb_error_id">,
   ) {
     // TODO add to render phase error list and try to add position or
     // relationships etc
