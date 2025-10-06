@@ -6,10 +6,18 @@ describe("Board Anchor", () => {
     const { circuit } = getTestFixture()
     const board = (
       <board
+        width="30mm"
+        height="30mm"
         boardAnchorPosition={{ x: 0, y: 0 }}
         boardAnchorAlignment="top_left"
       >
-        <resistor name="R1" resistance="10k" />
+        <resistor
+          name="R1"
+          resistance="10k"
+          footprint="0805"
+          pcbX="15mm"
+          pcbY="15mm"
+        />
       </board>
     )
 
