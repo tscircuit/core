@@ -1,7 +1,11 @@
 import type { SchematicTrace } from "circuit-json"
 
 type Edge = SchematicTrace["edges"][number]
-type TraceEdges = { source_trace_id: string; edges: Edge[] }
+type TraceEdges = { 
+  source_trace_id: string; 
+  edges: Edge[];
+  subcircuit_connectivity_map_key?: string;
+}
 
 const TOL = 1e-6
 
@@ -55,7 +59,6 @@ function isParallel(e1: Edge, e2: Edge, tol = TOL) {
   const L2 = Math.hypot(v2.x, v2.y)
   if (L1 < tol || L2 < tol) return true
   const cross = v1.x * v2.y - v1.y * v2.x
-  // Consider anti-parallel as parallel (no corner)
   return Math.abs(cross) <= tol * L1 * L2
 }
 
@@ -107,7 +110,6 @@ function getCornerOrientationAtPoint(
 ): `${"up" | "down"}-${"left" | "right"}` | null {
   const incident = incidentEdgesAtPoint(trace, p, tol)
   if (incident.length < 2) return null
-  // Collect unique primary directions away from point
   const dirs = incident.map((e) => edgeDirectionFromPoint(e, p, tol))
   const hasUp = dirs.includes("up" as any)
   const hasDown = dirs.includes("down" as any)
@@ -123,16 +125,29 @@ function getCornerOrientationAtPoint(
   return null
 }
 
+function tracesAreElectricallyConnected(
+  traceA: TraceEdges,
+  traceB: TraceEdges,
+): boolean {
+  // If both traces have subcircuit_connectivity_map_key, use that for comparison
+  // as it represents the actual net connectivity
+  if (traceA.subcircuit_connectivity_map_key && traceB.subcircuit_connectivity_map_key) {
+    return traceA.subcircuit_connectivity_map_key === traceB.subcircuit_connectivity_map_key
+  }
+  
+  // Fallback to source_trace_id comparison for backward compatibility
+  // In some cases, traces from the same net might have the same source_trace_id
+  return traceA.source_trace_id === traceB.source_trace_id
+}
+
 /**
- * Compute junction points (T or shared endpoints) for a set of traces purely
- * geometrically, without relying on database lookups.
+ * Compute junction points for a set of traces.
  *
- * Junctions are created when:
- * - An endpoint of one trace lies on another trace's edge (including its endpoints)
- * - Two trace endpoints coincide
+ * Junctions are created when traces from the same net intersect at endpoints
+ * or when an endpoint lies on another trace's edge. Traces from different nets
+ * do not create junctions even when they cross geometrically.
  *
- * Crossings (middle-to-middle intersections) are handled by computeCrossings()
- * and are not included as junctions here.
+ * Crossings between different nets are handled by computeCrossings().
  */
 export function computeJunctions(
   traces: TraceEdges[],
@@ -158,6 +173,11 @@ export function computeJunctions(
       const B = traces[j]
       const BEnds = endpointsByTrace[j]
 
+      // Only create junctions between traces that are electrically connected
+      if (!tracesAreElectricallyConnected(A, B)) {
+        continue
+      }
+
       // Endpoint-to-endpoint junctions (only when forming a corner)
       for (const pa of AEnds) {
         for (const pb of BEnds) {
@@ -168,8 +188,6 @@ export function computeJunctions(
               bEdgesAtP.some((eB) => !isParallel(eA, eB, tol)),
             )
 
-            // If both traces have a corner at this point and the corner orientation
-            // is the same (e.g. both are "up-right"), do NOT create a junction.
             const aCorner = getCornerOrientationAtPoint(A, pa, tol)
             const bCorner = getCornerOrientationAtPoint(B, pb, tol)
             const sameCornerOrientation =
@@ -191,7 +209,6 @@ export function computeJunctions(
             const aEdgesAtP = incidentEdgesAtPoint(A, pa, tol)
             const hasCorner = aEdgesAtP.some((eA) => !isParallel(eA, eB, tol))
             const aCorner = getCornerOrientationAtPoint(A, pa, tol)
-            // If B has a corner very close to this point with the same orientation, skip junction
             const bEndpointNearPa = nearestEndpointOnTrace(B, pa, tol * 1000)
             const bCorner = bEndpointNearPa
               ? getCornerOrientationAtPoint(B, bEndpointNearPa, tol)
@@ -214,7 +231,6 @@ export function computeJunctions(
             const bEdgesAtP = incidentEdgesAtPoint(B, pb, tol)
             const hasCorner = bEdgesAtP.some((eB) => !isParallel(eA, eB, tol))
             const bCorner = getCornerOrientationAtPoint(B, pb, tol)
-            // If A has a corner very close to this point with the same orientation, skip junction
             const aEndpointNearPb = nearestEndpointOnTrace(A, pb, tol * 1000)
             const aCorner = aEndpointNearPb
               ? getCornerOrientationAtPoint(A, aEndpointNearPb, tol)

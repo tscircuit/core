@@ -92,7 +92,17 @@ export function applyTracesFromSolverOutput(args: {
       edges: t.edges,
     })),
   )
-  const junctionsById = computeJunctions(withCrossings)
+  
+  // Enhance withCrossings with connectivity information for junction computation
+  const withCrossingsAndConnectivity = withCrossings.map((t) => ({
+    source_trace_id: t.source_trace_id,
+    edges: t.edges,
+    subcircuit_connectivity_map_key: pendingTraces.find(
+      (p) => p.source_trace_id === t.source_trace_id,
+    )?.subcircuit_connectivity_map_key,
+  }))
+  
+  const junctionsById = computeJunctions(withCrossingsAndConnectivity)
 
   for (const t of withCrossings) {
     db.schematic_trace.insert({
