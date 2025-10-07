@@ -27,6 +27,7 @@ test("nested group has parent_source_group_id", async () => {
         "parent_source_group_id": "source_group_1",
         "source_group_id": "source_group_0",
         "type": "source_group",
+        "was_automatically_named": false,
       },
       {
         "is_subcircuit": undefined,
@@ -34,6 +35,7 @@ test("nested group has parent_source_group_id", async () => {
         "parent_source_group_id": "source_group_2",
         "source_group_id": "source_group_1",
         "type": "source_group",
+        "was_automatically_named": false,
       },
       {
         "is_subcircuit": true,
@@ -41,6 +43,7 @@ test("nested group has parent_source_group_id", async () => {
         "source_group_id": "source_group_2",
         "subcircuit_id": "subcircuit_source_group_2",
         "type": "source_group",
+        "was_automatically_named": true,
       },
     ]
   `)

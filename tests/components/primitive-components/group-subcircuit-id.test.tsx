@@ -26,6 +26,7 @@ test("Subcircuit group should have subcircuit_id", async () => {
     "source_group_id": "source_group_0",
     "subcircuit_id": "subcircuit_source_group_0",
     "type": "source_group",
+    "was_automatically_named": false,
   },
 ]
 `)
