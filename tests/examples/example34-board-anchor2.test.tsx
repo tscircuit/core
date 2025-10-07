@@ -18,6 +18,13 @@ describe("Board Anchor", () => {
           pcbX="15mm"
           pcbY="15mm"
         />
+        <silkscreencircle pcbX={0} pcbY={0} radius="1mm" />
+        <silkscreentext pcbX={1} pcbY={1} text="(0,0)" />
+        <silkscreentext
+          pcbX={1}
+          pcbY={-2}
+          text="anchor: bottom_right @ (10,10)"
+        />
       </board>
     )
 
