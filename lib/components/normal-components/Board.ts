@@ -1,3 +1,4 @@
+import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { boardProps } from "@tscircuit/props"
 import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
@@ -159,6 +160,14 @@ export class Board extends Group<typeof boardProps> {
       updateBounds(pcbGroup.center, pcbGroup.width, pcbGroup.height)
     }
 
+    if (props.boardAnchorPosition) {
+      const { x, y } = props.boardAnchorPosition
+      minX = Math.min(minX, x)
+      minY = Math.min(minY, y)
+      maxX = Math.max(maxX, x)
+      maxY = Math.max(maxY, y)
+    }
+
     // Add padding around components
     const padding = 2
 
@@ -167,7 +176,7 @@ export class Board extends Group<typeof boardProps> {
     const computedHeight = hasComponents ? maxY - minY + padding * 2 : 0
 
     // Center the board around the components or use (0,0) for empty boards
-    const center = {
+    let center = {
       x: hasComponents
         ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
         : (props.outlineOffsetX ?? 0),
@@ -176,7 +185,6 @@ export class Board extends Group<typeof boardProps> {
         : (props.outlineOffsetY ?? 0),
     }
 
-    // Update the board dimensions, preserving any explicit dimension provided
     // by the user while auto-calculating the missing one.
     const finalWidth = props.width ?? computedWidth
     const finalHeight = props.height ?? computedHeight
@@ -266,6 +274,17 @@ export class Board extends Group<typeof boardProps> {
     let center = {
       x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
       y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
+    }
+
+    const { boardAnchorPosition, boardAnchorAlignment } = props
+
+    if (boardAnchorPosition) {
+      center = getBoardCenterFromAnchor({
+        boardAnchorPosition,
+        boardAnchorAlignment: boardAnchorAlignment ?? "center",
+        width: computedWidth,
+        height: computedHeight,
+      })
     }
 
     // Compute width and height from outline if not provided
