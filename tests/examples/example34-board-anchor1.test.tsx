@@ -11,19 +11,13 @@ describe("Board Anchor", () => {
         boardAnchorPosition={{ x: 0, y: 0 }}
         boardAnchorAlignment="top_left"
       >
-        <resistor
-          name="R1"
-          resistance="10k"
-          footprint="0805"
-          pcbX="15mm"
-          pcbY="15mm"
-        />
+        <resistor name="R1" resistance="10k" footprint="0805" />
         <silkscreencircle pcbX={0} pcbY={0} radius="1mm" />
         <silkscreentext pcbX={1} pcbY={1} text="(0,0)" />
         <silkscreentext
-          pcbX={1}
+          pcbX={0}
           pcbY={-2}
-          text="anchor: top_left @ (0,0)"
+          text="board.anchor: top_left @ (0,0)"
         />
       </board>
     )

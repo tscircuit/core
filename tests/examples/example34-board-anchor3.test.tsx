@@ -11,20 +11,11 @@ describe("Board Anchor", () => {
         boardAnchorPosition={{ x: 5, y: 5 }}
         boardAnchorAlignment="center"
       >
-        <resistor
-          name="R1"
-          resistance="10k"
-          footprint="0805"
-          pcbX="15mm"
-          pcbY="15mm"
-        />
+        <resistor name="R1" resistance="10k" footprint="0805" />
         <silkscreencircle pcbX={0} pcbY={0} radius="1mm" />
         <silkscreentext pcbX={1} pcbY={1} text="(0,0)" />
-        <silkscreentext
-          pcbX={1}
-          pcbY={-2}
-          text="anchor: center @ (5,5)"
-        />
+        <silkscreencircle pcbX={5} pcbY={5} radius="1mm" />
+        <silkscreentext pcbX={5} pcbY={3} text="board.anchor: center @ (5,5)" />
       </board>
     )
 
