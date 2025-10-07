@@ -158,6 +158,15 @@ export class Board extends Group<typeof boardProps> {
       updateBounds(pcbGroup.center, pcbGroup.width, pcbGroup.height)
     }
 
+    if (props.boardAnchorPosition) {
+      const { x, y } = props.boardAnchorPosition
+      minX = Math.min(minX, x)
+      minY = Math.min(minY, y)
+      maxX = Math.max(maxX, x)
+      maxY = Math.max(maxY, y)
+      hasComponents = true // Ensure board is rendered even if only anchor is set
+    }
+
     // Add padding around components
     const padding = 2
 
