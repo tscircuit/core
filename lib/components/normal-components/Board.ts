@@ -174,59 +174,6 @@ export class Board extends Group<typeof boardProps> {
         : (props.outlineOffsetY ?? 0),
     }
 
-    const { boardAnchorPosition, boardAnchorAlignment } = props as any
-
-    if (boardAnchorPosition) {
-      const { x: ax, y: ay } = boardAnchorPosition as any
-      const W = props.width ?? computedWidth
-      const H = props.height ?? computedHeight
-
-      let cx = ax
-      let cy = ay
-
-      switch (boardAnchorAlignment) {
-        case "top_left":
-          cx = ax + W / 2
-          cy = ay - H / 2
-          break
-        case "top_right":
-          cx = ax - W / 2
-          cy = ay - H / 2
-          break
-        case "bottom_left":
-          cx = ax + W / 2
-          cy = ay + H / 2
-          break
-        case "bottom_right":
-          cx = ax - W / 2
-          cy = ay + H / 2
-          break
-        case "top":
-          cx = ax
-          cy = ay - H / 2
-          break
-        case "bottom":
-          cx = ax
-          cy = ay + H / 2
-          break
-        case "left":
-          cx = ax + W / 2
-          cy = ay
-          break
-        case "right":
-          cx = ax - W / 2
-          cy = ay
-          break
-        case "center":
-        default:
-          // center is the default
-          break
-      }
-
-      center = { x: cx, y: cy }
-    }
-
-    // Update the board dimensions, preserving any explicit dimension provided
     // by the user while auto-calculating the missing one.
     const finalWidth = props.width ?? computedWidth
     const finalHeight = props.height ?? computedHeight
@@ -316,6 +263,58 @@ export class Board extends Group<typeof boardProps> {
     let center = {
       x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
       y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
+    }
+
+    const { boardAnchorPosition, boardAnchorAlignment } = props as any
+
+    if (boardAnchorPosition) {
+      const { x: ax, y: ay } = boardAnchorPosition as any
+      const W = props.width ?? computedWidth
+      const H = props.height ?? computedHeight
+
+      let cx = ax
+      let cy = ay
+
+      switch (boardAnchorAlignment) {
+        case "top_left":
+          cx = ax + W / 2
+          cy = ay - H / 2
+          break
+        case "top_right":
+          cx = ax - W / 2
+          cy = ay - H / 2
+          break
+        case "bottom_left":
+          cx = ax + W / 2
+          cy = ay + H / 2
+          break
+        case "bottom_right":
+          cx = ax - W / 2
+          cy = ay + H / 2
+          break
+        case "top":
+          cx = ax
+          cy = ay - H / 2
+          break
+        case "bottom":
+          cx = ax
+          cy = ay + H / 2
+          break
+        case "left":
+          cx = ax + W / 2
+          cy = ay
+          break
+        case "right":
+          cx = ax - W / 2
+          cy = ay
+          break
+        case "center":
+        default:
+          // center is the default
+          break
+      }
+
+      center = { x: cx, y: cy }
     }
 
     // Compute width and height from outline if not provided
