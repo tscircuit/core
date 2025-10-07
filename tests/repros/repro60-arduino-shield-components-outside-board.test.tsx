@@ -10,7 +10,8 @@ test("arduino shield components packed outside board", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <ArduinoShield name="SHIELD">
+    // @ts-expect-error bug in arduino shield where we can't specify name
+    <ArduinoShield>
       <resistor name="R1" resistance="10k" footprint="0805" />
       <led name="LED1" color="red" footprint="0603" />
       <trace from=".R1 > .pin1" to=".LED1 > .pin1" />
