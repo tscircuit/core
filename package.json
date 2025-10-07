@@ -33,6 +33,7 @@
     "@tscircuit/capacity-autorouter": "^0.0.129",
     "@tscircuit/checks": "^0.0.84",
     "@tscircuit/circuit-json-util": "^0.0.67",
+    "@tscircuit/common": "^0.0.9",
     "@tscircuit/footprinter": "^0.0.236",
     "@tscircuit/import-snippet": "^0.0.4",
     "@tscircuit/infgrid-ijump-astar": "^0.0.33",
@@ -99,7 +100,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "calculate-packing": "0.0.41",
+    "calculate-packing": "0.0.48",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.3",
     "nanoid": "^5.0.7",
