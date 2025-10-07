@@ -1,3 +1,4 @@
+import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { boardProps } from "@tscircuit/props"
 import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
@@ -265,56 +266,15 @@ export class Board extends Group<typeof boardProps> {
       y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
     }
 
-    const { boardAnchorPosition, boardAnchorAlignment } = props as any
+    const { boardAnchorPosition, boardAnchorAlignment } = props
 
     if (boardAnchorPosition) {
-      const { x: ax, y: ay } = boardAnchorPosition as any
-      const W = props.width ?? computedWidth
-      const H = props.height ?? computedHeight
-
-      let cx = ax
-      let cy = ay
-
-      switch (boardAnchorAlignment) {
-        case "top_left":
-          cx = ax + W / 2
-          cy = ay - H / 2
-          break
-        case "top_right":
-          cx = ax - W / 2
-          cy = ay - H / 2
-          break
-        case "bottom_left":
-          cx = ax + W / 2
-          cy = ay + H / 2
-          break
-        case "bottom_right":
-          cx = ax - W / 2
-          cy = ay + H / 2
-          break
-        case "top":
-          cx = ax
-          cy = ay - H / 2
-          break
-        case "bottom":
-          cx = ax
-          cy = ay + H / 2
-          break
-        case "left":
-          cx = ax + W / 2
-          cy = ay
-          break
-        case "right":
-          cx = ax - W / 2
-          cy = ay
-          break
-        case "center":
-        default:
-          // center is the default
-          break
-      }
-
-      center = { x: cx, y: cy }
+      center = getBoardCenterFromAnchor({
+        boardAnchorPosition,
+        boardAnchorAlignment: boardAnchorAlignment ?? "center",
+        width: computedWidth,
+        height: computedHeight,
+      })
     }
 
     // Compute width and height from outline if not provided
