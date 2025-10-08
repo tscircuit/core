@@ -253,6 +253,14 @@ export class Board extends Group<typeof boardProps> {
     })
   }
 
+  doInitialSourceRender() {
+    const { db } = this.root!
+    const source_board = (db as any).source_board.insert({
+      type: "source_board",
+      title: this.props.title,
+    })
+  }
+
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
