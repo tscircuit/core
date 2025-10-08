@@ -62,9 +62,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSourceGroupRender() {
     const { db } = this.root!
+    const hasExplicitName =
+      typeof (this._parsedProps as { name?: unknown }).name === "string" &&
+      (this._parsedProps as { name?: string }).name!.length > 0
+
     const source_group = db.source_group.insert({
       name: this.name,
       is_subcircuit: this.isSubcircuit,
+      was_automatically_named: !hasExplicitName,
     })
     this.source_group_id = source_group.source_group_id
     if (this.isSubcircuit) {
