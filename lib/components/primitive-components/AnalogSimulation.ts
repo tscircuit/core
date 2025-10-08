@@ -23,7 +23,7 @@ export class AnalogSimulation extends PrimitiveComponent<
     const timePerStepMs = timePerStep || 0.01 // ms
 
     db.simulation_experiment.insert({
-      name: `spice_transient_analysis_${this._renderId}`,
+      name: "spice_transient_analysis",
       experiment_type: "spice_transient_analysis" as const,
       end_time_ms: durationMs,
       time_per_step: timePerStepMs,
