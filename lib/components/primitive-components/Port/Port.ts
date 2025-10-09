@@ -537,12 +537,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       bestDisplayPinLabel = labelHints[0]
     }
 
-    if (props.schX !== undefined && props.schY !== undefined) {
-      console.log(
-        `Inserting port ${props.name} at position (${portCenter.x}, ${portCenter.y})`,
-      )
-    }
-
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
       schematic_component_id: parentNormalComponent?.schematic_component_id!,
