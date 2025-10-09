@@ -215,7 +215,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       return applyToPoint(
         parentNormalComponent!.computeSchematicGlobalTransform(),
         localPortPosition,
-      )
+      ) as { x: number; y: number }
     }
 
     throw new Error(
