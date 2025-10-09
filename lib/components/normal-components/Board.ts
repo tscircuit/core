@@ -10,7 +10,7 @@ import {
   checkDifferentNetViaSpacing,
   checkSameNetViaSpacing,
 } from "@tscircuit/checks"
-import { checkOverlappingPads } from "../../utils/drc/checkOverlappingPads"
+import { checkOverlappingPads } from "../../utils/drc/check-overlapping-pads"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 

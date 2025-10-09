@@ -1,12 +1,12 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { 
-  PcbSmtPad, 
-  PcbSmtPadCircle, 
+import type {
+  PcbSmtPad,
+  PcbSmtPadCircle,
   PcbSmtPadRect,
   PcbSmtPadPolygon,
   PcbSmtPadPill,
   PcbSmtPadRotatedRect,
-  PcbSmtPadRotatedPill
+  PcbSmtPadRotatedPill,
 } from "circuit-json"
 import { nanoid } from "nanoid"
 
@@ -28,8 +28,12 @@ export interface OverlappingPadError {
 export function checkOverlappingPads(
   circuitJson: any[] | CircuitJsonUtilObjects,
 ): OverlappingPadError[] {
-  const db = Array.isArray(circuitJson) 
-    ? { pcb_smtpad: { list: () => circuitJson.filter(el => el.type === "pcb_smtpad") } }
+  const db = Array.isArray(circuitJson)
+    ? {
+        pcb_smtpad: {
+          list: () => circuitJson.filter((el) => el.type === "pcb_smtpad"),
+        },
+      }
     : circuitJson
 
   const pads = db.pcb_smtpad.list() as PcbSmtPad[]
@@ -44,8 +48,12 @@ export function checkOverlappingPads(
       if (pad1.layer !== pad2.layer) continue
 
       // Skip if pads have the same subcircuit_id (same connectivity)
-      if (pad1.subcircuit_id && pad2.subcircuit_id && 
-          pad1.subcircuit_id === pad2.subcircuit_id) continue
+      if (
+        pad1.subcircuit_id &&
+        pad2.subcircuit_id &&
+        pad1.subcircuit_id === pad2.subcircuit_id
+      )
+        continue
 
       // Check if pads overlap
       if (isOverlapping(pad1, pad2)) {
@@ -54,11 +62,10 @@ export function checkOverlappingPads(
           pad1.pcb_component_id,
           pad2.pcb_component_id,
         ].filter(Boolean) as string[]
-        
-        const pcb_port_ids = [
-          pad1.pcb_port_id,
-          pad2.pcb_port_id,
-        ].filter(Boolean) as string[]
+
+        const pcb_port_ids = [pad1.pcb_port_id, pad2.pcb_port_id].filter(
+          Boolean,
+        ) as string[]
 
         errors.push({
           type: "overlapping_pad_error",
@@ -89,7 +96,7 @@ function isOverlapping(pad1: PcbSmtPad, pad2: PcbSmtPad): boolean {
   } else if (pad1.shape === "rect" && pad2.shape === "circle") {
     return isCircleRectOverlapping(pad2, pad1)
   }
-  
+
   // For other shapes (polygon, pill, etc.), use bounding box approximation
   return isBoundingBoxOverlapping(pad1, pad2)
 }
@@ -225,8 +232,8 @@ function getBoundingBox(pad: PcbSmtPad): {
   } else if (pad.shape === "polygon") {
     const polygonPad = pad as PcbSmtPadPolygon
     // For polygon, calculate bounding box from all points
-    const xs = polygonPad.points.map(p => p.x)
-    const ys = polygonPad.points.map(p => p.y)
+    const xs = polygonPad.points.map((p) => p.x)
+    const ys = polygonPad.points.map((p) => p.y)
     return {
       left: Math.min(...xs),
       right: Math.max(...xs),
@@ -237,11 +244,13 @@ function getBoundingBox(pad: PcbSmtPad): {
     // For unknown shapes, use a conservative bounding box
     // This is a fallback and may not be perfectly accurate
     const size = 1.0 // Default size assumption
+    const x = (pad as any).x ?? 0
+    const y = (pad as any).y ?? 0
     return {
-      left: -size / 2,
-      right: size / 2,
-      top: -size / 2,
-      bottom: size / 2,
+      left: x - size / 2,
+      right: x + size / 2,
+      top: y - size / 2,
+      bottom: y + size / 2,
     }
   }
 }
@@ -249,7 +258,10 @@ function getBoundingBox(pad: PcbSmtPad): {
 /**
  * Calculates the center point of the overlap between two pads
  */
-function getOverlapCenter(pad1: PcbSmtPad, pad2: PcbSmtPad): { x: number; y: number } {
+function getOverlapCenter(
+  pad1: PcbSmtPad,
+  pad2: PcbSmtPad,
+): { x: number; y: number } {
   const getCenter = (pad: PcbSmtPad): { x: number; y: number } => {
     if (pad.shape === "circle") {
       const circlePad = pad as PcbSmtPadCircle
@@ -269,8 +281,8 @@ function getOverlapCenter(pad1: PcbSmtPad, pad2: PcbSmtPad): { x: number; y: num
     } else if (pad.shape === "polygon") {
       const polygonPad = pad as PcbSmtPadPolygon
       // Calculate centroid of polygon
-      const xs = polygonPad.points.map(p => p.x)
-      const ys = polygonPad.points.map(p => p.y)
+      const xs = polygonPad.points.map((p) => p.x)
+      const ys = polygonPad.points.map((p) => p.y)
       return {
         x: xs.reduce((sum, x) => sum + x, 0) / xs.length,
         y: ys.reduce((sum, y) => sum + y, 0) / ys.length,
@@ -282,7 +294,7 @@ function getOverlapCenter(pad1: PcbSmtPad, pad2: PcbSmtPad): { x: number; y: num
 
   const center1 = getCenter(pad1)
   const center2 = getCenter(pad2)
-  
+
   return {
     x: (center1.x + center2.x) / 2,
     y: (center1.y + center2.y) / 2,
