@@ -1482,9 +1482,6 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
-          console.log(
-            `Adding trace from ${this.getSubcircuitSelector()} > port.${pinName} to ${targetPath}`,
-          )
           this.add(
             new Trace({
               from: `${this.getSubcircuitSelector()} > port.${pinName}`,
