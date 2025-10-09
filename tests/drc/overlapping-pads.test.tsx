@@ -3,7 +3,7 @@ import { checkOverlappingPads } from "../../lib/utils/drc/checkOverlappingPads"
 
 /**
  * Test for checking overlapping SMT pads
- * 
+ *
  * This test verifies that the DRC correctly detects overlapping pads
  * while allowing pads with the same subcircuit_id to overlap
  */
@@ -59,16 +59,16 @@ test("detects overlapping SMT pads", () => {
       x: 7, // No overlap with PAD3
       y: 0,
       subcircuit_id: "sub4",
-    }
+    },
   ]
 
   const errors = checkOverlappingPads(testPads)
 
   // Should detect overlap between PAD1 and PAD2
   expect(errors.length).toBeGreaterThan(0)
-  
-  const overlapError = errors.find(error => 
-    error.pad_ids.includes("PAD1") && error.pad_ids.includes("PAD2")
+
+  const overlapError = errors.find(
+    (error) => error.pad_ids.includes("PAD1") && error.pad_ids.includes("PAD2"),
   )
   expect(overlapError).toBeDefined()
   expect(overlapError?.message).toContain("PAD1")
@@ -102,7 +102,7 @@ test("allows overlapping pads with same subcircuit_id", () => {
       x: 0.3, // Overlaps with PAD1 but same subcircuit
       y: 0,
       subcircuit_id: "sub1", // Same subcircuit
-    }
+    },
   ]
 
   const errors = checkOverlappingPads(testPads)
@@ -138,16 +138,18 @@ test("detects different shape overlaps", () => {
       x: 0.2, // Overlaps with circle
       y: 0,
       subcircuit_id: "sub2", // Different subcircuit
-    }
+    },
   ]
 
   const errors = checkOverlappingPads(testPads)
 
   // Should detect overlap between different shapes
   expect(errors.length).toBeGreaterThan(0)
-  
-  const overlapError = errors.find(error => 
-    error.pad_ids.includes("CIRCLE_PAD") && error.pad_ids.includes("RECT_PAD")
+
+  const overlapError = errors.find(
+    (error) =>
+      error.pad_ids.includes("CIRCLE_PAD") &&
+      error.pad_ids.includes("RECT_PAD"),
   )
   expect(overlapError).toBeDefined()
 })
@@ -178,7 +180,7 @@ test("ignores pads on different layers", () => {
       x: 0, // Same position but different layer
       y: 0,
       subcircuit_id: "sub2",
-    }
+    },
   ]
 
   const errors = checkOverlappingPads(testPads)
@@ -241,21 +243,21 @@ test("detects multiple overlapping pairs", () => {
       x: 5.3,
       y: 0,
       subcircuit_id: "sub4",
-    }
+    },
   ]
 
   const errors = checkOverlappingPads(testPads)
 
   // Should detect both overlapping pairs
   expect(errors.length).toBe(2)
-  
-  const pair1Error = errors.find(error => 
-    error.pad_ids.includes("PAD1") && error.pad_ids.includes("PAD2")
+
+  const pair1Error = errors.find(
+    (error) => error.pad_ids.includes("PAD1") && error.pad_ids.includes("PAD2"),
   )
-  const pair2Error = errors.find(error => 
-    error.pad_ids.includes("PAD3") && error.pad_ids.includes("PAD4")
+  const pair2Error = errors.find(
+    (error) => error.pad_ids.includes("PAD3") && error.pad_ids.includes("PAD4"),
   )
-  
+
   expect(pair1Error).toBeDefined()
   expect(pair2Error).toBeDefined()
 })
@@ -286,15 +288,15 @@ test("overlapping pad error has correct structure", () => {
       x: 0.3,
       y: 0,
       subcircuit_id: "sub2",
-    }
+    },
   ]
 
   const errors = checkOverlappingPads(testPads)
 
   expect(errors.length).toBeGreaterThan(0)
-  
+
   const error = errors[0]
-  
+
   // Check error structure
   expect(error.type).toBe("overlapping_pad_error")
   expect(error.pcb_overlapping_pad_error_id).toBeDefined()

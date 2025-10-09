@@ -3,7 +3,7 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 
 /**
  * Integration test for overlapping pad detection in the Board DRC system
- * 
+ *
  * This test verifies that overlapping pad detection is properly integrated
  * into the Board's updatePcbDesignRuleChecks method
  */
@@ -39,9 +39,11 @@ test("Board DRC system detects overlapping pads", async () => {
 
   // Manually trigger the DRC check by calling the overlapping pad detection
   const circuitJson = circuit.getCircuitJson()
-  const { checkOverlappingPads } = await import("../../lib/utils/drc/checkOverlappingPads")
+  const { checkOverlappingPads } = await import(
+    "../../lib/utils/drc/checkOverlappingPads"
+  )
   const overlappingPadErrors = checkOverlappingPads(circuitJson)
-  
+
   // Insert the errors manually to test the integration
   for (const error of overlappingPadErrors) {
     circuit.db.pcb_placement_error.insert({
@@ -52,10 +54,10 @@ test("Board DRC system detects overlapping pads", async () => {
 
   // Check that overlapping pad errors were inserted into the database as placement errors
   const placementErrors = circuit.db.pcb_placement_error.list()
-  const overlappingErrors = placementErrors.filter(error => 
-    error.message.includes("overlapping")
+  const overlappingErrors = placementErrors.filter((error) =>
+    error.message.includes("overlapping"),
   )
-  
+
   // Note: This test may not find overlaps due to automatic layout spacing
   // The important thing is that the integration works when overlaps exist
   // We'll just verify that the function can be called and errors can be inserted
@@ -93,7 +95,9 @@ test("Board DRC system allows overlapping pads with same subcircuit", async () =
 
   // Manually test the overlapping pad detection
   const circuitJson = circuit.getCircuitJson()
-  const { checkOverlappingPads } = await import("../../lib/utils/drc/checkOverlappingPads")
+  const { checkOverlappingPads } = await import(
+    "../../lib/utils/drc/checkOverlappingPads"
+  )
   const overlappingPadErrors = checkOverlappingPads(circuitJson)
 
   // Should not detect overlap between pads with same subcircuit_id
@@ -132,7 +136,9 @@ test("Board DRC system handles mixed overlapping scenarios", async () => {
 
   // Manually test the overlapping pad detection
   const circuitJson = circuit.getCircuitJson()
-  const { checkOverlappingPads } = await import("../../lib/utils/drc/checkOverlappingPads")
+  const { checkOverlappingPads } = await import(
+    "../../lib/utils/drc/checkOverlappingPads"
+  )
   const overlappingPadErrors = checkOverlappingPads(circuitJson)
 
   // The test verifies that the function works correctly
