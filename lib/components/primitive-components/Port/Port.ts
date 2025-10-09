@@ -321,12 +321,21 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const port_hints = this.getNameAndAliases()
     const parentNormalComponent = this.getParentNormalComponent()
+    // Prioritize direct parent if it has source_component_id (for primitives like Via)
+    // Otherwise use the NormalComponent parent
+    const parentWithSourceId = this.parent?.source_component_id
+      ? this.parent
+      : parentNormalComponent
+
+    // For primitive parents like Via, source_component_id won't be set yet during SourceRender phase
+    // (children render before parents). It will be updated in SourceParentAttachment phase.
+    const source_component_id = parentWithSourceId?.source_component_id ?? null
 
     const source_port = db.source_port.insert({
       name: props.name!,
       pin_number: props.pinNumber,
       port_hints,
-      source_component_id: parentNormalComponent?.source_component_id!,
+      source_component_id: source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
     })
 
@@ -336,18 +345,22 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   doInitialSourceParentAttachment(): void {
     const { db } = this.root!
     const parentNormalComponent = this.getParentNormalComponent()
-    if (!parentNormalComponent?.source_component_id) {
+    const parentWithSourceId = this.parent?.source_component_id
+      ? this.parent
+      : parentNormalComponent
+
+    if (!parentWithSourceId?.source_component_id) {
       throw new Error(
         `${this.getString()} has no parent source component (parent: ${this.parent?.getString()})`,
       )
     }
 
     db.source_port.update(this.source_port_id!, {
-      source_component_id: parentNormalComponent.source_component_id!,
+      source_component_id: parentWithSourceId.source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
     })
 
-    this.source_component_id = parentNormalComponent.source_component_id
+    this.source_component_id = parentWithSourceId.source_component_id
   }
 
   doInitialPcbPortRender(): void {
@@ -356,7 +369,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { matchedComponents } = this
 
     const parentNormalComponent = this.getParentNormalComponent()
-    if (!parentNormalComponent?.pcb_component_id) {
+    const parentWithPcbComponentId = this.parent?.pcb_component_id
+      ? this.parent
+      : parentNormalComponent
+
+    if (!parentWithPcbComponentId?.pcb_component_id) {
       throw new Error(
         `${this.getString()} has no parent pcb component, cannot render pcb_port (parent: ${this.parent?.getString()}, parentNormalComponent: ${parentNormalComponent?.getString()})`,
       )
@@ -387,7 +404,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       const isBoardPinout = this._shouldIncludeInBoardPinout()
 
       const pcb_port = db.pcb_port.insert({
-        pcb_component_id: parentNormalComponent.pcb_component_id!,
+        pcb_component_id: parentWithPcbComponentId.pcb_component_id!,
         layers: this.getAvailablePcbLayers(),
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
@@ -432,10 +449,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (!matchCenter) return
 
     const parentNormalComponent = this.getParentNormalComponent()
+    const parentWithPcbComponentId = this.parent?.pcb_component_id
+      ? this.parent
+      : parentNormalComponent
+
     const subcircuit = this.getSubcircuit()
     const isBoardPinout = this._shouldIncludeInBoardPinout()
     const pcb_port = db.pcb_port.insert({
-      pcb_component_id: parentNormalComponent?.pcb_component_id!,
+      pcb_component_id: parentWithPcbComponentId?.pcb_component_id!,
       layers: this.getAvailablePcbLayers(),
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
