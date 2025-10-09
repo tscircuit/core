@@ -338,7 +338,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const parentNormalComponent = this.getParentNormalComponent()
     if (!parentNormalComponent?.source_component_id) {
       throw new Error(
-        `${this.getString()} has no parent source component (parent: ${this.parent?.getString()}, parentNormalComponent: ${parentNormalComponent?.getString()})`,
+        `${this.getString()} has no parent source component (parent: ${this.parent?.getString()})`,
       )
     }
 
