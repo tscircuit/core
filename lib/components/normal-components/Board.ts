@@ -10,6 +10,7 @@ import {
   checkDifferentNetViaSpacing,
   checkSameNetViaSpacing,
 } from "@tscircuit/checks"
+import { checkOverlappingPads } from "../../utils/drc/checkOverlappingPads"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 
@@ -399,6 +400,16 @@ export class Board extends Group<typeof boardProps> {
     const sameNetViaErrors = checkSameNetViaSpacing(db.toArray())
     for (const error of sameNetViaErrors) {
       db.pcb_via_clearance_error.insert(error)
+    }
+
+    const overlappingPadErrors = checkOverlappingPads(db.toArray())
+    for (const error of overlappingPadErrors) {
+      // Use pcb_placement_error as a fallback since pcb_overlapping_pad_error
+      // is not yet defined in the circuit-json-util types
+      db.pcb_placement_error.insert({
+        message: error.message,
+        error_type: "pcb_placement_error",
+      })
     }
   }
 
