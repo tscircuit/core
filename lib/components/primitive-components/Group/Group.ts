@@ -180,8 +180,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   unnamedElementCounter: Record<string, number> = {}
   getNextAvailableName(elm: PrimitiveComponent): string {
-    this.unnamedElementCounter[elm.lowercaseComponentName] ??= 1
-    return `unnamed_${elm.lowercaseComponentName}${this.unnamedElementCounter[elm.lowercaseComponentName]++}`
+    const componentType = elm.lowercaseComponentName || "component"
+
+    // Ensure the counter exists and is a valid number
+    if (typeof this.unnamedElementCounter[componentType] !== "number") {
+      this.unnamedElementCounter[componentType] = 1
+    }
+
+    // Generate the name and increment the counter
+    const name = `unnamed_${componentType}${this.unnamedElementCounter[componentType]++}`
+
+    return name
   }
 
   _resolvePcbPadding(): {
