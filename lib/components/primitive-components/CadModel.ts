@@ -56,7 +56,16 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
 
     const layer = parent.props.layer === "bottom" ? "bottom" : "top"
 
-    const ext = new URL(props.modelUrl).pathname.split(".").pop()?.toLowerCase()
+    let ext: string | undefined
+    try {
+      const parsedUrl = new URL(props.modelUrl)
+      ext = parsedUrl.pathname.split(".").pop()?.toLowerCase()
+    } catch (error) {
+      const details = error instanceof Error ? error.message : String(error)
+      throw new Error(
+        `Failed to parse CadModel modelUrl "${props.modelUrl}": ${details}`,
+      )
+    }
     const urlProps: Partial<CadComponent> = {}
     if (ext === "stl")
       urlProps.model_stl_url = this._addCachebustToModelUrl(props.modelUrl)
