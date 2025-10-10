@@ -68,7 +68,7 @@ const getRoundedRectOutline = (
 
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
-  source_board_id: string | null = null // Add this line
+  source_board_id: string | null = null
   _drcChecksComplete = false
   _connectedSchematicPortPairs = new Set<string>()
 
