@@ -111,7 +111,23 @@ export abstract class PrimitiveComponent<
   }
 
   get name() {
-    return (this._parsedProps as any).name ?? this.fallbackUnassignedName
+    const explicitName = (this._parsedProps as any).name
+    if (
+      explicitName &&
+      typeof explicitName === "string" &&
+      explicitName.trim() !== ""
+    ) {
+      return explicitName
+    }
+
+    // If we have a fallback name, use it
+    if (this.fallbackUnassignedName) {
+      return this.fallbackUnassignedName
+    }
+
+    // Last resort fallback - should never happen in normal operation
+    // This prevents undefined from being returned
+    return `unnamed_${this.lowercaseComponentName}`
   }
 
   /**
@@ -660,8 +676,9 @@ export abstract class PrimitiveComponent<
 
   doInitialAssignNameToUnnamedComponents() {
     if (!this._parsedProps.name) {
-      this.fallbackUnassignedName =
-        this.getSubcircuit().getNextAvailableName(this)
+      const subcircuit = this.getSubcircuit()
+      const newName = subcircuit.getNextAvailableName(this)
+      this.fallbackUnassignedName = newName
     }
   }
 
