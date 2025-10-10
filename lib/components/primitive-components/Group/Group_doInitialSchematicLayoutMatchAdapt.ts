@@ -4,6 +4,7 @@ import Debug from "debug"
 import type { Group } from "./Group"
 import type { z } from "zod"
 import { buildSubtree } from "@tscircuit/circuit-json-util"
+import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchAdapt")
 
@@ -119,6 +120,14 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
         text.position.x += positionDelta.x
         text.position.y += positionDelta.y
       }
+
+      // Update schematic primitives (rects, lines, circles, arcs)
+      updateSchematicPrimitivesForLayoutShift({
+        db,
+        schematicComponentId: schematic_component.schematic_component_id,
+        deltaX: positionDelta.x,
+        deltaY: positionDelta.y,
+      })
 
       schematic_component.center = newCenter
       continue

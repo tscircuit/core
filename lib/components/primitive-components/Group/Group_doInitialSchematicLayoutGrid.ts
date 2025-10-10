@@ -1,6 +1,7 @@
 import type { Group } from "./Group"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { length } from "circuit-json"
+import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
 
 export function Group_doInitialSchematicLayoutGrid(group: Group<any>) {
   const { db } = group.root!
@@ -171,6 +172,14 @@ export function Group_doInitialSchematicLayoutGrid(group: Group<any>) {
           },
         })
       }
+
+      // Update schematic primitives (rects, lines, circles, arcs)
+      updateSchematicPrimitivesForLayoutShift({
+        db,
+        schematicComponentId: child.schematic_component_id,
+        deltaX,
+        deltaY,
+      })
     }
   }
 
