@@ -38,8 +38,8 @@ test("resistor and capacitor connections prop", async () => {
 
   expect(traces.map((t) => t.display_name).sort()).toMatchInlineSnapshot(`
     [
-      "capacitor.C1 > port.neg to .R1 > .pin1",
-      "resistor.R1 > port.pin2 to .C1 > .pos",
+      ".C1 > .neg to .R1 > .pin1",
+      ".R1 > .pin2 to .C1 > .pos",
     ]
   `)
 })

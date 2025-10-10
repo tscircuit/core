@@ -1102,7 +1102,7 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
-          propsWithConnections.push(targetPath)
+          propsWithConnections.push(String(targetPath))
         }
       }
     }
@@ -1484,8 +1484,8 @@ export class NormalComponent<
         for (const targetPath of targets) {
           this.add(
             new Trace({
-              from: `${this.getSubcircuitSelector()} > port.${pinName}`,
-              to: targetPath as string,
+              from: `.${this.name} > .${pinName}`,
+              to: String(targetPath),
             }),
           )
         }
