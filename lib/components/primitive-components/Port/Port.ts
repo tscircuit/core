@@ -334,7 +334,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
     })
 
-    this.source_component_id = this.parent?.source_component_id
+    this.source_component_id = source_component_id
   }
 
   doInitialPcbPortRender(): void {
