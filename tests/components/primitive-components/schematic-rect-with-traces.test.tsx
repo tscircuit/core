@@ -1,12 +1,15 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { sel } from "lib/sel"
 
-test.skip("SchematicRect with traces", async () => {
+test("SchematicRect with traces", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
       <chip
+        schX={0}
+        schY={0}
         name="U1"
         symbol={
           <symbol>
@@ -22,11 +25,13 @@ test.skip("SchematicRect with traces", async () => {
         }
       />
       <chip
+        schX={4}
+        schY={0}
         name="U2"
         symbol={
           <symbol>
             <schematicrect
-              schX={5}
+              schX={0}
               schY={0}
               width={2}
               height={2}
@@ -46,6 +51,10 @@ test.skip("SchematicRect with traces", async () => {
     .getCircuitJson()
     .filter((c) => c.type === "schematic_trace")
   expect(schematic_trace.length).toBe(1)
+  const schematic_ports = circuit
+    .getCircuitJson()
+    .filter((c) => c.type === "schematic_port")
+  expect(schematic_ports.length).toBe(2)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

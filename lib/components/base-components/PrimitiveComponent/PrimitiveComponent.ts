@@ -254,6 +254,25 @@ export abstract class PrimitiveComponent<
   }
 
   /**
+   * Walk up the component hierarchy to find the nearest NormalComponent ancestor.
+   * This is useful for primitive components that need access to component IDs
+   * (pcb_component_id, schematic_component_id, source_component_id) from their
+   * parent NormalComponent, even when there are intermediate primitive containers
+   * like Symbol in the hierarchy.
+   */
+  getParentNormalComponent(): any | null {
+    let current: any = this.parent
+    while (current) {
+      // NormalComponent has isPrimitiveContainer = true but also has these render methods
+      if (current.isPrimitiveContainer && current.doInitialPcbComponentRender) {
+        return current
+      }
+      current = current.parent
+    }
+    return null
+  }
+
+  /**
    * Compute the PCB bounds of this component the circuit json elements
    * associated with it.
    */
@@ -670,7 +689,10 @@ export abstract class PrimitiveComponent<
     const ports = this.selectAll("port")
 
     for (const port of ports) {
-      const parentAliases = port.parent?.getNameAndAliases()
+      // For ports inside primitive containers (like Symbol), use getParentNormalComponent
+      // to get the actual parent component for selector caching
+      const parentComponent = port.getParentNormalComponent?.() ?? port.parent
+      const parentAliases = parentComponent?.getNameAndAliases()
       const portAliases = port.getNameAndAliases()
       if (!parentAliases) continue
       for (const parentAlias of parentAliases) {

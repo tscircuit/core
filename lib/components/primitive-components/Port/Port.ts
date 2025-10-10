@@ -20,6 +20,9 @@ export const portProps = z.object({
   aliases: z.array(z.string()).optional(),
   layer: z.string().optional(),
   layers: z.array(z.string()).optional(),
+  schX: z.number().optional(),
+  schY: z.number().optional(),
+  direction: z.enum(["up", "down", "left", "right"]).optional(),
 })
 
 export type PortProps = z.infer<typeof portProps>
@@ -134,7 +137,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * are rendered properly.
    */
   _hasSchematicPort() {
-    const symbol = this.parent?.getSchematicSymbol()
+    const { schX, schY } = this._parsedProps
+    if (schX !== undefined && schY !== undefined) {
+      return true
+    }
+
+    const parentNormalComponent = this.getParentNormalComponent()
+    const symbol = parentNormalComponent?.getSchematicSymbol()
     if (symbol) {
       if (this.schematicSymbolPortDef) return true
 
@@ -149,7 +158,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       return false
     }
 
-    const parentBoxDim = this?.parent?._getSchematicBoxDimensions()
+    const parentBoxDim = parentNormalComponent?._getSchematicBoxDimensions()
     if (parentBoxDim && this.props.pinNumber !== undefined) {
       const localPortPosition = parentBoxDim.getPortPositionByPinNumber(
         this.props.pinNumber!,
@@ -161,7 +170,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
-    const symbol = this.parent?.getSchematicSymbol()
+    const { schX, schY } = this._parsedProps
+    if (schX !== undefined && schY !== undefined) {
+      // For ports with explicit coordinates in custom React symbols,
+      // use them as absolute coordinates (not relative to the parent)
+      return { x: schX, y: schY }
+    }
+
+    const parentNormalComponent = this.getParentNormalComponent()
+    const symbol = parentNormalComponent?.getSchematicSymbol()
     if (symbol) {
       let schematicSymbolPortDef = this.schematicSymbolPortDef
 
@@ -178,14 +195,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       }
 
       const transform = compose(
-        this.parent!.computeSchematicGlobalTransform(),
+        parentNormalComponent!.computeSchematicGlobalTransform(),
         translate(-symbol.center.x, -symbol.center.y),
       )
 
       return applyToPoint(transform, schematicSymbolPortDef!)
     }
 
-    const parentBoxDim = this?.parent?._getSchematicBoxDimensions()
+    const parentBoxDim = parentNormalComponent?._getSchematicBoxDimensions()
     if (parentBoxDim && this.props.pinNumber !== undefined) {
       const localPortPosition = parentBoxDim.getPortPositionByPinNumber(
         this.props.pinNumber!,
@@ -196,9 +213,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         )
       }
       return applyToPoint(
-        this.parent!.computeSchematicGlobalTransform(),
+        parentNormalComponent!.computeSchematicGlobalTransform(),
         localPortPosition,
-      )
+      ) as { x: number; y: number }
     }
 
     throw new Error(
@@ -271,7 +288,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
   getPortSelector() {
     // TODO this.parent.getSubcircuitSelector() >
-    return `.${this.parent?.props.name} > port.${this.props.name}`
+    const parentComponent = this.getParentNormalComponent() ?? this.parent
+    return `.${parentComponent?.props.name} > port.${this.props.name}`
   }
   getAvailablePcbLayers(): LayerRef[] {
     const { layer, layers } = this._parsedProps
@@ -302,12 +320,22 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { _parsedProps: props } = this
 
     const port_hints = this.getNameAndAliases()
+    const parentNormalComponent = this.getParentNormalComponent()
+    // Prioritize direct parent if it has source_component_id (for primitives like Via)
+    // Otherwise use the NormalComponent parent
+    const parentWithSourceId = this.parent?.source_component_id
+      ? this.parent
+      : parentNormalComponent
+
+    // For primitive parents like Via, source_component_id won't be set yet during SourceRender phase
+    // (children render before parents). It will be updated in SourceParentAttachment phase.
+    const source_component_id = parentWithSourceId?.source_component_id ?? null
 
     const source_port = db.source_port.insert({
       name: props.name!,
       pin_number: props.pinNumber,
       port_hints,
-      source_component_id: this.parent?.source_component_id!,
+      source_component_id: source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
     })
 
@@ -316,18 +344,23 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   doInitialSourceParentAttachment(): void {
     const { db } = this.root!
-    if (!this.parent?.source_component_id) {
+    const parentNormalComponent = this.getParentNormalComponent()
+    const parentWithSourceId = this.parent?.source_component_id
+      ? this.parent
+      : parentNormalComponent
+
+    if (!parentWithSourceId?.source_component_id) {
       throw new Error(
         `${this.getString()} has no parent source component (parent: ${this.parent?.getString()})`,
       )
     }
 
     db.source_port.update(this.source_port_id!, {
-      source_component_id: this.parent?.source_component_id!,
+      source_component_id: parentWithSourceId.source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
     })
 
-    this.source_component_id = this.parent?.source_component_id
+    this.source_component_id = parentWithSourceId.source_component_id
   }
 
   doInitialPcbPortRender(): void {
@@ -335,9 +368,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { db } = this.root!
     const { matchedComponents } = this
 
-    if (!this.parent?.pcb_component_id) {
+    const parentNormalComponent = this.getParentNormalComponent()
+    const parentWithPcbComponentId = this.parent?.pcb_component_id
+      ? this.parent
+      : parentNormalComponent
+
+    if (!parentWithPcbComponentId?.pcb_component_id) {
       throw new Error(
-        `${this.getString()} has no parent pcb component, cannot render pcb_port (parent: ${this.parent?.getString()})`,
+        `${this.getString()} has no parent pcb component, cannot render pcb_port (parent: ${this.parent?.getString()}, parentNormalComponent: ${parentNormalComponent?.getString()})`,
       )
     }
 
@@ -366,7 +404,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       const isBoardPinout = this._shouldIncludeInBoardPinout()
 
       const pcb_port = db.pcb_port.insert({
-        pcb_component_id: this.parent?.pcb_component_id!,
+        pcb_component_id: parentWithPcbComponentId.pcb_component_id!,
         layers: this.getAvailablePcbLayers(),
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
@@ -410,10 +448,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (!matchCenter) return
 
+    const parentNormalComponent = this.getParentNormalComponent()
+    const parentWithPcbComponentId = this.parent?.pcb_component_id
+      ? this.parent
+      : parentNormalComponent
+
     const subcircuit = this.getSubcircuit()
     const isBoardPinout = this._shouldIncludeInBoardPinout()
     const pcb_port = db.pcb_port.insert({
-      pcb_component_id: this.parent?.pcb_component_id!,
+      pcb_component_id: parentWithPcbComponentId?.pcb_component_id!,
       layers: this.getAvailablePcbLayers(),
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
@@ -429,7 +472,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const container = this.getPrimitiveContainer()
+    const { schX, schY } = props
+    const container =
+      schX !== undefined && schY !== undefined
+        ? this.getParentNormalComponent()
+        : this.getPrimitiveContainer()
 
     if (!container) return
     if (!this._hasSchematicPort()) return
@@ -481,7 +528,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     let bestDisplayPinLabel: string | undefined = undefined
-    const showPinAliases = (this.parent as any)?.props?.showPinAliases
+    const parentNormalComponent = this.getParentNormalComponent()
+    const showPinAliases = parentNormalComponent?.props?.showPinAliases
     if (showPinAliases && labelHints.length > 0) {
       bestDisplayPinLabel = labelHints.join("/")
     } else if (labelHints.length > 0) {
@@ -491,7 +539,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
-      schematic_component_id: this.parent?.schematic_component_id!,
+      schematic_component_id: parentNormalComponent?.schematic_component_id!,
       center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,

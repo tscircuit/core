@@ -633,8 +633,6 @@ export class NormalComponent<
       is_box_with_pins: false,
     })
     this.schematic_component_id = schematic_component.schematic_component_id
-
-    this.add(symbolElement)
   }
 
   _doInitialSchematicComponentRenderWithSchematicBoxDimensions() {
@@ -925,6 +923,17 @@ export class NormalComponent<
       )
       if (!hasFootprintChild) {
         this.add(fpElm)
+      }
+    }
+
+    // Add React-based symbol subtree if provided
+    const symElm = this.props.symbol
+    if (isValidElement(symElm)) {
+      const hasSymbolChild = this.children.some(
+        (c) => c.componentName === "Symbol",
+      )
+      if (!hasSymbolChild) {
+        this.add(symElm)
       }
     }
 
