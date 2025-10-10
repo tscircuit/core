@@ -8,6 +8,7 @@ import { LayoutPipelineSolver, type InputProblem } from "@tscircuit/matchpack"
 import Debug from "debug"
 import type { Group } from "./Group"
 import type { z } from "zod"
+import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchpack")
 
@@ -670,7 +671,7 @@ export function Group_doInitialSchematicLayoutMatchPack<
     if (!treeNode) {
       debug(`Warning: No tree node found for chip: ${chipId}`)
       debug(
-        `Available tree nodes:`,
+        "Available tree nodes:",
         tree.childNodes.map((child, idx) => ({
           type: child.nodeType,
           name:
@@ -724,6 +725,14 @@ export function Group_doInitialSchematicLayoutMatchPack<
           text.position.x += positionDelta.x
           text.position.y += positionDelta.y
         }
+
+        // Update schematic primitives (rects, lines, circles, arcs)
+        updateSchematicPrimitivesForLayoutShift({
+          db,
+          schematicComponentId: schematicComponent.schematic_component_id,
+          deltaX: positionDelta.x,
+          deltaY: positionDelta.y,
+        })
 
         // Update component center
         schematicComponent.center = newCenter
