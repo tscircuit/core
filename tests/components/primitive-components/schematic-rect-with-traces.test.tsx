@@ -1,13 +1,16 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.skip("SchematicRect with traces", async () => {
+test("SchematicRect with traces", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board>
+    <board pcbX={0} pcbY={0} width={100} height={100}>
       <chip
         name="U1"
+        footprint="dip8"
+        pcbX={10}
+        pcbY={10}
         symbol={
           <symbol>
             <schematicrect
@@ -23,6 +26,9 @@ test.skip("SchematicRect with traces", async () => {
       />
       <chip
         name="U2"
+        footprint="dip8"
+        pcbX={30}
+        pcbY={10}
         symbol={
           <symbol>
             <schematicrect
