@@ -68,6 +68,7 @@ const getRoundedRectOutline = (
 
 export class Board extends Group<typeof boardProps> {
   pcb_board_id: string | null = null
+  source_board_id: string | null = null  // Add this line
   _drcChecksComplete = false
   _connectedSchematicPortPairs = new Set<string>()
 
@@ -262,6 +263,22 @@ export class Board extends Group<typeof boardProps> {
     })
   }
 
+  doInitialSourceRender() {
+    // Create source_group first (inherited from Group)
+    super.doInitialSourceRender()
+    
+    // Then create source_board
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    
+    const source_board = db.source_board.insert({
+      source_group_id: this.source_group_id!,
+      title: props.name,
+    })
+    
+    this.source_board_id = source_board.source_board_id
+  }
+
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -332,7 +349,8 @@ export class Board extends Group<typeof boardProps> {
         y: point.y + (props.outlineOffsetY ?? 0),
       })),
       material: props.material,
-    })
+      source_board_id: this.source_board_id,
+    } as any)
 
     this.pcb_board_id = pcb_board.pcb_board_id!
 
