@@ -270,7 +270,7 @@ export class Board extends Group<typeof boardProps> {
 
     const source_board = db.source_board.insert({
       source_group_id: this.source_group_id!,
-      title: this.props.title
+      title: this.props.title || this.props.name,
     })
 
     this.source_board_id = source_board.source_board_id
@@ -346,7 +346,6 @@ export class Board extends Group<typeof boardProps> {
         y: point.y + (props.outlineOffsetY ?? 0),
       })),
       material: props.material,
-      title: props.title,
     })
 
     this.pcb_board_id = pcb_board.pcb_board_id!
