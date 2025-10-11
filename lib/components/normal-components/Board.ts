@@ -264,16 +264,13 @@ export class Board extends Group<typeof boardProps> {
   }
 
   doInitialSourceRender() {
-    // Create source_group first (inherited from Group)
     super.doInitialSourceRender()
 
-    // Then create source_board
     const { db } = this.root!
-    const { _parsedProps: props } = this
 
     const source_board = db.source_board.insert({
       source_group_id: this.source_group_id!,
-      title: props.name,
+      title: this.props.name,
     })
 
     this.source_board_id = source_board.source_board_id
