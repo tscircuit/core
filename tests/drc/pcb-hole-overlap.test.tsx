@@ -55,28 +55,7 @@ test("design rule check detects overlapping holes", async () => {
   // Verify error contains hole IDs
   expect(overlapErrors[0]).toHaveProperty("pcb_hole_ids")
 
-  // Add error indicators to circuit JSON for visual regression detection
-  for (let i = 0; i < overlapErrors.length; i++) {
-    const error = overlapErrors[i] as any
-    const holeIds = error.pcb_hole_ids || []
-    if (holeIds.length >= 2) {
-      const hole1: any = holes.find((h: any) => h.pcb_hole_id === holeIds[0])
-      const hole2: any = holes.find((h: any) => h.pcb_hole_id === holeIds[1])
-      if (hole1 && hole2 && hole1.x !== undefined && hole2.x !== undefined) {
-        const centerX = (hole1.x + hole2.x) / 2
-        const centerY = (hole1.y + hole2.y) / 2
-        circuit.db.pcb_silkscreen_text.insert({
-          pcb_component_id: "",
-          anchor_position: { x: centerX, y: centerY - 2 },
-          anchor_alignment: "center",
-          font: "tscircuit2024",
-          font_size: 0.7,
-          layer: "top",
-          text: "⚠ HOLE OVERLAP",
-        })
-      }
-    }
-  }
-
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    shouldDrawErrors: true,
+  })
 })

@@ -47,7 +47,7 @@ async function saveSvgSnapshotOfCircuitJson({
   let content: Buffer | string
   switch (mode) {
     case "pcb":
-      content = convertCircuitJsonToPcbSvg(soup)
+      content = convertCircuitJsonToPcbSvg(soup, options)
       break
     case "schematic":
       content = convertCircuitJsonToSchematicSvg(soup, options)
@@ -274,6 +274,7 @@ expect.extend({
       soup: circuitJson,
       testPath: args[0],
       mode: "pcb",
+      options: args[1],
       updateSnapshot:
         process.argv.includes("--update-snapshots") ||
         process.argv.includes("-u") ||
@@ -355,7 +356,10 @@ expect.extend({
 
 declare module "bun:test" {
   interface Matchers<T = unknown> {
-    toMatchPcbSnapshot(testPath: string): Promise<MatcherResult>
+    toMatchPcbSnapshot(
+      testPath: string,
+      options?: Parameters<typeof convertCircuitJsonToPcbSvg>[1],
+    ): Promise<MatcherResult>
     toMatchSchematicSnapshot(
       testPath: string,
       options?: Parameters<typeof convertCircuitJsonToSchematicSvg>[1],
