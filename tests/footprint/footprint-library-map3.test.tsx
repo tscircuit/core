@@ -47,6 +47,7 @@ test("footprint library map 3", async () => {
         "num_layers": 2,
         "outline": undefined,
         "pcb_board_id": "pcb_board_0",
+        "source_board_id": "source_board_0",
         "thickness": 1.4,
         "type": "pcb_board",
         "width": 5.5600000000000005,
