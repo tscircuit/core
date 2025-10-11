@@ -9,6 +9,7 @@ import {
   checkPcbTracesOutOfBoard,
   checkDifferentNetViaSpacing,
   checkSameNetViaSpacing,
+  checkPcbComponentOverlap,
 } from "@tscircuit/checks"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
@@ -399,6 +400,11 @@ export class Board extends Group<typeof boardProps> {
     const sameNetViaErrors = checkSameNetViaSpacing(db.toArray())
     for (const error of sameNetViaErrors) {
       db.pcb_via_clearance_error.insert(error)
+    }
+
+    const pcbComponentOverlapErrors = checkPcbComponentOverlap(db.toArray())
+    for (const error of pcbComponentOverlapErrors) {
+      db.pcb_footprint_overlap_error.insert(error)
     }
   }
 
