@@ -27,7 +27,7 @@ test("unnamed chips receive sequential unnamed_chip fallback names", async () =>
           pin2: ["A2"],
         }}
       />
-      <trace from=".unnamed_chip1 > .pin1" to="unnamed_chip2 > .pin1" />
+      <trace from=".unnamed_chip1 > .pin1" to=".unnamed_chip2 > .pin1" />
     </board>,
   )
 
