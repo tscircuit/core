@@ -7,7 +7,7 @@ import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 it("should assign a default name to an unnamed chip", async () => {
   const { circuit } = getTestFixture()
 
-  circuit.add(<chip />)
+  circuit.add(<chip {...({} as any)} />)
 
   await circuit.render()
 
