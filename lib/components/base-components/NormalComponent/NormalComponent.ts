@@ -1249,12 +1249,16 @@ export class NormalComponent<
     const cadModelProp = this._parsedProps.cadModel
     const cadModel =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
-    const footprint =
-      this.props.footprint && this.props.color
-        ? `${this.props.footprint}_${this.props.color}`
-        : this.props.footprint
-          ? this.props.footprint
-          : this._getImpliedFootprintString()
+    let footprint: string | null | undefined
+    if (
+      this.constructor.name === "Led" &&
+      this.props.footprint &&
+      this.props.color
+    ) {
+      footprint = `${this.props.footprint}_${this.props.color}`
+    } else {
+      footprint = this.props.footprint ?? this._getImpliedFootprintString()
+    }
 
     if (!this.pcb_component_id) return
     if (!cadModel && !footprint) return
