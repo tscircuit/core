@@ -10,7 +10,6 @@ test("pcbnotedimension renders between explicit points", async () => {
         from={{ x: 1, y: 2 }}
         to={{ x: 6, y: 2 }}
         text="5mm"
-        offset={0.5}
         arrowSize={0.8}
         fontSize={1.5}
         color="#ffffff"
@@ -27,7 +26,6 @@ test("pcbnotedimension renders between explicit points", async () => {
     from: { x: 1, y: 2 },
     to: { x: 6, y: 2 },
     text: "5mm",
-    offset: 0.5,
     font: "tscircuit2024",
     font_size: 1.5,
     color: "#ffffff",
