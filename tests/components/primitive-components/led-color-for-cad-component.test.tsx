@@ -5,15 +5,9 @@ test("group rotation on the cad model", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <group name="group1" pcbRotation={45}>
-      <chip
-        name="U1"
-        footprint="soic8"
-        cadModel={{
-          stlUrl: "https://example.com/test.stl",
-        }}
-      />
-    </group>,
+    <board>
+      <led name="D1" color="red" footprint="0402" />
+    </board>,
   )
 
   circuit.render()
@@ -22,27 +16,27 @@ test("group rotation on the cad model", async () => {
   expect(cad_component).toMatchInlineSnapshot(`
     {
       "cad_component_id": "cad_component_0",
-      "color": undefined,
-      "footprinter_string": undefined,
+      "color": "red",
+      "footprinter_string": "0402",
       "model_glb_url": undefined,
       "model_gltf_url": undefined,
       "model_jscad": undefined,
       "model_mtl_url": undefined,
       "model_obj_url": undefined,
       "model_step_url": undefined,
-      "model_stl_url": "https://example.com/test.stl",
+      "model_stl_url": undefined,
       "model_unit_to_mm_scale_factor": undefined,
       "model_wrl_url": undefined,
       "pcb_component_id": "pcb_component_0",
       "position": {
         "x": 0,
         "y": 0,
-        "z": 0,
+        "z": 0.7,
       },
       "rotation": {
         "x": 0,
         "y": 0,
-        "z": 45,
+        "z": 0,
       },
       "source_component_id": "source_component_0",
       "type": "cad_component",
