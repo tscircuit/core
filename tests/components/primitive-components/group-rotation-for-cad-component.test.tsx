@@ -22,7 +22,6 @@ test("group rotation on the cad model", async () => {
   expect(cad_component).toMatchInlineSnapshot(`
     {
       "cad_component_id": "cad_component_0",
-      "color": undefined,
       "footprinter_string": undefined,
       "model_glb_url": undefined,
       "model_gltf_url": undefined,

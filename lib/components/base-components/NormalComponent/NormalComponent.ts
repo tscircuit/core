@@ -63,7 +63,6 @@ import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalCompo
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
 import { isFootprintUrl } from "./utils/isFoorprintUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
-import { color } from "bun"
 
 const debug = Debug("tscircuit:core")
 
@@ -1250,7 +1249,12 @@ export class NormalComponent<
     const cadModelProp = this._parsedProps.cadModel
     const cadModel =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
-    const footprint = this.props.footprint ?? this._getImpliedFootprintString()
+    const footprint =
+      this.props.footprint && this.props.color
+        ? `${this.props.footprint}_${this.props.color}`
+        : this.props.footprint
+          ? this.props.footprint
+          : this._getImpliedFootprintString()
 
     if (!this.pcb_component_id) return
     if (!cadModel && !footprint) return
@@ -1350,8 +1354,6 @@ export class NormalComponent<
         typeof cadModel?.modelUnitToMmScale === "number"
           ? cadModel.modelUnitToMmScale
           : undefined,
-
-      color: this.props.color,
 
       footprinter_string:
         typeof footprint === "string" && !cadModel ? footprint : undefined,
