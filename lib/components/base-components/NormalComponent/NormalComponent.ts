@@ -1242,6 +1242,13 @@ export class NormalComponent<
     return dimensions
   }
 
+  getFootprinterString(): string | null {
+    if (typeof this._parsedProps.footprint === "string") {
+      return this._parsedProps.footprint
+    }
+    return null
+  }
+
   doInitialCadModelRender(): void {
     if (this._isCadModelChild) return
     const { db } = this.root!
@@ -1249,7 +1256,8 @@ export class NormalComponent<
     const cadModelProp = this._parsedProps.cadModel
     const cadModel =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
-    const footprint = this.props.footprint ?? this._getImpliedFootprintString()
+    const footprint =
+      this.getFootprinterString() ?? this._getImpliedFootprintString()
 
     if (!this.pcb_component_id) return
     if (!cadModel && !footprint) return
