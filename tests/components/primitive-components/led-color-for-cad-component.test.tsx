@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("group rotation on the cad model", async () => {
+test("color for  cad model", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
