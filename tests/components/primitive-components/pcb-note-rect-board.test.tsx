@@ -34,4 +34,5 @@ test("pcbnoterect outside a footprint creates a global note rect", async () => {
     is_stroke_dashed: false,
   })
   expect(rects[0].pcb_component_id).toBeUndefined()
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

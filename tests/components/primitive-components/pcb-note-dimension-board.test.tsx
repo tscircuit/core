@@ -34,4 +34,5 @@ test("pcbnotedimension renders between explicit points", async () => {
     arrow_size: 0.8,
   })
   expect(dimensions[0].pcb_component_id).toBeUndefined()
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

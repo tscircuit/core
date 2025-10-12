@@ -16,27 +16,20 @@ export class PcbNoteDimension extends PrimitiveComponent<
     }
   }
 
-  private _resolvePoint(
-    input: string | Point,
-    transform: Matrix,
-  ): Point {
+  private _resolvePoint(input: string | Point, transform: Matrix): Point {
     if (typeof input === "string") {
-      const target = this.getSubcircuit().selectOne(input) as
-        | PrimitiveComponent
-        | null
+      const target = this.getSubcircuit().selectOne(
+        input,
+      ) as PrimitiveComponent | null
       if (!target) {
-        this.renderError(
-          `PcbNoteDimension could not find selector "${input}"`,
-        )
+        this.renderError(`PcbNoteDimension could not find selector "${input}"`)
         return applyToPoint(transform, { x: 0, y: 0 })
       }
       return target._getGlobalPcbPositionBeforeLayout()
     }
 
-    const numericX =
-      typeof input.x === "string" ? parseFloat(input.x) : input.x
-    const numericY =
-      typeof input.y === "string" ? parseFloat(input.y) : input.y
+    const numericX = typeof input.x === "string" ? parseFloat(input.x) : input.x
+    const numericY = typeof input.y === "string" ? parseFloat(input.y) : input.y
     return applyToPoint(transform, { x: numericX, y: numericY })
   }
 
