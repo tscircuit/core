@@ -42,6 +42,13 @@ export class Led extends NormalComponent<
     )
   }
 
+  doInitialCadModelRender(): void {
+    if (this.props.footprint && this.props.color) {
+      this.props.footprint = `${this.props.footprint}_${this.props.color}`
+    }
+    super.doInitialCadModelRender()
+  }
+
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
