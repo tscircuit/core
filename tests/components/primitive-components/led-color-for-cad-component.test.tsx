@@ -16,7 +16,7 @@ test("color for  cad model", async () => {
   expect(cad_component).toMatchInlineSnapshot(`
     {
       "cad_component_id": "cad_component_0",
-      "footprinter_string": "0402_red",
+      "footprinter_string": "0402_color(red)",
       "model_glb_url": undefined,
       "model_gltf_url": undefined,
       "model_jscad": undefined,
