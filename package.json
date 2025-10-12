@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.779",
+  "version": "0.0.780",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -32,7 +32,7 @@
     "@biomejs/biome": "^1.8.3",
     "@tscircuit/capacity-autorouter": "^0.0.131",
     "@tscircuit/checks": "^0.0.85",
-    "@tscircuit/circuit-json-util": "^0.0.67",
+    "@tscircuit/circuit-json-util": "^0.0.72",
     "@tscircuit/common": "^0.0.9",
     "@tscircuit/footprinter": "^0.0.236",
     "@tscircuit/import-snippet": "^0.0.4",

@@ -154,6 +154,21 @@ export interface PcbFabricationNoteText {
   color?: string
 }
 
+export interface PcbNoteLine {
+  type: "pcb_note_line"
+  pcb_note_line_id: string
+  pcb_component_id?: string
+  pcb_group_id?: string
+  subcircuit_id?: string
+  x1: Distance
+  y1: Distance
+  x2: Distance
+  y2: Distance
+  stroke_width: Distance
+  color?: string
+  is_dashed?: boolean
+}
+
 export interface PcbSilkscreenCircle {
   type: "pcb_silkscreen_circle"
   pcb_silkscreen_circle_id: string
