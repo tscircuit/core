@@ -12,7 +12,7 @@ it("should assign a default name to an unnamed chip", async () => {
   await circuit.render()
 
   const chip = circuit.selectOne("chip") as Chip
-  expect(chip.name).toMatch(/^unnamed_chip/)
+  expect(chip.name).toMatch(/^unnamed_chip\d+$/)
 
   expect(
     convertCircuitJsonToSchematicSvg(circuit.getCircuitJson()),

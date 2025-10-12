@@ -17,7 +17,6 @@ export const getTestFixture = ({
   global.debugGraphics = []
   preventExternalApiRequests()
   const circuit = new RootCircuit({ platform })
-  circuit.unnamedElementCounter = {}
   const staticAssetsServerUrl = withStaticAssetsServer
     ? getTestStaticAssetsServer().url
     : undefined
