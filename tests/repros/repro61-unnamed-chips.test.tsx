@@ -6,14 +6,17 @@ test("unnamed chips receive sequential unnamed_chip fallback names", async () =>
 
   circuit.add(
     <board width="15mm" height="10mm">
-      {/* @ts-expect-error - Testing unnamed chip fallback naming */} 
-      <chip footprint="soic8"  schHeight={2}
+      {/* @ts-expect-error - Testing unnamed chip fallback naming */}
+      <chip
+        footprint="soic8"
+        schHeight={2}
         schWidth={2}
         pinLabels={{
           pin1: ["A1"],
-          pin2: ["A2"]
-          }} />
-      
+          pin2: ["A2"],
+        }}
+      />
+
       {/* @ts-expect-error - Testing unnamed chip fallback naming */}
       <chip
         schHeight={2}
@@ -25,7 +28,7 @@ test("unnamed chips receive sequential unnamed_chip fallback names", async () =>
         }}
       />
       <trace from=".unnamed_chip1 > .pin1" to="unnamed_chip2 > .pin1" />
-    </board>
+    </board>,
   )
 
   await circuit.renderUntilSettled()
