@@ -42,11 +42,12 @@ export class Led extends NormalComponent<
     )
   }
 
-  doInitialCadModelRender(): void {
-    if (this.props.footprint && this.props.color) {
-      this.props.footprint = `${this.props.footprint}_${this.props.color}`
+  getFootprinterString(): string | null {
+    const baseFootprint = super.getFootprinterString()
+    if (baseFootprint && this.props.color) {
+      return `${baseFootprint}_color(${this.props.color})`
     }
-    super.doInitialCadModelRender()
+    return baseFootprint
   }
 
   doInitialSourceRender() {
