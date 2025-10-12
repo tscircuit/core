@@ -1465,7 +1465,7 @@ export class NormalComponent<
 
   doInitialAssignFallbackProps(): void {
     const { _parsedProps: props } = this
-    if (props.connections && !this.name) {
+    if (!this.name) {
       this.fallbackUnassignedName =
         this.getSubcircuit().getNextAvailableName(this)
     }

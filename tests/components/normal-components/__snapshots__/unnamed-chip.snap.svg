@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(326.0869565217,0,0,-326.0869565217,600,300)"><style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              /* Basic per-trace hover fallback */
+              .trace:hover {
+                filter: invert(1);
+              }
+              .trace:hover .trace-crossing-outline {
+                opacity: 0;
+              }
+              .trace:hover .trace-junction {
+                filter: invert(1);
+              }
+              /* Net-hover highlighting: when a trace or its overlays are hovered,
+                 invert color for all traces (base + overlays) sharing the same
+                 subcircuit connectivity key. Also hide crossing outline during hover. */
+              
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { fill: rgb(0, 100, 100); }
+            </style><rect class="boundary" x="0" y="0" width="1200" height="600"/><g data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_0"><rect class="component chip" x="534.78260869566" y="234.78260869565997" width="130.43478260868005" height="130.43478260868005" stroke-width="6.521739130434001px" fill="rgb(255, 255, 194)" stroke="rgb(132, 0, 0)"/><rect class="component-overlay" x="534.78260869566" y="234.78260869565997" width="130.43478260868005" height="130.43478260868005" fill="transparent"/><text x="534.78260869566" y="407.60869565216103" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="58.695652173906px" transform="rotate(0, 534.78260869566, 407.60869565216103)"></text><text x="534.78260869566" y="192.39130434783897" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="58.695652173906px" transform="rotate(0, 534.78260869566, 192.39130434783897)"></text></g></svg>
