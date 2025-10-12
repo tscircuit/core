@@ -1,11 +1,21 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("fabrication note path and text are created", async () => {
+test("fabrication note path, text and rect are created", async () => {
   const { circuit, logSoup } = getTestFixture()
 
   circuit.add(
     <board width="12mm" height="10mm">
+      <fabricationnoterect
+        width={2}
+        height={1}
+        pcbX={3}
+        pcbY={3}
+        strokeWidth={0.2}
+        isFilled
+        hasStroke={false}
+        color="rgba(255, 255, 255, 0.5)"
+      />
       <fabricationnotepath
         route={[
           {
