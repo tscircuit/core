@@ -42,6 +42,14 @@ export class Led extends NormalComponent<
     )
   }
 
+  getFootprinterString(): string | null {
+    const baseFootprint = super.getFootprinterString()
+    if (baseFootprint && this.props.color) {
+      return `${baseFootprint}_color(${this.props.color})`
+    }
+    return baseFootprint
+  }
+
   doInitialSourceRender() {
     const { db } = this.root!
     const { _parsedProps: props } = this
