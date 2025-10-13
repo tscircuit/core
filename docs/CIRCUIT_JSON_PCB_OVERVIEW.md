@@ -19,6 +19,23 @@ export interface PcbFabricationNotePath {
   color?: string
 }
 
+export interface PcbFabricationNoteDimension {
+  type: "pcb_fabrication_note_dimension"
+  pcb_fabrication_note_dimension_id: string
+  pcb_component_id: string
+  pcb_group_id?: string
+  subcircuit_id?: string
+  layer: LayerRef
+  from: Point
+  to: Point
+  text?: string
+  offset?: Length
+  font: "tscircuit2024"
+  font_size: Length
+  color?: string
+  arrow_size: Length
+}
+
 export interface PcbComponent {
   type: "pcb_component"
   pcb_component_id: string
