@@ -73,8 +73,38 @@ async function saveSvgSnapshotOfSimulation({
     }
   }
 
+  const diffPath = filePath.replace(".snap.svg", ".diff.txt")
+  try {
+    const oldStr = normalizeSvg(existingContent)
+    const newStr = normalizeSvg(content)
+
+    const oldLines = oldStr.split("\n")
+    const newLines = newStr.split("\n")
+    const maxLen = Math.max(oldLines.length, newLines.length)
+
+    const header = [
+      `--- existing: ${path.basename(filePath)} (normalized)`,
+      `+++ current:  ${path.basename(filePath)} (normalized)`,
+      "",
+    ]
+
+    const body: string[] = []
+    for (let i = 0; i < maxLen; i++) {
+      const a = oldLines[i] ?? ""
+      const b = newLines[i] ?? ""
+      const lineNo = i + 1
+      if (a === b) continue
+      if (a !== "") body.push(`-${lineNo}: ${a}`)
+      if (b !== "") body.push(`+${lineNo}: ${b}`)
+    }
+
+    const diffOut =
+      header.join("\n") + (body.length ? body.join("\n") + "\n" : "No differences found\n")
+    fs.writeFileSync(diffPath, diffOut, "utf8")
+  } catch {}
+
   return {
-    message: () => `Simulation SVG snapshot does not match.`,
+    message: () => `Simulation SVG snapshot does not match. See diff at ${diffPath}`,
     pass: false,
   }
 }
