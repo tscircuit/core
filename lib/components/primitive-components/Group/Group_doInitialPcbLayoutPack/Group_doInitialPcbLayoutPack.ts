@@ -35,9 +35,11 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   > = {}
 
   // Collect pcb_component_ids that should be excluded from packing
+  // Only collect from DIRECT children, not all descendants
   const excludedPcbComponentIds = new Set<string>()
 
-  const collectMarginsAndExclusions = (comp: any) => {
+  // Recursively collect margins from all descendants
+  const collectMargins = (comp: any) => {
     if (comp?.pcb_component_id && comp?._parsedProps) {
       const props = comp._parsedProps
       const left = length.parse(props.pcbMarginLeft ?? props.pcbMarginX ?? 0)
@@ -49,21 +51,38 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       if (left || right || top || bottom) {
         chipMarginsMap[comp.pcb_component_id] = { left, right, top, bottom }
       }
-
-      // Check if component is relatively positioned and should be excluded from packing
-      if (comp._isNormalComponent && comp.isRelativelyPositioned?.()) {
-        excludedPcbComponentIds.add(comp.pcb_component_id)
-      }
     }
-    if (comp?.children) comp.children.forEach(collectMarginsAndExclusions)
+    if (comp?.children) comp.children.forEach(collectMargins)
   }
 
-  collectMarginsAndExclusions(group)
+  collectMargins(group)
 
-  // Filter out relatively positioned components from the circuit JSON
+  // Only exclude DIRECT children that are relatively positioned
+  // Don't recurse into nested groups - their children are managed by those groups
+  const excludedPcbGroupIds = new Set<string>()
+  for (const child of group.children) {
+    const childAsAny = child as any
+    // Check for both pcb_component_id (regular components) and pcb_group_id (groups)
+    if (
+      childAsAny._isNormalComponent &&
+      childAsAny.isRelativelyPositioned?.()
+    ) {
+      if (childAsAny.pcb_component_id) {
+        excludedPcbComponentIds.add(childAsAny.pcb_component_id)
+      }
+      if (childAsAny.pcb_group_id) {
+        excludedPcbGroupIds.add(childAsAny.pcb_group_id)
+      }
+    }
+  }
+
+  // Filter out relatively positioned components and groups from the circuit JSON
   const filteredCircuitJson = db.toArray().filter((element: any) => {
     if (element.type === "pcb_component") {
       return !excludedPcbComponentIds.has(element.pcb_component_id)
+    }
+    if (element.type === "pcb_group") {
+      return !excludedPcbGroupIds.has(element.pcb_group_id)
     }
     return true
   })

@@ -158,17 +158,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         centerY += (padTop - padBottom) / 2
       }
 
-      // Preserve explicit positioning when pcbX/pcbY are set to prevent pcbPack interference
+      // Preserve explicit positioning when pcbX/pcbY are set
       const hasExplicitPositioning =
         this._parsedProps.pcbX !== undefined ||
         this._parsedProps.pcbY !== undefined
 
-      const center = hasExplicitPositioning
-        ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
-            x: centerX,
-            y: centerY,
-          })
-        : { x: centerX, y: centerY }
+      // If explicitly positioned, keep the center that was set in doInitialPcbComponentRender
+      // Otherwise, recalculate based on bounds of children
+      const existingCenter = db.pcb_group.get(this.pcb_group_id)?.center
+      const center =
+        hasExplicitPositioning && existingCenter
+          ? existingCenter
+          : { x: centerX, y: centerY }
 
       db.pcb_group.update(this.pcb_group_id, {
         width: Number(props.width ?? width),
@@ -848,7 +849,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const unpositionedDirectChildrenCount = this.children.reduce(
       (count, child) => {
-        const childProps = (child as any)._parsedProps
+        // Skip net components - they don't have physical PCB components
+        if (!child.pcb_component_id && !(child as Group).pcb_group_id) {
+          return count
+        }
+
+        const childProps = child._parsedProps
         const hasCoords =
           childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
         return count + (hasCoords ? 0 : 1)
