@@ -57,20 +57,22 @@ export class FabricationNoteDimension extends PrimitiveComponent<
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
 
-    const fabrication_note_dimension = db.pcb_fabrication_note_dimension.insert({
-      pcb_component_id,
-      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      pcb_group_id: group?.pcb_group_id ?? undefined,
-      layer,
-      from,
-      to,
-      text: props.text,
-      offset: props.offset,
-      font: props.font ?? "tscircuit2024",
-      font_size: props.fontSize ?? "1mm",
-      color: props.color,
-      arrow_size: props.arrowSize ?? "1mm",
-    })
+    const fabrication_note_dimension = db.pcb_fabrication_note_dimension.insert(
+      {
+        pcb_component_id,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: group?.pcb_group_id ?? undefined,
+        layer,
+        from,
+        to,
+        text: props.text,
+        offset: props.offset,
+        font: props.font ?? "tscircuit2024",
+        font_size: props.fontSize ?? "1mm",
+        color: props.color,
+        arrow_size: props.arrowSize ?? "1mm",
+      },
+    )
 
     this.fabrication_note_dimension_id =
       fabrication_note_dimension.pcb_fabrication_note_dimension_id

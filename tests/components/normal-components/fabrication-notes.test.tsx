@@ -39,8 +39,8 @@ test("fabrication note path, text and rect are created", async () => {
       />
       <fabricationnotetext text={"hello world!"} />
       <fabricationnotedimension
-        from={{ x: 0, y: 0 }}
-        to={{ x: 5, y: 0 }}
+        from={{ x: 0, y: -3 }}
+        to={{ x: 5, y: -3 }}
         text="5mm"
         arrowSize={0.8}
         offset={1.2}
@@ -56,8 +56,8 @@ test("fabrication note path, text and rect are created", async () => {
   expect(dimensions).toHaveLength(1)
   expect(dimensions[0]).toMatchObject({
     type: "pcb_fabrication_note_dimension",
-    from: { x: 0, y: 0 },
-    to: { x: 5, y: 0 },
+    from: { x: 0, y: -3 },
+    to: { x: 5, y: -3 },
     text: "5mm",
     offset: 1.2,
     arrow_size: 0.8,
