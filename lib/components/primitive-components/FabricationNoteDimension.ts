@@ -68,9 +68,9 @@ export class FabricationNoteDimension extends PrimitiveComponent<
         text: props.text,
         offset: props.offset,
         font: props.font ?? "tscircuit2024",
-        font_size: props.fontSize ?? "1mm",
+        font_size: props.fontSize ?? 1,
         color: props.color,
-        arrow_size: props.arrowSize ?? "1mm",
+        arrow_size: props.arrowSize ?? 1,
       },
     )
 
