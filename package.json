@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.781",
+  "version": "0.0.783",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
-    "@tscircuit/capacity-autorouter": "^0.0.131",
+    "@tscircuit/capacity-autorouter": "^0.0.132",
     "@tscircuit/checks": "^0.0.85",
     "@tscircuit/circuit-json-util": "^0.0.72",
     "@tscircuit/common": "^0.0.9",

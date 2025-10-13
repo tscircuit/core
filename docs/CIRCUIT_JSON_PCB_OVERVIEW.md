@@ -169,6 +169,49 @@ export interface PcbNoteLine {
   is_dashed?: boolean
 }
 
+export interface PcbNoteRect {
+  type: "pcb_note_rect"
+  pcb_note_rect_id: string
+  pcb_component_id?: string
+  pcb_group_id?: string
+  subcircuit_id?: string
+  center: Point
+  width: Distance
+  height: Distance
+  stroke_width: Distance
+  is_filled?: boolean
+  has_stroke?: boolean
+  is_stroke_dashed?: boolean
+  color?: string
+}
+
+export interface PcbNotePath {
+  type: "pcb_note_path"
+  pcb_note_path_id: string
+  pcb_component_id?: string
+  pcb_group_id?: string
+  subcircuit_id?: string
+  route: RouteHintPoint[]
+  stroke_width: Distance
+  color?: string
+}
+
+export interface PcbNoteDimension {
+  type: "pcb_note_dimension"
+  pcb_note_dimension_id: string
+  pcb_component_id?: string
+  pcb_group_id?: string
+  subcircuit_id?: string
+  from: Point
+  to: Point
+  text?: string
+  offset?: Distance
+  font: "tscircuit2024"
+  font_size: Distance
+  color?: string
+  arrow_size?: Distance
+}
+
 export interface PcbSilkscreenCircle {
   type: "pcb_silkscreen_circle"
   pcb_silkscreen_circle_id: string
