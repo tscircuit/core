@@ -6,7 +6,7 @@ test("Manual path with rotation", async () => {
 
   circuit.add(
     <board width="15mm" height="10mm">
-      <group>
+      <group pcbX={0} pcbY={0}>
         <capacitor
           name="C1"
           capacitance="10uF"
@@ -44,7 +44,7 @@ test("Manual path with rotation", async () => {
         />
         <trace from="C3.pin1" to="C4.pin1" pcbPath={[{ x: 1, y: 2 }]} />
       </group>
-      <group pcbRotation={-90}>
+      <group pcbRotation={-90} pcbX={0} pcbY={0}>
         <group pcbRotation={-90} pcbX={-4} pcbY={0}>
           <capacitor
             name="C5"
