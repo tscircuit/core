@@ -1522,4 +1522,15 @@ export class NormalComponent<
   doInitialSilkscreenOverlapAdjustment() {
     return NormalComponent_doInitialSilkscreenOverlapAdjustment(this)
   }
+
+  /**
+   * Returns true if this component has explicit PCB positioning (pcbX or pcbY)
+   * and should not be moved by automatic packing/layout algorithms
+   */
+  isRelativelyPositioned(): boolean {
+    return (
+      this._parsedProps.pcbX !== undefined ||
+      this._parsedProps.pcbY !== undefined
+    )
+  }
 }

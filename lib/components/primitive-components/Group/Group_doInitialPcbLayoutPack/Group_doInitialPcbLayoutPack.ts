@@ -6,10 +6,11 @@ import {
   getGraphicsFromPackOutput,
   type PackInput,
 } from "calculate-packing"
-import { length } from "circuit-json"
+import { type AnyCircuitElement, length } from "circuit-json"
 import Debug from "debug"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
@@ -34,6 +35,11 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     { left: number; right: number; top: number; bottom: number }
   > = {}
 
+  // Collect pcb_component_ids that should be excluded from packing
+  // Only collect from DIRECT children, not all descendants
+  const excludedPcbComponentIds = new Set<string>()
+
+  // Recursively collect margins from all descendants
   const collectMargins = (comp: any) => {
     if (comp?.pcb_component_id && comp?._parsedProps) {
       const props = comp._parsedProps
@@ -51,9 +57,43 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
 
   collectMargins(group)
+
+  const excludedPcbGroupIds = new Set<string>()
+  for (const child of group.children) {
+    const childIsGroupOrNormalComponent = child as NormalComponent
+    if (
+      childIsGroupOrNormalComponent._isNormalComponent &&
+      childIsGroupOrNormalComponent.isRelativelyPositioned?.()
+    ) {
+      if (childIsGroupOrNormalComponent.pcb_component_id) {
+        excludedPcbComponentIds.add(
+          childIsGroupOrNormalComponent.pcb_component_id,
+        )
+      }
+      if ((childIsGroupOrNormalComponent as Group).pcb_group_id) {
+        excludedPcbGroupIds.add(
+          (childIsGroupOrNormalComponent as Group).pcb_group_id!,
+        )
+      }
+    }
+  }
+
+  // Filter out relatively positioned components and groups from the circuit JSON
+  const filteredCircuitJson = db
+    .toArray()
+    .filter((element: AnyCircuitElement) => {
+      if (element.type === "pcb_component") {
+        return !excludedPcbComponentIds.has(element.pcb_component_id)
+      }
+      if (element.type === "pcb_group") {
+        return !excludedPcbGroupIds.has(element.pcb_group_id)
+      }
+      return true
+    })
+
   const packInput: PackInput = {
     ...convertPackOutputToPackInput(
-      convertCircuitJsonToPackOutput(db.toArray(), {
+      convertCircuitJsonToPackOutput(filteredCircuitJson, {
         source_group_id: group.source_group_id!,
         shouldAddInnerObstacles: true,
         chipMarginsMap,

@@ -158,7 +158,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         centerY += (padTop - padBottom) / 2
       }
 
-      // Preserve explicit positioning when pcbX/pcbY are set to prevent pcbPack interference
+      // Preserve explicit positioning when pcbX/pcbY are set
       const hasExplicitPositioning =
         this._parsedProps.pcbX !== undefined ||
         this._parsedProps.pcbY !== undefined
@@ -840,20 +840,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (props.grid) return "grid"
 
     // Default to pcbPack when there are multiple direct children without explicit
-    // pcb coordinates and no manual edits are present. If any direct child has
-    // explicit pcb coords, do not apply pack.
+    // pcb coordinates and no manual edits are present. Relatively positioned
+    // components (with pcbX/pcbY) will be excluded from packing, while others
+    // will be packed together.
     const groupHasCoords = props.pcbX !== undefined || props.pcbY !== undefined
     const hasManualEdits = (props.manualEdits?.pcb_placements?.length ?? 0) > 0
 
-    const anyDirectChildHasPcbCoords = this.children.some((child) => {
-      const childProps = (child as any)._parsedProps
-      return childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
-    })
-    if (anyDirectChildHasPcbCoords) return "none"
-
     const unpositionedDirectChildrenCount = this.children.reduce(
       (count, child) => {
-        const childProps = (child as any)._parsedProps
+        // Skip net components - they don't have physical PCB components
+        if (!child.pcb_component_id && !(child as Group).pcb_group_id) {
+          return count
+        }
+
+        const childProps = child._parsedProps
         const hasCoords =
           childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
         return count + (hasCoords ? 0 : 1)
