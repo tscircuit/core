@@ -62,6 +62,7 @@ export interface TscircuitElements {
   pcbnotedimension: Props.PcbNoteDimensionProps
   fabricationnotetext: Props.FabricationNoteTextProps
   fabricationnotepath: Props.FabricationNotePathProps
+  fabricationnotedimension: Props.FabricationNoteDimensionProps
   constraint: Props.ConstraintProps
   constrainedlayout: Props.ConstrainedLayoutProps
   battery: Props.BatteryProps

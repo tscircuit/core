@@ -38,6 +38,13 @@ test("fabrication note path, text and rect are created", async () => {
         strokeWidth={0.1}
       />
       <fabricationnotetext text={"hello world!"} />
+      <fabricationnotedimension
+        from={{ x: 0, y: 0 }}
+        to={{ x: 5, y: 0 }}
+        text="5mm"
+        arrowSize={0.8}
+        offset={1.2}
+      />
     </board>,
   )
 
@@ -45,6 +52,18 @@ test("fabrication note path, text and rect are created", async () => {
 
   expect(circuit.db.pcb_fabrication_note_text.list()).toHaveLength(1)
   expect(circuit.db.pcb_fabrication_note_path.list()).toHaveLength(1)
+  const dimensions = circuit.db.pcb_fabrication_note_dimension.list()
+  expect(dimensions).toHaveLength(1)
+  expect(dimensions[0]).toMatchObject({
+    type: "pcb_fabrication_note_dimension",
+    from: { x: 0, y: 0 },
+    to: { x: 5, y: 0 },
+    text: "5mm",
+    offset: 1.2,
+    arrow_size: 0.8,
+    font: "tscircuit2024",
+    layer: "top",
+  })
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
