@@ -74,6 +74,7 @@ export interface TscircuitElements {
   mosfet: Props.MosfetProps
   testpoint: Props.TestpointProps
   voltagesource: VoltageSourceProps
+  voltageprobe: Props.VoltageProbeProps
   copperpour: Props.CopperPourProps
   analogsimulation: Props.AnalogSimulationProps
   jscad: any
