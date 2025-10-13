@@ -42,6 +42,7 @@ async function saveSvgSnapshotOfSimulation({
   }
 
   if (!fs.existsSync(filePath) || forceUpdateSnapshot) {
+    console.log("Creating simulation snapshot at", filePath)
     fs.writeFileSync(filePath, content)
     return {
       message: () => `Simulation snapshot created at ${filePath}`,
@@ -65,6 +66,7 @@ async function saveSvgSnapshotOfSimulation({
   }
 
   if (!result.equal && updateSnapshot) {
+    console.log("Updating simulation snapshot at", filePath)
     fs.writeFileSync(filePath, content)
     return {
       message: () => `Simulation snapshot updated at ${filePath}`,
@@ -82,7 +84,7 @@ async function saveSvgSnapshotOfSimulation({
 
   return {
     message: () =>
-      `Simulation SVG snapshot does not match. Diff saved at ${diffPath}`,
+      `Simulation snapshot does not match. Diff saved at ${diffPath}`,
     pass: false,
   }
 }
