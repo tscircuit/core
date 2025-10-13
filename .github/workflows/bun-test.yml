@@ -24,12 +24,3 @@ jobs:
 
       - name: Run tests
         run: bun test --timeout 15000
-
-      - name: Upload simulation SVG diffs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: simulation-svg-diffs
-          path: |
-            tests/**/__snapshots__/*.diff.txt
-          if-no-files-found: ignore

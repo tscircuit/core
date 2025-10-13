@@ -2,6 +2,7 @@ import { convertCircuitJsonToSchematicSimulationSvg } from "circuit-to-svg"
 import { expect, type MatcherResult } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
+import looksSame from "looks-same"
 import { RootCircuit } from "lib/RootCircuit"
 import type { AnyCircuitElement } from "circuit-json"
 
@@ -48,24 +49,22 @@ async function saveSvgSnapshotOfSimulation({
     }
   }
 
-  const existingContent = fs.readFileSync(filePath, "utf8")
+  const existingSnapshot = fs.readFileSync(filePath)
+  const currentBuffer = Buffer.from(content)
 
-  const normalizeSvg = (s: string) =>
-    s
-      .replace(/\r\n/g, "\n")
-      .replace(/[ \t]+$/gm, "")
-      .trim()
+  const result = await looksSame(currentBuffer, existingSnapshot, {
+    strict: false,
+    tolerance: 2,
+  })
 
-  const equal = normalizeSvg(existingContent) === normalizeSvg(content)
-
-  if (equal) {
+  if (result.equal) {
     return {
       message: () => "Simulation snapshot matches",
       pass: true,
     }
   }
 
-  if (!equal && updateSnapshot) {
+  if (!result.equal && updateSnapshot) {
     fs.writeFileSync(filePath, content)
     return {
       message: () => `Simulation snapshot updated at ${filePath}`,
@@ -73,38 +72,17 @@ async function saveSvgSnapshotOfSimulation({
     }
   }
 
-  const diffPath = filePath.replace(".snap.svg", ".diff.txt")
-  try {
-    const oldStr = normalizeSvg(existingContent)
-    const newStr = normalizeSvg(content)
-
-    const oldLines = oldStr.split("\n")
-    const newLines = newStr.split("\n")
-    const maxLen = Math.max(oldLines.length, newLines.length)
-
-    const header = [
-      `--- existing: ${path.basename(filePath)} (normalized)`,
-      `+++ current:  ${path.basename(filePath)} (normalized)`,
-      "",
-    ]
-
-    const body: string[] = []
-    for (let i = 0; i < maxLen; i++) {
-      const a = oldLines[i] ?? ""
-      const b = newLines[i] ?? ""
-      const lineNo = i + 1
-      if (a === b) continue
-      if (a !== "") body.push(`-${lineNo}: ${a}`)
-      if (b !== "") body.push(`+${lineNo}: ${b}`)
-    }
-
-    const diffOut =
-      header.join("\n") + (body.length ? body.join("\n") + "\n" : "No differences found\n")
-    fs.writeFileSync(diffPath, diffOut, "utf8")
-  } catch {}
+  const diffPath = filePath.replace(".snap.svg", ".diff.png")
+  await looksSame.createDiff({
+    reference: existingSnapshot,
+    current: currentBuffer,
+    diff: diffPath,
+    highlightColor: "#ff00ff",
+  })
 
   return {
-    message: () => `Simulation SVG snapshot does not match. See diff at ${diffPath}`,
+    message: () =>
+      `Simulation SVG snapshot does not match. Diff saved at ${diffPath}`,
     pass: false,
   }
 }
