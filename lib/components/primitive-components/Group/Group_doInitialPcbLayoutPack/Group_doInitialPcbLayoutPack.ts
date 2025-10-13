@@ -34,7 +34,10 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     { left: number; right: number; top: number; bottom: number }
   > = {}
 
-  const collectMargins = (comp: any) => {
+  // Collect pcb_component_ids that should be excluded from packing
+  const excludedPcbComponentIds = new Set<string>()
+
+  const collectMarginsAndExclusions = (comp: any) => {
     if (comp?.pcb_component_id && comp?._parsedProps) {
       const props = comp._parsedProps
       const left = length.parse(props.pcbMarginLeft ?? props.pcbMarginX ?? 0)
@@ -46,14 +49,28 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       if (left || right || top || bottom) {
         chipMarginsMap[comp.pcb_component_id] = { left, right, top, bottom }
       }
+
+      // Check if component is relatively positioned and should be excluded from packing
+      if (comp._isNormalComponent && comp.isRelativelyPositioned?.()) {
+        excludedPcbComponentIds.add(comp.pcb_component_id)
+      }
     }
-    if (comp?.children) comp.children.forEach(collectMargins)
+    if (comp?.children) comp.children.forEach(collectMarginsAndExclusions)
   }
 
-  collectMargins(group)
+  collectMarginsAndExclusions(group)
+
+  // Filter out relatively positioned components from the circuit JSON
+  const filteredCircuitJson = db.toArray().filter((element: any) => {
+    if (element.type === "pcb_component") {
+      return !excludedPcbComponentIds.has(element.pcb_component_id)
+    }
+    return true
+  })
+
   const packInput: PackInput = {
     ...convertPackOutputToPackInput(
-      convertCircuitJsonToPackOutput(db.toArray(), {
+      convertCircuitJsonToPackOutput(filteredCircuitJson, {
         source_group_id: group.source_group_id!,
         shouldAddInnerObstacles: true,
         chipMarginsMap,

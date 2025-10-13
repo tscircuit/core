@@ -840,16 +840,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (props.grid) return "grid"
 
     // Default to pcbPack when there are multiple direct children without explicit
-    // pcb coordinates and no manual edits are present. If any direct child has
-    // explicit pcb coords, do not apply pack.
+    // pcb coordinates and no manual edits are present. Relatively positioned
+    // components (with pcbX/pcbY) will be excluded from packing, while others
+    // will be packed together.
     const groupHasCoords = props.pcbX !== undefined || props.pcbY !== undefined
     const hasManualEdits = (props.manualEdits?.pcb_placements?.length ?? 0) > 0
-
-    const anyDirectChildHasPcbCoords = this.children.some((child) => {
-      const childProps = (child as any)._parsedProps
-      return childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
-    })
-    if (anyDirectChildHasPcbCoords) return "none"
 
     const unpositionedDirectChildrenCount = this.children.reduce(
       (count, child) => {
