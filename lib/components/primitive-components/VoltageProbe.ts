@@ -1,17 +1,8 @@
-import { commonComponentProps } from "@tscircuit/props"
+import { commonComponentProps, voltageProbeProps } from "@tscircuit/props"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Net } from "./Net"
 import type { Port } from "./Port"
-
-export const voltageProbeProps = commonComponentProps
-  .omit({ name: true })
-  .extend({
-    name: z.string().optional(),
-    connectsTo: z.string().or(z.array(z.string())),
-  })
-
-export type VoltageProbeProps = z.input<typeof voltageProbeProps>
 
 export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
   simulation_voltage_probe_id: string | null = null
