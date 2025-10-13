@@ -2,7 +2,6 @@ import { convertCircuitJsonToSchematicSimulationSvg } from "circuit-to-svg"
 import { expect, type MatcherResult } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
-import looksSame from "looks-same"
 import { RootCircuit } from "lib/RootCircuit"
 import type { AnyCircuitElement } from "circuit-json"
 
@@ -42,7 +41,6 @@ async function saveSvgSnapshotOfSimulation({
   }
 
   if (!fs.existsSync(filePath) || forceUpdateSnapshot) {
-    console.log("Creating simulation snapshot at", filePath)
     fs.writeFileSync(filePath, content)
     return {
       message: () => `Simulation snapshot created at ${filePath}`,
@@ -50,23 +48,24 @@ async function saveSvgSnapshotOfSimulation({
     }
   }
 
-  const existingSnapshot = fs.readFileSync(filePath)
-  const currentBuffer = Buffer.from(content)
+  const existingContent = fs.readFileSync(filePath, "utf8")
 
-  const result = await looksSame(currentBuffer, existingSnapshot, {
-    strict: false,
-    tolerance: 2,
-  })
+  const normalizeSvg = (s: string) =>
+    s
+      .replace(/\r\n/g, "\n")
+      .replace(/[ \t]+$/gm, "")
+      .trim()
 
-  if (result.equal) {
+  const equal = normalizeSvg(existingContent) === normalizeSvg(content)
+
+  if (equal) {
     return {
       message: () => "Simulation snapshot matches",
       pass: true,
     }
   }
 
-  if (!result.equal && updateSnapshot) {
-    console.log("Updating simulation snapshot at", filePath)
+  if (!equal && updateSnapshot) {
     fs.writeFileSync(filePath, content)
     return {
       message: () => `Simulation snapshot updated at ${filePath}`,
@@ -74,17 +73,16 @@ async function saveSvgSnapshotOfSimulation({
     }
   }
 
-  const diffPath = filePath.replace(".snap.svg", ".diff.png")
-  await looksSame.createDiff({
-    reference: existingSnapshot,
-    current: currentBuffer,
-    diff: diffPath,
-    highlightColor: "#ff00ff",
-  })
+  const currentPath = filePath.replace(".snap.svg", ".current.svg")
+  const existingPath = filePath.replace(".snap.svg", ".existing.svg")
+  try {
+    fs.writeFileSync(currentPath, content)
+    fs.writeFileSync(existingPath, existingContent)
+  } catch {}
 
   return {
     message: () =>
-      `Simulation snapshot does not match. Diff saved at ${diffPath}`,
+      `Simulation SVG snapshot does not match. See ${currentPath} and ${existingPath}`,
     pass: false,
   }
 }
