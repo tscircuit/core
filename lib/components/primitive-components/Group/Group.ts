@@ -163,13 +163,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         this._parsedProps.pcbX !== undefined ||
         this._parsedProps.pcbY !== undefined
 
-      // If explicitly positioned, keep the center that was set in doInitialPcbComponentRender
-      // Otherwise, recalculate based on bounds of children
-      const existingCenter = db.pcb_group.get(this.pcb_group_id)?.center
-      const center =
-        hasExplicitPositioning && existingCenter
-          ? existingCenter
-          : { x: centerX, y: centerY }
+      const center = hasExplicitPositioning
+        ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
+            x: centerX,
+            y: centerY,
+          })
+        : { x: centerX, y: centerY }
 
       db.pcb_group.update(this.pcb_group_id, {
         width: Number(props.width ?? width),

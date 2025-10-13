@@ -6,10 +6,11 @@ import {
   getGraphicsFromPackOutput,
   type PackInput,
 } from "calculate-packing"
-import { length } from "circuit-json"
+import { type AnyCircuitElement, length } from "circuit-json"
 import Debug from "debug"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
@@ -57,35 +58,38 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   collectMargins(group)
 
-  // Only exclude DIRECT children that are relatively positioned
-  // Don't recurse into nested groups - their children are managed by those groups
   const excludedPcbGroupIds = new Set<string>()
   for (const child of group.children) {
-    const childAsAny = child as any
-    // Check for both pcb_component_id (regular components) and pcb_group_id (groups)
+    const childIsGroupOrNormalComponent = child as NormalComponent
     if (
-      childAsAny._isNormalComponent &&
-      childAsAny.isRelativelyPositioned?.()
+      childIsGroupOrNormalComponent._isNormalComponent &&
+      childIsGroupOrNormalComponent.isRelativelyPositioned?.()
     ) {
-      if (childAsAny.pcb_component_id) {
-        excludedPcbComponentIds.add(childAsAny.pcb_component_id)
+      if (childIsGroupOrNormalComponent.pcb_component_id) {
+        excludedPcbComponentIds.add(
+          childIsGroupOrNormalComponent.pcb_component_id,
+        )
       }
-      if (childAsAny.pcb_group_id) {
-        excludedPcbGroupIds.add(childAsAny.pcb_group_id)
+      if ((childIsGroupOrNormalComponent as Group).pcb_group_id) {
+        excludedPcbGroupIds.add(
+          (childIsGroupOrNormalComponent as Group).pcb_group_id!,
+        )
       }
     }
   }
 
   // Filter out relatively positioned components and groups from the circuit JSON
-  const filteredCircuitJson = db.toArray().filter((element: any) => {
-    if (element.type === "pcb_component") {
-      return !excludedPcbComponentIds.has(element.pcb_component_id)
-    }
-    if (element.type === "pcb_group") {
-      return !excludedPcbGroupIds.has(element.pcb_group_id)
-    }
-    return true
-  })
+  const filteredCircuitJson = db
+    .toArray()
+    .filter((element: AnyCircuitElement) => {
+      if (element.type === "pcb_component") {
+        return !excludedPcbComponentIds.has(element.pcb_component_id)
+      }
+      if (element.type === "pcb_group") {
+        return !excludedPcbGroupIds.has(element.pcb_group_id)
+      }
+      return true
+    })
 
   const packInput: PackInput = {
     ...convertPackOutputToPackInput(
