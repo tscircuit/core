@@ -73,16 +73,8 @@ async function saveSvgSnapshotOfSimulation({
     }
   }
 
-  const currentPath = filePath.replace(".snap.svg", ".current.svg")
-  const existingPath = filePath.replace(".snap.svg", ".existing.svg")
-  try {
-    fs.writeFileSync(currentPath, content)
-    fs.writeFileSync(existingPath, existingContent)
-  } catch {}
-
   return {
-    message: () =>
-      `Simulation SVG snapshot does not match. See ${currentPath} and ${existingPath}`,
+    message: () => `Simulation SVG snapshot does not match.`,
     pass: false,
   }
 }
