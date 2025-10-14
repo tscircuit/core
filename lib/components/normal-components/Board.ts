@@ -20,7 +20,11 @@ const getRoundedRectOutline = (
   radius: number,
 ) => {
   const r = Math.min(radius, width / 2, height / 2)
-  const segments = Math.max(1, Math.ceil((Math.PI / 2) * r))
+  const maxArcLengthPerSegment = 0.1 // mm
+  const segments = Math.max(
+    1,
+    Math.ceil(((Math.PI / 2) * r) / maxArcLengthPerSegment),
+  )
   const step = Math.PI / 2 / segments
   const w2 = width / 2
   const h2 = height / 2
