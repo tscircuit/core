@@ -36,8 +36,9 @@ export class SchematicCircle extends PrimitiveComponent<
         y: props.center.y + globalPos.y,
       },
       radius: props.radius,
-      stroke_width: SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
-      color: SCHEMATIC_COMPONENT_OUTLINE_COLOR,
+      stroke_width:
+        props.strokeWidth ?? SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
+      color: props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR,
       is_filled: props.isFilled,
       fill_color: props.fillColor,
       is_dashed: props.isDashed,
