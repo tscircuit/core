@@ -35,8 +35,9 @@ export class SchematicLine extends PrimitiveComponent<
       y1: props.y1 + globalPos.y,
       x2: props.x2 + globalPos.x,
       y2: props.y2 + globalPos.y,
-      stroke_width: SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
-      color: SCHEMATIC_COMPONENT_OUTLINE_COLOR,
+      stroke_width:
+        props.strokeWidth ?? SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
+      color: props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR,
       is_dashed: false,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
     })

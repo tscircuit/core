@@ -37,8 +37,9 @@ export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
       start_angle_degrees: props.startAngleDegrees,
       end_angle_degrees: props.endAngleDegrees,
       direction: props.direction,
-      stroke_width: SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
-      color: SCHEMATIC_COMPONENT_OUTLINE_COLOR,
+      stroke_width:
+        props.strokeWidth ?? SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
+      color: props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR,
       is_dashed: props.isDashed,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
     })
