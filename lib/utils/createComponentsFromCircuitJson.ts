@@ -218,12 +218,27 @@ export const createComponentsFromCircuitJson = (
         elm.ccw_rotation,
       )
       if (footprint.includes("pinrow") && elm.text.includes("PIN")) {
+        // For pin labels, calculate rotation based on footprint type
+        const componentAngle = parseInt(componentRotation || "0", 10)
+        let pinLabelRotation: number
+
+        // Orthogonal footprints have pre-rotated labels, use component angle directly
+        if (footprint.includes("orthogonal")) {
+          pinLabelRotation = componentAngle
+        } else {
+          // Basic footprints: add element rotation + component rotation
+          pinLabelRotation = (elm.ccw_rotation ?? 0) + componentAngle
+        }
+
+        const normalizedPinLabelRotation =
+          ((pinLabelRotation % 360) + 360) % 360
+
         components.push(
           createPinrowSilkscreenText({
             elm,
             pinLabels: pcbPinLabels ?? pinLabels,
             layer: elm.layer,
-            readableRotation: ccwRotation,
+            readableRotation: normalizedPinLabelRotation,
             anchorAlignment: elm.anchor_alignment,
           }),
         )

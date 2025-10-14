@@ -52,9 +52,9 @@ test("Jumper internally connected pins mix up between different Jumper component
     </board>,
   )
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await circuit.renderUntilSettled()
   const circuitJson = circuit.getCircuitJson()
   const errors = circuitJson.filter((e) => e.type.includes("error"))
   expect(errors.length).toBe(0)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
