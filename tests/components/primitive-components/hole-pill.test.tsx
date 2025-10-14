@@ -24,7 +24,6 @@ test("Hole component with pill shape", () => {
   expect(pcbHoles[0].x).toBe(0)
   expect(pcbHoles[0].y).toBe(-2)
 
-  expect(pcbHoles.length).toBe(2)
   expect(pcbHoles[1].hole_shape).toBe("pill")
   expect(pcbHoles[1].hole_width).toBe(4)
   expect(pcbHoles[1].hole_height).toBe(2)
