@@ -3,6 +3,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { CadModelProps } from "@tscircuit/props"
 import { z } from "zod"
 import type { CadComponent } from "circuit-json"
+import { distance } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import { getFileExtension } from "../base-components/NormalComponent/utils/getFileExtension"
 
@@ -55,6 +56,11 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
       ...(typeof props.positionOffset === "object" ? props.positionOffset : {}),
     })
 
+    const zOffsetFromSurface =
+      props.zOffsetFromSurface !== undefined
+        ? distance.parse(props.zOffsetFromSurface)
+        : 0
+
     const layer = parent.props.layer === "bottom" ? "bottom" : "top"
 
     const ext = getFileExtension(props.modelUrl)
@@ -79,6 +85,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
         y: bounds.center.y + Number(positionOffset.y),
         z:
           (layer === "bottom" ? -boardThickness / 2 : boardThickness / 2) +
+          (layer === "bottom" ? -zOffsetFromSurface : zOffsetFromSurface) +
           Number(positionOffset.z),
       },
       rotation: {

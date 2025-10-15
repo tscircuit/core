@@ -90,7 +90,7 @@ export class Board extends Group<typeof boardProps> {
 
   get boardThickness() {
     const { _parsedProps: props } = this
-    return 1.4 // TODO use prop
+    return props.thickness ?? 1.4
   }
 
   /**

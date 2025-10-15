@@ -12,6 +12,7 @@ import type {
   CadModelWrl,
 } from "@tscircuit/props"
 import {
+  distance,
   pcb_manual_edit_conflict_warning,
   point3,
   rotation,
@@ -938,7 +939,7 @@ export class NormalComponent<
     }
 
     // Add React-based cadModel subtree (CadAssembly or CadModel) if provided
-    const cmElm = this.props.cadModel as any
+    const cmElm = this.props.cadModel
     if (isValidElement(cmElm)) {
       // Mark that CAD will be handled by child elements to avoid parent inserting a CAD model
       this._isCadModelChild = true
@@ -1293,6 +1294,17 @@ export class NormalComponent<
         : {}),
     })
 
+    const zOffsetFromSurface =
+      cadModel &&
+      typeof cadModel === "object" &&
+      "zOffsetFromSurface" in cadModel
+        ? cadModel.zOffsetFromSurface !== undefined
+          ? distance.parse(
+              (cadModel as { zOffsetFromSurface?: unknown }).zOffsetFromSurface,
+            )
+          : 0
+        : 0
+
     const computedLayer = this.props.layer === "bottom" ? "bottom" : "top"
 
     // Get the accumulated rotation from the global transform
@@ -1309,7 +1321,11 @@ export class NormalComponent<
         z:
           (computedLayer === "bottom"
             ? -boardThickness / 2
-            : boardThickness / 2) + positionOffset.z,
+            : boardThickness / 2) +
+          (computedLayer === "bottom"
+            ? -zOffsetFromSurface
+            : zOffsetFromSurface) +
+          positionOffset.z,
       },
       rotation: {
         x: rotationOffset.x,
