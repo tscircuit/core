@@ -6,11 +6,21 @@ import {
   getGraphicsFromPackOutput,
   type PackInput,
 } from "calculate-packing"
-import { type AnyCircuitElement, length } from "circuit-json"
+import {
+  type AnyCircuitElement,
+  type PcbSmtPad,
+  type PcbPlatedHole,
+  type PcbComponent,
+  length,
+} from "circuit-json"
 import Debug from "debug"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import {
+  getObstacleDimensionsFromSmtPad,
+  getObstacleDimensionsFromPlatedHole,
+} from "lib/utils/packing/getObstacleDimensionsFromElement"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
@@ -91,6 +101,90 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       return true
     })
 
+  // Collect pads and holes from relatively positioned components to use as obstacles
+  const obstaclesFromRelativelyPositionedComponents: Array<{
+    obstacleId: string
+    absoluteCenter: { x: number; y: number }
+    width: number
+    height: number
+  }> = []
+
+  for (const pcb_component_id of excludedPcbComponentIds) {
+    const component = db
+      .toArray()
+      .find(
+        (el): el is PcbComponent =>
+          el.type === "pcb_component" &&
+          el.pcb_component_id === pcb_component_id,
+      )
+    if (!component) continue
+
+    const componentX = component.center.x
+    const componentY = component.center.y
+
+    // Collect SMT pads
+    const smtpads = db
+      .toArray()
+      .filter(
+        (el): el is PcbSmtPad =>
+          el.type === "pcb_smtpad" && el.pcb_component_id === pcb_component_id,
+      )
+
+    for (const pad of smtpads) {
+      const dimensions = getObstacleDimensionsFromSmtPad(pad)
+      if (!dimensions || dimensions.width === 0 || dimensions.height === 0) {
+        continue
+      }
+
+      // Polygon pads don't have x/y, they have points
+      let centerX: number
+      let centerY: number
+      if (pad.shape === "polygon") {
+        // For polygons, calculate center from bounding box
+        const xs = pad.points.map((p) => p.x)
+        const ys = pad.points.map((p) => p.y)
+        centerX = componentX + (Math.min(...xs) + Math.max(...xs)) / 2
+        centerY = componentY + (Math.min(...ys) + Math.max(...ys)) / 2
+      } else {
+        centerX = componentX + pad.x
+        centerY = componentY + pad.y
+      }
+
+      obstaclesFromRelativelyPositionedComponents.push({
+        obstacleId: pad.pcb_smtpad_id,
+        absoluteCenter: { x: centerX, y: centerY },
+        width: dimensions.width,
+        height: dimensions.height,
+      })
+    }
+
+    // Collect plated holes
+    const platedHoles = db
+      .toArray()
+      .filter(
+        (el): el is PcbPlatedHole =>
+          el.type === "pcb_plated_hole" &&
+          el.pcb_component_id === pcb_component_id,
+      )
+
+    for (const hole of platedHoles) {
+      const dimensions = getObstacleDimensionsFromPlatedHole(hole)
+      if (!dimensions || dimensions.width === 0 || dimensions.height === 0) {
+        continue
+      }
+
+      const centerX = componentX + hole.x
+      const centerY = componentY + hole.y
+
+      obstaclesFromRelativelyPositionedComponents.push({
+        obstacleId: hole.pcb_plated_hole_id,
+        absoluteCenter: { x: centerX, y: centerY },
+        width: dimensions.width,
+        height: dimensions.height,
+      })
+    }
+  }
+
   const packInput: PackInput = {
     ...convertPackOutputToPackInput(
       convertCircuitJsonToPackOutput(filteredCircuitJson, {
@@ -104,6 +198,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     placementStrategy:
       packPlacementStrategy ?? "minimum_sum_squared_distance_to_network",
     minGap: gapMm,
+    obstacles: obstaclesFromRelativelyPositionedComponents,
   }
 
   const clusterMap = applyComponentConstraintClusters(group, packInput)
