@@ -111,10 +111,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
   private _addCachebustToModelUrl(url: string | undefined): string | undefined {
     if (!url) return url
     const baseUrl = this.root?.platform?.projectBaseUrl
-    const transformedUrl = constructAssetUrl(
-      url.startsWith("/") ? url : `/${url}`,
-      baseUrl,
-    )
+    const transformedUrl = constructAssetUrl(url, baseUrl)
     if (!transformedUrl.includes("modelcdn.tscircuit.com"))
       return transformedUrl
     const origin = this.root?.getClientOrigin() ?? ""
