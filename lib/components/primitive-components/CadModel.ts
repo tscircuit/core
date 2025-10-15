@@ -5,6 +5,7 @@ import { z } from "zod"
 import type { CadComponent } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import { getFileExtension } from "../base-components/NormalComponent/utils/getFileExtension"
+import { constructAssetUrl } from "lib/utils/constructAssetUrl"
 
 const rotation = z.union([z.number(), z.string()])
 const rotation3 = z.object({ x: rotation, y: rotation, z: rotation })
@@ -108,8 +109,15 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
   }
 
   private _addCachebustToModelUrl(url: string | undefined): string | undefined {
-    if (!url || !url.includes("modelcdn.tscircuit.com")) return url
+    if (!url) return url
+    const baseUrl = this.root?.platform?.projectBaseUrl
+    const transformedUrl = constructAssetUrl(
+      url.startsWith("/") ? url : `/${url}`,
+      baseUrl,
+    )
+    if (!transformedUrl.includes("modelcdn.tscircuit.com"))
+      return transformedUrl
     const origin = this.root?.getClientOrigin() ?? ""
-    return `${url}${url.includes("?") ? "&" : "?"}cachebust_origin=${encodeURIComponent(origin)}`
+    return `${transformedUrl}${transformedUrl.includes("?") ? "&" : "?"}cachebust_origin=${encodeURIComponent(origin)}`
   }
 }
