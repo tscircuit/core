@@ -58,6 +58,7 @@ export interface TscircuitElements {
   fabricationnoterect: Props.FabricationNoteRectProps
   pcbnoteline: Props.PcbNoteLineProps
   pcbnoterect: Props.PcbNoteRectProps
+  pcbnotetext: Props.PcbNoteTextProps
   pcbnotepath: Props.PcbNotePathProps
   pcbnotedimension: Props.PcbNoteDimensionProps
   fabricationnotetext: Props.FabricationNoteTextProps
