@@ -74,14 +74,46 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const transform =
     anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
   for (const pt of props.pcbPath) {
-    const transformed = applyToPoint(transform, {
-      x: pt.x as number,
-      y: pt.y as number,
-    })
+    let coordinates: { x: number; y: number }
+    let isGlobalPosition = false
+
+    // Check if pt is a string selector
+    if (typeof pt === "string") {
+      // Resolve the selector to a Port (preprocessSelector handles format conversion)
+      const resolvedPort = trace.getSubcircuit().selectOne(pt, {
+        type: "port",
+      }) as Port | undefined
+      if (!resolvedPort) {
+        db.pcb_trace_error.insert({
+          error_type: "pcb_trace_error",
+          source_trace_id: trace.source_trace_id!,
+          message: `Could not resolve pcbPath selector "${pt}" for ${trace}`,
+          pcb_trace_id: trace.pcb_trace_id!,
+          pcb_component_ids: [],
+          pcb_port_ids: [],
+        })
+        continue
+      }
+
+      // Get the global position of the resolved port (already in global coordinates)
+      const portPos = resolvedPort._getGlobalPcbPositionAfterLayout()
+      coordinates = { x: portPos.x, y: portPos.y }
+      isGlobalPosition = true
+    } else {
+      // Use the provided coordinates (these are relative to the anchor point)
+      coordinates = { x: pt.x as number, y: pt.y as number }
+      isGlobalPosition = false
+    }
+
+    // Only apply transform to relative coordinates, not global positions
+    const finalCoordinates = isGlobalPosition
+      ? coordinates
+      : applyToPoint(transform, coordinates)
+
     route.push({
       route_type: "wire",
-      x: transformed.x,
-      y: transformed.y,
+      x: finalCoordinates.x,
+      y: finalCoordinates.y,
       width,
       layer: layer as LayerRef,
     })
