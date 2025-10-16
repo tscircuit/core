@@ -118,8 +118,8 @@ export class Board extends Group<typeof boardProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    // Skip if width and height are explicitly provided
-    if (props.width && props.height) return
+    // Skip if width and height are explicitly provided or if outline is provided
+    if ((props.width && props.height) || props.outline) return
 
     let minX = Infinity
     let minY = Infinity
