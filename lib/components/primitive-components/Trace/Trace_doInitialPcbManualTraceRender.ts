@@ -74,10 +74,50 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const transform =
     anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
   for (const pt of props.pcbPath) {
-    const transformed = applyToPoint(transform, {
-      x: pt.x as number,
-      y: pt.y as number,
-    })
+    let coordinates: { x: number; y: number }
+
+    // Check if pt is a string selector
+    if (typeof pt === "string") {
+      let selector = pt
+
+      // Convert dot notation like "R1.pin2" to CSS selector format ".R1 > .pin2"
+      const dotIndex = selector.lastIndexOf(".")
+      if (dotIndex !== -1 && dotIndex > selector.lastIndexOf(" ")) {
+        const parentName = selector.slice(0, dotIndex)
+        const portName = selector.slice(dotIndex + 1)
+
+        // Add dot prefix if not already present
+        const parentSelector = /[.#\[]/.test(parentName)
+          ? parentName
+          : `.${parentName}`
+        selector = `${parentSelector} > .${portName}`
+      }
+
+      // Resolve the selector to a Port
+      const resolvedPort = trace.getSubcircuit().selectOne(selector, {
+        type: "port",
+      }) as Port | undefined
+      if (!resolvedPort) {
+        db.pcb_trace_error.insert({
+          error_type: "pcb_trace_error",
+          source_trace_id: trace.source_trace_id!,
+          message: `Could not resolve pcbPath selector "${pt}" (converted to "${selector}") for ${trace}`,
+          pcb_trace_id: trace.pcb_trace_id!,
+          pcb_component_ids: [],
+          pcb_port_ids: [],
+        })
+        continue
+      }
+
+      // Get the global position of the resolved port
+      const portPos = resolvedPort._getGlobalPcbPositionAfterLayout()
+      coordinates = { x: portPos.x, y: portPos.y }
+    } else {
+      // Use the provided coordinates
+      coordinates = { x: pt.x as number, y: pt.y as number }
+    }
+
+    const transformed = applyToPoint(transform, coordinates)
     route.push({
       route_type: "wire",
       x: transformed.x,
