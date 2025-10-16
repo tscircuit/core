@@ -75,6 +75,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
   for (const pt of props.pcbPath) {
     let coordinates: { x: number; y: number }
+    let isGlobalPosition = false
 
     // Check if pt is a string selector
     if (typeof pt === "string") {
@@ -109,19 +110,25 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         continue
       }
 
-      // Get the global position of the resolved port
+      // Get the global position of the resolved port (already in global coordinates)
       const portPos = resolvedPort._getGlobalPcbPositionAfterLayout()
       coordinates = { x: portPos.x, y: portPos.y }
+      isGlobalPosition = true
     } else {
-      // Use the provided coordinates
+      // Use the provided coordinates (these are relative to the anchor point)
       coordinates = { x: pt.x as number, y: pt.y as number }
+      isGlobalPosition = false
     }
 
-    const transformed = applyToPoint(transform, coordinates)
+    // Only apply transform to relative coordinates, not global positions
+    const finalCoordinates = isGlobalPosition
+      ? coordinates
+      : applyToPoint(transform, coordinates)
+
     route.push({
       route_type: "wire",
-      x: transformed.x,
-      y: transformed.y,
+      x: finalCoordinates.x,
+      y: finalCoordinates.y,
       width,
       layer: layer as LayerRef,
     })
