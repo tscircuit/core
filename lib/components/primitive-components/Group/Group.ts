@@ -37,6 +37,7 @@ import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
+import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -170,11 +171,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           })
         : { x: centerX, y: centerY }
 
-      db.pcb_group.update(this.pcb_group_id, {
+      // Compute anchor_position and anchor_alignment if pcbPositionAnchor is provided
+      const updateData: any = {
         width: Number(props.width ?? width),
         height: Number(props.height ?? height),
         center,
-      })
+      }
+
+      const pcbPositionAnchor = props.pcbPositionAnchor
+      if (pcbPositionAnchor && hasExplicitPositioning) {
+        const pcbX = this._parsedProps.pcbX ?? 0
+        const pcbY = this._parsedProps.pcbY ?? 0
+
+        // Set anchor_position to the pcbX/pcbY coordinates
+        updateData.anchor_position = { x: pcbX, y: pcbY }
+        updateData.anchor_alignment = pcbPositionAnchor
+      }
+
+      db.pcb_group.update(this.pcb_group_id, updateData)
     }
   }
 
@@ -1097,6 +1111,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSimulationSpiceEngineRender() {
     Group_doInitialSimulationSpiceEngineRender(this)
+  }
+
+  /**
+   * Override anchor alignment to handle group-specific logic
+   */
+  doInitialPcbComponentAnchorAlignment(): void {
+    Group_doInitialPcbComponentAnchorAlignment(this)
+  }
+
+  updatePcbComponentAnchorAlignment(): void {
+    this.doInitialPcbComponentAnchorAlignment()
   }
 
   /**
