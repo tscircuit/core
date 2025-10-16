@@ -182,7 +182,7 @@ export class Board extends Group<typeof boardProps> {
     const computedHeight = hasComponents ? maxY - minY + padding * 2 : 0
 
     // Center the board around the components or use (0,0) for empty boards
-    let center = {
+    const center = {
       x: hasComponents
         ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
         : (props.outlineOffsetX ?? 0),
@@ -195,7 +195,7 @@ export class Board extends Group<typeof boardProps> {
     const finalWidth = props.width ?? computedWidth
     const finalHeight = props.height ?? computedHeight
 
-    let outline = props.outline
+    let outline = props.outline as { x: number; y: number }[] | undefined
     if (
       !outline &&
       props.borderRadius != null &&
