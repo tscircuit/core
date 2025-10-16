@@ -18,6 +18,7 @@ import {
   rotation,
   schematic_manual_edit_conflict_warning,
 } from "circuit-json"
+import { UnknownPartsEngineError } from "lib/errors"
 import { decomposeTSR } from "transformation-matrix"
 import Debug from "debug"
 import {
@@ -439,18 +440,41 @@ export class NormalComponent<
     if (typeof footprint === "string") {
       if (isFootprintUrl(footprint)) return
       if (parseLibraryFootprintRef(footprint)) return
-      const fpSoup = fp.string(footprint).soup()
-      const fpComponents = createComponentsFromCircuitJson(
-        {
-          componentName: this.name ?? this.componentName,
-          componentRotation: pcbRotation,
-          footprint,
-          pinLabels,
-          pcbPinLabels,
-        },
-        fpSoup as any,
-      ) // Remove as any when footprinter gets updated
-      this.addAll(fpComponents)
+
+      try {
+        const fpSoup = fp.string(footprint).soup()
+        const fpComponents = createComponentsFromCircuitJson(
+          {
+            componentName: this.name ?? this.componentName,
+            componentRotation: pcbRotation,
+            footprint,
+            pinLabels,
+            pcbPinLabels,
+          },
+          fpSoup as any,
+        ) // Remove as any when footprinter gets updated
+        this.addAll(fpComponents)
+      } catch (err) {
+        const db = this.root?.db
+        if (db && this.source_component_id && this.pcb_component_id) {
+          const subcircuit = this.getSubcircuit()
+          const errorMsg =
+            `${this.getString()} failed to process footprint "${footprint}": ` +
+            (err instanceof Error ? err.message : String(err))
+
+          // Create a generic error entry in the database
+          // Since unknown_parts_engine_error doesn't exist in circuit-json types,
+          // we'll use a similar approach to other errors in the codebase
+          db.source_failed_to_create_component_error.insert({
+            component_name: this.name ?? this.componentName,
+            error_type: "source_failed_to_create_component_error",
+            message: errorMsg,
+            pcb_center: this._getGlobalPcbPositionBeforeLayout(),
+            schematic_center: this._getGlobalSchematicPositionBeforeLayout(),
+          })
+        }
+        throw err
+      }
     }
   }
 
