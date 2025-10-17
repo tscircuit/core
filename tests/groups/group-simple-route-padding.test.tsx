@@ -23,6 +23,6 @@ test("simple route json uses subcircuit padding", async () => {
   const routeWidth = simpleRouteJson.bounds.maxX - simpleRouteJson.bounds.minX
   const routeHeight = simpleRouteJson.bounds.maxY - simpleRouteJson.bounds.minY
 
-  expect(routeWidth).toBeCloseTo(group.width, 1)
-  expect(routeHeight).toBeCloseTo(group.height, 1)
+  expect(routeWidth).toBeCloseTo(group.width!, 1)
+  expect(routeHeight).toBeCloseTo(group.height!, 1)
 })
