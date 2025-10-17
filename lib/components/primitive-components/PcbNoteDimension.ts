@@ -19,7 +19,7 @@ export class PcbNoteDimension extends PrimitiveComponent<
   private _resolvePoint(input: string | Point, transform: Matrix): Point {
     if (typeof input === "string") {
       const target = this.getSubcircuit().selectOne(
-        input,
+        `.${input}`,
       ) as PrimitiveComponent | null
       if (!target) {
         this.renderError(`PcbNoteDimension could not find selector "${input}"`)
