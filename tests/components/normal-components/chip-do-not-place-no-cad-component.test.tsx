@@ -6,14 +6,7 @@ test("chip with doNotPlace should not create cad_component", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
-      <chip
-        name="U1"
-        footprint="soic8"
-        cadModel={{
-          stlUrl: "https://example.com/chip.stl",
-        }}
-        doNotPlace
-      />
+      <chip name="U1" footprint="soic8" doNotPlace />
     </board>,
   )
 
