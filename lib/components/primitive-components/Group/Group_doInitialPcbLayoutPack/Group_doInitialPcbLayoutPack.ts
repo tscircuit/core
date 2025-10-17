@@ -185,6 +185,24 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     }
   }
 
+  // Calculate bounds if width and height are specified
+  let bounds:
+    | { minX: number; minY: number; maxX: number; maxY: number }
+    | undefined
+  if (props.width !== undefined && props.height !== undefined) {
+    const widthMm = length.parse(props.width)
+    const heightMm = length.parse(props.height)
+
+    // Bounds should be in local packing space (centered at 0,0)
+    // The group's global position will be applied later by applyPackOutput
+    bounds = {
+      minX: -widthMm / 2,
+      maxX: widthMm / 2,
+      minY: -heightMm / 2,
+      maxY: heightMm / 2,
+    }
+  }
+
   const packInput: PackInput = {
     ...convertPackOutputToPackInput(
       convertCircuitJsonToPackOutput(filteredCircuitJson, {
@@ -199,6 +217,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       packPlacementStrategy ?? "minimum_sum_squared_distance_to_network",
     minGap: gapMm,
     obstacles: obstaclesFromRelativelyPositionedComponents,
+    bounds,
   }
 
   const clusterMap = applyComponentConstraintClusters(group, packInput)
