@@ -69,5 +69,5 @@ test("nested group with anchor positioning", async () => {
   // The target position is (10, 10) relative to outer, which is at (10, 10), so absolute (20, 20)
   // Note: The anchor_position stored in circuit-json represents the absolute position
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, { showPcbGroups: true })
 })

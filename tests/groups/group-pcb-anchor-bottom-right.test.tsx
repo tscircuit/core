@@ -39,5 +39,5 @@ test("group with bottom_right anchor", async () => {
   expect(pcbGroup.anchor_position).toEqual({ x: 30, y: 30 })
   expect(pcbGroup.anchor_alignment).toBe("bottom_right")
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, { showPcbGroups: true })
 })

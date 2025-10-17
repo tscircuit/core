@@ -39,5 +39,5 @@ test("group with center anchor", async () => {
   expect(pcbGroup.anchor_position).toEqual({ x: 20, y: 25 })
   expect(pcbGroup.anchor_alignment).toBe("center")
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, { showPcbGroups: true })
 })

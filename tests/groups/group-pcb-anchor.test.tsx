@@ -46,5 +46,5 @@ test("group with top_left anchor should output anchor_position and anchor_alignm
   // Check that anchor_alignment matches pcbPositionAnchor
   expect(pcbGroup.anchor_alignment).toBe("top_left")
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, { showPcbGroups: true })
 })
