@@ -36,6 +36,15 @@ test("nested group with anchor positioning", async () => {
         anchorAlignment="top_right"
       />
 
+      {/* Title */}
+      <silkscreentext
+        pcbX={30}
+        pcbY={58}
+        text="NESTED Groups: Inner TOP_LEFT Anchor at (20,20)"
+        fontSize={2}
+        anchorAlignment="center"
+      />
+
       {/* Outer group anchor marker */}
       <silkscreentext
         pcbX={10}
@@ -47,13 +56,34 @@ test("nested group with anchor positioning", async () => {
 
       {/* Outer group positioned at (10, 10) */}
       <group name="OuterGroup" pcbX={10} pcbY={10} subcircuit>
-        {/* Inner group anchor marker - at absolute position (20, 20) */}
+        {/* Inner group anchor marker - crosshair at absolute position (20, 20) */}
+        <silkscreenpath
+          route={[
+            { x: 9, y: 10 },
+            { x: 11, y: 10 },
+          ]}
+          strokeWidth={0.15}
+        />
+        <silkscreenpath
+          route={[
+            { x: 10, y: 9 },
+            { x: 10, y: 11 },
+          ]}
+          strokeWidth={0.15}
+        />
         <silkscreentext
           pcbX={10}
           pcbY={10}
-          text="⊗ INNER(20,20)"
-          fontSize={2.5}
-          anchorAlignment="top_left"
+          text="⊗"
+          fontSize={3}
+          anchorAlignment="center"
+        />
+        <silkscreentext
+          pcbX={10}
+          pcbY={7}
+          text="INNER ANCHOR"
+          fontSize={1.5}
+          anchorAlignment="bottom_center"
         />
 
         {/* Inner group with top_left anchor at relative (10, 10) = absolute (20, 20) */}

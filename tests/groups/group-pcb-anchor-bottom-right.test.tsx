@@ -36,13 +36,44 @@ test("group with bottom_right anchor", async () => {
         anchorAlignment="top_right"
       />
 
-      {/* Anchor position marker - positioned at the exact anchor point */}
+      {/* Title */}
+      <silkscreentext
+        pcbX={25}
+        pcbY={48}
+        text="BOTTOM_RIGHT Anchor at (30,30)"
+        fontSize={2}
+        anchorAlignment="center"
+      />
+
+      {/* Anchor marker - crosshair lines */}
+      <silkscreenpath
+        route={[
+          { x: 29, y: 30 },
+          { x: 31, y: 30 },
+        ]}
+        strokeWidth={0.15}
+      />
+      <silkscreenpath
+        route={[
+          { x: 30, y: 29 },
+          { x: 30, y: 31 },
+        ]}
+        strokeWidth={0.15}
+      />
+      {/* Anchor symbol and label */}
       <silkscreentext
         pcbX={30}
         pcbY={30}
-        text="⊗ ANCHOR(30,30)"
-        fontSize={2.5}
-        anchorAlignment="bottom_right"
+        text="⊗"
+        fontSize={3}
+        anchorAlignment="center"
+      />
+      <silkscreentext
+        pcbX={30}
+        pcbY={33}
+        text="ANCHOR"
+        fontSize={1.5}
+        anchorAlignment="top_center"
       />
 
       <group

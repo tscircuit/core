@@ -36,13 +36,44 @@ test("group with center anchor", async () => {
         anchorAlignment="top_right"
       />
 
-      {/* Anchor position marker - positioned at the exact anchor point */}
+      {/* Title */}
+      <silkscreentext
+        pcbX={25}
+        pcbY={48}
+        text="CENTER Anchor at (20,25)"
+        fontSize={2}
+        anchorAlignment="center"
+      />
+
+      {/* Anchor marker - crosshair lines */}
+      <silkscreenpath
+        route={[
+          { x: 19, y: 25 },
+          { x: 21, y: 25 },
+        ]}
+        strokeWidth={0.15}
+      />
+      <silkscreenpath
+        route={[
+          { x: 20, y: 24 },
+          { x: 20, y: 26 },
+        ]}
+        strokeWidth={0.15}
+      />
+      {/* Anchor symbol and label */}
       <silkscreentext
         pcbX={20}
         pcbY={25}
-        text="⊗ ANCHOR(20,25)"
-        fontSize={2.5}
+        text="⊗"
+        fontSize={3}
         anchorAlignment="center"
+      />
+      <silkscreentext
+        pcbX={20}
+        pcbY={22}
+        text="ANCHOR"
+        fontSize={1.5}
+        anchorAlignment="bottom_center"
       />
 
       <group

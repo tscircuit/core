@@ -36,13 +36,44 @@ test("group with top_left anchor should output anchor_position and anchor_alignm
         anchorAlignment="top_right"
       />
 
-      {/* Anchor position marker - positioned at the exact anchor point */}
+      {/* Title */}
+      <silkscreentext
+        pcbX={25}
+        pcbY={48}
+        text="TOP_LEFT Anchor at (10,15)"
+        fontSize={2}
+        anchorAlignment="center"
+      />
+
+      {/* Anchor marker - crosshair lines */}
+      <silkscreenpath
+        route={[
+          { x: 9, y: 15 },
+          { x: 11, y: 15 },
+        ]}
+        strokeWidth={0.15}
+      />
+      <silkscreenpath
+        route={[
+          { x: 10, y: 14 },
+          { x: 10, y: 16 },
+        ]}
+        strokeWidth={0.15}
+      />
+      {/* Anchor symbol and label */}
       <silkscreentext
         pcbX={10}
         pcbY={15}
-        text="⊗ ANCHOR(10,15)"
-        fontSize={2.5}
-        anchorAlignment="top_left"
+        text="⊗"
+        fontSize={3}
+        anchorAlignment="center"
+      />
+      <silkscreentext
+        pcbX={10}
+        pcbY={12}
+        text="ANCHOR"
+        fontSize={1.5}
+        anchorAlignment="bottom_center"
       />
 
       <group
