@@ -6,18 +6,19 @@ test("group with top_left anchor should output anchor_position and anchor_alignm
 
   circuit.add(
     <board width="50mm" height="50mm">
-      {/* Reference markers */}
-      <silkscreentext pcbX={0} pcbY={0} text="(0,0)" fontSize={1.5} />
-      <silkscreentext pcbX={5} pcbY={5} text="(5,5)" fontSize={1.5} />
-      <silkscreentext pcbX={10} pcbY={10} text="(10,10)" fontSize={1.5} />
+      {/* Board corner markers */}
+      <silkscreentext pcbX={0} pcbY={0} text="(0,0)" fontSize={2} anchorAlignment="bottom_left" />
+      <silkscreentext pcbX={50} pcbY={0} text="(50,0)" fontSize={2} anchorAlignment="bottom_right" />
+      <silkscreentext pcbX={0} pcbY={50} text="(0,50)" fontSize={2} anchorAlignment="top_left" />
+      <silkscreentext pcbX={50} pcbY={50} text="(50,50)" fontSize={2} anchorAlignment="top_right" />
 
-      {/* Anchor position marker */}
+      {/* Anchor position marker - positioned at the exact anchor point */}
       <silkscreentext
         pcbX={10}
         pcbY={15}
-        text="ANCHOR(10,15) top_left"
-        fontSize={1.5}
-        anchorAlignment="center"
+        text="⊗ ANCHOR(10,15)"
+        fontSize={2.5}
+        anchorAlignment="top_left"
       />
 
       <group

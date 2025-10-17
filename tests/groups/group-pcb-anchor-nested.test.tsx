@@ -6,23 +6,33 @@ test("nested group with anchor positioning", async () => {
 
   circuit.add(
     <board width="60mm" height="60mm">
-      {/* Reference markers */}
-      <silkscreentext pcbX={0} pcbY={0} text="(0,0)" fontSize={1.5} />
-      <silkscreentext pcbX={10} pcbY={10} text="(10,10)" fontSize={1.5} />
-      <silkscreentext pcbX={20} pcbY={20} text="(20,20)" fontSize={1.5} />
+      {/* Board corner markers */}
+      <silkscreentext pcbX={0} pcbY={0} text="(0,0)" fontSize={2} anchorAlignment="bottom_left" />
+      <silkscreentext pcbX={60} pcbY={0} text="(60,0)" fontSize={2} anchorAlignment="bottom_right" />
+      <silkscreentext pcbX={0} pcbY={60} text="(0,60)" fontSize={2} anchorAlignment="top_left" />
+      <silkscreentext pcbX={60} pcbY={60} text="(60,60)" fontSize={2} anchorAlignment="top_right" />
+
+      {/* Outer group anchor marker */}
+      <silkscreentext
+        pcbX={10}
+        pcbY={10}
+        text="⊗ OUTER(10,10)"
+        fontSize={2.5}
+        anchorAlignment="center"
+      />
 
       {/* Outer group positioned at (10, 10) */}
       <group name="OuterGroup" pcbX={10} pcbY={10} subcircuit>
+        {/* Inner group anchor marker - at absolute position (20, 20) */}
         <silkscreentext
-          pcbX={0}
-          pcbY={0}
-          text="OUTER(10,10)"
-          fontSize={1.2}
-          anchorAlignment="center"
+          pcbX={10}
+          pcbY={10}
+          text="⊗ INNER(20,20)"
+          fontSize={2.5}
+          anchorAlignment="top_left"
         />
 
-        {/* Inner group with relative position (10, 10) from outer = absolute (20, 20) */}
-        {/* Using top_left anchor at (10, 10) relative to outer group */}
+        {/* Inner group with top_left anchor at relative (10, 10) = absolute (20, 20) */}
         <group
           name="InnerGroup"
           pcbX={10}
@@ -30,13 +40,6 @@ test("nested group with anchor positioning", async () => {
           pcbPositionAnchor="top_left"
           subcircuit
         >
-          <silkscreentext
-            pcbX={0}
-            pcbY={0}
-            text="INNER ANCHOR top_left"
-            fontSize={1}
-            anchorAlignment="center"
-          />
           <chip name="U1" footprint="dip8" pcbX={0} pcbY={0} />
         </group>
       </group>
