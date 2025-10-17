@@ -21,11 +21,12 @@ export function Group_doInitialPcbComponentAnchorAlignment(
   if (width === 0 || height === 0) return
 
   // Calculate the bounds of the group
+  // PCB uses Y-up coordinate system (cartesian): higher Y = top, lower Y = bottom
   const bounds = {
     left: center.x - width / 2,
     right: center.x + width / 2,
-    top: center.y - height / 2,
-    bottom: center.y + height / 2,
+    top: center.y + height / 2, // Y-up: top is at higher Y
+    bottom: center.y - height / 2, // Y-up: bottom is at lower Y
   }
 
   const currentCenter = { ...center }

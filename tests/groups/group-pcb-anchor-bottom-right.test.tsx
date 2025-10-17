@@ -6,6 +6,20 @@ test("group with bottom_right anchor", async () => {
 
   circuit.add(
     <board width="50mm" height="50mm">
+      {/* Reference markers */}
+      <silkscreentext pcbX={0} pcbY={0} text="(0,0)" fontSize={1.5} />
+      <silkscreentext pcbX={5} pcbY={5} text="(5,5)" fontSize={1.5} />
+      <silkscreentext pcbX={10} pcbY={10} text="(10,10)" fontSize={1.5} />
+
+      {/* Anchor position marker */}
+      <silkscreentext
+        pcbX={30}
+        pcbY={30}
+        text="ANCHOR(30,30) bottom_right"
+        fontSize={1.5}
+        anchorAlignment="center"
+      />
+
       <group
         name="G4"
         pcbX={30}
