@@ -23,8 +23,8 @@ export class Breakout extends Group<typeof breakoutProps> {
     const padTop = props.paddingTop ?? props.padding ?? 0
     const padBottom = props.paddingBottom ?? props.padding ?? 0
     db.pcb_group.update(this.pcb_group_id, {
-      width: pcb_group.width + padLeft + padRight,
-      height: pcb_group.height + padTop + padBottom,
+      width: pcb_group.width ?? 0 + padLeft + padRight,
+      height: pcb_group.height ?? 0 + padTop + padBottom,
       center: {
         x: pcb_group.center.x + (padRight - padLeft) / 2,
         y: pcb_group.center.y + (padTop - padBottom) / 2,
