@@ -14,6 +14,7 @@ import type {
 import {
   distance,
   pcb_manual_edit_conflict_warning,
+  pcb_component_invalid_layer_error,
   point3,
   rotation,
   schematic_manual_edit_conflict_warning,
@@ -720,6 +721,20 @@ export class NormalComponent<
     const { _parsedProps: props } = this
     const subcircuit = this.getSubcircuit()
 
+    // Validate that components can only be placed on top or bottom layers
+    const componentLayer = props.layer ?? "top"
+    if (componentLayer !== "top" && componentLayer !== "bottom") {
+      const error = pcb_component_invalid_layer_error.parse({
+        type: "pcb_component_invalid_layer_error",
+        message: `Component cannot be placed on layer '${componentLayer}'. Components can only be placed on 'top' or 'bottom' layers.`,
+        source_component_id: this.source_component_id!,
+        layer: componentLayer,
+        subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+      })
+      db.pcb_component_invalid_layer_error.insert(error)
+      // Still create the component but with 'top' as fallback to avoid cascading errors
+    }
+
     // Calculate accumulated rotation from parent transforms
     const globalTransform = this._computePcbGlobalTransformBeforeLayout()
     const decomposedTransform = decomposeTSR(globalTransform)
@@ -731,7 +746,10 @@ export class NormalComponent<
       // width/height are computed in the PcbComponentSizeCalculation phase
       width: 0,
       height: 0,
-      layer: props.layer ?? "top",
+      layer:
+        componentLayer === "top" || componentLayer === "bottom"
+          ? componentLayer
+          : "top",
       rotation: props.pcbRotation ?? accumulatedRotation,
       source_component_id: this.source_component_id!,
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,

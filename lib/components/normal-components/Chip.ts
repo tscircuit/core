@@ -1,4 +1,5 @@
 import { chipProps } from "@tscircuit/props"
+import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
@@ -99,11 +100,29 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
 
+    // Validate that components can only be placed on top or bottom layers
+    const componentLayer = props.layer ?? "top"
+    if (componentLayer !== "top" && componentLayer !== "bottom") {
+      const subcircuit = this.getSubcircuit()
+      const error = pcb_component_invalid_layer_error.parse({
+        type: "pcb_component_invalid_layer_error",
+        message: `Component cannot be placed on layer '${componentLayer}'. Components can only be placed on 'top' or 'bottom' layers.`,
+        source_component_id: this.source_component_id!,
+        layer: componentLayer,
+        subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+      })
+      db.pcb_component_invalid_layer_error.insert(error)
+      // Still create the component but with 'top' as fallback to avoid cascading errors
+    }
+
     const pcb_component = db.pcb_component.insert({
       center: { x: props.pcbX ?? 0, y: props.pcbY ?? 0 },
       width: 2, // Default width, adjust as needed
       height: 3, // Default height, adjust as needed
-      layer: props.layer ?? "top",
+      layer:
+        componentLayer === "top" || componentLayer === "bottom"
+          ? componentLayer
+          : "top",
       rotation: props.pcbRotation ?? 0,
       source_component_id: this.source_component_id!,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
