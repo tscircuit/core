@@ -1270,6 +1270,7 @@ export class NormalComponent<
 
   doInitialCadModelRender(): void {
     if (this._isCadModelChild) return
+    if (this.props.doNotPlace) return
     const { db } = this.root!
     const { boardThickness = 0 } = this.root?._getBoard() ?? {}
     const cadModelProp = this._parsedProps.cadModel
