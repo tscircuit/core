@@ -27,20 +27,7 @@ test("group with top_left anchor should output anchor_position and anchor_alignm
         pcbPositionAnchor="top_left"
         subcircuit
       >
-        <resistor
-          name="R1"
-          resistance="1k"
-          footprint="0402"
-          pcbX={0}
-          pcbY={0}
-        />
-        <resistor
-          name="R2"
-          resistance="1k"
-          footprint="0402"
-          pcbX={5}
-          pcbY={0}
-        />
+        <chip name="U1" footprint="dip8" pcbX={0} pcbY={0} />
       </group>
     </board>,
   )

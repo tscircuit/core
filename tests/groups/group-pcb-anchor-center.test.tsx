@@ -27,20 +27,7 @@ test("group with center anchor", async () => {
         pcbPositionAnchor="center"
         subcircuit
       >
-        <resistor
-          name="R1"
-          resistance="1k"
-          footprint="0402"
-          pcbX={-2}
-          pcbY={0}
-        />
-        <resistor
-          name="R2"
-          resistance="1k"
-          footprint="0402"
-          pcbX={2}
-          pcbY={0}
-        />
+        <chip name="U1" footprint="dip8" pcbX={0} pcbY={0} />
       </group>
     </board>,
   )

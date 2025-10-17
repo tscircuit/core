@@ -7,9 +7,14 @@ export function Group_doInitialPcbComponentAnchorAlignment(
   if (group.root?.pcbDisabled) return
   if (!group.pcb_group_id) return
 
-  const { pcbX, pcbY } = group._parsedProps as any
   const pcbPositionAnchor = (group._parsedProps as any)?.pcbPositionAnchor
   if (!pcbPositionAnchor) return
+
+  // Get the target position using the global position method to support nested groups
+  const targetPosition = group._getGlobalPcbPositionBeforeLayout()
+  const { pcbX, pcbY } = group._parsedProps as any
+
+  // Only proceed if explicit positioning is provided
   if (pcbX === undefined && pcbY === undefined) return
 
   const { db } = group.root!
@@ -79,9 +84,12 @@ export function Group_doInitialPcbComponentAnchorAlignment(
   if (!anchorPos) return
 
   // Calculate the new center position
+  // Use targetPosition (which accounts for parent positions in nested groups)
   const newCenter = { ...currentCenter }
-  if (pcbX !== undefined) newCenter.x += pcbX - anchorPos.x
-  if (pcbY !== undefined) newCenter.y += pcbY - anchorPos.y
+  if (targetPosition.x !== undefined)
+    newCenter.x += targetPosition.x - anchorPos.x
+  if (targetPosition.y !== undefined)
+    newCenter.y += targetPosition.y - anchorPos.y
 
   if (
     Math.abs(newCenter.x - currentCenter.x) > 1e-6 ||

@@ -27,13 +27,7 @@ test("group with bottom_right anchor", async () => {
         pcbPositionAnchor="bottom_right"
         subcircuit
       >
-        <resistor
-          name="R1"
-          resistance="1k"
-          footprint="0402"
-          pcbX={0}
-          pcbY={0}
-        />
+        <chip name="U1" footprint="dip8" pcbX={0} pcbY={0} />
       </group>
     </board>,
   )
