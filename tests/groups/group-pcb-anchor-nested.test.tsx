@@ -7,10 +7,34 @@ test("nested group with anchor positioning", async () => {
   circuit.add(
     <board width="60mm" height="60mm">
       {/* Board corner markers */}
-      <silkscreentext pcbX={0} pcbY={0} text="(0,0)" fontSize={2} anchorAlignment="bottom_left" />
-      <silkscreentext pcbX={60} pcbY={0} text="(60,0)" fontSize={2} anchorAlignment="bottom_right" />
-      <silkscreentext pcbX={0} pcbY={60} text="(0,60)" fontSize={2} anchorAlignment="top_left" />
-      <silkscreentext pcbX={60} pcbY={60} text="(60,60)" fontSize={2} anchorAlignment="top_right" />
+      <silkscreentext
+        pcbX={0}
+        pcbY={0}
+        text="(0,0)"
+        fontSize={2}
+        anchorAlignment="bottom_left"
+      />
+      <silkscreentext
+        pcbX={60}
+        pcbY={0}
+        text="(60,0)"
+        fontSize={2}
+        anchorAlignment="bottom_right"
+      />
+      <silkscreentext
+        pcbX={0}
+        pcbY={60}
+        text="(0,60)"
+        fontSize={2}
+        anchorAlignment="top_left"
+      />
+      <silkscreentext
+        pcbX={60}
+        pcbY={60}
+        text="(60,60)"
+        fontSize={2}
+        anchorAlignment="top_right"
+      />
 
       {/* Outer group anchor marker */}
       <silkscreentext
@@ -51,18 +75,6 @@ test("nested group with anchor positioning", async () => {
   const groups = circuit.db.pcb_group.list()
   const outerGroup = groups.find((g) => g.name === "OuterGroup")
   const innerGroup = groups.find((g) => g.name === "InnerGroup")
-
-  console.log("\n=== NESTED GROUP ANCHOR TEST ===")
-  console.log(
-    `Outer group center: (${outerGroup?.center.x.toFixed(2)}, ${outerGroup?.center.y.toFixed(2)})`,
-  )
-  console.log(
-    `Inner group center: (${innerGroup?.center.x.toFixed(2)}, ${innerGroup?.center.y.toFixed(2)})`,
-  )
-  console.log(
-    `Inner group anchor_position: (${innerGroup?.anchor_position?.x}, ${innerGroup?.anchor_position?.y})`,
-  )
-  console.log(`Inner group anchor_alignment: ${innerGroup?.anchor_alignment}`)
 
   // The inner group should be positioned relative to the outer group
   // Outer at (10, 10) + Inner relative (10, 10) = absolute (20, 20)

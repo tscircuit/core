@@ -7,10 +7,34 @@ test("group with bottom_right anchor", async () => {
   circuit.add(
     <board width="50mm" height="50mm">
       {/* Board corner markers */}
-      <silkscreentext pcbX={0} pcbY={0} text="(0,0)" fontSize={2} anchorAlignment="bottom_left" />
-      <silkscreentext pcbX={50} pcbY={0} text="(50,0)" fontSize={2} anchorAlignment="bottom_right" />
-      <silkscreentext pcbX={0} pcbY={50} text="(0,50)" fontSize={2} anchorAlignment="top_left" />
-      <silkscreentext pcbX={50} pcbY={50} text="(50,50)" fontSize={2} anchorAlignment="top_right" />
+      <silkscreentext
+        pcbX={0}
+        pcbY={0}
+        text="(0,0)"
+        fontSize={2}
+        anchorAlignment="bottom_left"
+      />
+      <silkscreentext
+        pcbX={50}
+        pcbY={0}
+        text="(50,0)"
+        fontSize={2}
+        anchorAlignment="bottom_right"
+      />
+      <silkscreentext
+        pcbX={0}
+        pcbY={50}
+        text="(0,50)"
+        fontSize={2}
+        anchorAlignment="top_left"
+      />
+      <silkscreentext
+        pcbX={50}
+        pcbY={50}
+        text="(50,50)"
+        fontSize={2}
+        anchorAlignment="top_right"
+      />
 
       {/* Anchor position marker - positioned at the exact anchor point */}
       <silkscreentext
