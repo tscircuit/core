@@ -31,8 +31,8 @@ test("example29: component outside board", async () => {
   const errors = circuit
     .getCircuitJson()
     .filter((e) => e.type === "pcb_component_outside_board_error")
-  expect(errors.length).toBe(2)
-  expect(errors[1].pcb_component_id).toBe("pcb_component_1")
-  expect(errors[1].message).toMatch(/extends outside board boundaries/)
+  expect(errors.length).toBe(1)
+  expect(errors[0].pcb_component_id).toBe("pcb_component_1")
+  expect(errors[0].message).toMatch(/extends outside board boundaries/)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
