@@ -93,12 +93,18 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const isRotated90Degrees =
       Math.abs(normalizedRotationDegrees - 90) < rotationTolerance ||
       Math.abs(normalizedRotationDegrees - 270) < rotationTolerance
-    const finalRotationDegrees =
+    let finalRotationDegrees =
       Math.abs(normalizedRotationDegrees - 360) < rotationTolerance
         ? 0
         : normalizedRotationDegrees
 
-    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const { maybeFlipLayer, isFlipped } =
+      this._getPcbPrimitiveFlippedHelpers()
+
+    if (isFlipped) {
+      finalRotationDegrees =
+        (360 - finalRotationDegrees + 360) % 360
+    }
 
     let pcb_smtpad: PcbSmtPad | null = null
     const pcb_component_id =
