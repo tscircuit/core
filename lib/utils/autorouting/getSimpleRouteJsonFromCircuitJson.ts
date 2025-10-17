@@ -118,17 +118,36 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   if (subcircuit_id) {
     const group = db.pcb_group.getWhere({ subcircuit_id })
     if (group) {
-      const groupBounds = {
-        minX: group.center.x - group.width / 2,
-        maxX: group.center.x + group.width / 2,
-        minY: group.center.y - group.height / 2,
-        maxY: group.center.y + group.height / 2,
+      let groupBounds:
+        | { minX: number; maxX: number; minY: number; maxY: number }
+        | undefined
+      if (group.outline && group.outline.length > 0) {
+        // Calculate bounds from outline
+        const xs = group.outline.map((p: { x: number }) => p.x)
+        const ys = group.outline.map((p: { y: number }) => p.y)
+        groupBounds = {
+          minX: Math.min(...xs),
+          maxX: Math.max(...xs),
+          minY: Math.min(...ys),
+          maxY: Math.max(...ys),
+        }
+      } else if (group.width !== undefined && group.height !== undefined) {
+        // Calculate bounds from width/height
+        groupBounds = {
+          minX: group.center.x - group.width / 2,
+          maxX: group.center.x + group.width / 2,
+          minY: group.center.y - group.height / 2,
+          maxY: group.center.y + group.height / 2,
+        }
       }
-      bounds = {
-        minX: Math.min(bounds.minX, groupBounds.minX),
-        maxX: Math.max(bounds.maxX, groupBounds.maxX),
-        minY: Math.min(bounds.minY, groupBounds.minY),
-        maxY: Math.max(bounds.maxY, groupBounds.maxY),
+
+      if (groupBounds) {
+        bounds = {
+          minX: Math.min(bounds.minX, groupBounds.minX),
+          maxX: Math.max(bounds.maxX, groupBounds.maxX),
+          minY: Math.min(bounds.minY, groupBounds.minY),
+          maxY: Math.max(bounds.maxY, groupBounds.maxY),
+        }
       }
     }
   }

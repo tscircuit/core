@@ -26,9 +26,21 @@ export const NormalComponent__getMinimumFlexContainerSize = (
       (component as unknown as IGroup).pcb_group_id!,
     )
     if (!pcbGroup) return null
+
+    // If group has outline, calculate bounds from outline
+    if (pcbGroup.outline && pcbGroup.outline.length > 0) {
+      const xs = pcbGroup.outline.map((p: any) => p.x)
+      const ys = pcbGroup.outline.map((p: any) => p.y)
+      return {
+        width: Math.max(...xs) - Math.min(...xs),
+        height: Math.max(...ys) - Math.min(...ys),
+      }
+    }
+
+    // Otherwise use width/height (with fallback to 0 for backwards compatibility)
     return {
-      width: pcbGroup.width,
-      height: pcbGroup.height,
+      width: pcbGroup.width ?? 0,
+      height: pcbGroup.height ?? 0,
     }
   }
 

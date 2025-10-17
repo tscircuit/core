@@ -21,17 +21,33 @@ export function Group_doInitialPcbComponentAnchorAlignment(
   const pcbGroup = db.pcb_group.get(group.pcb_group_id)
   if (!pcbGroup) return
 
-  const { width, height, center } = pcbGroup
+  const { width, height, center, outline } = pcbGroup
 
-  if (width === 0 || height === 0) return
+  // Calculate width and height (from explicit values or outline)
+  let actualWidth: number
+  let actualHeight: number
+
+  if (outline && outline.length > 0) {
+    const xs = outline.map((p: { x: number }) => p.x)
+    const ys = outline.map((p: { y: number }) => p.y)
+    actualWidth = Math.max(...xs) - Math.min(...xs)
+    actualHeight = Math.max(...ys) - Math.min(...ys)
+  } else if (width !== undefined && height !== undefined) {
+    actualWidth = width
+    actualHeight = height
+  } else {
+    return // No dimensions available
+  }
+
+  if (actualWidth === 0 || actualHeight === 0) return
 
   // Calculate the bounds of the group
   // PCB uses Y-up coordinate system (cartesian): higher Y = top, lower Y = bottom
   const bounds = {
-    left: center.x - width / 2,
-    right: center.x + width / 2,
-    top: center.y + height / 2, // Y-up: top is at higher Y
-    bottom: center.y - height / 2, // Y-up: bottom is at lower Y
+    left: center.x - actualWidth / 2,
+    right: center.x + actualWidth / 2,
+    top: center.y + actualHeight / 2, // Y-up: top is at higher Y
+    bottom: center.y - actualHeight / 2, // Y-up: bottom is at lower Y
   }
 
   const currentCenter = { ...center }
