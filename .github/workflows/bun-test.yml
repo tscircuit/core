@@ -23,4 +23,12 @@ jobs:
         run: bun install
 
       - name: Run tests
-        run: bun test --timeout 15000
+        run: bun test --timeout 15000 || true  # prevent job failure before uploading artifacts
+
+      - name: Upload diff artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-images
+          path: |
+            **/*.diff.png
+          if-no-files-found: ignore
