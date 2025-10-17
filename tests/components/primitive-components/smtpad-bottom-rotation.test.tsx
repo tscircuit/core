@@ -42,7 +42,7 @@ test("smt pads on the bottom layer preserve their rotation", async () => {
   const pads = circuit.db.pcb_smtpad.list()
   const topPad = pads.find(
     (pad): pad is PcbSmtPadRotatedRect =>
-      pad.layer === "top" && pad.shape === "rotated_rect",
+      pad.layer === "bottom" && pad.shape === "rotated_rect",
   )
   const bottomPad = pads.find(
     (pad): pad is PcbSmtPadRotatedRect =>
