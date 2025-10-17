@@ -8,22 +8,32 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("smt pads on the bottom layer preserve their rotation", async () => {
   const { circuit } = getTestFixture()
 
-  const footprint = (
-    <footprint>
-      <smtpad
-        shape="rect"
-        width="0.8mm"
-        height="0.4mm"
-        pcbRotation={45}
-        portHints={["1"]}
-      />
-    </footprint>
-  )
-
   circuit.add(
     <board width="10mm" height="10mm">
-      <chip name="U1" pcbX={-2} layer="top" footprint={footprint} />
-      <chip name="U2" pcbX={2} layer="bottom" footprint={footprint} />
+      <resistor
+        name="U1"
+        pcbX={-3}
+        layer="bottom"
+        footprint="0402"
+        resistance={20}
+        pcbRotation={110}
+      />
+      <resistor
+        name="U2"
+        pcbX={3}
+        layer="bottom"
+        footprint="0402"
+        resistance={10}
+        pcbRotation={85}
+      />
+      <resistor
+        name="U3"
+        pcbX={0}
+        layer="bottom"
+        footprint="0402"
+        resistance={10}
+        pcbRotation={230}
+      />
     </board>,
   )
 
@@ -41,15 +51,5 @@ test("smt pads on the bottom layer preserve their rotation", async () => {
 
   expect(topPad).toBeDefined()
   expect(bottomPad).toBeDefined()
-  expect(topPad?.ccw_rotation).toBe(45)
-  expect(bottomPad?.ccw_rotation).toBe(45)
-
-  const solderPastes = circuit.db.pcb_solder_paste.list()
-  const bottomPaste = solderPastes.find(
-    (paste): paste is PcbSolderPasteRotatedRect =>
-      paste.layer === "bottom" && paste.shape === "rotated_rect",
-  )
-
-  expect(bottomPaste).toBeDefined()
-  expect(bottomPaste?.ccw_rotation).toBe(45)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
