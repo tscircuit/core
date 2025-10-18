@@ -116,7 +116,6 @@ export function Group_doInitialPcbComponentAnchorAlignment(
     })
   }
 
-  // Store anchor metadata in the pcb_group for documentation
   db.pcb_group.update(group.pcb_group_id, {
     anchor_position: targetPosition,
     anchor_alignment: pcbPositionAnchor,

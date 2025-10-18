@@ -156,6 +156,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const hasOutline = props.outline && props.outline.length > 0
 
     if (this.pcb_group_id) {
+      // Check if explicit positioning is provided (pcbX or pcbY)
+      const hasExplicitPositioning =
+        this._parsedProps.pcbX !== undefined ||
+        this._parsedProps.pcbY !== undefined
+
       // If outline is specified, calculate bounds from outline
       if (hasOutline) {
         // Convert outline points to numeric values
@@ -170,10 +175,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const centerX = (outlineBounds.minX + outlineBounds.maxX) / 2
         const centerY = (outlineBounds.minY + outlineBounds.maxY) / 2
 
+        // Preserve explicit positioning when pcbX/pcbY are set
+        // Otherwise use calculated center from outline
+        const center = hasExplicitPositioning
+          ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
+              x: centerX,
+              y: centerY,
+            })
+          : { x: centerX, y: centerY }
+
         // For groups with outline, don't set width/height
-        // Center will be adjusted by anchor alignment phase if needed
         db.pcb_group.update(this.pcb_group_id, {
-          center: { x: centerX, y: centerY },
+          center,
         })
         return
       }
@@ -196,12 +209,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         centerY += (padTop - padBottom) / 2
       }
 
-      // Update width, height, and center
-      // Center will be adjusted by anchor alignment phase if needed
+      // Preserve explicit positioning when pcbX/pcbY are set
+      // Otherwise use calculated center from child bounds
+      const center = hasExplicitPositioning
+        ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
+            x: centerX,
+            y: centerY,
+          })
+        : { x: centerX, y: centerY }
+
       db.pcb_group.update(this.pcb_group_id, {
         width: Number(props.width ?? width),
         height: Number(props.height ?? height),
-        center: { x: centerX, y: centerY },
+        center,
       })
     }
   }
