@@ -1,8 +1,46 @@
 import type { Group } from "../Group"
 import { translate, rotate, compose } from "transformation-matrix"
-import { transformPCBElements } from "@tscircuit/circuit-json-util"
+import {
+  transformPCBElements,
+  type CircuitJsonUtilObjects,
+} from "@tscircuit/circuit-json-util"
 import type { PackOutput } from "calculate-packing"
 import type { ClusterInfo } from "./applyComponentConstraintClusters"
+import { normalizeDegrees } from "@tscircuit/math-utils"
+
+const updateCadRotation = ({
+  db,
+  pcbComponentId,
+  rotationDegrees,
+  layer,
+}: {
+  db: CircuitJsonUtilObjects
+  pcbComponentId: string
+  rotationDegrees: number
+  layer?: string
+}) => {
+  if (rotationDegrees == null) return
+  if (!db?.cad_component?.list) return
+
+  const cadComponent = db.cad_component.getWhere({
+    pcb_component_id: pcbComponentId,
+  })
+  if (!cadComponent) return
+
+  const delta =
+    layer?.toLowerCase?.() === "bottom" ? -rotationDegrees : rotationDegrees
+
+  const currentRotationZ = cadComponent.rotation?.z ?? 0
+  const nextRotation = {
+    ...(cadComponent.rotation ?? { x: 0, y: 0, z: 0 }),
+    z: normalizeDegrees(currentRotationZ + delta),
+  }
+
+  db.cad_component.update(cadComponent.cad_component_id, {
+    rotation: nextRotation,
+  })
+  cadComponent.rotation = nextRotation
+}
 
 const isDescendantGroup = (
   db: any,
@@ -53,6 +91,12 @@ export const applyPackOutput = (
               "pcb_component_id" in elm && elm.pcb_component_id === memberId,
           )
         transformPCBElements(related as any, transformMatrix)
+        updateCadRotation({
+          db,
+          pcbComponentId: memberId,
+          rotationDegrees,
+          layer: member.layer,
+        })
       }
       continue
     }
@@ -87,6 +131,12 @@ export const applyPackOutput = (
             "pcb_component_id" in elm && elm.pcb_component_id === componentId,
         )
       transformPCBElements(related as any, transformMatrix)
+      updateCadRotation({
+        db,
+        pcbComponentId: componentId,
+        rotationDegrees,
+        layer: pcbComponent.layer,
+      })
       continue
     }
 

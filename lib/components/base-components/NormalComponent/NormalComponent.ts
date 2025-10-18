@@ -65,6 +65,7 @@ import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalCompo
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
 import { isFootprintUrl } from "./utils/isFoorprintUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
+import { normalizeDegrees } from "@tscircuit/math-utils"
 
 const debug = Debug("tscircuit:core")
 
@@ -1332,6 +1333,16 @@ export class NormalComponent<
     const accumulatedRotation =
       (decomposedTransform.rotation.angle * 180) / Math.PI
 
+    const pcbRotation = pcb_component?.rotation ?? 0
+
+    const rotationWithOffset =
+      pcbRotation + accumulatedRotation + (rotationOffset.z ?? 0)
+    // Keep your same mirroring logic, but now includes group rotation
+    const cadRotationZ =
+      computedLayer === "bottom"
+        ? normalizeDegrees(-rotationWithOffset + 180)
+        : normalizeDegrees(rotationWithOffset)
+
     const cad_model = db.cad_component.insert({
       // TODO z maybe depends on layer
       position: {
@@ -1349,10 +1360,7 @@ export class NormalComponent<
       rotation: {
         x: rotationOffset.x,
         y: (computedLayer === "top" ? 0 : 180) + rotationOffset.y,
-        z:
-          computedLayer === "bottom"
-            ? -(accumulatedRotation + rotationOffset.z) + 180
-            : accumulatedRotation + rotationOffset.z,
+        z: cadRotationZ,
       },
       pcb_component_id: this.pcb_component_id!,
       source_component_id: this.source_component_id!,
