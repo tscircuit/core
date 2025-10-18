@@ -163,7 +163,7 @@ export class Board extends Group<typeof boardProps> {
 
     // Process all PCB groups (for nested subcircuits)
     for (const pcbGroup of allPcbGroups) {
-      updateBounds(pcbGroup.center, pcbGroup.width, pcbGroup.height)
+      updateBounds(pcbGroup.center, pcbGroup.width ?? 0, pcbGroup.height ?? 0)
     }
 
     if (props.boardAnchorPosition) {

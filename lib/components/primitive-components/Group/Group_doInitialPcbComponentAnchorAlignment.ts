@@ -23,7 +23,7 @@ export function Group_doInitialPcbComponentAnchorAlignment(
 
   const { width, height, center } = pcbGroup
 
-  if (width === 0 || height === 0) return
+  if (!width || !height) return
 
   // Calculate the bounds of the group
   // PCB uses Y-up coordinate system (cartesian): higher Y = top, lower Y = bottom

@@ -117,7 +117,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   if (subcircuit_id) {
     const group = db.pcb_group.getWhere({ subcircuit_id })
-    if (group) {
+    if (group?.width && group.height) {
       const groupBounds = {
         minX: group.center.x - group.width / 2,
         maxX: group.center.x + group.width / 2,
