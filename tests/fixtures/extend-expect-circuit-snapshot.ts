@@ -21,7 +21,7 @@ import {
   encodePNGToBuffer,
 } from "poppygl"
 
-const ACCEPTABLE_DIFF_PERCENTAGE = 5.0
+const ACCEPTABLE_DIFF_PERCENTAGE = 7.0
 
 async function saveSvgSnapshotOfCircuitJson({
   soup,

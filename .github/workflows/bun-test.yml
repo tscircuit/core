@@ -22,30 +22,20 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run tests (capture failure)
+      - name: Run tests (capture failures)
         id: test
         run: |
           set -e
           bun test --timeout 15000 || echo "TEST_FAILED=true" >> $GITHUB_ENV
 
-      - name: Collect failed test images
-        if: always()
-        run: |
-          mkdir -p failed_test_images
-          for diff in $(find . -type f -name '*.diff.png'); do
-            cp "$diff" failed_test_images/
-            snap="${diff%.diff.png}.snap.png"
-            if [ -f "$snap" ]; then
-              cp "$snap" failed_test_images/
-            fi
-          done
-
-      - name: Upload failed test images
+      - name: Upload test images
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: failed-test-images
-          path: failed_test_images
+          name: test-images
+          path: |
+            **/*.diff.png
+            **/*.snap.png
           if-no-files-found: ignore
 
       - name: Fail if tests failed
