@@ -1,68 +1,16 @@
-import {
-  switchProps,
-  type SwitchProps as BaseSwitchProps,
-} from "@tscircuit/props"
+import { switchProps, type SwitchProps } from "@tscircuit/props"
 import type { BaseSymbolName } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { frequency, ms, type SimulationSwitch } from "circuit-json"
 
-type SwitchSimulationValues = {
-  closesAt?: string | number
-  opensAt?: string | number
-  startsClosed?: boolean
-  switchingFrequency?: string | number
-}
-
-type SwitchSimulationProp =
-  | SwitchSimulationValues
-  | { spice?: SwitchSimulationValues | null }
-
-type SwitchPropsWithSimulation = BaseSwitchProps & {
-  simulation?: SwitchSimulationProp | null
-}
-
-type SimulationSwitchRow = {
-  type: "simulation_switch"
-  closes_at?: string | number
-  opens_at?: string | number
-  starts_closed?: boolean
-  switching_frequency?: string | number
-}
-
-const hasSimulationValues = (
-  values: SwitchSimulationValues | null | undefined,
-): values is SwitchSimulationValues => {
-  if (!values) return false
-
+function hasSimProps(props: SwitchProps) {
   return (
-    values.closesAt !== undefined ||
-    values.opensAt !== undefined ||
-    values.startsClosed !== undefined ||
-    values.switchingFrequency !== undefined
+    props.simSwitchFrequency !== undefined ||
+    props.simCloseAt !== undefined ||
+    props.simOpenAt !== undefined ||
+    props.simStartClosed !== undefined ||
+    props.simStartOpen !== undefined
   )
-}
-
-const isSpiceContainer = (
-  simulation: SwitchSimulationProp | null | undefined,
-): simulation is { spice?: SwitchSimulationValues | null } => {
-  if (!simulation || typeof simulation !== "object") {
-    return false
-  }
-
-  return Object.prototype.hasOwnProperty.call(simulation, "spice")
-}
-
-const getSimulationValues = (
-  simulation: SwitchSimulationProp | null | undefined,
-): SwitchSimulationValues | null => {
-  if (!simulation || typeof simulation !== "object") {
-    return null
-  }
-
-  const maybeValues = isSpiceContainer(simulation)
-    ? (simulation.spice ?? null)
-    : simulation
-
-  return hasSimulationValues(maybeValues) ? { ...maybeValues } : null
 }
 
 type SwitchType = "spst" | "spdt" | "dpst" | "dpdt"
@@ -107,43 +55,45 @@ export class Switch extends NormalComponent<typeof switchProps> {
     const source_component = db.source_component.insert({
       ftype: "simple_switch",
       name: this.name,
-      switch_type: props.type,
-      is_normally_closed: props.isNormallyClosed ?? false,
       are_pins_interchangeable: this._getSwitchType() === "spst",
-    } as any)
+    })
 
     this.source_component_id = source_component.source_component_id
   }
 
   doInitialSimulationRender() {
-    const props = this.props as SwitchPropsWithSimulation
-    const simulationValues = getSimulationValues(props.simulation)
+    const { _parsedProps: props } = this
 
-    if (!simulationValues) {
+    if (!hasSimProps(props)) {
       return
     }
 
     const { db } = this.root!
 
-    const simulationSwitch: SimulationSwitchRow = {
+    const simulationSwitch: Omit<SimulationSwitch, "simulation_switch_id"> = {
       type: "simulation_switch",
+      source_component_id: this.source_component_id || "",
     }
 
-    if (simulationValues.closesAt !== undefined) {
-      simulationSwitch.closes_at = simulationValues.closesAt
+    if (props.simSwitchFrequency !== undefined) {
+      simulationSwitch.switching_frequency = frequency.parse(
+        props.simSwitchFrequency,
+      )
+    }
+    if (props.simCloseAt !== undefined) {
+      simulationSwitch.closes_at = ms.parse(props.simCloseAt)
+    }
+    if (props.simOpenAt !== undefined) {
+      simulationSwitch.opens_at = ms.parse(props.simOpenAt)
     }
 
-    if (simulationValues.opensAt !== undefined) {
-      simulationSwitch.opens_at = simulationValues.opensAt
+    // simStartClosed takes precedence
+    if (props.simStartOpen !== undefined) {
+      simulationSwitch.starts_closed = !props.simStartOpen
     }
-
-    if (simulationValues.startsClosed !== undefined) {
-      simulationSwitch.starts_closed = simulationValues.startsClosed
+    if (props.simStartClosed !== undefined) {
+      simulationSwitch.starts_closed = props.simStartClosed
     }
-
-    if (simulationValues.switchingFrequency !== undefined) {
-      simulationSwitch.switching_frequency = simulationValues.switchingFrequency
-    }
-    ;(db as any).simulation_switch.insert(simulationSwitch)
+    db.simulation_switch.insert(simulationSwitch)
   }
 }

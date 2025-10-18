@@ -27,8 +27,8 @@ export const NormalComponent__getMinimumFlexContainerSize = (
     )
     if (!pcbGroup) return null
     return {
-      width: pcbGroup.width,
-      height: pcbGroup.height,
+      width: pcbGroup.width ?? 0,
+      height: pcbGroup.height ?? 0,
     }
   }
 
