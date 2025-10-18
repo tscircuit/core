@@ -11,6 +11,7 @@ import {
   type PcbVia,
   type SchematicComponent,
   type SchematicPort,
+  distance,
 } from "circuit-json"
 import Debug from "debug"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -117,11 +118,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const groupProps = props as SubcircuitGroupProps
     const hasOutline = groupProps.outline && groupProps.outline.length > 0
 
-    // Convert outline points to numeric values
     const numericOutline = hasOutline
       ? groupProps.outline!.map((point) => ({
-          x: Number(point.x),
-          y: Number(point.y),
+          x: distance.parse(point.x),
+          y: distance.parse(point.y),
         }))
       : undefined
 
@@ -163,10 +163,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       // If outline is specified, calculate bounds from outline
       if (hasOutline) {
-        // Convert outline points to numeric values
         const numericOutline = props.outline!.map((point) => ({
-          x: Number(point.x),
-          y: Number(point.y),
+          x: distance.parse(point.x),
+          y: distance.parse(point.y),
         }))
 
         const outlineBounds = getBoundsFromPoints(numericOutline)
