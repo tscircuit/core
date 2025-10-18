@@ -23,6 +23,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
@@ -112,13 +113,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+
+    const groupProps = props as SubcircuitGroupProps
+    const hasOutline = groupProps.outline && groupProps.outline.length > 0
+
+    // Convert outline points to numeric values
+    const numericOutline = hasOutline
+      ? groupProps.outline!.map((point) => ({
+          x: Number(point.x),
+          y: Number(point.y),
+        }))
+      : undefined
+
     const pcb_group = db.pcb_group.insert({
       is_subcircuit: this.isSubcircuit,
       subcircuit_id: this.subcircuit_id ?? this.getSubcircuit()?.subcircuit_id!,
       name: this.name,
       center: this._getGlobalPcbPositionBeforeLayout(),
-      width: 0,
-      height: 0,
+      ...(hasOutline ? { outline: numericOutline } : { width: 0, height: 0 }),
       pcb_component_ids: [],
       source_group_id: this.source_group_id!,
       autorouter_configuration: props.autorouter
@@ -141,9 +153,34 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { db } = this.root!
     const props = this._parsedProps as SubcircuitGroupProps
 
-    const bounds = getBoundsOfPcbComponents(this.children)
+    const hasOutline = props.outline && props.outline.length > 0
 
     if (this.pcb_group_id) {
+      // If outline is specified, calculate bounds from outline
+      if (hasOutline) {
+        // Convert outline points to numeric values
+        const numericOutline = props.outline!.map((point) => ({
+          x: Number(point.x),
+          y: Number(point.y),
+        }))
+
+        const outlineBounds = getBoundsFromPoints(numericOutline)
+        if (!outlineBounds) return
+
+        const centerX = (outlineBounds.minX + outlineBounds.maxX) / 2
+        const centerY = (outlineBounds.minY + outlineBounds.maxY) / 2
+
+        // For groups with outline, don't set width/height
+        // Center will be adjusted by anchor alignment phase if needed
+        db.pcb_group.update(this.pcb_group_id, {
+          center: { x: centerX, y: centerY },
+        })
+        return
+      }
+
+      // Original logic for groups without outline
+      const bounds = getBoundsOfPcbComponents(this.children)
+
       let width = bounds.width
       let height = bounds.height
       let centerX = (bounds.minX + bounds.maxX) / 2
@@ -159,36 +196,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         centerY += (padTop - padBottom) / 2
       }
 
-      // Preserve explicit positioning when pcbX/pcbY are set
-      const hasExplicitPositioning =
-        this._parsedProps.pcbX !== undefined ||
-        this._parsedProps.pcbY !== undefined
-
-      const center = hasExplicitPositioning
-        ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
-            x: centerX,
-            y: centerY,
-          })
-        : { x: centerX, y: centerY }
-
-      // Compute anchor_position and anchor_alignment if pcbPositionAnchor is provided
-      const updateData: any = {
+      // Update width, height, and center
+      // Center will be adjusted by anchor alignment phase if needed
+      db.pcb_group.update(this.pcb_group_id, {
         width: Number(props.width ?? width),
         height: Number(props.height ?? height),
-        center,
-      }
-
-      const pcbPositionAnchor = props.pcbPositionAnchor
-      if (pcbPositionAnchor && hasExplicitPositioning) {
-        const pcbX = this._parsedProps.pcbX ?? 0
-        const pcbY = this._parsedProps.pcbY ?? 0
-
-        // Set anchor_position to the pcbX/pcbY coordinates
-        updateData.anchor_position = { x: pcbX, y: pcbY }
-        updateData.anchor_alignment = pcbPositionAnchor
-      }
-
-      db.pcb_group.update(this.pcb_group_id, updateData)
+        center: { x: centerX, y: centerY },
+      })
     }
   }
 

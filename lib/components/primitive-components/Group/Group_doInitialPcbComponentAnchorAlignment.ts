@@ -1,5 +1,6 @@
 import type { Group } from "./Group"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 
 export function Group_doInitialPcbComponentAnchorAlignment(
   group: Group<any>,
@@ -21,7 +22,18 @@ export function Group_doInitialPcbComponentAnchorAlignment(
   const pcbGroup = db.pcb_group.get(group.pcb_group_id)
   if (!pcbGroup) return
 
-  const { width, height, center } = pcbGroup
+  let width: number | undefined = pcbGroup.width
+  let height: number | undefined = pcbGroup.height
+  const { center } = pcbGroup
+
+  // If the group has an outline, calculate width and height from outline
+  if (pcbGroup.outline && pcbGroup.outline.length > 0) {
+    const bounds = getBoundsFromPoints(pcbGroup.outline)
+    if (bounds) {
+      width = bounds.maxX - bounds.minX
+      height = bounds.maxY - bounds.minY
+    }
+  }
 
   if (!width || !height) return
 
@@ -103,4 +115,10 @@ export function Group_doInitialPcbComponentAnchorAlignment(
       center: newCenter,
     })
   }
+
+  // Store anchor metadata in the pcb_group for documentation
+  db.pcb_group.update(group.pcb_group_id, {
+    anchor_position: targetPosition,
+    anchor_alignment: pcbPositionAnchor,
+  })
 }
