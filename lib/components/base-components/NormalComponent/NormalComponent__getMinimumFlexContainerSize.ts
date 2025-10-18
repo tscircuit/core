@@ -39,8 +39,8 @@ export const NormalComponent__getMinimumFlexContainerSize = (
 
     // Otherwise use width/height (with fallback to 0 for backwards compatibility)
     return {
-      width: pcbGroup.width ?? 0,
-      height: pcbGroup.height ?? 0,
+      width: pcbGroup.width ?? undefined,
+      height: pcbGroup.height ?? undefined,
     }
   }
 
