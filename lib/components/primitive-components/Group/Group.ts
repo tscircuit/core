@@ -7,6 +7,7 @@ import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutoro
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type LayerRef,
+  type PcbGroup,
   type PcbTrace,
   type PcbVia,
   type SchematicComponent,
@@ -112,13 +113,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
-    const pcb_group = db.pcb_group.insert({
+    const hasOutline =
+      props.outline && Array.isArray(props.outline) && props.outline.length > 0
+
+    const pcb_group_data: Partial<PcbGroup> = {
       is_subcircuit: this.isSubcircuit,
       subcircuit_id: this.subcircuit_id ?? this.getSubcircuit()?.subcircuit_id!,
       name: this.name,
       center: this._getGlobalPcbPositionBeforeLayout(),
-      width: 0,
-      height: 0,
       pcb_component_ids: [],
       source_group_id: this.source_group_id!,
       autorouter_configuration: props.autorouter
@@ -126,7 +128,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             trace_clearance: props.autorouter.traceClearance,
           }
         : undefined,
-    })
+    }
+
+    // Only set width/height if no outline
+    if (!hasOutline) {
+      pcb_group_data.width = 0
+      pcb_group_data.height = 0
+    }
+
+    // Set outline if present
+    if (hasOutline) {
+      pcb_group_data.outline = props.outline
+    }
+
+    const pcb_group = db.pcb_group.insert(pcb_group_data as PcbGroup)
     this.pcb_group_id = pcb_group.pcb_group_id
 
     for (const child of this.children) {
@@ -142,6 +157,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const props = this._parsedProps as SubcircuitGroupProps
 
     const bounds = getBoundsOfPcbComponents(this.children)
+    const hasOutline =
+      props.outline && Array.isArray(props.outline) && props.outline.length > 0
 
     if (this.pcb_group_id) {
       let width = bounds.width
@@ -149,7 +166,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       let centerX = (bounds.minX + bounds.maxX) / 2
       let centerY = (bounds.minY + bounds.maxY) / 2
 
-      if (this.isSubcircuit) {
+      if (this.isSubcircuit && !hasOutline) {
         const { padLeft, padRight, padTop, padBottom } =
           this._resolvePcbPadding()
 
@@ -171,13 +188,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           })
         : { x: centerX, y: centerY }
 
-      // Compute anchor_position and anchor_alignment if pcbPositionAnchor is provided
+      // If outline is present, don't set width/height (they're optional)
       const updateData: any = {
-        width: Number(props.width ?? width),
-        height: Number(props.height ?? height),
         center,
+        outline: hasOutline ? props.outline : undefined,
       }
 
+      // Only set width/height if no outline or if explicitly specified
+      if (!hasOutline || props.width !== undefined) {
+        updateData.width = Number(props.width ?? width)
+      }
+      if (!hasOutline || props.height !== undefined) {
+        updateData.height = Number(props.height ?? height)
+      }
+
+      // Compute anchor_position and anchor_alignment if pcbPositionAnchor is provided
       const pcbPositionAnchor = props.pcbPositionAnchor
       if (pcbPositionAnchor && hasExplicitPositioning) {
         const pcbX = this._parsedProps.pcbX ?? 0

@@ -21,13 +21,15 @@ import {
   getObstacleDimensionsFromSmtPad,
   getObstacleDimensionsFromPlatedHole,
 } from "lib/utils/packing/getObstacleDimensionsFromElement"
+import type { SubcircuitGroupProps } from "@tscircuit/props"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
 
 export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const { db } = group.root!
-  const { _parsedProps: props } = group
+  const { _parsedProps } = group
+  const props = _parsedProps as SubcircuitGroupProps
 
   const {
     packOrderStrategy,
@@ -185,7 +187,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     }
   }
 
-  // Calculate bounds if width and height are specified
+  // Calculate bounds if width and height are specified, or from outline
   let bounds:
     | { minX: number; minY: number; maxX: number; maxY: number }
     | undefined
@@ -200,6 +202,19 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       maxX: widthMm / 2,
       minY: -heightMm / 2,
       maxY: heightMm / 2,
+    }
+  } else if (
+    props.outline &&
+    Array.isArray(props.outline) &&
+    props.outline.length > 0
+  ) {
+    const xs = props.outline.map((p: { x: number | string }) => Number(p.x))
+    const ys = props.outline.map((p: { y: number | string }) => Number(p.y))
+    bounds = {
+      minX: Math.min(...xs),
+      maxX: Math.max(...xs),
+      minY: Math.min(...ys),
+      maxY: Math.max(...ys),
     }
   }
 

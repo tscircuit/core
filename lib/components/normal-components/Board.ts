@@ -163,7 +163,16 @@ export class Board extends Group<typeof boardProps> {
 
     // Process all PCB groups (for nested subcircuits)
     for (const pcbGroup of allPcbGroups) {
-      updateBounds(pcbGroup.center, pcbGroup.width, pcbGroup.height)
+      // Calculate width/height from outline if present, otherwise use width/height
+      let width = 0
+      let height = 0
+      if (pcbGroup.outline && pcbGroup.outline.length > 0) {
+        const xs = pcbGroup.outline.map((p: { x: number }) => p.x)
+        const ys = pcbGroup.outline.map((p: { y: number }) => p.y)
+        width = Math.max(...xs) - Math.min(...xs)
+        height = Math.max(...ys) - Math.min(...ys)
+      }
+      updateBounds(pcbGroup.center, width, height)
     }
 
     if (props.boardAnchorPosition) {

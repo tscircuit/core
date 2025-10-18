@@ -44,6 +44,7 @@ test("Subcircuit group should have subcircuit_id", async () => {
     "height": 0,
     "is_subcircuit": true,
     "name": "G1",
+    "outline": undefined,
     "pcb_component_ids": [],
     "pcb_group_id": "pcb_group_0",
     "source_group_id": "source_group_0",
