@@ -9,13 +9,10 @@ test("<switch /> inserts simulation_switch when simulation props provided", asyn
       <switch
         name="SW1"
         spst
-        // @ts-expect-error Switch simulation props are currently typed downstream
-        simulation={{
-          closesAt: 1,
-          opensAt: 2,
-          startsClosed: true,
-          switchingFrequency: 3,
-        }}
+        simCloseAt={1}
+        simOpenAt={2}
+        simStartClosed={true}
+        simSwitchFrequency={3}
       />
     </board>,
   )
@@ -32,6 +29,27 @@ test("<switch /> inserts simulation_switch when simulation props provided", asyn
   expect(simulationSwitch.opens_at).toBe(2)
   expect(simulationSwitch.starts_closed).toBe(true)
   expect(simulationSwitch.switching_frequency).toBe(3)
+
+  const sourceComponent = circuit.db.source_component.getWhere({ name: "SW1" })
+  expect(sourceComponent).not.toHaveProperty("simulation_switch_id")
+})
+
+test("<switch /> with simStartOpen prop", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board>
+      <switch name="SW1" spst simStartOpen />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  const simulationSwitches = circuit.db.simulation_switch.list()
+
+  expect(simulationSwitches).toHaveLength(1)
+  const simulationSwitch = simulationSwitches[0]
+  expect(simulationSwitch.starts_closed).toBe(false)
 })
 
 test("<switch /> does not insert simulation_switch without simulation props", async () => {
