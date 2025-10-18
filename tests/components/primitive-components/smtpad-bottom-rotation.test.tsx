@@ -53,4 +53,5 @@ test("smt pads on the bottom layer preserve their rotation", async () => {
   expect(bottomPad).toBeDefined()
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSimple3dSnapshot(import.meta.path)
+  
 })
