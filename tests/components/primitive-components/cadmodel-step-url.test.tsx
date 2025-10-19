@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-import "lib/register-catalogue"
-
 test("cadmodel primitive forwards stepUrl to model_step_url", () => {
   const { circuit } = getTestFixture()
 
