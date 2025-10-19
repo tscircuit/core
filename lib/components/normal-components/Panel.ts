@@ -1,5 +1,4 @@
 import { panelProps } from "@tscircuit/props"
-import type { LayerRef } from "circuit-json"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Group } from "../primitive-components/Group/Group"
 
@@ -28,25 +27,5 @@ export class Panel extends Group<typeof panelProps> {
     }
 
     super.runRenderCycle()
-  }
-
-  get primaryBoard(): PrimitiveComponent & {
-    boardThickness: number
-    _connectedSchematicPortPairs: Set<string>
-    allLayers: LayerRef[]
-  } {
-    const boardChild = this.children.find(
-      (child) => child.componentName === "Board",
-    )
-
-    if (!boardChild) {
-      throw new Error("<panel> must contain at least one <board>")
-    }
-
-    return boardChild as PrimitiveComponent & {
-      boardThickness: number
-      _connectedSchematicPortPairs: Set<string>
-      allLayers: LayerRef[]
-    }
   }
 }

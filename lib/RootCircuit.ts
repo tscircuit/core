@@ -9,7 +9,6 @@ import pkgJson from "../package.json"
 import type { RootCircuitEventName } from "./events"
 import type { PlatformConfig } from "@tscircuit/props"
 import { Group } from "./components/primitive-components/Group"
-import { Panel } from "./components/normal-components/Panel"
 import Debug from "debug"
 
 export class RootCircuit {
@@ -79,13 +78,6 @@ export class RootCircuit {
     const directBoard = this.children.find((c) => c.componentName === "Board")
     if (directBoard) {
       return directBoard as any
-    }
-
-    const panel = this.children.find(
-      (child) => child.lowercaseComponentName === "panel",
-    ) as Panel | undefined
-    if (panel) {
-      return panel.primaryBoard
     }
 
     return undefined
