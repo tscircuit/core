@@ -69,18 +69,16 @@ export class RootCircuit {
   /**
    * Get the main board for this Circuit.
    */
-  _getBoard(): PrimitiveComponent & {
-    boardThickness: number
-    _connectedSchematicPortPairs: Set<string>
-    allLayers: LayerRef[]
-  } {
-    const directBoard = this.children.find((c) => c.componentName === "Board")
-    if (directBoard) {
-      return directBoard as PrimitiveComponent & {
+  _getBoard():
+    | (PrimitiveComponent & {
         boardThickness: number
         _connectedSchematicPortPairs: Set<string>
         allLayers: LayerRef[]
-      }
+      })
+    | undefined {
+    const directBoard = this.children.find((c) => c.componentName === "Board")
+    if (directBoard) {
+      return directBoard as any
     }
 
     const panel = this.children.find(
@@ -90,11 +88,7 @@ export class RootCircuit {
       return panel.primaryBoard
     }
 
-    return undefined as unknown as PrimitiveComponent & {
-      boardThickness: number
-      _connectedSchematicPortPairs: Set<string>
-      allLayers: LayerRef[]
-    }
+    return undefined
   }
 
   _guessRootComponent() {

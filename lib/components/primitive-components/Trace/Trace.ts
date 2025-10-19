@@ -125,7 +125,15 @@ export class Trace
     const netName = match ? match[1] : null
     if (!netName) return null
 
-    const allDescendants = this.root!._getBoard().getDescendants()
+    const board = this.root?._getBoard()
+    if (!board) {
+      this.renderError(
+        `Could not find a <board> ancestor for ${this}, so net "${selector}" cannot be resolved`,
+      )
+      return null
+    }
+
+    const allDescendants = board.getDescendants()
     return (
       (allDescendants.find(
         (d) => d.componentName === "Net" && d._parsedProps.name === netName,
