@@ -22,22 +22,5 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run tests (capture failures)
-        id: test
-        run: |
-          set -e
-          bun test --timeout 15000 || echo "TEST_FAILED=true" >> $GITHUB_ENV
-
-      - name: Upload test images
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-images
-          path: |
-            **/*.diff.png
-            **/*.snap.png
-          if-no-files-found: ignore
-
-      - name: Fail if tests failed
-        if: env.TEST_FAILED == 'true'
-        run: exit 1
+      - name: Run tests
+        run: bun test --timeout 15000 
