@@ -32,7 +32,11 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
 
     const props = this._parsedProps as CadModelProps
 
-    if (!props || typeof props.modelUrl !== "string") return
+    if (
+      !props ||
+      (typeof props.modelUrl !== "string" && typeof props.stepUrl !== "string")
+    )
+      return
 
     // Get the accumulated rotation from the parent's global transform
     const parentTransform = parent._computePcbGlobalTransformBeforeLayout()
@@ -64,7 +68,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
 
     const layer = parent.props.layer === "bottom" ? "bottom" : "top"
 
-    const ext = getFileExtension(props.modelUrl)
+    const ext = props.modelUrl ? getFileExtension(props.modelUrl) : undefined
     const urlProps: Partial<CadComponent> = {}
     if (ext === "stl")
       urlProps.model_stl_url = this._addCachebustToModelUrl(props.modelUrl)
@@ -79,6 +83,11 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
     else if (ext === "wrl" || ext === "vrml")
       urlProps.model_wrl_url = this._addCachebustToModelUrl(props.modelUrl)
     else urlProps.model_stl_url = this._addCachebustToModelUrl(props.modelUrl)
+
+    if (props.stepUrl) {
+      const transformed = this._addCachebustToModelUrl(props.stepUrl)
+      if (transformed) urlProps.model_step_url = transformed
+    }
 
     const cad = db.cad_component.insert({
       position: {
