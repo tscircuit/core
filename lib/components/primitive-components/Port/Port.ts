@@ -391,12 +391,16 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (pcbMatches.length > 1) {
       if (!areAllPcbPrimitivesOverlapping(pcbMatches)) {
-        throw new Error(
-          `${this.getString()} has multiple non-overlapping pcb matches, unclear how to place pcb_port: ${pcbMatches.map((c) => c.getString()).join(", ")}. (Note: tscircuit core does not currently allow you to specify internally connected pcb primitives with the same port hints, try giving them different port hints and specifying they are connected externally- or file an issue)`,
-        )
-      }
+        const prioritizedMatch =
+          pcbMatches.find((match) => {
+            const layer = (match as any)._parsedProps?.layer
+            return layer === undefined || layer === "top"
+          }) ?? pcbMatches[0]
 
-      matchCenter = getCenterOfPcbPrimitives(pcbMatches)
+        matchCenter = prioritizedMatch._getPcbCircuitJsonBounds().center
+      } else {
+        matchCenter = getCenterOfPcbPrimitives(pcbMatches)
+      }
     }
 
     if (matchCenter) {
@@ -442,6 +446,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       try {
         if (areAllPcbPrimitivesOverlapping(pcbMatches as any)) {
           matchCenter = getCenterOfPcbPrimitives(pcbMatches as any)
+        } else {
+          const prioritizedMatch =
+            pcbMatches.find((match) => {
+              const layer = (match as any)._parsedProps?.layer
+              return layer === undefined || layer === "top"
+            }) ?? pcbMatches[0]
+
+          matchCenter = prioritizedMatch._getPcbCircuitJsonBounds().center
         }
       } catch {}
     }
