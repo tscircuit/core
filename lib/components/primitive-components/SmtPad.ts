@@ -33,6 +33,17 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     if (props.shape === "rect") {
       return { width: props.width!, height: props.height! }
     }
+    if (props.shape === "rotated_rect") {
+      const rotationDegrees = props.ccwRotation ?? 0
+      const angleRad = (rotationDegrees * Math.PI) / 180
+      const cosAngle = Math.cos(angleRad)
+      const sinAngle = Math.sin(angleRad)
+      const width =
+        Math.abs(props.width! * cosAngle) + Math.abs(props.height! * sinAngle)
+      const height =
+        Math.abs(props.width! * sinAngle) + Math.abs(props.height! * cosAngle)
+      return { width, height }
+    }
     if (props.shape === "polygon") {
       const points = props.points!
       const xs = points.map((p) => p.x)
@@ -97,7 +108,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       Math.abs(normalizedRotationDegrees - 360) < rotationTolerance
         ? 0
         : normalizedRotationDegrees
-
+    const transformRotationBeforeFlip = finalRotationDegrees
     const { maybeFlipLayer, isFlipped } = this._getPcbPrimitiveFlippedHelpers()
 
     if (isFlipped) {
@@ -188,8 +199,47 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           height: pcb_smtpad.height * 0.7,
           x: pcb_smtpad.x,
           y: pcb_smtpad.y,
-          ccw_rotation: finalRotationDegrees,
+          ccw_rotation: pcb_smtpad.ccw_rotation,
           pcb_component_id: pcb_smtpad.pcb_component_id,
+          pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        } as PcbSmtPadRotatedRect)
+    } else if (props.shape === "rotated_rect") {
+      const baseRotation = props.ccwRotation ?? 0
+      const combinedRotationBeforeFlip =
+        (transformRotationBeforeFlip + baseRotation + 360) % 360
+      const padRotation = isFlipped
+        ? (360 - combinedRotationBeforeFlip + 360) % 360
+        : combinedRotationBeforeFlip
+
+      pcb_smtpad = db.pcb_smtpad.insert({
+        pcb_component_id,
+        pcb_port_id: this.matchedPort?.pcb_port_id!,
+        layer: maybeFlipLayer(props.layer ?? "top"),
+        shape: "rotated_rect",
+        width: props.width!,
+        height: props.height!,
+        corner_radius: props.cornerRadius ?? 0,
+        x: position.x,
+        y: position.y,
+        ccw_rotation: padRotation,
+        port_hints: props.portHints.map((ph) => ph.toString()),
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+      } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
+
+      if (shouldCreateSolderPaste)
+        db.pcb_solder_paste.insert({
+          layer: maybeFlipLayer(props.layer ?? "top"),
+          shape: "rotated_rect",
+          width: pcb_smtpad.width * 0.7,
+          height: pcb_smtpad.height * 0.7,
+          x: position.x,
+          y: position.y,
+          ccw_rotation: padRotation,
+          pcb_component_id,
           pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
