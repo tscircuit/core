@@ -2,6 +2,7 @@ export { NormalComponent } from "./base-components/NormalComponent/NormalCompone
 export { PrimitiveComponent } from "./base-components/PrimitiveComponent"
 export { Renderable, type IRenderable } from "./base-components/Renderable"
 export { Board } from "./normal-components/Board"
+export { Panel } from "./normal-components/Panel"
 export { Capacitor } from "./normal-components/Capacitor"
 export { Chip } from "./normal-components/Chip"
 export { Pinout } from "./normal-components/Pinout"

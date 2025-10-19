@@ -9,6 +9,7 @@ import pkgJson from "../package.json"
 import type { RootCircuitEventName } from "./events"
 import type { PlatformConfig } from "@tscircuit/props"
 import { Group } from "./components/primitive-components/Group"
+import { Panel } from "./components/normal-components/Panel"
 import Debug from "debug"
 
 export class RootCircuit {
@@ -73,9 +74,23 @@ export class RootCircuit {
     _connectedSchematicPortPairs: Set<string>
     allLayers: LayerRef[]
   } {
-    return this.children.find(
-      (c) => c.componentName === "Board",
-    ) as PrimitiveComponent & {
+    const directBoard = this.children.find((c) => c.componentName === "Board")
+    if (directBoard) {
+      return directBoard as PrimitiveComponent & {
+        boardThickness: number
+        _connectedSchematicPortPairs: Set<string>
+        allLayers: LayerRef[]
+      }
+    }
+
+    const panel = this.children.find(
+      (child) => child.lowercaseComponentName === "panel",
+    ) as Panel | undefined
+    if (panel) {
+      return panel.primaryBoard
+    }
+
+    return undefined as unknown as PrimitiveComponent & {
       boardThickness: number
       _connectedSchematicPortPairs: Set<string>
       allLayers: LayerRef[]
@@ -88,6 +103,23 @@ export class RootCircuit {
       throw new Error(
         "Not able to guess root component: RootCircuit has no children (use circuit.add(...))",
       )
+    }
+
+    const panels = this.children.filter(
+      (child) => child.lowercaseComponentName === "panel",
+    )
+
+    if (panels.length > 1) {
+      throw new Error("Only one <panel> is allowed per circuit")
+    }
+
+    if (panels.length === 1) {
+      if (this.children.length !== 1) {
+        throw new Error("<panel> must be the root element of the circuit")
+      }
+
+      this.firstChild = panels[0]
+      return
     }
 
     if (this.children.length === 1 && this.children[0].isGroup) {

@@ -586,6 +586,10 @@ export abstract class PrimitiveComponent<
     ) {
       throw new Error("Nested boards are not supported")
     }
+
+    if (component.lowercaseComponentName === "panel") {
+      throw new Error("<panel> must be a root-level element")
+    }
     if (!component.onAddToParent) {
       throw new Error(
         `Invalid JSX Element: Expected a React component but received "${JSON.stringify(
