@@ -13,6 +13,7 @@ import {
 } from "@tscircuit/checks"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 
 const getRoundedRectOutline = (
   width: number,
@@ -163,7 +164,19 @@ export class Board extends Group<typeof boardProps> {
 
     // Process all PCB groups (for nested subcircuits)
     for (const pcbGroup of allPcbGroups) {
-      updateBounds(pcbGroup.center, pcbGroup.width ?? 0, pcbGroup.height ?? 0)
+      let width = pcbGroup.width ?? 0
+      let height = pcbGroup.height ?? 0
+
+      // If the group has an outline, calculate width and height from outline
+      if (pcbGroup.outline && pcbGroup.outline.length > 0) {
+        const bounds = getBoundsFromPoints(pcbGroup.outline)
+        if (bounds) {
+          width = bounds.maxX - bounds.minX
+          height = bounds.maxY - bounds.minY
+        }
+      }
+
+      updateBounds(pcbGroup.center, width, height)
     }
 
     if (props.boardAnchorPosition) {
