@@ -68,18 +68,19 @@ export class RootCircuit {
   /**
    * Get the main board for this Circuit.
    */
-  _getBoard(): PrimitiveComponent & {
-    boardThickness: number
-    _connectedSchematicPortPairs: Set<string>
-    allLayers: LayerRef[]
-  } {
-    return this.children.find(
-      (c) => c.componentName === "Board",
-    ) as PrimitiveComponent & {
-      boardThickness: number
-      _connectedSchematicPortPairs: Set<string>
-      allLayers: LayerRef[]
+  _getBoard():
+    | (PrimitiveComponent & {
+        boardThickness: number
+        _connectedSchematicPortPairs: Set<string>
+        allLayers: LayerRef[]
+      })
+    | undefined {
+    const directBoard = this.children.find((c) => c.componentName === "Board")
+    if (directBoard) {
+      return directBoard as any
     }
+
+    return undefined
   }
 
   _guessRootComponent() {
@@ -88,6 +89,23 @@ export class RootCircuit {
       throw new Error(
         "Not able to guess root component: RootCircuit has no children (use circuit.add(...))",
       )
+    }
+
+    const panels = this.children.filter(
+      (child) => child.lowercaseComponentName === "panel",
+    )
+
+    if (panels.length > 1) {
+      throw new Error("Only one <panel> is allowed per circuit")
+    }
+
+    if (panels.length === 1) {
+      if (this.children.length !== 1) {
+        throw new Error("<panel> must be the root element of the circuit")
+      }
+
+      this.firstChild = panels[0]
+      return
     }
 
     if (this.children.length === 1 && this.children[0].isGroup) {
