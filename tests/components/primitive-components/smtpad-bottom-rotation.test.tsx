@@ -52,17 +52,13 @@ test("smt pads on the bottom layer preserve their rotation", async () => {
   expect(topPad).toBeDefined()
   expect(bottomPad).toBeDefined()
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSimple3dSnapshot(
-    import.meta.path,
-
-    {
-      poppygl: {
-        width: 1280,
-        height: 1280,
-        ambient: 1,
-        gamma: 2.2,
-        camPos: [-20, -30, -30],
-      },
+  expect(circuit).toMatch3dSnapshot(import.meta.path, {
+    cameraPreset: "bottom_angled",
+    poppygl: {
+      width: 1280,
+      height: 1280,
+      ambient: 1,
+      gamma: 2.2,
     },
-  )
+  })
 })
