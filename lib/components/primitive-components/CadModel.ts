@@ -31,8 +31,24 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
     const pcb_component = db.pcb_component.get(parent.pcb_component_id)
 
     const props = this._parsedProps as CadModelProps
+    if (!props) return
 
-    if (!props || typeof props.modelUrl !== "string") return
+    const propsRecord = props as unknown as Record<string, unknown>
+    const modelUrl =
+      typeof propsRecord.modelUrl === "string"
+        ? (propsRecord.modelUrl as string)
+        : undefined
+
+    const hasCadUrl =
+      typeof modelUrl === "string" ||
+      typeof propsRecord.stepUrl === "string" ||
+      typeof propsRecord.stlUrl === "string" ||
+      typeof propsRecord.objUrl === "string" ||
+      typeof propsRecord.gltfUrl === "string" ||
+      typeof propsRecord.glbUrl === "string" ||
+      typeof propsRecord.wrlUrl === "string"
+
+    if (!hasCadUrl) return
 
     // Get the accumulated rotation from the parent's global transform
     const parentTransform = parent._computePcbGlobalTransformBeforeLayout()
@@ -64,21 +80,36 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
 
     const layer = parent.props.layer === "bottom" ? "bottom" : "top"
 
-    const ext = getFileExtension(props.modelUrl)
     const urlProps: Partial<CadComponent> = {}
-    if (ext === "stl")
-      urlProps.model_stl_url = this._addCachebustToModelUrl(props.modelUrl)
-    else if (ext === "obj")
-      urlProps.model_obj_url = this._addCachebustToModelUrl(props.modelUrl)
-    else if (ext === "gltf")
-      urlProps.model_gltf_url = this._addCachebustToModelUrl(props.modelUrl)
-    else if (ext === "glb")
-      urlProps.model_glb_url = this._addCachebustToModelUrl(props.modelUrl)
-    else if (ext === "step" || ext === "stp")
-      urlProps.model_step_url = this._addCachebustToModelUrl(props.modelUrl)
-    else if (ext === "wrl" || ext === "vrml")
-      urlProps.model_wrl_url = this._addCachebustToModelUrl(props.modelUrl)
-    else urlProps.model_stl_url = this._addCachebustToModelUrl(props.modelUrl)
+    const addUrlProp = (value: unknown, field: keyof CadComponent) => {
+      if (typeof value !== "string" || value.length === 0) return
+      const transformed = this._addCachebustToModelUrl(value)
+      if (transformed) urlProps[field] = transformed
+    }
+
+    if (modelUrl) {
+      const transformedModelUrl = this._addCachebustToModelUrl(modelUrl)
+      if (transformedModelUrl) {
+        const ext = getFileExtension(modelUrl)
+        if (ext === "stl") urlProps.model_stl_url = transformedModelUrl
+        else if (ext === "obj") urlProps.model_obj_url = transformedModelUrl
+        else if (ext === "gltf") urlProps.model_gltf_url = transformedModelUrl
+        else if (ext === "glb") urlProps.model_glb_url = transformedModelUrl
+        else if (ext === "step" || ext === "stp")
+          urlProps.model_step_url = transformedModelUrl
+        else if (ext === "wrl" || ext === "vrml")
+          urlProps.model_wrl_url = transformedModelUrl
+        else urlProps.model_stl_url = transformedModelUrl
+      }
+    }
+
+    addUrlProp(propsRecord.stepUrl, "model_step_url")
+    addUrlProp(propsRecord.stlUrl, "model_stl_url")
+    addUrlProp(propsRecord.objUrl, "model_obj_url")
+    addUrlProp(propsRecord.mtlUrl, "model_mtl_url")
+    addUrlProp(propsRecord.gltfUrl, "model_gltf_url")
+    addUrlProp(propsRecord.glbUrl, "model_glb_url")
+    addUrlProp(propsRecord.wrlUrl, "model_wrl_url")
 
     const cad = db.cad_component.insert({
       position: {
