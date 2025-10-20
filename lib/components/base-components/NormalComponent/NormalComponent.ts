@@ -442,6 +442,7 @@ export class NormalComponent<
       if (isFootprintUrl(footprint)) return
       if (parseLibraryFootprintRef(footprint)) return
       const fpSoup = fp.string(footprint).soup()
+      console.log(JSON.stringify(fpSoup, null, 2))
       const fpComponents = createComponentsFromCircuitJson(
         {
           componentName: this.name ?? this.componentName,

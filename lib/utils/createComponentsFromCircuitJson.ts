@@ -70,6 +70,19 @@ export const createComponentsFromCircuitJson = (
           portHints: elm.port_hints,
         }),
       )
+    } else if (elm.type === "pcb_smtpad" && elm.shape === "pill") {
+      components.push(
+        new SmtPad({
+          shape: "pill",
+          height: elm.height,
+          width: elm.width,
+          radius: elm.radius,
+          portHints: elm.port_hints,
+          pcbX: elm.x,
+          pcbY: elm.y,
+          layer: elm.layer,
+        }),
+      )
     } else if (elm.type === "pcb_silkscreen_path") {
       components.push(
         new SilkscreenPath({
