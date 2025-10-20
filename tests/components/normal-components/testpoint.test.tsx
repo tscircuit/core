@@ -63,3 +63,28 @@ test("<testpoint /> component with netlabel test", async () => {
     import.meta.path + ".schematic-netlabels",
   )
 })
+
+test("<testpoint /> without hole renders SMT pad", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board>
+      <testpoint name="TP1" withouthole />
+    </board>,
+  )
+
+  circuit.render()
+
+  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([])
+
+  const sourceComponent = circuit.db.source_component.getWhere({
+    name: "TP1",
+  }) as any
+
+  expect(sourceComponent?.footprint_variant).toBe("pad")
+  expect(sourceComponent?.pad_shape).toBe("circle")
+  expect(sourceComponent?.hole_diameter).toBeUndefined()
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + ".withouthole")
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path + ".withouthole")
+})

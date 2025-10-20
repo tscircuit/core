@@ -74,7 +74,10 @@ export interface TscircuitElements {
   transistor: Props.TransistorProps
   switch: Props.SwitchProps
   mosfet: Props.MosfetProps
-  testpoint: Props.TestpointProps
+  testpoint: Props.TestpointProps & {
+    withoutHole?: boolean
+    withouthole?: boolean
+  }
   voltagesource: VoltageSourceProps
   voltageprobe: Props.VoltageProbeProps
   copperpour: Props.CopperPourProps

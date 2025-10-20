@@ -1,7 +1,8 @@
 import { testpointProps } from "@tscircuit/props"
 import type { SourceSimpleTestPoint } from "circuit-json"
-import { FTYPE, type BaseSymbolName } from "lib/utils/constants"
+import { FTYPE } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { z } from "zod"
 
 const TESTPOINT_DEFAULTS = {
   HOLE_DIAMETER: 0.5,
@@ -9,12 +10,19 @@ const TESTPOINT_DEFAULTS = {
   SMT_RECT_SIZE: 2,
 } as const
 
-export class TestPoint extends NormalComponent<typeof testpointProps> {
+const extendedTestpointProps = testpointProps.and(
+  z.object({
+    withoutHole: z.boolean().optional(),
+    withouthole: z.boolean().optional(),
+  }),
+)
+
+export class TestPoint extends NormalComponent<typeof extendedTestpointProps> {
   get config() {
     return {
       componentName: "TestPoint",
       schematicSymbolName: this.props.symbolName ?? "testpoint",
-      zodProps: testpointProps,
+      zodProps: extendedTestpointProps,
       sourceFtype: FTYPE.simple_test_point,
     }
   }
@@ -27,14 +35,24 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
       padDiameter,
       width,
       height,
+      withoutHole,
+      withouthole,
     } = this._parsedProps
+
+    withoutHole = withoutHole ?? withouthole
 
     if (!footprintVariant && holeDiameter) {
       footprintVariant = "through_hole"
     }
 
-    footprintVariant ??= "through_hole"
-    padShape ??= "circle"
+    if (withoutHole) {
+      footprintVariant = "pad"
+      padShape = "circle"
+      holeDiameter = undefined
+    } else {
+      footprintVariant ??= "through_hole"
+      padShape ??= "circle"
+    }
 
     // Apply defaults for SMT pads
     if (footprintVariant === "pad") {
