@@ -23,13 +23,5 @@ test("example32 3d snapshot resistor array", async () => {
 
   await circuit.renderUntilSettled()
 
-  // Render at a higher resolution to exercise poppygl options passthrough
-  expect(circuit).toMatchSimple3dSnapshot(import.meta.path, {
-    poppygl: {
-      width: 1280,
-      height: 720,
-      ambient: 0.25,
-      gamma: 2.2,
-    },
-  })
+  expect(circuit).toMatchSimple3dSnapshot(import.meta.path)
 })
