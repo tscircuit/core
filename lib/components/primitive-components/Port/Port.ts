@@ -7,12 +7,13 @@ import { type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
-import type { Trace } from "../Trace/Trace"
+import { Trace } from "../Trace/Trace"
 import type { LayerRef, SchematicPort } from "circuit-json"
 import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
 import type { PinAttributeMap } from "@tscircuit/props"
 import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
+import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 
 export const portProps = z.object({
   name: z.string().optional(),
@@ -23,6 +24,20 @@ export const portProps = z.object({
   schX: z.number().optional(),
   schY: z.number().optional(),
   direction: z.enum(["up", "down", "left", "right"]).optional(),
+  connectsTo: z
+    .union([
+      z.string(),
+      z.object({}).passthrough(),
+      z.array(z.union([z.string(), z.object({}).passthrough()])),
+    ])
+    .optional(),
+  connection: z
+    .union([
+      z.string(),
+      z.object({}).passthrough(),
+      z.array(z.union([z.string(), z.object({}).passthrough()])),
+    ])
+    .optional(),
 })
 
 export type PortProps = z.infer<typeof portProps>
@@ -59,6 +74,64 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       this.originDescription = opts.originDescription
     }
     this.matchedComponents = []
+  }
+
+  private _getConnectsToSelectors(): string[] {
+    const { connectsTo, connection } = this._parsedProps as {
+      connectsTo?: unknown
+      connection?: unknown
+    }
+    const resolvedTargets = connectsTo ?? connection
+    if (!resolvedTargets) return []
+    const rawTargets = Array.isArray(resolvedTargets)
+      ? resolvedTargets
+      : [resolvedTargets]
+
+    const selectors: string[] = []
+    for (const target of rawTargets) {
+      if (!target) continue
+      if (typeof target === "string") {
+        selectors.push(target)
+        continue
+      }
+      if (
+        typeof target === "object" &&
+        target !== null &&
+        "getPortSelector" in target
+      ) {
+        const maybeSelector = (target as { getPortSelector?: () => string })
+          .getPortSelector
+        if (typeof maybeSelector === "function") {
+          selectors.push(maybeSelector())
+          continue
+        }
+      }
+      selectors.push(String(target))
+    }
+
+    return selectors
+  }
+
+  doInitialCreateNetsFromProps(): void {
+    const targets = this._getConnectsToSelectors()
+    if (targets.length === 0) return
+    createNetsFromProps(this, targets)
+  }
+
+  doInitialCreateTracesFromProps(): void {
+    const targets = this._getConnectsToSelectors()
+    if (targets.length === 0) return
+
+    const fromSelector = this.getSubcircuitSelector()
+    for (const target of targets) {
+      if (!target || target === fromSelector) continue
+      this.add(
+        new Trace({
+          from: fromSelector,
+          to: target,
+        }),
+      )
+    }
   }
 
   _isBoardPinoutFromAttributes(): boolean | undefined {
@@ -329,15 +402,20 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // For primitive parents like Via, source_component_id won't be set yet during SourceRender phase
     // (children render before parents). It will be updated in SourceParentAttachment phase.
-    const source_component_id = parentWithSourceId?.source_component_id ?? null
+    const source_component_id =
+      parentWithSourceId?.source_component_id ?? undefined
 
-    const source_port = db.source_port.insert({
+    const sourcePortInsert: any = {
       name: props.name!,
       pin_number: props.pinNumber,
       port_hints,
-      source_component_id: source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
-    })
+    }
+    if (source_component_id) {
+      sourcePortInsert.source_component_id = source_component_id
+    }
+
+    const source_port = db.source_port.insert(sourcePortInsert)
 
     this.source_port_id = source_port.source_port_id
   }
@@ -349,11 +427,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       ? this.parent
       : parentNormalComponent
 
-    if (!parentWithSourceId?.source_component_id) {
-      throw new Error(
-        `${this.getString()} has no parent source component (parent: ${this.parent?.getString()})`,
-      )
-    }
+    if (!parentWithSourceId?.source_component_id) return
 
     db.source_port.update(this.source_port_id!, {
       source_component_id: parentWithSourceId.source_component_id!,
@@ -369,6 +443,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { matchedComponents } = this
 
     const parentNormalComponent = this.getParentNormalComponent()
+    const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
+
+    if (pcbMatches.length === 0) return
+
     const parentWithPcbComponentId = this.parent?.pcb_component_id
       ? this.parent
       : parentNormalComponent
@@ -378,10 +456,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         `${this.getString()} has no parent pcb component, cannot render pcb_port (parent: ${this.parent?.getString()}, parentNormalComponent: ${parentNormalComponent?.getString()})`,
       )
     }
-
-    const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
-
-    if (pcbMatches.length === 0) return
 
     let matchCenter: { x: number; y: number } | null = null
 
