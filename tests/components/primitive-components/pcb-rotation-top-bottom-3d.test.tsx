@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("pcb rotation", async () => {
+test("pcb rotation top-bottom resistor example with dual 3d views", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -20,4 +20,13 @@ test("pcb rotation", async () => {
   circuit.render()
 
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit.getCircuitJson()).toMatch3dSnapshot(
+    import.meta.path.replace("-rotation", "-rotation-top"),
+  )
+  expect(circuit.getCircuitJson()).toMatch3dSnapshot(
+    import.meta.path.replace("-rotation", "-rotation-bottom"),
+    {
+      cameraPreset: "bottom_angled",
+    },
+  )
 })
