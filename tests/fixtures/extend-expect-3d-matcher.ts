@@ -1,5 +1,5 @@
 import { expect, type MatcherResult } from "bun:test"
-import type { AnyCircuitElement } from "circuit-json"
+import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import looksSame from "looks-same"
@@ -7,6 +7,7 @@ import { RootCircuit } from "lib/RootCircuit"
 import {
   renderGLTFToPNGBufferFromGLBBuffer,
   decodeImageFromBuffer,
+  type RenderGLTFToPNGBufferFromGLBBufferOptions as PoppyglOptions,
 } from "poppygl"
 import { cju } from "@tscircuit/circuit-json-util"
 
@@ -14,44 +15,11 @@ const ACCEPTABLE_DIFF_PERCENTAGE = 7.0
 
 type CameraPosition = [number, number, number]
 
-type PoppyglOptions = {
-  camPos?: CameraPosition
-  cameraPreset?: string
-} & Record<string, unknown>
-
-type Simple3dAnglePreset =
-  | "angle1"
-  | "angle2"
-  | "left"
-  | "right"
-  | "left-raised"
-  | "right-raised"
-
-export type CameraPreset =
-  | "bottom_angled"
-  | "bottom-angled"
-  | "top_angled"
-  | "top-angled"
-  | "top_left"
-  | "top-left"
-  | "top_right"
-  | "top-right"
-  | "left"
-  | "right"
-  | "left_raised"
-  | "left-raised"
-  | "right_raised"
-  | "right-raised"
-  | "angle1"
-  | "angle2"
-  | "default"
-  | (string & {})
-
 export type Match3dSnapshotOptions = {
   gltf?: Record<string, unknown>
   poppygl?: PoppyglOptions
   camPos?: CameraPosition
-  cameraPreset?: CameraPreset
+  cameraPreset?: "bottom_angled"
 }
 
 type CameraPresetResolverContext = {
@@ -59,229 +27,52 @@ type CameraPresetResolverContext = {
   preset: string
 }
 
-type CameraPresetResolver = (
-  context: CameraPresetResolverContext,
-) => Promise<CameraPosition | undefined>
-
-const anglePresetAliases: Record<string, Simple3dAnglePreset> = {
-  angle1: "angle1",
-  angle2: "angle2",
-  left: "left",
-  right: "right",
-  "left-raised": "left-raised",
-  "right-raised": "right-raised",
-  left_raised: "left-raised",
-  right_raised: "right-raised",
-  top_angled: "angle1",
-  "top-angled": "angle1",
-  top_left: "angle1",
-  "top-left": "angle1",
-  top_right: "angle2",
-  "top-right": "angle2",
-  default: "angle1",
-}
-
-type OrbitPosition = { x: number; y: number; z: number }
-
-function toNumeric(value: unknown, fallback = 0): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value
-  if (typeof value === "string") {
-    const parsed = Number.parseFloat(value)
-    if (Number.isFinite(parsed)) return parsed
-  }
-  return fallback
-}
-
-function computeOrbitPosition({
-  cx,
-  cz,
-  dist,
-  anglePreset,
-}: {
-  cx: number
-  cz: number
-  dist: number
-  anglePreset: Simple3dAnglePreset
-}): OrbitPosition {
-  switch (anglePreset) {
-    case "angle1":
-      return { x: cx - dist, y: dist, z: cz - dist }
-    case "angle2":
-      return { x: cx + dist, y: dist, z: cz - dist }
-    case "left":
-      return { x: cx - dist, y: 0, z: cz }
-    case "right":
-      return { x: cx + dist, y: 0, z: cz }
-    case "left-raised":
-      return { x: cx - dist, y: dist, z: cz }
-    case "right-raised":
-      return { x: cx + dist, y: dist, z: cz }
-    default:
-      return { x: cx - dist, y: dist, z: cz - dist }
-  }
-}
-
-function getDefaultCameraForPcbBoard(
-  pcbBoard: any,
-  anglePreset: Simple3dAnglePreset,
-): OrbitPosition {
-  const w = toNumeric(pcbBoard?.width)
-  const h = toNumeric(pcbBoard?.height)
-  const cx = toNumeric(pcbBoard?.center?.x)
-  const cz = toNumeric(pcbBoard?.center?.y)
-  const boardSize = Math.max(w, h, 5)
-  const dist = boardSize * 1.5
-  return computeOrbitPosition({ cx, cz, dist, anglePreset })
-}
-
-function getDefaultCameraForComponents(
-  components: any[],
-  anglePreset: Simple3dAnglePreset,
-): OrbitPosition {
-  if (components.length === 0) {
-    return { x: 10, y: 10, z: 10 }
-  }
-
-  let minX = Number.POSITIVE_INFINITY
-  let maxX = Number.NEGATIVE_INFINITY
-  let minZ = Number.POSITIVE_INFINITY
-  let maxZ = Number.NEGATIVE_INFINITY
-
-  for (const comp of components) {
-    const width = toNumeric(comp?.width)
-    const height = toNumeric(comp?.height)
-    const centerX = toNumeric(comp?.center?.x)
-    const centerZ = toNumeric(comp?.center?.y)
-    const halfWidth = width / 2
-    const halfHeight = height / 2
-
-    minX = Math.min(minX, centerX - halfWidth)
-    maxX = Math.max(maxX, centerX + halfWidth)
-    minZ = Math.min(minZ, centerZ - halfHeight)
-    maxZ = Math.max(maxZ, centerZ + halfHeight)
-  }
-
-  if (
-    !Number.isFinite(minX) ||
-    !Number.isFinite(maxX) ||
-    !Number.isFinite(minZ) ||
-    !Number.isFinite(maxZ)
-  ) {
-    return { x: 10, y: 10, z: 10 }
-  }
-
-  const cx = (minX + maxX) / 2
-  const cz = (minZ + maxZ) / 2
-  const w = maxX - minX
-  const h = maxZ - minZ
-  const componentSize = Math.max(w, h, 5)
-  const dist = componentSize * 1.5
-  return computeOrbitPosition({ cx, cz, dist, anglePreset })
-}
-
-async function getSceneCameraPosition({
-  soup,
-  anglePreset,
-}: {
-  soup: AnyCircuitElement[]
-  anglePreset?: Simple3dAnglePreset
-}): Promise<CameraPosition | undefined> {
-  try {
-    const db = cju(soup)
-    const preset = anglePreset ?? "angle1"
-    const pcbBoard = db.pcb_board.list()[0]
-    if (pcbBoard) {
-      const position = getDefaultCameraForPcbBoard(pcbBoard, preset)
-      return [position.x, position.y, position.z]
-    }
-
-    const pcbComponents = db.pcb_component.list()
-    const position = getDefaultCameraForComponents(pcbComponents, preset)
-    return [position.x, position.y, position.z]
-  } catch (error) {
-    console.warn(
-      `Failed to derive camera position from circuit json: ${(error as Error).message}`,
-    )
-    return undefined
-  }
-}
-
-const cameraPresetResolvers: Record<string, CameraPresetResolver> = {
-  bottom_angled: async ({ soup }) => {
-    const base = await getSceneCameraPosition({ soup, anglePreset: "angle1" })
-    if (!base) return undefined
-    const [x, y, z] = base
-    const fallback = 10
-    const scaledX = x === 0 ? -fallback : x * (4 / 3)
-    const scaledZ = z === 0 ? -fallback : z * 2
-    const scaledY = y === 0 ? -fallback : -Math.abs(y) * 2
-    return [scaledX, scaledY, scaledZ]
-  },
-  "bottom-angled": async (context) =>
-    cameraPresetResolvers.bottom_angled(context),
-}
-
-async function resolveCameraPresetCamPos(
-  context: CameraPresetResolverContext,
-): Promise<CameraPosition | undefined> {
-  const normalized = context.preset.toLowerCase()
-  const directResolver = cameraPresetResolvers[normalized]
-  if (directResolver) {
-    return directResolver(context)
-  }
-
-  const anglePreset = anglePresetAliases[normalized]
-  if (anglePreset) {
-    return getSceneCameraPosition({ soup: context.soup, anglePreset })
-  }
-
-  if ((normalized as string).includes("angle")) {
-    const presetKey = normalized.replace(
-      /-/g,
-      "_",
-    ) as keyof typeof anglePresetAliases
-    const alias = anglePresetAliases[presetKey]
-    if (alias) {
-      return getSceneCameraPosition({ soup: context.soup, anglePreset: alias })
-    }
-  }
-
-  return undefined
-}
-
 export async function resolvePoppyglOptions(
   soup: AnyCircuitElement[],
   options?: Match3dSnapshotOptions,
 ): Promise<PoppyglOptions> {
-  const base: PoppyglOptions = {
+  const resolvedOpts: PoppyglOptions = {
     width: 1024,
     height: 1024,
-    ambient: 0.2,
-    gamma: 2.2,
     ...(options?.poppygl ?? {}),
   }
 
-  const explicitCamPos = options?.camPos ?? base.camPos
+  const explicitCamPos = options?.camPos ?? resolvedOpts.camPos
   if (explicitCamPos) {
-    base.camPos = explicitCamPos
+    resolvedOpts.camPos = explicitCamPos
   }
 
-  const cameraPreset = options?.cameraPreset ?? base.cameraPreset
+  const board = soup.find(
+    (element): element is PcbBoard => element.type === "pcb_board",
+  )
+
+  const cameraPreset = options?.cameraPreset
   if (cameraPreset) {
-    base.cameraPreset = cameraPreset
-  }
-
-  if (!base.camPos && cameraPreset) {
-    const resolved = await resolveCameraPresetCamPos({
-      soup,
-      preset: cameraPreset,
-    })
-    if (resolved) {
-      base.camPos = resolved
+    if (!board) {
+      throw new Error("Can't use cameraPreset without pcb_board")
+    }
+    switch (cameraPreset) {
+      case "bottom_angled":
+        resolvedOpts.camPos = [
+          -board.width / 2,
+          -(board.width + board.height) / 2,
+          -board.height / 2,
+        ]
+        break
+      default:
+        throw new Error(`Unknown camera preset: ${cameraPreset}`)
     }
   }
 
-  return base
+  if (!resolvedOpts.camPos && board) {
+    resolvedOpts.camPos = [
+      -board.width / 2,
+      (board.width + board.height) / 2,
+      -board.height / 2,
+    ]
+  }
+
+  return resolvedOpts
 }
 
 async function save3dSnapshotOfCircuitJson({
