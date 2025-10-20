@@ -9,6 +9,7 @@ import {
   decodeImageFromBuffer,
   type RenderGLTFToPNGBufferFromGLBBufferOptions as PoppyglOptions,
 } from "poppygl"
+import { convertCircuitJsonToGltf } from "circuit-json-to-gltf"
 import { cju } from "@tscircuit/circuit-json-util"
 
 const ACCEPTABLE_DIFF_PERCENTAGE = 7.0
@@ -22,11 +23,6 @@ export type Match3dSnapshotOptions = {
   cameraPreset?: "bottom_angled"
 }
 
-type CameraPresetResolverContext = {
-  soup: AnyCircuitElement[]
-  preset: string
-}
-
 export async function resolvePoppyglOptions(
   soup: AnyCircuitElement[],
   options?: Match3dSnapshotOptions,
@@ -34,6 +30,7 @@ export async function resolvePoppyglOptions(
   const resolvedOpts: PoppyglOptions = {
     width: 1024,
     height: 1024,
+    lookAt: [0, 0, 0],
     ...(options?.poppygl ?? {}),
   }
 
@@ -54,9 +51,9 @@ export async function resolvePoppyglOptions(
     switch (cameraPreset) {
       case "bottom_angled":
         resolvedOpts.camPos = [
-          -board.width / 2,
+          board.width / 2,
           -(board.width + board.height) / 2,
-          -board.height / 2,
+          board.height / 2,
         ]
         break
       default:
@@ -66,9 +63,9 @@ export async function resolvePoppyglOptions(
 
   if (!resolvedOpts.camPos && board) {
     resolvedOpts.camPos = [
-      -board.width / 2,
+      board.width / 2,
       (board.width + board.height) / 2,
-      -board.height / 2,
+      board.height / 2,
     ]
   }
 
@@ -93,17 +90,10 @@ async function save3dSnapshotOfCircuitJson({
   const snapshotName = `${path.basename(testPath || "")}-simple-3d.snap.png`
   const filePath = path.join(snapshotDir, snapshotName)
 
-  const gltfModule: any = await import("circuit-json-to-gltf")
-  const toGltf =
-    gltfModule.convertCircuitJsonToGltf ?? gltfModule.circuitJsonToGltf
-  if (!toGltf) {
-    throw new Error(
-      "circuit-json-to-gltf does not export convertCircuitJsonToGltf or circuitJsonToGltf",
-    )
-  }
-
-  const gltfOrGlb = await toGltf(soup, {
-    boardTextureResolution: 0,
+  const gltfOrGlb = await convertCircuitJsonToGltf(soup, {
+    boardTextureResolution: 512,
+    includeModels: true,
+    showBoundingBoxes: false,
     ...(options?.gltf ?? {}),
     format: "glb",
   })
@@ -160,6 +150,14 @@ async function save3dSnapshotOfCircuitJson({
   })
 
   if (lsResult.equal) {
+    if (forceUpdateSnapshot) {
+      console.log("Updating snapshot at", filePath)
+      fs.writeFileSync(filePath, content)
+      if (process.env.SAVE_3D_DEBUG_SNAPSHOT === "1") {
+        const debugPath = filePath.replace(/\.png$/, ".glb")
+        fs.writeFileSync(debugPath, glbBuffer)
+      }
+    }
     return {
       message: () => "Snapshot matches",
       pass: true,
