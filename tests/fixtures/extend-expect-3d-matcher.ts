@@ -179,12 +179,11 @@ async function save3dSnapshotOfCircuitJson({
   const diffFraction = areaOfDiffClusters / lsResult.totalPixels
 
   if (
-    Number.isFinite(diffFraction) &&
     diffFraction <= (options?.diffTolerance ?? ACCEPTABLE_DIFF_FRACTION)
   ) {
     return {
       message: () =>
-        `Snapshot within acceptable difference (${(diffFraction * 100).toFixed(2)}% <= ${ACCEPTABLE_DIFF_FRACTION}%)`,
+        `Snapshot within acceptable difference (${(diffFraction * 100).toFixed(2)}% <= ${(ACCEPTABLE_DIFF_FRACTION * 100).toFixed(3)}%)`,
       pass: true,
     }
   }
@@ -198,11 +197,7 @@ async function save3dSnapshotOfCircuitJson({
     }
     return {
       message: () =>
-        `Snapshot updated at ${filePath}${
-          Number.isFinite(diffFraction)
-            ? ` (was ${(diffFraction * 100).toFixed(2)}% different)`
-            : ""
-        }`,
+        `Snapshot updated at ${filePath}(was ${(diffFraction * 100).toFixed(2)}% different)`,
       pass: true,
     }
   }
@@ -212,9 +207,7 @@ async function save3dSnapshotOfCircuitJson({
 
   return {
     message: () =>
-      Number.isFinite(diffFraction)
-        ? `Snapshot differs by ${(diffFraction * 100).toFixed(2)}% (> ${(ACCEPTABLE_DIFF_FRACTION * 100).toFixed(3)}%). Diff saved at ${diffPath}`
-        : `Snapshot differs (percentage unavailable). Diff saved at ${diffPath}`,
+        `Snapshot differs by ${(diffFraction * 100).toFixed(2)}% (> ${(ACCEPTABLE_DIFF_FRACTION * 100).toFixed(3)}%). Diff saved at ${diffPath}`
     pass: false,
   }
 }
