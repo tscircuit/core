@@ -15,20 +15,32 @@ import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 
+const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
+
 const getRoundedRectOutline = (
   width: number,
   height: number,
   radius: number,
 ) => {
-  const r = Math.min(radius, width / 2, height / 2)
+  const w2 = width / 2
+  const h2 = height / 2
+  const r = Math.min(radius, w2, h2)
+
+  if (r < MIN_EFFECTIVE_BORDER_RADIUS_MM) {
+    return [
+      { x: -w2, y: -h2 },
+      { x: w2, y: -h2 },
+      { x: w2, y: h2 },
+      { x: -w2, y: h2 },
+    ]
+  }
+
   const maxArcLengthPerSegment = 0.1 // mm
   const segments = Math.max(
     1,
     Math.ceil(((Math.PI / 2) * r) / maxArcLengthPerSegment),
   )
   const step = Math.PI / 2 / segments
-  const w2 = width / 2
-  const h2 = height / 2
 
   const outline: { x: number; y: number }[] = []
 
