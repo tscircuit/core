@@ -145,66 +145,71 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadCircle)
     } else if (props.shape === "rect") {
-      pcb_smtpad =
-        isAxisAligned || isRotated90Degrees
-          ? (db.pcb_smtpad.insert({
-              pcb_component_id,
-              pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
-              layer: maybeFlipLayer(props.layer ?? "top"),
-              shape: "rect",
-
-              width: isRotated90Degrees ? props.height : props.width,
-              height: isRotated90Degrees ? props.width : props.height,
-              corner_radius: props.cornerRadius ?? 0,
-              port_hints: props.portHints.map((ph) => ph.toString()),
-              is_covered_with_solder_mask: isCoveredWithSolderMask,
-              x: position.x,
-              y: position.y,
-              subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-              pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-            } as PcbSmtPadRect) as PcbSmtPadRect)
-          : db.pcb_smtpad.insert({
-              pcb_component_id,
-              layer: maybeFlipLayer(props.layer ?? "top"),
-              shape: "rotated_rect",
-              width: props.width,
-              height: props.height,
-              corner_radius: props.cornerRadius ?? 0,
-              x: position.x,
-              y: position.y,
-              ccw_rotation: finalRotationDegrees,
-              port_hints: props.portHints.map((ph) => ph.toString()),
-              is_covered_with_solder_mask: isCoveredWithSolderMask,
-              subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-              pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-            } as PcbSmtPad)
-      if (shouldCreateSolderPaste && pcb_smtpad.shape === "rect")
-        db.pcb_solder_paste.insert({
-          layer: maybeFlipLayer(props.layer ?? "top"),
-          shape: "rect",
-          width: pcb_smtpad.width * 0.7,
-          height: pcb_smtpad.height * 0.7,
-          x: pcb_smtpad.x,
-          y: pcb_smtpad.y,
-          pcb_component_id: pcb_smtpad.pcb_component_id,
-          pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
-          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadRect)
-      if (shouldCreateSolderPaste && pcb_smtpad.shape === "rotated_rect")
-        db.pcb_solder_paste.insert({
+      const hasRotation = !isAxisAligned && !isRotated90Degrees
+      if (hasRotation) {
+        pcb_smtpad = db.pcb_smtpad.insert({
+          pcb_component_id,
+          pcb_port_id: this.matchedPort?.pcb_port_id!,
           layer: maybeFlipLayer(props.layer ?? "top"),
           shape: "rotated_rect",
-          width: pcb_smtpad.width * 0.7,
-          height: pcb_smtpad.height * 0.7,
-          x: pcb_smtpad.x,
-          y: pcb_smtpad.y,
-          ccw_rotation: pcb_smtpad.ccw_rotation,
-          pcb_component_id: pcb_smtpad.pcb_component_id,
-          pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+          width: props.width!,
+          height: props.height!,
+          corner_radius: props.cornerRadius ?? 0,
+          x: position.x,
+          y: position.y,
+          ccw_rotation: finalRotationDegrees,
+          port_hints: props.portHints.map((ph) => ph.toString()),
+          is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadRotatedRect)
+        } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
+      } else {
+        pcb_smtpad = db.pcb_smtpad.insert({
+          pcb_component_id,
+          pcb_port_id: this.matchedPort?.pcb_port_id!,
+          layer: maybeFlipLayer(props.layer ?? "top"),
+          shape: "rect",
+          width: isRotated90Degrees ? props.height! : props.width!,
+          height: isRotated90Degrees ? props.width! : props.height!,
+          corner_radius: props.cornerRadius ?? 0,
+          port_hints: props.portHints.map((ph) => ph.toString()),
+          is_covered_with_solder_mask: isCoveredWithSolderMask,
+          x: position.x,
+          y: position.y,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        } as PcbSmtPadRect) as PcbSmtPadRect
+      }
+      if (shouldCreateSolderPaste) {
+        if (pcb_smtpad.shape === "rect") {
+          db.pcb_solder_paste.insert({
+            layer: maybeFlipLayer(props.layer ?? "top"),
+            shape: "rect",
+            width: pcb_smtpad.width * 0.7,
+            height: pcb_smtpad.height * 0.7,
+            x: pcb_smtpad.x,
+            y: pcb_smtpad.y,
+            pcb_component_id: pcb_smtpad.pcb_component_id,
+            pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+            subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+            pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+          } as PcbSmtPadRect)
+        } else if (pcb_smtpad.shape === "rotated_rect") {
+          db.pcb_solder_paste.insert({
+            layer: maybeFlipLayer(props.layer ?? "top"),
+            shape: "rotated_rect",
+            width: pcb_smtpad.width * 0.7,
+            height: pcb_smtpad.height * 0.7,
+            x: pcb_smtpad.x,
+            y: pcb_smtpad.y,
+            ccw_rotation: pcb_smtpad.ccw_rotation,
+            pcb_component_id: pcb_smtpad.pcb_component_id,
+            pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
+            subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+            pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+          } as PcbSmtPadRotatedRect)
+        }
+      }
     } else if (props.shape === "rotated_rect") {
       const baseRotation = props.ccwRotation ?? 0
       const combinedRotationBeforeFlip =
