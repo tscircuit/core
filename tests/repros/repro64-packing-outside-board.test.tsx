@@ -6,7 +6,7 @@ test("pcb packing outside board", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width={24.13} height={15.24}>
+    <board width={24.13} height={15.24} routingDisabled>
       <jumper
         pcbX={10}
         pcbRotation={-90}
