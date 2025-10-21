@@ -17,6 +17,7 @@ const ACCEPTABLE_DIFF_PERCENTAGE = 7.0
 type CameraPosition = [number, number, number]
 
 export type Match3dSnapshotOptions = {
+  diffTolerance?: number
   gltf?: Record<string, unknown>
   poppygl?: PoppyglOptions
   camPos?: CameraPosition
@@ -200,7 +201,7 @@ async function save3dSnapshotOfCircuitJson({
 
   if (
     Number.isFinite(diffPercentage) &&
-    diffPercentage <= ACCEPTABLE_DIFF_PERCENTAGE
+    diffPercentage <= (options?.diffTolerance ?? ACCEPTABLE_DIFF_PERCENTAGE)
   ) {
     return {
       message: () =>

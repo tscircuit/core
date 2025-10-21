@@ -54,5 +54,6 @@ test("smt pads on the bottom layer preserve their rotation", async () => {
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatch3dSnapshot(import.meta.path, {
     cameraPreset: "bottom_angled",
+    diffTolerance: 0.9,
   })
 })
