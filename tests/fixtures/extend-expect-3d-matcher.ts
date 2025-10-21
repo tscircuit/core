@@ -178,9 +178,7 @@ async function save3dSnapshotOfCircuitJson({
   /** [0,1] percentage of the image that is different */
   const diffFraction = areaOfDiffClusters / lsResult.totalPixels
 
-  if (
-    diffFraction <= (options?.diffTolerance ?? ACCEPTABLE_DIFF_FRACTION)
-  ) {
+  if (diffFraction <= (options?.diffTolerance ?? ACCEPTABLE_DIFF_FRACTION)) {
     return {
       message: () =>
         `Snapshot within acceptable difference (${(diffFraction * 100).toFixed(2)}% <= ${(ACCEPTABLE_DIFF_FRACTION * 100).toFixed(3)}%)`,
@@ -207,7 +205,7 @@ async function save3dSnapshotOfCircuitJson({
 
   return {
     message: () =>
-        `Snapshot differs by ${(diffFraction * 100).toFixed(2)}% (> ${(ACCEPTABLE_DIFF_FRACTION * 100).toFixed(3)}%). Diff saved at ${diffPath}`
+      `Snapshot differs by ${(diffFraction * 100).toFixed(2)}% (> ${(ACCEPTABLE_DIFF_FRACTION * 100).toFixed(3)}%). Diff saved at ${diffPath}`,
     pass: false,
   }
 }
