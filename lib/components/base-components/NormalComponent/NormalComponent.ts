@@ -1287,8 +1287,6 @@ export class NormalComponent<
     // Use post-layout bounds
     const bounds = this._getPcbCircuitJsonBounds()
 
-    const pcb_component = db.pcb_component.get(this.pcb_component_id!)
-
     if (typeof cadModel === "string") {
       throw new Error("String cadModel not yet implemented")
     }
@@ -1327,21 +1325,13 @@ export class NormalComponent<
 
     const computedLayer = this.props.layer === "bottom" ? "bottom" : "top"
 
-    // Get the accumulated rotation from the global transform
     const globalTransform = this._computePcbGlobalTransformBeforeLayout()
     const decomposedTransform = decomposeTSR(globalTransform)
-    const accumulatedRotation =
-      (decomposedTransform.rotation.angle * 180) / Math.PI
+    const totalRotation = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const isBottomLayer = computedLayer === "bottom"
 
-    const pcbRotation = pcb_component?.rotation ?? 0
-
-    const rotationWithOffset =
-      pcbRotation + accumulatedRotation + (rotationOffset.z ?? 0)
-    // Keep your same mirroring logic, but now includes group rotation
-    const cadRotationZ =
-      computedLayer === "bottom"
-        ? normalizeDegrees(-rotationWithOffset + 180)
-        : normalizeDegrees(rotationWithOffset)
+    const rotationWithOffset = totalRotation + (rotationOffset.z ?? 0)
+    const cadRotationZ = normalizeDegrees(rotationWithOffset)
 
     const cad_model = db.cad_component.insert({
       // TODO z maybe depends on layer
@@ -1359,8 +1349,8 @@ export class NormalComponent<
       },
       rotation: {
         x: rotationOffset.x,
-        y: (computedLayer === "top" ? 0 : 180) + rotationOffset.y,
-        z: cadRotationZ,
+        y: rotationOffset.y + (isBottomLayer ? 180 : 0),
+        z: normalizeDegrees(isBottomLayer ? -cadRotationZ : cadRotationZ),
       },
       pcb_component_id: this.pcb_component_id!,
       source_component_id: this.source_component_id!,
