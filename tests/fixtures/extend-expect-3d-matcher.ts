@@ -208,17 +208,12 @@ async function save3dSnapshotOfCircuitJson({
   }
 
   const diffPath = filePath.replace(/\.snap\.(svg|png)$/, ".diff.png")
-  await looksSame.createDiff({
-    reference: existingSnapshot,
-    current: currentBuffer,
-    diff: diffPath,
-    highlightColor: "#ff00ff",
-  })
+  await lsResult.diffImage.save(diffPath)
 
   return {
     message: () =>
       Number.isFinite(diffFraction)
-        ? `Snapshot differs by ${diffFraction.toFixed(2)}% (> ${ACCEPTABLE_DIFF_FRACTION}%). Diff saved at ${diffPath}`
+        ? `Snapshot differs by ${(diffFraction * 100).toFixed(2)}% (> ${(ACCEPTABLE_DIFF_FRACTION * 100).toFixed(3)}%). Diff saved at ${diffPath}`
         : `Snapshot differs (percentage unavailable). Diff saved at ${diffPath}`,
     pass: false,
   }
