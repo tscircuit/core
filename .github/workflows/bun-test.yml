@@ -25,12 +25,12 @@ jobs:
       - name: Run tests
         run: bun test --timeout 15000 
       
-        - name: Upload 3D Snapshot Artifacts on Failure
-          if: failure()
-          uses: actions/upload-artifact@v3
-          with:
-            name: 3d-snapshots
-            path: |
-              tests/**/__snapshots__/*.diff.png
-              tests/**/__snapshots__/*.snap.png
-            if-no-files-found: ignore
+      - name: Upload 3D Snapshot Artifacts on Failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: 3d-snapshots
+          path: |
+            tests/**/__snapshots__/*.diff.png
+            tests/**/__snapshots__/*.snap.png
+          if-no-files-found: ignore
