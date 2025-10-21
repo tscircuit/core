@@ -27,7 +27,7 @@ jobs:
       
       - name: Upload 3D Snapshot Artifacts on Failure
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: 3d-snapshots
           path: |
