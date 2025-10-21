@@ -12,7 +12,8 @@ import {
 import { convertCircuitJsonToGltf } from "circuit-json-to-gltf"
 import { cju } from "@tscircuit/circuit-json-util"
 
-const ACCEPTABLE_DIFF_PERCENTAGE = 7.0
+/** [0,1] percentage of the image that is different */
+const ACCEPTABLE_DIFF_FRACTION = 0.01
 
 type CameraPosition = [number, number, number]
 
@@ -128,7 +129,6 @@ async function save3dSnapshotOfCircuitJson({
   }
 
   if (!fs.existsSync(filePath) || forceUpdateSnapshot) {
-    console.log("Creating snapshot at", filePath)
     fs.writeFileSync(filePath, content)
     if (process.env.SAVE_3D_DEBUG_SNAPSHOT === "1") {
       const debugPath = filePath.replace(/\.png$/, ".glb")
@@ -145,9 +145,13 @@ async function save3dSnapshotOfCircuitJson({
     ? content
     : Buffer.from(content)
 
-  const lsResult: any = await looksSame(currentBuffer, existingSnapshot, {
+  const lsResult = await looksSame(currentBuffer, existingSnapshot, {
     strict: false,
     tolerance: 2,
+    antialiasingTolerance: 4,
+    shouldCluster: true,
+    clustersSize: 10,
+    createDiffImage: true,
   })
 
   if (lsResult.equal) {
@@ -165,47 +169,22 @@ async function save3dSnapshotOfCircuitJson({
     }
   }
 
-  const mismatchRaw =
-    lsResult?.misMatchPercentage ?? lsResult?.rawMisMatchPercentage
-
-  let diffPercentage =
-    mismatchRaw != null ? Number(mismatchRaw) : Number.POSITIVE_INFINITY
-
-  if (!Number.isFinite(diffPercentage)) {
-    try {
-      const refImg = await decodeImageFromBuffer(existingSnapshot, "image/png")
-      const curImg = await decodeImageFromBuffer(currentBuffer, "image/png")
-      if (
-        refImg?.width === curImg?.width &&
-        refImg?.height === curImg?.height
-      ) {
-        const totalPixels = refImg.width * refImg.height
-        let different = 0
-        const ref = refImg.data
-        const cur = curImg.data
-        for (let i = 0; i < totalPixels; i++) {
-          const idx = i * 4
-          if (
-            ref[idx] !== cur[idx] ||
-            ref[idx + 1] !== cur[idx + 1] ||
-            ref[idx + 2] !== cur[idx + 2] ||
-            ref[idx + 3] !== cur[idx + 3]
-          ) {
-            different++
-          }
-        }
-        diffPercentage = (different / totalPixels) * 100
-      }
-    } catch {}
+  let areaOfDiffClusters = 0
+  for (const cluster of lsResult.diffClusters) {
+    areaOfDiffClusters +=
+      (cluster.right - cluster.left) * (cluster.bottom - cluster.top)
   }
 
+  /** [0,1] percentage of the image that is different */
+  const diffFraction = areaOfDiffClusters / lsResult.totalPixels
+
   if (
-    Number.isFinite(diffPercentage) &&
-    diffPercentage <= (options?.diffTolerance ?? ACCEPTABLE_DIFF_PERCENTAGE)
+    Number.isFinite(diffFraction) &&
+    diffFraction <= (options?.diffTolerance ?? ACCEPTABLE_DIFF_FRACTION)
   ) {
     return {
       message: () =>
-        `Snapshot within acceptable difference (${diffPercentage.toFixed(2)}% <= ${ACCEPTABLE_DIFF_PERCENTAGE}%)`,
+        `Snapshot within acceptable difference (${(diffFraction * 100).toFixed(2)}% <= ${ACCEPTABLE_DIFF_FRACTION}%)`,
       pass: true,
     }
   }
@@ -220,8 +199,8 @@ async function save3dSnapshotOfCircuitJson({
     return {
       message: () =>
         `Snapshot updated at ${filePath}${
-          Number.isFinite(diffPercentage)
-            ? ` (was ${diffPercentage.toFixed(2)}% different)`
+          Number.isFinite(diffFraction)
+            ? ` (was ${(diffFraction * 100).toFixed(2)}% different)`
             : ""
         }`,
       pass: true,
@@ -238,8 +217,8 @@ async function save3dSnapshotOfCircuitJson({
 
   return {
     message: () =>
-      Number.isFinite(diffPercentage)
-        ? `Snapshot differs by ${diffPercentage.toFixed(2)}% (> ${ACCEPTABLE_DIFF_PERCENTAGE}%). Diff saved at ${diffPath}`
+      Number.isFinite(diffFraction)
+        ? `Snapshot differs by ${diffFraction.toFixed(2)}% (> ${ACCEPTABLE_DIFF_FRACTION}%). Diff saved at ${diffPath}`
         : `Snapshot differs (percentage unavailable). Diff saved at ${diffPath}`,
     pass: false,
   }
