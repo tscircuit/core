@@ -33,6 +33,12 @@ export async function resolvePoppyglOptions(
     width: 1024,
     height: 1024,
     lookAt: [0, 0, 0],
+    backgroundColor: [0, 0, 0],
+    grid: {
+      cellSize: 1,
+      color: [128, 128, 128],
+      infiniteGrid: true,
+    },
     ...(options?.poppygl ?? {}),
   }
 
