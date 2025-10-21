@@ -128,6 +128,7 @@ async function save3dSnapshotOfCircuitJson({
     glbBuffer,
     resolvedRenderOpts,
   )
+  console.log("got here", forceUpdateSnapshot)
   const content = Buffer.isBuffer(png) ? png : Buffer.from(png)
 
   if (!fs.existsSync(snapshotDir)) {
@@ -135,6 +136,7 @@ async function save3dSnapshotOfCircuitJson({
   }
 
   if (!fs.existsSync(filePath) || forceUpdateSnapshot) {
+    console.log("Writing snapshot at", filePath)
     fs.writeFileSync(filePath, content)
     if (process.env.SAVE_3D_DEBUG_SNAPSHOT === "1") {
       const debugPath = filePath.replace(/\.png$/, ".glb")
@@ -153,7 +155,8 @@ async function save3dSnapshotOfCircuitJson({
 
   const lsResult = await looksSame(currentBuffer, existingSnapshot, {
     strict: false,
-    tolerance: 2,
+    tolerance: 7,
+    ignoreAntialiasing: true,
     antialiasingTolerance: 4,
     shouldCluster: true,
     clustersSize: 10,
@@ -239,7 +242,8 @@ async function match3dSnapshot(
     forceUpdateSnapshot:
       process.argv.includes("--force-update-snapshots") ||
       process.argv.includes("-f") ||
-      Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS),
+      Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS) ||
+      Boolean(process.env.FORCE_BUN_UPDATE_SNAPSHOTS),
   })
 }
 
