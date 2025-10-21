@@ -6,7 +6,6 @@ test("rect smtpad should convert to rotated_rect when PCB rotation is supplied",
 
   circuit.add(
     <board width="30mm" height="30mm">
-      <chip name="U1" pcbX={0} pcbY={0} footprint="ms012" />
       <chip
         name="U2"
         pcbX={-10}
