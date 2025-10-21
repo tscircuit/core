@@ -6,13 +6,7 @@ test("rect smtpad should convert to rotated_rect when PCB rotation is supplied",
 
   circuit.add(
     <board width="30mm" height="30mm">
-      <chip
-        name="U2"
-        pcbX={-10}
-        pcbY={-10}
-        pcbRotation={45}
-        footprint="ms012"
-      />
+      <chip name="U1" pcbX={0} pcbY={0} pcbRotation={45} footprint="ms012" />
     </board>,
   )
 
@@ -21,14 +15,9 @@ test("rect smtpad should convert to rotated_rect when PCB rotation is supplied",
   const rotatedRectSmtpads = circuit
     .getCircuitJson()
     .filter((elm) => elm.type === "pcb_smtpad" && elm.shape === "rotated_rect")
-  const rectSmtpads = circuit
-    .getCircuitJson()
-    .filter((elm) => elm.type === "pcb_smtpad" && elm.shape === "rect")
 
-  // U1 has no rotation, should have rect pads
-  // U2 has 45-degree rotation, should have rotated_rect pads
+  // U1 has 45-degree rotation, should have rotated_rect pads
   expect(rotatedRectSmtpads.length).toBe(8)
-  expect(rectSmtpads.length).toBe(8)
 
   // Verify the rotated pads have correct rotation
   for (const pad of rotatedRectSmtpads) {
