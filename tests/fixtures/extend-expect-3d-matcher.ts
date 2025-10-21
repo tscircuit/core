@@ -128,7 +128,6 @@ async function save3dSnapshotOfCircuitJson({
     glbBuffer,
     resolvedRenderOpts,
   )
-  console.log("got here", forceUpdateSnapshot)
   const content = Buffer.isBuffer(png) ? png : Buffer.from(png)
 
   if (!fs.existsSync(snapshotDir)) {
@@ -162,7 +161,6 @@ async function save3dSnapshotOfCircuitJson({
     clustersSize: 10,
     createDiffImage: true,
   })
-  console.log("lsResult", lsResult)
 
   if (lsResult.equal) {
     if (forceUpdateSnapshot) {
