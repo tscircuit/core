@@ -162,6 +162,7 @@ async function save3dSnapshotOfCircuitJson({
     clustersSize: 10,
     createDiffImage: true,
   })
+  console.log("lsResult", lsResult)
 
   if (lsResult.equal) {
     if (forceUpdateSnapshot) {
