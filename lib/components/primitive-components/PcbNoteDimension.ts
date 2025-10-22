@@ -48,13 +48,15 @@ export class PcbNoteDimension extends PrimitiveComponent<
       this.getPrimitiveContainer()?.pcb_component_id ??
       undefined
 
+    const text = props.text ?? this._formatDistanceText({ from, to })
+
     const pcb_note_dimension = db.pcb_note_dimension.insert({
       pcb_component_id,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: group?.pcb_group_id ?? undefined,
       from,
       to,
-      text: props.text,
+      text,
       font: props.font ?? "tscircuit2024",
       font_size: props.fontSize ?? 1,
       color: props.color,
@@ -73,5 +75,24 @@ export class PcbNoteDimension extends PrimitiveComponent<
       width: Math.abs(to.x - from.x),
       height: Math.abs(to.y - from.y),
     }
+  }
+
+  private _formatDistanceText({
+    from,
+    to,
+  }: {
+    from: Point
+    to: Point
+  }): string {
+    const dx = to.x - from.x
+    const dy = to.y - from.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+
+    const roundedDistance = Math.round(distance)
+    const isWholeNumber = Math.abs(distance - roundedDistance) < 1e-9
+
+    const valueText = isWholeNumber ? `${roundedDistance}` : distance.toFixed(2)
+
+    return `${valueText}mm`
   }
 }

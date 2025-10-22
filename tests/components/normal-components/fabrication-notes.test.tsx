@@ -57,3 +57,30 @@ test("fabrication note path, text and rect are created", async () => {
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
+
+test("fabricationnotedimension defaults text to measured distance", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <fabricationnotedimension
+        from={{ x: 0, y: 0 }}
+        to={{ x: 3, y: 4 }}
+        offset={1}
+      />
+      <fabricationnotedimension
+        from={{ x: 0, y: 0 }}
+        to={{ x: 0, y: 1.234 }}
+        offset={1}
+        layer="bottom"
+      />
+    </board>,
+  )
+
+  circuit.render()
+
+  const dimensions = circuit.db.pcb_fabrication_note_dimension.list()
+  expect(dimensions).toHaveLength(2)
+  expect(dimensions[0].text).toBe("5mm")
+  expect(dimensions[1].text).toBe("1.23mm")
+})

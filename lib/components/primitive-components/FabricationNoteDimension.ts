@@ -57,6 +57,8 @@ export class FabricationNoteDimension extends PrimitiveComponent<
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
 
+    const text = props.text ?? this._formatDistanceText({ from, to })
+
     const fabrication_note_dimension = db.pcb_fabrication_note_dimension.insert(
       {
         pcb_component_id,
@@ -65,7 +67,7 @@ export class FabricationNoteDimension extends PrimitiveComponent<
         layer,
         from,
         to,
-        text: props.text,
+        text,
         offset: props.offset,
         font: props.font ?? "tscircuit2024",
         font_size: props.fontSize ?? 1,
@@ -87,5 +89,24 @@ export class FabricationNoteDimension extends PrimitiveComponent<
       width: Math.abs(to.x - from.x),
       height: Math.abs(to.y - from.y),
     }
+  }
+
+  private _formatDistanceText({
+    from,
+    to,
+  }: {
+    from: Point
+    to: Point
+  }): string {
+    const dx = to.x - from.x
+    const dy = to.y - from.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+
+    const roundedDistance = Math.round(distance)
+    const isWholeNumber = Math.abs(distance - roundedDistance) < 1e-9
+
+    const valueText = isWholeNumber ? `${roundedDistance}` : distance.toFixed(2)
+
+    return `${valueText}mm`
   }
 }
