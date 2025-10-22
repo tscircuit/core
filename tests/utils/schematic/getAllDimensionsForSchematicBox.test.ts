@@ -62,3 +62,28 @@ test("getAllDimensionsForSchematicBox 3 (4 sided with margins)", () => {
     "schematicbox3",
   )
 })
+
+test("schematic boxes with only vertical pins keep default width", () => {
+  const defaultSpacingDimensions = getAllDimensionsForSchematicBox({
+    schPinSpacing: 0.2,
+    schPortArrangement: {
+      rightSide: { pins: [1, 2, 3] },
+    },
+    pinCount: 3,
+  })
+
+  const wideSpacingDimensions = getAllDimensionsForSchematicBox({
+    schPinSpacing: 0.75,
+    schPortArrangement: {
+      rightSide: { pins: [1, 2, 3] },
+    },
+    pinCount: 3,
+  })
+
+  expect(wideSpacingDimensions.getSize().width).toBeCloseTo(
+    defaultSpacingDimensions.getSize().width,
+  )
+  expect(wideSpacingDimensions.getSize().height).toBeGreaterThan(
+    defaultSpacingDimensions.getSize().height,
+  )
+})

@@ -1,6 +1,8 @@
 import { getSizeOfSidesFromPortArrangement } from "./getSizeOfSidesFromPortArrangement"
 import { parsePinNumberFromLabelsOrThrow } from "./parsePinNumberFromLabelsOrThrow"
 
+const DEFAULT_SCH_PIN_SPACING = 0.2
+
 export type VerticalPortSideConfiguration = {
   direction?: "top-to-bottom" | "bottom-to-top"
   pins: number[]
@@ -346,9 +348,16 @@ export const getAllDimensionsForSchematicBox = (
   // Use lengths to determine schWidth and schHeight
   let schWidth = params.schWidth
   if (schWidth === undefined) {
+    const topSpacingMargin =
+      sidePinCounts.topSize > 0 ? params.schPinSpacing : DEFAULT_SCH_PIN_SPACING
+    const bottomSpacingMargin =
+      sidePinCounts.bottomSize > 0
+        ? params.schPinSpacing
+        : DEFAULT_SCH_PIN_SPACING
+
     schWidth = Math.max(
-      sideLengths.top + params.schPinSpacing * 2,
-      sideLengths.bottom + params.schPinSpacing * 2,
+      sideLengths.top + topSpacingMargin * 2,
+      sideLengths.bottom + bottomSpacingMargin * 2,
     )
 
     const labelWidth = params.pinLabels
