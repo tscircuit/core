@@ -101,7 +101,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
-    "calculate-packing": "0.0.49",
+    "calculate-packing": "0.0.50",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.3",
     "nanoid": "^5.0.7",
