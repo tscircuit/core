@@ -14,6 +14,9 @@ import {
 import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { Constraint } from "../primitive-components/Constraint"
+import * as kiwi from "@lume/kiwi"
+import { length } from "circuit-json"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -393,6 +396,200 @@ export class Board extends Group<typeof boardProps> {
 
   _computePcbGlobalTransformBeforeLayout(): Matrix {
     return identity()
+  }
+
+  /**
+   * Override the PcbLayout phase to handle group-to-group constraints
+   */
+  doInitialPcbLayout(): void {
+    // First run the normal group layout
+    super.doInitialPcbLayout()
+    
+    // Then apply group-to-group constraints
+    this._applyGroupConstraints()
+  }
+
+  /**
+   * Apply constraints between groups on the board
+   */
+  private _applyGroupConstraints(): void {
+    if (this.root?.pcbDisabled) return
+    
+    const { db } = this.root!
+    
+    // Find all constraints that reference groups
+    const groupConstraints = this.children.filter(
+      (c): c is Constraint => 
+        c.componentName === "Constraint" && 
+        c._parsedProps.pcb &&
+        this._constraintReferencesGroups(c)
+    )
+    
+    if (groupConstraints.length === 0) return
+    
+    // Collect all groups on this board
+    const groups = this.children.filter(
+      (c): c is Group => c.componentName === "Group" && (c as Group).pcb_group_id !== null
+    ) as Group[]
+    
+    if (groups.length < 2) return
+    
+    // Apply constraints using kiwi constraint solver
+    this._solveGroupConstraints(groupConstraints, groups)
+  }
+
+  /**
+   * Check if a constraint references groups (selectors starting with . that match group names)
+   */
+  private _constraintReferencesGroups(constraint: Constraint): boolean {
+    const props = constraint._parsedProps as any
+    const selectors: string[] = []
+    
+    if ("left" in props) selectors.push(props.left)
+    if ("right" in props) selectors.push(props.right)
+    if ("top" in props) selectors.push(props.top)
+    if ("bottom" in props) selectors.push(props.bottom)
+    if ("for" in props && Array.isArray(props.for)) selectors.push(...props.for)
+    
+    return selectors.some(selector => {
+      if (!selector.startsWith(".")) return false
+      const name = selector.slice(1)
+      return this.children.some(child => 
+        child.componentName === "Group" && 
+        (child as any).name === name &&
+        (child as Group).pcb_group_id !== null
+      )
+    })
+  }
+
+  /**
+   * Solve group constraints using kiwi constraint solver
+   */
+  private _solveGroupConstraints(constraints: Constraint[], groups: Group[]): void {
+    const { db } = this.root!
+    const solver = new kiwi.Solver()
+    const kVars: Record<string, kiwi.Variable> = {}
+    
+    const getVar = (groupName: string, axis: "x" | "y") => {
+      const key = `${groupName}_${axis}`
+      if (!kVars[key]) kVars[key] = new kiwi.Variable(key)
+      return kVars[key]
+    }
+    
+    const getGroupFromSelector = (selector: string): Group | undefined => {
+      const name = selector.startsWith(".") ? selector.slice(1) : selector
+      return groups.find(g => (g as any).name === name)
+    }
+    
+    // Initialize variables with current group positions
+    for (const group of groups) {
+      const pcbGroup = db.pcb_group.get(group.pcb_group_id!)
+      if (pcbGroup) {
+        const groupName = (group as any).name
+        solver.addEditVariable(getVar(groupName, "x"), kiwi.Strength.weak)
+        solver.addEditVariable(getVar(groupName, "y"), kiwi.Strength.weak)
+        solver.suggestValue(getVar(groupName, "x"), pcbGroup.center.x)
+        solver.suggestValue(getVar(groupName, "y"), pcbGroup.center.y)
+      }
+    }
+    
+    // Apply constraints
+    for (const constraint of constraints) {
+      const props = constraint._parsedProps as any
+      const rawProps = constraint.props as any // Use raw props to access centerX
+      
+      if ("xDist" in props && "left" in props && "right" in props) {
+        const leftGroup = getGroupFromSelector(props.left)
+        const rightGroup = getGroupFromSelector(props.right)
+        
+        if (leftGroup && rightGroup) {
+          const leftName = (leftGroup as any).name
+          const rightName = (rightGroup as any).name
+          const distance = length.parse(props.xDist)
+          
+          // right.x - left.x = xDist
+          solver.addConstraint(
+            new kiwi.Constraint(
+              new kiwi.Expression(getVar(rightName, "x"), [-1, getVar(leftName, "x")]),
+              kiwi.Operator.Eq,
+              distance,
+              kiwi.Strength.required,
+            ),
+          )
+          
+          // If centerX is specified, position both groups to center around that X
+          if ("centerX" in rawProps) {
+            const centerX = typeof rawProps.centerX === "string" ? length.parse(rawProps.centerX) : rawProps.centerX
+            
+            // (left.x + right.x) / 2 = centerX
+            // left.x + right.x = 2 * centerX
+            const centerExpr = new kiwi.Expression(getVar(leftName, "x"), getVar(rightName, "x"))
+            solver.addConstraint(
+              new kiwi.Constraint(
+                centerExpr,
+                kiwi.Operator.Eq,
+                2 * centerX,
+                kiwi.Strength.required,
+              ),
+            )
+          }
+        }
+      }
+      
+      if ("yDist" in props && "top" in props && "bottom" in props) {
+        const topGroup = getGroupFromSelector(props.top)
+        const bottomGroup = getGroupFromSelector(props.bottom)
+        
+        if (topGroup && bottomGroup) {
+          const topName = (topGroup as any).name
+          const bottomName = (bottomGroup as any).name
+          const distance = length.parse(props.yDist)
+          
+          // top.y - bottom.y = yDist  
+          solver.addConstraint(
+            new kiwi.Constraint(
+              new kiwi.Expression(getVar(topName, "y"), [-1, getVar(bottomName, "y")]),
+              kiwi.Operator.Eq,
+              distance,
+              kiwi.Strength.required,
+            ),
+          )
+          
+          // If centerY is specified, position both groups to center around that Y
+          if ("centerY" in rawProps) {
+            const centerY = typeof rawProps.centerY === "string" ? length.parse(rawProps.centerY) : rawProps.centerY
+            
+            // (top.y + bottom.y) / 2 = centerY
+            const centerExpr = new kiwi.Expression(getVar(topName, "y"), getVar(bottomName, "y"))
+            solver.addConstraint(
+              new kiwi.Constraint(
+                centerExpr,
+                kiwi.Operator.Eq,
+                2 * centerY,
+                kiwi.Strength.required,
+              ),
+            )
+          }
+        }
+      }
+    }
+    
+    // Solve the constraints
+    solver.updateVariables()
+    
+    // Apply the solved positions to the groups
+    for (const group of groups) {
+      const groupName = (group as any).name
+      const newX = getVar(groupName, "x").value()
+      const newY = getVar(groupName, "y").value()
+      
+      // Update the PCB group position
+      if (group.pcb_group_id) {
+        db.pcb_group.update(group.pcb_group_id, {
+          center: { x: newX, y: newY }
+        })
+      }
+    }
   }
 
   doInitialPcbDesignRuleChecks() {

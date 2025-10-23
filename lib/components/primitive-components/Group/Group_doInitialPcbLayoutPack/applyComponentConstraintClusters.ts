@@ -36,7 +36,18 @@ export const applyComponentConstraintClusters = (
   const getIdFromSelector = (sel: string): string | undefined => {
     const name = sel.startsWith(".") ? sel.slice(1) : sel
     const child = group.children.find((c) => (c as any).name === name)
-    return child?.pcb_component_id ?? undefined
+    
+    // First try to get component ID, then group ID
+    if (child?.pcb_component_id) {
+      return child.pcb_component_id
+    }
+    
+    // If it's a group, return the group ID prefixed to distinguish from component IDs
+    if ((child as any)?.pcb_group_id) {
+      return `group:${(child as any).pcb_group_id}`
+    }
+    
+    return undefined
   }
 
   for (const constraint of constraints) {
