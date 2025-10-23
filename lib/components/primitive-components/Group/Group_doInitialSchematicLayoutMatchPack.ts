@@ -774,15 +774,9 @@ export function Group_doInitialSchematicLayoutMatchPack<
               originalDirection,
               placement.ccwRotationDegrees,
             )
-            // Update side_of_component to match the new facing direction
-            const facingToSideMap = {
-              left: "left",
-              right: "right",
-              up: "top",
-              down: "bottom",
-            } as const
             port.side_of_component =
-              facingToSideMap[port.facing_direction] || port.side_of_component
+              (port.facing_direction as "left" | "right" | "top" | "bottom") ||
+              port.side_of_component
           }
 
           // Also rotate text positions
