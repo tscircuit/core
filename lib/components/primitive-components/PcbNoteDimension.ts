@@ -48,7 +48,9 @@ export class PcbNoteDimension extends PrimitiveComponent<
       this.getPrimitiveContainer()?.pcb_component_id ??
       undefined
 
-    const text = props.text ?? this._formatDistanceText({ from, to })
+    const text =
+      props.text ??
+      this._formatDistanceText({ from, to, units: props.units ?? "mm" })
 
     const pcb_note_dimension = db.pcb_note_dimension.insert({
       pcb_component_id,
@@ -80,19 +82,32 @@ export class PcbNoteDimension extends PrimitiveComponent<
   private _formatDistanceText({
     from,
     to,
+    units,
   }: {
     from: Point
     to: Point
+    units: "mm" | "in"
   }): string {
     const dx = to.x - from.x
     const dy = to.y - from.y
-    const distance = Math.sqrt(dx * dx + dy * dy)
+    const distanceInMillimeters = Math.sqrt(dx * dx + dy * dy)
 
-    const roundedDistance = Math.round(distance)
-    const isWholeNumber = Math.abs(distance - roundedDistance) < 1e-9
+    const distanceInUnits =
+      units === "in" ? distanceInMillimeters / 25.4 : distanceInMillimeters
 
-    const valueText = isWholeNumber ? `${roundedDistance}` : distance.toFixed(2)
+    const roundedDistance = Math.round(distanceInUnits)
+    const isWholeNumber = Math.abs(distanceInUnits - roundedDistance) < 1e-9
 
-    return `${valueText}mm`
+    if (isWholeNumber) {
+      return `${roundedDistance}${units}`
+    }
+
+    const decimalPlaces = units === "in" ? 3 : 2
+    const valueText =
+      units === "in"
+        ? Number(distanceInUnits.toFixed(decimalPlaces)).toString()
+        : distanceInUnits.toFixed(decimalPlaces)
+
+    return `${valueText}${units}`
   }
 }

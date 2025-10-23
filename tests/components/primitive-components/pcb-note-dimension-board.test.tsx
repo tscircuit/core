@@ -52,3 +52,29 @@ test("pcbnotedimension defaults text to measured distance", async () => {
   expect(dimensions[0].text).toBe("5mm")
   expect(dimensions[1].text).toBe("1.23mm")
 })
+
+test("pcbnotedimension defaults text to measured distance in inches", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <pcbnotedimension
+        from={{ x: 0, y: 0 }}
+        to={{ x: 25.4, y: 0 }}
+        units="in"
+      />
+      <pcbnotedimension
+        from={{ x: 0, y: 0 }}
+        to={{ x: 12.7, y: 0 }}
+        units="in"
+      />
+    </board>,
+  )
+
+  circuit.render()
+
+  const dimensions = circuit.db.pcb_note_dimension.list()
+  expect(dimensions).toHaveLength(2)
+  expect(dimensions[0].text).toBe("1in")
+  expect(dimensions[1].text).toBe("0.5in")
+})
