@@ -111,6 +111,14 @@ function convertTreeToInputProblem(
         // 0 offset
         availableRotations = [0]
       }
+      if (component?._parsedProps?.facingDirection) {
+        // If facingDirection is set (e.g., for pinheaders), don't allow rotation
+        availableRotations = [0]
+      }
+      if (component?._parsedProps?.schFacingDirection) {
+        // If schFacingDirection is set, don't allow rotation
+        availableRotations = [0]
+      }
 
       const marginLeft =
         component?._parsedProps?.schMarginLeft ??
