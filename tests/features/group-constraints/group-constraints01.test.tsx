@@ -10,7 +10,7 @@ test("constraint between groups with xDist and centerX", async () => {
         <resistor name="R1" resistance="1k" footprint="0402" />
         <resistor name="R2" resistance="1k" footprint="0402" />
       </group>
-      
+
       <group name="group2" pcbLayout={{ pack: true }}>
         <resistor name="R3" resistance="1k" footprint="0402" />
         <resistor name="R4" resistance="1k" footprint="0402" />
@@ -26,10 +26,10 @@ test("constraint between groups with xDist and centerX", async () => {
   // Find the groups in the circuit JSON
   const pcbGroups = circuit.db.pcb_group.list()
   expect(pcbGroups.length).toBe(2)
-  
-  const group1 = pcbGroups.find(g => g.name === "group1")
-  const group2 = pcbGroups.find(g => g.name === "group2")
-  
+
+  const group1 = pcbGroups.find((g) => g.name === "group1")
+  const group2 = pcbGroups.find((g) => g.name === "group2")
+
   expect(group1).toBeDefined()
   expect(group2).toBeDefined()
 
@@ -40,7 +40,7 @@ test("constraint between groups with xDist and centerX", async () => {
   // Check that both groups are centered around x=0 (centerX constraint)
   const avgX = (group1!.center.x + group2!.center.x) / 2
   expect(avgX).toBeCloseTo(0, 1) // Should be close to 0
-  
+
   // Comment out snapshot test for now since this is a new feature
   // expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
@@ -53,13 +53,19 @@ test("constraint between groups without centerX", async () => {
       <group name="group1" pcbLayout={{ pack: true }}>
         <resistor name="R1" resistance="1k" footprint="0402" />
       </group>
-      
+
       <group name="group2" pcbLayout={{ pack: true }}>
         <resistor name="R2" resistance="1k" footprint="0402" />
       </group>
 
       {/* This constraint should just set distance between groups */}
-      <constraint pcb centerToCenter xDist="15mm" left=".group1" right=".group2" />
+      <constraint
+        pcb
+        centerToCenter
+        xDist="15mm"
+        left=".group1"
+        right=".group2"
+      />
     </board>,
   )
 
@@ -68,17 +74,17 @@ test("constraint between groups without centerX", async () => {
   // Find the groups in the circuit JSON
   const pcbGroups = circuit.db.pcb_group.list()
   expect(pcbGroups.length).toBe(2)
-  
-  const group1 = pcbGroups.find(g => g.name === "group1")
-  const group2 = pcbGroups.find(g => g.name === "group2")
-  
+
+  const group1 = pcbGroups.find((g) => g.name === "group1")
+  const group2 = pcbGroups.find((g) => g.name === "group2")
+
   expect(group1).toBeDefined()
   expect(group2).toBeDefined()
 
   // Check that the distance between group centers is 15mm
   const distance = Math.abs(group2!.center.x - group1!.center.x)
   expect(distance).toBeCloseTo(15, 1) // 15mm with 1mm tolerance
-  
+
   // Comment out snapshot test for now since this is a new feature
   // expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
@@ -91,13 +97,19 @@ test("constraint between groups with yDist and centerY", async () => {
       <group name="groupTop" pcbLayout={{ pack: true }}>
         <resistor name="R1" resistance="1k" footprint="0402" />
       </group>
-      
+
       <group name="groupBottom" pcbLayout={{ pack: true }}>
         <resistor name="R2" resistance="1k" footprint="0402" />
       </group>
 
       {/* This constraint should set distance between groups and center them at Y=0 */}
-      <constraint pcb yDist="20mm" top=".groupTop" bottom=".groupBottom" centerY={0} />
+      <constraint
+        pcb
+        yDist="20mm"
+        top=".groupTop"
+        bottom=".groupBottom"
+        centerY={0}
+      />
     </board>,
   )
 
@@ -106,10 +118,10 @@ test("constraint between groups with yDist and centerY", async () => {
   // Find the groups in the circuit JSON
   const pcbGroups = circuit.db.pcb_group.list()
   expect(pcbGroups.length).toBe(2)
-  
-  const groupTop = pcbGroups.find(g => g.name === "groupTop")
-  const groupBottom = pcbGroups.find(g => g.name === "groupBottom")
-  
+
+  const groupTop = pcbGroups.find((g) => g.name === "groupTop")
+  const groupBottom = pcbGroups.find((g) => g.name === "groupBottom")
+
   expect(groupTop).toBeDefined()
   expect(groupBottom).toBeDefined()
 
@@ -130,11 +142,11 @@ test("multiple group constraints", async () => {
       <group name="A" pcbLayout={{ pack: true }}>
         <resistor name="R1" resistance="1k" footprint="0402" />
       </group>
-      
+
       <group name="B" pcbLayout={{ pack: true }}>
         <resistor name="R2" resistance="1k" footprint="0402" />
       </group>
-      
+
       <group name="C" pcbLayout={{ pack: true }}>
         <resistor name="R3" resistance="1k" footprint="0402" />
       </group>
@@ -150,11 +162,11 @@ test("multiple group constraints", async () => {
   // Find the groups in the circuit JSON
   const pcbGroups = circuit.db.pcb_group.list()
   expect(pcbGroups.length).toBe(3)
-  
-  const groupA = pcbGroups.find(g => g.name === "A")
-  const groupB = pcbGroups.find(g => g.name === "B")
-  const groupC = pcbGroups.find(g => g.name === "C")
-  
+
+  const groupA = pcbGroups.find((g) => g.name === "A")
+  const groupB = pcbGroups.find((g) => g.name === "B")
+  const groupC = pcbGroups.find((g) => g.name === "C")
+
   expect(groupA).toBeDefined()
   expect(groupB).toBeDefined()
   expect(groupC).toBeDefined()
@@ -162,14 +174,14 @@ test("multiple group constraints", async () => {
   // Check distances
   const distanceAB = Math.abs(groupB!.center.x - groupA!.center.x)
   expect(distanceAB).toBeCloseTo(20, 1)
-  
+
   const distanceAC = Math.abs(groupA!.center.y - groupC!.center.y)
   expect(distanceAC).toBeCloseTo(20, 1)
 
   // Check centering
   const avgXAB = (groupA!.center.x + groupB!.center.x) / 2
   expect(avgXAB).toBeCloseTo(0, 1)
-  
+
   const avgYAC = (groupA!.center.y + groupC!.center.y) / 2
   expect(avgYAC).toBeCloseTo(0, 1)
 })
