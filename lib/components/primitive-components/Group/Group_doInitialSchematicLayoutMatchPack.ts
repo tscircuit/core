@@ -1,6 +1,5 @@
 import {
   getCircuitJsonTree,
-  transformSchematicElements,
   type CircuitJsonTreeNode,
   type CircuitJsonUtilObjects,
 } from "@tscircuit/circuit-json-util"
@@ -775,6 +774,9 @@ export function Group_doInitialSchematicLayoutMatchPack<
               originalDirection,
               placement.ccwRotationDegrees,
             )
+            port.side_of_component =
+              (port.facing_direction as "left" | "right" | "top" | "bottom") ||
+              port.side_of_component
           }
 
           // Also rotate text positions

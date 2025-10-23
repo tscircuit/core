@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.817",
+  "version": "0.0.819",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -42,7 +42,7 @@
     "@tscircuit/matchpack": "^0.0.16",
     "@tscircuit/math-utils": "^0.0.29",
     "@tscircuit/miniflex": "^0.0.4",
-    "@tscircuit/props": "0.0.375",
+    "@tscircuit/props": "0.0.378",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
     "@tscircuit/schematic-trace-solver": "^0.0.41",
