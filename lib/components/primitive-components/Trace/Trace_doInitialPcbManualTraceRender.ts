@@ -10,7 +10,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const { _parsedProps: props } = trace
   const subcircuit = trace.getSubcircuit()
 
-  if (!props.pcbPath || props.pcbPath.length === 0) return
+  if (!props.pcbPath) return
 
   const { allPortsFound, ports, portsWithSelectors } =
     trace._findConnectedPorts()
@@ -57,7 +57,9 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
 
   const layer = anchorPort.getAvailablePcbLayers()[0] || "top"
   const width =
-    props.thickness ?? trace.getSubcircuit()._parsedProps.minTraceWidth ?? 0.16
+    trace._getExplicitTraceThickness() ??
+    trace.getSubcircuit()._parsedProps.minTraceWidth ??
+    0.16
 
   const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout()
   const otherPos = otherPort._getGlobalPcbPositionAfterLayout()
