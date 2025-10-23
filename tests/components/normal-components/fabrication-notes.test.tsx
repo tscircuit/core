@@ -13,7 +13,6 @@ test("fabrication note path, text and rect are created", async () => {
         pcbY={3}
         strokeWidth={0.2}
         isFilled
-        hasStroke={false}
         color="rgba(255, 255, 255, 0.5)"
       />
       <fabricationnotepath
@@ -56,6 +55,22 @@ test("fabrication note path, text and rect are created", async () => {
   expect(dimensions).toHaveLength(1)
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})
+
+test("fabricationnoterect defaults hasStroke to true when strokeWidth provided", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="12mm" height="10mm">
+      <fabricationnoterect width={2} height={1} strokeWidth={0.2} />
+    </board>,
+  )
+
+  circuit.render()
+
+  const rects = circuit.db.pcb_fabrication_note_rect.list()
+  expect(rects).toHaveLength(1)
+  expect(rects[0].has_stroke).toBe(true)
 })
 
 test("fabricationnotedimension defaults text to measured distance", async () => {
