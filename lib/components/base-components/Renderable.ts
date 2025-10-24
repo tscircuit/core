@@ -332,6 +332,12 @@ export abstract class Renderable implements IRenderable {
   }
 
   runRenderPhaseForChildren(phase: RenderPhase): void {
+    const deps = asyncPhaseDependencies[phase] || []
+    for (const depPhase of deps) {
+      if (this._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) {
+        return
+      }
+    }
     for (const child of this.children) {
       child.runRenderPhaseForChildren(phase)
       child.runRenderPhase(phase)
