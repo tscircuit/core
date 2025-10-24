@@ -750,6 +750,19 @@ export function Group_doInitialSchematicLayoutMatchPack<
             `Component ${chipId} has rotation: ${placement.ccwRotationDegrees}°`,
           )
 
+          // Rotate component size for 90° and 270° rotations
+          if (
+            placement.ccwRotationDegrees === 90 ||
+            placement.ccwRotationDegrees === 270
+          ) {
+            if (schematicComponent.size) {
+              const oldWidth = schematicComponent.size.width
+              const oldHeight = schematicComponent.size.height
+              schematicComponent.size.width = oldHeight
+              schematicComponent.size.height = oldWidth
+            }
+          }
+          
           // Rotate ports around the component center
           const angleRad = (placement.ccwRotationDegrees * Math.PI) / 180
           const cos = Math.cos(angleRad)
