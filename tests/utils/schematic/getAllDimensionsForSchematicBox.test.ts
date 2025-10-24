@@ -62,3 +62,28 @@ test("getAllDimensionsForSchematicBox 3 (4 sided with margins)", () => {
     "schematicbox3",
   )
 })
+
+test("schematic width remains stable when adjusting schPinSpacing", () => {
+  const baseParams: Parameters<typeof getAllDimensionsForSchematicBox>[0] = {
+    schPinSpacing: 0.2,
+    schPortArrangement: {
+      leftSize: 2,
+      rightSize: 2,
+      topSize: 0,
+      bottomSize: 0,
+    },
+    pinCount: 4,
+  }
+
+  const widenedSpacingParams = {
+    ...baseParams,
+    schPinSpacing: 0.75,
+  }
+
+  const defaultSpacingWidth =
+    getAllDimensionsForSchematicBox(baseParams).getSize().width
+  const widenedSpacingWidth =
+    getAllDimensionsForSchematicBox(widenedSpacingParams).getSize().width
+
+  expect(widenedSpacingWidth).toBeCloseTo(defaultSpacingWidth)
+})
