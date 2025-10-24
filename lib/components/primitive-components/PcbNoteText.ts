@@ -1,4 +1,5 @@
 import { pcbNoteTextProps } from "@tscircuit/props"
+import { convertColorName } from "lib/utils/colors"
 import { applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
@@ -36,7 +37,7 @@ export class PcbNoteText extends PrimitiveComponent<typeof pcbNoteTextProps> {
       text: props.text,
       anchor_position: anchorPosition,
       anchor_alignment: props.anchorAlignment ?? "center",
-      color: props.color,
+      color: props.color ? convertColorName(props.color) : undefined,
     })
 
     this.pcb_note_text_id = pcb_note_text.pcb_note_text_id

@@ -1,4 +1,5 @@
 import { pcbNotePathProps } from "@tscircuit/props"
+import { convertColorName } from "lib/utils/colors"
 import { applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
@@ -40,7 +41,7 @@ export class PcbNotePath extends PrimitiveComponent<typeof pcbNotePathProps> {
       pcb_group_id: group?.pcb_group_id ?? undefined,
       route: transformedRoute,
       stroke_width: props.strokeWidth ?? 0.1,
-      color: props.color,
+      color: props.color ? convertColorName(props.color) : undefined,
     })
 
     this.pcb_note_path_id = pcb_note_path.pcb_note_path_id

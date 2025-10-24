@@ -1,0 +1,1 @@
+export { convertColorName } from "./convertColorName"

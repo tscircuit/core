@@ -1,5 +1,6 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicTextProps } from "@tscircuit/props"
+import { convertColorName } from "lib/utils/colors"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SchematicText extends PrimitiveComponent<
   typeof schematicTextProps
@@ -24,7 +25,7 @@ export class SchematicText extends PrimitiveComponent<
       anchor: props.anchor ?? "center",
       text: props.text,
       font_size: props.fontSize,
-      color: props.color || "#000000",
+      color: convertColorName(props.color || "#000000"),
       position: {
         x: globalPos.x,
         y: globalPos.y,

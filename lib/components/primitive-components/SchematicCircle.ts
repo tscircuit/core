@@ -1,9 +1,10 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicCircleProps } from "@tscircuit/props"
+import { convertColorName } from "lib/utils/colors"
 import {
   SCHEMATIC_COMPONENT_OUTLINE_COLOR,
   SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
 } from "lib/utils/constants"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SchematicCircle extends PrimitiveComponent<
   typeof schematicCircleProps
@@ -38,9 +39,11 @@ export class SchematicCircle extends PrimitiveComponent<
       radius: props.radius,
       stroke_width:
         props.strokeWidth ?? SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
-      color: props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR,
+      color: convertColorName(props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR),
       is_filled: props.isFilled,
-      fill_color: props.fillColor,
+      fill_color: props.fillColor
+        ? convertColorName(props.fillColor)
+        : undefined,
       is_dashed: props.isDashed,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
     })

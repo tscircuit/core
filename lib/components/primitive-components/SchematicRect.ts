@@ -1,9 +1,10 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicRectProps } from "@tscircuit/props"
+import { convertColorName } from "lib/utils/colors"
 import {
   SCHEMATIC_COMPONENT_OUTLINE_COLOR,
   SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
 } from "lib/utils/constants"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SchematicRect extends PrimitiveComponent<
   typeof schematicRectProps
@@ -38,7 +39,7 @@ export class SchematicRect extends PrimitiveComponent<
       height: props.height,
       stroke_width:
         props.strokeWidth ?? SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
-      color: props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR,
+      color: convertColorName(props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR),
       is_filled: props.isFilled,
       schematic_component_id,
       is_dashed: props.isDashed,

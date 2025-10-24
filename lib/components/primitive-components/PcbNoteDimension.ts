@@ -1,6 +1,7 @@
 import { pcbNoteDimensionProps } from "@tscircuit/props"
 import type { Point } from "circuit-json"
-import { applyToPoint, type Matrix } from "transformation-matrix"
+import { convertColorName } from "lib/utils/colors"
+import { type Matrix, applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class PcbNoteDimension extends PrimitiveComponent<
@@ -61,7 +62,7 @@ export class PcbNoteDimension extends PrimitiveComponent<
       text,
       font: props.font ?? "tscircuit2024",
       font_size: props.fontSize ?? 1,
-      color: props.color,
+      color: props.color ? convertColorName(props.color) : undefined,
       arrow_size: props.arrowSize ?? 1,
     })
 

@@ -1,9 +1,10 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicArcProps } from "@tscircuit/props"
+import { convertColorName } from "lib/utils/colors"
 import {
   SCHEMATIC_COMPONENT_OUTLINE_COLOR,
   SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
 } from "lib/utils/constants"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
   isSchematicPrimitive = true
@@ -39,7 +40,7 @@ export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
       direction: props.direction,
       stroke_width:
         props.strokeWidth ?? SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
-      color: props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR,
+      color: convertColorName(props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR),
       is_dashed: props.isDashed,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
     })

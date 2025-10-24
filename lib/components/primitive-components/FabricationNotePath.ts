@@ -1,6 +1,7 @@
 import { fabricationNotePathProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { convertColorName } from "lib/utils/colors"
 import { applyToPoint } from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class FabricationNotePath extends PrimitiveComponent<
   typeof fabricationNotePathProps
@@ -35,7 +36,7 @@ export class FabricationNotePath extends PrimitiveComponent<
     const fabrication_note_path = db.pcb_fabrication_note_path.insert({
       pcb_component_id,
       layer,
-      color: props.color,
+      color: props.color ? convertColorName(props.color) : undefined,
       route: props.route.map((p) => {
         const transformedPosition = applyToPoint(transform, {
           x: p.x,

@@ -1,5 +1,6 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicBoxProps } from "@tscircuit/props"
+import { convertColorName } from "lib/utils/colors"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { getTitleAnchorAndPosition } from "./getTitleAnchorAndPosition"
 
@@ -158,7 +159,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
         anchor: textAnchor,
         text: props.title,
         font_size: props.titleFontSize ?? 0.18,
-        color: props.titleColor ?? "#000000",
+        color: convertColorName(props.titleColor ?? "#000000"),
         position: {
           x: titleX,
           y: titleY,

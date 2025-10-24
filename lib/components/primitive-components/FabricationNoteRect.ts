@@ -1,4 +1,5 @@
 import { fabricationNoteRectProps } from "@tscircuit/props"
+import { convertColorName } from "lib/utils/colors"
 import { applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
@@ -40,7 +41,7 @@ export class FabricationNoteRect extends PrimitiveComponent<
     const fabrication_note_rect = db.pcb_fabrication_note_rect.insert({
       pcb_component_id,
       layer,
-      color: props.color,
+      color: props.color ? convertColorName(props.color) : undefined,
 
       center: {
         x: props.pcbX ?? 0,
