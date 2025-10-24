@@ -464,11 +464,10 @@ export class NormalComponent<
         try {
           const { db } = this.root ?? {}
           const pcbPosition = this._getGlobalPcbPositionBeforeLayout()
-          const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
+          const schematicPosition =
+            this._getGlobalSchematicPositionBeforeLayout()
 
-          const errorMessage = `Failed to create children from footprint string for ${
-            this.getString()
-          }: footprint=${String(footprint)} error=${String(err)}`
+          const errorMessage = `Failed to create children from footprint string for ${this.getString()}: footprint=${String(footprint)} error=${String(err)}`
 
           // Use the same error table used elsewhere for failures creating
           // components from source so consumer tooling can find it.
@@ -1480,36 +1479,37 @@ export class NormalComponent<
         } catch (err) {
           // Cached value was not valid JSON (often HTML error pages). Record an
           // error element in the DB and fall through to fresh lookup.
+          try {
+            const errEl: any = {
+              component_name: source_component?.name ?? undefined,
+              error_type: "source_failed_to_create_component_error",
+              message: `Failed to parse cached supplier part numbers for component ${source_component.source_component_id}: ${String(
+                err,
+              )}`,
+              source_component_id: source_component.source_component_id,
+            }
+            // Best-effort: try to insert into the spec-defined table.
             try {
-              const errEl: any = {
-                component_name: source_component?.name ?? undefined,
-                error_type: "source_failed_to_create_component_error",
-                message: `Failed to parse cached supplier part numbers for component ${source_component.source_component_id}: ${String(
-                  err,
-                )}`,
-                source_component_id: source_component.source_component_id,
-              }
-              // Best-effort: try to insert into the spec-defined table.
-              try {
-                const dbAny = this.root?.db as any
-                if (
-                  dbAny?.source_failed_to_create_component_error &&
-                  typeof dbAny.source_failed_to_create_component_error.insert === "function"
-                ) {
-                  try {
-                    const parsed = source_failed_to_create_component_error.parse({
-                      type: "source_failed_to_create_component_error",
-                      ...errEl,
-                    })
-                    dbAny.source_failed_to_create_component_error.insert(parsed)
-                  } catch (parseErr) {
-                    dbAny.source_failed_to_create_component_error.insert(errEl)
-                  }
-                } else if (typeof dbAny?._addElement === "function") {
-                  dbAny._addElement(errEl)
+              const dbAny = this.root?.db as any
+              if (
+                dbAny?.source_failed_to_create_component_error &&
+                typeof dbAny.source_failed_to_create_component_error.insert ===
+                  "function"
+              ) {
+                try {
+                  const parsed = source_failed_to_create_component_error.parse({
+                    type: "source_failed_to_create_component_error",
+                    ...errEl,
+                  })
+                  dbAny.source_failed_to_create_component_error.insert(parsed)
+                } catch (parseErr) {
+                  dbAny.source_failed_to_create_component_error.insert(errEl)
                 }
-              } catch {}
+              } else if (typeof dbAny?._addElement === "function") {
+                dbAny._addElement(errEl)
+              }
             } catch {}
+          } catch {}
         }
       }
     }
@@ -1538,17 +1538,18 @@ export class NormalComponent<
           const dbAny = this.root?.db as any
           if (
             dbAny?.source_failed_to_create_component_error &&
-            typeof dbAny.source_failed_to_create_component_error.insert === "function"
+            typeof dbAny.source_failed_to_create_component_error.insert ===
+              "function"
           ) {
-              try {
-                const parsed = source_failed_to_create_component_error.parse({
-                  type: "source_failed_to_create_component_error",
-                  ...errEl,
-                })
-                dbAny.source_failed_to_create_component_error.insert(parsed)
-              } catch (parseErr) {
-                dbAny.source_failed_to_create_component_error.insert(errEl)
-              }
+            try {
+              const parsed = source_failed_to_create_component_error.parse({
+                type: "source_failed_to_create_component_error",
+                ...errEl,
+              })
+              dbAny.source_failed_to_create_component_error.insert(parsed)
+            } catch (parseErr) {
+              dbAny.source_failed_to_create_component_error.insert(errEl)
+            }
           } else if (typeof dbAny?._addElement === "function") {
             dbAny._addElement(errEl)
           }
