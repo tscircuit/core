@@ -65,6 +65,13 @@ export class RootCircuit {
     this.children.push(component)
   }
 
+  setPlatform(platform: PlatformConfig) {
+    this.platform = {
+      ...this.platform,
+      ...platform,
+    }
+  }
+
   /**
    * Get the main board for this Circuit.
    */

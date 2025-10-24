@@ -37,14 +37,37 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     return
   }
 
-  // Run simulation for each configured spice engine
-  for (const [engineName, spiceEngine] of Object.entries(spiceEngineMap)) {
-    debug(`Queueing simulation for spice engine: ${engineName}`)
+  // Run simulation for each analogsimulation component
+  for (const analogSim of analogSims) {
+    const requestedEngineName = analogSim._parsedProps.spiceEngine
 
-    group._queueAsyncEffect(`spice-simulation-${engineName}`, async () => {
+    let engineToUse
+    let engineNameToUse: string
+
+    if (requestedEngineName && spiceEngineMap[requestedEngineName]) {
+      engineToUse = spiceEngineMap[requestedEngineName]
+      engineNameToUse = requestedEngineName
+      debug(`Using requested spice engine: "${requestedEngineName}"`)
+    } else {
+      if (requestedEngineName) {
+        debug(
+          `Requested spice engine "${requestedEngineName}" not found in platform config, falling back to "spicey".`,
+        )
+      }
+      engineNameToUse = "spicey"
+      engineToUse = spiceEngineMap.spicey
+    }
+
+    const effectId = `spice-simulation-${engineNameToUse}-${analogSim.source_component_id}`
+
+    debug(
+      `Queueing simulation for spice engine: ${engineNameToUse} (id: ${effectId})`,
+    )
+
+    group._queueAsyncEffect(effectId, async () => {
       try {
-        debug(`Running simulation with engine: ${engineName}`)
-        const result = await spiceEngine.simulate(spiceString)
+        debug(`Running simulation with engine: ${engineNameToUse}`)
+        const result = await engineToUse.simulate(spiceString)
 
         debug(
           `Simulation completed, received ${result.simulationResultCircuitJson.length} elements`,
@@ -80,7 +103,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
         // Mark the component as dirty to trigger re-render if needed
         group._markDirty("SimulationSpiceEngineRender")
       } catch (error) {
-        debug(`Simulation failed for engine ${engineName}: ${error}`)
+        debug(`Simulation failed for engine ${engineNameToUse}: ${error}`)
         // Don't throw - allow other engines to continue
       }
     })
