@@ -5,7 +5,7 @@ it("repro68: chip top side port spacing in autolayout", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="60mm" height="40mm" routingDisabled schAutoLayoutEnabled>
+    <board>
       <capacitor
         name="C1"
         capacitance="10uF"
