@@ -5,6 +5,14 @@ import type { Trace } from "./Trace"
 import { applyToPoint, identity } from "transformation-matrix"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
+  Trace_renderPcbManualTrace(trace)
+}
+
+export function Trace_updatePcbManualTraceRender(trace: Trace) {
+  Trace_renderPcbManualTrace(trace)
+}
+
+function Trace_renderPcbManualTrace(trace: Trace) {
   if (trace.root?.pcbDisabled) return
   const { db } = trace.root!
   const { _parsedProps: props } = trace
@@ -130,14 +138,21 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   })
 
   const traceLength = getTraceLength(route)
-  const pcb_trace = db.pcb_trace.insert({
-    route,
-    source_trace_id: trace.source_trace_id!,
-    subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-    pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
-    trace_length: traceLength,
-  })
+  if (trace.pcb_trace_id) {
+    db.pcb_trace.update(trace.pcb_trace_id, {
+      route,
+      trace_length: traceLength,
+    })
+  } else {
+    const pcb_trace = db.pcb_trace.insert({
+      route,
+      source_trace_id: trace.source_trace_id!,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+      trace_length: traceLength,
+    })
+    trace.pcb_trace_id = pcb_trace.pcb_trace_id
+  }
   trace._portsRoutedOnPcb = ports
-  trace.pcb_trace_id = pcb_trace.pcb_trace_id
   trace._insertErrorIfTraceIsOutsideBoard(route, ports)
 }
