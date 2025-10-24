@@ -4,21 +4,14 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 type Size = { width: number; height: number }
 
-type ComponentSizeResult = {
-  defaultSize: Size
-  adjustedSize: Size
-}
-
-const getSchematicComponentSizes = async (
-  component: ReactElement,
-  adjustedComponent: ReactElement,
-): Promise<ComponentSizeResult> => {
+const renderComponentsAndGetSizeLookup = async (
+  ...components: ReactElement[]
+) => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="10mm" height="10mm">
-      {component}
-      {adjustedComponent}
+      {components}
     </board>,
   )
 
@@ -39,28 +32,39 @@ const getSchematicComponentSizes = async (
     return schematic.size
   }
 
-  return {
-    defaultSize: getSizeForName("DEFAULT"),
-    adjustedSize: getSizeForName("ADJUSTED"),
-  }
+  return { circuit, getSizeForName }
 }
 
-it("pinheader schPinSpacing does not change schematic width", async () => {
-  const { defaultSize, adjustedSize } = await getSchematicComponentSizes(
-    <pinheader name="DEFAULT" pinCount={3} />,
-    <pinheader name="ADJUSTED" pinCount={3} schPinSpacing={0.75} schY={-4} />,
+it("pinheader and jumper schPinSpacing does not change schematic width", async () => {
+  const { circuit, getSizeForName } = await renderComponentsAndGetSizeLookup(
+    <pinheader key="pinheader-default" name="PINHEADER_DEFAULT" pinCount={3} />,
+    <pinheader
+      key="pinheader-adjusted"
+      name="PINHEADER_ADJUSTED"
+      pinCount={3}
+      schPinSpacing={0.75}
+      schY={-4}
+    />,
+    <jumper key="jumper-default" name="JUMPER_DEFAULT" pinCount={3} />,
+    <jumper
+      key="jumper-adjusted"
+      name="JUMPER_ADJUSTED"
+      pinCount={3}
+      schPinSpacing={0.75}
+      schY={-4}
+    />,
   )
 
-  expect(adjustedSize.width).toBeCloseTo(defaultSize.width)
-  expect(adjustedSize.height).toBeGreaterThan(defaultSize.height)
-})
+  const pinheaderDefault = getSizeForName("PINHEADER_DEFAULT")
+  const pinheaderAdjusted = getSizeForName("PINHEADER_ADJUSTED")
+  const jumperDefault = getSizeForName("JUMPER_DEFAULT")
+  const jumperAdjusted = getSizeForName("JUMPER_ADJUSTED")
 
-it("jumper schPinSpacing does not change schematic width", async () => {
-  const { defaultSize, adjustedSize } = await getSchematicComponentSizes(
-    <jumper name="DEFAULT" pinCount={3} />,
-    <jumper name="ADJUSTED" pinCount={3} schPinSpacing={0.75} schY={-4} />,
-  )
+  expect(pinheaderAdjusted.width).toBeCloseTo(pinheaderDefault.width)
+  expect(pinheaderAdjusted.height).toBeGreaterThan(pinheaderDefault.height)
 
-  expect(adjustedSize.width).toBeCloseTo(defaultSize.width)
-  expect(adjustedSize.height).toBeGreaterThan(defaultSize.height)
+  expect(jumperAdjusted.width).toBeCloseTo(jumperDefault.width)
+  expect(jumperAdjusted.height).toBeGreaterThan(jumperDefault.height)
+
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
