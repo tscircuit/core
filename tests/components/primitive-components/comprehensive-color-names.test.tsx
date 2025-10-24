@@ -63,65 +63,65 @@ test("comprehensive color name support across components", () => {
 
   const schematicRects = circuitJson.filter(
     (item: any) => item.type === "schematic_rect",
-  )
+  ) as any[]
   const schematicCircles = circuitJson.filter(
     (item: any) => item.type === "schematic_circle",
-  )
+  ) as any[]
   const schematicLines = circuitJson.filter(
     (item: any) => item.type === "schematic_line",
-  )
+  ) as any[]
   const schematicTexts = circuitJson.filter(
     (item: any) => item.type === "schematic_text",
-  )
+  ) as any[]
   const schematicArcs = circuitJson.filter(
     (item: any) => item.type === "schematic_arc",
-  )
+  ) as any[]
   const pcbNoteRects = circuitJson.filter(
     (item: any) => item.type === "pcb_note_rect",
-  )
+  ) as any[]
   const pcbNoteLines = circuitJson.filter(
     (item: any) => item.type === "pcb_note_line",
-  )
+  ) as any[]
   const pcbNoteTexts = circuitJson.filter(
     (item: any) => item.type === "pcb_note_text",
-  )
+  ) as any[]
   const fabricationNoteRects = circuitJson.filter(
     (item: any) => item.type === "pcb_fabrication_note_rect",
-  )
+  ) as any[]
   const fabricationNoteTexts = circuitJson.filter(
     (item: any) => item.type === "pcb_fabrication_note_text",
-  )
+  ) as any[]
 
   // Test basic colors
-  expect(schematicRects[0].color).toBe("#ff0000") // red
-  expect(schematicRects[1].color).toBe("#00ff00") // lime
-  expect(schematicRects[2].color).toBe("#000080") // navy
+  expect((schematicRects[0] as any).color).toBe("#ff0000") // red
+  expect((schematicRects[1] as any).color).toBe("#00ff00") // lime
+  expect((schematicRects[2] as any).color).toBe("#000080") // navy
 
   // Test circle with fill color
-  expect(schematicCircles[0].color).toBe("#008080") // teal
-  expect(schematicCircles[0].fill_color).toBe("#ffc0cb") // pink
+  expect((schematicCircles[0] as any).color).toBe("#008080") // teal
+  expect((schematicCircles[0] as any).fill_color).toBe("#ffc0cb") // pink
 
   // Test other schematic components
-  expect(schematicLines[0].color).toBe("#800000") // maroon
-  expect(schematicTexts[0].color).toBe("#808000") // olive
-  expect(schematicArcs[0].color).toBe("#ff7f50") // coral
+  expect((schematicLines[0] as any).color).toBe("#800000") // maroon
+  expect((schematicTexts[0] as any).color).toBe("#808000") // olive
+  expect((schematicArcs[0] as any).color).toBe("#ff7f50") // coral
 
   // Test PCB note components
-  expect(pcbNoteRects[0].color).toBe("#dc143c") // crimson
-  expect(pcbNoteLines[0].color).toBe("#4b0082") // indigo
-  expect(pcbNoteTexts[0].color).toBe("#ffd700") // gold
+  expect((pcbNoteRects[0] as any).color).toBe("#dc143c") // crimson
+  expect((pcbNoteLines[0] as any).color).toBe("#4b0082") // indigo
+  expect((pcbNoteTexts[0] as any).color).toBe("#ffd700") // gold
 
   // Test fabrication note components
-  expect(fabricationNoteRects[0].color).toBe("#c0c0c0") // silver
-  expect(fabricationNoteTexts[0].color).toBe("#40e0d0") // turquoise
+  expect((fabricationNoteRects[0] as any).color).toBe("#c0c0c0") // silver
+  expect((fabricationNoteTexts[0] as any).color).toBe("#40e0d0") // turquoise
 
   // Test case insensitivity
-  expect(schematicRects[3].color).toBe("#00008b") // DarkBlue -> darkblue
-  expect(schematicRects[4].color).toBe("#90ee90") // LIGHTGREEN -> lightgreen
-  expect(schematicRects[5].color).toBe("#ff69b4") // HotPink -> hotpink
+  expect((schematicRects[3] as any).color).toBe("#00008b") // DarkBlue -> darkblue
+  expect((schematicRects[4] as any).color).toBe("#90ee90") // LIGHTGREEN -> lightgreen
+  expect((schematicRects[5] as any).color).toBe("#ff69b4") // HotPink -> hotpink
 
   // Test that hex colors are preserved
-  expect(schematicRects[6].color).toBe("#ff5733")
+  expect((schematicRects[6] as any).color).toBe("#ff5733")
 })
 
 test("schematicbox with titleColor should support color names", () => {
@@ -145,9 +145,9 @@ test("schematicbox with titleColor should support color names", () => {
   const circuitJson = circuit.getCircuitJson()
   const schematicTexts = circuitJson.filter(
     (item: any) => item.type === "schematic_text",
-  )
+  ) as any[]
 
   // The title should be rendered as a schematic_text with purple color
-  expect(schematicTexts[0].text).toBe("Test Box")
-  expect(schematicTexts[0].color).toBe("#800080") // purple
+  expect((schematicTexts[0] as any).text).toBe("Test Box")
+  expect((schematicTexts[0] as any).color).toBe("#800080") // purple
 })
