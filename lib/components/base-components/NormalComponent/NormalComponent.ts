@@ -1466,7 +1466,16 @@ export class NormalComponent<
 
       // Cache the result
       if (cacheEngine) {
-        await cacheEngine.setItem(cacheKey, JSON.stringify(supplierPartNumbers))
+        try {
+          await cacheEngine.setItem(
+            cacheKey,
+            JSON.stringify(supplierPartNumbers),
+          )
+        } catch (cacheError) {
+          debug(
+            `Failed to cache supplier part numbers for ${source_component.name}: ${cacheError}`,
+          )
+        }
       }
 
       return supplierPartNumbers
