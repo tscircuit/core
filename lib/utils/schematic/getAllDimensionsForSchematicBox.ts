@@ -346,10 +346,16 @@ export const getAllDimensionsForSchematicBox = (
   // Use lengths to determine schWidth and schHeight
   let schWidth = params.schWidth
   if (schWidth === undefined) {
-    schWidth = Math.max(
-      sideLengths.top + params.schPinSpacing * 2,
-      sideLengths.bottom + params.schPinSpacing * 2,
-    )
+    const FIXED_SPACING_FOR_BOX_SIZING = 0.2
+    const BOX_PADDING = 0.4
+    
+    const maxHorizontalPins = Math.max(sidePinCounts.topSize, sidePinCounts.bottomSize)
+    
+    if (maxHorizontalPins > 0) {
+      schWidth = (maxHorizontalPins - 1) * FIXED_SPACING_FOR_BOX_SIZING + BOX_PADDING * 2
+    } else {
+      schWidth = 1.0
+    }
 
     const labelWidth = params.pinLabels
       ? Math.max(
