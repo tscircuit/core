@@ -355,10 +355,10 @@ export const getAllDimensionsForSchematicBox = (
 
     const labelWidth = params.pinLabels
       ? Math.max(
-        ...Object.values(params.pinLabels).map(
-          (label) => label.length * 0.1, // Estimated text width
-        ),
-      )
+          ...Object.values(params.pinLabels).map(
+            (label) => label.length * 0.1, // Estimated text width
+          ),
+        )
       : 0
 
     // When label is present, only then add some padding to the width
