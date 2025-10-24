@@ -1503,7 +1503,10 @@ export class NormalComponent<
                   })
                   dbAny.source_failed_to_create_component_error.insert(parsed)
                 } catch (parseErr) {
-                  dbAny.source_failed_to_create_component_error.insert(errEl)
+                  dbAny.source_failed_to_create_component_error.insert({
+                    type: "source_failed_to_create_component_error",
+                    ...errEl
+                  })
                 }
               } else if (typeof dbAny?._addElement === "function") {
                 dbAny._addElement(errEl)
