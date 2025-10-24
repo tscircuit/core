@@ -130,6 +130,12 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   })
 
   const traceLength = getTraceLength(route)
+
+  if (trace.pcb_trace_id) {
+    db.pcb_trace.delete(trace.pcb_trace_id)
+    trace.pcb_trace_id = null
+  }
+
   const pcb_trace = db.pcb_trace.insert({
     route,
     source_trace_id: trace.source_trace_id!,
