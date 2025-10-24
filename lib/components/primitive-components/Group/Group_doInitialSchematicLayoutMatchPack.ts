@@ -1,6 +1,5 @@
 import {
   getCircuitJsonTree,
-  transformSchematicElements,
   type CircuitJsonTreeNode,
   type CircuitJsonUtilObjects,
 } from "@tscircuit/circuit-json-util"
@@ -109,6 +108,14 @@ function convertTreeToInputProblem(
       if (component?._parsedProps?.schRotation !== undefined) {
         // If explicitly set, only allow the specified rotation, which is a
         // 0 offset
+        availableRotations = [0]
+      }
+      if (component?._parsedProps?.facingDirection) {
+        // If facingDirection is set (e.g., for pinheaders), don't allow rotation
+        availableRotations = [0]
+      }
+      if (component?._parsedProps?.schFacingDirection) {
+        // If schFacingDirection is set, don't allow rotation
         availableRotations = [0]
       }
 
@@ -767,6 +774,16 @@ export function Group_doInitialSchematicLayoutMatchPack<
               originalDirection,
               placement.ccwRotationDegrees,
             )
+            port.side_of_component =
+              (port.facing_direction === "up"
+                ? "top"
+                : port.facing_direction === "down"
+                  ? "bottom"
+                  : (port.facing_direction as
+                      | "left"
+                      | "right"
+                      | "top"
+                      | "bottom")) || port.side_of_component
           }
 
           // Also rotate text positions

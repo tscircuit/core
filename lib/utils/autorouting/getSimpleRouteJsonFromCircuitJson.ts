@@ -187,6 +187,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           connMap.getNetConnectedToId(trace.source_trace_id) ??
           "",
         source_trace_id: trace.source_trace_id,
+        width: trace.min_trace_thickness,
         pointsToConnect: [
           {
             x: portA.x!,

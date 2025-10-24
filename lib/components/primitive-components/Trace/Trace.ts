@@ -62,6 +62,13 @@ export class Trace
     this._portsRoutedOnPcb = []
   }
 
+  /**
+   * Get the explicit trace thickness, supporting 'width' as an alias for 'thickness'
+   */
+  _getExplicitTraceThickness(): number | undefined {
+    return this._parsedProps.thickness ?? this._parsedProps.width
+  }
+
   get config() {
     return {
       zodProps: traceProps,
@@ -276,7 +283,7 @@ export class Trace
           { db },
         ) ?? props.maxLength,
       display_name: displayName,
-      min_trace_thickness: props.thickness,
+      min_trace_thickness: this._getExplicitTraceThickness(),
     })
 
     this.source_trace_id = trace.source_trace_id

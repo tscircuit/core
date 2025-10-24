@@ -33,6 +33,10 @@ export class FabricationNoteRect extends PrimitiveComponent<
 
     const subcircuit = this.getSubcircuit()
 
+    const hasStroke =
+      props.hasStroke ??
+      (props.strokeWidth !== undefined && props.strokeWidth !== null)
+
     const fabrication_note_rect = db.pcb_fabrication_note_rect.insert({
       pcb_component_id,
       layer,
@@ -46,7 +50,7 @@ export class FabricationNoteRect extends PrimitiveComponent<
       height: props.height,
       stroke_width: props.strokeWidth ?? 1,
       is_filled: props.isFilled ?? false,
-      has_stroke: props.hasStroke ?? false,
+      has_stroke: hasStroke,
       is_stroke_dashed: props.isStrokeDashed ?? false,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
