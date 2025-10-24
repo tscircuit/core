@@ -775,10 +775,15 @@ export function Group_doInitialSchematicLayoutMatchPack<
               placement.ccwRotationDegrees,
             )
             port.side_of_component =
-              (port.facing_direction === "up" ? "top" : 
-               port.facing_direction === "down" ? "bottom" : 
-               port.facing_direction as "left" | "right" | "top" | "bottom") ||
-              port.side_of_component
+              (port.facing_direction === "up"
+                ? "top"
+                : port.facing_direction === "down"
+                  ? "bottom"
+                  : (port.facing_direction as
+                      | "left"
+                      | "right"
+                      | "top"
+                      | "bottom")) || port.side_of_component
           }
 
           // Also rotate text positions
