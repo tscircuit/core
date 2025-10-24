@@ -311,6 +311,10 @@ export class Trace
     Trace_doInitialPcbManualTraceRender(this)
   }
 
+  updatePcbManualTraceRender(): void {
+    Trace_doInitialPcbManualTraceRender(this)
+  }
+
   doInitialPcbTraceRender(): void {
     Trace_doInitialPcbTraceRender(this)
   }
