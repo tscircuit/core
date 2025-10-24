@@ -115,6 +115,6 @@ test("trace pcbPath selectors with thickness works with KiCad footprints", async
       .every((segment) => segment.width === 0.5),
   ).toBe(true)
   await expect(circuit).toMatchPcbSnapshot(
-    `${import.meta.path}-selectors-thickness-kicadd`,
+    `${import.meta.path}-selectors-thickness-kicad`,
   )
 })
