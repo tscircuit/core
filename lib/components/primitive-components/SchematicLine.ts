@@ -1,5 +1,5 @@
 import { schematicLineProps } from "@tscircuit/props"
-import { convertColorName } from "lib/utils/colors"
+import { convertColorName } from "lib/utils/colors/convert-color-name"
 import {
   SCHEMATIC_COMPONENT_OUTLINE_COLOR,
   SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,

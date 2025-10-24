@@ -28,4 +28,3 @@ test("schematicbox with titleColor should support color names", () => {
   expect((schematicTexts[0] as any).text).toBe("Test Box")
   expect((schematicTexts[0] as any).color).toBe("#800080") // purple
 })
-

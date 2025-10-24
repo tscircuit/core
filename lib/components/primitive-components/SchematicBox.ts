@@ -1,5 +1,5 @@
 import { schematicBoxProps } from "@tscircuit/props"
-import { convertColorName } from "lib/utils/colors"
+import { convertColorName } from "lib/utils/colors/convert-color-name"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { getTitleAnchorAndPosition } from "./getTitleAnchorAndPosition"

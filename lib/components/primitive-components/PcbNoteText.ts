@@ -1,5 +1,5 @@
 import { pcbNoteTextProps } from "@tscircuit/props"
-import { convertColorName } from "lib/utils/colors"
+import { convertColorName } from "lib/utils/colors/convert-color-name"
 import { applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 

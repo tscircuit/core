@@ -1,1 +1,0 @@
-export { convertColorName } from "./convertColorName"

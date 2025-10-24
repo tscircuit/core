@@ -1,6 +1,6 @@
 import { fabricationNoteDimensionProps } from "@tscircuit/props"
 import type { Point } from "circuit-json"
-import { convertColorName } from "lib/utils/colors"
+import { convertColorName } from "lib/utils/colors/convert-color-name"
 import { type Matrix, applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 

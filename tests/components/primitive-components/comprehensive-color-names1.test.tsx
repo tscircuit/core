@@ -123,4 +123,3 @@ test("comprehensive color name support across components", () => {
   // Test that hex colors are preserved
   expect((schematicRects[6] as any).color).toBe("#ff5733")
 })
-
