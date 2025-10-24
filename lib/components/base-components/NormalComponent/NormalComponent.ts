@@ -1423,35 +1423,70 @@ export class NormalComponent<
     footprinterString: string | undefined,
   ) {
     if (this.props.doNotPlace) return {}
-    const cacheEngine = this.root?.platform?.localCacheEngine
-    const cacheKey = this._getPartsEngineCacheKey(
-      source_component,
-      footprinterString,
-    )
-    if (cacheEngine) {
-      const cached = await cacheEngine.getItem(cacheKey)
-      if (cached) {
-        try {
-          return JSON.parse(cached)
-        } catch {}
-      }
-    }
-    const result = await Promise.resolve(
-      partsEngine.findPart({
-        sourceComponent: source_component,
+
+    try {
+      const cacheEngine = this.root?.platform?.localCacheEngine
+      const cacheKey = this._getPartsEngineCacheKey(
+        source_component,
         footprinterString,
-      }),
-    )
+      )
 
-    // Convert "Not found" to empty object before caching or returning
-    const supplierPartNumbers = result === "Not found" ? {} : result
+      if (cacheEngine) {
+        const cached = await cacheEngine.getItem(cacheKey)
+        if (cached) {
+          return JSON.parse(cached)
+        }
+      }
 
-    if (cacheEngine) {
-      try {
+      const result = await Promise.resolve(
+        partsEngine.findPart({
+          sourceComponent: source_component,
+          footprinterString,
+        }),
+      )
+
+      // Validate response format
+      if (typeof result === "string" && result !== "Not found") {
+        throw new Error(
+          `Invalid response from parts engine: Expected JSON object but received string starting with "${result.substring(0, 50)}..."`,
+        )
+      }
+
+      const supplierPartNumbers = result === "Not found" ? {} : result
+
+      if (
+        typeof supplierPartNumbers !== "object" ||
+        supplierPartNumbers === null ||
+        Array.isArray(supplierPartNumbers)
+      ) {
+        throw new Error(
+          `Invalid supplier part numbers format: Expected object but received ${typeof supplierPartNumbers}`,
+        )
+      }
+
+      // Cache the result
+      if (cacheEngine) {
         await cacheEngine.setItem(cacheKey, JSON.stringify(supplierPartNumbers))
-      } catch {}
+      }
+
+      return supplierPartNumbers
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
+      debug(
+        `Error fetching supplier part numbers for ${source_component.name}: ${errorMessage}`,
+      )
+
+      // Insert error into Circuit JSON for user visibility
+      if (this.root?.db) {
+        this.root.db.pcb_placement_error.insert({
+          error_type: "pcb_placement_error",
+          message: `Failed to fetch supplier part numbers: ${errorMessage}`,
+        } as any)
+      }
+
+      return {}
     }
-    return supplierPartNumbers
   }
 
   doInitialPartsEngineRender(): void {
