@@ -762,7 +762,7 @@ export function Group_doInitialSchematicLayoutMatchPack<
               schematicComponent.size.height = oldWidth
             }
           }
-          
+
           // Rotate ports around the component center
           const angleRad = (placement.ccwRotationDegrees * Math.PI) / 180
           const cos = Math.cos(angleRad)
