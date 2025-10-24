@@ -1,4 +1,4 @@
-import { isFootprintUrl } from "./isFoorprintUrl"
+import { isHttpUrl } from "./isHttpUrl"
 
 /**
  * Parse a library-style footprint reference of the form "<lib>:<footprintName>".
@@ -6,7 +6,7 @@ import { isFootprintUrl } from "./isFoorprintUrl"
 export const parseLibraryFootprintRef = (
   s: string,
 ): { footprintLib: string; footprintName: string } | null => {
-  if (isFootprintUrl(s)) return null
+  if (isHttpUrl(s)) return null
   const idx = s.indexOf(":")
   if (idx <= 0) return null
   const footprintLib = s.slice(0, idx)
