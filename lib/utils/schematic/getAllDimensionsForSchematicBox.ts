@@ -346,9 +346,14 @@ export const getAllDimensionsForSchematicBox = (
   // Use lengths to determine schWidth and schHeight
   let schWidth = params.schWidth
   if (schWidth === undefined) {
+    // Use fixed padding based on default schPinSpacing (0.2) to ensure
+    // the box width doesn't change when schPinSpacing changes
+    // This ensures box dimensions are determined by pin positions, not pin spacing
+    const DEFAULT_PIN_SPACING = 0.2
+    const MIN_PADDING = DEFAULT_PIN_SPACING * 2
     schWidth = Math.max(
-      sideLengths.top + params.schPinSpacing * 2,
-      sideLengths.bottom + params.schPinSpacing * 2,
+      sideLengths.top + MIN_PADDING,
+      sideLengths.bottom + MIN_PADDING,
     )
 
     const labelWidth = params.pinLabels
@@ -366,9 +371,14 @@ export const getAllDimensionsForSchematicBox = (
 
   let schHeight = params.schHeight
   if (!schHeight) {
+    // Use fixed padding based on default schPinSpacing (0.2) to ensure
+    // the box height doesn't change when schPinSpacing changes
+    // This ensures box dimensions are determined by pin positions, not pin spacing
+    const DEFAULT_PIN_SPACING = 0.2
+    const MIN_PADDING = DEFAULT_PIN_SPACING * 2
     schHeight = Math.max(
-      sideLengths.left + params.schPinSpacing * 2,
-      sideLengths.right + params.schPinSpacing * 2,
+      sideLengths.left + MIN_PADDING,
+      sideLengths.right + MIN_PADDING,
     )
   }
 
