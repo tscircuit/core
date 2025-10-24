@@ -18,6 +18,7 @@ import {
   point3,
   rotation,
   schematic_manual_edit_conflict_warning,
+  source_failed_to_create_component_error,
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import Debug from "debug"
@@ -441,18 +442,61 @@ export class NormalComponent<
     if (typeof footprint === "string") {
       if (isFootprintUrl(footprint)) return
       if (parseLibraryFootprintRef(footprint)) return
-      const fpSoup = fp.string(footprint).soup()
-      const fpComponents = createComponentsFromCircuitJson(
-        {
-          componentName: this.name ?? this.componentName,
-          componentRotation: pcbRotation,
-          footprint,
-          pinLabels,
-          pcbPinLabels,
-        },
-        fpSoup as any,
-      ) // Remove as any when footprinter gets updated
-      this.addAll(fpComponents)
+
+      // Protect against footprinter or soup conversion failures (for example
+      // when the footprint string is invalid or an HTML error page is passed
+      // where JSON was expected). Record a circuit-json error and continue so
+      // rendering of the rest of the circuit is not disrupted.
+      try {
+        const fpSoup = fp.string(footprint).soup()
+        const fpComponents = createComponentsFromCircuitJson(
+          {
+            componentName: this.name ?? this.componentName,
+            componentRotation: pcbRotation,
+            footprint,
+            pinLabels,
+            pcbPinLabels,
+          },
+          fpSoup as any,
+        ) // Remove as any when footprinter gets updated
+        this.addAll(fpComponents)
+      } catch (err) {
+        try {
+          const { db } = this.root ?? {}
+          const pcbPosition = this._getGlobalPcbPositionBeforeLayout()
+          const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
+
+          const errorMessage = `Failed to create children from footprint string for ${
+            this.getString()
+          }: footprint=${String(footprint)} error=${String(err)}`
+
+          // Use the same error table used elsewhere for failures creating
+          // components from source so consumer tooling can find it.
+          try {
+            const parsed = source_failed_to_create_component_error.parse({
+              type: "source_failed_to_create_component_error",
+              component_name: this.name ?? this.componentName,
+              error_type: "source_failed_to_create_component_error",
+              message: errorMessage,
+              pcb_center: pcbPosition,
+              schematic_center: schematicPosition,
+            })
+            db?.source_failed_to_create_component_error?.insert?.(parsed)
+          } catch (parseErr) {
+            // If parsing/validation fails for any reason, fall back to a
+            // best-effort insert so we still record the failure.
+            try {
+              db?.source_failed_to_create_component_error?.insert?.({
+                component_name: this.name ?? this.componentName,
+                error_type: "source_failed_to_create_component_error",
+                message: errorMessage,
+                pcb_center: pcbPosition,
+                schematic_center: schematicPosition,
+              })
+            } catch {}
+          }
+        } catch {}
+      }
     }
   }
 
@@ -1433,15 +1477,86 @@ export class NormalComponent<
       if (cached) {
         try {
           return JSON.parse(cached)
-        } catch {}
+        } catch (err) {
+          // Cached value was not valid JSON (often HTML error pages). Record an
+          // error element in the DB and fall through to fresh lookup.
+            try {
+              const errEl: any = {
+                component_name: source_component?.name ?? undefined,
+                error_type: "source_failed_to_create_component_error",
+                message: `Failed to parse cached supplier part numbers for component ${source_component.source_component_id}: ${String(
+                  err,
+                )}`,
+                source_component_id: source_component.source_component_id,
+              }
+              // Best-effort: try to insert into the spec-defined table.
+              try {
+                const dbAny = this.root?.db as any
+                if (
+                  dbAny?.source_failed_to_create_component_error &&
+                  typeof dbAny.source_failed_to_create_component_error.insert === "function"
+                ) {
+                  try {
+                    const parsed = source_failed_to_create_component_error.parse({
+                      type: "source_failed_to_create_component_error",
+                      ...errEl,
+                    })
+                    dbAny.source_failed_to_create_component_error.insert(parsed)
+                  } catch (parseErr) {
+                    dbAny.source_failed_to_create_component_error.insert(errEl)
+                  }
+                } else if (typeof dbAny?._addElement === "function") {
+                  dbAny._addElement(errEl)
+                }
+              } catch {}
+            } catch {}
+        }
       }
     }
-    const result = await Promise.resolve(
-      partsEngine.findPart({
-        sourceComponent: source_component,
-        footprinterString,
-      }),
-    )
+
+    let result: any
+    try {
+      result = await Promise.resolve(
+        partsEngine.findPart({
+          sourceComponent: source_component,
+          footprinterString,
+        }),
+      )
+    } catch (err) {
+      // Parts engine lookup threw. Record a spec-style error element and
+      // return an empty set of supplier part numbers so render continues.
+      try {
+        const errEl: any = {
+          component_name: source_component?.name ?? undefined,
+          error_type: "source_failed_to_create_component_error",
+          message: `Parts engine lookup failed for component ${source_component.source_component_id}: ${String(
+            err,
+          )}`,
+          source_component_id: source_component.source_component_id,
+        }
+        try {
+          const dbAny = this.root?.db as any
+          if (
+            dbAny?.source_failed_to_create_component_error &&
+            typeof dbAny.source_failed_to_create_component_error.insert === "function"
+          ) {
+              try {
+                const parsed = source_failed_to_create_component_error.parse({
+                  type: "source_failed_to_create_component_error",
+                  ...errEl,
+                })
+                dbAny.source_failed_to_create_component_error.insert(parsed)
+              } catch (parseErr) {
+                dbAny.source_failed_to_create_component_error.insert(errEl)
+              }
+          } else if (typeof dbAny?._addElement === "function") {
+            dbAny._addElement(errEl)
+          }
+        } catch {}
+      } catch {}
+
+      return {}
+    }
 
     // Convert "Not found" to empty object before caching or returning
     const supplierPartNumbers = result === "Not found" ? {} : result
