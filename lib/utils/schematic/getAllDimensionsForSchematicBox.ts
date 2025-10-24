@@ -346,8 +346,7 @@ export const getAllDimensionsForSchematicBox = (
   // Use lengths to determine schWidth and schHeight
   let schWidth = params.schWidth
   if (schWidth === undefined) {
-    const DEFAULT_PIN_SPACING = 0.2
-    const MIN_PADDING = DEFAULT_PIN_SPACING * 2
+    const MIN_PADDING = 0.4
     schWidth = Math.max(
       sideLengths.top + MIN_PADDING,
       sideLengths.bottom + MIN_PADDING,
@@ -368,8 +367,7 @@ export const getAllDimensionsForSchematicBox = (
 
   let schHeight = params.schHeight
   if (!schHeight) {
-    const DEFAULT_PIN_SPACING = 0.2
-    const MIN_PADDING = DEFAULT_PIN_SPACING * 2
+    const MIN_PADDING = 0.4
     schHeight = Math.max(
       sideLengths.left + MIN_PADDING,
       sideLengths.right + MIN_PADDING,
