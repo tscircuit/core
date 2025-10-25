@@ -56,7 +56,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           result.footprintCircuitJson,
         )
         component.addAll(fpComponents)
-        component._markDirty("InitializePortsFromChildren")
       } catch (err) {
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {
@@ -102,7 +101,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           soup as any,
         )
         component.addAll(fpComponents)
-        component._markDirty("InitializePortsFromChildren")
       } catch (err) {
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {
@@ -174,13 +172,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         if (!Array.isArray(result) && result.cadModel) {
           component._asyncFootprintCadModel = result.cadModel
         }
-        // Ensure existing Ports re-run PcbPortRender now that pads exist
-        for (const child of component.children) {
-          if (child.componentName === "Port") {
-            child._markDirty?.("PcbPortRender")
-          }
-        }
-        component._markDirty("InitializePortsFromChildren")
       } catch (err) {
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {

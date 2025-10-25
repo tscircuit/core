@@ -307,10 +307,14 @@ export abstract class Renderable implements IRenderable {
       if (hasIncompleteEffects) return
     }
 
-    // Check declared async dependencies for this phase within subtree
     const deps = asyncPhaseDependencies[phase] || []
     for (const depPhase of deps) {
-      if (this._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) return
+      const root = (this as any).root
+      const boardComponent = root?._getBoard?.() || root?.children?.[0] || this
+      if (
+        boardComponent._hasIncompleteAsyncEffectsInSubtreeForPhase?.(depPhase)
+      )
+        return
     }
 
     this._emitRenderLifecycleEvent(phase, "start")
