@@ -7,7 +7,7 @@ import type {
   PcbSmtPadRotatedRect,
   PcbSmtPadPill,
 } from "circuit-json"
-import { decomposeTSR } from "transformation-matrix"
+import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 
@@ -91,6 +91,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const subcircuit = this.getSubcircuit()
 
     const position = this._getGlobalPcbPositionBeforeLayout()
+    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
     const decomposedTransform = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
     )
@@ -250,15 +251,27 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRotatedRect)
     } else if (props.shape === "polygon") {
+      const transformedPoints = props.points.map((point) => {
+        const numericX =
+          typeof point.x === "string" ? parseFloat(point.x) : point.x
+        const numericY =
+          typeof point.y === "string" ? parseFloat(point.y) : point.y
+        const transformed = applyToPoint(globalTransform, {
+          x: numericX,
+          y: numericY,
+        })
+        return {
+          x: transformed.x,
+          y: transformed.y,
+        }
+      })
+
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
         layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "polygon",
-        points: props.points.map((p) => ({
-          x: p.x + position.x,
-          y: p.y + position.y,
-        })),
+        points: transformedPoints,
         port_hints: props.portHints.map((ph) => ph.toString()),
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
