@@ -63,9 +63,10 @@ import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalCo
 import { filterPinLabels } from "lib/utils/filterPinLabels"
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
-import { isFootprintUrl } from "./utils/isFoorprintUrl"
+import { isHttpUrl } from "./utils/isHttpUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 import { normalizeDegrees } from "@tscircuit/math-utils"
+import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 
 const debug = Debug("tscircuit:core")
 
@@ -439,7 +440,8 @@ export class NormalComponent<
     if (!footprint) return
 
     if (typeof footprint === "string") {
-      if (isFootprintUrl(footprint)) return
+      if (isHttpUrl(footprint)) return
+      if (isStaticAssetPath(footprint)) return
       if (parseLibraryFootprintRef(footprint)) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
@@ -1035,7 +1037,8 @@ export class NormalComponent<
     }
 
     if (typeof footprint === "string") {
-      if (isFootprintUrl(footprint)) return []
+      if (isHttpUrl(footprint)) return []
+      if (isStaticAssetPath(footprint)) return []
       if (parseLibraryFootprintRef(footprint)) return []
       const fpSoup = fp.string(footprint).soup()
 
