@@ -39,34 +39,26 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
 
   // Run simulation for each analogsimulation component
   for (const analogSim of analogSims) {
-    const requestedEngineName = analogSim._parsedProps.spiceEngine
+    const engineName = analogSim._parsedProps.spiceEngine ?? "spicey"
+    const engineToUse = spiceEngineMap[engineName]
 
-    let engineToUse
-    let engineNameToUse: string
-
-    if (requestedEngineName && spiceEngineMap[requestedEngineName]) {
-      engineToUse = spiceEngineMap[requestedEngineName]
-      engineNameToUse = requestedEngineName
-      debug(`Using requested spice engine: "${requestedEngineName}"`)
-    } else {
-      if (requestedEngineName) {
-        debug(
-          `Requested spice engine "${requestedEngineName}" not found in platform config, falling back to "spicey".`,
-        )
-      }
-      engineNameToUse = "spicey"
-      engineToUse = spiceEngineMap.spicey
+    if (!engineToUse) {
+      throw new Error(
+        `SPICE engine "${engineName}" not found in platform config. Available engines: ${JSON.stringify(
+          Object.keys(spiceEngineMap).filter((k) => k !== "spicey"),
+        )}`,
+      )
     }
 
-    const effectId = `spice-simulation-${engineNameToUse}-${analogSim.source_component_id}`
+    const effectId = `spice-simulation-${engineName}-${analogSim.source_component_id}`
 
     debug(
-      `Queueing simulation for spice engine: ${engineNameToUse} (id: ${effectId})`,
+      `Queueing simulation for spice engine: ${engineName} (id: ${effectId})`,
     )
 
     group._queueAsyncEffect(effectId, async () => {
       try {
-        debug(`Running simulation with engine: ${engineNameToUse}`)
+        debug(`Running simulation with engine: ${engineName}`)
         const result = await engineToUse.simulate(spiceString)
 
         debug(
@@ -103,7 +95,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
         // Mark the component as dirty to trigger re-render if needed
         group._markDirty("SimulationSpiceEngineRender")
       } catch (error) {
-        debug(`Simulation failed for engine ${engineNameToUse}: ${error}`)
+        debug(`Simulation failed for engine ${engineName}: ${error}`)
         // Don't throw - allow other engines to continue
       }
     })

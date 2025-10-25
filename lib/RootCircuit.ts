@@ -65,7 +65,7 @@ export class RootCircuit {
     this.children.push(component)
   }
 
-  setPlatform(platform: PlatformConfig) {
+  setPlatform(platform: Partial<PlatformConfig>) {
     this.platform = {
       ...this.platform,
       ...platform,

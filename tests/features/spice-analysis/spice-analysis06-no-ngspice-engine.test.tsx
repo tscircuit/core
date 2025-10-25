@@ -26,17 +26,9 @@ test(
       </board>,
     )
 
-    await circuit.renderUntilSettled()
-
-    const circuitJson = circuit.getCircuitJson()
-
-    expect(
-      circuitJson.some(
-        (el) => el.type === "simulation_transient_voltage_graph",
-      ),
-    ).toBe(true)
-
-    expect(circuit).toMatchSimulationSnapshot(import.meta.path)
+    expect(circuit.renderUntilSettled()).rejects.toThrow(
+      'SPICE engine "ngspice" not found in platform config. Available engines: []',
+    )
   },
   { timeout: 20000 },
 )
