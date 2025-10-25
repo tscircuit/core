@@ -2,6 +2,18 @@ import type * as Props from "@tscircuit/props"
 import type { VoltageSourceProps } from "lib/components/normal-components/VoltageSource"
 import type { DetailedHTMLProps, SVGProps } from "react"
 
+type NoteDimensionMeasurementProps = {
+  centerToCenter?: true
+  innerEdgeToEdge?: true
+  outerEdgeToEdge?: true
+}
+
+type ExtendedPcbNoteDimensionProps = Props.PcbNoteDimensionProps &
+  NoteDimensionMeasurementProps
+
+type ExtendedFabricationNoteDimensionProps =
+  Props.FabricationNoteDimensionProps & NoteDimensionMeasurementProps
+
 export interface TscircuitElements {
   resistor: Props.ResistorProps
   capacitor: Props.CapacitorProps
@@ -61,10 +73,10 @@ export interface TscircuitElements {
   pcbnoterect: Props.PcbNoteRectProps
   pcbnotetext: Props.PcbNoteTextProps
   pcbnotepath: Props.PcbNotePathProps
-  pcbnotedimension: Props.PcbNoteDimensionProps
+  pcbnotedimension: ExtendedPcbNoteDimensionProps
   fabricationnotetext: Props.FabricationNoteTextProps
   fabricationnotepath: Props.FabricationNotePathProps
-  fabricationnotedimension: Props.FabricationNoteDimensionProps
+  fabricationnotedimension: ExtendedFabricationNoteDimensionProps
   constraint: Props.ConstraintProps
   constrainedlayout: Props.ConstrainedLayoutProps
   battery: Props.BatteryProps
