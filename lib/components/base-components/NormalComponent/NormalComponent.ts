@@ -1462,9 +1462,15 @@ export class NormalComponent<
     }
 
     // Validate that result is an object (not array, null, etc.)
-    if (!result || typeof result !== "object" || Array.isArray(result)) {
+    if (!result || Array.isArray(result) || typeof result !== "object") {
+      const actualType =
+        result === null
+          ? "null"
+          : Array.isArray(result)
+            ? "array"
+            : typeof result
       throw new Error(
-        `Invalid supplier part numbers format: Expected object but got ${Array.isArray(result) ? "array" : typeof result}`,
+        `Invalid supplier part numbers format: Expected object but got ${actualType}`,
       )
     }
 
