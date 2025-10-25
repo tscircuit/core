@@ -1,11 +1,12 @@
 import { smtPadProps } from "@tscircuit/props"
-import type {
-  PcbSmtPad,
-  PcbSmtPadCircle,
-  PcbSmtPadRect,
-  PcbSmtPadPolygon,
-  PcbSmtPadRotatedRect,
-  PcbSmtPadPill,
+import {
+  distance,
+  type PcbSmtPad,
+  type PcbSmtPadCircle,
+  type PcbSmtPadRect,
+  type PcbSmtPadPolygon,
+  type PcbSmtPadRotatedRect,
+  type PcbSmtPadPill,
 } from "circuit-json"
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
@@ -252,13 +253,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         } as PcbSmtPadRotatedRect)
     } else if (props.shape === "polygon") {
       const transformedPoints = props.points.map((point) => {
-        const numericX =
-          typeof point.x === "string" ? parseFloat(point.x) : point.x
-        const numericY =
-          typeof point.y === "string" ? parseFloat(point.y) : point.y
         const transformed = applyToPoint(globalTransform, {
-          x: numericX,
-          y: numericY,
+          x: distance.parse(point.x),
+          y: distance.parse(point.y),
         })
         return {
           x: transformed.x,
