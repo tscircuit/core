@@ -28,6 +28,8 @@ test("polygon smtpad points rotate with component rotation", async () => {
 
   await circuit.renderUntilSettled()
 
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+
   const insertedPads = circuit.db.pcb_smtpad
     .list()
     .filter((pad): pad is PcbSmtPadPolygon => pad.shape === "polygon")
