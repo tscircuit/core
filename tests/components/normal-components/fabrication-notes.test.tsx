@@ -125,3 +125,24 @@ test("fabricationnotedimension defaults text to measured distance in inches", as
   expect(dimensions[0].text).toBe("1in")
   expect(dimensions[1].text).toBe("0.5in")
 })
+
+test("fabricationnotedimension supports edge measurement modes with offsets", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="30mm" height="20mm">
+      <hole name="H1" pcbX={0} pcbY={0} diameter={2} />
+      <hole name="H2" pcbX={10} pcbY={0} diameter={2} />
+      <fabricationnotedimension from="H1" to="H2" centerToCenter offset={0} />
+      <fabricationnotedimension from="H1" to="H2" innerEdgeToEdge offset={2} />
+      <fabricationnotedimension from="H1" to="H2" outerEdgeToEdge offset={4} />
+    </board>,
+  )
+
+  circuit.render()
+
+  const dimensions = circuit.db.pcb_fabrication_note_dimension.list()
+  expect(dimensions).toHaveLength(3)
+
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

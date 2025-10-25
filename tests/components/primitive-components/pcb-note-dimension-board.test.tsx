@@ -78,3 +78,24 @@ test("pcbnotedimension defaults text to measured distance in inches", async () =
   expect(dimensions[0].text).toBe("1in")
   expect(dimensions[1].text).toBe("0.5in")
 })
+
+test("pcbnotedimension supports edge measurement modes with offsets", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="30mm" height="20mm">
+      <hole name="H1" pcbX={0} pcbY={0} diameter={2} />
+      <hole name="H2" pcbX={10} pcbY={0} diameter={2} />
+      <pcbnotedimension from="H1" to="H2" centerToCenter offset={0} />
+      <pcbnotedimension from="H1" to="H2" innerEdgeToEdge offset={2} />
+      <pcbnotedimension from="H1" to="H2" outerEdgeToEdge offset={4} />
+    </board>,
+  )
+
+  circuit.render()
+
+  const dimensions = circuit.db.pcb_note_dimension.list()
+  expect(dimensions).toHaveLength(3)
+
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+})

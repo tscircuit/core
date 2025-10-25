@@ -1,6 +1,11 @@
 import { fabricationNoteDimensionProps } from "@tscircuit/props"
 import type { Point } from "circuit-json"
 import { applyToPoint, type Matrix } from "transformation-matrix"
+import {
+  calculateDimensionPoints,
+  getDimensionModeFromProps,
+  type DimensionTarget,
+} from "./shared/calculateDimensionPoints"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class FabricationNoteDimension extends PrimitiveComponent<
@@ -16,32 +21,83 @@ export class FabricationNoteDimension extends PrimitiveComponent<
     }
   }
 
-  private _resolvePoint(input: string | Point, transform: Matrix): Point {
+  private _resolveTarget(
+    input: string | Point,
+    transform: Matrix,
+  ): DimensionTarget {
     if (typeof input === "string") {
+      const selector =
+        input.startsWith(".") || input.startsWith("#") ? input : `.${input}`
       const target = this.getSubcircuit().selectOne(
-        input,
+        selector,
       ) as PrimitiveComponent | null
       if (!target) {
         this.renderError(
           `FabricationNoteDimension could not find selector "${input}"`,
         )
-        return applyToPoint(transform, { x: 0, y: 0 })
+        return {
+          center: applyToPoint(transform, { x: 0, y: 0 }),
+          width: 0,
+          height: 0,
+        }
       }
-      return target._getGlobalPcbPositionBeforeLayout()
+
+      const bounds = target._getPcbCircuitJsonBounds?.()
+      if (bounds) {
+        return {
+          center: bounds.center,
+          width: bounds.width,
+          height: bounds.height,
+        }
+      }
+
+      return {
+        center: target._getGlobalPcbPositionBeforeLayout(),
+        width: 0,
+        height: 0,
+      }
     }
 
     const numericX = typeof input.x === "string" ? parseFloat(input.x) : input.x
     const numericY = typeof input.y === "string" ? parseFloat(input.y) : input.y
-    return applyToPoint(transform, { x: numericX, y: numericY })
+    const center = applyToPoint(transform, { x: numericX, y: numericY })
+    return { center, width: 0, height: 0 }
   }
 
-  doInitialPcbPrimitiveRender(): void {
+  private _computeDimensionPoints(): { from: Point; to: Point } {
+    const { _parsedProps: props } = this
+    const transform = this._computePcbGlobalTransformBeforeLayout()
+    const fromTarget = this._resolveTarget(props.from, transform)
+    const toTarget = this._resolveTarget(props.to, transform)
+    const mode = getDimensionModeFromProps(props)
+
+    const { fromPoint, toPoint } = calculateDimensionPoints({
+      fromTarget,
+      toTarget,
+      mode,
+    })
+
+    return { from: fromPoint, to: toPoint }
+  }
+
+  private _computeDimensionText(from: Point, to: Point): string {
+    const { _parsedProps: props } = this
+    return (
+      props.text ??
+      this._formatDistanceText({
+        from,
+        to,
+        units: props.units ?? "mm",
+      })
+    )
+  }
+
+  doInitialPcbDimensionRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
-    const transform = this._computePcbGlobalTransformBeforeLayout()
-    const from = this._resolvePoint(props.from, transform)
-    const to = this._resolvePoint(props.to, transform)
+    const { from, to } = this._computeDimensionPoints()
+    const text = this._computeDimensionText(from, to)
     const subcircuit = this.getSubcircuit()
     const group = this.getGroup()
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
@@ -56,10 +112,6 @@ export class FabricationNoteDimension extends PrimitiveComponent<
     const pcb_component_id =
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
-
-    const text =
-      props.text ??
-      this._formatDistanceText({ from, to, units: props.units ?? "mm" })
 
     const fabrication_note_dimension = db.pcb_fabrication_note_dimension.insert(
       {
@@ -83,9 +135,7 @@ export class FabricationNoteDimension extends PrimitiveComponent<
   }
 
   getPcbSize(): { width: number; height: number } {
-    const transform = this._computePcbGlobalTransformBeforeLayout()
-    const from = this._resolvePoint(this._parsedProps.from, transform)
-    const to = this._resolvePoint(this._parsedProps.to, transform)
+    const { from, to } = this._computeDimensionPoints()
 
     return {
       width: Math.abs(to.x - from.x),
