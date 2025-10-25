@@ -23,7 +23,7 @@ test("parts engine processes valid responses and special cases correctly", async
     digikey: ["123-456"],
     mouser: ["789-012"],
   })
-  const errors1 = circuit1.db.pcb_placement_error.list()
+  const errors1 = circuit1.db.unknown_error_finding_part.list()
   expect(errors1.length).toBe(0)
 
   // Test 2: "Not found" response (valid, converts to empty object)
@@ -41,6 +41,6 @@ test("parts engine processes valid responses and special cases correctly", async
 
   const sc2 = circuit2.db.source_component.list()[0]
   expect(sc2.supplier_part_numbers).toEqual({})
-  const errors2 = circuit2.db.pcb_placement_error.list()
+  const errors2 = circuit2.db.unknown_error_finding_part.list()
   expect(errors2.length).toBe(0)
 })

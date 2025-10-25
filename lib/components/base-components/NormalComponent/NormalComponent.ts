@@ -18,6 +18,7 @@ import {
   point3,
   rotation,
   schematic_manual_edit_conflict_warning,
+  unknown_error_finding_part,
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import Debug from "debug"
@@ -1443,8 +1444,31 @@ export class NormalComponent<
       }),
     )
 
-    // Convert "Not found" to empty object before caching or returning
-    const supplierPartNumbers = result === "Not found" ? {} : result
+    // Validate the result format
+    if (typeof result === "string") {
+      // Check if it's an HTML error page or "Not found"
+      if (result.includes("<!DOCTYPE") || result.includes("<html")) {
+        throw new Error(
+          `Failed to fetch supplier part numbers: Received HTML response instead of JSON. Response starts with: ${result.substring(0, 100)}`,
+        )
+      }
+      // Convert "Not found" to empty object
+      if (result === "Not found") {
+        return {}
+      }
+      throw new Error(
+        `Invalid supplier part numbers format: Expected object but got string: "${result}"`,
+      )
+    }
+
+    // Validate that result is an object (not array, null, etc.)
+    if (!result || typeof result !== "object" || Array.isArray(result)) {
+      throw new Error(
+        `Invalid supplier part numbers format: Expected object but got ${Array.isArray(result) ? "array" : typeof result}`,
+      )
+    }
+
+    const supplierPartNumbers = result
 
     if (cacheEngine) {
       try {
@@ -1483,8 +1507,23 @@ export class NormalComponent<
     }
 
     this._queueAsyncEffect("get-supplier-part-numbers", async () => {
-      this._asyncSupplierPartNumbers = await supplierPartNumbersMaybePromise
-      this._markDirty("PartsEngineRender")
+      await supplierPartNumbersMaybePromise
+        .then((supplierPartNumbers) => {
+          this._asyncSupplierPartNumbers = supplierPartNumbers
+          this._markDirty("PartsEngineRender")
+        })
+        .catch((error: Error) => {
+          // Log structured error to Circuit JSON
+          this._asyncSupplierPartNumbers = {}
+          const errorObj = unknown_error_finding_part.parse({
+            type: "unknown_error_finding_part",
+            message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error.message}`,
+            source_component_id: this.source_component_id,
+            subcircuit_id: this.getSubcircuit()?.subcircuit_id,
+          })
+          db.unknown_error_finding_part.insert(errorObj)
+          this._markDirty("PartsEngineRender")
+        })
     })
   }
 
