@@ -251,8 +251,8 @@ export abstract class Renderable implements IRenderable {
 
   private _getRootRenderable(): Renderable {
     let node: Renderable = this
-    while (node.parent) {
-      node = node.parent as Renderable
+    while (node.parent && node.parent instanceof Renderable) {
+      node = node.parent
     }
     return node
   }
@@ -318,7 +318,7 @@ export abstract class Renderable implements IRenderable {
     const deps = asyncPhaseDependencies[phase] || []
     if (deps.length > 0) {
       const root = this._getRootRenderable()
-      const checkNode = (root.children?.[0] as Renderable) || root
+      const checkNode = (root.children?.[0] as any) || root
       for (const depPhase of deps) {
         if (checkNode._hasIncompleteAsyncEffectsInSubtreeForPhase?.(depPhase))
           return

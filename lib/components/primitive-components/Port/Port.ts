@@ -245,6 +245,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    */
   registerMatch(component: PrimitiveComponent) {
     this.matchedComponents.push(component)
+    if (this.renderPhaseStates.PcbPortRender.initialized && !this.pcb_port_id) {
+      this._markDirty("PcbPortRender")
+    }
   }
   getNameAndAliases() {
     const { _parsedProps: props } = this
