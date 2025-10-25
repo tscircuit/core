@@ -133,6 +133,10 @@ function getCornerOrientationAtPoint(
  *
  * Crossings (middle-to-middle intersections) are handled by computeCrossings()
  * and are not included as junctions here.
+ *
+ * Optional network-awareness: callers may provide `opts.shouldConnect(traceIdA, traceIdB, atPoint)`
+ * to veto junction creation between traces that are not electrically connected (e.g. different nets).
+ * When omitted, all geometric T/endpoint junctions are produced as before.
  */
 export function computeJunctions(
   traces: TraceEdges[],
@@ -142,21 +146,27 @@ export function computeJunctions(
   const result: Record<string, Array<{ x: number; y: number }>> = {}
   for (const t of traces) result[t.source_trace_id] = []
 
-  // Precompute endpoints for each trace
-  const endpointsByTrace = traces.map((t) => {
-    const pts: Array<{ x: number; y: number }> = []
-    for (const e of t.edges) {
-      pts.push(e.from, e.to)
-    }
-    return dedupePoints(pts, tol)
-  })
-
   for (let i = 0; i < traces.length; i++) {
     const A = traces[i]
-    const AEnds = endpointsByTrace[i]
+    const AEnds = dedupePoints(
+      A.edges.flatMap((e) => [e.from, e.to]),
+      tol,
+    )
     for (let j = i + 1; j < traces.length; j++) {
       const B = traces[j]
-      const BEnds = endpointsByTrace[j]
+      const BEnds = dedupePoints(
+        B.edges.flatMap((e) => [e.from, e.to]),
+        tol,
+      )
+
+      // Opt-in net-aware junctions: applies only when either trace has the flag enabled
+      const netAware =
+        (A as any).__netAwareJunctions || (B as any).__netAwareJunctions
+      if (netAware) {
+        const netA = (A as any).subcircuit_connectivity_map_key
+        const netB = (B as any).subcircuit_connectivity_map_key
+        if (netA == null || netB == null || netA !== netB) continue
+      }
 
       // Endpoint-to-endpoint junctions (only when forming a corner)
       for (const pa of AEnds) {
