@@ -66,6 +66,8 @@ interface Params {
 
 type Side = "left" | "right" | "top" | "bottom"
 
+const DEFAULT_SCHEMATIC_PIN_SPACING = 0.2
+
 export function isExplicitPinMappingArrangement(
   arrangement: PortArrangement,
 ): arrangement is ExplicitPinMappingArrangement {
@@ -346,9 +348,10 @@ export const getAllDimensionsForSchematicBox = (
   // Use lengths to determine schWidth and schHeight
   let schWidth = params.schWidth
   if (schWidth === undefined) {
+    const edgePadding = DEFAULT_SCHEMATIC_PIN_SPACING * 2
     schWidth = Math.max(
-      sideLengths.top + params.schPinSpacing * 2,
-      sideLengths.bottom + params.schPinSpacing * 2,
+      sideLengths.top + edgePadding,
+      sideLengths.bottom + edgePadding,
     )
 
     const labelWidth = params.pinLabels

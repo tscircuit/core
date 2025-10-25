@@ -1,0 +1,77 @@
+
+    <svg
+      width="80"
+      height="425"
+      viewBox="0 0 80 425"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect
+        x="10"
+        y="10"
+        width="60"
+        height="405"
+        fill="none"
+        stroke="#c5c5c5"
+        stroke-dasharray="6 6"
+        stroke-width="1"
+      />
+      
+      <g>
+        <rect
+          x="20"
+          y="50"
+          width="40"
+          height="60.00000000000001"
+          fill="none"
+          stroke="#1b76ff"
+          stroke-width="2"
+          rx="8"
+          ry="8"
+        />
+        <text
+          x="40"
+          y="35"
+          text-anchor="middle"
+          font-family="monospace"
+          font-size="16"
+        >Baseline (schPinSpacing=0.2)</text>
+        <text
+          x="40"
+          y="86"
+          text-anchor="middle"
+          font-family="monospace"
+          font-size="16"
+        >width=0.400</text>
+      </g>
+    
+      
+      <g>
+        <rect
+          x="20"
+          y="150"
+          width="40"
+          height="225"
+          fill="none"
+          stroke="#f97316"
+          stroke-width="2"
+          rx="8"
+          ry="8"
+        />
+        <text
+          x="40"
+          y="390"
+          text-anchor="middle"
+          font-family="monospace"
+          font-size="16"
+        >Adjusted (schPinSpacing=0.75)</text>
+        <text
+          x="40"
+          y="268.5"
+          text-anchor="middle"
+          font-family="monospace"
+          font-size="16"
+        >width=0.400</text>
+      </g>
+    
+    </svg>
+  
