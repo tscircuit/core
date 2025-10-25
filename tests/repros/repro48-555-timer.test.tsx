@@ -73,6 +73,13 @@ test("repro48: 555 timer circuit", () => {
 
   circuit.render()
 
+  const schematic = (circuit as any).schematic
+  const traces = schematic?.traces ?? []
+
+  for (const trace of traces) {
+    ;(trace as any).__netAwareJunctions = true
+  }
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
