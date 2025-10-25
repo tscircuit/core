@@ -154,10 +154,7 @@ export function computeJunctions(
     )
     for (let j = i + 1; j < traces.length; j++) {
       const B = traces[j]
-      const BEnds = dedupePoints(
-        B.edges.flatMap((e) => [e.from, e.to]),
-        tol,
-      )
+      const BEnds = endpointsByTrace[j]
 
       // Opt-in net-aware junctions: applies only when either trace has the flag enabled
       const netAware =
