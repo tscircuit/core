@@ -29,7 +29,10 @@ export function getPresetAutoroutingConfig(
   const providedConfig =
     typeof autorouterConfig === "object" ? autorouterConfig : {}
 
-  switch (preset) {
+  const normalizedPreset =
+    typeof preset === "string" ? preset.replace(/_/g, "-") : preset
+
+  switch (normalizedPreset) {
     case "auto-local":
       return {
         local: true,
