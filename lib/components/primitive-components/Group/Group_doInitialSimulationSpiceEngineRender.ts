@@ -40,9 +40,9 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   // Run simulation for each analogsimulation component
   for (const analogSim of analogSims) {
     const engineName = analogSim._parsedProps.spiceEngine ?? "spicey"
-    const engineToUse = spiceEngineMap[engineName]
+    const spiceEngine = spiceEngineMap[engineName]
 
-    if (!engineToUse) {
+    if (!spiceEngine) {
       throw new Error(
         `SPICE engine "${engineName}" not found in platform config. Available engines: ${JSON.stringify(
           Object.keys(spiceEngineMap).filter((k) => k !== "spicey"),
@@ -59,7 +59,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     group._queueAsyncEffect(effectId, async () => {
       try {
         debug(`Running simulation with engine: ${engineName}`)
-        const result = await engineToUse.simulate(spiceString)
+        const result = await spiceEngine.simulate(spiceString)
 
         debug(
           `Simulation completed, received ${result.simulationResultCircuitJson.length} elements`,
