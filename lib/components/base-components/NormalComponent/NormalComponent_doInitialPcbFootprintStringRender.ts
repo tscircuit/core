@@ -10,8 +10,8 @@ import {
   external_footprint_load_error,
 } from "circuit-json"
 import { getFileExtension } from "./utils/getFileExtension"
-import { constructAssetUrl } from "lib/utils/constructAssetUrl"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
+import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
 
 interface FootprintLibraryResult {
   footprintCircuitJson: any[]
@@ -39,11 +39,10 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
   ) {
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
-    const projectBaseUrl = component.root?.platform?.projectBaseUrl
-    const footprintUrl = isHttpUrl(footprint)
-      ? footprint
-      : constructAssetUrl(footprint, projectBaseUrl)
     queueAsyncEffect("load-footprint-from-platform-file-parser", async () => {
+      const footprintUrl = isHttpUrl(footprint)
+        ? footprint
+        : await resolveStaticFileImport(footprint, component.root?.platform)
       try {
         const result = await footprintParser.loadFromUrl(footprintUrl)
         const fpComponents = createComponentsFromCircuitJson(

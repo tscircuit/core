@@ -290,3 +290,5 @@ export const Project = RootCircuit
  * incorporated into a larger RootCircuit
  */
 export const Circuit = RootCircuit
+
+export { resolveStaticFileImport } from "./utils/resolveStaticFileImport"
