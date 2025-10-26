@@ -1239,32 +1239,27 @@ export class NormalComponent<
    */
   _getPortLabelsFromFootprint(): Record<string, string> {
     const portLabels: Record<string, string> = {}
-    let { footprint } = this.props
+
+    // Find the Footprint component in children (it's been instantiated by now)
+    const footprint = this.children.find(
+      (c) => c.componentName === "Footprint",
+    ) as Footprint | undefined
 
     if (!footprint) return portLabels
 
-    // Handle footprint as a Footprint component
-    if (
-      !isValidElement(footprint) &&
-      footprint &&
-      footprint.componentName === "Footprint"
-    ) {
-      const fp = footprint as Footprint
-      let pinNumber = 1
+    let pinNumber = 1
+    for (const fpChild of footprint.children) {
+      if (!fpChild.props.portHints) continue
 
-      for (const fpChild of fp.children) {
-        if (!fpChild.props.portHints) continue
-
-        const portHints = fpChild.props.portHints as string[]
-        // Use the first portHint that's not a generic "pinX" format
-        for (const hint of portHints) {
-          if (!hint.match(/^pin\d+$/)) {
-            portLabels[String(pinNumber)] = hint
-            break
-          }
+      const portHints = fpChild.props.portHints as string[]
+      // Use the first portHint that's not a generic "pinX" format
+      for (const hint of portHints) {
+        if (!hint.match(/^pin\d+$/)) {
+          portLabels[String(pinNumber)] = hint
+          break
         }
-        pinNumber++
       }
+      pinNumber++
     }
 
     return portLabels
