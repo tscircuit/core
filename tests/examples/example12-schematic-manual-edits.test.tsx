@@ -37,11 +37,11 @@ test("example12-schematic-manual-edits", async () => {
   },
   "text_centers": [
     {
-      "x": 4.8,
+      "x": 4.6,
       "y": 4.37,
     },
     {
-      "x": 4.8,
+      "x": 4.6,
       "y": 5.63,
     },
   ],

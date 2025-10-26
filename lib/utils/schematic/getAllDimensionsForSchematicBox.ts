@@ -353,12 +353,27 @@ export const getAllDimensionsForSchematicBox = (
       sideLengths.bottom + DEFAULT_SCHEMATIC_BOX_PADDING_MM,
     )
 
-    const labelWidth = params.pinLabels
-      ? Math.max(
-          ...Object.values(params.pinLabels).map(
-            (label) => label.length * 0.1, // Estimated text width
-          ),
-        )
+    // When there are no top/bottom pins but there are left/right pins,
+    // use a minimum width based on pin count (not spacing-dependent)
+    if (sideLengths.top === 0 && sideLengths.bottom === 0) {
+      const maxVerticalPinCount = Math.max(sidePinCounts.leftSize, sidePinCounts.rightSize)
+      if (maxVerticalPinCount > 0) {
+        // Use a fixed minimum width per pin (0.2mm) to ensure reasonable proportions
+        const minWidthBasedOnPins = maxVerticalPinCount * 0.2
+        schWidth = Math.max(schWidth, minWidthBasedOnPins)
+      }
+    }
+
+    // Only consider labels on left/right sides for width calculation
+    const leftRightPins = orderedTruePorts.filter(
+      (p) => p.side === "left" || p.side === "right",
+    )
+    const leftRightLabels = leftRightPins
+      .map((p) => params.pinLabels?.[`pin${p.pinNumber}`] || params.pinLabels?.[p.pinNumber])
+      .filter((label) => label !== undefined)
+
+    const labelWidth = leftRightLabels.length > 0
+      ? Math.max(...leftRightLabels.map((label) => label.length * 0.1))
       : 0
 
     // When label is present, only then add some padding to the width
