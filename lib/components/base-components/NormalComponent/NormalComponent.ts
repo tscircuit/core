@@ -1238,18 +1238,20 @@ export class NormalComponent<
    */
   _getPortLabelsFromFootprint(): Record<string, string> {
     const portLabels: Record<string, string> = {}
-    const ports = this.children.filter((c) => c.componentName === "Port") as Port[]
-    
+    const ports = this.children.filter(
+      (c) => c.componentName === "Port",
+    ) as Port[]
+
     for (const port of ports) {
       const pinNumber = port.props.pinNumber
       const portName = port.props.name
-      
+
       if (pinNumber !== undefined && portName) {
         // Use the port name (which comes from portHints) as the label
         portLabels[String(pinNumber)] = portName
       }
     }
-    
+
     return portLabels
   }
 
