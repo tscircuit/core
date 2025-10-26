@@ -353,6 +353,22 @@ export const getAllDimensionsForSchematicBox = (
       sideLengths.bottom + DEFAULT_SCHEMATIC_BOX_PADDING_MM,
     )
 
+    // Check if there are actual pin labels on left/right sides
+    if (params.pinLabels) {
+      const leftRightPins = orderedTruePorts.filter(
+        (p) => p.side === "left" || p.side === "right",
+      )
+      const hasLeftRightLabels = leftRightPins.some(
+        (p) => params.pinLabels?.[`pin${p.pinNumber}`] || params.pinLabels?.[p.pinNumber]
+      )
+      
+      if (hasLeftRightLabels) {
+        // Apply minimum width when there are left/right pins with labels
+        const MIN_WIDTH_FOR_SIDE_PINS = 0.5
+        schWidth = Math.max(schWidth, MIN_WIDTH_FOR_SIDE_PINS)
+      }
+    }
+
     const labelWidth = params.pinLabels
       ? Math.max(
           ...Object.values(params.pinLabels).map(
