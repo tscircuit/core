@@ -1233,6 +1233,26 @@ export class NormalComponent<
     )
   }
 
+  /**
+   * Extract port labels from footprint portHints to be displayed in schematic
+   */
+  _getPortLabelsFromFootprint(): Record<string, string> {
+    const portLabels: Record<string, string> = {}
+    const ports = this.children.filter((c) => c.componentName === "Port") as Port[]
+    
+    for (const port of ports) {
+      const pinNumber = port.props.pinNumber
+      const portName = port.props.name
+      
+      if (pinNumber !== undefined && portName) {
+        // Use the port name (which comes from portHints) as the label
+        portLabels[String(pinNumber)] = portName
+      }
+    }
+    
+    return portLabels
+  }
+
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     // Only valid if we don't have a schematic symbol
     if (this.getSchematicSymbol()) return null
@@ -1244,19 +1264,26 @@ export class NormalComponent<
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 
+    // Merge portHints-based labels with explicit pinLabels
+    const portLabelsFromFootprint = this._getPortLabelsFromFootprint()
+    const mergedPinLabels = {
+      ...portLabelsFromFootprint,
+      ...props.pinLabels, // Explicit pinLabels override footprint labels
+    }
+
     const dimensions = getAllDimensionsForSchematicBox({
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
       numericSchPinStyle: getNumericSchPinStyle(
         props.schPinStyle,
-        props.pinLabels,
+        mergedPinLabels,
       ),
 
       pinCount,
 
       schPortArrangement: this._getSchematicPortArrangement()!,
-      pinLabels: props.pinLabels,
+      pinLabels: mergedPinLabels,
     })
 
     return dimensions
