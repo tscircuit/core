@@ -7,8 +7,27 @@ on:
     branches: [main]
 
 jobs:
+  validate-test-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Validate test matrix covers all directories
+        run: bun run scripts/validate-test-matrix.js
+
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: validate-test-matrix
+    strategy:
+      matrix:
+        test-dir: [breakout, components, drc, examples, features, fiber, footprint, groups, hooks, pcb-packing, projects, repro, repros, root-circuit, sel, selector-index, snippet-imports, subcircuits, utils]
 
     steps:
       - name: Checkout code
@@ -22,14 +41,44 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run tests
-        run: bun test --timeout 15000 
+      - name: Run tests for ${{ matrix.test-dir }}
+        run: |
+          mapfile -t test_files < <(find tests/${{ matrix.test-dir }} -type f \( -name "*.test.ts" -o -name "*.test.tsx" \) | sort)
+          if [ ${#test_files[@]} -eq 0 ]; then
+            echo "No test files found in tests/${{ matrix.test-dir }}."
+            exit 0
+          fi
+
+          for test_file in "${test_files[@]}"; do
+            echo "Running tests in $test_file"
+            attempt=1
+            while [ $attempt -le 4 ]; do
+              bun test "$test_file" --timeout 15000
+              code=$?
+
+              if [ $code -eq 0 ]; then
+                break
+              fi
+
+              if [ $code -ne 139 ] && [ $code -ne 132 ]; then
+                exit $code
+              fi
+
+              if [ $attempt -eq 4 ]; then
+                echo "Segmentation fault or illegal instruction detected for $test_file after $attempt attempts (exit=$code)."
+                exit $code
+              fi
+
+              attempt=$((attempt + 1))
+              echo "Segfault (139) or illegal instruction (132) detected for $test_file, retrying ($attempt/4)..."
+            done
+          done
       
       - name: Upload 3D Snapshot Artifacts on Failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: 3d-snapshots
+          name: 3d-snapshots-${{ matrix.test-dir }}
           path: |
             tests/**/__snapshots__/*.diff.png
             tests/**/__snapshots__/*.snap.png

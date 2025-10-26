@@ -26,7 +26,8 @@
     "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-simple-circuit.tsx",
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
     "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
-    "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\""
+    "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
+    "test:validate-matrix": "bun run scripts/validate-test-matrix.js"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
