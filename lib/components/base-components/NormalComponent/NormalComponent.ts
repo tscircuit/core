@@ -98,11 +98,12 @@ export type PortMap<T extends string> = {
  */
 
 export class NormalComponent<
-  ZodProps extends z.ZodType = any,
-  PortNames extends string = never,
->
+    ZodProps extends z.ZodType = any,
+    PortNames extends string = never,
+  >
   extends PrimitiveComponent<ZodProps>
-  implements INormalComponent {
+  implements INormalComponent
+{
   reactSubtrees: Array<ReactSubtree> = []
   _impliedFootprint?: string | undefined
 
@@ -467,8 +468,10 @@ export class NormalComponent<
           )
           if (!port) {
             throw new Error(
-              `There was an issue finding the port "${prop.toString()}" inside of a ${this.componentName
-              } component with name: "${this.props.name
+              `There was an issue finding the port "${prop.toString()}" inside of a ${
+                this.componentName
+              } component with name: "${
+                this.props.name
               }". This is a bug in @tscircuit/core`,
             )
           }
@@ -1241,7 +1244,11 @@ export class NormalComponent<
     if (!footprint) return portLabels
 
     // Handle footprint as a Footprint component
-    if (!isValidElement(footprint) && footprint && footprint.componentName === "Footprint") {
+    if (
+      !isValidElement(footprint) &&
+      footprint &&
+      footprint.componentName === "Footprint"
+    ) {
       const fp = footprint as Footprint
       let pinNumber = 1
 
@@ -1351,12 +1358,12 @@ export class NormalComponent<
 
     const zOffsetFromSurface =
       cadModel &&
-        typeof cadModel === "object" &&
-        "zOffsetFromSurface" in cadModel
+      typeof cadModel === "object" &&
+      "zOffsetFromSurface" in cadModel
         ? cadModel.zOffsetFromSurface !== undefined
           ? distance.parse(
-            (cadModel as { zOffsetFromSurface?: unknown }).zOffsetFromSurface,
-          )
+              (cadModel as { zOffsetFromSurface?: unknown }).zOffsetFromSurface,
+            )
           : 0
         : 0
 
@@ -1437,8 +1444,9 @@ export class NormalComponent<
   private _addCachebustToModelUrl(url?: string): string | undefined {
     if (!url || !url.includes("modelcdn.tscircuit.com")) return url
     const origin = this.root?.getClientOrigin() ?? ""
-    return `${url}${url.includes("?") ? "&" : "?"
-      }cachebust_origin=${encodeURIComponent(origin)}`
+    return `${url}${
+      url.includes("?") ? "&" : "?"
+    }cachebust_origin=${encodeURIComponent(origin)}`
   }
 
   private _getPartsEngineCacheKey(
@@ -1469,7 +1477,7 @@ export class NormalComponent<
       if (cached) {
         try {
           return JSON.parse(cached)
-        } catch { }
+        } catch {}
       }
     }
     const result = await Promise.resolve(
@@ -1485,7 +1493,7 @@ export class NormalComponent<
     if (cacheEngine) {
       try {
         await cacheEngine.setItem(cacheKey, JSON.stringify(supplierPartNumbers))
-      } catch { }
+      } catch {}
     }
     return supplierPartNumbers
   }
