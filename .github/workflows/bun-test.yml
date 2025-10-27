@@ -216,8 +216,10 @@ jobs:
             local pattern="$1"
             pattern=$(echo "$pattern" | sed 's/{\([^}]*\)}/(\1)/g' | sed 's/,/|/g')
             pattern=$(echo "$pattern" | sed 's/\./\\./g')
-            pattern=$(echo "$pattern" | sed 's/\*\*/.*/g')
+            # Replace ** first with placeholder to avoid conflict with single *
+            pattern=$(echo "$pattern" | sed 's/\*\*/<<GLOBSTAR>>/g')
             pattern=$(echo "$pattern" | sed 's/\*/[^\/]*/g')
+            pattern=$(echo "$pattern" | sed 's/<<GLOBSTAR>>/.*/g')
             pattern=$(echo "$pattern" | sed 's/?/./g')
             echo "$pattern"
           }
