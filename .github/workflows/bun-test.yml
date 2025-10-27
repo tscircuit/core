@@ -208,18 +208,15 @@ jobs:
       - name: Run tests for ${{ matrix.name }}
         shell: bash
         run: |
+          set -e
+          
           # Function to convert glob pattern to grep-compatible regex
           convert_glob_to_regex() {
             local pattern="$1"
-            # Handle brace expansion {ts,tsx} -> (ts|tsx)
             pattern=$(echo "$pattern" | sed 's/{\([^}]*\)}/(\1)/g' | sed 's/,/|/g')
-            # Escape dots
             pattern=$(echo "$pattern" | sed 's/\./\\./g')
-            # Convert ** to .*
             pattern=$(echo "$pattern" | sed 's/\*\*/.*/g')
-            # Convert * to [^/]*
             pattern=$(echo "$pattern" | sed 's/\*/[^\/]*/g')
-            # Convert ? to .
             pattern=$(echo "$pattern" | sed 's/?/./g')
             echo "$pattern"
           }
@@ -227,28 +224,24 @@ jobs:
           # Get all test files
           all_test_files=$(find tests -type f \( -name "*.test.ts" -o -name "*.test.tsx" \) | sort)
           
-          # Extract all patterns from previous matrix nodes (index < current)
+          # Extract patterns from previous matrix nodes
           excluded_patterns=$(yq eval '.jobs.test.strategy.matrix.include[] | select(.index < ${{ matrix.index }}) | .pattern' .github/workflows/bun-test.yml)
           
-          # Build list of files to exclude (matched by previous patterns)
+          # Build exclusion list
           excluded_files=""
           if [ -n "$excluded_patterns" ]; then
-            while IFS= read -r prev_pattern; do
+            echo "$excluded_patterns" | while IFS= read -r prev_pattern; do
               if [ -z "$prev_pattern" ]; then continue; fi
-              
-              # Handle multiple space-separated patterns
               for single_pattern in $prev_pattern; do
                 regex=$(convert_glob_to_regex "$single_pattern")
                 matched=$(echo "$all_test_files" | grep -E "^$regex$" || true)
                 if [ -n "$matched" ]; then
-                  excluded_files="$excluded_files$matched\n"
+                  echo "$matched"
                 fi
               done
-            done <<< "$excluded_patterns"
+            done > /tmp/excluded_files.txt
+            excluded_files=$(sort -u /tmp/excluded_files.txt | grep -v '^$' || true)
           fi
-          
-          # Remove duplicates from exclusion list
-          excluded_files=$(echo -e "$excluded_files" | sort -u | grep -v '^$')
           
           # Find files matching current pattern
           current_pattern="${{ matrix.pattern }}"
@@ -257,31 +250,31 @@ jobs:
             regex=$(convert_glob_to_regex "$single_pattern")
             matched=$(echo "$all_test_files" | grep -E "^$regex$" || true)
             if [ -n "$matched" ]; then
-              current_files="$current_files$matched\n"
+              echo "$matched"
             fi
-          done
+          done > /tmp/current_files.txt
+          current_files=$(sort -u /tmp/current_files.txt | grep -v '^$' || true)
           
-          current_files=$(echo -e "$current_files" | sort -u | grep -v '^$')
-          
-          # Compute final test files (current - excluded)
+          # Compute final test files
           if [ -n "$excluded_files" ]; then
-            test_files=$(comm -23 <(echo "$current_files") <(echo "$excluded_files"))
+            echo "$excluded_files" > /tmp/excluded_files_final.txt
+            echo "$current_files" > /tmp/current_files_final.txt
+            test_files=$(comm -23 /tmp/current_files_final.txt /tmp/excluded_files_final.txt)
           else
             test_files="$current_files"
           fi
           
-          # Convert to array
-          mapfile -t test_file_array <<< "$test_files"
-          
-          if [ ${#test_file_array[@]} -eq 0 ] || [ -z "${test_file_array[0]}" ]; then
+          if [ -z "$test_files" ]; then
             echo "No test files to run for pattern: ${{ matrix.pattern }}"
             exit 0
           fi
           
-          echo "Running ${#test_file_array[@]} test files for pattern: ${{ matrix.pattern }}"
-          echo "Files: ${test_file_array[@]}"
+          # Count files
+          file_count=$(echo "$test_files" | wc -l)
+          echo "Running $file_count test files for pattern: ${{ matrix.pattern }}"
           
-          for test_file in "${test_file_array[@]}"; do
+          # Run tests
+          echo "$test_files" | while IFS= read -r test_file; do
             if [ -z "$test_file" ]; then continue; fi
             
             echo "Running tests in $test_file"
