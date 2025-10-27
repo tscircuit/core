@@ -1268,18 +1268,26 @@ export class NormalComponent<
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 
-    const pinLabels = this._getPinLabelsFromPorts()
+    const pinLabelsFromPorts = this._getPinLabelsFromPorts()
+    // Merge with props.pinLabels for label-to-pin-number mapping
+    const allPinLabels = {
+      ...pinLabelsFromPorts,
+      ...props.pinLabels,
+    }
 
     const dimensions = getAllDimensionsForSchematicBox({
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
-      numericSchPinStyle: getNumericSchPinStyle(props.schPinStyle, pinLabels),
+      numericSchPinStyle: getNumericSchPinStyle(
+        props.schPinStyle,
+        allPinLabels,
+      ),
 
       pinCount,
 
       schPortArrangement: this._getSchematicPortArrangement()!,
-      pinLabels,
+      pinLabels: allPinLabels,
     })
 
     return dimensions
