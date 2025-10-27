@@ -1274,10 +1274,7 @@ export class NormalComponent<
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
-      numericSchPinStyle: getNumericSchPinStyle(
-        props.schPinStyle,
-        pinLabels,
-      ),
+      numericSchPinStyle: getNumericSchPinStyle(props.schPinStyle, pinLabels),
 
       pinCount,
 
