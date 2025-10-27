@@ -23,6 +23,7 @@ export const portProps = z.object({
   schX: z.number().optional(),
   schY: z.number().optional(),
   direction: z.enum(["up", "down", "left", "right"]).optional(),
+  connectsTo: z.union([z.string(), z.array(z.string())]).optional(),
 })
 
 export type PortProps = z.infer<typeof portProps>
@@ -59,6 +60,36 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       this.originDescription = opts.originDescription
     }
     this.matchedComponents = []
+  }
+
+  isGroupPort(): boolean {
+    return this.parent?.componentName === "Group"
+  }
+
+  isComponentPort(): boolean {
+    return !this.isGroupPort()
+  }
+
+  _getConnectedPortsFromConnectsTo(): Port[] {
+    const { _parsedProps: props } = this
+    const connectsTo = props.connectsTo
+    if (!connectsTo) return []
+
+    const connectedPorts: Port[] = []
+    const connectsToArray = Array.isArray(connectsTo)
+      ? connectsTo
+      : [connectsTo]
+
+    for (const connection of connectsToArray) {
+      const port = this.getSubcircuit().selectOne(connection, {
+        type: "port",
+      }) as Port | null
+      if (port) {
+        connectedPorts.push(port)
+      }
+    }
+
+    return connectedPorts
   }
 
   _isBoardPinoutFromAttributes(): boolean | undefined {
@@ -349,6 +380,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       ? this.parent
       : parentNormalComponent
 
+    // Group ports don't need a source_component_id
+    if (this.isGroupPort()) {
+      db.source_port.update(this.source_port_id!, {
+        source_component_id: null as any,
+        subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
+      })
+      return
+    }
+
     if (!parentWithSourceId?.source_component_id) {
       throw new Error(
         `${this.getString()} has no parent source component (parent: ${this.parent?.getString()})`,
@@ -367,6 +407,38 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { matchedComponents } = this
+
+    // Handle group ports separately
+    if (this.isGroupPort()) {
+      const connectedPorts = this._getConnectedPortsFromConnectsTo()
+      if (connectedPorts.length === 0) {
+        // Group port needs connectsTo to resolve position
+        return
+      }
+
+      // Get position from the first connected port
+      const connectedPort = connectedPorts[0]
+      if (!connectedPort.pcb_port_id) {
+        // Connected port hasn't been rendered yet, skip for now
+        return
+      }
+
+      const connectedPcbPort = db.pcb_port.get(connectedPort.pcb_port_id)!
+      const matchCenter = { x: connectedPcbPort.x, y: connectedPcbPort.y }
+
+      const subcircuit = this.getSubcircuit()
+      const pcb_port = db.pcb_port.insert({
+        pcb_component_id: undefined as any,
+        layers: connectedPort.getAvailablePcbLayers(),
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        ...matchCenter,
+        source_port_id: this.source_port_id!,
+        is_board_pinout: false,
+      })
+      this.pcb_port_id = pcb_port.pcb_port_id
+      return
+    }
 
     const parentNormalComponent = this.getParentNormalComponent()
     const parentWithPcbComponentId = this.parent?.pcb_component_id
@@ -429,6 +501,31 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // If pcb_port already exists, nothing to do
     if (this.pcb_port_id) return
+
+    // Handle group ports separately
+    if (this.isGroupPort()) {
+      const connectedPorts = this._getConnectedPortsFromConnectsTo()
+      if (connectedPorts.length === 0) return
+
+      const connectedPort = connectedPorts[0]
+      if (!connectedPort.pcb_port_id) return
+
+      const connectedPcbPort = db.pcb_port.get(connectedPort.pcb_port_id)!
+      const matchCenter = { x: connectedPcbPort.x, y: connectedPcbPort.y }
+
+      const subcircuit = this.getSubcircuit()
+      const pcb_port = db.pcb_port.insert({
+        pcb_component_id: undefined as any,
+        layers: connectedPort.getAvailablePcbLayers(),
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        ...matchCenter,
+        source_port_id: this.source_port_id!,
+        is_board_pinout: false,
+      })
+      this.pcb_port_id = pcb_port.pcb_port_id
+      return
+    }
 
     // Try again if we now have matched PCB primitives
     const pcbMatches = this.matchedComponents.filter((c) => c.isPcbPrimitive)
