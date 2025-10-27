@@ -76,7 +76,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (!connectsTo) return []
 
     const connectedPorts: Port[] = []
-    const connectsToArray = Array.isArray(connectsTo) ? connectsTo : [connectsTo]
+    const connectsToArray = Array.isArray(connectsTo)
+      ? connectsTo
+      : [connectsTo]
 
     for (const connection of connectsToArray) {
       const port = this.getSubcircuit().selectOne(connection, {
