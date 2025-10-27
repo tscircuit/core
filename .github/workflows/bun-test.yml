@@ -27,7 +27,166 @@ jobs:
     needs: validate-test-matrix
     strategy:
       matrix:
-        test-dir: [breakout, components, drc, examples, features, fiber, footprint, groups, hooks, pcb-packing, projects, repro, repros, root-circuit, sel, selector-index, snippet-imports, subcircuits, utils]
+        # Each pattern is evaluated in order by index. Files matched by earlier patterns
+        # are excluded from later patterns, enabling fine-grained test distribution.
+        # The catchall pattern at the end captures any remaining files.
+        include:
+          - pattern: "tests/repros/repro[1-9]-*.test.tsx tests/repros/repro10-*.test.tsx"
+            index: 0
+            name: "repros-1-10"
+          - pattern: "tests/repros/repro1[1-9]-*.test.tsx tests/repros/repro20-*.test.tsx"
+            index: 1
+            name: "repros-11-20"
+          - pattern: "tests/repros/repro2[1-9]-*.test.tsx tests/repros/repro30-*.test.tsx"
+            index: 2
+            name: "repros-21-30"
+          - pattern: "tests/repros/repro3[1-9]-*.test.tsx tests/repros/repro40-*.test.tsx"
+            index: 3
+            name: "repros-31-40"
+          - pattern: "tests/repros/repro4[1-9]-*.test.tsx tests/repros/repro5[0-9]-*.test.tsx"
+            index: 4
+            name: "repros-41-59"
+          - pattern: "tests/repros/repro6[0-9]-*.test.tsx tests/repros/repro[7-9][0-9]-*.test.tsx"
+            index: 5
+            name: "repros-60-99"
+          - pattern: "tests/repros/repro_*.test.tsx"
+            index: 6
+            name: "repros-underscore"
+          - pattern: "tests/repros/**/*.test.tsx"
+            index: 7
+            name: "repros-subdirs"
+          - pattern: "tests/components/normal-components/chip-[a-i]*.test.tsx"
+            index: 8
+            name: "normal-components-chips-a-i"
+          - pattern: "tests/components/normal-components/chip-[j-z]*.test.tsx"
+            index: 9
+            name: "normal-components-chips-j-z"
+          - pattern: "tests/components/normal-components/[a-b]*.test.tsx tests/components/normal-components/c[a-g]*.test.tsx"
+            index: 10
+            name: "normal-components-a-to-cg"
+          - pattern: "tests/components/normal-components/[d-h]*.test.tsx tests/components/normal-components/c[h-z]*.test.tsx"
+            index: 11
+            name: "normal-components-ch-to-h"
+          - pattern: "tests/components/normal-components/[i-m]*.test.tsx"
+            index: 12
+            name: "normal-components-i-to-m"
+          - pattern: "tests/components/normal-components/[n-p]*.test.tsx"
+            index: 13
+            name: "normal-components-n-to-p"
+          - pattern: "tests/components/normal-components/[q-r]*.test.tsx"
+            index: 14
+            name: "normal-components-q-to-r"
+          - pattern: "tests/components/normal-components/[s-z]*.test.tsx"
+            index: 15
+            name: "normal-components-s-to-z"
+          - pattern: "tests/components/primitive-components/[a-m]*.test.tsx"
+            index: 16
+            name: "primitive-components-a-to-m"
+          - pattern: "tests/components/primitive-components/[n-p]*.test.tsx"
+            index: 17
+            name: "primitive-components-n-to-p"
+          - pattern: "tests/components/primitive-components/[q-s]*.test.tsx"
+            index: 18
+            name: "primitive-components-q-to-s"
+          - pattern: "tests/components/primitive-components/[t-z]*.test.tsx"
+            index: 19
+            name: "primitive-components-t-to-z"
+          - pattern: "tests/examples/example[1-2]*.test.tsx"
+            index: 20
+            name: "examples-1-29"
+          - pattern: "tests/examples/example3*.test.tsx"
+            index: 21
+            name: "examples-30-39"
+          - pattern: "tests/features/capacity-mesh-autorouting*.test.tsx tests/features/custom-autorouting-algorithmfn.test.tsx tests/features/drc-error-detection.test.tsx"
+            index: 22
+            name: "features-autorouting"
+          - pattern: "tests/features/component-constraints/*.test.tsx"
+            index: 23
+            name: "features-constraints"
+          - pattern: "tests/features/flex/*.test.tsx"
+            index: 24
+            name: "features-flex"
+          - pattern: "tests/features/four-layer-routing/*.test.tsx"
+            index: 25
+            name: "features-four-layer"
+          - pattern: "tests/features/grid/*.test.tsx"
+            index: 26
+            name: "features-grid"
+          - pattern: "tests/features/no-top-level-board*.test.tsx"
+            index: 27
+            name: "features-no-board"
+          - pattern: "tests/features/pcb-pack-layout/*.test.tsx"
+            index: 28
+            name: "features-pcb-pack"
+          - pattern: "tests/features/remote-autorouting-*.test.tsx"
+            index: 29
+            name: "features-remote-autorouting"
+          - pattern: "tests/features/schematic-match-adapt/*.test.tsx"
+            index: 30
+            name: "features-match-adapt"
+          - pattern: "tests/features/*.test.tsx"
+            index: 31
+            name: "features-remaining"
+          - pattern: "tests/utils/**/*.test.tsx"
+            index: 32
+            name: "utils"
+          - pattern: "tests/*.test.{ts,tsx}"
+            index: 33
+            name: "root-tests"
+          - pattern: "tests/components/base-components/*.test.tsx"
+            index: 34
+            name: "base-components"
+          - pattern: "tests/components/trace/*.test.tsx"
+            index: 35
+            name: "trace-tests"
+          - pattern: "tests/components/select-all-normal-components.test.tsx"
+            index: 36
+            name: "select-all"
+          - pattern: "tests/breakout/*.test.tsx"
+            index: 37
+            name: "breakout"
+          - pattern: "tests/drc/*.test.tsx"
+            index: 38
+            name: "drc"
+          - pattern: "tests/fiber/*.test.tsx"
+            index: 39
+            name: "fiber"
+          - pattern: "tests/footprint/*.test.tsx"
+            index: 40
+            name: "footprint"
+          - pattern: "tests/groups/*.test.tsx"
+            index: 41
+            name: "groups"
+          - pattern: "tests/hooks/*.test.tsx"
+            index: 42
+            name: "hooks"
+          - pattern: "tests/pcb-packing/**/*.test.tsx"
+            index: 43
+            name: "pcb-packing"
+          - pattern: "tests/projects/**/*.test.tsx"
+            index: 44
+            name: "projects"
+          - pattern: "tests/repro/*.test.tsx"
+            index: 45
+            name: "repro-singular"
+          - pattern: "tests/root-circuit/*.test.tsx"
+            index: 46
+            name: "root-circuit"
+          - pattern: "tests/sel/*.test.{ts,tsx}"
+            index: 47
+            name: "sel"
+          - pattern: "tests/selector-index/*.test.tsx"
+            index: 48
+            name: "selector-index"
+          - pattern: "tests/snippet-imports/*.test.tsx"
+            index: 49
+            name: "snippet-imports"
+          - pattern: "tests/subcircuits/*.test.tsx"
+            index: 50
+            name: "subcircuits"
+          - pattern: "tests/**/*.test.{ts,tsx}"
+            index: 51
+            name: "catchall"
 
     steps:
       - name: Checkout code
@@ -41,15 +200,90 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run tests for ${{ matrix.test-dir }}
+      - name: Install yq for YAML parsing
         run: |
-          mapfile -t test_files < <(find tests/${{ matrix.test-dir }} -type f \( -name "*.test.ts" -o -name "*.test.tsx" \) | sort)
-          if [ ${#test_files[@]} -eq 0 ]; then
-            echo "No test files found in tests/${{ matrix.test-dir }}."
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+
+      - name: Run tests for ${{ matrix.name }}
+        shell: bash
+        run: |
+          # Function to convert glob pattern to grep-compatible regex
+          convert_glob_to_regex() {
+            local pattern="$1"
+            # Handle brace expansion {ts,tsx} -> (ts|tsx)
+            pattern=$(echo "$pattern" | sed 's/{\([^}]*\)}/(\1)/g' | sed 's/,/|/g')
+            # Escape dots
+            pattern=$(echo "$pattern" | sed 's/\./\\./g')
+            # Convert ** to .*
+            pattern=$(echo "$pattern" | sed 's/\*\*/.*/g')
+            # Convert * to [^/]*
+            pattern=$(echo "$pattern" | sed 's/\*/[^\/]*/g')
+            # Convert ? to .
+            pattern=$(echo "$pattern" | sed 's/?/./g')
+            echo "$pattern"
+          }
+          
+          # Get all test files
+          all_test_files=$(find tests -type f \( -name "*.test.ts" -o -name "*.test.tsx" \) | sort)
+          
+          # Extract all patterns from previous matrix nodes (index < current)
+          excluded_patterns=$(yq eval '.jobs.test.strategy.matrix.include[] | select(.index < ${{ matrix.index }}) | .pattern' .github/workflows/bun-test.yml)
+          
+          # Build list of files to exclude (matched by previous patterns)
+          excluded_files=""
+          if [ -n "$excluded_patterns" ]; then
+            while IFS= read -r prev_pattern; do
+              if [ -z "$prev_pattern" ]; then continue; fi
+              
+              # Handle multiple space-separated patterns
+              for single_pattern in $prev_pattern; do
+                regex=$(convert_glob_to_regex "$single_pattern")
+                matched=$(echo "$all_test_files" | grep -E "^$regex$" || true)
+                if [ -n "$matched" ]; then
+                  excluded_files="$excluded_files$matched\n"
+                fi
+              done
+            done <<< "$excluded_patterns"
+          fi
+          
+          # Remove duplicates from exclusion list
+          excluded_files=$(echo -e "$excluded_files" | sort -u | grep -v '^$')
+          
+          # Find files matching current pattern
+          current_pattern="${{ matrix.pattern }}"
+          current_files=""
+          for single_pattern in $current_pattern; do
+            regex=$(convert_glob_to_regex "$single_pattern")
+            matched=$(echo "$all_test_files" | grep -E "^$regex$" || true)
+            if [ -n "$matched" ]; then
+              current_files="$current_files$matched\n"
+            fi
+          done
+          
+          current_files=$(echo -e "$current_files" | sort -u | grep -v '^$')
+          
+          # Compute final test files (current - excluded)
+          if [ -n "$excluded_files" ]; then
+            test_files=$(comm -23 <(echo "$current_files") <(echo "$excluded_files"))
+          else
+            test_files="$current_files"
+          fi
+          
+          # Convert to array
+          mapfile -t test_file_array <<< "$test_files"
+          
+          if [ ${#test_file_array[@]} -eq 0 ] || [ -z "${test_file_array[0]}" ]; then
+            echo "No test files to run for pattern: ${{ matrix.pattern }}"
             exit 0
           fi
-
-          for test_file in "${test_files[@]}"; do
+          
+          echo "Running ${#test_file_array[@]} test files for pattern: ${{ matrix.pattern }}"
+          echo "Files: ${test_file_array[@]}"
+          
+          for test_file in "${test_file_array[@]}"; do
+            if [ -z "$test_file" ]; then continue; fi
+            
             echo "Running tests in $test_file"
             attempt=1
             while [ $attempt -le 4 ]; do
@@ -78,7 +312,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: 3d-snapshots-${{ matrix.test-dir }}
+          name: 3d-snapshots-${{ matrix.name }}
           path: |
             tests/**/__snapshots__/*.diff.png
             tests/**/__snapshots__/*.snap.png
