@@ -1234,35 +1234,27 @@ export class NormalComponent<
   }
 
   /**
-   * Extract port labels from footprint portHints to be displayed in schematic
-   * Only includes portHints that are meaningful labels (not generic "pin1", "pin2", etc.)
+   * Extract pin labels from ports using existing Port logic
    */
-  _getPortLabelsFromFootprint(): Record<string, string> {
-    const portLabels: Record<string, string> = {}
+  _getPinLabelsFromPorts(): Record<string, string> {
+    const ports = this.selectAll("port")
+    const pinLabels: Record<string, string> = {}
 
-    // Find the Footprint component in children (it's been instantiated by now)
-    const footprint = this.children.find(
-      (c) => c.componentName === "Footprint",
-    ) as Footprint | undefined
-
-    if (!footprint) return portLabels
-
-    let pinNumber = 1
-    for (const fpChild of footprint.children) {
-      if (!fpChild.props.portHints) continue
-
-      const portHints = fpChild.props.portHints as string[]
-      // Use the first portHint that's not a generic "pinX" format
-      for (const hint of portHints) {
-        if (!hint.match(/^pin\d+$/)) {
-          portLabels[String(pinNumber)] = hint
-          break
+    for (const port of ports) {
+      const pinNumber = port.props.pinNumber
+      if (pinNumber !== undefined) {
+        const names = port.getNameAndAliases()
+        // Filter out generic patterns like "pin1", "1", etc. (same logic as Port.doInitialSchematicPortRender)
+        const meaningfulNames = names.filter(
+          (name) => !name.match(/^(pin)?\d+$/),
+        )
+        if (meaningfulNames.length > 0) {
+          pinLabels[`pin${pinNumber}`] = meaningfulNames[0]
         }
       }
-      pinNumber++
     }
 
-    return portLabels
+    return pinLabels
   }
 
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
@@ -1276,11 +1268,11 @@ export class NormalComponent<
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 
-    // Merge portHints-based labels with explicit pinLabels
-    const portLabelsFromFootprint = this._getPortLabelsFromFootprint()
+    // Merge port-based labels with explicit pinLabels
+    const portLabelsFromPorts = this._getPinLabelsFromPorts()
     const mergedPinLabels = {
-      ...portLabelsFromFootprint,
-      ...props.pinLabels, // Explicit pinLabels override footprint labels
+      ...portLabelsFromPorts,
+      ...props.pinLabels, // Explicit pinLabels override port labels
     }
 
     const dimensions = getAllDimensionsForSchematicBox({
