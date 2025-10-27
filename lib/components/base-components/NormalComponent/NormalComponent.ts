@@ -1243,13 +1243,9 @@ export class NormalComponent<
     for (const port of ports) {
       const pinNumber = port.props.pinNumber
       if (pinNumber !== undefined) {
-        const names = port.getNameAndAliases()
-        // Filter out generic patterns like "pin1", "1", etc. (same logic as Port.doInitialSchematicPortRender)
-        const meaningfulNames = names.filter(
-          (name) => !name.match(/^(pin)?\d+$/),
-        )
-        if (meaningfulNames.length > 0) {
-          pinLabels[`pin${pinNumber}`] = meaningfulNames[0]
+        const bestLabel = port._getBestDisplayPinLabel()
+        if (bestLabel) {
+          pinLabels[`pin${pinNumber}`] = bestLabel
         }
       }
     }
