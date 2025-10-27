@@ -300,7 +300,7 @@ jobs:
           echo "Running $file_count test files for pattern: ${{ matrix.pattern }}"
           
           # Run tests
-          echo "$test_files" | while IFS= read -r test_file; do
+          while IFS= read -r test_file; do
             if [ -z "$test_file" ]; then continue; fi
             
             echo "Running tests in $test_file"
@@ -325,7 +325,7 @@ jobs:
               attempt=$((attempt + 1))
               echo "Segfault (139) or illegal instruction (132) detected for $test_file, retrying ($attempt/4)..."
             done
-          done
+          done <<< "$test_files"
       
       - name: Upload 3D Snapshot Artifacts on Failure
         if: failure()
