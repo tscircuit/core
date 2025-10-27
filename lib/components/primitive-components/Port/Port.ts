@@ -468,6 +468,38 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     this.pcb_port_id = pcb_port.pcb_port_id
   }
 
+  /**
+   * Get the best display label for this port based on port_hints
+   * Filters out generic patterns and applies showPinAliases logic
+   */
+  _getBestDisplayPinLabel(): string | undefined {
+    const { db } = this.root!
+    const sourcePort = db.source_port.get(this.source_port_id!)
+
+    // Filter out generic patterns like "pin1", "1", etc.
+    const labelHints: string[] = []
+    for (const portHint of sourcePort?.port_hints ?? []) {
+      if (portHint.match(/^(pin)?\d+$/)) continue
+      if (
+        portHint.match(/^(left|right)/) &&
+        !sourcePort?.name.match(/^(left|right)/)
+      )
+        continue
+      labelHints.push(portHint)
+    }
+
+    const parentNormalComponent = this.getParentNormalComponent()
+    const showPinAliases = parentNormalComponent?.props?.showPinAliases
+
+    if (showPinAliases && labelHints.length > 0) {
+      return labelHints.join("/")
+    } else if (labelHints.length > 0) {
+      return labelHints[0]
+    }
+
+    return undefined
+  }
+
   doInitialSchematicPortRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -514,28 +546,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       }[localPortInfo.side] as "up" | "down" | "left" | "right"
     }
 
-    const sourcePort = db.source_port.get(this.source_port_id!)
-
-    const labelHints: string[] = []
-    for (const portHint of sourcePort?.port_hints ?? []) {
-      if (portHint.match(/^(pin)?\d+$/)) continue
-      if (
-        portHint.match(/^(left|right)/) &&
-        !sourcePort?.name.match(/^(left|right)/)
-      )
-        continue
-      labelHints.push(portHint)
-    }
-
-    let bestDisplayPinLabel: string | undefined = undefined
+    const bestDisplayPinLabel = this._getBestDisplayPinLabel()
     const parentNormalComponent = this.getParentNormalComponent()
-    const showPinAliases = parentNormalComponent?.props?.showPinAliases
-    if (showPinAliases && labelHints.length > 0) {
-      bestDisplayPinLabel = labelHints.join("/")
-    } else if (labelHints.length > 0) {
-      // show the first label hint
-      bestDisplayPinLabel = labelHints[0]
-    }
 
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",

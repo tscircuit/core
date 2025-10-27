@@ -1,6 +1,8 @@
 import { getSizeOfSidesFromPortArrangement } from "./getSizeOfSidesFromPortArrangement"
 import { parsePinNumberFromLabelsOrThrow } from "./parsePinNumberFromLabelsOrThrow"
 
+const DEFAULT_SCHEMATIC_BOX_PADDING_MM = 0.4
+
 export type VerticalPortSideConfiguration = {
   direction?: "top-to-bottom" | "bottom-to-top"
   pins: number[]
@@ -344,12 +346,30 @@ export const getAllDimensionsForSchematicBox = (
   }
 
   // Use lengths to determine schWidth and schHeight
-  let schWidth = params.schWidth
-  if (schWidth === undefined) {
-    schWidth = Math.max(
-      sideLengths.top + params.schPinSpacing * 2,
-      sideLengths.bottom + params.schPinSpacing * 2,
+  let resolvedSchWidth = params.schWidth
+  if (resolvedSchWidth === undefined) {
+    resolvedSchWidth = Math.max(
+      sideLengths.top + DEFAULT_SCHEMATIC_BOX_PADDING_MM,
+      sideLengths.bottom + DEFAULT_SCHEMATIC_BOX_PADDING_MM,
     )
+
+    // Check if there are actual pin labels on left/right sides
+    if (params.pinLabels) {
+      const leftRightPins = orderedTruePorts.filter(
+        (p) => p.side === "left" || p.side === "right",
+      )
+      const hasLeftRightLabels = leftRightPins.some(
+        (p) =>
+          params.pinLabels?.[`pin${p.pinNumber}`] ||
+          params.pinLabels?.[p.pinNumber],
+      )
+
+      if (hasLeftRightLabels) {
+        // Apply minimum width when there are left/right pins with labels
+        const MIN_WIDTH_FOR_SIDE_PINS = 0.5
+        resolvedSchWidth = Math.max(resolvedSchWidth, MIN_WIDTH_FOR_SIDE_PINS)
+      }
+    }
 
     const labelWidth = params.pinLabels
       ? Math.max(
@@ -361,21 +381,21 @@ export const getAllDimensionsForSchematicBox = (
 
     // When label is present, only then add some padding to the width
     const LABEL_PADDING = labelWidth > 0 ? 1.1 : 0
-    schWidth = Math.max(schWidth, labelWidth + LABEL_PADDING)
+    resolvedSchWidth = Math.max(resolvedSchWidth, labelWidth + LABEL_PADDING)
   }
 
   let schHeight = params.schHeight
   if (!schHeight) {
     schHeight = Math.max(
-      sideLengths.left + params.schPinSpacing * 2,
-      sideLengths.right + params.schPinSpacing * 2,
+      sideLengths.left + DEFAULT_SCHEMATIC_BOX_PADDING_MM,
+      sideLengths.right + DEFAULT_SCHEMATIC_BOX_PADDING_MM,
     )
   }
 
   const trueEdgePositions = {
     // Top left corner
     left: {
-      x: -schWidth / 2 - portDistanceFromEdge,
+      x: -resolvedSchWidth / 2 - portDistanceFromEdge,
       y: sideLengths.left / 2,
     },
     // bottom left corner
@@ -385,7 +405,7 @@ export const getAllDimensionsForSchematicBox = (
     },
     // bottom right corner
     right: {
-      x: schWidth / 2 + portDistanceFromEdge,
+      x: resolvedSchWidth / 2 + portDistanceFromEdge,
       y: -sideLengths.right / 2,
     },
     // top right corner
@@ -426,12 +446,12 @@ export const getAllDimensionsForSchematicBox = (
       return port
     },
     getSize(): { width: number; height: number } {
-      return { width: schWidth, height: schHeight }
+      return { width: resolvedSchWidth, height: schHeight }
     },
     getSizeIncludingPins(): { width: number; height: number } {
       return {
         width:
-          schWidth +
+          resolvedSchWidth +
           (sidePinCounts.leftSize || sidePinCounts.rightSize ? 0.4 : 0),
         height:
           schHeight +

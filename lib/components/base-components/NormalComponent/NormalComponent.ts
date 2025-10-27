@@ -1237,6 +1237,26 @@ export class NormalComponent<
     )
   }
 
+  /**
+   * Extract pin labels from ports using existing Port logic
+   */
+  _getPinLabelsFromPorts(): Record<string, string> {
+    const ports = this.selectAll("port") as Port[]
+    const pinLabels: Record<string, string> = {}
+
+    for (const port of ports) {
+      const pinNumber = port.props.pinNumber
+      if (pinNumber !== undefined) {
+        const bestLabel = port._getBestDisplayPinLabel()
+        if (bestLabel) {
+          pinLabels[`pin${pinNumber}`] = bestLabel
+        }
+      }
+    }
+
+    return pinLabels
+  }
+
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     // Only valid if we don't have a schematic symbol
     if (this.getSchematicSymbol()) return null
@@ -1248,19 +1268,26 @@ export class NormalComponent<
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 
+    const pinLabelsFromPorts = this._getPinLabelsFromPorts()
+    // Merge with props.pinLabels for label-to-pin-number mapping
+    const allPinLabels = {
+      ...pinLabelsFromPorts,
+      ...props.pinLabels,
+    }
+
     const dimensions = getAllDimensionsForSchematicBox({
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
       numericSchPinStyle: getNumericSchPinStyle(
         props.schPinStyle,
-        props.pinLabels,
+        allPinLabels,
       ),
 
       pinCount,
 
       schPortArrangement: this._getSchematicPortArrangement()!,
-      pinLabels: props.pinLabels,
+      pinLabels: allPinLabels,
     })
 
     return dimensions
