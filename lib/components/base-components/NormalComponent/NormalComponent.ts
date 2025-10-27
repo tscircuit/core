@@ -1237,7 +1237,7 @@ export class NormalComponent<
    * Extract pin labels from ports using existing Port logic
    */
   _getPinLabelsFromPorts(): Record<string, string> {
-    const ports = this.selectAll("port")
+    const ports = this.selectAll("port") as Port[]
     const pinLabels: Record<string, string> = {}
 
     for (const port of ports) {
