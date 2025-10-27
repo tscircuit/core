@@ -27,9 +27,6 @@ jobs:
     needs: validate-test-matrix
     strategy:
       matrix:
-        # Each pattern is evaluated in order by index. Files matched by earlier patterns
-        # are excluded from later patterns, enabling fine-grained test distribution.
-        # The catchall pattern at the end captures any remaining files.
         include:
           - pattern: "tests/repros/repro[1-9]-*.test.tsx tests/repros/repro10-*.test.tsx"
             index: 0
