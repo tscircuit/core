@@ -1,5 +1,4 @@
 # Created using @tscircuit/plop (npm install -g @tscircuit/plop)
-# Updated with glob pattern-based test distribution
 name: Bun Test
 
 on:
