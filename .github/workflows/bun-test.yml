@@ -98,95 +98,119 @@ jobs:
           - pattern: "tests/examples/example3*.test.tsx"
             index: 21
             name: "examples-30-39"
-          - pattern: "tests/features/capacity-mesh-autorouting*.test.tsx tests/features/custom-autorouting-algorithmfn.test.tsx tests/features/drc-error-detection.test.tsx"
+          - pattern: "tests/examples/example[4-9]*.test.tsx"
             index: 22
+            name: "examples-40-99"
+          - pattern: "tests/features/capacity-mesh-autorouting*.test.tsx tests/features/custom-autorouting-algorithmfn.test.tsx tests/features/drc-error-detection.test.tsx"
+            index: 23
             name: "features-autorouting"
           - pattern: "tests/features/component-constraints/*.test.tsx"
-            index: 23
+            index: 24
             name: "features-constraints"
           - pattern: "tests/features/flex/*.test.tsx"
-            index: 24
+            index: 25
             name: "features-flex"
           - pattern: "tests/features/four-layer-routing/*.test.tsx"
-            index: 25
+            index: 26
             name: "features-four-layer"
           - pattern: "tests/features/grid/*.test.tsx"
-            index: 26
+            index: 27
             name: "features-grid"
           - pattern: "tests/features/no-top-level-board*.test.tsx"
-            index: 27
+            index: 28
             name: "features-no-board"
           - pattern: "tests/features/pcb-pack-layout/*.test.tsx"
-            index: 28
+            index: 29
             name: "features-pcb-pack"
           - pattern: "tests/features/remote-autorouting-*.test.tsx"
-            index: 29
+            index: 30
             name: "features-remote-autorouting"
           - pattern: "tests/features/schematic-match-adapt/*.test.tsx"
-            index: 30
-            name: "features-match-adapt"
-          - pattern: "tests/features/*.test.tsx"
             index: 31
-            name: "features-remaining"
-          - pattern: "tests/utils/**/*.test.tsx"
+            name: "features-match-adapt"
+          - pattern: "tests/features/spice-analysis/*.test.tsx"
             index: 32
-            name: "utils"
-          - pattern: "tests/*.test.{ts,tsx}"
+            name: "features-spice-analysis"
+          - pattern: "tests/features/*.test.tsx"
             index: 33
+            name: "features-remaining"
+          - pattern: "tests/utils/autorouting/*.test.ts tests/utils/autorouting/**/*.test.ts"
+            index: 34
+            name: "utils-autorouting"
+          - pattern: "tests/utils/schematic/*.test.ts"
+            index: 35
+            name: "utils-schematic"
+          - pattern: "tests/utils/get-relative-direction.test.ts"
+            index: 36
+            name: "utils-get-relative-direction"
+          - pattern: "tests/utils/**/*.test.tsx"
+            index: 37
+            name: "utils-remaining"
+          - pattern: "tests/*.test.{ts,tsx}"
+            index: 38
             name: "root-tests"
           - pattern: "tests/components/base-components/*.test.tsx"
-            index: 34
+            index: 39
             name: "base-components"
           - pattern: "tests/components/trace/*.test.tsx"
-            index: 35
+            index: 40
             name: "trace-tests"
+          - pattern: "tests/components/trace/*.test.ts"
+            index: 41
+            name: "trace-tests-ts"
           - pattern: "tests/components/select-all-normal-components.test.tsx"
-            index: 36
+            index: 42
             name: "select-all"
           - pattern: "tests/breakout/*.test.tsx"
-            index: 37
+            index: 43
             name: "breakout"
           - pattern: "tests/drc/*.test.tsx"
-            index: 38
+            index: 44
             name: "drc"
           - pattern: "tests/fiber/*.test.tsx"
-            index: 39
+            index: 45
             name: "fiber"
           - pattern: "tests/footprint/*.test.tsx"
-            index: 40
+            index: 46
             name: "footprint"
           - pattern: "tests/groups/*.test.tsx"
-            index: 41
+            index: 47
             name: "groups"
           - pattern: "tests/hooks/*.test.tsx"
-            index: 42
+            index: 48
             name: "hooks"
           - pattern: "tests/pcb-packing/**/*.test.tsx"
-            index: 43
+            index: 49
             name: "pcb-packing"
           - pattern: "tests/projects/**/*.test.tsx"
-            index: 44
+            index: 50
             name: "projects"
           - pattern: "tests/repro/*.test.tsx"
-            index: 45
+            index: 51
             name: "repro-singular"
+          - pattern: "tests/repros/repro-*.test.tsx"
+            index: 52
+            name: "repros-dash-prefix"
           - pattern: "tests/root-circuit/*.test.tsx"
-            index: 46
+            index: 53
             name: "root-circuit"
+          - pattern: "tests/root-circuit/*.test.ts"
+            index: 54
+            name: "root-circuit-ts"
           - pattern: "tests/sel/*.test.{ts,tsx}"
-            index: 47
+            index: 55
             name: "sel"
           - pattern: "tests/selector-index/*.test.tsx"
-            index: 48
+            index: 56
             name: "selector-index"
           - pattern: "tests/snippet-imports/*.test.tsx"
-            index: 49
+            index: 57
             name: "snippet-imports"
           - pattern: "tests/subcircuits/*.test.tsx"
-            index: 50
+            index: 58
             name: "subcircuits"
           - pattern: "tests/**/*.test.{ts,tsx}"
-            index: 51
+            index: 59
             name: "catchall"
 
     steps:
