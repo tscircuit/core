@@ -57,7 +57,7 @@ test("source_port and source_net subcircuit_connectivity_map_key are populated",
     a.source_port_id.localeCompare(b.source_port_id),
   )) {
     const connectivityKey = port.subcircuit_connectivity_map_key || "undefined"
-    const component = circuit.db.source_component.get(port.source_component_id)
+    const component = circuit.db.source_component.get(port.source_component_id!)
     const componentName = component?.name || "unknown"
     const pinName = port.name || "unknown"
     tableRows.push([
