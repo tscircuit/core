@@ -31,21 +31,21 @@ jobs:
 
       - name: Run tests for node ${{ matrix.node }}
         run: |
-          if [ ! -f "node${{ matrix.node }}-testplan.txt" ]; then
-            echo "No test plan found for node ${{ matrix.node }}"
-            exit 0
+          if [ ! -f ".github/test-plans/node${{ matrix.node }}-testplan.txt" ]; then
+            echo "ERROR: No test plan found for node ${{ matrix.node }}"
+            exit 1
           fi
 
-          mapfile -t test_files < node${{ matrix.node }}-testplan.txt
+          mapfile -t test_files < .github/test-plans/node${{ matrix.node }}-testplan.txt
           if [ ${#test_files[@]} -eq 0 ]; then
-            echo "No test files in plan for node ${{ matrix.node }}"
-            exit 0
+            echo "ERROR: No test files in plan for node ${{ matrix.node }}"
+            exit 1
           fi
 
           echo "Running ${#test_files[@]} test files for node ${{ matrix.node }}"
           attempt=1
           while [ $attempt -le 4 ]; do
-            bun test "${test_files[@]}" --timeout 15000
+            bun test ${test_files[@]} --timeout 15000
             code=$?
 
             if [ $code -eq 0 ]; then

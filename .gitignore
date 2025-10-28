@@ -194,4 +194,4 @@ debug-graphics
 references
 debug-output
 debug-outputs
-node*-testplan.txt
+.github/test-plans/
