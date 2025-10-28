@@ -48,14 +48,11 @@ export class SilkscreenText extends PrimitiveComponent<
     const targetLayers: LayerRef[] =
       uniqueLayers.size > 0 ? Array.from(uniqueLayers) : ["top"]
 
-    // Get font size from props, board's pcbStyle, or default to 1
-    let fontSize: number
-    if (props.fontSize !== undefined) {
-      fontSize = props.fontSize
-    } else {
-      const board = this.root?._getBoard()
-      fontSize = board?._parsedProps?.pcbStyle?.silkscreenFontSize ?? 1
-    }
+    // Get font size from props, inherited pcbStyle, or default to 1
+    const fontSize =
+      props.fontSize ??
+      this.getInheritedProperty("pcbStyle")?.silkscreenFontSize ??
+      1
 
     for (const layer of targetLayers) {
       db.pcb_silkscreen_text.insert({
@@ -78,13 +75,10 @@ export class SilkscreenText extends PrimitiveComponent<
 
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
-    let fontSize: number
-    if (props.fontSize !== undefined) {
-      fontSize = props.fontSize
-    } else {
-      const board = this.root?._getBoard()
-      fontSize = board?._parsedProps?.pcbStyle?.silkscreenFontSize ?? 1
-    }
+    const fontSize =
+      props.fontSize ??
+      this.getInheritedProperty("pcbStyle")?.silkscreenFontSize ??
+      1
     const text = props.text ?? ""
     const textWidth = text.length * fontSize
     const textHeight = fontSize
