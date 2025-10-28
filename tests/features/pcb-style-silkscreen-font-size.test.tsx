@@ -26,6 +26,7 @@ test("pcbStyle.silkscreenFontSize should resize silkscreen text", () => {
 
   // Second text should use its explicit fontSize prop
   expect(silkscreenTexts[1].font_size).toBe(0.5)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
 
 test("silkscreenFontSize defaults to 1 when not set", () => {
