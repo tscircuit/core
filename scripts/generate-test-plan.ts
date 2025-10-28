@@ -48,7 +48,9 @@ function generateTestPlans() {
 
     // Find files matching this pattern
     const glob = new Glob(pattern)
-    const matchingFiles = Array.from(glob.scanSync({ cwd: process.cwd() })).sort()
+    const matchingFiles = Array.from(
+      glob.scanSync({ cwd: process.cwd() }),
+    ).sort()
 
     // Filter to only unclaimed files
     const unclaimedMatches = matchingFiles.filter((f) => !claimedFiles.has(f))
