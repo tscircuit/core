@@ -3,7 +3,9 @@ import { subcircuitProps } from "@tscircuit/props"
 import { cju } from "@tscircuit/circuit-json-util"
 import type { z } from "zod"
 import { inflateSourceResistor } from "./inflators/inflateSourceResistor"
-import type { InflatorContext } from "./InflatorFn"
+import { inflateSourcePort } from "./inflators/inflateSourcePort"
+import { inflateSourceGroup } from "./inflators/inflateSourceGroup"
+import type { InflatorContext, SourceGroupId } from "./InflatorFn"
 
 export class Subcircuit extends Group<typeof subcircuitProps> {
   constructor(props: z.input<typeof subcircuitProps>) {
@@ -36,12 +38,23 @@ export class Subcircuit extends Group<typeof subcircuitProps> {
       throw new Error("Subcircuit cannot have both circuitJson and children")
     }
 
-    const sourceComponents = injectionDb.source_component.list()
+    // Create a map to store inflated groups
+    const groupsMap = new Map<SourceGroupId, Group<any>>()
+
     const inflationCtx: InflatorContext = {
       injectionDb,
       subcircuit: this,
+      groupsMap,
     }
 
+    // First, inflate all groups to preserve hierarchy
+    const sourceGroups = injectionDb.source_group.list()
+    for (const sourceGroup of sourceGroups) {
+      inflateSourceGroup(sourceGroup, inflationCtx)
+    }
+
+    // Then inflate components, adding them to their groups
+    const sourceComponents = injectionDb.source_component.list()
     for (const sourceComponent of sourceComponents) {
       switch (sourceComponent.ftype) {
         case "simple_resistor":
@@ -52,6 +65,12 @@ export class Subcircuit extends Group<typeof subcircuitProps> {
             `No inflator implemented for source component ftype: "${sourceComponent.ftype}"`,
           )
       }
+    }
+
+    // Finally, inflate source ports (group ports)
+    const sourcePorts = injectionDb.source_port.list()
+    for (const sourcePort of sourcePorts) {
+      inflateSourcePort(sourcePort, inflationCtx)
     }
   }
 }

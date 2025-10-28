@@ -39,7 +39,6 @@ test("subcircuit-circuit-json01", async () => {
 
   const pcbTrace = circuitJson.find((c) => c.type === "pcb_trace")
 
-  console.log({ pcbTrace })
-
+  expect(pcbTrace).toBeDefined()
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

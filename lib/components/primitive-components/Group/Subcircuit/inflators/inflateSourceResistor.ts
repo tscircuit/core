@@ -11,7 +11,7 @@ export function inflateSourceResistor(
   sourceElm: SourceSimpleResistor,
   inflatorContext: InflatorContext,
 ) {
-  const { injectionDb, subcircuit } = inflatorContext
+  const { injectionDb, subcircuit, groupsMap } = inflatorContext
 
   const pcbElm = injectionDb.pcb_component.getWhere({
     source_component_id: sourceElm.source_component_id,
@@ -33,5 +33,11 @@ export function inflateSourceResistor(
     })
   }
 
-  subcircuit.add(resistor)
+  // Add the resistor to its group if it has one, otherwise add to subcircuit
+  if (sourceElm.source_group_id && groupsMap?.has(sourceElm.source_group_id)) {
+    const group = groupsMap.get(sourceElm.source_group_id)!
+    group.add(resistor)
+  } else {
+    subcircuit.add(resistor)
+  }
 }
