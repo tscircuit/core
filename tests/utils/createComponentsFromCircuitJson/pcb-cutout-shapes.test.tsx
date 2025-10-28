@@ -40,7 +40,7 @@ test("createComponentsFromCircuitJson handles different cutout shapes", () => {
     {
       componentName: "test_component",
       componentRotation: "0",
-      footprint: "test",
+      footprinterString: "test",
       pinLabels: {},
     },
     testSoup,

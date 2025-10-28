@@ -5,26 +5,33 @@ import type {
 } from "circuit-json"
 import type { InflatorContext } from "../InflatorFn"
 import { Resistor } from "lib/components/normal-components/Resistor"
+import { inflatePcbComponent } from "./inflatePcbComponent"
 
 export function inflateSourceResistor(
   sourceElm: SourceSimpleResistor,
-  context: InflatorContext,
+  inflatorContext: InflatorContext,
 ) {
-  const { injectionDb, subcircuit } = context
+  const { injectionDb, subcircuit } = inflatorContext
 
   const pcbElm = injectionDb.pcb_component.getWhere({
-    name: sourceElm.name,
+    source_component_id: sourceElm.source_component_id,
   }) as PcbComponent | null
 
   const cadElm = injectionDb.cad_component.getWhere({
-    name: sourceElm.name,
+    source_component_id: sourceElm.source_component_id,
   }) as CadComponent | null
 
   const resistor = new Resistor({
     name: sourceElm.name,
     resistance: sourceElm.resistance,
-    footprint: cadElm?.footprinter_string,
   })
+
+  if (pcbElm) {
+    inflatePcbComponent(pcbElm, {
+      ...inflatorContext,
+      normalComponent: resistor,
+    })
+  }
 
   subcircuit.add(resistor)
 }

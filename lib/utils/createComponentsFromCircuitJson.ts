@@ -32,20 +32,20 @@ export const createComponentsFromCircuitJson = (
   {
     componentName,
     componentRotation,
-    footprint,
+    footprinterString,
     pinLabels,
     pcbPinLabels,
   }: {
     componentName: string
     componentRotation: string
-    footprint: string
-    pinLabels: PinLabelsProp
+    footprinterString?: string
+    pinLabels?: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
   },
-  soup: AnyCircuitElement[],
+  circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
   const components: PrimitiveComponent[] = []
-  for (const elm of soup) {
+  for (const elm of circuitJson) {
     if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
       components.push(
         new SmtPad({
@@ -230,11 +230,11 @@ export const createComponentsFromCircuitJson = (
         componentRotation,
         elm.ccw_rotation,
       )
-      if (footprint.includes("pinrow") && elm.text.includes("PIN")) {
+      if (footprinterString?.includes("pinrow") && elm.text.includes("PIN")) {
         components.push(
           createPinrowSilkscreenText({
             elm,
-            pinLabels: pcbPinLabels ?? pinLabels,
+            pinLabels: pcbPinLabels ?? pinLabels ?? {},
             layer: elm.layer,
             readableRotation: ccwRotation,
             anchorAlignment: elm.anchor_alignment,

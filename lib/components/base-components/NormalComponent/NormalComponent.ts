@@ -449,7 +449,7 @@ export class NormalComponent<
         {
           componentName: this.name ?? this.componentName,
           componentRotation: pcbRotation,
-          footprint,
+          footprinterString: footprint,
           pinLabels,
           pcbPinLabels,
         },
