@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { writeFileSync } from "fs"
-import { globSync } from "glob"
+import { globSync } from "bun"
 
 interface TestMatrix {
   nodeCount: number

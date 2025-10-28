@@ -42,29 +42,27 @@ jobs:
             exit 0
           fi
 
-          for test_file in "${test_files[@]}"; do
-            echo "Running tests in $test_file"
-            attempt=1
-            while [ $attempt -le 4 ]; do
-              bun test "$test_file" --timeout 15000
-              code=$?
+          echo "Running ${#test_files[@]} test files for node ${{ matrix.node }}"
+          attempt=1
+          while [ $attempt -le 4 ]; do
+            bun test "${test_files[@]}" --timeout 15000
+            code=$?
 
-              if [ $code -eq 0 ]; then
-                break
-              fi
+            if [ $code -eq 0 ]; then
+              break
+            fi
 
-              if [ $code -ne 139 ] && [ $code -ne 132 ]; then
-                exit $code
-              fi
+            if [ $code -ne 139 ] && [ $code -ne 132 ]; then
+              exit $code
+            fi
 
-              if [ $attempt -eq 4 ]; then
-                echo "Segmentation fault or illegal instruction detected for $test_file after $attempt attempts (exit=$code)."
-                exit $code
-              fi
+            if [ $attempt -eq 4 ]; then
+              echo "Segmentation fault or illegal instruction detected after $attempt attempts (exit=$code)."
+              exit $code
+            fi
 
-              attempt=$((attempt + 1))
-              echo "Segfault (139) or illegal instruction (132) detected for $test_file, retrying ($attempt/4)..."
-            done
+            attempt=$((attempt + 1))
+            echo "Segfault (139) or illegal instruction (132) detected, retrying ($attempt/4)..."
           done
       
       - name: Upload 3D Snapshot Artifacts on Failure
