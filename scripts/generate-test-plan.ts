@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { writeFileSync } from "fs"
-import { globSync } from "glob"
+import { Glob } from "bun"
 
 interface TestMatrix {
   nodeCount: number
@@ -22,10 +22,8 @@ const TEST_MATRIX: TestMatrix = {
 }
 
 function getAllTestFiles(): string[] {
-  const allTests = globSync("tests/**/*.test.{ts,tsx}", {
-    cwd: process.cwd(),
-    absolute: false,
-  })
+  const glob = new Glob("tests/**/*.test.{ts,tsx}")
+  const allTests = Array.from(glob.scanSync({ cwd: process.cwd() }))
   return allTests.sort()
 }
 
@@ -49,10 +47,8 @@ function generateTestPlans() {
     const pattern = TEST_MATRIX.globPatterns[patternIdx]
 
     // Find files matching this pattern
-    const matchingFiles = globSync(pattern, {
-      cwd: process.cwd(),
-      absolute: false,
-    }).sort()
+    const glob = new Glob(pattern)
+    const matchingFiles = Array.from(glob.scanSync({ cwd: process.cwd() })).sort()
 
     // Filter to only unclaimed files
     const unclaimedMatches = matchingFiles.filter((f) => !claimedFiles.has(f))
