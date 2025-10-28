@@ -14,10 +14,6 @@ test("subcircuit-circuit-json01", async () => {
       <port name="P1" direction="left" connectsTo="R1.pin1" />
     </group>,
   )
-  console.log(
-    "PCB_COMPONENTS",
-    subcircuitCircuitJson.filter((c) => c.type === "pcb_component"),
-  )
 
   circuit.add(
     <board width="20mm" height="20mm">
@@ -26,7 +22,7 @@ test("subcircuit-circuit-json01", async () => {
         name="R2"
         resistance="1k"
         footprint="0402"
-        connections={{ pin1: ".S1 .G1 .P1" }}
+        connections={{ pin1: ".S1 .G1 .R1 .pin1" }}
       />
     </board>,
   )

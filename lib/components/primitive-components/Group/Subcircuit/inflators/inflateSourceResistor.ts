@@ -17,15 +17,10 @@ export function inflateSourceResistor(
     source_component_id: sourceElm.source_component_id,
   }) as PcbComponent | null
 
-  console.log("sourceElm", sourceElm)
-  console.log("pcbComponents", injectionDb.pcb_component.list())
-
   const cadElm = injectionDb.cad_component.getWhere({
     source_component_id: sourceElm.source_component_id,
   }) as CadComponent | null
 
-  console.log("cadElm", cadElm)
-  console.log("pcbElm", pcbElm)
   const resistor = new Resistor({
     name: sourceElm.name,
     resistance: sourceElm.resistance,

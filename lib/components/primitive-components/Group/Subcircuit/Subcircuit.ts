@@ -28,27 +28,20 @@ export class Subcircuit extends Group<typeof subcircuitProps> {
    * - Add components to groups in the appropriate hierarchy
    */
   doInitialInflateSubcircuitCircuitJson() {
-    const { circuitJson, children } = this._parsedProps
-    if (!circuitJson) return
-    const { db } = this.root!
+    const { circuitJson: injectionCircuitJson, children } = this._parsedProps
+    if (!injectionCircuitJson) return
+    const injectionDb = cju(injectionCircuitJson)
 
-    if (circuitJson && children?.length > 0) {
+    if (injectionCircuitJson && children?.length > 0) {
       throw new Error("Subcircuit cannot have both circuitJson and children")
     }
 
-    console.log(
-      "pcbComponents1",
-      circuitJson.filter((c) => c.type === "pcb_component"),
-    )
-    const sourceComponents = cju(circuitJson).source_component.list()
-    console.log(
-      "pcbComponents2",
-      db.toArray().filter((c) => c.type === "pcb_component"),
-    )
+    const sourceComponents = injectionDb.source_component.list()
     const inflationCtx: InflatorContext = {
-      injectionDb: db,
+      injectionDb,
       subcircuit: this,
     }
+
     for (const sourceComponent of sourceComponents) {
       switch (sourceComponent.ftype) {
         case "simple_resistor":
