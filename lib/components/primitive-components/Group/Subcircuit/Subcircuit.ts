@@ -31,7 +31,7 @@ export class Subcircuit extends Group<typeof subcircuitProps> {
     if (!circuitJson) return
     const { db } = this.root!
 
-    if (circuitJson && children.length > 0) {
+    if (circuitJson && children?.length > 0) {
       throw new Error("Subcircuit cannot have both circuitJson and children")
     }
 

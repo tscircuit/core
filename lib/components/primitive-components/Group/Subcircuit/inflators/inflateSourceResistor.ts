@@ -14,16 +14,16 @@ export function inflateSourceResistor(
 
   const pcbElm = injectionDb.pcb_component.getWhere({
     name: sourceElm.name,
-  }) as PcbComponent
+  }) as PcbComponent | null
 
   const cadElm = injectionDb.cad_component.getWhere({
     name: sourceElm.name,
-  }) as CadComponent
+  }) as CadComponent | null
 
   const resistor = new Resistor({
     name: sourceElm.name,
     resistance: sourceElm.resistance,
-    footprint: cadElm.footprinter_string,
+    footprint: cadElm?.footprinter_string,
   })
 
   subcircuit.add(resistor)
