@@ -6,6 +6,7 @@ import { inflateSourceResistor } from "./inflators/inflateSourceResistor"
 import { inflateSourcePort } from "./inflators/inflateSourcePort"
 import { inflateSourceGroup } from "./inflators/inflateSourceGroup"
 import type { InflatorContext, SourceGroupId } from "./InflatorFn"
+import { inflateSourceChip } from "./inflators/inflateSourceChip"
 
 export class Subcircuit extends Group<typeof subcircuitProps> {
   constructor(props: z.input<typeof subcircuitProps>) {
@@ -59,6 +60,9 @@ export class Subcircuit extends Group<typeof subcircuitProps> {
       switch (sourceComponent.ftype) {
         case "simple_resistor":
           inflateSourceResistor(sourceComponent, inflationCtx)
+          break
+        case "simple_chip":
+          inflateSourceChip(sourceComponent, inflationCtx)
           break
         default:
           throw new Error(
