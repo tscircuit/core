@@ -38,8 +38,7 @@ test("subcircuit-circuit-json01", async () => {
     (c) => c.type === "source_component" && c.name === "R1",
   )
 
-  // TODO circuitJson loading doesn't currently work!
-  // expect(R1).toBeDefined()
+  expect(R1).toBeDefined()
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -19,7 +19,7 @@ import {
 import type { Primitive, ZodType } from "zod"
 import { z } from "zod"
 import type { RootCircuit } from "lib/RootCircuit"
-import type { ISubcircuit } from "lib/components/primitive-components/Group/ISubcircuit"
+import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { Renderable } from "lib/components/base-components/Renderable"
 import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { Ftype } from "lib/utils/constants"
