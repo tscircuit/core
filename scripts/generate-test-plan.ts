@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { writeFileSync } from "fs"
+import { writeFileSync, mkdirSync } from "fs"
 import { Glob } from "bun"
 
 interface TestMatrix {
@@ -79,8 +79,9 @@ function generateTestPlans() {
 
   // Write test plans to files
   console.log(`\n📝 Writing test plans for ${TEST_MATRIX.nodeCount} nodes...`)
+  mkdirSync(".github/test-plans", { recursive: true })
   for (let i = 0; i < TEST_MATRIX.nodeCount; i++) {
-    const planFile = `node${i + 1}-testplan.txt`
+    const planFile = `.github/test-plans/node${i + 1}-testplan.txt`
     const content = nodePlans[i].join("\n")
     writeFileSync(planFile, content, "utf8")
     console.log(`  ${planFile}: ${nodePlans[i].length} tests`)
