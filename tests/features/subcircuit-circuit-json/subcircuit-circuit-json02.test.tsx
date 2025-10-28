@@ -59,5 +59,15 @@ test("subcircuit-circuit-json02 - chip inflation", async () => {
   expect(pcbComponent).toBeDefined()
   expect(pcbComponent?.layer).toBe("top")
 
+  const cadComponent = circuitJson.find(
+    (element) =>
+      element.type === "cad_component" &&
+      (element as any).source_component_id ===
+        chipSourceComponent?.source_component_id,
+  ) as any
+
+  expect(cadComponent).toBeDefined()
+  expect(cadComponent?.footprinter_string).toBe("soic8")
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

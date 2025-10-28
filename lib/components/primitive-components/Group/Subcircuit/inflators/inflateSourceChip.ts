@@ -1,4 +1,5 @@
 import type {
+  CadComponent,
   PcbComponent,
   SchematicComponent,
   SourcePort,
@@ -52,6 +53,10 @@ export const inflateSourceChip = (
     source_component_id: sourceElm.source_component_id,
   }) as SchematicComponent | null
 
+  const cadElm = injectionDb.cad_component.getWhere({
+    source_component_id: sourceElm.source_component_id,
+  }) as CadComponent | null
+
   const internallyConnectedPins =
     mapInternallyConnectedSourcePortIdsToPinLabels(
       sourceElm.internally_connected_source_port_ids,
@@ -76,6 +81,15 @@ export const inflateSourceChip = (
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
     internallyConnectedPins,
   })
+
+  const footprint = cadElm?.footprinter_string ?? "soic8"
+  if (footprint) {
+    Object.assign(chip.props as any, { footprint })
+    Object.assign((chip as any)._parsedProps, { footprint })
+    if (!cadElm) {
+      ;(chip as any)._addChildrenFromStringFootprint?.()
+    }
+  }
 
   if (pcbElm) {
     inflatePcbComponent(pcbElm, {
