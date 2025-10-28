@@ -3,6 +3,7 @@ import { subcircuitProps } from "@tscircuit/props"
 import { cju } from "@tscircuit/circuit-json-util"
 import type { z } from "zod"
 import { inflateSourceResistor } from "./inflators/inflateSourceResistor"
+import type { InflatorContext } from "./InflatorFn"
 
 export class Subcircuit extends Group<typeof subcircuitProps> {
   constructor(props: z.input<typeof subcircuitProps>) {
@@ -36,13 +37,14 @@ export class Subcircuit extends Group<typeof subcircuitProps> {
     }
 
     const sourceComponents = cju(circuitJson).source_component.list()
+    const inflationCtx: InflatorContext = {
+      injectionDb: db,
+      subcircuit: this,
+    }
     for (const sourceComponent of sourceComponents) {
       switch (sourceComponent.ftype) {
         case "simple_resistor":
-          inflateSourceResistor(sourceComponent, {
-            injectionDb: db,
-            subcircuit: this,
-          })
+          inflateSourceResistor(sourceComponent, inflationCtx)
           break
         default:
           throw new Error(
