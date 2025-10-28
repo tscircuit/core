@@ -311,6 +311,14 @@ export class Trace
     Trace_doInitialPcbManualTraceRender(this)
   }
 
+  updatePcbManualTraceRender(): void {
+    if (this.pcb_trace_id) {
+      this.root!.db.pcb_trace.delete(this.pcb_trace_id)
+      this.pcb_trace_id = null
+    }
+    this.doInitialPcbManualTraceRender()
+  }
+
   doInitialPcbTraceRender(): void {
     Trace_doInitialPcbTraceRender(this)
   }

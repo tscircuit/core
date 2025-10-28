@@ -103,9 +103,15 @@ export function Trace__findConnectedPorts(trace: Trace):
     return { allPortsFound: false }
   }
 
+  const ports = portsWithSelectors.map(({ port }) => port!)
+
+  for (const port of ports) {
+    port._addConnectedTrace(trace)
+  }
+
   return {
     allPortsFound: true,
     portsWithSelectors,
-    ports: portsWithSelectors.map(({ port }) => port),
+    ports: ports,
   }
 }

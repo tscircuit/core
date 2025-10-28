@@ -2,6 +2,7 @@ import { NormalComponent } from "./NormalComponent"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { isValidElement as isReactElement } from "react"
 import { Footprint } from "lib/components/primitive-components/Footprint"
+import type { Port } from "lib/components/primitive-components/Port/Port"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 import type { CadModelProp } from "@tscircuit/props"
@@ -181,6 +182,19 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           }
         }
         component._markDirty("InitializePortsFromChildren")
+        // Mark traces connected to this component as dirty so they can be
+        // re-rendered now that pads/ports are available
+        for (const child of component.children) {
+          if (child.componentName !== "Port") continue
+          const port = child as Port
+          for (const trace of port._connectedTraces) {
+            if (trace._parsedProps.pcbPath) {
+              trace._markDirty("PcbManualTraceRender")
+            } else {
+              trace._markDirty("PcbTraceRender")
+            }
+          }
+        }
       } catch (err) {
         const db = component.root?.db
         if (db && component.source_component_id && component.pcb_component_id) {

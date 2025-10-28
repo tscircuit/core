@@ -37,6 +37,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   matchedComponents: PrimitiveComponent[]
   facingDirection: "up" | "down" | "left" | "right" | null = null
 
+  _connectedTraces: Trace[] = []
   originDescription: string | null = null
 
   get config() {
@@ -60,6 +61,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       this.originDescription = opts.originDescription
     }
     this.matchedComponents = []
+  }
+
+  _addConnectedTrace(trace: Trace): void {
+    if (!this._connectedTraces.includes(trace)) {
+      this._connectedTraces.push(trace)
+    }
   }
 
   isGroupPort(): boolean {
@@ -335,15 +342,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * Return traces that are explicitly connected to this port (not via a net)
    */
   _getDirectlyConnectedTraces(): Trace[] {
-    const allSubcircuitTraces = this.getSubcircuit().selectAll(
-      "trace",
-    ) as Trace[]
-
-    const connectedTraces = allSubcircuitTraces
-      .filter((trace) => !trace._couldNotFindPort)
-      .filter((trace) => trace._isExplicitlyConnectedToPort(this))
-
-    return connectedTraces
+    return this._connectedTraces
   }
 
   doInitialSourceRender(): void {
