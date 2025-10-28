@@ -49,7 +49,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           {
             componentName: component.name,
             componentRotation: pcbRotation,
-            footprint: footprintUrl,
+            footprinterString: footprintUrl,
             pinLabels,
             pcbPinLabels,
           },
@@ -95,7 +95,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           {
             componentName: component.name,
             componentRotation: pcbRotation,
-            footprint: url,
+            footprinterString: url,
             pinLabels,
             pcbPinLabels,
           },
@@ -164,7 +164,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           {
             componentName: component.name,
             componentRotation: pcbRotation,
-            footprint,
+            footprinterString: footprint,
             pinLabels,
             pcbPinLabels,
           },
@@ -222,7 +222,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         {
           componentName: component.name,
           componentRotation: pcbRotation,
-          footprint: "",
+          footprinterString: "",
           pinLabels,
           pcbPinLabels,
         },

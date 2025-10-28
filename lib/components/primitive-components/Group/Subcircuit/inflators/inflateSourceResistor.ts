@@ -14,11 +14,11 @@ export function inflateSourceResistor(
   const { injectionDb, subcircuit } = inflatorContext
 
   const pcbElm = injectionDb.pcb_component.getWhere({
-    name: sourceElm.name,
+    source_component_id: sourceElm.source_component_id,
   }) as PcbComponent | null
 
   const cadElm = injectionDb.cad_component.getWhere({
-    name: sourceElm.name,
+    source_component_id: sourceElm.source_component_id,
   }) as CadComponent | null
 
   const resistor = new Resistor({
