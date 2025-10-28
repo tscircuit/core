@@ -8,19 +8,20 @@ import { renderToCircuitJson } from "tests/fixtures/renderToCircuitJson"
 test("subcircuit-circuit-json01", async () => {
   const { circuit } = await getTestFixture()
 
+  const subcircuitCircuitJson = await renderToCircuitJson(
+    <group name="G1">
+      <resistor name="R1" resistance="10k" footprint="0402" />
+      <port name="P1" direction="left" connectsTo="R1.pin1" />
+    </group>,
+  )
+  console.log(
+    "PCB_COMPONENTS",
+    subcircuitCircuitJson.filter((c) => c.type === "pcb_component"),
+  )
+
   circuit.add(
     <board width="20mm" height="20mm">
-      <subcircuit
-        name="S1"
-        circuitJson={
-          await renderToCircuitJson(
-            <group name="G1">
-              <resistor name="R1" resistance="10k" footprint="0402" />
-              <port name="P1" direction="left" connectsTo="R1.pin1" />
-            </group>,
-          )
-        }
-      />
+      <subcircuit name="S1" circuitJson={subcircuitCircuitJson} />
       <resistor
         name="R2"
         resistance="1k"

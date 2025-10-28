@@ -36,7 +36,15 @@ export class Subcircuit extends Group<typeof subcircuitProps> {
       throw new Error("Subcircuit cannot have both circuitJson and children")
     }
 
+    console.log(
+      "pcbComponents1",
+      circuitJson.filter((c) => c.type === "pcb_component"),
+    )
     const sourceComponents = cju(circuitJson).source_component.list()
+    console.log(
+      "pcbComponents2",
+      db.toArray().filter((c) => c.type === "pcb_component"),
+    )
     const inflationCtx: InflatorContext = {
       injectionDb: db,
       subcircuit: this,
