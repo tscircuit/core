@@ -231,15 +231,10 @@ export const createComponentsFromCircuitJson = (
         elm.ccw_rotation,
       )
       if (footprinterString?.includes("pinrow") && elm.text.includes("PIN")) {
-        if (!pcbPinLabels && !pinLabels) {
-          throw new Error(
-            "pcbPinLabels or pinLabels are required when using pinrow silkscreen text",
-          )
-        }
         components.push(
           createPinrowSilkscreenText({
             elm,
-            pinLabels: pcbPinLabels ?? pinLabels,
+            pinLabels: pcbPinLabels ?? pinLabels ?? {},
             layer: elm.layer,
             readableRotation: ccwRotation,
             anchorAlignment: elm.anchor_alignment,
