@@ -48,6 +48,12 @@ export class SilkscreenText extends PrimitiveComponent<
     const targetLayers: LayerRef[] =
       uniqueLayers.size > 0 ? Array.from(uniqueLayers) : ["top"]
 
+    // Get font size from props, inherited pcbStyle, or default to 1
+    const fontSize =
+      props.fontSize ??
+      this.getInheritedProperty("pcbStyle")?.silkscreenFontSize ??
+      1
+
     for (const layer of targetLayers) {
       db.pcb_silkscreen_text.insert({
         anchor_alignment: props.anchorAlignment,
@@ -56,7 +62,7 @@ export class SilkscreenText extends PrimitiveComponent<
           y: position.y,
         },
         font: props.font ?? "tscircuit2024",
-        font_size: props.fontSize ?? 1,
+        font_size: fontSize,
         layer: maybeFlipLayer(layer) as "top" | "bottom",
         text: props.text ?? "",
         ccw_rotation: rotation,
@@ -69,7 +75,10 @@ export class SilkscreenText extends PrimitiveComponent<
 
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
-    const fontSize = props.fontSize ?? 1
+    const fontSize =
+      props.fontSize ??
+      this.getInheritedProperty("pcbStyle")?.silkscreenFontSize ??
+      1
     const text = props.text ?? ""
     const textWidth = text.length * fontSize
     const textHeight = fontSize
