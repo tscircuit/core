@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("SilkscreenRect rendering", () => {
+test("Corner radius for rect component", () => {
   const { project } = getTestFixture()
   project.add(
     <board width="20mm" height="20mm">
