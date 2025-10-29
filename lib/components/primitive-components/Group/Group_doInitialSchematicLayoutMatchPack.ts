@@ -118,6 +118,9 @@ function convertTreeToInputProblem(
         // If schFacingDirection is set, don't allow rotation
         availableRotations = [0]
       }
+      if (component?.componentName === "Chip") {
+        availableRotations = [0]
+      }
 
       const marginLeft =
         component?._parsedProps?.schMarginLeft ??

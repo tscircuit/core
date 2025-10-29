@@ -20,7 +20,7 @@ test("createComponentsFromCircuitJson handles pcb_cutout elements", () => {
     {
       componentName: "m2host",
       componentRotation: "0",
-      footprint: "m2host",
+      footprinterString: "m2host",
       pinLabels: {},
     },
     m2hostSoup,

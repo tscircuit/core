@@ -18,6 +18,7 @@ import {
   point3,
   rotation,
   schematic_manual_edit_conflict_warning,
+  unknown_error_finding_part,
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import Debug from "debug"
@@ -63,9 +64,10 @@ import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalCo
 import { filterPinLabels } from "lib/utils/filterPinLabels"
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
-import { isFootprintUrl } from "./utils/isFoorprintUrl"
+import { isHttpUrl } from "./utils/isHttpUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 import { normalizeDegrees } from "@tscircuit/math-utils"
+import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 
 const debug = Debug("tscircuit:core")
 
@@ -439,14 +441,15 @@ export class NormalComponent<
     if (!footprint) return
 
     if (typeof footprint === "string") {
-      if (isFootprintUrl(footprint)) return
+      if (isHttpUrl(footprint)) return
+      if (isStaticAssetPath(footprint)) return
       if (parseLibraryFootprintRef(footprint)) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         {
           componentName: this.name ?? this.componentName,
           componentRotation: pcbRotation,
-          footprint,
+          footprinterString: footprint,
           pinLabels,
           pcbPinLabels,
         },
@@ -1035,7 +1038,8 @@ export class NormalComponent<
     }
 
     if (typeof footprint === "string") {
-      if (isFootprintUrl(footprint)) return []
+      if (isHttpUrl(footprint)) return []
+      if (isStaticAssetPath(footprint)) return []
       if (parseLibraryFootprintRef(footprint)) return []
       const fpSoup = fp.string(footprint).soup()
 
@@ -1233,6 +1237,26 @@ export class NormalComponent<
     )
   }
 
+  /**
+   * Extract pin labels from ports using existing Port logic
+   */
+  _getPinLabelsFromPorts(): Record<string, string> {
+    const ports = this.selectAll("port") as Port[]
+    const pinLabels: Record<string, string> = {}
+
+    for (const port of ports) {
+      const pinNumber = port.props.pinNumber
+      if (pinNumber !== undefined) {
+        const bestLabel = port._getBestDisplayPinLabel()
+        if (bestLabel) {
+          pinLabels[`pin${pinNumber}`] = bestLabel
+        }
+      }
+    }
+
+    return pinLabels
+  }
+
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     // Only valid if we don't have a schematic symbol
     if (this.getSchematicSymbol()) return null
@@ -1244,19 +1268,26 @@ export class NormalComponent<
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 
+    const pinLabelsFromPorts = this._getPinLabelsFromPorts()
+    // Merge with props.pinLabels for label-to-pin-number mapping
+    const allPinLabels = {
+      ...pinLabelsFromPorts,
+      ...props.pinLabels,
+    }
+
     const dimensions = getAllDimensionsForSchematicBox({
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
       numericSchPinStyle: getNumericSchPinStyle(
         props.schPinStyle,
-        props.pinLabels,
+        allPinLabels,
       ),
 
       pinCount,
 
       schPortArrangement: this._getSchematicPortArrangement()!,
-      pinLabels: props.pinLabels,
+      pinLabels: allPinLabels,
     })
 
     return dimensions
@@ -1443,8 +1474,37 @@ export class NormalComponent<
       }),
     )
 
-    // Convert "Not found" to empty object before caching or returning
-    const supplierPartNumbers = result === "Not found" ? {} : result
+    // Validate the result format
+    if (typeof result === "string") {
+      // Check if it's an HTML error page or "Not found"
+      if (result.includes("<!DOCTYPE") || result.includes("<html")) {
+        throw new Error(
+          `Failed to fetch supplier part numbers: Received HTML response instead of JSON. Response starts with: ${result.substring(0, 100)}`,
+        )
+      }
+      // Convert "Not found" to empty object
+      if (result === "Not found") {
+        return {}
+      }
+      throw new Error(
+        `Invalid supplier part numbers format: Expected object but got string: "${result}"`,
+      )
+    }
+
+    // Validate that result is an object (not array, null, etc.)
+    if (!result || Array.isArray(result) || typeof result !== "object") {
+      const actualType =
+        result === null
+          ? "null"
+          : Array.isArray(result)
+            ? "array"
+            : typeof result
+      throw new Error(
+        `Invalid supplier part numbers format: Expected object but got ${actualType}`,
+      )
+    }
+
+    const supplierPartNumbers = result
 
     if (cacheEngine) {
       try {
@@ -1483,8 +1543,23 @@ export class NormalComponent<
     }
 
     this._queueAsyncEffect("get-supplier-part-numbers", async () => {
-      this._asyncSupplierPartNumbers = await supplierPartNumbersMaybePromise
-      this._markDirty("PartsEngineRender")
+      await supplierPartNumbersMaybePromise
+        .then((supplierPartNumbers) => {
+          this._asyncSupplierPartNumbers = supplierPartNumbers
+          this._markDirty("PartsEngineRender")
+        })
+        .catch((error: Error) => {
+          // Log structured error to Circuit JSON
+          this._asyncSupplierPartNumbers = {}
+          const errorObj = unknown_error_finding_part.parse({
+            type: "unknown_error_finding_part",
+            message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error.message}`,
+            source_component_id: this.source_component_id,
+            subcircuit_id: this.getSubcircuit()?.subcircuit_id,
+          })
+          db.unknown_error_finding_part.insert(errorObj)
+          this._markDirty("PartsEngineRender")
+        })
     })
   }
 

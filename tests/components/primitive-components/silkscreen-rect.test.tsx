@@ -12,13 +12,21 @@ test("SilkscreenRect rendering", () => {
         height={"1.5mm"}
         layer="bottom"
       />
+      <silkscreenrect
+        pcbX={2}
+        pcbY={-3}
+        width={"2mm"}
+        height={"1.5mm"}
+        layer="top"
+        filled
+      />
     </board>,
   )
   project.render()
 
   const silkscreenRects = project.db.pcb_silkscreen_rect.list()
 
-  expect(silkscreenRects.length).toBe(1)
+  expect(silkscreenRects.length).toBe(2)
   expect(silkscreenRects[0].center.x).toBe(2)
   expect(silkscreenRects[0].center.y).toBe(3)
   expect(silkscreenRects[0].width).toBe(2)

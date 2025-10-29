@@ -37,11 +37,26 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     return
   }
 
-  // Run simulation for each configured spice engine
-  for (const [engineName, spiceEngine] of Object.entries(spiceEngineMap)) {
-    debug(`Queueing simulation for spice engine: ${engineName}`)
+  // Run simulation for each analogsimulation component
+  for (const analogSim of analogSims) {
+    const engineName = analogSim._parsedProps.spiceEngine ?? "spicey"
+    const spiceEngine = spiceEngineMap[engineName]
 
-    group._queueAsyncEffect(`spice-simulation-${engineName}`, async () => {
+    if (!spiceEngine) {
+      throw new Error(
+        `SPICE engine "${engineName}" not found in platform config. Available engines: ${JSON.stringify(
+          Object.keys(spiceEngineMap).filter((k) => k !== "spicey"),
+        )}`,
+      )
+    }
+
+    const effectId = `spice-simulation-${engineName}-${analogSim.source_component_id}`
+
+    debug(
+      `Queueing simulation for spice engine: ${engineName} (id: ${effectId})`,
+    )
+
+    group._queueAsyncEffect(effectId, async () => {
       try {
         debug(`Running simulation with engine: ${engineName}`)
         const result = await spiceEngine.simulate(spiceString)

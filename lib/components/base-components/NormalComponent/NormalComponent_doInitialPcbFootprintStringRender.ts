@@ -2,7 +2,7 @@ import { NormalComponent } from "./NormalComponent"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { isValidElement as isReactElement } from "react"
 import { Footprint } from "lib/components/primitive-components/Footprint"
-import { isFootprintUrl } from "./utils/isFoorprintUrl"
+import { isHttpUrl } from "./utils/isHttpUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 import type { CadModelProp } from "@tscircuit/props"
 import {
@@ -10,7 +10,8 @@ import {
   external_footprint_load_error,
 } from "circuit-json"
 import { getFileExtension } from "./utils/getFileExtension"
-import { constructAssetUrl } from "lib/utils/constructAssetUrl"
+import { isStaticAssetPath } from "./utils/isStaticAssetPath"
+import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
 
 interface FootprintLibraryResult {
   footprintCircuitJson: any[]
@@ -33,25 +34,22 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     : null
   if (
     typeof footprint === "string" &&
-    isFootprintUrl(footprint) &&
+    (isHttpUrl(footprint) || isStaticAssetPath(footprint)) &&
     footprintParser
   ) {
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
-    const baseUrl = component.root?.platform?.projectBaseUrl
-    const url = constructAssetUrl(footprint, baseUrl)
     queueAsyncEffect("load-footprint-from-platform-file-parser", async () => {
+      const footprintUrl = isHttpUrl(footprint)
+        ? footprint
+        : await resolveStaticFileImport(footprint, component.root?.platform)
       try {
-        const result = await footprintParser
-          .loadFromUrl(footprint)
-          .catch(() => {
-            return footprintParser.loadFromUrl(url)
-          })
+        const result = await footprintParser.loadFromUrl(footprintUrl)
         const fpComponents = createComponentsFromCircuitJson(
           {
             componentName: component.name,
             componentRotation: pcbRotation,
-            footprint: url,
+            footprinterString: footprintUrl,
             pinLabels,
             pcbPinLabels,
           },
@@ -64,7 +62,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         if (db && component.source_component_id && component.pcb_component_id) {
           const subcircuit = component.getSubcircuit()
           const errorMsg =
-            `${component.getString()} failed to load footprint "${url}": ` +
+            `${component.getString()} failed to load footprint "${footprintUrl}": ` +
             (err instanceof Error ? err.message : String(err))
           const errorObj = external_footprint_load_error.parse({
             type: "external_footprint_load_error",
@@ -73,7 +71,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             source_component_id: component.source_component_id,
             subcircuit_id: subcircuit.subcircuit_id ?? undefined,
             pcb_group_id: component.getGroup()?.pcb_group_id ?? undefined,
-            footprinter_string: url,
+            footprinter_string: footprintUrl,
           })
           db.external_footprint_load_error.insert(errorObj)
         }
@@ -82,7 +80,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     })
     return
   }
-  if (typeof footprint === "string" && isFootprintUrl(footprint)) {
+  if (typeof footprint === "string" && isHttpUrl(footprint)) {
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
     const url = footprint
@@ -97,7 +95,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           {
             componentName: component.name,
             componentRotation: pcbRotation,
-            footprint: url,
+            footprinterString: url,
             pinLabels,
             pcbPinLabels,
           },
@@ -166,7 +164,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           {
             componentName: component.name,
             componentRotation: pcbRotation,
-            footprint,
+            footprinterString: footprint,
             pinLabels,
             pcbPinLabels,
           },
@@ -224,7 +222,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         {
           componentName: component.name,
           componentRotation: pcbRotation,
-          footprint: "",
+          footprinterString: "",
           pinLabels,
           pcbPinLabels,
         },

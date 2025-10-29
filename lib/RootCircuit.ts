@@ -65,6 +65,13 @@ export class RootCircuit {
     this.children.push(component)
   }
 
+  setPlatform(platform: Partial<PlatformConfig>) {
+    this.platform = {
+      ...this.platform,
+      ...platform,
+    }
+  }
+
   /**
    * Get the main board for this Circuit.
    */
@@ -290,3 +297,5 @@ export const Project = RootCircuit
  * incorporated into a larger RootCircuit
  */
 export const Circuit = RootCircuit
+
+export { resolveStaticFileImport } from "./utils/resolveStaticFileImport"
