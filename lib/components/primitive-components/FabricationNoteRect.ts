@@ -54,7 +54,7 @@ export class FabricationNoteRect extends PrimitiveComponent<
       is_stroke_dashed: props.isStrokeDashed ?? false,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      corner_radius: props.cornerRadius ?? 0,
+      corner_radius: props.cornerRadius ?? undefined,
     })
 
     this.fabrication_note_rect_id =

@@ -39,7 +39,7 @@ export class PcbNoteRect extends PrimitiveComponent<typeof pcbNoteRectProps> {
       has_stroke: props.hasStroke ?? true,
       is_stroke_dashed: props.isStrokeDashed ?? false,
       color: props.color,
-      corner_radius: props.cornerRadius ?? 0,
+      corner_radius: props.cornerRadius ?? undefined,
     })
 
     this.pcb_note_rect_id = pcb_note_rect.pcb_note_rect_id
