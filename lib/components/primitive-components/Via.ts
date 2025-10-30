@@ -1,7 +1,7 @@
 import { viaProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Port } from "./Port"
-import type { LayerRef } from "circuit-json"
+import type { LayerRef, PcbVia } from "circuit-json"
 import { z } from "zod"
 export class Via extends PrimitiveComponent<typeof viaProps> {
   pcb_via_id: string | null = null
@@ -128,7 +128,8 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       to_layer: props.toLayer || "top",
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-    })
+      net_is_assignable: props.netIsAssignable ?? undefined,
+    } as Omit<PcbVia & { net_is_assignable?: boolean }, "type" | "pcb_via_id">)
     this.pcb_via_id = pcb_via.pcb_via_id
   }
 }

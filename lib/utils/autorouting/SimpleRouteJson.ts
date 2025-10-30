@@ -27,6 +27,7 @@ export type Obstacle = {
   width: number
   height: number
   connectedTo: string[]
+  netIsAssignable?: boolean
 }
 
 export interface SimpleRouteConnection {
