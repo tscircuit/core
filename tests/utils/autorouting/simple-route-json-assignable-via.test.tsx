@@ -13,8 +13,8 @@ test("assignable vias produce assignable obstacles", async () => {
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={0} pcbY={0} />
       <trace from=".R1 > .pin1" to=".R1 > .pin2" />
       <via
-        pcbX={1}
-        pcbY={0}
+        pcbX={0}
+        pcbY={4}
         fromLayer="top"
         toLayer="bottom"
         holeDiameter="0.3mm"
