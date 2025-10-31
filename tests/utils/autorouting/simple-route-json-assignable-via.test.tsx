@@ -10,9 +10,22 @@ test("assignable vias produce assignable obstacles", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm" autorouter="laser_prefab">
-      <resistor name="R1" resistance="1k" footprint="0402" pcbX={0} pcbY={0} />
-      <trace from=".R1 > .pin1" to=".R1 > .pin2" />
+      <testpoint
+        name="TP_TOP"
+        footprintVariant="pad"
+        pcbX={0}
+        pcbY={0}
+        layer="top"
+      />
+      <testpoint
+        name="TP_BOTTOM"
+        footprintVariant="pad"
+        pcbX={0}
+        pcbY={8}
+        layer="bottom"
+      />
       <via
+        name="V_ASSIGNABLE"
         pcbX={0}
         pcbY={4}
         fromLayer="top"
@@ -21,6 +34,8 @@ test("assignable vias produce assignable obstacles", async () => {
         outerDiameter="0.6mm"
         netIsAssignable
       />
+      <trace from="TP_TOP.pin1" to="V_ASSIGNABLE.top" />
+      <trace from="V_ASSIGNABLE.bottom" to="TP_BOTTOM.pin1" />
     </board>,
   )
 
