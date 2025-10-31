@@ -18,6 +18,7 @@ export function applyTracesFromSolverOutput(args: {
 
   // Use the overlap-corrected traces from the pipeline
   const traces =
+    solver.traceCleanupSolver?.getOutput().traces ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
     solver.schematicTraceLinesSolver?.solvedTracePaths
   const pendingTraces: Array<{

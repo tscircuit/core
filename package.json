@@ -47,7 +47,7 @@
     "@tscircuit/props": "^0.0.387",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
-    "@tscircuit/schematic-trace-solver": "^0.0.41",
+    "@tscircuit/schematic-trace-solver": "^0.0.43",
     "@types/bun": "^1.2.16",
     "@types/debug": "^4.1.12",
     "@types/react": "^19.1.8",
