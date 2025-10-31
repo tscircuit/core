@@ -14,20 +14,20 @@ test("assignable vias produce assignable obstacles", async () => {
         name="TP_TOP"
         footprintVariant="pad"
         pcbX={0}
-        pcbY={0}
+        pcbY={4}
         layer="top"
       />
       <testpoint
         name="TP_BOTTOM"
         footprintVariant="pad"
         pcbX={0}
-        pcbY={8}
+        pcbY={-4}
         layer="bottom"
       />
       <via
         name="V_ASSIGNABLE"
         pcbX={0}
-        pcbY={4}
+        pcbY={0}
         fromLayer="top"
         toLayer="bottom"
         holeDiameter="0.3mm"
