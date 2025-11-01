@@ -62,6 +62,20 @@ export function getPresetAutoroutingConfig(
         ...rest,
       }
     }
+    case "laser-prefab": {
+      const {
+        preset: _preset,
+        local: _local,
+        groupMode: _groupMode,
+        ...rest
+      } = providedConfig
+      return {
+        local: true,
+        groupMode: "subcircuit",
+        preset: "laser_prefab",
+        ...rest,
+      }
+    }
     default:
       return {
         local: true,
