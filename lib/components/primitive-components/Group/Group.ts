@@ -40,6 +40,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
+import type { CopperPour } from "../CopperPour"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -637,6 +638,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     )
     if (!this._hasTracesToRoute()) return
     this._startAsyncAutorouting()
+  }
+
+  doInitialPcbCopperPourRender() {
+    if (this.root?.pcbDisabled) return
+
+    for (const child of this.children) {
+      if (child.componentName === "CopperPour") {
+        ;(child as CopperPour).renderCopperPour()
+      }
+    }
   }
 
   doInitialSchematicTraceRender() {
