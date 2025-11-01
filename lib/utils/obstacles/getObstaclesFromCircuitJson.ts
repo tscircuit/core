@@ -237,6 +237,9 @@ export const getObstaclesFromCircuitJson = (
       )
       obstacles.push(...traceObstacles)
     } else if (element.type === "pcb_via") {
+      const netIsAssignable = Boolean(
+        (element as any).net_is_assignable ?? (element as any).netIsAssignable,
+      )
       obstacles.push({
         type: "rect",
         layers: element.layers,
@@ -247,6 +250,7 @@ export const getObstaclesFromCircuitJson = (
         connectedTo: [], // TODO we can associate source_ports with this via
         width: element.outer_diameter,
         height: element.outer_diameter,
+        netIsAssignable: netIsAssignable || undefined,
       })
     }
   }

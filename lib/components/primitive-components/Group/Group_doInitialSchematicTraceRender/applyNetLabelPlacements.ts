@@ -38,6 +38,7 @@ export function applyNetLabelPlacements(args: {
 
   // Place net labels suggested by the solver
   const netLabelPlacements =
+    solver.netLabelPlacementSolver?.netLabelPlacements ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().netLabelPlacements ??
     []
   const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
