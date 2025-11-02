@@ -235,8 +235,13 @@ export class Board extends Group<typeof boardProps> {
     }
 
     const update: Record<string, unknown> = {
-      width: finalWidth,
-      height: finalHeight,
+      // Only set width/height when outline is not present
+      ...(props.outline
+        ? {}
+        : {
+            width: props.width ?? computedWidth,
+            height: props.height ?? computedHeight,
+          }),
       center,
     }
 
@@ -341,8 +346,7 @@ export class Board extends Group<typeof boardProps> {
       const minY = Math.min(...yValues)
       const maxY = Math.max(...yValues)
 
-      computedWidth = maxX - minX
-      computedHeight = maxY - minY
+      // When outline is present, only calculate center, not width/height
       center = {
         x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
         y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
@@ -369,14 +373,14 @@ export class Board extends Group<typeof boardProps> {
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
 
-      width: computedWidth!,
-      height: computedHeight!,
+      width: props.outline ? undefined : computedWidth,
+      height: props.outline ? undefined : computedHeight,
       outline: outline?.map((point) => ({
         x: point.x + (props.outlineOffsetX ?? 0),
         y: point.y + (props.outlineOffsetY ?? 0),
       })),
       material: props.material,
-    })
+    } as any)
 
     this.pcb_board_id = pcb_board.pcb_board_id!
 
