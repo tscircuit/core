@@ -21,7 +21,7 @@ test("board width and height should be undefined when outline is provided", asyn
   circuit.render()
 
   const pcb_board = circuit.db.pcb_board.list()[0]
-  
+
   // EXPECTED: width and height should be undefined when outline is present
   expect(pcb_board.width).toBeUndefined()
   expect(pcb_board.height).toBeUndefined()
@@ -30,3 +30,4 @@ test("board width and height should be undefined when outline is provided", asyn
   expect(pcb_board.outline).toBeDefined()
   expect(pcb_board.outline).toHaveLength(4)
 })
+

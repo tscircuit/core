@@ -21,8 +21,9 @@ test("board outline dimension is calculated correctly", () => {
   circuit.render()
 
   const pcb_board = circuit.db.pcb_board.list()[0]
-  expect(pcb_board.width).toBe(16)
-  expect(pcb_board.height).toBe(16)
+  // When outline is provided, width and height should be undefined
+  expect(pcb_board.width).toBeUndefined()
+  expect(pcb_board.height).toBeUndefined()
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
