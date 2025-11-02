@@ -25,9 +25,8 @@ test("board width and height should be undefined when outline is provided", asyn
   // EXPECTED: width and height should be undefined when outline is present
   expect(pcb_board.width).toBeUndefined()
   expect(pcb_board.height).toBeUndefined()
-  
+
   // EXPECTED: outline should exist and have the correct points
   expect(pcb_board.outline).toBeDefined()
   expect(pcb_board.outline).toHaveLength(4)
 })
-
