@@ -7,20 +7,7 @@ import Flatten from "@flatten-js/core"
 import { getBoardPolygon } from "./utils/get-board-polygon"
 import { processObstaclesForPour } from "./utils/process-obstacles"
 import { generateAndInsertBRep } from "./utils/generate-and-insert-brep"
-
-const circleToPolygon = (circle: Flatten.Circle, numSegments = 32) => {
-  const points: Flatten.Point[] = []
-  for (let i = 0; i < numSegments; i++) {
-    const angle = (i / numSegments) * 2 * Math.PI
-    points.push(
-      new Flatten.Point(
-        circle.center.x + circle.r * Math.cos(angle),
-        circle.center.y + circle.r * Math.sin(angle),
-      ),
-    )
-  }
-  return new Flatten.Polygon(points)
-}
+import { circleToPolygon } from "lib/utils/circle-to-polygon"
 
 export { type CopperPourProps }
 
@@ -64,8 +51,6 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
         db.toArray(),
         connMap,
       ).filter((o) => o.layers.includes(props.layer))
-
-      console.log(`[copper-pour] found ${obstaclesRaw.length} obstacles total`)
 
       const { rectObstaclesToSubtract, circularObstacles } =
         processObstaclesForPour(obstaclesRaw, connMap, net, {

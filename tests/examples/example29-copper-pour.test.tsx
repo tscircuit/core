@@ -87,7 +87,7 @@ test("multiple copper pours on different layers", async () => {
   expect(circuit).toMatchPcbSnapshot(import.meta.path + "-multiple-layers")
 })
 
-test("diagonal trace copper pour", async () => {
+test("copper pour should avoid traces on different nets", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="20mm" height="20mm" autorouter="sequential-trace">
@@ -116,7 +116,7 @@ test("diagonal trace copper pour", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-diagonal-trace-pour")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-avoid-traces")
 })
 
 test("smaller trace margin", async () => {
