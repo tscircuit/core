@@ -66,10 +66,6 @@ export const processObstaclesForPour = (
           rotatedCorners.map((p: any) => Flatten.point(p.x, p.y)),
         ),
       )
-      const actualMargin = (enlargedHeight - height) / 2
-      console.log(
-        `[copper-pour] adding trace segment obstacle cutout, wanted_margin: ${traceMargin}, actual_margin: ${actualMargin}`,
-      )
       continue
     }
 
@@ -79,12 +75,6 @@ export const processObstaclesForPour = (
       const is_trace_end = obs.obstacle_type === "trace"
       const margin = is_trace_end ? traceMargin : padMargin
       const radius = obs.width / 2 + margin
-      if (is_trace_end) {
-        const actualMargin = radius - obs.width / 2
-        console.log(
-          `[copper-pour] adding trace end obstacle cutout, wanted_margin: ${margin}, actual_margin: ${actualMargin}`,
-        )
-      }
       circularObstacles.push({
         center: obs.center,
         radius: radius,
