@@ -87,6 +87,35 @@ export abstract class PrimitiveComponent<
     return undefined // Return undefined if not found
   }
 
+  getInheritedMergedProperty(propertyName: string): any {
+    const parentValue =
+      this.parent &&
+      typeof (this.parent as any).getInheritedMergedProperty === "function"
+        ? (this.parent as any).getInheritedMergedProperty(propertyName)
+        : undefined
+
+    const currentValue =
+      this._parsedProps?.[propertyName as keyof z.infer<ZodProps>]
+
+    // If both are objects, merge them
+    if (
+      parentValue &&
+      typeof parentValue === "object" &&
+      !Array.isArray(parentValue) &&
+      currentValue &&
+      typeof currentValue === "object" &&
+      !Array.isArray(currentValue)
+    ) {
+      return {
+        ...parentValue,
+        ...currentValue,
+      }
+    }
+
+    // Otherwise return current value if it exists, else parent value
+    return currentValue !== undefined ? currentValue : parentValue
+  }
+
   get lowercaseComponentName() {
     return this.componentName.toLowerCase()
   }

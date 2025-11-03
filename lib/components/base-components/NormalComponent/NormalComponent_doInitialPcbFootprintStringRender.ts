@@ -154,8 +154,8 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
 
     if (!resolverFn) return
 
-    // Get the resolved pcbStyle from the component
-    const resolvedPcbStyle = component.getInheritedProperty("pcbStyle")
+    // Get the resolved pcbStyle from the component, merging all parent styles
+    const resolvedPcbStyle = component.getInheritedMergedProperty("pcbStyle")
 
     queueAsyncEffect("load-lib-footprint", async () => {
       try {
