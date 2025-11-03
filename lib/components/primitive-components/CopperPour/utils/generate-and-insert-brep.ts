@@ -21,7 +21,7 @@ const faceToVertices = (face: Flatten.Face) =>
 
 export const generateAndInsertBRep = (
   pourPolygons: Flatten.Polygon | Flatten.Polygon[],
-  circularObstacles: Array<{
+  _circularObstacles: Array<{
     center: { x: number; y: number }
     radius: number
   }>,
@@ -71,29 +71,6 @@ export const generateAndInsertBRep = (
         f.reverse()
         return { vertices: faceToVertices(f) }
       })
-
-      // Add circular obstacles as inner rings if they are contained in the island
-      for (const circle of circularObstacles) {
-        const centerPoint = Flatten.point(circle.center.x, circle.center.y)
-        const isContained = island.contains(centerPoint)
-
-        if (isContained) {
-          inner_rings.push({
-            vertices: [
-              {
-                x: circle.center.x,
-                y: circle.center.y - circle.radius,
-                bulge: 1,
-              },
-              {
-                x: circle.center.x,
-                y: circle.center.y + circle.radius,
-                bulge: 1,
-              },
-            ],
-          })
-        }
-      }
 
       db.pcb_copper_pour.insert({
         shape: "brep",

@@ -5,9 +5,22 @@ import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectiv
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import Flatten from "@flatten-js/core"
 import { getBoardPolygon } from "./utils/get-board-polygon"
-import { getTraceObstacles } from "./utils/get-trace-obstacles"
 import { processObstaclesForPour } from "./utils/process-obstacles"
 import { generateAndInsertBRep } from "./utils/generate-and-insert-brep"
+
+const circleToPolygon = (circle: Flatten.Circle, numSegments = 32) => {
+  const points: Flatten.Point[] = []
+  for (let i = 0; i < numSegments; i++) {
+    const angle = (i / numSegments) * 2 * Math.PI
+    points.push(
+      new Flatten.Point(
+        circle.center.x + circle.r * Math.cos(angle),
+        circle.center.y + circle.r * Math.sin(angle),
+      ),
+    )
+  }
+  return new Flatten.Polygon(points)
+}
 
 export { type CopperPourProps }
 
@@ -52,7 +65,7 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
         connMap,
       ).filter((o) => o.layers.includes(props.layer))
 
-      obstaclesRaw.push(...getTraceObstacles(db, props.layer))
+      console.log(`[copper-pour] found ${obstaclesRaw.length} obstacles total`)
 
       const { rectObstaclesToSubtract, circularObstacles } =
         processObstaclesForPour(obstaclesRaw, connMap, net, {
@@ -62,18 +75,24 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
 
       let pourPolygons: Flatten.Polygon | Flatten.Polygon[] = boardPolygon
       if (rectObstaclesToSubtract.length > 0) {
-        const obstacleUnion = rectObstaclesToSubtract.reduce((acc, p) =>
-          Flatten.BooleanOperations.unify(acc, p),
-        )
-        if (obstacleUnion && !obstacleUnion.isEmpty()) {
-          pourPolygons = Flatten.BooleanOperations.subtract(
-            boardPolygon,
-            obstacleUnion,
-          )
+        for (const rect of rectObstaclesToSubtract) {
+          pourPolygons = Flatten.BooleanOperations.subtract(pourPolygons, rect)
         }
       }
 
-      generateAndInsertBRep(pourPolygons, circularObstacles, {
+      for (const circ of circularObstacles) {
+        const circleShape = new Flatten.Circle(
+          Flatten.point(circ.center.x, circ.center.y),
+          circ.radius,
+        )
+        const circlePolygon = circleToPolygon(circleShape)
+        pourPolygons = Flatten.BooleanOperations.subtract(
+          pourPolygons,
+          circlePolygon,
+        )
+      }
+
+      generateAndInsertBRep(pourPolygons, [], {
         db,
         copperPour: this,
       })

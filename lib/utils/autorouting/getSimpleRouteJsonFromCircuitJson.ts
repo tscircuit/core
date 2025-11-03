@@ -1,6 +1,6 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { Trace } from "lib/components"
-import type { SimpleRouteConnection } from "./SimpleRouteJson"
+import type { Obstacle, SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 import type { AnyCircuitElement } from "circuit-json"
 import { su } from "@tscircuit/circuit-json-util"
@@ -350,7 +350,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   return {
     simpleRouteJson: {
       bounds,
-      obstacles,
+      obstacles: obstacles as Obstacle[],
       connections: allConns,
       // TODO add traces so that we don't run into things routed by another
       // subcircuit

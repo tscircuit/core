@@ -2,7 +2,10 @@ import type { Trace } from "./Trace"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
+import type {
+  Obstacle,
+  SimplifiedPcbTrace,
+} from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { getClosest } from "lib/utils/getClosest"
@@ -287,7 +290,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       optimizeWithGoalBoxes: Boolean(pcbPortA && pcbPortB),
       connMap,
       input: {
-        obstacles,
+        obstacles: obstacles as Obstacle[],
         minTraceWidth,
         connections: [
           {
