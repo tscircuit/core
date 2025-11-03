@@ -5,6 +5,7 @@ import { Footprint } from "lib/components/primitive-components/Footprint"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 import type { CadModelProp } from "@tscircuit/props"
+import type { PcbStyle } from "@tscircuit/props/lib/common/pcbStyle"
 import {
   circuit_json_footprint_load_error,
   external_footprint_load_error,
@@ -140,19 +141,28 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
 
     // Find resolver: library can be a function or an object of resolvers
     let resolverFn:
-      | ((path: string) => Promise<FootprintLibraryResult | any[]>)
+      | ((
+          path: string,
+          options?: { resolvedPcbStyle?: PcbStyle },
+        ) => Promise<FootprintLibraryResult | any[]>)
       | undefined
     if (typeof libMap === "function") {
       resolverFn = libMap as (
         path: string,
+        options?: { resolvedPcbStyle?: PcbStyle },
       ) => Promise<FootprintLibraryResult | any[]>
     }
 
     if (!resolverFn) return
 
+    // Get the resolved pcbStyle from the component
+    const resolvedPcbStyle = component.getInheritedProperty("pcbStyle")
+
     queueAsyncEffect("load-lib-footprint", async () => {
       try {
-        const result = await resolverFn!(libRef.footprintName)
+        const result = await resolverFn!(libRef.footprintName, {
+          resolvedPcbStyle,
+        })
         let circuitJson: any[] | null = null
         if (Array.isArray(result)) {
           circuitJson = result
