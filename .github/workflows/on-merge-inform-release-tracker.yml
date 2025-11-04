@@ -1,0 +1,24 @@
+name: Release Tracker - Feature Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  track-feature-merge:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send feature merge event
+        continue-on-error: true
+        run: |
+          FEATURE_NAME=$(echo "${{ github.event.pull_request.user.login }}: ${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}" | jq -R .)
+          curl -X POST https://release-tracker.tscircuit.com/release_events/create \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"event\": {
+                \"event_type\": \"feature_merged\",
+                \"repo\": \"tscircuit/core\",
+                \"feature_name\": $FEATURE_NAME
+              }
+            }"
