@@ -8,4 +8,8 @@ declare module "circuit-json" {
   interface PCBBoard {
     shape?: "rectangular" | "outlined"
   }
+
+  interface PcbVia {
+    net_is_assignable?: boolean
+  }
 }
