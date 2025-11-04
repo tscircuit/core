@@ -4,4 +4,8 @@ declare module "circuit-json" {
   interface CadComponent {
     model_mtl_url?: string
   }
+
+  interface PCBBoard {
+    shape?: "rectangular" | "outlined"
+  }
 }

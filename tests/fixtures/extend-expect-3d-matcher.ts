@@ -56,25 +56,62 @@ export async function resolvePoppyglOptions(
     if (!board) {
       throw new Error("Can't use cameraPreset without pcb_board")
     }
-    switch (cameraPreset) {
-      case "bottom_angled":
-        resolvedOpts.camPos = [
-          board.width / 2,
-          -(board.width + board.height) / 2,
-          board.height / 2,
-        ]
-        break
-      default:
-        throw new Error(`Unknown camera preset: ${cameraPreset}`)
+    // Handle outlined boards differently
+    if ((board as any).shape === "outlined" && board.outline) {
+      // Calculate bounds from outline for camera positioning
+      const xVals = board.outline.map((p) => p.x)
+      const yVals = board.outline.map((p) => p.y)
+      const outlineWidth = Math.max(...xVals) - Math.min(...xVals)
+      const outlineHeight = Math.max(...yVals) - Math.min(...yVals)
+      
+      switch (cameraPreset) {
+        case "bottom_angled":
+          resolvedOpts.camPos = [
+            outlineWidth / 2,
+            -(outlineWidth + outlineHeight) / 2,
+            outlineHeight / 2,
+          ]
+          break
+        default:
+          throw new Error(`Unknown camera preset: ${cameraPreset}`)
+      }
+    } else {
+      switch (cameraPreset) {
+        case "bottom_angled":
+          resolvedOpts.camPos = [
+            board.width / 2,
+            -(board.width + board.height) / 2,
+            board.height / 2,
+          ]
+          break
+        default:
+          throw new Error(`Unknown camera preset: ${cameraPreset}`)
+      }
     }
   }
 
   if (!resolvedOpts.camPos && board) {
-    resolvedOpts.camPos = [
-      board.width / 2,
-      (board.width + board.height) / 2,
-      board.height / 2,
-    ]
+    // Handle outlined boards
+    if ((board as any).shape === "outlined" && board.outline) {
+      // Calculate bounds from outline
+      const xVals = board.outline.map((p) => p.x)
+      const yVals = board.outline.map((p) => p.y)
+      const outlineWidth = Math.max(...xVals) - Math.min(...xVals)
+      const outlineHeight = Math.max(...yVals) - Math.min(...yVals)
+      
+      resolvedOpts.camPos = [
+        outlineWidth / 2,
+        (outlineWidth + outlineHeight) / 2,
+        outlineHeight / 2,
+      ]
+    } else {
+      // Rectangular board with width/height
+      resolvedOpts.camPos = [
+        board.width / 2,
+        (board.width + board.height) / 2,
+        board.height / 2,
+      ]
+    }
   }
 
   return resolvedOpts

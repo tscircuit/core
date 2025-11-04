@@ -375,6 +375,7 @@ export class Board extends Group<typeof boardProps> {
 
       width: props.outline ? undefined : computedWidth,
       height: props.outline ? undefined : computedHeight,
+      shape: props.outline ? "outlined" : "rectangular",
       outline: outline?.map((point) => ({
         x: point.x + (props.outlineOffsetX ?? 0),
         y: point.y + (props.outlineOffsetY ?? 0),
