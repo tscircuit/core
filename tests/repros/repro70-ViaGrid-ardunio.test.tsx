@@ -16,7 +16,6 @@ test("ViaGridBoard ", async () => {
   await circuit.renderUntilSettled()
 
   const circuitJson = circuit.getCircuitJson()
-  Bun.write("circuit.json", JSON.stringify(circuitJson, null, 2))
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
