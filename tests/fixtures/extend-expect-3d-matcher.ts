@@ -63,7 +63,7 @@ export async function resolvePoppyglOptions(
       const yVals = board.outline.map((p) => p.y)
       const outlineWidth = Math.max(...xVals) - Math.min(...xVals)
       const outlineHeight = Math.max(...yVals) - Math.min(...yVals)
-      
+
       switch (cameraPreset) {
         case "bottom_angled":
           resolvedOpts.camPos = [
@@ -98,7 +98,7 @@ export async function resolvePoppyglOptions(
       const yVals = board.outline.map((p) => p.y)
       const outlineWidth = Math.max(...xVals) - Math.min(...xVals)
       const outlineHeight = Math.max(...yVals) - Math.min(...yVals)
-      
+
       resolvedOpts.camPos = [
         outlineWidth / 2,
         (outlineWidth + outlineHeight) / 2,
