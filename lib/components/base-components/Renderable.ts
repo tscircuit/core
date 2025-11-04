@@ -234,9 +234,7 @@ export abstract class Renderable implements IRenderable {
     return this._asyncEffects.some((effect) => !effect.complete)
   }
 
-  private _hasIncompleteAsyncEffectsInSubtreeForPhase(
-    phase: RenderPhase,
-  ): boolean {
+  _hasIncompleteAsyncEffectsInSubtreeForPhase(phase: RenderPhase): boolean {
     // Check self
     for (const e of this._asyncEffects) {
       if (!e.complete && e.phase === phase) return true
@@ -264,6 +262,14 @@ export abstract class Renderable implements IRenderable {
         (child as Renderable).getRenderGraph(),
       ),
     }
+  }
+
+  getTopLevelRenderable(): Renderable {
+    let current: Renderable = this
+    while (current.parent && current.parent instanceof Renderable) {
+      current = current.parent
+    }
+    return current
   }
 
   runRenderCycle() {
@@ -308,10 +314,15 @@ export abstract class Renderable implements IRenderable {
       if (hasIncompleteEffects) return
     }
 
-    // Check declared async dependencies for this phase within subtree
+    // Check declared async dependencies for this phase within the entire tree
     const deps = asyncPhaseDependencies[phase] || []
-    for (const depPhase of deps) {
-      if (this._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) return
+    if (deps.length > 0) {
+      const root = this.getTopLevelRenderable()
+      for (const depPhase of deps) {
+        if (root._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) {
+          return
+        }
+      }
     }
 
     this._emitRenderLifecycleEvent(phase, "start")

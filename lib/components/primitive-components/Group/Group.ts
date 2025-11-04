@@ -484,6 +484,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const debug = Debug("tscircuit:core:_runLocalAutorouting")
     debug(`[${this.getString()}] starting local autorouting`)
     const autorouterConfig = this._getAutorouterConfig()
+    const isLaserPrefabPreset = this._isLaserPrefabAutorouter(autorouterConfig)
 
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       db,
@@ -521,6 +522,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Optional configuration parameters
         capacityDepth: this.props.autorouter?.capacityDepth,
         targetMinCapacity: this.props.autorouter?.targetMinCapacity,
+        useAssignableViaSolver: isLaserPrefabPreset,
       })
     }
 
@@ -1057,6 +1059,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const autorouter =
       this._parsedProps.autorouter || this.getInheritedProperty("autorouter")
     return getPresetAutoroutingConfig(autorouter)
+  }
+
+  _isLaserPrefabAutorouter(
+    autorouterConfig: AutorouterConfig = this._getAutorouterConfig(),
+  ): boolean {
+    const autorouterProp = this.props.autorouter
+    const normalize = (value?: string) => value?.replace(/-/g, "_") ?? value
+    if (autorouterConfig.preset === "laser_prefab") return true
+    if (typeof autorouterProp === "string") {
+      return normalize(autorouterProp) === "laser_prefab"
+    }
+    if (typeof autorouterProp === "object" && autorouterProp) {
+      return normalize(autorouterProp.preset) === "laser_prefab"
+    }
+    return false
   }
 
   _getSubcircuitLayerCount(): number {
