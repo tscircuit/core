@@ -369,10 +369,8 @@ export class Board extends Group<typeof boardProps> {
 
     const pcb_board = db.pcb_board.insert({
       center,
-
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
-
       width: props.outline ? undefined : computedWidth,
       height: props.outline ? undefined : computedHeight,
       shape: props.outline ? "outlined" : "rectangular",
