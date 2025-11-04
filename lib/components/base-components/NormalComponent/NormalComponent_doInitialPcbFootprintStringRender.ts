@@ -4,7 +4,7 @@ import { isValidElement as isReactElement } from "react"
 import { Footprint } from "lib/components/primitive-components/Footprint"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
-import type { CadModelProp } from "@tscircuit/props"
+import type { CadModelProp, PcbStyle } from "@tscircuit/props"
 import {
   circuit_json_footprint_load_error,
   external_footprint_load_error,
@@ -142,13 +142,13 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     let resolverFn:
       | ((
           path: string,
-          options?: { resolvedPcbStyle?: any },
+          options?: { resolvedPcbStyle?: PcbStyle },
         ) => Promise<FootprintLibraryResult | any[]>)
       | undefined
     if (typeof libMap === "function") {
       resolverFn = libMap as (
         path: string,
-        options?: { resolvedPcbStyle?: any },
+        options?: { resolvedPcbStyle?: PcbStyle },
       ) => Promise<FootprintLibraryResult | any[]>
     }
 
