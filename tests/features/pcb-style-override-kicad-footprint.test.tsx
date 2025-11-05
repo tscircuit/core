@@ -104,7 +104,10 @@ test("pcbStyle.silkscreenFontSize should override kicad footprint silkscreen fon
         anchorAlignment="center"
         fontSize="1mm"
       />
-      <pcbnotedimension from={{ x: -3, y: -4.17 - 1.1 }} to={{ x: -3, y: -4.17 + 1.1 }} />
+      <pcbnotedimension
+        from={{ x: -3, y: -4.17 - 1.1 }}
+        to={{ x: -3, y: -4.17 + 1.1 }}
+      />
     </board>,
   )
 
