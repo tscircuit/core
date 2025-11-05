@@ -87,6 +87,14 @@ export abstract class PrimitiveComponent<
     return undefined // Return undefined if not found
   }
 
+  getInheritedMergedProperty(propertyName: string): any {
+    const parentPropertyObject =
+      this.parent?.getInheritedMergedProperty?.(propertyName)
+    const myPropertyObject =
+      this._parsedProps?.[propertyName as keyof z.infer<ZodProps>]
+    return { ...parentPropertyObject, ...myPropertyObject }
+  }
+
   get lowercaseComponentName() {
     return this.componentName.toLowerCase()
   }
