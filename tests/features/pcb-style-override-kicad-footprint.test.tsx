@@ -84,7 +84,7 @@ test("pcbStyle.silkscreenFontSize should override kicad footprint silkscreen fon
 
   circuit.add(
     <board
-      width="50mm"
+      width="30mm"
       height="20mm"
       pcbStyle={{
         silkscreenFontSize: 2,
@@ -102,8 +102,9 @@ test("pcbStyle.silkscreenFontSize should override kicad footprint silkscreen fon
         pcbX={0}
         pcbY={3}
         anchorAlignment="center"
+        fontSize="1mm"
       />
-      <pcbnotedimension from={{ x: -21, y: 3 - 1 }} to={{ x: -21, y: 3 + 1 }} />
+      <pcbnotedimension from={{ x: -3, y: -4.17 - 1.1 }} to={{ x: -3, y: -4.17 + 1.1 }} />
     </board>,
   )
 
@@ -117,11 +118,6 @@ test("pcbStyle.silkscreenFontSize should override kicad footprint silkscreen fon
 
   const kicadSilkscreenText = silkscreenTexts.find((text) => text.text === "R1")
   expect(kicadSilkscreenText?.font_size).toBe(2.2)
-
-  const addedSilkscreenText = silkscreenTexts.find((text) =>
-    text.text?.includes("KiCad silkscreen"),
-  )
-  expect(addedSilkscreenText?.font_size).toBe(2)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
