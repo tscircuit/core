@@ -88,29 +88,11 @@ export abstract class PrimitiveComponent<
   }
 
   getInheritedMergedProperty(propertyName: string): any {
-    const parentValue = this.parent?.getInheritedMergedProperty?.(propertyName)
-    const currentValue =
+    const parentPropertyObject =
+      this.parent?.getInheritedMergedProperty?.(propertyName)
+    const myPropertyObject =
       this._parsedProps?.[propertyName as keyof z.infer<ZodProps>]
-
-    // Return current value if it's defined
-    if (currentValue !== undefined) {
-      // If both values are plain objects, merge them
-      const isParentPlainObject =
-        parentValue !== null &&
-        typeof parentValue === "object" &&
-        !Array.isArray(parentValue)
-      const isCurrentPlainObject =
-        typeof currentValue === "object" && !Array.isArray(currentValue)
-
-      if (isParentPlainObject && isCurrentPlainObject) {
-        return { ...parentValue, ...currentValue }
-      }
-
-      return currentValue
-    }
-
-    // Otherwise return parent value
-    return parentValue
+    return { ...parentPropertyObject, ...myPropertyObject }
   }
 
   get lowercaseComponentName() {
