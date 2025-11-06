@@ -47,7 +47,7 @@ test("copper pour with board outline", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-outline")
+  expect(circuit).toMatchPcbSnapshot(`${import.meta.path}-outline`)
 })
 
 test("multiple copper pours on different layers", async () => {
@@ -84,7 +84,7 @@ test("multiple copper pours on different layers", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-multiple-layers")
+  expect(circuit).toMatchPcbSnapshot(`${import.meta.path}-multiple-layers`)
 })
 
 test("copper pour should avoid traces on different nets", async () => {
@@ -116,7 +116,7 @@ test("copper pour should avoid traces on different nets", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-avoid-traces")
+  expect(circuit).toMatchPcbSnapshot(`${import.meta.path}-avoid-traces`)
 })
 
 test("smaller trace margin", async () => {
@@ -142,7 +142,7 @@ test("smaller trace margin", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-smaller-trace-margin")
+  expect(circuit).toMatchPcbSnapshot(`${import.meta.path}-smaller-trace-margin`)
 })
 
 test("bigger trace margin", async () => {
@@ -168,5 +168,54 @@ test("bigger trace margin", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "bigger-trace-margin")
+  expect(circuit).toMatchPcbSnapshot(`${import.meta.path}bigger-trace-margin`)
+})
+
+test("copper pour respects board edge margin", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board
+      width="20mm"
+      height="20mm"
+      outline={[
+        { x: -10, y: -10 },
+        { x: 10, y: -10 },
+        { x: 10, y: 10 },
+        { x: 0, y: 10 },
+        { x: 0, y: 0 },
+        { x: -10, y: 0 },
+      ]}
+    >
+      <net name="GND" />
+      <net name="VCC" />
+      <resistor
+        name="R1"
+        footprint="0805"
+        resistance="10k"
+        pcbX={-5}
+        pcbY={-2}
+        connections={{
+          pin1: "net.GND",
+          pin2: "net.VCC",
+        }}
+      />
+      <resistor
+        name="R2"
+        footprint="0805"
+        resistance="1k"
+        pcbX={5}
+        pcbY={-2}
+        connections={{
+          pin1: "net.VCC",
+          pin2: "net.VCC",
+        }}
+      />
+      {/* Use the new boardEdgeMargin prop to ensure the pour leaves a larger margin from the board outline */}
+      <copperpour connectsTo="net.GND" layer="top" boardEdgeMargin={2} />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  expect(circuit).toMatchPcbSnapshot(`${import.meta.path}-board-edge-margin`)
 })

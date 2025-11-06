@@ -46,6 +46,7 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
         pour_connectivity_key: sourceNet.subcircuit_connectivity_map_key || "",
         pad_margin: props.padMargin ?? 0.2,
         trace_margin: props.traceMargin ?? 0.2,
+        board_edge_margin: props.boardEdgeMargin ?? 0,
       })
 
       const solver = new CopperPourPipelineSolver(inputProblem)
