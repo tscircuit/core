@@ -168,7 +168,7 @@ test("bigger trace margin", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(`${import.meta.path}bigger-trace-margin`)
+  expect(circuit).toMatchPcbSnapshot(`${import.meta.path}-bigger-trace-margin`)
 })
 
 test("copper pour respects board edge margin", async () => {
