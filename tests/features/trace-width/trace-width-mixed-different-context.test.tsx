@@ -64,16 +64,16 @@ test("different trace widths in same board context", async () => {
   expect(traces.length).toBe(3)
 
   // Verify each trace maintains its specified width
-  const thickTrace = traces.find(t => {
-    const wireSegments = t.route.filter(s => s.route_type === "wire")
+  const thickTrace = traces.find((t) => {
+    const wireSegments = t.route.filter((s) => s.route_type === "wire")
     return wireSegments.length > 0 && wireSegments[0].width === 0.5
   })
-  const mediumTrace = traces.find(t => {
-    const wireSegments = t.route.filter(s => s.route_type === "wire")
+  const mediumTrace = traces.find((t) => {
+    const wireSegments = t.route.filter((s) => s.route_type === "wire")
     return wireSegments.length > 0 && wireSegments[0].width === 0.2
   })
-  const thinTrace = traces.find(t => {
-    const wireSegments = t.route.filter(s => s.route_type === "wire")
+  const thinTrace = traces.find((t) => {
+    const wireSegments = t.route.filter((s) => s.route_type === "wire")
     return wireSegments.length > 0 && wireSegments[0].width === 0.1
   })
 

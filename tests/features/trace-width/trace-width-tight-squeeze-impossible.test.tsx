@@ -7,13 +7,7 @@ test("trace width too large for component spacing should still attempt routing",
   circuit.add(
     <board width="10mm" height="10mm">
       {/* Components extremely close together */}
-      <resistor
-        name="R1"
-        resistance="10k"
-        footprint="0402"
-        pcbX={0}
-        pcbY={0}
-      />
+      <resistor name="R1" resistance="10k" footprint="0402" pcbX={0} pcbY={0} />
       <resistor
         name="R2"
         resistance="10k"
@@ -22,11 +16,7 @@ test("trace width too large for component spacing should still attempt routing",
         pcbY={0}
       />
       {/* Trace width larger than the distance between components */}
-      <trace
-        from=".R1 > .pin2"
-        to=".R2 > .pin1"
-        thickness="1mm"
-      />
+      <trace from=".R1 > .pin2" to=".R2 > .pin1" thickness="1mm" />
     </board>,
   )
 

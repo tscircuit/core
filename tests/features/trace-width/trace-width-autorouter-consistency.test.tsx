@@ -13,31 +13,11 @@ test("trace width consistency across different autorouter algorithms", async () 
         pcbX={-5}
         pcbY={0}
       />
-      <resistor
-        name="R2"
-        resistance="10k"
-        footprint="0402"
-        pcbX={0}
-        pcbY={0}
-      />
-      <resistor
-        name="R3"
-        resistance="10k"
-        footprint="0402"
-        pcbX={5}
-        pcbY={0}
-      />
+      <resistor name="R2" resistance="10k" footprint="0402" pcbX={0} pcbY={0} />
+      <resistor name="R3" resistance="10k" footprint="0402" pcbX={5} pcbY={0} />
       {/* Different trace widths in same routing context */}
-      <trace
-        from=".R1 > .pin2"
-        to=".R2 > .pin1"
-        thickness="0.2mm"
-      />
-      <trace
-        from=".R2 > .pin2"
-        to=".R3 > .pin1"
-        thickness="0.4mm"
-      />
+      <trace from=".R1 > .pin2" to=".R2 > .pin1" thickness="0.2mm" />
+      <trace from=".R2 > .pin2" to=".R3 > .pin1" thickness="0.4mm" />
     </board>,
   )
 
@@ -47,8 +27,8 @@ test("trace width consistency across different autorouter algorithms", async () 
   expect(traces.length).toBe(2)
 
   // Verify each trace maintains its specified width
-  const trace1 = traces.find(t => t.source_trace_id?.includes("R1"))
-  const trace2 = traces.find(t => t.source_trace_id?.includes("R2"))
+  const trace1 = traces.find((t) => t.source_trace_id?.includes("R1"))
+  const trace2 = traces.find((t) => t.source_trace_id?.includes("R2"))
 
   if (trace1) {
     expect(

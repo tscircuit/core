@@ -14,19 +14,9 @@ test("tight squeeze scenario with large trace width causing routing challenges",
         pcbX={-1}
         pcbY={0}
       />
-      <resistor
-        name="R2"
-        resistance="10k"
-        footprint="0402"
-        pcbX={1}
-        pcbY={0}
-      />
+      <resistor name="R2" resistance="10k" footprint="0402" pcbX={1} pcbY={0} />
       {/* Very large trace width that may be challenging to route */}
-      <trace
-        from=".R1 > .pin2"
-        to=".R2 > .pin1"
-        thickness="2mm"
-      />
+      <trace from=".R1 > .pin2" to=".R2 > .pin1" thickness="2mm" />
     </board>,
   )
 

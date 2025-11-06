@@ -38,26 +38,10 @@ test("subcircuit autorouter behavior with trace width constraints", async () => 
         />
 
         {/* Different trace widths in constrained space */}
-        <trace
-          from=".R1 > .pin2"
-          to=".R2 > .pin1"
-          thickness="0.2mm"
-        />
-        <trace
-          from=".R3 > .pin2"
-          to=".R4 > .pin1"
-          thickness="0.15mm"
-        />
-        <trace
-          from=".R1 > .pin1"
-          to=".R3 > .pin1"
-          thickness="0.3mm"
-        />
-        <trace
-          from=".R2 > .pin2"
-          to=".R4 > .pin2"
-          thickness="0.25mm"
-        />
+        <trace from=".R1 > .pin2" to=".R2 > .pin1" thickness="0.2mm" />
+        <trace from=".R3 > .pin2" to=".R4 > .pin1" thickness="0.15mm" />
+        <trace from=".R1 > .pin1" to=".R3 > .pin1" thickness="0.3mm" />
+        <trace from=".R2 > .pin2" to=".R4 > .pin2" thickness="0.25mm" />
       </subcircuit>
     </board>,
   )
@@ -69,10 +53,12 @@ test("subcircuit autorouter behavior with trace width constraints", async () => 
 
   // Verify all traces maintain their specified widths despite dense routing
   const expectedWidths = [0.2, 0.15, 0.3, 0.25]
-  const actualWidths = traces.map(t => {
-    const wireSegments = t.route.filter(s => s.route_type === "wire")
-    return wireSegments.length > 0 ? wireSegments[0].width : 0
-  }).sort()
+  const actualWidths = traces
+    .map((t) => {
+      const wireSegments = t.route.filter((s) => s.route_type === "wire")
+      return wireSegments.length > 0 ? wireSegments[0].width : 0
+    })
+    .sort()
 
   expect(actualWidths).toEqual(expectedWidths.sort())
 

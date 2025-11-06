@@ -13,18 +13,8 @@ test("trace width with laser-prefab autorouter preset", async () => {
         pcbX={-5}
         pcbY={0}
       />
-      <resistor
-        name="R2"
-        resistance="10k"
-        footprint="0402"
-        pcbX={5}
-        pcbY={0}
-      />
-      <trace
-        from=".R1 > .pin2"
-        to=".R2 > .pin1"
-        thickness="0.4mm"
-      />
+      <resistor name="R2" resistance="10k" footprint="0402" pcbX={5} pcbY={0} />
+      <trace from=".R1 > .pin2" to=".R2 > .pin1" thickness="0.4mm" />
     </board>,
   )
 

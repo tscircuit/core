@@ -7,13 +7,7 @@ test("trace width larger than distance between components", async () => {
   circuit.add(
     <board width="10mm" height="10mm">
       {/* Components placed extremely close together */}
-      <resistor
-        name="R1"
-        resistance="10k"
-        footprint="0402"
-        pcbX={0}
-        pcbY={0}
-      />
+      <resistor name="R1" resistance="10k" footprint="0402" pcbX={0} pcbY={0} />
       <resistor
         name="R2"
         resistance="10k"
@@ -22,11 +16,7 @@ test("trace width larger than distance between components", async () => {
         pcbY={0}
       />
       {/* Trace width (1mm) larger than component spacing (0.2mm) */}
-      <trace
-        from=".R1 > .pin2"
-        to=".R2 > .pin1"
-        thickness="1mm"
-      />
+      <trace from=".R1 > .pin2" to=".R2 > .pin1" thickness="1mm" />
     </board>,
   )
 

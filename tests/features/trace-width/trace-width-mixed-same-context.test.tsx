@@ -21,13 +21,7 @@ test("mixed trace widths within same routing context", async () => {
         pcbX={-8}
         pcbY={-2}
       />
-      <resistor
-        name="R3"
-        resistance="10k"
-        footprint="0402"
-        pcbX={8}
-        pcbY={0}
-      />
+      <resistor name="R3" resistance="10k" footprint="0402" pcbX={8} pcbY={0} />
 
       {/* High current trace - thick */}
       <trace
@@ -52,13 +46,13 @@ test("mixed trace widths within same routing context", async () => {
   expect(traces.length).toBe(2)
 
   // Find traces by their approximate routing (this is a bit fragile but works for this test)
-  const thickTrace = traces.find(t => {
-    const wireSegments = t.route.filter(s => s.route_type === "wire")
+  const thickTrace = traces.find((t) => {
+    const wireSegments = t.route.filter((s) => s.route_type === "wire")
     return wireSegments.length > 0 && wireSegments[0].width === 0.5
   })
 
-  const thinTrace = traces.find(t => {
-    const wireSegments = t.route.filter(s => s.route_type === "wire")
+  const thinTrace = traces.find((t) => {
+    const wireSegments = t.route.filter((s) => s.route_type === "wire")
     return wireSegments.length > 0 && wireSegments[0].width === 0.15
   })
 

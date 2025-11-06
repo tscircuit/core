@@ -21,11 +21,7 @@ test("autorouted traces use default minTraceWidth regardless of explicit thickne
           pcbX={5}
           pcbY={0}
         />
-        <trace
-          from=".R1 > .pin2"
-          to=".R2 > .pin1"
-          thickness="0.5mm"
-        />
+        <trace from=".R1 > .pin2" to=".R2 > .pin1" thickness="0.5mm" />
       </group>
     </board>,
   )

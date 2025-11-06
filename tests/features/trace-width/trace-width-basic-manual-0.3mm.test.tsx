@@ -14,12 +14,7 @@ test("trace width prop works as alias for thickness in manual routing", async ()
         pcbY={0}
       />
       <resistor name="R2" resistance="10k" footprint="0402" pcbX={3} pcbY={0} />
-      <trace
-        from=".R1 > .pin2"
-        to=".R2 > .pin1"
-        width="0.3mm"
-        pcbPath={[]}
-      />
+      <trace from=".R1 > .pin2" to=".R2 > .pin1" width="0.3mm" pcbPath={[]} />
     </board>,
   )
 
