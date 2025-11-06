@@ -41,12 +41,13 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
           .filter(
             (elm) => elm.type === "source_net" && elm.name === net.name,
           )[0] as SourceNet) || ""
+      const clearance = props.clearance ?? 0.2
       const inputProblem = convertCircuitJsonToInputProblem(db.toArray(), {
         layer: props.layer,
         pour_connectivity_key: sourceNet.subcircuit_connectivity_map_key || "",
-        pad_margin: props.padMargin ?? 0.2,
-        trace_margin: props.traceMargin ?? 0.2,
-        board_edge_margin: props.boardEdgeMargin ?? 0,
+        pad_margin: props.padMargin ?? clearance,
+        trace_margin: props.traceMargin ?? clearance,
+        board_edge_margin: props.boardEdgeMargin ?? clearance,
       })
 
       const solver = new CopperPourPipelineSolver(inputProblem)
