@@ -170,3 +170,39 @@ test("bigger trace margin", async () => {
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path + "bigger-trace-margin")
 })
+
+test("respects board edge margin", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board width="20mm" height="20mm">
+      <net name="GND" />
+      <copperpour connectsTo="net.GND" layer="top" boardEdgeMargin="2mm" />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-board-edge-margin")
+})
+
+test("respects clearance prop", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board width="20mm" height="20mm">
+      <net name="GND" />
+      <chip
+        name="R1"
+        footprint="soic4"
+        pcbX={-5}
+        connections={{
+          pin2: "net.GND",
+        }}
+      />
+      <copperpour connectsTo="net.GND" layer="top" clearance={0.1} />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-clearance")
+})
