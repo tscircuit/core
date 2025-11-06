@@ -277,8 +277,8 @@ export class Board extends Group<typeof boardProps> {
     const marginX = 0.25
     const marginY = 1
     const position = {
-      x: pcbBoard.center.x + pcbBoard.width / 2 - marginX,
-      y: pcbBoard.center.y - pcbBoard.height / 2 + marginY,
+      x: pcbBoard.center.x + pcbBoard.width! / 2 - marginX,
+      y: pcbBoard.center.y - pcbBoard.height! / 2 + marginY,
     }
 
     this.root!.db.pcb_silkscreen_text.insert({
