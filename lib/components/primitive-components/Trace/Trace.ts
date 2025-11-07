@@ -63,7 +63,39 @@ export class Trace
   }
 
   /**
+   * Get the trace thickness, checking explicit props first, then group defaults
+   */
+  _getTraceThickness(): number | undefined {
+    // Check for explicit thickness on the trace
+    const explicitThickness =
+      this._parsedProps.thickness ?? this._parsedProps.width
+    if (explicitThickness !== undefined) {
+      return explicitThickness
+    }
+
+    // Check for group-level default trace width by traversing up the parent chain
+    let current = this.parent
+    while (current) {
+      if (current.componentName === "Group") {
+        // Check direct minTraceWidth prop first (preferred API)
+        if (current.props?.minTraceWidth !== undefined) {
+          return current.props.minTraceWidth
+        }
+        // Fall back to autorouter config (legacy API)
+        const autorouter = current.props?.autorouter
+        if (autorouter?.minTraceWidth) {
+          return autorouter.minTraceWidth
+        }
+      }
+      current = current.parent
+    }
+
+    return undefined
+  }
+
+  /**
    * Get the explicit trace thickness, supporting 'width' as an alias for 'thickness'
+   * @deprecated Use _getTraceThickness() instead for group-level defaults
    */
   _getExplicitTraceThickness(): number | undefined {
     return this._parsedProps.thickness ?? this._parsedProps.width
@@ -283,7 +315,7 @@ export class Trace
           { db },
         ) ?? props.maxLength,
       display_name: displayName,
-      min_trace_thickness: this._getExplicitTraceThickness(),
+      min_trace_thickness: this._getTraceThickness(),
     })
 
     this.source_trace_id = trace.source_trace_id
