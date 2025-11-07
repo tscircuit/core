@@ -87,6 +87,35 @@ circuit.selectOne("resistor") // Find first resistor
 
 - If a class function is too long, create a file `ClassName_fnName.ts` and call the function from the class file
 
+**Trace Width Configuration:**
+
+Traces support both individual and group-level width settings:
+
+```tsx
+// Individual trace width
+<trace from=".R1 > .pin1" to=".C1 > .pin1" thickness={0.5} />
+
+// Group-level default trace width (preferred API - direct prop)
+<group name="power-section" minTraceWidth={0.8}>
+  <resistor name="R1" />
+  <capacitor name="C1" />
+  <trace from=".R1 > .pin1" to=".C1 > .pin1" /> {/* Uses 0.8mm width */}
+  <trace from=".R1 > .pin2" to=".C1 > .pin2" thickness={1.2} /> {/* Overrides with 1.2mm */}
+</group>
+
+// Legacy API (still supported for backward compatibility)
+<group name="power-section" autorouter={{ minTraceWidth: 0.8 }}>
+  <resistor name="R1" />
+  <capacitor name="C1" />
+  <trace from=".R1 > .pin1" to=".C1 > .pin1" />
+</group>
+```
+
+**API Priority:**
+1. Explicit `thickness` on trace (highest priority)
+2. Direct `minTraceWidth` prop on group
+3. `autorouter.minTraceWidth` in group (legacy, lowest priority)
+
 ## Technology Stack
 
 - React + custom React Reconciler

@@ -39,6 +39,30 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
   private stepDelay: number
   private timeoutId?: number
 
+  /**
+   * Fix trace widths to match the input connection widths
+   */
+  private fixTraceWidths(traces: SimplifiedPcbTrace[]): SimplifiedPcbTrace[] {
+    return traces.map((trace) => {
+      const connection = this.input.connections.find(
+        (c) => c.name === trace.connection_name,
+      )
+      if (connection?.width !== undefined) {
+        const width = connection.width
+        return {
+          ...trace,
+          route: trace.route.map((point) => {
+            if (point.route_type === "wire") {
+              return { ...point, width }
+            }
+            return point
+          }),
+        }
+      }
+      return trace
+    })
+  }
+
   constructor(
     input: SimpleRouteJson,
     options: CapacityMeshAutoRouterOptions = {},
@@ -101,7 +125,9 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
         } else {
           this.emitEvent({
             type: "complete",
-            traces: this.solver.getOutputSimpleRouteJson().traces || [],
+            traces: this.fixTraceWidths(
+              this.solver.getOutputSimpleRouteJson().traces || [],
+            ),
           })
         }
         this.isRouting = false
@@ -234,6 +260,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       throw new AutorouterError(this.solver.error || "Routing failed")
     }
 
-    return this.solver.getOutputSimpleRouteJson().traces || []
+    const traces = this.solver.getOutputSimpleRouteJson().traces || []
+    return this.fixTraceWidths(traces)
   }
 }
