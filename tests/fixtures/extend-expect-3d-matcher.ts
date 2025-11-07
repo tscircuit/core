@@ -92,7 +92,7 @@ export async function resolvePoppyglOptions(
 
   if (!resolvedOpts.camPos && board) {
     // Handle outlined boards
-    if ((board as any).shape === "polygon" && board.outline) {
+    if (board.shape === "polygon" && board.outline) {
       // Calculate bounds from outline
       const xVals = board.outline.map((p) => p.x)
       const yVals = board.outline.map((p) => p.y)
