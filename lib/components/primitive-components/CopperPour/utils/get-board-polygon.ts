@@ -9,10 +9,10 @@ export const getBoardPolygon = (board: PcbBoard): Flatten.Polygon => {
   }
   return new Flatten.Polygon(
     new Flatten.Box(
-      board.center.x - board.width / 2,
-      board.center.y - board.height / 2,
-      board.center.x + board.width / 2,
-      board.center.y + board.height / 2,
+      board.center.x - board.width! / 2,
+      board.center.y - board.height! / 2,
+      board.center.x + board.width! / 2,
+      board.center.y + board.height! / 2,
     ).toPoints(),
   )
 }
