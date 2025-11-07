@@ -7,7 +7,7 @@ export const getBoardPolygon = (board: PcbBoard): Flatten.Polygon => {
       board.outline.map((p) => Flatten.point(p.x, p.y)),
     )
   }
-  
+
   // For rectangular boards with width/height
   if (board.width && board.height) {
     return new Flatten.Polygon(
@@ -19,7 +19,7 @@ export const getBoardPolygon = (board: PcbBoard): Flatten.Polygon => {
       ).toPoints(),
     )
   }
-  
+
   // Fallback: return empty polygon
   return new Flatten.Polygon()
 }
