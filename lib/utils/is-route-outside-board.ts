@@ -50,10 +50,10 @@ export const isRouteOutsideBoard = (
 
   const outsideBoard = mergedRoute.some((point) => {
     return (
-      point.x < boardCenterX - boardWidth / 2 ||
-      point.y < boardCenterY - boardHeight / 2 ||
-      point.x > boardCenterX + boardWidth / 2 ||
-      point.y > boardCenterY + boardHeight / 2
+      point.x < boardCenterX - boardWidth! / 2 ||
+      point.y < boardCenterY - boardHeight! / 2 ||
+      point.x > boardCenterX + boardWidth! / 2 ||
+      point.y > boardCenterY + boardHeight! / 2
     )
   })
   return outsideBoard
