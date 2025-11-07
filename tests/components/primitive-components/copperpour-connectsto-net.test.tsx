@@ -19,4 +19,6 @@ test("copper pour creates net from connectsTo prop", async () => {
 
   const copperPours = circuit.db.pcb_copper_pour.list()
   expect(copperPours.length).toBeGreaterThan(0)
+
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
