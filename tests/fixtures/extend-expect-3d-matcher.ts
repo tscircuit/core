@@ -57,7 +57,7 @@ export async function resolvePoppyglOptions(
       throw new Error("Can't use cameraPreset without pcb_board")
     }
     // Handle outlined boards differently
-    if ((board as any).shape === "outlined" && board.outline) {
+    if ((board as any).shape === "polygon" && board.outline) {
       // Calculate bounds from outline for camera positioning
       const xVals = board.outline.map((p) => p.x)
       const yVals = board.outline.map((p) => p.y)
@@ -75,7 +75,7 @@ export async function resolvePoppyglOptions(
         default:
           throw new Error(`Unknown camera preset: ${cameraPreset}`)
       }
-    } else {
+    } else if (board.width && board.height) {
       switch (cameraPreset) {
         case "bottom_angled":
           resolvedOpts.camPos = [
@@ -92,7 +92,7 @@ export async function resolvePoppyglOptions(
 
   if (!resolvedOpts.camPos && board) {
     // Handle outlined boards
-    if ((board as any).shape === "outlined" && board.outline) {
+    if ((board as any).shape === "polygon" && board.outline) {
       // Calculate bounds from outline
       const xVals = board.outline.map((p) => p.x)
       const yVals = board.outline.map((p) => p.y)
@@ -104,7 +104,7 @@ export async function resolvePoppyglOptions(
         (outlineWidth + outlineHeight) / 2,
         outlineHeight / 2,
       ]
-    } else {
+    } else if (board.width && board.height) {
       // Rectangular board with width/height
       resolvedOpts.camPos = [
         board.width / 2,

@@ -39,6 +39,12 @@ export const isRouteOutsideBoard = (
   // New error handling for traces routed outside the board
   const boardWidth = pcbBoard.width
   const boardHeight = pcbBoard.height
+  
+  // If board has no width/height (outline-based board without dimensions), skip check
+  if (!boardWidth || !boardHeight) {
+    return false
+  }
+  
   const boardCenterX = pcbBoard.center.x
   const boardCenterY = pcbBoard.center.y
 

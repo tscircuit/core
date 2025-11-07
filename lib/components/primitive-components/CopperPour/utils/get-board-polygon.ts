@@ -7,12 +7,19 @@ export const getBoardPolygon = (board: PcbBoard): Flatten.Polygon => {
       board.outline.map((p) => Flatten.point(p.x, p.y)),
     )
   }
-  return new Flatten.Polygon(
-    new Flatten.Box(
-      board.center.x - board.width / 2,
-      board.center.y - board.height / 2,
-      board.center.x + board.width / 2,
-      board.center.y + board.height / 2,
-    ).toPoints(),
-  )
+  
+  // For rectangular boards with width/height
+  if (board.width && board.height) {
+    return new Flatten.Polygon(
+      new Flatten.Box(
+        board.center.x - board.width / 2,
+        board.center.y - board.height / 2,
+        board.center.x + board.width / 2,
+        board.center.y + board.height / 2,
+      ).toPoints(),
+    )
+  }
+  
+  // Fallback: return empty polygon
+  return new Flatten.Polygon()
 }

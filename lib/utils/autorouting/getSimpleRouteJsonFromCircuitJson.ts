@@ -99,7 +99,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   let bounds: { minX: number; maxX: number; minY: number; maxY: number }
 
-  if (board && !board.outline) {
+  if (board && !board.outline && board.width && board.height) {
     bounds = {
       minX: board.center.x - board.width / 2,
       maxX: board.center.x + board.width / 2,

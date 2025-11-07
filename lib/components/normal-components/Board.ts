@@ -272,6 +272,9 @@ export class Board extends Group<typeof boardProps> {
     const pcbBoard = this.root!.db.pcb_board.get(this.pcb_board_id!)
     if (!pcbBoard) return
 
+    // Only add board information for rectangular boards with width/height
+    if (!pcbBoard.width || !pcbBoard.height) return
+
     const boardInformation: string[] = []
     if (platform.projectName) boardInformation.push(platform.projectName)
     if (platform.version) boardInformation.push(`v${platform.version}`)
@@ -373,7 +376,7 @@ export class Board extends Group<typeof boardProps> {
       num_layers: this.allLayers.length,
       width: props.outline ? undefined : computedWidth,
       height: props.outline ? undefined : computedHeight,
-      shape: props.outline ? "outlined" : "rectangular",
+      shape: props.outline ? "polygon" : "rect",
       outline: outline?.map((point) => ({
         x: point.x + (props.outlineOffsetX ?? 0),
         y: point.y + (props.outlineOffsetY ?? 0),

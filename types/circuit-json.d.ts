@@ -5,10 +5,6 @@ declare module "circuit-json" {
     model_mtl_url?: string
   }
 
-  interface PCBBoard {
-    shape?: "rectangular" | "outlined"
-  }
-
   interface PcbVia {
     net_is_assignable?: boolean
   }
