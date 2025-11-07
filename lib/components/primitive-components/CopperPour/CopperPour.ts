@@ -4,6 +4,7 @@ import {
   convertCircuitJsonToInputProblem,
 } from "@tscircuit/copper-pour-solver"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import type { Net } from "../Net"
 import type { PcbCopperPour, SourceNet } from "circuit-json"
 
@@ -21,6 +22,11 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
 
   getPcbSize(): { width: number; height: number } {
     return { width: 0, height: 0 }
+  }
+
+  doInitialCreateNetsFromProps(): void {
+    const { _parsedProps: props } = this
+    createNetsFromProps(this, [props.connectsTo])
   }
 
   doInitialPcbCopperPourRender() {
