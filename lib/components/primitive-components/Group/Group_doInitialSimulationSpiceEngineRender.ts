@@ -96,6 +96,13 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
         group._markDirty("SimulationSpiceEngineRender")
       } catch (error) {
         debug(`Simulation failed for engine ${engineName}: ${error}`)
+        const simulationExperiment = root.db.simulation_experiment.list()[0]
+        root.db.simulation_unknown_experiment_error.insert({
+          simulation_experiment_id:
+            simulationExperiment?.simulation_experiment_id,
+          error_type: "simulation_unknown_experiment_error",
+          message: error instanceof Error ? error.message : String(error),
+        })
         // Don't throw - allow other engines to continue
       }
     })
