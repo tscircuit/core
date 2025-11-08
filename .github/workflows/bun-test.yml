@@ -26,6 +26,17 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Rebuild sharp for Linux
+        run: |
+          if bun pm ls sharp > /dev/null 2>&1; then
+            echo "Rebuilding sharp for Linux..."
+            bun x npm rebuild sharp --platform=linux --arch=x64 --force || \
+            npx --yes sharp --help >/dev/null || \
+            echo "Warning: sharp rebuild failed, continuing..."
+          else
+            echo "No sharp dependency found, skipping rebuild."
+          fi
+
       - name: Generate test plans
         run: bun run scripts/generate-test-plan.ts
 
