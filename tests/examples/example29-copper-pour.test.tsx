@@ -248,5 +248,5 @@ test("cutouts and vias", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-clearance")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-cutouts-and-vias")
 })
