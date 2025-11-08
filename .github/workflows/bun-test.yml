@@ -26,17 +26,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Rebuild sharp in core for Linux
-        working-directory: core
-        run: |
-          if [ -d "node_modules/sharp" ]; then
-            echo "🔧 Rebuilding sharp for Linux (core)..."
-            bun x npm rebuild sharp --platform=linux --arch=x64 --force || \
-            (echo "⚠️ bun rebuild failed, trying npm directly..." && npx --yes npm rebuild sharp --platform=linux --arch=x64 --force)
-          else
-            echo "ℹ️ No sharp dependency in core, skipping rebuild."
-          fi
-
       - name: Generate test plans
         run: bun run scripts/generate-test-plan.ts
 
