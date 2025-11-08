@@ -87,11 +87,6 @@ circuit.selectOne("resistor") // Find first resistor
 
 - If a class function is too long, create a file `ClassName_fnName.ts` and call the function from the class file
 
-**API Priority:**
-1. Explicit `thickness` on trace (highest priority)
-2. Direct `minTraceWidth` prop on group
-3. `autorouter.minTraceWidth` in group (legacy, lowest priority)
-
 ## Technology Stack
 
 - React + custom React Reconciler
