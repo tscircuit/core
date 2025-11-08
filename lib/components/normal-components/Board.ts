@@ -206,19 +206,26 @@ export class Board extends Group<typeof boardProps> {
     const computedWidth = hasComponents ? maxX - minX + padding * 2 : 0
     const computedHeight = hasComponents ? maxY - minY + padding * 2 : 0
 
-    // Center the board around the components or use (0,0) for empty boards
-    const center = {
-      x: hasComponents
-        ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
-        : (props.outlineOffsetX ?? 0),
-      y: hasComponents
-        ? (minY + maxY) / 2 + (props.outlineOffsetY ?? 0)
-        : (props.outlineOffsetY ?? 0),
-    }
-
     // by the user while auto-calculating the missing one.
     const finalWidth = props.width ?? computedWidth
     const finalHeight = props.height ?? computedHeight
+
+    // Center the board around the components or use the requested anchor.
+    const center = props.boardAnchorPosition
+      ? getBoardCenterFromAnchor({
+          boardAnchorPosition: props.boardAnchorPosition,
+          boardAnchorAlignment: props.boardAnchorAlignment ?? "center",
+          width: finalWidth,
+          height: finalHeight,
+        })
+      : {
+          x: hasComponents
+            ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
+            : (props.outlineOffsetX ?? 0),
+          y: hasComponents
+            ? (minY + maxY) / 2 + (props.outlineOffsetY ?? 0)
+            : (props.outlineOffsetY ?? 0),
+        }
 
     let outline = props.outline as { x: number; y: number }[] | undefined
     if (
