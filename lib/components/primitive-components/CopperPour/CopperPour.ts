@@ -54,6 +54,7 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
         pad_margin: props.padMargin ?? clearance,
         trace_margin: props.traceMargin ?? clearance,
         board_edge_margin: props.boardEdgeMargin ?? clearance,
+        cutout_margin: props.cutoutMargin ?? clearance,
       })
 
       const solver = new CopperPourPipelineSolver(inputProblem)

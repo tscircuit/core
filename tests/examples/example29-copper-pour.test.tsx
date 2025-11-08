@@ -206,3 +206,47 @@ test("respects clearance prop", async () => {
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path + "-clearance")
 })
+
+test("cutouts and vias", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <net name="GND" />
+      <resistor
+        resistance="1k"
+        footprint="0402"
+        name="R1"
+        connections={{
+          pin2: "net.GND",
+          pin1: "net.VCC",
+        }}
+      />
+      <capacitor
+        capacitance="1000pF"
+        footprint="0402"
+        name="C1"
+        layer="bottom"
+        connections={{
+          pin1: "net.VCC",
+        }}
+      />
+      <hole shape="circle" radius={1} pcbY={-3} />
+      <cutout pcbX={3} shape="rect" width={2} height={1} />
+      <cutout pcbX={3} pcbY={3} shape="circle" radius={1} />
+      <cutout
+        shape="polygon"
+        points={[
+          { x: "3", y: "-2" },
+          { x: 3, y: -2 },
+          { x: 4, y: -3 },
+          { x: 2, y: -3 },
+        ]}
+      />
+      <copperpour connectsTo="net.GND" layer={"top"} cutoutMargin="0.1" />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-clearance")
+})
