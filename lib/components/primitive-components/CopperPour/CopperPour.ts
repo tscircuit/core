@@ -61,6 +61,8 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
 
       const { brep_shapes } = solver.getOutput()
 
+      const coveredWithSolderMask = props.coveredWithSolderMask ?? false
+
       for (const brep_shape of brep_shapes) {
         db.pcb_copper_pour.insert({
           shape: "brep",
@@ -68,6 +70,7 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
           brep_shape,
           source_net_id: net.source_net_id,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          covered_with_solder_mask: coveredWithSolderMask,
         } as PcbCopperPour)
       }
     })
