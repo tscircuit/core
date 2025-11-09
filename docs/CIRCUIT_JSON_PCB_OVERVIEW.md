@@ -368,6 +368,29 @@ export interface PcbHoleCircleOrSquare {
   y: Distance
 }
 
+export interface PcbHoleCircle {
+  type: "pcb_hole"
+  pcb_hole_id: string
+  pcb_group_id?: string
+  subcircuit_id?: string
+  hole_shape: "circle"
+  hole_diameter: number
+  x: Distance
+  y: Distance
+}
+
+export interface PcbHoleRect {
+  type: "pcb_hole"
+  pcb_hole_id: string
+  pcb_group_id?: string
+  subcircuit_id?: string
+  hole_shape: "rect"
+  hole_width: number
+  hole_height: number
+  x: Distance
+  y: Distance
+}
+
 export interface PcbHoleOval {
   type: "pcb_hole"
   pcb_hole_id: string
@@ -378,7 +401,7 @@ export interface PcbHoleOval {
   y: Distance
 }
 
-export type PcbHole = PcbHoleCircleOrSquare | PcbHoleOval
+export type PcbHole = PcbHoleCircleOrSquare | PcbHoleCircle | PcbHoleRect | PcbHoleOval
 
 export interface PcbTraceRoutePointWire {
   route_type: "wire"
