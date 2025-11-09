@@ -250,3 +250,41 @@ test("cutouts and vias", async () => {
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path + "-cutouts-and-vias")
 })
+
+test("polygon board", async () => {
+  const { circuit } = getTestFixture()
+  circuit.add(
+    <board
+      width="30mm"
+      height="20mm"
+      outline={[
+        { x: -13, y: 10 },
+        { x: 13, y: 10 },
+        { x: 15, y: 8 },
+        { x: 15, y: -8 },
+        { x: 13, y: -10 },
+        { x: -13, y: -10 },
+        { x: -15, y: -8 },
+        { x: -15, y: 8 },
+      ]}
+    >
+      <chip name="U1" footprint="soic8" pcbX={-6} pcbY={0} />
+      <resistor name="R1" resistance="10k" footprint="0402" pcbX={6} pcbY={0} />
+      <capacitor
+        name="C1"
+        capacitance="100nF"
+        footprint="0402"
+        pcbX={6}
+        pcbY={-4}
+      />
+      <trace from=".R1 > .pin2" to="net.GND" />
+      <trace from=".C1 > .pin2" to="net.GND" />
+      <trace from=".U1 > .pin4" to="net.GND" />
+      <copperpour connectsTo="net.GND" layer="top" clearance="0.3mm" />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-polygon-board")
+})
