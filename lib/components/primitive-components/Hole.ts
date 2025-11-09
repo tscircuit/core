@@ -113,62 +113,18 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
   } {
     const { db } = this.root!
     const hole = db.pcb_hole.get(this.pcb_hole_id!)!
-
-    // Get size from props if available, otherwise from database
-    let width: number
-    let height: number
-
-    if (this.pcb_hole_id && hole) {
-      // Read from database based on hole shape
-      if (
-        hole.hole_shape === "rect" &&
-        "hole_width" in hole &&
-        "hole_height" in hole
-      ) {
-        width = hole.hole_width
-        height = hole.hole_height
-      } else if (
-        hole.hole_shape === "pill" &&
-        "hole_width" in hole &&
-        "hole_height" in hole
-      ) {
-        width = hole.hole_width
-        height = hole.hole_height
-      } else if (
-        hole.hole_shape === "rotated_pill" &&
-        "hole_width" in hole &&
-        "hole_height" in hole
-      ) {
-        width = hole.hole_width
-        height = hole.hole_height
-      } else if (
-        (hole.hole_shape === "circle" || hole.hole_shape === "square") &&
-        "hole_diameter" in hole
-      ) {
-        width = hole.hole_diameter
-        height = hole.hole_diameter
-      } else {
-        // Fallback to props
-        const size = this.getPcbSize()
-        width = size.width
-        height = size.height
-      }
-    } else {
-      const size = this.getPcbSize()
-      width = size.width
-      height = size.height
-    }
+    const size = this.getPcbSize()
 
     return {
       center: { x: hole.x, y: hole.y },
       bounds: {
-        left: hole.x - width / 2,
-        top: hole.y - height / 2,
-        right: hole.x + width / 2,
-        bottom: hole.y + height / 2,
+        left: hole.x - size.width / 2,
+        top: hole.y - size.height / 2,
+        right: hole.x + size.width / 2,
+        bottom: hole.y + size.height / 2,
       },
-      width,
-      height,
+      width: size.width,
+      height: size.height,
     }
   }
 
