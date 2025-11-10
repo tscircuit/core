@@ -17,6 +17,7 @@ export const netProps = z.object({
 
 export class Net extends PrimitiveComponent<typeof netProps> {
   source_net_id?: string
+  subcircuit_connectivity_map_key: string | null = null
 
   get config() {
     return {

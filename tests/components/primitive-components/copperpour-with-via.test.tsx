@@ -22,7 +22,6 @@ test("copper pour surrounds centered via on the same net", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_via.list()).toHaveLength(1)
-  console.log(circuit.db.pcb_via.list()[0])
   expect(circuit.db.pcb_copper_pour.list()).toHaveLength(1)
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
