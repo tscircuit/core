@@ -8,7 +8,7 @@ import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import type { Net } from "../Net"
 import type { PcbCopperPour, SourceNet } from "circuit-json"
 
-export { type CopperPourProps }
+export type { CopperPourProps }
 
 export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
   isPcbPrimitive = true
