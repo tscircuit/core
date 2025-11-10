@@ -1,28 +1,19 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const BOARD_SIZE = "10mm"
-
-const VIA_HOLE_DIAMETER = "0.6mm"
-const VIA_OUTER_DIAMETER = "1.2mm"
-
-const VIA_POSITION = {
-  pcbX: "0mm",
-  pcbY: "0mm",
-}
-
 test("copper pour surrounds centered via on the same net", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width={BOARD_SIZE} height={BOARD_SIZE}>
+    <board width="10mm" height="10mm">
       <via
-        {...VIA_POSITION}
+        pcbX="0mm"
+        pcbY="0mm"
         connectsTo="net.GND"
         fromLayer="top"
         toLayer="bottom"
-        holeDiameter={VIA_HOLE_DIAMETER}
-        outerDiameter={VIA_OUTER_DIAMETER}
+        holeDiameter="0.6mm"
+        outerDiameter="1.2mm"
       />
       <copperpour connectsTo="net.GND" layer="top" />
     </board>,
@@ -31,6 +22,7 @@ test("copper pour surrounds centered via on the same net", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_via.list()).toHaveLength(1)
+  console.log(circuit.db.pcb_via.list()[0])
   expect(circuit.db.pcb_copper_pour.list()).toHaveLength(1)
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
