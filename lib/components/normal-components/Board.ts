@@ -14,6 +14,7 @@ import {
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { getBoundsForPcbHole } from "lib/utils/get-bounds-of-pcb-holes"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -189,6 +190,22 @@ export class Board extends Group<typeof boardProps> {
       }
 
       updateBounds(pcbGroup.center, width, height)
+    }
+
+    const allPcbHoles = db.pcb_hole.list().filter((hole) => {
+      if (hole.subcircuit_id && allowedSubcircuitIds.has(hole.subcircuit_id)) {
+        return true
+      }
+      if (!hole.pcb_group_id) return false
+      const group = db.pcb_group.get(hole.pcb_group_id)
+      return group?.subcircuit_id
+        ? allowedSubcircuitIds.has(group.subcircuit_id)
+        : false
+    })
+
+    for (const pcbHole of allPcbHoles) {
+      const bounds = getBoundsForPcbHole(pcbHole)
+      updateBounds({ x: pcbHole.x, y: pcbHole.y }, bounds.width, bounds.height)
     }
 
     if (props.boardAnchorPosition) {
