@@ -11,8 +11,8 @@ import {
   checkSameNetViaSpacing,
   checkPcbComponentOverlap,
 } from "@tscircuit/checks"
-import type { RenderPhase } from "../base-components/Renderable"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
+import type { RenderPhase } from "../base-components/Renderable"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
