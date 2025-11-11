@@ -237,7 +237,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   const packOutput = pack(packInput)
 
-  if (debug.enabled && global.debugGraphics) {
+  if (debug.enabled && global?.debugGraphics) {
     const graphics = getGraphicsFromPackOutput(packOutput)
     graphics.title = `packOutput-${group.name}`
     global.debugGraphics?.push(graphics)
