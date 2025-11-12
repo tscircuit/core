@@ -66,3 +66,38 @@ test("panel must contain at least one board", () => {
     circuit.render()
   }).toThrow("<panel> must contain at least one <board>")
 })
+
+test("panel emits pcb_panel with center", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <panel width="100mm" height="50mm" pcbX="10mm" pcbY="20mm">
+      <board width="10mm" height="10mm" routingDisabled />
+    </panel>,
+  )
+
+  circuit.render()
+
+  const pcbPanel = circuit.db.pcb_panel.list()[0]
+  expect(pcbPanel).toMatchObject({
+    width: 100,
+    height: 50,
+    center: { x: 10, y: 20 },
+    covered_with_solder_mask: true,
+  })
+})
+
+test("panel noSolderMask disables solder mask coverage", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <panel width="100mm" height="100mm" noSolderMask>
+      <board width="10mm" height="10mm" routingDisabled />
+    </panel>,
+  )
+
+  circuit.render()
+
+  const pcbPanel = circuit.db.pcb_panel.list()[0]
+  expect(pcbPanel.covered_with_solder_mask).toBe(false)
+})
