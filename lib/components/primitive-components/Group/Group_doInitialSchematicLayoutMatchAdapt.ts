@@ -20,7 +20,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
   const bpcGraphBeforeGeneratedNetLabels =
     convertCircuitJsonToBpc(subtreeCircuitJson)
 
-  if (debug.enabled) {
+  if (debug.enabled && global?.debugGraphics) {
     global.debugGraphics?.push(
       getGraphicsForBpcGraph(bpcGraphBeforeGeneratedNetLabels, {
         title: `floatingBpcGraph-${group.name}`,
@@ -78,7 +78,7 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
     },
   )
 
-  if (debug.enabled) {
+  if (debug.enabled && global?.debugGraphics) {
     global.debugGraphics?.push(
       getGraphicsForBpcGraph(laidOutBpcGraph, {
         title: `laidOutBpcGraph-${group.name}`,

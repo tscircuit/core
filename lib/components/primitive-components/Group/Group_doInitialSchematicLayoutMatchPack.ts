@@ -594,7 +594,7 @@ export function Group_doInitialSchematicLayoutMatchPack<
   debug("Starting LayoutPipelineSolver...")
 
   // Add initial visualization if debug is enabled
-  if (debug.enabled && global.debugGraphics) {
+  if (debug.enabled && global?.debugGraphics) {
     const initialViz = solver.visualize()
     global.debugGraphics.push({
       ...initialViz,
@@ -621,7 +621,7 @@ export function Group_doInitialSchematicLayoutMatchPack<
   debug("Solver completed successfully:", !solver.failed)
 
   // Add final visualization if debug is enabled
-  if (debug.enabled && global.debugGraphics) {
+  if (debug.enabled && global?.debugGraphics) {
     const finalViz = solver.visualize()
     global.debugGraphics.push({
       ...finalViz,
