@@ -57,7 +57,7 @@ export async function resolvePoppyglOptions(
       throw new Error("Can't use cameraPreset without pcb_board")
     }
     // Handle outlined boards differently
-    if ((board as any).shape === "polygon" && board.outline) {
+    if (board.shape === "polygon" && board.outline) {
       // Calculate bounds from outline for camera positioning
       const xVals = board.outline.map((p) => p.x)
       const yVals = board.outline.map((p) => p.y)
@@ -92,7 +92,7 @@ export async function resolvePoppyglOptions(
 
   if (!resolvedOpts.camPos && board) {
     // Handle outlined boards
-    if ((board as any).shape === "polygon" && board.outline) {
+    if (board.shape === "polygon" && board.outline) {
       // Calculate bounds from outline
       const xVals = board.outline.map((p) => p.x)
       const yVals = board.outline.map((p) => p.y)
