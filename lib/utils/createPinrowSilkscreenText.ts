@@ -30,6 +30,11 @@ export const createPinrowSilkscreenText = ({
   let normalizedRotation = ((readableRotation % 360) + 360) % 360
   normalizedRotation = Math.round(normalizedRotation / 90) * 90
 
+  // Normalize 360° back to 0°
+  if (normalizedRotation === 360) {
+    normalizedRotation = 0
+  }
+
   // Ensure text is readable (not upside-down)
   // Keep text at 0° or 90° only, avoiding 180° and 270°
   if (normalizedRotation === 180) {
