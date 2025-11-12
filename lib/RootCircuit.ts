@@ -17,7 +17,22 @@ export class RootCircuit {
   db: CircuitJsonUtilObjects
   root: RootCircuit | null = null
   isRoot = true
-  schematicDisabled = false
+  private _schematicDisabledOverride: boolean | undefined
+  get schematicDisabled(): boolean {
+    if (this._schematicDisabledOverride !== undefined) {
+      return this._schematicDisabledOverride
+    }
+
+    const board = this._getBoard() as
+      | { _parsedProps?: { schematicDisabled?: boolean } }
+      | undefined
+
+    return board?._parsedProps?.schematicDisabled ?? false
+  }
+
+  set schematicDisabled(value: boolean) {
+    this._schematicDisabledOverride = value
+  }
   pcbDisabled = false
   pcbRoutingDisabled = false
 

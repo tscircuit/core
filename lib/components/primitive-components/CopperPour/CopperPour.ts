@@ -4,10 +4,11 @@ import {
   convertCircuitJsonToInputProblem,
 } from "@tscircuit/copper-pour-solver"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import type { Net } from "../Net"
 import type { PcbCopperPour, SourceNet } from "circuit-json"
 
-export { type CopperPourProps }
+export type { CopperPourProps }
 
 export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
   isPcbPrimitive = true
@@ -21,6 +22,11 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
 
   getPcbSize(): { width: number; height: number } {
     return { width: 0, height: 0 }
+  }
+
+  doInitialCreateNetsFromProps(): void {
+    const { _parsedProps: props } = this
+    createNetsFromProps(this, [props.connectsTo])
   }
 
   doInitialPcbCopperPourRender() {
@@ -48,11 +54,14 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
         pad_margin: props.padMargin ?? clearance,
         trace_margin: props.traceMargin ?? clearance,
         board_edge_margin: props.boardEdgeMargin ?? clearance,
+        cutout_margin: props.cutoutMargin ?? clearance,
       })
 
       const solver = new CopperPourPipelineSolver(inputProblem)
 
       const { brep_shapes } = solver.getOutput()
+
+      const coveredWithSolderMask = props.coveredWithSolderMask ?? false
 
       for (const brep_shape of brep_shapes) {
         db.pcb_copper_pour.insert({
@@ -61,6 +70,7 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
           brep_shape,
           source_net_id: net.source_net_id,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          covered_with_solder_mask: coveredWithSolderMask,
         } as PcbCopperPour)
       }
     })

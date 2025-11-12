@@ -156,6 +156,18 @@ export const getObstaclesFromCircuitJson = (
           height: element.hole_height,
           connectedTo: [],
         })
+      } else if (element.hole_shape === "rect") {
+        obstacles.push({
+          type: "rect",
+          layers: EVERY_LAYER,
+          center: {
+            x: element.x,
+            y: element.y,
+          },
+          width: element.hole_width,
+          height: element.hole_height,
+          connectedTo: [],
+        })
       } else if (element.hole_shape === "square") {
         obstacles.push({
           type: "rect",

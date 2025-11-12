@@ -3,11 +3,14 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Port } from "./Port"
 import type { LayerRef, PcbVia } from "circuit-json"
 import { z } from "zod"
+import type { Net } from "./Net"
+import type { Trace } from "./Trace/Trace"
 export class Via extends PrimitiveComponent<typeof viaProps> {
   pcb_via_id: string | null = null
   matchedPort: Port | null = null
   isPcbPrimitive = true
   source_manually_placed_via_id: string | null = null
+  subcircuit_connectivity_map_key: string | null = null
 
   constructor(props: z.input<typeof viaProps>) {
     super(props)
@@ -80,6 +83,29 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     port.registerMatch(this)
     this.add(port)
   }
+
+  /**
+   * Find the Net or Trace that this via is connected to
+   */
+  _getConnectedNetOrTrace(): Net | Trace | null {
+    const connectsTo = this._parsedProps.connectsTo
+    if (!connectsTo) return null
+
+    const subcircuit = this.getSubcircuit()
+    const selectors = Array.isArray(connectsTo) ? connectsTo : [connectsTo]
+
+    for (const selector of selectors) {
+      if (selector.startsWith("net.")) {
+        // Find the net
+        const net = subcircuit.selectOne(selector, {
+          type: "net",
+        }) as Net | null
+        if (net) return net
+      }
+    }
+
+    return null
+  }
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -127,6 +153,8 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       from_layer: props.fromLayer || "bottom",
       to_layer: props.toLayer || "top",
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      subcircuit_connectivity_map_key:
+        this.subcircuit_connectivity_map_key ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       net_is_assignable: props.netIsAssignable ?? undefined,
     } as Omit<PcbVia & { net_is_assignable?: boolean }, "type" | "pcb_via_id">)
