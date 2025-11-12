@@ -273,7 +273,7 @@ export class Board extends Group<typeof boardProps> {
     if (!pcbBoard) return
 
     // Only add board information for rectangular boards with width/height
-    if (!pcbBoard.width || !pcbBoard.height) return
+    if (pcbBoard.shape !== "rect" || !pcbBoard.width || !pcbBoard.height) return
 
     const boardInformation: string[] = []
     if (platform.projectName) boardInformation.push(platform.projectName)
@@ -285,8 +285,8 @@ export class Board extends Group<typeof boardProps> {
     const marginX = 0.25
     const marginY = 1
     const position = {
-      x: pcbBoard.center.x + pcbBoard.width! / 2 - marginX,
-      y: pcbBoard.center.y - pcbBoard.height! / 2 + marginY,
+      x: pcbBoard.center.x + pcbBoard.width / 2 - marginX,
+      y: pcbBoard.center.y - pcbBoard.height / 2 + marginY,
     }
 
     this.root!.db.pcb_silkscreen_text.insert({
