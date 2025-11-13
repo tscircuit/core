@@ -87,7 +87,6 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const { _parsedProps: props } = this
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
     const shouldCreateSolderPaste = !isCoveredWithSolderMask
-    if (!props.portHints) return
 
     const subcircuit = this.getSubcircuit()
 
@@ -117,6 +116,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       finalRotationDegrees = (360 - finalRotationDegrees + 360) % 360
     }
 
+    const portHints = props.portHints?.map((ph) => ph.toString()) ?? []
+
     let pcb_smtpad: PcbSmtPad | null = null
     const pcb_component_id =
       this.parent?.pcb_component_id ??
@@ -128,7 +129,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "circle",
         radius: props.radius!,
-        port_hints: props.portHints.map((ph) => ph.toString()),
+        port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         x: position.x,
         y: position.y,
@@ -160,7 +161,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           x: position.x,
           y: position.y,
           ccw_rotation: finalRotationDegrees,
-          port_hints: props.portHints.map((ph) => ph.toString()),
+          port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
@@ -174,7 +175,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           width: isRotated90Degrees ? props.height! : props.width!,
           height: isRotated90Degrees ? props.width! : props.height!,
           corner_radius: props.cornerRadius ?? undefined,
-          port_hints: props.portHints.map((ph) => ph.toString()),
+          port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           x: position.x,
           y: position.y,
@@ -231,7 +232,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         x: position.x,
         y: position.y,
         ccw_rotation: padRotation,
-        port_hints: props.portHints.map((ph) => ph.toString()),
+        port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
@@ -269,7 +270,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         layer: maybeFlipLayer(props.layer ?? "top"),
         shape: "polygon",
         points: transformedPoints,
-        port_hints: props.portHints.map((ph) => ph.toString()),
+        port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
@@ -285,7 +286,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         radius: props.radius!,
         height: props.height!,
         width: props.width!,
-        port_hints: props.portHints.map((ph) => ph.toString()),
+        port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
