@@ -9,6 +9,7 @@ import type { InflatorContext, SourceGroupId } from "./InflatorFn"
 import { inflateSourceChip } from "./inflators/inflateSourceChip"
 import { inflateSourceCapacitor } from "./inflators/inflateSourceCapacitor"
 import { inflateSourceInductor } from "./inflators/inflateSourceInductor"
+import { inflateSourceDiode } from "./inflators/inflateSourceDiode"
 
 export class Subcircuit extends Group<typeof subcircuitProps> {
   constructor(props: z.input<typeof subcircuitProps>) {
@@ -68,6 +69,9 @@ export class Subcircuit extends Group<typeof subcircuitProps> {
           break
         case "simple_inductor":
           inflateSourceInductor(sourceComponent, inflationCtx)
+          break
+        case "simple_diode":
+          inflateSourceDiode(sourceComponent, inflationCtx)
           break
         case "simple_chip":
           inflateSourceChip(sourceComponent, inflationCtx)
