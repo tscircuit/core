@@ -8,6 +8,7 @@ import { Keepout } from "lib/components/primitive-components/Keepout"
 import { Hole } from "lib/components/primitive-components/Hole"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { Cutout } from "lib/components/primitive-components/Cutout"
+import { Via } from "lib/components/primitive-components/Via"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
 import type { PinLabelsProp } from "@tscircuit/props"
 
@@ -264,6 +265,37 @@ export const createComponentsFromCircuitJson = (
           }),
         )
       }
+    } else if (elm.type === "pcb_via") {
+      const layers = elm.layers ?? []
+      const fromLayer =
+        elm.from_layer ?? (layers.length > 0 ? layers[0] : "top")
+      const toLayer =
+        elm.to_layer ??
+        (layers.length > 0 ? layers[layers.length - 1] : fromLayer)
+
+      const viaElm = elm as any
+      const viaProps: ConstructorParameters<typeof Via>[0] = {
+        pcbX: viaElm.x,
+        pcbY: viaElm.y,
+        holeDiameter: viaElm.hole_diameter,
+        outerDiameter: viaElm.outer_diameter,
+        fromLayer,
+        toLayer,
+      }
+
+      if (viaElm.name) {
+        viaProps.name = viaElm.name
+      }
+
+      if (viaElm.connects_to !== undefined) {
+        viaProps.connectsTo = viaElm.connects_to
+      }
+
+      if (viaElm.net_is_assignable !== undefined) {
+        viaProps.netIsAssignable = viaElm.net_is_assignable
+      }
+
+      components.push(new Via(viaProps))
     } else if (elm.type === "pcb_trace") {
       components.push(
         new PcbTrace({
