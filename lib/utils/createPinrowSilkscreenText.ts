@@ -3,7 +3,9 @@ import { SilkscreenText } from "lib/components/primitive-components/SilkscreenTe
 import type { LayerRef, PcbSilkscreenText } from "circuit-json"
 
 const FONT_SIZE_INCREASE_MM = 0.2
-const LABEL_OFFSET_MM = 0.5
+const BASE_LABEL_OFFSET_MM = 0.6
+const CHAR_WIDTH_MULTIPLIER = 0.6
+const TEXT_MARGIN_MM = 0.3
 
 export const createPinrowSilkscreenText = ({
   elm,
@@ -38,12 +40,14 @@ export const createPinrowSilkscreenText = ({
     normalizedRotation === 180 ||
     normalizedRotation === 270
 
-  let offsetX = 0
   let offsetY = 0
   if (!isAxisAligned) {
-    const angleRad = (readableRotation * Math.PI) / 180
-    offsetX = -Math.cos(angleRad) * LABEL_OFFSET_MM
-    offsetY = -Math.sin(angleRad) * LABEL_OFFSET_MM
+    const fontSize = elm.font_size + FONT_SIZE_INCREASE_MM
+    const textWidthMm = label.length * fontSize * CHAR_WIDTH_MULTIPLIER
+    const textExtentMm = Math.max(textWidthMm, fontSize)
+    const textBasedOffsetMm = textExtentMm / 2 + TEXT_MARGIN_MM
+
+    offsetY = Math.max(BASE_LABEL_OFFSET_MM, textBasedOffsetMm)
   }
 
   return new SilkscreenText({
@@ -51,7 +55,7 @@ export const createPinrowSilkscreenText = ({
     text: label ?? pinNum,
     layer: layer || "top",
     fontSize: elm.font_size + FONT_SIZE_INCREASE_MM,
-    pcbX: anchorX + offsetX,
+    pcbX: anchorX,
     pcbY: anchorY + offsetY,
     pcbRotation: readableRotation,
   })

@@ -13,7 +13,7 @@ test("pinrow labels should be readable at various component rotations", async ()
         pcbX={-5}
         pcbY={5}
         pcbRotation={0}
-        pinLabels={{ pin1: "GND", pin2: "VDD", pin3: "SDA", pin4: "SCL" }}
+        pinLabels={{ pin1: "GROUND", pin2: "V", pin3: "SDA", pin4: "SCL" }}
       />
 
       {/* Test pinrow at 45 degrees */}
@@ -23,7 +23,7 @@ test("pinrow labels should be readable at various component rotations", async ()
         pcbX={5}
         pcbY={5}
         pcbRotation={45}
-        pinLabels={{ pin1: "GND", pin2: "VDD", pin3: "SDA", pin4: "SCL" }}
+        pinLabels={{ pin1: "G", pin2: "POWER", pin3: "SDA", pin4: "SCL" }}
       />
 
       {/* Test pinrow at 90 degrees */}
@@ -33,7 +33,7 @@ test("pinrow labels should be readable at various component rotations", async ()
         pcbX={-5}
         pcbY={-5}
         pcbRotation={90}
-        pinLabels={{ pin1: "GND", pin2: "VDD", pin3: "SDA", pin4: "SCL" }}
+        pinLabels={{ pin1: "GND", pin2: "VOLTAGE", pin3: "D", pin4: "SCL" }}
       />
 
       {/* Test pinrow at 135 degrees */}
@@ -43,7 +43,7 @@ test("pinrow labels should be readable at various component rotations", async ()
         pcbX={5}
         pcbY={-5}
         pcbRotation={135}
-        pinLabels={{ pin1: "GND", pin2: "VDD", pin3: "SDA", pin4: "SCL" }}
+        pinLabels={{ pin1: "GND", pin2: "VDD", pin3: "SERIAL_DATA", pin4: "C" }}
       />
     </board>,
   )
