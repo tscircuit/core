@@ -738,7 +738,7 @@ export abstract class PrimitiveComponent<
     if (this._cachedSelectAllQueries.has(selectorRaw)) {
       return this._cachedSelectAllQueries.get(selectorRaw) as T[]
     }
-    const selector = preprocessSelector(selectorRaw)
+    const selector = preprocessSelector(selectorRaw, this)
     const result = selectAll(
       selector,
       this,
@@ -773,7 +773,7 @@ export abstract class PrimitiveComponent<
     if (this._cachedSelectOneQueries.has(selectorRaw)) {
       return this._cachedSelectOneQueries.get(selectorRaw) as T | null
     }
-    const selector = preprocessSelector(selectorRaw)
+    const selector = preprocessSelector(selectorRaw, this)
     if (options?.port) {
       options.type = "port"
     }

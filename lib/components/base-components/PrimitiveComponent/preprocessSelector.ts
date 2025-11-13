@@ -1,13 +1,28 @@
-export const preprocessSelector = (selector: string) => {
+import type { PrimitiveComponent } from "./PrimitiveComponent"
+
+const buildPlusMinusNetErrorMessage = (
+  selector: string,
+  component?: PrimitiveComponent,
+) => {
+  const netName = selector.split("net.")[1]?.split(/[ >]/)[0] ?? selector
+  const componentName = component?.componentName ?? "Unknown component"
+  return (
+    `Net names cannot contain "+" or "-" (component "${componentName}" received "${netName}" via "${selector}"). ` +
+    `Try using underscores instead, e.g. VCC_P`
+  )
+}
+
+export const preprocessSelector = (
+  selector: string,
+  component?: PrimitiveComponent,
+) => {
   if (/net\.[^\s>]*\./.test(selector)) {
     throw new Error(
       'Net names cannot contain a period, try using "sel.net..." to autocomplete with conventional net names, e.g. V3_3',
     )
   }
   if (/net\.[^\s>]*[+-]/.test(selector)) {
-    throw new Error(
-      'Net names cannot contain "+" or "-", try using underscores instead, e.g. VCC_P',
-    )
+    throw new Error(buildPlusMinusNetErrorMessage(selector, component))
   }
   if (/net\.[0-9]/.test(selector)) {
     const match = selector.match(/net\.([^ >]+)/)
