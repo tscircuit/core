@@ -33,22 +33,12 @@ export const createPinrowSilkscreenText = ({
   const anchorX = isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x
   const anchorY = elm.anchor_position.y
 
-  const normalizedRotation = ((readableRotation % 360) + 360) % 360
-  const isAxisAligned =
-    normalizedRotation === 0 ||
-    normalizedRotation === 90 ||
-    normalizedRotation === 180 ||
-    normalizedRotation === 270
+  const fontSize = elm.font_size + FONT_SIZE_INCREASE_MM
+  const textWidthMm = label.length * fontSize * CHAR_WIDTH_MULTIPLIER
+  const textExtentMm = Math.max(textWidthMm, fontSize)
+  const textBasedOffsetMm = textExtentMm / 2 + TEXT_MARGIN_MM
 
-  let offsetY = 0
-  if (!isAxisAligned) {
-    const fontSize = elm.font_size + FONT_SIZE_INCREASE_MM
-    const textWidthMm = label.length * fontSize * CHAR_WIDTH_MULTIPLIER
-    const textExtentMm = Math.max(textWidthMm, fontSize)
-    const textBasedOffsetMm = textExtentMm / 2 + TEXT_MARGIN_MM
-
-    offsetY = Math.max(BASE_LABEL_OFFSET_MM, textBasedOffsetMm)
-  }
+  const offsetY = Math.max(BASE_LABEL_OFFSET_MM, textBasedOffsetMm)
 
   return new SilkscreenText({
     anchorAlignment: anchorAlignment || "center",
