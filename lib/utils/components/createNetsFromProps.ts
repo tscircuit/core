@@ -13,9 +13,11 @@ export const createNetsFromProps = (
         )
       }
       if (/net\.[^\s>]*[+-]/.test(prop)) {
-        throw new Error(
-          'Net names cannot contain "+" or "-", try using underscores instead, e.g. VCC_P',
-        )
+        const netName = prop.split("net.")[1]
+        const message =
+          `Net names cannot contain "+" or "-" (component "${component.componentName}" received "${netName}" via "${prop}"). ` +
+          `Try using underscores instead, e.g. VCC_P`
+        throw new Error(message)
       }
       if (/net\.[0-9]/.test(prop)) {
         const netName = prop.split("net.")[1]
