@@ -235,8 +235,13 @@ export class Board extends Group<typeof boardProps> {
     }
 
     const update: Record<string, unknown> = {
-      width: finalWidth,
-      height: finalHeight,
+      // Only set width/height when outline is not present
+      ...(props.outline
+        ? {}
+        : {
+            width: props.width ?? computedWidth,
+            height: props.height ?? computedHeight,
+          }),
       center,
     }
 
@@ -267,6 +272,9 @@ export class Board extends Group<typeof boardProps> {
     const pcbBoard = this.root!.db.pcb_board.get(this.pcb_board_id!)
     if (!pcbBoard) return
 
+    // Only add board information for rectangular boards with width/height
+    if (pcbBoard.shape !== "rect" || !pcbBoard.width || !pcbBoard.height) return
+
     const boardInformation: string[] = []
     if (platform.projectName) boardInformation.push(platform.projectName)
     if (platform.version) boardInformation.push(`v${platform.version}`)
@@ -277,8 +285,8 @@ export class Board extends Group<typeof boardProps> {
     const marginX = 0.25
     const marginY = 1
     const position = {
-      x: pcbBoard.center.x + pcbBoard.width! / 2 - marginX,
-      y: pcbBoard.center.y - pcbBoard.height! / 2 + marginY,
+      x: pcbBoard.center.x + pcbBoard.width / 2 - marginX,
+      y: pcbBoard.center.y - pcbBoard.height / 2 + marginY,
     }
 
     this.root!.db.pcb_silkscreen_text.insert({
@@ -341,8 +349,7 @@ export class Board extends Group<typeof boardProps> {
       const minY = Math.min(...yValues)
       const maxY = Math.max(...yValues)
 
-      computedWidth = maxX - minX
-      computedHeight = maxY - minY
+      // When outline is present, only calculate center, not width/height
       center = {
         x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
         y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
@@ -365,12 +372,11 @@ export class Board extends Group<typeof boardProps> {
 
     const pcb_board = db.pcb_board.insert({
       center,
-
       thickness: this.boardThickness,
       num_layers: this.allLayers.length,
-
-      width: computedWidth!,
-      height: computedHeight!,
+      width: props.outline ? undefined : computedWidth,
+      height: props.outline ? undefined : computedHeight,
+      shape: props.outline ? "polygon" : "rect",
       outline: outline?.map((point) => ({
         x: point.x + (props.outlineOffsetX ?? 0),
         y: point.y + (props.outlineOffsetY ?? 0),

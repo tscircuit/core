@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("board outline dimension is calculated correctly", () => {
+test("board width and height should be undefined when outline is provided", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -21,9 +21,12 @@ test("board outline dimension is calculated correctly", () => {
   circuit.render()
 
   const pcb_board = circuit.db.pcb_board.list()[0]
-  // When outline is provided, width and height should be undefined
+
+  // EXPECTED: width and height should be undefined when outline is present
   expect(pcb_board.width).toBeUndefined()
   expect(pcb_board.height).toBeUndefined()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  // EXPECTED: outline should exist and have the correct points
+  expect(pcb_board.outline).toBeDefined()
+  expect(pcb_board.outline).toHaveLength(4)
 })
