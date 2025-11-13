@@ -10,6 +10,7 @@ import { inflateSourceChip } from "./inflators/inflateSourceChip"
 import { inflateSourceCapacitor } from "./inflators/inflateSourceCapacitor"
 import { inflateSourceInductor } from "./inflators/inflateSourceInductor"
 import { inflateSourceDiode } from "./inflators/inflateSourceDiode"
+import { inflateSourceTrace } from "./inflators/inflateSourceTrace"
 
 export class Subcircuit extends Group<typeof subcircuitProps> {
   constructor(props: z.input<typeof subcircuitProps>) {
@@ -83,10 +84,14 @@ export class Subcircuit extends Group<typeof subcircuitProps> {
       }
     }
 
-    // Finally, inflate source ports (group ports)
     const sourcePorts = injectionDb.source_port.list()
     for (const sourcePort of sourcePorts) {
       inflateSourcePort(sourcePort, inflationCtx)
+    }
+
+    const sourceTraces = injectionDb.source_trace.list()
+    for (const sourceTrace of sourceTraces) {
+      inflateSourceTrace(sourceTrace, inflationCtx)
     }
   }
 }
