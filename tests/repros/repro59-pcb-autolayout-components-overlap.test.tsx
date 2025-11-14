@@ -29,6 +29,7 @@ test("pcb autolayout components overlap", async () => {
         name="JP3"
         footprint="pinrow4_id1.016_od1.88_nosquareplating_pinlabeltextalignright_pinlabelorthogonal_doublesidedpinlabel_pinlabelverticallyinverted"
         connections={{ pin3: sel.U1.pin10 }}
+        pinLabels={{ pin1: "GND", pin2: "POWER", pin3: "DATA", pin4: "CLK" }}
       />
     </board>,
   )
