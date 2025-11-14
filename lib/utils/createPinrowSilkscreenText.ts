@@ -3,7 +3,7 @@ import { SilkscreenText } from "lib/components/primitive-components/SilkscreenTe
 import type { LayerRef, PcbSilkscreenText } from "circuit-json"
 
 const FONT_SIZE_INCREASE_MM = 0.2
-const BASE_LABEL_OFFSET_MM = 0.4
+const BASE_LABEL_OFFSET_MM = 0.3
 const CHAR_WIDTH_MULTIPLIER = 0.6
 const TEXT_MARGIN_MM = 0.3
 

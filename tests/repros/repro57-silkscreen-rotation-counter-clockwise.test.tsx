@@ -30,7 +30,7 @@ test("rotate silkscreen text ccw", async () => {
       {
         "anchor_alignment": "center_left",
         "anchor_position": {
-          "x": 1.41,
+          "x": 1.1099999999999999,
           "y": -1.27,
         },
         "ccw_rotation": 90,
@@ -47,7 +47,7 @@ test("rotate silkscreen text ccw", async () => {
       {
         "anchor_alignment": "center_left",
         "anchor_position": {
-          "x": 1.41,
+          "x": 1.1099999999999999,
           "y": 1.27,
         },
         "ccw_rotation": 90,
