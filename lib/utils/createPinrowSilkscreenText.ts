@@ -3,8 +3,8 @@ import { SilkscreenText } from "lib/components/primitive-components/SilkscreenTe
 import type { LayerRef, PcbSilkscreenText } from "circuit-json"
 
 const FONT_SIZE_INCREASE_MM = 0.2
-const BASE_LABEL_OFFSET_MM = 0.3
-const CHAR_WIDTH_MULTIPLIER = 0.6
+const BASE_LABEL_OFFSET_MM = 0.5
+const CHAR_WIDTH_MULTIPLIER = 1.2
 const TEXT_MARGIN_MM = 0.3
 
 export const createPinrowSilkscreenText = ({
@@ -35,10 +35,7 @@ export const createPinrowSilkscreenText = ({
 
   const normalizedRotation = ((readableRotation % 360) + 360) % 360
   const isAxisAligned =
-    normalizedRotation === 0 ||
-    normalizedRotation === 90 ||
-    normalizedRotation === 180 ||
-    normalizedRotation === 270
+    normalizedRotation === 0 || normalizedRotation === 180
 
   let offsetY = BASE_LABEL_OFFSET_MM
   if (!isAxisAligned) {
