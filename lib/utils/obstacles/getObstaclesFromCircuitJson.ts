@@ -237,6 +237,34 @@ export const getObstaclesFromCircuitJson = (
           height: element.outer_height,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
         })
+      } else if (element.shape === "hole_with_polygon_pad") {
+        // Calculate bounding box from pad outline
+        if (
+          "pad_outline" in element &&
+          element.pad_outline &&
+          element.pad_outline.length > 0
+        ) {
+          const xs = element.pad_outline.map((p) => element.x + p.x)
+          const ys = element.pad_outline.map((p) => element.y + p.y)
+          const minX = Math.min(...xs)
+          const maxX = Math.max(...xs)
+          const minY = Math.min(...ys)
+          const maxY = Math.max(...ys)
+          const centerX = (minX + maxX) / 2
+          const centerY = (minY + maxY) / 2
+          obstacles.push({
+            // @ts-ignore
+            type: "rect",
+            layers: EVERY_LAYER,
+            center: {
+              x: centerX,
+              y: centerY,
+            },
+            width: maxX - minX,
+            height: maxY - minY,
+            connectedTo: withNetId([element.pcb_plated_hole_id]),
+          })
+        }
       }
     } else if (element.type === "pcb_trace") {
       const traceObstacles = getObstaclesFromRoute(
