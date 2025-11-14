@@ -34,8 +34,7 @@ export const createPinrowSilkscreenText = ({
   const anchorY = elm.anchor_position.y
 
   const normalizedRotation = ((readableRotation % 360) + 360) % 360
-  const isAxisAligned =
-    normalizedRotation === 0 || normalizedRotation === 180
+  const isAxisAligned = normalizedRotation === 0 || normalizedRotation === 180
 
   let offsetY = BASE_LABEL_OFFSET_MM
   if (!isAxisAligned) {
