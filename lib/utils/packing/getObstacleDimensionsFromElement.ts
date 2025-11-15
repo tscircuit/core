@@ -81,6 +81,26 @@ export function getObstacleDimensionsFromPlatedHole(
         height: hole.outer_height,
       }
 
+    case "hole_with_polygon_pad":
+      // Calculate bounding box from pad outline
+      if (
+        !("pad_outline" in hole) ||
+        !hole.pad_outline ||
+        hole.pad_outline.length === 0
+      ) {
+        return null
+      }
+      const xs = hole.pad_outline.map((p) => p.x)
+      const ys = hole.pad_outline.map((p) => p.y)
+      const minX = Math.min(...xs)
+      const maxX = Math.max(...xs)
+      const minY = Math.min(...ys)
+      const maxY = Math.max(...ys)
+      return {
+        width: maxX - minX,
+        height: maxY - minY,
+      }
+
     default:
       return null
   }

@@ -148,6 +148,22 @@ export const createComponentsFromCircuitJson = (
             holeOffsetY: elm.hole_offset_y,
           }),
         )
+      } else if (elm.shape === "hole_with_polygon_pad") {
+        components.push(
+          new PlatedHole({
+            pcbX: elm.x,
+            pcbY: elm.y,
+            shape: "hole_with_polygon_pad",
+            holeShape: elm.hole_shape || "circle",
+            holeDiameter: elm.hole_diameter,
+            holeWidth: elm.hole_width,
+            holeHeight: elm.hole_height,
+            padOutline: elm.pad_outline || [],
+            holeOffsetX: elm.hole_offset_x,
+            holeOffsetY: elm.hole_offset_y,
+            portHints: elm.port_hints,
+          }),
+        )
       }
     } else if (elm.type === "pcb_keepout" && elm.shape === "circle") {
       components.push(
