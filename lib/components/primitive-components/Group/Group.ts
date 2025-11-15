@@ -24,6 +24,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { getBoundsOfPcbHoles } from "lib/utils/get-bounds-of-pcb-holes"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
@@ -191,12 +192,40 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       // Original logic for groups without outline
-      const bounds = getBoundsOfPcbComponents(this.children)
+      const componentBounds = getBoundsOfPcbComponents(this.children)
+      const holeBounds = this.pcb_group_id
+        ? getBoundsOfPcbHoles(
+            db.pcb_hole
+              .list()
+              .filter((hole) => hole.pcb_group_id === this.pcb_group_id),
+          )
+        : getBoundsOfPcbHoles([])
 
-      let width = bounds.width
-      let height = bounds.height
-      let centerX = (bounds.minX + bounds.maxX) / 2
-      let centerY = (bounds.minY + bounds.maxY) / 2
+      const hasComponentBounds =
+        componentBounds.width > 0 || componentBounds.height > 0
+      const hasHoleBounds = holeBounds.width > 0 || holeBounds.height > 0
+
+      let minX = componentBounds.minX
+      let minY = componentBounds.minY
+      let maxX = componentBounds.maxX
+      let maxY = componentBounds.maxY
+
+      if (!hasComponentBounds && hasHoleBounds) {
+        minX = holeBounds.minX
+        minY = holeBounds.minY
+        maxX = holeBounds.maxX
+        maxY = holeBounds.maxY
+      } else if (hasComponentBounds && hasHoleBounds) {
+        minX = Math.min(componentBounds.minX, holeBounds.minX)
+        minY = Math.min(componentBounds.minY, holeBounds.minY)
+        maxX = Math.max(componentBounds.maxX, holeBounds.maxX)
+        maxY = Math.max(componentBounds.maxY, holeBounds.maxY)
+      }
+
+      let width = Math.max(0, maxX - minX)
+      let height = Math.max(0, maxY - minY)
+      let centerX = (minX + maxX) / 2
+      let centerY = (minY + maxY) / 2
 
       if (this.isSubcircuit) {
         const { padLeft, padRight, padTop, padBottom } =
