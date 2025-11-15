@@ -7,6 +7,7 @@ import type {
   PcbHoleCircularWithRectPad,
   PcbHolePillWithRectPad,
   PcbHoleRotatedPillWithRectPad,
+  PcbHoleWithPolygonPad,
 } from "circuit-json"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
@@ -39,6 +40,25 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     }
     if (props.shape === "pill_hole_with_rect_pad") {
       return { width: props.rectPadWidth, height: props.rectPadHeight }
+    }
+    if (props.shape === "hole_with_polygon_pad") {
+      // Calculate bounding box from pad outline
+      if (!props.padOutline || props.padOutline.length === 0) {
+        throw new Error(
+          "padOutline is required for hole_with_polygon_pad shape",
+        )
+      }
+      const xs = props.padOutline.map((p) =>
+        typeof p.x === "number" ? p.x : parseFloat(String(p.x)),
+      )
+      const ys = props.padOutline.map((p) =>
+        typeof p.y === "number" ? p.y : parseFloat(String(p.y)),
+      )
+      const minX = Math.min(...xs)
+      const maxX = Math.max(...xs)
+      const minY = Math.min(...ys)
+      const maxY = Math.max(...ys)
+      return { width: maxX - minX, height: maxY - minY }
     }
     throw new Error(
       `getPcbSize for shape "${(props as any).shape}" not implemented for ${this.componentName}`,
@@ -251,6 +271,44 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbHolePillWithRectPad)
+      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+    } else if (props.shape === "hole_with_polygon_pad") {
+      // Pad outline points are relative to the hole position (x, y)
+      const padOutline = (props.padOutline || []).map((point) => {
+        const x =
+          typeof point.x === "number" ? point.x : parseFloat(String(point.x))
+        const y =
+          typeof point.y === "number" ? point.y : parseFloat(String(point.y))
+        return {
+          x,
+          y,
+        }
+      })
+
+      const pcb_plated_hole = db.pcb_plated_hole.insert({
+        pcb_component_id,
+        pcb_port_id: this.matchedPort?.pcb_port_id!,
+        shape: "hole_with_polygon_pad" as const,
+        hole_shape: props.holeShape || "circle",
+        hole_diameter: props.holeDiameter,
+        hole_width: props.holeWidth,
+        hole_height: props.holeHeight,
+        pad_outline: padOutline,
+        hole_offset_x:
+          typeof props.holeOffsetX === "number"
+            ? props.holeOffsetX
+            : parseFloat(String(props.holeOffsetX || 0)),
+        hole_offset_y:
+          typeof props.holeOffsetY === "number"
+            ? props.holeOffsetY
+            : parseFloat(String(props.holeOffsetY || 0)),
+        port_hints: this.getNameAndAliases(),
+        x: position.x,
+        y: position.y,
+        layers: ["top", "bottom"],
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+      } as PcbHoleWithPolygonPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     }
   }
