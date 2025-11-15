@@ -3,16 +3,8 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import subcircuitCircuitJson from "./assets/pic-programmer-circuit-json.json"
 import { renderToCircuitJson } from "tests/fixtures/renderToCircuitJson"
 
-test("subcircuit-circuit-json06 - trace inflation", async () => {
+test("subcircuit-circuit-json07 - component inflation", async () => {
   const { circuit } = await getTestFixture()
-
-  // const subcircuitCircuitJson = await renderToCircuitJson(
-  //   <group name="G1">
-  //     <resistor name="R1" resistance="10k" footprint="0402" />
-  //     <resistor name="R2" resistance="1k" footprint="0402" />
-  //     <trace from=".R1 > .pin2" to=".R2 > .pin1" />
-  //   </group>,
-  // )
 
   circuit.add(
     <subcircuit name="S1" circuitJson={subcircuitCircuitJson} pcbX={-5} />,
@@ -54,4 +46,4 @@ test("subcircuit-circuit-json06 - trace inflation", async () => {
   )
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+}, 20000)

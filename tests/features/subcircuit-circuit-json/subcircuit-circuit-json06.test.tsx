@@ -62,4 +62,4 @@ test("subcircuit-circuit-json06 - trace inflation", async () => {
   expect(pcbTraces).toHaveLength(1)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-}, 20000)
+})
