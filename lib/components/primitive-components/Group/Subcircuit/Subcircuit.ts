@@ -11,6 +11,7 @@ import { inflateSourceCapacitor } from "./inflators/inflateSourceCapacitor"
 import { inflateSourceInductor } from "./inflators/inflateSourceInductor"
 import { inflateSourceDiode } from "./inflators/inflateSourceDiode"
 import { inflateSourceTrace } from "./inflators/inflateSourceTrace"
+import { inflateSourceTransistor } from "./inflators/inflateSourceTransistor"
 
 export class Subcircuit extends Group<typeof subcircuitProps> {
   constructor(props: z.input<typeof subcircuitProps>) {
@@ -76,6 +77,9 @@ export class Subcircuit extends Group<typeof subcircuitProps> {
           break
         case "simple_chip":
           inflateSourceChip(sourceComponent, inflationCtx)
+          break
+        case "simple_transistor":
+          inflateSourceTransistor(sourceComponent, inflationCtx)
           break
         default:
           throw new Error(
