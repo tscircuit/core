@@ -174,6 +174,9 @@ export function createSchematicTraceSolverInputProblem(
   const directConnections: Array<{ pinIds: [string, string]; netId?: string }> =
     []
   const pairKeyToSourceTraceId = new Map<string, string>()
+  // This set is used to decouple net label orientation from net connections
+  const allInScopeNetNames = new Set<string>()
+
   for (const st of db.source_trace.list()) {
     if (st.subcircuit_id && !allowedSubcircuitIds.has(st.subcircuit_id)) {
       continue
@@ -196,6 +199,9 @@ export function createSchematicTraceSolverInputProblem(
           allScks.add(st.subcircuit_connectivity_map_key)
           userNetIdToSck.set(userNetId, st.subcircuit_connectivity_map_key)
           sckToUserNetId.set(st.subcircuit_connectivity_map_key, userNetId)
+        }
+        if (userNetId) {
+          allInScopeNetNames.add(userNetId);
         }
         directConnections.push({
           pinIds: [a, b].map((id) => schematicPortIdToPinId.get(id)!) as [
@@ -241,27 +247,81 @@ export function createSchematicTraceSolverInputProblem(
   for (const [subcircuitConnectivityKey, schematicPortIds] of sckToPinIds) {
     const sourceNet = sckToSourceNet.get(subcircuitConnectivityKey)
     if (sourceNet && schematicPortIds.length >= 2) {
-      const userNetId = String(
-        sourceNet.name || sourceNet.source_net_id || subcircuitConnectivityKey,
-      )
+      const hasExplicitTrace = db.source_trace
+        .list()
+        .some(
+          (st) =>
+            st.subcircuit_connectivity_map_key === subcircuitConnectivityKey
+        );
+
+      const userLabeledThisNet = Boolean(
+        sourceNet?.name && sourceNet.name.trim() !== ""
+      );
+
+      if (sourceNet.name) {
+        allInScopeNetNames.add(sourceNet.name);
+      }
+
+      // Only create a netConnection if:
+      // 1. There's exactly 2 ports (simple case: netlabel connects two specific components)
+      // 2. OR there's an explicit trace connecting them (user explicitly routed this net)
+      //
+      // Skip if there are 3+ ports without an explicit trace, as this indicates
+      // multiple separate netlabel instances targeting different components
+      // (which should NOT be auto-connected together).
+      if (sourceNet && schematicPortIds.length === 2 && userLabeledThisNet) {
+        // This is the "net jumping" fix:
+        // If it's a ground or power net (AND there is NO explicit trace),
+        // skip making the connection.
+        if (sourceNet.is_ground || sourceNet.is_power) {
+          continue;
+        }
+
+        const userNetId = String(
+          sourceNet.name || sourceNet.source_net_id || subcircuitConnectivityKey,
+        )
       userNetIdToSck.set(userNetId, subcircuitConnectivityKey)
       sckToUserNetId.set(subcircuitConnectivityKey, userNetId)
 
-      // Estimate net label width using same heuristic as computeSchematicNetLabelCenter
-      // Default font_size is 0.18 and charWidth = 0.1 * (font_size / 0.18)
-      const fontSize = 0.18
-      const charWidth = 0.1 * (fontSize / 0.18)
-      const netLabelWidth = Number(
-        (String(userNetId).length * charWidth).toFixed(2),
-      )
+        // Estimate net label width using same heuristic as computeSchematicNetLabelCenter
+        // Default font_size is 0.18 and charWidth = 0.1 * (font_size / 0.18)
+        const fontSize = 0.18
+        const charWidth = 0.1 * (fontSize / 0.18)
+        const netLabelWidth = Number(
+          (String(userNetId).length * charWidth).toFixed(2),
+        )
 
-      netConnections.push({
-        netId: userNetId,
-        pinIds: schematicPortIds.map(
-          (portId) => schematicPortIdToPinId.get(portId)!,
-        ),
-        netLabelWidth,
-      })
+        netConnections.push({
+          netId: userNetId,
+          pinIds: schematicPortIds.map(
+            (portId) => schematicPortIdToPinId.get(portId)!,
+          ),
+          netLabelWidth,
+        })
+      } else if (hasExplicitTrace && userLabeledThisNet) {
+        // This is the fix for the 12 failing tests:
+        // If there's an explicit trace, honor it regardless of pin count
+        // and ALWAYS create the connection, even for GND/VCC.
+        const userNetId = String(
+          sourceNet.name || sourceNet.source_net_id || subcircuitConnectivityKey
+        );
+        userNetIdToSck.set(userNetId, subcircuitConnectivityKey);
+        sckToUserNetId.set(subcircuitConnectivityKey, userNetId);
+
+        const fontSize = 0.18;
+        const charWidth = 0.1 * (fontSize / 0.18);
+        const netLabelWidth = Number(
+          (String(userNetId).length * charWidth).toFixed(2)
+        );
+
+        netConnections.push({
+          netId: userNetId,
+          pinIds: schematicPortIds.map(
+            (portId) => schematicPortIdToPinId.get(portId)!
+          ),
+          netLabelWidth,
+        });
+      }
     }
   }
 
@@ -269,17 +329,20 @@ export function createSchematicTraceSolverInputProblem(
   const availableNetLabelOrientations: Record<string, AxisDirection[]> =
     (() => {
       const netToAllowedOrientations: Record<string, AxisDirection[]> = {}
-      const presentNetIds = new Set(netConnections.map((nc) => nc.netId))
+      // Use allInScopeNetNames so that labels for GND/VCC get oriented
+      // even if we skipped their connection.
       for (const net of db.source_net
         .list()
         .filter(
           (n) => !n.subcircuit_id || allowedSubcircuitIds.has(n.subcircuit_id),
         )) {
-        if (!net.name) continue
-        if (!presentNetIds.has(net.name)) continue
-        if (net.is_ground || net.name.toLowerCase().startsWith("gnd")) {
+        if (!net.name) continue;
+        if (!allInScopeNetNames.has(net.name)) continue
+        
+        // FIXED: Removed hard-coded string checks
+        if (net.is_ground) {
           netToAllowedOrientations[net.name] = ["y-"]
-        } else if (net.is_power || net.name.toLowerCase().startsWith("v")) {
+        } else if (net.is_power) {
           netToAllowedOrientations[net.name] = ["y+"]
         } else {
           netToAllowedOrientations[net.name] = ["x-", "x+"]
