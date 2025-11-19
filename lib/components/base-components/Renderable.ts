@@ -55,7 +55,6 @@ export const orderedRenderPhases = [
   "CadModelRender",
   "PartsEngineRender",
   "SimulationSpiceEngineRender",
-  "SchematicVoltageProbeRender",
 ] as const
 
 export type RenderPhase = (typeof orderedRenderPhases)[number]
@@ -82,7 +81,6 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   CadModelRender: ["PcbFootprintStringRender"],
   PartsEngineRender: ["PcbFootprintStringRender"],
   PcbComponentAnchorAlignment: ["PcbFootprintStringRender"],
-  SchematicVoltageProbeRender: ["SimulationSpiceEngineRender"],
 }
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
