@@ -1,8 +1,10 @@
 import type { Group } from "./Group"
-import { circuitJsonToSpice } from "circuit-json-to-spice"
+import { circuitJsonToSpice, SpiceNetlist } from "circuit-json-to-spice"
 import Debug from "debug"
 import { getSpiceyEngine } from "../../../spice/get-spicey-engine"
 import type { AnalogSimulation } from "../AnalogSimulation"
+import { resetSimulationColorState } from "lib/utils/simulation/getSimulationColorForId"
+import type { VoltageProbe } from "../VoltageProbe"
 
 const debug = Debug("tscircuit:core:Group_doInitialSimulationSpiceEngineRender")
 
@@ -17,6 +19,10 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
 
   if (analogSims.length === 0) return
 
+  const voltageProbes = group.selectAll("voltageprobe") as VoltageProbe[]
+
+  resetSimulationColorState()
+
   // Check if there are any spice engines configured, or use default
   const spiceEngineMap = { ...root.platform?.spiceEngineMap }
   if (!spiceEngineMap.spicey) {
@@ -28,8 +34,9 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
 
   // Convert circuit JSON to SPICE string
   let spiceString: string
+  let spiceNetlist: SpiceNetlist
   try {
-    const spiceNetlist = circuitJsonToSpice(circuitJson as any)
+    spiceNetlist = circuitJsonToSpice(circuitJson)
     spiceString = spiceNetlist.toSpiceString()
     debug(`Generated SPICE string:\n${spiceString}`)
   } catch (error) {
@@ -76,6 +83,11 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
           if (element.type === "simulation_transient_voltage_graph") {
             element.simulation_experiment_id =
               simulationExperiment.simulation_experiment_id
+
+            const probeMatch = voltageProbes.find(
+              (p) => p.finalProbeName === element.name,
+            )
+            if (probeMatch) element.color = probeMatch.color
           }
 
           // Insert the simulation result into the database
