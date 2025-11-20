@@ -52,6 +52,8 @@ export class Panel extends Group<typeof panelProps> {
     )
 
     if (unpositionedBoards.length > 0 && !hasAnyPositionedBoards) {
+      const tabWidth = this._parsedProps.tabWidth ?? TAB_CONFIG.TAB_WIDTH
+      const boardGap = this._parsedProps.boardGap ?? tabWidth
       const gridCols = Math.ceil(Math.sqrt(unpositionedBoards.length))
       const gridRows = Math.ceil(unpositionedBoards.length / gridCols)
 
@@ -76,22 +78,22 @@ export class Panel extends Group<typeof panelProps> {
 
       const totalGridWidth =
         colWidths.reduce((a, b) => a + b, 0) +
-        (gridCols > 1 ? (gridCols - 1) * TAB_CONFIG.TAB_DEPTH : 0)
+        (gridCols > 1 ? (gridCols - 1) * boardGap : 0)
       const totalGridHeight =
         rowHeights.reduce((a, b) => a + b, 0) +
-        (gridRows > 1 ? (gridRows - 1) * TAB_CONFIG.TAB_DEPTH : 0)
+        (gridRows > 1 ? (gridRows - 1) * boardGap : 0)
 
       const startX = -totalGridWidth / 2
       const startY = -totalGridHeight / 2
 
       const rowYOffsets = [startY]
       for (let i = 0; i < gridRows - 1; i++) {
-        rowYOffsets.push(rowYOffsets[i] + rowHeights[i] + TAB_CONFIG.TAB_DEPTH)
+        rowYOffsets.push(rowYOffsets[i] + rowHeights[i] + boardGap)
       }
 
       const colXOffsets = [startX]
       for (let i = 0; i < gridCols - 1; i++) {
-        colXOffsets.push(colXOffsets[i] + colWidths[i] + TAB_CONFIG.TAB_DEPTH)
+        colXOffsets.push(colXOffsets[i] + colWidths[i] + boardGap)
       }
 
       unpositionedBoards.forEach((board, i) => {
@@ -145,7 +147,7 @@ export class Panel extends Group<typeof panelProps> {
       if (isFinite(minX)) {
         const boundsWidth = maxX - minX
         const boundsHeight = maxY - minY
-        const margin = TAB_CONFIG.TAB_DEPTH * 3
+        const margin = boardGap * 3
 
         const newPanelWidth = boundsWidth + 2 * margin
         const newPanelHeight = boundsHeight + 2 * margin
@@ -159,6 +161,14 @@ export class Panel extends Group<typeof panelProps> {
 
     if (this._tabsAndMouseBitesGenerated) return
 
+    const props = this._parsedProps
+    const panelizationMethod = props.panelizationMethod ?? "tab-routing"
+
+    if (panelizationMethod === "none") {
+      this._tabsAndMouseBitesGenerated = true
+      return
+    }
+
     // Get all boards that are children of this panel
     const childBoardIds = childBoardInstances
       .map((c) => c.pcb_board_id)
@@ -170,9 +180,18 @@ export class Panel extends Group<typeof panelProps> {
 
     if (boardsInPanel.length === 0) return
 
+    const tabWidth = props.tabWidth ?? TAB_CONFIG.TAB_WIDTH
+    const boardGap = props.boardGap ?? tabWidth
     // Generate tabs and mouse bites
-    const { tabCutouts, mouseBiteHoles } =
-      generatePanelTabsAndMouseBites(boardsInPanel)
+    const { tabCutouts, mouseBiteHoles } = generatePanelTabsAndMouseBites(
+      boardsInPanel,
+      {
+        boardGap: boardGap,
+        tabWidth: tabWidth,
+        tabLength: props.tabLength ?? TAB_CONFIG.TAB_LENGTH,
+        mouseBites: props.mouseBites ?? true,
+      },
+    )
 
     // Insert tab cutouts into the database
     for (const tabCutout of tabCutouts) {
