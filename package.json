@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.868",
+  "version": "0.0.869",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -44,7 +44,7 @@
     "@tscircuit/matchpack": "^0.0.16",
     "@tscircuit/math-utils": "^0.0.29",
     "@tscircuit/miniflex": "^0.0.4",
-    "@tscircuit/ngspice-spice-engine": "^0.0.2",
+    "@tscircuit/ngspice-spice-engine": "^0.0.3",
     "@tscircuit/props": "^0.0.403",
     "@tscircuit/schematic-autolayout": "^0.0.6",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
@@ -81,7 +81,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "schematic-symbols": "^0.0.202",
-    "spicey": "^0.0.10",
+    "spicey": "^0.0.14",
     "ts-expect": "^1.3.0",
     "tsup": "^8.2.4"
   },

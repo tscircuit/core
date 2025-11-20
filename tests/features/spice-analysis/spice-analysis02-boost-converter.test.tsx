@@ -69,8 +69,7 @@ test(
           mosfetMode="enhancement"
           pcbX={-4}
         />
-        <voltageprobe connectsTo={".V1 > .pin1"} />
-        <voltageprobe connectsTo={".V2 > .pin1"} />
+        <voltageprobe name="5V" connectsTo={".V1 > .pin1"} />
         <voltageprobe connectsTo={".R1 > .pin1"} />
 
         <analogsimulation duration={100} timePerStep={1} />
