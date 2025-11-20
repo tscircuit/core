@@ -43,11 +43,15 @@ export class Panel extends Group<typeof panelProps> {
       (c) => c instanceof Board,
     ) as Board[]
 
+    const hasAnyPositionedBoards = childBoardInstances.some(
+      (b) => b.props.pcbX !== undefined || b.props.pcbY !== undefined,
+    )
+
     const unpositionedBoards = childBoardInstances.filter(
       (b) => b.props.pcbX === undefined && b.props.pcbY === undefined,
     )
 
-    if (unpositionedBoards.length > 0) {
+    if (unpositionedBoards.length > 0 && !hasAnyPositionedBoards) {
       const gridCols = Math.ceil(Math.sqrt(unpositionedBoards.length))
       const gridRows = Math.ceil(unpositionedBoards.length / gridCols)
 
