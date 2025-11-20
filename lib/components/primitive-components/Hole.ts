@@ -1,5 +1,6 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { holeProps } from "@tscircuit/props"
+import { distance } from "circuit-json"
 import type {
   PCBHole,
   PcbHolePill,
@@ -48,6 +49,10 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     const { _parsedProps: props } = this
     const subcircuit = this.getSubcircuit()
     const position = this._getGlobalPcbPositionBeforeLayout()
+    const soldermaskMargin = props.solderMaskMargin
+      ? distance.parse(props.solderMaskMargin)
+      : undefined
+    const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
 
     if (props.shape === "pill") {
       // Check if rotation is specified to determine pill type
@@ -60,6 +65,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
           x: position.x,
           y: position.y,
           ccw_rotation: props.pcbRotation,
+          soldermask_margin: soldermaskMargin,
+          is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
         } as PcbHoleRotatedPill)
@@ -72,6 +79,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
           hole_height: props.height,
           x: position.x,
           y: position.y,
+          soldermask_margin: soldermaskMargin,
+          is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
         } as PcbHolePill)
@@ -86,6 +95,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         hole_height: props.height,
         x: position.x,
         y: position.y,
+        soldermask_margin: soldermaskMargin,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
       } as PcbHoleRect)
@@ -98,6 +109,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         hole_diameter: props.diameter,
         x: position.x,
         y: position.y,
+        soldermask_margin: soldermaskMargin,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
       } as PcbHoleCircle)
