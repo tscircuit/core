@@ -26,6 +26,7 @@ test("PlatedHole pill shape", () => {
       "ccw_rotation": 45,
       "hole_height": 2,
       "hole_width": 1,
+      "is_covered_with_solder_mask": false,
       "layers": [
         "top",
         "bottom",
@@ -40,6 +41,7 @@ test("PlatedHole pill shape", () => {
         "unnamed_platedhole1",
       ],
       "shape": "pill",
+      "soldermask_margin": undefined,
       "subcircuit_id": "subcircuit_source_group_0",
       "type": "pcb_plated_hole",
       "x": 0,
