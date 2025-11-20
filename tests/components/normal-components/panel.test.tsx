@@ -72,7 +72,7 @@ test("panel emits pcb_panel with center", () => {
 
   circuit.add(
     <panel width="100mm" height="50mm" pcbX="10mm" pcbY="20mm">
-      <board width="10mm" height="10mm" routingDisabled />
+      <board width="10mm" height="10mm" routingDisabled pcbX={0} pcbY={0} />
     </panel>,
   )
 
