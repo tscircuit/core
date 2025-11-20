@@ -80,3 +80,45 @@ test("panel boards with no positions", () => {
     import.meta.path + "-no-positions-5-boards",
   )
 })
+
+test("panel boards with some positions", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <panel width="100mm" height="100mm">
+      <board width="20mm" height="50mm" routingDisabled />
+      <board width="20mm" height="50mm" routingDisabled />
+      <board width="20mm" height="50mm" routingDisabled />
+      <board width="20mm" height="50mm" pcbX={-30} routingDisabled />
+      <board width="20mm" height="50mm" pcbX={30} routingDisabled />
+    </panel>,
+  )
+
+  circuit.render()
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-some-positions")
+})
+
+test("panel with mixed positions doesn't autolayout", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <panel width="100mm" height="100mm">
+      <board width="20mm" height="50mm" routingDisabled />
+      <board width="20mm" height="50mm" pcbX={30} routingDisabled />
+    </panel>,
+  )
+
+  circuit.render()
+
+  const boards = circuit.db.pcb_board.list()
+  // Unpositioned board should be at 0,0
+  expect(boards.find((b) => b.center.x === 0)).toBeDefined()
+  // Positioned board should be at 30,0
+  expect(boards.find((b) => b.center.x === 30)).toBeDefined()
+
+  const panel = circuit.db.pcb_panel.list()[0]
+  // Panel should not be resized
+  expect(panel.width).toBe(100)
+  expect(panel.height).toBe(100)
+})
