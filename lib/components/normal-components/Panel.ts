@@ -4,7 +4,8 @@ import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Group } from "../primitive-components/Group/Group"
 import {
   generatePanelTabsAndMouseBites,
-  TAB_CONFIG,
+  DEFAULT_TAB_LENGTH,
+  DEFAULT_TAB_WIDTH,
 } from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
 import { Board } from "./Board"
 
@@ -52,7 +53,7 @@ export class Panel extends Group<typeof panelProps> {
     )
 
     if (unpositionedBoards.length > 0 && !hasAnyPositionedBoards) {
-      const tabWidth = this._parsedProps.tabWidth ?? TAB_CONFIG.TAB_WIDTH
+      const tabWidth = this._parsedProps.tabWidth ?? DEFAULT_TAB_WIDTH
       const boardGap = this._parsedProps.boardGap ?? tabWidth
       const gridCols = Math.ceil(Math.sqrt(unpositionedBoards.length))
       const gridRows = Math.ceil(unpositionedBoards.length / gridCols)
@@ -147,7 +148,7 @@ export class Panel extends Group<typeof panelProps> {
       if (isFinite(minX)) {
         const boundsWidth = maxX - minX
         const boundsHeight = maxY - minY
-        const margin = boardGap * 3
+        const margin = 5
 
         const newPanelWidth = boundsWidth + 2 * margin
         const newPanelHeight = boundsHeight + 2 * margin
@@ -164,43 +165,40 @@ export class Panel extends Group<typeof panelProps> {
     const props = this._parsedProps
     const panelizationMethod = props.panelizationMethod ?? "tab-routing"
 
-    if (panelizationMethod === "none") {
-      this._tabsAndMouseBitesGenerated = true
-      return
-    }
+    if (panelizationMethod !== "none") {
+      // Get all boards that are children of this panel
+      const childBoardIds = childBoardInstances
+        .map((c) => c.pcb_board_id)
+        .filter((id): id is string => !!id)
 
-    // Get all boards that are children of this panel
-    const childBoardIds = childBoardInstances
-      .map((c) => c.pcb_board_id)
-      .filter((id): id is string => !!id)
+      const boardsInPanel = db.pcb_board
+        .list()
+        .filter((b) => childBoardIds.includes(b.pcb_board_id!))
 
-    const boardsInPanel = db.pcb_board
-      .list()
-      .filter((b) => childBoardIds.includes(b.pcb_board_id!))
+      if (boardsInPanel.length === 0) return
 
-    if (boardsInPanel.length === 0) return
+      const tabWidth = props.tabWidth ?? DEFAULT_TAB_WIDTH
+      const boardGap = props.boardGap ?? tabWidth
+      // Generate tabs and mouse bites
+      const { tabCutouts, mouseBiteHoles } = generatePanelTabsAndMouseBites(
+        boardsInPanel,
+        {
+          boardGap: boardGap,
+          tabWidth: tabWidth,
+          tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
+          mouseBites: props.mouseBites ?? true,
+        },
+      )
 
-    const tabWidth = props.tabWidth ?? TAB_CONFIG.TAB_WIDTH
-    const boardGap = props.boardGap ?? tabWidth
-    // Generate tabs and mouse bites
-    const { tabCutouts, mouseBiteHoles } = generatePanelTabsAndMouseBites(
-      boardsInPanel,
-      {
-        boardGap: boardGap,
-        tabWidth: tabWidth,
-        tabLength: props.tabLength ?? TAB_CONFIG.TAB_LENGTH,
-        mouseBites: props.mouseBites ?? true,
-      },
-    )
+      // Insert tab cutouts into the database
+      for (const tabCutout of tabCutouts) {
+        db.pcb_cutout.insert(tabCutout)
+      }
 
-    // Insert tab cutouts into the database
-    for (const tabCutout of tabCutouts) {
-      db.pcb_cutout.insert(tabCutout)
-    }
-
-    // Insert mouse bite holes into the database
-    for (const mouseBiteHole of mouseBiteHoles) {
-      db.pcb_hole.insert(mouseBiteHole)
+      // Insert mouse bite holes into the database
+      for (const mouseBiteHole of mouseBiteHoles) {
+        db.pcb_hole.insert(mouseBiteHole)
+      }
     }
 
     this._tabsAndMouseBitesGenerated = true
