@@ -17,12 +17,26 @@ test("Hole with positive and negative solder mask margin", () => {
               solderMaskMargin={0.2}
               coveredWithSolderMask={true}
             />
+            <silkscreentext
+              pcbX="-4mm"
+              pcbY="3.2mm"
+              text="+0.2mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
+            />
             <hole
               pcbX="-4mm"
               pcbY="-2mm"
               diameter="1mm"
               solderMaskMargin={-0.1}
               coveredWithSolderMask={true}
+            />
+            <silkscreentext
+              pcbX="-4mm"
+              pcbY="-3.2mm"
+              text="-0.1mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
             />
             <hole
               pcbX="0mm"
@@ -33,6 +47,13 @@ test("Hole with positive and negative solder mask margin", () => {
               solderMaskMargin={0.15}
               coveredWithSolderMask={true}
             />
+            <silkscreentext
+              pcbX="0mm"
+              pcbY="3.2mm"
+              text="+0.15mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
+            />
             <hole
               pcbX="0mm"
               pcbY="-2mm"
@@ -41,6 +62,13 @@ test("Hole with positive and negative solder mask margin", () => {
               shape="rect"
               solderMaskMargin={-0.05}
               coveredWithSolderMask={true}
+            />
+            <silkscreentext
+              pcbX="0mm"
+              pcbY="-3.2mm"
+              text="-0.05mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
             />
             <hole
               pcbX="4mm"
@@ -51,6 +79,13 @@ test("Hole with positive and negative solder mask margin", () => {
               solderMaskMargin={0.25}
               coveredWithSolderMask={true}
             />
+            <silkscreentext
+              pcbX="4mm"
+              pcbY="3.2mm"
+              text="+0.25mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
+            />
             <hole
               pcbX="4mm"
               pcbY="-2mm"
@@ -59,6 +94,13 @@ test("Hole with positive and negative solder mask margin", () => {
               shape="pill"
               solderMaskMargin={-0.15}
               coveredWithSolderMask={true}
+            />
+            <silkscreentext
+              pcbX="4mm"
+              pcbY="-3.2mm"
+              text="-0.15mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
             />
           </footprint>
         }

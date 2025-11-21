@@ -21,6 +21,13 @@ test("PlatedHole with positive and negative solder mask margin", () => {
               solderMaskMargin={0.2}
               coveredWithSolderMask={true}
             />
+            <silkscreentext
+              pcbX="-5mm"
+              pcbY="3.5mm"
+              text="+0.2mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
+            />
             <platedhole
               portHints={["pin2"]}
               pcbX="-5mm"
@@ -30,6 +37,13 @@ test("PlatedHole with positive and negative solder mask margin", () => {
               holeDiameter={0.8}
               coveredWithSolderMask={true}
               solderMaskMargin={-0.1}
+            />
+            <silkscreentext
+              pcbX="-5mm"
+              pcbY="-3.5mm"
+              text="-0.1mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
             />
             <platedhole
               portHints={["pin3"]}
@@ -43,6 +57,13 @@ test("PlatedHole with positive and negative solder mask margin", () => {
               solderMaskMargin={0.15}
               coveredWithSolderMask={true}
             />
+            <silkscreentext
+              pcbX="0mm"
+              pcbY="3.2mm"
+              text="+0.15mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
+            />
             <platedhole
               portHints={["pin4"]}
               pcbX="0mm"
@@ -55,6 +76,13 @@ test("PlatedHole with positive and negative solder mask margin", () => {
               solderMaskMargin={-0.05}
               coveredWithSolderMask={true}
             />
+            <silkscreentext
+              pcbX="0mm"
+              pcbY="-3.2mm"
+              text="-0.05mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
+            />
             <platedhole
               portHints={["pin5"]}
               pcbX="5mm"
@@ -66,6 +94,13 @@ test("PlatedHole with positive and negative solder mask margin", () => {
               solderMaskMargin={0.25}
               coveredWithSolderMask={true}
             />
+            <silkscreentext
+              pcbX="5mm"
+              pcbY="3.3mm"
+              text="+0.25mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
+            />
             <platedhole
               portHints={["pin6"]}
               pcbX="5mm"
@@ -76,6 +111,13 @@ test("PlatedHole with positive and negative solder mask margin", () => {
               rectPadHeight={1.2}
               solderMaskMargin={-0.15}
               coveredWithSolderMask={true}
+            />
+            <silkscreentext
+              pcbX="5mm"
+              pcbY="-3.3mm"
+              text="-0.15mm"
+              fontSize="0.4mm"
+              anchorAlignment="center"
             />
           </footprint>
         }

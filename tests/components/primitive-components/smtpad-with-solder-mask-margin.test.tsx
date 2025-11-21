@@ -15,6 +15,13 @@ test("SmtPad with positive and negative solder mask margin", async () => {
         pcbX={-4}
         solderMaskMargin={0.2}
       />
+      <silkscreentext
+        pcbX={-4}
+        pcbY={1.2}
+        text="+0.2mm"
+        fontSize="0.4mm"
+        anchorAlignment="center"
+      />
       <smtpad
         shape="rect"
         layer="top"
@@ -23,6 +30,13 @@ test("SmtPad with positive and negative solder mask margin", async () => {
         portHints={["2"]}
         pcbX={0}
         solderMaskMargin={-0.1}
+      />
+      <silkscreentext
+        pcbX={0}
+        pcbY={1.2}
+        text="-0.1mm"
+        fontSize="0.4mm"
+        anchorAlignment="center"
       />
       <smtpad
         shape="circle"
@@ -33,6 +47,13 @@ test("SmtPad with positive and negative solder mask margin", async () => {
         pcbY={1}
         solderMaskMargin={0.15}
       />
+      <silkscreentext
+        pcbX={4}
+        pcbY={2.1}
+        text="+0.15mm"
+        fontSize="0.4mm"
+        anchorAlignment="center"
+      />
       <smtpad
         shape="circle"
         layer="top"
@@ -42,6 +63,13 @@ test("SmtPad with positive and negative solder mask margin", async () => {
         pcbY={-1}
         solderMaskMargin={-0.05}
         coveredWithSolderMask={true}
+      />
+      <silkscreentext
+        pcbX={4}
+        pcbY={-2.1}
+        text="-0.05mm"
+        fontSize="0.4mm"
+        anchorAlignment="center"
       />
     </footprint>
   )
