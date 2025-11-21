@@ -87,6 +87,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const { _parsedProps: props } = this
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
     const shouldCreateSolderPaste = !isCoveredWithSolderMask
+    const soldermaskMargin = props.solderMaskMargin
 
     const subcircuit = this.getSubcircuit()
 
@@ -131,6 +132,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         radius: props.radius!,
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
+        soldermask_margin: soldermaskMargin,
         x: position.x,
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -163,6 +165,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           ccw_rotation: finalRotationDegrees,
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
+          soldermask_margin: soldermaskMargin,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
@@ -177,6 +180,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           corner_radius: props.cornerRadius ?? undefined,
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
+          soldermask_margin: soldermaskMargin,
           x: position.x,
           y: position.y,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -234,6 +238,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         ccw_rotation: padRotation,
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
+        soldermask_margin: soldermaskMargin,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
@@ -272,6 +277,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         points: transformedPoints,
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
+        soldermask_margin: soldermaskMargin,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
@@ -288,6 +294,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         width: props.width!,
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
+        soldermask_margin: soldermaskMargin,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPill) as PcbSmtPadPill

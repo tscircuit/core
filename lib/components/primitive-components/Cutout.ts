@@ -4,6 +4,7 @@ import type {
   PcbCutoutRect,
   PcbCutoutCircle,
   PcbCutoutPolygon,
+  PcbCutoutPath,
 } from "circuit-json"
 import { cutoutProps } from "@tscircuit/props"
 
@@ -35,6 +36,7 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
       | PcbCutoutRect
       | PcbCutoutCircle
       | PcbCutoutPolygon
+      | PcbCutoutPath
       | undefined = undefined
 
     if (props.shape === "rect") {
