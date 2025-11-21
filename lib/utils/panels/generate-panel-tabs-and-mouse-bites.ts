@@ -1,5 +1,6 @@
 import type { PcbBoard, PcbCutoutRect, PcbHoleCircle } from "circuit-json"
 
+export const DEFAULT_PANEL_MARGIN = 5
 export const DEFAULT_TAB_LENGTH = 5
 export const DEFAULT_TAB_WIDTH = 2
 

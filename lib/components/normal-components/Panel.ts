@@ -4,6 +4,7 @@ import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Group } from "../primitive-components/Group/Group"
 import {
   generatePanelTabsAndMouseBites,
+  DEFAULT_PANEL_MARGIN,
   DEFAULT_TAB_LENGTH,
   DEFAULT_TAB_WIDTH,
 } from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
@@ -148,10 +149,9 @@ export class Panel extends Group<typeof panelProps> {
       if (isFinite(minX)) {
         const boundsWidth = maxX - minX
         const boundsHeight = maxY - minY
-        const margin = 5
 
-        const newPanelWidth = boundsWidth + 2 * margin
-        const newPanelHeight = boundsHeight + 2 * margin
+        const newPanelWidth = boundsWidth + 2 * DEFAULT_PANEL_MARGIN
+        const newPanelHeight = boundsHeight + 2 * DEFAULT_PANEL_MARGIN
 
         db.pcb_panel.update(this.pcb_panel_id!, {
           width: newPanelWidth,
