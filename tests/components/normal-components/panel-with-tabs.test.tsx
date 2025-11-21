@@ -122,3 +122,76 @@ test("panel with mixed positions doesn't autolayout", () => {
   expect(panel.width).toBe(100)
   expect(panel.height).toBe(100)
 })
+
+test("panel with panelizationMethod: 'none' has no tabs or mouse bites", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <panel width="100mm" height="100mm" panelizationMethod="none">
+      <board width="30mm" height="30mm" routingDisabled />
+      <board width="30mm" height="30mm" routingDisabled />
+    </panel>,
+  )
+
+  circuit.render()
+
+  const circuitJson = circuit.getCircuitJson()
+  const tabCutouts = circuitJson.filter((el) => el.type === "pcb_cutout")
+  expect(tabCutouts.length).toBe(0)
+  const mouseBiteHoles = circuitJson.filter((el) => el.type === "pcb_hole")
+  expect(mouseBiteHoles.length).toBe(0)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-tabs")
+})
+
+test("panel with mouseBites: false has no mouse bites", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <panel width="100mm" height="100mm" mouseBites={false}>
+      <board
+        width="30mm"
+        height="30mm"
+        pcbX="-20mm"
+        pcbY="-20mm"
+        routingDisabled
+      />
+      <board
+        width="30mm"
+        height="30mm"
+        pcbX="20mm"
+        pcbY="20mm"
+        routingDisabled
+      />
+    </panel>,
+  )
+
+  circuit.render()
+
+  const circuitJson = circuit.getCircuitJson()
+  const tabCutouts = circuitJson.filter((el) => el.type === "pcb_cutout")
+  expect(tabCutouts.length).toBeGreaterThan(0)
+  const mouseBiteHoles = circuitJson.filter((el) => el.type === "pcb_hole")
+  expect(mouseBiteHoles.length).toBe(0)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-mouse-bites")
+})
+
+test("panel custom tab/gap props", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <panel
+      width="100mm"
+      height="100mm"
+      boardGap="5mm"
+      tabLength="2mm"
+      tabWidth="0.5mm"
+    >
+      <board width="30mm" height="30mm" routingDisabled />
+      <board width="30mm" height="30mm" routingDisabled />
+    </panel>,
+  )
+
+  circuit.render()
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-custom-props")
+})

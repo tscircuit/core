@@ -1,12 +1,16 @@
 import type { PcbBoard, PcbCutoutRect, PcbHoleCircle } from "circuit-json"
 
-export const TAB_CONFIG = {
-  TAB_WIDTH: 4,
-  TAB_DEPTH: 0.5,
-  TAB_TO_SPACE_RATIO: 5,
-  MOUSE_BITE_DIAMETER: 0.2,
-  MOUSE_BITE_SPACING: 0.1,
-  MOUSE_BITES_PER_GAP: 5,
+export const DEFAULT_PANEL_MARGIN = 5
+export const DEFAULT_TAB_LENGTH = 5
+export const DEFAULT_TAB_WIDTH = 2
+
+export const PANEL_GRID_SPACING = DEFAULT_TAB_WIDTH
+
+interface PanelOptions {
+  boardGap: number
+  tabWidth: number
+  tabLength: number
+  mouseBites: boolean
 }
 
 interface TabCutout {
@@ -62,12 +66,17 @@ function pointOverlapsRectangle(
   return distanceX * distanceX + distanceY * distanceY <= radius * radius
 }
 
-function generateTabsForEdge(
-  board: PcbBoard,
-  edge: "top" | "bottom" | "left" | "right",
-  existingTabs: TabCutout[],
-  otherBoards: PcbBoard[],
-): TabCutout[] {
+function generateTabsForEdge({
+  board,
+  edge,
+  otherBoards,
+  options,
+}: {
+  board: PcbBoard
+  edge: "top" | "bottom" | "left" | "right"
+  otherBoards: PcbBoard[]
+  options: PanelOptions
+}): TabCutout[] {
   const tabs: TabCutout[] = []
 
   if (!board.width || !board.height) return tabs
@@ -91,12 +100,20 @@ function generateTabsForEdge(
     edgeCenter = edge === "right" ? boardRight : boardLeft
   }
 
-  const totalTabWidth = TAB_CONFIG.TAB_WIDTH
-  const minSpacingForMouseBites =
-    TAB_CONFIG.MOUSE_BITES_PER_GAP * TAB_CONFIG.MOUSE_BITE_DIAMETER +
-    (TAB_CONFIG.MOUSE_BITES_PER_GAP - 1) * TAB_CONFIG.MOUSE_BITE_SPACING
+  const totalTabWidth = options.tabLength
+  let fixedSpacing = options.boardGap
+  if (options.mouseBites) {
+    const mouseBiteDiameter = options.tabWidth * 0.45
+    const mouseBiteSpacing = mouseBiteDiameter * 0.1
+    // Ensure at least 2 mouse bites per gap
+    const mouseBitesPerGap = Math.max(2, Math.ceil(options.tabLength / 2))
 
-  const fixedSpacing = minSpacingForMouseBites * 1.1
+    // the spacing between tabs should depend on all mouse bite data
+    const minSpacingForMouseBites =
+      mouseBitesPerGap * mouseBiteDiameter +
+      (mouseBitesPerGap - 1) * mouseBiteSpacing
+    fixedSpacing = minSpacingForMouseBites * 1.1
+  }
 
   let numTabs = Math.floor(
     (edgeLength - fixedSpacing) / (totalTabWidth + fixedSpacing),
@@ -136,8 +153,8 @@ function generateTabsForEdge(
     axisEnd = Math.min(axisEnd, boardEnd)
 
     if (isCornerTab) {
-      if (isFirstTab) axisStart -= TAB_CONFIG.TAB_DEPTH
-      if (isLastTab) axisEnd += TAB_CONFIG.TAB_DEPTH
+      if (isFirstTab) axisStart -= options.tabWidth
+      if (isLastTab) axisEnd += options.tabWidth
     }
 
     if (axisEnd <= axisStart) continue
@@ -146,8 +163,8 @@ function generateTabsForEdge(
     const axisLength = axisEnd - axisStart
     const crossAxisOffset =
       edge === "top" || edge === "right"
-        ? TAB_CONFIG.TAB_DEPTH / 2
-        : -TAB_CONFIG.TAB_DEPTH / 2
+        ? options.tabWidth / 2
+        : -options.tabWidth / 2
 
     const tabCenter = isHorizontal
       ? {
@@ -159,8 +176,8 @@ function generateTabsForEdge(
           y: board.center.y + axisCenterOffset,
         }
 
-    const tabWidth = isHorizontal ? axisLength : TAB_CONFIG.TAB_DEPTH
-    const tabHeight = isHorizontal ? TAB_CONFIG.TAB_DEPTH : axisLength
+    const tabWidth = isHorizontal ? axisLength : options.tabWidth
+    const tabHeight = isHorizontal ? options.tabWidth : axisLength
 
     const newTab: TabCutout = {
       center: tabCenter,
@@ -192,14 +209,19 @@ function generateTabsForEdge(
   return tabs
 }
 
-function generateMouseBitesForEdge(
-  board: PcbBoard,
-  edge: "top" | "bottom" | "left" | "right",
-  edgeTabs: TabCutout[],
-  allTabs: TabCutout[],
-  allBoards: PcbBoard[],
-  existingMouseBites: MouseBite[],
-): MouseBite[] {
+function generateMouseBitesForEdge({
+  board,
+  edge,
+  edgeTabs,
+  allBoards,
+  options,
+}: {
+  board: PcbBoard
+  edge: "top" | "bottom" | "left" | "right"
+  edgeTabs: TabCutout[]
+  allBoards: PcbBoard[]
+  options: PanelOptions
+}): MouseBite[] {
   const mouseBites: MouseBite[] = []
 
   if (edgeTabs.length === 0) return mouseBites
@@ -213,9 +235,16 @@ function generateMouseBitesForEdge(
 
   const isHorizontal = edge === "top" || edge === "bottom"
 
+  // mouse bite diameter should depend on the tab size
+  const mouseBiteDiameter = options.tabWidth * 0.45
+  // the mouse bite spacing should depend on its diameter
+  const mouseBiteSpacing = mouseBiteDiameter * 0.1
+  // the mouse bites per gap should depend on the tab length only, with a min of 2
+  const mouseBitesPerGap = Math.max(2, Math.ceil(options.tabLength / 2))
+
   let mouseBitePosition: number
 
-  const radius = TAB_CONFIG.MOUSE_BITE_DIAMETER / 2
+  const radius = mouseBiteDiameter / 2
 
   if (edge === "top") {
     mouseBitePosition = boardTop
@@ -252,25 +281,23 @@ function generateMouseBitesForEdge(
 
     const gapLength = gapEnd - gapStart
 
-    const totalMouseBiteWidth =
-      TAB_CONFIG.MOUSE_BITES_PER_GAP * TAB_CONFIG.MOUSE_BITE_DIAMETER
-    const totalSpacing =
-      (TAB_CONFIG.MOUSE_BITES_PER_GAP - 1) * TAB_CONFIG.MOUSE_BITE_SPACING
+    const totalMouseBiteWidth = mouseBitesPerGap * mouseBiteDiameter
+    const totalSpacing = (mouseBitesPerGap - 1) * mouseBiteSpacing
 
     if (gapLength < totalMouseBiteWidth + totalSpacing) continue
 
     const gapCenter = (gapStart + gapEnd) / 2
 
-    for (let j = 0; j < TAB_CONFIG.MOUSE_BITES_PER_GAP; j++) {
+    for (let j = 0; j < mouseBitesPerGap; j++) {
       const posOffset =
-        (j - (TAB_CONFIG.MOUSE_BITES_PER_GAP - 1) / 2) *
-        (TAB_CONFIG.MOUSE_BITE_DIAMETER + TAB_CONFIG.MOUSE_BITE_SPACING)
+        (j - (mouseBitesPerGap - 1) / 2) *
+        (mouseBiteDiameter + mouseBiteSpacing)
 
       const newMouseBite: MouseBite = isHorizontal
         ? { x: gapCenter + posOffset, y: mouseBitePosition }
         : { x: mouseBitePosition, y: gapCenter + posOffset }
 
-      const radius = TAB_CONFIG.MOUSE_BITE_DIAMETER / 2
+      const radius = mouseBiteDiameter / 2
       let overlapsBoard = false
       for (const otherBoard of allBoards) {
         if (!otherBoard.width || !otherBoard.height) continue
@@ -293,7 +320,10 @@ function generateMouseBitesForEdge(
   return mouseBites
 }
 
-export function generatePanelTabsAndMouseBites(boards: PcbBoard[]): {
+export function generatePanelTabsAndMouseBites(
+  boards: PcbBoard[],
+  options: PanelOptions,
+): {
   tabCutouts: PcbCutoutRect[]
   mouseBiteHoles: PcbHoleCircle[]
 } {
@@ -305,41 +335,47 @@ export function generatePanelTabsAndMouseBites(boards: PcbBoard[]): {
     const otherBoards = boards.filter((_, i) => i !== boardIndex)
 
     for (const edge of ["top", "bottom", "left", "right"] as const) {
-      const edgeTabs = generateTabsForEdge(
+      const edgeTabs = generateTabsForEdge({
         board,
         edge,
-        allTabCutouts,
         otherBoards,
-      )
+        options,
+      })
       allTabCutouts.push(...edgeTabs)
 
-      const edgeMouseBites = generateMouseBitesForEdge(
-        board,
-        edge,
-        edgeTabs,
-        allTabCutouts,
-        otherBoards,
-        allMouseBites,
-      )
-      allMouseBites.push(...edgeMouseBites)
+      if (options.mouseBites) {
+        const edgeMouseBites = generateMouseBitesForEdge({
+          board,
+          edge,
+          edgeTabs,
+          allBoards: otherBoards,
+          options,
+        })
+        allMouseBites.push(...edgeMouseBites)
+      }
     }
   }
 
-  const tabCutouts: PcbCutoutRect[] = allTabCutouts.map((tab, index) => ({
-    type: "pcb_cutout",
-    pcb_cutout_id: `panel_tab_${index}`,
-    shape: "rect",
-    center: tab.center,
-    width: tab.width,
-    height: tab.height,
-    corner_radius: 0.25,
-  }))
+  const tabCutouts: PcbCutoutRect[] = allTabCutouts.map((tab, index) => {
+    const tabWidthDimension = Math.min(tab.width, tab.height)
+    return {
+      type: "pcb_cutout",
+      pcb_cutout_id: `panel_tab_${index}`,
+      shape: "rect",
+      center: tab.center,
+      width: tab.width,
+      height: tab.height,
+      corner_radius: tabWidthDimension / 2,
+    }
+  })
 
+  // TODO this logic should be shared with generateMouseBitesForEdge
+  const mouseBiteDiameter = options.tabWidth * 0.45
   const mouseBiteHoles: PcbHoleCircle[] = allMouseBites.map((bite, index) => ({
     type: "pcb_hole",
     pcb_hole_id: `panel_mouse_bite_${index}`,
     hole_shape: "circle",
-    hole_diameter: TAB_CONFIG.MOUSE_BITE_DIAMETER,
+    hole_diameter: mouseBiteDiameter,
     x: bite.x,
     y: bite.y,
   }))
