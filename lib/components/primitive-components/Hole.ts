@@ -50,8 +50,6 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     const subcircuit = this.getSubcircuit()
     const position = this._getGlobalPcbPositionBeforeLayout()
     const soldermaskMargin = props.solderMaskMargin
-      ? distance.parse(props.solderMaskMargin)
-      : undefined
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
 
     if (props.shape === "pill") {

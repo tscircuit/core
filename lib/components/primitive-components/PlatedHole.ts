@@ -126,8 +126,6 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       this.getPrimitiveContainer()?.pcb_component_id!
     const subcircuit = this.getSubcircuit()
     const soldermaskMargin = props.solderMaskMargin
-      ? distance.parse(props.solderMaskMargin)
-      : undefined
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
 
     if (props.shape === "circle") {

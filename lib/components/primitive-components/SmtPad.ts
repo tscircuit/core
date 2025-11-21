@@ -88,8 +88,6 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
     const shouldCreateSolderPaste = !isCoveredWithSolderMask
     const soldermaskMargin = props.solderMaskMargin
-      ? distance.parse(props.solderMaskMargin)
-      : undefined
 
     const subcircuit = this.getSubcircuit()
 

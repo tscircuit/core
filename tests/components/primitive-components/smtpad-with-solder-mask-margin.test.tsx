@@ -55,8 +55,6 @@ test("SmtPad with positive and negative solder mask margin", async () => {
   circuit.render()
 
   const circuitJson = circuit.getCircuitJson()
-  const pcb_smtpad = circuitJson.filter((elm) => elm.type === "pcb_smtpad")
-  console.log(pcb_smtpad)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showSolderMask: true,
   })
