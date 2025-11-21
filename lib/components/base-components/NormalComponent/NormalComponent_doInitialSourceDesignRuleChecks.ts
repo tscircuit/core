@@ -30,16 +30,51 @@ export const NormalComponent_doInitialSourceDesignRuleChecks = (
 
   for (const port of ports) {
     if (!port.source_port_id) continue
-    if (!shouldCheckPortForMissingTrace(component, port)) continue
-    if (connected.has(port.source_port_id)) continue
-    db.source_pin_missing_trace_warning.insert({
-      message: `Port ${port.getNameAndAliases()[0]} on ${component.props.name} is missing a trace`,
-      source_component_id: component.source_component_id,
-      source_port_id: port.source_port_id,
-      subcircuit_id: component.getSubcircuit().subcircuit_id ?? undefined,
-      warning_type: "source_pin_missing_trace_warning",
-    })
+    const portName = port.getNameAndAliases()[0]
+    const isConnected = connected.has(port.source_port_id)
+
+    // Check if pin must be connected
+    if (shouldCheckPortForMustBeConnected(component, port)) {
+      if (!isConnected) {
+        db.source_pin_must_be_connected_error.insert({
+          message: `Port ${portName} on ${component.props.name} must be connected but is floating`,
+          source_component_id: component.source_component_id,
+          source_port_id: port.source_port_id,
+          subcircuit_id: component.getSubcircuit().subcircuit_id ?? undefined,
+          error_type: "source_pin_must_be_connected_error",
+        })
+      }
+    } else if (
+      !isConnected &&
+      shouldCheckPortForMissingTrace(component, port)
+    ) {
+      // Only emit warning if pin doesn't have mustBeConnected
+      db.source_pin_missing_trace_warning.insert({
+        message: `Port ${portName} on ${component.props.name} is missing a trace`,
+        source_component_id: component.source_component_id,
+        source_port_id: port.source_port_id,
+        subcircuit_id: component.getSubcircuit().subcircuit_id ?? undefined,
+        warning_type: "source_pin_missing_trace_warning",
+      })
+    }
   }
+}
+
+export const shouldCheckPortForMustBeConnected = (
+  component: NormalComponent,
+  port: Port,
+): boolean => {
+  if (component.config.componentName === "Chip") {
+    const pinAttributes = (component.props as any).pinAttributes
+    if (!pinAttributes) return false
+    for (const alias of port.getNameAndAliases()) {
+      const attrs = pinAttributes[alias]
+      if (attrs?.mustBeConnected === true) {
+        return true
+      }
+    }
+  }
+  return false
 }
 
 export const shouldCheckPortForMissingTrace = (
