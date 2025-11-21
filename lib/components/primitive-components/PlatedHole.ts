@@ -1,5 +1,6 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { platedHoleProps } from "@tscircuit/props"
+import { distance } from "circuit-json"
 import type { Port } from "./Port"
 import type {
   PCBPlatedHoleInput,
@@ -124,6 +125,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
     const subcircuit = this.getSubcircuit()
+    const soldermaskMargin = props.solderMaskMargin
+    const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
 
     if (props.shape === "circle") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
@@ -137,6 +140,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         x: position.x,
         y: position.y,
         layers: ["top", "bottom"],
+        soldermask_margin: soldermaskMargin,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       })
@@ -177,6 +182,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         x: position.x,
         y: position.y,
         layers: ["top", "bottom"],
+        soldermask_margin: soldermaskMargin,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         hole_shape: "rotated_pill",
@@ -205,6 +212,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         x: position.x,
         y: position.y,
         layers: ["top", "bottom"],
+        soldermask_margin: soldermaskMargin,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         ccw_rotation: props.pcbRotation ?? 0,
@@ -246,6 +255,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         x: position.x,
         y: position.y,
         layers: ["top", "bottom"],
+        soldermask_margin: soldermaskMargin,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         hole_offset_x: props.holeOffsetX,
@@ -268,6 +279,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         x: position.x,
         y: position.y,
         layers: ["top", "bottom"],
+        soldermask_margin: soldermaskMargin,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbHolePillWithRectPad)
@@ -306,6 +319,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         x: position.x,
         y: position.y,
         layers: ["top", "bottom"],
+        soldermask_margin: soldermaskMargin,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbHoleWithPolygonPad)
