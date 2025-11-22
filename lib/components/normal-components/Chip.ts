@@ -4,6 +4,7 @@ import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
+import { underscorifyPinAttributes } from "lib/soup/underscorifyPinAttributes"
 import type { z } from "zod"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
@@ -90,6 +91,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
+      source_pin_attributes: underscorifyPinAttributes(props.pinAttributes),
     })
 
     this.source_component_id = source_component.source_component_id!
