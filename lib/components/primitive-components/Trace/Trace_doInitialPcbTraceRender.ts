@@ -63,6 +63,10 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     return
   }
 
+  if (props.pcbStraightLine) {
+    return
+  }
+
   if (!subcircuit._shouldUseTraceByTraceRouting()) {
     return
   }
