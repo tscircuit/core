@@ -370,34 +370,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       if (attributes.mustBeConnected !== undefined) {
         portAttributesFromParent.must_be_connected = attributes.mustBeConnected
       }
-      if (attributes.requiresPower !== undefined) {
-        portAttributesFromParent.requires_power = attributes.requiresPower
-      }
-      if (attributes.requiresGround !== undefined) {
-        portAttributesFromParent.requires_ground = attributes.requiresGround
-      }
-      if (attributes.requiresVoltage !== undefined) {
-        portAttributesFromParent.requires_voltage = attributes.requiresVoltage
-      }
-      if (attributes.doNotConnect !== undefined) {
-        portAttributesFromParent.do_not_connect = attributes.doNotConnect
-      }
-      if (attributes.includeInBoardPinout !== undefined) {
-        portAttributesFromParent.include_in_board_pinout =
-          attributes.includeInBoardPinout
-      }
-      if (attributes.highlightColor !== undefined) {
-        portAttributesFromParent.highlight_color = attributes.highlightColor
-      }
-      if (attributes.providesPower !== undefined) {
-        portAttributesFromParent.provides_power = attributes.providesPower
-      }
-      if (attributes.providesGround !== undefined) {
-        portAttributesFromParent.provides_ground = attributes.providesGround
-      }
-      if (attributes.providesVoltage !== undefined) {
-        portAttributesFromParent.provides_voltage = attributes.providesVoltage
-      }
     }
 
     const source_port = db.source_port.insert({
