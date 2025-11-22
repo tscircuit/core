@@ -1,11 +1,11 @@
 import { usePushButton } from "./PushButton"
 import { SmdUsbC, useUsbC } from "./SmdUsbC"
 
-export default () => {
+export default ({ pcbX, pcbY }: { pcbX?: number; pcbY?: number }) => {
   const USBC = useUsbC("USBC")
   const Button = usePushButton("SW1")
   return (
-    <board width="12mm" height="30mm">
+    <board width="12mm" height="30mm" pcbX={pcbX} pcbY={pcbY}>
       <SmdUsbC
         name="USBC"
         connections={{

@@ -391,10 +391,6 @@ export class Board extends Group<typeof boardProps> {
     this.pcb_board_id = null
   }
 
-  _computePcbGlobalTransformBeforeLayout(): Matrix {
-    return identity()
-  }
-
   doInitialPcbDesignRuleChecks() {
     if (this.root?.pcbDisabled) return
     if (this.getInheritedProperty("routingDisabled")) return
