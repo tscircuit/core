@@ -10,7 +10,10 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const { _parsedProps: props } = trace
   const subcircuit = trace.getSubcircuit()
 
-  if (!props.pcbPath) return
+  const hasPcbPath = props.pcbPath !== undefined
+  const wantsStraightLine = Boolean(props.pcbStraightLine)
+
+  if (!hasPcbPath && !wantsStraightLine) return
 
   const { allPortsFound, ports, portsWithSelectors } =
     trace._findConnectedPorts()
@@ -39,6 +42,64 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     return
   }
 
+  const width =
+    trace._getExplicitTraceThickness() ??
+    trace.getSubcircuit()._parsedProps.minTraceWidth ??
+    0.16
+
+  if (wantsStraightLine && !hasPcbPath) {
+    if (!ports || ports.length < 2) {
+      trace.renderError("pcbStraightLine requires exactly two connected ports")
+      return
+    }
+
+    const [startPort, endPort] = ports
+    const startLayers = startPort.getAvailablePcbLayers()
+    const endLayers = endPort.getAvailablePcbLayers()
+    const sharedLayer = startLayers.find((layer) => endLayers.includes(layer))
+    const layer = (sharedLayer ??
+      startLayers[0] ??
+      endLayers[0] ??
+      "top") as LayerRef
+
+    const startPos = startPort._getGlobalPcbPositionAfterLayout()
+    const endPos = endPort._getGlobalPcbPositionAfterLayout()
+
+    const route: PcbTraceRoutePoint[] = [
+      {
+        route_type: "wire",
+        x: startPos.x,
+        y: startPos.y,
+        width,
+        layer,
+        start_pcb_port_id: startPort.pcb_port_id!,
+      },
+      {
+        route_type: "wire",
+        x: endPos.x,
+        y: endPos.y,
+        width,
+        layer,
+        end_pcb_port_id: endPort.pcb_port_id!,
+      },
+    ]
+
+    const traceLength = getTraceLength(route)
+    const pcb_trace = db.pcb_trace.insert({
+      route,
+      source_trace_id: trace.source_trace_id!,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+      trace_length: traceLength,
+    })
+    trace._portsRoutedOnPcb = ports
+    trace.pcb_trace_id = pcb_trace.pcb_trace_id
+    trace._insertErrorIfTraceIsOutsideBoard(route, ports)
+    return
+  }
+
+  if (!props.pcbPath) return
+
   let anchorPort: Port | undefined
   if (props.pcbPathRelativeTo) {
     anchorPort = portsWithSelectors.find(
@@ -56,10 +117,6 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const otherPort = ports.find((p) => p !== anchorPort) ?? ports[1]
 
   const layer = anchorPort.getAvailablePcbLayers()[0] || "top"
-  const width =
-    trace._getExplicitTraceThickness() ??
-    trace.getSubcircuit()._parsedProps.minTraceWidth ??
-    0.16
 
   const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout()
   const otherPos = otherPort._getGlobalPcbPositionAfterLayout()
