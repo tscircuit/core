@@ -362,12 +362,51 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // (children render before parents). It will be updated in SourceParentAttachment phase.
     const source_component_id = parentWithSourceId?.source_component_id ?? null
 
+    // Get pin attributes from parent component and apply them to this port
+    const pinAttributes = this._getMatchingPinAttributes()
+    const portAttributesFromParent: any = {}
+
+    for (const attributes of pinAttributes) {
+      if (attributes.mustBeConnected !== undefined) {
+        portAttributesFromParent.must_be_connected = attributes.mustBeConnected
+      }
+      if (attributes.requiresPower !== undefined) {
+        portAttributesFromParent.requires_power = attributes.requiresPower
+      }
+      if (attributes.requiresGround !== undefined) {
+        portAttributesFromParent.requires_ground = attributes.requiresGround
+      }
+      if (attributes.requiresVoltage !== undefined) {
+        portAttributesFromParent.requires_voltage = attributes.requiresVoltage
+      }
+      if (attributes.doNotConnect !== undefined) {
+        portAttributesFromParent.do_not_connect = attributes.doNotConnect
+      }
+      if (attributes.includeInBoardPinout !== undefined) {
+        portAttributesFromParent.include_in_board_pinout =
+          attributes.includeInBoardPinout
+      }
+      if (attributes.highlightColor !== undefined) {
+        portAttributesFromParent.highlight_color = attributes.highlightColor
+      }
+      if (attributes.providesPower !== undefined) {
+        portAttributesFromParent.provides_power = attributes.providesPower
+      }
+      if (attributes.providesGround !== undefined) {
+        portAttributesFromParent.provides_ground = attributes.providesGround
+      }
+      if (attributes.providesVoltage !== undefined) {
+        portAttributesFromParent.provides_voltage = attributes.providesVoltage
+      }
+    }
+
     const source_port = db.source_port.insert({
       name: props.name!,
       pin_number: props.pinNumber,
       port_hints,
       source_component_id: source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
+      ...portAttributesFromParent,
     })
 
     this.source_port_id = source_port.source_port_id

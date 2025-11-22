@@ -21,6 +21,18 @@ test("chip pin with mustBeConnected attribute should emit error if floating", ()
   circuit.render()
 
   const circuitJson = circuit.getCircuitJson()
+  const sourcePorts = circuitJson.filter((el: any) => el.type === "source_port")
+  const portsWithMustBeConnected = sourcePorts.filter(
+    (p: any) => p.must_be_connected === true,
+  )
+  console.log(
+    "Ports with must_be_connected === true:",
+    portsWithMustBeConnected.length,
+  )
+  console.log(
+    "First port details:",
+    JSON.stringify(portsWithMustBeConnected[0], null, 2),
+  )
   const errors = checkPinMustBeConnected(circuitJson)
 
   expect(errors.length).toBe(2)
