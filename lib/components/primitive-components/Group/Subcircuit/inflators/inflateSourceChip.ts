@@ -82,7 +82,7 @@ export const inflateSourceChip = (
     internallyConnectedPins,
   })
 
-  const footprint = cadElm?.footprinter_string ?? "soic8"
+  const footprint = cadElm?.footprinter_string ?? null
   if (footprint) {
     Object.assign(chip.props as any, { footprint })
     Object.assign((chip as any)._parsedProps, { footprint })
