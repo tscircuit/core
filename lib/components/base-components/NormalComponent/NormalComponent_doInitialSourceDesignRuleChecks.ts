@@ -33,22 +33,7 @@ export const NormalComponent_doInitialSourceDesignRuleChecks = (
     const portName = port.getNameAndAliases()[0]
     const isConnected = connected.has(port.source_port_id)
 
-    // Check if pin must be connected
-    if (shouldCheckPortForMustBeConnected(component, port)) {
-      if (!isConnected) {
-        db.source_pin_must_be_connected_error.insert({
-          message: `Port ${portName} on ${component.props.name} must be connected but is floating`,
-          source_component_id: component.source_component_id,
-          source_port_id: port.source_port_id,
-          subcircuit_id: component.getSubcircuit().subcircuit_id ?? undefined,
-          error_type: "source_pin_must_be_connected_error",
-        })
-      }
-    } else if (
-      !isConnected &&
-      shouldCheckPortForMissingTrace(component, port)
-    ) {
-      // Only emit warning if pin doesn't have mustBeConnected
+    if (!isConnected && shouldCheckPortForMissingTrace(component, port)) {
       db.source_pin_missing_trace_warning.insert({
         message: `Port ${portName} on ${component.props.name} is missing a trace`,
         source_component_id: component.source_component_id,
@@ -58,23 +43,6 @@ export const NormalComponent_doInitialSourceDesignRuleChecks = (
       })
     }
   }
-}
-
-export const shouldCheckPortForMustBeConnected = (
-  component: NormalComponent,
-  port: Port,
-): boolean => {
-  if (component.config.componentName === "Chip") {
-    const pinAttributes = (component.props as any).pinAttributes
-    if (!pinAttributes) return false
-    for (const alias of port.getNameAndAliases()) {
-      const attrs = pinAttributes[alias]
-      if (attrs?.mustBeConnected === true) {
-        return true
-      }
-    }
-  }
-  return false
 }
 
 export const shouldCheckPortForMissingTrace = (

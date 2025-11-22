@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../../../tests/fixtures/get-test-fixture"
+import { checkPinMustBeConnected } from "@tscircuit/checks"
 
 test("chip pin with mustBeConnected attribute should emit error if floating", () => {
   const { circuit } = getTestFixture()
@@ -19,7 +20,8 @@ test("chip pin with mustBeConnected attribute should emit error if floating", ()
 
   circuit.render()
 
-  const errors = circuit.db.source_pin_must_be_connected_error.list()
+  const circuitJson = circuit.getCircuitJson()
+  const errors = checkPinMustBeConnected(circuitJson)
 
   expect(errors.length).toBe(2)
   expect(errors[0].message).toContain("pin1")
