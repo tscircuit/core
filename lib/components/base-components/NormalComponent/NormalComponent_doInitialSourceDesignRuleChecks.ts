@@ -32,7 +32,6 @@ export const NormalComponent_doInitialSourceDesignRuleChecks = (
     if (!port.source_port_id) continue
     if (!shouldCheckPortForMissingTrace(component, port)) continue
     if (connected.has(port.source_port_id)) continue
-
     db.source_pin_missing_trace_warning.insert({
       message: `Port ${port.getNameAndAliases()[0]} on ${component.props.name} is missing a trace`,
       source_component_id: component.source_component_id,
