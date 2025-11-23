@@ -2,7 +2,7 @@ import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
-import { getSide, type AxisDirection } from "./getSide"
+import { getSide, type AxisDirection, type Side } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
 import { Port } from "../../Port"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
@@ -54,7 +54,13 @@ export function applyNetLabelPlacements(args: {
     const anchor_position = placement.anchorPoint
 
     const orientation = placement.orientation as AxisDirection
-    const anchor_side = oppositeSide(orientation)
+    const anchor_side: Side = oppositeSide(orientation)
+    const isVertical = orientation === "y+" || orientation === "y-"
+    const final_anchor_side: Side = isVertical
+      ? anchor_side === "top"
+        ? "right"
+        : "left"
+      : anchor_side
 
     const sourceNet = placementSck
       ? sckToSourceNet.get(placementSck)
@@ -80,16 +86,15 @@ export function applyNetLabelPlacements(args: {
 
       const center = computeSchematicNetLabelCenter({
         anchor_position,
-        anchor_side: anchor_side as any,
+        anchor_side: anchor_side,
         text,
       })
 
-      // @ts-ignore
       db.schematic_net_label.insert({
         text,
         anchor_position,
         center,
-        anchor_side: anchor_side as any,
+        anchor_side: final_anchor_side,
         ...(sourceNet?.source_net_id
           ? { source_net_id: sourceNet.source_net_id }
           : {}),
@@ -117,16 +122,15 @@ export function applyNetLabelPlacements(args: {
 
     const center = computeSchematicNetLabelCenter({
       anchor_position,
-      anchor_side: anchor_side as any,
+      anchor_side: anchor_side,
       text,
     })
 
-    // @ts-ignore
     db.schematic_net_label.insert({
       text,
       anchor_position,
       center,
-      anchor_side: anchor_side as any,
+      anchor_side: final_anchor_side,
     })
   }
 }
