@@ -725,12 +725,22 @@ export class NormalComponent<
     const { _parsedProps: props } = this
     const subcircuit = this.getSubcircuit()
 
-    // Validate that components can only be placed on top or bottom layers
-    const componentLayer = props.layer ?? "top"
-    if (componentLayer !== "top" && componentLayer !== "bottom") {
+    const boardLayers = this.root?._getBoard()?.allLayers ?? ["top", "bottom"]
+    const placeableLayers = boardLayers.filter(
+      (layer): layer is "top" | "bottom" =>
+        layer === "top" || layer === "bottom",
+    )
+    const allowedLayers = placeableLayers.length > 0 ? placeableLayers : ["top"]
+    const componentLayer = props.layer ?? allowedLayers[0]
+    const isLayerAllowed = allowedLayers.includes(componentLayer as any)
+    if (!isLayerAllowed) {
+      const allowedLayerText =
+        allowedLayers.length === 1
+          ? `'${allowedLayers[0]}'`
+          : allowedLayers.map((layer) => `'${layer}'`).join(" or ")
       const error = pcb_component_invalid_layer_error.parse({
         type: "pcb_component_invalid_layer_error",
-        message: `Component cannot be placed on layer '${componentLayer}'. Components can only be placed on 'top' or 'bottom' layers.`,
+        message: `Component cannot be placed on layer '${componentLayer}'. Components can only be placed on ${allowedLayerText} layers.`,
         source_component_id: this.source_component_id!,
         layer: componentLayer,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
@@ -750,10 +760,7 @@ export class NormalComponent<
       // width/height are computed in the PcbComponentSizeCalculation phase
       width: 0,
       height: 0,
-      layer:
-        componentLayer === "top" || componentLayer === "bottom"
-          ? componentLayer
-          : "top",
+      layer: isLayerAllowed ? componentLayer : allowedLayers[0],
       rotation: props.pcbRotation ?? accumulatedRotation,
       source_component_id: this.source_component_id!,
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,

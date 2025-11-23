@@ -1,5 +1,6 @@
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { boardProps } from "@tscircuit/props"
+import type { LayerRef } from "circuit-json"
 import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
 import {
@@ -115,14 +116,17 @@ export class Board extends Group<typeof boardProps> {
    */
   get allLayers() {
     const layerCount = this._parsedProps.layers ?? 2
-    if (layerCount === 4) {
-      return ["top", "bottom", "inner1", "inner2"] as const
+    if (layerCount === 1) {
+      return ["top"] as LayerRef[]
     }
-    return ["top", "bottom"] as const
+    if (layerCount === 4) {
+      return ["top", "bottom", "inner1", "inner2"] as LayerRef[]
+    }
+    return ["top", "bottom"] as LayerRef[]
   }
 
   _getSubcircuitLayerCount(): number {
-    return this._parsedProps.layers ?? 2
+    return this.allLayers.length
   }
 
   doInitialPcbBoardAutoSize(): void {
