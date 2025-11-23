@@ -108,6 +108,7 @@ export class Panel extends Group<typeof panelProps> {
         const xPos = colXOffsets[col] + colWidths[col] / 2
         const yPos = rowYOffsets[row] + rowHeights[row] / 2
 
+        board._repositionOnPcb({ x: xPos, y: yPos })
         db.pcb_board.update(board.pcb_board_id!, {
           center: { x: xPos, y: yPos },
         })
