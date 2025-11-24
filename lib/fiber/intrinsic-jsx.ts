@@ -1,5 +1,4 @@
 import type * as Props from "@tscircuit/props"
-import type { VoltageSourceProps } from "lib/components/normal-components/VoltageSource"
 import type { DetailedHTMLProps, SVGProps } from "react"
 
 export interface TscircuitElements {
@@ -75,7 +74,7 @@ export interface TscircuitElements {
   switch: Props.SwitchProps
   mosfet: Props.MosfetProps
   testpoint: Props.TestpointProps
-  voltagesource: VoltageSourceProps
+  voltagesource: Props.VoltageSourceProps
   voltageprobe: Props.VoltageProbeProps
   copperpour: Props.CopperPourProps
   analogsimulation: Props.AnalogSimulationProps

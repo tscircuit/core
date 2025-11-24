@@ -1,34 +1,11 @@
-import { frequency, rotation, voltage } from "circuit-json"
-import {
-  commonComponentProps,
-  type CommonComponentProps,
-} from "@tscircuit/props"
-import { z } from "zod"
+import { voltageSourceProps } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { FTYPE, type BaseSymbolName, type Ftype } from "lib/utils/constants"
+import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
 import type { SimulationAcVoltageSource } from "circuit-json"
-import { Port } from "../primitive-components/Port"
+
 import type { RenderPhase } from "lib/components/base-components/Renderable"
 
 export type WaveShape = "sinewave" | "square" | "triangle" | "sawtooth"
-
-export interface VoltageSourceProps extends CommonComponentProps {
-  voltage?: number | string
-  frequency?: number | string
-  peakToPeakVoltage?: number | string
-  waveShape?: WaveShape
-  phase?: number | string
-  dutyCycle?: number
-}
-
-export const voltageSourceProps = commonComponentProps.extend({
-  voltage: voltage.optional(),
-  frequency: frequency.optional(),
-  peakToPeakVoltage: voltage.optional(),
-  waveShape: z.enum(["sinewave", "square", "triangle", "sawtooth"]).optional(),
-  phase: rotation.optional(),
-  dutyCycle: z.number().optional(),
-})
 
 export class VoltageSource extends NormalComponent<
   typeof voltageSourceProps,
