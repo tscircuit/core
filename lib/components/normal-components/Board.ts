@@ -10,6 +10,7 @@ import {
   checkDifferentNetViaSpacing,
   checkSameNetViaSpacing,
   checkPcbComponentOverlap,
+  checkPinMustBeConnected,
 } from "@tscircuit/checks"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import type { RenderPhase } from "../base-components/Renderable"
@@ -444,6 +445,11 @@ export class Board extends Group<typeof boardProps> {
     const pcbComponentOverlapErrors = checkPcbComponentOverlap(db.toArray())
     for (const error of pcbComponentOverlapErrors) {
       db.pcb_footprint_overlap_error.insert(error)
+    }
+
+    const sourcePinMustBeConnectedErrors = checkPinMustBeConnected(db.toArray())
+    for (const error of sourcePinMustBeConnectedErrors) {
+      db.source_pin_must_be_connected_error.insert(error)
     }
   }
 
