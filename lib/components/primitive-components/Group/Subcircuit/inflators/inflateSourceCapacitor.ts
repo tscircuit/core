@@ -24,7 +24,19 @@ export function inflateSourceCapacitor(
   const capacitor = new Capacitor({
     name: sourceElm.name,
     capacitance: sourceElm.capacitance,
+    layer: pcbElm?.layer,
+    pcbX: pcbElm?.center?.x,
+    pcbY: pcbElm?.center?.y,
+    pcbRotation: pcbElm?.rotation,
+    doNotPlace: pcbElm?.do_not_place,
+    obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
+
+  const footprint = cadElm?.footprinter_string ?? null
+  if (footprint) {
+    Object.assign(capacitor.props as any, { footprint })
+    Object.assign((capacitor as any)._parsedProps, { footprint })
+  }
 
   if (pcbElm) {
     inflatePcbComponent(pcbElm, {

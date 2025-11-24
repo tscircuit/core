@@ -808,13 +808,19 @@ export class NormalComponent<
 
     if (bounds.width === 0 || bounds.height === 0) return
 
-    const center = {
+    const oldCenter = db.pcb_component.get(this.pcb_component_id!)?.center
+    const calculatedCenter = {
       x: (bounds.minX + bounds.maxX) / 2,
       y: (bounds.minY + bounds.maxY) / 2,
     }
 
+    // Only preserve center for components inflated from Circuit JSON
+    // Normal components should have their center recalculated from child bounds
+    const shouldPreserveCenter = !!(this as any)._inflatedFromCircuitJson
+    const finalCenter = shouldPreserveCenter ? oldCenter! : calculatedCenter
+
     db.pcb_component.update(this.pcb_component_id!, {
-      center,
+      center: finalCenter,
       width: bounds.width,
       height: bounds.height,
     })

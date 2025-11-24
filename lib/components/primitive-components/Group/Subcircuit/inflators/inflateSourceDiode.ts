@@ -23,7 +23,19 @@ export function inflateSourceDiode(
 
   const diode = new Diode({
     name: sourceElm.name,
+    layer: pcbElm?.layer,
+    pcbX: pcbElm?.center?.x,
+    pcbY: pcbElm?.center?.y,
+    pcbRotation: pcbElm?.rotation,
+    doNotPlace: pcbElm?.do_not_place,
+    obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
+
+  const footprint = cadElm?.footprinter_string ?? null
+  if (footprint) {
+    Object.assign(diode.props as any, { footprint })
+    Object.assign((diode as any)._parsedProps, { footprint })
+  }
 
   if (pcbElm) {
     inflatePcbComponent(pcbElm, {

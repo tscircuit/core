@@ -24,7 +24,19 @@ export function inflateSourceResistor(
   const resistor = new Resistor({
     name: sourceElm.name,
     resistance: sourceElm.resistance,
+    layer: pcbElm?.layer,
+    pcbX: pcbElm?.center?.x,
+    pcbY: pcbElm?.center?.y,
+    pcbRotation: pcbElm?.rotation,
+    doNotPlace: pcbElm?.do_not_place,
+    obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
+
+  const footprint = cadElm?.footprinter_string ?? null
+  if (footprint) {
+    Object.assign(resistor.props as any, { footprint })
+    Object.assign((resistor as any)._parsedProps, { footprint })
+  }
 
   if (pcbElm) {
     inflatePcbComponent(pcbElm, {

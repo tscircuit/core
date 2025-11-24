@@ -115,8 +115,19 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       // Still create the component but with 'top' as fallback to avoid cascading errors
     }
 
+    const initialCenter = { x: props.pcbX ?? 0, y: props.pcbY ?? 0 }
+    console.log(
+      `[PCB POS] 1. Initial Chip Creation - ${this.getString()} (${this.source_component_id})`,
+      JSON.stringify({
+        center: initialCenter,
+        pcbX: props.pcbX,
+        pcbY: props.pcbY,
+        isRelativelyPositioned: this.isRelativelyPositioned?.(),
+      }),
+    )
+
     const pcb_component = db.pcb_component.insert({
-      center: { x: props.pcbX ?? 0, y: props.pcbY ?? 0 },
+      center: initialCenter,
       width: 2, // Default width, adjust as needed
       height: 3, // Default height, adjust as needed
       layer:
