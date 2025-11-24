@@ -14,6 +14,7 @@ test("SmtPad with positive and negative solder mask margin", async () => {
         portHints={["1"]}
         pcbX={-4}
         solderMaskMargin={0.2}
+        coveredWithSolderMask={true}
       />
       <silkscreentext
         pcbX={-4}
@@ -30,6 +31,7 @@ test("SmtPad with positive and negative solder mask margin", async () => {
         portHints={["2"]}
         pcbX={0}
         solderMaskMargin={-0.1}
+        coveredWithSolderMask={true}
       />
       <silkscreentext
         pcbX={0}
@@ -46,6 +48,7 @@ test("SmtPad with positive and negative solder mask margin", async () => {
         pcbX={4}
         pcbY={1}
         solderMaskMargin={0.15}
+        coveredWithSolderMask={true}
       />
       <silkscreentext
         pcbX={4}

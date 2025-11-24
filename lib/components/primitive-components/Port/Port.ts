@@ -362,12 +362,23 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // (children render before parents). It will be updated in SourceParentAttachment phase.
     const source_component_id = parentWithSourceId?.source_component_id ?? null
 
+    // Get pin attributes from parent component and apply them to this port
+    const pinAttributes = this._getMatchingPinAttributes()
+    const portAttributesFromParent: any = {}
+
+    for (const attributes of pinAttributes) {
+      if (attributes.mustBeConnected !== undefined) {
+        portAttributesFromParent.must_be_connected = attributes.mustBeConnected
+      }
+    }
+
     const source_port = db.source_port.insert({
       name: props.name!,
       pin_number: props.pinNumber,
       port_hints,
       source_component_id: source_component_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
+      ...portAttributesFromParent,
     })
 
     this.source_port_id = source_port.source_port_id
