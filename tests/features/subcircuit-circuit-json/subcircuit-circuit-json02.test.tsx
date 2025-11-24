@@ -11,6 +11,7 @@ test("subcircuit-circuit-json02 - chip inflation", async () => {
         name="U1"
         manufacturerPartNumber="MPN123"
         supplierPartNumbers={{ digikey: ["DIGI-123"] }}
+        footprint={"soic8"}
         pinLabels={{ pin1: "VCC", pin2: "GND" }}
       />
       <port name="VIN" direction="left" connectsTo="U1.pin1" />
