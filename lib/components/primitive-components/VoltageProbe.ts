@@ -70,16 +70,16 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
     if (!finalName) {
       finalName = targets[0]
         .split(" > ")
-        .map((s) => s.replace(/^\./, ""))
+        .map((s: string) => s.replace(/^\./, ""))
         .join(".")
     }
 
-    this.finalProbeName = finalName
+    this.finalProbeName = finalName ?? null
 
     const { simulation_voltage_probe_id } = db.simulation_voltage_probe.insert({
       name: finalName,
-      source_port_id: port?.source_port_id ?? undefined,
-      source_net_id: net?.source_net_id ?? undefined,
+      signal_input_source_port_id: port?.source_port_id ?? undefined,
+      signal_input_source_net_id: net?.source_net_id ?? undefined,
       subcircuit_id: subcircuit.subcircuit_id || undefined,
       color: this.color,
     })

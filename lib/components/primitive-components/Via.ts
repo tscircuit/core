@@ -31,8 +31,21 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   }
 
   getPcbSize(): { width: number; height: number } {
+    const outerDiameter = this.getOuterDiameter()
+    return { width: outerDiameter, height: outerDiameter }
+  }
+
+  getOuterDiameter(): number {
     const { _parsedProps: props } = this
-    return { width: props.outerDiameter, height: props.outerDiameter }
+    const outerDiameter = props.outerDiameter ?? props.holeDiameter
+
+    if (outerDiameter === undefined) {
+      throw new Error(
+        "Via requires either an outerDiameter or holeDiameter to calculate size",
+      )
+    }
+
+    return outerDiameter
   }
 
   _getPcbCircuitJsonBounds(): {
@@ -110,12 +123,13 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const outerDiameter = this.getOuterDiameter()
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()
     const pcb_component = db.pcb_component.insert({
       center: position,
-      width: props.outerDiameter,
-      height: props.outerDiameter,
+      width: outerDiameter,
+      height: outerDiameter,
       layer: props.fromLayer ?? "top",
       rotation: 0,
       source_component_id: this.source_component_id!,
@@ -142,13 +156,14 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const outerDiameter = this.getOuterDiameter()
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()
     const pcb_via = db.pcb_via.insert({
       x: position.x,
       y: position.y,
       hole_diameter: props.holeDiameter,
-      outer_diameter: props.outerDiameter,
+      outer_diameter: outerDiameter,
       layers: ["bottom", "top"],
       from_layer: props.fromLayer || "bottom",
       to_layer: props.toLayer || "top",
