@@ -5,7 +5,13 @@ import type { LayerRef, PcbVia } from "circuit-json"
 import { z } from "zod"
 import type { Net } from "./Net"
 import type { Trace } from "./Trace/Trace"
-export class Via extends PrimitiveComponent<typeof viaProps> {
+
+const viaPropsWithDefaults = viaProps.extend({
+  outerDiameter: viaProps.shape.outerDiameter.default(0.6),
+  holeDiameter: viaProps.shape.holeDiameter.default(0.3),
+})
+
+export class Via extends PrimitiveComponent<typeof viaPropsWithDefaults> {
   pcb_via_id: string | null = null
   matchedPort: Port | null = null
   isPcbPrimitive = true
@@ -21,7 +27,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   get config() {
     return {
       componentName: "Via",
-      zodProps: viaProps,
+      zodProps: viaPropsWithDefaults,
     }
   }
 
