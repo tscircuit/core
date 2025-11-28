@@ -1424,6 +1424,7 @@ export class NormalComponent<
 
       footprinter_string:
         typeof footprint === "string" && !cadModel ? footprint : undefined,
+      show_as_translucent_model: this._parsedProps.showAsTranslucentModel,
     } as any)
     this.cad_component_id = cad_model.cad_component_id
   }
