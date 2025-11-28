@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("repro73: circular pad connected to capacitor with straight trace starting from out of pad", async () => {
+test("repro73: circular pad connected to capacitor with straight trace coming out on other side", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
