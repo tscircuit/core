@@ -37,6 +37,7 @@ test("color for  cad model", async () => {
         "y": 0,
         "z": 0,
       },
+      "show_as_translucent_model": undefined,
       "source_component_id": "source_component_0",
       "type": "cad_component",
     }
