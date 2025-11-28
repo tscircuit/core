@@ -1,5 +1,4 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { Trace } from "lib/components"
 import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 import type { AnyCircuitElement } from "circuit-json"
@@ -157,6 +156,20 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
       // TODO handle trace.connected_source_net_ids
       const [portA, portB] = connectedPorts
+
+      if (portA.x === undefined || portA.y === undefined) {
+        console.error(
+          `(source_port_id: ${portA.source_port_id}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
+        )
+        return null
+      }
+      if (portB.x === undefined || portB.y === undefined) {
+        console.error(
+          `(source_port_id: ${portB.source_port_id}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
+        )
+        return null
+      }
+
       const layerA = portA.layers?.[0] ?? "top"
       const layerB = portB.layers?.[0] ?? "top"
 
