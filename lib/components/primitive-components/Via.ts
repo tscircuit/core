@@ -1,10 +1,11 @@
-import { viaProps } from "@tscircuit/props"
+import { viaProps, type PcbStyle } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Port } from "./Port"
 import type { LayerRef, PcbVia } from "circuit-json"
 import { z } from "zod"
 import type { Net } from "./Net"
 import type { Trace } from "./Trace/Trace"
+import { getViaDiameterDefaultsWithOverrides } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 export class Via extends PrimitiveComponent<typeof viaProps> {
   pcb_via_id: string | null = null
   matchedPort: Port | null = null
@@ -30,9 +31,22 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     return ["top", "inner1", "inner2", "bottom"]
   }
 
+  private _getResolvedViaDiameters(pcbStyle?: PcbStyle) {
+    return getViaDiameterDefaultsWithOverrides(
+      {
+        holeDiameter: this._parsedProps.holeDiameter,
+        padDiameter: this._parsedProps.outerDiameter,
+      },
+      pcbStyle,
+    )
+  }
+
   getPcbSize(): { width: number; height: number } {
-    const { _parsedProps: props } = this
-    return { width: props.outerDiameter, height: props.outerDiameter }
+    const pcbStyle = this.getInheritedMergedProperty("pcbStyle") as
+      | PcbStyle
+      | undefined
+    const { padDiameter } = this._getResolvedViaDiameters(pcbStyle)
+    return { width: padDiameter, height: padDiameter }
   }
 
   _getPcbCircuitJsonBounds(): {
@@ -109,14 +123,17 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
-    const { _parsedProps: props } = this
+    const pcbStyle = this.getInheritedMergedProperty("pcbStyle") as
+      | PcbStyle
+      | undefined
+    const { padDiameter } = this._getResolvedViaDiameters(pcbStyle)
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()
     const pcb_component = db.pcb_component.insert({
       center: position,
-      width: props.outerDiameter,
-      height: props.outerDiameter,
-      layer: props.fromLayer ?? "top",
+      width: padDiameter,
+      height: padDiameter,
+      layer: this._parsedProps.fromLayer ?? "top",
       rotation: 0,
       source_component_id: this.source_component_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -141,22 +158,26 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
-    const { _parsedProps: props } = this
+    const pcbStyle = this.getInheritedMergedProperty("pcbStyle") as
+      | PcbStyle
+      | undefined
+    const { holeDiameter, padDiameter } =
+      this._getResolvedViaDiameters(pcbStyle)
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()
     const pcb_via = db.pcb_via.insert({
       x: position.x,
       y: position.y,
-      hole_diameter: props.holeDiameter,
-      outer_diameter: props.outerDiameter,
+      hole_diameter: holeDiameter,
+      outer_diameter: padDiameter,
       layers: ["bottom", "top"],
-      from_layer: props.fromLayer || "bottom",
-      to_layer: props.toLayer || "top",
+      from_layer: this._parsedProps.fromLayer || "bottom",
+      to_layer: this._parsedProps.toLayer || "top",
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       subcircuit_connectivity_map_key:
         this.subcircuit_connectivity_map_key ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      net_is_assignable: props.netIsAssignable ?? undefined,
+      net_is_assignable: this._parsedProps.netIsAssignable ?? undefined,
     } as Omit<PcbVia & { net_is_assignable?: boolean }, "type" | "pcb_via_id">)
     this.pcb_via_id = pcb_via.pcb_via_id
   }
