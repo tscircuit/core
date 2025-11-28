@@ -65,16 +65,16 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
 
     this.color = getSimulationColorForId(connectedId)
 
-    let finalName = name
+    let finalName: string | undefined = name
 
     if (!finalName) {
       finalName = targets[0]
         .split(" > ")
-        .map((s) => s.replace(/^\./, ""))
+        .map((s: string) => s.replace(/^\./, ""))
         .join(".")
     }
 
-    this.finalProbeName = finalName
+    this.finalProbeName = finalName ?? null
 
     const { simulation_voltage_probe_id } = db.simulation_voltage_probe.insert({
       name: finalName,
