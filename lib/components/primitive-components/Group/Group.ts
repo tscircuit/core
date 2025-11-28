@@ -28,6 +28,7 @@ import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
+import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
@@ -739,6 +740,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // TODO
 
     // Apply each routed trace to the corresponding circuit trace
+    const pcbStyle = this.getInheritedMergedProperty("pcbStyle")
+    const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
@@ -768,8 +772,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               pcb_trace_id: pcb_trace.pcb_trace_id,
               x: point.x,
               y: point.y,
-              hole_diameter: 0.3,
-              outer_diameter: 0.6,
+              hole_diameter: holeDiameter,
+              outer_diameter: padDiameter,
               layers: [
                 point.from_layer as LayerRef,
                 point.to_layer as LayerRef,
