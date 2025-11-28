@@ -115,7 +115,10 @@ export class Board extends Group<typeof boardProps> {
    * Get all available layers for the board
    */
   get allLayers() {
-    const layerCount = this._parsedProps.layers ?? 2
+    const layerCount: number = this._parsedProps.layers ?? 2
+    if (layerCount === 1) {
+      return ["top"] as const
+    }
     if (layerCount === 4) {
       return ["top", "bottom", "inner1", "inner2"] as const
     }
