@@ -82,15 +82,6 @@ export const inflateSourceChip = (
     internallyConnectedPins,
   })
 
-  const footprint = cadElm?.footprinter_string ?? null
-  if (footprint) {
-    Object.assign(chip.props as any, { footprint })
-    Object.assign((chip as any)._parsedProps, { footprint })
-    if (!cadElm) {
-      ;(chip as any)._addChildrenFromStringFootprint?.()
-    }
-  }
-
   if (pcbElm) {
     inflatePcbComponent(pcbElm, {
       ...inflatorContext,

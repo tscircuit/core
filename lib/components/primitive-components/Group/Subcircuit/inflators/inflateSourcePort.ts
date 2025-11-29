@@ -19,8 +19,6 @@ export function inflateSourcePort(
     source_port_id: sourcePort.source_port_id,
   }) as PcbPort | null
 
-  console.log("pcbPortFromInjection", pcbPortFromInjection)
-
   // Create a Port instance
   const port = new Port({
     name: sourcePort.name,

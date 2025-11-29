@@ -32,12 +32,6 @@ export function inflateSourceCapacitor(
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
 
-  const footprint = cadElm?.footprinter_string ?? null
-  if (footprint) {
-    Object.assign(capacitor.props as any, { footprint })
-    Object.assign((capacitor as any)._parsedProps, { footprint })
-  }
-
   if (pcbElm) {
     inflatePcbComponent(pcbElm, {
       ...inflatorContext,

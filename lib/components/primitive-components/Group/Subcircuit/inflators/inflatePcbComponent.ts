@@ -18,7 +18,7 @@ export const inflatePcbComponent = (
 
   // Create inverse transform to convert from global to component-local coordinates
   // This uses the same transformation matrix approach as the rest of the codebase
-  const transformMatrix = inverse(
+  const absoluteToComponentRelativeTransform = inverse(
     compose(
       translate(componentCenter.x, componentCenter.y),
       rotate((componentRotation * Math.PI) / 180),
@@ -36,7 +36,7 @@ export const inflatePcbComponent = (
 
   // Transform all PCB elements using the standard transformation utility
   // This handles all element types (holes, pads, keepouts, silkscreen, etc.)
-  transformPCBElements(relativeElements as any, transformMatrix)
+  transformPCBElements(relativeElements, absoluteToComponentRelativeTransform)
 
   const components = createComponentsFromCircuitJson(
     {

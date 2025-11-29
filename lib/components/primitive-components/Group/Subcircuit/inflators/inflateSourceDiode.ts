@@ -31,12 +31,6 @@ export function inflateSourceDiode(
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
 
-  const footprint = cadElm?.footprinter_string ?? null
-  if (footprint) {
-    Object.assign(diode.props as any, { footprint })
-    Object.assign((diode as any)._parsedProps, { footprint })
-  }
-
   if (pcbElm) {
     inflatePcbComponent(pcbElm, {
       ...inflatorContext,

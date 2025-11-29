@@ -32,12 +32,6 @@ export function inflateSourceInductor(
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
 
-  const footprint = cadElm?.footprinter_string ?? null
-  if (footprint) {
-    Object.assign(inductor.props as any, { footprint })
-    Object.assign((inductor as any)._parsedProps, { footprint })
-  }
-
   if (pcbElm) {
     inflatePcbComponent(pcbElm, {
       ...inflatorContext,
