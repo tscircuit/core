@@ -21,7 +21,7 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
 
   doInitialSimulationRender() {
     const { db } = this.root!
-    const { connectsTo, name } = this._parsedProps
+    const { connectsTo, name, referenceTo, color } = this._parsedProps
 
     const subcircuit = this.getSubcircuit()
     if (!subcircuit) {
@@ -63,7 +63,45 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
       return
     }
 
-    this.color = getSimulationColorForId(connectedId)
+    // Handle reference (for differential probes)
+    let referencePort: Port | null = null
+    let referenceNet: Net | null = null
+
+    if (referenceTo) {
+      const referenceTargets = Array.isArray(referenceTo)
+        ? referenceTo
+        : [referenceTo]
+      if (referenceTargets.length !== 1) {
+        this.renderError("VoltageProbe must reference exactly one port or net")
+        return
+      }
+      const referenceSelector = referenceTargets[0]
+
+      referencePort = subcircuit.selectOne(referenceSelector, {
+        type: "port",
+      }) as Port | null
+      referenceNet = !referencePort
+        ? (subcircuit.selectOne(referenceSelector, {
+            type: "net",
+          }) as Net | null)
+        : null
+
+      if (referenceNet && referenceNet.componentName !== "Net") {
+        this.renderError(
+          `VoltageProbe reference target "${referenceSelector}" resolved to a non-net component "${referenceNet.componentName}".`,
+        )
+        return
+      }
+
+      if (!referencePort && !referenceNet) {
+        this.renderError(
+          `VoltageProbe could not find reference target "${referenceSelector}"`,
+        )
+        return
+      }
+    }
+
+    this.color = color ?? getSimulationColorForId(connectedId)
 
     let finalName: string | undefined = name
 
@@ -80,6 +118,9 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
       name: finalName,
       signal_input_source_port_id: port?.source_port_id ?? undefined,
       signal_input_source_net_id: net?.source_net_id ?? undefined,
+      reference_input_source_port_id:
+        referencePort?.source_port_id ?? undefined,
+      reference_input_source_net_id: referenceNet?.source_net_id ?? undefined,
       subcircuit_id: subcircuit.subcircuit_id || undefined,
       color: this.color,
     })
