@@ -24,7 +24,19 @@ export function inflateSourceInductor(
   const inductor = new Inductor({
     name: sourceElm.name,
     inductance: (sourceElm as any).inductance,
+    layer: pcbElm?.layer,
+    pcbX: pcbElm?.center?.x,
+    pcbY: pcbElm?.center?.y,
+    pcbRotation: pcbElm?.rotation,
+    doNotPlace: pcbElm?.do_not_place,
+    obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
+
+  const footprint = cadElm?.footprinter_string ?? null
+  if (footprint) {
+    Object.assign(inductor.props as any, { footprint })
+    Object.assign((inductor as any)._parsedProps, { footprint })
+  }
 
   if (pcbElm) {
     inflatePcbComponent(pcbElm, {
