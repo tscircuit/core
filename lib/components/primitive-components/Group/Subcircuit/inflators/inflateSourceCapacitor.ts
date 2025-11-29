@@ -24,6 +24,12 @@ export function inflateSourceCapacitor(
   const capacitor = new Capacitor({
     name: sourceElm.name,
     capacitance: sourceElm.capacitance,
+    layer: pcbElm?.layer,
+    pcbX: pcbElm?.center?.x,
+    pcbY: pcbElm?.center?.y,
+    pcbRotation: pcbElm?.rotation,
+    doNotPlace: pcbElm?.do_not_place,
+    obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
 
   if (pcbElm) {
