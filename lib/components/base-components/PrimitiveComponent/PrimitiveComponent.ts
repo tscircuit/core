@@ -383,7 +383,18 @@ export abstract class PrimitiveComponent<
         : props.schRotation
 
     if (normalizedRotation === undefined) {
-      normalizedRotation = 0
+      const schStyle = this.getInheritedMergedProperty("schStyle") as
+        | { defaultCapacitorOrientation?: "vertical" | "none" }
+        | undefined
+
+      const shouldDefaultCapacitorVertical =
+        this.config.schematicSymbolName?.toString().startsWith("capacitor") &&
+        (schStyle?.defaultCapacitorOrientation === "vertical" ||
+          schStyle?.defaultCapacitorOrientation === undefined)
+
+      normalizedRotation = shouldDefaultCapacitorVertical
+        ? orientationRotationMap.vertical
+        : 0
     }
     // Normalize rotation to be between 0 and 360
     normalizedRotation = normalizedRotation % 360
