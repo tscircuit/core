@@ -16,7 +16,7 @@ test("panel can only contain boards", () => {
         <resistor name="R1" resistance={100} />
       </panel>,
     ),
-  ).toThrow("<panel> can only contain <board> elements")
+  ).toThrow("<panel> can only contain <board> or <subcircuit> elements")
 })
 
 test("panel must be a root element", () => {
@@ -64,7 +64,7 @@ test("panel must contain at least one board", () => {
 
   expect(() => {
     circuit.render()
-  }).toThrow("<panel> must contain at least one <board>")
+  }).toThrow("<panel> must contain at least one <board> or <subcircuit>")
 })
 
 test("panel emits pcb_panel with center", () => {

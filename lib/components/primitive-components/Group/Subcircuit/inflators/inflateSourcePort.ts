@@ -6,7 +6,7 @@ export function inflateSourcePort(
   sourcePort: SourcePort,
   inflatorContext: InflatorContext,
 ) {
-  const { injectionDb, subcircuit } = inflatorContext
+  const { injectionDb, subcircuit, groupsMap } = inflatorContext
 
   // Only inflate group ports (ports with no source_component_id)
   // Component ports are created when their parent component is inflated
@@ -25,13 +25,23 @@ export function inflateSourcePort(
     pinNumber: sourcePort.pin_number,
   })
 
-  subcircuit.add(port)
+  // Add the port to its group if it has one, otherwise add to subcircuit
+  if (
+    sourcePort.source_group_id &&
+    groupsMap?.has(sourcePort.source_group_id)
+  ) {
+    const group = groupsMap.get(sourcePort.source_group_id)!
+    group.add(port)
+  } else {
+    subcircuit.add(port)
+  }
 
   // Set the source_port_id from the injected circuit JSON
   // This is needed so the port can be found by selectors
   // Normally this would be set during doInitialSourceRender, but since
   // we're inflating from circuit JSON, we set it here
   port.source_port_id = sourcePort.source_port_id
+  port.source_component_id = subcircuit.source_component_id
 
   // After adding to subcircuit, the port should be able to access the root
   // and we can insert the pcb_port into the main circuit database

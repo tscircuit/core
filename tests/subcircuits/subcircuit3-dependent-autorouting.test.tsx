@@ -65,7 +65,7 @@ test("subcircuit3-dependent-autorouting", async () => {
   expect(asyncEffectEndEvents.sort()).toMatchInlineSnapshot(`
     [
       {
-        "componentDisplayName": "<group# name=".S1" />",
+        "componentDisplayName": "<subcircuit# name=".S1" />",
         "effectName": "make-http-autorouting-request",
         "phase": "PcbTraceRender",
       },

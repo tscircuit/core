@@ -9,7 +9,7 @@ import {
   DEFAULT_TAB_WIDTH,
 } from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
 import { Board } from "./Board"
-
+import { Subcircuit } from "../primitive-components/Group/Subcircuit/Subcircuit"
 export class Panel extends Group<typeof panelProps> {
   pcb_panel_id: string | null = null
   _tabsAndMouseBitesGenerated = false
@@ -30,8 +30,13 @@ export class Panel extends Group<typeof panelProps> {
   }
 
   add(component: PrimitiveComponent) {
-    if (component.lowercaseComponentName !== "board") {
-      throw new Error("<panel> can only contain <board> elements")
+    if (
+      component.lowercaseComponentName !== "board" &&
+      component.lowercaseComponentName !== "subcircuit"
+    ) {
+      throw new Error(
+        "<panel> can only contain <board> or <subcircuit> elements",
+      )
     }
     super.add(component)
   }
@@ -41,15 +46,17 @@ export class Panel extends Group<typeof panelProps> {
     super.doInitialPcbComponentAnchorAlignment()
     const { db } = this.root!
 
-    const childBoardInstances = this.children.filter(
-      (c) => c instanceof Board,
-    ) as Board[]
+    const childBoardOrSubcircuitInstances = this.children.filter(
+      (c): c is Board | Subcircuit =>
+        c instanceof Board ||
+        (c instanceof Subcircuit && c.pcb_board_id !== null),
+    )
 
-    const hasAnyPositionedBoards = childBoardInstances.some(
+    const hasAnyPositionedBoards = childBoardOrSubcircuitInstances.some(
       (b) => b.props.pcbX !== undefined || b.props.pcbY !== undefined,
     )
 
-    const unpositionedBoards = childBoardInstances.filter(
+    const unpositionedBoards = childBoardOrSubcircuitInstances.filter(
       (b) => b.props.pcbX === undefined && b.props.pcbY === undefined,
     )
 
@@ -114,7 +121,7 @@ export class Panel extends Group<typeof panelProps> {
         })
       })
 
-      const allBoardPcbIds = childBoardInstances
+      const allBoardPcbIds = childBoardOrSubcircuitInstances
         .map((b) => b.pcb_board_id)
         .filter((id): id is string => !!id)
 
@@ -168,7 +175,7 @@ export class Panel extends Group<typeof panelProps> {
 
     if (panelizationMethod !== "none") {
       // Get all boards that are children of this panel
-      const childBoardIds = childBoardInstances
+      const childBoardIds = childBoardOrSubcircuitInstances
         .map((c) => c.pcb_board_id)
         .filter((id): id is string => !!id)
 
@@ -206,8 +213,16 @@ export class Panel extends Group<typeof panelProps> {
   }
 
   runRenderCycle() {
-    if (!this.children.some((child) => child.componentName === "Board")) {
-      throw new Error("<panel> must contain at least one <board>")
+    if (
+      !this.children.some(
+        (child) =>
+          child.componentName === "Board" ||
+          child.componentName === "Subcircuit",
+      )
+    ) {
+      throw new Error(
+        "<panel> must contain at least one <board> or <subcircuit>",
+      )
     }
 
     super.runRenderCycle()

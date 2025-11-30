@@ -195,3 +195,70 @@ test("panel custom tab/gap props", () => {
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path + "-custom-props")
 })
+
+test("panel with subcircuits", () => {
+  const { circuit: boardCircuit } = getTestFixture()
+  boardCircuit.add(<board width="30mm" height="30mm" />)
+  boardCircuit.render()
+  const boardJson = boardCircuit.getCircuitJson()
+
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <panel width="100mm" height="100mm">
+      <subcircuit
+        name="board1"
+        circuitJson={boardJson}
+        pcbX="-20mm"
+        pcbY="-20mm"
+        routingDisabled
+      />
+      <subcircuit
+        name="board2"
+        circuitJson={boardJson}
+        pcbX="20mm"
+        pcbY="20mm"
+        routingDisabled
+      />
+    </panel>,
+  )
+
+  circuit.render()
+
+  const circuitJson = circuit.getCircuitJson()
+
+  const boards = circuitJson.filter(
+    (el) => el.type === "pcb_board",
+  ) as PcbBoard[]
+  expect(boards.length).toBe(2)
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-with-subcircuits")
+})
+test("panel with subcircuits + auto-layout", () => {
+  const { circuit: boardCircuit } = getTestFixture()
+  boardCircuit.add(<board width="30mm" height="30mm" />)
+  boardCircuit.render()
+  const boardJson = boardCircuit.getCircuitJson()
+
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <panel width="100mm" height="100mm">
+      <subcircuit name="board1" circuitJson={boardJson} routingDisabled />
+      <subcircuit name="board2" circuitJson={boardJson} routingDisabled />
+    </panel>,
+  )
+
+  circuit.render()
+
+  const circuitJson = circuit.getCircuitJson()
+
+  const boards = circuitJson.filter(
+    (el) => el.type === "pcb_board",
+  ) as PcbBoard[]
+  expect(boards.length).toBe(2)
+
+  expect(circuit).toMatchPcbSnapshot(
+    import.meta.path + "-with-subcircuits-auto-layout",
+  )
+})
