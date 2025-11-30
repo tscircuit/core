@@ -24,6 +24,8 @@ import { Renderable } from "lib/components/base-components/Renderable"
 import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { Ftype } from "lib/utils/constants"
 import { selectOne, selectAll, type Options } from "css-select"
+import type { BoardI } from "lib/components/normal-components/BoardI"
+import { evaluateCalcString } from "lib/utils/evaluateCalcString"
 import {
   cssSelectPrimitiveComponentAdapter,
   cssSelectPrimitiveComponentAdapterOnlySubcircuits,
@@ -190,16 +192,74 @@ export abstract class PrimitiveComponent<
     return pcbRotation ?? null
   }
 
+  getResolvedPcbPositionProp(): { pcbX: number; pcbY: number } {
+    return {
+      pcbX: this._resolvePcbCoordinate((this._parsedProps as any).pcbX, "pcbX"),
+      pcbY: this._resolvePcbCoordinate((this._parsedProps as any).pcbY, "pcbY"),
+    }
+  }
+
+  protected _resolvePcbCoordinate(
+    rawValue: unknown,
+    axis: "pcbX" | "pcbY",
+    options: { allowBoardVariables?: boolean } = {},
+  ): number {
+    if (rawValue == null) return 0
+    if (typeof rawValue === "number") return rawValue
+    if (typeof rawValue !== "string") {
+      throw new Error(
+        `Invalid ${axis} value for ${this.componentName}: ${String(rawValue)}`,
+      )
+    }
+
+    const allowBoardVariables =
+      options.allowBoardVariables ?? (this as any)._isNormalComponent === true
+    const includesBoardVariable = rawValue.includes("board.")
+    const knownVariables: Record<string, number> = {}
+
+    if (allowBoardVariables) {
+      const board = this._getBoard()
+      const boardVariables = board?._getBoardCalcVariables() ?? {}
+
+      if (includesBoardVariable && !board) {
+        throw new Error(
+          `Cannot resolve ${axis} for ${this.componentName}: no board found for board.* variables`,
+        )
+      }
+
+      if (
+        includesBoardVariable &&
+        board &&
+        Object.keys(boardVariables).length === 0
+      ) {
+        throw new Error(
+          "Cannot do calculations based on board size when the board is auto-sized",
+        )
+      }
+
+      Object.assign(knownVariables, boardVariables)
+    }
+
+    try {
+      return evaluateCalcString(rawValue, { knownVariables })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      throw new Error(
+        `Invalid ${axis} value for ${this.componentName}: ${message}`,
+      )
+    }
+  }
+
   /**
    * Computes a transformation matrix from the props of this component for PCB
    * components
    */
   computePcbPropsTransform(): Matrix {
-    const { _parsedProps: props } = this
     const rotation = this._getPcbRotationBeforeLayout() ?? 0
+    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
 
     const matrix = compose(
-      translate(props.pcbX ?? 0, props.pcbY ?? 0),
+      translate(pcbX, pcbY),
       rotate((rotation * Math.PI) / 180),
     )
 
@@ -557,6 +617,19 @@ export abstract class PrimitiveComponent<
     return applyToPoint(this.computeSchematicGlobalTransform(), { x: 0, y: 0 })
   }
 
+  _getBoard(): (PrimitiveComponent & BoardI) | undefined {
+    let current: PrimitiveComponent | Renderable | null = this
+    while (current) {
+      const maybePrimitive = current as PrimitiveComponent
+      if ((maybePrimitive as any).componentName === "Board") {
+        return maybePrimitive as PrimitiveComponent & BoardI
+      }
+      current =
+        (current.parent as PrimitiveComponent | Renderable | null) ?? null
+    }
+    return this.root?._getBoard() as (PrimitiveComponent & BoardI) | undefined
+  }
+
   get root(): RootCircuit | null {
     return this.parent?.root ?? null
   }
@@ -835,7 +908,7 @@ export abstract class PrimitiveComponent<
         return this._parsedProps.layers
       }
       if (this.componentName === "PlatedHole") {
-        return this.root?._getBoard()?.allLayers ?? ["top", "bottom"]
+        return [...(this.root?._getBoard()?.allLayers ?? ["top", "bottom"])]
       }
       return []
     }
