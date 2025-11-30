@@ -4,6 +4,19 @@ import { z } from "zod"
 class ErrorPlaceholderComponent extends PrimitiveComponent {
   constructor(props: any, error: any) {
     super(props)
+    const resolveCoordinate = (value: unknown, axis: "pcbX" | "pcbY") => {
+      if (typeof value === "number") return value
+      if (typeof value === "string") {
+        try {
+          return this._resolvePcbCoordinate(value, axis, {
+            allowBoardVariables: false,
+          })
+        } catch (err) {
+          return 0
+        }
+      }
+      return 0
+    }
     this._parsedProps = {
       ...props,
       error,
@@ -11,8 +24,8 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
       component_name: props.name,
       error_type: "source_failed_to_create_component_error",
       message: error instanceof Error ? error.message : String(error),
-      pcbX: props.pcbX,
-      pcbY: props.pcbY,
+      pcbX: resolveCoordinate(props.pcbX, "pcbX"),
+      pcbY: resolveCoordinate(props.pcbY, "pcbY"),
       schX: props.schX,
       schY: props.schY,
     }

@@ -1,5 +1,6 @@
-import type { AnyCircuitElement, LayerRef } from "circuit-json"
+import type { AnyCircuitElement } from "circuit-json"
 import type { PrimitiveComponent } from "./components/base-components/PrimitiveComponent"
+import type { BoardI } from "./components/normal-components/BoardI"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
 import { isValidElement, type ReactElement } from "react"
@@ -90,13 +91,7 @@ export class RootCircuit {
   /**
    * Get the main board for this Circuit.
    */
-  _getBoard():
-    | (PrimitiveComponent & {
-        boardThickness: number
-        _connectedSchematicPortPairs: Set<string>
-        allLayers: LayerRef[]
-      })
-    | undefined {
+  _getBoard(): (PrimitiveComponent & BoardI) | undefined {
     const directBoard = this.children.find((c) => c.componentName === "Board")
     if (directBoard) {
       return directBoard as any

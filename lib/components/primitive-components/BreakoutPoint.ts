@@ -53,7 +53,7 @@ export class BreakoutPoint extends PrimitiveComponent<
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     this._matchConnection()
-    const { pcbX = 0, pcbY = 0 } = this._parsedProps
+    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
     const group = this.parent?.getGroup()
     const subcircuit = this.getSubcircuit()
     if (!group || !group.pcb_group_id) return
@@ -76,7 +76,7 @@ export class BreakoutPoint extends PrimitiveComponent<
   }
 
   _getPcbCircuitJsonBounds() {
-    const { pcbX = 0, pcbY = 0 } = this._parsedProps
+    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
     return {
       center: { x: pcbX, y: pcbY },
       bounds: { left: pcbX, top: pcbY, right: pcbX, bottom: pcbY },
