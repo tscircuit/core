@@ -28,6 +28,7 @@ export class SilkscreenRect extends PrimitiveComponent<
     }
 
     const subcircuit = this.getSubcircuit()
+    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
 
     const pcb_component_id =
       this.parent?.pcb_component_id ??
@@ -36,8 +37,8 @@ export class SilkscreenRect extends PrimitiveComponent<
       pcb_component_id,
       layer,
       center: {
-        x: props.pcbX ?? 0,
-        y: props.pcbY ?? 0,
+        x: pcbX,
+        y: pcbY,
       },
       width: props.width,
       height: props.height,

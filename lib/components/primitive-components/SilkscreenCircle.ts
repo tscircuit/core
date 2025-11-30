@@ -18,6 +18,7 @@ export class SilkscreenCircle extends PrimitiveComponent<
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     const layer = maybeFlipLayer(props.layer ?? "top") as "top" | "bottom"
 
@@ -37,8 +38,8 @@ export class SilkscreenCircle extends PrimitiveComponent<
       pcb_component_id,
       layer,
       center: {
-        x: props.pcbX ?? 0,
-        y: props.pcbY ?? 0,
+        x: pcbX,
+        y: pcbY,
       },
       radius: props.radius,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
