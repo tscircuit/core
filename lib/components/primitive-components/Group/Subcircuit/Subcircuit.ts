@@ -2,11 +2,11 @@ import { Group } from "../Group"
 import { subcircuitProps } from "@tscircuit/props"
 import type { z } from "zod"
 import { inflateCircuitJson } from "../../../../utils/circuit-json/inflate-circuit-json"
-import type { SubcircuitContext } from "../../../types/SubcircuitContext"
+import type { SubcircuitI } from "./SubcircuitI"
 
 export class Subcircuit
   extends Group<typeof subcircuitProps>
-  implements SubcircuitContext
+  implements SubcircuitI
 {
   constructor(props: z.input<typeof subcircuitProps>) {
     super({

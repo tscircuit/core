@@ -3,7 +3,7 @@ import { boardProps } from "@tscircuit/props"
 import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
-import type { SubcircuitContext } from "../types/SubcircuitContext"
+import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import {
   checkEachPcbPortConnectedToPcbTraces,
   checkEachPcbTraceNonOverlapping,
@@ -90,7 +90,7 @@ const getRoundedRectOutline = (
 
 export class Board
   extends Group<typeof boardProps>
-  implements BoardI, SubcircuitContext
+  implements BoardI, SubcircuitI
 {
   pcb_board_id: string | null = null
   source_board_id: string | null = null

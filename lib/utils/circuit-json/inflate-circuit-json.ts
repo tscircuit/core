@@ -1,7 +1,7 @@
 import { cju } from "@tscircuit/circuit-json-util"
 import type { CircuitJson } from "circuit-json"
 import type { Group } from "../../components/primitive-components/Group/Group"
-import type { SubcircuitContext } from "../../components/types/SubcircuitContext"
+import type { SubcircuitI } from "../../components/primitive-components/Group/Subcircuit/SubcircuitI"
 import type {
   InflatorContext,
   SourceGroupId,
@@ -17,7 +17,7 @@ import { inflateSourceTrace } from "../../components/primitive-components/Group/
 import { inflateSourceTransistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTransistor"
 
 export const inflateCircuitJson = (
-  target: SubcircuitContext & Group<any>,
+  target: SubcircuitI & Group<any>,
   circuitJson: CircuitJson | undefined,
   children: any[],
 ) => {
