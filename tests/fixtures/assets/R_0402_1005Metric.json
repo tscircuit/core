@@ -2,7 +2,9 @@
   {
     "type": "source_component",
     "source_component_id": "source_component_0",
-    "supplier_part_numbers": {}
+    "supplier_part_numbers": {},
+    "ftype": "simple_resistor",
+    "resistance": 1000
   },
   {
     "type": "schematic_component",

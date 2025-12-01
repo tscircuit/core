@@ -2,6 +2,8 @@ import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-fr
 import { boardProps } from "@tscircuit/props"
 import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
+import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
+import type { SubcircuitContext } from "../types/SubcircuitContext"
 import {
   checkEachPcbPortConnectedToPcbTraces,
   checkEachPcbTraceNonOverlapping,
@@ -86,7 +88,10 @@ const getRoundedRectOutline = (
   return outline
 }
 
-export class Board extends Group<typeof boardProps> implements BoardI {
+export class Board
+  extends Group<typeof boardProps>
+  implements BoardI, SubcircuitContext
+{
   pcb_board_id: string | null = null
   source_board_id: string | null = null
   _drcChecksComplete = false
@@ -356,6 +361,11 @@ export class Board extends Group<typeof boardProps> implements BoardI {
     })
 
     this.source_board_id = source_board.source_board_id
+  }
+
+  doInitialInflateSubcircuitCircuitJson() {
+    const { circuitJson, children } = this._parsedProps
+    inflateCircuitJson(this, circuitJson, children)
   }
 
   doInitialPcbComponentRender(): void {
