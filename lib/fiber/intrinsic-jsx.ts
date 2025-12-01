@@ -12,6 +12,7 @@ export interface TscircuitElements {
   board: Props.BoardProps
   panel: Props.PanelProps
   jumper: Props.JumperProps
+  interconnect: Props.InterconnectProps
   solderjumper: Props.SolderJumperProps
   bug: Props.ChipProps
   potentiometer: Props.PotentiometerProps
