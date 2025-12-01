@@ -36,9 +36,8 @@ export class Panel extends Group<typeof panelProps> {
     super.add(component)
   }
 
-  doInitialPcbComponentAnchorAlignment() {
+  doInitialPanelLayout() {
     if (this.root?.pcbDisabled) return
-    super.doInitialPcbComponentAnchorAlignment()
     const { db } = this.root!
 
     const childBoardInstances = this.children.filter(
