@@ -7,4 +7,5 @@ export interface SubcircuitI {
   add(component: PrimitiveComponent): void
   root: RootCircuit | null
   getGroup(): IGroup | null
+  source_group_id: string | null
 }
