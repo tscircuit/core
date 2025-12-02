@@ -188,8 +188,14 @@ export class Board
       allowBoardVariables: false,
     })
 
-    // Skip if width and height are explicitly provided or if outline is provided
-    if ((props.width && props.height) || props.outline) return
+    const pcbBoard = db.pcb_board.get(this.pcb_board_id!)
+
+    // If the board is already sized (from props or circuitJson) or has an outline, don't autosize
+    if (
+      (pcbBoard?.width && pcbBoard?.height) ||
+      (pcbBoard?.outline && pcbBoard.outline.length > 0)
+    )
+      return
 
     let minX = Infinity
     let minY = Infinity
@@ -373,10 +379,15 @@ export class Board
     const { db } = this.root!
     const { _parsedProps: props } = this
 
+    const circuitJsonElements = props.circuitJson
+    const pcbBoardFromCircuitJson = circuitJsonElements?.find(
+      (elm) => elm.type === "pcb_board",
+    )
+
     // Initialize with minimal dimensions if not provided
     // They will be updated in PcbBoardAutoSize phase
-    let computedWidth = props.width ?? 0
-    let computedHeight = props.height ?? 0
+    let computedWidth = props.width ?? pcbBoardFromCircuitJson?.width ?? 0
+    let computedHeight = props.height ?? pcbBoardFromCircuitJson?.height ?? 0
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
     let center = {
       x: pcbX + (props.outlineOffsetX ?? 0),
