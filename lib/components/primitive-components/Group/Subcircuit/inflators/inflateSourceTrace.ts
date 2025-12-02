@@ -1,19 +1,27 @@
 import type { SourceTrace } from "circuit-json"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import type { InflatorContext } from "../InflatorFn"
-import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 
 const getSelectorPath = (
   component: { name: string; source_group_id: string | undefined },
-  db: CircuitJsonUtilObjects,
+  inflatorContext: InflatorContext,
 ): string => {
+  const { injectionDb, subcircuit, groupsMap } = inflatorContext
   const path_parts: string[] = []
   let currentGroupId = component.source_group_id
-  while (currentGroupId) {
-    const group = db.source_group.get(currentGroupId)
-    if (!group) break
-    path_parts.unshift(`.${group.name}`)
-    currentGroupId = group.parent_source_group_id
+  while (currentGroupId && currentGroupId !== subcircuit.source_group_id) {
+    const sourceGroup = injectionDb.source_group.get(currentGroupId)
+    const groupInstance = groupsMap?.get(currentGroupId)
+    if (!sourceGroup || !groupInstance) break
+
+    // The group instance may not have been rendered, so its ".name"
+    // getter can fail. We reconstruct the name from its props or
+    // its fallback.
+    const groupName =
+      groupInstance.props.name ?? groupInstance.fallbackUnassignedName
+
+    path_parts.unshift(`.${groupName}`)
+    currentGroupId = sourceGroup.parent_source_group_id
   }
   path_parts.push(`.${component.name}`)
   return path_parts.join(" > ")
@@ -30,7 +38,9 @@ export function inflateSourceTrace(
   // Get selectors for connected ports
   for (const sourcePortId of sourceTrace.connected_source_port_ids) {
     const sourcePort = injectionDb.source_port.get(sourcePortId)
-    if (!sourcePort) continue
+    if (!sourcePort) {
+      continue
+    }
 
     let selector: string | undefined
     if (sourcePort.source_component_id) {
@@ -44,7 +54,7 @@ export function inflateSourceTrace(
             name: sourceComponent.name,
             source_group_id: sourceComponent.source_group_id,
           },
-          injectionDb,
+          inflatorContext,
         )
         selector = `${path} > .${sourcePort.name}`
       }
@@ -67,7 +77,9 @@ export function inflateSourceTrace(
     }
   }
 
-  if (connectedSelectors.length < 2) return
+  if (connectedSelectors.length < 2) {
+    return
+  }
 
   const trace = new Trace({
     path: connectedSelectors,
@@ -77,4 +89,11 @@ export function inflateSourceTrace(
   trace.source_trace_id = sourceTrace.source_trace_id
 
   subcircuit.add(trace)
+
+  if (subcircuit.root) {
+    subcircuit.root.db.source_trace.insert({
+      ...sourceTrace,
+      subcircuit_id: subcircuit.subcircuit_id!,
+    })
+  }
 }
