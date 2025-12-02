@@ -30,6 +30,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
 
     // Then, ensure that any pins referenced in externallyConnectedPins have ports created
     const { _parsedProps: props } = this
+    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
     if (props.externallyConnectedPins) {
       const requiredPorts = new Set<string>()
 
@@ -84,6 +85,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
   doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
 
     const source_component = db.source_component.insert({
       ftype: "simple_chip",
@@ -99,6 +101,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
 
     // Validate that components can only be placed on top or bottom layers
     const componentLayer = props.layer ?? "top"
@@ -116,7 +119,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     }
 
     const pcb_component = db.pcb_component.insert({
-      center: { x: props.pcbX ?? 0, y: props.pcbY ?? 0 },
+      center: { x: pcbX, y: pcbY },
       width: 2, // Default width, adjust as needed
       height: 3, // Default height, adjust as needed
       layer:

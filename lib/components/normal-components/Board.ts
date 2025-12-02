@@ -2,6 +2,8 @@ import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-fr
 import { boardProps } from "@tscircuit/props"
 import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
+import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
+import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import {
   checkEachPcbPortConnectedToPcbTraces,
   checkEachPcbTraceNonOverlapping,
@@ -15,6 +17,7 @@ import {
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import type { RenderPhase } from "../base-components/Renderable"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import type { BoardI } from "./BoardI"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -85,7 +88,10 @@ const getRoundedRectOutline = (
   return outline
 }
 
-export class Board extends Group<typeof boardProps> {
+export class Board
+  extends Group<typeof boardProps>
+  implements BoardI, SubcircuitI
+{
   pcb_board_id: string | null = null
   source_board_id: string | null = null
   _drcChecksComplete = false
@@ -108,6 +114,12 @@ export class Board extends Group<typeof boardProps> {
 
   get boardThickness() {
     const { _parsedProps: props } = this
+    const pcbX = this._resolvePcbCoordinate((props as any).pcbX, "pcbX", {
+      allowBoardVariables: false,
+    })
+    const pcbY = this._resolvePcbCoordinate((props as any).pcbY, "pcbY", {
+      allowBoardVariables: false,
+    })
     return props.thickness ?? 1.4
   }
 
@@ -129,14 +141,64 @@ export class Board extends Group<typeof boardProps> {
     return this._parsedProps.layers ?? 2
   }
 
+  _getBoardCalcVariables(): Record<string, number> {
+    const { _parsedProps: props } = this
+    const isAutoSized =
+      (props.width == null || props.height == null) && !props.outline
+    if (isAutoSized) return {}
+
+    const dbBoard = this.pcb_board_id
+      ? this.root?.db.pcb_board.get(this.pcb_board_id)
+      : null
+
+    let width = dbBoard?.width ?? props.width
+    let height = dbBoard?.height ?? props.height
+
+    if ((width == null || height == null) && props.outline?.length) {
+      const outlineBounds = getBoundsFromPoints(props.outline)
+      if (outlineBounds) {
+        width ??= outlineBounds.maxX - outlineBounds.minX
+        height ??= outlineBounds.maxY - outlineBounds.minY
+      }
+    }
+
+    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
+    const center = dbBoard?.center ?? {
+      x: pcbX + (props.outlineOffsetX ?? 0),
+      y: pcbY + (props.outlineOffsetY ?? 0),
+    }
+
+    const resolvedWidth = width ?? 0
+    const resolvedHeight = height ?? 0
+
+    return {
+      "board.minx": center.x - resolvedWidth / 2,
+      "board.maxx": center.x + resolvedWidth / 2,
+      "board.miny": center.y - resolvedHeight / 2,
+      "board.maxy": center.y + resolvedHeight / 2,
+    }
+  }
+
   doInitialPcbBoardAutoSize(): void {
     if (this.root?.pcbDisabled) return
     if (!this.pcb_board_id) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const pcbX = this._resolvePcbCoordinate((props as any).pcbX, "pcbX", {
+      allowBoardVariables: false,
+    })
+    const pcbY = this._resolvePcbCoordinate((props as any).pcbY, "pcbY", {
+      allowBoardVariables: false,
+    })
 
-    // Skip if width and height are explicitly provided or if outline is provided
-    if ((props.width && props.height) || props.outline) return
+    const pcbBoard = db.pcb_board.get(this.pcb_board_id!)
+
+    // If the board is already sized (from props or circuitJson) or has an outline, don't autosize
+    if (
+      (pcbBoard?.width && pcbBoard?.height) ||
+      (pcbBoard?.outline && pcbBoard.outline.length > 0)
+    )
+      return
 
     let minX = Infinity
     let minY = Infinity
@@ -214,10 +276,10 @@ export class Board extends Group<typeof boardProps> {
     const center = {
       x: hasComponents
         ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
-        : (props.outlineOffsetX ?? 0),
+        : (props.outlineOffsetX ?? 0) + pcbX,
       y: hasComponents
         ? (minY + maxY) / 2 + (props.outlineOffsetY ?? 0)
-        : (props.outlineOffsetY ?? 0),
+        : (props.outlineOffsetY ?? 0) + pcbY,
     }
 
     // by the user while auto-calculating the missing one.
@@ -310,18 +372,29 @@ export class Board extends Group<typeof boardProps> {
     this.source_board_id = source_board.source_board_id
   }
 
+  doInitialInflateSubcircuitCircuitJson() {
+    const { circuitJson, children } = this._parsedProps
+    inflateCircuitJson(this, circuitJson, children)
+  }
+
   doInitialPcbComponentRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
+    const circuitJsonElements = props.circuitJson
+    const pcbBoardFromCircuitJson = circuitJsonElements?.find(
+      (elm) => elm.type === "pcb_board",
+    )
+
     // Initialize with minimal dimensions if not provided
     // They will be updated in PcbBoardAutoSize phase
-    let computedWidth = props.width ?? 0
-    let computedHeight = props.height ?? 0
+    let computedWidth = props.width ?? pcbBoardFromCircuitJson?.width ?? 0
+    let computedHeight = props.height ?? pcbBoardFromCircuitJson?.height ?? 0
+    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
     let center = {
-      x: (props.pcbX ?? 0) + (props.outlineOffsetX ?? 0),
-      y: (props.pcbY ?? 0) + (props.outlineOffsetY ?? 0),
+      x: pcbX + (props.outlineOffsetX ?? 0),
+      y: pcbY + (props.outlineOffsetY ?? 0),
     }
 
     const { boardAnchorPosition, boardAnchorAlignment } = props

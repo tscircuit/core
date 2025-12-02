@@ -24,6 +24,12 @@ export function inflateSourceResistor(
   const resistor = new Resistor({
     name: sourceElm.name,
     resistance: sourceElm.resistance,
+    layer: pcbElm?.layer,
+    pcbX: pcbElm?.center?.x,
+    pcbY: pcbElm?.center?.y,
+    pcbRotation: pcbElm?.rotation,
+    doNotPlace: pcbElm?.do_not_place,
+    obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
 
   if (pcbElm) {

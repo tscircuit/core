@@ -54,9 +54,11 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
       rotationOffset.z = Number(parsed.z)
     }
 
+    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
+
     const positionOffset = point3.parse({
-      x: props.pcbX ?? 0,
-      y: props.pcbY ?? 0,
+      x: pcbX,
+      y: pcbY,
       z: props.pcbZ ?? 0,
       ...(typeof props.positionOffset === "object" ? props.positionOffset : {}),
     })
@@ -112,6 +114,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
         typeof props.modelUnitToMmScale === "number"
           ? props.modelUnitToMmScale
           : undefined,
+      show_as_translucent_model: parent._parsedProps.showAsTranslucentModel,
       ...urlProps,
     } as any)
 

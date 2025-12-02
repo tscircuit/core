@@ -10,17 +10,26 @@ export function inflateSourceGroup(
 
   // Create a Group instance
   const group = new Group({
-    name: sourceGroup.name,
+    name: sourceGroup.name ?? `inflated_group_${sourceGroup.source_group_id}`,
   })
 
   // Set the source_group_id so the group can be found
   group.source_group_id = sourceGroup.source_group_id
 
-  subcircuit.add(group)
-
   // Add to the groups map for later reference
   if (groupsMap) {
     groupsMap.set(sourceGroup.source_group_id, group)
+  }
+
+  // Add the group to its parent if it has one, otherwise add to subcircuit
+  if (
+    sourceGroup.parent_source_group_id &&
+    groupsMap?.has(sourceGroup.parent_source_group_id)
+  ) {
+    const parentGroup = groupsMap.get(sourceGroup.parent_source_group_id)!
+    parentGroup.add(group)
+  } else {
+    subcircuit.add(group)
   }
 
   return group

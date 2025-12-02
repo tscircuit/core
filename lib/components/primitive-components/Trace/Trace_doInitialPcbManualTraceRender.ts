@@ -3,6 +3,7 @@ import { getTraceLength } from "./trace-utils/compute-trace-length"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
 import { applyToPoint, identity } from "transformation-matrix"
+import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -65,19 +66,33 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     const startPos = startPort._getGlobalPcbPositionAfterLayout()
     const endPos = endPort._getGlobalPcbPositionAfterLayout()
 
+    // Clip trace endpoints at pad edges when trace is too wide
+    const clippedStartPos = clipTraceEndAtPad({
+      traceStart: endPos,
+      traceEnd: startPos,
+      traceWidth: width,
+      port: startPort,
+    })
+    const clippedEndPos = clipTraceEndAtPad({
+      traceStart: startPos,
+      traceEnd: endPos,
+      traceWidth: width,
+      port: endPort,
+    })
+
     const route: PcbTraceRoutePoint[] = [
       {
         route_type: "wire",
-        x: startPos.x,
-        y: startPos.y,
+        x: clippedStartPos.x,
+        y: clippedStartPos.y,
         width,
         layer,
         start_pcb_port_id: startPort.pcb_port_id!,
       },
       {
         route_type: "wire",
-        x: endPos.x,
-        y: endPos.y,
+        x: clippedEndPos.x,
+        y: clippedEndPos.y,
         width,
         layer,
         end_pcb_port_id: endPort.pcb_port_id!,

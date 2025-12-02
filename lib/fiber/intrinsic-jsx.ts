@@ -12,6 +12,7 @@ export interface TscircuitElements {
   board: Props.BoardProps
   panel: Props.PanelProps
   jumper: Props.JumperProps
+  interconnect: Props.InterconnectProps
   solderjumper: Props.SolderJumperProps
   bug: Props.ChipProps
   potentiometer: Props.PotentiometerProps
@@ -46,7 +47,7 @@ export interface TscircuitElements {
   custom: any
   component: Props.ComponentProps
   crystal: Props.CrystalProps
-  footprint: any
+  footprint: Props.FootprintProps & { name?: string }
   silkscreentext: Props.SilkscreenTextProps
   cutout: Props.CutoutProps
   silkscreenpath: Props.SilkscreenPathProps
