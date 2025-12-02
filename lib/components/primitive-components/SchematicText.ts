@@ -1,5 +1,6 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicTextProps } from "@tscircuit/props"
+import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 
 export class SchematicText extends PrimitiveComponent<
   typeof schematicTextProps
@@ -22,7 +23,7 @@ export class SchematicText extends PrimitiveComponent<
 
     db.schematic_text.insert({
       anchor: props.anchor ?? "center",
-      text: props.text,
+      text: normalizeTextForCircuitJson(props.text),
       font_size: props.fontSize,
       color: props.color || "#000000",
       position: {

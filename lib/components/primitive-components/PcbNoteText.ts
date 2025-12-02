@@ -1,6 +1,7 @@
 import { pcbNoteTextProps } from "@tscircuit/props"
 import { applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 
 export class PcbNoteText extends PrimitiveComponent<typeof pcbNoteTextProps> {
   pcb_note_text_id: string | null = null
@@ -33,7 +34,7 @@ export class PcbNoteText extends PrimitiveComponent<typeof pcbNoteTextProps> {
       pcb_group_id: group?.pcb_group_id ?? undefined,
       font: props.font ?? "tscircuit2024",
       font_size: props.fontSize ?? 1,
-      text: props.text,
+      text: normalizeTextForCircuitJson(props.text),
       anchor_position: anchorPosition,
       anchor_alignment: props.anchorAlignment ?? "center",
       color: props.color,
