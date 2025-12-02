@@ -34,7 +34,7 @@ export const inflatePcbComponent = (
         elm.pcb_component_id === pcbElm.pcb_component_id,
     )
 
-  const clonedRelativeElements = JSON.parse(JSON.stringify(relativeElements))
+  const clonedRelativeElements = structuredClone(relativeElements)
 
   // Transform all PCB elements using the standard transformation utility
   // This handles all element types (holes, pads, keepouts, silkscreen, etc.)
