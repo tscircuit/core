@@ -2,6 +2,7 @@ import type { LayerRef } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { silkscreenTextProps } from "@tscircuit/props"
 import { decomposeTSR } from "transformation-matrix"
+import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 
 export class SilkscreenText extends PrimitiveComponent<
   typeof silkscreenTextProps
@@ -64,7 +65,7 @@ export class SilkscreenText extends PrimitiveComponent<
         font: props.font ?? "tscircuit2024",
         font_size: fontSize,
         layer: maybeFlipLayer(layer) as "top" | "bottom",
-        text: props.text ?? "",
+        text: normalizeTextForCircuitJson(props.text ?? ""),
         ccw_rotation: rotation,
         pcb_component_id: container.pcb_component_id!,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,

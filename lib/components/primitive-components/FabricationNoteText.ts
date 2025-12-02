@@ -1,5 +1,6 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { fabricationNoteTextProps } from "@tscircuit/props"
+import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 
 export class FabricationNoteText extends PrimitiveComponent<
   typeof fabricationNoteTextProps
@@ -28,7 +29,7 @@ export class FabricationNoteText extends PrimitiveComponent<
       font_size: props.fontSize ?? 1,
       layer: "top",
       color: props.color,
-      text: props.text ?? "",
+      text: normalizeTextForCircuitJson(props.text ?? ""),
       pcb_component_id: container.pcb_component_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
