@@ -89,11 +89,4 @@ export function inflateSourceTrace(
   trace.source_trace_id = sourceTrace.source_trace_id
 
   subcircuit.add(trace)
-
-  if (subcircuit.root) {
-    subcircuit.root.db.source_trace.insert({
-      ...sourceTrace,
-      subcircuit_id: subcircuit.subcircuit_id!,
-    })
-  }
 }
