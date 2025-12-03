@@ -34,7 +34,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "@tscircuit/capacity-autorouter": "^0.0.140",
     "@tscircuit/checks": "^0.0.87",
-    "@tscircuit/circuit-json-util": "^0.0.72",
+    "@tscircuit/circuit-json-util": "^0.0.73",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.14",
     "@tscircuit/footprinter": "^0.0.236",
