@@ -1,6 +1,7 @@
 import type { SourceBoard, PcbBoard } from "circuit-json"
 import type { InflatorContext } from "../InflatorFn"
 import { Board } from "lib/components/normal-components/Board"
+import type { BoardProps } from "@tscircuit/props"
 
 export function inflateSourceBoard(
   sourceBoard: SourceBoard,
@@ -11,13 +12,12 @@ export function inflateSourceBoard(
   // Don't inflate a board if the subcircuit is already a Board component with circuitJson
   // This happens when you have: <board circuitJson={...} />
   // In this case, the Board itself is the board, and we don't need to create a nested board
-  if (subcircuit instanceof Board) {
+  if ((subcircuit as any).lowercaseComponentName === "board") {
     return
   }
-
   // Don't inflate a board if the subcircuit is already inside a Board component
   // This happens when you have: <board><subcircuit circuitJson={...} /></board>
-  if ((subcircuit as any).parent instanceof Board) {
+  if ((subcircuit as any).parent?.lowercaseComponentName === "board") {
     return
   }
 
@@ -27,7 +27,7 @@ export function inflateSourceBoard(
   const pcbBoard = pcbBoards.length > 0 ? (pcbBoards[0] as PcbBoard) : null
 
   // Create board props from source and PCB data
-  const boardProps: any = {
+  const boardProps: BoardProps = {
     name: sourceBoard.title || "inflated_board",
   }
 
@@ -41,7 +41,6 @@ export function inflateSourceBoard(
     }
     if (pcbBoard.outline) boardProps.outline = pcbBoard.outline
     if (pcbBoard.thickness) boardProps.thickness = pcbBoard.thickness
-    if (pcbBoard.num_layers) boardProps.layers = pcbBoard.num_layers
     if (pcbBoard.material) boardProps.material = pcbBoard.material
   }
 
