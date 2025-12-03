@@ -6,7 +6,7 @@ import type {
   InflatorContext,
   SourceGroupId,
 } from "../../components/primitive-components/Group/Subcircuit/InflatorFn"
-import { inflateSourceBoard } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceBoard"
+import { inflatePcbBoard } from "../../components/primitive-components/Group/Subcircuit/inflators/inflatePcbBoard"
 import { inflateSourceCapacitor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceCapacitor"
 import { inflateSourceChip } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceChip"
 import { inflateSourceDiode } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceDiode"
@@ -42,9 +42,9 @@ export const inflateCircuitJson = (
     inflateSourceGroup(sourceGroup, inflationCtx)
   }
 
-  const sourceBoards = injectionDb.source_board.list()
-  for (const sourceBoard of sourceBoards) {
-    inflateSourceBoard(sourceBoard, inflationCtx)
+  const pcbBoards = injectionDb.pcb_board.list()
+  for (const pcbBoard of pcbBoards) {
+    inflatePcbBoard(pcbBoard, inflationCtx)
   }
 
   const sourceComponents = injectionDb.source_component.list()
