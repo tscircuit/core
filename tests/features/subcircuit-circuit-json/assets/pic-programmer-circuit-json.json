@@ -1,9 +1,5 @@
 [
   {
-    "type": "source_group",
-    "source_group_id": "source_group_0"
-  },
-  {
     "type": "source_board",
     "source_board_id": "source_board_0",
     "source_group_id": "source_group_0"

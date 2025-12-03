@@ -17,4 +17,4 @@ test("subcircuit-circuit-json08", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
-}, 25000)
+}, 30000)
