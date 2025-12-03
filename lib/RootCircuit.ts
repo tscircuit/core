@@ -168,7 +168,14 @@ export class RootCircuit {
   }
 
   private _hasIncompleteAsyncEffects(): boolean {
-    return this.children.some((child) => child._hasIncompleteAsyncEffects())
+    const checkComponent = (component: PrimitiveComponent): boolean => {
+      if (component._hasIncompleteAsyncEffects?.()) return true
+      if (component.children) {
+        return component.children.some((child) => checkComponent(child))
+      }
+      return false
+    }
+    return this.children.some((child) => checkComponent(child))
   }
 
   getCircuitJson(): AnyCircuitElement[] {
