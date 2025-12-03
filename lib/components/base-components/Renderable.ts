@@ -232,7 +232,13 @@ export abstract class Renderable implements IRenderable {
   }
 
   _hasIncompleteAsyncEffects(): boolean {
-    return this._asyncEffects.some((effect) => !effect.complete)
+    if (this._asyncEffects.some((effect) => !effect.complete)) return true
+
+    return this.children.some((child) =>
+      typeof (child as Renderable)._hasIncompleteAsyncEffects === "function"
+        ? (child as Renderable)._hasIncompleteAsyncEffects()
+        : false,
+    )
   }
 
   _hasIncompleteAsyncEffectsInSubtreeForPhase(phase: RenderPhase): boolean {
