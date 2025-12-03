@@ -619,6 +619,37 @@ export abstract class PrimitiveComponent<
     return this.root?._getBoard() as (PrimitiveComponent & BoardI) | undefined
   }
 
+  /**
+   * Check if this component has a Board ancestor (used to prevent nested boards)
+   */
+  _getAncestorBoard(): PrimitiveComponent | null {
+    let current: PrimitiveComponent | null = this
+    while (current) {
+      if (current.lowercaseComponentName === "board") {
+        return current
+      }
+      current = current.parent
+    }
+    return null
+  }
+
+  /**
+   * Check if this component has a Board descendant (used to prevent nested boards)
+   * This is needed because React reconciler builds the tree bottom-up
+   */
+  _getDescendantBoard(): PrimitiveComponent | null {
+    if (this.lowercaseComponentName === "board") {
+      return this
+    }
+    for (const child of this.children) {
+      const descendantBoard = child._getDescendantBoard()
+      if (descendantBoard) {
+        return descendantBoard
+      }
+    }
+    return null
+  }
+
   get root(): RootCircuit | null {
     return this.parent?.root ?? null
   }
@@ -660,12 +691,28 @@ export abstract class PrimitiveComponent<
       // Ignore empty objects produced by the reconciler in edge cases
       return
     }
-    // Disallow nesting boards inside of boards
-    if (
-      this.lowercaseComponentName === "board" &&
-      component.lowercaseComponentName === "board"
-    ) {
-      throw new Error("Nested boards are not supported")
+    // Disallow nesting boards inside of boards (at any depth)
+    // Check if the parent (this) is a board, or if the component being added
+    // contains any board descendants
+    if (component.lowercaseComponentName === "board") {
+      const ancestorBoard = this._getAncestorBoard()
+      if (ancestorBoard) {
+        throw new Error(
+          `Nested boards are not allowed. Cannot place a <board> inside another <board>. ` +
+            `Found ancestor board: "${ancestorBoard.name || "unnamed"}".`,
+        )
+      }
+    }
+    // Also check if we're a board and the component being added has board descendants
+    // This catches cases where the React reconciler builds bottom-up
+    if (this.lowercaseComponentName === "board") {
+      const descendantBoard = component._getDescendantBoard()
+      if (descendantBoard) {
+        throw new Error(
+          `Nested boards are not allowed. Cannot place a <board> inside another <board>. ` +
+            `Found nested board: "${descendantBoard.name || "unnamed"}".`,
+        )
+      }
     }
 
     if (component.lowercaseComponentName === "panel") {
