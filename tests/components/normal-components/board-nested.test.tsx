@@ -12,5 +12,5 @@ test("error when board nested inside board", () => {
         </board>
       </board>,
     ),
-  ).toThrow("Nested boards are not supported")
+  ).toThrow("Nested boards are not allowed")
 })

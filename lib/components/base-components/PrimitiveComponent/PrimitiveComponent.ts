@@ -636,10 +636,15 @@ export abstract class PrimitiveComponent<
   /**
    * Check if this component has a Board descendant (used to prevent nested boards)
    * This is needed because React reconciler builds the tree bottom-up
+   * Note: Panels are excluded since they legitimately contain boards by design
    */
   _getDescendantBoard(): PrimitiveComponent | null {
     if (this.lowercaseComponentName === "board") {
       return this
+    }
+    // Panels legitimately contain boards, so don't check their descendants
+    if (this.lowercaseComponentName === "panel") {
+      return null
     }
     for (const child of this.children) {
       const descendantBoard = child._getDescendantBoard()
