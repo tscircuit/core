@@ -150,12 +150,22 @@ export class Panel extends Group<typeof panelProps> {
         const boundsWidth = maxX - minX
         const boundsHeight = maxY - minY
 
-        const newPanelWidth = boundsWidth + 2 * DEFAULT_PANEL_MARGIN
-        const newPanelHeight = boundsHeight + 2 * DEFAULT_PANEL_MARGIN
+        const calculatedPanelWidth = boundsWidth + 2 * DEFAULT_PANEL_MARGIN
+        const calculatedPanelHeight = boundsHeight + 2 * DEFAULT_PANEL_MARGIN
+
+        // Use explicit props if provided, otherwise use calculated values
+        const finalWidth =
+          this._parsedProps.width !== undefined
+            ? distance.parse(this._parsedProps.width)
+            : calculatedPanelWidth
+        const finalHeight =
+          this._parsedProps.height !== undefined
+            ? distance.parse(this._parsedProps.height)
+            : calculatedPanelHeight
 
         db.pcb_panel.update(this.pcb_panel_id!, {
-          width: newPanelWidth,
-          height: newPanelHeight,
+          width: finalWidth,
+          height: finalHeight,
         })
       }
     }
@@ -219,9 +229,10 @@ export class Panel extends Group<typeof panelProps> {
     const { db } = this.root!
     const props = this._parsedProps
 
+    // Use 0 as placeholder when dimensions are not provided - will be auto-calculated in doInitialPanelLayout
     const inserted = db.pcb_panel.insert({
-      width: distance.parse(props.width),
-      height: distance.parse(props.height),
+      width: props.width !== undefined ? distance.parse(props.width) : 0,
+      height: props.height !== undefined ? distance.parse(props.height) : 0,
       center: this._getGlobalPcbPositionBeforeLayout(),
       covered_with_solder_mask: !(props.noSolderMask ?? false),
     })
@@ -235,10 +246,18 @@ export class Panel extends Group<typeof panelProps> {
 
     const { db } = this.root!
     const props = this._parsedProps
+    const currentPanel = db.pcb_panel.get(this.pcb_panel_id)
 
+    // Only update dimensions if explicitly provided, otherwise keep current (auto-calculated) values
     db.pcb_panel.update(this.pcb_panel_id, {
-      width: distance.parse(props.width),
-      height: distance.parse(props.height),
+      width:
+        props.width !== undefined
+          ? distance.parse(props.width)
+          : currentPanel?.width,
+      height:
+        props.height !== undefined
+          ? distance.parse(props.height)
+          : currentPanel?.height,
       center: this._getGlobalPcbPositionBeforeLayout(),
       covered_with_solder_mask: !(props.noSolderMask ?? false),
     })
