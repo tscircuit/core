@@ -39,5 +39,7 @@ test("boards inside panel have positions relative to panel", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    showAnchorOffsets: true,
+  })
 })
