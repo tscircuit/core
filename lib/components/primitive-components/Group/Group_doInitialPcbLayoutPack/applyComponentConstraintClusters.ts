@@ -95,7 +95,7 @@ export const applyComponentConstraintClusters = (
       const results = props.for
         .map((s: string) => getIdFromSelector(s))
         .filter((r: ItemInfo | undefined): r is ItemInfo => !!r)
-      const ids = results.map((r) => r.id)
+      const ids = results.map((r:ItemInfo) => r.id)
       for (const id of ids) makeSet(id)
       for (let i = 1; i < ids.length; i++) union(ids[0], ids[i])
     }
@@ -214,7 +214,7 @@ export const applyComponentConstraintClusters = (
         const results = props.for
           .map((s: string) => getIdFromSelector(s))
           .filter((r: ItemInfo | undefined): r is ItemInfo => !!r)
-        const ids = results.map((r) => r.id)
+        const ids = results.map((r:ItemInfo) => r.id)
         if (ids.length > 1) {
           const base = getVar(ids[0], "x")
           for (let i = 1; i < ids.length; i++) {
@@ -232,7 +232,7 @@ export const applyComponentConstraintClusters = (
         const results = props.for
           .map((s: string) => getIdFromSelector(s))
           .filter((r: ItemInfo | undefined): r is ItemInfo => !!r)
-        const ids = results.map((r) => r.id)
+        const ids = results.map((r:ItemInfo) => r.id)
         if (ids.length > 1) {
           const base = getVar(ids[0], "y")
           for (let i = 1; i < ids.length; i++) {
@@ -462,8 +462,8 @@ const convertSmtPadsToGenericPads = (smtpads: any[]) => {
 
   for (const p of smtpads) {
     if (Array.isArray(p.points)) {
-      const xs = p.points.map((pt) => pt.x)
-      const ys = p.points.map((pt) => pt.y)
+      const xs = p.points.map((pt: { x: number; y: number }) => pt.x)
+      const ys = p.points.map((pt: { x: number; y: number }) => pt.y)
 
       pads.push({
         pcb_pad_id: p.pcb_smtpad_id,
