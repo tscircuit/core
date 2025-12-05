@@ -1,4 +1,5 @@
 export { NormalComponent } from "./base-components/NormalComponent/NormalComponent"
+export { Connector } from "./normal-components/Connector"
 export { PrimitiveComponent } from "./base-components/PrimitiveComponent"
 export { Renderable, type IRenderable } from "./base-components/Renderable"
 export { Board } from "./normal-components/Board"
