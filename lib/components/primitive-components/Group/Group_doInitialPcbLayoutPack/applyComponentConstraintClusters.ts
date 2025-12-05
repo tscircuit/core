@@ -95,7 +95,7 @@ export const applyComponentConstraintClusters = (
       const results = props.for
         .map((s: string) => getIdFromSelector(s))
         .filter((r: ItemInfo | undefined): r is ItemInfo => !!r)
-      const ids = results.map((r:ItemInfo) => r.id)
+      const ids = results.map((r: ItemInfo) => r.id)
       for (const id of ids) makeSet(id)
       for (let i = 1; i < ids.length; i++) union(ids[0], ids[i])
     }
@@ -214,7 +214,7 @@ export const applyComponentConstraintClusters = (
         const results = props.for
           .map((s: string) => getIdFromSelector(s))
           .filter((r: ItemInfo | undefined): r is ItemInfo => !!r)
-        const ids = results.map((r:ItemInfo) => r.id)
+        const ids = results.map((r: ItemInfo) => r.id)
         if (ids.length > 1) {
           const base = getVar(ids[0], "x")
           for (let i = 1; i < ids.length; i++) {
@@ -232,7 +232,7 @@ export const applyComponentConstraintClusters = (
         const results = props.for
           .map((s: string) => getIdFromSelector(s))
           .filter((r: ItemInfo | undefined): r is ItemInfo => !!r)
-        const ids = results.map((r:ItemInfo) => r.id)
+        const ids = results.map((r: ItemInfo) => r.id)
         if (ids.length > 1) {
           const base = getVar(ids[0], "y")
           for (let i = 1; i < ids.length; i++) {
