@@ -146,26 +146,26 @@ export class Panel extends Group<typeof panelProps> {
         maxY = Math.max(maxY, top)
       }
 
-      if (isFinite(minX)) {
+      // Skip auto-calculation if both dimensions are explicitly provided
+      const hasExplicitWidth = this._parsedProps.width !== undefined
+      const hasExplicitHeight = this._parsedProps.height !== undefined
+
+      if (hasExplicitWidth && hasExplicitHeight) {
+        db.pcb_panel.update(this.pcb_panel_id!, {
+          width: distance.parse(this._parsedProps.width),
+          height: distance.parse(this._parsedProps.height),
+        })
+      } else if (isFinite(minX)) {
         const boundsWidth = maxX - minX
         const boundsHeight = maxY - minY
 
-        const calculatedPanelWidth = boundsWidth + 2 * DEFAULT_PANEL_MARGIN
-        const calculatedPanelHeight = boundsHeight + 2 * DEFAULT_PANEL_MARGIN
-
-        // Use explicit props if provided, otherwise use calculated values
-        const finalWidth =
-          this._parsedProps.width !== undefined
-            ? distance.parse(this._parsedProps.width)
-            : calculatedPanelWidth
-        const finalHeight =
-          this._parsedProps.height !== undefined
-            ? distance.parse(this._parsedProps.height)
-            : calculatedPanelHeight
-
         db.pcb_panel.update(this.pcb_panel_id!, {
-          width: finalWidth,
-          height: finalHeight,
+          width: hasExplicitWidth
+            ? distance.parse(this._parsedProps.width)
+            : boundsWidth + 2 * DEFAULT_PANEL_MARGIN,
+          height: hasExplicitHeight
+            ? distance.parse(this._parsedProps.height)
+            : boundsHeight + 2 * DEFAULT_PANEL_MARGIN,
         })
       }
     }
