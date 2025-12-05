@@ -6,7 +6,7 @@ test("panels boards with manual positions", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width="100mm" height="100mm">
+    <panel width="100mm" height="100mm" panelizationMethod="tab-routing">
       <board
         width="30mm"
         height="30mm"
@@ -50,7 +50,7 @@ test("panel boards with no positions", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width="100mm" height="100mm">
+    <panel width="100mm" height="100mm" panelizationMethod="tab-routing">
       <board width="20mm" height="50mm" routingDisabled />
       <board width="20mm" height="50mm" routingDisabled />
     </panel>,
@@ -65,7 +65,7 @@ test("panel boards with no positions", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width="100mm" height="100mm">
+    <panel width="100mm" height="100mm" panelizationMethod="tab-routing">
       <board width="20mm" height="50mm" routingDisabled />
       <board width="20mm" height="50mm" routingDisabled />
       <board width="20mm" height="50mm" routingDisabled />
@@ -85,7 +85,7 @@ test("panel boards with some positions", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width="100mm" height="100mm">
+    <panel width="100mm" height="100mm" panelizationMethod="tab-routing">
       <board width="20mm" height="50mm" routingDisabled />
       <board width="20mm" height="50mm" routingDisabled />
       <board width="20mm" height="50mm" routingDisabled />
@@ -103,7 +103,7 @@ test("panel with mixed positions doesn't autolayout", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width="100mm" height="100mm">
+    <panel width="100mm" height="100mm" panelizationMethod="tab-routing">
       <board width="20mm" height="50mm" routingDisabled />
       <board width="20mm" height="50mm" pcbX={30} routingDisabled />
     </panel>,
@@ -147,7 +147,12 @@ test("panel with mouseBites: false has no mouse bites", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width="100mm" height="100mm" mouseBites={false}>
+    <panel
+      width="100mm"
+      height="100mm"
+      panelizationMethod="tab-routing"
+      mouseBites={false}
+    >
       <board
         width="30mm"
         height="30mm"
@@ -182,6 +187,7 @@ test("panel custom tab/gap props", () => {
     <panel
       width="100mm"
       height="100mm"
+      panelizationMethod="tab-routing"
       boardGap="5mm"
       tabLength="2mm"
       tabWidth="0.5mm"
