@@ -1,6 +1,5 @@
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { boardProps } from "@tscircuit/props"
-import { type Matrix, identity } from "transformation-matrix"
 import { Group } from "../primitive-components/Group/Group"
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
 import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
@@ -113,14 +112,7 @@ export class Board
   }
 
   get boardThickness() {
-    const { _parsedProps: props } = this
-    const pcbX = this._resolvePcbCoordinate((props as any).pcbX, "pcbX", {
-      allowBoardVariables: false,
-    })
-    const pcbY = this._resolvePcbCoordinate((props as any).pcbY, "pcbY", {
-      allowBoardVariables: false,
-    })
-    return props.thickness ?? 1.4
+    return this._parsedProps.thickness ?? 1.4
   }
 
   /**
@@ -181,12 +173,8 @@ export class Board
     if (!this.pcb_board_id) return
     const { db } = this.root!
     const { _parsedProps: props } = this
-    const pcbX = this._resolvePcbCoordinate((props as any).pcbX, "pcbX", {
-      allowBoardVariables: false,
-    })
-    const pcbY = this._resolvePcbCoordinate((props as any).pcbY, "pcbY", {
-      allowBoardVariables: false,
-    })
+    // Use global position to properly handle boards inside panels
+    const globalPos = this._getGlobalPcbPositionBeforeLayout()
 
     const pcbBoard = db.pcb_board.get(this.pcb_board_id!)
 
@@ -269,14 +257,14 @@ export class Board
     const computedWidth = hasComponents ? maxX - minX + padding * 2 : 0
     const computedHeight = hasComponents ? maxY - minY + padding * 2 : 0
 
-    // Center the board around the components or use (0,0) for empty boards
+    // Center the board around the components or use global position for empty boards
     const center = {
       x: hasComponents
         ? (minX + maxX) / 2 + (props.outlineOffsetX ?? 0)
-        : (props.outlineOffsetX ?? 0) + pcbX,
+        : (props.outlineOffsetX ?? 0) + globalPos.x,
       y: hasComponents
         ? (minY + maxY) / 2 + (props.outlineOffsetY ?? 0)
-        : (props.outlineOffsetY ?? 0) + pcbY,
+        : (props.outlineOffsetY ?? 0) + globalPos.y,
     }
 
     // by the user while auto-calculating the missing one.
@@ -388,10 +376,11 @@ export class Board
     // They will be updated in PcbBoardAutoSize phase
     let computedWidth = props.width ?? pcbBoardFromCircuitJson?.width ?? 0
     let computedHeight = props.height ?? pcbBoardFromCircuitJson?.height ?? 0
-    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
+    // Use global position to properly handle boards inside panels
+    const globalPos = this._getGlobalPcbPositionBeforeLayout()
     let center = {
-      x: pcbX + (props.outlineOffsetX ?? 0),
-      y: pcbY + (props.outlineOffsetY ?? 0),
+      x: globalPos.x + (props.outlineOffsetX ?? 0),
+      y: globalPos.y + (props.outlineOffsetY ?? 0),
     }
 
     const { boardAnchorPosition, boardAnchorAlignment } = props
