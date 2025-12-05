@@ -18,7 +18,10 @@ import { unknown_error_finding_part } from "circuit-json"
 export const USB_C_STANDARD_PINS = {
   // USB 2.0 Data (D+/D-) - includes aliases for 16-pin connector secondary pins
   DP: { pinNumber: 1, aliases: ["D+", "dp", "data_plus", "DP1", "DP2", "D+2"] },
-  DM: { pinNumber: 2, aliases: ["D-", "dm", "data_minus", "DM1", "DM2", "D-2"] },
+  DM: {
+    pinNumber: 2,
+    aliases: ["D-", "dm", "data_minus", "DM1", "DM2", "D-2"],
+  },
 
   // Configuration Channel
   CC1: { pinNumber: 3, aliases: ["cc1", "config_channel_1"] },
