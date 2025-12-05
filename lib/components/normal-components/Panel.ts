@@ -181,7 +181,7 @@ export class Panel extends Group<typeof panelProps> {
     if (this._tabsAndMouseBitesGenerated) return
 
     const props = this._parsedProps
-    const panelizationMethod = props.panelizationMethod ?? "tab-routing"
+    const panelizationMethod = props.panelizationMethod ?? "none"
 
     if (panelizationMethod !== "none") {
       // Get all boards that are children of this panel
