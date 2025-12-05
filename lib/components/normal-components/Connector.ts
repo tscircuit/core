@@ -4,6 +4,8 @@ import { Port } from "../primitive-components/Port"
 import type { z } from "zod"
 import type { SchematicPortArrangement } from "@tscircuit/props"
 import { Trace } from "../primitive-components/Trace/Trace"
+import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
+import { unknown_error_finding_part } from "circuit-json"
 
 /**
  * Standard USB-C pin definitions following USB Type-C specification.
@@ -242,6 +244,122 @@ export class Connector<
     } as any)
 
     this.source_component_id = source_component.source_component_id
+  }
+
+  doInitialPartsEngineRender(): void {
+    const standard = this._parsedProps.standard
+    if (!standard) {
+      // No standard specified, fall back to base behavior
+      super.doInitialPartsEngineRender()
+      return
+    }
+
+    if (this.props.doNotPlace) return
+    const partsEngine = this.getInheritedProperty("partsEngine")
+    if (!partsEngine?.findStandardPart) {
+      // Parts engine doesn't support findStandardPart, fall back to base behavior
+      super.doInitialPartsEngineRender()
+      return
+    }
+
+    const { db } = this.root!
+    const source_component = db.source_component.get(this.source_component_id!)
+    if (!source_component) return
+    if (source_component.supplier_part_numbers) return
+
+    const resultMaybePromise = partsEngine.findStandardPart({
+      standard,
+      sourceComponent: source_component,
+    })
+
+    if (!(resultMaybePromise instanceof Promise)) {
+      this._applyStandardPartResult(resultMaybePromise)
+      return
+    }
+
+    this._queueAsyncEffect("find-standard-part", async () => {
+      await resultMaybePromise
+        .then((result) => {
+          this._asyncStandardPartResult = result
+          this._markDirty("PartsEngineRender")
+        })
+        .catch((error: Error) => {
+          this._asyncStandardPartResult = null
+          const errorObj = unknown_error_finding_part.parse({
+            type: "unknown_error_finding_part",
+            message: `Failed to find standard part for ${this.getString()} (${standard}): ${error.message}`,
+            source_component_id: this.source_component_id,
+            subcircuit_id: this.getSubcircuit()?.subcircuit_id,
+          })
+          db.unknown_error_finding_part.insert(errorObj)
+          this._markDirty("PartsEngineRender")
+        })
+    })
+  }
+
+  updatePartsEngineRender(): void {
+    const standard = this._parsedProps.standard
+    if (!standard || this._asyncStandardPartResult === undefined) {
+      super.updatePartsEngineRender()
+      return
+    }
+
+    if (this.props.doNotPlace) return
+    const { db } = this.root!
+
+    const source_component = db.source_component.get(this.source_component_id!)
+    if (!source_component) return
+    if (source_component.supplier_part_numbers) return
+
+    this._applyStandardPartResult(this._asyncStandardPartResult)
+  }
+
+  private _asyncStandardPartResult:
+    | { supplierPartNumbers: Record<string, string[]>; footprint?: unknown[] }
+    | null
+    | undefined
+
+  private _applyStandardPartResult(
+    result: {
+      supplierPartNumbers: Record<string, string[]>
+      footprint?: unknown[]
+    } | null,
+  ): void {
+    if (!result) return
+
+    const { db } = this.root!
+    const { pcbRotation, pinLabels } = this.props
+
+    // Update supplier part numbers on the source component
+    if (result.supplierPartNumbers) {
+      db.source_component.update(this.source_component_id!, {
+        supplier_part_numbers: result.supplierPartNumbers,
+      })
+    }
+
+    // If footprint Circuit JSON is provided, create components from it
+    if (result.footprint && Array.isArray(result.footprint)) {
+      const fpComponents = createComponentsFromCircuitJson(
+        {
+          componentName: this.name,
+          componentRotation: String(pcbRotation ?? "0"),
+          footprinterString: `standard:${this._parsedProps.standard}`,
+          pinLabels,
+        },
+        result.footprint as Parameters<
+          typeof createComponentsFromCircuitJson
+        >[1],
+      )
+      this.addAll(fpComponents)
+
+      // Ensure existing Ports re-run PcbPortRender now that pads exist
+      for (const child of this.children) {
+        if (child.componentName === "Port") {
+          child._markDirty?.("PcbPortRender")
+        }
+      }
+      this._markDirty("InitializePortsFromChildren")
+    }
   }
 
   doInitialCreateTracesFromProps(): void {
