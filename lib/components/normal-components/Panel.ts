@@ -97,6 +97,9 @@ export class Panel extends Group<typeof panelProps> {
         colXOffsets.push(colXOffsets[i] + colWidths[i] + boardGap)
       }
 
+      // Get panel's global position to compute absolute board positions
+      const panelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
+
       unpositionedBoards.forEach((board, i) => {
         const col = i % gridCols
         const row = Math.floor(i / gridCols)
@@ -104,12 +107,17 @@ export class Panel extends Group<typeof panelProps> {
         const pcbBoard = db.pcb_board.get(board.pcb_board_id!)
         if (!pcbBoard || !pcbBoard.width || !pcbBoard.height) return
 
-        const xPos = colXOffsets[col] + colWidths[col] / 2
-        const yPos = rowYOffsets[row] + rowHeights[row] / 2
+        // Compute relative position within the panel grid
+        const relativeX = colXOffsets[col] + colWidths[col] / 2
+        const relativeY = rowYOffsets[row] + rowHeights[row] / 2
 
-        board._repositionOnPcb({ x: xPos, y: yPos })
+        // Compute absolute position by adding panel's global position
+        const absoluteX = panelGlobalPos.x + relativeX
+        const absoluteY = panelGlobalPos.y + relativeY
+
+        board._repositionOnPcb({ x: absoluteX, y: absoluteY })
         db.pcb_board.update(board.pcb_board_id!, {
-          center: { x: xPos, y: yPos },
+          center: { x: absoluteX, y: absoluteY },
         })
       })
 
@@ -146,16 +154,26 @@ export class Panel extends Group<typeof panelProps> {
         maxY = Math.max(maxY, top)
       }
 
-      if (isFinite(minX)) {
+      // Skip auto-calculation if both dimensions are explicitly provided
+      const hasExplicitWidth = this._parsedProps.width !== undefined
+      const hasExplicitHeight = this._parsedProps.height !== undefined
+
+      if (hasExplicitWidth && hasExplicitHeight) {
+        db.pcb_panel.update(this.pcb_panel_id!, {
+          width: distance.parse(this._parsedProps.width),
+          height: distance.parse(this._parsedProps.height),
+        })
+      } else if (isFinite(minX)) {
         const boundsWidth = maxX - minX
         const boundsHeight = maxY - minY
 
-        const newPanelWidth = boundsWidth + 2 * DEFAULT_PANEL_MARGIN
-        const newPanelHeight = boundsHeight + 2 * DEFAULT_PANEL_MARGIN
-
         db.pcb_panel.update(this.pcb_panel_id!, {
-          width: newPanelWidth,
-          height: newPanelHeight,
+          width: hasExplicitWidth
+            ? distance.parse(this._parsedProps.width)
+            : boundsWidth + 2 * DEFAULT_PANEL_MARGIN,
+          height: hasExplicitHeight
+            ? distance.parse(this._parsedProps.height)
+            : boundsHeight + 2 * DEFAULT_PANEL_MARGIN,
         })
       }
     }
@@ -219,9 +237,10 @@ export class Panel extends Group<typeof panelProps> {
     const { db } = this.root!
     const props = this._parsedProps
 
+    // Use 0 as placeholder when dimensions are not provided - will be auto-calculated in doInitialPanelLayout
     const inserted = db.pcb_panel.insert({
-      width: distance.parse(props.width),
-      height: distance.parse(props.height),
+      width: props.width !== undefined ? distance.parse(props.width) : 0,
+      height: props.height !== undefined ? distance.parse(props.height) : 0,
       center: this._getGlobalPcbPositionBeforeLayout(),
       covered_with_solder_mask: !(props.noSolderMask ?? false),
     })
@@ -235,10 +254,18 @@ export class Panel extends Group<typeof panelProps> {
 
     const { db } = this.root!
     const props = this._parsedProps
+    const currentPanel = db.pcb_panel.get(this.pcb_panel_id)
 
+    // Only update dimensions if explicitly provided, otherwise keep current (auto-calculated) values
     db.pcb_panel.update(this.pcb_panel_id, {
-      width: distance.parse(props.width),
-      height: distance.parse(props.height),
+      width:
+        props.width !== undefined
+          ? distance.parse(props.width)
+          : currentPanel?.width,
+      height:
+        props.height !== undefined
+          ? distance.parse(props.height)
+          : currentPanel?.height,
       center: this._getGlobalPcbPositionBeforeLayout(),
       covered_with_solder_mask: !(props.noSolderMask ?? false),
     })
