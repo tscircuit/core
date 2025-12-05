@@ -10,11 +10,15 @@ import { unknown_error_finding_part } from "circuit-json"
 /**
  * Standard USB-C pin definitions following USB Type-C specification.
  * USB-C has 24 pins with the following standard naming convention.
+ *
+ * Note: USB-C is reversible, so some signals appear twice (e.g., DP/DP2, DM/DM2).
+ * The aliases include common manufacturer naming conventions like DP2, DM2 for
+ * the secondary data pins on 16-pin connectors.
  */
 export const USB_C_STANDARD_PINS = {
-  // USB 2.0 Data (D+/D-)
-  DP: { pinNumber: 1, aliases: ["D+", "dp", "data_plus"] },
-  DM: { pinNumber: 2, aliases: ["D-", "dm", "data_minus"] },
+  // USB 2.0 Data (D+/D-) - includes aliases for 16-pin connector secondary pins
+  DP: { pinNumber: 1, aliases: ["D+", "dp", "data_plus", "DP1", "DP2", "D+2"] },
+  DM: { pinNumber: 2, aliases: ["D-", "dm", "data_minus", "DM1", "DM2", "D-2"] },
 
   // Configuration Channel
   CC1: { pinNumber: 3, aliases: ["cc1", "config_channel_1"] },
