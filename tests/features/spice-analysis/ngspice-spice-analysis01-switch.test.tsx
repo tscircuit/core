@@ -39,7 +39,7 @@ test(
 
         <analogsimulation
           duration="4ms"
-          timePerStep="50us"
+          timePerStep="1us"
           spiceEngine="ngspice"
         />
       </board>,
