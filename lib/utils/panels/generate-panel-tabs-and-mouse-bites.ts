@@ -1,4 +1,10 @@
-import type { PcbBoard, PcbCutoutRect, PcbHoleCircle } from "circuit-json"
+import type {
+  PcbBoard,
+  PcbCutout,
+  PcbCutoutRect,
+  PcbHoleCircle,
+} from "circuit-json"
+import { generatePanelTabsAndMouseBitesForOutlines } from "./generate-panel-tabs-and-mousebites-for-outlines"
 
 export const DEFAULT_PANEL_MARGIN = 5
 export const DEFAULT_TAB_LENGTH = 5
@@ -324,52 +330,71 @@ export function generatePanelTabsAndMouseBites(
   boards: PcbBoard[],
   options: PanelOptions,
 ): {
-  tabCutouts: PcbCutoutRect[]
+  tabCutouts: PcbCutout[]
   mouseBiteHoles: PcbHoleCircle[]
 } {
-  const allTabCutouts: TabCutout[] = []
+  const finalTabCutouts: PcbCutout[] = []
   const allMouseBites: MouseBite[] = []
 
   for (let boardIndex = 0; boardIndex < boards.length; boardIndex++) {
-    const board = boards[boardIndex]
+    const board = boards[boardIndex]!
     const otherBoards = boards.filter((_, i) => i !== boardIndex)
 
-    for (const edge of ["top", "bottom", "left", "right"] as const) {
-      const edgeTabs = generateTabsForEdge({
-        board,
-        edge,
+    if (board.outline && board.outline.length > 0) {
+      const mouseBiteDiameter = options.tabWidth * 0.45
+      const mouseBiteSpacing = mouseBiteDiameter * 0.1
+      const generated = generatePanelTabsAndMouseBitesForOutlines(
+        board.outline,
         otherBoards,
-        options,
-      })
-      allTabCutouts.push(...edgeTabs)
+        {
+          ...options,
+          mouseBiteHoleDiameter: mouseBiteDiameter,
+          mouseBiteHoleSpacing: mouseBiteSpacing,
+        },
+      )
 
-      if (options.mouseBites) {
-        const edgeMouseBites = generateMouseBitesForEdge({
+      finalTabCutouts.push(...generated.tabCutouts)
+      allMouseBites.push(...generated.mouseBiteHoles)
+    } else {
+      for (const edge of ["top", "bottom", "left", "right"] as const) {
+        const edgeTabs = generateTabsForEdge({
           board,
           edge,
-          edgeTabs,
-          allBoards: otherBoards,
+          otherBoards,
           options,
         })
-        allMouseBites.push(...edgeMouseBites)
+
+        for (const tab of edgeTabs) {
+          const tabWidthDimension = Math.min(tab.width, tab.height)
+          finalTabCutouts.push({
+            type: "pcb_cutout",
+            shape: "rect",
+            center: tab.center,
+            width: tab.width,
+            height: tab.height,
+            corner_radius: tabWidthDimension / 2,
+          } as PcbCutoutRect)
+        }
+
+        if (options.mouseBites) {
+          const edgeMouseBites = generateMouseBitesForEdge({
+            board,
+            edge,
+            edgeTabs,
+            allBoards: otherBoards,
+            options,
+          })
+          allMouseBites.push(...edgeMouseBites)
+        }
       }
     }
   }
 
-  const tabCutouts: PcbCutoutRect[] = allTabCutouts.map((tab, index) => {
-    const tabWidthDimension = Math.min(tab.width, tab.height)
-    return {
-      type: "pcb_cutout",
-      pcb_cutout_id: `panel_tab_${index}`,
-      shape: "rect",
-      center: tab.center,
-      width: tab.width,
-      height: tab.height,
-      corner_radius: tabWidthDimension / 2,
-    }
-  })
+  const tabCutouts: PcbCutout[] = finalTabCutouts.map((tab, index) => ({
+    ...tab,
+    pcb_cutout_id: `panel_tab_${index}`,
+  }))
 
-  // TODO this logic should be shared with generateMouseBitesForEdge
   const mouseBiteDiameter = options.tabWidth * 0.45
   const mouseBiteHoles: PcbHoleCircle[] = allMouseBites.map((bite, index) => ({
     type: "pcb_hole",
