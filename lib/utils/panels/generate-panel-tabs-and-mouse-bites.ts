@@ -1,10 +1,4 @@
-import type {
-  PcbBoard,
-  PcbCutout,
-  PcbCutoutRect,
-  PcbHoleCircle,
-  Point,
-} from "circuit-json"
+import type { PcbBoard, PcbCutout, PcbHoleCircle, Point } from "circuit-json"
 import * as Flatten from "@flatten-js/core"
 
 export const DEFAULT_PANEL_MARGIN = 5
@@ -20,320 +14,16 @@ interface PanelOptions {
   mouseBites: boolean
 }
 
-interface TabCutout {
-  center: { x: number; y: number }
-  width: number
-  height: number
-  boardId?: string
-}
-
 interface MouseBite {
   x: number
   y: number
 }
 
-function rectanglesOverlap(
-  rect1: { center: { x: number; y: number }; width: number; height: number },
-  rect2: { center: { x: number; y: number }; width: number; height: number },
-): boolean {
-  const r1Left = rect1.center.x - rect1.width / 2
-  const r1Right = rect1.center.x + rect1.width / 2
-  const r1Bottom = rect1.center.y - rect1.height / 2
-  const r1Top = rect1.center.y + rect1.height / 2
-
-  const r2Left = rect2.center.x - rect2.width / 2
-  const r2Right = rect2.center.x + rect2.width / 2
-  const r2Bottom = rect2.center.y - rect2.height / 2
-  const r2Top = rect2.center.y + rect2.height / 2
-
-  return !(
-    r1Right <= r2Left ||
-    r1Left >= r2Right ||
-    r1Top <= r2Bottom ||
-    r1Bottom >= r2Top
-  )
-}
-
-function pointOverlapsRectangle(
-  point: { x: number; y: number },
-  radius: number,
-  rect: { center: { x: number; y: number }; width: number; height: number },
-): boolean {
-  const rectLeft = rect.center.x - rect.width / 2
-  const rectRight = rect.center.x + rect.width / 2
-  const rectBottom = rect.center.y - rect.height / 2
-  const rectTop = rect.center.y + rect.height / 2
-
-  const closestX = Math.max(rectLeft, Math.min(point.x, rectRight))
-  const closestY = Math.max(rectBottom, Math.min(point.y, rectTop))
-
-  const distanceX = point.x - closestX
-  const distanceY = point.y - closestY
-
-  return distanceX * distanceX + distanceY * distanceY <= radius * radius
-}
-
-function generateTabsForEdge({
-  board,
-  edge,
-  otherBoards,
-  options,
-}: {
-  board: PcbBoard
-  edge: "top" | "bottom" | "left" | "right"
-  otherBoards: PcbBoard[]
-  options: PanelOptions
-}): TabCutout[] {
-  const tabs: TabCutout[] = []
-
-  if (!board.width || !board.height) return tabs
-
-  const boardLeft = board.center.x - board.width / 2
-  const boardRight = board.center.x + board.width / 2
-  const boardBottom = board.center.y - board.height / 2
-  const boardTop = board.center.y + board.height / 2
-
-  let edgeLength: number
-  let isHorizontal: boolean
-  let edgeCenter: number
-
-  if (edge === "top" || edge === "bottom") {
-    edgeLength = board.width
-    isHorizontal = true
-    edgeCenter = edge === "top" ? boardTop : boardBottom
-  } else {
-    edgeLength = board.height
-    isHorizontal = false
-    edgeCenter = edge === "right" ? boardRight : boardLeft
-  }
-
-  const totalTabWidth = options.tabLength
-  let fixedSpacing = options.boardGap
-  if (options.mouseBites) {
-    const mouseBiteDiameter = options.tabWidth * 0.45
-    const mouseBiteSpacing = mouseBiteDiameter * 0.1
-    // Ensure at least 2 mouse bites per gap
-    const mouseBitesPerGap = Math.max(2, Math.ceil(options.tabLength / 2))
-
-    // the spacing between tabs should depend on all mouse bite data
-    const minSpacingForMouseBites =
-      mouseBitesPerGap * mouseBiteDiameter +
-      (mouseBitesPerGap - 1) * mouseBiteSpacing
-    fixedSpacing = minSpacingForMouseBites * 1.1
-  }
-
-  let numTabs = Math.floor(
-    (edgeLength - fixedSpacing) / (totalTabWidth + fixedSpacing),
-  )
-
-  if (numTabs < 1 && edgeLength >= totalTabWidth) {
-    numTabs = 1
-  }
-
-  if (numTabs === 0) return tabs
-
-  const actualSpacing = fixedSpacing
-
-  const boardStart = -edgeLength / 2
-  const boardEnd = edgeLength / 2
-
-  for (let i = 0; i < numTabs; i++) {
-    const offsetAlongEdge =
-      boardStart +
-      actualSpacing +
-      i * (totalTabWidth + actualSpacing) +
-      totalTabWidth / 2
-
-    const isFirstTab = i === 0
-    const isLastTab = i === numTabs - 1
-    const isCornerTab = isFirstTab || isLastTab
-
-    let axisStart = offsetAlongEdge - totalTabWidth / 2
-    let axisEnd = offsetAlongEdge + totalTabWidth / 2
-
-    if (isCornerTab) {
-      if (isFirstTab) axisStart = boardStart
-      if (isLastTab) axisEnd = boardEnd
-    }
-
-    axisStart = Math.max(axisStart, boardStart)
-    axisEnd = Math.min(axisEnd, boardEnd)
-
-    if (isCornerTab) {
-      if (isFirstTab) axisStart -= options.tabWidth
-      if (isLastTab) axisEnd += options.tabWidth
-    }
-
-    if (axisEnd <= axisStart) continue
-
-    const axisCenterOffset = (axisStart + axisEnd) / 2
-    const axisLength = axisEnd - axisStart
-    const crossAxisOffset =
-      edge === "top" || edge === "right"
-        ? options.tabWidth / 2
-        : -options.tabWidth / 2
-
-    const tabCenter = isHorizontal
-      ? {
-          x: board.center.x + axisCenterOffset,
-          y: edgeCenter + crossAxisOffset,
-        }
-      : {
-          x: edgeCenter + crossAxisOffset,
-          y: board.center.y + axisCenterOffset,
-        }
-
-    const tabWidth = isHorizontal ? axisLength : options.tabWidth
-    const tabHeight = isHorizontal ? options.tabWidth : axisLength
-
-    const newTab: TabCutout = {
-      center: tabCenter,
-      width: tabWidth,
-      height: tabHeight,
-      boardId: `${board.center.x}_${board.center.y}`,
-    }
-
-    let overlapsBoard = false
-    for (const otherBoard of otherBoards) {
-      if (!otherBoard.width || !otherBoard.height) continue
-
-      const boardRect = {
-        center: otherBoard.center,
-        width: otherBoard.width,
-        height: otherBoard.height,
-      }
-      if (rectanglesOverlap(newTab, boardRect)) {
-        overlapsBoard = true
-        break
-      }
-    }
-
-    if (overlapsBoard && !isCornerTab) continue
-
-    tabs.push(newTab)
-  }
-
-  return tabs
-}
-
-function generateMouseBitesForEdge({
-  board,
-  edge,
-  edgeTabs,
-  allBoards,
-  options,
-}: {
-  board: PcbBoard
-  edge: "top" | "bottom" | "left" | "right"
-  edgeTabs: TabCutout[]
-  allBoards: PcbBoard[]
-  options: PanelOptions
-}): MouseBite[] {
-  const mouseBites: MouseBite[] = []
-
-  if (edgeTabs.length === 0) return mouseBites
-
-  if (!board.width || !board.height) return mouseBites
-
-  const boardLeft = board.center.x - board.width / 2
-  const boardRight = board.center.x + board.width / 2
-  const boardBottom = board.center.y - board.height / 2
-  const boardTop = board.center.y + board.height / 2
-
-  const isHorizontal = edge === "top" || edge === "bottom"
-
-  // mouse bite diameter should depend on the tab size
-  const mouseBiteDiameter = options.tabWidth * 0.45
-  // the mouse bite spacing should depend on its diameter
-  const mouseBiteSpacing = mouseBiteDiameter * 0.1
-  // the mouse bites per gap should depend on the tab length only, with a min of 2
-  const mouseBitesPerGap = Math.max(2, Math.ceil(options.tabLength / 2))
-
-  let mouseBitePosition: number
-
-  const radius = mouseBiteDiameter / 2
-
-  if (edge === "top") {
-    mouseBitePosition = boardTop
-  } else if (edge === "bottom") {
-    mouseBitePosition = boardBottom
-  } else if (edge === "right") {
-    mouseBitePosition = boardRight
-  } else {
-    mouseBitePosition = boardLeft
-  }
-
-  const sortedTabs = [...edgeTabs].sort((a, b) => {
-    if (isHorizontal) {
-      return a.center.x - b.center.x
-    } else {
-      return a.center.y - b.center.y
-    }
-  })
-
-  for (let i = 0; i < sortedTabs.length - 1; i++) {
-    const tab1 = sortedTabs[i]
-    const tab2 = sortedTabs[i + 1]
-
-    let gapStart: number
-    let gapEnd: number
-
-    if (isHorizontal) {
-      gapStart = tab1.center.x + tab1.width / 2
-      gapEnd = tab2.center.x - tab2.width / 2
-    } else {
-      gapStart = tab1.center.y + tab1.height / 2
-      gapEnd = tab2.center.y - tab2.height / 2
-    }
-
-    const gapLength = gapEnd - gapStart
-
-    const totalMouseBiteWidth = mouseBitesPerGap * mouseBiteDiameter
-    const totalSpacing = (mouseBitesPerGap - 1) * mouseBiteSpacing
-
-    if (gapLength < totalMouseBiteWidth + totalSpacing) continue
-
-    const gapCenter = (gapStart + gapEnd) / 2
-
-    for (let j = 0; j < mouseBitesPerGap; j++) {
-      const posOffset =
-        (j - (mouseBitesPerGap - 1) / 2) *
-        (mouseBiteDiameter + mouseBiteSpacing)
-
-      const newMouseBite: MouseBite = isHorizontal
-        ? { x: gapCenter + posOffset, y: mouseBitePosition }
-        : { x: mouseBitePosition, y: gapCenter + posOffset }
-
-      const radius = mouseBiteDiameter / 2
-      let overlapsBoard = false
-      for (const otherBoard of allBoards) {
-        if (!otherBoard.width || !otherBoard.height) continue
-        const boardRect = {
-          center: otherBoard.center,
-          width: otherBoard.width,
-          height: otherBoard.height,
-        }
-        if (pointOverlapsRectangle(newMouseBite, radius, boardRect)) {
-          overlapsBoard = true
-          break
-        }
-      }
-      if (overlapsBoard) continue
-
-      mouseBites.push(newMouseBite)
-    }
-  }
-
-  return mouseBites
-}
-
-const generatePanelTabsAndMouseBitesForOutlines = (
+const generateCutoutsAndMousebitesForOutline = (
   outline: Point[],
-  otherBoards: PcbBoard[],
   options: {
-    boardGap: number
-    tabLength: number
-    tabWidth: number
+    gapLength: number
+    cutoutWidth: number
     mouseBites: boolean
     mouseBiteHoleDiameter: number
     mouseBiteHoleSpacing: number
@@ -343,9 +33,8 @@ const generatePanelTabsAndMouseBitesForOutlines = (
   mouseBiteHoles: Point[]
 } => {
   const {
-    boardGap,
-    tabLength, // along edge
-    tabWidth, // extrusion
+    gapLength,
+    cutoutWidth,
     mouseBites,
     mouseBiteHoleDiameter,
     mouseBiteHoleSpacing,
@@ -361,153 +50,135 @@ const generatePanelTabsAndMouseBitesForOutlines = (
   const outlinePolygon = new Flatten.Polygon(
     outline.map((p) => Flatten.point(p.x, p.y)),
   )
-  const otherBoardGeometries = otherBoards.map((b) =>
-    b.outline
-      ? new Flatten.Polygon(b.outline.map((p) => Flatten.point(p.x, p.y)))
-      : b.width && b.height
-        ? new Flatten.Box(
-            b.center.x - b.width / 2,
-            b.center.y - b.height / 2,
-            b.center.x + b.width / 2,
-            b.center.y + b.height / 2,
-          )
-        : null,
-  )
+
+  // Determine winding order. A CCW polygon has its interior to the left of
+  // its segments.
+  let is_ccw: boolean
+  if (outline.length > 2) {
+    const p0 = Flatten.point(outline[0]!.x, outline[0]!.y)
+    const p1 = Flatten.point(outline[1]!.x, outline[1]!.y)
+    const segmentDir = Flatten.vector(p0, p1).normalize()
+    const normalToLeft = segmentDir.rotate(Math.PI / 2)
+    const midPoint = p0.translate(
+      segmentDir.multiply(Flatten.segment(p0, p1).length / 2),
+    )
+    const testPoint = midPoint.translate(normalToLeft.multiply(0.01))
+    is_ccw = outlinePolygon.contains(testPoint)
+  } else {
+    // Fallback for simple cases, though convexity doesn't really apply
+    is_ccw = outlinePolygon.area() > 0
+  }
 
   // Iterate over each segment of the outline
   for (let i = 0; i < outline.length; i++) {
-    const p1 = outline[i]!
-    const p2 = outline[(i + 1) % outline.length]!
+    const p1_ = outline[i]!
+    const p2_ = outline[(i + 1) % outline.length]!
 
-    const segmentVector = Flatten.vector(p2.x - p1.x, p2.y - p1.y)
-    const segmentLength = segmentVector.length
-    // NOTE: boardGap is the "tab length", tabLength is the "gap length"
-    const physicalTabLength = boardGap
-    const cutoutLength = tabLength
-    if (segmentLength < physicalTabLength) continue
+    if (!p1_ || !p2_) continue
 
-    const segmentDirVec = segmentVector.normalize()
+    const p1 = Flatten.point(p1_.x, p1_.y)
+    const p2 = Flatten.point(p2_.x, p2_.y)
 
-    const isHorizontal = Math.abs(segmentVector.y) < 1e-9
-    const isVertical = Math.abs(segmentVector.x) < 1e-9
-    const isAxisAligned = isHorizontal || isVertical
+    const segment = Flatten.segment(p1, p2)
+    const segmentLength = segment.length
+
+    if (segmentLength < 1e-6) continue
+
+    const segmentVec = Flatten.vector(p1, p2)
+    const segmentDir = segmentVec.normalize()
 
     // Determine outward normal
-    let normalVec = segmentDirVec.rotate(Math.PI / 2)
-    const midPoint = Flatten.point(p1.x, p1.y).translate(
-      segmentDirVec.multiply(segmentLength / 2),
-    )
+    let normalVec = segmentDir.rotate(Math.PI / 2)
+    const midPoint = segment.middle()
 
     // Check if normal is pointing inwards, and flip if necessary
-    const testPointInward = midPoint.translate(normalVec.multiply(0.01))
-    if (outlinePolygon.contains(testPointInward)) {
+    const testPoint = midPoint.translate(normalVec.multiply(0.01))
+    if (outlinePolygon.contains(testPoint)) {
       normalVec = normalVec.multiply(-1)
     }
 
-    // Check if the edge is adjacent to another board
-    const testPointOutward = midPoint.translate(
-      normalVec.multiply((tabWidth + physicalTabLength) / 2),
-    )
-    let isExterior = true
-    for (const geom of otherBoardGeometries) {
-      if (geom?.contains(testPointOutward)) {
-        isExterior = false
-        break
-      }
-    }
-    if (!isExterior) continue
+    const numBitesInGap = 2
+    const totalBitesLength =
+      numBitesInGap * mouseBiteHoleDiameter +
+      (numBitesInGap - 1) * mouseBiteHoleSpacing
 
-    const numTabs = Math.max(
-      1,
-      Math.floor(segmentLength / (physicalTabLength + cutoutLength)),
-    )
-
-    const totalContentLength = numTabs * physicalTabLength
-    const totalGapLength = segmentLength - totalContentLength
-    const gapSize = totalGapLength / (numTabs + 1)
-    if (gapSize < 0) continue
-
-    const tabsOnSegment: { start: number; end: number }[] = []
-
-    for (let j = 0; j < numTabs; j++) {
-      const tabStartDist = gapSize * (j + 1) + physicalTabLength * j
-      tabsOnSegment.push({
-        start: tabStartDist,
-        end: tabStartDist + physicalTabLength,
-      })
-    }
-
-    const extrusion = normalVec.multiply(tabWidth)
-
-    // Create cutouts in the gaps between tabs
-    for (let j = 0; j <= numTabs; j++) {
-      const gapStartDist = j === 0 ? 0 : tabsOnSegment[j - 1]!.end
-      const gapEndDist = j === numTabs ? segmentLength : tabsOnSegment[j]!.start
-      const gapLength = gapEndDist - gapStartDist
-      if (gapLength < 1e-6) continue
-
-      if (isAxisAligned) {
-        const width = isHorizontal ? gapLength : tabWidth
-        const height = isHorizontal ? tabWidth : gapLength
-        const gapCenterAlongSegment = Flatten.point(p1.x, p1.y).translate(
-          segmentDirVec.multiply(gapStartDist + gapLength / 2),
-        )
-        const center = gapCenterAlongSegment.translate(extrusion.multiply(0.5))
-
-        tabCutouts.push({
-          type: "pcb_cutout",
-          shape: "rect",
-          center,
-          width,
-          height,
-          corner_radius: Math.min(width, height) / 2,
-        } as any)
-      } else {
-        const width = gapLength
-        const height = tabWidth
-        const gapCenterAlongSegment = Flatten.point(p1.x, p1.y).translate(
-          segmentDirVec.multiply(gapStartDist + gapLength / 2),
-        )
-        const center = gapCenterAlongSegment.translate(extrusion.multiply(0.5))
-
-        const rotationDeg = (segmentDirVec.slope * 180) / Math.PI
-
-        tabCutouts.push({
-          type: "pcb_cutout",
-          shape: "rect",
-          center,
-          width,
-          height,
-          rotation: rotationDeg,
-          corner_radius: Math.min(width, height) / 2,
-        } as any)
-      }
-    }
-
+    let effectiveGapLength
     if (mouseBites) {
-      const holeSpacing = mouseBiteHoleDiameter + mouseBiteHoleSpacing
-      // Create mousebites on the tabs
-      for (const tab of tabsOnSegment) {
-        const tabLength = tab.end - tab.start
-        if (tabLength < holeSpacing) continue
+      effectiveGapLength = totalBitesLength
+    } else {
+      effectiveGapLength = gapLength
+    }
+    effectiveGapLength = Math.min(effectiveGapLength, segmentLength * 0.9)
 
-        const numBitesInTab = Math.floor(tabLength / holeSpacing)
-        if (numBitesInTab <= 0) continue
+    const gapStartDist = (segmentLength - effectiveGapLength) / 2
+    const gapEndDist = gapStartDist + effectiveGapLength
 
-        const biteStartOffset =
-          tab.start + (tabLength - (numBitesInTab - 1) * holeSpacing) / 2
+    // Add mousebites in the gap
+    if (mouseBites) {
+      const holeAndSpacing = mouseBiteHoleDiameter + mouseBiteHoleSpacing
+      if (effectiveGapLength >= totalBitesLength && holeAndSpacing > 0) {
+        const firstBiteCenterOffsetInGap =
+          (effectiveGapLength - totalBitesLength) / 2 +
+          mouseBiteHoleDiameter / 2
+        const firstBiteDistFromP1 = gapStartDist + firstBiteCenterOffsetInGap
 
-        for (let k = 0; k < numBitesInTab; k++) {
-          const biteDist = biteStartOffset + k * holeSpacing
-          const pos = Flatten.point(p1.x, p1.y).translate(
-            segmentDirVec.multiply(biteDist),
-          )
-          mouseBiteHoles.push({
-            x: pos.x,
-            y: pos.y,
-          })
+        for (let k = 0; k < numBitesInGap; k++) {
+          const biteDist = firstBiteDistFromP1 + k * holeAndSpacing
+          const pos = p1.translate(segmentDir.multiply(biteDist))
+          mouseBiteHoles.push({ x: pos.x, y: pos.y })
         }
       }
+    }
+
+    // Check convexity of start and end points of the segment for corner extension
+    const p_prev_ = outline[(i - 1 + outline.length) % outline.length]!
+    const p_next_ = outline[(i + 2) % outline.length]!
+    let start_ext = 0
+    let end_ext = 0
+
+    if (p_prev_ && p_next_) {
+      const vec_in_p1 = Flatten.vector(Flatten.point(p_prev_.x, p_prev_.y), p1)
+      const p1_cross = vec_in_p1.cross(segmentVec)
+      const is_p1_convex = is_ccw ? p1_cross > 1e-9 : p1_cross < -1e-9
+
+      const vec_out_p2 = Flatten.vector(p2, Flatten.point(p_next_.x, p_next_.y))
+      const p2_cross = segmentVec.cross(vec_out_p2)
+      const is_p2_convex = is_ccw ? p2_cross > 1e-9 : p2_cross < -1e-9
+
+      start_ext = is_p1_convex ? cutoutWidth : 0
+      end_ext = is_p2_convex ? cutoutWidth : 0
+    }
+
+    // Create cutouts on both sides of the gap, extending them to overlap at corners
+    const cutoutParts = [
+      { start: 0 - start_ext, end: gapStartDist },
+      { start: gapEndDist, end: segmentLength + end_ext },
+    ]
+
+    const extrusion = normalVec.multiply(cutoutWidth)
+
+    for (const part of cutoutParts) {
+      const partLength = part.end - part.start
+      if (partLength < 1e-6) continue
+
+      const partCenterAlongSegment = p1.translate(
+        segmentDir.multiply(part.start + partLength / 2),
+      )
+      const center = partCenterAlongSegment.translate(extrusion.multiply(0.5))
+
+      const width = partLength
+      const height = cutoutWidth
+      const rotationDeg = (segmentDir.slope * 180) / Math.PI
+
+      tabCutouts.push({
+        type: "pcb_cutout",
+        shape: "rect",
+        center: { x: center.x, y: center.y },
+        width,
+        height,
+        rotation: rotationDeg,
+        corner_radius: cutoutWidth / 2,
+      } as any)
     }
   }
 
@@ -524,57 +195,44 @@ export function generatePanelTabsAndMouseBites(
   const finalTabCutouts: PcbCutout[] = []
   const allMouseBites: MouseBite[] = []
 
-  for (let boardIndex = 0; boardIndex < boards.length; boardIndex++) {
-    const board = boards[boardIndex]!
-    const otherBoards = boards.filter((_, i) => i !== boardIndex)
+  const { tabWidth, tabLength, mouseBites: useMouseBites } = options
 
+  const processedBoards: PcbBoard[] = boards.map((board) => {
+    if (
+      (!board.outline || board.outline.length === 0) &&
+      board.width &&
+      board.height
+    ) {
+      const w2 = board.width / 2
+      const h2 = board.height / 2
+      return {
+        ...board,
+        outline: [
+          { x: board.center.x - w2, y: board.center.y - h2 },
+          { x: board.center.x + w2, y: board.center.y - h2 },
+          { x: board.center.x + w2, y: board.center.y + h2 },
+          { x: board.center.x - w2, y: board.center.y + h2 },
+        ],
+      }
+    }
+    return board
+  })
+
+  for (const board of processedBoards) {
     if (board.outline && board.outline.length > 0) {
-      const mouseBiteDiameter = options.tabWidth * 0.45
+      const mouseBiteDiameter = tabWidth * 0.45
       const mouseBiteSpacing = mouseBiteDiameter * 0.1
-      const generated = generatePanelTabsAndMouseBitesForOutlines(
-        board.outline,
-        otherBoards,
-        {
-          ...options,
-          mouseBiteHoleDiameter: mouseBiteDiameter,
-          mouseBiteHoleSpacing: mouseBiteSpacing,
-        },
-      )
+
+      const generated = generateCutoutsAndMousebitesForOutline(board.outline, {
+        gapLength: tabLength,
+        cutoutWidth: tabWidth,
+        mouseBites: useMouseBites,
+        mouseBiteHoleDiameter: mouseBiteDiameter,
+        mouseBiteHoleSpacing: mouseBiteSpacing,
+      })
 
       finalTabCutouts.push(...generated.tabCutouts)
       allMouseBites.push(...generated.mouseBiteHoles)
-    } else {
-      for (const edge of ["top", "bottom", "left", "right"] as const) {
-        const edgeTabs = generateTabsForEdge({
-          board,
-          edge,
-          otherBoards,
-          options,
-        })
-
-        for (const tab of edgeTabs) {
-          const tabWidthDimension = Math.min(tab.width, tab.height)
-          finalTabCutouts.push({
-            type: "pcb_cutout",
-            shape: "rect",
-            center: tab.center,
-            width: tab.width,
-            height: tab.height,
-            corner_radius: tabWidthDimension / 2,
-          } as PcbCutoutRect)
-        }
-
-        if (options.mouseBites) {
-          const edgeMouseBites = generateMouseBitesForEdge({
-            board,
-            edge,
-            edgeTabs,
-            allBoards: otherBoards,
-            options,
-          })
-          allMouseBites.push(...edgeMouseBites)
-        }
-      }
     }
   }
 
@@ -583,7 +241,7 @@ export function generatePanelTabsAndMouseBites(
     pcb_cutout_id: `panel_tab_${index}`,
   }))
 
-  const mouseBiteDiameter = options.tabWidth * 0.45
+  const mouseBiteDiameter = tabWidth * 0.45
   const mouseBiteHoles: PcbHoleCircle[] = allMouseBites.map((bite, index) => ({
     type: "pcb_hole",
     pcb_hole_id: `panel_mouse_bite_${index}`,
