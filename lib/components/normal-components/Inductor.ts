@@ -7,6 +7,7 @@ import {
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import { formatSiUnit } from "format-si-unit"
+import type { SourceSimpleInductor } from "circuit-json"
 
 export class Inductor extends NormalComponent<
   typeof inductorProps,
@@ -47,7 +48,7 @@ export class Inductor extends NormalComponent<
       display_inductance: this._getSchematicSymbolDisplayValue(),
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
-    } as any)
+    } as Omit<SourceSimpleInductor, "source_component_id" | "type">)
     this.source_component_id = source_component.source_component_id
   }
 }
