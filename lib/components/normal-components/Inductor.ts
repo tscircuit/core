@@ -1,5 +1,4 @@
 import { inductorProps } from "@tscircuit/props"
-import type { SourceSimpleInductor } from "circuit-json"
 import {
   FTYPE,
   type BaseSymbolName,
@@ -8,6 +7,7 @@ import {
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
 import { formatSiUnit } from "format-si-unit"
+import type { SourceSimpleInductor } from "circuit-json"
 
 export class Inductor extends NormalComponent<
   typeof inductorProps,
@@ -44,10 +44,11 @@ export class Inductor extends NormalComponent<
     const source_component = db.source_component.insert({
       name: this.name,
       ftype: FTYPE.simple_inductor,
-      inductance: props.inductance,
+      inductance: this.props.inductance,
+      display_inductance: this._getSchematicSymbolDisplayValue(),
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
-    } as SourceSimpleInductor)
+    } as Omit<SourceSimpleInductor, "source_component_id" | "type">)
     this.source_component_id = source_component.source_component_id
   }
 }
