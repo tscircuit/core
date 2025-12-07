@@ -25,10 +25,7 @@ export class Inductor extends NormalComponent<
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
-    const inputInductance = this.props.inductance
-    return typeof inputInductance === "string"
-      ? inputInductance
-      : `${formatSiUnit(this._parsedProps.inductance)}H`
+    return `${formatSiUnit(this._parsedProps.inductance)}H`
   }
 
   initPorts() {
