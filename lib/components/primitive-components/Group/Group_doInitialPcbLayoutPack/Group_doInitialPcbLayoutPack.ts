@@ -6,21 +6,11 @@ import {
   getGraphicsFromPackOutput,
   type PackInput,
 } from "calculate-packing"
-import {
-  type AnyCircuitElement,
-  type PcbSmtPad,
-  type PcbPlatedHole,
-  type PcbComponent,
-  length,
-} from "circuit-json"
+import { type PcbComponent, length } from "circuit-json"
 import Debug from "debug"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
-import {
-  getObstacleDimensionsFromSmtPad,
-  getObstacleDimensionsFromPlatedHole,
-} from "lib/utils/packing/getObstacleDimensionsFromElement"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
@@ -45,9 +35,9 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     { left: number; right: number; top: number; bottom: number }
   > = {}
 
-  // Collect pcb_component_ids that should be excluded from packing
+  // Collect pcb_component_ids that should be treated as static by the packer
   // Only collect from DIRECT children, not all descendants
-  const excludedPcbComponentIds = new Set<string>()
+  const staticPcbComponentIds = new Set<string>()
 
   // Recursively collect margins from all descendants
   const collectMargins = (comp: any) => {
@@ -76,7 +66,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       childIsGroupOrNormalComponent.isRelativelyPositioned?.()
     ) {
       if (childIsGroupOrNormalComponent.pcb_component_id) {
-        excludedPcbComponentIds.add(
+        staticPcbComponentIds.add(
           childIsGroupOrNormalComponent.pcb_component_id,
         )
       }
@@ -88,102 +78,35 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     }
   }
 
-  // Filter out relatively positioned components and groups from the circuit JSON
-  const filteredCircuitJson = db
-    .toArray()
-    .filter((element: AnyCircuitElement) => {
-      if (element.type === "pcb_component") {
-        return !excludedPcbComponentIds.has(element.pcb_component_id)
-      }
-      if (element.type === "pcb_group") {
-        return !excludedPcbGroupIds.has(element.pcb_group_id)
-      }
-      return true
-    })
+  const isDescendantGroup = (
+    db: any,
+    groupId: string,
+    ancestorId: string,
+  ): boolean => {
+    if (groupId === ancestorId) return true
+    const group = db.source_group.get(groupId)
+    if (!group || !group.parent_source_group_id) return false
+    return isDescendantGroup(db, group.parent_source_group_id, ancestorId)
+  }
 
-  // Collect pads and holes from relatively positioned components to use as obstacles
-  const obstaclesFromRelativelyPositionedComponents: Array<{
-    obstacleId: string
-    absoluteCenter: { x: number; y: number }
-    width: number
-    height: number
-  }> = []
-
-  for (const pcb_component_id of excludedPcbComponentIds) {
-    const component = db
-      .toArray()
-      .find(
-        (el): el is PcbComponent =>
-          el.type === "pcb_component" &&
-          el.pcb_component_id === pcb_component_id,
+  // Mark all components belonging to relatively positioned groups as static
+  if (excludedPcbGroupIds.size > 0) {
+    for (const element of db.toArray()) {
+      if (element.type !== "pcb_component") continue
+      const sourceComponent = db.source_component.get(
+        (element as PcbComponent).source_component_id,
       )
-    if (!component) continue
-
-    const componentX = component.center.x
-    const componentY = component.center.y
-
-    // Collect SMT pads
-    const smtpads = db
-      .toArray()
-      .filter(
-        (el): el is PcbSmtPad =>
-          el.type === "pcb_smtpad" && el.pcb_component_id === pcb_component_id,
-      )
-
-    for (const pad of smtpads) {
-      const dimensions = getObstacleDimensionsFromSmtPad(pad)
-      if (!dimensions || dimensions.width === 0 || dimensions.height === 0) {
-        continue
+      if (!sourceComponent?.source_group_id) continue
+      for (const groupId of excludedPcbGroupIds) {
+        if (isDescendantGroup(db, sourceComponent.source_group_id, groupId)) {
+          staticPcbComponentIds.add(element.pcb_component_id)
+        }
       }
-
-      // Polygon pads don't have x/y, they have points
-      let centerX: number
-      let centerY: number
-      if (pad.shape === "polygon") {
-        // For polygons, calculate center from bounding box
-        const xs = pad.points.map((p) => p.x)
-        const ys = pad.points.map((p) => p.y)
-        centerX = componentX + (Math.min(...xs) + Math.max(...xs)) / 2
-        centerY = componentY + (Math.min(...ys) + Math.max(...ys)) / 2
-      } else {
-        centerX = componentX + pad.x
-        centerY = componentY + pad.y
-      }
-
-      obstaclesFromRelativelyPositionedComponents.push({
-        obstacleId: pad.pcb_smtpad_id,
-        absoluteCenter: { x: centerX, y: centerY },
-        width: dimensions.width,
-        height: dimensions.height,
-      })
-    }
-
-    // Collect plated holes
-    const platedHoles = db
-      .toArray()
-      .filter(
-        (el): el is PcbPlatedHole =>
-          el.type === "pcb_plated_hole" &&
-          el.pcb_component_id === pcb_component_id,
-      )
-
-    for (const hole of platedHoles) {
-      const dimensions = getObstacleDimensionsFromPlatedHole(hole)
-      if (!dimensions || dimensions.width === 0 || dimensions.height === 0) {
-        continue
-      }
-
-      const centerX = componentX + hole.x
-      const centerY = componentY + hole.y
-
-      obstaclesFromRelativelyPositionedComponents.push({
-        obstacleId: hole.pcb_plated_hole_id,
-        absoluteCenter: { x: centerX, y: centerY },
-        width: dimensions.width,
-        height: dimensions.height,
-      })
     }
   }
+
+  // Keep all circuit elements; static components will remain fixed during packing
+  const filteredCircuitJson = db.toArray()
 
   // Calculate bounds if width and height are specified
   let bounds:
@@ -207,8 +130,9 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     ...convertPackOutputToPackInput(
       convertCircuitJsonToPackOutput(filteredCircuitJson, {
         source_group_id: group.source_group_id!,
-        shouldAddInnerObstacles: true,
+        // shouldAddInnerObstacles: true,
         chipMarginsMap,
+        staticPcbComponentIds: Array.from(staticPcbComponentIds),
       }),
     ),
     // @ts-expect-error we're missing some pack order strategies
@@ -216,7 +140,6 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     placementStrategy:
       packPlacementStrategy ?? "minimum_sum_squared_distance_to_network",
     minGap: gapMm,
-    obstacles: obstaclesFromRelativelyPositionedComponents,
     bounds,
   }
 
