@@ -1,10 +1,18 @@
-import type { AnyCircuitElement, PcbComponent, PcbBoard } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  PcbComponent,
+  PcbBoard,
+  PcbGroup,
+} from "circuit-json"
 import type { NormalComponent } from "./NormalComponent"
-import { transformPCBElements } from "@tscircuit/circuit-json-util"
+import {
+  transformPCBElements,
+  type CircuitJsonUtilObjects,
+} from "@tscircuit/circuit-json-util"
 import { translate } from "transformation-matrix"
 
 const isDescendantGroup = (
-  db: any,
+  db: CircuitJsonUtilObjects,
   groupId: string,
   ancestorId: string,
 ): boolean => {
@@ -16,7 +24,7 @@ const isDescendantGroup = (
 }
 
 const collectPcbElementsForGroup = (
-  db: any,
+  db: CircuitJsonUtilObjects,
   rootGroupId: string,
 ): AnyCircuitElement[] => {
   return db.toArray().filter((elm: AnyCircuitElement) => {
@@ -132,7 +140,7 @@ export const NormalComponent__repositionOnPcb = (
   if (component.source_group_id) {
     const group = db.pcb_group
       .list()
-      .find((g: any) => g.source_group_id === component.source_group_id)
+      .find((g: PcbGroup) => g.source_group_id === component.source_group_id)
     if (!group)
       throw new Error(
         `Cannot reposition component ${component.getString()}: no pcb_group found`,
