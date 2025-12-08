@@ -130,7 +130,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     ...convertPackOutputToPackInput(
       convertCircuitJsonToPackOutput(filteredCircuitJson, {
         source_group_id: group.source_group_id!,
-        shouldAddInnerObstacles: true,
+        // shouldAddInnerObstacles: true,
         chipMarginsMap,
         staticPcbComponentIds: Array.from(staticPcbComponentIds),
       }),
