@@ -7,4 +7,5 @@ export type Obstacle = {
   height: number
   connectedTo: string[]
   netIsAssignable?: boolean
+  offBoardConnectsTo?: string[]
 }

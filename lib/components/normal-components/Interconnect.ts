@@ -25,6 +25,22 @@ export class Interconnect extends NormalComponent<typeof interconnectProps> {
     return INTERCONNECT_STANDARD_FOOTPRINTS[standard] ?? null
   }
 
+  doInitialPcbComponentRender() {
+    super.doInitialPcbComponentRender()
+    if (!this.pcb_component_id) return
+    const { db } = this.root!
+
+    const netIsAssignable = (this.props as any).netIsAssignable ?? true
+    const offBoardConnectsTo = (this.props as any).offBoardConnectsTo ?? [
+      `INTERCONNECT_TELEPORT_NET_${this.source_component_id}`,
+    ]
+
+    db.pcb_component.update(this.pcb_component_id, {
+      net_is_assignable: netIsAssignable,
+      off_board_connects_to: offBoardConnectsTo,
+    })
+  }
+
   doInitialSourceRender() {
     const { db } = this.root!
 

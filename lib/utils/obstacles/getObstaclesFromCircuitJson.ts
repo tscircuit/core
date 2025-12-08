@@ -22,8 +22,26 @@ export const getObstaclesFromCircuitJson = (
         )
       : idList
   const obstacles: Obstacle[] = []
+
+  const componentMap = new Map<string, AnyCircuitElement>()
+  for (const element of soup) {
+    if (element.type === "pcb_component") {
+      componentMap.set(element.pcb_component_id, element)
+    }
+  }
+
   for (const element of soup) {
     if (element.type === "pcb_smtpad") {
+      const parentComponent = element.pcb_component_id
+        ? componentMap.get(element.pcb_component_id)
+        : undefined
+      const netIsAssignable = Boolean(
+        (parentComponent as any)?.net_is_assignable ??
+          (parentComponent as any)?.netIsAssignable,
+      )
+      const offBoardConnectsTo =
+        (parentComponent as any)?.off_board_connects_to ??
+        (parentComponent as any)?.offBoardConnectsTo
       if (element.shape === "circle") {
         obstacles.push({
           // @ts-ignore
@@ -36,6 +54,8 @@ export const getObstaclesFromCircuitJson = (
           width: element.radius * 2,
           height: element.radius * 2,
           connectedTo: withNetId([element.pcb_smtpad_id]),
+          netIsAssignable: netIsAssignable || undefined,
+          offBoardConnectsTo: offBoardConnectsTo || undefined,
         })
       } else if (element.shape === "rect") {
         obstacles.push({
@@ -48,6 +68,8 @@ export const getObstaclesFromCircuitJson = (
           width: element.width,
           height: element.height,
           connectedTo: withNetId([element.pcb_smtpad_id]),
+          netIsAssignable: netIsAssignable || undefined,
+          offBoardConnectsTo: offBoardConnectsTo || undefined,
         })
       } else if (element.shape === "rotated_rect") {
         const rotatedRect: RotatedRect = {
@@ -65,6 +87,8 @@ export const getObstaclesFromCircuitJson = (
             width: rect.width,
             height: rect.height,
             connectedTo: withNetId([element.pcb_smtpad_id]),
+            netIsAssignable: netIsAssignable || undefined,
+            offBoardConnectsTo: offBoardConnectsTo || undefined,
           })
         }
       }
@@ -198,6 +222,17 @@ export const getObstaclesFromCircuitJson = (
         })
       }
     } else if (element.type === "pcb_plated_hole") {
+      const parentComponent = element.pcb_component_id
+        ? componentMap.get(element.pcb_component_id)
+        : undefined
+      const netIsAssignable = Boolean(
+        (parentComponent as any)?.net_is_assignable ??
+          (parentComponent as any)?.netIsAssignable,
+      )
+      const offBoardConnectsTo =
+        (parentComponent as any)?.off_board_connects_to ??
+        (parentComponent as any)?.offBoardConnectsTo
+
       if (element.shape === "circle") {
         obstacles.push({
           // @ts-ignore
@@ -210,6 +245,8 @@ export const getObstaclesFromCircuitJson = (
           width: element.outer_diameter,
           height: element.outer_diameter,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
+          netIsAssignable: netIsAssignable || undefined,
+          offBoardConnectsTo: offBoardConnectsTo || undefined,
         })
       } else if (element.shape === "circular_hole_with_rect_pad") {
         obstacles.push({
@@ -223,6 +260,8 @@ export const getObstaclesFromCircuitJson = (
           width: element.rect_pad_width,
           height: element.rect_pad_height,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
+          netIsAssignable: netIsAssignable || undefined,
+          offBoardConnectsTo: offBoardConnectsTo || undefined,
         })
       } else if (element.shape === "oval" || element.shape === "pill") {
         obstacles.push({
@@ -236,6 +275,8 @@ export const getObstaclesFromCircuitJson = (
           width: element.outer_width,
           height: element.outer_height,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
+          netIsAssignable: netIsAssignable || undefined,
+          offBoardConnectsTo: offBoardConnectsTo || undefined,
         })
       } else if (element.shape === "hole_with_polygon_pad") {
         // Calculate bounding box from pad outline
@@ -263,6 +304,8 @@ export const getObstaclesFromCircuitJson = (
             width: maxX - minX,
             height: maxY - minY,
             connectedTo: withNetId([element.pcb_plated_hole_id]),
+            netIsAssignable: netIsAssignable || undefined,
+            offBoardConnectsTo: offBoardConnectsTo || undefined,
           })
         }
       }
