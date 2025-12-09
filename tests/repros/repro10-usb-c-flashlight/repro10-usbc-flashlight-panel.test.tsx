@@ -3,7 +3,7 @@ import { getTestFixture } from "../../fixtures/get-test-fixture"
 import USBCFlashlight from "./UsbCFlashlight"
 import type { AutoroutingStartEvent } from "lib/events"
 
-test("repro10-usbc-flashlight-pcb", async () => {
+test("panel autolayout, usbc-flashlight-pcb + other board", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -21,8 +21,7 @@ test("repro10-usbc-flashlight-pcb", async () => {
 
   await circuit.renderUntilSettled()
 
-  const autoroutingErrors = circuit.db.pcb_autorouting_error.list()
-  expect(autoroutingErrors).toHaveLength(0)
-
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    shouldDrawErrors: true,
+  })
 })

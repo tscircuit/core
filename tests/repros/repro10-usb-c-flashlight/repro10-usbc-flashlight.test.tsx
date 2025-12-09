@@ -13,6 +13,9 @@ test("repro10-usbc-flashlight-pcb", async () => {
   const autoroutingErrors = circuit.db.pcb_autorouting_error.list()
   expect(autoroutingErrors).toHaveLength(0)
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    shouldDrawErrors: true,
+  })
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
