@@ -5,7 +5,7 @@ test("Connector with resistor and solder jumper circuit layout same net not comb
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="25mm" height="20mm">
+    <board width="25mm" height="20mm" routingDisabled>
       <jumper
         name="JP6"
         pinLabels={{

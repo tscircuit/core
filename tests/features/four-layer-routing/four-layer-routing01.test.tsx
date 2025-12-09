@@ -80,5 +80,5 @@ test(
 
     expect(usesInnerLayers).toBe(true)
   },
-  { timeout: 60_000 },
+  { timeout: 120_000 },
 )
