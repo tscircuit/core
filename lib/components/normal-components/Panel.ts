@@ -4,7 +4,6 @@ import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Group } from "../primitive-components/Group/Group"
 import {
   generatePanelTabsAndMouseBites,
-  DEFAULT_PANEL_MARGIN,
   DEFAULT_TAB_LENGTH,
   DEFAULT_TAB_WIDTH,
 } from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
@@ -89,13 +88,33 @@ export class Panel extends Group<typeof panelProps> {
           height: distance.parse(this._parsedProps.height),
         })
       } else if (gridWidth > 0 || gridHeight > 0) {
+        const {
+          edgePadding: edgePaddingProp,
+          edgePaddingLeft: edgePaddingLeftProp,
+          edgePaddingRight: edgePaddingRightProp,
+          edgePaddingTop: edgePaddingTopProp,
+          edgePaddingBottom: edgePaddingBottomProp,
+        } = this._parsedProps
+
+        const edgePadding = distance.parse(edgePaddingProp ?? 5)
+        const edgePaddingLeft = distance.parse(
+          edgePaddingLeftProp ?? edgePadding,
+        )
+        const edgePaddingRight = distance.parse(
+          edgePaddingRightProp ?? edgePadding,
+        )
+        const edgePaddingTop = distance.parse(edgePaddingTopProp ?? edgePadding)
+        const edgePaddingBottom = distance.parse(
+          edgePaddingBottomProp ?? edgePadding,
+        )
+
         db.pcb_panel.update(this.pcb_panel_id!, {
           width: hasExplicitWidth
             ? distance.parse(this._parsedProps.width)
-            : gridWidth + 2 * DEFAULT_PANEL_MARGIN,
+            : gridWidth + edgePaddingLeft + edgePaddingRight,
           height: hasExplicitHeight
             ? distance.parse(this._parsedProps.height)
-            : gridHeight + 2 * DEFAULT_PANEL_MARGIN,
+            : gridHeight + edgePaddingTop + edgePaddingBottom,
         })
       }
     }

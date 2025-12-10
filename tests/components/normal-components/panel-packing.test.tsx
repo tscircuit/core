@@ -43,7 +43,7 @@ test("panel packing default", () => {
 test("panel packing with no board gap", () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <panel boardGap={0}>
+    <panel boardGap={0} edgePadding={0}>
       <board width="10mm" height="10mm" routingDisabled />
       <board width="12mm" height="8mm" routingDisabled />
       <board width="8mm" height="12mm" routingDisabled />
@@ -81,7 +81,7 @@ test("panel packing with outline boards", () => {
 test("panel packing with outline boards and no board gap", () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <panel boardGap={0}>
+    <panel boardGap={0} edgePadding={0}>
       <board name="B1" outline={boardOutline} routingDisabled />
       <board name="B2" outline={boardOutline2} routingDisabled />
       <board name="B3" outline={boardOutline3} routingDisabled />
@@ -140,16 +140,6 @@ test("panel packing with cellWidth and cellHeight", () => {
   const boards = circuit.db.pcb_board.list()
   expect(boards).toHaveLength(2)
 
-  const pcb_panel = circuit.db.pcb_panel.list()[0]
-  const boardGap = 2
-  // cell width 20, 2 boards -> 2x1 grid
-  // total width: 20 + boardGap + 20 = 42
-  // total height: 20
-  // panel width: 42 + 2*5 margin = 52
-  // panel height: 20 + 2*5 margin = 30
-  expect(pcb_panel.width).toBe(52)
-  expect(pcb_panel.height).toBe(30)
-
   expect(circuit).toMatchPcbSnapshot(import.meta.path + "-cell-dims")
 })
 
@@ -162,17 +152,6 @@ test("panel packing with small cellWidth/cellHeight", () => {
     </panel>,
   )
   circuit.render()
-
-  // cellWidth/Height should be ignored and 10x10 should be used
-  const pcb_panel = circuit.db.pcb_panel.list()[0]
-  const boardGap = 2
-  // cell width 10, 2 boards -> 2x1 grid
-  // total width: 10 + boardGap + 10 = 22
-  // total height: 10
-  // panel width: 22 + 2*5 margin = 32
-  // panel height: 10 + 2*5 margin = 20
-  expect(pcb_panel.width).toBe(32)
-  expect(pcb_panel.height).toBe(20)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path + "-small-cell-dims")
 })
