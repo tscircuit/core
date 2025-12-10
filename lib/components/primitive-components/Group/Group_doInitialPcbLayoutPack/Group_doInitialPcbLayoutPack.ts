@@ -5,6 +5,7 @@ import {
   convertPackOutputToPackInput,
   getGraphicsFromPackOutput,
   type PackInput,
+  type PackOutput,
 } from "calculate-packing"
 import { type PcbComponent, length } from "circuit-json"
 import Debug from "debug"
@@ -18,6 +19,12 @@ const debug = Debug("Group_doInitialPcbLayoutPack")
 export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const { db } = group.root!
   const { _parsedProps: props } = group
+
+  // Emit packing:start event
+  group.root?.emit("packing:start", {
+    subcircuit_id: group.subcircuit_id,
+    componentDisplayName: group.getString(),
+  })
 
   const {
     packOrderStrategy,
@@ -158,7 +165,19 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     })
   }
 
-  const packOutput = pack(packInput)
+  let packOutput: PackOutput
+  try {
+    packOutput = pack(packInput)
+  } catch (error) {
+    group.root?.emit("packing:error", {
+      subcircuit_id: group.subcircuit_id,
+      componentDisplayName: group.getString(),
+      error: {
+        message: error instanceof Error ? error.message : String(error),
+      },
+    })
+    throw error
+  }
 
   if (debug.enabled && global?.debugGraphics) {
     const graphics = getGraphicsFromPackOutput(packOutput)
@@ -167,4 +186,10 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
 
   applyPackOutput(group, packOutput, clusterMap)
+
+  // Emit packing:end event
+  group.root?.emit("packing:end", {
+    subcircuit_id: group.subcircuit_id,
+    componentDisplayName: group.getString(),
+  })
 }
