@@ -404,11 +404,14 @@ export class Board
       const minY = Math.min(...yValues)
       const maxY = Math.max(...yValues)
 
+      const outlineCenterX = (minX + maxX) / 2
+      const outlineCenterY = (minY + maxY) / 2
+
       computedWidth = maxX - minX
       computedHeight = maxY - minY
       center = {
-        x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
-        y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
+        x: outlineCenterX + (props.outlineOffsetX ?? 0),
+        y: outlineCenterY + (props.outlineOffsetY ?? 0),
       }
     }
 
@@ -525,6 +528,28 @@ export class Board
         renderId: this._renderId,
         phase,
       })
+    }
+  }
+
+  _repositionOnPcb(position: { x: number; y: number }): void {
+    super._repositionOnPcb(position)
+
+    if (this.pcb_board_id) {
+      const { db } = this.root!
+      const pcb_board = db.pcb_board.get(this.pcb_board_id)
+      if (pcb_board?.center && pcb_board.outline) {
+        const deltaX = position.x - pcb_board.center.x
+        const deltaY = position.y - pcb_board.center.y
+
+        const newOutline = pcb_board.outline.map((p) => ({
+          x: p.x + deltaX,
+          y: p.y + deltaY,
+        }))
+
+        db.pcb_board.update(this.pcb_board_id, {
+          outline: newOutline,
+        })
+      }
     }
   }
 }
