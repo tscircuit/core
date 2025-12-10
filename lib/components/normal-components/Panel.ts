@@ -9,6 +9,7 @@ import {
   DEFAULT_TAB_WIDTH,
 } from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
 import { Board } from "./Board"
+import { packBoardsIntoGrid } from "../../utils/panels/pack-boards-into-grid"
 
 export class Panel extends Group<typeof panelProps> {
   pcb_panel_id: string | null = null
@@ -55,103 +56,27 @@ export class Panel extends Group<typeof panelProps> {
     if (unpositionedBoards.length > 0 && !hasAnyPositionedBoards) {
       const tabWidth = this._parsedProps.tabWidth ?? DEFAULT_TAB_WIDTH
       const boardGap = this._parsedProps.boardGap ?? tabWidth
-      const gridCols = Math.ceil(Math.sqrt(unpositionedBoards.length))
-      const gridRows = Math.ceil(unpositionedBoards.length / gridCols)
 
-      const colWidths: number[] = Array(gridCols).fill(0)
-      const rowHeights: number[] = Array(gridRows).fill(0)
-
-      unpositionedBoards.forEach((board, i) => {
-        const col = i % gridCols
-        const row = Math.floor(i / gridCols)
-
-        const pcbBoard = db.pcb_board.get(board.pcb_board_id!)
-        if (
-          !pcbBoard ||
-          pcbBoard.width === undefined ||
-          pcbBoard.height === undefined
-        )
-          return
-
-        colWidths[col] = Math.max(colWidths[col], pcbBoard.width)
-        rowHeights[row] = Math.max(rowHeights[row], pcbBoard.height)
+      const { positions, gridWidth, gridHeight } = packBoardsIntoGrid({
+        boards: unpositionedBoards,
+        db,
+        row: this._parsedProps.row,
+        col: this._parsedProps.col,
+        cellWidth: this._parsedProps.cellWidth,
+        cellHeight: this._parsedProps.cellHeight,
+        boardGap,
       })
-
-      const totalGridWidth =
-        colWidths.reduce((a, b) => a + b, 0) +
-        (gridCols > 1 ? (gridCols - 1) * boardGap : 0)
-      const totalGridHeight =
-        rowHeights.reduce((a, b) => a + b, 0) +
-        (gridRows > 1 ? (gridRows - 1) * boardGap : 0)
-
-      const startX = -totalGridWidth / 2
-      const startY = -totalGridHeight / 2
-
-      const rowYOffsets = [startY]
-      for (let i = 0; i < gridRows - 1; i++) {
-        rowYOffsets.push(rowYOffsets[i] + rowHeights[i] + boardGap)
-      }
-
-      const colXOffsets = [startX]
-      for (let i = 0; i < gridCols - 1; i++) {
-        colXOffsets.push(colXOffsets[i] + colWidths[i] + boardGap)
-      }
 
       // Get panel's global position to compute absolute board positions
       const panelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
 
-      unpositionedBoards.forEach((board, i) => {
-        const col = i % gridCols
-        const row = Math.floor(i / gridCols)
-
-        const pcbBoard = db.pcb_board.get(board.pcb_board_id!)
-        if (!pcbBoard || !pcbBoard.width || !pcbBoard.height) return
-
-        // Compute relative position within the panel grid
-        const relativeX = colXOffsets[col] + colWidths[col] / 2
-        const relativeY = rowYOffsets[row] + rowHeights[row] / 2
-
-        // Compute absolute position by adding panel's global position
-        const absoluteX = panelGlobalPos.x + relativeX
-        const absoluteY = panelGlobalPos.y + relativeY
-
+      for (const { board, pos } of positions) {
+        const absoluteX = panelGlobalPos.x + pos.x
+        const absoluteY = panelGlobalPos.y + pos.y
         board._repositionOnPcb({ x: absoluteX, y: absoluteY })
         db.pcb_board.update(board.pcb_board_id!, {
           center: { x: absoluteX, y: absoluteY },
         })
-      })
-
-      const allBoardPcbIds = childBoardInstances
-        .map((b) => b.pcb_board_id)
-        .filter((id): id is string => !!id)
-
-      const allBoardsInPanel = db.pcb_board
-        .list()
-        .filter((b) => allBoardPcbIds.includes(b.pcb_board_id!))
-
-      let minX = Infinity
-      let minY = Infinity
-      let maxX = -Infinity
-      let maxY = -Infinity
-
-      for (const board of allBoardsInPanel) {
-        if (
-          board.width === undefined ||
-          board.height === undefined ||
-          !isFinite(board.width) ||
-          !isFinite(board.height)
-        )
-          continue
-
-        const left = board.center.x - board.width / 2
-        const right = board.center.x + board.width / 2
-        const bottom = board.center.y - board.height / 2
-        const top = board.center.y + board.height / 2
-
-        minX = Math.min(minX, left)
-        maxX = Math.max(maxX, right)
-        minY = Math.min(minY, bottom)
-        maxY = Math.max(maxY, top)
       }
 
       // Skip auto-calculation if both dimensions are explicitly provided
@@ -163,17 +88,14 @@ export class Panel extends Group<typeof panelProps> {
           width: distance.parse(this._parsedProps.width),
           height: distance.parse(this._parsedProps.height),
         })
-      } else if (isFinite(minX)) {
-        const boundsWidth = maxX - minX
-        const boundsHeight = maxY - minY
-
+      } else if (gridWidth > 0 || gridHeight > 0) {
         db.pcb_panel.update(this.pcb_panel_id!, {
           width: hasExplicitWidth
             ? distance.parse(this._parsedProps.width)
-            : boundsWidth + 2 * DEFAULT_PANEL_MARGIN,
+            : gridWidth + 2 * DEFAULT_PANEL_MARGIN,
           height: hasExplicitHeight
             ? distance.parse(this._parsedProps.height)
-            : boundsHeight + 2 * DEFAULT_PANEL_MARGIN,
+            : gridHeight + 2 * DEFAULT_PANEL_MARGIN,
         })
       }
     }
