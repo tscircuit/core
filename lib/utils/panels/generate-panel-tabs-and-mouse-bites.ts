@@ -1,7 +1,6 @@
 import type { PcbBoard, PcbCutout, PcbHoleCircle, Point } from "circuit-json"
 import * as Flatten from "@flatten-js/core"
 
-export const DEFAULT_PANEL_MARGIN = 5
 export const DEFAULT_TAB_LENGTH = 5
 export const DEFAULT_TAB_WIDTH = 2
 
