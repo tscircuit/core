@@ -6,7 +6,7 @@ test("interconnect pads have offBoardConnectsTo and netIsAssignable set", async 
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm">
+    <board width="10mm" height="10mm" routingDisabled>
       <interconnect name="IC1" standard="0603" pcbX={0} pcbY={0} />
     </board>,
   )

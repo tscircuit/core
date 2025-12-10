@@ -82,6 +82,60 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     obstacle.connectedTo.push(...additionalIds)
   }
 
+  // Build mapping from source_port_id to internal connection ID for interconnects
+  const internalConnections = db.source_component_internal_connection.list()
+  const sourcePortIdToInternalConnectionId = new Map<string, string>()
+  for (const ic of internalConnections) {
+    for (const sourcePortId of ic.source_port_ids) {
+      sourcePortIdToInternalConnectionId.set(
+        sourcePortId,
+        ic.source_component_internal_connection_id,
+      )
+    }
+  }
+
+  // Build mapping from pcb_smtpad_id/pcb_plated_hole_id to source_port_id via pcb_port
+  const pcbElementIdToSourcePortId = new Map<string, string>()
+  for (const pcbPort of db.pcb_port.list()) {
+    if (pcbPort.source_port_id) {
+      // Find the smtpad or plated hole associated with this port
+      const smtpad = db.pcb_smtpad.getWhere({
+        pcb_port_id: pcbPort.pcb_port_id,
+      })
+      if (smtpad) {
+        pcbElementIdToSourcePortId.set(
+          smtpad.pcb_smtpad_id,
+          pcbPort.source_port_id,
+        )
+      }
+      const platedHole = db.pcb_plated_hole.getWhere({
+        pcb_port_id: pcbPort.pcb_port_id,
+      })
+      if (platedHole) {
+        pcbElementIdToSourcePortId.set(
+          platedHole.pcb_plated_hole_id,
+          pcbPort.source_port_id,
+        )
+      }
+    }
+  }
+
+  // Set offBoardConnectsTo and netIsAssignable for obstacles that are part of internal connections
+  for (const obstacle of obstacles) {
+    for (const connectedId of obstacle.connectedTo) {
+      const sourcePortId = pcbElementIdToSourcePortId.get(connectedId)
+      if (sourcePortId) {
+        const internalConnectionId =
+          sourcePortIdToInternalConnectionId.get(sourcePortId)
+        if (internalConnectionId) {
+          obstacle.offBoardConnectsTo = [internalConnectionId]
+          obstacle.netIsAssignable = true
+          break
+        }
+      }
+    }
+  }
+
   // Calculate bounds
   const allPoints = obstacles
     .flatMap((o) => [
