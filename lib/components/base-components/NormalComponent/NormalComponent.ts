@@ -760,7 +760,7 @@ export class NormalComponent<
       do_not_place: props.doNotPlace ?? false,
       obstructs_within_bounds: props.obstructsWithinBounds ?? true,
       ...this._getPositionModeMetadata(),
-    } as any)
+    })
 
     const footprint = props.footprint ?? this._getImpliedFootprintString()
 
@@ -775,6 +775,16 @@ export class NormalComponent<
         footprint_error.pcb_missing_footprint_error_id
     }
     this.pcb_component_id = pcb_component.pcb_component_id
+
+    queueMicrotask(() => {
+      if (!this.root || !this.pcb_component_id) return
+
+      const positioningMetadata = this._getPositionModeMetadata()
+
+      if (Object.keys(positioningMetadata).length > 0) {
+        db.pcb_component.update(this.pcb_component_id, positioningMetadata)
+      }
+    })
 
     const manualPlacement =
       this.getSubcircuit()._getPcbManualPlacementForComponent(this)
@@ -942,7 +952,7 @@ export class NormalComponent<
 
     if (parentGroupId) {
       metadata.positioned_relative_to_pcb_group_id = parentGroupId
-    } else if ((this.parent as any)?.componentName === "Board") {
+    } else {
       const boardId = (this._getBoard() as any)?.pcb_board_id
 
       if (boardId) {

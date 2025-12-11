@@ -151,7 +151,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       db.pcb_component.update(child.pcb_component_id, {
         pcb_group_id: pcb_group.pcb_group_id,
         ...positioningMetadata,
-      } as any)
+      })
     }
   }
 
