@@ -924,6 +924,57 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return "none"
   }
 
+  _applyPcbComponentPositionMetadata(
+    pcbLayoutMode: ReturnType<Group["_getPcbLayoutMode"]>,
+  ) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    const board = this._getBoard()
+    const boardId = (board as any)?.pcb_board_id as string | undefined
+
+    const applyForChild = (child: PrimitiveComponent) => {
+      const normalChild = child as unknown as NormalComponent
+      if (normalChild?._isNormalComponent && normalChild.pcb_component_id) {
+        const hasExplicitPosition =
+          normalChild._parsedProps?.pcbX !== undefined ||
+          normalChild._parsedProps?.pcbY !== undefined
+
+        const sourceComponent = normalChild.source_component_id
+          ? db.source_component.get(normalChild.source_component_id)
+          : null
+        const sourceGroupId = sourceComponent?.source_group_id
+        const pcbGroupId = sourceGroupId
+          ? db.pcb_group.getWhere({ source_group_id: sourceGroupId })
+              ?.pcb_group_id
+          : undefined
+
+        const update: Record<string, any> = {}
+
+        if (hasExplicitPosition) {
+          update.position_mode = "relative_to_group_anchor"
+          update.positioned_relative_to_pcb_group_id = pcbGroupId
+          update.positioned_relative_to_pcb_board_id = pcbGroupId
+            ? undefined
+            : boardId
+        } else if (pcbLayoutMode === "pack") {
+          update.position_mode = "packed"
+          update.positioned_relative_to_pcb_group_id = undefined
+          update.positioned_relative_to_pcb_board_id = undefined
+        }
+
+        if (Object.keys(update).length > 0) {
+          db.pcb_component.update(normalChild.pcb_component_id!, update)
+        }
+      }
+
+      for (const grandchild of child.children ?? []) {
+        applyForChild(grandchild)
+      }
+    }
+
+    for (const child of this.children) applyForChild(child)
+  }
+
   doInitialPcbLayout(): void {
     const pcbLayoutMode = this._getPcbLayoutMode()
 
@@ -934,6 +985,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     } else if (pcbLayoutMode === "flex") {
       this._doInitialPcbLayoutFlex()
     }
+
+    this._applyPcbComponentPositionMetadata(pcbLayoutMode)
   }
 
   _doInitialPcbLayoutGrid(): void {
