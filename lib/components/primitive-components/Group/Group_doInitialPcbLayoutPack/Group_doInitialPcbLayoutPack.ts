@@ -1,3 +1,4 @@
+import type { SubcircuitGroupProps } from "@tscircuit/props"
 import type { Group } from "../Group"
 import {
   pack,
@@ -19,6 +20,9 @@ const debug = Debug("Group_doInitialPcbLayoutPack")
 export const Group_doInitialPcbLayoutPack = (group: Group) => {
   const { db } = group.root!
   const { _parsedProps: props } = group
+
+  // Skip packing when circuitJson is provided - components are already positioned
+  if ((props as SubcircuitGroupProps).circuitJson) return
 
   // Emit packing:start event
   group.root?.emit("packing:start", {

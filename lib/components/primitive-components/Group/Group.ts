@@ -25,6 +25,9 @@ import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalA
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { inflatePcbTrace } from "./Subcircuit/inflators/inflatePcbTrace"
+import type { InflatorContext } from "./Subcircuit/InflatorFn"
+import { cju } from "@tscircuit/circuit-json-util"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
@@ -629,6 +632,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this.getInheritedProperty("routingDisabled")) return
     if (this._shouldUseTraceByTraceRouting()) return
 
+    const props = this._parsedProps
+    // When circuitJson is provided, insert pcb_traces directly instead of autorouting
+    if (props.circuitJson) {
+      const injectionDb = cju(props.circuitJson)
+      const pcbTraces = injectionDb.pcb_trace.list()
+      const inflatorContext: InflatorContext = {
+        injectionDb,
+        subcircuit: this,
+        groupsMap: this.source_group_id
+          ? new Map([[this.source_group_id, this]])
+          : undefined,
+      }
+      for (const pcbTrace of pcbTraces) {
+        inflatePcbTrace(pcbTrace, inflatorContext, props.circuitJson)
+      }
+      return
+    }
+
     if (!this._areChildSubcircuitsRouted()) {
       debug(
         `[${this.getString()}] child subcircuits are not routed, skipping async autorouting until subcircuits routed`,
@@ -651,6 +672,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const debug = Debug("tscircuit:core:updatePcbTraceRender")
     debug(`[${this.getString()}] updating...`)
     if (!this.isSubcircuit) return
+    const props = this._parsedProps
+    // Skip autorouting when circuitJson is provided - traces are already routed
+    if (props.circuitJson) return
     if (
       this._shouldRouteAsync() &&
       this._hasTracesToRoute() &&
