@@ -486,6 +486,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     debug(`[${this.getString()}] starting local autorouting`)
     const autorouterConfig = this._getAutorouterConfig()
     const isLaserPrefabPreset = this._isLaserPrefabAutorouter(autorouterConfig)
+    const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       db,
@@ -523,7 +524,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Optional configuration parameters
         capacityDepth: this.props.autorouter?.capacityDepth,
         targetMinCapacity: this.props.autorouter?.targetMinCapacity,
-        useAssignableViaSolver: isLaserPrefabPreset,
+        useAssignableViaSolver: isLaserPrefabPreset || isSingleLayerBoard,
       })
     }
 
