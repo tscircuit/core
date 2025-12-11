@@ -25,6 +25,9 @@ import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalA
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { inflatePcbTrace } from "./Subcircuit/inflators/inflatePcbTrace"
+import type { InflatorContext } from "./Subcircuit/InflatorFn"
+import { cju } from "@tscircuit/circuit-json-util"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
@@ -41,7 +44,6 @@ import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
-import { Group_insertPcbTracesFromCircuitJson } from "./Group_insertPcbTracesFromCircuitJson"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -633,7 +635,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const props = this._parsedProps
     // When circuitJson is provided, insert pcb_traces directly instead of autorouting
     if (props.circuitJson) {
-      this._insertPcbTracesFromCircuitJson()
+      const injectionDb = cju(props.circuitJson)
+      const pcbTraces = injectionDb.pcb_trace.list()
+      const inflatorContext: InflatorContext = {
+        injectionDb,
+        subcircuit: this,
+        groupsMap: this.source_group_id
+          ? new Map([[this.source_group_id, this]])
+          : undefined,
+      }
+      for (const pcbTrace of pcbTraces) {
+        inflatePcbTrace(pcbTrace, inflatorContext, props.circuitJson)
+      }
       return
     }
 
@@ -649,14 +662,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     )
     if (!this._hasTracesToRoute()) return
     this._startAsyncAutorouting()
-  }
-
-  /**
-   * Insert pcb_traces from circuitJson directly into the database.
-   * This is used when circuitJson is provided to skip autorouting.
-   */
-  _insertPcbTracesFromCircuitJson(): void {
-    Group_insertPcbTracesFromCircuitJson(this)
   }
 
   doInitialSchematicTraceRender() {
