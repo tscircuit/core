@@ -41,6 +41,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
+import { Group_insertPcbTracesFromCircuitJson } from "./Group_insertPcbTracesFromCircuitJson"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -629,6 +630,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this.getInheritedProperty("routingDisabled")) return
     if (this._shouldUseTraceByTraceRouting()) return
 
+    const props = this._parsedProps
+    // When circuitJson is provided, insert pcb_traces directly instead of autorouting
+    if (props.circuitJson) {
+      this._insertPcbTracesFromCircuitJson()
+      return
+    }
+
     if (!this._areChildSubcircuitsRouted()) {
       debug(
         `[${this.getString()}] child subcircuits are not routed, skipping async autorouting until subcircuits routed`,
@@ -643,6 +651,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this._startAsyncAutorouting()
   }
 
+  /**
+   * Insert pcb_traces from circuitJson directly into the database.
+   * This is used when circuitJson is provided to skip autorouting.
+   */
+  _insertPcbTracesFromCircuitJson(): void {
+    Group_insertPcbTracesFromCircuitJson(this)
+  }
+
   doInitialSchematicTraceRender() {
     Group_doInitialSchematicTraceRender(this as any)
   }
@@ -651,6 +667,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const debug = Debug("tscircuit:core:updatePcbTraceRender")
     debug(`[${this.getString()}] updating...`)
     if (!this.isSubcircuit) return
+    const props = this._parsedProps
+    // Skip autorouting when circuitJson is provided - traces are already routed
+    if (props.circuitJson) return
     if (
       this._shouldRouteAsync() &&
       this._hasTracesToRoute() &&
