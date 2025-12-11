@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.skip("pcb components include relative positioning metadata 1", async () => {
+test("pcb components include relative positioning metadata 1", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

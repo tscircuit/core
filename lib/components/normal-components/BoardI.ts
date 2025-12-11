@@ -6,4 +6,5 @@ export interface BoardI {
   _connectedSchematicPortPairs: Set<string>
   allLayers: ReadonlyArray<LayerRef>
   _getBoardCalcVariables(): Record<string, number>
+  pcb_board_id?: string | null
 }

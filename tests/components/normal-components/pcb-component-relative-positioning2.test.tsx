@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.skip("pcb components include relative positioning metadata 2", async () => {
+test("pcb components include relative positioning metadata 2", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -30,5 +30,10 @@ test.skip("pcb components include relative positioning metadata 2", async () => 
   })!
 
   expect(pcbR1.position_mode).toBe("packed")
+  expect(pcbR1.positioned_relative_to_pcb_group_id).toBeUndefined()
+  expect(pcbR1.positioned_relative_to_pcb_board_id).toBeUndefined()
+
   expect(pcbC1.position_mode).toBe("packed")
+  expect(pcbC1.positioned_relative_to_pcb_group_id).toBeUndefined()
+  expect(pcbC1.positioned_relative_to_pcb_board_id).toBeUndefined()
 })

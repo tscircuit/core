@@ -71,6 +71,9 @@ export const applyPackOutput = (
       for (const memberId of cluster.componentIds) {
         const rel = cluster.relativeCenters![memberId]
         if (!rel) continue
+        db.pcb_component.update(memberId, {
+          position_mode: "packed",
+        })
         const rotatedRel = {
           x: rel.x * Math.cos(angleRad) - rel.y * Math.sin(angleRad),
           y: rel.x * Math.sin(angleRad) + rel.y * Math.cos(angleRad),
@@ -103,6 +106,9 @@ export const applyPackOutput = (
 
     const pcbComponent = db.pcb_component.get(componentId)
     if (pcbComponent) {
+      db.pcb_component.update(componentId, {
+        position_mode: "packed",
+      })
       const currentGroupId = group.source_group_id
       const sourceComponent = db.source_component.get(
         pcbComponent.source_component_id,
@@ -196,6 +202,14 @@ export const applyPackOutput = (
       }
       return false
     })
+
+    for (const elm of relatedElements) {
+      if (elm.type === "pcb_component") {
+        db.pcb_component.update(elm.pcb_component_id, {
+          position_mode: "packed",
+        })
+      }
+    }
 
     transformPCBElements(relatedElements as any, transformMatrix)
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
