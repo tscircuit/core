@@ -776,15 +776,7 @@ export class NormalComponent<
     }
     this.pcb_component_id = pcb_component.pcb_component_id
 
-    queueMicrotask(() => {
-      if (!this.root || !this.pcb_component_id) return
-
-      const positioningMetadata = this._getPositionModeMetadata()
-
-      if (Object.keys(positioningMetadata).length > 0) {
-        db.pcb_component.update(this.pcb_component_id, positioningMetadata)
-      }
-    })
+    this._applyPositionModeMetadata()
 
     const manualPlacement =
       this.getSubcircuit()._getPcbManualPlacementForComponent(this)
@@ -929,6 +921,7 @@ export class NormalComponent<
   }
 
   doInitialPcbComponentAnchorAlignment(): void {
+    this._applyPositionModeMetadata()
     NormalComponent_doInitialPcbComponentAnchorAlignment(this)
   }
 
@@ -961,6 +954,19 @@ export class NormalComponent<
     }
 
     return metadata
+  }
+
+  private _applyPositionModeMetadata() {
+    if (!this.root || !this.pcb_component_id) return
+
+    const positioningMetadata = this._getPositionModeMetadata()
+
+    if (Object.keys(positioningMetadata).length > 0) {
+      this.root.db.pcb_component.update(
+        this.pcb_component_id,
+        positioningMetadata,
+      )
+    }
   }
 
   _renderReactSubtree(element: ReactElement): ReactSubtree {
