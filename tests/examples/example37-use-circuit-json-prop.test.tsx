@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import boardCircuitJson from "circuit.json"
+import boardCircuitJson from "./assets/boardCircuitJson.json"
 
 test("identical boards in panel reuse first board circuitJson", async () => {
   const { circuit } = getTestFixture()
@@ -21,7 +21,6 @@ test("identical boards in panel reuse first board circuitJson", async () => {
   await circuit.renderUntilSettled()
 
   const circuitJson = circuit.getCircuitJson()
-  // Bun.write("circuit.json",JSON.stringify(circuitJson,null,2))
   const traceCount = circuitJson.filter(
     (item) => item.type === "pcb_trace",
   ).length
