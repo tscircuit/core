@@ -446,8 +446,36 @@ export class Board
 
     this.pcb_board_id = pcb_board.pcb_board_id!
 
+    this._applyBoardPositioningMetadata()
+
     // Add board information silkscreen text
     this._addBoardInformationToSilkscreen()
+  }
+
+  private _applyBoardPositioningMetadata() {
+    if (!this.root || !this.pcb_board_id) return
+
+    const { db } = this.root
+
+    const applyToDescendants = (component: any) => {
+      if (component?.pcb_component_id) {
+        const positioningMetadata = component._getPositionModeMetadata?.() ?? {}
+
+        if (Object.keys(positioningMetadata).length > 0) {
+          db.pcb_component.update(component.pcb_component_id, {
+            ...positioningMetadata,
+          } as any)
+        }
+      }
+
+      for (const child of component.children ?? []) {
+        applyToDescendants(child)
+      }
+    }
+
+    for (const child of this.children) {
+      applyToDescendants(child)
+    }
   }
 
   removePcbComponentRender(): void {

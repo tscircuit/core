@@ -143,9 +143,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this.pcb_group_id = pcb_group.pcb_group_id
 
     for (const child of this.children) {
-      db.pcb_component.update(child.pcb_component_id!, {
+      if (!child.pcb_component_id) continue
+
+      const positioningMetadata =
+        (child as any)._getPositionModeMetadata?.() ?? {}
+
+      db.pcb_component.update(child.pcb_component_id, {
         pcb_group_id: pcb_group.pcb_group_id,
-      })
+        ...positioningMetadata,
+      } as any)
     }
   }
 

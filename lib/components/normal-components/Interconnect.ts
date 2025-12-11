@@ -69,9 +69,6 @@ export class Interconnect extends NormalComponent<typeof interconnectProps> {
       if (sourcePortIds.length >= 2) {
         db.source_component_internal_connection.insert({
           source_component_id: this.source_component_id!,
-          // @ts-expect-error uncomment when circuit-json includes subcircuit_id
-          // in the source_component_internal_connection schema
-          subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
           source_port_ids: sourcePortIds,
         })
       }

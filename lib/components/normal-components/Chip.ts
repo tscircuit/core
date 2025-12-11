@@ -131,7 +131,8 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       do_not_place: props.doNotPlace ?? false,
       obstructs_within_bounds: props.obstructsWithinBounds ?? true,
-    })
+      ...this._getPositionModeMetadata(),
+    } as any)
 
     this.pcb_component_id = pcb_component.pcb_component_id
   }

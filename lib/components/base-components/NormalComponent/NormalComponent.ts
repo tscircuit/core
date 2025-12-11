@@ -759,7 +759,8 @@ export class NormalComponent<
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
       do_not_place: props.doNotPlace ?? false,
       obstructs_within_bounds: props.obstructsWithinBounds ?? true,
-    })
+      ...this._getPositionModeMetadata(),
+    } as any)
 
     const footprint = props.footprint ?? this._getImpliedFootprintString()
 
@@ -923,6 +924,33 @@ export class NormalComponent<
 
   updatePcbComponentAnchorAlignment(): void {
     this.doInitialPcbComponentAnchorAlignment()
+  }
+
+  protected _getPositionModeMetadata() {
+    const { _parsedProps: props } = this
+
+    const hasExplicitPcbPosition =
+      props.pcbX !== undefined || props.pcbY !== undefined
+
+    if (!hasExplicitPcbPosition) return {}
+
+    const metadata: any = {
+      position_mode: "relative",
+    }
+
+    const parentGroupId = (this.parent as any)?.pcb_group_id
+
+    if (parentGroupId) {
+      metadata.positioned_relative_to_pcb_group_id = parentGroupId
+    } else if ((this.parent as any)?.componentName === "Board") {
+      const boardId = (this._getBoard() as any)?.pcb_board_id
+
+      if (boardId) {
+        metadata.positioned_relative_to_pcb_board_id = boardId
+      }
+    }
+
+    return metadata
   }
 
   _renderReactSubtree(element: ReactElement): ReactSubtree {
