@@ -5,7 +5,7 @@ test("interconnect acts as bridge across cutout on single-layer board", async ()
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="8mm" layers={1}>
+    <board width="20mm" height="8mm" layers={1} autorouter="laser_prefab">
       <silkscreentext
         text="Trace should use the interconnect to cross the cutout"
         pcbX={-10}
