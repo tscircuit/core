@@ -177,7 +177,9 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
     const probeName = this.finalProbeName!
 
     // Select the best label alignment to avoid overlaps
-    const labelAlignment = selectBestLabelAlignment(position, probeName, {
+    const labelAlignment = selectBestLabelAlignment({
+      probePosition: position,
+      labelText: probeName,
       schematicElements: [
         ...db.schematic_component.list(),
         ...db.schematic_text.list(),

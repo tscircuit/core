@@ -17,6 +17,7 @@ function getLabelBounds(
   const charWidth = 0.1
   const labelWidth = Math.max(labelText.length * charWidth, 0.3)
   const labelHeight = 0.25
+  const labelHeightWithPadding = labelHeight + 0.2
 
   let anchorX = probePosition.x
   let anchorY = probePosition.y
@@ -49,14 +50,14 @@ function getLabelBounds(
   }
 
   if (alignment.includes("top")) {
-    minY = anchorY - labelHeight
+    minY = anchorY - labelHeightWithPadding
     maxY = anchorY
   } else if (alignment.includes("bottom")) {
     minY = anchorY
-    maxY = anchorY + labelHeight
+    maxY = anchorY + labelHeightWithPadding
   } else {
-    minY = anchorY - labelHeight / 2
-    maxY = anchorY + labelHeight / 2
+    minY = anchorY - labelHeightWithPadding / 2
+    maxY = anchorY + labelHeightWithPadding / 2
   }
 
   return { minX, maxX, minY, maxY }
@@ -108,15 +109,17 @@ function getOverlapArea(a: Bounds, b: Bounds): number {
   return overlapWidth * overlapHeight
 }
 
-export function selectBestLabelAlignment(
-  probePosition: Point,
-  labelText: string,
-  opts: {
-    schematicElements: SchematicElement[]
-    defaultAlignment?: NinePointAnchor
-  },
-): NinePointAnchor {
-  const { schematicElements, defaultAlignment = "top_right" } = opts
+export function selectBestLabelAlignment({
+  probePosition,
+  labelText,
+  schematicElements,
+  defaultAlignment = "top_right",
+}: {
+  probePosition: Point
+  labelText: string
+  schematicElements: SchematicElement[]
+  defaultAlignment?: NinePointAnchor
+}): NinePointAnchor {
   const alignmentOptions: NinePointAnchor[] = [
     "top_right",
     "top_left",
