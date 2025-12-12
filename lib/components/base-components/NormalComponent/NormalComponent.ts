@@ -1640,6 +1640,8 @@ export class NormalComponent<
       position_mode: "relative_to_group_anchor",
       positioned_relative_to_pcb_group_id: positionedRelativeToGroupId,
       positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
+      display_offset_x: props.pcbX,
+      display_offset_y: props.pcbY,
     })
   }
 
