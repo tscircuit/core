@@ -8,12 +8,12 @@ export function Group_doInitialPcbComponentAnchorAlignment(
   if (group.root?.pcbDisabled) return
   if (!group.pcb_group_id) return
 
-  const pcbPositionAnchor = (group._parsedProps as any)?.pcbPositionAnchor
+  const pcbPositionAnchor = group._parsedProps?.pcbPositionAnchor
   if (!pcbPositionAnchor) return
 
   // Get the target position using the global position method to support nested groups
   const targetPosition = group._getGlobalPcbPositionBeforeLayout()
-  const { pcbX, pcbY } = group._parsedProps as any
+  const { pcbX, pcbY } = group._parsedProps
 
   // Only proceed if explicit positioning is provided
   if (pcbX === undefined && pcbY === undefined) return
@@ -119,5 +119,7 @@ export function Group_doInitialPcbComponentAnchorAlignment(
   db.pcb_group.update(group.pcb_group_id, {
     anchor_position: targetPosition,
     anchor_alignment: pcbPositionAnchor,
+    display_offset_x: pcbX,
+    display_offset_y: pcbY,
   })
 }
