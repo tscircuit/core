@@ -525,6 +525,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         capacityDepth: this.props.autorouter?.capacityDepth,
         targetMinCapacity: this.props.autorouter?.targetMinCapacity,
         useAssignableViaSolver: isLaserPrefabPreset || isSingleLayerBoard,
+        onSolverStarted: ({ solverName, solverParams }) =>
+          this.root?.emit("solver:started", {
+            type: "solver:started",
+            solverName,
+            solverParams,
+            componentName: this.getString(),
+          }),
       })
     }
 

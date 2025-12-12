@@ -16,6 +16,7 @@ export type RootCircuitEventName =
   | "packing:start"
   | "packing:end"
   | "packing:error"
+  | "solver:started"
   | "renderComplete"
   | "debug:logOutput"
 
@@ -65,6 +66,13 @@ export interface PackingErrorEvent {
   subcircuit_id: string | null
   componentDisplayName: string
   error?: { message: string }
+}
+
+export interface SolverStartedEvent {
+  type: "solver:started"
+  solverName: string
+  solverParams: unknown
+  componentName: string
 }
 
 export interface DebugLogOutputEvent {

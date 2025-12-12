@@ -1,6 +1,6 @@
 import type { Group } from "../Group"
 import {
-  pack,
+  PackSolver2,
   convertCircuitJsonToPackOutput,
   convertPackOutputToPackInput,
   getGraphicsFromPackOutput,
@@ -167,7 +167,20 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
   let packOutput: PackOutput
   try {
-    packOutput = pack(packInput)
+    const solver = new PackSolver2(packInput)
+    group.root?.emit("solver:started", {
+      type: "solver:started",
+      solverName: solver.constructor.name,
+      solverParams: solver.getConstructorParams(),
+      componentName: group.getString(),
+    })
+
+    solver.solve()
+
+    packOutput = {
+      ...packInput,
+      components: solver.packedComponents,
+    }
   } catch (error) {
     group.root?.emit("packing:error", {
       subcircuit_id: group.subcircuit_id,

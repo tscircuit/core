@@ -55,3 +55,22 @@ test("CapacityMeshAutorouter should solve a simple routing problem", () => {
   expect(firstPoint.y).toBeCloseTo(0, 0)
   expect(lastPoint.y).toBeCloseTo(0, 0)
 })
+
+test("CapacityMeshAutorouter invokes onSolverStarted callback", () => {
+  const simpleRouteJson = createTestSimpleRouteJson()
+  let solverDetails: any
+
+  new CapacityMeshAutorouter(simpleRouteJson, {
+    onSolverStarted: (details) => {
+      solverDetails = details
+    },
+  })
+
+  expect(solverDetails?.solverName).toBeDefined()
+  expect(solverDetails?.solverParams).toMatchObject({
+    input: simpleRouteJson,
+    options: expect.objectContaining({
+      cacheProvider: null,
+    }),
+  })
+})
