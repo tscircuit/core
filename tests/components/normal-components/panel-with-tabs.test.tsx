@@ -78,6 +78,7 @@ test("panel boards with no positions", () => {
 
   expect(circuit).toMatchPcbSnapshot(
     import.meta.path + "-no-positions-5-boards",
+    { showAnchorOffsets: true },
   )
 })
 
@@ -96,7 +97,9 @@ test("panel boards with some positions", () => {
 
   circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-some-positions")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-some-positions", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel with mixed positions doesn't autolayout", () => {
@@ -140,7 +143,9 @@ test("panel with panelizationMethod: 'none' has no tabs or mouse bites", () => {
   expect(tabCutouts.length).toBe(0)
   const mouseBiteHoles = circuitJson.filter((el) => el.type === "pcb_hole")
   expect(mouseBiteHoles.length).toBe(0)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-tabs")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-tabs", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel with mouseBites: false has no mouse bites", () => {
@@ -177,7 +182,9 @@ test("panel with mouseBites: false has no mouse bites", () => {
   expect(tabCutouts.length).toBeGreaterThan(0)
   const mouseBiteHoles = circuitJson.filter((el) => el.type === "pcb_hole")
   expect(mouseBiteHoles.length).toBe(0)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-mouse-bites")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-mouse-bites", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel custom tab/gap props", () => {
@@ -199,7 +206,9 @@ test("panel custom tab/gap props", () => {
 
   circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-custom-props")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-custom-props", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel with boards with different outlines", () => {
@@ -322,5 +331,7 @@ test("panel with boards with different outlines", () => {
   circuit.render()
   const circuitJson = circuit.getCircuitJson()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-with-outlines")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-with-outlines", {
+    showAnchorOffsets: true,
+  })
 })

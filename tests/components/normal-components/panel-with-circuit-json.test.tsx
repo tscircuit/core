@@ -15,7 +15,9 @@ test("panel with boards from circuitJson", () => {
 
   circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel with boards from circuitJson with explicit positions", () => {
@@ -30,5 +32,7 @@ test("panel with boards from circuitJson with explicit positions", () => {
 
   circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-explicit-positions")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-explicit-positions", {
+    showAnchorOffsets: true,
+  })
 })

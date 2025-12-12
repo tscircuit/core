@@ -57,7 +57,9 @@ test("panel packing with no board gap", () => {
   const boards = circuit.db.pcb_board.list()
   expect(boards).toHaveLength(6)
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-gap")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-gap", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel packing with outline boards", () => {
@@ -75,7 +77,9 @@ test("panel packing with outline boards", () => {
   const boards = circuit.db.pcb_board.list()
   expect(boards).toHaveLength(4)
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-outline")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-outline", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel packing with outline boards and no board gap", () => {
@@ -93,7 +97,9 @@ test("panel packing with outline boards and no board gap", () => {
   const boards = circuit.db.pcb_board.list()
   expect(boards).toHaveLength(4)
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-outline-no-gap")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-outline-no-gap", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel packing with rows and cols", () => {
@@ -124,7 +130,9 @@ test("panel packing with rows and cols", () => {
     expect(positions[i].x).toBeLessThan(positions[i + 1].x)
   }
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-rows-cols")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-rows-cols", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel packing with cellWidth and cellHeight", () => {
@@ -140,7 +148,9 @@ test("panel packing with cellWidth and cellHeight", () => {
   const boards = circuit.db.pcb_board.list()
   expect(boards).toHaveLength(2)
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-cell-dims")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-cell-dims", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel packing with small cellWidth/cellHeight", () => {
@@ -153,5 +163,7 @@ test("panel packing with small cellWidth/cellHeight", () => {
   )
   circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-small-cell-dims")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-small-cell-dims", {
+    showAnchorOffsets: true,
+  })
 })
