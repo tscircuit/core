@@ -17,6 +17,7 @@ import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorS
 import type { RenderPhase } from "../base-components/Renderable"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type { BoardI } from "./BoardI"
+import { communityLibrary } from "../../utils/boards/board-templates"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -89,12 +90,12 @@ const getRoundedRectOutline = (
 
 export class Board
   extends Group<typeof boardProps>
-  implements BoardI, SubcircuitI
-{
+  implements BoardI, SubcircuitI {
   pcb_board_id: string | null = null
   source_board_id: string | null = null
   _drcChecksComplete = false
   _connectedSchematicPortPairs = new Set<string>()
+  _hasStartedFootprintUrlLoad = false
 
   get isSubcircuit() {
     return true
@@ -395,9 +396,73 @@ export class Board
     }
 
     // Compute width and height from outline if not provided
-    if (props.outline) {
-      const xValues = props.outline.map((point) => point.x)
-      const yValues = props.outline.map((point) => point.y)
+    let templateOutline: { x: number; y: number }[] | undefined
+
+    const templateName = (this.props as any).template || (props as any).template
+    if (templateName && this._asyncFootprintCadModel && (this._asyncFootprintCadModel as any).templateName === templateName) {
+      const cached = (this._asyncFootprintCadModel as any).outline
+      if (cached) {
+        templateOutline = cached
+      }
+    }
+
+    if (!templateOutline && templateName) {
+      const [libName, fpName] = templateName.split(":")
+
+      if (libName === "community" && fpName && !this._hasStartedFootprintUrlLoad) {
+        this._hasStartedFootprintUrlLoad = true
+
+        this._queueAsyncEffect("load-board-template", async () => {
+          try {
+            const result = await communityLibrary.getTemplate(fpName)
+            const outline = result?.outline
+
+            if (outline) {
+              (this as any)._asyncFootprintCadModel = {
+                templateName,
+                outline
+              }
+
+              if (this.pcb_board_id && this.root?.db) {
+                const outlinePoints = outline
+                const xValues = outlinePoints.map((point) => point.x)
+                const yValues = outlinePoints.map((point) => point.y)
+
+                const minX = Math.min(...xValues)
+                const maxX = Math.max(...xValues)
+                const minY = Math.min(...yValues)
+                const maxY = Math.max(...yValues)
+
+                const width = maxX - minX
+                const height = maxY - minY
+                const center = {
+                  x: (minX + maxX) / 2,
+                  y: (minY + maxY) / 2,
+                }
+
+                this.root.db.pcb_board.update(this.pcb_board_id, {
+                  width,
+                  height,
+                  center,
+                  outline: outline.map((point) => ({ ...point })),
+                })
+              }
+
+              this._markDirty("PcbComponentRender")
+            }
+
+          } catch (e) {
+            console.warn(`Failed to load template ${templateName}`, e)
+          }
+        })
+      }
+    }
+
+    const finalOutline = props.outline || templateOutline
+    if (finalOutline) {
+      const outlinePoints = finalOutline
+      const xValues = outlinePoints.map((point) => point.x)
+      const yValues = outlinePoints.map((point) => point.y)
 
       const minX = Math.min(...xValues)
       const maxX = Math.max(...xValues)
@@ -412,7 +477,7 @@ export class Board
       }
     }
 
-    let outline = props.outline
+    let outline = finalOutline
     if (
       !outline &&
       props.borderRadius != null &&
