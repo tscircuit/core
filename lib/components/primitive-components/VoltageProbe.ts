@@ -176,23 +176,14 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
 
     const probeName = this.finalProbeName!
 
-    const schematicElements = [
-      ...db.schematic_component.list(),
-      ...db.schematic_text.list(),
-      ...db.schematic_box.list(),
-      ...db.schematic_port.list(),
-      ...db.schematic_line.list(),
-      ...db.schematic_rect.list(),
-      ...db.schematic_circle.list(),
-    ]
-
     // Select the best label alignment to avoid overlaps
-    const labelAlignment = selectBestLabelAlignment(
-      position,
-      probeName,
-      schematicElements,
-      "top_right",
-    )
+    const labelAlignment = selectBestLabelAlignment(position, probeName, {
+      schematicElements: [
+        ...db.schematic_component.list(),
+        ...db.schematic_text.list(),
+      ],
+      defaultAlignment: "top_right",
+    })
 
     const schematic_voltage_probe = db.schematic_voltage_probe.insert({
       name: probeName,
