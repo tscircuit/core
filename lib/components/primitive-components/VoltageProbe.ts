@@ -5,6 +5,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Net } from "./Net"
 import type { Port } from "./Port"
 import { getSimulationColorForId } from "lib/utils/simulation/getSimulationColorForId"
+import { selectBestLabelAlignment } from "lib/utils/schematic/selectBestLabelAlignment"
 
 export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
   simulation_voltage_probe_id: string | null = null
@@ -174,12 +175,25 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
     }
 
     const probeName = this.finalProbeName!
+
+    // Select the best label alignment to avoid overlaps
+    const labelAlignment = selectBestLabelAlignment({
+      probePosition: position,
+      labelText: probeName,
+      schematicElements: [
+        ...db.schematic_component.list(),
+        ...db.schematic_text.list(),
+      ],
+      defaultAlignment: "top_right",
+    })
+
     const schematic_voltage_probe = db.schematic_voltage_probe.insert({
       name: probeName,
       position,
       schematic_trace_id: targetTraceId,
       subcircuit_id: subcircuit.subcircuit_id || undefined,
       color: this.color ?? undefined,
+      label_alignment: labelAlignment,
     } as Omit<SchematicVoltageProbe, "type" | "schematic_voltage_probe_id">)
 
     this.schematic_voltage_probe_id =
