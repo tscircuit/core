@@ -525,6 +525,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         capacityDepth: this.props.autorouter?.capacityDepth,
         targetMinCapacity: this.props.autorouter?.targetMinCapacity,
         useAssignableViaSolver: isLaserPrefabPreset || isSingleLayerBoard,
+        onSolverStarted: ({ solverName, solverParams }) =>
+          this.root?.emit("solver:started", {
+            type: "solver:started",
+            solverName,
+            solverParams,
+            componentName: this.getString(),
+          }),
       })
     }
 
@@ -925,6 +932,36 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbLayout(): void {
+    if (this.root?.pcbDisabled) return
+
+    // Position the group itself if pcbX/pcbY are provided
+    if (this.pcb_group_id) {
+      const { db } = this.root!
+      const props = this._parsedProps
+
+      const hasExplicitPcbPosition =
+        props.pcbX !== undefined || props.pcbY !== undefined
+
+      if (hasExplicitPcbPosition) {
+        const parentGroup = this.parent?.getGroup?.()
+        const pcbParentGroupId = parentGroup?.pcb_group_id
+          ? db.pcb_group.get(parentGroup.pcb_group_id)?.pcb_group_id
+          : undefined
+
+        const positionedRelativeToBoardId = !pcbParentGroupId
+          ? (this._getBoard()?.pcb_board_id ?? undefined)
+          : undefined
+
+        db.pcb_group.update(this.pcb_group_id, {
+          position_mode: "relative_to_group_anchor",
+          positioned_relative_to_pcb_group_id: pcbParentGroupId,
+          positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
+          display_offset_x: props.pcbX,
+          display_offset_y: props.pcbY,
+        })
+      }
+    }
+
     const pcbLayoutMode = this._getPcbLayoutMode()
 
     if (pcbLayoutMode === "grid") {
