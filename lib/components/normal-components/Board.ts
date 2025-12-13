@@ -90,7 +90,8 @@ const getRoundedRectOutline = (
 
 export class Board
   extends Group<typeof boardProps>
-  implements BoardI, SubcircuitI {
+  implements BoardI, SubcircuitI
+{
   pcb_board_id: string | null = null
   source_board_id: string | null = null
   _drcChecksComplete = false
@@ -399,7 +400,11 @@ export class Board
     let templateOutline: { x: number; y: number }[] | undefined
 
     const templateName = (this.props as any).template || (props as any).template
-    if (templateName && this._asyncFootprintCadModel && (this._asyncFootprintCadModel as any).templateName === templateName) {
+    if (
+      templateName &&
+      this._asyncFootprintCadModel &&
+      (this._asyncFootprintCadModel as any).templateName === templateName
+    ) {
       const cached = (this._asyncFootprintCadModel as any).outline
       if (cached) {
         templateOutline = cached
@@ -409,7 +414,11 @@ export class Board
     if (!templateOutline && templateName) {
       const [libName, fpName] = templateName.split(":")
 
-      if (libName === "community" && fpName && !this._hasStartedFootprintUrlLoad) {
+      if (
+        libName === "community" &&
+        fpName &&
+        !this._hasStartedFootprintUrlLoad
+      ) {
         this._hasStartedFootprintUrlLoad = true
 
         this._queueAsyncEffect("load-board-template", async () => {
@@ -418,9 +427,9 @@ export class Board
             const outline = result?.outline
 
             if (outline) {
-              (this as any)._asyncFootprintCadModel = {
+              ;(this as any)._asyncFootprintCadModel = {
                 templateName,
-                outline
+                outline,
               }
 
               if (this.pcb_board_id && this.root?.db) {
@@ -450,7 +459,6 @@ export class Board
 
               this._markDirty("PcbComponentRender")
             }
-
           } catch (e) {
             console.warn(`Failed to load template ${templateName}`, e)
           }

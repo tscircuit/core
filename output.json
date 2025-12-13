@@ -1,0 +1,65 @@
+[
+  {
+    "type": "source_project_metadata",
+    "source_project_metadata_id": "source_project_metadata_0",
+    "software_used_string": "@tscircuit/core@0.0.911"
+  },
+  {
+    "type": "source_group",
+    "source_group_id": "source_group_0",
+    "is_subcircuit": true,
+    "was_automatically_named": true,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "source_board",
+    "source_board_id": "source_board_0",
+    "source_group_id": "source_group_0"
+  },
+  {
+    "type": "schematic_group",
+    "schematic_group_id": "schematic_group_0",
+    "is_subcircuit": true,
+    "subcircuit_id": "subcircuit_source_group_0",
+    "name": "unnamed_board1",
+    "center": {
+      "x": 0,
+      "y": 0
+    },
+    "width": 0,
+    "height": 0,
+    "schematic_component_ids": [],
+    "source_group_id": "source_group_0"
+  },
+  {
+    "type": "pcb_board",
+    "pcb_board_id": "pcb_board_0",
+    "center": {
+      "x": 34.29,
+      "y": 26.67
+    },
+    "thickness": 1.4,
+    "num_layers": 2,
+    "width": 68.58,
+    "height": 53.34,
+    "outline": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 68.58,
+        "y": 0
+      },
+      {
+        "x": 68.58,
+        "y": 53.34
+      },
+      {
+        "x": 0,
+        "y": 53.34
+      }
+    ],
+    "material": "fr4"
+  }
+]

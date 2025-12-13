@@ -3,12 +3,15 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { communityLibrary } from "lib/utils/boards/board-templates"
 
 test("Community templates > should support all community templates", async () => {
-
   // Test all 4 community templates
   const templates = [
     { name: "arduinoshield", expectedWidth: 68.58, expectedHeight: 53.34 },
     { name: "raspberrypihat", expectedWidth: 65, expectedHeight: 56 },
-    { name: "sparkfunmicromod_processor", expectedWidth: 22, expectedHeight: 22 },
+    {
+      name: "sparkfunmicromod_processor",
+      expectedWidth: 22,
+      expectedHeight: 22,
+    },
     { name: "sparkfunmicromod_host", expectedWidth: 22, expectedHeight: 22 },
   ]
 
@@ -23,7 +26,9 @@ test("Community templates > should support all community templates", async () =>
     const boardJson = json.find((elm) => elm.type === "pcb_board")
 
     console.log(`Template: ${template.name}`)
-    console.log(`  Expected: ${template.expectedWidth} x ${template.expectedHeight}`)
+    console.log(
+      `  Expected: ${template.expectedWidth} x ${template.expectedHeight}`,
+    )
     console.log(`  Actual: ${boardJson?.width} x ${boardJson?.height}`)
 
     expect(boardJson?.width).toBe(template.expectedWidth)
