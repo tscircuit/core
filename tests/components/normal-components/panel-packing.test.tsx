@@ -24,8 +24,12 @@ test("panel packing default", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <panel>
-      <board width="10mm" height="10mm" routingDisabled />
-      <board width="12mm" height="8mm" routingDisabled />
+      <board width="10mm" height="10mm" routingDisabled>
+        <resistor name="R1" resistance="1k" footprint="0805" />
+      </board>
+      <board width="12mm" height="8mm" routingDisabled>
+        <resistor name="R1" resistance="1k" pcbY={2} footprint="0805" />
+      </board>
       <board width="8mm" height="12mm" routingDisabled />
       <board width="10mm" height="10mm" routingDisabled />
       <board width="5mm" height="5mm" routingDisabled />

@@ -291,29 +291,29 @@ test("panel with boards with different outlines", () => {
   ]
 
   circuit.add(
-    <panel width="160mm" height="80mm" panelizationMethod="tab-routing">
-      <board outline={board1_outline} pcbX={-60} pcbY={-20} routingDisabled>
+    <panel panelizationMethod="tab-routing" row={2} boardGap={10}>
+      <board outline={board1_outline} routingDisabled>
         <resistor name="R1" resistance="1k" footprint="0805" />
       </board>
-      <board outline={board2_outline} pcbX={20} pcbY={-20} routingDisabled>
+      <board outline={board2_outline} routingDisabled>
         <resistor name="R2" resistance="1k" footprint="0805" />
       </board>
-      <board outline={board3_outline} pcbX={-20} pcbY={20} routingDisabled>
+      <board outline={board3_outline} routingDisabled>
         <resistor name="R3" resistance="1k" footprint="0805" pcbY={7} />
       </board>
-      <board outline={board4_outline} pcbX={60} pcbY={20} routingDisabled>
+      <board outline={board4_outline} routingDisabled>
         <resistor name="R4" resistance="1k" footprint="0805" />
       </board>
-      <board outline={board5_outline} pcbX={-60} pcbY={20} routingDisabled>
+      <board outline={board5_outline} routingDisabled>
         <resistor name="R5" resistance="1k" footprint="0805" />
       </board>
-      <board outline={board6_outline} pcbX={-20} pcbY={-20} routingDisabled>
+      <board outline={board6_outline} routingDisabled>
         <resistor name="R6" resistance="1k" footprint="0805" />
       </board>
-      <board outline={board7_outline} pcbX={20} pcbY={20} routingDisabled>
+      <board outline={board7_outline} routingDisabled>
         <resistor name="R7" resistance="1k" footprint="0805" pcbY={7} />
       </board>
-      <board outline={board8_outline} pcbX={60} pcbY={-20} routingDisabled>
+      <board outline={board8_outline} routingDisabled>
         <resistor name="R8" resistance="1k" footprint="0805" />
       </board>
     </panel>,
