@@ -660,13 +660,6 @@ export abstract class PrimitiveComponent<
       // Ignore empty objects produced by the reconciler in edge cases
       return
     }
-    // Disallow nesting boards inside of boards
-    if (
-      this.lowercaseComponentName === "board" &&
-      component.lowercaseComponentName === "board"
-    ) {
-      throw new Error("Nested boards are not supported")
-    }
 
     if (component.lowercaseComponentName === "panel") {
       throw new Error("<panel> must be a root-level element")
