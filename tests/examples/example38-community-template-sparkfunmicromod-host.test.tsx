@@ -1,8 +1,6 @@
-
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { communityLibrary } from "lib/utils/boards/board-templates"
-
 
 test("Community templates > should support sparkfunmicromod_host", async () => {
   const { circuit } = getTestFixture({
@@ -11,20 +9,18 @@ test("Community templates > should support sparkfunmicromod_host", async () => {
         // @ts-ignore
         community: async (name) => {
           return communityLibrary.getTemplate(name)
-        }
-      }
-    }
+        },
+      },
+    },
   })
 
-  circuit.add(
-    <board template="community:sparkfunmicromod_host" />
-  )
+  circuit.add(<board template="community:sparkfunmicromod_host" />)
 
   // Initial render
   circuit.render()
 
   // Allow async template load
-  await new Promise(r => setTimeout(r, 200))
+  await new Promise((r) => setTimeout(r, 200))
 
   // Re-render to apply
   circuit.render()
