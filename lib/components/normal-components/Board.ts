@@ -1,3 +1,4 @@
+import { z } from "zod"
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { boardProps } from "@tscircuit/props"
 import { Group } from "../primitive-components/Group/Group"
@@ -90,13 +91,16 @@ const getRoundedRectOutline = (
 
 export class Board
   extends Group<typeof boardProps>
-  implements BoardI, SubcircuitI
-{
+  implements BoardI, SubcircuitI {
   pcb_board_id: string | null = null
   source_board_id: string | null = null
   _drcChecksComplete = false
   _connectedSchematicPortPairs = new Set<string>()
   _hasStartedFootprintUrlLoad = false
+  _boardTemplateCache?: {
+    templateName: string
+    outline: Array<{ x: number; y: number }>
+  }
 
   get isSubcircuit() {
     return true
@@ -109,7 +113,8 @@ export class Board
   get config() {
     return {
       componentName: "Board",
-      zodProps: boardProps,
+      // temp until i raise pr in @tscircuit/props
+      zodProps: boardProps.extend({ template: z.string().optional() }),
     }
   }
 
@@ -396,20 +401,13 @@ export class Board
       })
     }
 
-    // Compute width and height from outline if not provided
     let templateOutline: { x: number; y: number }[] | undefined
 
-    const templateName = (this.props as any).template || (props as any).template
-    if (
-      templateName &&
-      this._asyncFootprintCadModel &&
-      (this._asyncFootprintCadModel as any).templateName === templateName
-    ) {
-      const cached = (this._asyncFootprintCadModel as any).outline
-      if (cached) {
-        templateOutline = cached
-      }
-    }
+    // Need make changes in @tscircuit/props
+    type BoardPropsWithTemplate = typeof props & { template?: string }
+    const templateName = (props as BoardPropsWithTemplate).template
+
+
 
     if (!templateOutline && templateName) {
       const [libName, fpName] = templateName.split(":")
@@ -427,7 +425,8 @@ export class Board
             const outline = result?.outline
 
             if (outline) {
-              ;(this as any)._asyncFootprintCadModel = {
+              // Cache the template for future renders
+              this._boardTemplateCache = {
                 templateName,
                 outline,
               }
