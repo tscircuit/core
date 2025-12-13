@@ -1,14 +1,16 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("error when board nested inside board", () => {
+test("error when board nested inside group inside board", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board>
-      <board>
-        <resistor name="R1" resistance={100} />
-      </board>
+      <group>
+        <board>
+          <resistor name="R1" resistance={100} />
+        </board>
+      </group>
     </board>,
   )
 

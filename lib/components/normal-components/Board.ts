@@ -345,6 +345,16 @@ export class Board
   }
 
   doInitialSourceRender() {
+    // Check for nested boards (boards inside this board at any depth)
+    const nestedBoard = this.getDescendants().find(
+      (d) => d.lowercaseComponentName === "board",
+    )
+    if (nestedBoard) {
+      throw new Error(
+        `Nested boards are not supported: found board "${nestedBoard.name}" inside board "${this.name}"`,
+      )
+    }
+
     super.doInitialSourceRender()
 
     const { db } = this.root!
