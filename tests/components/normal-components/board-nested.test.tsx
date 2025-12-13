@@ -1,6 +1,5 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-//test
 test("error when board nested inside board", () => {
   const { circuit } = getTestFixture()
 
