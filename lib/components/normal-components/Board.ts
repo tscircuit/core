@@ -1,6 +1,7 @@
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { boardProps } from "@tscircuit/props"
 import { Group } from "../primitive-components/Group/Group"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
 import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import {
@@ -404,15 +405,8 @@ export class Board
       const minY = Math.min(...yValues)
       const maxY = Math.max(...yValues)
 
-      const outlineCenterX = (minX + maxX) / 2
-      const outlineCenterY = (minY + maxY) / 2
-
       computedWidth = maxX - minX
       computedHeight = maxY - minY
-      center = {
-        x: outlineCenterX + (props.outlineOffsetX ?? 0),
-        y: outlineCenterY + (props.outlineOffsetY ?? 0),
-      }
     }
 
     let outline = props.outline
@@ -532,23 +526,69 @@ export class Board
   }
 
   _repositionOnPcb(position: { x: number; y: number }): void {
-    super._repositionOnPcb(position)
+    const { db } = this.root!
+    const pcbBoard = this.pcb_board_id
+      ? db.pcb_board.get(this.pcb_board_id)
+      : null
+    const oldPos = pcbBoard?.center
+
+    if (!oldPos) {
+      if (this.pcb_board_id) {
+        db.pcb_board.update(this.pcb_board_id, { center: position })
+      }
+      return
+    }
+
+    const deltaX = position.x - oldPos.x
+    const deltaY = position.y - oldPos.y
+
+    if (Math.abs(deltaX) < 1e-6 && Math.abs(deltaY) < 1e-6) {
+      return
+    }
+
+    for (const child of this.children) {
+      if (child instanceof NormalComponent) {
+        let childOldCenter: { x: number; y: number } | undefined
+
+        if (child.pcb_component_id) {
+          const comp = db.pcb_component.get(child.pcb_component_id)
+          if (comp) childOldCenter = comp.center
+        } else if (child instanceof Group && child.pcb_group_id) {
+          const group = db.pcb_group.get(child.pcb_group_id)
+          if (group) childOldCenter = group.center
+        }
+
+        if (childOldCenter) {
+          child._repositionOnPcb({
+            x: childOldCenter.x + deltaX,
+            y: childOldCenter.y + deltaY,
+          })
+        }
+      }
+    }
 
     if (this.pcb_board_id) {
-      const { db } = this.root!
-      const pcb_board = db.pcb_board.get(this.pcb_board_id)
-      if (pcb_board?.center && pcb_board.outline) {
-        const deltaX = position.x - pcb_board.center.x
-        const deltaY = position.y - pcb_board.center.y
+      db.pcb_board.update(this.pcb_board_id, { center: position })
 
-        const newOutline = pcb_board.outline.map((p) => ({
-          x: p.x + deltaX,
-          y: p.y + deltaY,
-        }))
+      if (pcbBoard?.outline) {
+        const outlineBounds = getBoundsFromPoints(pcbBoard.outline)
+        if (outlineBounds) {
+          const oldOutlineCenter = {
+            x: (outlineBounds.minX + outlineBounds.maxX) / 2,
+            y: (outlineBounds.minY + outlineBounds.maxY) / 2,
+          }
+          const outlineDeltaX = position.x - oldOutlineCenter.x
+          const outlineDeltaY = position.y - oldOutlineCenter.y
 
-        db.pcb_board.update(this.pcb_board_id, {
-          outline: newOutline,
-        })
+          const newOutline = pcbBoard.outline.map((p) => ({
+            x: p.x + outlineDeltaX,
+            y: p.y + outlineDeltaY,
+          }))
+
+          db.pcb_board.update(this.pcb_board_id, {
+            outline: newOutline,
+          })
+        }
       }
     }
   }
