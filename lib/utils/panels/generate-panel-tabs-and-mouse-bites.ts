@@ -146,8 +146,6 @@ const generateCutoutsAndMousebitesForOutline = (
 
       if (is_p1_convex) {
         let angle = vec_in_p1.angleTo(segmentVec)
-        // angleTo is always CCW, for CW polygons this will be > PI so we
-        // take the smaller turning angle
         if (angle > Math.PI) angle = 2 * Math.PI - angle
         start_ext = cutoutWidth * Math.tan(angle / 2)
       } else {
