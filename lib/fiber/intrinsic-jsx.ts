@@ -79,6 +79,7 @@ export interface TscircuitElements {
   voltageprobe: Props.VoltageProbeProps
   copperpour: Props.CopperPourProps
   analogsimulation: Props.AnalogSimulationProps
+  fiducial: Props.FiducialProps
   jscad: any
 }
 

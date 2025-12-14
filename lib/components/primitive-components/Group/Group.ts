@@ -131,6 +131,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       subcircuit_id: this.subcircuit_id ?? this.getSubcircuit()?.subcircuit_id!,
       name: this.name,
       center: this._getGlobalPcbPositionBeforeLayout(),
+      anchor_alignment: "center",
       ...(hasOutline ? { outline: numericOutline } : { width: 0, height: 0 }),
       pcb_component_ids: [],
       source_group_id: this.source_group_id!,
