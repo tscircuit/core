@@ -144,8 +144,23 @@ const generateCutoutsAndMousebitesForOutline = (
       const p2_cross = segmentVec.cross(vec_out_p2)
       const is_p2_convex = is_ccw ? p2_cross > 1e-9 : p2_cross < -1e-9
 
-      start_ext = is_p1_convex ? cutoutWidth : 0
-      end_ext = is_p2_convex ? cutoutWidth : 0
+      if (is_p1_convex) {
+        let angle = vec_in_p1.angleTo(segmentVec)
+        // angleTo is always CCW, for CW polygons this will be > PI so we
+        // take the smaller turning angle
+        if (angle > Math.PI) angle = 2 * Math.PI - angle
+        start_ext = cutoutWidth * Math.tan(angle / 2)
+      } else {
+        start_ext = 0
+      }
+
+      if (is_p2_convex) {
+        let angle = segmentVec.angleTo(vec_out_p2)
+        if (angle > Math.PI) angle = 2 * Math.PI - angle
+        end_ext = cutoutWidth * Math.tan(angle / 2)
+      } else {
+        end_ext = 0
+      }
     }
 
     // Create cutouts on both sides of the gap, extending them to overlap at corners
