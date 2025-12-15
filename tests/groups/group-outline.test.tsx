@@ -26,7 +26,7 @@ test("group with outline specified", async () => {
   expect(pcb_groups).toMatchInlineSnapshot(`
     [
       {
-        "anchor_alignment": "center",
+        "anchor_alignment": null,
         "anchor_position": {
           "x": 0,
           "y": 0,
