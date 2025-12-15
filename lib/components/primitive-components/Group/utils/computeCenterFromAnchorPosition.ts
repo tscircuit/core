@@ -5,9 +5,8 @@ export function computeCenterFromAnchorPosition(
   size: { width: number; height: number },
   anchorAlignment?: NinePointAnchor | null,
 ): { x: number; y: number } {
-  const alignment = anchorAlignment ?? "center"
-  console.log(alignment)
-  if (alignment === "center") return anchorPosition
+  if (!anchorAlignment) return anchorPosition
+  const alignment = anchorAlignment
 
   const width = size.width
   const height = size.height
