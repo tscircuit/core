@@ -923,12 +923,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       0,
     )
 
-    if (
-      !groupHasCoords &&
-      !hasManualEdits &&
-      unpositionedDirectChildrenCount > 1
-    )
-      return "pack"
+    if (!hasManualEdits && unpositionedDirectChildrenCount > 1) return "pack"
     return "none"
   }
 
