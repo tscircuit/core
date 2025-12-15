@@ -34,6 +34,7 @@ test("Subcircuit group should have subcircuit_id", async () => {
   expect(circuit.db.pcb_group.list()).toMatchInlineSnapshot(`
 [
   {
+    "anchor_alignment": "center",
     "autorouter_configuration": {
       "trace_clearance": 0.1,
     },

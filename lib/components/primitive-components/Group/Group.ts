@@ -132,6 +132,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       name: this.name,
       anchor_position: this._getGlobalPcbPositionBeforeLayout(),
       center: this._getGlobalPcbPositionBeforeLayout(),
+      anchor_alignment: "center",
       ...(hasOutline ? { outline: numericOutline } : { width: 0, height: 0 }),
       pcb_component_ids: [],
       source_group_id: this.source_group_id!,
@@ -924,12 +925,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       0,
     )
 
-    if (
-      !groupHasCoords &&
-      !hasManualEdits &&
-      unpositionedDirectChildrenCount > 1
-    )
-      return "pack"
+    if (!hasManualEdits && unpositionedDirectChildrenCount > 1) return "pack"
     return "none"
   }
 
