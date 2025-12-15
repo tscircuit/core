@@ -35,6 +35,10 @@ test("Subcircuit group should have subcircuit_id", async () => {
 [
   {
     "anchor_alignment": "center",
+    "anchor_position": {
+      "x": 0,
+      "y": 0,
+    },
     "autorouter_configuration": {
       "trace_clearance": 0.1,
     },
