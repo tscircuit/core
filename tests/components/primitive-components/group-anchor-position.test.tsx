@@ -42,12 +42,12 @@ test("group anchor position", async () => {
       },
       "autorouter_configuration": undefined,
       "center": {
-        "x": -3,
-        "y": 3,
+        "x": -1.2750000000000004,
+        "y": 1.5250000000000004,
       },
       "display_offset_x": -3,
       "display_offset_y": 3,
-      "height": 5,
+      "height": 2.9499999999999997,
       "is_subcircuit": undefined,
       "name": "Grouped Section",
       "pcb_component_ids": [],
@@ -58,7 +58,7 @@ test("group anchor position", async () => {
       "source_group_id": "source_group_0",
       "subcircuit_id": "subcircuit_source_group_1",
       "type": "pcb_group",
-      "width": 5,
+      "width": 3.45,
     }
   `)
 
