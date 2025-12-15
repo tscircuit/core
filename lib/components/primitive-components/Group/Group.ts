@@ -130,6 +130,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       is_subcircuit: this.isSubcircuit,
       subcircuit_id: this.subcircuit_id ?? this.getSubcircuit()?.subcircuit_id!,
       name: this.name,
+      anchor_position: this._getGlobalPcbPositionBeforeLayout(),
       center: this._getGlobalPcbPositionBeforeLayout(),
       ...(hasOutline ? { outline: numericOutline } : { width: 0, height: 0 }),
       pcb_component_ids: [],
@@ -139,6 +140,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             trace_clearance: props.autorouter.traceClearance,
           }
         : undefined,
+      anchor_alignment: props.pcbAnchorPosition ?? "center",
     })
     this.pcb_group_id = pcb_group.pcb_group_id
 
