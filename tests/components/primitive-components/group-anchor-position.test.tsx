@@ -8,9 +8,11 @@ test("group anchor position", async () => {
     <board width={20} height={20}>
       <group
         name="Grouped Section"
-        pcbPositionAnchor="top_left"
-        pcbX="-3mm"
-        pcbY="3mm"
+        pcbAnchorAlignment="bottom_center"
+        pcbX="0mm"
+        pcbY="0mm"
+        width={4}
+        height={3}
       >
         <resistor
           name="RG1"
@@ -35,19 +37,19 @@ test("group anchor position", async () => {
   const groupCircuitJson = circuitJson.find((elm) => elm.type === "pcb_group")
   expect(groupCircuitJson).toMatchInlineSnapshot(`
     {
-      "anchor_alignment": "top_left",
+      "anchor_alignment": "bottom_center",
       "anchor_position": {
-        "x": -3,
-        "y": 3,
+        "x": 0,
+        "y": 0,
       },
       "autorouter_configuration": undefined,
       "center": {
-        "x": -1.2750000000000004,
-        "y": 1.5250000000000004,
+        "x": 0,
+        "y": 1.5,
       },
-      "display_offset_x": -3,
-      "display_offset_y": 3,
-      "height": 2.9499999999999997,
+      "display_offset_x": 0,
+      "display_offset_y": 0,
+      "height": 3,
       "is_subcircuit": undefined,
       "name": "Grouped Section",
       "pcb_component_ids": [],
@@ -58,7 +60,7 @@ test("group anchor position", async () => {
       "source_group_id": "source_group_0",
       "subcircuit_id": "subcircuit_source_group_1",
       "type": "pcb_group",
-      "width": 3.45,
+      "width": 4,
     }
   `)
 

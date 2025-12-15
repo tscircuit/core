@@ -41,6 +41,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
+import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -126,12 +127,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }))
       : undefined
 
+    const anchorPosition = this._getGlobalPcbPositionBeforeLayout()
+    const center = computeCenterFromAnchorPosition(
+      anchorPosition,
+      { width: this.props.width, height: this.props.height },
+      this.props.pcbAnchorAlignment,
+    )
+
     const pcb_group = db.pcb_group.insert({
       is_subcircuit: this.isSubcircuit,
       subcircuit_id: this.subcircuit_id ?? this.getSubcircuit()?.subcircuit_id!,
       name: this.name,
-      anchor_position: this._getGlobalPcbPositionBeforeLayout(),
-      center: this._getGlobalPcbPositionBeforeLayout(),
+      anchor_position: anchorPosition,
+      center,
       ...(hasOutline ? { outline: numericOutline } : { width: 0, height: 0 }),
       pcb_component_ids: [],
       source_group_id: this.source_group_id!,
@@ -140,7 +148,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             trace_clearance: props.autorouter.traceClearance,
           }
         : undefined,
-      anchor_alignment: props.pcbAnchorPosition ?? "center",
+      anchor_alignment: props.pcbAnchorAlignment ?? null,
     })
     this.pcb_group_id = pcb_group.pcb_group_id
 
