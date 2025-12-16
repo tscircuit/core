@@ -1,15 +1,13 @@
-import type { NinePointAnchor } from "circuit-json"
+import type { GroupProps } from "@tscircuit/props"
 
 export function computeCenterFromAnchorPosition(
   anchorPosition: { x: number; y: number },
-  size: { width: number; height: number },
-  anchorAlignment?: NinePointAnchor | null,
+  ctx: GroupProps,
 ): { x: number; y: number } {
-  if (!anchorAlignment) return anchorPosition
-  const alignment = anchorAlignment
+  const { width, height, pcbAnchorAlignment } = ctx
+  if (!pcbAnchorAlignment) return anchorPosition
+  const alignment = pcbAnchorAlignment
 
-  const width = size.width
-  const height = size.height
   if (typeof width !== "number" || typeof height !== "number") {
     console.log("width or height is not a number")
     return anchorPosition

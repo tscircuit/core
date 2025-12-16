@@ -126,13 +126,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           y: distance.parse(point.y),
         }))
       : undefined
-
+    const ctx = this.props
     const anchorPosition = this._getGlobalPcbPositionBeforeLayout()
-    const center = computeCenterFromAnchorPosition(
-      anchorPosition,
-      { width: this.props.width, height: this.props.height },
-      this.props.pcbAnchorAlignment,
-    )
+    const center = computeCenterFromAnchorPosition(anchorPosition, ctx)
 
     const pcb_group = db.pcb_group.insert({
       is_subcircuit: this.isSubcircuit,
