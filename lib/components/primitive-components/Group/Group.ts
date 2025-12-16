@@ -41,6 +41,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
+import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -125,12 +126,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           y: distance.parse(point.y),
         }))
       : undefined
+    const ctx = this.props
+    const anchorPosition = this._getGlobalPcbPositionBeforeLayout()
+    const center = computeCenterFromAnchorPosition(anchorPosition, ctx)
 
     const pcb_group = db.pcb_group.insert({
       is_subcircuit: this.isSubcircuit,
       subcircuit_id: this.subcircuit_id ?? this.getSubcircuit()?.subcircuit_id!,
       name: this.name,
-      center: this._getGlobalPcbPositionBeforeLayout(),
+      anchor_position: anchorPosition,
+      center,
       ...(hasOutline ? { outline: numericOutline } : { width: 0, height: 0 }),
       pcb_component_ids: [],
       source_group_id: this.source_group_id!,
@@ -139,6 +144,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             trace_clearance: props.autorouter.traceClearance,
           }
         : undefined,
+      anchor_alignment: props.pcbAnchorAlignment ?? null,
     })
     this.pcb_group_id = pcb_group.pcb_group_id
 
@@ -486,6 +492,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     debug(`[${this.getString()}] starting local autorouting`)
     const autorouterConfig = this._getAutorouterConfig()
     const isLaserPrefabPreset = this._isLaserPrefabAutorouter(autorouterConfig)
+    const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       db,
@@ -523,7 +530,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Optional configuration parameters
         capacityDepth: this.props.autorouter?.capacityDepth,
         targetMinCapacity: this.props.autorouter?.targetMinCapacity,
-        useAssignableViaSolver: isLaserPrefabPreset,
+        useAssignableViaSolver: isLaserPrefabPreset || isSingleLayerBoard,
+        onSolverStarted: ({ solverName, solverParams }) =>
+          this.root?.emit("solver:started", {
+            type: "solver:started",
+            solverName,
+            solverParams,
+            componentName: this.getString(),
+          }),
       })
     }
 
@@ -914,16 +928,41 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       0,
     )
 
-    if (
-      !groupHasCoords &&
-      !hasManualEdits &&
-      unpositionedDirectChildrenCount > 1
-    )
-      return "pack"
+    if (!hasManualEdits && unpositionedDirectChildrenCount > 1) return "pack"
     return "none"
   }
 
   doInitialPcbLayout(): void {
+    if (this.root?.pcbDisabled) return
+
+    // Position the group itself if pcbX/pcbY are provided
+    if (this.pcb_group_id) {
+      const { db } = this.root!
+      const props = this._parsedProps
+
+      const hasExplicitPcbPosition =
+        props.pcbX !== undefined || props.pcbY !== undefined
+
+      if (hasExplicitPcbPosition) {
+        const parentGroup = this.parent?.getGroup?.()
+        const pcbParentGroupId = parentGroup?.pcb_group_id
+          ? db.pcb_group.get(parentGroup.pcb_group_id)?.pcb_group_id
+          : undefined
+
+        const positionedRelativeToBoardId = !pcbParentGroupId
+          ? (this._getBoard()?.pcb_board_id ?? undefined)
+          : undefined
+
+        db.pcb_group.update(this.pcb_group_id, {
+          position_mode: "relative_to_group_anchor",
+          positioned_relative_to_pcb_group_id: pcbParentGroupId,
+          positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
+          display_offset_x: props.pcbX,
+          display_offset_y: props.pcbY,
+        })
+      }
+    }
+
     const pcbLayoutMode = this._getPcbLayoutMode()
 
     if (pcbLayoutMode === "grid") {

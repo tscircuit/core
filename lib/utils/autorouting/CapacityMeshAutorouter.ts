@@ -18,6 +18,10 @@ export interface CapacityMeshAutoRouterOptions {
   targetMinCapacity?: number
   stepDelay?: number
   useAssignableViaSolver?: boolean
+  onSolverStarted?: (details: {
+    solverName: string
+    solverParams: unknown
+  }) => void
 }
 
 export class CapacityMeshAutorouter implements GenericLocalAutorouter {
@@ -49,6 +53,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       targetMinCapacity,
       stepDelay = 0,
       useAssignableViaSolver = false,
+      onSolverStarted,
     } = options
 
     // Initialize the solver with input and optional configuration
@@ -65,6 +70,18 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       capacityDepth,
       targetMinCapacity,
       cacheProvider: null,
+    })
+
+    onSolverStarted?.({
+      solverName: SolverClass.name,
+      solverParams: {
+        input,
+        options: {
+          capacityDepth,
+          targetMinCapacity,
+          cacheProvider: null,
+        },
+      },
     })
 
     this.stepDelay = stepDelay

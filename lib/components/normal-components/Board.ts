@@ -2,6 +2,7 @@ import { z } from "zod"
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { boardProps } from "@tscircuit/props"
 import { Group } from "../primitive-components/Group/Group"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
 import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import {
@@ -19,6 +20,7 @@ import type { RenderPhase } from "../base-components/Renderable"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type { BoardI } from "./BoardI"
 import { communityLibrary } from "../../utils/boards/board-templates"
+import type { PcbBoard } from "circuit-json"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -353,6 +355,16 @@ export class Board
   }
 
   doInitialSourceRender() {
+    // Check for nested boards (boards inside this board at any depth)
+    const nestedBoard = this.getDescendants().find(
+      (d) => d.lowercaseComponentName === "board",
+    )
+    if (nestedBoard) {
+      throw new Error(
+        `Nested boards are not supported: found board "${nestedBoard.name}" inside board "${this.name}"`,
+      )
+    }
+
     super.doInitialSourceRender()
 
     const { db } = this.root!
@@ -477,10 +489,6 @@ export class Board
 
       computedWidth = maxX - minX
       computedHeight = maxY - minY
-      center = {
-        x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
-        y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
-      }
     }
 
     let outline = finalOutline
@@ -498,6 +506,7 @@ export class Board
     }
 
     const pcb_board = db.pcb_board.insert({
+      source_board_id: this.source_board_id,
       center,
 
       thickness: this.boardThickness,
@@ -510,7 +519,7 @@ export class Board
         y: point.y + (props.outlineOffsetY ?? 0),
       })),
       material: props.material,
-    })
+    } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
     this.pcb_board_id = pcb_board.pcb_board_id!
 
@@ -596,6 +605,74 @@ export class Board
         renderId: this._renderId,
         phase,
       })
+    }
+  }
+
+  _repositionOnPcb(position: { x: number; y: number }): void {
+    const { db } = this.root!
+    const pcbBoard = this.pcb_board_id
+      ? db.pcb_board.get(this.pcb_board_id)
+      : null
+    const oldPos = pcbBoard?.center
+
+    if (!oldPos) {
+      if (this.pcb_board_id) {
+        db.pcb_board.update(this.pcb_board_id, { center: position })
+      }
+      return
+    }
+
+    const deltaX = position.x - oldPos.x
+    const deltaY = position.y - oldPos.y
+
+    if (Math.abs(deltaX) < 1e-6 && Math.abs(deltaY) < 1e-6) {
+      return
+    }
+
+    for (const child of this.children) {
+      if (child instanceof NormalComponent) {
+        let childOldCenter: { x: number; y: number } | undefined
+
+        if (child.pcb_component_id) {
+          const comp = db.pcb_component.get(child.pcb_component_id)
+          if (comp) childOldCenter = comp.center
+        } else if (child instanceof Group && child.pcb_group_id) {
+          const group = db.pcb_group.get(child.pcb_group_id)
+          if (group) childOldCenter = group.center
+        }
+
+        if (childOldCenter) {
+          child._repositionOnPcb({
+            x: childOldCenter.x + deltaX,
+            y: childOldCenter.y + deltaY,
+          })
+        }
+      }
+    }
+
+    if (this.pcb_board_id) {
+      db.pcb_board.update(this.pcb_board_id, { center: position })
+
+      if (pcbBoard?.outline) {
+        const outlineBounds = getBoundsFromPoints(pcbBoard.outline)
+        if (outlineBounds) {
+          const oldOutlineCenter = {
+            x: (outlineBounds.minX + outlineBounds.maxX) / 2,
+            y: (outlineBounds.minY + outlineBounds.maxY) / 2,
+          }
+          const outlineDeltaX = position.x - oldOutlineCenter.x
+          const outlineDeltaY = position.y - oldOutlineCenter.y
+
+          const newOutline = pcbBoard.outline.map((p) => ({
+            x: p.x + outlineDeltaX,
+            y: p.y + outlineDeltaY,
+          }))
+
+          db.pcb_board.update(this.pcb_board_id, {
+            outline: newOutline,
+          })
+        }
+      }
     }
   }
 }

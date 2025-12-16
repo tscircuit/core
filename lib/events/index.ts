@@ -13,6 +13,10 @@ export type RootCircuitEventName =
   | "autorouting:end"
   | "autorouting:error"
   | "autorouting:progress"
+  | "packing:start"
+  | "packing:end"
+  | "packing:error"
+  | "solver:started"
   | "renderComplete"
   | "debug:logOutput"
 
@@ -43,6 +47,32 @@ export interface AutoroutingProgressEvent {
 
 export interface AutoroutingEndEvent {
   type: "autorouting:end"
+}
+
+export interface PackingStartEvent {
+  type: "packing:start"
+  subcircuit_id: string | null
+  componentDisplayName: string
+}
+
+export interface PackingEndEvent {
+  type: "packing:end"
+  subcircuit_id: string | null
+  componentDisplayName: string
+}
+
+export interface PackingErrorEvent {
+  type: "packing:error"
+  subcircuit_id: string | null
+  componentDisplayName: string
+  error?: { message: string }
+}
+
+export interface SolverStartedEvent {
+  type: "solver:started"
+  solverName: string
+  solverParams: unknown
+  componentName: string
 }
 
 export interface DebugLogOutputEvent {

@@ -1614,6 +1614,37 @@ export class NormalComponent<
     NormalComponent_doInitialSourceDesignRuleChecks(this)
   }
 
+  doInitialPcbLayout(): void {
+    if (this.root?.pcbDisabled) return
+    if (!this.pcb_component_id) return
+
+    const { db } = this.root!
+    const props = this._parsedProps
+
+    const hasExplicitPcbPosition =
+      props.pcbX !== undefined || props.pcbY !== undefined
+    if (!hasExplicitPcbPosition) return
+
+    const sourceComponent = db.source_component.get(this.source_component_id!)
+    const positionedRelativeToGroupId = sourceComponent?.source_group_id
+      ? db.pcb_group.getWhere({
+          source_group_id: sourceComponent.source_group_id,
+        })?.pcb_group_id
+      : undefined
+
+    const positionedRelativeToBoardId = positionedRelativeToGroupId
+      ? undefined
+      : (this._getBoard()?.pcb_board_id ?? undefined)
+
+    db.pcb_component.update(this.pcb_component_id, {
+      position_mode: "relative_to_group_anchor",
+      positioned_relative_to_pcb_group_id: positionedRelativeToGroupId,
+      positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
+      display_offset_x: props.pcbX,
+      display_offset_y: props.pcbY,
+    })
+  }
+
   /**
    * Get the minimum flex container size for this component on PCB
    */
