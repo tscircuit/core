@@ -54,7 +54,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   )
 
   let board: PcbBoard | undefined | null = null
-  if (subcircuit_id && db.source_board) {
+  if (subcircuit_id) {
     const source_group_id = subcircuit_id.replace(/^subcircuit_/, "")
     const source_board = db.source_board.getWhere({ source_group_id })
     if (source_board) {
