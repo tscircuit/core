@@ -1,7 +1,7 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
-import type { AnyCircuitElement } from "circuit-json"
+import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import { su } from "@tscircuit/circuit-json-util"
 import {
   ConnectivityMap,
@@ -53,7 +53,21 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ("subcircuit_id" in e && relevantSubcircuitIds!.has(e.subcircuit_id!)),
   )
 
-  const board = db.pcb_board.list()[0]
+  let board: PcbBoard | undefined | null = null
+  if (subcircuit_id) {
+    const source_group_id = subcircuit_id.replace(/^subcircuit_/, "")
+    const source_board = db.source_board.getWhere({ source_group_id })
+    if (source_board) {
+      board = db.pcb_board.getWhere({
+        source_board_id: source_board.source_board_id,
+      })
+    }
+  }
+
+  if (!board) {
+    board = db.pcb_board.list()[0]
+  }
+
   db = su(subcircuitElements)
 
   const connMap = getFullConnectivityMapFromCircuitJson(subcircuitElements)

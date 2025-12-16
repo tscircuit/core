@@ -6,7 +6,7 @@ test("panel with a grid of resistors on boards", async () => {
 
   const boardWidth = 10
   const boardHeight = 5
-  const numBoardsX = 1
+  const numBoardsX = 2
   const numBoardsY = 2
 
   const boards = []
@@ -60,8 +60,8 @@ test("panel with a grid of resistors on boards with no explicit positions", asyn
 
   const boardWidth = 10 // mm
   const boardHeight = 5 // mm
-  const numBoardsX = 1
-  const numBoardsY = 2
+  const numBoardsX = 4
+  const numBoardsY = 4
 
   const boards = []
   for (let y = 0; y < numBoardsY; y++) {
@@ -74,7 +74,7 @@ test("panel with a grid of resistors on boards with no explicit positions", asyn
   }
 
   circuit.add(
-    <panel width={35} height={20} col={1}>
+    <panel>
       {boards.map((pos, i) => (
         <board
           key={i}

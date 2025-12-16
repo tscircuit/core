@@ -18,6 +18,7 @@ import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorS
 import type { RenderPhase } from "../base-components/Renderable"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type { BoardI } from "./BoardI"
+import type { PcbBoard } from "circuit-json"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -434,6 +435,7 @@ export class Board
     }
 
     const pcb_board = db.pcb_board.insert({
+      source_board_id: this.source_board_id,
       center,
 
       thickness: this.boardThickness,
@@ -446,7 +448,7 @@ export class Board
         y: point.y + (props.outlineOffsetY ?? 0),
       })),
       material: props.material,
-    })
+    } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
     this.pcb_board_id = pcb_board.pcb_board_id!
 
