@@ -1,4 +1,5 @@
 import type { RenderPhase } from "lib/components/base-components/Renderable"
+import type { SOLVERS } from "lib/solvers"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
 export type RootCircuitEventName =
@@ -70,8 +71,8 @@ export interface PackingErrorEvent {
 
 export interface SolverStartedEvent {
   type: "solver:started"
-  solverName: string
-  solverParams: unknown
+  solverName: keyof typeof SOLVERS
+  solverParams: any
   componentName: string
 }
 
