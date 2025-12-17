@@ -12,6 +12,7 @@ import type {
   AutorouterEvent,
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
+import { SOLVERS } from "lib/solvers"
 
 export interface CapacityMeshAutoRouterOptions {
   capacityDepth?: number
@@ -62,9 +63,10 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
       AssignableViaAutoroutingPipelineSolver,
     } = CapacityAutorouter
 
-    const SolverClass = useAssignableViaSolver
-      ? AssignableViaAutoroutingPipelineSolver
-      : AutoroutingPipelineSolver
+    const solverName = useAssignableViaSolver
+      ? "AssignableViaAutoroutingPipelineSolver"
+      : "AutoroutingPipelineSolver"
+    const SolverClass = SOLVERS[solverName]
 
     this.solver = new SolverClass(input as any, {
       capacityDepth,
@@ -73,7 +75,7 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
     })
 
     onSolverStarted?.({
-      solverName: SolverClass.name,
+      solverName,
       solverParams: {
         input,
         options: {
