@@ -9,6 +9,12 @@ test("interconnect with custom footprint and internallyConnectedPins", async () 
       <testpoint name="TP_LEFT" pcbX={-5} pcbY={0} />
       <testpoint name="TP_RIGHT" pcbX={5} pcbY={0} />
 
+      <silkscreentext
+        text="This interconnect has a custom footprint with internallyConnectedPins"
+        pcbX={0}
+        pcbY={2}
+        fontSize="0.2mm"
+      />
       <interconnect
         name="IC1"
         footprint={
