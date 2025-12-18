@@ -11,7 +11,10 @@ test("cadmodel handles blob glb url via fragment extension", () => {
         resistance={1000}
         footprint="0402"
         cadModel={
-          <cadmodel modelUrl="blob:http://localhost:3000/123#ext=glb" pcbX={1} />
+          <cadmodel
+            modelUrl="blob:http://localhost:3000/123#ext=glb"
+            pcbX={1}
+          />
         }
       />
     </board>,
