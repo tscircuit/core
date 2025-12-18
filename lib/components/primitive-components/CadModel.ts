@@ -71,20 +71,36 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
     const layer = parent.props.layer === "bottom" ? "bottom" : "top"
 
     const ext = props.modelUrl ? getFileExtension(props.modelUrl) : undefined
+    const modelUrlWithoutExtFragment = props.modelUrl?.replace(/#ext=\w+$/, "")
     const urlProps: Partial<CadComponent> = {}
     if (ext === "stl")
-      urlProps.model_stl_url = this._addCachebustToModelUrl(props.modelUrl)
+      urlProps.model_stl_url = this._addCachebustToModelUrl(
+        modelUrlWithoutExtFragment,
+      )
     else if (ext === "obj")
-      urlProps.model_obj_url = this._addCachebustToModelUrl(props.modelUrl)
+      urlProps.model_obj_url = this._addCachebustToModelUrl(
+        modelUrlWithoutExtFragment,
+      )
     else if (ext === "gltf")
-      urlProps.model_gltf_url = this._addCachebustToModelUrl(props.modelUrl)
+      urlProps.model_gltf_url = this._addCachebustToModelUrl(
+        modelUrlWithoutExtFragment,
+      )
     else if (ext === "glb")
-      urlProps.model_glb_url = this._addCachebustToModelUrl(props.modelUrl)
+      urlProps.model_glb_url = this._addCachebustToModelUrl(
+        modelUrlWithoutExtFragment,
+      )
     else if (ext === "step" || ext === "stp")
-      urlProps.model_step_url = this._addCachebustToModelUrl(props.modelUrl)
+      urlProps.model_step_url = this._addCachebustToModelUrl(
+        modelUrlWithoutExtFragment,
+      )
     else if (ext === "wrl" || ext === "vrml")
-      urlProps.model_wrl_url = this._addCachebustToModelUrl(props.modelUrl)
-    else urlProps.model_stl_url = this._addCachebustToModelUrl(props.modelUrl)
+      urlProps.model_wrl_url = this._addCachebustToModelUrl(
+        modelUrlWithoutExtFragment,
+      )
+    else
+      urlProps.model_stl_url = this._addCachebustToModelUrl(
+        modelUrlWithoutExtFragment,
+      )
 
     if (props.stepUrl) {
       const transformed = this._addCachebustToModelUrl(props.stepUrl)
