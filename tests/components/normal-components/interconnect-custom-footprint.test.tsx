@@ -5,7 +5,7 @@ test("interconnect with custom footprint and internallyConnectedPins", async () 
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="10mm">
+    <board width="20mm" height="10mm" autorouter="laser_prefab">
       <testpoint name="TP_LEFT" pcbX={-5} pcbY={0} />
       <testpoint name="TP_RIGHT" pcbX={5} pcbY={0} />
 
@@ -41,9 +41,9 @@ test("interconnect with custom footprint and internallyConnectedPins", async () 
         pcbX={0}
         pcbY={0}
       />
+      <cutout pcbX={0} pcbY={0} shape="rect" width={0.25} height={8} />
 
-      <trace from=".TP_LEFT" to=".IC1 .pin1" />
-      <trace from=".TP_RIGHT" to=".IC1 .pin2" />
+      <trace from="TP_LEFT.pin1" to="TP_RIGHT.pin1" />
     </board>,
   )
 
