@@ -59,6 +59,12 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
 
       const solver = new CopperPourPipelineSolver(inputProblem)
 
+      this.root!.emit("solver:started", {
+        solverName: "CopperPourPipelineSolver",
+        solverParams: inputProblem,
+        componentName: this.props.name,
+      })
+
       const { brep_shapes } = solver.getOutput()
 
       const coveredWithSolderMask = props.coveredWithSolderMask ?? false
