@@ -51,11 +51,15 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     const position = this._getGlobalPcbPositionBeforeLayout()
     const soldermaskMargin = props.solderMaskMargin
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
+    const pcb_component_id =
+      this.parent?.pcb_component_id ??
+      this.getPrimitiveContainer()?.pcb_component_id
 
     if (props.shape === "pill") {
       // Check if rotation is specified to determine pill type
       if (props.pcbRotation && props.pcbRotation !== 0) {
         const inserted_hole = db.pcb_hole.insert({
+          pcb_component_id,
           type: "pcb_hole",
           hole_shape: "rotated_pill",
           hole_width: props.width,
@@ -71,6 +75,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         this.pcb_hole_id = inserted_hole.pcb_hole_id!
       } else {
         const inserted_hole = db.pcb_hole.insert({
+          pcb_component_id,
           type: "pcb_hole",
           hole_shape: "pill",
           hole_width: props.width,
@@ -87,6 +92,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     } else if (props.shape === "rect") {
       // Rect shape
       const inserted_hole = db.pcb_hole.insert({
+        pcb_component_id,
         type: "pcb_hole",
         hole_shape: "rect",
         hole_width: props.width,
@@ -102,6 +108,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     } else {
       // Circle shape (default)
       const inserted_hole = db.pcb_hole.insert({
+        pcb_component_id,
         type: "pcb_hole",
         hole_shape: "circle",
         hole_diameter: props.diameter,
