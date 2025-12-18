@@ -3,7 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const BOARD_SIZE = "10mm"
 
-test("copper pour creates net from connectsTo prop", async () => {
+test("emit solver:started event for Copper Pour pipeline execution", async () => {
   const { circuit } = getTestFixture()
 
   let copperPourEvent: string

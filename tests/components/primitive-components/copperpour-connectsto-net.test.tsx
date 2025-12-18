@@ -6,10 +6,6 @@ const BOARD_SIZE = "10mm"
 test("copper pour creates net from connectsTo prop", async () => {
   const { circuit } = getTestFixture()
 
-  circuit.on("solver:started", (data) => {
-    console.log(data)
-  })
-
   circuit.add(
     <board width={BOARD_SIZE} height={BOARD_SIZE}>
       <copperpour connectsTo="net.GND" layer="top" />
