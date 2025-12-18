@@ -42,6 +42,10 @@ import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicT
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
+import {
+  translateSimpleRouteJson,
+  translateSimplifiedPcbTraces,
+} from "lib/utils/autorouting/translateSimpleRouteJson"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -494,22 +498,39 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const isLaserPrefabPreset = this._isLaserPrefabAutorouter(autorouterConfig)
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
+    const boardCenter = { x: 0, y: 0 }
+    if ("pcb_board_id" in this && typeof this.pcb_board_id === "string") {
+      const board = db.pcb_board.get(this.pcb_board_id)
+      if (board) {
+        boardCenter.x = board.center.x
+        boardCenter.y = board.center.y
+      }
+    }
+
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       db,
       minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
       subcircuit_id: this.subcircuit_id,
     })
 
+    const translatedRouteJson =
+      boardCenter.x !== 0 || boardCenter.y !== 0
+        ? translateSimpleRouteJson(simpleRouteJson, {
+            x: -boardCenter.x,
+            y: -boardCenter.y,
+          })
+        : simpleRouteJson
+
     if (debug.enabled) {
       ;(global as any).debugOutputArray?.push({
         name: `simpleroutejson-${this.props.name}.json`,
-        obj: simpleRouteJson,
+        obj: translatedRouteJson,
       })
     }
 
     if (debug.enabled) {
       const graphicsObject = convertSrjToGraphicsObject(
-        simpleRouteJson as any,
+        translatedRouteJson as any,
       ) as GraphicsObject
       graphicsObject.title = `autorouting-${this.props.name}`
       ;(global as any).debugGraphics?.push(graphicsObject)
@@ -518,15 +539,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this.root?.emit("autorouting:start", {
       subcircuit_id: this.subcircuit_id,
       componentDisplayName: this.getString(),
-      simpleRouteJson,
+      simpleRouteJson: translatedRouteJson,
     })
 
     // Create the autorouter instance
     let autorouter: GenericLocalAutorouter
     if (autorouterConfig.algorithmFn) {
-      autorouter = await autorouterConfig.algorithmFn(simpleRouteJson)
+      autorouter = await autorouterConfig.algorithmFn(translatedRouteJson)
     } else {
-      autorouter = new CapacityMeshAutorouter(simpleRouteJson, {
+      autorouter = new CapacityMeshAutorouter(translatedRouteJson, {
         // Optional configuration parameters
         capacityDepth: this.props.autorouter?.capacityDepth,
         targetMinCapacity: this.props.autorouter?.targetMinCapacity,
@@ -571,7 +592,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     try {
       // Wait for the autorouting to complete
-      const traces = await routingPromise
+      let traces = await routingPromise
+
+      // If we shifted the coordinates, shift them back
+      if (boardCenter.x !== 0 || boardCenter.y !== 0) {
+        traces = translateSimplifiedPcbTraces(traces, boardCenter)
+      }
 
       // Make vias. Unclear if the autorouter should include this in it's output
       // const vias: Partial<PcbVia>[] = []
@@ -611,7 +637,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         error: {
           message: error instanceof Error ? error.message : String(error),
         },
-        simpleRouteJson,
+        simpleRouteJson: translatedRouteJson,
       })
 
       throw error
