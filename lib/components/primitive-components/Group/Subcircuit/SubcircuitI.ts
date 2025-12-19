@@ -8,4 +8,6 @@ export interface SubcircuitI {
   root: RootCircuit | null
   getGroup(): IGroup | null
   source_group_id: string | null
+  selectOne(selector: string): PrimitiveComponent | null
+  selectAll(selector: string): PrimitiveComponent[]
 }

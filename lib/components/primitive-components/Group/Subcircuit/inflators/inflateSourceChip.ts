@@ -79,24 +79,25 @@ export const inflateSourceChip = (
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
+    footprint: deriveFootprintFromPcbComponent(pcbElm, injectionDb),
     internallyConnectedPins,
   })
 
-  const footprint = cadElm?.footprinter_string ?? null
-  if (footprint) {
-    Object.assign(chip.props as any, { footprint })
-    Object.assign((chip as any)._parsedProps, { footprint })
-    if (!cadElm) {
-      ;(chip as any)._addChildrenFromStringFootprint?.()
-    }
-  }
+  // const footprint = cadElm?.footprinter_string ?? null
+  // if (footprint) {
+  //   Object.assign(chip.props as any, { footprint })
+  //   Object.assign((chip as any)._parsedProps, { footprint })
+  //   if (!cadElm) {
+  //     ;(chip as any)._addChildrenFromStringFootprint?.()
+  //   }
+  // }
 
-  if (pcbElm) {
-    inflatePcbComponent(pcbElm, {
-      ...inflatorContext,
-      normalComponent: chip,
-    })
-  }
+  // if (pcbElm) {
+  //   inflatePcbComponent(pcbElm, {
+  //     ...inflatorContext,
+  //     normalComponent: chip,
+  //   })
+  // }
 
   if (sourceElm.source_group_id && groupsMap?.has(sourceElm.source_group_id)) {
     const group = groupsMap.get(sourceElm.source_group_id)!

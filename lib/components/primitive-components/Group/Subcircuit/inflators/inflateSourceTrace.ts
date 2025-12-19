@@ -1,31 +1,7 @@
-import type { SourceTrace } from "circuit-json"
+import type { PcbPort, SourcePort, SourceTrace } from "circuit-json"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import type { InflatorContext } from "../InflatorFn"
-
-const getSelectorPath = (
-  component: { name: string; source_group_id: string | undefined },
-  inflatorContext: InflatorContext,
-): string => {
-  const { injectionDb, subcircuit, groupsMap } = inflatorContext
-  const path_parts: string[] = []
-  let currentGroupId = component.source_group_id
-  while (currentGroupId && currentGroupId !== subcircuit.source_group_id) {
-    const sourceGroup = injectionDb.source_group.get(currentGroupId)
-    const groupInstance = groupsMap?.get(currentGroupId)
-    if (!sourceGroup || !groupInstance) break
-
-    // The group instance may not have been rendered, so its ".name"
-    // getter can fail. We reconstruct the name from its props or
-    // its fallback.
-    const groupName =
-      groupInstance.props.name ?? groupInstance.fallbackUnassignedName
-
-    path_parts.unshift(`.${groupName}`)
-    currentGroupId = sourceGroup.parent_source_group_id
-  }
-  path_parts.push(`.${component.name}`)
-  return path_parts.join(" > ")
-}
+import type { Port } from "lib/components"
 
 export function inflateSourceTrace(
   sourceTrace: SourceTrace,
@@ -33,60 +9,69 @@ export function inflateSourceTrace(
 ) {
   const { injectionDb, subcircuit } = inflatorContext
 
-  const connectedSelectors: string[] = []
+  const pcbTraces = injectionDb.pcb_trace.list({
+    source_trace_id: sourceTrace.source_trace_id,
+  })
 
-  // Get selectors for connected ports
-  for (const sourcePortId of sourceTrace.connected_source_port_ids) {
-    const sourcePort = injectionDb.source_port.get(sourcePortId)
-    if (!sourcePort) {
-      continue
-    }
+  // TODO support multiple pcb traces with pcbPaths
 
-    let selector: string | undefined
-    if (sourcePort.source_component_id) {
-      const sourceComponent = injectionDb.source_component.get(
-        sourcePort.source_component_id,
-      )
-      if (sourceComponent) {
-        // This is a port on a component, e.g. .G1 > .R1 > .pin1
-        const path = getSelectorPath(
-          {
-            name: sourceComponent.name,
-            source_group_id: sourceComponent.source_group_id,
-          },
-          inflatorContext,
-        )
-        selector = `${path} > .${sourcePort.name}`
-      }
-    } else {
-      // This is a port on a group, usually the root group of the subcircuit.
-      // e.g. .P1
-      selector = `.${sourcePort.name}`
-    }
+  const pcbTrace = pcbTraces[0]
 
-    if (selector) {
-      connectedSelectors.push(selector)
-    }
+  if (!pcbTrace) {
+    throw new Error(
+      `No pcb trace found for source trace ${sourceTrace.source_trace_id}`,
+    )
   }
 
-  // Get selectors for connected nets
-  for (const sourceNetId of sourceTrace.connected_source_net_ids) {
-    const sourceNet = injectionDb.source_net.get(sourceNetId)
-    if (sourceNet) {
-      connectedSelectors.push(`net.${sourceNet.name}`)
-    }
+  const inflationDbPcbPorts = pcbTrace.route
+    .flatMap((rp) =>
+      rp.route_type === "wire"
+        ? [rp.start_pcb_port_id, rp.end_pcb_port_id]
+        : [],
+    )
+    .filter(Boolean)
+    .map((pcbPortId) => injectionDb.pcb_port.get(pcbPortId!) as PcbPort)
+
+  debugger
+  const connectedPorts: Port[] = []
+
+  for (const pcbPort of inflationDbPcbPorts) {
+    const sourcePort = injectionDb.source_port.get(pcbPort.source_port_id!)!
+    const pinNumber = sourcePort.pin_number
+
+    const component = injectionDb.source_component.get(
+      sourcePort.source_component_id!,
+    )!
+
+    const connectedPort = subcircuit.selectOne(
+      `.${component.name} > port.pin${pinNumber}`,
+    ) as Port | null
+
+    if (!connectedPort) continue
+
+    connectedPorts.push(connectedPort)
   }
 
-  if (connectedSelectors.length < 2) {
-    return
+  if (connectedPorts.length <= 2) {
+    throw new Error(
+      `Trace ${sourceTrace.source_trace_id} has less than 2 connected ports`,
+    )
   }
 
   const trace = new Trace({
-    path: connectedSelectors,
+    // path: ["#PortId1", "#PortId2"],
+    path: connectedPorts.map((p) => p.getPortSelector()),
+    pcbPath: pcbTrace.route.map((rp) =>
+      rp.route_type === "wire"
+        ? { x: rp.x, y: rp.y }
+        : {
+            x: rp.x,
+            y: rp.y,
+            // @ts-ignore
+            layer: rp.to_layer,
+          },
+    ),
   })
-
-  // Set source_trace_id on the new trace
-  trace.source_trace_id = sourceTrace.source_trace_id
 
   subcircuit.add(trace)
 }
