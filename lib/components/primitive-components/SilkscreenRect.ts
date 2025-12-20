@@ -56,4 +56,21 @@ export class SilkscreenRect extends PrimitiveComponent<
     const { _parsedProps: props } = this
     return { width: props.width, height: props.height }
   }
+
+  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_silkscreen_rect_id) return
+
+    const rect = db.pcb_silkscreen_rect.get(this.pcb_silkscreen_rect_id)
+
+    if (rect) {
+      db.pcb_silkscreen_rect.update(this.pcb_silkscreen_rect_id, {
+        center: {
+          x: rect.center.x + deltaX,
+          y: rect.center.y + deltaY,
+        },
+      })
+    }
+  }
 }

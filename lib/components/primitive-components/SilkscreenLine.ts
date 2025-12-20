@@ -52,4 +52,20 @@ export class SilkscreenLine extends PrimitiveComponent<
     const height = Math.abs(props.y2 - props.y1)
     return { width, height }
   }
+
+  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_silkscreen_line_id) return
+
+    const line = db.pcb_silkscreen_line.get(this.pcb_silkscreen_line_id)
+    if (line) {
+      db.pcb_silkscreen_line.update(this.pcb_silkscreen_line_id, {
+        x1: line.x1 + deltaX,
+        y1: line.y1 + deltaY,
+        x2: line.x2 + deltaX,
+        y2: line.y2 + deltaY,
+      })
+    }
+  }
 }

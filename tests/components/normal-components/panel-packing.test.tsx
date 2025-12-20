@@ -26,14 +26,37 @@ test("panel packing default", () => {
     <panel>
       <board width="10mm" height="10mm" routingDisabled>
         <resistor name="R1" resistance="1k" footprint="0805" />
+        <silkscreentext pcbX={0} pcbY={0} text="B1" anchorAlignment="center" />
       </board>
       <board width="12mm" height="8mm" routingDisabled>
         <resistor name="R1" resistance="1k" pcbY={2} footprint="0805" />
+        <silkscreencircle pcbX={0} pcbY={-1} radius={1} />
       </board>
-      <board width="8mm" height="12mm" routingDisabled />
-      <board width="10mm" height="10mm" routingDisabled />
-      <board width="5mm" height="5mm" routingDisabled />
-      <board width="15mm" height="5mm" routingDisabled />
+      <board width="8mm" height="12mm" routingDisabled>
+        <silkscreenrect pcbX={0} pcbY={0} width={2} height={2} />
+      </board>
+      <board width="10mm" height="10mm" routingDisabled>
+        <silkscreenline x1={-2} y1={-2} x2={2} y2={2} strokeWidth={0.1} />
+      </board>
+      <board width="5mm" height="5mm" routingDisabled>
+        <silkscreenpath
+          route={[
+            { x: -1, y: -1 },
+            { x: 1, y: -1 },
+            { x: 0, y: 1 },
+            { x: -1, y: -1 },
+          ]}
+        />
+      </board>
+      <board width="15mm" height="5mm" routingDisabled>
+        <silkscreentext
+          pcbX={0}
+          pcbY={0}
+          text="B6"
+          fontSize="0.5mm"
+          anchorAlignment="center"
+        />
+      </board>
     </panel>,
   )
   circuit.render()
