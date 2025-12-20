@@ -576,6 +576,12 @@ export class Board
             y: childOldCenter.y + deltaY,
           })
         }
+      } else if (
+        child.isPcbPrimitive &&
+        "_repositionOnPcb" in child &&
+        typeof child._repositionOnPcb === "function"
+      ) {
+        child._repositionOnPcb({ deltaX, deltaY })
       }
     }
 

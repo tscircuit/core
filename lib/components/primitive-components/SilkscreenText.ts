@@ -7,6 +7,7 @@ import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJs
 export class SilkscreenText extends PrimitiveComponent<
   typeof silkscreenTextProps
 > {
+  pcb_silkscreen_text_ids: string[] = []
   isPcbPrimitive = true
 
   get config() {
@@ -56,7 +57,7 @@ export class SilkscreenText extends PrimitiveComponent<
       1
 
     for (const layer of targetLayers) {
-      db.pcb_silkscreen_text.insert({
+      const pcb_silkscreen_text = db.pcb_silkscreen_text.insert({
         anchor_alignment: props.anchorAlignment,
         anchor_position: {
           x: position.x,
@@ -71,6 +72,9 @@ export class SilkscreenText extends PrimitiveComponent<
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       })
+      this.pcb_silkscreen_text_ids.push(
+        pcb_silkscreen_text.pcb_silkscreen_text_id,
+      )
     }
   }
 
@@ -84,5 +88,22 @@ export class SilkscreenText extends PrimitiveComponent<
     const textWidth = text.length * fontSize
     const textHeight = fontSize
     return { width: textWidth * fontSize, height: textHeight * fontSize }
+  }
+
+  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+
+    for (const id of this.pcb_silkscreen_text_ids) {
+      const text = db.pcb_silkscreen_text.get(id)
+      if (text) {
+        db.pcb_silkscreen_text.update(id, {
+          anchor_position: {
+            x: text.anchor_position.x + deltaX,
+            y: text.anchor_position.y + deltaY,
+          },
+        })
+      }
+    }
   }
 }

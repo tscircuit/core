@@ -89,6 +89,23 @@ export class SilkscreenPath extends PrimitiveComponent<
     })
   }
 
+  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_silkscreen_path_id) return
+
+    const path = db.pcb_silkscreen_path.get(this.pcb_silkscreen_path_id)
+    if (path) {
+      db.pcb_silkscreen_path.update(this.pcb_silkscreen_path_id, {
+        route: path.route.map((p) => ({
+          ...p,
+          x: p.x + deltaX,
+          y: p.y + deltaY,
+        })),
+      })
+    }
+  }
+
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
     if (!props.route || props.route.length === 0) {

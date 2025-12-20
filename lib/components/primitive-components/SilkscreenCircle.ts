@@ -56,4 +56,20 @@ export class SilkscreenCircle extends PrimitiveComponent<
     const diameter = props.radius * 2
     return { width: diameter, height: diameter }
   }
+
+  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_silkscreen_circle_id) return
+
+    const circle = db.pcb_silkscreen_circle.get(this.pcb_silkscreen_circle_id)
+    if (circle) {
+      db.pcb_silkscreen_circle.update(this.pcb_silkscreen_circle_id, {
+        center: {
+          x: circle.center.x + deltaX,
+          y: circle.center.y + deltaY,
+        },
+      })
+    }
+  }
 }
