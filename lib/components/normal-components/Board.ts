@@ -406,7 +406,7 @@ export class Board
       })
     }
 
-    // Compute width and height from outline if not provided
+    // Compute width and height from outline only when not explicitly provided
     if (props.outline) {
       const xValues = props.outline.map((point) => point.x)
       const yValues = props.outline.map((point) => point.y)
@@ -416,8 +416,13 @@ export class Board
       const minY = Math.min(...yValues)
       const maxY = Math.max(...yValues)
 
-      computedWidth = maxX - minX
-      computedHeight = maxY - minY
+      // Only calculate from outline if dimension is not explicitly provided
+      if (props.width == null) {
+        computedWidth = maxX - minX
+      }
+      if (props.height == null) {
+        computedHeight = maxY - minY
+      }
     }
 
     let outline = props.outline
