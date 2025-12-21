@@ -6,6 +6,7 @@ export class FabricationNoteRect extends PrimitiveComponent<
   typeof fabricationNoteRectProps
 > {
   fabrication_note_rect_id: string | null = null
+  isPcbPrimitive = true
 
   get config() {
     return {
@@ -65,5 +66,22 @@ export class FabricationNoteRect extends PrimitiveComponent<
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
     return { width: props.width, height: props.height }
+  }
+
+  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.fabrication_note_rect_id) return
+
+    const rect = db.pcb_fabrication_note_rect.get(this.fabrication_note_rect_id)
+
+    if (rect) {
+      db.pcb_fabrication_note_rect.update(this.fabrication_note_rect_id, {
+        center: {
+          x: rect.center.x + deltaX,
+          y: rect.center.y + deltaY,
+        },
+      })
+    }
   }
 }

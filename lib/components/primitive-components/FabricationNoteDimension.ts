@@ -82,6 +82,31 @@ export class FabricationNoteDimension extends PrimitiveComponent<
       fabrication_note_dimension.pcb_fabrication_note_dimension_id
   }
 
+  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.fabrication_note_dimension_id) return
+
+    const dimension = db.pcb_fabrication_note_dimension.get(
+      this.fabrication_note_dimension_id,
+    )
+    if (dimension) {
+      db.pcb_fabrication_note_dimension.update(
+        this.fabrication_note_dimension_id,
+        {
+          from: {
+            x: dimension.from.x + deltaX,
+            y: dimension.from.y + deltaY,
+          },
+          to: {
+            x: dimension.to.x + deltaX,
+            y: dimension.to.y + deltaY,
+          },
+        },
+      )
+    }
+  }
+
   getPcbSize(): { width: number; height: number } {
     const transform = this._computePcbGlobalTransformBeforeLayout()
     const from = this._resolvePoint(this._parsedProps.from, transform)
