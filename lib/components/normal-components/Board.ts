@@ -122,6 +122,9 @@ export class Board
    */
   get allLayers() {
     const layerCount = this._parsedProps.layers ?? 2
+    if (layerCount === 1) {
+      return ["top"] as const
+    }
     if (layerCount === 4) {
       return ["top", "bottom", "inner1", "inner2"] as const
     }
