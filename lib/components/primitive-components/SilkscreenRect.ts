@@ -1,4 +1,5 @@
 import { silkscreenRectProps } from "@tscircuit/props"
+import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SilkscreenRect extends PrimitiveComponent<
@@ -29,6 +30,14 @@ export class SilkscreenRect extends PrimitiveComponent<
 
     const subcircuit = this.getSubcircuit()
     const position = this._getGlobalPcbPositionBeforeLayout()
+    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
+    const decomposedTransform = decomposeTSR(globalTransform)
+    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
+    const rotationTolerance = 0.01
+    const isRotated90Degrees =
+      Math.abs(normalizedRotationDegrees - 90) < rotationTolerance ||
+      Math.abs(normalizedRotationDegrees - 270) < rotationTolerance
 
     const pcb_component_id =
       this.parent?.pcb_component_id ??
@@ -40,8 +49,8 @@ export class SilkscreenRect extends PrimitiveComponent<
         x: position.x,
         y: position.y,
       },
-      width: props.width,
-      height: props.height,
+      width: isRotated90Degrees ? props.height : props.width,
+      height: isRotated90Degrees ? props.width : props.height,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this?.getGroup()?.pcb_group_id ?? undefined,
       stroke_width: props.strokeWidth ?? 0.1,

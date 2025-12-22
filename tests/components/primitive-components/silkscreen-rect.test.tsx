@@ -62,3 +62,34 @@ test("SilkscreenRect footprint positions respect chip pcbX/pcbY", () => {
   expect(silkscreenRects[0].center.x).toBe(6)
   expect(silkscreenRects[0].center.y).toBe(8)
 })
+
+test("SilkscreenRect footprint rotation respects chip pcbRotation", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <chip
+        name="U1"
+        pcbX={5}
+        pcbY={6}
+        pcbRotation="90deg"
+        footprint={
+          <footprint>
+            <silkscreenrect pcbX={1} pcbY={2} width={1} height={2} />
+          </footprint>
+        }
+      />
+    </board>,
+  )
+
+  circuit.render()
+
+  const silkscreenRects = circuit.db.pcb_silkscreen_rect.list()
+
+  expect(silkscreenRects.length).toBe(1)
+  expect(silkscreenRects[0].center.x).toBe(3)
+  expect(silkscreenRects[0].center.y).toBe(7)
+  expect(silkscreenRects[0].width).toBe(2)
+  expect(silkscreenRects[0].height).toBe(1)
+  expect(circuit).toMatchPcbSnapshot(`${import.meta.path}-rotation`)
+})
