@@ -64,6 +64,12 @@ test("panel packing default", () => {
   const boards = circuit.db.pcb_board.list()
   expect(boards).toHaveLength(6)
 
+  for (const board of boards) {
+    expect(board.position_mode).toBe("relative_to_panel_anchor")
+    expect(board).toHaveProperty("display_offset_x")
+    expect(board).toHaveProperty("display_offset_y")
+  }
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path + "-default")
 })
 
