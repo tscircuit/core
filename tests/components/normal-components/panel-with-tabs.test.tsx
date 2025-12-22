@@ -43,7 +43,9 @@ test("panels boards with manual positions", () => {
   ) as PcbBoard[]
   expect(boards.length).toBe(2)
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-with-positions")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-with-positions", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel boards with no positions", () => {
@@ -58,7 +60,9 @@ test("panel boards with no positions", () => {
 
   circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-positions")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-positions", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel boards with no positions", () => {
@@ -78,7 +82,8 @@ test("panel boards with no positions", () => {
 
   expect(circuit).toMatchPcbSnapshot(
     import.meta.path + "-no-positions-5-boards",
-  )
+  ),
+    { showAnchorOffsets: true }
 })
 
 test("panel boards with some positions", () => {
@@ -96,7 +101,9 @@ test("panel boards with some positions", () => {
 
   circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-some-positions")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-some-positions", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel with mixed positions doesn't autolayout", () => {
@@ -112,6 +119,19 @@ test("panel with mixed positions doesn't autolayout", () => {
   circuit.render()
 
   const boards = circuit.db.pcb_board.list()
+
+  for (const board of boards) {
+    expect(board.position_mode).toBe("relative_to_panel_anchor")
+    expect(board).toHaveProperty("display_offset_x")
+    expect(board).toHaveProperty("display_offset_y")
+    if (board.center.x === 0) {
+      expect(board.display_offset_x).toBe("0mm")
+    }
+    if (board.center.x === 30) {
+      expect(board.display_offset_x).toBe("30mm")
+    }
+  }
+
   // Unpositioned board should be at 0,0
   expect(boards.find((b) => b.center.x === 0)).toBeDefined()
   // Positioned board should be at 30,0
@@ -140,7 +160,9 @@ test("panel with panelizationMethod: 'none' has no tabs or mouse bites", () => {
   expect(tabCutouts.length).toBe(0)
   const mouseBiteHoles = circuitJson.filter((el) => el.type === "pcb_hole")
   expect(mouseBiteHoles.length).toBe(0)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-tabs")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-tabs", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel with mouseBites: false has no mouse bites", () => {
@@ -177,7 +199,9 @@ test("panel with mouseBites: false has no mouse bites", () => {
   expect(tabCutouts.length).toBeGreaterThan(0)
   const mouseBiteHoles = circuitJson.filter((el) => el.type === "pcb_hole")
   expect(mouseBiteHoles.length).toBe(0)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-mouse-bites")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-no-mouse-bites", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel custom tab/gap props", () => {
@@ -199,7 +223,9 @@ test("panel custom tab/gap props", () => {
 
   circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-custom-props")
+  expect(circuit).toMatchPcbSnapshot(import.meta.path + "-custom-props", {
+    showAnchorOffsets: true,
+  })
 })
 
 test("panel with boards with different outlines", () => {

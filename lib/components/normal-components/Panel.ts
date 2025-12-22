@@ -75,6 +75,9 @@ export class Panel extends Group<typeof panelProps> {
         board._repositionOnPcb({ x: absoluteX, y: absoluteY })
         db.pcb_board.update(board.pcb_board_id!, {
           center: { x: absoluteX, y: absoluteY },
+          position_mode: "relative_to_panel_anchor",
+          display_offset_x: `${pos.x}mm`,
+          display_offset_y: `${pos.y}mm`,
         })
       }
 
@@ -115,6 +118,19 @@ export class Panel extends Group<typeof panelProps> {
           height: hasExplicitHeight
             ? distance.parse(this._parsedProps.height)
             : gridHeight + edgePaddingTop + edgePaddingBottom,
+        })
+      }
+    } else {
+      const panelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
+      for (const board of childBoardInstances) {
+        const boardDb = db.pcb_board.get(board.pcb_board_id!)
+        if (!boardDb) continue
+        const relativeX = boardDb.center.x - panelGlobalPos.x
+        const relativeY = boardDb.center.y - panelGlobalPos.y
+        db.pcb_board.update(board.pcb_board_id!, {
+          position_mode: "relative_to_panel_anchor",
+          display_offset_x: `${relativeX}mm`,
+          display_offset_y: `${relativeY}mm`,
         })
       }
     }
