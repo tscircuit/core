@@ -70,8 +70,8 @@ test("SilkscreenRect footprint rotation respects chip pcbRotation", () => {
     <board width="20mm" height="10mm">
       <chip
         name="U1"
-        pcbX={5}
-        pcbY={5}
+        pcbX={-5}
+        pcbY={0}
         pcbRotation="0deg"
         footprint={
           <footprint>
@@ -82,8 +82,8 @@ test("SilkscreenRect footprint rotation respects chip pcbRotation", () => {
       />
       <chip
         name="U2"
-        pcbX={10}
-        pcbY={5}
+        pcbX={0}
+        pcbY={0}
         pcbRotation="90deg"
         footprint={
           <footprint>
@@ -94,8 +94,8 @@ test("SilkscreenRect footprint rotation respects chip pcbRotation", () => {
       />
       <chip
         name="U3"
-        pcbX={15}
-        pcbY={5}
+        pcbX={5}
+        pcbY={0}
         pcbRotation="270deg"
         footprint={
           <footprint>
@@ -119,9 +119,9 @@ test("SilkscreenRect footprint rotation respects chip pcbRotation", () => {
     )
   }
 
-  const rect0 = findRectAt(6, 7)
-  const rect90 = findRectAt(8, 6)
-  const rect270 = findRectAt(17, 4)
+  const rect0 = findRectAt(-4, 2)
+  const rect90 = findRectAt(-2, 1)
+  const rect270 = findRectAt(7, -1)
 
   expect(rect0).toBeDefined()
   expect(rect0?.width).toBe(1)
