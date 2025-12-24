@@ -75,7 +75,10 @@ export class FabricationNotePath extends PrimitiveComponent<
     return { width: maxX - minX, height: maxY - minY }
   }
 
-  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.fabrication_note_path_id) return

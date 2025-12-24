@@ -578,10 +578,10 @@ export class Board
         }
       } else if (
         child.isPcbPrimitive &&
-        "_repositionOnPcb" in child &&
-        typeof child._repositionOnPcb === "function"
+        "_moveCircuitJsonElements" in child &&
+        typeof child._moveCircuitJsonElements === "function"
       ) {
-        child._repositionOnPcb({ deltaX, deltaY })
+        child._moveCircuitJsonElements({ deltaX, deltaY })
       }
     }
 

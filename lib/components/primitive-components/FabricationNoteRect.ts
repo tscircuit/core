@@ -68,7 +68,10 @@ export class FabricationNoteRect extends PrimitiveComponent<
     return { width: props.width, height: props.height }
   }
 
-  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.fabrication_note_rect_id) return

@@ -82,7 +82,10 @@ export class FabricationNoteDimension extends PrimitiveComponent<
       fabrication_note_dimension.pcb_fabrication_note_dimension_id
   }
 
-  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.fabrication_note_dimension_id) return

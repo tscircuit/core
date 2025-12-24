@@ -57,7 +57,10 @@ export class SilkscreenRect extends PrimitiveComponent<
     return { width: props.width, height: props.height }
   }
 
-  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_silkscreen_rect_id) return
