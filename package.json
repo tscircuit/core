@@ -38,7 +38,7 @@
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.14",
     "@tscircuit/footprinter": "^0.0.236",
-    "@tscircuit/infgrid-ijump-astar": "^0.0.33",
+    "@tscircuit/infgrid-ijump-astar": "^0.0.35",
     "@tscircuit/log-soup": "^1.0.2",
     "@tscircuit/matchpack": "^0.0.16",
     "@tscircuit/math-utils": "^0.0.29",
@@ -103,6 +103,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
+    "@tscircuit/soup-util": "^0.0.41",
     "calculate-packing": "0.0.68",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.3",
