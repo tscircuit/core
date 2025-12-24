@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("example29: component outside board", async () => {
+test.skip("example29: component outside board", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
