@@ -1,8 +1,7 @@
-import type {
-  AssignableViaAutoroutingPipelineSolver as AssignableViaAutoroutingPipelineSolverType,
-  AutoroutingPipelineSolver as AutoroutingPipelineSolverType,
+import {
+  AutoroutingPipelineSolver,
+  AssignableAutoroutingPipeline2,
 } from "@tscircuit/capacity-autorouter"
-import * as CapacityAutorouter from "@tscircuit/capacity-autorouter"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 import type {
@@ -14,23 +13,21 @@ import type {
 } from "./GenericLocalAutorouter"
 import { SOLVERS } from "lib/solvers"
 
-export interface CapacityMeshAutoRouterOptions {
+export interface AutorouterOptions {
   capacityDepth?: number
   targetMinCapacity?: number
   stepDelay?: number
-  useAssignableViaSolver?: boolean
+  useAssignableSolver?: boolean
   onSolverStarted?: (details: {
     solverName: string
     solverParams: unknown
   }) => void
 }
 
-export class CapacityMeshAutorouter implements GenericLocalAutorouter {
+export class TscircuitAutorouter implements GenericLocalAutorouter {
   input: SimpleRouteJson
   isRouting = false
-  private solver:
-    | AutoroutingPipelineSolverType
-    | AssignableViaAutoroutingPipelineSolverType
+  private solver: AutoroutingPipelineSolver | AssignableAutoroutingPipeline2
   private eventHandlers: {
     complete: Array<(ev: AutorouterCompleteEvent) => void>
     error: Array<(ev: AutorouterErrorEvent) => void>
@@ -44,27 +41,20 @@ export class CapacityMeshAutorouter implements GenericLocalAutorouter {
   private stepDelay: number
   private timeoutId?: number
 
-  constructor(
-    input: SimpleRouteJson,
-    options: CapacityMeshAutoRouterOptions = {},
-  ) {
+  constructor(input: SimpleRouteJson, options: AutorouterOptions = {}) {
     this.input = input
     const {
       capacityDepth,
       targetMinCapacity,
       stepDelay = 0,
-      useAssignableViaSolver = false,
+      useAssignableSolver = false,
       onSolverStarted,
     } = options
 
     // Initialize the solver with input and optional configuration
-    const {
-      AutoroutingPipelineSolver,
-      AssignableViaAutoroutingPipelineSolver,
-    } = CapacityAutorouter
 
-    const solverName = useAssignableViaSolver
-      ? "AssignableViaAutoroutingPipelineSolver"
+    const solverName = useAssignableSolver
+      ? "AssignableAutoroutingPipeline2"
       : "AutoroutingPipelineSolver"
     const SolverClass = SOLVERS[solverName]
 

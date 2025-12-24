@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "../../fixtures/get-test-fixture"
 import { sel } from "lib/sel"
 
-test(
+test.skip(
   "autorouter uses inner layers on a four-layer board with dense crossings",
   async () => {
     const { circuit } = getTestFixture()

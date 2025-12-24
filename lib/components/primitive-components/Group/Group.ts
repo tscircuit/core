@@ -3,7 +3,7 @@ import {
   type SubcircuitGroupProps,
   groupProps,
 } from "@tscircuit/props"
-import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type LayerRef,
@@ -526,11 +526,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (autorouterConfig.algorithmFn) {
       autorouter = await autorouterConfig.algorithmFn(simpleRouteJson)
     } else {
-      autorouter = new CapacityMeshAutorouter(simpleRouteJson, {
+      autorouter = new TscircuitAutorouter(simpleRouteJson, {
         // Optional configuration parameters
         capacityDepth: this.props.autorouter?.capacityDepth,
         targetMinCapacity: this.props.autorouter?.targetMinCapacity,
-        useAssignableViaSolver: isLaserPrefabPreset || isSingleLayerBoard,
+        useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
         onSolverStarted: ({ solverName, solverParams }) =>
           this.root?.emit("solver:started", {
             type: "solver:started",

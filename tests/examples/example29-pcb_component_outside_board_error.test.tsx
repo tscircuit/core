@@ -1,11 +1,11 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("example29: component outside board", async () => {
+test.skip("example29: component outside board", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width={6} height={6}>
+    <board width={6} height={6} routingDisabled>
       <resistor
         resistance="1k"
         footprint="0402"

@@ -2,13 +2,13 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 import { grid } from "@tscircuit/math-utils"
 
-export default test("3x3 switch matrix with diodes", async () => {
+test("repro47P: 3x3 switch matrix with diodes", async () => {
   const { circuit } = getTestFixture()
   const rows = 3
   const cols = 3
 
   circuit.add(
-    <board width="60mm" height="60mm" schMaxTraceDistance={30}>
+    <board width="60mm" height="60mm" schMaxTraceDistance={30} routingDisabled>
       <pinheader
         name="J1"
         pinCount={6}

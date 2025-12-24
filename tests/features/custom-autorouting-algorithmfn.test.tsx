@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
-import { CapacityMeshAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 
 test("custom autorouting algorithmFn", async () => {
   const { circuit } = getTestFixture()
@@ -17,7 +17,7 @@ test("custom autorouting algorithmFn", async () => {
         local: true,
         groupMode: "subcircuit",
         algorithmFn: async (simpleRouteJson) => {
-          const autorouter = new CapacityMeshAutorouter(simpleRouteJson)
+          const autorouter = new TscircuitAutorouter(simpleRouteJson)
           autorouter.on("complete", () => {
             autorouterFinished = true
           })
