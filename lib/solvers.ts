@@ -1,14 +1,14 @@
 import { PackSolver2 } from "calculate-packing"
 import {
   AutoroutingPipelineSolver,
-  AssignableViaAutoroutingPipelineSolver,
+  AssignableAutoroutingPipeline2,
 } from "@tscircuit/capacity-autorouter"
 import { CopperPourPipelineSolver } from "@tscircuit/copper-pour-solver"
 
 export const SOLVERS = {
   PackSolver2,
   AutoroutingPipelineSolver,
-  AssignableViaAutoroutingPipelineSolver,
+  AssignableAutoroutingPipeline2,
   CopperPourPipelineSolver,
 }
 
