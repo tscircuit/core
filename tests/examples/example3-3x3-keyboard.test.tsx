@@ -178,7 +178,7 @@ const MacroKeypad = () => {
 }
 
 // CI IS TOO SLOW TO ROUTE! TODO autorouter bug
-test.skip("example3-2x2-keyboard", () => {
+test("example3-2x2-keyboard", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(<MacroKeypad />)
