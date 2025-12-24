@@ -18,7 +18,7 @@ interface Rect {
 
 export function generateApproximatingRects(
   rotatedRect: RotatedRect,
-  numRects: number = 4,
+  numRects = 2,
 ): Rect[] {
   const { center, width, height, rotation } = rotatedRect
   const rects: Rect[] = []
