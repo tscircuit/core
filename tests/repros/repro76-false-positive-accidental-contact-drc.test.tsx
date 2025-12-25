@@ -249,12 +249,9 @@ test(
         (el as any).message?.includes("accidental contact"),
     )
 
-    console.log(`Accidental contact errors: ${accidentalContactErrors.length}`)
     expect(accidentalContactErrors.length).toBe(2)
-
     expect(circuit).toMatchPcbSnapshot(import.meta.path, {
       shouldDrawErrors: true,
     })
-  },
-  { timeout: 60000 },
+  }
 )
