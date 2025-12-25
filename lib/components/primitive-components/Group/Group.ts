@@ -24,7 +24,10 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getBoundsFromPoints, distance as getDistance } from "@tscircuit/math-utils"
+import {
+  getBoundsFromPoints,
+  distance as getDistance,
+} from "@tscircuit/math-utils"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
@@ -759,7 +762,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // Build a map of pcb_port positions for matching route endpoints
     const pcbPorts = db.pcb_port.list()
-    const findPortIdAtPosition = (x: number, y: number, tolerance = 0.01): string | undefined => {
+    const findPortIdAtPosition = (
+      x: number,
+      y: number,
+      tolerance = 0.01,
+    ): string | undefined => {
       for (const port of pcbPorts) {
         if (port.x !== undefined && port.y !== undefined) {
           if (getDistance({ x: port.x, y: port.y }, { x, y }) < tolerance) {
@@ -783,9 +790,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Add start_pcb_port_id and end_pcb_port_id to route points if not present
       // This is needed for the connectivity map to properly link traces to ports
       if (pcb_trace.route && pcb_trace.route.length > 0) {
-        const firstWire = pcb_trace.route.find(
-          (rp) => rp.route_type === "wire",
-        )
+        const firstWire = pcb_trace.route.find((rp) => rp.route_type === "wire")
         const lastWire = [...pcb_trace.route]
           .reverse()
           .find((rp) => rp.route_type === "wire")
