@@ -314,9 +314,6 @@ const Greenpill = ({
 test(
   "dev-board should not have false positive trace-smtpad overlap errors",
   async () => {
-    // Increase timeout for complex circuit
-    // @ts-ignore
-    if (typeof jest !== "undefined") jest.setTimeout(60000)
     const { circuit } = getTestFixture()
 
     circuit.add(
