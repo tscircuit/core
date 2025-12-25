@@ -24,7 +24,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { getBoundsFromPoints, distance as getDistance } from "@tscircuit/math-utils"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
@@ -757,6 +757,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const pcbStyle = this.getInheritedMergedProperty("pcbStyle")
     const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
 
+    // Build a map of pcb_port positions for matching route endpoints
+    const pcbPorts = db.pcb_port.list()
+    const findPortIdAtPosition = (x: number, y: number, tolerance = 0.01): string | undefined => {
+      for (const port of pcbPorts) {
+        if (port.x !== undefined && port.y !== undefined) {
+          if (getDistance({ x: port.x, y: port.y }, { x, y }) < tolerance) {
+            return port.pcb_port_id
+          }
+        }
+      }
+      return undefined
+    }
+
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
@@ -765,6 +778,31 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if ((pcb_trace as any).connection_name) {
         const sourceTraceId = (pcb_trace as any).connection_name
         pcb_trace.source_trace_id = sourceTraceId
+      }
+
+      // Add start_pcb_port_id and end_pcb_port_id to route points if not present
+      // This is needed for the connectivity map to properly link traces to ports
+      if (pcb_trace.route && pcb_trace.route.length > 0) {
+        const firstWire = pcb_trace.route.find(
+          (rp) => rp.route_type === "wire",
+        )
+        const lastWire = [...pcb_trace.route]
+          .reverse()
+          .find((rp) => rp.route_type === "wire")
+
+        if (firstWire && !firstWire.start_pcb_port_id) {
+          const portId = findPortIdAtPosition(firstWire.x, firstWire.y)
+          if (portId) {
+            firstWire.start_pcb_port_id = portId
+          }
+        }
+
+        if (lastWire && !lastWire.end_pcb_port_id) {
+          const portId = findPortIdAtPosition(lastWire.x, lastWire.y)
+          if (portId) {
+            lastWire.end_pcb_port_id = portId
+          }
+        }
       }
 
       db.pcb_trace.insert(pcb_trace)
