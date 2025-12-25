@@ -242,7 +242,7 @@ test("false positive accidental contact DRC (simplified)", async () => {
       (el as any).message?.includes("accidental contact"),
   )
 
-  expect(accidentalContactErrors.length).toBe(2)
+  expect(accidentalContactErrors.length).toBe(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
   })
