@@ -1,5 +1,6 @@
 import { silkscreenRectProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { decomposeTSR } from "transformation-matrix"
 
 export class SilkscreenRect extends PrimitiveComponent<
   typeof silkscreenRectProps
@@ -12,6 +13,23 @@ export class SilkscreenRect extends PrimitiveComponent<
       componentName: "SilkscreenRect",
       zodProps: silkscreenRectProps,
     }
+  }
+
+  /**
+   * Check if the component is rotated 90 or 270 degrees based on global transform.
+   * For these rotations, we need to swap width/height instead of using ccw_rotation.
+   */
+  private _isRotated90Degrees(): boolean {
+    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
+    const decomposedTransform = decomposeTSR(globalTransform)
+    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
+    const rotationTolerance = 0.01
+
+    return (
+      Math.abs(normalizedRotationDegrees - 90) < rotationTolerance ||
+      Math.abs(normalizedRotationDegrees - 270) < rotationTolerance
+    )
   }
 
   doInitialPcbPrimitiveRender(): void {
@@ -30,6 +48,12 @@ export class SilkscreenRect extends PrimitiveComponent<
     const subcircuit = this.getSubcircuit()
     const position = this._getGlobalPcbPositionBeforeLayout()
 
+    // For 0, 90, 180, 270 degree rotations, swap width/height for 90/270
+    // Don't use ccw_rotation for these angles (like SilkscreenPath handles rotation)
+    const isRotated90Degrees = this._isRotated90Degrees()
+    const finalWidth = isRotated90Degrees ? props.height : props.width
+    const finalHeight = isRotated90Degrees ? props.width : props.height
+
     const pcb_component_id =
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
@@ -40,8 +64,8 @@ export class SilkscreenRect extends PrimitiveComponent<
         x: position.x,
         y: position.y,
       },
-      width: props.width,
-      height: props.height,
+      width: finalWidth,
+      height: finalHeight,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this?.getGroup()?.pcb_group_id ?? undefined,
       stroke_width: props.strokeWidth ?? 0.1,
@@ -54,6 +78,12 @@ export class SilkscreenRect extends PrimitiveComponent<
 
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
+    // Account for rotation by checking if width/height should be swapped
+    const isRotated90Degrees = this._isRotated90Degrees()
+
+    if (isRotated90Degrees) {
+      return { width: props.height, height: props.width }
+    }
     return { width: props.width, height: props.height }
   }
 
