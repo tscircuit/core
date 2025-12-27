@@ -4,6 +4,12 @@ import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 export type AutorouterCompleteEvent = {
   type: "complete"
   traces: SimplifiedPcbTrace[]
+  /**
+   * Map of obstacle IDs to their connected root connection names.
+   * This is used to create source traces for interconnect components
+   * that were connected during routing.
+   */
+  connectedOffboardObstacles?: Record<string, string>
 }
 
 export type AutorouterErrorEvent = {

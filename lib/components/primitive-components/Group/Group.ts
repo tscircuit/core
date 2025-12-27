@@ -542,21 +542,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     // Create a promise that will resolve when autorouting is complete
-    const routingPromise = new Promise<SimplifiedPcbTrace[]>(
-      (resolve, reject) => {
-        autorouter.on("complete", (event) => {
-          debug(`[${this.getString()}] local autorouting complete`)
-          resolve(event.traces)
+    const routingPromise = new Promise<{
+      traces: SimplifiedPcbTrace[]
+      connectedOffboardObstacles?: Record<string, string>
+    }>((resolve, reject) => {
+      autorouter.on("complete", (event) => {
+        debug(`[${this.getString()}] local autorouting complete`)
+        resolve({
+          traces: event.traces,
+          connectedOffboardObstacles: event.connectedOffboardObstacles,
         })
+      })
 
-        autorouter.on("error", (event) => {
-          debug(
-            `[${this.getString()}] local autorouting error: ${event.error.message}`,
-          )
-          reject(event.error)
-        })
-      },
-    )
+      autorouter.on("error", (event) => {
+        debug(
+          `[${this.getString()}] local autorouting error: ${event.error.message}`,
+        )
+        reject(event.error)
+      })
+    })
 
     autorouter.on("progress", (event) => {
       this.root?.emit("autorouting:progress", {
@@ -571,23 +575,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     try {
       // Wait for the autorouting to complete
-      const traces = await routingPromise
+      const { traces, connectedOffboardObstacles } = await routingPromise
 
-      // Make vias. Unclear if the autorouter should include this in it's output
-      // const vias: Partial<PcbVia>[] = []
-      // for (const via of traces.flatMap((t) =>
-      //   t.route.filter((r) => r.route_type === "via"),
-      // )) {
-      //   vias.push({
-      //     x: via.x,
-      //     y: via.y,
-      //     hole_diameter: 0.3,
-      //     outer_diameter: 0.6,
-      //     layers: [via.from_layer as any, via.to_layer as any],
-      //     from_layer: via.from_layer as any,
-      //     to_layer: via.to_layer as any,
-      //   })
-      // }
+      // Create source traces for interconnect connections made during routing
+      // This allows DRC to understand that these connections are intentional
+      if (connectedOffboardObstacles) {
+        this._createSourceTracesForOffboardConnections(
+          connectedOffboardObstacles,
+        )
+      }
 
       // Store the result
       this._asyncAutoroutingResult = {
@@ -1229,5 +1225,99 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    */
   _repositionOnPcb(position: { x: number; y: number }) {
     return super._repositionOnPcb(position)
+  }
+
+  /**
+   * Create source traces for interconnect ports that were connected during routing.
+   * This is necessary so that DRC understands that connections made to interconnect
+   * ports are intentional and not overlapping errors.
+   *
+   * The connectedOffboardObstacles map obstacle IDs (e.g., pcb_smtpad_id) to
+   * the root connection name (source_trace_id) they were connected to.
+   */
+  _createSourceTracesForOffboardConnections(
+    connectedOffboardObstacles: Record<string, string>,
+  ): void {
+    const { db } = this.root!
+    const debug = Debug(
+      "tscircuit:core:_createSourceTracesForOffboardConnections",
+    )
+
+    // Group obstacles by their connected root connection name
+    const connectionToObstacles = new Map<string, string[]>()
+    for (const [obstacleId, connectionName] of Object.entries(
+      connectedOffboardObstacles,
+    )) {
+      const obstacles = connectionToObstacles.get(connectionName) ?? []
+      obstacles.push(obstacleId)
+      connectionToObstacles.set(connectionName, obstacles)
+    }
+
+    // For each connection with multiple obstacles, find the source_port_ids
+    // and create a source_trace connecting them
+    for (const [connectionName, obstacleIds] of connectionToObstacles) {
+      if (obstacleIds.length < 2) continue
+
+      const sourcePortIds: string[] = []
+
+      for (const obstacleId of obstacleIds) {
+        // Get pcb_port_id from the obstacle (smtpad or plated hole)
+        let pcbPortId: string | null = null
+
+        // Try smtpad first
+        const smtpad = db.pcb_smtpad.get(obstacleId)
+        if (smtpad?.pcb_port_id) {
+          pcbPortId = smtpad.pcb_port_id
+        }
+
+        // Try plated hole if smtpad not found
+        if (!pcbPortId) {
+          const platedHole = db.pcb_plated_hole.get(obstacleId)
+          if (platedHole?.pcb_port_id) {
+            pcbPortId = platedHole.pcb_port_id
+          }
+        }
+
+        if (!pcbPortId) continue
+
+        // Get source_port_id from pcb_port
+        const pcbPort = db.pcb_port.get(pcbPortId)
+        if (pcbPort?.source_port_id) {
+          sourcePortIds.push(pcbPort.source_port_id)
+        }
+      }
+
+      if (sourcePortIds.length < 2) continue
+
+      // Check if a source_trace already exists for these ports
+      const existingTraces = db.source_trace.list()
+      const sortedPortIds = [...sourcePortIds].sort()
+      const alreadyExists = existingTraces.some((trace) => {
+        const tracePorts = [...trace.connected_source_port_ids].sort()
+        return (
+          tracePorts.length === sortedPortIds.length &&
+          tracePorts.every((id, i) => id === sortedPortIds[i])
+        )
+      })
+
+      if (alreadyExists) {
+        debug(
+          `Source trace already exists for interconnect ports: ${sourcePortIds.join(", ")}`,
+        )
+        continue
+      }
+
+      // Create a source_trace for the connected interconnect ports
+      const sourceTrace = db.source_trace.insert({
+        connected_source_port_ids: sourcePortIds,
+        connected_source_net_ids: [],
+        subcircuit_id: this.subcircuit_id!,
+        display_name: `Interconnect connection (${connectionName})`,
+      })
+
+      debug(
+        `Created source_trace ${sourceTrace.source_trace_id} for interconnect ports: ${sourcePortIds.join(", ")}`,
+      )
+    }
   }
 }

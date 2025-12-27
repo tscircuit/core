@@ -108,9 +108,18 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
             error: new AutorouterError(this.solver.error || "Routing failed"),
           })
         } else {
+          // Get connected offboard obstacles if available (only for AssignableAutoroutingPipeline2)
+          const connectedOffboardObstacles =
+            "getConnectedOffboardObstacles" in this.solver
+              ? (
+                  this.solver as AssignableAutoroutingPipeline2
+                ).getConnectedOffboardObstacles()
+              : undefined
+
           this.emitEvent({
             type: "complete",
             traces: this.solver.getOutputSimpleRouteJson().traces || [],
+            connectedOffboardObstacles,
           })
         }
         this.isRouting = false
