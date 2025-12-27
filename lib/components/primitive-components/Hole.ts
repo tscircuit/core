@@ -153,4 +153,20 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       y: newCenter.y,
     })
   }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_hole_id) return
+    const hole = db.pcb_hole.get(this.pcb_hole_id)!
+    if (hole) {
+      db.pcb_hole.update(this.pcb_hole_id, {
+        x: hole.x + deltaX,
+        y: hole.y + deltaY,
+      })
+    }
+  }
 }

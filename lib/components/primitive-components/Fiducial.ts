@@ -57,4 +57,31 @@ export class Fiducial extends PrimitiveComponent<typeof fiducialProps> {
       y: newCenter.y,
     })
   }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_smtpad_id) return
+
+    const pad = db.pcb_smtpad.get(this.pcb_smtpad_id)
+    if (!pad) return
+    if (
+      pad.shape === "rect" ||
+      pad.shape === "circle" ||
+      pad.shape === "rotated_rect" ||
+      pad.shape === "pill"
+    ) {
+      this._setPositionFromLayout({ x: pad.x + deltaX, y: pad.y + deltaY })
+    } else if (pad.shape === "polygon") {
+      db.pcb_smtpad.update(this.pcb_smtpad_id, {
+        points: pad.points.map((p) => ({
+          x: p.x + deltaX,
+          y: p.y + deltaY,
+        })),
+      })
+    }
+  }
 }

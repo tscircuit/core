@@ -94,6 +94,24 @@ export class BreakoutPoint extends PrimitiveComponent<
     })
   }
 
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_breakout_point_id) return
+
+    const point = db.pcb_breakout_point.get(this.pcb_breakout_point_id)
+
+    if (point) {
+      db.pcb_breakout_point.update(this.pcb_breakout_point_id, {
+        x: point.x + deltaX,
+        y: point.y + deltaY,
+      })
+    }
+  }
+
   getPcbSize() {
     return { width: 0, height: 0 }
   }
