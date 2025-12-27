@@ -37,4 +37,11 @@ export interface GenericLocalAutorouter {
   on(event: "progress", callback: (ev: AutorouterProgressEvent) => void): void
 
   solveSync(): SimplifiedPcbTrace[]
+
+  /**
+   * Get the mapping of obstacle IDs to root connection names that were
+   * connected via off-board paths (e.g., interconnects).
+   * Returns empty object if not supported by the autorouter.
+   */
+  getConnectedOffboardObstacles?(): Record<string, string>
 }
