@@ -110,4 +110,28 @@ export class PcbNoteDimension extends PrimitiveComponent<
 
     return `${valueText}${units}`
   }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_note_dimension_id) return
+
+    const dimension = db.pcb_note_dimension.get(this.pcb_note_dimension_id)
+
+    if (dimension) {
+      db.pcb_note_dimension.update(this.pcb_note_dimension_id, {
+        from: {
+          x: dimension.from.x + deltaX,
+          y: dimension.from.y + deltaY,
+        },
+        to: {
+          x: dimension.to.x + deltaX,
+          y: dimension.to.y + deltaY,
+        },
+      })
+    }
+  }
 }

@@ -193,4 +193,27 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
       } as any)
     }
   }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }): void {
+    if (!this.pcb_cutout_id) return
+    const { db } = this.root!
+    const cutout = db.pcb_cutout.get(this.pcb_cutout_id)
+    if (!cutout) return
+
+    if (cutout.shape === "rect" || cutout.shape === "circle") {
+      db.pcb_cutout.update(this.pcb_cutout_id, {
+        center: { x: cutout.center.x + deltaX, y: cutout.center.y + deltaY },
+      })
+    } else if (cutout.shape === "polygon") {
+      db.pcb_cutout.update(this.pcb_cutout_id, {
+        points: cutout.points.map((p) => ({
+          x: p.x + deltaX,
+          y: p.y + deltaY,
+        })),
+      })
+    }
+  }
 }

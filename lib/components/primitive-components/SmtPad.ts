@@ -431,4 +431,37 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
 
     this.matchedPort?._setPositionFromLayout(newCenter)
   }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_smtpad_id) return
+
+    const pad = db.pcb_smtpad.get(this.pcb_smtpad_id)!
+
+    if (
+      pad.shape === "rect" ||
+      pad.shape === "circle" ||
+      pad.shape === "rotated_rect" ||
+      pad.shape === "pill"
+    ) {
+      this._setPositionFromLayout({ x: pad.x + deltaX, y: pad.y + deltaY })
+    } else if (pad.shape === "polygon") {
+      db.pcb_smtpad.update(this.pcb_smtpad_id, {
+        points: pad.points.map((p) => ({
+          x: p.x + deltaX,
+          y: p.y + deltaY,
+        })),
+      })
+
+      const newCenter = {
+        x: this._getPcbCircuitJsonBounds().center.x + deltaX / 2,
+        y: this._getPcbCircuitJsonBounds().center.y + deltaY / 2,
+      }
+      this.matchedPort?._setPositionFromLayout(newCenter)
+    }
+  }
 }

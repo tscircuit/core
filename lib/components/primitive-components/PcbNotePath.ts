@@ -64,4 +64,24 @@ export class PcbNotePath extends PrimitiveComponent<typeof pcbNotePathProps> {
 
     return { width: maxX - minX, height: maxY - minY }
   }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_note_path_id) return
+
+    const path = db.pcb_note_path.get(this.pcb_note_path_id)
+    if (path) {
+      db.pcb_note_path.update(this.pcb_note_path_id, {
+        route: path.route.map((p: any) => ({
+          ...p,
+          x: p.x + deltaX,
+          y: p.y + deltaY,
+        })),
+      })
+    }
+  }
 }
