@@ -5,7 +5,7 @@ test("one-sided board autorouting routes all traces on top layer only", async ()
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="30mm" height="20mm" layers={1} autorouter="auto-local">
+    <board width="30mm" height="20mm" layers={1}>
       <resistor
         name="R1"
         footprint="0805"
