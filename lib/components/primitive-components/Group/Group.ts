@@ -44,6 +44,10 @@ import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSim
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 
+const getAutorouterEffort = (
+  level?: SubcircuitGroupProps["autorouterEffortLevel"],
+) => (level ? parseFloat(level.replace("x", "")) : undefined)
+
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
   implements ISubcircuit
@@ -495,6 +499,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const autorouterConfig = this._getAutorouterConfig()
     const isLaserPrefabPreset = this._isLaserPrefabAutorouter(autorouterConfig)
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
+    const effort = getAutorouterEffort(props.autorouterEffortLevel)
 
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       db,
@@ -534,6 +539,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         capacityDepth: this.props.autorouter?.capacityDepth,
         targetMinCapacity: this.props.autorouter?.targetMinCapacity,
         useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
+        effort,
         onSolverStarted: ({ solverName, solverParams }) =>
           this.root?.emit("solver:started", {
             type: "solver:started",

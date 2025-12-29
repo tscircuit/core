@@ -18,6 +18,7 @@ export interface AutorouterOptions {
   targetMinCapacity?: number
   stepDelay?: number
   useAssignableSolver?: boolean
+  effort?: number
   onSolverStarted?: (details: {
     solverName: string
     solverParams: unknown
@@ -48,6 +49,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       targetMinCapacity,
       stepDelay = 0,
       useAssignableSolver = false,
+      effort,
       onSolverStarted,
     } = options
 
@@ -58,21 +60,20 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       : "AutoroutingPipelineSolver"
     const SolverClass = SOLVERS[solverName]
 
-    this.solver = new SolverClass(input as any, {
+    const solverOptions = {
       capacityDepth,
       targetMinCapacity,
       cacheProvider: null,
-    })
+      effort,
+    } as any
+
+    this.solver = new SolverClass(input as any, solverOptions)
 
     onSolverStarted?.({
       solverName,
       solverParams: {
         input,
-        options: {
-          capacityDepth,
-          targetMinCapacity,
-          cacheProvider: null,
-        },
+        options: solverOptions,
       },
     })
 
