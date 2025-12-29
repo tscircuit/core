@@ -46,6 +46,9 @@ export const shouldCheckPortForMissingTrace = (
   component: NormalComponent,
   port: Port,
 ): boolean => {
+  if (component.config.componentName === "Interconnect") {
+    return false
+  }
   if (component.config.componentName === "Chip") {
     const pinAttributes = (component.props as any).pinAttributes
     if (!pinAttributes) return false
