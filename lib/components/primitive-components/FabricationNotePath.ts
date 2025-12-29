@@ -6,6 +6,7 @@ export class FabricationNotePath extends PrimitiveComponent<
   typeof fabricationNotePathProps
 > {
   fabrication_note_path_id: string | null = null
+  isPcbPrimitive = true
 
   get config() {
     return {
@@ -53,5 +54,44 @@ export class FabricationNotePath extends PrimitiveComponent<
 
     this.fabrication_note_path_id =
       fabrication_note_path.pcb_fabrication_note_path_id
+  }
+
+  getPcbSize(): { width: number; height: number } {
+    const { _parsedProps: props } = this
+    if (props.route.length === 0) return { width: 0, height: 0 }
+
+    const xs = props.route.map((point) =>
+      typeof point.x === "string" ? parseFloat(point.x) : point.x,
+    )
+    const ys = props.route.map((point) =>
+      typeof point.y === "string" ? parseFloat(point.y) : point.y,
+    )
+
+    const minX = Math.min(...xs)
+    const maxX = Math.max(...xs)
+    const minY = Math.min(...ys)
+    const maxY = Math.max(...ys)
+
+    return { width: maxX - minX, height: maxY - minY }
+  }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.fabrication_note_path_id) return
+
+    const path = db.pcb_fabrication_note_path.get(this.fabrication_note_path_id)
+    if (path) {
+      db.pcb_fabrication_note_path.update(this.fabrication_note_path_id, {
+        route: path.route.map((p) => ({
+          ...p,
+          x: p.x + deltaX,
+          y: p.y + deltaY,
+        })),
+      })
+    }
   }
 }

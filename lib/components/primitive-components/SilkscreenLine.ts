@@ -53,7 +53,10 @@ export class SilkscreenLine extends PrimitiveComponent<
     return { width, height }
   }
 
-  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_silkscreen_line_id) return

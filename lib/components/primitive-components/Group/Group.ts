@@ -38,6 +38,7 @@ import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Gro
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import type { GraphicsObject } from "graphics-debug"
+import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
@@ -371,6 +372,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               input_simple_route_json: getSimpleRouteJsonFromCircuitJson({
                 db,
                 minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
+                nominalTraceWidth: this.props.nominalTraceWidth,
                 subcircuit_id: this.subcircuit_id,
               }).simpleRouteJson,
               subcircuit_id: this.subcircuit_id!,
@@ -497,6 +499,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       db,
       minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
+      nominalTraceWidth: this.props.nominalTraceWidth,
       subcircuit_id: this.subcircuit_id,
     })
 
@@ -573,21 +576,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Wait for the autorouting to complete
       const traces = await routingPromise
 
-      // Make vias. Unclear if the autorouter should include this in it's output
-      // const vias: Partial<PcbVia>[] = []
-      // for (const via of traces.flatMap((t) =>
-      //   t.route.filter((r) => r.route_type === "via"),
-      // )) {
-      //   vias.push({
-      //     x: via.x,
-      //     y: via.y,
-      //     hole_diameter: 0.3,
-      //     outer_diameter: 0.6,
-      //     layers: [via.from_layer as any, via.to_layer as any],
-      //     from_layer: via.from_layer as any,
-      //     to_layer: via.to_layer as any,
-      //   })
-      // }
+      // Create source_traces for interconnect ports that were connected via
+      // off-board paths during routing. This allows DRC to understand that
+      // these ports are intentionally connected.
+      if (autorouter.getConnectedOffboardObstacles) {
+        const connectedOffboardObstacles =
+          autorouter.getConnectedOffboardObstacles()
+        createSourceTracesFromOffboardConnections({
+          db,
+          connectedOffboardObstacles,
+          simpleRouteJson,
+          subcircuit_id: this.subcircuit_id,
+        })
+      }
 
       // Store the result
       this._asyncAutoroutingResult = {

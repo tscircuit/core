@@ -90,7 +90,10 @@ export class SilkscreenText extends PrimitiveComponent<
     return { width: textWidth * fontSize, height: textHeight * fontSize }
   }
 
-  _repositionOnPcb({ deltaX, deltaY }: { deltaX: number; deltaY: number }) {
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
 

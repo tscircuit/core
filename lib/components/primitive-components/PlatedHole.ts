@@ -335,4 +335,22 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       pcb_port_id: this.matchedPort?.pcb_port_id!,
     })
   }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_plated_hole_id) return
+
+    const hole = db.pcb_plated_hole.get(this.pcb_plated_hole_id)
+    if (hole) {
+      const newCenter = {
+        x: hole.x + deltaX,
+        y: hole.y + deltaY,
+      }
+      this._setPositionFromLayout(newCenter)
+    }
+  }
 }

@@ -245,4 +245,18 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
 
     return this.solver.getOutputSimpleRouteJson().traces || []
   }
+
+  /**
+   * Get the mapping of obstacle IDs to root connection names that were
+   * connected via off-board paths (e.g., interconnects).
+   * Only available when using AssignableAutoroutingPipeline2.
+   */
+  getConnectedOffboardObstacles(): Record<string, string> {
+    if ("getConnectedOffboardObstacles" in this.solver) {
+      return (
+        this.solver as AssignableAutoroutingPipeline2
+      ).getConnectedOffboardObstacles()
+    }
+    return {}
+  }
 }

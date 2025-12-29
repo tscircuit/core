@@ -20,6 +20,7 @@ export type SimplifiedPcbTrace = {
   >
 }
 export type Obstacle = {
+  obstacleId?: string
   // TODO include ovals
   type: "rect" // NOTE: most datasets do not contain ovals
   layers: string[]
@@ -48,6 +49,7 @@ export interface SimpleRouteConnection {
 export interface SimpleRouteJson {
   layerCount: number
   minTraceWidth: number
+  nominalTraceWidth?: number
   obstacles: Obstacle[]
   connections: Array<SimpleRouteConnection>
   bounds: { minX: number; maxX: number; minY: number; maxY: number }
