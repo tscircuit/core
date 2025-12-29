@@ -18,11 +18,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   circuitJson,
   subcircuit_id,
   minTraceWidth = 0.1,
+  nominalTraceWidth,
 }: {
   db?: CircuitJsonUtilObjects
   circuitJson?: AnyCircuitElement[]
   subcircuit_id?: string | null
   minTraceWidth?: number
+  nominalTraceWidth?: number
 }): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
   if (!db && circuitJson) {
     db = su(circuitJson)
@@ -437,6 +439,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       // subcircuit
       layerCount: board?.num_layers ?? 2,
       minTraceWidth,
+      nominalTraceWidth,
       outline: board?.outline?.map((point) => ({ ...point })),
     },
     connMap,
