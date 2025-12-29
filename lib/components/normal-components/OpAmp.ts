@@ -27,8 +27,8 @@ export class OpAmp extends NormalComponent<typeof opampProps, OpAmpPinLabels> {
     super.initPorts({
       pinCount: 5,
       additionalAliases: {
-        pin1: ["inverting_input"],
-        pin2: ["non_inverting_input"],
+        pin1: ["non_inverting_input"],
+        pin2: ["inverting_input"],
         pin3: ["output"],
         pin4: ["positive_supply", "vcc", "vdd"],
         pin5: ["negative_supply", "vee", "vss", "gnd"],
