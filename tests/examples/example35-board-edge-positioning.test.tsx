@@ -16,9 +16,16 @@ test("board edge props set board placement", async () => {
         <pcbnotetext
           pcbX={-45}
           pcbY={38}
-          text="left/right/top/bottom"
+          text="pcbLeftEdgeX, pcbRightEdgeX, pcbTopEdgeY, pcbBottomEdgeY"
           fontSize={2}
           anchorAlignment="center"
+        />
+        <pcbnotedimension
+          from={{ x: -45, y: 20 }}
+          to={{ x: -40, y: 20 }}
+          text="anchor"
+          fontSize={1.6}
+          arrowSize={0.8}
         />
       </board>
       <board
@@ -31,9 +38,16 @@ test("board edge props set board placement", async () => {
         <pcbnotetext
           pcbX={22.5}
           pcbY={38}
-          text="left/top + width/height"
+          text="pcbLeftEdgeX, pcbTopEdgeY, width, height"
           fontSize={2}
           anchorAlignment="center"
+        />
+        <pcbnotedimension
+          from={{ x: 10, y: 30 }}
+          to={{ x: 15, y: 30 }}
+          text="anchor"
+          fontSize={1.6}
+          arrowSize={0.8}
         />
       </board>
       <board
@@ -46,9 +60,16 @@ test("board edge props set board placement", async () => {
         <pcbnotetext
           pcbX={-40}
           pcbY={-8}
-          text="right/bottom + width/height"
+          text="pcbRightEdgeX, pcbBottomEdgeY, width, height"
           fontSize={2}
           anchorAlignment="center"
+        />
+        <pcbnotedimension
+          from={{ x: -30, y: -30 }}
+          to={{ x: -25, y: -30 }}
+          text="anchor"
+          fontSize={1.6}
+          arrowSize={0.8}
         />
       </board>
       <board
@@ -61,9 +82,16 @@ test("board edge props set board placement", async () => {
         <pcbnotetext
           pcbX={30}
           pcbY={-8}
-          text="left/right + bottom + height"
+          text="pcbLeftEdgeX, pcbRightEdgeX, pcbBottomEdgeY, height"
           fontSize={2}
           anchorAlignment="center"
+        />
+        <pcbnotedimension
+          from={{ x: 30, y: -25 }}
+          to={{ x: 35, y: -25 }}
+          text="anchor"
+          fontSize={1.6}
+          arrowSize={0.8}
         />
       </board>
     </panel>,
