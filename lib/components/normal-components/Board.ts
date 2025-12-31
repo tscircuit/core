@@ -89,6 +89,22 @@ const getRoundedRectOutline = (
   return outline
 }
 
+const resolveAnchorAlignment = (
+  xAlignment: "left" | "center" | "right",
+  yAlignment: "top" | "center" | "bottom",
+) => {
+  if (xAlignment === "center" && yAlignment === "center") return "center"
+  if (xAlignment === "center" && yAlignment === "top") return "top"
+  if (xAlignment === "center" && yAlignment === "bottom") return "bottom"
+  if (xAlignment === "left" && yAlignment === "center") return "left"
+  if (xAlignment === "right" && yAlignment === "center") return "right"
+  if (xAlignment === "left" && yAlignment === "top") return "top_left"
+  if (xAlignment === "right" && yAlignment === "top") return "top_right"
+  if (xAlignment === "left" && yAlignment === "bottom") return "bottom_left"
+  if (xAlignment === "right" && yAlignment === "bottom") return "bottom_right"
+  return "center"
+}
+
 export class Board
   extends Group<typeof boardProps>
   implements BoardI, SubcircuitI
@@ -157,9 +173,34 @@ export class Board
     }
 
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
-    const center = dbBoard?.center ?? {
+    let center = dbBoard?.center ?? {
       x: pcbX + (props.outlineOffsetX ?? 0),
       y: pcbY + (props.outlineOffsetY ?? 0),
+    }
+
+    const edges = this._resolveBoardEdgePositions()
+    if (edges.left !== undefined && edges.right !== undefined) {
+      width = edges.right - edges.left
+    }
+    if (edges.top !== undefined && edges.bottom !== undefined) {
+      height = edges.top - edges.bottom
+    }
+
+    const inferredAnchor = this._getBoardAnchorFromEdges(center, edges)
+    if (inferredAnchor) {
+      center = getBoardCenterFromAnchor({
+        boardAnchorPosition: inferredAnchor.boardAnchorPosition,
+        boardAnchorAlignment: inferredAnchor.boardAnchorAlignment,
+        width: width ?? 0,
+        height: height ?? 0,
+      })
+    } else if (props.boardAnchorPosition) {
+      center = getBoardCenterFromAnchor({
+        boardAnchorPosition: props.boardAnchorPosition,
+        boardAnchorAlignment: props.boardAnchorAlignment ?? "center",
+        width: width ?? 0,
+        height: height ?? 0,
+      })
     }
 
     const resolvedWidth = width ?? 0
@@ -398,17 +439,6 @@ export class Board
       y: globalPos.y + (props.outlineOffsetY ?? 0),
     }
 
-    const { boardAnchorPosition, boardAnchorAlignment } = props
-
-    if (boardAnchorPosition) {
-      center = getBoardCenterFromAnchor({
-        boardAnchorPosition,
-        boardAnchorAlignment: boardAnchorAlignment ?? "center",
-        width: computedWidth,
-        height: computedHeight,
-      })
-    }
-
     // Compute width and height from outline if not provided
     if (props.outline) {
       const xValues = props.outline.map((point) => point.x)
@@ -421,6 +451,33 @@ export class Board
 
       computedWidth = maxX - minX
       computedHeight = maxY - minY
+    }
+
+    const edges = this._resolveBoardEdgePositions()
+    if (edges.left !== undefined && edges.right !== undefined) {
+      computedWidth = edges.right - edges.left
+    }
+    if (edges.top !== undefined && edges.bottom !== undefined) {
+      computedHeight = edges.top - edges.bottom
+    }
+
+    const inferredAnchor = this._getBoardAnchorFromEdges(center, edges)
+    const { boardAnchorPosition, boardAnchorAlignment } = props
+
+    if (inferredAnchor) {
+      center = getBoardCenterFromAnchor({
+        boardAnchorPosition: inferredAnchor.boardAnchorPosition,
+        boardAnchorAlignment: inferredAnchor.boardAnchorAlignment,
+        width: computedWidth,
+        height: computedHeight,
+      })
+    } else if (boardAnchorPosition) {
+      center = getBoardCenterFromAnchor({
+        boardAnchorPosition,
+        boardAnchorAlignment: boardAnchorAlignment ?? "center",
+        width: computedWidth,
+        height: computedHeight,
+      })
     }
 
     let outline = props.outline
@@ -611,6 +668,93 @@ export class Board
           })
         }
       }
+    }
+  }
+
+  private _resolveBoardEdgePositions(): {
+    left?: number
+    right?: number
+    top?: number
+    bottom?: number
+  } {
+    const props = this._parsedProps as any
+    return {
+      left: this._resolveBoardEdgeValue(props.pcbLeftEdgeX, "pcbX"),
+      right: this._resolveBoardEdgeValue(props.pcbRightEdgeX, "pcbX"),
+      top: this._resolveBoardEdgeValue(props.pcbTopEdgeY, "pcbY"),
+      bottom: this._resolveBoardEdgeValue(props.pcbBottomEdgeY, "pcbY"),
+    }
+  }
+
+  private _resolveBoardEdgeValue(
+    value: unknown,
+    axis: "pcbX" | "pcbY",
+  ): number | undefined {
+    if (value == null) return undefined
+    return this._resolvePcbCoordinate(value, axis, {
+      allowBoardVariables: false,
+    })
+  }
+
+  private _getBoardAnchorFromEdges(
+    fallbackCenter: { x: number; y: number },
+    edges: {
+      left?: number
+      right?: number
+      top?: number
+      bottom?: number
+    },
+  ): {
+    boardAnchorPosition: { x: number; y: number }
+    boardAnchorAlignment: string
+  } | null {
+    const hasEdge =
+      edges.left !== undefined ||
+      edges.right !== undefined ||
+      edges.top !== undefined ||
+      edges.bottom !== undefined
+
+    if (!hasEdge) return null
+
+    const xAlignment =
+      edges.left !== undefined && edges.right !== undefined
+        ? "center"
+        : edges.left !== undefined
+          ? "left"
+          : edges.right !== undefined
+            ? "right"
+            : "center"
+
+    const yAlignment =
+      edges.top !== undefined && edges.bottom !== undefined
+        ? "center"
+        : edges.top !== undefined
+          ? "top"
+          : edges.bottom !== undefined
+            ? "bottom"
+            : "center"
+
+    const anchorX =
+      xAlignment === "left"
+        ? (edges.left as number)
+        : xAlignment === "right"
+          ? (edges.right as number)
+          : edges.left !== undefined && edges.right !== undefined
+            ? (edges.left + edges.right) / 2
+            : fallbackCenter.x
+
+    const anchorY =
+      yAlignment === "top"
+        ? (edges.top as number)
+        : yAlignment === "bottom"
+          ? (edges.bottom as number)
+          : edges.top !== undefined && edges.bottom !== undefined
+            ? (edges.top + edges.bottom) / 2
+            : fallbackCenter.y
+
+    return {
+      boardAnchorPosition: { x: anchorX, y: anchorY },
+      boardAnchorAlignment: resolveAnchorAlignment(xAlignment, yAlignment),
     }
   }
 }
