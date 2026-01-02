@@ -24,6 +24,12 @@ export function filterPinLabels(
   const invalidPinLabelsMessages: string[] = []
 
   for (const [pin, labelOrLabels] of Object.entries(pinLabels)) {
+    if (!isValidPinLabelKey(pin)) {
+      invalidPinLabelsMessages.push(
+        `Invalid pinLabels key "${pin}" - expected a number or "pin\${number}".`,
+      )
+      continue
+    }
     const labels: string[] = Array.isArray(labelOrLabels)
       ? (labelOrLabels as string[]).slice() // Convert readonly to mutable
       : [labelOrLabels as string]
@@ -72,4 +78,8 @@ function isValidPinLabel(pin: string, label: string): boolean {
   } catch (error) {
     return false
   }
+}
+
+function isValidPinLabelKey(pin: string): boolean {
+  return /^\d+$/.test(pin) || /^pin\d+$/.test(pin)
 }
