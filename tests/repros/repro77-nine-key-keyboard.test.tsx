@@ -1,8 +1,8 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import type { CommonLayoutProps } from "@tscircuit/props"
-import { createUseComponent } from "lib/index"
-export const SmdDiode = (props: Props2) => {
+
+const SmdDiode = (props: Props2) => {
   return (
     <diode
       {...props}
@@ -84,7 +84,7 @@ interface Props extends CommonLayoutProps {
   connections: { pin1?: string; pin2?: string } | undefined
 }
 
-export const KeyHotSocket = (props: Props) => {
+const KeyHotSocket = (props: Props) => {
   return (
     <pushbutton
       layer="bottom"
@@ -213,7 +213,7 @@ interface Props2 extends CommonLayoutProps {
   name: string
 }
 
-export const KeyShaftForHotSocket = (props: Props2) => {
+const KeyShaftForHotSocket = (props: Props2) => {
   return (
     <chip
       {...props}
@@ -285,15 +285,7 @@ export const KeyShaftForHotSocket = (props: Props2) => {
   )
 }
 
-export const useKeyShaftForHotSocket = createUseComponent(
-  KeyShaftForHotSocket,
-  pinNames2,
-)
-
-export const useKeyHotSocket = createUseComponent(KeyHotSocket, pinNames)
-// export const useKeyHotSocket = createUseComponent(KeyHotSocket, pinNames)
-
-export const Key = (props: {
+const Key = (props: {
   pcbX?: number
   pcbY?: number
   schX?: number
@@ -323,7 +315,7 @@ export const Key = (props: {
     </group>
   )
 }
-export const Pico2 = (props: { name: string; pcbX: string | number }) => (
+const Pico2 = (props: { name: string; pcbX: string | number }) => (
   <chip
     {...props}
     pinLabels={{
@@ -399,7 +391,7 @@ test("repro77 nine key keyboard", () => {
           const schOffX = 5 + x / 6
           const schOffY = -y / 8
           return (
-            <group key={`Kgroup${index}`}>
+            <group key={`${x}-${y}`}>
               <Key
                 pcbX={x}
                 pcbY={y}
