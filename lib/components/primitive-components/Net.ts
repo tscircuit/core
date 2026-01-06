@@ -1,7 +1,7 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { z } from "zod"
 import type { Port } from "./Port"
-import type { Trace } from "./Trace/Trace"
+import { Trace } from "./Trace/Trace"
 import { pairs } from "lib/utils/pairs"
 import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import { autoroute } from "@tscircuit/infgrid-ijump-astar"
@@ -13,6 +13,7 @@ export const netProps = z.object({
       message: `Net names cannot contain "+" or "-" (component "Net" received "${val}"). Try using underscores instead, e.g. VCC_P`,
     }),
   ),
+  connectsTo: z.union([z.string(), z.array(z.string())]).optional(),
 })
 
 export class Net extends PrimitiveComponent<typeof netProps> {
@@ -28,6 +29,40 @@ export class Net extends PrimitiveComponent<typeof netProps> {
 
   getPortSelector() {
     return `net.${this.props.name}`
+  }
+
+  _resolveConnectsTo(): string[] | undefined {
+    const { _parsedProps: props } = this
+
+    const connectsTo = props.connectsTo
+
+    if (Array.isArray(connectsTo)) {
+      return connectsTo
+    }
+
+    if (typeof connectsTo === "string") {
+      return [connectsTo]
+    }
+
+    return undefined
+  }
+
+  doInitialCreateTracesFromNetLabels(): void {
+    const { _parsedProps: props } = this
+    const connectsTo = this._resolveConnectsTo()
+    if (!connectsTo) return
+
+    // TODO check if connection is already represented by a trace in the
+    // subcircuit
+
+    for (const connection of connectsTo) {
+      this.add(
+        new Trace({
+          from: connection,
+          to: `net.${props.name}`,
+        }),
+      )
+    }
   }
 
   doInitialSourceRender(): void {
