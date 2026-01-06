@@ -1,8 +1,6 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// Verify net connectsTo accepts an array of selectors
-
 test("net connectsTo array", () => {
   const { circuit } = getTestFixture()
 
@@ -41,11 +39,9 @@ test("net connectsTo array", () => {
       "U1.VCC to net.VCC",
     ]
   `)
-  // add schematic snapshot
   expect(circuit).toMatchSchematicSnapshot(
     import.meta.path + "-schematic-array",
   )
-  // add pcb snapshot
 })
 
 test("net connectsTo string", () => {
@@ -83,9 +79,7 @@ test("net connectsTo string", () => {
       "U1.SDA to net.DATA",
     ]
   `)
-  // add schematic snapshot
   expect(circuit).toMatchSchematicSnapshot(
     import.meta.path + "-schematic-string",
   )
-  // add pcb snapshot
 })
