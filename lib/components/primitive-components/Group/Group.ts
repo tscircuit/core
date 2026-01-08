@@ -43,6 +43,7 @@ import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicT
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
+import type { Board } from "index"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -157,67 +158,37 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbPrimitiveRender(): void {
+    this.calculatePcbGroupBounds()
+  }
+
+  calculatePcbGroupBounds() {
+    if (!this.pcb_group_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const props = this._parsedProps as SubcircuitGroupProps
 
     const hasOutline = props.outline && props.outline.length > 0
 
-    if (this.pcb_group_id) {
-      // Check if explicit positioning is provided (pcbX or pcbY)
-      const hasExplicitPositioning =
-        this._parsedProps.pcbX !== undefined ||
-        this._parsedProps.pcbY !== undefined
+    // Check if explicit positioning is provided (pcbX or pcbY)
+    const hasExplicitPositioning =
+      this._parsedProps.pcbX !== undefined ||
+      this._parsedProps.pcbY !== undefined
 
-      // If outline is specified, calculate bounds from outline
-      if (hasOutline) {
-        const numericOutline = props.outline!.map((point) => ({
-          x: distance.parse(point.x),
-          y: distance.parse(point.y),
-        }))
+    // If outline is specified, calculate bounds from outline
+    if (hasOutline) {
+      const numericOutline = props.outline!.map((point) => ({
+        x: distance.parse(point.x),
+        y: distance.parse(point.y),
+      }))
 
-        const outlineBounds = getBoundsFromPoints(numericOutline)
-        if (!outlineBounds) return
+      const outlineBounds = getBoundsFromPoints(numericOutline)
+      if (!outlineBounds) return
 
-        const centerX = (outlineBounds.minX + outlineBounds.maxX) / 2
-        const centerY = (outlineBounds.minY + outlineBounds.maxY) / 2
-
-        // Preserve explicit positioning when pcbX/pcbY are set
-        // Otherwise use calculated center from outline
-        const center = hasExplicitPositioning
-          ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
-              x: centerX,
-              y: centerY,
-            })
-          : { x: centerX, y: centerY }
-
-        // For groups with outline, don't set width/height
-        db.pcb_group.update(this.pcb_group_id, {
-          center,
-        })
-        return
-      }
-
-      // Original logic for groups without outline
-      const bounds = getBoundsOfPcbComponents(this.children)
-
-      let width = bounds.width
-      let height = bounds.height
-      let centerX = (bounds.minX + bounds.maxX) / 2
-      let centerY = (bounds.minY + bounds.maxY) / 2
-
-      if (this.isSubcircuit) {
-        const { padLeft, padRight, padTop, padBottom } =
-          this._resolvePcbPadding()
-
-        width += padLeft + padRight
-        height += padTop + padBottom
-        centerX += (padRight - padLeft) / 2
-        centerY += (padTop - padBottom) / 2
-      }
+      const centerX = (outlineBounds.minX + outlineBounds.maxX) / 2
+      const centerY = (outlineBounds.minY + outlineBounds.maxY) / 2
 
       // Preserve explicit positioning when pcbX/pcbY are set
-      // Otherwise use calculated center from child bounds
+      // Otherwise use calculated center from outline
       const center = hasExplicitPositioning
         ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
             x: centerX,
@@ -225,12 +196,48 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           })
         : { x: centerX, y: centerY }
 
+      // For groups with outline, don't set width/height
       db.pcb_group.update(this.pcb_group_id, {
-        width: Number(props.width ?? width),
-        height: Number(props.height ?? height),
         center,
       })
+      return
     }
+
+    // Original logic for groups without outline
+    const bounds = getBoundsOfPcbComponents(this.children)
+
+    let width = bounds.width
+    let height = bounds.height
+    let centerX = (bounds.minX + bounds.maxX) / 2
+    let centerY = (bounds.minY + bounds.maxY) / 2
+
+    if (this.isSubcircuit) {
+      const { padLeft, padRight, padTop, padBottom } = this._resolvePcbPadding()
+
+      width += padLeft + padRight
+      height += padTop + padBottom
+      centerX += (padRight - padLeft) / 2
+      centerY += (padTop - padBottom) / 2
+    }
+
+    // Preserve explicit positioning when pcbX/pcbY are set
+    // Otherwise use calculated center from child bounds
+    const center = hasExplicitPositioning
+      ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
+          x: centerX,
+          y: centerY,
+        })
+      : { x: centerX, y: centerY }
+
+    db.pcb_group.update(this.pcb_group_id, {
+      width: Number(props.width ?? width),
+      height: Number(props.height ?? height),
+      center,
+    })
+  }
+
+  updatePcbPrimitiveRender(): void {
+    this.calculatePcbGroupBounds()
   }
 
   unnamedElementCounter: Record<string, number> = {}
