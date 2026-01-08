@@ -5,15 +5,15 @@ import { Trace } from "./Trace/Trace"
 import { pairs } from "lib/utils/pairs"
 import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import { autoroute } from "@tscircuit/infgrid-ijump-astar"
+import { netProps as baseNetProps } from "@tscircuit/props"
 
-export const netProps = z.object({
+export const netProps = baseNetProps.extend({
   name: z.string().refine(
     (val) => !/[+-]/.test(val),
     (val) => ({
       message: `Net names cannot contain "+" or "-" (component "Net" received "${val}"). Try using underscores instead, e.g. VCC_P`,
     }),
   ),
-  connectsTo: z.union([z.string(), z.array(z.string())]).optional(),
 })
 
 export class Net extends PrimitiveComponent<typeof netProps> {
