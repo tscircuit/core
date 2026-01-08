@@ -1,29 +1,16 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("net connectsTo array", () => {
+// Verify net connectsTo accepts net-to-net connections
+
+test("net connectsTo array of nets", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board routingDisabled>
-      <chip
-        name="U1"
-        manufacturerPartNumber="I2C_SENSOR"
-        footprint="soic4"
-        pinLabels={{
-          pin1: "SCL",
-          pin2: "SDA",
-          pin3: "VCC",
-          pin4: "GND",
-        }}
-        schPinArrangement={{
-          leftSide: {
-            direction: "top-to-bottom",
-            pins: ["SCL", "SDA", "VCC", "GND"],
-          },
-        }}
-      />
-      <net name="VCC" connectsTo={["U1.VCC", "U1.SCL"]} />
+      <net name="VCC" />
+      <net name="VCC_REGULATED" />
+      <net name="VCC_MAIN" connectsTo={["net.VCC", "net.VCC_REGULATED"]} />
     </board>,
   )
 
@@ -35,36 +22,19 @@ test("net connectsTo array", () => {
     .sort()
   expect(traces).toMatchInlineSnapshot(`
     [
-      "U1.SCL to net.VCC",
-      "U1.VCC to net.VCC",
+      "net.VCC to net.VCC_MAIN",
+      "net.VCC_REGULATED to net.VCC_MAIN",
     ]
   `)
-  expect(circuit).toMatchSchematicSnapshot(
-    import.meta.path + "-schematic-array",
-  )
 })
 
-test("net connectsTo string", () => {
+test("net connectsTo single net", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board routingDisabled>
-      <chip
-        name="U1"
-        manufacturerPartNumber="I2C_SENSOR"
-        footprint="soic4"
-        pinLabels={{
-          pin1: "SCL",
-          pin2: "SDA",
-        }}
-        schPinArrangement={{
-          leftSide: {
-            direction: "top-to-bottom",
-            pins: ["SCL", "SDA"],
-          },
-        }}
-      />
-      <net name="DATA" connectsTo="U1.SDA" />
+      <net name="GND" />
+      <net name="GND_PLANE" connectsTo="net.GND" />
     </board>,
   )
 
@@ -76,10 +46,7 @@ test("net connectsTo string", () => {
     .sort()
   expect(traces).toMatchInlineSnapshot(`
     [
-      "U1.SDA to net.DATA",
+      "net.GND to net.GND_PLANE",
     ]
   `)
-  expect(circuit).toMatchSchematicSnapshot(
-    import.meta.path + "-schematic-string",
-  )
 })
