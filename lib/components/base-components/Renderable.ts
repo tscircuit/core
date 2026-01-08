@@ -82,6 +82,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   CadModelRender: ["PcbFootprintStringRender"],
   PartsEngineRender: ["PcbFootprintStringRender"],
   PcbComponentAnchorAlignment: ["PcbFootprintStringRender"],
+  PanelLayout: ["PcbFootprintStringRender"],
 }
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
