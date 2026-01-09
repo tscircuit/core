@@ -32,7 +32,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@resvg/resvg-js": "^2.6.2",
-    "@tscircuit/capacity-autorouter": "^0.0.223",
+    "@tscircuit/capacity-autorouter": "^0.0.245",
     "@tscircuit/checks": "^0.0.87",
     "@tscircuit/circuit-json-util": "^0.0.73",
     "@tscircuit/common": "^0.0.20",
@@ -44,7 +44,7 @@
     "@tscircuit/math-utils": "^0.0.29",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.8",
-    "@tscircuit/props": "^0.0.440",
+    "@tscircuit/props": "^0.0.441",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
     "@tscircuit/schematic-trace-solver": "^v0.0.45",
     "@tscircuit/solver-utils": "^0.0.3",
