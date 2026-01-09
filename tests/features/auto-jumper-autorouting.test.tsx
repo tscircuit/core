@@ -1,6 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import * as fs from "node:fs"
 
 test("board with auto_jumper autorouter for single layer with crossing traces", async () => {
   const { circuit } = getTestFixture()
@@ -68,6 +69,7 @@ test("board with auto_jumper autorouter for single layer with crossing traces", 
 
   // Verify connectivity map recognizes jumper connections
   const circuitJson = circuit.getCircuitJson()
+  // fs.writeFileSync("circuit.json", JSON.stringify(circuitJson, null, 2))
   const connectivityMap = getFullConnectivityMapFromCircuitJson(circuitJson)
 
   // U1.pin1 should be connected to U1.pin9 (via trace and possibly through jumper)

@@ -124,9 +124,19 @@ export function insertAutoplacedJumpers(params: {
       // Get layer from pad - may be `layer` string or `layers` array
       const padLayer = pad.layer || pad.layers?.[0] || "top"
 
-      // Create pcb_smtpad
+      // Create pcb_port linking source_port to pcb_smtpad
+      const pcbPort = db.pcb_port.insert({
+        pcb_component_id: pcbComponent.pcb_component_id,
+        source_port_id: sourcePort.source_port_id,
+        x: pad.center.x,
+        y: pad.center.y,
+        layers: [padLayer as LayerRef],
+      })
+
+      // Create pcb_smtpad with link to pcb_port
       const pcbSmtpad = db.pcb_smtpad.insert({
         pcb_component_id: pcbComponent.pcb_component_id,
+        pcb_port_id: pcbPort.pcb_port_id,
         shape: "rect",
         x: pad.center.x,
         y: pad.center.y,
@@ -134,15 +144,6 @@ export function insertAutoplacedJumpers(params: {
         height: pad.height,
         layer: padLayer as LayerRef,
       } as PcbSmtPadRect)
-
-      // Create pcb_port linking source_port to pcb_smtpad
-      db.pcb_port.insert({
-        pcb_component_id: pcbComponent.pcb_component_id,
-        source_port_id: sourcePort.source_port_id,
-        x: pad.center.x,
-        y: pad.center.y,
-        layers: [padLayer as LayerRef],
-      })
 
       padData.push({
         pad,
