@@ -5,7 +5,7 @@ test("board with auto_jumper autorouter for single layer with crossing traces", 
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="30mm" height="30mm" layers={1} autorouter="auto_jumper">
+    <board width="18mm" height="22mm" layers={1} autorouter="auto_jumper">
       <chip
         footprint="dip16_w14"
         name="U1"
@@ -25,10 +25,10 @@ test("board with auto_jumper autorouter for single layer with crossing traces", 
 
   await circuit.renderUntilSettled()
 
+  // Match against a PCB snapshot to verify routing with jumpers
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+
   // Verify that we have PCB traces in the output
   const traces = circuit.selectAll("trace")
   expect(traces.length).toBeGreaterThan(0)
-
-  // Match against a PCB snapshot to verify routing with jumpers
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
