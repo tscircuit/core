@@ -9,7 +9,6 @@ import {
   type LayerRef,
   type PcbTrace,
   type PcbVia,
-  type PcbSmtPadRect,
   type SchematicComponent,
   type SchematicPort,
   distance,
@@ -45,6 +44,8 @@ import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSim
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 import type { Board } from "index"
+import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
+import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -558,8 +559,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Optional configuration parameters
         capacityDepth: this.props.autorouter?.capacityDepth,
         targetMinCapacity: this.props.autorouter?.targetMinCapacity,
-        useAssignableSolver:
-          isLaserPrefabPreset || isSingleLayerBoard,
+        useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
         useAutoJumperSolver: isAutoJumperPreset,
         onSolverStarted: ({ solverName, solverParams }) =>
           this.root?.emit("solver:started", {
@@ -804,49 +804,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
 
     // First, create jumper components from getOutputJumpers() result
-    // These have all 8 pads for the 1206x4 footprint
     if (output_jumpers && output_jumpers.length > 0) {
-      for (let jumperIndex = 0; jumperIndex < output_jumpers.length; jumperIndex++) {
-        const jumper = output_jumpers[jumperIndex] as any
-
-        const sourceComponent = db.source_component.insert({
-          ftype: "simple_chip",
-          name: `J${jumperIndex}`,
-          supplier_part_numbers: {},
-        })
-
-        // Calculate rotation from orientation
-        const rotation = jumper.orientation === "horizontal" ? 0 : 90
-
-        // Get layer from first pad - may be `layer` string or `layers` array
-        const firstPadLayer = jumper.pads[0]?.layer ||
-          (jumper.pads[0]?.layers?.[0]) || "top"
-
-        const pcbComponent = db.pcb_component.insert({
-          source_component_id: sourceComponent.source_component_id,
-          center: jumper.center,
-          rotation,
-          layer: firstPadLayer as LayerRef,
-          width: jumper.width || 0,
-          height: jumper.height || 0,
-          obstructs_within_bounds: false,
-        })
-
-        // Create all pads from the jumper
-        for (const pad of jumper.pads as any[]) {
-          // Get layer from pad - may be `layer` string or `layers` array
-          const padLayer = pad.layer || (pad.layers?.[0]) || "top"
-          db.pcb_smtpad.insert({
-            pcb_component_id: pcbComponent.pcb_component_id,
-            shape: "rect",
-            x: pad.center.x,
-            y: pad.center.y,
-            width: pad.width,
-            height: pad.height,
-            layer: padLayer as LayerRef,
-          } as PcbSmtPadRect)
-        }
-      }
+      insertAutoplacedJumpers({
+        db,
+        output_jumpers,
+        subcircuit_id: this.subcircuit_id,
+      })
     }
 
     for (const pcb_trace of output_pcb_traces) {
@@ -859,80 +822,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         pcb_trace.source_trace_id = sourceTraceId
       }
 
-      // Extract all jumper routes from this trace
-      const jumperRoutes = pcb_trace.route.filter(
-        (p: any) => p.route_type === "jumper",
-      )
-      const wireAndViaRoutes = pcb_trace.route.filter(
-        (p: any) => p.route_type !== "jumper",
-      )
+      // Split traces at jumper locations
+      const segments = splitPcbTracesOnJumperSegments(pcb_trace.route)
 
-      // If no jumpers, just insert the trace as-is
-      if (jumperRoutes.length === 0) {
+      // If no splitting needed, insert the trace as-is
+      if (segments === null) {
         db.pcb_trace.insert(pcb_trace)
         continue
-      }
-
-      // Process each jumper: find where in the trace it connects and split there
-      // Build a list of split points (indices where we need to cut the trace)
-      const splitRanges: Array<{ startIdx: number; endIdx: number }> = []
-
-      for (const jumperRoute of jumperRoutes) {
-        const jumperPoint = jumperRoute as any
-        const jumperStart = jumperPoint.start
-        const jumperEnd = jumperPoint.end
-
-        // Find the closest wire point to jumper start and end
-        let startIdx = -1
-        let endIdx = -1
-        let minStartDist = Infinity
-        let minEndDist = Infinity
-
-        for (let i = 0; i < wireAndViaRoutes.length; i++) {
-          const p = wireAndViaRoutes[i] as any
-          if (p.route_type !== "wire") continue
-
-          const distToStart = Math.hypot(p.x - jumperStart.x, p.y - jumperStart.y)
-          const distToEnd = Math.hypot(p.x - jumperEnd.x, p.y - jumperEnd.y)
-
-          if (distToStart < minStartDist) {
-            minStartDist = distToStart
-            startIdx = i
-          }
-          if (distToEnd < minEndDist) {
-            minEndDist = distToEnd
-            endIdx = i
-          }
-        }
-
-        // Ensure startIdx < endIdx (the trace goes from start to end)
-        if (startIdx > endIdx) {
-          ;[startIdx, endIdx] = [endIdx, startIdx]
-        }
-
-        if (startIdx >= 0 && endIdx >= 0 && startIdx !== endIdx) {
-          splitRanges.push({ startIdx, endIdx })
-        }
-      }
-
-      // Sort split ranges by startIdx and merge overlapping ranges
-      splitRanges.sort((a, b) => a.startIdx - b.startIdx)
-
-      // Build segments by excluding the split ranges
-      const segments: PcbTrace["route"][] = []
-      let currentStart = 0
-
-      for (const range of splitRanges) {
-        // Add segment before this split range
-        if (currentStart < range.startIdx) {
-          segments.push(wireAndViaRoutes.slice(currentStart, range.startIdx + 1))
-        }
-        currentStart = range.endIdx
-      }
-
-      // Add final segment after last split
-      if (currentStart < wireAndViaRoutes.length) {
-        segments.push(wireAndViaRoutes.slice(currentStart))
       }
 
       // Insert each segment as a separate trace
