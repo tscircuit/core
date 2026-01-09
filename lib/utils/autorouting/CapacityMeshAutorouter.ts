@@ -1,6 +1,7 @@
 import {
   AutoroutingPipelineSolver,
   AssignableAutoroutingPipeline2,
+  AssignableAutoroutingPipeline3,
 } from "@tscircuit/capacity-autorouter"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"

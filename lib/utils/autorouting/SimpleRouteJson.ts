@@ -17,6 +17,13 @@ export type SimplifiedPcbTrace = {
         to_layer: string
         from_layer: string
       }
+    | {
+        route_type: "jumper"
+        start: { x: number; y: number }
+        end: { x: number; y: number }
+        footprint: "0603" | "1206" | "1206x4_pair"
+        layer: string
+      }
   >
 }
 export type Obstacle = {
@@ -56,6 +63,8 @@ export interface SimpleRouteJson {
   outline?: Array<{ x: number; y: number }>
   // NOTE: this is only present after an autorouter solves the input
   traces?: SimplifiedPcbTrace[]
+  // Enable jumper-based routing for single-layer boards
+  allowJumpers?: boolean
 }
 
 // declare module "autorouting-dataset" {

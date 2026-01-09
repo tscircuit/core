@@ -501,6 +501,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     debug(`[${this.getString()}] starting local autorouting`)
     const autorouterConfig = this._getAutorouterConfig()
     const isLaserPrefabPreset = this._isLaserPrefabAutorouter(autorouterConfig)
+    const isAutoJumperPreset = this._isAutoJumperAutorouter(autorouterConfig)
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
@@ -509,6 +510,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       nominalTraceWidth: this.props.nominalTraceWidth,
       subcircuit_id: this.subcircuit_id,
     })
+
+    // Enable jumpers for auto_jumper preset
+    if (isAutoJumperPreset) {
+      simpleRouteJson.allowJumpers = true
+    }
 
     if (debug.enabled) {
       ;(global as any).debugOutputArray?.push({
@@ -540,7 +546,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Optional configuration parameters
         capacityDepth: this.props.autorouter?.capacityDepth,
         targetMinCapacity: this.props.autorouter?.targetMinCapacity,
-        useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
+        useAssignableSolver:
+          isLaserPrefabPreset || isAutoJumperPreset || isSingleLayerBoard,
         onSolverStarted: ({ solverName, solverParams }) =>
           this.root?.emit("solver:started", {
             type: "solver:started",
@@ -1123,6 +1130,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
     if (typeof autorouterProp === "object" && autorouterProp) {
       return normalize(autorouterProp.preset) === "laser_prefab"
+    }
+    return false
+  }
+
+  _isAutoJumperAutorouter(
+    autorouterConfig: AutorouterConfig = this._getAutorouterConfig(),
+  ): boolean {
+    const autorouterProp = this.props.autorouter
+    const normalize = (value?: string) => value?.replace(/-/g, "_") ?? value
+    if (autorouterConfig.preset === "auto_jumper") return true
+    if (typeof autorouterProp === "string") {
+      return normalize(autorouterProp) === "auto_jumper"
+    }
+    if (typeof autorouterProp === "object" && autorouterProp) {
+      return normalize(autorouterProp.preset) === "auto_jumper"
     }
     return false
   }
