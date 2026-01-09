@@ -76,6 +76,20 @@ export function getPresetAutoroutingConfig(
         ...rest,
       }
     }
+    case "auto-jumper": {
+      const {
+        preset: _preset,
+        local: _local,
+        groupMode: _groupMode,
+        ...rest
+      } = providedConfig
+      return {
+        local: true,
+        groupMode: "subcircuit",
+        preset: "auto_jumper",
+        ...rest,
+      }
+    }
     default:
       return {
         local: true,

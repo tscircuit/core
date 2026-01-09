@@ -6,6 +6,7 @@ import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
 import type {
   SimpleRouteConnection,
   SimpleRouteJson,
+  SimplifiedPcbTrace,
   Obstacle,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
@@ -335,7 +336,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         },
       ],
     })
-    let results = autorouter.solveAndMapToTraces()
+    let results: SimplifiedPcbTrace[] = autorouter.solveAndMapToTraces()
 
     if (results.length === 0) {
       if (
@@ -356,11 +357,14 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     const [{ route }] = results
 
     edges = []
-    // Add autorouted path
-    for (let i = 0; i < route.length - 1; i++) {
+    // Add autorouted path (filter out jumper routes which only apply to PCB)
+    const wireAndViaRoutes = route.filter(
+      (r) => r.route_type === "wire" || r.route_type === "via",
+    )
+    for (let i = 0; i < wireAndViaRoutes.length - 1; i++) {
       edges.push({
-        from: route[i],
-        to: route[i + 1],
+        from: wireAndViaRoutes[i],
+        to: wireAndViaRoutes[i + 1],
       })
     }
   }

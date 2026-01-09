@@ -43,6 +43,9 @@ import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicT
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
+import type { Board } from "index"
+import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
+import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -57,6 +60,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: (PcbTrace | PcbVia)[]
+    output_jumpers?: Array<{
+      jumper_footprint: string
+      center: { x: number; y: number }
+      orientation: string
+      pads: Array<{
+        center: { x: number; y: number }
+        width: number
+        height: number
+        layer: string
+      }>
+    }>
   } | null = null
 
   get config() {
@@ -157,67 +171,37 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbPrimitiveRender(): void {
+    this.calculatePcbGroupBounds()
+  }
+
+  calculatePcbGroupBounds() {
+    if (!this.pcb_group_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const props = this._parsedProps as SubcircuitGroupProps
 
     const hasOutline = props.outline && props.outline.length > 0
 
-    if (this.pcb_group_id) {
-      // Check if explicit positioning is provided (pcbX or pcbY)
-      const hasExplicitPositioning =
-        this._parsedProps.pcbX !== undefined ||
-        this._parsedProps.pcbY !== undefined
+    // Check if explicit positioning is provided (pcbX or pcbY)
+    const hasExplicitPositioning =
+      this._parsedProps.pcbX !== undefined ||
+      this._parsedProps.pcbY !== undefined
 
-      // If outline is specified, calculate bounds from outline
-      if (hasOutline) {
-        const numericOutline = props.outline!.map((point) => ({
-          x: distance.parse(point.x),
-          y: distance.parse(point.y),
-        }))
+    // If outline is specified, calculate bounds from outline
+    if (hasOutline) {
+      const numericOutline = props.outline!.map((point) => ({
+        x: distance.parse(point.x),
+        y: distance.parse(point.y),
+      }))
 
-        const outlineBounds = getBoundsFromPoints(numericOutline)
-        if (!outlineBounds) return
+      const outlineBounds = getBoundsFromPoints(numericOutline)
+      if (!outlineBounds) return
 
-        const centerX = (outlineBounds.minX + outlineBounds.maxX) / 2
-        const centerY = (outlineBounds.minY + outlineBounds.maxY) / 2
-
-        // Preserve explicit positioning when pcbX/pcbY are set
-        // Otherwise use calculated center from outline
-        const center = hasExplicitPositioning
-          ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
-              x: centerX,
-              y: centerY,
-            })
-          : { x: centerX, y: centerY }
-
-        // For groups with outline, don't set width/height
-        db.pcb_group.update(this.pcb_group_id, {
-          center,
-        })
-        return
-      }
-
-      // Original logic for groups without outline
-      const bounds = getBoundsOfPcbComponents(this.children)
-
-      let width = bounds.width
-      let height = bounds.height
-      let centerX = (bounds.minX + bounds.maxX) / 2
-      let centerY = (bounds.minY + bounds.maxY) / 2
-
-      if (this.isSubcircuit) {
-        const { padLeft, padRight, padTop, padBottom } =
-          this._resolvePcbPadding()
-
-        width += padLeft + padRight
-        height += padTop + padBottom
-        centerX += (padRight - padLeft) / 2
-        centerY += (padTop - padBottom) / 2
-      }
+      const centerX = (outlineBounds.minX + outlineBounds.maxX) / 2
+      const centerY = (outlineBounds.minY + outlineBounds.maxY) / 2
 
       // Preserve explicit positioning when pcbX/pcbY are set
-      // Otherwise use calculated center from child bounds
+      // Otherwise use calculated center from outline
       const center = hasExplicitPositioning
         ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
             x: centerX,
@@ -225,12 +209,48 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           })
         : { x: centerX, y: centerY }
 
+      // For groups with outline, don't set width/height
       db.pcb_group.update(this.pcb_group_id, {
-        width: Number(props.width ?? width),
-        height: Number(props.height ?? height),
         center,
       })
+      return
     }
+
+    // Original logic for groups without outline
+    const bounds = getBoundsOfPcbComponents(this.children)
+
+    let width = bounds.width
+    let height = bounds.height
+    let centerX = (bounds.minX + bounds.maxX) / 2
+    let centerY = (bounds.minY + bounds.maxY) / 2
+
+    if (this.isSubcircuit) {
+      const { padLeft, padRight, padTop, padBottom } = this._resolvePcbPadding()
+
+      width += padLeft + padRight
+      height += padTop + padBottom
+      centerX += (padRight - padLeft) / 2
+      centerY += (padTop - padBottom) / 2
+    }
+
+    // Preserve explicit positioning when pcbX/pcbY are set
+    // Otherwise use calculated center from child bounds
+    const center = hasExplicitPositioning
+      ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
+          x: centerX,
+          y: centerY,
+        })
+      : { x: centerX, y: centerY }
+
+    db.pcb_group.update(this.pcb_group_id, {
+      width: Number(props.width ?? width),
+      height: Number(props.height ?? height),
+      center,
+    })
+  }
+
+  updatePcbPrimitiveRender(): void {
+    this.calculatePcbGroupBounds()
   }
 
   unnamedElementCounter: Record<string, number> = {}
@@ -494,6 +514,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     debug(`[${this.getString()}] starting local autorouting`)
     const autorouterConfig = this._getAutorouterConfig()
     const isLaserPrefabPreset = this._isLaserPrefabAutorouter(autorouterConfig)
+    const isAutoJumperPreset = this._isAutoJumperAutorouter(autorouterConfig)
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
@@ -502,6 +523,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       nominalTraceWidth: this.props.nominalTraceWidth,
       subcircuit_id: this.subcircuit_id,
     })
+
+    // Enable jumpers for auto_jumper preset
+    if (isAutoJumperPreset) {
+      simpleRouteJson.allowJumpers = true
+    }
 
     if (debug.enabled) {
       ;(global as any).debugOutputArray?.push({
@@ -534,6 +560,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         capacityDepth: this.props.autorouter?.capacityDepth,
         targetMinCapacity: this.props.autorouter?.targetMinCapacity,
         useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
+        useAutoJumperSolver: isAutoJumperPreset,
         onSolverStarted: ({ solverName, solverParams }) =>
           this.root?.emit("solver:started", {
             type: "solver:started",
@@ -590,9 +617,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         })
       }
 
+      // Get jumper output from solver
+      let outputJumpers: Array<{
+        jumper_footprint: string
+        center: { x: number; y: number }
+        orientation: string
+        pads: Array<{
+          center: { x: number; y: number }
+          width: number
+          height: number
+          layer: string
+        }>
+      }> = []
+      const solver = (autorouter as any).solver
+      if (solver?.getOutputJumpers) {
+        outputJumpers = solver.getOutputJumpers() || []
+      }
+
       // Store the result
       this._asyncAutoroutingResult = {
         output_pcb_traces: traces as any,
+        output_jumpers: outputJumpers,
       }
 
       // Mark the component as needing to re-render the PCB traces
@@ -746,7 +791,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _updatePcbTraceRenderFromPcbTraces() {
-    const { output_pcb_traces } = this._asyncAutoroutingResult!
+    const { output_pcb_traces, output_jumpers } = this._asyncAutoroutingResult!
     if (!output_pcb_traces) return
 
     const { db } = this.root!
@@ -758,6 +803,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const pcbStyle = this.getInheritedMergedProperty("pcbStyle")
     const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
 
+    // First, create jumper components from getOutputJumpers() result
+    if (output_jumpers && output_jumpers.length > 0) {
+      insertAutoplacedJumpers({
+        db,
+        output_jumpers,
+        subcircuit_id: this.subcircuit_id,
+      })
+    }
+
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
@@ -768,7 +822,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         pcb_trace.source_trace_id = sourceTraceId
       }
 
-      db.pcb_trace.insert(pcb_trace)
+      // Split traces at jumper locations
+      const segments = splitPcbTracesOnJumperSegments(pcb_trace.route)
+
+      // If no splitting needed, insert the trace as-is
+      if (segments === null) {
+        db.pcb_trace.insert(pcb_trace)
+        continue
+      }
+
+      // Insert each segment as a separate trace
+      for (const segment of segments) {
+        if (segment.length > 0) {
+          db.pcb_trace.insert({
+            ...pcb_trace,
+            route: segment,
+          })
+        }
+      }
     }
 
     // Create vias for layer transitions (this shouldn't be necessary, but
@@ -1116,6 +1187,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
     if (typeof autorouterProp === "object" && autorouterProp) {
       return normalize(autorouterProp.preset) === "laser_prefab"
+    }
+    return false
+  }
+
+  _isAutoJumperAutorouter(
+    autorouterConfig: AutorouterConfig = this._getAutorouterConfig(),
+  ): boolean {
+    const autorouterProp = this.props.autorouter
+    const normalize = (value?: string) => value?.replace(/-/g, "_") ?? value
+    if (autorouterConfig.preset === "auto_jumper") return true
+    if (typeof autorouterProp === "string") {
+      return normalize(autorouterProp) === "auto_jumper"
+    }
+    if (typeof autorouterProp === "object" && autorouterProp) {
+      return normalize(autorouterProp.preset) === "auto_jumper"
     }
     return false
   }

@@ -6,6 +6,7 @@ export interface ISubcircuit extends PrimitiveComponent {
   _shouldUseTraceByTraceRouting(): boolean
   _parsedProps: z.infer<typeof subcircuitGroupProps>
   _getAutorouterConfig(): AutorouterConfig
+  _isAutoJumperAutorouter(autorouterConfig?: AutorouterConfig): boolean
   getNextAvailableName(elm: PrimitiveComponent): string
   _getSubcircuitLayerCount(): number
   subcircuit_id: string | null
