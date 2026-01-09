@@ -46,6 +46,7 @@ import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchor
 import type { Board } from "index"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
+import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -822,17 +823,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         pcb_trace.source_trace_id = sourceTraceId
       }
 
-      // Split traces at jumper locations
-      const segments = splitPcbTracesOnJumperSegments(pcb_trace.route)
+      // Split traces at jumper locations (based on explicit jumper route markers)
+      let segments = splitPcbTracesOnJumperSegments(pcb_trace.route)
 
-      // If no splitting needed, insert the trace as-is
+      // If no explicit jumper splits, use the original route
       if (segments === null) {
-        db.pcb_trace.insert(pcb_trace)
-        continue
+        segments = [pcb_trace.route]
       }
 
+      // Add port IDs to trace segments at jumper pad locations
+      const processedSegments = addPortIdsToTracesAtJumperPads(segments, db)
+
       // Insert each segment as a separate trace
-      for (const segment of segments) {
+      for (const segment of processedSegments) {
         if (segment.length > 0) {
           db.pcb_trace.insert({
             ...pcb_trace,
