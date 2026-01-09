@@ -632,7 +632,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const solver = (autorouter as any).solver
       if (solver?.getOutputJumpers) {
         outputJumpers = solver.getOutputJumpers() || []
-        console.log("[auto_jumper] getOutputJumpers() returned:", JSON.stringify(outputJumpers, null, 2))
       }
 
       // Store the result
@@ -808,7 +807,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // These have all 8 pads for the 1206x4 footprint
     if (output_jumpers && output_jumpers.length > 0) {
       for (let jumperIndex = 0; jumperIndex < output_jumpers.length; jumperIndex++) {
-        const jumper = output_jumpers[jumperIndex]
+        const jumper = output_jumpers[jumperIndex] as any
 
         const sourceComponent = db.source_component.insert({
           ftype: "simple_chip",
@@ -819,18 +818,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Calculate rotation from orientation
         const rotation = jumper.orientation === "horizontal" ? 0 : 90
 
+        // Get layer from first pad - may be `layer` string or `layers` array
+        const firstPadLayer = jumper.pads[0]?.layer ||
+          (jumper.pads[0]?.layers?.[0]) || "top"
+
         const pcbComponent = db.pcb_component.insert({
           source_component_id: sourceComponent.source_component_id,
           center: jumper.center,
           rotation,
-          layer: (jumper.pads[0]?.layer || "top") as LayerRef,
-          width: 0,
-          height: 0,
+          layer: firstPadLayer as LayerRef,
+          width: jumper.width || 0,
+          height: jumper.height || 0,
           obstructs_within_bounds: false,
         })
 
         // Create all pads from the jumper
-        for (const pad of jumper.pads) {
+        for (const pad of jumper.pads as any[]) {
+          // Get layer from pad - may be `layer` string or `layers` array
+          const padLayer = pad.layer || (pad.layers?.[0]) || "top"
           db.pcb_smtpad.insert({
             pcb_component_id: pcbComponent.pcb_component_id,
             shape: "rect",
@@ -838,7 +843,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             y: pad.center.y,
             width: pad.width,
             height: pad.height,
-            layer: (pad.layer || "top") as LayerRef,
+            layer: padLayer as LayerRef,
           } as PcbSmtPadRect)
         }
       }
