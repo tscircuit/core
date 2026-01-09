@@ -59,6 +59,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: (PcbTrace | PcbVia)[]
+    output_jumpers?: Array<{
+      jumper_footprint: string
+      center: { x: number; y: number }
+      orientation: string
+      pads: Array<{
+        center: { x: number; y: number }
+        width: number
+        height: number
+        layer: string
+      }>
+    }>
   } | null = null
 
   get config() {
@@ -606,9 +617,28 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         })
       }
 
+      // Get jumper output from solver
+      let outputJumpers: Array<{
+        jumper_footprint: string
+        center: { x: number; y: number }
+        orientation: string
+        pads: Array<{
+          center: { x: number; y: number }
+          width: number
+          height: number
+          layer: string
+        }>
+      }> = []
+      const solver = (autorouter as any).solver
+      if (solver?.getOutputJumpers) {
+        outputJumpers = solver.getOutputJumpers() || []
+        console.log("[auto_jumper] getOutputJumpers() returned:", JSON.stringify(outputJumpers, null, 2))
+      }
+
       // Store the result
       this._asyncAutoroutingResult = {
         output_pcb_traces: traces as any,
+        output_jumpers: outputJumpers,
       }
 
       // Mark the component as needing to re-render the PCB traces
@@ -762,7 +792,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _updatePcbTraceRenderFromPcbTraces() {
-    const { output_pcb_traces } = this._asyncAutoroutingResult!
+    const { output_pcb_traces, output_jumpers } = this._asyncAutoroutingResult!
     if (!output_pcb_traces) return
 
     const { db } = this.root!
@@ -774,7 +804,46 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const pcbStyle = this.getInheritedMergedProperty("pcbStyle")
     const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
 
-    let jumperIndex = 0
+    // First, create jumper components from getOutputJumpers() result
+    // These have all 8 pads for the 1206x4 footprint
+    if (output_jumpers && output_jumpers.length > 0) {
+      for (let jumperIndex = 0; jumperIndex < output_jumpers.length; jumperIndex++) {
+        const jumper = output_jumpers[jumperIndex]
+
+        const sourceComponent = db.source_component.insert({
+          ftype: "simple_chip",
+          name: `J${jumperIndex}`,
+          supplier_part_numbers: {},
+        })
+
+        // Calculate rotation from orientation
+        const rotation = jumper.orientation === "horizontal" ? 0 : 90
+
+        const pcbComponent = db.pcb_component.insert({
+          source_component_id: sourceComponent.source_component_id,
+          center: jumper.center,
+          rotation,
+          layer: (jumper.pads[0]?.layer || "top") as LayerRef,
+          width: 0,
+          height: 0,
+          obstructs_within_bounds: false,
+        })
+
+        // Create all pads from the jumper
+        for (const pad of jumper.pads) {
+          db.pcb_smtpad.insert({
+            pcb_component_id: pcbComponent.pcb_component_id,
+            shape: "rect",
+            x: pad.center.x,
+            y: pad.center.y,
+            width: pad.width,
+            height: pad.height,
+            layer: (pad.layer || "top") as LayerRef,
+          } as PcbSmtPadRect)
+        }
+      }
+    }
+
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
@@ -807,8 +876,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         const jumperPoint = jumperRoute as any
         const jumperStart = jumperPoint.start
         const jumperEnd = jumperPoint.end
-        const jumperFootprint = jumperPoint.footprint || "0603"
-        const layer = jumperPoint.layer || "top"
 
         // Find the closest wire point to jumper start and end
         let startIdx = -1
@@ -841,56 +908,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         if (startIdx >= 0 && endIdx >= 0 && startIdx !== endIdx) {
           splitRanges.push({ startIdx, endIdx })
         }
-
-        // Create the jumper component
-        const centerX = (jumperStart.x + jumperEnd.x) / 2
-        const centerY = (jumperStart.y + jumperEnd.y) / 2
-        const rotation =
-          (Math.atan2(
-            jumperEnd.y - jumperStart.y,
-            jumperEnd.x - jumperStart.x,
-          ) *
-            180) /
-          Math.PI
-
-        const sourceComponent = db.source_component.insert({
-          ftype: "simple_chip",
-          name: `J${jumperIndex++}`,
-          supplier_part_numbers: {},
-        })
-
-        const pcbComponent = db.pcb_component.insert({
-          source_component_id: sourceComponent.source_component_id,
-          center: { x: centerX, y: centerY },
-          rotation,
-          layer: layer as LayerRef,
-          width: 0,
-          height: 0,
-          obstructs_within_bounds: false,
-        })
-
-        const padWidth = jumperFootprint === "0603" ? 0.6 : 1.6
-        const padHeight = jumperFootprint === "0603" ? 0.5 : 0.8
-
-        db.pcb_smtpad.insert({
-          pcb_component_id: pcbComponent.pcb_component_id,
-          shape: "rect",
-          x: jumperStart.x,
-          y: jumperStart.y,
-          width: padWidth,
-          height: padHeight,
-          layer: layer as LayerRef,
-        } as PcbSmtPadRect)
-
-        db.pcb_smtpad.insert({
-          pcb_component_id: pcbComponent.pcb_component_id,
-          shape: "rect",
-          x: jumperEnd.x,
-          y: jumperEnd.y,
-          width: padWidth,
-          height: padHeight,
-          layer: layer as LayerRef,
-        } as PcbSmtPadRect)
       }
 
       // Sort split ranges by startIdx and merge overlapping ranges
