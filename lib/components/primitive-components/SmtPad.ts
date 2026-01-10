@@ -89,6 +89,12 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const shouldCreateSolderPaste = !isCoveredWithSolderMask
     const soldermaskMargin = props.solderMaskMargin
 
+    if (isCoveredWithSolderMask && soldermaskMargin !== undefined) {
+      console.warn(
+        `Warning: coveredWithSolderMask is true but solderMaskMargin is also set on ${this.componentName}. When a component is fully covered with solder mask, a margin doesn't apply.`,
+      )
+    }
+
     const subcircuit = this.getSubcircuit()
 
     const position = this._getGlobalPcbPositionBeforeLayout()

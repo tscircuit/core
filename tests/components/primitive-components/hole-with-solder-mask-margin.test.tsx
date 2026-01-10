@@ -1,7 +1,8 @@
-import { test, expect } from "bun:test"
+import { test, expect, spyOn } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("Hole with positive and negative solder mask margin", () => {
+  const consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {})
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -110,7 +111,14 @@ test("Hole with positive and negative solder mask margin", () => {
 
   circuit.render()
 
+  expect(consoleWarnSpy).toHaveBeenCalledTimes(6)
+  expect(consoleWarnSpy).toHaveBeenCalledWith(
+    "Warning: coveredWithSolderMask is true but solderMaskMargin is also set on Hole. When a component is fully covered with solder mask, a margin doesn't apply.",
+  )
+
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path, {
     showSolderMask: true,
   })
+
+  consoleWarnSpy.mockRestore()
 })

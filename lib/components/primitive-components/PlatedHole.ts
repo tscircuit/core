@@ -128,6 +128,12 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     const soldermaskMargin = props.solderMaskMargin
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
 
+    if (isCoveredWithSolderMask && soldermaskMargin !== undefined) {
+      console.warn(
+        `Warning: coveredWithSolderMask is true but solderMaskMargin is also set on ${this.componentName}. When a component is fully covered with solder mask, a margin doesn't apply.`,
+      )
+    }
+
     if (props.shape === "circle") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
