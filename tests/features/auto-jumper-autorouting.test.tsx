@@ -1,13 +1,12 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
-import * as fs from "node:fs"
 
 test("board with auto_jumper autorouter for single layer with crossing traces", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="18mm" height="22mm" layers={1} autorouter="auto_jumper">
+    <board width="18mm" layers={1} autorouter="auto_jumper">
       <chip
         footprint="dip16_w14"
         name="U1"
@@ -69,7 +68,6 @@ test("board with auto_jumper autorouter for single layer with crossing traces", 
 
   // Verify connectivity map recognizes jumper connections
   const circuitJson = circuit.getCircuitJson()
-  // fs.writeFileSync("circuit.json", JSON.stringify(circuitJson, null, 2))
   const connectivityMap = getFullConnectivityMapFromCircuitJson(circuitJson)
 
   // U1.pin1 should be connected to U1.pin9 (via trace and possibly through jumper)
@@ -100,4 +98,91 @@ test("board with auto_jumper autorouter for single layer with crossing traces", 
   expect(pin1NetId).toBeDefined()
   expect(pin9NetId).toBeDefined()
   expect(pin1NetId).toBe(pin9NetId)
+
+  // Get all autoplaced jumper components
+  const jumperComponents = circuit.db.source_component
+    .list()
+    .filter((c) => c.name?.startsWith("__autoplaced_jumper"))
+  const jumperPcbComponentIds = jumperComponents.map((jc) => {
+    const pcbComp = circuit.db.pcb_component
+      .list()
+      .find((c) => c.source_component_id === jc.source_component_id)
+    return pcbComp?.pcb_component_id
+  })
+
+  // Verify each jumper pad is connected to traces that have points within its bounds
+  const pcbSmtpads = circuitJson.filter(
+    (el): el is Extract<typeof el, { type: "pcb_smtpad" }> =>
+      el.type === "pcb_smtpad" &&
+      jumperPcbComponentIds.includes(el.pcb_component_id),
+  )
+  const pcbTraces = circuitJson.filter(
+    (el): el is Extract<typeof el, { type: "pcb_trace" }> =>
+      el.type === "pcb_trace",
+  )
+
+  // Helper function to check if a point is within a pad's bounds
+  const isPointWithinPad = (
+    point: { x: number; y: number },
+    pad: (typeof pcbSmtpads)[number],
+  ): boolean => {
+    if (pad.shape === "circle") {
+      const dx = point.x - pad.x
+      const dy = point.y - pad.y
+      return Math.sqrt(dx * dx + dy * dy) <= pad.radius
+    } else if (pad.shape === "rect" || pad.shape === "rotated_rect") {
+      // For simplicity, treat rotated_rect as axis-aligned (good enough for this test)
+      const halfWidth = pad.width / 2
+      const halfHeight = pad.height / 2
+      return (
+        point.x >= pad.x - halfWidth &&
+        point.x <= pad.x + halfWidth &&
+        point.y >= pad.y - halfHeight &&
+        point.y <= pad.y + halfHeight
+      )
+    }
+    return false
+  }
+
+  // For each jumper pad, find traces with points within its bounds and verify connectivity
+  let padsWithTracesInBounds = 0
+  const connectivityFailures: string[] = []
+
+  for (const pad of pcbSmtpads) {
+    // Skip polygon pads which don't have x/y
+    if (pad.shape === "polygon") continue
+
+    // Find traces that have points within this pad's bounds
+    const tracesWithPointsInPad = pcbTraces.filter((trace) =>
+      trace.route.some(
+        (point) => point.route_type === "wire" && isPointWithinPad(point, pad),
+      ),
+    )
+
+    if (tracesWithPointsInPad.length > 0) {
+      padsWithTracesInBounds++
+      // Get the connectivity net for this pad
+      const padNetId = connectivityMap.getNetConnectedToId(pad.pcb_smtpad_id)
+
+      // Each trace with points in this pad should be in the same connectivity net
+      for (const trace of tracesWithPointsInPad) {
+        const traceNetId = connectivityMap.getNetConnectedToId(
+          trace.pcb_trace_id,
+        )
+
+        if (!padNetId || !traceNetId || padNetId !== traceNetId) {
+          connectivityFailures.push(
+            `Pad ${pad.pcb_smtpad_id} (port ${pad.pcb_port_id}) at (${pad.x}, ${pad.y}) ` +
+              `not connected to trace ${trace.pcb_trace_id} (pad net: ${padNetId}, trace net: ${traceNetId})`,
+          )
+        }
+      }
+    }
+  }
+
+  // Verify we found some pads with traces in their bounds
+  expect(padsWithTracesInBounds).toBeGreaterThan(0)
+
+  // Verify all pads with traces in bounds are properly connected
+  expect(connectivityFailures).toEqual([])
 })
