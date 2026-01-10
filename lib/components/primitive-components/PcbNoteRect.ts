@@ -54,4 +54,23 @@ export class PcbNoteRect extends PrimitiveComponent<typeof pcbNoteRectProps> {
 
     return { width, height }
   }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_note_rect_id) return
+
+    const rect = db.pcb_note_rect.get(this.pcb_note_rect_id)
+    if (rect) {
+      db.pcb_note_rect.update(this.pcb_note_rect_id, {
+        center: {
+          x: rect.center.x + deltaX,
+          y: rect.center.y + deltaY,
+        },
+      })
+    }
+  }
 }
