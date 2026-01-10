@@ -1,7 +1,7 @@
 import { pcbNoteTextProps } from "@tscircuit/props"
+import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 import { applyToPoint } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 
 export class PcbNoteText extends PrimitiveComponent<typeof pcbNoteTextProps> {
   pcb_note_text_id: string | null = null
@@ -56,5 +56,24 @@ export class PcbNoteText extends PrimitiveComponent<typeof pcbNoteTextProps> {
     const height = fontSize
 
     return { width, height }
+  }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_note_text_id) return
+
+    const text = db.pcb_note_text.get(this.pcb_note_text_id)
+    if (text) {
+      db.pcb_note_text.update(this.pcb_note_text_id, {
+        anchor_position: {
+          x: text.anchor_position.x + deltaX,
+          y: text.anchor_position.y + deltaY,
+        },
+      })
+    }
   }
 }

@@ -52,4 +52,23 @@ export class PcbNoteLine extends PrimitiveComponent<typeof pcbNoteLineProps> {
       height: Math.abs(props.y2 - props.y1),
     }
   }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_note_line_id) return
+
+    const line = db.pcb_note_line.get(this.pcb_note_line_id)
+    if (line) {
+      db.pcb_note_line.update(this.pcb_note_line_id, {
+        x1: line.x1 + deltaX,
+        y1: line.y1 + deltaY,
+        x2: line.x2 + deltaX,
+        y2: line.y2 + deltaY,
+      })
+    }
+  }
 }

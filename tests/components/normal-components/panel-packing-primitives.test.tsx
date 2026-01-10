@@ -45,6 +45,15 @@ test("panel packing with various primitives", async () => {
       <board width="10mm" height="10mm" name="B_coppertext">
         <coppertext text="Cu" pcbX={0} pcbY={0} fontSize={1.5} />
       </board>
+      <board width="10mm" height="10mm" name="B_pcbnoteline">
+        <pcbnoteline x1={-2} y1={-2} x2={2} y2={2} />
+      </board>
+      <board width="10mm" height="10mm" name="B_pcbnoterect">
+        <pcbnoterect width={4} height={4} />
+      </board>
+      <board width="10mm" height="10mm" name="B_pcbnotetext">
+        <pcbnotetext text="Note" />
+      </board>
     </panel>,
   )
 
