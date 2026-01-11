@@ -90,9 +90,15 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const soldermaskMargin = props.solderMaskMargin
 
     if (isCoveredWithSolderMask && soldermaskMargin !== undefined) {
-      console.warn(
-        `Warning: coveredWithSolderMask is true but solderMaskMargin is also set on ${this.componentName}. When a component is fully covered with solder mask, a margin doesn't apply.`,
-      )
+      const parentNormalComponent = this.getParentNormalComponent()
+      if (parentNormalComponent?.source_component_id) {
+        this.root!.db.source_property_ignored_warning.insert({
+          source_component_id: parentNormalComponent.source_component_id,
+          property_name: "solderMaskMargin",
+          message: `solderMaskMargin is set but coveredWithSolderMask is true. When a component is fully covered with solder mask, a margin doesn't apply.`,
+          error_type: "source_property_ignored_warning",
+        })
+      }
     }
 
     const subcircuit = this.getSubcircuit()
