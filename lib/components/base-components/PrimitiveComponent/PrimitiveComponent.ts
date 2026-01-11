@@ -341,6 +341,26 @@ export abstract class PrimitiveComponent<
   }
 
   /**
+   * Emit a warning when coveredWithSolderMask is true but solderMaskMargin is also set
+   */
+  emitSolderMaskMarginWarning(
+    isCoveredWithSolderMask: boolean,
+    solderMaskMargin: number | undefined,
+  ): void {
+    if (isCoveredWithSolderMask && solderMaskMargin !== undefined) {
+      const parentNormalComponent = this.getParentNormalComponent()
+      if (parentNormalComponent?.source_component_id) {
+        this.root!.db.source_property_ignored_warning.insert({
+          source_component_id: parentNormalComponent.source_component_id,
+          property_name: "solderMaskMargin",
+          message: `solderMaskMargin is set but coveredWithSolderMask is true. When a component is fully covered with solder mask, a margin doesn't apply.`,
+          error_type: "source_property_ignored_warning",
+        })
+      }
+    }
+  }
+
+  /**
    * Compute the PCB bounds of this component the circuit json elements
    * associated with it.
    */

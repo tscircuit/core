@@ -55,17 +55,7 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id
 
-    if (isCoveredWithSolderMask && soldermaskMargin !== undefined) {
-      const parentNormalComponent = this.getParentNormalComponent()
-      if (parentNormalComponent?.source_component_id) {
-        this.root!.db.source_property_ignored_warning.insert({
-          source_component_id: parentNormalComponent.source_component_id,
-          property_name: "solderMaskMargin",
-          message: `solderMaskMargin is set but coveredWithSolderMask is true. When a component is fully covered with solder mask, a margin doesn't apply.`,
-          error_type: "source_property_ignored_warning",
-        })
-      }
-    }
+    this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
     if (props.shape === "pill") {
       // Check if rotation is specified to determine pill type
