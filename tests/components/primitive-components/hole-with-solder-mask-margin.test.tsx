@@ -110,7 +110,18 @@ test("Hole with positive and negative solder mask margin", () => {
 
   circuit.render()
 
-  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path, {
+  const circuitJson = circuit.getCircuitJson()
+  const warnings = circuitJson.filter(
+    (e) => e.type === "source_property_ignored_warning",
+  )
+  expect(warnings).toHaveLength(6)
+  for (const warning of warnings) {
+    expect(warning.message).toContain(
+      "solderMaskMargin is set but coveredWithSolderMask is true",
+    )
+  }
+
+  expect(circuitJson).toMatchPcbSnapshot(import.meta.path, {
     showSolderMask: true,
   })
 })

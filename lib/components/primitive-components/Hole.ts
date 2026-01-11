@@ -55,6 +55,8 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id
 
+    this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
+
     if (props.shape === "pill") {
       // Check if rotation is specified to determine pill type
       if (props.pcbRotation && props.pcbRotation !== 0) {

@@ -89,6 +89,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const shouldCreateSolderPaste = !isCoveredWithSolderMask
     const soldermaskMargin = props.solderMaskMargin
 
+    this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
+
     const subcircuit = this.getSubcircuit()
 
     const position = this._getGlobalPcbPositionBeforeLayout()
