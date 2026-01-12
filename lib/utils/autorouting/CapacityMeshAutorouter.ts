@@ -2,6 +2,7 @@ import {
   AutoroutingPipelineSolver,
   AssignableAutoroutingPipeline2,
   AssignableAutoroutingPipeline3,
+  AutoroutingPipeline1_OriginalUnravel,
 } from "@tscircuit/capacity-autorouter"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
@@ -20,6 +21,7 @@ export interface AutorouterOptions {
   stepDelay?: number
   useAssignableSolver?: boolean
   useAutoJumperSolver?: boolean
+  autorouterVersion?: "v1" | "v2" | "latest"
   onSolverStarted?: (details: {
     solverName: string
     solverParams: unknown
@@ -33,6 +35,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     | AutoroutingPipelineSolver
     | AssignableAutoroutingPipeline2
     | AssignableAutoroutingPipeline3
+    | AutoroutingPipeline1_OriginalUnravel
   private eventHandlers: {
     complete: Array<(ev: AutorouterCompleteEvent) => void>
     error: Array<(ev: AutorouterErrorEvent) => void>
@@ -54,12 +57,15 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       stepDelay = 0,
       useAssignableSolver = false,
       useAutoJumperSolver = false,
+      autorouterVersion,
       onSolverStarted,
     } = options
 
     // Initialize the solver with input and optional configuration
     let solverName: keyof typeof SOLVERS
-    if (useAutoJumperSolver) {
+    if (autorouterVersion === "v1") {
+      solverName = "AutoroutingPipeline1_OriginalUnravel"
+    } else if (useAutoJumperSolver) {
       solverName = "AssignableAutoroutingPipeline3"
     } else if (useAssignableSolver) {
       solverName = "AssignableAutoroutingPipeline2"
