@@ -17,8 +17,8 @@ test("board with autorouterVersion v1 uses AutoroutingPipeline1_OriginalUnravel"
       autorouter={{
         local: true,
         groupMode: "subcircuit",
-        autorouterVersion: "v1",
       }}
+      autorouterVersion="v1"
     >
       <resistor
         name="R1"
