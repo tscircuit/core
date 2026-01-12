@@ -5,7 +5,7 @@ export default ({ pcbX, pcbY }: { pcbX?: number; pcbY?: number }) => {
   const USBC = useUsbC("USBC")
   const Button = usePushButton("SW1")
   return (
-    <board width="12mm" height="30mm" pcbX={pcbX} pcbY={pcbY}>
+    <board width="12mm" height="30mm" pcbX={pcbX} pcbY={pcbY} bomDisabled>
       <SmdUsbC
         name="USBC"
         connections={{

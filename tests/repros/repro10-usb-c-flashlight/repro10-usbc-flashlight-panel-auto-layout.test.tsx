@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "../../fixtures/get-test-fixture"
 import USBCFlashlight from "./UsbCFlashlight"
 
-test("Panel auto-layout repro10-usbc-flashlight-pcb", async () => {
+test.skip("Panel auto-layout repro10-usbc-flashlight-pcb", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

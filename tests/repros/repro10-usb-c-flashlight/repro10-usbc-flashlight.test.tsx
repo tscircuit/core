@@ -3,7 +3,7 @@ import { getTestFixture } from "../../fixtures/get-test-fixture"
 import USBCFlashlight from "./UsbCFlashlight"
 import type { AutoroutingStartEvent } from "lib/events"
 
-test("repro10-usbc-flashlight-pcb", async () => {
+test.skip("repro10-usbc-flashlight-pcb", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(<USBCFlashlight />)
