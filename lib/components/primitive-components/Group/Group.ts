@@ -557,6 +557,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       autorouter = await autorouterConfig.algorithmFn(simpleRouteJson)
     } else {
       const autorouterVersion = this.props.autorouterVersion
+      const effortLevel = this.props.autorouterEffortLevel
+      const effort = effortLevel
+        ? Number.parseInt(effortLevel.replace("x", ""), 10)
+        : undefined
       autorouter = new TscircuitAutorouter(simpleRouteJson, {
         // Optional configuration parameters
         capacityDepth: this.props.autorouter?.capacityDepth,
@@ -564,6 +568,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
         useAutoJumperSolver: isAutoJumperPreset,
         autorouterVersion,
+        effort,
         onSolverStarted: ({ solverName, solverParams }) =>
           this.root?.emit("solver:started", {
             type: "solver:started",

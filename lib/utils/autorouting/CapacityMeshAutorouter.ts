@@ -22,6 +22,7 @@ export interface AutorouterOptions {
   useAssignableSolver?: boolean
   useAutoJumperSolver?: boolean
   autorouterVersion?: "v1" | "v2" | "latest"
+  effort?: number
   onSolverStarted?: (details: {
     solverName: string
     solverParams: unknown
@@ -58,6 +59,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       useAssignableSolver = false,
       useAutoJumperSolver = false,
       autorouterVersion,
+      effort,
       onSolverStarted,
     } = options
 
@@ -78,6 +80,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       capacityDepth,
       targetMinCapacity,
       cacheProvider: null,
+      effort,
     })
 
     onSolverStarted?.({
@@ -88,6 +91,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
           capacityDepth,
           targetMinCapacity,
           cacheProvider: null,
+          effort,
         },
       },
     })
