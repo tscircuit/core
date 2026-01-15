@@ -6,7 +6,12 @@ test("board with auto_jumper autorouter for single layer with crossing traces", 
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="18mm" layers={1} autorouter="auto_jumper">
+    <board
+      width="18mm"
+      layers={1}
+      autorouter="auto_jumper"
+      autorouterEffortLevel="2x"
+    >
       <chip
         footprint="dip16_w14"
         name="U1"
