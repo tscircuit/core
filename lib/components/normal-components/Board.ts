@@ -561,30 +561,28 @@ export class Board
       return
     }
 
-    for (const child of this.children) {
-      if (child instanceof NormalComponent) {
-        let childOldCenter: { x: number; y: number } | undefined
-
-        if (child.pcb_component_id) {
-          const comp = db.pcb_component.get(child.pcb_component_id)
-          if (comp) childOldCenter = comp.center
-        } else if (child instanceof Group && child.pcb_group_id) {
-          const group = db.pcb_group.get(child.pcb_group_id)
-          if (group) childOldCenter = group.center
-        }
-
-        if (childOldCenter) {
-          child._repositionOnPcb({
-            x: childOldCenter.x + deltaX,
-            y: childOldCenter.y + deltaY,
-          })
-        }
-      } else if (
+    for (const child of this.getDescendants()) {
+      if (
         child.isPcbPrimitive &&
         "_moveCircuitJsonElements" in child &&
         typeof child._moveCircuitJsonElements === "function"
       ) {
         child._moveCircuitJsonElements({ deltaX, deltaY })
+      }
+
+      if (child instanceof Group) {
+        const groupChild = child
+        const pcbGroup = db.pcb_group.get(groupChild.pcb_group_id || "")
+        if (!pcbGroup) continue
+        if (pcbGroup.center) {
+          if (!groupChild.pcb_group_id) continue
+          db.pcb_group.update(groupChild.pcb_group_id, {
+            center: {
+              x: pcbGroup.center.x + deltaX,
+              y: pcbGroup.center.y + deltaY,
+            },
+          })
+        }
       }
     }
 
