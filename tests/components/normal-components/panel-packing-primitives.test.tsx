@@ -46,18 +46,46 @@ test("panel packing with various primitives", async () => {
         <coppertext text="Cu" pcbX={0} pcbY={0} fontSize={1.5} />
       </board>
       <board width="10mm" height="10mm" name="B_pcbnoteline">
-        <pcbnoteline x1={-2} y1={-2} x2={2} y2={2} />
+        <group name="g1 l1">
+          <pcbnoteline x1={-2} y1={-2} x2={2} y2={2} />
+        </group>
       </board>
       <board width="10mm" height="10mm" name="B_pcbnoterect">
-        <pcbnoterect width={4} height={4} />
+        <group name="g2 l1">
+          <pcbnoterect width={4} height={4} />
+        </group>
       </board>
       <board width="10mm" height="10mm" name="B_pcbnotetext">
-        <pcbnotetext text="Note" />
+        <group name="g3 l1">
+          <group name="g4 l2">
+            <pcbnotetext text="Note" />
+          </group>
+        </group>
+      </board>
+      <board width="10mm" height="10mm" name="B_fabricationnotetext">
+        <fabricationnotetext text="Fab Note" />
+      </board>
+      <board width="10mm" height="10mm" name="B_fabricationnoterect">
+        <fabricationnoterect width={4} height={4} strokeWidth={0.2} />
+      </board>
+      <board width="10mm" height="10mm" name="B_fabricationnotepath">
+        <fabricationnotepath
+          route={[
+            { x: -2, y: -2 },
+            { x: 2, y: 2 },
+          ]}
+          strokeWidth={0.1}
+        />
+      </board>
+      <board width="10mm" height="10mm" name="B_fabricationnotedimension">
+        <fabricationnotedimension from={{ x: -2, y: -2 }} to={{ x: 2, y: 2 }} />
       </board>
     </panel>,
   )
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    showAnchorOffsets: true,
+  })
 })
