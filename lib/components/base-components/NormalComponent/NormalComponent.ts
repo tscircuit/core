@@ -1518,6 +1518,7 @@ export class NormalComponent<
   doInitialPartsEngineRender(): void {
     if (this.props.doNotPlace) return
     if (this.getInheritedProperty("bomDisabled")) return
+    if (this.getInheritedProperty("partsEngineDisabled")) return
     const partsEngine = this.getInheritedProperty("partsEngine")
     if (!partsEngine) return
     const { db } = this.root!
