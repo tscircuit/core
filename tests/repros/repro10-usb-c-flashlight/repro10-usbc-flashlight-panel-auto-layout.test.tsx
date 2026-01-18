@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "../../fixtures/get-test-fixture"
 import USBCFlashlight from "./UsbCFlashlight"
 
@@ -6,7 +6,7 @@ test.skip("Panel auto-layout repro10-usbc-flashlight-pcb", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width={100} height={100}>
+    <panel width={100} height={100} layoutMode="grid">
       <USBCFlashlight />
       <USBCFlashlight />
       <USBCFlashlight />

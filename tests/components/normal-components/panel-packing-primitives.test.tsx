@@ -5,7 +5,7 @@ test("panel packing with various primitives", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel>
+    <panel layoutMode="grid">
       <board width="10mm" height="10mm" name="B_breakout">
         <resistor name="R1" resistance="1k" footprint="0805" />
         <breakoutpoint connection=".R1 > .pin1" pcbX={-2} pcbY={-2} />

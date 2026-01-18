@@ -1,5 +1,6 @@
 import { silkscreenLineProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { applyToPoint } from "transformation-matrix"
 
 export class SilkscreenLine extends PrimitiveComponent<
   typeof silkscreenLineProps
@@ -28,16 +29,21 @@ export class SilkscreenLine extends PrimitiveComponent<
     }
     const subcircuit = this.getSubcircuit()
 
+    // Transform line endpoints using global transform
+    const transform = this._computePcbGlobalTransformBeforeLayout()
+    const p1 = applyToPoint(transform, { x: props.x1, y: props.y1 })
+    const p2 = applyToPoint(transform, { x: props.x2, y: props.y2 })
+
     const pcb_component_id =
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
     const pcb_silkscreen_line = db.pcb_silkscreen_line.insert({
       pcb_component_id,
       layer,
-      x1: props.x1,
-      y1: props.y1,
-      x2: props.x2,
-      y2: props.y2,
+      x1: p1.x,
+      y1: p1.y,
+      x2: p2.x,
+      y2: p2.y,
       stroke_width: props.strokeWidth ?? 0.1,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,

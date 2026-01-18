@@ -53,7 +53,7 @@ export class BreakoutPoint extends PrimitiveComponent<
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     this._matchConnection()
-    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
+    const position = this._getGlobalPcbPositionBeforeLayout()
     const group = this.parent?.getGroup()
     const subcircuit = this.getSubcircuit()
     if (!group || !group.pcb_group_id) return
@@ -69,17 +69,22 @@ export class BreakoutPoint extends PrimitiveComponent<
         : this.matchedPort
           ? this._getSourceNetIdForPort(this.matchedPort)
           : undefined,
-      x: pcbX,
-      y: pcbY,
+      x: position.x,
+      y: position.y,
     })
     this.pcb_breakout_point_id = pcb_breakout_point.pcb_breakout_point_id
   }
 
   _getPcbCircuitJsonBounds() {
-    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
+    const position = this._getGlobalPcbPositionBeforeLayout()
     return {
-      center: { x: pcbX, y: pcbY },
-      bounds: { left: pcbX, top: pcbY, right: pcbX, bottom: pcbY },
+      center: { x: position.x, y: position.y },
+      bounds: {
+        left: position.x,
+        top: position.y,
+        right: position.x,
+        bottom: position.y,
+      },
       width: 0,
       height: 0,
     }

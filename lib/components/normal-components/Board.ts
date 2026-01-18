@@ -19,6 +19,7 @@ import type { RenderPhase } from "../base-components/Renderable"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type { BoardI } from "./BoardI"
 import type { PcbBoard } from "circuit-json"
+import { compose, translate, type Matrix } from "transformation-matrix"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -97,6 +98,7 @@ export class Board
   source_board_id: string | null = null
   _drcChecksComplete = false
   _connectedSchematicPortPairs = new Set<string>()
+  _panelPositionOffset: { x: number; y: number } | null = null
 
   get isSubcircuit() {
     return true
@@ -133,6 +135,25 @@ export class Board
 
   _getSubcircuitLayerCount(): number {
     return this._parsedProps.layers ?? 2
+  }
+
+  override _computePcbGlobalTransformBeforeLayout(): Matrix {
+    // If we have a panel-computed offset, incorporate it into the transform
+    if (this._panelPositionOffset) {
+      // Get parent transform (typically the Panel)
+      const parentTransform =
+        this.parent?._computePcbGlobalTransformBeforeLayout?.() ??
+        ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 } as Matrix)
+
+      // Compose parent transform with panel offset translation
+      // The panel offset is relative to the panel center
+      return compose(
+        parentTransform,
+        translate(this._panelPositionOffset.x, this._panelPositionOffset.y),
+      )
+    }
+    // Otherwise, fall back to the default behavior
+    return super._computePcbGlobalTransformBeforeLayout()
   }
 
   _getBoardCalcVariables(): Record<string, number> {
@@ -437,6 +458,24 @@ export class Board
       )
     }
 
+    // Calculate outline translation to center it on the board position
+    // This is ONLY needed for boards inside panels, where the board
+    // position is offset from the origin by the panel layout
+    let outlineTranslation = { x: 0, y: 0 }
+    if (outline && outline.length > 0 && this._panelPositionOffset) {
+      // Find the center of the original outline
+      const outlineBounds = getBoundsFromPoints(outline)
+      if (outlineBounds) {
+        const outlineCenterX = (outlineBounds.minX + outlineBounds.maxX) / 2
+        const outlineCenterY = (outlineBounds.minY + outlineBounds.maxY) / 2
+        // Translation needed to move outline center to board center
+        outlineTranslation = {
+          x: center.x - outlineCenterX,
+          y: center.y - outlineCenterY,
+        }
+      }
+    }
+
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
       center,
@@ -447,8 +486,8 @@ export class Board
       width: computedWidth!,
       height: computedHeight!,
       outline: outline?.map((point) => ({
-        x: point.x + (props.outlineOffsetX ?? 0),
-        y: point.y + (props.outlineOffsetY ?? 0),
+        x: point.x + (props.outlineOffsetX ?? 0) + outlineTranslation.x,
+        y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
       })),
       material: props.material,
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
@@ -559,31 +598,6 @@ export class Board
 
     if (Math.abs(deltaX) < 1e-6 && Math.abs(deltaY) < 1e-6) {
       return
-    }
-
-    for (const child of this.getDescendants()) {
-      if (
-        child.isPcbPrimitive &&
-        "_moveCircuitJsonElements" in child &&
-        typeof child._moveCircuitJsonElements === "function"
-      ) {
-        child._moveCircuitJsonElements({ deltaX, deltaY })
-      }
-
-      if (child instanceof Group) {
-        const groupChild = child
-        const pcbGroup = db.pcb_group.get(groupChild.pcb_group_id || "")
-        if (!pcbGroup) continue
-        if (pcbGroup.center) {
-          if (!groupChild.pcb_group_id) continue
-          db.pcb_group.update(groupChild.pcb_group_id, {
-            center: {
-              x: pcbGroup.center.x + deltaX,
-              y: pcbGroup.center.y + deltaY,
-            },
-          })
-        }
-      }
     }
 
     if (this.pcb_board_id) {

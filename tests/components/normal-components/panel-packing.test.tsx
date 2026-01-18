@@ -23,7 +23,7 @@ const boardOutline3 = [
 test("panel packing default", () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <panel>
+    <panel layoutMode="grid">
       <board width="10mm" height="10mm" routingDisabled>
         <resistor name="R1" resistance="1k" footprint="0805" />
         <silkscreentext pcbX={0} pcbY={0} text="B1" anchorAlignment="center" />
@@ -100,7 +100,7 @@ test("panel packing default", () => {
 test("panel packing with no board gap", () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <panel boardGap={0} edgePadding={0}>
+    <panel layoutMode="grid" boardGap={0} edgePadding={0}>
       <board width="10mm" height="10mm" routingDisabled />
       <board width="12mm" height="8mm" routingDisabled />
       <board width="8mm" height="12mm" routingDisabled />
@@ -120,7 +120,7 @@ test("panel packing with no board gap", () => {
 test("panel packing with outline boards", () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <panel>
+    <panel layoutMode="grid">
       <board name="B1" outline={boardOutline} routingDisabled />
       <board name="B2" outline={boardOutline2} routingDisabled />
       <board name="B3" outline={boardOutline3} routingDisabled />
@@ -138,7 +138,7 @@ test("panel packing with outline boards", () => {
 test("panel packing with outline boards and no board gap", () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <panel boardGap={0} edgePadding={0}>
+    <panel layoutMode="grid" boardGap={0} edgePadding={0}>
       <board name="B1" outline={boardOutline} routingDisabled />
       <board name="B2" outline={boardOutline2} routingDisabled />
       <board name="B3" outline={boardOutline3} routingDisabled />
@@ -156,7 +156,7 @@ test("panel packing with outline boards and no board gap", () => {
 test("panel packing with rows and cols", () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <panel row={1} col={5}>
+    <panel layoutMode="grid" row={1} col={5}>
       <board width="10mm" height="10mm" routingDisabled />
       <board width="10mm" height="10mm" routingDisabled />
       <board width="10mm" height="10mm" routingDisabled />
@@ -187,7 +187,7 @@ test("panel packing with rows and cols", () => {
 test("panel packing with cellWidth and cellHeight", () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <panel cellWidth="20mm" cellHeight="20mm">
+    <panel layoutMode="grid" cellWidth="20mm" cellHeight="20mm">
       <board width="10mm" height="10mm" routingDisabled />
       <board width="10mm" height="10mm" routingDisabled />
     </panel>,
@@ -203,7 +203,7 @@ test("panel packing with cellWidth and cellHeight", () => {
 test("panel packing with small cellWidth/cellHeight", () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <panel cellWidth="5mm" cellHeight="5mm">
+    <panel layoutMode="grid" cellWidth="5mm" cellHeight="5mm">
       <board width="10mm" height="10mm" routingDisabled />
       <board width="10mm" height="10mm" routingDisabled />
     </panel>,

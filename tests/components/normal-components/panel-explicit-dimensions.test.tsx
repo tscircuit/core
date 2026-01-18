@@ -6,7 +6,7 @@ test("panel respects explicit width and height props", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width="200mm" height="150mm">
+    <panel width="200mm" height="150mm" layoutMode="grid">
       <board circuitJson={circuitJson as any} />
       <board circuitJson={circuitJson as any} />
     </panel>,
