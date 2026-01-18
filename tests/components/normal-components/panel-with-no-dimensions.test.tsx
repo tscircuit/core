@@ -6,7 +6,7 @@ test("panel with no dimensions given", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel>
+    <panel layoutMode="grid">
       <board circuitJson={circuitJson as any} />
       <board circuitJson={circuitJson as any} />
     </panel>,

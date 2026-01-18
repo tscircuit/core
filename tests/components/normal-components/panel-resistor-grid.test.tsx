@@ -74,7 +74,7 @@ test("panel with a grid of resistors on boards with no explicit positions", asyn
   }
 
   circuit.add(
-    <panel>
+    <panel layoutMode="grid">
       {boards.map((pos, i) => (
         <board
           key={i}

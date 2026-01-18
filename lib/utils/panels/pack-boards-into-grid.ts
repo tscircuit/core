@@ -1,6 +1,7 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { distance } from "circuit-json"
 import type { Board } from "lib/components/normal-components/Board"
+import { getBoardDimensionsFromProps } from "./get-board-dimensions-from-props"
 
 interface PackingOptions {
   row?: number
@@ -24,22 +25,38 @@ export const packBoardsIntoGrid = ({
   cellWidth,
   cellHeight,
   boardGap,
-}: { boards: Board[]; db: CircuitJsonUtilObjects } & PackingOptions): {
+}: { boards: Board[]; db?: CircuitJsonUtilObjects } & PackingOptions): {
   positions: Array<{ board: Board; pos: { x: number; y: number } }>
   gridWidth: number
   gridHeight: number
 } => {
   const boardsWithDims: BoardWithDims[] = boards
     .map((board) => {
-      const pcbBoard = db.pcb_board.get(board.pcb_board_id!)
-      if (
-        !pcbBoard ||
-        pcbBoard.width === undefined ||
-        pcbBoard.height === undefined
-      ) {
+      let width: number | undefined
+      let height: number | undefined
+
+      // Try to get dimensions from database if available
+      if (db && board.pcb_board_id) {
+        const pcbBoard = db.pcb_board.get(board.pcb_board_id)
+        if (pcbBoard?.width !== undefined && pcbBoard?.height !== undefined) {
+          width = pcbBoard.width
+          height = pcbBoard.height
+        }
+      }
+
+      // Fall back to props-based dimensions
+      if (width === undefined || height === undefined) {
+        const propsDims = getBoardDimensionsFromProps(board)
+        width = propsDims.width
+        height = propsDims.height
+      }
+
+      // Skip boards with unknown dimensions
+      if (width === 0 && height === 0) {
         return null
       }
-      return { board, width: pcbBoard.width, height: pcbBoard.height }
+
+      return { board, width, height }
     })
     .filter((b): b is BoardWithDims => b !== null)
 
@@ -67,13 +84,13 @@ export const packBoardsIntoGrid = ({
 
   // Determine the max width for each column and max height for each row
   boardsWithDims.forEach((b, i) => {
-    const col = i % cols
-    const row = Math.floor(i / cols)
-    if (row < rowHeights.length && b.height > rowHeights[row]) {
-      rowHeights[row] = b.height
+    const colIdx = i % cols
+    const rowIdx = Math.floor(i / cols)
+    if (rowIdx < rowHeights.length && b.height > rowHeights[rowIdx]) {
+      rowHeights[rowIdx] = b.height
     }
-    if (col < colWidths.length && b.width > colWidths[col]) {
-      colWidths[col] = b.width
+    if (colIdx < colWidths.length && b.width > colWidths[colIdx]) {
+      colWidths[colIdx] = b.width
     }
   })
 
@@ -111,20 +128,20 @@ export const packBoardsIntoGrid = ({
   const positions: Array<{ board: Board; pos: { x: number; y: number } }> = []
 
   boardsWithDims.forEach((b, i) => {
-    const col = i % cols
-    const row = Math.floor(i / cols)
+    const colIdx = i % cols
+    const rowIdx = Math.floor(i / cols)
 
-    if (row >= rowYOffsets.length || col >= colXOffsets.length) return
+    if (rowIdx >= rowYOffsets.length || colIdx >= colXOffsets.length) return
 
-    const cellX = colXOffsets[col]
-    const cellY = rowYOffsets[row]
+    const cellX = colXOffsets[colIdx]
+    const cellY = rowYOffsets[rowIdx]
 
-    const cellWidth = colWidths[col]
-    const cellHeight = rowHeights[row]
+    const currentCellWidth = colWidths[colIdx]
+    const currentCellHeight = rowHeights[rowIdx]
 
     // Center the board within its dynamic cell
-    const boardX = cellX + cellWidth / 2
-    const boardY = cellY + cellHeight / 2
+    const boardX = cellX + currentCellWidth / 2
+    const boardY = cellY + currentCellHeight / 2
 
     positions.push({
       board: b.board,

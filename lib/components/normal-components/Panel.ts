@@ -36,6 +36,39 @@ export class Panel extends Group<typeof panelProps> {
     super.add(component)
   }
 
+  _cachedGridWidth = 0
+  _cachedGridHeight = 0
+  doInitialPanelBoardLayout() {
+    if (this.root?.pcbDisabled) return
+
+    const layoutMode = this._parsedProps.layoutMode ?? "none"
+    if (layoutMode !== "grid") return
+
+    const childBoardInstances = this.children.filter(
+      (c) => c instanceof Board,
+    ) as Board[]
+
+    const tabWidth = this._parsedProps.tabWidth ?? DEFAULT_TAB_WIDTH
+    const boardGap = this._parsedProps.boardGap ?? tabWidth
+
+    const { positions, gridWidth, gridHeight } = packBoardsIntoGrid({
+      boards: childBoardInstances,
+      row: this._parsedProps.row,
+      col: this._parsedProps.col,
+      cellWidth: this._parsedProps.cellWidth,
+      cellHeight: this._parsedProps.cellHeight,
+      boardGap,
+    })
+
+    this._cachedGridWidth = gridWidth
+    this._cachedGridHeight = gridHeight
+
+    // Set panel position offset on each board (relative to panel center)
+    for (const { board, pos } of positions) {
+      board._panelPositionOffset = pos
+    }
+  }
+
   doInitialPanelLayout() {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -44,46 +77,24 @@ export class Panel extends Group<typeof panelProps> {
       (c) => c instanceof Board,
     ) as Board[]
 
-    const hasAnyPositionedBoards = childBoardInstances.some(
-      (b) => b.props.pcbX !== undefined || b.props.pcbY !== undefined,
-    )
+    const layoutMode = this._parsedProps.layoutMode ?? "none"
 
-    const unpositionedBoards = childBoardInstances.filter(
-      (b) => b.props.pcbX === undefined && b.props.pcbY === undefined,
-    )
-
-    if (unpositionedBoards.length > 0 && !hasAnyPositionedBoards) {
-      const tabWidth = this._parsedProps.tabWidth ?? DEFAULT_TAB_WIDTH
-      const boardGap = this._parsedProps.boardGap ?? tabWidth
-
-      const { positions, gridWidth, gridHeight } = packBoardsIntoGrid({
-        boards: unpositionedBoards,
-        db,
-        row: this._parsedProps.row,
-        col: this._parsedProps.col,
-        cellWidth: this._parsedProps.cellWidth,
-        cellHeight: this._parsedProps.cellHeight,
-        boardGap,
-      })
-
-      // Get panel's global position to compute absolute board positions
-      const panelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
-
-      for (const { board, pos } of positions) {
-        const absoluteX = panelGlobalPos.x + pos.x
-        const absoluteY = panelGlobalPos.y + pos.y
-        board._repositionOnPcb({ x: absoluteX, y: absoluteY })
-        db.pcb_board.update(board.pcb_board_id!, {
-          center: { x: absoluteX, y: absoluteY },
+    if (layoutMode === "grid") {
+      // Update display offsets for boards (positions are already correct)
+      for (const board of childBoardInstances) {
+        if (!board.pcb_board_id || !board._panelPositionOffset) continue
+        db.pcb_board.update(board.pcb_board_id, {
           position_mode: "relative_to_panel_anchor",
-          display_offset_x: `${pos.x}mm`,
-          display_offset_y: `${pos.y}mm`,
+          display_offset_x: `${board._panelPositionOffset.x}mm`,
+          display_offset_y: `${board._panelPositionOffset.y}mm`,
         })
       }
 
-      // Skip auto-calculation if both dimensions are explicitly provided
+      // Update panel dimensions
       const hasExplicitWidth = this._parsedProps.width !== undefined
       const hasExplicitHeight = this._parsedProps.height !== undefined
+      const gridWidth = this._cachedGridWidth
+      const gridHeight = this._cachedGridHeight
 
       if (hasExplicitWidth && hasExplicitHeight) {
         db.pcb_panel.update(this.pcb_panel_id!, {
@@ -121,6 +132,7 @@ export class Panel extends Group<typeof panelProps> {
         })
       }
     } else {
+      // layoutMode is "none" or "pack" - use explicit positions
       const panelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
       for (const board of childBoardInstances) {
         const boardDb = db.pcb_board.get(board.pcb_board_id!)

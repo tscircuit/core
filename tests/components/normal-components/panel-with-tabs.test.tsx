@@ -1,6 +1,6 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
+import type { PcbBoard, PcbCutout, PcbHole } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import type { PcbCutout, PcbHole, PcbBoard } from "circuit-json"
 
 test("panels boards with manual positions", () => {
   const { circuit } = getTestFixture()
@@ -52,7 +52,12 @@ test("panel boards with no positions", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width="100mm" height="100mm" panelizationMethod="tab-routing">
+    <panel
+      width="100mm"
+      height="100mm"
+      panelizationMethod="tab-routing"
+      layoutMode="grid"
+    >
       <board width="20mm" height="50mm" routingDisabled />
       <board width="20mm" height="50mm" routingDisabled />
     </panel>,
@@ -65,11 +70,16 @@ test("panel boards with no positions", () => {
   })
 })
 
-test("panel boards with no positions", () => {
+test("panel boards with no positions 5 boards", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width="100mm" height="120mm" panelizationMethod="tab-routing">
+    <panel
+      width="100mm"
+      height="120mm"
+      panelizationMethod="tab-routing"
+      layoutMode="grid"
+    >
       <board width="20mm" height="50mm" routingDisabled />
       <board width="20mm" height="50mm" routingDisabled />
       <board width="20mm" height="50mm" routingDisabled />
@@ -82,11 +92,11 @@ test("panel boards with no positions", () => {
 
   expect(circuit).toMatchPcbSnapshot(
     import.meta.path + "-no-positions-5-boards",
-  ),
-    { showAnchorOffsets: true }
+    { showAnchorOffsets: true },
+  )
 })
 
-test("panel boards with some positions", () => {
+test("panel boards with grid layout ignores explicit positions", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -106,7 +116,7 @@ test("panel boards with some positions", () => {
   })
 })
 
-test("panel with mixed positions doesn't autolayout", () => {
+test("panel with layoutMode none uses explicit positions", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -138,7 +148,7 @@ test("panel with mixed positions doesn't autolayout", () => {
   expect(boards.find((b) => b.center.x === 30)).toBeDefined()
 
   const panel = circuit.db.pcb_panel.list()[0]
-  // Panel should not be resized
+  // Panel dimensions are explicit
   expect(panel.width).toBe(100)
   expect(panel.height).toBe(100)
 })
@@ -147,7 +157,12 @@ test("panel with panelizationMethod: 'none' has no tabs or mouse bites", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <panel width="100mm" height="100mm" panelizationMethod="none">
+    <panel
+      width="100mm"
+      height="100mm"
+      panelizationMethod="none"
+      layoutMode="grid"
+    >
       <board width="30mm" height="30mm" routingDisabled />
       <board width="30mm" height="30mm" routingDisabled />
     </panel>,
@@ -212,6 +227,7 @@ test("panel custom tab/gap props", () => {
       width="100mm"
       height="100mm"
       panelizationMethod="tab-routing"
+      layoutMode="grid"
       boardGap="5mm"
       tabLength="2mm"
       tabWidth="0.5mm"
@@ -317,7 +333,12 @@ test("panel with boards with different outlines", () => {
   ]
 
   circuit.add(
-    <panel panelizationMethod="tab-routing" row={2} boardGap={10}>
+    <panel
+      panelizationMethod="tab-routing"
+      layoutMode="grid"
+      row={2}
+      boardGap={10}
+    >
       <board outline={board1_outline} routingDisabled>
         <resistor name="R1" resistance="1k" footprint="0805" />
       </board>

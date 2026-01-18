@@ -19,14 +19,14 @@ export class FabricationNoteText extends PrimitiveComponent<
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
-    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
+    const position = this._getGlobalPcbPositionBeforeLayout()
     const container = this.getPrimitiveContainer()!
     const subcircuit = this.getSubcircuit()
     const pcb_fabrication_note_text = db.pcb_fabrication_note_text.insert({
       anchor_alignment: props.anchorAlignment,
       anchor_position: {
-        x: pcbX,
-        y: pcbY,
+        x: position.x,
+        y: position.y,
       },
       font: props.font ?? "tscircuit2024",
       font_size: props.fontSize ?? 1,

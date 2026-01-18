@@ -7,7 +7,7 @@ test("panel auto-layout positions boards relative to panel center", async () => 
   // Panel at (25, 25) with two unpositioned boards
   // The boards should be auto-laid out centered around the panel position
   circuit.add(
-    <panel width="30mm" height="30mm" pcbX="25mm" pcbY="25mm">
+    <panel width="30mm" height="30mm" pcbX="25mm" pcbY="25mm" layoutMode="grid">
       <board width="10mm" height="10mm" routingDisabled>
         <resistor name="R1" resistance="1k" footprint="0402" />
       </board>

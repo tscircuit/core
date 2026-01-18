@@ -18,7 +18,7 @@ export class SilkscreenCircle extends PrimitiveComponent<
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
-    const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
+    const position = this._getGlobalPcbPositionBeforeLayout()
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     const layer = maybeFlipLayer(props.layer ?? "top") as "top" | "bottom"
 
@@ -28,7 +28,6 @@ export class SilkscreenCircle extends PrimitiveComponent<
       )
     }
 
-    const transform = this._computePcbGlobalTransformBeforeLayout()
     const subcircuit = this.getSubcircuit()
 
     const pcb_component_id =
@@ -38,8 +37,8 @@ export class SilkscreenCircle extends PrimitiveComponent<
       pcb_component_id,
       layer,
       center: {
-        x: pcbX,
-        y: pcbY,
+        x: position.x,
+        y: position.y,
       },
       radius: props.radius,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,

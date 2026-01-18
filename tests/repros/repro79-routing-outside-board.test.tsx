@@ -141,7 +141,7 @@ test("repro kicad footprints in panel", async () => {
   }
 
   circuit.add(
-    <panel width={40} height={40} boardGap={8}>
+    <panel width={40} height={40} boardGap={8} layoutMode="grid">
       {boards.map((pos, i) => (
         <board key={i} width={`${boardWidth}mm`} height={`${boardHeight}mm`}>
           {i % 2 == 0 ? <ExternalResistor /> : <InternalResistor />}
