@@ -3,6 +3,7 @@ import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromC
 import { isValidElement as isReactElement } from "react"
 import { Footprint } from "lib/components/primitive-components/Footprint"
 import { isHttpUrl } from "./utils/isHttpUrl"
+import { isFetchableUrl } from "./utils/isFetchableUrl"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 import type { CadModelProp, PcbStyle } from "@tscircuit/props"
 import {
@@ -34,13 +35,13 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     : null
   if (
     typeof footprint === "string" &&
-    (isHttpUrl(footprint) || isStaticAssetPath(footprint)) &&
+    (isFetchableUrl(footprint) || isStaticAssetPath(footprint)) &&
     footprintParser
   ) {
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
     queueAsyncEffect("load-footprint-from-platform-file-parser", async () => {
-      const footprintUrl = isHttpUrl(footprint)
+      const footprintUrl = isFetchableUrl(footprint)
         ? footprint
         : await resolveStaticFileImport(footprint, component.root?.platform)
       try {
@@ -80,7 +81,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     })
     return
   }
-  if (typeof footprint === "string" && isHttpUrl(footprint)) {
+  if (typeof footprint === "string" && isFetchableUrl(footprint)) {
     if (component._hasStartedFootprintUrlLoad) return
     component._hasStartedFootprintUrlLoad = true
     const url = footprint
