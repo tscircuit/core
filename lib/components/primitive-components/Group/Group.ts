@@ -58,11 +58,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _hasStartedAsyncAutorouting = false
 
-  /**
-   * Cached map of component names to NormalComponent instances within this subcircuit.
-   * Used by NormalComponent.doInitialSourceNameDuplicateComponentRemoval() to efficiently
-   * detect duplicate component names.
-   */
   private _normalComponentNameMap: Map<string, NormalComponent[]> | null = null
 
   /**
