@@ -7,16 +7,24 @@ test("multi-board DRC: panel with two boards, each has component outside board e
   circuit.add(
     <panel layoutMode="grid">
       <board width="10mm" height="10mm">
-        <resistor name="R2" resistance="1k" footprint="0603" pcbY={10} />
-        <resistor name="R3" resistance="1k" footprint="0603" pcbY={-4} />
-        <resistor name="R4" resistance="1k" footprint="0603" pcbY={4} />
-        <trace from={".R3 > .pin1"} to={".R4 > .pin2"} />
+        <group>
+          <group>
+            <resistor name="R2" resistance="1k" footprint="0603" pcbY={10} />
+            <resistor name="R3" resistance="1k" footprint="0603" pcbY={-4} />
+            <resistor name="R4" resistance="1k" footprint="0603" pcbY={4} />
+            <trace from={".R3 > .pin1"} to={".R4 > .pin2"} />
+          </group>
+        </group>
       </board>
       <board width="10mm" height="10mm">
-        <resistor name="R1" resistance="1k" footprint="0402" pcbY={10} />
-        <resistor name="R5" resistance="1k" footprint="0603" pcbY={-4} />
-        <resistor name="R6" resistance="1k" footprint="0603" pcbY={4} />
-        <trace from={".R5 > .pin1"} to={".R6 > .pin2"} />
+        <group subcircuit>
+          <group subcircuit>
+            <resistor name="R1" resistance="1k" footprint="0402" pcbY={10} />
+            <resistor name="R5" resistance="1k" footprint="0603" pcbY={-4} />
+            <resistor name="R6" resistance="1k" footprint="0603" pcbY={4} />
+            <trace from={".R5 > .pin1"} to={".R6 > .pin2"} />
+          </group>
+        </group>
       </board>
     </panel>,
   )
