@@ -1629,12 +1629,8 @@ export class NormalComponent<
       props.pcbX !== undefined || props.pcbY !== undefined
     if (!hasExplicitPcbPosition) return
 
-    const sourceComponent = db.source_component.get(this.source_component_id!)
-    const positionedRelativeToGroupId = sourceComponent?.source_group_id
-      ? db.pcb_group.getWhere({
-          source_group_id: sourceComponent.source_group_id,
-        })?.pcb_group_id
-      : undefined
+    const parentGroup = this.getGroup()
+    const positionedRelativeToGroupId = parentGroup?.pcb_group_id ?? undefined
 
     const positionedRelativeToBoardId = positionedRelativeToGroupId
       ? undefined
