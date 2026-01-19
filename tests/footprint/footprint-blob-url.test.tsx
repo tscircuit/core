@@ -22,7 +22,10 @@ it("should correctly load and render a KiCad footprint from a blob: URL", async 
 
   circuit.add(
     <board>
-      <chip footprint="blob:null/12345678-1234-1234-1234-123456789012#ext=kicad_mod" name="U1" />
+      <chip
+        footprint="blob:null/12345678-1234-1234-1234-123456789012#ext=kicad_mod"
+        name="U1"
+      />
     </board>,
   )
 
