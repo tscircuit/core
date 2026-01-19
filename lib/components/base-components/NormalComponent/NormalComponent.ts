@@ -176,18 +176,15 @@ export class NormalComponent<
 
     const root = this.root!
 
-    // Use selector to find all components with the same name in this subcircuit
-    const componentsWithSameName = this.getSubcircuit().selectAll(
-      `.${this.name}`,
-    )
+    const nameMap = this.getSubcircuit().getNormalComponentNameMap?.()
+    const componentsWithSameName = nameMap?.get(this.props.name) ?? []
 
     // Check if any of these components have already been processed (initialized this phase)
     const conflictingComponents = componentsWithSameName.filter(
-      (component: any) =>
+      (component: NormalComponent) =>
         component !== this &&
-        component._isNormalComponent &&
-        component.renderPhaseStates?.SourceNameDuplicateComponentRemoval
-          ?.initialized,
+        component.renderPhaseStates.SourceNameDuplicateComponentRemoval
+          .initialized,
     )
 
     if (conflictingComponents.length > 0) {

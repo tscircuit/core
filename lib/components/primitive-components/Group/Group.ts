@@ -58,6 +58,39 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _hasStartedAsyncAutorouting = false
 
+  private _normalComponentNameMap: Map<string, NormalComponent[]> | null = null
+
+  /**
+   * Returns a cached map of component names to NormalComponent instances within this subcircuit.
+   * The map is built lazily on first access and cached for subsequent calls.
+   */
+  getNormalComponentNameMap(): Map<string, NormalComponent[]> {
+    if (this._normalComponentNameMap) {
+      return this._normalComponentNameMap
+    }
+
+    const nameMap = new Map<string, NormalComponent[]>()
+    const collectNamedComponents = (component: PrimitiveComponent) => {
+      if ((component as NormalComponent)._isNormalComponent && component.name) {
+        const componentsWithSameName = nameMap.get(component.name)
+        if (componentsWithSameName) {
+          componentsWithSameName.push(component as NormalComponent)
+        } else {
+          nameMap.set(component.name, [component as NormalComponent])
+        }
+      }
+      for (const child of component.children) {
+        if (!child.isSubcircuit) collectNamedComponents(child)
+      }
+    }
+    for (const child of this.children) {
+      if (!child.isSubcircuit) collectNamedComponents(child)
+    }
+
+    this._normalComponentNameMap = nameMap
+    return nameMap
+  }
+
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: (PcbTrace | PcbVia)[]
