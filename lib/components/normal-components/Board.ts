@@ -578,27 +578,18 @@ export class Board
       }
     }
 
-    if (boardSubcircuitIds.length > 1) {
-      // Run DRC checks per board using source group hierarchy
-      for (const subcircuitId of boardSubcircuitIds) {
-        // Get board's source group ID
-        const boardGroup = db.source_group
-          .list()
-          .find((g) => g.subcircuit_id === subcircuitId)
-        if (!boardGroup) continue
-        const boardSourceGroupId = boardGroup.source_group_id!
+    const boardGroup = db.source_group
+      .list()
+      .find((g) => g.subcircuit_id === this.subcircuit_id)
+    if (!boardGroup) return
+    const boardSourceGroupId = boardGroup.source_group_id!
 
-        const filteredCircuitJson = db
-          .toArray()
-          .filter((element) =>
-            doesElementBelongToBoard(db, element, boardSourceGroupId),
-          )
-        runDrcChecks(filteredCircuitJson)
-      }
-    } else {
-      // Run DRC checks on the entire circuit
-      runDrcChecks(db.toArray())
-    }
+    const filteredCircuitJson = db
+      .toArray()
+      .filter((element) =>
+        doesElementBelongToBoard(db, element, boardSourceGroupId),
+      )
+    runDrcChecks(filteredCircuitJson)
     this._drcChecksComplete = true
   }
 

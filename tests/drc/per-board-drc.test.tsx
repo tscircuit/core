@@ -14,6 +14,9 @@ test("multi-board DRC: panel with two boards, each has component outside board e
       </board>
       <board width="10mm" height="10mm">
         <resistor name="R1" resistance="1k" footprint="0402" pcbY={10} />
+        <resistor name="R5" resistance="1k" footprint="0603" pcbY={-4} />
+        <resistor name="R6" resistance="1k" footprint="0603" pcbY={4} />
+        <trace from={".R5 > .pin1"} to={".R6 > .pin2"} />
       </board>
     </panel>,
   )
