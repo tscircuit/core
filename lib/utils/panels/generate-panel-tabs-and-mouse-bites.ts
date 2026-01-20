@@ -207,7 +207,29 @@ export function generatePanelTabsAndMouseBites(
   const finalTabCutouts: PcbCutout[] = []
   const allMouseBites: MouseBite[] = []
 
-  const { tabWidth, tabLength, mouseBites: useMouseBites } = options
+  let { tabWidth, tabLength, mouseBites: useMouseBites } = options
+
+  // Scale tab sizes based on board dimensions for small boards
+  const boardSizes = boards.map((board) => ({
+    width: board.width || 0,
+    height: board.height || 0,
+  }))
+
+  if (boardSizes.length > 0) {
+    const minBoardWidth = Math.min(...boardSizes.map((b) => b.width))
+    const minBoardHeight = Math.min(...boardSizes.map((b) => b.height))
+    const minBoardDimension = Math.min(minBoardWidth, minBoardHeight)
+
+    const scaleFactor = minBoardDimension / 20 // mm
+    tabWidth = Math.min(
+      tabWidth,
+      DEFAULT_TAB_WIDTH * Math.max(scaleFactor, 0.3),
+    )
+    tabLength = Math.min(
+      tabLength,
+      DEFAULT_TAB_LENGTH * Math.max(scaleFactor, 0.3),
+    )
+  }
 
   const processedBoards: PcbBoard[] = boards.map((board) => {
     if (
