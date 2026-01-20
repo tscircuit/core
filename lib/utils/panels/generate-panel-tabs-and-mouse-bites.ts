@@ -1,5 +1,6 @@
 import type { PcbBoard, PcbCutout, PcbHoleCircle, Point } from "circuit-json"
 import * as Flatten from "@flatten-js/core"
+import { point, Polygon } from "@flatten-js/core"
 
 export const DEFAULT_TAB_LENGTH = 5
 export const DEFAULT_TAB_WIDTH = 2
@@ -210,15 +211,24 @@ export function generatePanelTabsAndMouseBites(
   let { tabWidth, tabLength, mouseBites: useMouseBites } = options
 
   // Scale tab sizes based on board dimensions for small boards
-  const boardSizes = boards.map((board) => ({
-    width: board.width || 0,
-    height: board.height || 0,
-  }))
+  const boardDimensions: number[] = []
 
-  if (boardSizes.length > 0) {
-    const minBoardWidth = Math.min(...boardSizes.map((b) => b.width))
-    const minBoardHeight = Math.min(...boardSizes.map((b) => b.height))
-    const minBoardDimension = Math.min(minBoardWidth, minBoardHeight)
+  for (const board of boards) {
+    if (board.width && board.height) {
+      boardDimensions.push(Math.min(board.width, board.height))
+    } else if (board.outline && board.outline.length > 0) {
+      const outlinePolygon = new Polygon(
+        board.outline.map((p) => point(p.x, p.y)),
+      )
+      const area: number = Math.abs(outlinePolygon.area() as number)
+      if (area > 0) {
+        boardDimensions.push(Math.sqrt(area))
+      }
+    }
+  }
+
+  if (boardDimensions.length > 0) {
+    const minBoardDimension = Math.min(...boardDimensions)
 
     const scaleFactor = minBoardDimension / 20 // mm
     tabWidth = Math.min(
