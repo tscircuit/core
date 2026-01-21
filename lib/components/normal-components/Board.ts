@@ -572,10 +572,10 @@ export class Board
       }
     }
 
-    const subtree = db.subtree({ subcircuit_id: this.subcircuit_id })
-    const subtreeCircuitJson = subtree.toArray()
+    const subcircuit = db.subtree({ subcircuit_id: this.subcircuit_id })
+    const subcircuitCircuitJson = subcircuit.toArray()
 
-    runDrcChecks(subtreeCircuitJson)
+    runDrcChecks(subcircuitCircuitJson)
     this._drcChecksComplete = true
   }
 
