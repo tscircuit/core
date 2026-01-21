@@ -121,14 +121,22 @@ test("panel packing with outline boards", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <panel layoutMode="grid">
-      <board name="B1" outline={boardOutline} routingDisabled />
+      <board pcbX={4} name="B1" outline={boardOutline} routingDisabled />
       <board name="B2" outline={boardOutline2} routingDisabled />
-      <board name="B3" outline={boardOutline3} routingDisabled />
+      <board pcbY={20} name="B3" outline={boardOutline3} routingDisabled />
       <board name="B4" width="8mm" height="8mm" routingDisabled />
     </panel>,
   )
 
   circuit.render()
+  const circuitJson = circuit.getCircuitJson()
+  const warnings = circuitJson.filter(
+    (element) =>
+      "error_type" in element &&
+      element.error_type === "source_property_ignored_warning",
+  )
+
+  expect(warnings.length).toBe(2)
   const boards = circuit.db.pcb_board.list()
   expect(boards).toHaveLength(4)
 
