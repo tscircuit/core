@@ -58,6 +58,7 @@ export class Transistor extends NormalComponent<
       ftype: "simple_transistor",
       name: this.name,
       transistor_type: props.type,
+      display_name: props.displayName,
     } as any)
 
     this.source_component_id = source_component.source_component_id

@@ -498,6 +498,7 @@ export class NormalComponent<
       name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
+      display_name: props.displayName,
     })
     this.source_component_id = source_component.source_component_id
   }

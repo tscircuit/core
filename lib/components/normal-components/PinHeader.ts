@@ -138,6 +138,7 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
       pin_count: props.pinCount,
       gender: props.gender,
       are_pins_interchangeable: true,
+      display_name: props.displayName,
     } as SourceSimplePinHeader)
     this.source_component_id = source_component.source_component_id
   }

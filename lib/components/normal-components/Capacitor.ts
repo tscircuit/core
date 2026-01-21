@@ -98,6 +98,7 @@ export class Capacitor extends NormalComponent<
       max_decoupling_trace_length: props.maxDecouplingTraceLength,
       display_capacitance: this._getSchematicSymbolDisplayValue(),
       are_pins_interchangeable: !props.polarized,
+      display_name: props.displayName,
     } as SourceSimpleCapacitorInput)
 
     this.source_component_id = source_component.source_component_id

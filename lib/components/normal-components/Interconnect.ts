@@ -46,6 +46,7 @@ export class Interconnect extends NormalComponent<typeof interconnectProps> {
       ftype: "interconnect" as Ftype,
       name: this.name,
       are_pins_interchangeable: true,
+      display_name: this._parsedProps.displayName,
     })
 
     this.source_component_id = source_component.source_component_id

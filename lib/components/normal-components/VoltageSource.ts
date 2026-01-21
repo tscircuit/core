@@ -74,6 +74,7 @@ export class VoltageSource extends NormalComponent<
       duty_cycle: props.dutyCycle,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
+      display_name: props.displayName,
     } as any)
     this.source_component_id = source_component.source_component_id
   }

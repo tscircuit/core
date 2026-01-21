@@ -59,6 +59,7 @@ export class Diode extends NormalComponent<
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: false,
+      display_name: props.displayName,
     } as any)
     this.source_component_id = source_component.source_component_id
   }
