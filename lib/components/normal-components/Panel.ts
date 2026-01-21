@@ -42,11 +42,33 @@ export class Panel extends Group<typeof panelProps> {
     if (this.root?.pcbDisabled) return
 
     const layoutMode = this._parsedProps.layoutMode ?? "none"
-    if (layoutMode !== "grid") return
 
     const childBoardInstances = this.children.filter(
       (c) => c instanceof Board,
     ) as Board[]
+
+    // Warn if boards have manual positioning when panel layout is automatic
+    if (layoutMode !== "none") {
+      for (const board of childBoardInstances) {
+        const hasPcbX = board._parsedProps.pcbX !== undefined
+        const hasPcbY = board._parsedProps.pcbY !== undefined
+        if (hasPcbX || hasPcbY) {
+          const properties = []
+          if (hasPcbX) properties.push("pcbX")
+          if (hasPcbY) properties.push("pcbY")
+          const propertyNames = properties.join(" and ")
+
+          this.root!.db.source_property_ignored_warning.insert({
+            source_component_id: board.source_component_id!,
+            property_name: propertyNames,
+            message: `Board has manual positioning (${propertyNames}) but panel layout mode is "${layoutMode}". Manual positioning will be ignored.`,
+            error_type: "source_property_ignored_warning",
+          })
+        }
+      }
+    }
+
+    if (layoutMode !== "grid") return
 
     const tabWidth = this._parsedProps.tabWidth ?? DEFAULT_TAB_WIDTH
     const boardGap = this._parsedProps.boardGap ?? tabWidth
