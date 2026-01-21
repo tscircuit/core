@@ -18,7 +18,7 @@ import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorS
 import type { RenderPhase } from "../base-components/Renderable"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type { BoardI } from "./BoardI"
-import type { PcbBoard } from "circuit-json"
+import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import { compose, translate, type Matrix } from "transformation-matrix"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
@@ -525,49 +525,58 @@ export class Board
 
     // Only run once after all autorouting is complete
     if (this._drcChecksComplete) return
+
+    const runDrcChecks = (circuitJson: AnyCircuitElement[]) => {
+      const pcbTraceOverlappingErrors =
+        checkEachPcbTraceNonOverlapping(circuitJson)
+      for (const error of pcbTraceOverlappingErrors) {
+        db.pcb_trace_error.insert(error)
+      }
+
+      const pcbPortNotConnectedErrors =
+        checkEachPcbPortConnectedToPcbTraces(circuitJson)
+      for (const error of pcbPortNotConnectedErrors) {
+        db.pcb_port_not_connected_error.insert(error)
+      }
+
+      const pcbComponentOutsideErrors =
+        checkPcbComponentsOutOfBoard(circuitJson)
+      for (const error of pcbComponentOutsideErrors) {
+        db.pcb_component_outside_board_error.insert(error)
+      }
+
+      const pcbTracesOutOfBoardErrors = checkPcbTracesOutOfBoard(circuitJson)
+      for (const error of pcbTracesOutOfBoardErrors) {
+        db.pcb_trace_error.insert(error)
+      }
+
+      const differentNetViaErrors = checkDifferentNetViaSpacing(circuitJson)
+      for (const error of differentNetViaErrors) {
+        db.pcb_via_clearance_error.insert(error)
+      }
+
+      const sameNetViaErrors = checkSameNetViaSpacing(circuitJson)
+      for (const error of sameNetViaErrors) {
+        db.pcb_via_clearance_error.insert(error)
+      }
+
+      const pcbComponentOverlapErrors = checkPcbComponentOverlap(circuitJson)
+      for (const error of pcbComponentOverlapErrors) {
+        db.pcb_footprint_overlap_error.insert(error)
+      }
+
+      const sourcePinMustBeConnectedErrors =
+        checkPinMustBeConnected(circuitJson)
+      for (const error of sourcePinMustBeConnectedErrors) {
+        db.source_pin_must_be_connected_error.insert(error)
+      }
+    }
+
+    const subtree = db.subtree({ subcircuit_id: this.subcircuit_id })
+    const subtreeCircuitJson = subtree.toArray()
+
+    runDrcChecks(subtreeCircuitJson)
     this._drcChecksComplete = true
-
-    const errors = checkEachPcbTraceNonOverlapping(db.toArray())
-    for (const error of errors) {
-      db.pcb_trace_error.insert(error)
-    }
-
-    const pcbPortNotConnectedErrors = checkEachPcbPortConnectedToPcbTraces(
-      db.toArray(),
-    )
-    for (const error of pcbPortNotConnectedErrors) {
-      db.pcb_port_not_connected_error.insert(error)
-    }
-
-    const pcbComponentOutsideErrors = checkPcbComponentsOutOfBoard(db.toArray())
-    for (const error of pcbComponentOutsideErrors) {
-      db.pcb_component_outside_board_error.insert(error)
-    }
-
-    const pcbTracesOutOfBoardErrors = checkPcbTracesOutOfBoard(db.toArray())
-    for (const error of pcbTracesOutOfBoardErrors) {
-      db.pcb_trace_error.insert(error)
-    }
-
-    const differentNetViaErrors = checkDifferentNetViaSpacing(db.toArray())
-    for (const error of differentNetViaErrors) {
-      db.pcb_via_clearance_error.insert(error)
-    }
-
-    const sameNetViaErrors = checkSameNetViaSpacing(db.toArray())
-    for (const error of sameNetViaErrors) {
-      db.pcb_via_clearance_error.insert(error)
-    }
-
-    const pcbComponentOverlapErrors = checkPcbComponentOverlap(db.toArray())
-    for (const error of pcbComponentOverlapErrors) {
-      db.pcb_footprint_overlap_error.insert(error)
-    }
-
-    const sourcePinMustBeConnectedErrors = checkPinMustBeConnected(db.toArray())
-    for (const error of sourcePinMustBeConnectedErrors) {
-      db.source_pin_must_be_connected_error.insert(error)
-    }
   }
 
   override _emitRenderLifecycleEvent(
