@@ -1,4 +1,5 @@
 import type { LayerRef } from "circuit-json"
+import { distance } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { silkscreenTextProps } from "@tscircuit/props"
 import { decomposeTSR } from "transformation-matrix"
@@ -56,6 +57,33 @@ export class SilkscreenText extends PrimitiveComponent<
       this.getInheritedProperty("pcbStyle")?.silkscreenFontSize ??
       1
 
+    // Build knockout padding if any padding prop is specified
+    const defaultPadding = 0.2 // 0.2mm default
+    const hasKnockoutPadding =
+      props.isKnockout ||
+      props.knockoutPadding !== undefined ||
+      props.knockoutPaddingLeft !== undefined ||
+      props.knockoutPaddingRight !== undefined ||
+      props.knockoutPaddingTop !== undefined ||
+      props.knockoutPaddingBottom !== undefined
+
+    const knockoutPadding = hasKnockoutPadding
+      ? {
+          left: distance.parse(
+            props.knockoutPaddingLeft ?? props.knockoutPadding ?? defaultPadding,
+          ),
+          right: distance.parse(
+            props.knockoutPaddingRight ?? props.knockoutPadding ?? defaultPadding,
+          ),
+          top: distance.parse(
+            props.knockoutPaddingTop ?? props.knockoutPadding ?? defaultPadding,
+          ),
+          bottom: distance.parse(
+            props.knockoutPaddingBottom ?? props.knockoutPadding ?? defaultPadding,
+          ),
+        }
+      : undefined
+
     for (const layer of targetLayers) {
       const pcb_silkscreen_text = db.pcb_silkscreen_text.insert({
         anchor_alignment: props.anchorAlignment,
@@ -71,6 +99,8 @@ export class SilkscreenText extends PrimitiveComponent<
         pcb_component_id: container.pcb_component_id!,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        is_knockout: props.isKnockout ?? false,
+        knockout_padding: knockoutPadding,
       })
       this.pcb_silkscreen_text_ids.push(
         pcb_silkscreen_text.pcb_silkscreen_text_id,
