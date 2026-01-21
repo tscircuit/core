@@ -462,7 +462,11 @@ export class Board
     // This is ONLY needed for boards inside panels, where the board
     // position is offset from the origin by the panel layout
     let outlineTranslation = { x: 0, y: 0 }
-    if (outline && outline.length > 0 && this._panelPositionOffset) {
+    if (
+      outline &&
+      outline.length > 0 &&
+      this.parent?.lowercaseComponentName === "panel"
+    ) {
       // Find the center of the original outline
       const outlineBounds = getBoundsFromPoints(outline)
       if (outlineBounds) {
