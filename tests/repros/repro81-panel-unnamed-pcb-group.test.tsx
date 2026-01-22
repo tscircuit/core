@@ -4,10 +4,10 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("Panel unnamed PCB group repro", async () => {
   const { circuit } = getTestFixture()
 
-  const boardWidth = 6
+  const boardWidth = 10
   const boardHeight = 2
   const numBoardsX = 4
-  const numBoardsY = 4
+  const numBoardsY = 1
 
   const boards: any[] = []
   for (let y = 0; y < numBoardsY; y++) {
