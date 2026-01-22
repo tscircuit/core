@@ -222,8 +222,6 @@ export class Panel extends Group<typeof panelProps> {
   }
 
   doInitialPcbComponentRender() {
-    // Panel does not create a PCB group, only a PCB panel
-    // super.doInitialPcbComponentRender() // Skip this to avoid creating PCB group
     if (this.root?.pcbDisabled) return
 
     const { db } = this.root!
