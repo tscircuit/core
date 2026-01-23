@@ -103,10 +103,17 @@ export type RenderPhaseStates = Record<
 >
 
 export type AsyncEffect = {
+  asyncEffectId: string
   effectName: string
   promise: Promise<void>
   phase: RenderPhase
   complete: boolean
+}
+
+export type AsyncEffectStartEvent = {
+  effectName: string
+  componentDisplayName: string
+  phase: RenderPhase
 }
 
 export type RenderPhaseFunctions = {
@@ -123,6 +130,7 @@ export type IRenderable = RenderPhaseFunctions & {
 }
 
 let globalRenderCounter = 0
+let globalAsyncEffectCounter = 0
 export abstract class Renderable implements IRenderable {
   renderPhaseStates: RenderPhaseStates
   shouldBeRemoved = false
@@ -166,7 +174,9 @@ export abstract class Renderable implements IRenderable {
   }
 
   _queueAsyncEffect(effectName: string, effect: () => Promise<void>) {
+    const asyncEffectId = `${this._renderId}-${globalAsyncEffectCounter++}`
     const asyncEffect: AsyncEffect = {
+      asyncEffectId,
       promise: effect(), // TODO don't start effects until end of render cycle
       phase: this._currentRenderPhase!,
       effectName,
@@ -175,17 +185,30 @@ export abstract class Renderable implements IRenderable {
     this._asyncEffects.push(asyncEffect)
 
     if ("root" in this && this.root) {
-      ;(this.root as any).emit("asyncEffect:start", {
+      const startEvent: AsyncEffectStartEvent = {
         effectName,
         componentDisplayName: this.getString(),
         phase: asyncEffect.phase,
+      }
+      ;(this.root as any)._trackAsyncEffectStart?.({
+        startEvent,
+        component: this,
+        asyncEffectId,
       })
+      ;(this.root as any).emit("asyncEffect:start", startEvent)
     }
 
     // Set up completion handler
     asyncEffect.promise
       .then(() => {
         asyncEffect.complete = true
+        if ("root" in this && this.root) {
+          ;(this.root as any)._trackAsyncEffectEnd?.({
+            phase: asyncEffect.phase,
+            component: this,
+            asyncEffectId,
+          })
+        }
         // HACK: emit to the root circuit component that an async effect has completed
         if ("root" in this && this.root) {
           ;(this.root as any).emit("asyncEffect:end", {
@@ -200,6 +223,13 @@ export abstract class Renderable implements IRenderable {
           `Async effect error in ${asyncEffect.phase} "${effectName}":\n${error.stack}`,
         )
         asyncEffect.complete = true
+        if ("root" in this && this.root) {
+          ;(this.root as any)._trackAsyncEffectEnd?.({
+            phase: asyncEffect.phase,
+            component: this,
+            asyncEffectId,
+          })
+        }
 
         // HACK: emit to the root circuit component that an async effect has completed
         if ("root" in this && this.root) {
@@ -247,17 +277,12 @@ export abstract class Renderable implements IRenderable {
   }
 
   _hasIncompleteAsyncEffectsInSubtreeForPhase(phase: RenderPhase): boolean {
-    // Check self
-    for (const e of this._asyncEffects) {
-      if (!e.complete && e.phase === phase) return true
+    if ("root" in this && this.root) {
+      return (this.root as any)._hasIncompleteAsyncEffectsForPhase?.(phase)
     }
-    // Check children
-    for (const child of this.children) {
-      const renderableChild = child as Renderable
-      if (renderableChild._hasIncompleteAsyncEffectsInSubtreeForPhase(phase))
-        return true
-    }
-    return false
+    return this._asyncEffects.some(
+      (effect) => !effect.complete && effect.phase === phase,
+    )
   }
 
   getCurrentRenderPhase(): RenderPhase | null {

@@ -10,6 +10,11 @@ import pkgJson from "../package.json"
 import type { RootCircuitEventName } from "./events"
 import type { PlatformConfig } from "@tscircuit/props"
 import { Group } from "./components/primitive-components/Group"
+import type {
+  AsyncEffectStartEvent,
+  RenderPhase,
+} from "./components/base-components/Renderable"
+import type { Renderable } from "./components/base-components/Renderable"
 import Debug from "debug"
 
 export class RootCircuit {
@@ -56,6 +61,11 @@ export class RootCircuit {
   projectUrl?: string
 
   _hasRenderedAtleastOnce = false
+
+  private _asyncEffectsByPhase: Map<
+    RenderPhase,
+    Map<Renderable, Map<string, AsyncEffectStartEvent>>
+  > = new Map()
 
   constructor({
     platform,
@@ -169,6 +179,55 @@ export class RootCircuit {
 
   private _hasIncompleteAsyncEffects(): boolean {
     return this.children.some((child) => child._hasIncompleteAsyncEffects())
+  }
+
+  _trackAsyncEffectStart({
+    startEvent,
+    component,
+    asyncEffectId,
+  }: {
+    startEvent: AsyncEffectStartEvent
+    component: Renderable
+    asyncEffectId: string
+  }) {
+    let phaseMap = this._asyncEffectsByPhase.get(startEvent.phase)
+    if (!phaseMap) {
+      phaseMap = new Map()
+      this._asyncEffectsByPhase.set(startEvent.phase, phaseMap)
+    }
+    let componentMap = phaseMap.get(component)
+    if (!componentMap) {
+      componentMap = new Map()
+      phaseMap.set(component, componentMap)
+    }
+    componentMap.set(asyncEffectId, startEvent)
+  }
+
+  _trackAsyncEffectEnd({
+    phase,
+    component,
+    asyncEffectId,
+  }: {
+    phase: RenderPhase
+    component: Renderable
+    asyncEffectId: string
+  }) {
+    const phaseMap = this._asyncEffectsByPhase.get(phase)
+    if (!phaseMap) return
+    const componentMap = phaseMap.get(component)
+    if (!componentMap) return
+    componentMap.delete(asyncEffectId)
+    if (componentMap.size === 0) {
+      phaseMap.delete(component)
+    }
+    if (phaseMap.size === 0) {
+      this._asyncEffectsByPhase.delete(phase)
+    }
+  }
+
+  _hasIncompleteAsyncEffectsForPhase(phase: RenderPhase): boolean {
+    const phaseMap = this._asyncEffectsByPhase.get(phase)
+    return !!phaseMap && phaseMap.size > 0
   }
 
   getCircuitJson(): AnyCircuitElement[] {
