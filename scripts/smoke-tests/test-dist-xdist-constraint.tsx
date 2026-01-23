@@ -6,11 +6,11 @@ const circuit = new RootCircuit()
 
 circuit.add(
   <board width="50mm" height="50mm" schAutoLayoutEnabled>
-    <group class="group1">
+    <group className="group1">
       <resistor name="R1" resistance="1k" footprint="0603" />
     </group>
 
-    <group class="group2">
+    <group className="group2">
       <resistor name="R2" resistance="1k" footprint="0603" />
     </group>
 
