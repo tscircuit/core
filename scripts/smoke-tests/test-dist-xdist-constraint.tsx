@@ -49,7 +49,9 @@ if (!Array.isArray(circuitJson) || circuitJson.length === 0) {
 }
 
 if (checksPassed) {
-  console.log("\nSmoke test passed: xDist constraint basic validation successful!")
+  console.log(
+    "\nSmoke test passed: xDist constraint basic validation successful!",
+  )
   process.exit(0)
 } else {
   console.error("\nSmoke test FAILED:")
