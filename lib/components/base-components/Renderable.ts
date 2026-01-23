@@ -180,6 +180,16 @@ export abstract class Renderable implements IRenderable {
         componentDisplayName: this.getString(),
         phase: asyncEffect.phase,
       })
+
+      // Increment the counter for O(1) lookup
+      const counters = (this.root as any)._incompleteAsyncEffectsByPhase as Map<
+        string,
+        number
+      >
+      counters.set(
+        asyncEffect.phase,
+        (counters.get(asyncEffect.phase) || 0) + 1,
+      )
     }
 
     // Set up completion handler
@@ -193,6 +203,14 @@ export abstract class Renderable implements IRenderable {
             componentDisplayName: this.getString(),
             phase: asyncEffect.phase,
           })
+
+          // Decrement the counter
+          const counters = (this.root as any)
+            ._incompleteAsyncEffectsByPhase as Map<string, number>
+          counters.set(
+            asyncEffect.phase,
+            (counters.get(asyncEffect.phase) || 1) - 1,
+          )
         }
       })
       .catch((error) => {
@@ -209,6 +227,14 @@ export abstract class Renderable implements IRenderable {
             phase: asyncEffect.phase,
             error: error.toString(),
           })
+
+          // Decrement the counter
+          const counters = (this.root as any)
+            ._incompleteAsyncEffectsByPhase as Map<string, number>
+          counters.set(
+            asyncEffect.phase,
+            (counters.get(asyncEffect.phase) || 1) - 1,
+          )
         }
       })
   }
@@ -327,14 +353,26 @@ export abstract class Renderable implements IRenderable {
     }
 
     // Check declared async dependencies for this phase within the entire tree
+    // Uses O(1) counter lookup on RootCircuit instead of tree traversal
     const deps = asyncPhaseDependencies[phase] || []
-    if (deps.length > 0) {
-      const root = this.getTopLevelRenderable()
+    if (deps.length > 0 && "root" in this && this.root) {
+      this._emitRenderLifecycleEvent(
+        "AsyncDependencyCheck" as RenderPhase,
+        "start",
+      )
+      const rootCircuit = this.root as any
+      let hasIncomplete = false
       for (const depPhase of deps) {
-        if (root._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) {
-          return
+        if (rootCircuit._hasIncompleteAsyncEffectsForPhase(depPhase)) {
+          hasIncomplete = true
+          break
         }
       }
+      this._emitRenderLifecycleEvent(
+        "AsyncDependencyCheck" as RenderPhase,
+        "end",
+      )
+      if (hasIncomplete) return
     }
 
     this._emitRenderLifecycleEvent(phase, "start")

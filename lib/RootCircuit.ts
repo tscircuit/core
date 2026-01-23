@@ -57,6 +57,12 @@ export class RootCircuit {
 
   _hasRenderedAtleastOnce = false
 
+  /**
+   * Tracks the count of incomplete async effects by phase.
+   * Used for O(1) lookup instead of tree traversal.
+   */
+  _incompleteAsyncEffectsByPhase: Map<string, number> = new Map()
+
   constructor({
     platform,
     projectUrl,
@@ -68,6 +74,13 @@ export class RootCircuit {
     this.platform = platform
     this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false
+  }
+
+  /**
+   * O(1) check if there are incomplete async effects for a given phase.
+   */
+  _hasIncompleteAsyncEffectsForPhase(phase: string): boolean {
+    return (this._incompleteAsyncEffectsByPhase.get(phase) || 0) > 0
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
