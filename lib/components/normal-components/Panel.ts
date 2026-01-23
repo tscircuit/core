@@ -1,14 +1,14 @@
 import { panelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
-import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { Group } from "../primitive-components/Group/Group"
 import {
-  generatePanelTabsAndMouseBites,
   DEFAULT_TAB_LENGTH,
   DEFAULT_TAB_WIDTH,
+  generatePanelTabsAndMouseBites,
 } from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
-import { Board } from "./Board"
 import { packBoardsIntoGrid } from "../../utils/panels/pack-boards-into-grid"
+import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { Group } from "../primitive-components/Group/Group"
+import { Board } from "./Board"
 
 export class Panel extends Group<typeof panelProps> {
   pcb_panel_id: string | null = null
@@ -222,7 +222,6 @@ export class Panel extends Group<typeof panelProps> {
   }
 
   doInitialPcbComponentRender() {
-    super.doInitialPcbComponentRender()
     if (this.root?.pcbDisabled) return
 
     const { db } = this.root!
