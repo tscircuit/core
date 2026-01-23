@@ -34,7 +34,9 @@ test("remote-autorouter-7 with preset config", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(asyncEffectStartEvents).toMatchInlineSnapshot(`
+  expect(
+    asyncEffectStartEvents.map(({ asyncEffectId, ...rest }) => rest),
+  ).toMatchInlineSnapshot(`
     [
       {
         "componentDisplayName": "<board# />",
