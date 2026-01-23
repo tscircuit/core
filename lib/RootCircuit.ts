@@ -11,6 +11,13 @@ import type { RootCircuitEventName } from "./events"
 import type { PlatformConfig } from "@tscircuit/props"
 import { Group } from "./components/primitive-components/Group"
 import Debug from "debug"
+import type { RenderPhase } from "./components/base-components/Renderable"
+
+export interface IRootCircuit {
+  emit(event: RootCircuitEventName, ...args: any[]): void
+  on(event: RootCircuitEventName, listener: (...args: any[]) => void): void
+  _hasIncompleteAsyncEffectsForPhase(phase: RenderPhase): boolean
+}
 
 export class RootCircuit {
   firstChild: PrimitiveComponent | null = null
@@ -56,6 +63,8 @@ export class RootCircuit {
   projectUrl?: string
 
   _hasRenderedAtleastOnce = false
+  private _asyncEffectIdsByPhase = new Map<RenderPhase, Set<string>>()
+  private _asyncEffectPhaseById = new Map<string, RenderPhase>()
 
   constructor({
     platform,
@@ -168,7 +177,12 @@ export class RootCircuit {
   }
 
   private _hasIncompleteAsyncEffects(): boolean {
+    if (this._asyncEffectPhaseById.size > 0) return true
     return this.children.some((child) => child._hasIncompleteAsyncEffects())
+  }
+
+  _hasIncompleteAsyncEffectsForPhase(phase: RenderPhase): boolean {
+    return (this._asyncEffectIdsByPhase.get(phase)?.size ?? 0) > 0
   }
 
   getCircuitJson(): AnyCircuitElement[] {
@@ -249,6 +263,11 @@ export class RootCircuit {
   > = {} as Record<RootCircuitEventName, Array<(...args: any[]) => void>>
 
   emit(event: RootCircuitEventName, ...args: any[]) {
+    if (event === "asyncEffect:start") {
+      this._registerAsyncEffectStart(args[0] as { asyncEffectId?: string })
+    } else if (event === "asyncEffect:end") {
+      this._registerAsyncEffectEnd(args[0] as { asyncEffectId?: string })
+    }
     if (!this._eventListeners[event]) return
     for (const listener of this._eventListeners[event]) {
       listener(...args)
@@ -288,6 +307,40 @@ export class RootCircuit {
       return (self as any).location.origin
     }
     return ""
+  }
+
+  private _registerAsyncEffectStart(payload: {
+    asyncEffectId?: string
+    phase?: RenderPhase
+  }) {
+    if (!payload?.asyncEffectId || !payload.phase) return
+    const { asyncEffectId, phase } = payload
+    const existingPhase = this._asyncEffectPhaseById.get(asyncEffectId)
+    if (existingPhase && existingPhase !== phase) {
+      this._asyncEffectIdsByPhase.get(existingPhase)?.delete(asyncEffectId)
+    }
+    if (!this._asyncEffectIdsByPhase.has(phase)) {
+      this._asyncEffectIdsByPhase.set(phase, new Set())
+    }
+    this._asyncEffectIdsByPhase.get(phase)!.add(asyncEffectId)
+    this._asyncEffectPhaseById.set(asyncEffectId, phase)
+  }
+
+  private _registerAsyncEffectEnd(payload: {
+    asyncEffectId?: string
+    phase?: RenderPhase
+  }) {
+    if (!payload?.asyncEffectId) return
+    const { asyncEffectId } = payload
+    const phase = this._asyncEffectPhaseById.get(asyncEffectId) ?? payload.phase
+    if (phase) {
+      const phaseSet = this._asyncEffectIdsByPhase.get(phase)
+      phaseSet?.delete(asyncEffectId)
+      if (phaseSet && phaseSet.size === 0) {
+        this._asyncEffectIdsByPhase.delete(phase)
+      }
+    }
+    this._asyncEffectPhaseById.delete(asyncEffectId)
   }
 }
 

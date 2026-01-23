@@ -5,6 +5,8 @@ import type {
   PcbViaClearanceError,
 } from "circuit-json"
 import Debug from "debug"
+import type { IRootCircuit } from "lib/RootCircuit"
+import type { RootCircuitEventName } from "lib/events"
 
 const debug = Debug("tscircuit:renderable")
 
@@ -103,6 +105,7 @@ export type RenderPhaseStates = Record<
 >
 
 export type AsyncEffect = {
+  asyncEffectId: string
   effectName: string
   promise: Promise<void>
   phase: RenderPhase
@@ -123,6 +126,7 @@ export type IRenderable = RenderPhaseFunctions & {
 }
 
 let globalRenderCounter = 0
+let globalAsyncEffectCounter = 0
 export abstract class Renderable implements IRenderable {
   renderPhaseStates: RenderPhaseStates
   shouldBeRemoved = false
@@ -166,7 +170,9 @@ export abstract class Renderable implements IRenderable {
   }
 
   _queueAsyncEffect(effectName: string, effect: () => Promise<void>) {
+    const asyncEffectId = `${this._renderId}:${globalAsyncEffectCounter++}`
     const asyncEffect: AsyncEffect = {
+      asyncEffectId,
       promise: effect(), // TODO don't start effects until end of render cycle
       phase: this._currentRenderPhase!,
       effectName,
@@ -174,8 +180,10 @@ export abstract class Renderable implements IRenderable {
     }
     this._asyncEffects.push(asyncEffect)
 
-    if ("root" in this && this.root) {
-      ;(this.root as any).emit("asyncEffect:start", {
+    const root = this._getRootCircuit()
+    if (root) {
+      root.emit("asyncEffect:start", {
+        asyncEffectId,
         effectName,
         componentDisplayName: this.getString(),
         phase: asyncEffect.phase,
@@ -187,8 +195,10 @@ export abstract class Renderable implements IRenderable {
       .then(() => {
         asyncEffect.complete = true
         // HACK: emit to the root circuit component that an async effect has completed
-        if ("root" in this && this.root) {
-          ;(this.root as any).emit("asyncEffect:end", {
+        const root = this._getRootCircuit()
+        if (root) {
+          root.emit("asyncEffect:end", {
+            asyncEffectId,
             effectName,
             componentDisplayName: this.getString(),
             phase: asyncEffect.phase,
@@ -202,8 +212,10 @@ export abstract class Renderable implements IRenderable {
         asyncEffect.complete = true
 
         // HACK: emit to the root circuit component that an async effect has completed
-        if ("root" in this && this.root) {
-          ;(this.root as any).emit("asyncEffect:end", {
+        const root = this._getRootCircuit()
+        if (root) {
+          root.emit("asyncEffect:end", {
+            asyncEffectId,
             effectName,
             componentDisplayName: this.getString(),
             phase: asyncEffect.phase,
@@ -218,15 +230,17 @@ export abstract class Renderable implements IRenderable {
     startOrEnd: "start" | "end",
   ) {
     debug(`${phase}:${startOrEnd} ${this.getString()}`)
-    const granular_event_type = `renderable:renderLifecycle:${phase}:${startOrEnd}`
+    const granular_event_type =
+      `renderable:renderLifecycle:${phase}:${startOrEnd}` as RootCircuitEventName
     const eventPayload = {
       renderId: this._renderId,
       componentDisplayName: this.getString(),
       type: granular_event_type,
     }
-    if ("root" in this && this.root) {
-      ;(this.root as any).emit(granular_event_type, eventPayload)
-      ;(this.root as any).emit("renderable:renderLifecycle:anyEvent", {
+    const root = this._getRootCircuit()
+    if (root) {
+      root.emit(granular_event_type, eventPayload)
+      root.emit("renderable:renderLifecycle:anyEvent", {
         ...eventPayload,
         type: granular_event_type,
       })
@@ -258,6 +272,14 @@ export abstract class Renderable implements IRenderable {
         return true
     }
     return false
+  }
+
+  _hasIncompleteAsyncEffectsForPhase(phase: RenderPhase): boolean {
+    const root = this._getRootCircuit()
+    if (root?._hasIncompleteAsyncEffectsForPhase) {
+      return root._hasIncompleteAsyncEffectsForPhase(phase)
+    }
+    return this._hasIncompleteAsyncEffectsInSubtreeForPhase(phase)
   }
 
   getCurrentRenderPhase(): RenderPhase | null {
@@ -329,9 +351,8 @@ export abstract class Renderable implements IRenderable {
     // Check declared async dependencies for this phase within the entire tree
     const deps = asyncPhaseDependencies[phase] || []
     if (deps.length > 0) {
-      const root = this.getTopLevelRenderable()
       for (const depPhase of deps) {
-        if (root._hasIncompleteAsyncEffectsInSubtreeForPhase(depPhase)) {
+        if (this._hasIncompleteAsyncEffectsForPhase(depPhase)) {
           return
         }
       }
@@ -360,6 +381,13 @@ export abstract class Renderable implements IRenderable {
       child.runRenderPhaseForChildren(phase)
       child.runRenderPhase(phase)
     }
+  }
+
+  protected _getRootCircuit(): IRootCircuit | null {
+    if ("root" in this) {
+      return (this as { root?: IRootCircuit | null }).root ?? null
+    }
+    return null
   }
 
   renderError(
