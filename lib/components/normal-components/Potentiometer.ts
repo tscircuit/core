@@ -40,6 +40,7 @@ export class Potentiometer extends NormalComponent<typeof potentiometerProps> {
       max_resistance: props.maxResistance,
       pin_variant: pinVariant,
       are_pins_interchangeable: pinVariant === "two_pin",
+      display_name: props.displayName,
     } as any)
     this.source_component_id = source_component.source_component_id
   }

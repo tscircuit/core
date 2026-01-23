@@ -36,6 +36,7 @@ export class Battery extends NormalComponent<
       capacity: props.capacity,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: false,
+      display_name: props.displayName,
     } as SourceSimpleBatteryInput)
     this.source_component_id = source_component.source_component_id
   }

@@ -52,6 +52,7 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
       voltage_rating_volts: voltageRating,
       display_current_rating: `${formatSiUnit(currentRating)}A`,
       display_voltage_rating: `${formatSiUnit(voltageRating)}V`,
+      display_name: props.displayName,
     } as any)
 
     this.source_component_id = source_component.source_component_id

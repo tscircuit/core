@@ -56,6 +56,7 @@ export class Switch extends NormalComponent<typeof switchProps> {
       ftype: "simple_switch",
       name: this.name,
       are_pins_interchangeable: this._getSwitchType() === "spst",
+      display_name: props?.displayName,
     })
 
     this.source_component_id = source_component.source_component_id

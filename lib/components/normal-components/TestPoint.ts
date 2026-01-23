@@ -111,6 +111,7 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
       width: width,
       height: height,
       are_pins_interchangeable: true,
+      display_name: props.displayName,
     } as SourceSimpleTestPoint)
     this.source_component_id = source_component.source_component_id
   }

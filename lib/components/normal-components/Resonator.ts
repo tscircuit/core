@@ -40,6 +40,7 @@ export class Resonator extends NormalComponent<typeof resonatorProps> {
       pin_variant: pinVariant,
       are_pins_interchangeable:
         pinVariant === "no_ground" || pinVariant === "ground_pin",
+      display_name: props.displayName,
     } as any)
 
     this.source_component_id = source_component.source_component_id

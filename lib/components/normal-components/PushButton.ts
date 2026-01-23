@@ -84,6 +84,7 @@ export class PushButton extends NormalComponent<
       ftype: FTYPE.simple_push_button,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
+      display_name: props.displayName,
     } as SourceSimplePushButton)
     this.source_component_id = source_component.source_component_id
   }

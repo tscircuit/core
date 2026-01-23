@@ -24,6 +24,7 @@ export class Pinout<PinLabels extends string = never> extends Chip<PinLabels> {
       name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
+      display_name: props.displayName,
     })
 
     this.source_component_id = source_component.source_component_id!

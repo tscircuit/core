@@ -25,6 +25,7 @@ export class Mosfet extends NormalComponent<typeof mosfetProps> {
       name: this.name,
       mosfet_mode: props.mosfetMode,
       channel_type: props.channelType,
+      display_name: props.displayName,
     } as any)
     this.source_component_id = source_component.source_component_id
   }

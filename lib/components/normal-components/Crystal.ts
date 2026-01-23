@@ -67,6 +67,7 @@ export class Crystal extends NormalComponent<
       load_capacitance: props.loadCapacitance,
       pin_variant: props.pinVariant || "two_pin",
       are_pins_interchangeable: (props.pinVariant || "two_pin") === "two_pin",
+      display_name: props.displayName,
     } as any)
 
     this.source_component_id = source_component.source_component_id
