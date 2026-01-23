@@ -62,7 +62,9 @@ test("subcircuit3-dependent-autorouting", async () => {
 
   // Check the order of the async effect, should be S1 then board, and S2 is
   // synchronously routed so has no effect
-  expect(asyncEffectEndEvents.sort()).toMatchInlineSnapshot(`
+  expect(
+    asyncEffectEndEvents.sort().map(({ asyncEffectId, ...rest }) => rest),
+  ).toMatchInlineSnapshot(`
     [
       {
         "componentDisplayName": "<group# name=".S1" />",
