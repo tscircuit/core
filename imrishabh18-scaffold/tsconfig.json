@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ESNext",
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "types": ["tscircuit", "bun", "node"],
+    "baseUrl": "."
+  }
+}

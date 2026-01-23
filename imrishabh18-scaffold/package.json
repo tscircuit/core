@@ -1,0 +1,31 @@
+{
+  "name": "@tsci/imrishabh18.scaffold",
+  "version": "1.0.2",
+  "main": "dist/index.js",
+  "keywords": [
+    "tscircuit"
+  ],
+  "scripts": {
+    "dev": "tsci dev",
+    "build": "tsci build",
+    "snapshot": "tsci snapshot",
+    "snapshot:update": "tsci snapshot --update",
+    "start": "tsci dev -p 3024",
+    "generate:scaffolds": "bun run lib/scaffolds/generator.ts",
+    "generate:scaffolds:all": "bun run lib/scaffolds/generator.ts all",
+    "generate:scaffolds:lrglrg": "bun run lib/scaffolds/generator.ts LrgLrg",
+    "generate:scaffolds:lrgmed": "bun run lib/scaffolds/generator.ts LrgMed",
+    "generate:scaffolds:medmed": "bun run lib/scaffolds/generator.ts MedMed"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.8",
+    "tscircuit": "^0.0.1148"
+  },
+  "dependencies": {
+    "@tsci/imrishabh18.library": "^1.1.1",
+    "@tsci/imrishabh18.molecule": "^1.1.1",
+    "@tscircuit/mm": "^0.0.8",
+    "@types/bun": "^1.3.6",
+    "@types/node": "^25.0.8"
+  }
+}

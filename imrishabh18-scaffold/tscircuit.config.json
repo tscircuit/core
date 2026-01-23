@@ -1,0 +1,5 @@
+{
+  "mainEntrypoint": "lib/index.ts",
+  "includeBoardFiles": ["lib/scaffolds/**/generated/*.tsx"],
+  "prebuildCommand": "bun run lib/scaffolds/generator.ts"
+}
