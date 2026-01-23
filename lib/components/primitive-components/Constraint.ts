@@ -22,7 +22,7 @@ export class Constraint extends PrimitiveComponent<typeof constraintProps> {
 
   constructor(props: z.input<typeof constraintProps>) {
     super(props)
-    if ("xdist" in props || "ydist" in props) {
+    if ("xDist" in props || "ydist" in props) {
       if (!("edgeToEdge" in props) && !("centerToCenter" in props)) {
         // TODO don't throw an error if the selectors specify an edge
         throw new Error(
