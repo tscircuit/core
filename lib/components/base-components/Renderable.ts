@@ -61,6 +61,10 @@ export const orderedRenderPhases = [
 
 export type RenderPhase = (typeof orderedRenderPhases)[number]
 
+export const renderPhaseIndexMap = new Map<RenderPhase, number>(
+  orderedRenderPhases.map((phase, index) => [phase, index]),
+)
+
 // Declare async dependencies between phases where later phases should wait for
 // async effects originating in specific earlier phases to complete within the
 // current component's subtree.
@@ -151,7 +155,7 @@ export abstract class Renderable implements IRenderable {
   _markDirty(phase: RenderPhase) {
     this.renderPhaseStates[phase].dirty = true
     // Mark all subsequent phases as dirty
-    const phaseIndex = orderedRenderPhases.indexOf(phase)
+    const phaseIndex = renderPhaseIndexMap.get(phase)!
     for (let i = phaseIndex + 1; i < orderedRenderPhases.length; i++) {
       this.renderPhaseStates[orderedRenderPhases[i]].dirty = true
     }
@@ -313,7 +317,7 @@ export abstract class Renderable implements IRenderable {
     }
 
     // Check for incomplete async effects from previous phases
-    const prevPhaseIndex = orderedRenderPhases.indexOf(phase) - 1
+    const prevPhaseIndex = renderPhaseIndexMap.get(phase)! - 1
     if (prevPhaseIndex >= 0) {
       const prevPhase = orderedRenderPhases[prevPhaseIndex]
       const hasIncompleteEffects = this._asyncEffects
