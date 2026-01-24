@@ -8,7 +8,11 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
   let hasValidComponents = false
 
   for (const child of components) {
-    if (child.isPcbPrimitive && !child.componentName.startsWith("Silkscreen")) {
+    if (
+      child.isPcbPrimitive &&
+      !child.componentName.startsWith("Silkscreen") &&
+      !child.componentName.startsWith("PcbNote")
+    ) {
       const { x, y } = child._getGlobalPcbPositionBeforeLayout()
       const { width, height } = child.getPcbSize()
       minX = Math.min(minX, x - width / 2)
