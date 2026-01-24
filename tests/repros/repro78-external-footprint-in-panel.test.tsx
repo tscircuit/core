@@ -99,6 +99,11 @@ test("repro kicad footprints in panel", async () => {
   )
 
   await circuit.renderUntilSettled()
+  const circuitJson = circuit.getCircuitJson()
+
+  const errors = circuitJson.filter((element) => element.type.includes("error"))
+
+  expect(errors.length).toBe(0)
 
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })

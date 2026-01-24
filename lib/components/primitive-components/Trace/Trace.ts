@@ -288,12 +288,31 @@ export class Trace
 
     this.source_trace_id = trace.source_trace_id
   }
+
+  _getParentBoardId(): string | null {
+    let current = this.parent as any
+    while (current) {
+      if (current.componentName === "Board" && "pcb_board_id" in current) {
+        return current.pcb_board_id
+      }
+      current = current.parent
+    }
+    return null
+  }
+
   _insertErrorIfTraceIsOutsideBoard(
     mergedRoute: PcbTraceRoutePoint[],
     ports: Port[],
   ): void {
     const { db } = this.root!
-    const isOutsideBoard = isRouteOutsideBoard(mergedRoute, { db })
+
+    const pcbBoardId = this._getParentBoardId()
+
+    const isOutsideBoard = isRouteOutsideBoard({
+      mergedRoute,
+      circuitJson: db,
+      pcbBoardId: pcbBoardId || "",
+    })
 
     if (isOutsideBoard) {
       db.pcb_trace_error.insert({
