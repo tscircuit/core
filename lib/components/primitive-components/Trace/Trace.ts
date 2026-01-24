@@ -2,7 +2,6 @@ import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { traceProps } from "@tscircuit/props"
 import {
   type LayerRef,
-  type PcbBoard,
   type PcbTrace,
   type PcbTraceRoutePoint,
   type RouteHintPoint,
@@ -289,7 +288,6 @@ export class Trace
 
     this.source_trace_id = trace.source_trace_id
   }
-
   _insertErrorIfTraceIsOutsideBoard(
     mergedRoute: PcbTraceRoutePoint[],
     ports: Port[],
