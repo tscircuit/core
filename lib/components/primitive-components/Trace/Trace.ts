@@ -293,7 +293,17 @@ export class Trace
     ports: Port[],
   ): void {
     const { db } = this.root!
-    const isOutsideBoard = isRouteOutsideBoard(mergedRoute, { db })
+
+    const board = this._getBoard()
+    if (!board) return
+    const pcbBoardId = board.pcb_board_id
+    if (!pcbBoardId) return
+
+    const isOutsideBoard = isRouteOutsideBoard({
+      mergedRoute,
+      db,
+      pcbBoardId: pcbBoardId,
+    })
 
     if (isOutsideBoard) {
       db.pcb_trace_error.insert({
