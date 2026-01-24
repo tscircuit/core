@@ -2,6 +2,7 @@ import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { traceProps } from "@tscircuit/props"
 import {
   type LayerRef,
+  type PcbBoard,
   type PcbTrace,
   type PcbTraceRoutePoint,
   type RouteHintPoint,
@@ -289,29 +290,21 @@ export class Trace
     this.source_trace_id = trace.source_trace_id
   }
 
-  _getParentBoardId(): string | null {
-    let current = this.parent as any
-    while (current) {
-      if (current.componentName === "Board" && "pcb_board_id" in current) {
-        return current.pcb_board_id
-      }
-      current = current.parent
-    }
-    return null
-  }
-
   _insertErrorIfTraceIsOutsideBoard(
     mergedRoute: PcbTraceRoutePoint[],
     ports: Port[],
   ): void {
     const { db } = this.root!
 
-    const pcbBoardId = this._getParentBoardId()
+    const board = this._getBoard()
+    if (!board) return
+    const pcbBoardId = board.pcb_board_id
+    if (!pcbBoardId) return
 
     const isOutsideBoard = isRouteOutsideBoard({
       mergedRoute,
       circuitJson: db,
-      pcbBoardId: pcbBoardId || "",
+      pcbBoardId: pcbBoardId,
     })
 
     if (isOutsideBoard) {
