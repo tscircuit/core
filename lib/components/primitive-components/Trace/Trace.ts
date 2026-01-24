@@ -301,7 +301,7 @@ export class Trace
 
     const isOutsideBoard = isRouteOutsideBoard({
       mergedRoute,
-      circuitJson: db,
+      db,
       pcbBoardId: pcbBoardId,
     })
 

@@ -1,6 +1,6 @@
 import { Box, point, Polygon } from "@flatten-js/core"
 
-export const getBoardOutlinePolygon = (pcbBoard: {
+export const getPcbBoardOutlinePolygon = (pcbBoard: {
   outline?: { x: number; y: number }[]
   center: { x: number; y: number }
   width?: number
