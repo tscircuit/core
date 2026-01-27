@@ -31,6 +31,7 @@ export class SchematicPath extends PrimitiveComponent<
       })),
       is_filled: props.isFilled,
       fill_color: props.fillColor,
+      stroke_width: props.strokeWidth,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
     })
   }
