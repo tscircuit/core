@@ -40,7 +40,7 @@ test("SchematicPath Test", () => {
       { x: 5, y: 5 },
       { x: 0, y: 5 },
     ],
-    stroke_width: 0.05
+    stroke_width: 0.05,
   })
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
