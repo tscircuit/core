@@ -5,14 +5,16 @@ import {
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import type { SourceSimpleCrystal } from "circuit-json"
+import type {
+  SourceSimpleCrystal,
+  SourceSimpleCrystalInput,
+} from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
 
 export class Crystal extends NormalComponent<
   typeof crystalProps,
   PolarizedPassivePorts
 > {
-  // @ts-ignore
   get config() {
     const symbolName =
       this.props.symbolName ??
@@ -68,7 +70,7 @@ export class Crystal extends NormalComponent<
       pin_variant: props.pinVariant || "two_pin",
       are_pins_interchangeable: (props.pinVariant || "two_pin") === "two_pin",
       display_name: props.displayName,
-    } as any)
+    } as SourceSimpleCrystalInput)
 
     this.source_component_id = source_component.source_component_id
   }
