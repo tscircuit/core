@@ -4,8 +4,13 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("SchematicPath with svgPath containing multiple subpaths", () => {
   const { circuit } = getTestFixture()
 
-  // SVG path with two separate subpaths (two M commands)
-  const multiSubpathSvg = "M 0 0 L 2 0 L 2 2 M 4 0 L 6 0 L 6 2"
+  // Square within a square - two completely separated closed paths
+  // Outer square: 4x4 centered at origin
+  // Inner square: 2x2 centered at origin
+  const squareWithinSquare = [
+    "M -2 -2 L 2 -2 L 2 2 L -2 2 Z", // Outer square
+    "M -1 -1 L 1 -1 L 1 1 L -1 1 Z", // Inner square
+  ].join(" ")
 
   circuit.add(
     <board width="10mm" height="10mm">
@@ -14,7 +19,7 @@ test("SchematicPath with svgPath containing multiple subpaths", () => {
         symbol={
           <symbol>
             <schematicpath
-              svgPath={multiSubpathSvg}
+              svgPath={squareWithinSquare}
               strokeColor="#000000"
               isFilled={false}
               strokeWidth={0.05}
@@ -30,7 +35,7 @@ test("SchematicPath with svgPath containing multiple subpaths", () => {
   const circuitJson = circuit.getCircuitJson()
   const schematicPaths = circuitJson.filter((c) => c.type === "schematic_path")
 
-  // Should create two separate schematic_path entries, one for each subpath
+  // Should create two separate schematic_path entries, one for each square
   expect(schematicPaths).toHaveLength(2)
 
   // Verify both paths have the same styling
@@ -48,15 +53,15 @@ test("SchematicPath with svgPath containing multiple subpaths", () => {
     expect(points.length).toBeGreaterThan(2)
   }
 
-  // Verify first subpath starts at origin (M 0 0)
-  const firstPathPoints = (schematicPaths[0] as any).points
-  expect(firstPathPoints[0].x).toBeCloseTo(0, 1)
-  expect(firstPathPoints[0].y).toBeCloseTo(0, 1)
+  // Verify outer square starts at (-2, -2)
+  const outerSquarePoints = (schematicPaths[0] as any).points
+  expect(outerSquarePoints[0].x).toBeCloseTo(-2, 1)
+  expect(outerSquarePoints[0].y).toBeCloseTo(-2, 1)
 
-  // Verify second subpath starts at (4, 0) from M 4 0
-  const secondPathPoints = (schematicPaths[1] as any).points
-  expect(secondPathPoints[0].x).toBeCloseTo(4, 1)
-  expect(secondPathPoints[0].y).toBeCloseTo(0, 1)
+  // Verify inner square starts at (-1, -1)
+  const innerSquarePoints = (schematicPaths[1] as any).points
+  expect(innerSquarePoints[0].x).toBeCloseTo(-1, 1)
+  expect(innerSquarePoints[0].y).toBeCloseTo(-1, 1)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

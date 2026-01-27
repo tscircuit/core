@@ -44,7 +44,7 @@ export class SchematicPath extends PrimitiveComponent<
           subcircuit_id,
         })
       }
-    } else {
+    } else if (props.points && props.points.length > 0) {
       // Use the provided points directly
       db.schematic_path.insert({
         schematic_component_id,
