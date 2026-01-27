@@ -14,7 +14,6 @@ test("SchematicPath with svgPath containing multiple subpaths", () => {
         symbol={
           <symbol>
             <schematicpath
-              points={[]}
               svgPath={multiSubpathSvg}
               strokeColor="#000000"
               isFilled={false}
