@@ -15,6 +15,7 @@ test("SchematicPath with svgPath", () => {
         symbol={
           <symbol>
             <schematicpath
+              points={[]}
               svgPath={complexSvgPath}
               strokeColor="#000000"
               isFilled={false}
