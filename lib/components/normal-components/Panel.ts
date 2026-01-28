@@ -30,8 +30,11 @@ export class Panel extends Group<typeof panelProps> {
   }
 
   add(component: PrimitiveComponent) {
-    if (component.lowercaseComponentName !== "board") {
-      throw new Error("<panel> can only contain <board> elements")
+    if (
+      component.lowercaseComponentName !== "board" &&
+      component.lowercaseComponentName !== "subpanel"
+    ) {
+      throw new Error("<panel> can only contain <board> or <subpanel> elements")
     }
     super.add(component)
   }
@@ -229,8 +232,23 @@ export class Panel extends Group<typeof panelProps> {
     this._tabsAndMouseBitesGenerated = true
   }
 
+  _hasBoard(children: PrimitiveComponent[]): boolean {
+    for (const child of children) {
+      if (child.componentName === "Board") {
+        return true
+      }
+      if (child.componentName === "Subpanel") {
+        if (this._hasBoard(child.children)) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
   runRenderCycle() {
-    if (!this.children.some((child) => child.componentName === "Board")) {
+    // Panel must contain at least one board directly or inside subpanels (recursively)
+    if (!this._hasBoard(this.children)) {
       throw new Error("<panel> must contain at least one <board>")
     }
 
