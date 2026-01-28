@@ -9,16 +9,13 @@ import { packBoardsIntoGrid } from "../../utils/panels/pack-boards-into-grid"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Group } from "../primitive-components/Group/Group"
 import { Board } from "./Board"
-import { Panel } from "./Panel"
 
 /**
  * Subpanel is a nested panel that can be placed inside a Panel.
  * It allows organizing boards into groups within a larger panel.
- * Unlike Panel, Subpanel:
  * - Can be nested inside a Panel (not required to be root-level)
  * - Can contain Board elements
  * - Can contain other Subpanel elements (for nested grouping)
- * - Inherits most behavior from Panel but without root-level restrictions
  */
 export class Subpanel extends Group<typeof subpanelProps> {
   pcb_panel_id: string | null = null
@@ -29,6 +26,10 @@ export class Subpanel extends Group<typeof subpanelProps> {
       componentName: "Subpanel",
       zodProps: subpanelProps,
     }
+  }
+
+  protected get _errorComponentName(): string {
+    return this.componentName.toLowerCase()
   }
 
   get isGroup() {
@@ -46,7 +47,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
       component.lowercaseComponentName !== "subpanel"
     ) {
       throw new Error(
-        "<subpanel> can only contain <board> or <subpanel> elements",
+        `<${this._errorComponentName}> can only contain <board> or <subpanel> elements`,
       )
     }
     super.add(component)
@@ -115,7 +116,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
           this.root!.db.source_property_ignored_warning.insert({
             source_component_id: board.source_component_id!,
             property_name: propertyNames,
-            message: `Board has manual positioning (${propertyNames}) but subpanel layout mode is "${layoutMode}". Manual positioning will be ignored.`,
+            message: `Board has manual positioning (${propertyNames}) but ${this._errorComponentName} layout mode is "${layoutMode}". Manual positioning will be ignored.`,
             error_type: "source_property_ignored_warning",
           })
         }
@@ -133,7 +134,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
       if (boardsWithoutPosition.length > 1) {
         this.root!.db.pcb_placement_error.insert({
           error_type: "pcb_placement_error",
-          message: `Multiple boards in subpanel without pcbX/pcbY positions. When layoutMode="none", each board must have explicit pcbX and pcbY coordinates to avoid overlapping. Either set pcbX/pcbY on each board, or use layoutMode="grid" for automatic positioning.`,
+          message: `Multiple boards in ${this._errorComponentName} without pcbX/pcbY positions. When layoutMode="none", each board must have explicit pcbX and pcbY coordinates to avoid overlapping. Either set pcbX/pcbY on each board, or use layoutMode="grid" for automatic positioning.`,
         })
       }
     }
@@ -155,7 +156,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
     this._cachedGridWidth = gridWidth
     this._cachedGridHeight = gridHeight
 
-    // Set panel position offset on each board (relative to subpanel center)
+    // Set subpanel position offset on each board (relative to subpanel center)
     for (const { board, pos } of positions) {
       board._panelPositionOffset = pos
     }
@@ -223,12 +224,12 @@ export class Subpanel extends Group<typeof subpanelProps> {
       }
     } else {
       // layoutMode is "none" or "pack" - use explicit positions
-      const subpanelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
+      const panelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
       for (const board of childBoardInstances) {
         const boardDb = db.pcb_board.get(board.pcb_board_id!)
         if (!boardDb) continue
-        const relativeX = boardDb.center.x - subpanelGlobalPos.x
-        const relativeY = boardDb.center.y - subpanelGlobalPos.y
+        const relativeX = boardDb.center.x - panelGlobalPos.x
+        const relativeY = boardDb.center.y - panelGlobalPos.y
         db.pcb_board.update(board.pcb_board_id!, {
           position_mode: "relative_to_panel_anchor",
           display_offset_x: `${relativeX}mm`,
@@ -286,7 +287,9 @@ export class Subpanel extends Group<typeof subpanelProps> {
 
     // Validate that subpanel contains at least one board
     if (!this._containsBoards()) {
-      throw new Error("<subpanel> must contain at least one <board>")
+      throw new Error(
+        `<${this._errorComponentName}> must contain at least one <board>`,
+      )
     }
 
     const { db } = this.root!
