@@ -6,7 +6,7 @@ test("subpanel auto-calculates dimensions when not provided", () => {
 
   circuit.add(
     <panel width="150mm" height="150mm">
-      <subpanel layoutMode="grid" edgePadding={5}>
+      <subpanel name="autoSizedSubpanel" layoutMode="grid" edgePadding={5}>
         <board width="10mm" height="10mm" routingDisabled />
         <board width="10mm" height="10mm" routingDisabled />
       </subpanel>
@@ -15,12 +15,15 @@ test("subpanel auto-calculates dimensions when not provided", () => {
 
   circuit.render()
 
-  // Find the subpanel (not the main 150mm panel)
+  // Only the main panel creates pcb_panel
   const panels = circuit.db.pcb_panel.list()
-  const subpanel = panels.find((p) => p.width !== 150)
+  expect(panels).toHaveLength(1)
+  expect(panels[0].width).toBe(150)
 
-  // Subpanel should have auto-calculated dimensions based on boards + edge padding
-  expect(subpanel).toBeDefined()
-  expect(subpanel!.width).toBeGreaterThan(0)
-  expect(subpanel!.height).toBeGreaterThan(0)
+  // Subpanel creates a pcb_group with auto-calculated dimensions
+  const groups = circuit.db.pcb_group.list()
+  const subpanelGroup = groups.find((g) => g.name === "autoSizedSubpanel")
+  expect(subpanelGroup).toBeDefined()
+  expect(subpanelGroup!.width).toBeGreaterThan(0)
+  expect(subpanelGroup!.height).toBeGreaterThan(0)
 })

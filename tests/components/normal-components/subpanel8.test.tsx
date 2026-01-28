@@ -19,6 +19,11 @@ test("panel can now contain both boards and subpanels", () => {
   const boards = circuit.db.pcb_board.list()
   expect(boards).toHaveLength(2)
 
+  // Only the main panel creates pcb_panel
   const panels = circuit.db.pcb_panel.list()
-  expect(panels).toHaveLength(2)
+  expect(panels).toHaveLength(1)
+
+  // Subpanel creates a pcb_group
+  const groups = circuit.db.pcb_group.list()
+  expect(groups.length).toBeGreaterThanOrEqual(1)
 })

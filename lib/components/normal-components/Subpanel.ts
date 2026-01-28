@@ -181,47 +181,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
         })
       }
 
-      // Update subpanel dimensions
-      const hasExplicitWidth = this._parsedProps.width !== undefined
-      const hasExplicitHeight = this._parsedProps.height !== undefined
-      const gridWidth = this._cachedGridWidth
-      const gridHeight = this._cachedGridHeight
-
-      if (hasExplicitWidth && hasExplicitHeight) {
-        db.pcb_panel.update(this.pcb_panel_id!, {
-          width: distance.parse(this._parsedProps.width),
-          height: distance.parse(this._parsedProps.height),
-        })
-      } else if (gridWidth > 0 || gridHeight > 0) {
-        const {
-          edgePadding: edgePaddingProp,
-          edgePaddingLeft: edgePaddingLeftProp,
-          edgePaddingRight: edgePaddingRightProp,
-          edgePaddingTop: edgePaddingTopProp,
-          edgePaddingBottom: edgePaddingBottomProp,
-        } = this._parsedProps
-
-        const edgePadding = distance.parse(edgePaddingProp ?? 5)
-        const edgePaddingLeft = distance.parse(
-          edgePaddingLeftProp ?? edgePadding,
-        )
-        const edgePaddingRight = distance.parse(
-          edgePaddingRightProp ?? edgePadding,
-        )
-        const edgePaddingTop = distance.parse(edgePaddingTopProp ?? edgePadding)
-        const edgePaddingBottom = distance.parse(
-          edgePaddingBottomProp ?? edgePadding,
-        )
-
-        db.pcb_panel.update(this.pcb_panel_id!, {
-          width: hasExplicitWidth
-            ? distance.parse(this._parsedProps.width)
-            : gridWidth + edgePaddingLeft + edgePaddingRight,
-          height: hasExplicitHeight
-            ? distance.parse(this._parsedProps.height)
-            : gridHeight + edgePaddingTop + edgePaddingBottom,
-        })
-      }
+      this._updatePanelDimensions()
     } else {
       // layoutMode is "none" or "pack" - use explicit positions
       const panelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
@@ -238,10 +198,66 @@ export class Subpanel extends Group<typeof subpanelProps> {
       }
     }
 
+    this._generateTabsAndMouseBites()
+  }
+
+  /**
+   * Update dimensions for the subpanel. Subpanel updates pcb_group,
+   */
+  protected _updatePanelDimensions() {
+    const { db } = this.root!
+    const hasExplicitWidth = this._parsedProps.width !== undefined
+    const hasExplicitHeight = this._parsedProps.height !== undefined
+    const gridWidth = this._cachedGridWidth
+    const gridHeight = this._cachedGridHeight
+
+    if (!this.pcb_group_id) return
+
+    if (hasExplicitWidth && hasExplicitHeight) {
+      db.pcb_group.update(this.pcb_group_id, {
+        width: distance.parse(this._parsedProps.width),
+        height: distance.parse(this._parsedProps.height),
+      })
+    } else if (gridWidth > 0 || gridHeight > 0) {
+      const {
+        edgePadding: edgePaddingProp,
+        edgePaddingLeft: edgePaddingLeftProp,
+        edgePaddingRight: edgePaddingRightProp,
+        edgePaddingTop: edgePaddingTopProp,
+        edgePaddingBottom: edgePaddingBottomProp,
+      } = this._parsedProps
+
+      const edgePadding = distance.parse(edgePaddingProp ?? 5)
+      const edgePaddingLeft = distance.parse(edgePaddingLeftProp ?? edgePadding)
+      const edgePaddingRight = distance.parse(
+        edgePaddingRightProp ?? edgePadding,
+      )
+      const edgePaddingTop = distance.parse(edgePaddingTopProp ?? edgePadding)
+      const edgePaddingBottom = distance.parse(
+        edgePaddingBottomProp ?? edgePadding,
+      )
+
+      db.pcb_group.update(this.pcb_group_id, {
+        width: hasExplicitWidth
+          ? distance.parse(this._parsedProps.width)
+          : gridWidth + edgePaddingLeft + edgePaddingRight,
+        height: hasExplicitHeight
+          ? distance.parse(this._parsedProps.height)
+          : gridHeight + edgePaddingTop + edgePaddingBottom,
+      })
+    }
+  }
+
+  /**
+   * Generate tabs and mouse bites for panelization
+   */
+  protected _generateTabsAndMouseBites() {
     if (this._tabsAndMouseBitesGenerated) return
 
+    const { db } = this.root!
     const props = this._parsedProps
     const panelizationMethod = props.panelizationMethod ?? "none"
+    const childBoardInstances = this._getDirectBoardChildren()
 
     if (panelizationMethod !== "none") {
       // Get all boards that are children of this subpanel
@@ -282,6 +298,10 @@ export class Subpanel extends Group<typeof subpanelProps> {
     this._tabsAndMouseBitesGenerated = true
   }
 
+  /**
+   * Override to validate board containment before rendering.
+   * Subpanel uses parent Group's pcb_group rendering.
+   */
   doInitialPcbComponentRender() {
     if (this.root?.pcbDisabled) return
 
@@ -292,47 +312,7 @@ export class Subpanel extends Group<typeof subpanelProps> {
       )
     }
 
-    const { db } = this.root!
-    const props = this._parsedProps
-
-    // Use 0 as placeholder when dimensions are not provided - will be auto-calculated in doInitialPanelLayout
-    const inserted = db.pcb_panel.insert({
-      width: props.width !== undefined ? distance.parse(props.width) : 0,
-      height: props.height !== undefined ? distance.parse(props.height) : 0,
-      center: this._getGlobalPcbPositionBeforeLayout(),
-      covered_with_solder_mask: !(props.noSolderMask ?? false),
-    })
-
-    this.pcb_panel_id = inserted.pcb_panel_id
-  }
-
-  updatePcbComponentRender() {
-    if (this.root?.pcbDisabled) return
-    if (!this.pcb_panel_id) return
-
-    const { db } = this.root!
-    const props = this._parsedProps
-    const currentPanel = db.pcb_panel.get(this.pcb_panel_id)
-
-    // Only update dimensions if explicitly provided, otherwise keep current (auto-calculated) values
-    db.pcb_panel.update(this.pcb_panel_id, {
-      width:
-        props.width !== undefined
-          ? distance.parse(props.width)
-          : currentPanel?.width,
-      height:
-        props.height !== undefined
-          ? distance.parse(props.height)
-          : currentPanel?.height,
-      center: this._getGlobalPcbPositionBeforeLayout(),
-      covered_with_solder_mask: !(props.noSolderMask ?? false),
-    })
-  }
-
-  removePcbComponentRender() {
-    if (!this.pcb_panel_id) return
-
-    this.root?.db.pcb_panel.delete(this.pcb_panel_id)
-    this.pcb_panel_id = null
+    // Call parent Group implementation which creates pcb_group
+    super.doInitialPcbComponentRender()
   }
 }

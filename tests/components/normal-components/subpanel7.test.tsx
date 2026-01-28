@@ -21,9 +21,13 @@ test("nested subpanels work correctly", () => {
   const boards = circuit.db.pcb_board.list()
   expect(boards).toHaveLength(3)
 
-  // Should have 3 pcb_panel entries: main panel + 2 subpanels
+  // Only the main panel creates pcb_panel, subpanels use pcb_group
   const panels = circuit.db.pcb_panel.list()
-  expect(panels).toHaveLength(3)
+  expect(panels).toHaveLength(1)
+
+  // There should be pcb_groups for the subpanels
+  const groups = circuit.db.pcb_group.list()
+  expect(groups.length).toBeGreaterThanOrEqual(2)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

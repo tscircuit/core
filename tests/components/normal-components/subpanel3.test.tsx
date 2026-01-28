@@ -18,7 +18,11 @@ test("subpanel can be nested inside panel with boards", () => {
   const boards = circuit.db.pcb_board.list()
   expect(boards).toHaveLength(2)
 
-  // Should have 2 pcb_panel entries: one for main panel, one for subpanel
+  // Should have 1 pcb_panel (the main panel) - subpanels use pcb_group
   const panels = circuit.db.pcb_panel.list()
-  expect(panels).toHaveLength(2)
+  expect(panels).toHaveLength(1)
+
+  // Subpanel should create a pcb_group
+  const groups = circuit.db.pcb_group.list()
+  expect(groups.length).toBeGreaterThanOrEqual(1)
 })
