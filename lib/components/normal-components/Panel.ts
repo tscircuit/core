@@ -68,6 +68,22 @@ export class Panel extends Group<typeof panelProps> {
       }
     }
 
+    // Error if multiple boards without pcbX/pcbY when layoutMode is "none"
+    if (layoutMode === "none" && childBoardInstances.length > 1) {
+      const boardsWithoutPosition = childBoardInstances.filter((board) => {
+        const hasPcbX = board._parsedProps.pcbX !== undefined
+        const hasPcbY = board._parsedProps.pcbY !== undefined
+        return !hasPcbX && !hasPcbY
+      })
+
+      if (boardsWithoutPosition.length > 1) {
+        this.root!.db.pcb_placement_error.insert({
+          error_type: "pcb_placement_error",
+          message: `Multiple boards in panel without pcbX/pcbY positions. When layoutMode="none", each board must have explicit pcbX and pcbY coordinates to avoid overlapping. Either set pcbX/pcbY on each board, or use layoutMode="grid" for automatic positioning.`,
+        })
+      }
+    }
+
     if (layoutMode !== "grid") return
 
     const tabWidth = this._parsedProps.tabWidth ?? DEFAULT_TAB_WIDTH
