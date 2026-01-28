@@ -1,4 +1,4 @@
-import { panelProps } from "@tscircuit/props"
+import { subpanelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
 import {
   DEFAULT_TAB_LENGTH,
@@ -9,16 +9,25 @@ import { packBoardsIntoGrid } from "../../utils/panels/pack-boards-into-grid"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Group } from "../primitive-components/Group/Group"
 import { Board } from "./Board"
-import type { Subpanel } from "./Subpanel"
+import { Panel } from "./Panel"
 
-export class Panel extends Group<typeof panelProps> {
+/**
+ * Subpanel is a nested panel that can be placed inside a Panel.
+ * It allows organizing boards into groups within a larger panel.
+ * Unlike Panel, Subpanel:
+ * - Can be nested inside a Panel (not required to be root-level)
+ * - Can contain Board elements
+ * - Can contain other Subpanel elements (for nested grouping)
+ * - Inherits most behavior from Panel but without root-level restrictions
+ */
+export class Subpanel extends Group<typeof subpanelProps> {
   pcb_panel_id: string | null = null
   _tabsAndMouseBitesGenerated = false
 
   get config() {
     return {
-      componentName: "Panel",
-      zodProps: panelProps,
+      componentName: "Subpanel",
+      zodProps: subpanelProps,
     }
   }
 
@@ -31,25 +40,66 @@ export class Panel extends Group<typeof panelProps> {
   }
 
   add(component: PrimitiveComponent) {
+    // Subpanel can contain boards and other subpanels
     if (
       component.lowercaseComponentName !== "board" &&
       component.lowercaseComponentName !== "subpanel"
     ) {
-      throw new Error("<panel> can only contain <board> or <subpanel> elements")
+      throw new Error(
+        "<subpanel> can only contain <board> or <subpanel> elements",
+      )
     }
     super.add(component)
   }
 
   _cachedGridWidth = 0
   _cachedGridHeight = 0
+
+  /**
+   * Get all board instances from this subpanel and nested subpanels
+   */
+  _getAllBoardInstances(): Board[] {
+    const boards: Board[] = []
+    for (const child of this.children) {
+      if (child instanceof Board) {
+        boards.push(child)
+      } else if (child instanceof Subpanel) {
+        boards.push(...child._getAllBoardInstances())
+      }
+    }
+    return boards
+  }
+
+  /**
+   * Check if this subpanel contains at least one board (directly or through nested subpanels)
+   */
+  _containsBoards(): boolean {
+    for (const child of this.children) {
+      if (child.componentName === "Board") {
+        return true
+      }
+      if (child.componentName === "Subpanel" && "_containsBoards" in child) {
+        if ((child as Subpanel)._containsBoards()) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  /**
+   * Get direct board children only (not from nested subpanels)
+   */
+  _getDirectBoardChildren(): Board[] {
+    return this.children.filter((c) => c instanceof Board) as Board[]
+  }
+
   doInitialPanelBoardLayout() {
     if (this.root?.pcbDisabled) return
 
     const layoutMode = this._parsedProps.layoutMode ?? "none"
 
-    const childBoardInstances = this.children.filter(
-      (c) => c instanceof Board,
-    ) as Board[]
+    const childBoardInstances = this._getDirectBoardChildren()
 
     // Warn if boards have manual positioning when panel layout is automatic
     if (layoutMode !== "none") {
@@ -65,7 +115,7 @@ export class Panel extends Group<typeof panelProps> {
           this.root!.db.source_property_ignored_warning.insert({
             source_component_id: board.source_component_id!,
             property_name: propertyNames,
-            message: `Board has manual positioning (${propertyNames}) but panel layout mode is "${layoutMode}". Manual positioning will be ignored.`,
+            message: `Board has manual positioning (${propertyNames}) but subpanel layout mode is "${layoutMode}". Manual positioning will be ignored.`,
             error_type: "source_property_ignored_warning",
           })
         }
@@ -83,7 +133,7 @@ export class Panel extends Group<typeof panelProps> {
       if (boardsWithoutPosition.length > 1) {
         this.root!.db.pcb_placement_error.insert({
           error_type: "pcb_placement_error",
-          message: `Multiple boards in panel without pcbX/pcbY positions. When layoutMode="none", each board must have explicit pcbX and pcbY coordinates to avoid overlapping. Either set pcbX/pcbY on each board, or use layoutMode="grid" for automatic positioning.`,
+          message: `Multiple boards in subpanel without pcbX/pcbY positions. When layoutMode="none", each board must have explicit pcbX and pcbY coordinates to avoid overlapping. Either set pcbX/pcbY on each board, or use layoutMode="grid" for automatic positioning.`,
         })
       }
     }
@@ -105,7 +155,7 @@ export class Panel extends Group<typeof panelProps> {
     this._cachedGridWidth = gridWidth
     this._cachedGridHeight = gridHeight
 
-    // Set panel position offset on each board (relative to panel center)
+    // Set panel position offset on each board (relative to subpanel center)
     for (const { board, pos } of positions) {
       board._panelPositionOffset = pos
     }
@@ -115,9 +165,7 @@ export class Panel extends Group<typeof panelProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
 
-    const childBoardInstances = this.children.filter(
-      (c) => c instanceof Board,
-    ) as Board[]
+    const childBoardInstances = this._getDirectBoardChildren()
 
     const layoutMode = this._parsedProps.layoutMode ?? "none"
 
@@ -132,7 +180,7 @@ export class Panel extends Group<typeof panelProps> {
         })
       }
 
-      // Update panel dimensions
+      // Update subpanel dimensions
       const hasExplicitWidth = this._parsedProps.width !== undefined
       const hasExplicitHeight = this._parsedProps.height !== undefined
       const gridWidth = this._cachedGridWidth
@@ -175,12 +223,12 @@ export class Panel extends Group<typeof panelProps> {
       }
     } else {
       // layoutMode is "none" or "pack" - use explicit positions
-      const panelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
+      const subpanelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
       for (const board of childBoardInstances) {
         const boardDb = db.pcb_board.get(board.pcb_board_id!)
         if (!boardDb) continue
-        const relativeX = boardDb.center.x - panelGlobalPos.x
-        const relativeY = boardDb.center.y - panelGlobalPos.y
+        const relativeX = boardDb.center.x - subpanelGlobalPos.x
+        const relativeY = boardDb.center.y - subpanelGlobalPos.y
         db.pcb_board.update(board.pcb_board_id!, {
           position_mode: "relative_to_panel_anchor",
           display_offset_x: `${relativeX}mm`,
@@ -195,7 +243,7 @@ export class Panel extends Group<typeof panelProps> {
     const panelizationMethod = props.panelizationMethod ?? "none"
 
     if (panelizationMethod !== "none") {
-      // Get all boards that are children of this panel
+      // Get all boards that are children of this subpanel
       const childBoardIds = childBoardInstances
         .map((c) => c.pcb_board_id)
         .filter((id): id is string => !!id)
@@ -233,29 +281,12 @@ export class Panel extends Group<typeof panelProps> {
     this._tabsAndMouseBitesGenerated = true
   }
 
-  /**
-   * Check if this panel contains at least one board (directly or through subpanels)
-   */
-  _containsBoards(): boolean {
-    for (const child of this.children) {
-      if (child.componentName === "Board") {
-        return true
-      }
-      if (child.componentName === "Subpanel" && "_containsBoards" in child) {
-        if ((child as Subpanel)._containsBoards()) {
-          return true
-        }
-      }
-    }
-    return false
-  }
-
   doInitialPcbComponentRender() {
     if (this.root?.pcbDisabled) return
 
-    // Validate that panel contains at least one board
+    // Validate that subpanel contains at least one board
     if (!this._containsBoards()) {
-      throw new Error("<panel> must contain at least one <board>")
+      throw new Error("<subpanel> must contain at least one <board>")
     }
 
     const { db } = this.root!
