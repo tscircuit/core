@@ -65,7 +65,5 @@ test("Chip should support pin labels in schPinStyle", () => {
 }
 `)
 
-  console.log(circuit.db.schematic_text.list())
-
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
