@@ -14,9 +14,7 @@ export class PowerSource extends NormalComponent<
   // @ts-ignore
   get config() {
     return {
-      // TBD in schematic_symbol and replace then
-      schematicSymbolName:
-        this.props.symbolName ?? ("power_factor_meter_horz" as BaseSymbolName),
+      schematicSymbolName: this.props.symbolName ?? "power_factor_meter",
       componentName: "PowerSource",
       zodProps: powerSourceProps,
       sourceFtype: "simple_power_source" as Ftype,
@@ -24,12 +22,12 @@ export class PowerSource extends NormalComponent<
   }
 
   initPorts() {
-    this.add(
-      new Port({ name: "pin1", pinNumber: 1, aliases: ["positive", "pos"] }),
-    )
-    this.add(
-      new Port({ name: "pin2", pinNumber: 2, aliases: ["negative", "neg"] }),
-    )
+    super.initPorts({
+      additionalAliases: {
+        pin1: ["positive", "pos", "left"],
+        pin2: ["negative", "neg", "right"],
+      },
+    })
   }
 
   doInitialSourceRender() {

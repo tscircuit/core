@@ -1,7 +1,7 @@
-import { expect, it } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it.skip("should render a power source", async () => {
+test("should render a power source", async () => {
   const { project } = getTestFixture()
 
   project.add(
@@ -13,4 +13,6 @@ it.skip("should render a power source", async () => {
   project.render()
   expect(project.db.schematic_component.list()).toHaveLength(1)
   expect(project.db.schematic_port.list()).toHaveLength(2)
+  expect(project).toMatchSchematicSnapshot(import.meta.path)
+
 })
