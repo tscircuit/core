@@ -14,5 +14,4 @@ test("should render a power source", async () => {
   expect(project.db.schematic_component.list()).toHaveLength(1)
   expect(project.db.schematic_port.list()).toHaveLength(2)
   expect(project).toMatchSchematicSnapshot(import.meta.path)
-
 })
