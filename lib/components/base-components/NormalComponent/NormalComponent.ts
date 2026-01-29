@@ -699,7 +699,7 @@ export class NormalComponent<
       font_size: 0.18,
     })
     const component_name_text = db.schematic_text.insert({
-      text: props.name ?? "",
+      text: props.displayName ?? props.name ?? "",
       schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",
       rotation: 0,
