@@ -26,6 +26,7 @@ test("Chip should support pin labels in schPinStyle", () => {
           // Should work with alternate pin labels
           A4: { topMargin: 0.2 },
         }}
+        displayName="U1 - MCU"
         schPinArrangement={{
           leftSide: {
             pins: ["GND", "VCC", "SIG"],
