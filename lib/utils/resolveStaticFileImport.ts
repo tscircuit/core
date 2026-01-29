@@ -12,10 +12,13 @@ export async function resolveStaticFileImport(
 ): Promise<string> {
   if (!path) return path
 
+  // Normalize ./ paths to / paths for consistent handling
+  const normalizedPath = path.startsWith("./") ? path.slice(1) : path
+
   const resolver = platform?.resolveProjectStaticFileImportUrl
-  if (resolver && path.startsWith("/")) {
+  if (resolver && (path.startsWith("/") || path.startsWith("./"))) {
     try {
-      const resolved = await resolver(path)
+      const resolved = await resolver(normalizedPath)
       if (resolved) return resolved
     } catch (error) {
       resolveStaticFileImportDebug(
@@ -25,5 +28,5 @@ export async function resolveStaticFileImport(
     }
   }
 
-  return constructAssetUrl(path, platform?.projectBaseUrl)
+  return constructAssetUrl(normalizedPath, platform?.projectBaseUrl)
 }
