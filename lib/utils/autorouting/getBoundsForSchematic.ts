@@ -145,6 +145,19 @@ export function getBoundsForSchematic(db: any[]): {
         maxY = Math.max(maxY, bounds.maxY)
       }
       continue
+    } else if (elm.type === "schematic_path") {
+      const points = elm.points
+      if (Array.isArray(points)) {
+        for (const point of points) {
+          if (typeof point.x === "number" && typeof point.y === "number") {
+            minX = Math.min(minX, point.x)
+            maxX = Math.max(maxX, point.x)
+            minY = Math.min(minY, point.y)
+            maxY = Math.max(maxY, point.y)
+          }
+        }
+      }
+      continue
     }
     if (
       typeof cx === "number" &&

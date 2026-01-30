@@ -11,7 +11,7 @@ export class SymbolComponent
   isPrimitiveContainer = true
 
   userCoordinateToResizedSymbolTransformMat?: Matrix
-  schematicSymbolBounds?: SchematicSymbolBounds
+  schematicSymbolBoundsInUserCoordinates?: SchematicSymbolBounds
 
   get config() {
     return {
@@ -26,13 +26,13 @@ export class SymbolComponent
   }
 
   getSchematicSymbolBounds(): SchematicSymbolBounds | null {
-    if (this.schematicSymbolBounds) {
-      return this.schematicSymbolBounds
+    if (this.schematicSymbolBoundsInUserCoordinates) {
+      return this.schematicSymbolBoundsInUserCoordinates
     }
 
     // Compute bounds from children's circuit-json elements
     this._computeSchematicSymbolBounds()
-    return this.schematicSymbolBounds ?? null
+    return this.schematicSymbolBoundsInUserCoordinates ?? null
   }
 
   getUserCoordinateToResizedSymbolTransform(): Matrix | null {
@@ -79,13 +79,21 @@ export class SymbolComponent
       } else if (child.componentName === "SchematicText") {
         const text = db.schematic_text.get((child as any).schematic_text_id)
         if (text) schematicElements.push(text)
+      } else if (child.componentName === "SchematicPath") {
+        const pathIds = (child as any).schematic_path_ids as string[]
+        if (pathIds) {
+          for (const pathId of pathIds) {
+            const path = db.schematic_path.get(pathId)
+            if (path) schematicElements.push(path)
+          }
+        }
       }
     }
 
     if (schematicElements.length === 0) return
 
     const bounds = getBoundsForSchematic(schematicElements)
-    this.schematicSymbolBounds = bounds
+    this.schematicSymbolBoundsInUserCoordinates = bounds
   }
 
   private _computeUserCoordinateToResizedSymbolTransform(): void {

@@ -4,6 +4,9 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("SchematicSymbol resize with all primitive types", () => {
   const { circuit } = getTestFixture()
 
+  // SVG path for a small triangle (0,0 -> 0.5,0.5 -> 0,0.5 -> 0,0)
+  const triangleSvgPath = "M 0 0 L 0.5 0.5 L 0 0.5 Z"
+
   circuit.add(
     <board width="20mm" height="20mm">
       {/* Symbol WITHOUT width/height - should render as-is at schX/schY position */}
@@ -24,6 +27,8 @@ test("SchematicSymbol resize with all primitive types", () => {
             <schematiccircle center={{ x: 0.25, y: 0.75 }} radius={0.1} />
             {/* Text label */}
             <schematictext schX={0.5} schY={-0.2} text="U1" />
+            {/* Path from SVG */}
+            <schematicpath svgPath={triangleSvgPath} />
           </symbol>
         }
       />
@@ -46,6 +51,8 @@ test("SchematicSymbol resize with all primitive types", () => {
             <schematiccircle center={{ x: 0.25, y: 0.75 }} radius={0.1} />
             {/* Text label */}
             <schematictext schX={0.5} schY={-0.2} text="U2" />
+            {/* Path from SVG - should also be scaled */}
+            <schematicpath svgPath={triangleSvgPath} />
           </symbol>
         }
       />
