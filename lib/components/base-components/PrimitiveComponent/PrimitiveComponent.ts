@@ -20,6 +20,7 @@ import type { Primitive, ZodType } from "zod"
 import { z } from "zod"
 import type { RootCircuit } from "lib/RootCircuit"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
+import type { ISymbol } from "lib/components/primitive-components/Symbol/ISymbol"
 import { Renderable } from "lib/components/base-components/Renderable"
 import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
 import type { Ftype } from "lib/utils/constants"
@@ -319,6 +320,18 @@ export abstract class PrimitiveComponent<
   getPrimitiveContainer(): PrimitiveComponent | null {
     if (this.isPrimitiveContainer) return this
     return this.parent?.getPrimitiveContainer?.() ?? null
+  }
+
+  /**
+   * Get the Symbol ancestor if this component is inside a Symbol primitive container.
+   * Used by schematic primitives to access the symbol's resize transform.
+   */
+  _getSymbolAncestor(): ISymbol | null {
+    const container = this.getPrimitiveContainer()
+    if (container?.componentName === "Symbol") {
+      return container as unknown as ISymbol
+    }
+    return null
   }
 
   /**

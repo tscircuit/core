@@ -1,7 +1,6 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicPathProps } from "@tscircuit/props"
 import { svgPathToPoints } from "lib/utils/schematic/svgPathToPoints"
-import type { SymbolComponent } from "./Symbol"
 import { applyToPoint } from "transformation-matrix"
 
 export class SchematicPath extends PrimitiveComponent<
@@ -67,14 +66,6 @@ export class SchematicPath extends PrimitiveComponent<
       })
       this.schematic_path_ids.push(schematic_path.schematic_path_id)
     }
-  }
-
-  _getSymbolAncestor(): SymbolComponent | null {
-    const container = this.getPrimitiveContainer()
-    if (container?.componentName === "Symbol") {
-      return container as SymbolComponent
-    }
-    return null
   }
 
   doInitialSchematicSymbolResize(): void {

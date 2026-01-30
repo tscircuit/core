@@ -85,15 +85,15 @@ export function getBoundsForSchematic(db: any[]): {
   minY: number
   maxY: number
 } {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
   for (const elm of db) {
-    let cx: number | undefined,
-      cy: number | undefined,
-      w: number | undefined,
-      h: number | undefined
+    let cx: number | undefined
+    let cy: number | undefined
+    let w: number | undefined
+    let h: number | undefined
     if (elm.type === "schematic_component") {
       cx = elm.center?.x
       cy = elm.center?.y

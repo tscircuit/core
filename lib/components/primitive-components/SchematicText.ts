@@ -1,7 +1,6 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicTextProps } from "@tscircuit/props"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
-import type { SymbolComponent } from "./Symbol"
 import { applyToPoint } from "transformation-matrix"
 
 export class SchematicText extends PrimitiveComponent<
@@ -38,14 +37,6 @@ export class SchematicText extends PrimitiveComponent<
     })
 
     this.schematic_text_id = schematic_text.schematic_text_id
-  }
-
-  _getSymbolAncestor(): SymbolComponent | null {
-    const container = this.getPrimitiveContainer()
-    if (container?.componentName === "Symbol") {
-      return container as SymbolComponent
-    }
-    return null
   }
 
   doInitialSchematicSymbolResize(): void {

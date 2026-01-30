@@ -4,7 +4,6 @@ import {
   SCHEMATIC_COMPONENT_OUTLINE_COLOR,
   SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
 } from "lib/utils/constants"
-import type { SymbolComponent } from "./Symbol"
 import { applyToPoint } from "transformation-matrix"
 
 export class SchematicLine extends PrimitiveComponent<
@@ -45,14 +44,6 @@ export class SchematicLine extends PrimitiveComponent<
     })
 
     this.schematic_line_id = schematic_line.schematic_line_id
-  }
-
-  _getSymbolAncestor(): SymbolComponent | null {
-    const container = this.getPrimitiveContainer()
-    if (container?.componentName === "Symbol") {
-      return container as SymbolComponent
-    }
-    return null
   }
 
   doInitialSchematicSymbolResize(): void {
