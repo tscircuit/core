@@ -35,11 +35,10 @@ export class SymbolComponent
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
 
-    const parentComponent = this.parent
-    const name = parentComponent?.props?.name
+    const { _parsedProps: props } = this
 
     const schematic_symbol = db.schematic_symbol.insert({
-      name,
+      name: props.name,
     })
 
     this.schematic_symbol_id = schematic_symbol.schematic_symbol_id
