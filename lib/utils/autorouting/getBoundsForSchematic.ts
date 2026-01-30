@@ -85,15 +85,15 @@ export function getBoundsForSchematic(db: any[]): {
   minY: number
   maxY: number
 } {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
   for (const elm of db) {
-    let cx: number | undefined,
-      cy: number | undefined,
-      w: number | undefined,
-      h: number | undefined
+    let cx: number | undefined
+    let cy: number | undefined
+    let w: number | undefined
+    let h: number | undefined
     if (elm.type === "schematic_component") {
       cx = elm.center?.x
       cy = elm.center?.y
@@ -143,6 +143,19 @@ export function getBoundsForSchematic(db: any[]): {
         maxX = Math.max(maxX, bounds.maxX)
         minY = Math.min(minY, bounds.minY)
         maxY = Math.max(maxY, bounds.maxY)
+      }
+      continue
+    } else if (elm.type === "schematic_path") {
+      const points = elm.points
+      if (Array.isArray(points)) {
+        for (const point of points) {
+          if (typeof point.x === "number" && typeof point.y === "number") {
+            minX = Math.min(minX, point.x)
+            maxX = Math.max(maxX, point.x)
+            minY = Math.min(minY, point.y)
+            maxY = Math.max(maxY, point.y)
+          }
+        }
       }
       continue
     }

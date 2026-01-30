@@ -1,11 +1,14 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicPathProps } from "@tscircuit/props"
 import { svgPathToPoints } from "lib/utils/schematic/svgPathToPoints"
+import { applyToPoint } from "transformation-matrix"
 
 export class SchematicPath extends PrimitiveComponent<
   typeof schematicPathProps
 > {
   isSchematicPrimitive = true
+
+  schematic_path_ids: string[] = []
 
   get config() {
     return {
@@ -26,12 +29,14 @@ export class SchematicPath extends PrimitiveComponent<
 
     const subcircuit_id = this.getSubcircuit().subcircuit_id ?? undefined
 
+    this.schematic_path_ids = []
+
     // If svgPath is provided, parse it and create separate paths for each subpath
     if (props.svgPath) {
       const subpaths = svgPathToPoints(props.svgPath)
 
       for (const subpathPoints of subpaths) {
-        db.schematic_path.insert({
+        const schematic_path = db.schematic_path.insert({
           schematic_component_id,
           points: subpathPoints.map((point) => ({
             x: point.x + globalPos.x,
@@ -43,10 +48,11 @@ export class SchematicPath extends PrimitiveComponent<
           stroke_width: props.strokeWidth,
           subcircuit_id,
         })
+        this.schematic_path_ids.push(schematic_path.schematic_path_id)
       }
     } else if (props.points && props.points.length > 0) {
       // Use the provided points directly
-      db.schematic_path.insert({
+      const schematic_path = db.schematic_path.insert({
         schematic_component_id,
         points: props.points.map((point) => ({
           x: point.x + globalPos.x,
@@ -57,6 +63,32 @@ export class SchematicPath extends PrimitiveComponent<
         stroke_color: props.strokeColor,
         stroke_width: props.strokeWidth,
         subcircuit_id,
+      })
+      this.schematic_path_ids.push(schematic_path.schematic_path_id)
+    }
+  }
+
+  doInitialSchematicSymbolResize(): void {
+    if (this.root?.schematicDisabled) return
+    if (this.schematic_path_ids.length === 0) return
+
+    const symbol = this._getSymbolAncestor()
+    const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
+    if (!transform) return
+
+    const { db } = this.root!
+
+    for (const pathId of this.schematic_path_ids) {
+      const path = db.schematic_path.get(pathId)
+      if (!path) continue
+
+      const newPoints = path.points.map((point) => {
+        const transformed = applyToPoint(transform, point)
+        return { x: transformed.x, y: transformed.y }
+      })
+
+      db.schematic_path.update(pathId, {
+        points: newPoints,
       })
     }
   }

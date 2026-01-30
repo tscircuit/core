@@ -4,6 +4,7 @@ import {
   SCHEMATIC_COMPONENT_OUTLINE_COLOR,
   SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
 } from "lib/utils/constants"
+import { applyToPoint } from "transformation-matrix"
 
 export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
   isSchematicPrimitive = true
@@ -45,5 +46,31 @@ export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
     })
 
     this.schematic_arc_id = schematic_arc.schematic_arc_id
+  }
+
+  doInitialSchematicSymbolResize(): void {
+    if (this.root?.schematicDisabled) return
+    if (!this.schematic_arc_id) return
+
+    const symbol = this._getSymbolAncestor()
+    const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
+    if (!transform) return
+
+    const { db } = this.root!
+    const arc = db.schematic_arc.get(this.schematic_arc_id)
+    if (!arc) return
+
+    const newCenter = applyToPoint(transform, arc.center)
+    // Transform a point on the edge to compute new radius
+    const edgePoint = applyToPoint(transform, {
+      x: arc.center.x + arc.radius,
+      y: arc.center.y,
+    })
+    const newRadius = Math.abs(edgePoint.x - newCenter.x)
+
+    db.schematic_arc.update(this.schematic_arc_id, {
+      center: { x: newCenter.x, y: newCenter.y },
+      radius: newRadius,
+    })
   }
 }
