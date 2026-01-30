@@ -64,6 +64,7 @@ test("SchematicArc Test", () => {
         "radius": 5,
         "schematic_arc_id": "schematic_arc_0",
         "schematic_component_id": "schematic_component_0",
+        "schematic_symbol_id": "schematic_symbol_0",
         "start_angle_degrees": 0,
         "stroke_width": 0.12,
         "subcircuit_id": "subcircuit_source_group_0",

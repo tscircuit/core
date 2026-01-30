@@ -24,7 +24,10 @@ export class SchematicText extends PrimitiveComponent<
 
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
 
+    const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
+
     const schematic_text = db.schematic_text.insert({
+      schematic_symbol_id,
       anchor: props.anchor ?? "center",
       text: normalizeTextForCircuitJson(props.text),
       font_size: props.fontSize,

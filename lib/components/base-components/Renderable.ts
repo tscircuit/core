@@ -33,6 +33,7 @@ export const orderedRenderPhases = [
   "SimulationRender",
   "SchematicComponentRender",
   "SchematicPortRender",
+  "SymbolContainerRender",
   "SchematicPrimitiveRender",
   "SchematicSymbolResize",
   "SchematicComponentSizeCalculation",
