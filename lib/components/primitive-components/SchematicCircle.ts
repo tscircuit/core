@@ -4,6 +4,8 @@ import {
   SCHEMATIC_COMPONENT_OUTLINE_COLOR,
   SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
 } from "lib/utils/constants"
+import type { SymbolComponent } from "./Symbol"
+import { applyToPoint } from "transformation-matrix"
 
 export class SchematicCircle extends PrimitiveComponent<
   typeof schematicCircleProps
@@ -46,5 +48,39 @@ export class SchematicCircle extends PrimitiveComponent<
     })
 
     this.schematic_circle_id = schematic_circle.schematic_circle_id
+  }
+
+  _getSymbolAncestor(): SymbolComponent | null {
+    const container = this.getPrimitiveContainer()
+    if (container?.componentName === "Symbol") {
+      return container as SymbolComponent
+    }
+    return null
+  }
+
+  doInitialSchematicSymbolResize(): void {
+    if (this.root?.schematicDisabled) return
+    if (!this.schematic_circle_id) return
+
+    const symbol = this._getSymbolAncestor()
+    const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
+    if (!transform) return
+
+    const { db } = this.root!
+    const circle = db.schematic_circle.get(this.schematic_circle_id)
+    if (!circle) return
+
+    const newCenter = applyToPoint(transform, circle.center)
+    // Transform a point on the edge to compute new radius
+    const edgePoint = applyToPoint(transform, {
+      x: circle.center.x + circle.radius,
+      y: circle.center.y,
+    })
+    const newRadius = Math.abs(edgePoint.x - newCenter.x)
+
+    db.schematic_circle.update(this.schematic_circle_id, {
+      center: { x: newCenter.x, y: newCenter.y },
+      radius: newRadius,
+    })
   }
 }

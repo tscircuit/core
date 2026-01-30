@@ -4,6 +4,8 @@ import {
   SCHEMATIC_COMPONENT_OUTLINE_COLOR,
   SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
 } from "lib/utils/constants"
+import type { SymbolComponent } from "./Symbol"
+import { applyToPoint } from "transformation-matrix"
 
 export class SchematicLine extends PrimitiveComponent<
   typeof schematicLineProps
@@ -43,5 +45,36 @@ export class SchematicLine extends PrimitiveComponent<
     })
 
     this.schematic_line_id = schematic_line.schematic_line_id
+  }
+
+  _getSymbolAncestor(): SymbolComponent | null {
+    const container = this.getPrimitiveContainer()
+    if (container?.componentName === "Symbol") {
+      return container as SymbolComponent
+    }
+    return null
+  }
+
+  doInitialSchematicSymbolResize(): void {
+    if (this.root?.schematicDisabled) return
+    if (!this.schematic_line_id) return
+
+    const symbol = this._getSymbolAncestor()
+    const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
+    if (!transform) return
+
+    const { db } = this.root!
+    const line = db.schematic_line.get(this.schematic_line_id)
+    if (!line) return
+
+    const p1 = applyToPoint(transform, { x: line.x1, y: line.y1 })
+    const p2 = applyToPoint(transform, { x: line.x2, y: line.y2 })
+
+    db.schematic_line.update(this.schematic_line_id, {
+      x1: p1.x,
+      y1: p1.y,
+      x2: p2.x,
+      y2: p2.y,
+    })
   }
 }
