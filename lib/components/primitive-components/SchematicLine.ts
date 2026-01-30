@@ -30,8 +30,11 @@ export class SchematicLine extends PrimitiveComponent<
     const schematic_component_id =
       this.getPrimitiveContainer()?.parent?.schematic_component_id!
 
+    const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
+
     const schematic_line = db.schematic_line.insert({
       schematic_component_id,
+      schematic_symbol_id,
       x1: props.x1 + globalPos.x,
       y1: props.y1 + globalPos.y,
       x2: props.x2 + globalPos.x,

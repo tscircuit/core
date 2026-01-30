@@ -10,6 +10,7 @@ export class SymbolComponent
 {
   isPrimitiveContainer = true
 
+  schematic_symbol_id?: string
   userCoordinateToResizedSymbolTransformMat?: Matrix
   schematicSymbolBoundsInUserCoordinates?: SchematicSymbolBounds
 
@@ -23,6 +24,25 @@ export class SymbolComponent
   hasExplicitSize(): boolean {
     const { _parsedProps: props } = this
     return props.width !== undefined || props.height !== undefined
+  }
+
+  /**
+   * Create the schematic_symbol element in SymbolContainerRender phase.
+   * This runs before SchematicPrimitiveRender, ensuring children can
+   * reference the schematic_symbol_id when they render.
+   */
+  doInitialSymbolContainerRender(): void {
+    if (this.root?.schematicDisabled) return
+    const { db } = this.root!
+
+    const parentComponent = this.parent
+    const name = parentComponent?.props?.name
+
+    const schematic_symbol = db.schematic_symbol.insert({
+      name,
+    })
+
+    this.schematic_symbol_id = schematic_symbol.schematic_symbol_id
   }
 
   getSchematicSymbolBounds(): SchematicSymbolBounds | null {

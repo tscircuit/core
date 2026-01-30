@@ -30,7 +30,10 @@ export class SchematicRect extends PrimitiveComponent<
     const schematic_component_id =
       this.getPrimitiveContainer()?.parent?.schematic_component_id!
 
+    const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
+
     const schematic_rect = db.schematic_rect.insert({
+      schematic_symbol_id,
       center: {
         x: globalPos.x,
         y: globalPos.y,

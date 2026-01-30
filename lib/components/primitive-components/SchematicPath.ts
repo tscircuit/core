@@ -27,6 +27,8 @@ export class SchematicPath extends PrimitiveComponent<
     const schematic_component_id =
       this.getPrimitiveContainer()?.parent?.schematic_component_id!
 
+    const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
+
     const subcircuit_id = this.getSubcircuit().subcircuit_id ?? undefined
 
     this.schematic_path_ids = []
@@ -38,6 +40,7 @@ export class SchematicPath extends PrimitiveComponent<
       for (const subpathPoints of subpaths) {
         const schematic_path = db.schematic_path.insert({
           schematic_component_id,
+          schematic_symbol_id,
           points: subpathPoints.map((point) => ({
             x: point.x + globalPos.x,
             y: point.y + globalPos.y,
@@ -54,6 +57,7 @@ export class SchematicPath extends PrimitiveComponent<
       // Use the provided points directly
       const schematic_path = db.schematic_path.insert({
         schematic_component_id,
+        schematic_symbol_id,
         points: props.points.map((point) => ({
           x: point.x + globalPos.x,
           y: point.y + globalPos.y,

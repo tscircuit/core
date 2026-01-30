@@ -64,6 +64,7 @@ test("SchematicRect Test", () => {
       "rotation": 0,
       "schematic_component_id": "schematic_component_0",
       "schematic_rect_id": "schematic_rect_0",
+      "schematic_symbol_id": "schematic_symbol_0",
       "stroke_width": 0.12,
       "subcircuit_id": "subcircuit_source_group_0",
       "type": "schematic_rect",

@@ -52,6 +52,7 @@ test("SchematicLine Test", () => {
         "is_dashed": false,
         "schematic_component_id": "schematic_component_0",
         "schematic_line_id": "schematic_line_0",
+        "schematic_symbol_id": "schematic_symbol_0",
         "stroke_width": 0.12,
         "subcircuit_id": "subcircuit_source_group_0",
         "type": "schematic_line",

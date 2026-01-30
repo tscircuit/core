@@ -9,6 +9,12 @@ export interface SchematicSymbolBounds {
 
 export interface ISymbol {
   /**
+   * The circuit-json schematic_symbol_id for this symbol.
+   * Created during SchematicPrimitiveRender phase.
+   */
+  schematic_symbol_id?: string
+
+  /**
    * The transformation matrix to convert from user coordinates (as specified
    * in the symbol's children) to the final resized symbol coordinates.
    * This is computed lazily when first requested.
