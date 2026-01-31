@@ -7,6 +7,7 @@ import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import type { Net } from "../Net"
 import type { PcbCopperPour, SourceNet } from "circuit-json"
+import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 
 export type { CopperPourProps }
 
@@ -41,20 +42,27 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
         return
       }
       const subcircuit = this.getSubcircuit()
+      const circuitJson = db.toArray()
       const sourceNet: SourceNet =
-        (db
-          .toArray()
-          .filter(
-            (elm) => elm.type === "source_net" && elm.name === net.name,
-          )[0] as SourceNet) || ""
+        (circuitJson.filter(
+          (elm) => elm.type === "source_net" && elm.name === net.name,
+        )[0] as SourceNet) || ""
+
+      const connectivityMap = getFullConnectivityMapFromCircuitJson(circuitJson)
+      const pourConnectivityKey =
+        connectivityMap.getNetConnectedToId(sourceNet.source_net_id) ||
+        sourceNet.subcircuit_connectivity_map_key ||
+        ""
+
       const clearance = props.clearance ?? 0.2
-      const inputProblem = convertCircuitJsonToInputProblem(db.toArray(), {
+      const inputProblem = convertCircuitJsonToInputProblem(circuitJson, {
         layer: props.layer,
-        pour_connectivity_key: sourceNet.subcircuit_connectivity_map_key || "",
+        pour_connectivity_key: pourConnectivityKey,
         pad_margin: props.padMargin ?? clearance,
         trace_margin: props.traceMargin ?? clearance,
         board_edge_margin: props.boardEdgeMargin ?? clearance,
         cutout_margin: props.cutoutMargin ?? clearance,
+        outline: props.outline,
       })
 
       const solver = new CopperPourPipelineSolver(inputProblem)

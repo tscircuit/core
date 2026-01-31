@@ -36,7 +36,7 @@
     "@tscircuit/checks": "^0.0.87",
     "@tscircuit/circuit-json-util": "^0.0.77",
     "@tscircuit/common": "^0.0.20",
-    "@tscircuit/copper-pour-solver": "^0.0.14",
+    "@tscircuit/copper-pour-solver": "^0.0.20",
     "@tscircuit/footprinter": "^0.0.288",
     "@tscircuit/infgrid-ijump-astar": "^0.0.35",
     "@tscircuit/log-soup": "^1.0.2",
