@@ -41,6 +41,7 @@ export class Potentiometer extends NormalComponent<typeof potentiometerProps> {
       pin_variant: pinVariant,
       are_pins_interchangeable: pinVariant === "two_pin",
       display_name: props.displayName,
+      display_max_resistance: this._getSchematicSymbolDisplayValue(),
     } as any)
     this.source_component_id = source_component.source_component_id
   }
