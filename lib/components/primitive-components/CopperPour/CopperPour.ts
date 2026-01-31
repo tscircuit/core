@@ -43,15 +43,17 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
       }
       const subcircuit = this.getSubcircuit()
       const circuitJson = db.toArray()
-      const sourceNet: SourceNet =
-        (circuitJson.filter(
-          (elm) => elm.type === "source_net" && elm.name === net.name,
-        )[0] as SourceNet) || ""
+      const sourceNet = circuitJson.find(
+        (elm) => elm.type === "source_net" && elm.name === net.name,
+      ) as SourceNet | undefined
 
       const connectivityMap = getFullConnectivityMapFromCircuitJson(circuitJson)
+      const connectedNetId = sourceNet?.source_net_id ?? net.source_net_id
       const pourConnectivityKey =
-        connectivityMap.getNetConnectedToId(sourceNet.source_net_id) ||
-        sourceNet.subcircuit_connectivity_map_key ||
+        (connectedNetId
+          ? connectivityMap.getNetConnectedToId(connectedNetId)
+          : undefined) ||
+        sourceNet?.subcircuit_connectivity_map_key ||
         ""
 
       const clearance = props.clearance ?? 0.2
