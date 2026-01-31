@@ -1,11 +1,11 @@
-import { viaProps, type PcbStyle } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { Port } from "./Port"
+import { type PcbStyle, viaProps } from "@tscircuit/props"
 import type { LayerRef, PcbVia } from "circuit-json"
-import { z } from "zod"
-import type { Net } from "./Net"
-import type { Trace } from "./Trace/Trace"
 import { getViaDiameterDefaultsWithOverrides } from "lib/utils/pcbStyle/getViaDiameterDefaults"
+import { z } from "zod"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Net } from "./Net"
+import { Port } from "./Port"
+import type { Trace } from "./Trace/Trace"
 export class Via extends PrimitiveComponent<typeof viaProps> {
   pcb_via_id: string | null = null
   matchedPort: Port | null = null
@@ -180,5 +180,12 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       net_is_assignable: this._parsedProps.netIsAssignable ?? undefined,
     } as Omit<PcbVia & { net_is_assignable?: boolean }, "type" | "pcb_via_id">)
     this.pcb_via_id = pcb_via.pcb_via_id
+
+    const connected = this._getConnectedNetOrTrace()
+    if (connected && "source_net_id" in connected && connected.source_net_id) {
+      db.pcb_via.update(this.pcb_via_id, {
+        pcb_trace_id: connected.source_net_id,
+      })
+    }
   }
 }
