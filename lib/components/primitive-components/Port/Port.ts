@@ -666,8 +666,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const bestDisplayPinLabel = this._getBestDisplayPinLabel()
     const parentNormalComponent = this.getParentNormalComponent()
 
+    const sourcePort = db.source_port.get(this.source_port_id!)
+
     const isDrawnWithInversionCircle =
-      this._parsedProps.isDrawnWithInversionCircle || false
+      sourcePort?.port_hints?.some((hint) => hint.startsWith("INV_")) || false
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
       schematic_component_id: parentNormalComponent?.schematic_component_id!,
@@ -681,12 +683,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       display_pin_label: bestDisplayPinLabel,
       is_connected: false,
       is_drawn_with_inversion_circle: isDrawnWithInversionCircle,
-    }
-
-    const { db: source_db } = this.root!
-    const sourcePort = source_db.source_port.get(this.source_port_id!)
-    if (sourcePort?.port_hints?.some((hint) => hint.startsWith("INV_"))) {
-      schematicPortInsertProps.is_drawn_with_inversion_circle = true
     }
 
     for (const attributes of this._getMatchingPinAttributes()) {
