@@ -9,12 +9,76 @@ interface PackingOptions {
   cellWidth?: string | number
   cellHeight?: string | number
   boardGap: number
+  availablePanelWidth?: number
+  availablePanelHeight?: number
 }
 
 interface BoardWithDims {
   board: Board
   width: number
   height: number
+}
+
+/**
+ * Calculate optimal grid rows and cols that fit within available panel dimensions.
+ * The goal is to find a grid configuration where boards don't exceed panel boundaries.
+ */
+function calculateOptimalGrid({
+  boardsWithDims,
+  availableWidth,
+  availableHeight,
+  boardGap,
+  minCellWidth,
+  minCellHeight,
+}: {
+  boardsWithDims: BoardWithDims[]
+  availableWidth: number
+  availableHeight: number
+  boardGap: number
+  minCellWidth: number
+  minCellHeight: number
+}): { rows: number; cols: number } {
+  const boardCount = boardsWithDims.length
+
+  if (boardCount === 0) {
+    return { rows: 0, cols: 0 }
+  }
+
+  const maxBoardWidth = Math.max(
+    ...boardsWithDims.map((b) => b.width),
+    minCellWidth,
+  )
+  const maxBoardHeight = Math.max(
+    ...boardsWithDims.map((b) => b.height),
+    minCellHeight,
+  )
+
+  const maxCols = Math.max(
+    1,
+    Math.floor((availableWidth + boardGap) / (maxBoardWidth + boardGap)),
+  )
+  const maxRows = Math.max(
+    1,
+    Math.floor((availableHeight + boardGap) / (maxBoardHeight + boardGap)),
+  )
+
+  let bestCols = maxCols
+  let bestRows = Math.ceil(boardCount / bestCols)
+
+  if (bestRows > maxRows) {
+    bestRows = maxRows
+    bestCols = Math.ceil(boardCount / bestRows)
+
+    if (bestCols > maxCols) {
+      bestCols = maxCols
+      bestRows = Math.ceil(boardCount / bestCols)
+    }
+  }
+
+  return {
+    rows: Math.max(1, bestRows),
+    cols: Math.max(1, bestCols),
+  }
 }
 
 export const packBoardsIntoGrid = ({
@@ -25,6 +89,8 @@ export const packBoardsIntoGrid = ({
   cellWidth,
   cellHeight,
   boardGap,
+  availablePanelWidth,
+  availablePanelHeight,
 }: { boards: Board[]; db?: CircuitJsonUtilObjects } & PackingOptions): {
   positions: Array<{ board: Board; pos: { x: number; y: number } }>
   gridWidth: number
@@ -71,12 +137,33 @@ export const packBoardsIntoGrid = ({
   const explicitRow = row
   const explicitCol = col
 
-  const cols =
-    explicitCol ??
-    (explicitRow
-      ? Math.ceil(boardsWithDims.length / explicitRow)
-      : Math.ceil(Math.sqrt(boardsWithDims.length)))
-  const rows = explicitRow ?? Math.ceil(boardsWithDims.length / cols)
+  let cols: number
+  let rows: number
+
+  if (explicitCol !== undefined) {
+    cols = explicitCol
+    rows = explicitRow ?? Math.ceil(boardsWithDims.length / cols)
+  } else if (explicitRow !== undefined) {
+    rows = explicitRow
+    cols = Math.ceil(boardsWithDims.length / rows)
+  } else if (
+    availablePanelWidth !== undefined &&
+    availablePanelHeight !== undefined
+  ) {
+    const result = calculateOptimalGrid({
+      boardsWithDims,
+      availableWidth: availablePanelWidth,
+      availableHeight: availablePanelHeight,
+      boardGap,
+      minCellWidth: cellWidth ? distance.parse(cellWidth) : 0,
+      minCellHeight: cellHeight ? distance.parse(cellHeight) : 0,
+    })
+    cols = result.cols
+    rows = result.rows
+  } else {
+    cols = Math.ceil(Math.sqrt(boardsWithDims.length))
+    rows = Math.ceil(boardsWithDims.length / cols)
+  }
 
   // Initialize column widths and row heights to 0
   const colWidths = Array(cols).fill(0)
