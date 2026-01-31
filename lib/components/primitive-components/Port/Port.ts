@@ -24,6 +24,7 @@ export const portProps = z.object({
   schY: z.number().optional(),
   direction: z.enum(["up", "down", "left", "right"]).optional(),
   connectsTo: z.union([z.string(), z.array(z.string())]).optional(),
+  isDrawnWithInversionCircle: z.boolean().optional(),
 })
 
 export type PortProps = z.infer<typeof portProps>
@@ -581,6 +582,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * Filters out generic patterns and applies showPinAliases logic
    */
   _getBestDisplayPinLabel(): string | undefined {
+    const { _parsedProps: props } = this
     const { db } = this.root!
     const sourcePort = db.source_port.get(this.source_port_id!)
 
@@ -599,13 +601,20 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const parentNormalComponent = this.getParentNormalComponent()
     const showPinAliases = parentNormalComponent?.props?.showPinAliases
 
+    let label: string | undefined
     if (showPinAliases && labelHints.length > 0) {
-      return labelHints.join("/")
+      label = labelHints.join("/")
     } else if (labelHints.length > 0) {
-      return labelHints[0]
+      label = labelHints[0]
+    } else if (props.name && !props.name.match(/^(pin)?\d+$/)) {
+      label = props.name
     }
 
-    return undefined
+    if (label?.startsWith("INV_")) {
+      return label.slice(4)
+    }
+
+    return label
   }
 
   doInitialSchematicPortRender(): void {
@@ -657,6 +666,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const bestDisplayPinLabel = this._getBestDisplayPinLabel()
     const parentNormalComponent = this.getParentNormalComponent()
 
+    const isDrawnWithInversionCircle =
+      this._parsedProps.isDrawnWithInversionCircle || false
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
       schematic_component_id: parentNormalComponent?.schematic_component_id!,
@@ -669,9 +680,22 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       true_ccw_index: localPortInfo?.trueIndex,
       display_pin_label: bestDisplayPinLabel,
       is_connected: false,
+      is_drawn_with_inversion_circle: isDrawnWithInversionCircle,
+    }
+
+    const { db: source_db } = this.root!
+    const sourcePort = source_db.source_port.get(this.source_port_id!)
+    if (sourcePort?.port_hints?.some((hint) => hint.startsWith("INV_"))) {
+      schematicPortInsertProps.is_drawn_with_inversion_circle = true
     }
 
     for (const attributes of this._getMatchingPinAttributes()) {
+      if (
+        "isDrawnWithInversionCircle" in attributes &&
+        attributes.isDrawnWithInversionCircle
+      ) {
+        schematicPortInsertProps.is_drawn_with_inversion_circle = true
+      }
       if (attributes.requiresPower) {
         schematicPortInsertProps.has_input_arrow = true
       }

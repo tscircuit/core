@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(300,0,0,-300,600,300)"><style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              /* Basic per-trace hover fallback */
+              .trace:hover {
+                filter: invert(1);
+              }
+              .trace:hover .trace-crossing-outline {
+                opacity: 0;
+              }
+              .trace:hover .trace-junction {
+                filter: invert(1);
+              }
+              /* Net-hover highlighting: when a trace or its overlays are hovered,
+                 invert color for all traces (base + overlays) sharing the same
+                 subcircuit connectivity key. Also hide crossing outline during hover. */
+              
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { fill: rgb(0, 100, 100); }
+            </style><rect class="boundary" x="0" y="0" width="1200" height="600"/><g data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_0"><rect class="component chip" x="300" y="240" width="600" height="120" stroke-width="6px" fill="rgb(255, 255, 194)" stroke="rgb(132, 0, 0)"/><rect class="component-overlay" x="300" y="240" width="600" height="120" fill="transparent"/><text x="300" y="399" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="54px" transform="rotate(0, 300, 399)"></text><text x="300" y="201" fill="#006464" text-anchor="start" dominant-baseline="middle" font-family="sans-serif" font-size="54px" transform="rotate(0, 300, 201)">U1</text><circle class="component-pin" cx="282.00000000000006" cy="300" r="18" fill="white" stroke="rgb(132, 0, 0)" stroke-width="6px"/><line class="component-pin" x1="264.00000000000006" y1="300" x2="186.00000000000006" y2="300" stroke-width="6px"/><g data-schematic-port-id="source_port_0"><circle class="component-pin" cx="180" cy="300" r="6" stroke-width="6px"/><rect x="174" y="294" width="12" height="12" opacity="0"/></g><text class="pin-number" x="240" y="294" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="45px" transform="">1</text><text class="pin-number" x="330" y="300" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="start" dominant-baseline="middle" font-size="36px" transform="">LEFT</text><circle class="component-pin" cx="918" cy="300" r="18" fill="white" stroke="rgb(132, 0, 0)" stroke-width="6px"/><line class="component-pin" x1="936" y1="300" x2="1014" y2="300" stroke-width="6px"/><g data-schematic-port-id="source_port_1"><circle class="component-pin" cx="1020" cy="300" r="6" stroke-width="6px"/><rect x="1014" y="294" width="12" height="12" opacity="0"/></g><text class="pin-number" x="960" y="294" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="45px" transform="">2</text><text class="pin-number" x="870" y="300" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="end" dominant-baseline="middle" font-size="36px" transform="">RIGHT</text></g><g class="schematic-port-hover" data-schematic-port-id="source_port_0"><circle cx="180" cy="300" r="12" fill="red" opacity="0"/></g><g class="schematic-port-hover" data-schematic-port-id="source_port_1"><circle cx="1020" cy="300" r="12" fill="red" opacity="0"/></g></svg>
