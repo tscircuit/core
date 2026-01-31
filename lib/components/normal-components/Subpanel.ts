@@ -144,6 +144,43 @@ export class Subpanel extends Group<typeof subpanelProps> {
     const tabWidth = this._parsedProps.tabWidth ?? DEFAULT_TAB_WIDTH
     const boardGap = this._parsedProps.boardGap ?? tabWidth
 
+    // Calculate available space for the grid if panel dimensions are specified
+    // but rows/cols are not (auto-calculate optimal grid)
+    let availablePanelWidth: number | undefined
+    let availablePanelHeight: number | undefined
+
+    const hasExplicitRowOrCol =
+      this._parsedProps.row !== undefined || this._parsedProps.col !== undefined
+    const hasExplicitWidth = this._parsedProps.width !== undefined
+    const hasExplicitHeight = this._parsedProps.height !== undefined
+
+    if (!hasExplicitRowOrCol && hasExplicitWidth && hasExplicitHeight) {
+      // Calculate edge padding to determine available space for boards
+      const {
+        edgePadding: edgePaddingProp,
+        edgePaddingLeft: edgePaddingLeftProp,
+        edgePaddingRight: edgePaddingRightProp,
+        edgePaddingTop: edgePaddingTopProp,
+        edgePaddingBottom: edgePaddingBottomProp,
+      } = this._parsedProps
+
+      const edgePadding = distance.parse(edgePaddingProp ?? 5)
+      const edgePaddingLeft = distance.parse(edgePaddingLeftProp ?? edgePadding)
+      const edgePaddingRight = distance.parse(
+        edgePaddingRightProp ?? edgePadding,
+      )
+      const edgePaddingTop = distance.parse(edgePaddingTopProp ?? edgePadding)
+      const edgePaddingBottom = distance.parse(
+        edgePaddingBottomProp ?? edgePadding,
+      )
+
+      const panelWidth = distance.parse(this._parsedProps.width!)
+      const panelHeight = distance.parse(this._parsedProps.height!)
+
+      availablePanelWidth = panelWidth - edgePaddingLeft - edgePaddingRight
+      availablePanelHeight = panelHeight - edgePaddingTop - edgePaddingBottom
+    }
+
     const { positions, gridWidth, gridHeight } = packBoardsIntoGrid({
       boards: childBoardInstances,
       row: this._parsedProps.row,
@@ -151,6 +188,8 @@ export class Subpanel extends Group<typeof subpanelProps> {
       cellWidth: this._parsedProps.cellWidth,
       cellHeight: this._parsedProps.cellHeight,
       boardGap,
+      availablePanelHeight,
+      availablePanelWidth,
     })
 
     this._cachedGridWidth = gridWidth
