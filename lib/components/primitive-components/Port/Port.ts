@@ -551,7 +551,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         if (areAllPcbPrimitivesOverlapping(pcbMatches as any)) {
           matchCenter = getCenterOfPcbPrimitives(pcbMatches as any)
         }
-      } catch { }
+      } catch {}
     }
 
     if (!matchCenter) return
