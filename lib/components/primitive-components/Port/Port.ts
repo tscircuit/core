@@ -551,7 +551,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         if (areAllPcbPrimitivesOverlapping(pcbMatches as any)) {
           matchCenter = getCenterOfPcbPrimitives(pcbMatches as any)
         }
-      } catch {}
+      } catch { }
     }
 
     if (!matchCenter) return
@@ -710,6 +710,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * port, but appears at the port it connects to.
    */
   _getNetLabelText(): string | undefined {
-    return `${this.parent?.props.name}_${this.props.name}`
+    const parent = this.parent as any
+    const componentName = parent?.props.displayName ?? parent?.props.name
+    return `${componentName}_${this.props.name}`
   }
 }
