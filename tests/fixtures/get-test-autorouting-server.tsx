@@ -1,6 +1,6 @@
 import { serve } from "bun"
 import { afterEach } from "bun:test"
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
@@ -50,12 +50,11 @@ export const getTestAutoroutingServer = ({
           )
         }
 
-        const autorouter = new MultilayerIjump({
-          input: simpleRouteJson,
-          OBSTACLE_MARGIN: 0.2,
+        const autorouter = new TscircuitAutorouter(simpleRouteJson, {
+          autorouterVersion: "v1",
         })
 
-        const traces = autorouter.solveAndMapToTraces()
+        const traces = autorouter.solveSync()
 
         // Simulate failure in the first trace if the flag is set
         if (failInFirstTrace && traces.length > 0) {
@@ -107,12 +106,11 @@ export const getTestAutoroutingServer = ({
           circuitJson: body.input_circuit_json,
         })
 
-        const autorouter = new MultilayerIjump({
-          input: simpleRouteJson as any,
-          OBSTACLE_MARGIN: 0.2,
+        const autorouter = new TscircuitAutorouter(simpleRouteJson as any, {
+          autorouterVersion: "v1",
         })
 
-        const traces = autorouter.solveAndMapToTraces()
+        const traces = autorouter.solveSync()
 
         // Simulate failure in the first trace if the flag is set
         if (failInFirstTrace && traces.length > 0) {

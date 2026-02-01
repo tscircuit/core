@@ -3,8 +3,7 @@ import { z } from "zod"
 import type { Port } from "./Port"
 import type { Trace } from "./Trace/Trace"
 import { pairs } from "lib/utils/pairs"
-import type { AnyCircuitElement, SourceTrace } from "circuit-json"
-import { autoroute } from "@tscircuit/infgrid-ijump-astar"
+import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
 
 export const netProps = z.object({
   name: z.string().refine(
@@ -177,30 +176,34 @@ export class Net extends PrimitiveComponent<typeof netProps> {
       const Aport = A.ports[closestPair[0]]
       const Bport = B.ports[closestPair[1]]
 
-      const pcbElements: AnyCircuitElement[] = db
-        .toArray()
-        .filter(
-          (elm) =>
-            elm.type === "pcb_smtpad" ||
-            elm.type === "pcb_trace" ||
-            elm.type === "pcb_plated_hole" ||
-            elm.type === "pcb_hole" ||
-            elm.type === "source_port" ||
-            elm.type === "pcb_port",
-        )
+      const AportPos = Aport._getGlobalPcbPositionBeforeLayout()
+      const BportPos = Bport._getGlobalPcbPositionBeforeLayout()
 
-      const { solution } = autoroute(
-        pcbElements.concat([
-          {
-            type: "source_trace",
-            source_trace_id: "__net_trace_tmp",
-            connected_source_port_ids: [
-              Aport.source_port_id!,
-              Bport.source_port_id!,
-            ],
-          } as SourceTrace,
-        ]) as any, // Remove as any when autorouting-dataset has been updated
-      )
+      // Use DirectLineRouter for simple net island connections
+      const directLineRouter = new DirectLineRouter({
+        input: {
+          minTraceWidth: 0.16,
+          obstacles: [],
+          connections: [
+            {
+              name: "__net_trace_tmp",
+              pointsToConnect: [
+                { x: AportPos.x, y: AportPos.y, layer: "top" },
+                { x: BportPos.x, y: BportPos.y, layer: "top" },
+              ],
+            },
+          ],
+          bounds: {
+            minX: Math.min(AportPos.x, BportPos.x) - 1,
+            maxX: Math.max(AportPos.x, BportPos.x) + 1,
+            minY: Math.min(AportPos.y, BportPos.y) - 1,
+            maxY: Math.max(AportPos.y, BportPos.y) + 1,
+          },
+          layerCount: 1,
+        },
+      })
+
+      const solution = directLineRouter.solveAndMapToTraces()
 
       const trace = solution[0]
       if (!trace) {

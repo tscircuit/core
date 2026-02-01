@@ -38,7 +38,6 @@
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.20",
     "@tscircuit/footprinter": "^0.0.288",
-    "@tscircuit/infgrid-ijump-astar": "^0.0.35",
     "@tscircuit/log-soup": "^1.0.2",
     "@tscircuit/matchpack": "^0.0.16",
     "@tscircuit/math-utils": "^0.0.29",
@@ -81,15 +80,13 @@
     "schematic-symbols": "^0.0.208",
     "spicey": "^0.0.14",
     "ts-expect": "^1.3.0",
-    "tsup": "^8.2.4",
-    "@tscircuit/soup-util": "^0.0.41"
+    "tsup": "^8.2.4"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
     "@tscircuit/checks": "*",
     "@tscircuit/circuit-json-util": "*",
     "@tscircuit/footprinter": "*",
-    "@tscircuit/infgrid-ijump-astar": "*",
     "@tscircuit/math-utils": "*",
     "@tscircuit/props": "*",
     "@tscircuit/schematic-match-adapt": "*",

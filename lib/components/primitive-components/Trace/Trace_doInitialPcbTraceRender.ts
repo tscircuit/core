@@ -1,5 +1,4 @@
 import type { Trace } from "./Trace"
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
@@ -13,6 +12,7 @@ import type { TraceHint } from "../TraceHint"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -286,12 +286,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       trace.getSubcircuit()._parsedProps.minTraceWidth ??
       0.16
 
-    const ijump = new MultilayerIjump({
-      OBSTACLE_MARGIN: minTraceWidth * 2,
-      isRemovePathLoopsEnabled: true,
-      optimizeWithGoalBoxes: Boolean(pcbPortA && pcbPortB),
-      connMap,
-      input: {
+    const autorouter = new TscircuitAutorouter(
+      {
         obstacles,
         minTraceWidth,
         connections: [
@@ -311,10 +307,13 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
           maxY: Math.max(a.y, b.y) + BOUNDS_MARGIN,
         },
       },
-    })
+      {
+        autorouterVersion: "v1",
+      },
+    )
     let traces: SimplifiedPcbTrace[] | null = null
     try {
-      traces = ijump.solveAndMapToTraces()
+      traces = autorouter.solveSync()
     } catch (e: any) {
       trace.renderError({
         type: "pcb_trace_error",

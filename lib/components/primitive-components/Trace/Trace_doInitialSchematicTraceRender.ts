@@ -1,4 +1,3 @@
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { type SchematicNetLabel, type SchematicTrace } from "circuit-json"
 import { calculateElbow } from "calculate-elbow"
 import { doesLineIntersectLine, type Point } from "@tscircuit/math-utils"
@@ -299,44 +298,14 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     layerCount: 1,
   }
 
-  let Autorouter = MultilayerIjump
-  let skipOtherTraceInteraction = false
-  if (trace.getSubcircuit().props._schDirectLineRoutingEnabled) {
-    Autorouter = DirectLineRouter as any
-    skipOtherTraceInteraction = true
-  }
+  // Use DirectLineRouter for schematic trace routing
+  const skipOtherTraceInteraction = true
 
   if (!edges) {
-    const autorouter = new Autorouter({
+    const autorouter = new DirectLineRouter({
       input: simpleRouteJsonInput,
-      MAX_ITERATIONS: 100,
-      OBSTACLE_MARGIN: 0.1,
-      isRemovePathLoopsEnabled: true,
-      isShortenPathWithShortcutsEnabled: true,
-      marginsWithCosts: [
-        {
-          margin: 1,
-          enterCost: 0,
-          travelCostFactor: 1,
-        },
-        {
-          margin: 0.3,
-          enterCost: 0,
-          travelCostFactor: 1,
-        },
-        {
-          margin: 0.2,
-          enterCost: 0,
-          travelCostFactor: 2,
-        },
-        {
-          margin: 0.1,
-          enterCost: 0,
-          travelCostFactor: 3,
-        },
-      ],
     })
-    let results: SimplifiedPcbTrace[] = autorouter.solveAndMapToTraces()
+    const results: SimplifiedPcbTrace[] = autorouter.solveAndMapToTraces()
 
     if (results.length === 0) {
       if (
@@ -347,11 +316,9 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         trace._doInitialSchematicTraceRenderWithDisplayLabel()
         return
       }
-      const directLineRouter = new DirectLineRouter({
-        input: simpleRouteJsonInput,
-      })
-      results = directLineRouter.solveAndMapToTraces()
-      skipOtherTraceInteraction = true
+      // DirectLineRouter should always produce results for 2-point connections
+      // but if it doesn't, we can't proceed
+      return
     }
 
     const [{ route }] = results
