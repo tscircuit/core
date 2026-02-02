@@ -5,8 +5,9 @@ test("pcb_courtyard_circle", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm">
+    <board width="20mm" height="20mm">
       <courtyardcircle radius={2} />
+      <courtyardcircle radius={2} pcbX={5} />
     </board>,
   )
 
@@ -14,12 +15,18 @@ test("pcb_courtyard_circle", () => {
     .getCircuitJson()
     .filter((c) => c.type === "pcb_courtyard_circle")
 
-  expect(pcbCourtyardCircles.length).toBe(1)
+  expect(pcbCourtyardCircles.length).toBe(2)
   expect(pcbCourtyardCircles[0]).toMatchObject({
     type: "pcb_courtyard_circle",
     radius: 2,
     layer: "top",
     center: { x: 0, y: 0 },
+  })
+  expect(pcbCourtyardCircles[1]).toMatchObject({
+    type: "pcb_courtyard_circle",
+    radius: 2,
+    layer: "top",
+    center: { x: 5, y: 0 },
   })
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, { showCourtyards: true })
