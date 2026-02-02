@@ -72,6 +72,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             subcircuit_id: subcircuit.subcircuit_id ?? undefined,
             pcb_group_id: component.getGroup()?.pcb_group_id ?? undefined,
             footprinter_string: footprintUrl,
+            is_fatal: true,
           })
           db.external_footprint_load_error.insert(errorObj)
         }
@@ -118,6 +119,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             subcircuit_id: subcircuit.subcircuit_id ?? undefined,
             pcb_group_id: component.getGroup()?.pcb_group_id ?? undefined,
             footprinter_string: url,
+            is_fatal: true,
           })
           db.external_footprint_load_error.insert(errorObj)
         }
@@ -205,6 +207,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             subcircuit_id: subcircuit.subcircuit_id ?? undefined,
             pcb_group_id: component.getGroup()?.pcb_group_id ?? undefined,
             footprinter_string: footprint,
+            is_fatal: true,
           })
           db.external_footprint_load_error.insert(errorObj)
         }
@@ -252,6 +255,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           source_component_id: component.source_component_id,
           subcircuit_id: subcircuit.subcircuit_id ?? undefined,
           pcb_group_id: component.getGroup()?.pcb_group_id ?? undefined,
+          is_fatal: true,
         })
         db.circuit_json_footprint_load_error.insert(errorObj)
       }

@@ -198,6 +198,7 @@ export class NormalComponent<
         message: `Cannot create component "${this.name}": A component with the same name already exists`,
         pcb_center: pcbPosition,
         schematic_center: schematicPosition,
+        is_fatal: true,
       })
 
       // Mark component for removal to prevent downstream issues
@@ -766,6 +767,7 @@ export class NormalComponent<
         message: `No footprint found for component: ${this.getString()}`,
         source_component_id: `${this.source_component_id}`,
         error_type: "pcb_missing_footprint_error",
+        is_fatal: true,
       })
 
       this.pcb_missing_footprint_error_id =

@@ -53,6 +53,7 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
 
         pcb_center: pcbPosition,
         schematic_center: schematicPosition,
+        is_fatal: true,
       })
     }
   }
