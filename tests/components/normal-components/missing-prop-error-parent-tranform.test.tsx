@@ -40,7 +40,35 @@ test("(ErrorPlaceholder) - missing prop error with parent transform", async () =
         {
           "component_name": "R1",
           "error_type": "source_failed_to_create_component_error",
-          "message": "Could not create resistor "R1". Invalid props for resistor "R1": resistance (Required)",
+          "message": 
+      "Could not create resistor "R1". Invalid props for resistor "R1": resistance (Required) Details: Props: {
+        "footprint": "0402",
+        "name": "R1",
+        "componentType": "resistor",
+        "error": {
+          "componentName": "resistor",
+          "originalProps": {
+            "footprint": "0402",
+            "name": "R1"
+          },
+          "formattedError": {
+            "_errors": [],
+            "resistance": {
+              "_errors": [
+                "Required",
+                "Required"
+              ]
+            }
+          }
+        },
+        "type": "unknown",
+        "component_name": "R1",
+        "error_type": "source_failed_to_create_component_error",
+        "message": "Invalid props for resistor \\"R1\\": resistance (Required)",
+        "pcbX": 0,
+        "pcbY": 0
+      }"
+      ,
           "pcb_center": {
             "x": 3,
             "y": 0,
