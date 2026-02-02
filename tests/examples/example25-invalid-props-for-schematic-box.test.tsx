@@ -46,6 +46,7 @@ test("Schematic box with invalid props", async () => {
         {
           "component_name": undefined,
           "error_type": "source_failed_to_create_component_error",
+          "is_fatal": true,
           "message": "Could not create schematicbox. Must provide either both \`width\` and \`height\`, or a non-empty \`overlay\` array.",
           "pcb_center": {
             "x": 0,
@@ -61,6 +62,7 @@ test("Schematic box with invalid props", async () => {
         {
           "component_name": undefined,
           "error_type": "source_failed_to_create_component_error",
+          "is_fatal": true,
           "message": "Could not create schematicbox. Cannot provide both \`width\`/\`height\` and \`overlay\` at the same time.",
           "pcb_center": {
             "x": 0,
