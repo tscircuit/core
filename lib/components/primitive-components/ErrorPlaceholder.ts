@@ -78,8 +78,8 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
       return "undefined"
     }
 
-    if (json.length > 2000) {
-      return `${json.slice(0, 2000)}…`
+    if (json.length > 1600) {
+      return `${json.slice(0, 1600)}…`
     }
 
     return json
