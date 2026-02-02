@@ -17,6 +17,23 @@ export class CopperText extends PrimitiveComponent<typeof copperTextProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+
+    // Insert error if text is empty or undefined
+    if (!props.text) {
+      const subcircuit = this.getSubcircuit()
+      db.source_missing_property_error.insert({
+        error_type: "source_missing_property_error",
+        source_component_id:
+          this.source_component_id ??
+          this.getParentNormalComponent()?.source_component_id ??
+          "",
+        property_name: "text",
+        message: `pcb_copper_text requires a non-empty "text" property`,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      })
+      return
+    }
+
     const container = this.getPrimitiveContainer()!
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()

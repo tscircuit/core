@@ -18,6 +18,23 @@ export class PcbNoteText extends PrimitiveComponent<typeof pcbNoteTextProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+
+    // Insert error if text is empty or undefined
+    if (!props.text) {
+      const subcircuit = this.getSubcircuit()
+      db.source_missing_property_error.insert({
+        error_type: "source_missing_property_error",
+        source_component_id:
+          this.source_component_id ??
+          this.getParentNormalComponent()?.source_component_id ??
+          "",
+        property_name: "text",
+        message: `pcb_note_text requires a non-empty "text" property`,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      })
+      return
+    }
+
     const transform = this._computePcbGlobalTransformBeforeLayout()
     const anchorPosition = applyToPoint(transform, { x: 0, y: 0 })
     const subcircuit = this.getSubcircuit()
@@ -52,7 +69,8 @@ export class PcbNoteText extends PrimitiveComponent<typeof pcbNoteTextProps> {
 
     // Approximate the size based on the text length and font size
     const charWidth = fontSize * 0.6
-    const width = props.text.length * charWidth
+    const text = props.text ?? ""
+    const width = text.length * charWidth
     const height = fontSize
 
     return { width, height }
