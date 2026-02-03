@@ -69,6 +69,12 @@ import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 
+const getSidePins = (side: any): (string | number)[] => {
+  if (!side) return []
+  if (Array.isArray(side)) return side
+  return side.pins ?? []
+}
+
 const debug = Debug("tscircuit:core")
 
 const rotation3 = z.object({
@@ -239,8 +245,8 @@ export class NormalComponent<
     const schPortArrangement = this._getSchematicPortArrangement()
     if (schPortArrangement && !this._parsedProps.pinLabels) {
       for (const side in schPortArrangement) {
-        const pins = (schPortArrangement as any)[side].pins
-        if (Array.isArray(pins)) {
+        const pins = getSidePins((schPortArrangement as any)[side])
+        if (pins.length > 0) {
           for (const pinNumberOrLabel of pins) {
             const pinNumber = parsePinNumberFromLabelsOrThrow(
               pinNumberOrLabel,
@@ -378,10 +384,10 @@ export class NormalComponent<
         continue
       }
       let explicitlyListedPinNumbersInSchPortArrangement = [
-        ...(schPortArrangement.leftSide?.pins ?? []),
-        ...(schPortArrangement.rightSide?.pins ?? []),
-        ...(schPortArrangement.topSide?.pins ?? []),
-        ...(schPortArrangement.bottomSide?.pins ?? []),
+        ...getSidePins(schPortArrangement.leftSide),
+        ...getSidePins(schPortArrangement.rightSide),
+        ...getSidePins(schPortArrangement.topSide),
+        ...getSidePins(schPortArrangement.bottomSide),
       ].map((pn) =>
         parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
       )
