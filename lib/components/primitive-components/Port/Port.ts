@@ -314,6 +314,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       (attributes) => attributes.includeInBoardPinout === true,
     )
   }
+
+  private _getPinoutHighlightColor(): string | undefined {
+    for (const attributes of this._getMatchingPinAttributes()) {
+      if (attributes.highlightColor) {
+        return attributes.highlightColor
+      }
+    }
+    return undefined
+  }
   isMatchingPort(port: Port) {
     return this.isMatchingAnyOf(port.getNameAndAliases())
   }
@@ -485,6 +494,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (matchCenter) {
       const subcircuit = this.getSubcircuit()
       const isBoardPinout = this._shouldIncludeInBoardPinout()
+      const highlightColor = this._getPinoutHighlightColor()
 
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: parentWithPcbComponentId.pcb_component_id!,
@@ -496,6 +506,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
         source_port_id: this.source_port_id!,
         is_board_pinout: this._isBoardPinoutFromAttributes(),
+        ...(highlightColor ? { highlight_color: highlightColor } : {}),
       })
       this.pcb_port_id = pcb_port.pcb_port_id
     } else {
@@ -563,6 +574,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const subcircuit = this.getSubcircuit()
     const isBoardPinout = this._shouldIncludeInBoardPinout()
+    const highlightColor = this._getPinoutHighlightColor()
     const pcb_port = db.pcb_port.insert({
       pcb_component_id: parentWithPcbComponentId?.pcb_component_id!,
       layers: this.getAvailablePcbLayers(),
@@ -572,6 +584,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       ...matchCenter,
       source_port_id: this.source_port_id!,
       is_board_pinout: this._isBoardPinoutFromAttributes(),
+      ...(highlightColor ? { highlight_color: highlightColor } : {}),
     })
     this.pcb_port_id = pcb_port.pcb_port_id
   }
