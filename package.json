@@ -32,6 +32,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@resvg/resvg-js": "^2.6.2",
+    "@tscircuit/alphabet": "0.0.18",
     "@tscircuit/capacity-autorouter": "^0.0.264",
     "@tscircuit/checks": "^0.0.87",
     "@tscircuit/circuit-json-util": "^0.0.77",
@@ -48,6 +49,7 @@
     "@tscircuit/schematic-match-adapt": "^0.0.16",
     "@tscircuit/schematic-trace-solver": "^v0.0.45",
     "@tscircuit/solver-utils": "^0.0.3",
+    "@tscircuit/soup-util": "^0.0.41",
     "@types/bun": "^1.2.16",
     "@types/debug": "^4.1.12",
     "@types/react": "^19.1.8",
@@ -81,8 +83,7 @@
     "schematic-symbols": "^0.0.208",
     "spicey": "^0.0.14",
     "ts-expect": "^1.3.0",
-    "tsup": "^8.2.4",
-    "@tscircuit/soup-util": "^0.0.41"
+    "tsup": "^8.2.4"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
