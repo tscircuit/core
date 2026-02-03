@@ -149,7 +149,15 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   })
   const transform =
     anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
-  for (const pt of props.pcbPath) {
+  type ManualPcbPathPoint = {
+    x: number
+    y: number
+    via?: boolean
+    fromLayer?: LayerRef
+    toLayer?: LayerRef
+  }
+  const pcbPath = props.pcbPath as Array<string | ManualPcbPathPoint>
+  for (const pt of pcbPath) {
     let coordinates: { x: number; y: number }
     let isGlobalPosition = false
     const isViaPoint = typeof pt !== "string" && pt.via
