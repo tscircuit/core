@@ -4,6 +4,7 @@ import type { Port } from "../Port"
 import type { Trace } from "./Trace"
 import { applyToPoint, identity } from "transformation-matrix"
 import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
+import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -132,6 +133,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const otherPort = ports.find((p) => p !== anchorPort) ?? ports[1]
 
   const layer = anchorPort.getAvailablePcbLayers()[0] || "top"
+  let currentLayer = layer as LayerRef
 
   const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout()
   const otherPos = otherPort._getGlobalPcbPositionAfterLayout()
@@ -142,14 +144,25 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     x: anchorPos.x,
     y: anchorPos.y,
     width,
-    layer: layer as LayerRef,
+    layer: currentLayer,
     start_pcb_port_id: anchorPort.pcb_port_id!,
   })
   const transform =
     anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
-  for (const pt of props.pcbPath) {
+  type ManualPcbPathPoint = {
+    x: number
+    y: number
+    via?: boolean
+    fromLayer?: LayerRef
+    toLayer?: LayerRef
+  }
+  const pcbPath = props.pcbPath as Array<string | ManualPcbPathPoint>
+  for (const pt of pcbPath) {
     let coordinates: { x: number; y: number }
     let isGlobalPosition = false
+    const isViaPoint = typeof pt !== "string" && pt.via
+    let viaFromLayer: LayerRef | undefined
+    let viaToLayer: LayerRef | undefined
 
     // Check if pt is a string selector
     if (typeof pt === "string") {
@@ -177,6 +190,10 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       // Use the provided coordinates (these are relative to the anchor point)
       coordinates = { x: pt.x as number, y: pt.y as number }
       isGlobalPosition = false
+      if (pt.via) {
+        viaFromLayer = (pt.fromLayer ?? currentLayer) as LayerRef
+        viaToLayer = pt.toLayer as LayerRef
+      }
     }
 
     // Only apply transform to relative coordinates, not global positions
@@ -184,20 +201,31 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       ? coordinates
       : applyToPoint(transform, coordinates)
 
-    route.push({
-      route_type: "wire",
-      x: finalCoordinates.x,
-      y: finalCoordinates.y,
-      width,
-      layer: layer as LayerRef,
-    })
+    if (isViaPoint) {
+      route.push({
+        route_type: "via",
+        x: finalCoordinates.x,
+        y: finalCoordinates.y,
+        from_layer: viaFromLayer ?? currentLayer,
+        to_layer: viaToLayer ?? currentLayer,
+      })
+      currentLayer = (viaToLayer ?? currentLayer) as LayerRef
+    } else {
+      route.push({
+        route_type: "wire",
+        x: finalCoordinates.x,
+        y: finalCoordinates.y,
+        width,
+        layer: currentLayer,
+      })
+    }
   }
   route.push({
     route_type: "wire",
     x: otherPos.x,
     y: otherPos.y,
     width,
-    layer: layer as LayerRef,
+    layer: currentLayer,
     end_pcb_port_id: otherPort.pcb_port_id!,
   })
 
@@ -209,6 +237,22 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
     trace_length: traceLength,
   })
+  const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
+  const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+  for (const point of route) {
+    if (point.route_type === "via") {
+      db.pcb_via.insert({
+        pcb_trace_id: pcb_trace.pcb_trace_id,
+        x: point.x,
+        y: point.y,
+        hole_diameter: holeDiameter,
+        outer_diameter: padDiameter,
+        layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
+        from_layer: point.from_layer as LayerRef,
+        to_layer: point.to_layer as LayerRef,
+      })
+    }
+  }
   trace._portsRoutedOnPcb = ports
   trace.pcb_trace_id = pcb_trace.pcb_trace_id
   trace._insertErrorIfTraceIsOutsideBoard(route, ports)
