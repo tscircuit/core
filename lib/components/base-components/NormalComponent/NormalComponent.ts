@@ -69,7 +69,9 @@ import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
 import { normalizeDegrees } from "@tscircuit/math-utils"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 
-const getSidePins = (side: any): (string | number)[] => {
+const getSidePins = (
+  side: SchematicPortArrangement["leftSide"],
+): (string | number)[] => {
   if (!side) return []
   if (Array.isArray(side)) return side
   return side.pins ?? []
