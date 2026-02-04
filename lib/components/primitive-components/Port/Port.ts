@@ -314,6 +314,16 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       (attributes) => attributes.includeInBoardPinout === true,
     )
   }
+
+  private _getPinoutHighlightColor(): string | undefined {
+    for (const attributes of this._getMatchingPinAttributes()) {
+      if (attributes.highlightColor) {
+        return attributes.highlightColor
+      }
+    }
+    return undefined
+  }
+
   isMatchingPort(port: Port) {
     return this.isMatchingAnyOf(port.getNameAndAliases())
   }
@@ -485,6 +495,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (matchCenter) {
       const subcircuit = this.getSubcircuit()
       const isBoardPinout = this._shouldIncludeInBoardPinout()
+      const highlightColor = this._getPinoutHighlightColor()
 
       const pcb_port = db.pcb_port.insert({
         pcb_component_id: parentWithPcbComponentId.pcb_component_id!,
@@ -492,6 +503,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         ...(isBoardPinout ? { is_board_pinout: true } : {}),
+        ...(highlightColor ? { highlight_color: highlightColor } : {}),
         ...matchCenter,
 
         source_port_id: this.source_port_id!,
@@ -563,12 +575,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const subcircuit = this.getSubcircuit()
     const isBoardPinout = this._shouldIncludeInBoardPinout()
+    const highlightColor = this._getPinoutHighlightColor()
     const pcb_port = db.pcb_port.insert({
       pcb_component_id: parentWithPcbComponentId?.pcb_component_id!,
       layers: this.getAvailablePcbLayers(),
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       ...(isBoardPinout ? { is_board_pinout: true } : {}),
+      ...(highlightColor ? { highlight_color: highlightColor } : {}),
       ...matchCenter,
       source_port_id: this.source_port_id!,
       is_board_pinout: this._isBoardPinoutFromAttributes(),
