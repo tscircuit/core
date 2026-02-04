@@ -114,6 +114,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
   doInitialPcbRouteNetIslands(): void {
     if (this.root?.pcbDisabled) return
     if (this.getSubcircuit()._parsedProps.routingDisabled) return
+    if (this.getSubcircuit()._isInflatedFromCircuitJson) return
     if (
       this.getSubcircuit()._getAutorouterConfig().groupMode !==
       "sequential-trace"

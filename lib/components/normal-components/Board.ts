@@ -395,6 +395,9 @@ export class Board
 
   doInitialInflateSubcircuitCircuitJson() {
     const { circuitJson, children } = this._parsedProps
+    if (circuitJson) {
+      this._isInflatedFromCircuitJson = true
+    }
     inflateCircuitJson(this, circuitJson, children)
   }
 

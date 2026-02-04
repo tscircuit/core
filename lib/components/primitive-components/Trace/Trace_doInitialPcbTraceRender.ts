@@ -46,6 +46,10 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     return
   }
 
+  if (subcircuit._isInflatedFromCircuitJson) {
+    return
+  }
+
   // Check for cached route
   const cachedRoute = subcircuit._parsedProps.pcbRouteCache?.pcbTraces
   if (cachedRoute) {
