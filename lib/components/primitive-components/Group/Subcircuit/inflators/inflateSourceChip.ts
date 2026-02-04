@@ -7,7 +7,7 @@ import type {
 } from "circuit-json"
 import { Chip } from "lib/components/normal-components/Chip"
 import type { InflatorContext } from "../InflatorFn"
-import { inflatePcbComponent } from "./inflatePcbComponent"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 const mapInternallyConnectedSourcePortIdsToPinLabels = (
   sourcePortIds: string[][] | undefined,
@@ -63,6 +63,8 @@ export const inflateSourceChip = (
       inflatorContext,
     )
 
+  const footprinterString = cadElm?.footprinter_string ?? null
+
   const chip = new Chip({
     name: sourceElm.name,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
@@ -82,20 +84,23 @@ export const inflateSourceChip = (
     internallyConnectedPins,
   })
 
-  const footprint = cadElm?.footprinter_string ?? null
-  if (footprint) {
-    Object.assign(chip.props as any, { footprint })
-    Object.assign((chip as any)._parsedProps, { footprint })
-    if (!cadElm) {
-      ;(chip as any)._addChildrenFromStringFootprint?.()
-    }
+  // Store the footprinter string in props for reference (used by cad_component generation)
+  if (footprinterString) {
+    Object.assign(chip.props, { footprint: footprinterString })
+    Object.assign(chip._parsedProps, { footprint: footprinterString })
   }
 
+  // Create a Footprint component from the PCB primitives in the circuit JSON
+  // This properly wraps all pads, holes, silkscreen, etc. in a Footprint component
   if (pcbElm) {
-    inflatePcbComponent(pcbElm, {
+    const footprint = inflateFootprintComponent(pcbElm, {
       ...inflatorContext,
       normalComponent: chip,
     })
+
+    if (footprint) {
+      chip.add(footprint)
+    }
   }
 
   if (sourceElm.source_group_id && groupsMap?.has(sourceElm.source_group_id)) {
