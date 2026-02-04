@@ -41,6 +41,7 @@ import {
   getAllDimensionsForSchematicBox,
   isExplicitPinMappingArrangement,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { getPinsFromSideDefinition } from "lib/utils/schematic/normalizePinSideDefinition"
 import {
   type ReactElement,
   isValidElement as isReactElement,
@@ -378,10 +379,10 @@ export class NormalComponent<
         continue
       }
       let explicitlyListedPinNumbersInSchPortArrangement = [
-        ...(schPortArrangement.leftSide?.pins ?? []),
-        ...(schPortArrangement.rightSide?.pins ?? []),
-        ...(schPortArrangement.topSide?.pins ?? []),
-        ...(schPortArrangement.bottomSide?.pins ?? []),
+        ...getPinsFromSideDefinition(schPortArrangement.leftSide),
+        ...getPinsFromSideDefinition(schPortArrangement.rightSide),
+        ...getPinsFromSideDefinition(schPortArrangement.topSide),
+        ...getPinsFromSideDefinition(schPortArrangement.bottomSide),
       ].map((pn) =>
         parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
       )
