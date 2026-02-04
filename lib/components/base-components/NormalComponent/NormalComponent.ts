@@ -1066,7 +1066,14 @@ export class NormalComponent<
       for (const fpChild of fp.children) {
         if (!fpChild.props.portHints) continue
 
-        let portHintsList = fpChild.props.portHints
+        // Filter out empty strings from port hints
+        const filteredPortHints = fpChild.props.portHints.filter(
+          (hint: string) => hint && hint.trim() !== "",
+        )
+
+        if (filteredPortHints.length === 0) continue
+
+        let portHintsList = filteredPortHints
         const hasPinPrefix = portHintsList.some((hint: string) =>
           hint.startsWith("pin"),
         )

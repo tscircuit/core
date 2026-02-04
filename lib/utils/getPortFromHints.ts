@@ -13,7 +13,10 @@ export function getPortFromHints(
   const pinNumber = getPinNumberFromLabels(hints)
   if (!pinNumber) return null
   const aliasesFromHints = hints.filter(
-    (p) => p.toString() !== pinNumber.toString() && p !== `pin${pinNumber}`,
+    (p) =>
+      p.toString() !== pinNumber.toString() &&
+      p !== `pin${pinNumber}` &&
+      p.trim() !== "",
   )
 
   const aliases = [
