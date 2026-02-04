@@ -2,6 +2,7 @@ import type {
   ExplicitPinMappingArrangement,
   PortArrangement,
 } from "./getAllDimensionsForSchematicBox"
+import { getPinsFromSideDefinition } from "./normalizePinSideDefinition"
 
 export const hasExplicitPinMapping = (
   pa: PortArrangement,
@@ -36,10 +37,10 @@ export const getSizeOfSidesFromPortArrangement = (
 } => {
   if (hasExplicitPinMapping(pa)) {
     return {
-      leftSize: pa.leftSide?.pins.length ?? 0,
-      rightSize: pa.rightSide?.pins.length ?? 0,
-      topSize: pa.topSide?.pins.length ?? 0,
-      bottomSize: pa.bottomSide?.pins.length ?? 0,
+      leftSize: getPinsFromSideDefinition(pa.leftSide).length,
+      rightSize: getPinsFromSideDefinition(pa.rightSide).length,
+      topSize: getPinsFromSideDefinition(pa.topSide).length,
+      bottomSize: getPinsFromSideDefinition(pa.bottomSide).length,
     }
   }
   const { leftSize = 0, rightSize = 0, topSize = 0, bottomSize = 0 } = pa as any
