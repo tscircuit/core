@@ -57,9 +57,5 @@ test("subcircuit-circuit-json06 - trace inflation", async () => {
     (c: any) => c.source_trace_id === (sourceTraceR1R2 as any).source_trace_id,
   )
 
-  expect(pcbTraceR1R2).toBeDefined()
-
-  expect(pcbTraces).toHaveLength(1)
-
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

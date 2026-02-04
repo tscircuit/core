@@ -12,4 +12,5 @@ export interface ISubcircuit extends PrimitiveComponent {
   _getSubcircuitLayerCount(): number
   subcircuit_id: string | null
   getNormalComponentNameMap?: () => Map<string, NormalComponent[]>
+  _isInflatedFromCircuitJson: boolean
 }

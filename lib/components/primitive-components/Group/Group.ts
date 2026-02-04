@@ -58,6 +58,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _hasStartedAsyncAutorouting = false
 
+  _isInflatedFromCircuitJson = false
+
   private _normalComponentNameMap: Map<string, NormalComponent[]> | null = null
 
   /**
@@ -727,6 +729,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (!this.isSubcircuit) return
     if (this.root?.pcbDisabled) return
     if (this.getInheritedProperty("routingDisabled")) return
+    if (this._isInflatedFromCircuitJson) return
     if (this._shouldUseTraceByTraceRouting()) return
 
     if (!this._areChildSubcircuitsRouted()) {
@@ -751,6 +754,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const debug = Debug("tscircuit:core:updatePcbTraceRender")
     debug(`[${this.getString()}] updating...`)
     if (!this.isSubcircuit) return
+    if (this._isInflatedFromCircuitJson) return
     if (
       this._shouldRouteAsync() &&
       this._hasTracesToRoute() &&
@@ -1006,6 +1010,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _getPcbLayoutMode(): "grid" | "flex" | "match-adapt" | "pack" | "none" {
     const props = this._parsedProps as SubcircuitGroupProps
+    if (this._isInflatedFromCircuitJson) return "none"
     if (props.pcbRelative) return "none"
     if (props.pcbLayout?.matchAdapt) return "match-adapt"
     if (props.pcbLayout?.flex) return "flex"
