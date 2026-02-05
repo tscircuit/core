@@ -1,6 +1,15 @@
-import type { SourceTrace } from "circuit-json"
+import type {
+  LayerRef,
+  PcbTrace,
+  PcbTraceRoutePoint,
+  SourceTrace,
+} from "circuit-json"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import type { InflatorContext } from "../InflatorFn"
+import {
+  pcbTraceRouteToPcbPath,
+  type ManualPcbPathPoint,
+} from "lib/utils/pcbTraceRouteToPcbPath"
 
 const getSelectorPath = (
   component: { name: string; source_group_id: string | undefined },
@@ -81,9 +90,25 @@ export function inflateSourceTrace(
     return
   }
 
-  const trace = new Trace({
-    path: connectedSelectors,
+  const pcbTrace = injectionDb.pcb_trace.getWhere({
+    source_trace_id: sourceTrace.source_trace_id,
   })
+
+  let pcbPath: ManualPcbPathPoint[] | undefined
+  if (pcbTrace) {
+    pcbPath = pcbTraceRouteToPcbPath(pcbTrace.route)
+  }
+
+  const traceProps: { path: string[]; pcbPath?: ManualPcbPathPoint[] } = {
+    path: connectedSelectors,
+  }
+
+  // If pcbPath is empty, the trace will route directly between ports
+  if (pcbPath && pcbPath.length > 0) {
+    traceProps.pcbPath = pcbPath
+  }
+
+  const trace = new Trace(traceProps)
 
   // Set source_trace_id on the new trace
   trace.source_trace_id = sourceTrace.source_trace_id
