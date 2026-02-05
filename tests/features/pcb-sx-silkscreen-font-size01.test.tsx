@@ -10,13 +10,7 @@ test("pcbSx silkscreentext fontSize applies to footprinter-generated silkscreen 
       height="15mm"
       pcbSx={{ "& silkscreentext": { fontSize: "3mm" } }}
     >
-      <resistor
-        name="R1"
-        resistance="330"
-        footprint="0402"
-        pcbX={0}
-        pcbY={0}
-      />
+      <resistor name="R1" resistance="330" footprint="0402" pcbX={0} pcbY={0} />
     </board>,
   )
 
