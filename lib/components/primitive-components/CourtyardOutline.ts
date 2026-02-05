@@ -1,4 +1,5 @@
 import { courtyardOutlineProps } from "@tscircuit/props"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { applyToPoint } from "transformation-matrix"
 
@@ -113,21 +114,14 @@ export class CourtyardOutline extends PrimitiveComponent<
       return { width: 0, height: 0 }
     }
 
-    let minX = Infinity,
-      maxX = -Infinity,
-      minY = Infinity,
-      maxY = -Infinity
-
-    for (const point of props.outline) {
-      minX = Math.min(minX, point.x)
-      maxX = Math.max(maxX, point.x)
-      minY = Math.min(minY, point.y)
-      maxY = Math.max(maxY, point.y)
+    const bounds = getBoundsFromPoints(props.outline)
+    if (!bounds) {
+      return { width: 0, height: 0 }
     }
 
     return {
-      width: maxX - minX,
-      height: maxY - minY,
+      width: bounds.maxX - bounds.minX,
+      height: bounds.maxY - bounds.minY,
     }
   }
 }
