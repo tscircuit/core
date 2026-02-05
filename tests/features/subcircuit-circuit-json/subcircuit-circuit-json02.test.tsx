@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
-import type { PcbSmtPad } from "circuit-json"
+import type { PcbSmtPad, PcbTrace, PcbVia } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { renderToCircuitJson } from "tests/fixtures/renderToCircuitJson"
 
 test("subcircuit-circuit-json02 - chip inflation", async () => {
   const initialCircuit = getTestFixture().circuit
@@ -127,6 +126,82 @@ test("subcircuit-circuit-json02 - chip inflation", async () => {
     (pad) => pad.pcb_port_id !== undefined && pad.pcb_port_id !== null,
   )
   expect(padsWithPorts.length).toBe(8)
+
+  // Get pcb_traces from both circuits to verify route preservation
+  const originalPcbTraces = subcircuitCircuitJson.filter(
+    (el) => el.type === "pcb_trace",
+  ) as PcbTrace[]
+  const inflatedPcbTraces = circuitJson.filter(
+    (el) => el.type === "pcb_trace",
+  ) as PcbTrace[]
+
+  // Should have the same number of pcb_traces
+  expect(inflatedPcbTraces.length).toBe(originalPcbTraces.length)
+
+  // Verify the routes have the same structure (same number of points, same route types)
+  // Match traces by source_trace_id since order may differ
+  for (const originalTrace of originalPcbTraces) {
+    const inflatedTrace = inflatedPcbTraces.find(
+      (t) => t.source_trace_id === originalTrace.source_trace_id,
+    )
+    expect(inflatedTrace).toBeDefined()
+    if (!inflatedTrace) continue
+
+    const originalRoute = originalTrace.route
+    const inflatedRoute = inflatedTrace.route
+
+    // Same number of route points
+    expect(inflatedRoute.length).toBe(originalRoute.length)
+
+    // The route may be reversed depending on which port is the anchor.
+    // Check if the routes match in either direction.
+    const routesMatchForward = originalRoute.every((origPt, j) => {
+      const inflPt = inflatedRoute[j]
+      return (
+        origPt.route_type === inflPt.route_type &&
+        Math.abs(origPt.x - inflPt.x) < 0.0001 &&
+        Math.abs(origPt.y - inflPt.y) < 0.0001
+      )
+    })
+
+    const routesMatchReverse = originalRoute.every((origPt, j) => {
+      const inflPt = inflatedRoute[originalRoute.length - 1 - j]
+      return (
+        origPt.route_type === inflPt.route_type &&
+        Math.abs(origPt.x - inflPt.x) < 0.0001 &&
+        Math.abs(origPt.y - inflPt.y) < 0.0001
+      )
+    })
+
+    expect(routesMatchForward || routesMatchReverse).toBe(true)
+  }
+
+  // Get pcb_vias from both circuits
+  const originalPcbVias = subcircuitCircuitJson.filter(
+    (el) => el.type === "pcb_via",
+  ) as PcbVia[]
+  const inflatedPcbVias = circuitJson.filter(
+    (el) => el.type === "pcb_via",
+  ) as PcbVia[]
+
+  // Should have the same number of pcb_vias
+  expect(inflatedPcbVias.length).toBe(originalPcbVias.length)
+
+  // Verify via positions match
+  for (let i = 0; i < originalPcbVias.length; i++) {
+    const origVia = originalPcbVias[i]
+    // Find matching via by position
+    const matchingVia = inflatedPcbVias.find(
+      (v) =>
+        Math.abs(v.x - origVia.x) < 0.0001 &&
+        Math.abs(v.y - origVia.y) < 0.0001,
+    )
+    expect(matchingVia).toBeDefined()
+    if (matchingVia) {
+      expect(matchingVia.from_layer).toBe(origVia.from_layer)
+      expect(matchingVia.to_layer).toBe(origVia.to_layer)
+    }
+  }
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

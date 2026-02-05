@@ -5,6 +5,7 @@ import type { Trace } from "./Trace"
 import { applyToPoint, identity } from "transformation-matrix"
 import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
+import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -147,15 +148,9 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     layer: currentLayer,
     start_pcb_port_id: anchorPort.pcb_port_id!,
   })
-  const transform =
-    anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
-  type ManualPcbPathPoint = {
-    x: number
-    y: number
-    via?: boolean
-    fromLayer?: LayerRef
-    toLayer?: LayerRef
-  }
+  const transform = subcircuit._isInflatedFromCircuitJson
+    ? trace._computePcbGlobalTransformBeforeLayout()
+    : anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
   const pcbPath = props.pcbPath as Array<string | ManualPcbPathPoint>
   for (const pt of pcbPath) {
     let coordinates: { x: number; y: number }

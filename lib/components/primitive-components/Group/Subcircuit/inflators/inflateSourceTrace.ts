@@ -1,6 +1,15 @@
-import type { PcbTrace, PcbVia, SourceTrace } from "circuit-json"
+import type {
+  LayerRef,
+  PcbTrace,
+  PcbTraceRoutePoint,
+  SourceTrace,
+} from "circuit-json"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import type { InflatorContext } from "../InflatorFn"
+import {
+  pcbTraceRouteToPcbPath,
+  type ManualPcbPathPoint,
+} from "lib/utils/pcbTraceRouteToPcbPath"
 
 const getSelectorPath = (
   component: { name: string; source_group_id: string | undefined },
@@ -81,33 +90,34 @@ export function inflateSourceTrace(
     return
   }
 
-  const trace = new Trace({
-    path: connectedSelectors,
-  })
-
-  // Set source_trace_id on the new trace
-  trace.source_trace_id = sourceTrace.source_trace_id
-
-  // Find and store the corresponding pcb_trace and vias for this source_trace
+  // Find the corresponding pcb_trace for this source_trace
   const pcbTraces = injectionDb.pcb_trace
     .list()
     .filter(
       (pt: PcbTrace) => pt.source_trace_id === sourceTrace.source_trace_id,
     )
 
+  let pcbPath: ManualPcbPathPoint[] | undefined
   if (pcbTraces.length > 0) {
     const pcbTrace = pcbTraces[0]
-    trace._inflatedPcbRoute = pcbTrace.route
-
-    // Find associated vias for this pcb_trace
-    const pcbVias = injectionDb.pcb_via
-      .list()
-      .filter((via: PcbVia) => via.pcb_trace_id === pcbTrace.pcb_trace_id)
-
-    if (pcbVias.length > 0) {
-      trace._inflatedPcbVias = pcbVias
-    }
+    pcbPath = pcbTraceRouteToPcbPath(pcbTrace.route)
   }
+
+  // Create trace with pcbPath if available, otherwise just path
+  const traceProps: { path: string[]; pcbPath?: ManualPcbPathPoint[] } = {
+    path: connectedSelectors,
+  }
+
+  // Only set pcbPath if we have middle points to include
+  // If pcbPath is empty, the trace will route directly between ports
+  if (pcbPath && pcbPath.length > 0) {
+    traceProps.pcbPath = pcbPath
+  }
+
+  const trace = new Trace(traceProps)
+
+  // Set source_trace_id on the new trace
+  trace.source_trace_id = sourceTrace.source_trace_id
 
   subcircuit.add(trace)
 }

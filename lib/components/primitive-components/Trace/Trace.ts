@@ -57,8 +57,6 @@ export class Trace
   subcircuit_connectivity_map_key: string | null = null
   _traceConnectionHash: string | null = null
   _couldNotFindPort?: boolean
-  _inflatedPcbRoute: PcbTraceRoutePoint[] | null = null
-  _inflatedPcbVias: PcbVia[] | null = null
 
   constructor(props: z.input<typeof traceProps>) {
     super(props)
