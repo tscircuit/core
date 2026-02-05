@@ -90,25 +90,19 @@ export function inflateSourceTrace(
     return
   }
 
-  // Find the corresponding pcb_trace for this source_trace
-  const pcbTraces = injectionDb.pcb_trace
-    .list()
-    .filter(
-      (pt: PcbTrace) => pt.source_trace_id === sourceTrace.source_trace_id,
-    )
+  const pcbTrace = injectionDb.pcb_trace.getWhere({
+    source_trace_id: sourceTrace.source_trace_id,
+  })
 
   let pcbPath: ManualPcbPathPoint[] | undefined
-  if (pcbTraces.length > 0) {
-    const pcbTrace = pcbTraces[0]
+  if (pcbTrace) {
     pcbPath = pcbTraceRouteToPcbPath(pcbTrace.route)
   }
 
-  // Create trace with pcbPath if available, otherwise just path
   const traceProps: { path: string[]; pcbPath?: ManualPcbPathPoint[] } = {
     path: connectedSelectors,
   }
 
-  // Only set pcbPath if we have middle points to include
   // If pcbPath is empty, the trace will route directly between ports
   if (pcbPath && pcbPath.length > 0) {
     traceProps.pcbPath = pcbPath

@@ -4,7 +4,6 @@ import {
   type LayerRef,
   type PcbTrace,
   type PcbTraceRoutePoint,
-  type PcbVia,
   type RouteHintPoint,
   type SchematicNetLabel,
   type SchematicTrace,

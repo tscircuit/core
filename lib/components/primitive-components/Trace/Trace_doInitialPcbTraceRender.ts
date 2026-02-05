@@ -1,11 +1,6 @@
 import type { Trace } from "./Trace"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
-import {
-  type LayerRef,
-  type PcbTrace,
-  type PcbTraceRoutePoint,
-  type RouteHintPoint,
-} from "circuit-json"
+import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
@@ -18,7 +13,6 @@ import type { TraceHint } from "../TraceHint"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
-import { applyToPoint } from "transformation-matrix"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -51,7 +45,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   if (subcircuit._parsedProps.routingDisabled) {
     return
   }
-  // Skip routing for inflated traces without a pre-stored route
+
   if (subcircuit._isInflatedFromCircuitJson) {
     return
   }
