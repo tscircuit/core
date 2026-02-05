@@ -4,9 +4,10 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { renderToCircuitJson } from "tests/fixtures/renderToCircuitJson"
 
 test("subcircuit-circuit-json02 - chip inflation", async () => {
-  const { circuit } = await getTestFixture()
+  const initialCircuit = getTestFixture().circuit
+  const { circuit } = getTestFixture()
 
-  const subcircuitCircuitJson = await renderToCircuitJson(
+  initialCircuit.add(
     <group name="G1">
       <chip
         name="U1"
@@ -15,8 +16,31 @@ test("subcircuit-circuit-json02 - chip inflation", async () => {
         footprint={"soic8"}
         pinLabels={{ pin1: "VCC", pin2: "GND" }}
       />
+      <resistor
+        name="R1"
+        footprint={"0402"}
+        resistance={"1k"}
+        pcbX={0}
+        pcbY={0}
+        connections={{
+          pin1: "U1.pin8",
+        }}
+      />
+      <resistor
+        name="R2"
+        footprint={"0402"}
+        resistance={"1k"}
+        pcbX={0}
+        pcbY={-2}
+        connections={{
+          pin2: "U1.pin1",
+        }}
+      />
+      <trace from={".R1 > .pin2"} to={".R2 > .pin1"} />
     </group>,
   )
+  await initialCircuit.renderUntilSettled()
+  const subcircuitCircuitJson = initialCircuit.getCircuitJson()
 
   circuit.add(
     <board width="20mm" height="20mm">

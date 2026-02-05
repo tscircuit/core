@@ -1,6 +1,11 @@
 import type { Trace } from "./Trace"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
-import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
+import {
+  type LayerRef,
+  type PcbTrace,
+  type PcbTraceRoutePoint,
+  type RouteHintPoint,
+} from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
@@ -13,6 +18,7 @@ import type { TraceHint } from "../TraceHint"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
+import { applyToPoint } from "transformation-matrix"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -46,6 +52,48 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     return
   }
 
+  // Handle inflated traces from circuit JSON - use the pre-stored route
+  if (subcircuit._isInflatedFromCircuitJson && trace._inflatedPcbRoute) {
+    // Apply parent transformation to each point in the route
+    // This is needed when boards are positioned within a panel
+    const parentTransform = trace._computePcbGlobalTransformBeforeLayout()
+    const transformedRoute = trace._inflatedPcbRoute.map((point) => {
+      const { x, y, ...restOfPoint } = point
+      const transformedPoint = applyToPoint(parentTransform, { x, y })
+      return { ...transformedPoint, ...restOfPoint } as PcbTraceRoutePoint
+    })
+
+    const traceLength = getTraceLength(transformedRoute)
+    const pcb_trace = db.pcb_trace.insert({
+      route: transformedRoute,
+      source_trace_id: trace.source_trace_id!,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+      trace_length: traceLength,
+    })
+    trace.pcb_trace_id = pcb_trace.pcb_trace_id
+
+    // Insert vias from the transformed route
+    const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
+    const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+    for (const point of transformedRoute) {
+      if (point.route_type === "via") {
+        db.pcb_via.insert({
+          pcb_trace_id: pcb_trace.pcb_trace_id,
+          x: point.x,
+          y: point.y,
+          hole_diameter: holeDiameter,
+          outer_diameter: padDiameter,
+          layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
+          from_layer: point.from_layer as LayerRef,
+          to_layer: point.to_layer as LayerRef,
+        })
+      }
+    }
+    return
+  }
+
+  // Skip routing for inflated traces without a pre-stored route
   if (subcircuit._isInflatedFromCircuitJson) {
     return
   }

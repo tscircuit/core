@@ -1,4 +1,4 @@
-import type { SourceTrace } from "circuit-json"
+import type { PcbTrace, PcbVia, SourceTrace } from "circuit-json"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import type { InflatorContext } from "../InflatorFn"
 
@@ -87,6 +87,27 @@ export function inflateSourceTrace(
 
   // Set source_trace_id on the new trace
   trace.source_trace_id = sourceTrace.source_trace_id
+
+  // Find and store the corresponding pcb_trace and vias for this source_trace
+  const pcbTraces = injectionDb.pcb_trace
+    .list()
+    .filter(
+      (pt: PcbTrace) => pt.source_trace_id === sourceTrace.source_trace_id,
+    )
+
+  if (pcbTraces.length > 0) {
+    const pcbTrace = pcbTraces[0]
+    trace._inflatedPcbRoute = pcbTrace.route
+
+    // Find associated vias for this pcb_trace
+    const pcbVias = injectionDb.pcb_via
+      .list()
+      .filter((via: PcbVia) => via.pcb_trace_id === pcbTrace.pcb_trace_id)
+
+    if (pcbVias.length > 0) {
+      trace._inflatedPcbVias = pcbVias
+    }
+  }
 
   subcircuit.add(trace)
 }
