@@ -24,13 +24,14 @@ export const createPinrowSilkscreenText = ({
   } else if (typeof pinLabels === "object") {
     label = String(pinLabels[pinNum] ?? pinNum)
   }
-  return new SilkscreenText({
+  const silkscreenText = new SilkscreenText({
     anchorAlignment: anchorAlignment || "center",
     text: label ?? pinNum,
     layer: layer || "top",
-    fontSize: elm.font_size + 0.2,
     pcbX: isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
     pcbY: elm.anchor_position.y,
     pcbRotation: readableRotation ?? 0,
   })
+  silkscreenText._footprinterFontSize = elm.font_size + 0.2
+  return silkscreenText
 }

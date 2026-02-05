@@ -267,18 +267,17 @@ export const createComponentsFromCircuitJson = (
           }),
         )
       } else {
-        components.push(
-          new SilkscreenText({
-            anchorAlignment: elm.anchor_alignment || "center",
-            text: componentName || elm.text,
-            fontSize: elm.font_size + 0.2,
-            pcbX: Number.isNaN(elm.anchor_position.x)
-              ? 0
-              : elm.anchor_position.x,
-            pcbY: elm.anchor_position.y,
-            pcbRotation: ccwRotation ?? 0,
-          }),
-        )
+        const silkscreenText = new SilkscreenText({
+          anchorAlignment: elm.anchor_alignment || "center",
+          text: componentName || elm.text,
+          pcbX: Number.isNaN(elm.anchor_position.x)
+            ? 0
+            : elm.anchor_position.x,
+          pcbY: elm.anchor_position.y,
+          pcbRotation: ccwRotation ?? 0,
+        })
+        silkscreenText._footprinterFontSize = elm.font_size + 0.2
+        components.push(silkscreenText)
       }
     } else if (elm.type === "pcb_trace") {
       components.push(
