@@ -1,9 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("pcbStyle.silkscreenFontSize should override kicad footprint silkscreen font size", async () => {
-  let capturedOptions: any = null
-
+test("pcbSx with footprint[src^='kicad:'] selector overrides kicad footprint silkscreen font size", async () => {
   const mockFootprintWithSilkscreen = [
     {
       type: "source_component",
@@ -60,23 +58,8 @@ test("pcbStyle.silkscreenFontSize should override kicad footprint silkscreen fon
   const { circuit } = getTestFixture({
     platform: {
       footprintLibraryMap: {
-        kicad: async (footprintName: string, options?: any) => {
-          capturedOptions = options
-          // Create circuit JSON with silkscreen that should be overridden
-          const footprintCircuitJson = mockFootprintWithSilkscreen.map((el) => {
-            // Override silkscreen font size if resolvedPcbStyle is provided
-            if (
-              el.type === "pcb_silkscreen_text" &&
-              options?.resolvedPcbStyle?.silkscreenFontSize
-            ) {
-              return {
-                ...el,
-                font_size: options.resolvedPcbStyle.silkscreenFontSize,
-              }
-            }
-            return el
-          })
-          return { footprintCircuitJson }
+        kicad: async (footprintName: string) => {
+          return { footprintCircuitJson: mockFootprintWithSilkscreen }
         },
       },
     },
@@ -86,8 +69,10 @@ test("pcbStyle.silkscreenFontSize should override kicad footprint silkscreen fon
     <board
       width="30mm"
       height="20mm"
-      pcbStyle={{
-        silkscreenFontSize: 2,
+      pcbSx={{
+        "& footprint[src^='kicad:'] silkscreentext": {
+          fontSize: "2mm",
+        },
       }}
     >
       <resistor
@@ -98,29 +83,28 @@ test("pcbStyle.silkscreenFontSize should override kicad footprint silkscreen fon
         pcbY={-3}
       />
       <silkscreentext
-        text="KiCad silkscreen text size change w/ pcbStyle"
+        text="KiCad silkscreen text size change w/ pcbSx"
         pcbX={0}
         pcbY={3}
         anchorAlignment="center"
         fontSize="1mm"
-      />
-      <pcbnotedimension
-        from={{ x: -3, y: -4.17 - 1.1 }}
-        to={{ x: -3, y: -4.17 + 1.1 }}
       />
     </board>,
   )
 
   await circuit.renderUntilSettled()
 
-  // Verify that resolvedPcbStyle was passed to the footprint loader
-  expect(capturedOptions).toBeDefined()
-  expect(capturedOptions?.resolvedPcbStyle?.silkscreenFontSize).toBe(2)
-
   const silkscreenTexts = circuit.db.pcb_silkscreen_text.list()
 
+  // The kicad footprint's silkscreen text should use the pcbSx fontSize
   const kicadSilkscreenText = silkscreenTexts.find((text) => text.text === "R1")
-  expect(kicadSilkscreenText?.font_size).toBe(2.2)
+  expect(kicadSilkscreenText?.font_size).toBe(2)
+
+  // The standalone silkscreentext should keep its explicit fontSize (1mm)
+  const standaloneSilkscreenText = silkscreenTexts.find(
+    (text) => text.text === "KiCad silkscreen text size change w/ pcbSx",
+  )
+  expect(standaloneSilkscreenText?.font_size).toBe(1)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

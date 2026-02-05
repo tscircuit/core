@@ -57,6 +57,7 @@ export class SilkscreenText extends PrimitiveComponent<
       propertyName: "fontSize",
       resolvedPcbSx: this.getResolvedPcbSx(),
       pathFromAmpersand: "silkscreentext",
+      component: this,
     }) as number | undefined
 
     const fontSize =
@@ -95,6 +96,7 @@ export class SilkscreenText extends PrimitiveComponent<
       propertyName: "fontSize",
       resolvedPcbSx: this.getResolvedPcbSx(),
       pathFromAmpersand: "silkscreentext",
+      component: this,
     }) as number | undefined
 
     const fontSize =
