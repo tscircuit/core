@@ -17,7 +17,10 @@ export function inflatePcbBoard(
   }
   // Don't inflate a board if the subcircuit is already inside a Board component
   // This happens when you have: <board><subcircuit circuitJson={...} /></board>
-  if ((subcircuit as any).parent?.lowercaseComponentName === "board") {
+  if (
+    (subcircuit as any).parent?.lowercaseComponentName === "board" &&
+    (subcircuit as any).lowercaseComponentName !== "mountedboard"
+  ) {
     return
   }
 

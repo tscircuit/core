@@ -371,9 +371,21 @@ export class Board
   }
 
   doInitialSourceRender() {
+    const isMountedBoardDescendant = (component: any) => {
+      let current = component.parent
+      while (current && current !== this) {
+        if (current.lowercaseComponentName === "mountedboard") {
+          return true
+        }
+        current = current.parent
+      }
+      return false
+    }
+
     // Check for nested boards (boards inside this board at any depth)
     const nestedBoard = this.getDescendants().find(
-      (d) => d.lowercaseComponentName === "board",
+      (d) =>
+        d.lowercaseComponentName === "board" && !isMountedBoardDescendant(d),
     )
     if (nestedBoard) {
       throw new Error(
