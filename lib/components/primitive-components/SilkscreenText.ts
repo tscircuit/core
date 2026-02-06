@@ -3,12 +3,14 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { silkscreenTextProps } from "@tscircuit/props"
 import { decomposeTSR } from "transformation-matrix"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
+import { resolvePcbProperty } from "lib/utils/pcbSx/resolve-pcb-property"
 
 export class SilkscreenText extends PrimitiveComponent<
   typeof silkscreenTextProps
 > {
   pcb_silkscreen_text_ids: string[] = []
   isPcbPrimitive = true
+  _footprinterFontSize?: number
 
   get config() {
     return {
@@ -50,10 +52,19 @@ export class SilkscreenText extends PrimitiveComponent<
     const targetLayers: LayerRef[] =
       uniqueLayers.size > 0 ? Array.from(uniqueLayers) : ["top"]
 
-    // Get font size from props, inherited pcbStyle, or default to 1
+    // Font size priority: explicit prop > resolvedPcbSx > pcbStyle > footprinter default > 1
+    const resolvedPcbSxFontSize = resolvePcbProperty({
+      propertyName: "fontSize",
+      resolvedPcbSx: this.getResolvedPcbSx(),
+      pathFromAmpersand: "silkscreentext",
+      component: this,
+    }) as number | undefined
+
     const fontSize =
       props.fontSize ??
+      resolvedPcbSxFontSize ??
       this.getInheritedProperty("pcbStyle")?.silkscreenFontSize ??
+      this._footprinterFontSize ??
       1
 
     for (const layer of targetLayers) {
@@ -80,9 +91,19 @@ export class SilkscreenText extends PrimitiveComponent<
 
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
+
+    const resolvedPcbSxFontSize = resolvePcbProperty({
+      propertyName: "fontSize",
+      resolvedPcbSx: this.getResolvedPcbSx(),
+      pathFromAmpersand: "silkscreentext",
+      component: this,
+    }) as number | undefined
+
     const fontSize =
       props.fontSize ??
+      resolvedPcbSxFontSize ??
       this.getInheritedProperty("pcbStyle")?.silkscreenFontSize ??
+      this._footprinterFontSize ??
       1
     const text = props.text ?? ""
     const textWidth = text.length * fontSize
