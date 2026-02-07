@@ -35,6 +35,7 @@ import {
   cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
 } from "./cssSelectPrimitiveComponentAdapter"
 import { preprocessSelector } from "./preprocessSelector"
+import type { IsolatedCircuit } from "lib/IsolatedCircuit"
 
 const cssSelectOptionsInsideSubcircuit: Options<
   PrimitiveComponent,
@@ -662,7 +663,7 @@ export abstract class PrimitiveComponent<
     return this.root?._getBoard() as (PrimitiveComponent & BoardI) | undefined
   }
 
-  get root(): RootCircuit | null {
+  get root(): IsolatedCircuit | null {
     return this.parent?.root ?? null
   }
 
