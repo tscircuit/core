@@ -31,7 +31,6 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
   }
 
   doInitialPcbCopperPourRender() {
-    if (this.root?.pcbDisabled) return
     this._queueAsyncEffect("PcbCopperPourRender", async () => {
       const { db } = this.root!
       const { _parsedProps: props } = this

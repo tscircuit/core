@@ -66,7 +66,6 @@ export class TraceHint extends PrimitiveComponent<typeof traceHintProps> {
   }
 
   doInitialPcbTraceHintRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 

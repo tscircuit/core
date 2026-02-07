@@ -37,6 +37,7 @@ export class IsolatedCircuit {
   }
   pcbDisabled = false
   pcbRoutingDisabled = false
+  partsEngineDisabled = false
 
   _featureMspSchematicTraceRouting = true
 
@@ -69,6 +70,7 @@ export class IsolatedCircuit {
     this.platform = platform
     this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false
+    this.partsEngineDisabled = platform?.partsEngineDisabled ?? false
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {

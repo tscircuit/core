@@ -33,7 +33,6 @@ export class SilkscreenRect extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
@@ -91,7 +90,6 @@ export class SilkscreenRect extends PrimitiveComponent<
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_silkscreen_rect_id) return
 

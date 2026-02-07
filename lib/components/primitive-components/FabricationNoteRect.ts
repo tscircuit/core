@@ -16,7 +16,6 @@ export class FabricationNoteRect extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
@@ -72,7 +71,6 @@ export class FabricationNoteRect extends PrimitiveComponent<
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.fabrication_note_rect_id) return
 

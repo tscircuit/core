@@ -16,7 +16,6 @@ export class Fiducial extends PrimitiveComponent<typeof fiducialProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -62,7 +61,6 @@ export class Fiducial extends PrimitiveComponent<typeof fiducialProps> {
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_smtpad_id) return
 

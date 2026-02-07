@@ -17,7 +17,6 @@ const debug = Debug("Group_doInitialSchematicTraceRender")
 export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   if (!group.root?._featureMspSchematicTraceRouting) return
   if (!group.isSubcircuit) return
-  if (group.root?.schematicDisabled) return
 
   // Prepare the solver input and context
   const {

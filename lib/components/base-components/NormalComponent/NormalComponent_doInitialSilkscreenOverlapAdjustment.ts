@@ -26,10 +26,8 @@ export function NormalComponent_doInitialSilkscreenOverlapAdjustment(
     return
   }
 
-  // Skip if PCB is disabled or component has no PCB component
-  if (component.root?.pcbDisabled || !component.pcb_component_id) {
-    return
-  }
+  // Skip if component has no PCB component
+  if (!component.pcb_component_id) return
 
   const { db } = component.root!
 

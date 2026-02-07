@@ -14,7 +14,6 @@ export class PcbNotePath extends PrimitiveComponent<typeof pcbNotePathProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const transform = this._computePcbGlobalTransformBeforeLayout()
@@ -69,7 +68,6 @@ export class PcbNotePath extends PrimitiveComponent<typeof pcbNotePathProps> {
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_note_path_id) return
 

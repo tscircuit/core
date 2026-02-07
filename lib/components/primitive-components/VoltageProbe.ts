@@ -130,7 +130,6 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
   }
 
   doInitialSchematicReplaceNetLabelsWithSymbols() {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { connectsTo, name } = this._parsedProps
 

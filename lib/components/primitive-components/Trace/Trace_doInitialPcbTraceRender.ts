@@ -35,7 +35,6 @@ const portToObjective = (port: Port): PcbRouteObjective => {
 const SHOULD_USE_SINGLE_LAYER_ROUTING = false
 
 export function Trace_doInitialPcbTraceRender(trace: Trace) {
-  if (trace.root?.pcbDisabled) return
   const { db } = trace.root!
   const { _parsedProps: props, parent } = trace
   const subcircuit = trace.getSubcircuit()

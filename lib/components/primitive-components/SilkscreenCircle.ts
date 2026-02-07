@@ -15,7 +15,6 @@ export class SilkscreenCircle extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
@@ -60,7 +59,6 @@ export class SilkscreenCircle extends PrimitiveComponent<
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_silkscreen_circle_id) return
 

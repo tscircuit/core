@@ -5,7 +5,6 @@ import type { Trace } from "./Trace"
 export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   trace: Trace,
 ): void {
-  if (trace.root?.schematicDisabled) return
   const { db } = trace.root!
   const { _parsedProps: props, parent } = trace
 

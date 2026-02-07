@@ -19,7 +19,6 @@ export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
   schematic_arc_id?: string
 
   doInitialSchematicPrimitiveRender(): void {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -52,7 +51,6 @@ export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
   }
 
   doInitialSchematicSymbolResize(): void {
-    if (this.root?.schematicDisabled) return
     if (!this.schematic_arc_id) return
 
     const symbol = this._getSymbolAncestor()

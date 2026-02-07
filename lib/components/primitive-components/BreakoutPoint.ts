@@ -50,7 +50,6 @@ export class BreakoutPoint extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     this._matchConnection()
     const position = this._getGlobalPcbPositionBeforeLayout()
@@ -103,7 +102,6 @@ export class BreakoutPoint extends PrimitiveComponent<
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_breakout_point_id) return
 

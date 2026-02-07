@@ -139,7 +139,6 @@ export class SolderJumper<
   }
 
   doInitialPcbComponentRender() {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
@@ -173,7 +172,7 @@ export class SolderJumper<
       if (typeof sourcePort?.pin_number === "number") {
         pinLabel = sourcePort.pin_number.toString()
       } else if (Array.isArray(sourcePort?.port_hints)) {
-        let matchedHint = sourcePort.port_hints.find((h: string) =>
+        const matchedHint = sourcePort.port_hints.find((h: string) =>
           /^(pin)?\d+$/.test(h),
         )
         if (matchedHint) {
