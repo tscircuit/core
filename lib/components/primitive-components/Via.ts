@@ -121,7 +121,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     return null
   }
   doInitialPcbComponentRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const pcbStyle = this.getInheritedMergedProperty("pcbStyle") as
       | PcbStyle
@@ -156,7 +155,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     this.source_component_id = source_via.source_manually_placed_via_id
   }
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const pcbStyle = this.getInheritedMergedProperty("pcbStyle") as
       | PcbStyle

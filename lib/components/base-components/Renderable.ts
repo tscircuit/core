@@ -69,6 +69,62 @@ export const renderPhaseIndexMap = new Map<RenderPhase, number>(
   orderedRenderPhases.map((phase, index) => [phase, index]),
 )
 
+/**
+ * Phases that are specific to PCB rendering.
+ */
+export const pcbPhases = new Set<RenderPhase>([
+  "PcbFootprintStringRender",
+  "PcbComponentRender",
+  "PcbPrimitiveRender",
+  "PcbFootprintLayout",
+  "PcbPortRender",
+  "PcbPortAttachment",
+  "PcbComponentSizeCalculation",
+  "PcbComponentAnchorAlignment",
+  "PcbLayout",
+  "PcbBoardAutoSize",
+  "PanelBoardLayout",
+  "PanelLayout",
+  "PcbTraceHintRender",
+  "PcbManualTraceRender",
+  "PcbTraceRender",
+  "PcbRouteNetIslands",
+  "PcbCopperPourRender",
+  "PcbDesignRuleChecks",
+  "SilkscreenOverlapAdjustment",
+  "CadModelRender",
+])
+
+/**
+ * Phases that are specific to schematic rendering.
+ */
+export const schematicPhases = new Set<RenderPhase>([
+  "SchematicComponentRender",
+  "SchematicPortRender",
+  "SymbolContainerRender",
+  "SchematicPrimitiveRender",
+  "SchematicSymbolResize",
+  "SchematicComponentSizeCalculation",
+  "SchematicLayout",
+  "SchematicTraceRender",
+  "SchematicReplaceNetLabelsWithSymbols",
+])
+
+/**
+ * Phases that are specific to PCB routing.
+ */
+export const pcbRoutingPhases = new Set<RenderPhase>([
+  "PcbTraceHintRender",
+  "PcbManualTraceRender",
+  "PcbTraceRender",
+  "PcbRouteNetIslands",
+])
+
+/**
+ * Phases that are specific to parts engine.
+ */
+export const partsEnginePhases = new Set<RenderPhase>(["PartsEngineRender"])
+
 // Declare async dependencies between phases where later phases should wait for
 // async effects originating in specific earlier phases to complete within the
 // current component's subtree.
@@ -327,6 +383,21 @@ export abstract class Renderable implements IRenderable {
     const phaseState = this.renderPhaseStates[phase]
     const isInitialized = phaseState.initialized
     const isDirty = phaseState.dirty
+
+    // Skip phases based on root circuit configuration
+    const root = this._getRootCircuit()
+    if (root?.pcbDisabled && pcbPhases.has(phase)) {
+      return
+    }
+    if (root?.schematicDisabled && schematicPhases.has(phase)) {
+      return
+    }
+    if (root?.pcbRoutingDisabled && pcbRoutingPhases.has(phase)) {
+      return
+    }
+    if (root?.partsEngineDisabled && partsEnginePhases.has(phase)) {
+      return
+    }
 
     // Skip if component is being removed and not initialized
     if (!isInitialized && this.shouldBeRemoved) return

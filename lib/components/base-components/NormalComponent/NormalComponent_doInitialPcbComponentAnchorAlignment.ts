@@ -5,7 +5,6 @@ import { Port } from "../../primitive-components/Port"
 export function NormalComponent_doInitialPcbComponentAnchorAlignment(
   component: NormalComponent<any, any>,
 ): void {
-  if (component.root?.pcbDisabled) return
   if (!component.pcb_component_id) return
 
   const { pcbX, pcbY } = component._parsedProps as any

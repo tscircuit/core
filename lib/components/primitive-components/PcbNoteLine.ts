@@ -14,7 +14,6 @@ export class PcbNoteLine extends PrimitiveComponent<typeof pcbNoteLineProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const subcircuit = this.getSubcircuit()
@@ -57,7 +56,6 @@ export class PcbNoteLine extends PrimitiveComponent<typeof pcbNoteLineProps> {
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_note_line_id) return
 

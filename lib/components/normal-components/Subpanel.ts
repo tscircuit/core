@@ -96,8 +96,6 @@ export class Subpanel extends Group<typeof subpanelProps> {
   }
 
   doInitialPanelBoardLayout() {
-    if (this.root?.pcbDisabled) return
-
     const layoutMode = this._parsedProps.layoutMode ?? "none"
 
     const childBoardInstances = this._getDirectBoardChildren()
@@ -202,7 +200,6 @@ export class Subpanel extends Group<typeof subpanelProps> {
   }
 
   doInitialPanelLayout() {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
 
     const childBoardInstances = this._getDirectBoardChildren()
@@ -342,8 +339,6 @@ export class Subpanel extends Group<typeof subpanelProps> {
    * Subpanel uses parent Group's pcb_group rendering.
    */
   doInitialPcbComponentRender() {
-    if (this.root?.pcbDisabled) return
-
     // Validate that subpanel contains at least one board
     if (!this._containsBoards()) {
       throw new Error(

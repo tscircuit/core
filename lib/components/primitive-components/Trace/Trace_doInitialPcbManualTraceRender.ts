@@ -8,7 +8,6 @@ import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDe
 import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
-  if (trace.root?.pcbDisabled) return
   const { db } = trace.root!
   const { _parsedProps: props } = trace
   const subcircuit = trace.getSubcircuit()

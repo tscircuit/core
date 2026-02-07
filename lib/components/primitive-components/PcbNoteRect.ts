@@ -14,7 +14,6 @@ export class PcbNoteRect extends PrimitiveComponent<typeof pcbNoteRectProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const transform = this._computePcbGlobalTransformBeforeLayout()
@@ -59,7 +58,6 @@ export class PcbNoteRect extends PrimitiveComponent<typeof pcbNoteRectProps> {
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_note_rect_id) return
 

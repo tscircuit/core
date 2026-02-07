@@ -17,7 +17,6 @@ export class SchematicTable extends PrimitiveComponent<
   }
 
   doInitialSchematicPrimitiveRender(): void {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 

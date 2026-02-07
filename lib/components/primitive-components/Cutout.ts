@@ -20,7 +20,6 @@ export class Cutout extends PrimitiveComponent<typeof cutoutProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const subcircuit = this.getSubcircuit()

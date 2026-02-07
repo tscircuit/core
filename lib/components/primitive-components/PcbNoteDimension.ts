@@ -34,7 +34,6 @@ export class PcbNoteDimension extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const transform = this._computePcbGlobalTransformBeforeLayout()
@@ -115,7 +114,6 @@ export class PcbNoteDimension extends PrimitiveComponent<
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_note_dimension_id) return
 

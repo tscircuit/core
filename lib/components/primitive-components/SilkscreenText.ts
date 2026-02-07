@@ -20,7 +20,6 @@ export class SilkscreenText extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const container = this.getPrimitiveContainer()!
@@ -135,7 +134,6 @@ export class SilkscreenText extends PrimitiveComponent<
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
 
     for (const id of this.pcb_silkscreen_text_ids) {

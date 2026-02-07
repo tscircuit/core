@@ -26,8 +26,6 @@ export class Panel extends Subpanel {
    * This overrides the Subpanel behavior which uses pcb_group.
    */
   doInitialPcbComponentRender() {
-    if (this.root?.pcbDisabled) return
-
     // Validate that panel contains at least one board
     if (!this._containsBoards()) {
       throw new Error(
@@ -97,7 +95,6 @@ export class Panel extends Subpanel {
   }
 
   updatePcbComponentRender() {
-    if (this.root?.pcbDisabled) return
     if (!this.pcb_panel_id) return
 
     const { db } = this.root!

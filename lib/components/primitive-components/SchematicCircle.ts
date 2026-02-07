@@ -21,7 +21,6 @@ export class SchematicCircle extends PrimitiveComponent<
   schematic_circle_id?: string
 
   doInitialSchematicPrimitiveRender(): void {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -53,7 +52,6 @@ export class SchematicCircle extends PrimitiveComponent<
   }
 
   doInitialSchematicSymbolResize(): void {
-    if (this.root?.schematicDisabled) return
     if (!this.schematic_circle_id) return
 
     const symbol = this._getSymbolAncestor()

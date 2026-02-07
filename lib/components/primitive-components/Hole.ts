@@ -44,7 +44,6 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const subcircuit = this.getSubcircuit()
@@ -160,7 +159,6 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_hole_id) return
     const hole = db.pcb_hole.get(this.pcb_hole_id)!

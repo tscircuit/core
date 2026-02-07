@@ -14,7 +14,6 @@ export class CopperText extends PrimitiveComponent<typeof copperTextProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const container = this.getPrimitiveContainer()!
@@ -54,7 +53,6 @@ export class CopperText extends PrimitiveComponent<typeof copperTextProps> {
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_copper_text_id) return
 

@@ -21,7 +21,6 @@ export class SchematicRect extends PrimitiveComponent<
   schematic_rect_id?: string
 
   doInitialSchematicPrimitiveRender(): void {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -54,7 +53,6 @@ export class SchematicRect extends PrimitiveComponent<
   }
 
   doInitialSchematicSymbolResize(): void {
-    if (this.root?.schematicDisabled) return
     if (!this.schematic_rect_id) return
 
     const symbol = this._getSymbolAncestor()

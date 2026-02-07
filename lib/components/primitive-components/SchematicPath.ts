@@ -18,7 +18,6 @@ export class SchematicPath extends PrimitiveComponent<
   }
 
   doInitialSchematicPrimitiveRender(): void {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -73,7 +72,6 @@ export class SchematicPath extends PrimitiveComponent<
   }
 
   doInitialSchematicSymbolResize(): void {
-    if (this.root?.schematicDisabled) return
     if (this.schematic_path_ids.length === 0) return
 
     const symbol = this._getSymbolAncestor()

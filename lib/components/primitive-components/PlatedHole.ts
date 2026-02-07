@@ -117,7 +117,6 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
@@ -331,7 +330,6 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   }
 
   doInitialPcbPortAttachment(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     db.pcb_plated_hole.update(this.pcb_plated_hole_id!, {
       pcb_port_id: this.matchedPort?.pcb_port_id!,
@@ -342,7 +340,6 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_plated_hole_id) return
 

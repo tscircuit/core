@@ -5,7 +5,6 @@ import { getBoundsFromPoints } from "@tscircuit/math-utils"
 export function Group_doInitialPcbComponentAnchorAlignment(
   group: Group<any>,
 ): void {
-  if (group.root?.pcbDisabled) return
   if (!group.pcb_group_id) return
 
   const pcbPositionAnchor = group._parsedProps?.pcbPositionAnchor

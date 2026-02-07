@@ -13,7 +13,6 @@ export class Breakout extends Group<typeof breakoutProps> {
 
   doInitialPcbPrimitiveRender(): void {
     super.doInitialPcbPrimitiveRender()
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const props = this._parsedProps as z.infer<typeof breakoutProps>
     if (!this.pcb_group_id) return

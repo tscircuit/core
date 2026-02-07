@@ -21,7 +21,6 @@ export class SchematicLine extends PrimitiveComponent<
   schematic_line_id?: string
 
   doInitialSchematicPrimitiveRender(): void {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -50,7 +49,6 @@ export class SchematicLine extends PrimitiveComponent<
   }
 
   doInitialSchematicSymbolResize(): void {
-    if (this.root?.schematicDisabled) return
     if (!this.schematic_line_id) return
 
     const symbol = this._getSymbolAncestor()

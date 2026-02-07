@@ -17,7 +17,6 @@ export class CourtyardOutline extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
@@ -93,7 +92,6 @@ export class CourtyardOutline extends PrimitiveComponent<
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.pcb_courtyard_outline_id) return
 

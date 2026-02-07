@@ -195,7 +195,6 @@ export class Board
   }
 
   doInitialPcbBoardAutoSize(): void {
-    if (this.root?.pcbDisabled) return
     if (!this.pcb_board_id) return
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -402,7 +401,6 @@ export class Board
   }
 
   doInitialPcbComponentRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -514,14 +512,12 @@ export class Board
   }
 
   doInitialPcbDesignRuleChecks() {
-    if (this.root?.pcbDisabled) return
     if (this.getInheritedProperty("routingDisabled")) return
 
     super.doInitialPcbDesignRuleChecks()
   }
 
   updatePcbDesignRuleChecks() {
-    if (this.root?.pcbDisabled) return
     if (this.getInheritedProperty("routingDisabled")) return
     const { db } = this.root!
 

@@ -17,7 +17,6 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const subcircuit = this.getSubcircuit()
     const { db } = this.root!
     const { _parsedProps: props } = this

@@ -16,7 +16,6 @@ export class FabricationNotePath extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const subcircuit = this.getSubcircuit()
     const { _parsedProps: props } = this
@@ -79,7 +78,6 @@ export class FabricationNotePath extends PrimitiveComponent<
     deltaX,
     deltaY,
   }: { deltaX: number; deltaY: number }) {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     if (!this.fabrication_note_path_id) return
 

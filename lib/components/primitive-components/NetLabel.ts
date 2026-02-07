@@ -90,7 +90,6 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   }
 
   doInitialSchematicPrimitiveRender(): void {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -147,7 +146,6 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   }
 
   doInitialCreateTracesFromNetLabels(): void {
-    if (this.root?.schematicDisabled) return
     const connectsTo = this._resolveConnectsTo()
     if (!connectsTo) return
 
@@ -166,7 +164,6 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
 
   doInitialSchematicTraceRender(): void {
     if (!this.root?._featureMspSchematicTraceRouting) return
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const connectsTo = this._resolveConnectsTo()
     if (!connectsTo || connectsTo.length === 0) return

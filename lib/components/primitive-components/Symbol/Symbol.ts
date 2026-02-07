@@ -32,7 +32,6 @@ export class SymbolComponent
    * reference the schematic_symbol_id when they render.
    */
   doInitialSymbolContainerRender(): void {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
 
     const { _parsedProps: props } = this
@@ -69,8 +68,6 @@ export class SymbolComponent
   }
 
   private _computeSchematicSymbolBounds(): void {
-    if (this.root?.schematicDisabled) return
-
     const { db } = this.root!
     const schematicElements: Array<{
       type: string

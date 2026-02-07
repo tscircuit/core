@@ -232,7 +232,6 @@ export class NormalComponent<
       ignoreSymbolPorts?: boolean
     } = {},
   ) {
-    if (this.root?.schematicDisabled) return
     const { config } = this
     const portsToCreate: Port[] = []
 
@@ -512,7 +511,6 @@ export class NormalComponent<
    * You can override this method to do more complicated things.
    */
   doInitialSchematicComponentRender() {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
 
     // Insert warnings for invalid pin labels
@@ -597,7 +595,6 @@ export class NormalComponent<
   }
 
   _doInitialSchematicComponentRenderWithSymbol() {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -624,7 +621,6 @@ export class NormalComponent<
   _doInitialSchematicComponentRenderWithReactSymbol(
     symbolElement: ReactElement,
   ) {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
 
     const center = this._getGlobalSchematicPositionBeforeLayout()
@@ -641,7 +637,6 @@ export class NormalComponent<
   }
 
   _doInitialSchematicComponentRenderWithSchematicBoxDimensions() {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const dimensions = this._getSchematicBoxDimensions()!
@@ -719,7 +714,6 @@ export class NormalComponent<
   }
 
   doInitialPcbComponentRender() {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const subcircuit = this.getSubcircuit()
@@ -798,7 +792,6 @@ export class NormalComponent<
    * the width/height of the component
    */
   doInitialPcbComponentSizeCalculation(): void {
-    if (this.root?.pcbDisabled) return
     if (!this.pcb_component_id) return
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -827,7 +820,6 @@ export class NormalComponent<
    * Calculate and update the size of a custom schematic symbol based on its children
    */
   doInitialSchematicComponentSizeCalculation(): void {
-    if (this.root?.schematicDisabled) return
     if (!this.schematic_component_id) return
 
     const { db } = this.root!
@@ -1105,7 +1097,6 @@ export class NormalComponent<
   }
 
   getPortsFromSchematicSymbol(): Port[] {
-    if (this.root?.schematicDisabled) return []
     const { config } = this
     if (!config.schematicSymbolName) return []
     const symbol: SchSymbol = (symbols as any)[config.schematicSymbolName]
@@ -1625,7 +1616,6 @@ export class NormalComponent<
   }
 
   doInitialPcbLayout(): void {
-    if (this.root?.pcbDisabled) return
     if (!this.pcb_component_id) return
 
     const { db } = this.root!

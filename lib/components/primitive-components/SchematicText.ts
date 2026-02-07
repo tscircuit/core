@@ -18,7 +18,6 @@ export class SchematicText extends PrimitiveComponent<
   }
 
   doInitialSchematicPrimitiveRender(): void {
-    if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -43,7 +42,6 @@ export class SchematicText extends PrimitiveComponent<
   }
 
   doInitialSchematicSymbolResize(): void {
-    if (this.root?.schematicDisabled) return
     if (!this.schematic_text_id) return
 
     const symbol = this._getSymbolAncestor()

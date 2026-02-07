@@ -24,7 +24,6 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const container = this.getPrimitiveContainer()!
