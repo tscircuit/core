@@ -67,8 +67,10 @@ export class SilkscreenText extends PrimitiveComponent<
       this._footprinterFontSize ??
       1
 
-    // Build knockout padding object if any padding props are set
+    // Build knockout padding object from uniform or individual padding props
+    const uniformPadding = props.knockoutPadding ?? 0
     const hasKnockoutPadding =
+      props.knockoutPadding !== undefined ||
       props.knockoutPaddingLeft !== undefined ||
       props.knockoutPaddingRight !== undefined ||
       props.knockoutPaddingTop !== undefined ||
@@ -76,10 +78,10 @@ export class SilkscreenText extends PrimitiveComponent<
 
     const knockoutPadding = hasKnockoutPadding
       ? {
-          left: props.knockoutPaddingLeft ?? 0,
-          right: props.knockoutPaddingRight ?? 0,
-          top: props.knockoutPaddingTop ?? 0,
-          bottom: props.knockoutPaddingBottom ?? 0,
+          left: props.knockoutPaddingLeft ?? uniformPadding,
+          right: props.knockoutPaddingRight ?? uniformPadding,
+          top: props.knockoutPaddingTop ?? uniformPadding,
+          bottom: props.knockoutPaddingBottom ?? uniformPadding,
         }
       : undefined
 
