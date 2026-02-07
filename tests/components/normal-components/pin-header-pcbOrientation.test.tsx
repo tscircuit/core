@@ -29,6 +29,8 @@ test("pinheader pcbOrientation vertical places pins vertically", () => {
         "ccw_rotation": -90,
         "font": "tscircuit2024",
         "font_size": 0.7,
+        "is_knockout": undefined,
+        "knockout_padding": undefined,
         "layer": "top",
         "pcb_component_id": "pcb_component_0",
         "pcb_group_id": undefined,

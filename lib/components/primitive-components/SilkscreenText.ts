@@ -67,6 +67,24 @@ export class SilkscreenText extends PrimitiveComponent<
       this._footprinterFontSize ??
       1
 
+    // Build knockout padding object from uniform or individual padding props
+    const uniformPadding = props.knockoutPadding ?? 0
+    const hasKnockoutPadding =
+      props.knockoutPadding !== undefined ||
+      props.knockoutPaddingLeft !== undefined ||
+      props.knockoutPaddingRight !== undefined ||
+      props.knockoutPaddingTop !== undefined ||
+      props.knockoutPaddingBottom !== undefined
+
+    const knockoutPadding = hasKnockoutPadding
+      ? {
+          left: props.knockoutPaddingLeft ?? uniformPadding,
+          right: props.knockoutPaddingRight ?? uniformPadding,
+          top: props.knockoutPaddingTop ?? uniformPadding,
+          bottom: props.knockoutPaddingBottom ?? uniformPadding,
+        }
+      : undefined
+
     for (const layer of targetLayers) {
       const pcb_silkscreen_text = db.pcb_silkscreen_text.insert({
         anchor_alignment: props.anchorAlignment,
@@ -82,6 +100,8 @@ export class SilkscreenText extends PrimitiveComponent<
         pcb_component_id: container.pcb_component_id!,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        is_knockout: props.isKnockout,
+        knockout_padding: knockoutPadding,
       })
       this.pcb_silkscreen_text_ids.push(
         pcb_silkscreen_text.pcb_silkscreen_text_id,
