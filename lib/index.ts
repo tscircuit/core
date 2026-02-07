@@ -1,4 +1,7 @@
 export * from "./components"
+export * from "./IIsolatedCircuit"
+export * from "./IRootCircuit"
+export * from "./IsolatedCircuit"
 export * from "./RootCircuit"
 export * from "./hooks/use-rendered-circuit"
 export * from "./hooks/create-use-component"
