@@ -431,7 +431,6 @@ export const RedLed = (props: Props) => {
     />
   )
 }
-import { createUseComponent } from "@tscircuit/core"
 import type { CommonLayoutProps } from "@tscircuit/props"
 
 const pinLabels = {
