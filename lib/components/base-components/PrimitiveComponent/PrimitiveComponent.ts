@@ -860,14 +860,37 @@ export abstract class PrimitiveComponent<
     }
 
     // If we didn't find anything, check for a subcircuit query
-    const [firstpart, ...rest] = selector.split(" ")
-    const subcircuit = selectOne(firstpart, this, {
-      adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
-    }) as ISubcircuit | null
-    if (!subcircuit) return []
-    const result2 = subcircuit.selectAll(rest.join(" ")) as T[]
-    this._cachedSelectAllQueries.set(selectorRaw, result2)
-    return result2
+    // If the selector contains a space, we assume it's a descendant selector
+    // and try to find the subcircuit first.
+    if (selector.includes(" ")) {
+      const [firstpart, ...rest] = selector.split(" ")
+      const subcircuit = selectOne(firstpart, this, {
+        adapter: cssSelectPrimitiveComponentAdapterOnlySubcircuits,
+      }) as ISubcircuit | null
+      if (subcircuit) {
+        const result2 = subcircuit.selectAll(rest.join(" ")) as T[]
+        this._cachedSelectAllQueries.set(selectorRaw, result2)
+        return result2
+      }
+    }
+
+    // If we still haven't found anything, and the selector is simple (no spaces),
+    // we might want to search inside *any* subcircuit for this component.
+    // This supports finding "keepout" inside "group[subcircuit]"
+    // NOTE: This might be expensive for large trees
+    const nestedResults: T[] = []
+    const directSubcircuits = this.children.filter((c) => c.isSubcircuit)
+
+    for (const sub of directSubcircuits) {
+      nestedResults.push(...sub.selectAll<T>(selectorRaw))
+    }
+
+    if (nestedResults.length > 0) {
+      this._cachedSelectAllQueries.set(selectorRaw, nestedResults)
+      return nestedResults
+    }
+
+    return []
   }
 
   _cachedSelectOneQueries: Map<string, PrimitiveComponent | null> = new Map()
