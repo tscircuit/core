@@ -432,6 +432,7 @@ export const RedLed = (props: Props) => {
   )
 }
 import type { CommonLayoutProps } from "@tscircuit/props"
+import { createUseComponent } from "lib/index"
 
 const pinLabels = {
   pin1: ["GND"],
