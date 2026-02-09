@@ -68,6 +68,9 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     if (props.shape === "circle") {
       return { width: props.radius * 2, height: props.radius * 2 }
     }
-    return { width: props.width, height: props.height }
+    if (props.shape === "rect") {
+      return { width: props.width, height: props.height }
+    }
+    return { width: 0, height: 0 }
   }
 }
