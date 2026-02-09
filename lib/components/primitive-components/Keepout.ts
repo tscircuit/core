@@ -62,4 +62,15 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       this.pcb_keepout_id = pcb_keepout.pcb_keepout_id
     }
   }
+
+  getPcbSize(): { width: number; height: number } {
+    const { _parsedProps: props } = this
+    if (props.shape === "circle") {
+      return { width: props.radius * 2, height: props.radius * 2 }
+    }
+    if (props.shape === "rect") {
+      return { width: props.width, height: props.height }
+    }
+    return { width: 0, height: 0 }
+  }
 }
