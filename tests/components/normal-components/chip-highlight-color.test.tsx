@@ -34,7 +34,7 @@ test("chip pinAttributes highlightColor passes to pcb_port", async () => {
     (port) => port.source_port_id === vccSourcePort!.source_port_id,
   )
   expect(vccPcbPort).toBeTruthy()
-  expect(vccPcbPort?.highlight_color).toBe("#ff0000")
+  expect((vccPcbPort as any)?.highlight_color).toBe("#ff0000")
 
   const gndSourcePort = sourcePorts.find((port) => port.name === "GND")
   expect(gndSourcePort).toBeTruthy()
@@ -43,7 +43,7 @@ test("chip pinAttributes highlightColor passes to pcb_port", async () => {
     (port) => port.source_port_id === gndSourcePort!.source_port_id,
   )
   expect(gndPcbPort).toBeTruthy()
-  expect(gndPcbPort?.highlight_color).toBe("#00ff00")
+  expect((gndPcbPort as any)?.highlight_color).toBe("#00ff00")
 
   const sdaSourcePort = sourcePorts.find((port) => port.name === "SDA")
   expect(sdaSourcePort).toBeTruthy()
@@ -52,5 +52,5 @@ test("chip pinAttributes highlightColor passes to pcb_port", async () => {
     (port) => port.source_port_id === sdaSourcePort!.source_port_id,
   )
   expect(sdaPcbPort).toBeTruthy()
-  expect(sdaPcbPort?.highlight_color).toBeUndefined()
+  expect((sdaPcbPort as any)?.highlight_color).toBeUndefined()
 })
