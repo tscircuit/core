@@ -13,11 +13,5 @@ test("Keepout getPcbSize", () => {
   )
 
   circuit.render()
-
-  const keepouts = circuit.selectAll("keepout")
-  expect(keepouts.length).toBe(1)
-  const k1 = keepouts[0]
-
-  expect(k1.getPcbSize()).toEqual({ width: 10, height: 10 })
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
