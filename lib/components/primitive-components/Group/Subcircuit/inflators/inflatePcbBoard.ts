@@ -9,19 +9,17 @@ export function inflatePcbBoard(
 ) {
   const { subcircuit } = inflatorContext
 
-  // Don't inflate a board if the subcircuit is already a Board component with circuitJson
-  // This happens when you have: <board circuitJson={...} />
-  // In this case, the Board itself is the board, and we don't need to create a nested board
-  if ((subcircuit as any).lowercaseComponentName === "board") {
+  // Don't inflate a board if the subcircuit is already a Board or MountedBoard component
+  // These components create their own pcb_board entry
+  if (
+    (subcircuit as any).lowercaseComponentName === "board" ||
+    (subcircuit as any).lowercaseComponentName === "mountedboard"
+  ) {
     return
   }
   // Don't inflate a board if the subcircuit is already inside a Board component
   // This happens when you have: <board><subcircuit circuitJson={...} /></board>
-  // But allow mountedboard components to have their own boards inflated
-  if (
-    (subcircuit as any).parent?.lowercaseComponentName === "board" &&
-    (subcircuit as any).lowercaseComponentName !== "mountedboard"
-  ) {
+  if ((subcircuit as any).parent?.lowercaseComponentName === "board") {
     return
   }
 

@@ -194,37 +194,6 @@ export class Board
     }
   }
 
-  /**
-   * Find if this board is inside a MountedBoard ancestor
-   */
-  private _findMountedBoardAncestor(): any | null {
-    let current = this.parent
-    while (current) {
-      if (current.lowercaseComponentName === "mountedboard") {
-        return current
-      }
-      current = current.parent
-    }
-    return null
-  }
-
-  /**
-   * Find the carrier board (the Board that contains the MountedBoard)
-   */
-  private _findCarrierBoard(mountedBoard: any): Board | null {
-    let current = mountedBoard.parent
-    while (current) {
-      if (
-        current.lowercaseComponentName === "board" &&
-        current instanceof Board
-      ) {
-        return current
-      }
-      current = current.parent
-    }
-    return null
-  }
-
   doInitialPcbBoardAutoSize(): void {
     if (this.root?.pcbDisabled) return
     if (!this.pcb_board_id) return
@@ -234,18 +203,6 @@ export class Board
     const globalPos = this._getGlobalPcbPositionBeforeLayout()
 
     const pcbBoard = db.pcb_board.get(this.pcb_board_id!)
-
-    // Set carrier_pcb_board_id for boards inside MountedBoard
-    // This is done here because carrier board is now rendered (parents render after children)
-    const mountedBoardAncestor = this._findMountedBoardAncestor()
-    if (mountedBoardAncestor) {
-      const carrierBoard = this._findCarrierBoard(mountedBoardAncestor)
-      if (carrierBoard?.pcb_board_id) {
-        db.pcb_board.update(this.pcb_board_id, {
-          carrier_pcb_board_id: carrierBoard.pcb_board_id,
-        })
-      }
-    }
 
     // If the board is already sized (from props or circuitJson) or has an outline, don't autosize
     if (
@@ -541,9 +498,6 @@ export class Board
       }
     }
 
-    // Check if this board is inside a MountedBoard (making it a daughter/mounted board)
-    const mountedBoardAncestor = this._findMountedBoardAncestor()
-
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
       center,
@@ -558,9 +512,6 @@ export class Board
         y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
       })),
       material: props.material,
-      // Mark as mounted board if inside a MountedBoard
-      // carrier_pcb_board_id will be set in PcbBoardAutoSize phase after all boards are created
-      is_mounted_to_carrier_board: mountedBoardAncestor ? true : undefined,
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
     this.pcb_board_id = pcb_board.pcb_board_id!

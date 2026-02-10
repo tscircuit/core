@@ -1,24 +1,14 @@
 import { mountedboardProps } from "@tscircuit/props"
-import { Group } from "../primitive-components/Group/Group"
-import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
-import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
-import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { RootCircuit } from "../../RootCircuit"
+import { Subcircuit } from "../primitive-components/Group/Subcircuit/Subcircuit"
 import type { z } from "zod"
-import { isValidElement, type ReactElement } from "react"
+import type { PcbBoard } from "circuit-json"
+import { Board } from "./Board"
 
-export class MountedBoard
-  extends Group<typeof mountedboardProps>
-  implements SubcircuitI
-{
-  private _mountedChildren: PrimitiveComponent[] = []
+export class MountedBoard extends Subcircuit {
+  pcb_board_id: string | null = null
 
   constructor(props: z.input<typeof mountedboardProps>) {
-    super({
-      ...props,
-      // @ts-ignore - subcircuit is needed for Group behavior
-      subcircuit: true,
-    })
+    super(props)
   }
 
   get config() {
@@ -28,65 +18,42 @@ export class MountedBoard
     }
   }
 
-  /**
-   * Override add() to store mounted children for later rendering
-   */
-  add(componentOrElm: PrimitiveComponent | ReactElement): this {
-    if (isValidElement(componentOrElm)) {
-      // Render the React element to get PrimitiveComponent instances
-      const tmpCircuit = new RootCircuit()
-      tmpCircuit.add(componentOrElm)
-      tmpCircuit.render()
-      const children = tmpCircuit.children
+  doInitialPcbComponentRender(): void {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    const { _parsedProps: props } = this
 
-      for (const child of children) {
-        if (child.lowercaseComponentName === "panel") {
-          throw new Error("MountedBoard cannot contain a <panel> element")
-        }
-        this._mountedChildren.push(child as PrimitiveComponent)
-      }
-      return this
-    }
+    const globalPos = this._getGlobalPcbPositionBeforeLayout()
 
-    if (!(componentOrElm instanceof Object) || !("props" in componentOrElm)) {
-      throw new Error(
-        `Invalid component passed to MountedBoard.add(): ${typeof componentOrElm}`,
-      )
-    }
+    const pcb_board = db.pcb_board.insert({
+      center: { x: globalPos.x, y: globalPos.y },
+      width: props.width ?? 0,
+      height: props.height ?? 0,
+      is_mounted_to_carrier_board: true,
+    } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
-    this._mountedChildren.push(componentOrElm as PrimitiveComponent)
-    return this
+    this.pcb_board_id = pcb_board.pcb_board_id
   }
 
-  /**
-   * During this phase, we inflate the subcircuit circuit json into class
-   * instances
-   */
-  doInitialInflateSubcircuitCircuitJson() {
-    const { circuitJson, children } = this._parsedProps
+  doInitialPcbBoardAutoSize(): void {
+    if (!this.pcb_board_id || !this.root) return
 
-    // If circuitJson is provided, inflate it
-    if (circuitJson) {
-      if (children) {
-        throw new Error(
-          "MountedBoard cannot have both circuitJson and children",
-        )
-      }
-      this._isInflatedFromCircuitJson = true
-      inflateCircuitJson(this, circuitJson, children)
-      return
+    const carrierBoardId = this._findCarrierBoardId()
+    if (carrierBoardId) {
+      this.root.db.pcb_board.update(this.pcb_board_id, {
+        carrier_pcb_board_id: carrierBoardId,
+      } as Partial<PcbBoard>)
     }
+  }
 
-    // If we have mounted children from add() calls, add them to this group
-    if (this._mountedChildren.length > 0) {
-      for (const child of this._mountedChildren) {
-        child.parent = this
-        this.children.push(child)
+  private _findCarrierBoardId(): string | null {
+    let current = this.parent
+    while (current) {
+      if (current instanceof Board) {
+        return current.pcb_board_id
       }
-      return
+      current = current.parent
     }
-
-    // Otherwise, inflate from children (JSX children)
-    inflateCircuitJson(this, circuitJson, children)
+    return null
   }
 }

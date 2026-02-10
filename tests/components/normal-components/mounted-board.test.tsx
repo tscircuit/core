@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { su } from "@tscircuit/circuit-json-util"
 
-test("Board inside MountedBoard has carrier_pcb_board_id and is_mounted_to_carrier_board set", () => {
+test("MountedBoard sets carrier_pcb_board_id and is_mounted_to_carrier_board", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -11,12 +11,14 @@ test("Board inside MountedBoard has carrier_pcb_board_id and is_mounted_to_carri
 
       <mountedboard
         name="DaughterBoard"
+        width={30}
+        height={20}
+        pcbX={10}
+        pcbY={10}
         boardToBoardDistance="5mm"
         mountOrientation="faceDown"
       >
-        <board width={30} height={20}>
-          <resistor name="R2" resistance="20k" footprint="0402" />
-        </board>
+        <resistor name="R2" resistance="20k" footprint="0402" />
       </mountedboard>
     </board>,
   )
@@ -26,7 +28,6 @@ test("Board inside MountedBoard has carrier_pcb_board_id and is_mounted_to_carri
   const circuitJson = circuit.getCircuitJson()
   const boards = su(circuitJson).pcb_board.list()
 
-  // Should have 2 boards: carrier board and daughter board inside mountedboard
   expect(boards.length).toBe(2)
 
   const carrierBoard = boards.find((b) => !b.is_mounted_to_carrier_board)
