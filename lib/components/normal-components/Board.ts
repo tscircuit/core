@@ -371,23 +371,9 @@ export class Board
   }
 
   doInitialSourceRender() {
-    // Helper function to check if a component is a descendant of a MountedBoard
-    const isMountedBoardDescendant = (component: any) => {
-      let current = component.parent
-      while (current && current !== this) {
-        if (current.lowercaseComponentName === "mountedboard") {
-          return true
-        }
-        current = current.parent
-      }
-      return false
-    }
-
     // Check for nested boards (boards inside this board at any depth)
-    // Allow boards that are inside a MountedBoard
     const nestedBoard = this.getDescendants().find(
-      (d) =>
-        d.lowercaseComponentName === "board" && !isMountedBoardDescendant(d),
+      (d) => d.lowercaseComponentName === "board",
     )
     if (nestedBoard) {
       throw new Error(
