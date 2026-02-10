@@ -3,3 +3,6 @@ preload = ["./tests/fixtures/preload.ts"]
 
 [install.lockfile]
 save = false
+
+[install]
+trustedDependencies = ["patch-package"]
