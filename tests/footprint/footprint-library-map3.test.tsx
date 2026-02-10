@@ -43,6 +43,7 @@ test("footprint library map 3", async () => {
           "y": 0,
         },
         "height": 4.64,
+        "is_mounted_to_carrier_board": undefined,
         "material": "fr4",
         "num_layers": 2,
         "outline": undefined,
