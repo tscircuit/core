@@ -27,7 +27,8 @@
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
     "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
-    "generate-test-plan": "bun run scripts/generate-test-plan.ts"
+    "generate-test-plan": "bun run scripts/generate-test-plan.ts",
+    "postinstall": "patch-package"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
@@ -76,6 +77,7 @@
     "live-server": "^1.2.2",
     "looks-same": "^9.0.1",
     "minicssgrid": "^0.0.9",
+    "patch-package": "^8.0.1",
     "pkg-pr-new": "^0.0.37",
     "poppygl": "^0.0.16",
     "react": "^19.1.0",
@@ -91,13 +93,13 @@
     "@tscircuit/circuit-json-util": "*",
     "@tscircuit/footprinter": "*",
     "@tscircuit/infgrid-ijump-astar": "*",
+    "@tscircuit/matchpack": "*",
     "@tscircuit/math-utils": "*",
     "@tscircuit/props": "*",
     "@tscircuit/schematic-match-adapt": "*",
-    "circuit-json-to-bpc": "*",
     "bpc-graph": "*",
-    "@tscircuit/matchpack": "*",
     "circuit-json": "*",
+    "circuit-json-to-bpc": "*",
     "circuit-json-to-connectivity-map": "*",
     "schematic-symbols": "*",
     "typescript": "^5.0.0"

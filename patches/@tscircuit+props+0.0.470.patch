@@ -1,0 +1,46 @@
+diff --git a/node_modules/@tscircuit/props/lib/components/constraint.ts b/node_modules/@tscircuit/props/lib/components/constraint.ts
+index a5a995a..81b7584 100644
+--- a/node_modules/@tscircuit/props/lib/components/constraint.ts
++++ b/node_modules/@tscircuit/props/lib/components/constraint.ts
+@@ -30,6 +30,12 @@ export type PcbXDistConstraint = {
+    * left and right components
+    */
+   centerToCenter?: true
++
++  /**
++   * Optional X coordinate for the center point between left and right components.
++   * Allows positioning both components on the x-axis.
++   */
++  centerX?: Distance
+ }
+ 
+ export type PcbYDistConstraint = {
+@@ -50,6 +56,12 @@ export type PcbYDistConstraint = {
+ 
+   edgeToEdge?: true
+   centerToCenter?: true
++
++  /**
++   * Optional Y coordinate for the center point between top and bottom components.
++   * Allows positioning both components on the y-axis.
++   */
++  centerY?: Distance
+ }
+ 
+ export type PcbSameYConstraint = {
+@@ -91,6 +103,7 @@ export const pcbXDistConstraintProps = z.object({
+ 
+   edgeToEdge: z.literal(true).optional(),
+   centerToCenter: z.literal(true).optional(),
++  centerX: distance.optional(),
+ })
+ expectTypesMatch<PcbXDistConstraint, z.input<typeof pcbXDistConstraintProps>>(
+   true,
+@@ -104,6 +117,7 @@ export const pcbYDistConstraintProps = z.object({
+ 
+   edgeToEdge: z.literal(true).optional(),
+   centerToCenter: z.literal(true).optional(),
++  centerY: distance.optional(),
+ })
+ expectTypesMatch<PcbYDistConstraint, z.input<typeof pcbYDistConstraintProps>>(
+   true,
