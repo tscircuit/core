@@ -100,22 +100,32 @@ export const applyComponentConstraintClusters = (
       return kVars[key]
     }
     const anchor = info.componentIds[0]
-    solver.addConstraint(
-      new kiwi.Constraint(
-        getVar(anchor, "x"),
-        kiwi.Operator.Eq,
-        0,
-        kiwi.Strength.required,
-      ),
-    )
-    solver.addConstraint(
-      new kiwi.Constraint(
-        getVar(anchor, "y"),
-        kiwi.Operator.Eq,
-        0,
-        kiwi.Strength.required,
-      ),
-    )
+
+    // Check if any constraint specifies centerX or centerY
+    const hasCenterX = info.constraints.some((c) => "centerX" in c._parsedProps)
+    const hasCenterY = info.constraints.some((c) => "centerY" in c._parsedProps)
+
+    // Only anchor to (0,0) if centerX/centerY are not specified
+    if (!hasCenterX) {
+      solver.addConstraint(
+        new kiwi.Constraint(
+          getVar(anchor, "x"),
+          kiwi.Operator.Eq,
+          0,
+          kiwi.Strength.required,
+        ),
+      )
+    }
+    if (!hasCenterY) {
+      solver.addConstraint(
+        new kiwi.Constraint(
+          getVar(anchor, "y"),
+          kiwi.Operator.Eq,
+          0,
+          kiwi.Strength.required,
+        ),
+      )
+    }
 
     for (const constraint of info.constraints) {
       const props = constraint._parsedProps as any
@@ -131,6 +141,20 @@ export const applyComponentConstraintClusters = (
               kiwi.Strength.required,
             ),
           )
+          // If centerX is specified, constrain the midpoint between left and right
+          if ("centerX" in props) {
+            solver.addConstraint(
+              new kiwi.Constraint(
+                new kiwi.Expression(
+                  [0.5, getVar(left, "x")],
+                  [0.5, getVar(right, "x")],
+                ),
+                kiwi.Operator.Eq,
+                props.centerX,
+                kiwi.Strength.required,
+              ),
+            )
+          }
         }
       } else if ("yDist" in props) {
         const top = getIdFromSelector(props.top)
@@ -144,6 +168,20 @@ export const applyComponentConstraintClusters = (
               kiwi.Strength.required,
             ),
           )
+          // If centerY is specified, constrain the midpoint between top and bottom
+          if ("centerY" in props) {
+            solver.addConstraint(
+              new kiwi.Constraint(
+                new kiwi.Expression(
+                  [0.5, getVar(top, "y")],
+                  [0.5, getVar(bottom, "y")],
+                ),
+                kiwi.Operator.Eq,
+                props.centerY,
+                kiwi.Strength.required,
+              ),
+            )
+          }
         }
       } else if ("sameX" in props && Array.isArray(props.for)) {
         const ids = props.for
