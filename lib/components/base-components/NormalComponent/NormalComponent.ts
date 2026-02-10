@@ -505,6 +505,31 @@ export class NormalComponent<
   }
 
   /**
+   * After ports have their source_port_id assigned, create
+   * source_component_internal_connection records so that the connectivity
+   * map (and therefore DRC) knows which pins are internally connected.
+   */
+  doInitialSourceParentAttachment(): void {
+    const { db } = this.root!
+
+    const internallyConnectedPorts = this._getInternallyConnectedPins()
+
+    for (const ports of internallyConnectedPorts) {
+      const sourcePortIds = ports
+        .map((port: Port) => port.source_port_id)
+        .filter((id): id is string => id !== null)
+
+      if (sourcePortIds.length >= 2) {
+        db.source_component_internal_connection.insert({
+          source_component_id: this.source_component_id!,
+          subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
+          source_port_ids: sourcePortIds,
+        })
+      }
+    }
+  }
+
+  /**
    * Render the schematic component for this NormalComponent using the
    * config.schematicSymbolName if it exists, or create a generic box if
    * no symbol is defined.

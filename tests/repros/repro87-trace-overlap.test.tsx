@@ -77,6 +77,12 @@ export const SmdUsbC = (props: Props) => {
         },
       }}
       manufacturerPartNumber="TYPE-C-31-M-12"
+      internallyConnectedPins={[
+        // Connect all GND pins together (pins 1, 2, 15, 16)
+        [1, 2, 15, 16],
+        // Connect all VBUS pins together (pins 3, 4, 13, 14)
+        [3, 4, 13, 14],
+      ]}
       footprint={
         <footprint>
           <hole
@@ -643,9 +649,8 @@ test("repro87 trace overlap", async () => {
   // establish the connection (route segments were missing port IDs).
   const errors = circuitJson.filter((elm) => elm.type.includes("error"))
 
-  // Only 2 legitimate errors should remain:
-  // - source_trace_0 overlapping with adjacent USBC pads on different nets
-  expect(errors.length).toBe(2)
+  // Only 1 legitimate error should remain
+  expect(errors.length).toBe(1)
 
   const svg = convertCircuitJsonToPcbSvg(circuitJson)
   expect(svg).toMatchSvgSnapshot(import.meta.path)
