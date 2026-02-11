@@ -655,7 +655,10 @@ export abstract class PrimitiveComponent<
     let current: PrimitiveComponent | Renderable | null = this
     while (current) {
       const maybePrimitive = current as PrimitiveComponent
-      if ((maybePrimitive as any).componentName === "Board") {
+      const componentName = (maybePrimitive as any).componentName
+      // MountedBoard also creates a pcb_board, so components inside should
+      // be associated with it, not the parent carrier board
+      if (componentName === "Board" || componentName === "MountedBoard") {
         return maybePrimitive as PrimitiveComponent & BoardI
       }
       current =
