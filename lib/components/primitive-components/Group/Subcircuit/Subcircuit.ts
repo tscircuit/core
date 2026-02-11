@@ -30,6 +30,14 @@ export class Subcircuit
    * - Add components to groups in the appropriate hierarchy
    */
   doInitialInflateSubcircuitCircuitJson() {
+    const isolatedJson = this._isolatedCircuitJson
+    if (isolatedJson) {
+      this._isInflatedFromCircuitJson = true
+      this._isolatedCircuitJson = null
+      inflateCircuitJson(this, isolatedJson, [])
+      return
+    }
+
     const { circuitJson, children } = this._parsedProps
     if (circuitJson) {
       this._isInflatedFromCircuitJson = true

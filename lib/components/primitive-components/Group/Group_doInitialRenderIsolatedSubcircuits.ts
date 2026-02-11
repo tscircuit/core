@@ -4,8 +4,8 @@ import type { Group } from "./Group"
 /**
  * Renders this subcircuit in complete isolation using its own IsolatedCircuit
  * instance. The isolated circuit runs all render phases independently, then
- * the resulting Circuit JSON is inflated into class instances on the parent
- * group using the existing circuitJson inflation mechanism.
+ * the resulting Circuit JSON is stored on the group for the existing
+ * InflateSubcircuitCircuitJson phase to pick up and inflate.
  */
 export function Group_doInitialRenderIsolatedSubcircuits(
   group: Group<any>,
@@ -35,16 +35,8 @@ export function Group_doInitialRenderIsolatedSubcircuits(
   group._queueAsyncEffect("render-isolated-subcircuit", async () => {
     await isolatedCircuit.renderUntilSettled()
 
-    const isolatedElements = isolatedCircuit.getCircuitJson()
-
-    // Clear original children before inflation
     group.children = []
     group._normalComponentNameMap = null
-
-    const { inflateCircuitJson } = await import(
-      "lib/utils/circuit-json/inflate-circuit-json"
-    )
-    group._isInflatedFromCircuitJson = true
-    inflateCircuitJson(group, isolatedElements, [])
+    group._isolatedCircuitJson = isolatedCircuit.getCircuitJson()
   })
 }

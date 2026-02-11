@@ -6,6 +6,7 @@ import {
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
+  type AnyCircuitElement,
   type LayerRef,
   type PcbTrace,
   type PcbVia,
@@ -60,6 +61,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _hasStartedAsyncAutorouting = false
 
   _isInflatedFromCircuitJson = false
+
+  _isolatedCircuitJson: AnyCircuitElement[] | null = null
 
   get _isIsolatedSubcircuit(): boolean {
     return Boolean(this._parsedProps._subcircuitCachingEnabled)
