@@ -30,6 +30,7 @@ test("isolated subcircuit produces valid pcb snapshot", async () => {
           schX={3}
           schY={2}
         />
+        <trace from=".R2 .pin1" to=".C1 .pin1" />
       </subcircuit>
     </board>,
   )

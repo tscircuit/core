@@ -1,10 +1,10 @@
+import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   type AutorouterConfig,
   type SubcircuitGroupProps,
   groupProps,
 } from "@tscircuit/props"
-import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type LayerRef,
   type PcbTrace,
@@ -14,40 +14,40 @@ import {
   distance,
 } from "circuit-json"
 import Debug from "debug"
+import type { GraphicsObject } from "graphics-debug"
+import type { Board, RenderPhase } from "index"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { AutorouterError } from "lib/errors/AutorouterError"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
+import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
+import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
-import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
-import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
-import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
+import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
+import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
+import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
+import { Group_doInitialRenderIsolatedSubcircuits } from "./Group_doInitialRenderIsolatedSubcircuits"
+import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
+import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
-import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
-import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
-import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
-import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
-import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
-import { AutorouterError } from "lib/errors/AutorouterError"
-import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
-import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
-import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
-import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
-import type { GraphicsObject } from "graphics-debug"
-import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
-import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
-import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
-import type { Board, RenderPhase } from "index"
+import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
+import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
+import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
-import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
-import { Group_doInitialRenderIsolatedSubcircuits } from "./Group_doInitialRenderIsolatedSubcircuits"
+import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -71,7 +71,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return Boolean(this._parsedProps._subcircuitCachingEnabled)
   }
 
-  private _normalComponentNameMap: Map<string, NormalComponent[]> | null = null
+  _normalComponentNameMap: Map<string, NormalComponent[]> | null = null
 
   /**
    * Returns a cached map of component names to NormalComponent instances within this subcircuit.
@@ -133,7 +133,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    * the parent db, so children don't need to run their render phases.
    */
   override runRenderPhaseForChildren(phase: RenderPhase): void {
-    if (this._isIsolatedSubcircuit) return
+    // Skip children while the isolated subcircuit is rendering but inflation
+    // hasn't completed yet. Once inflated, children run normally.
+    if (this._isIsolatedSubcircuit && !this._isInflatedFromCircuitJson) return
     super.runRenderPhaseForChildren(phase)
   }
 
@@ -142,7 +144,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSourceGroupRender() {
-    if (this._isIsolatedSubcircuit) return
     const { db } = this.root!
     const hasExplicitName =
       typeof (this._parsedProps as { name?: unknown }).name === "string" &&
@@ -163,7 +164,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSourceRender() {
-    if (this._isIsolatedSubcircuit) return
     const { db } = this.root!
 
     for (const child of this.children) {
@@ -174,7 +174,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSourceParentAttachment() {
-    if (this._isIsolatedSubcircuit) return
     const { db } = this.root!
     const parentGroup = this.parent?.getGroup?.()
     if (parentGroup?.source_group_id) {
@@ -192,7 +191,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbComponentRender() {
-    if (this._isIsolatedSubcircuit) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -236,7 +234,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this._isIsolatedSubcircuit) return
     this.calculatePcbGroupBounds()
   }
 
@@ -361,7 +358,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialCreateTraceHintsFromProps(): void {
-    if (this._isIsolatedSubcircuit) return
     const { _parsedProps: props } = this
     const { db } = this.root!
 
@@ -384,7 +380,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSourceAddConnectivityMapKey(): void {
-    if (this._isIsolatedSubcircuit) return
     Group_doInitialSourceAddConnectivityMapKey(this)
   }
 
@@ -757,7 +752,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbTraceRender() {
-    if (this._isIsolatedSubcircuit) return
     const debug = Debug("tscircuit:core:doInitialPcbTraceRender")
     if (!this.isSubcircuit) return
     if (this.root?.pcbDisabled) return
@@ -780,7 +774,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicTraceRender() {
-    if (this._isIsolatedSubcircuit) return
     Group_doInitialSchematicTraceRender(this as any)
   }
 
@@ -955,7 +948,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicComponentRender() {
-    if (this._isIsolatedSubcircuit) return
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -1011,7 +1003,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicLayout(): void {
-    if (this._isIsolatedSubcircuit) return
     // The schematic_components are rendered in our children
     const schematicLayoutMode = this._getSchematicLayoutMode()
 
@@ -1089,7 +1080,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbLayout(): void {
-    if (this._isIsolatedSubcircuit) return
     if (this.root?.pcbDisabled) return
 
     // Position the group itself if pcbX/pcbY are provided
@@ -1310,7 +1300,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialPcbDesignRuleChecks() {
-    if (this._isIsolatedSubcircuit) return
     if (this.root?.pcbDisabled) return
     if (this.getInheritedProperty("routingDisabled")) return
     const { db } = this.root!
@@ -1348,7 +1337,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicReplaceNetLabelsWithSymbols() {
-    if (this._isIsolatedSubcircuit) return
     if (this.root?.schematicDisabled) return
     if (!this.isSubcircuit) return
     const { db } = this.root!
@@ -1377,7 +1365,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSimulationSpiceEngineRender() {
-    if (this._isIsolatedSubcircuit) return
     Group_doInitialSimulationSpiceEngineRender(this)
   }
 
@@ -1385,7 +1372,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    * Override anchor alignment to handle group-specific logic
    */
   doInitialPcbComponentAnchorAlignment(): void {
-    if (this._isIsolatedSubcircuit) return
     Group_doInitialPcbComponentAnchorAlignment(this)
   }
 

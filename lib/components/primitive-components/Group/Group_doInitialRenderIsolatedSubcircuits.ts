@@ -1,14 +1,11 @@
 import { IsolatedCircuit } from "lib/IsolatedCircuit"
-import { mergeIsolatedCircuitJson } from "lib/utils/circuit-json/merge-isolated-circuit-json"
 import type { Group } from "./Group"
 
 /**
  * Renders this subcircuit in complete isolation using its own IsolatedCircuit
  * instance. The isolated circuit runs all render phases independently, then
- * the resulting Circuit JSON is merged into the parent circuit's database.
- *
- * After this, child rendering in subsequent phases is skipped because all
- * circuit JSON has already been produced by the isolated render.
+ * the resulting Circuit JSON is inflated into class instances on the parent
+ * group using the existing circuitJson inflation mechanism.
  */
 export function Group_doInitialRenderIsolatedSubcircuits(
   group: Group<any>,
@@ -43,37 +40,18 @@ export function Group_doInitialRenderIsolatedSubcircuits(
 
     const isolatedElements = isolatedCircuit.getCircuitJson()
 
-    // Merge into the main db with a unique prefix to avoid ID conflicts
-    const idPrefix = `isolated_${group.name ?? group._renderId}_`
-    mergeIsolatedCircuitJson(parentRoot.db, isolatedElements, idPrefix)
+    // Clear original children before inflation — inflateCircuitJson
+    // throws if both circuitJson and children are present.
+    group.children = []
+    group._normalComponentNameMap = null
 
-    // Extract the top-level source_group, pcb_group, and schematic_group IDs
-    // from the merged output so the parent can reference this subcircuit
-    for (const element of isolatedElements) {
-      if (element.type === "source_group" && element.is_subcircuit === true) {
-        group.source_group_id = `${idPrefix}${element.source_group_id}`
-        group.subcircuit_id = element.subcircuit_id
-          ? `${idPrefix}${element.subcircuit_id}`
-          : null
-        break
-      }
-    }
-
-    for (const element of isolatedElements) {
-      if (element.type === "pcb_group" && element.is_subcircuit === true) {
-        group.pcb_group_id = `${idPrefix}${element.pcb_group_id}`
-        break
-      }
-    }
-
-    for (const element of isolatedElements) {
-      if (
-        element.type === "schematic_group" &&
-        element.is_subcircuit === true
-      ) {
-        group.schematic_group_id = `${idPrefix}${element.schematic_group_id}`
-        break
-      }
-    }
+    // Inflate the isolated circuit JSON into class instances on the
+    // group, reusing the existing circuitJson inflation mechanism.
+    // Dynamic import to avoid circular dependency (inflators reference Group).
+    const { inflateCircuitJson } = await import(
+      "lib/utils/circuit-json/inflate-circuit-json"
+    )
+    group._isInflatedFromCircuitJson = true
+    inflateCircuitJson(group, isolatedElements, [])
   })
 }

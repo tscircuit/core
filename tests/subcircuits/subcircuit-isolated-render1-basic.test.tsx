@@ -39,8 +39,6 @@ test("subcircuit with _subcircuitCachingEnabled renders in isolation and produce
 
   const circuitJson = circuit.getCircuitJson()
 
-  // Verify we have source components from both the main circuit and the
-  // isolated subcircuit
   const sourceComponents = circuitJson.filter(
     (e: any) => e.type === "source_component",
   )
@@ -48,7 +46,6 @@ test("subcircuit with _subcircuitCachingEnabled renders in isolation and produce
   // R1 from the main circuit + R2 and C1 from the isolated subcircuit
   expect(sourceComponents.length).toBeGreaterThanOrEqual(3)
 
-  // Verify the isolated subcircuit produced source_component entries
   const resistorComponents = sourceComponents.filter(
     (e: any) => e.ftype === "simple_resistor",
   )
@@ -65,22 +62,7 @@ test("subcircuit with _subcircuitCachingEnabled renders in isolation and produce
   )
   expect(pcbComponents.length).toBeGreaterThanOrEqual(3)
 
-  // Verify source_group entries exist
+  // Verify source_group entries exist (main board group + subcircuit group)
   const sourceGroups = circuitJson.filter((e: any) => e.type === "source_group")
-  expect(sourceGroups.length).toBeGreaterThanOrEqual(1)
-
-  // Verify the isolated subcircuit's elements have prefixed IDs
-  const isolatedSourceComponents = sourceComponents.filter(
-    (e: any) =>
-      typeof e.source_component_id === "string" &&
-      e.source_component_id.startsWith("isolated_"),
-  )
-  expect(isolatedSourceComponents.length).toBeGreaterThanOrEqual(2)
-
-  // Verify the main circuit R1 has its normal ID (not prefixed)
-  const mainR1 = sourceComponents.find(
-    (e: any) =>
-      e.name === "R1" && !e.source_component_id?.startsWith("isolated_"),
-  )
-  expect(mainR1).toBeDefined()
+  expect(sourceGroups.length).toBeGreaterThanOrEqual(2)
 })
