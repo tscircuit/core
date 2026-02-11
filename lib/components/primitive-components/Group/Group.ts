@@ -121,11 +121,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  /**
-   * Override to skip child rendering when this subcircuit has been rendered
-   * in isolation. All circuit JSON has already been produced and merged into
-   * the parent db, so children don't need to run their render phases.
-   */
   override runRenderPhaseForChildren(phase: RenderPhase): void {
     // Skip children while the isolated subcircuit is rendering but inflation
     // hasn't completed yet. Once inflated, children run normally.

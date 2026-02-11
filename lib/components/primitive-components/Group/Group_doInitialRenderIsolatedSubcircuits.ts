@@ -15,7 +15,6 @@ export function Group_doInitialRenderIsolatedSubcircuits(
 
   const parentRoot = group.root
 
-  // Create an isolated circuit, passing the parent's platform config and flags.
   const isolatedCircuit = new IsolatedCircuit({
     platform: {
       ...parentRoot.platform,
@@ -24,8 +23,6 @@ export function Group_doInitialRenderIsolatedSubcircuits(
     },
   })
 
-  // Add children directly to the isolated circuit. The isolated circuit's
-  // _guessRootComponent will wrap them in a Group(subcircuit: true) if needed.
   const childrenSnapshot = [...group.children]
 
   for (const child of childrenSnapshot) {
@@ -40,14 +37,10 @@ export function Group_doInitialRenderIsolatedSubcircuits(
 
     const isolatedElements = isolatedCircuit.getCircuitJson()
 
-    // Clear original children before inflation — inflateCircuitJson
-    // throws if both circuitJson and children are present.
+    // Clear original children before inflation
     group.children = []
     group._normalComponentNameMap = null
 
-    // Inflate the isolated circuit JSON into class instances on the
-    // group, reusing the existing circuitJson inflation mechanism.
-    // Dynamic import to avoid circular dependency (inflators reference Group).
     const { inflateCircuitJson } = await import(
       "lib/utils/circuit-json/inflate-circuit-json"
     )
