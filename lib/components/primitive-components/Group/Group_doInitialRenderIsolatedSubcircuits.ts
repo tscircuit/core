@@ -29,9 +29,6 @@ export function Group_doInitialRenderIsolatedSubcircuits(
     isolatedCircuit.add(child)
   }
 
-  // Queue an async effect so the parent circuit waits for the isolated
-  // subcircuit to fully settle (including async effects like autorouting)
-  // before proceeding to subsequent render phases.
   group._queueAsyncEffect("render-isolated-subcircuit", async () => {
     await isolatedCircuit.renderUntilSettled()
 
