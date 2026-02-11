@@ -18,11 +18,15 @@ export class IsolatedCircuit {
   children: PrimitiveComponent[]
   db: CircuitJsonUtilObjects
   root: IsolatedCircuit | null = null
-  isRoot = false
+  isRootCircuit = false
   private _schematicDisabledOverride: boolean | undefined
   get schematicDisabled(): boolean {
     if (this._schematicDisabledOverride !== undefined) {
       return this._schematicDisabledOverride
+    }
+
+    if (this.platform?.schematicDisabled !== undefined) {
+      return this.platform.schematicDisabled
     }
 
     const board = this._getBoard() as
@@ -69,6 +73,7 @@ export class IsolatedCircuit {
     this.platform = platform
     this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false
+    this.root = this
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
