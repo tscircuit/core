@@ -124,7 +124,8 @@ export abstract class PrimitiveComponent<
   get isSubcircuit() {
     return (
       Boolean(this.props.subcircuit) ||
-      (this.lowercaseComponentName === "group" && (this?.parent as any)?.isRoot)
+      (this.lowercaseComponentName === "group" &&
+        (this?.parent as any)?.isRootCircuit)
     )
   }
 

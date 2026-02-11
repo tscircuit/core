@@ -2,7 +2,7 @@ import type { PlatformConfig } from "@tscircuit/props"
 import { IsolatedCircuit } from "./IsolatedCircuit"
 
 export class RootCircuit extends IsolatedCircuit {
-  override isRoot = true
+  override isRootCircuit = true
 
   constructor({
     platform,
