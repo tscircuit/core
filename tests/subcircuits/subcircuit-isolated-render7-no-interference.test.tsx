@@ -44,7 +44,7 @@ test("isolated subcircuit does not interfere with main circuit components", asyn
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   const circuitJson = circuit.getCircuitJson()
 

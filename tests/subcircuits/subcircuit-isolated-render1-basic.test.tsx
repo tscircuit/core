@@ -35,7 +35,7 @@ test("subcircuit with _subcircuitCachingEnabled renders in isolation and produce
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   const circuitJson = circuit.getCircuitJson()
 

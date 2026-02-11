@@ -22,7 +22,7 @@ test("isolated subcircuit receives platform config from parent", async () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   const circuitJson = circuit.getCircuitJson()
 

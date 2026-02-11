@@ -26,7 +26,7 @@ test("isolated subcircuit produces equivalent source components to non-isolated 
       </subcircuit>
     </board>,
   )
-  fixture1.circuit.render()
+  await fixture1.circuit.renderUntilSettled()
   const normalJson = fixture1.circuit.getCircuitJson()
 
   // Now render WITH isolation
@@ -53,7 +53,7 @@ test("isolated subcircuit produces equivalent source components to non-isolated 
       </subcircuit>
     </board>,
   )
-  fixture2.circuit.render()
+  await fixture2.circuit.renderUntilSettled()
   const isolatedJson = fixture2.circuit.getCircuitJson()
 
   // Compare element types - both should have the same types of elements

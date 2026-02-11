@@ -34,7 +34,7 @@ test("isolated subcircuit IDs do not conflict with main circuit IDs", async () =
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   const circuitJson = circuit.getCircuitJson()
 

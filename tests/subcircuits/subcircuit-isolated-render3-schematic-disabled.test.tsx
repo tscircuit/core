@@ -13,7 +13,7 @@ test("isolated subcircuit respects schematicDisabled flag from parent", async ()
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   const circuitJson = circuit.getCircuitJson()
 

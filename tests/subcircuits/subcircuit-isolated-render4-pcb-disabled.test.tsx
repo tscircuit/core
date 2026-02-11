@@ -14,7 +14,7 @@ test("isolated subcircuit respects pcbDisabled flag from parent", async () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   const circuitJson = circuit.getCircuitJson()
 

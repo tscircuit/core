@@ -34,7 +34,7 @@ test("isolated subcircuit produces valid pcb snapshot", async () => {
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
