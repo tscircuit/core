@@ -1,10 +1,10 @@
+import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
+import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   type AutorouterConfig,
   type SubcircuitGroupProps,
   groupProps,
 } from "@tscircuit/props"
-import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import {
   type AnyCircuitElement,
   type LayerRef,
@@ -15,40 +15,42 @@ import {
   distance,
 } from "circuit-json"
 import Debug from "debug"
+import type { GraphicsObject } from "graphics-debug"
+import type { Board, RenderPhase } from "index"
+import type { IsolatedCircuit } from "lib/IsolatedCircuit"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { AutorouterError } from "lib/errors/AutorouterError"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
+import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
+import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
-import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
-import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
-import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
-import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import { Group_doInitialPcbCalcPlacementResolution } from "./Group_doInitialPcbCalcPlacementResolution"
+import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
+import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
+import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
+import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
+import { Group_doInitialRenderIsolatedSubcircuits } from "./Group_doInitialRenderIsolatedSubcircuits"
+import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
+import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
-import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
-import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
-import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
-import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
-import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
-import { AutorouterError } from "lib/errors/AutorouterError"
-import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
-import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
-import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
-import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
-import type { GraphicsObject } from "graphics-debug"
-import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
-import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
-import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
-import type { Board, IsolatedCircuit, RenderPhase } from "index"
+import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
+import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
+import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
-import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
-import { Group_doInitialRenderIsolatedSubcircuits } from "./Group_doInitialRenderIsolatedSubcircuits"
+import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -1375,6 +1377,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   updatePcbComponentAnchorAlignment(): void {
     this.doInitialPcbComponentAnchorAlignment()
+  }
+
+  doInitialPcbCalcPlacementResolution(): void {
+    Group_doInitialPcbCalcPlacementResolution(this)
+  }
+
+  updatePcbCalcPlacementResolution(): void {
+    this.doInitialPcbCalcPlacementResolution()
   }
 
   /**

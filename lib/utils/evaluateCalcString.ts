@@ -41,6 +41,14 @@ export function evaluateCalcString(
   return result
 }
 
+export function extractCalcIdentifiers(input: string): string[] {
+  const expr = extractExpression(input)
+  const tokens = tokenize(expr, defaultUnits)
+  return tokens
+    .filter((token): token is StringToken => token.type === "identifier")
+    .map((token) => token.value)
+}
+
 /**
  * Strip the outer calc(...) if present and return the inner expression.
  */

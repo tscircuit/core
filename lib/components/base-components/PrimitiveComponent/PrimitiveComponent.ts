@@ -1,8 +1,21 @@
 import type { PcbSx } from "@tscircuit/props"
 import type { AnySourceComponent, LayerRef } from "circuit-json"
-import { getResolvedPcbSx } from "lib/utils/pcbSx/get-resolved-pcb-sx"
+import { type Options, selectAll, selectOne } from "css-select"
 import Debug from "debug"
+import type { IsolatedCircuit } from "lib/IsolatedCircuit"
+import type { RootCircuit } from "lib/RootCircuit"
+import { Renderable } from "lib/components/base-components/Renderable"
+import type { BoardI } from "lib/components/normal-components/BoardI"
+import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
+import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
+import type { ISymbol } from "lib/components/primitive-components/Symbol/ISymbol"
 import { InvalidProps } from "lib/errors/InvalidProps"
+import type { Ftype } from "lib/utils/constants"
+import {
+  evaluateCalcString,
+  extractCalcIdentifiers,
+} from "lib/utils/evaluateCalcString"
+import { getResolvedPcbSx } from "lib/utils/pcbSx/get-resolved-pcb-sx"
 import type {
   SchematicBoxComponentDimensions,
   SchematicBoxDimensions,
@@ -20,22 +33,12 @@ import {
 } from "transformation-matrix"
 import type { Primitive, ZodType } from "zod"
 import { z } from "zod"
-import type { RootCircuit } from "lib/RootCircuit"
-import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
-import type { ISymbol } from "lib/components/primitive-components/Symbol/ISymbol"
-import { Renderable } from "lib/components/base-components/Renderable"
-import type { IGroup } from "lib/components/primitive-components/Group/IGroup"
-import type { Ftype } from "lib/utils/constants"
-import { selectOne, selectAll, type Options } from "css-select"
-import type { BoardI } from "lib/components/normal-components/BoardI"
-import { evaluateCalcString } from "lib/utils/evaluateCalcString"
 import {
   cssSelectPrimitiveComponentAdapter,
   cssSelectPrimitiveComponentAdapterOnlySubcircuits,
   cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
 } from "./cssSelectPrimitiveComponentAdapter"
 import { preprocessSelector } from "./preprocessSelector"
-import type { IsolatedCircuit } from "lib/IsolatedCircuit"
 
 const cssSelectOptionsInsideSubcircuit: Options<
   PrimitiveComponent,
@@ -215,7 +218,11 @@ export abstract class PrimitiveComponent<
   protected _resolvePcbCoordinate(
     rawValue: unknown,
     axis: "pcbX" | "pcbY",
-    options: { allowBoardVariables?: boolean } = {},
+    options: {
+      allowBoardVariables?: boolean
+      allowComponentVariables?: boolean
+      componentVariables?: Record<string, number>
+    } = {},
   ): number {
     if (rawValue == null) return 0
     if (typeof rawValue === "number") return rawValue
@@ -227,7 +234,9 @@ export abstract class PrimitiveComponent<
 
     const allowBoardVariables =
       options.allowBoardVariables ?? (this as any)._isNormalComponent === true
+    const allowComponentVariables = options.allowComponentVariables ?? false
     const includesBoardVariable = rawValue.includes("board.")
+
     const knownVariables: Record<string, number> = {}
 
     if (allowBoardVariables) {
@@ -253,7 +262,20 @@ export abstract class PrimitiveComponent<
       Object.assign(knownVariables, boardVariables)
     }
 
+    if (allowComponentVariables) {
+      Object.assign(knownVariables, options.componentVariables ?? {})
+    }
+
     try {
+      const calcIdentifiers = extractCalcIdentifiers(rawValue)
+      const includesComponentVariable = calcIdentifiers.some(
+        (identifier) => !identifier.startsWith("board."),
+      )
+
+      if (includesComponentVariable && !allowComponentVariables) {
+        return 0
+      }
+
       return evaluateCalcString(rawValue, { knownVariables })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
@@ -261,6 +283,18 @@ export abstract class PrimitiveComponent<
         `Invalid ${axis} value for ${this.componentName}: ${message}`,
       )
     }
+  }
+
+  resolvePcbCoordinate(
+    rawValue: unknown,
+    axis: "pcbX" | "pcbY",
+    options: {
+      allowBoardVariables?: boolean
+      allowComponentVariables?: boolean
+      componentVariables?: Record<string, number>
+    } = {},
+  ): number {
+    return this._resolvePcbCoordinate(rawValue, axis, options)
   }
 
   /**
