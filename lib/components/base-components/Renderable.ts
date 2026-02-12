@@ -49,6 +49,7 @@ export const orderedRenderPhases = [
   "PcbPortAttachment",
   "PcbComponentSizeCalculation",
   "PcbComponentAnchorAlignment",
+  "PcbCalcPlacementResolution",
   "PcbLayout",
   "PcbBoardAutoSize",
   "PanelLayout",
@@ -93,6 +94,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   CadModelRender: ["PcbFootprintStringRender"],
   PartsEngineRender: ["PcbFootprintStringRender"],
   PcbComponentAnchorAlignment: ["PcbFootprintStringRender"],
+  PcbCalcPlacementResolution: ["PcbFootprintStringRender"],
 }
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
