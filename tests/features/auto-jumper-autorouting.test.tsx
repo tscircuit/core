@@ -9,7 +9,7 @@ test("board with auto_jumper autorouter for single layer with crossing traces", 
     <board
       width="18mm"
       layers={1}
-      autorouter="auto_jumper"
+      autorouter={{ preset: "auto_jumper", availableJumperTypes: ["1206x4"] }}
       autorouterEffortLevel="2x"
     >
       <chip

@@ -582,6 +582,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Enable jumpers for auto_jumper preset
     if (isAutoJumperPreset) {
       simpleRouteJson.allowJumpers = true
+      if (autorouterConfig.availableJumperTypes) {
+        simpleRouteJson.availableJumperTypes =
+          autorouterConfig.availableJumperTypes
+      }
     }
 
     if (debug.enabled) {
