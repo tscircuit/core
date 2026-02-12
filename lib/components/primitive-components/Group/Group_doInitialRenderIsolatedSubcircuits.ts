@@ -2,38 +2,40 @@ import { IsolatedCircuit } from "lib/IsolatedCircuit"
 import type { Group } from "./Group"
 
 /**
- * Renders this subcircuit in complete isolation using its own IsolatedCircuit
- * instance. The isolated circuit runs all render phases independently, then
- * the resulting Circuit JSON is stored on the group for the existing
- * InflateSubcircuitCircuitJson phase to pick up and inflate.
+ * Drives one render cycle of the group's isolated circuit. On the first call,
+ * creates the IsolatedCircuit and moves the group's children into it. On each
+ * call, runs one render cycle. Returns true once the isolated circuit has
+ * settled and its results are ready to be inflated.
  */
 export function Group_doInitialRenderIsolatedSubcircuits(
   group: Group<any>,
-): void {
-  if (!group._isIsolatedSubcircuit) return
-  if (!group.root) return
+): boolean {
+  if (!group._isolatedCircuit) {
+    const parentRoot = group.root!
 
-  const parentRoot = group.root
+    group._isolatedCircuit = new IsolatedCircuit({
+      platform: {
+        ...parentRoot.platform,
+        pcbDisabled: parentRoot.pcbDisabled,
+        schematicDisabled: parentRoot.schematicDisabled,
+      },
+    })
 
-  const isolatedCircuit = new IsolatedCircuit({
-    platform: {
-      ...parentRoot.platform,
-      pcbDisabled: parentRoot.pcbDisabled,
-      schematicDisabled: parentRoot.schematicDisabled,
-    },
-  })
-
-  const childrenSnapshot = [...group.children]
-
-  for (const child of childrenSnapshot) {
-    isolatedCircuit.add(child)
+    for (const child of group.children) {
+      group._isolatedCircuit.add(child)
+    }
   }
 
-  group._queueAsyncEffect("render-isolated-subcircuit", async () => {
-    await isolatedCircuit.renderUntilSettled()
+  group._isolatedCircuit.render()
 
-    group.children = []
-    group._normalComponentNameMap = null
-    group._isolatedCircuitJson = isolatedCircuit.getCircuitJson()
-  })
+  if (group._isolatedCircuit._hasIncompleteAsyncEffects()) {
+    return false
+  }
+
+  group._isolatedCircuitJson = group._isolatedCircuit.getCircuitJson()
+  group.children = []
+  group._normalComponentNameMap = null
+  group._isolatedCircuit = null
+
+  return true
 }

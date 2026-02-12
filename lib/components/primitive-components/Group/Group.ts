@@ -17,6 +17,7 @@ import {
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
 import type { Board, RenderPhase } from "index"
+import type { IsolatedCircuit } from "lib/IsolatedCircuit"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
@@ -64,6 +65,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _isInflatedFromCircuitJson = false
 
   _isolatedCircuitJson: AnyCircuitElement[] | null = null
+
+  _isolatedCircuit: IsolatedCircuit | null = null
 
   get _isIsolatedSubcircuit(): boolean {
     return Boolean(this._parsedProps._subcircuitCachingEnabled)
@@ -125,15 +128,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  override runRenderPhaseForChildren(phase: RenderPhase): void {
-    // Skip children while the isolated subcircuit is rendering but inflation
-    // hasn't completed yet. Once inflated, children run normally.
-    if (this._isIsolatedSubcircuit && !this._isInflatedFromCircuitJson) return
-    super.runRenderPhaseForChildren(phase)
-  }
+  override runRenderCycle() {
+    if (!this._isIsolatedSubcircuit || !this.root) {
+      super.runRenderCycle()
+      return
+    }
 
-  doInitialRenderIsolatedSubcircuits() {
-    Group_doInitialRenderIsolatedSubcircuits(this)
+    if (!Group_doInitialRenderIsolatedSubcircuits(this)) return
+
+    super.runRenderCycle()
   }
 
   doInitialSourceGroupRender() {
