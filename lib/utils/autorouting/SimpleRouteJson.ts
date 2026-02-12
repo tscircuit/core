@@ -65,6 +65,7 @@ export interface SimpleRouteJson {
   traces?: SimplifiedPcbTrace[]
   // Enable jumper-based routing for single-layer boards
   allowJumpers?: boolean
+  availableJumperTypes?: Array<"1206x4" | "0603">
 }
 
 // declare module "autorouting-dataset" {
