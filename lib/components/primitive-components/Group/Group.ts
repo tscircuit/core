@@ -44,7 +44,7 @@ import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicT
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
-import type { Board, RenderPhase } from "index"
+import type { Board, IsolatedCircuit, RenderPhase } from "index"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
@@ -63,6 +63,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _isInflatedFromCircuitJson = false
 
   _isolatedCircuitJson: AnyCircuitElement[] | null = null
+
+  _isolatedCircuit: IsolatedCircuit | null = null
 
   get _isIsolatedSubcircuit(): boolean {
     return Boolean(this._parsedProps._subcircuitCachingEnabled)
@@ -124,15 +126,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  override runRenderPhaseForChildren(phase: RenderPhase): void {
-    // Skip children while the isolated subcircuit is rendering but inflation
-    // hasn't completed yet. Once inflated, children run normally.
-    if (this._isIsolatedSubcircuit && !this._isInflatedFromCircuitJson) return
-    super.runRenderPhaseForChildren(phase)
-  }
+  override runRenderCycle() {
+    if (!this._isIsolatedSubcircuit || !this.root) {
+      super.runRenderCycle()
+      return
+    }
 
-  doInitialRenderIsolatedSubcircuits() {
-    Group_doInitialRenderIsolatedSubcircuits(this)
+    if (!Group_doInitialRenderIsolatedSubcircuits(this)) return
+
+    super.runRenderCycle()
   }
 
   doInitialSourceGroupRender() {

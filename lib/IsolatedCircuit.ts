@@ -173,7 +173,7 @@ export class IsolatedCircuit {
     this.emit("renderComplete")
   }
 
-  private _hasIncompleteAsyncEffects(): boolean {
+  _hasIncompleteAsyncEffects(): boolean {
     if (this._asyncEffectPhaseById.size > 0) return true
     return this.children.some((child) => child._hasIncompleteAsyncEffects())
   }
