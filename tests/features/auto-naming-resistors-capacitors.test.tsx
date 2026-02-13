@@ -99,3 +99,25 @@ test("leds are auto-named D1, D2 etc", () => {
 
   expect(ledNames).toEqual(["D1", "D2"])
 })
+
+test("diodes and leds share the same counter (D prefix)", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board>
+      <led footprint="0402" />
+      <led footprint="0402" />
+      <diode footprint="0402" />
+      <led footprint="0402" />
+    </board>,
+  )
+
+  circuit.render()
+
+  const sourceComponents = circuit.db.source_component.list()
+  const names = sourceComponents
+    .filter((c) => c.ftype === "simple_led" || c.ftype === "simple_diode")
+    .map((c) => c.name)
+
+  expect(names).toEqual(["D1", "D2", "D3", "D4"])
+})

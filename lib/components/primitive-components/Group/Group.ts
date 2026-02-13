@@ -337,14 +337,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const prefix = componentPrefixes[elm.lowercaseComponentName]
 
     if (prefix) {
-      let counter = this.unnamedElementCounter[elm.lowercaseComponentName] ?? 1
+      let counter = this.unnamedElementCounter[prefix] ?? 1
       let candidateName: string
 
       do {
         candidateName = `${prefix}${counter++}`
       } while (this.isNameTaken(candidateName))
 
-      this.unnamedElementCounter[elm.lowercaseComponentName] = counter
+      this.unnamedElementCounter[prefix] = counter
       return candidateName
     }
 
