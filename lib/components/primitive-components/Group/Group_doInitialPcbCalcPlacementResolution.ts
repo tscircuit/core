@@ -388,10 +388,10 @@ function updateVarsForNamedComponent(
   vars[`${component.name}.y`] = y
   vars[`${component.name}.width`] = width
   vars[`${component.name}.height`] = height
-  vars[`${component.name}.minx`] = x - width / 2
-  vars[`${component.name}.maxx`] = x + width / 2
-  vars[`${component.name}.miny`] = y - height / 2
-  vars[`${component.name}.maxy`] = y + height / 2
+  vars[`${component.name}.minX`] = x - width / 2
+  vars[`${component.name}.maxX`] = x + width / 2
+  vars[`${component.name}.minY`] = y - height / 2
+  vars[`${component.name}.maxY`] = y + height / 2
 
   const padElementsByReference = collectPadElementsByReference(component)
   for (const [referencePath, elements] of padElementsByReference.entries()) {
@@ -405,10 +405,10 @@ function updateVarsForNamedComponent(
     vars[`${referencePath}.y`] = (minY + maxY) / 2
     vars[`${referencePath}.width`] = maxX - minX
     vars[`${referencePath}.height`] = maxY - minY
-    vars[`${referencePath}.minx`] = minX
-    vars[`${referencePath}.maxx`] = maxX
-    vars[`${referencePath}.miny`] = minY
-    vars[`${referencePath}.maxy`] = maxY
+    vars[`${referencePath}.minX`] = minX
+    vars[`${referencePath}.maxX`] = maxX
+    vars[`${referencePath}.minY`] = minY
+    vars[`${referencePath}.maxY`] = maxY
   }
 }
 

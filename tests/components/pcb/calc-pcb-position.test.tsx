@@ -13,8 +13,8 @@ test("pcb coordinates can use calc expressions with board bounds", () => {
         name="R1"
         footprint="0402"
         resistance="1k"
-        pcbX="calc(board.minx + 1mm)"
-        pcbY="calc(board.maxy - 1mm)"
+        pcbX="calc(board.minX + 1mm)"
+        pcbY="calc(board.maxY - 1mm)"
       />
     </board>,
   )
@@ -41,7 +41,7 @@ test("calc expressions using board bounds fail for auto-sized boards", () => {
         name="R1"
         footprint="0402"
         resistance="1k"
-        pcbX="calc(board.minx + 1mm)"
+        pcbX="calc(board.minX + 1mm)"
       />
     </board>,
   )

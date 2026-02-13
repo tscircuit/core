@@ -17,21 +17,21 @@ test("pcb calc resolves chained component-relative references with y references"
         name="R2"
         footprint="0603"
         resistance="1k"
-        pcbX="calc(R1.maxx + 1.5mm)"
+        pcbX="calc(R1.maxX + 1.5mm)"
         pcbY="calc(R1.y)"
       />
       <resistor
         name="R3"
         footprint="0603"
         resistance="1k"
-        pcbX="calc(R2.maxx + 1.5mm)"
+        pcbX="calc(R2.maxX + 1.5mm)"
         pcbY="calc(R2.y)"
       />
       <resistor
         name="R4"
         footprint="0603"
         resistance="1k"
-        pcbX="calc(R3.maxx + 1.5mm)"
+        pcbX="calc(R3.maxX + 1.5mm)"
         pcbY="calc(R3.y)"
       />
     </board>,

@@ -68,7 +68,7 @@ function extractExpression(raw: string): string {
 }
 
 /**
- * Tokenizer: turns "board.minx + 1mm" into tokens.
+ * Tokenizer: turns "board.minX + 1mm" into tokens.
  */
 function tokenize(expr: string, units: Record<string, number>): Token[] {
   const tokens: Token[] = []
@@ -131,7 +131,7 @@ function tokenize(expr: string, units: Record<string, number>): Token[] {
       continue
     }
 
-    // Identifier: board.minx, foo, x1, etc.
+    // Identifier: board.minX, foo, x1, etc.
     if (isIdentStart(ch)) {
       const start = i
       i++

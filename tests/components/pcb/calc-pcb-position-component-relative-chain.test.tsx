@@ -11,13 +11,13 @@ test("pcb calc resolves chained component-relative references", () => {
         name="R2"
         footprint="0402"
         resistance="1k"
-        pcbX="calc(R1.maxx + 1mm)"
+        pcbX="calc(R1.maxX + 1mm)"
       />
       <resistor
         name="R3"
         footprint="0402"
         resistance="1k"
-        pcbX="calc(R2.maxx + 1mm)"
+        pcbX="calc(R2.maxX + 1mm)"
       />
     </board>,
   )

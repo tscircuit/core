@@ -10,7 +10,7 @@ test("pcb calc errors on unknown component references", () => {
         name="R2"
         footprint="0402"
         resistance="1k"
-        pcbX="calc(R999.maxx + 2mm)"
+        pcbX="calc(R999.maxX + 2mm)"
       />
     </board>,
   )
