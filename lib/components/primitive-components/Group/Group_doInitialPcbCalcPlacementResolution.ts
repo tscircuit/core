@@ -1,3 +1,5 @@
+import { getBoundsOfPcbElements } from "@tscircuit/circuit-json-util"
+import type { AnyCircuitElement } from "circuit-json"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { extractCalcIdentifiers } from "lib/utils/evaluateCalcString"
@@ -54,35 +56,29 @@ export function Group_doInitialPcbCalcPlacementResolution(
 
   for (const [candidateName, candidate] of candidatesByName.entries()) {
     for (const token of candidate.refs) {
-      const { componentName, field } = parseComponentReferenceToken(token)
+      const { referencePath, field } = parseComponentReferenceToken(token)
       if (!SUPPORTED_COMPONENT_FIELDS.has(field)) {
         throw new Error(
           `Invalid pcb position expression for ${candidate.component.getString()}: unsupported component field "${field}" in "${token}"`,
         )
       }
 
-      const referencedComponents = normalComponentNameMap.get(componentName)
-      if (!referencedComponents || referencedComponents.length === 0) {
-        throw new Error(
-          `Invalid pcb position expression for ${candidate.component.getString()}: unknown component reference "${componentName}" in "${token}"`,
-        )
-      }
-
-      if (referencedComponents.length > 1) {
-        throw new Error(
-          `Invalid pcb position expression for ${candidate.component.getString()}: ambiguous component reference "${componentName}" in "${token}"`,
-        )
-      }
+      const referencedComponentName = resolveReferencedComponentName({
+        token,
+        referencePath,
+        candidate,
+        normalComponentNameMap,
+      })
 
       if (
-        candidatesByName.has(componentName) &&
-        componentName !== candidateName
+        candidatesByName.has(referencedComponentName) &&
+        referencedComponentName !== candidateName
       ) {
         inDegree.set(candidateName, (inDegree.get(candidateName) ?? 0) + 1)
-        if (!dependents.has(componentName)) {
-          dependents.set(componentName, new Set())
+        if (!dependents.has(referencedComponentName)) {
+          dependents.set(referencedComponentName, new Set())
         }
-        dependents.get(componentName)!.add(candidateName)
+        dependents.get(referencedComponentName)!.add(candidateName)
       }
     }
   }
@@ -201,7 +197,7 @@ function getComponentRefsForCalcPlacement(
 }
 
 function parseComponentReferenceToken(token: string): {
-  componentName: string
+  referencePath: string
   field: string
 } {
   const dotIndex = token.lastIndexOf(".")
@@ -209,9 +205,44 @@ function parseComponentReferenceToken(token: string): {
     throw new Error(`Invalid component reference token: "${token}"`)
   }
   return {
-    componentName: token.slice(0, dotIndex),
+    referencePath: token.slice(0, dotIndex),
     field: token.slice(dotIndex + 1).toLowerCase(),
   }
+}
+
+function resolveReferencedComponentName(params: {
+  token: string
+  referencePath: string
+  candidate: PlacementCandidate
+  normalComponentNameMap: Map<string, NormalComponent[]>
+}): string {
+  const { token, referencePath, candidate, normalComponentNameMap } = params
+
+  const directComponents = normalComponentNameMap.get(referencePath)
+  if (directComponents && directComponents.length > 0) {
+    if (directComponents.length > 1) {
+      throw new Error(
+        `Invalid pcb position expression for ${candidate.component.getString()}: ambiguous component reference "${referencePath}" in "${token}"`,
+      )
+    }
+    return referencePath
+  }
+
+  let bestMatch: string | null = null
+  for (const componentName of normalComponentNameMap.keys()) {
+    if (!referencePath.startsWith(`${componentName}.`)) continue
+    if (!bestMatch || componentName.length > bestMatch.length) {
+      bestMatch = componentName
+    }
+  }
+
+  if (!bestMatch) {
+    throw new Error(
+      `Invalid pcb position expression for ${candidate.component.getString()}: unknown component reference "${referencePath}" in "${token}"`,
+    )
+  }
+
+  return bestMatch
 }
 
 function updateVarsForNamedComponent(
@@ -238,4 +269,70 @@ function updateVarsForNamedComponent(
   vars[`${component.name}.maxx`] = x + width / 2
   vars[`${component.name}.miny`] = y - height / 2
   vars[`${component.name}.maxy`] = y + height / 2
+
+  const padElementsByReference = collectPadElementsByReference(component)
+  for (const [referencePath, elements] of padElementsByReference.entries()) {
+    const bounds = getBoundsOfPcbElements(elements)
+    const minX = bounds.minX
+    const maxX = bounds.maxX
+    const minY = bounds.minY
+    const maxY = bounds.maxY
+
+    vars[`${referencePath}.x`] = (minX + maxX) / 2
+    vars[`${referencePath}.y`] = (minY + maxY) / 2
+    vars[`${referencePath}.width`] = maxX - minX
+    vars[`${referencePath}.height`] = maxY - minY
+    vars[`${referencePath}.minx`] = minX
+    vars[`${referencePath}.maxx`] = maxX
+    vars[`${referencePath}.miny`] = minY
+    vars[`${referencePath}.maxy`] = maxY
+  }
+}
+
+function collectPadElementsByReference(
+  component: NormalComponent,
+): Map<string, AnyCircuitElement[]> {
+  const refsToElements = new Map<string, AnyCircuitElement[]>()
+  if (!component.name || !component.pcb_component_id || !component.root) {
+    return refsToElements
+  }
+
+  const { db } = component.root
+  const padElements = [
+    ...db.pcb_smtpad.list({ pcb_component_id: component.pcb_component_id }),
+    ...db.pcb_plated_hole.list({
+      pcb_component_id: component.pcb_component_id,
+    }),
+  ] as AnyCircuitElement[]
+
+  for (const pad of padElements) {
+    const aliases = new Set<string>()
+
+    for (const hint of (pad as any).port_hints ?? []) {
+      if (typeof hint === "string" && hint.length > 0) aliases.add(hint)
+    }
+
+    const pcbPortId = (pad as any).pcb_port_id
+    if (pcbPortId) {
+      const pcbPort = db.pcb_port.get(pcbPortId)
+      const sourcePort = pcbPort?.source_port_id
+        ? db.source_port.get(pcbPort.source_port_id)
+        : null
+
+      if (sourcePort?.name) aliases.add(sourcePort.name)
+      if (sourcePort?.pin_number != null) {
+        aliases.add(`pin${sourcePort.pin_number}`)
+      }
+    }
+
+    for (const alias of aliases) {
+      const referencePath = `${component.name}.${alias}`
+      if (!refsToElements.has(referencePath)) {
+        refsToElements.set(referencePath, [])
+      }
+      refsToElements.get(referencePath)!.push(pad)
+    }
+  }
+
+  return refsToElements
 }
