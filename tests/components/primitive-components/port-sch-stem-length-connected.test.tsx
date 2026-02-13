@@ -16,6 +16,13 @@ test("Ports with schStemLength can be connected with traces", async () => {
             <schematicline x1={-0.5} y1={-0.6} x2={-0.5} y2={0.6} />
             <schematicline x1={-0.5} y1={0.6} x2={0.5} y2={0} />
             <schematicline x1={0.5} y1={0} x2={-0.5} y2={-0.6} />
+            <schematictext
+              text="U1"
+              schX={-0.3}
+              schY={0.8}
+              fontSize={0.4}
+              color="brown"
+            />
             <port
               name="OUT"
               schX={1.3}
@@ -37,6 +44,13 @@ test("Ports with schStemLength can be connected with traces", async () => {
             <schematicline x1={-0.5} y1={0.6} x2={0.5} y2={0} />
             <schematicline x1={0.5} y1={0} x2={-0.5} y2={-0.6} />
             <schematiccircle center={{ x: 0.65, y: 0 }} radius={0.15} />
+            <schematictext
+              text="U2"
+              schX={-0.3}
+              schY={0.8}
+              fontSize={0.4}
+              color="brown"
+            />
             <port
               name="IN"
               schX={2.7}

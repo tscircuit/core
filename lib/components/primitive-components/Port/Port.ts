@@ -205,8 +205,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
     const { schX, schY } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
-      // For ports with explicit coordinates in custom React symbols,
-      // the port position is where traces connect (end of stem)
+      // use them as absolute coordinates (not relative to the parent)
       return { x: schX, y: schY }
     }
 
@@ -696,7 +695,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     this.schematic_port_id = schematic_port.schematic_port_id
 
     // Create schematic_line for port stem when schStemLength is specified
-    if (props.schStemLength !== undefined && props.direction) {
+    if (props.schStemLength !== undefined && props.schStemLength !== 0) {
       const { schStemLength, direction } = props
       let x2 = portCenter.x
       let y2 = portCenter.y
@@ -713,6 +712,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         y1: portCenter.y,
         x2,
         y2,
+        stroke_width: 0.05,
         color: SCHEMATIC_COMPONENT_OUTLINE_COLOR,
         is_dashed: false,
       })
