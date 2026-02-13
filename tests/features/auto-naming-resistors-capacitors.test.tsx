@@ -118,3 +118,22 @@ test("led auto-naming uses D prefix", () => {
 
   expect(dNames).toEqual(["D1", "D2"])
 })
+
+test("pin headers auto-named with J prefix", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board>
+      <pinheader pinCount={4} />
+      <pinheader pinCount={2} />
+    </board>,
+  )
+
+  circuit.render()
+
+  const sourceComponents = circuit.db.source_component.list()
+  const jComponents = sourceComponents.filter((c) => c.name?.startsWith("J"))
+  const jNames = jComponents.map((c) => c.name).sort()
+
+  expect(jNames).toEqual(["J1", "J2"])
+})

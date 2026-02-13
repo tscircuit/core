@@ -332,6 +332,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       fuse: "F",
       crystal: "X",
       jumper: "J",
+      pinheader: "J",
     }
 
     const prefix = componentPrefixes[elm.lowercaseComponentName]
