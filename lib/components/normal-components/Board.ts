@@ -547,7 +547,7 @@ export class Board
         checkPcbComponentsOutOfBoard(circuitJson)
       for (const error of pcbComponentOutsideErrors) {
         const component = db.pcb_component.get(error.pcb_component_id)
-        if (component?.allow_off_board) continue
+        if (component?.is_allowed_to_be_off_board) continue
         db.pcb_component_outside_board_error.insert(error)
       }
 
