@@ -45,7 +45,7 @@
     "@tscircuit/math-utils": "^0.0.29",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.8",
-    "@tscircuit/props": "file:.yalc/@tscircuit/props",
+    "@tscircuit/props": "^0.0.471",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
     "@tscircuit/schematic-trace-solver": "^v0.0.45",
     "@tscircuit/solver-utils": "^0.0.3",
