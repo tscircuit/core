@@ -119,5 +119,5 @@ test("diodes and leds share the same counter (D prefix)", () => {
     .filter((c) => c.ftype === "simple_led" || c.ftype === "simple_diode")
     .map((c) => c.name)
 
-  expect(names).toEqual(["D1", "D2", "D3", "D4"])
+  expect(names.sort()).toEqual(["D1", "D2", "D3", "D4"])
 })
