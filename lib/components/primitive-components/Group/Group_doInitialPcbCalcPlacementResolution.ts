@@ -55,6 +55,8 @@ export function Group_doInitialPcbCalcPlacementResolution(
   }
 
   for (const [candidateName, candidate] of candidatesByName.entries()) {
+    const referencedCandidateNames = new Set<string>()
+
     for (const token of candidate.refs) {
       const { referencePath, field } = parseComponentReferenceToken(token)
       if (!SUPPORTED_COMPONENT_FIELDS.has(field)) {
@@ -74,12 +76,16 @@ export function Group_doInitialPcbCalcPlacementResolution(
         candidatesByName.has(referencedComponentName) &&
         referencedComponentName !== candidateName
       ) {
-        inDegree.set(candidateName, (inDegree.get(candidateName) ?? 0) + 1)
-        if (!dependents.has(referencedComponentName)) {
-          dependents.set(referencedComponentName, new Set())
-        }
-        dependents.get(referencedComponentName)!.add(candidateName)
+        referencedCandidateNames.add(referencedComponentName)
       }
+    }
+
+    for (const referencedComponentName of referencedCandidateNames) {
+      inDegree.set(candidateName, (inDegree.get(candidateName) ?? 0) + 1)
+      if (!dependents.has(referencedComponentName)) {
+        dependents.set(referencedComponentName, new Set())
+      }
+      dependents.get(referencedComponentName)!.add(candidateName)
     }
   }
 
