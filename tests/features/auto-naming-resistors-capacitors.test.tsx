@@ -115,9 +115,34 @@ test("diodes and leds share the same counter (D prefix)", () => {
   circuit.render()
 
   const sourceComponents = circuit.db.source_component.list()
-  const names = sourceComponents
-    .filter((c) => c.ftype === "simple_led" || c.ftype === "simple_diode")
-    .map((c) => c.name)
 
-  expect(names.sort()).toEqual(["D1", "D2", "D3", "D4"])
+  const dComponents = sourceComponents.filter((c) => c.name?.startsWith("D"))
+  const dNames = dComponents.map((c) => c.name)
+
+  expect(dComponents.length).toBe(4)
+  expect(new Set(dNames)).toEqual(new Set(["D1", "D2", "D3", "D4"]))
+
+  const errorComponents = circuit
+    .getCircuitJson()
+    .filter((e) => e.type === "source_failed_to_create_component_error")
+  expect(errorComponents).toHaveLength(0)
+})
+
+test("led and diode auto-naming uses shared counter", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board>
+      <led footprint="0402" />
+      <diode footprint="0402" />
+    </board>,
+  )
+
+  circuit.render()
+
+  const sourceComponents = circuit.db.source_component.list()
+  const dComponents = sourceComponents.filter((c) => c.name?.startsWith("D"))
+  const dNames = dComponents.map((c) => c.name).sort()
+
+  expect(dNames).toEqual(["D1", "D2"])
 })
