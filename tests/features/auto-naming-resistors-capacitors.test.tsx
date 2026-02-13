@@ -6,15 +6,10 @@ test("resistors and capacitors are auto-named R1, R2, C1, C2 etc", () => {
 
   circuit.add(
     <board>
-      {/* @ts-expect-error - name is not required */}
       <resistor resistance={1000} footprint="0402" />
-      {/* @ts-expect-error - name is not required */}
       <resistor resistance={1000} footprint="0402" />
-      {/* @ts-expect-error - name is not required */}
       <resistor resistance={1000} footprint="0402" />
-      {/* @ts-expect-error - name is not required */}
       <capacitor capacitance="10uF" footprint="0402" />
-      {/* @ts-expect-error - name is not required */}
       <capacitor capacitance="10uF" footprint="0402" />
     </board>,
   )
@@ -40,12 +35,9 @@ test("auto-naming skips manually assigned names", () => {
   circuit.add(
     <board>
       <resistor name="R1" resistance={1000} footprint="0402" />
-      {/* @ts-expect-error - name is not required */}
       <resistor resistance={1000} footprint="0402" />
-      {/* @ts-expect-error - name is not required */}
       <resistor resistance={1000} footprint="0402" />
       <capacitor name="C2" capacitance="10uF" footprint="0402" />
-      {/* @ts-expect-error - name is not required */}
       <capacitor capacitance="10uF" footprint="0402" />
     </board>,
   )
