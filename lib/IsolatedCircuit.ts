@@ -60,6 +60,14 @@ export class IsolatedCircuit {
    */
   projectUrl?: string
 
+  /**
+   * Cache of rendered circuit JSON for isolated subcircuits, keyed by a
+   * deterministic hash of the subcircuit's children tree (excluding positional
+   * props). Shared across all subcircuits within the same root circuit so that
+   * identical subcircuits with `_subcircuitCachingEnabled` can skip re-rendering.
+   */
+  _cachedSubcircuitCircuitJson = new Map<string, AnyCircuitElement[]>()
+
   _hasRenderedAtleastOnce = false
   private _asyncEffectIdsByPhase = new Map<RenderPhase, Set<string>>()
   private _asyncEffectPhaseById = new Map<string, RenderPhase>()

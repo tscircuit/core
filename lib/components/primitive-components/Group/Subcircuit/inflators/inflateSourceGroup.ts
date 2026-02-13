@@ -1,6 +1,7 @@
 import type { SourceGroup } from "circuit-json"
 import type { InflatorContext } from "../InflatorFn"
 import { Group } from "lib/components/primitive-components/Group/Group"
+import { Subcircuit } from "lib/components/primitive-components/Group/Subcircuit/Subcircuit"
 
 export function inflateSourceGroup(
   sourceGroup: SourceGroup,
@@ -8,10 +9,12 @@ export function inflateSourceGroup(
 ) {
   const { subcircuit, groupsMap } = inflatorContext
 
-  // Create a Group instance
-  const group = new Group({
-    name: sourceGroup.name ?? `inflated_group_${sourceGroup.source_group_id}`,
-  })
+  const groupName =
+    sourceGroup.name ?? `inflated_group_${sourceGroup.source_group_id}`
+
+  const group = sourceGroup.is_subcircuit
+    ? new Subcircuit({ name: groupName })
+    : new Group({ name: groupName })
 
   // Set the source_group_id so the group can be found
   group.source_group_id = sourceGroup.source_group_id

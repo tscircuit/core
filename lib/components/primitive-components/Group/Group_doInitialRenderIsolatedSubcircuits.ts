@@ -6,6 +6,12 @@ import type { Group } from "./Group"
  * creates the IsolatedCircuit and moves the group's children into it. On each
  * call, runs one render cycle. Returns true once the isolated circuit has
  * settled and its results are ready to be inflated.
+ *
+ * Cache key computation and cache lookups are handled by the caller
+ * (Group.runRenderPhaseForChildren or Group.runRenderCycle). This function
+ * only handles the isolated rendering pipeline. When the render settles, the
+ * caller is responsible for extracting the circuit JSON and storing it in the
+ * cache.
  */
 export function Group_doInitialRenderIsolatedSubcircuits(
   group: Group<any>,
@@ -32,7 +38,18 @@ export function Group_doInitialRenderIsolatedSubcircuits(
     return false
   }
 
-  group._isolatedCircuitJson = group._isolatedCircuit.getCircuitJson()
+  // Isolated render settled — extract results
+  const circuitJson = group._isolatedCircuit.getCircuitJson()
+  group._isolatedCircuitJson = circuitJson
+
+  // Store in cache if a cache key was set by the caller
+  if (group._subcircuitCacheKey && group.root) {
+    group.root._cachedSubcircuitCircuitJson.set(
+      group._subcircuitCacheKey,
+      circuitJson,
+    )
+  }
+
   group.children = []
   group._normalComponentNameMap = null
   group._isolatedCircuit = null
