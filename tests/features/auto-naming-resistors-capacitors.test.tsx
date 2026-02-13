@@ -59,3 +59,47 @@ test("auto-naming skips manually assigned names", () => {
   expect(capacitorNames).toContain("C2")
   expect(capacitorNames).toContain("C1")
 })
+
+test("inductors are auto-named L1, L2 etc", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board>
+      {/* @ts-expect-error - name is not required */}
+      <inductor inductance="10uH" footprint="0402" />
+      {/* @ts-expect-error - name is not required */}
+      <inductor inductance="10uH" footprint="0402" />
+    </board>,
+  )
+
+  circuit.render()
+
+  const sourceComponents = circuit.db.source_component.list()
+  const inductorNames = sourceComponents
+    .filter((c) => c.ftype === "simple_inductor")
+    .map((c) => c.name)
+
+  expect(inductorNames).toEqual(["L1", "L2"])
+})
+
+test("leds are auto-named D1, D2 etc", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board>
+      {/* @ts-expect-error - name is not required */}
+      <led footprint="0402" />
+      {/* @ts-expect-error - name is not required */}
+      <led footprint="0402" />
+    </board>,
+  )
+
+  circuit.render()
+
+  const sourceComponents = circuit.db.source_component.list()
+  const ledNames = sourceComponents
+    .filter((c) => c.ftype === "simple_led")
+    .map((c) => c.name)
+
+  expect(ledNames).toEqual(["D1", "D2"])
+})

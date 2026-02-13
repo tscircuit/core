@@ -322,6 +322,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const componentPrefixes: Record<string, string> = {
       resistor: "R",
       capacitor: "C",
+      inductor: "L",
+      diode: "D",
+      led: "D",
+      transistor: "Q",
+      mosfet: "Q",
+      switch: "SW",
+      pushbutton: "SW",
+      fuse: "F",
+      crystal: "Y",
+      jumper: "J",
     }
 
     const prefix = componentPrefixes[elm.lowercaseComponentName]
