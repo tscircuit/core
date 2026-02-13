@@ -313,7 +313,31 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   unnamedElementCounter: Record<string, number> = {}
+
+  private isNameTaken(name: string): boolean {
+    return this.children.some((c) => c.name === name)
+  }
+
   getNextAvailableName(elm: PrimitiveComponent): string {
+    const componentPrefixes: Record<string, string> = {
+      resistor: "R",
+      capacitor: "C",
+    }
+
+    const prefix = componentPrefixes[elm.lowercaseComponentName]
+
+    if (prefix) {
+      let counter = this.unnamedElementCounter[elm.lowercaseComponentName] ?? 1
+      let candidateName: string
+
+      do {
+        candidateName = `${prefix}${counter++}`
+      } while (this.isNameTaken(candidateName))
+
+      this.unnamedElementCounter[elm.lowercaseComponentName] = counter
+      return candidateName
+    }
+
     this.unnamedElementCounter[elm.lowercaseComponentName] ??= 1
     return `unnamed_${elm.lowercaseComponentName}${this.unnamedElementCounter[elm.lowercaseComponentName]++}`
   }

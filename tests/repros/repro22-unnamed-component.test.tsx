@@ -14,7 +14,7 @@ test("chip renders with default name when none provided", () => {
   circuit.render()
 
   const source_component = circuit.db.source_component.list()[0]
-  expect(source_component.name).toMatchInlineSnapshot(`"unnamed_resistor1"`)
+  expect(source_component.name).toMatchInlineSnapshot(`"R1"`)
   const errors = circuit
     .getCircuitJson()
     .filter((e) => e.type === "source_failed_to_create_component_error")
