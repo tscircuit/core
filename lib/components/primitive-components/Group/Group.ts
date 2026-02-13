@@ -330,7 +330,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       switch: "SW",
       pushbutton: "SW",
       fuse: "F",
-      crystal: "Y",
+      crystal: "X",
       jumper: "J",
     }
 
