@@ -10,35 +10,35 @@ test("pcb edge positioning props support calc expressions and are visible in pcb
         name="R_LEFT"
         footprint="0402"
         resistance="1k"
-        pcbLeftEdgeX="calc(board.minx + 2mm)"
+        pcbLeftEdgeX="calc(board.minX + 2mm)"
         pcbY="0mm"
       />
       <resistor
         name="R_LEFT_PLUS_2"
         footprint="0402"
         resistance="1k"
-        pcbLeftEdgeX="calc(R_LEFT.maxx + 2mm)"
+        pcbLeftEdgeX="calc(R_LEFT.maxX + 2mm)"
         pcbY="0mm"
       />
       <resistor
         name="R_RIGHT"
         footprint="0402"
         resistance="1k"
-        pcbRightEdgeX="calc(board.maxx - 2mm)"
+        pcbRightEdgeX="calc(board.maxX - 2mm)"
         pcbY="0mm"
       />
       <resistor
         name="R_TOP"
         footprint="0402"
         resistance="1k"
-        pcbTopEdgeY="calc(board.maxy - 2mm)"
+        pcbTopEdgeY="calc(board.maxY - 2mm)"
         pcbX="0mm"
       />
       <resistor
         name="R_BOTTOM"
         footprint="0402"
         resistance="1k"
-        pcbBottomEdgeY="calc(board.miny + 2mm)"
+        pcbBottomEdgeY="calc(board.minY + 2mm)"
         pcbX="0mm"
       />
 

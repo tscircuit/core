@@ -12,7 +12,7 @@ test("pcb calc supports pad-relative references", () => {
         name="R2"
         footprint="0402"
         resistance="1k"
-        pcbX="calc(R1.pin1.minx - 2mm)"
+        pcbX="calc(R1.pin1.minX - 2mm)"
         pcbY="calc(R1.pin1.y)"
       />
     </board>,
