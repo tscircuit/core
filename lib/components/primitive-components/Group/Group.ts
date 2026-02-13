@@ -1037,6 +1037,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _getPcbLayoutMode(): "grid" | "flex" | "match-adapt" | "pack" | "none" {
     const props = this._parsedProps as SubcircuitGroupProps
+    const rawProps = this.props as any
     if (this._isInflatedFromCircuitJson) return "none"
     if (props.pcbRelative) return "none"
     if (props.pcbLayout?.matchAdapt) return "match-adapt"
@@ -1057,7 +1058,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // pcb coordinates and no manual edits are present. Relatively positioned
     // components (with pcbX/pcbY) will be excluded from packing, while others
     // will be packed together.
-    const groupHasCoords = props.pcbX !== undefined || props.pcbY !== undefined
+    const groupHasCoords =
+      props.pcbX !== undefined ||
+      props.pcbY !== undefined ||
+      props.pcbLeftEdgeX !== undefined ||
+      props.pcbRightEdgeX !== undefined ||
+      props.pcbTopEdgeY !== undefined ||
+      props.pcbBottomEdgeY !== undefined ||
+      rawProps.pcbLeftEdgeX !== undefined ||
+      rawProps.pcbRightEdgeX !== undefined ||
+      rawProps.pcbTopEdgeY !== undefined ||
+      rawProps.pcbBottomEdgeY !== undefined
     const hasManualEdits = (props.manualEdits?.pcb_placements?.length ?? 0) > 0
 
     const unpositionedDirectChildrenCount = this.children.reduce(
@@ -1068,8 +1079,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
 
         const childProps = child._parsedProps
+        const rawChildProps = child.props as any
         const hasCoords =
-          childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
+          childProps?.pcbX !== undefined ||
+          childProps?.pcbY !== undefined ||
+          childProps?.pcbLeftEdgeX !== undefined ||
+          childProps?.pcbRightEdgeX !== undefined ||
+          childProps?.pcbTopEdgeY !== undefined ||
+          childProps?.pcbBottomEdgeY !== undefined ||
+          rawChildProps?.pcbLeftEdgeX !== undefined ||
+          rawChildProps?.pcbRightEdgeX !== undefined ||
+          rawChildProps?.pcbTopEdgeY !== undefined ||
+          rawChildProps?.pcbBottomEdgeY !== undefined
         return count + (hasCoords ? 0 : 1)
       },
       0,
