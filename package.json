@@ -30,7 +30,7 @@
     "generate-test-plan": "bun run scripts/generate-test-plan.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.3",
+    "@biomejs/biome": "^1.9.4",
     "@resvg/resvg-js": "^2.6.2",
     "@tscircuit/alphabet": "0.0.18",
     "@tscircuit/capacity-autorouter": "^0.0.269",
@@ -47,13 +47,13 @@
     "@tscircuit/ngspice-spice-engine": "^0.0.8",
     "@tscircuit/props": "^0.0.474",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
-    "@tscircuit/schematic-trace-solver": "^v0.0.45",
+    "@tscircuit/schematic-trace-solver": "^0.0.45",
     "@tscircuit/solver-utils": "^0.0.3",
     "@tscircuit/soup-util": "^0.0.41",
-    "@types/bun": "^1.2.16",
+    "@types/bun": "^1.3.9",
     "@types/debug": "^4.1.12",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/react-reconciler": "^0.28.9",
     "bpc-graph": "^0.0.57",
     "bun-match-svg": "0.0.12",
@@ -66,10 +66,10 @@
     "circuit-json-to-simple-3d": "^0.0.9",
     "circuit-json-to-spice": "^0.0.34",
     "circuit-to-svg": "^0.0.327",
-    "concurrently": "^9.1.2",
+    "concurrently": "^9.2.1",
     "connectivity-map": "^1.0.0",
-    "debug": "^4.3.6",
-    "eecircuit-engine": "^1.5.6",
+    "debug": "^4.4.3",
+    "eecircuit-engine": "^1.5.9",
     "flatbush": "^4.5.0",
     "graphics-debug": "^0.0.60",
     "howfat": "^0.3.8",
@@ -78,12 +78,12 @@
     "minicssgrid": "^0.0.9",
     "pkg-pr-new": "^0.0.37",
     "poppygl": "^0.0.16",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "schematic-symbols": "^0.0.208",
     "spicey": "^0.0.14",
     "ts-expect": "^1.3.0",
-    "tsup": "^8.2.4"
+    "tsup": "^8.5.1"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -100,19 +100,19 @@
     "circuit-json": "*",
     "circuit-json-to-connectivity-map": "*",
     "schematic-symbols": "*",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@flatten-js/core": "^1.6.2",
-    "@lume/kiwi": "^0.4.3",
+    "@flatten-js/core": "^1.6.10",
+    "@lume/kiwi": "^0.4.4",
     "calculate-packing": "0.0.68",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.3",
-    "nanoid": "^5.0.7",
+    "nanoid": "^5.1.6",
     "performance-now": "^2.1.0",
     "react-reconciler": "^0.32.0",
     "svg-path-commander": "^2.1.11",
     "transformation-matrix": "^2.16.1",
-    "zod": "^3.25.67"
+    "zod": "^3.25.76"
   }
 }
