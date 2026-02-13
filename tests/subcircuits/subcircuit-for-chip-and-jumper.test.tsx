@@ -22,6 +22,7 @@ test("subcircuit-id property for chip", async () => {
       },
       "do_not_place": false,
       "height": 3,
+      "is_allowed_to_be_off_board": false,
       "layer": "top",
       "obstructs_within_bounds": true,
       "pcb_component_id": "pcb_component_0",
