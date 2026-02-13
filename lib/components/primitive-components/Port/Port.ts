@@ -1,4 +1,5 @@
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
+import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
 import type {
   SchematicBoxDimensions,
   SchematicBoxPortPositionWithMetadata,
@@ -202,20 +203,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
-    const { schX, schY, schStemLength, direction } = this._parsedProps
+    const { schX, schY } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
       // For ports with explicit coordinates in custom React symbols,
-      // if schStemLength is specified, offset the port center by that amount
-      // in the facing direction so the port center is at the tip of the stem
-      let x = schX
-      let y = schY
-      if (schStemLength !== undefined && direction) {
-        if (direction === "right") x += schStemLength
-        else if (direction === "left") x -= schStemLength
-        else if (direction === "up") y += schStemLength
-        else if (direction === "down") y -= schStemLength
-      }
-      return { x, y }
+      // the port position is where traces connect (end of stem)
+      return { x: schX, y: schY }
     }
 
     const parentNormalComponent = this.getParentNormalComponent()
@@ -702,6 +694,29 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const schematic_port = db.schematic_port.insert(schematicPortInsertProps)
 
     this.schematic_port_id = schematic_port.schematic_port_id
+
+    // Create schematic_line for port stem when schStemLength is specified
+    if (props.schStemLength !== undefined && props.direction) {
+      const { schStemLength, direction } = props
+      let x2 = portCenter.x
+      let y2 = portCenter.y
+
+      // Line goes from port position toward the component body (opposite of direction)
+      if (direction === "right") x2 -= schStemLength
+      else if (direction === "left") x2 += schStemLength
+      else if (direction === "up") y2 -= schStemLength
+      else if (direction === "down") y2 += schStemLength
+
+      db.schematic_line.insert({
+        schematic_component_id: parentNormalComponent?.schematic_component_id!,
+        x1: portCenter.x,
+        y1: portCenter.y,
+        x2,
+        y2,
+        color: SCHEMATIC_COMPONENT_OUTLINE_COLOR,
+        is_dashed: false,
+      })
+    }
   }
 
   _getSubcircuitConnectivityKey(): string | undefined {
