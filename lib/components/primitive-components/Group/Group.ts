@@ -16,7 +16,6 @@ import {
 } from "circuit-json"
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
-import type { Board, RenderPhase } from "index"
 import type { IsolatedCircuit } from "lib/IsolatedCircuit"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { AutorouterError } from "lib/errors/AutorouterError"
@@ -974,6 +973,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "relative" {
     const props = this._parsedProps as SubcircuitGroupProps
+    const schAutoLayoutEnabled = props.schAutoLayoutEnabled ?? false
     if (props.schLayout?.layoutMode === "none") return "relative"
     if (props.schLayout?.layoutMode === "relative") return "relative"
     if (props.schLayout?.matchAdapt) return "match-adapt"
@@ -996,8 +996,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const hasManualEdits =
       (props.manualEdits?.schematic_placements?.length ?? 0) > 0
 
-    // Use match-adapt if no explicit positioning is set, even with group children
-    // This allows nested groups to be laid out properly
+    // For boards, schAutoLayoutEnabled should keep auto layout enabled for
+    // unpositioned children even if some siblings have explicit schX/schY.
+    // Explicitly positioned children are skipped by matchpack.
+    if (schAutoLayoutEnabled && !hasManualEdits) return "match-adapt"
+
+    // Use match-adapt if no explicit positioning is set, even with group
+    // children. This allows nested groups to be laid out properly.
     if (!anyChildHasSchCoords && !hasManualEdits) return "match-adapt"
     return "relative"
   }
