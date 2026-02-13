@@ -17,6 +17,7 @@ import type { INormalComponent } from "lib/components/base-components/NormalComp
 export const portProps = z.object({
   name: z.string().optional(),
   pinNumber: z.number().optional(),
+  schStemLength: z.number().optional(),
   aliases: z.array(z.string()).optional(),
   layer: z.string().optional(),
   layers: z.array(z.string()).optional(),
@@ -201,11 +202,20 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
-    const { schX, schY } = this._parsedProps
+    const { schX, schY, schStemLength, direction } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
       // For ports with explicit coordinates in custom React symbols,
-      // use them as absolute coordinates (not relative to the parent)
-      return { x: schX, y: schY }
+      // if schStemLength is specified, offset the port center by that amount
+      // in the facing direction so the port center is at the tip of the stem
+      let x = schX
+      let y = schY
+      if (schStemLength !== undefined && direction) {
+        if (direction === "right") x += schStemLength
+        else if (direction === "left") x -= schStemLength
+        else if (direction === "up") y += schStemLength
+        else if (direction === "down") y -= schStemLength
+      }
+      return { x, y }
     }
 
     const parentNormalComponent = this.getParentNormalComponent()
@@ -657,14 +667,23 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const bestDisplayPinLabel = this._getBestDisplayPinLabel()
     const parentNormalComponent = this.getParentNormalComponent()
 
+    // Derive side_of_component from direction prop for custom symbols
+    const sideOfComponent =
+      localPortInfo?.side ??
+      (props.direction === "up"
+        ? "top"
+        : props.direction === "down"
+          ? "bottom"
+          : props.direction)
+
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
       schematic_component_id: parentNormalComponent?.schematic_component_id!,
       center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,
-      distance_from_component_edge: 0.4,
-      side_of_component: localPortInfo?.side,
+      distance_from_component_edge: props.schStemLength ?? 0.4,
+      side_of_component: sideOfComponent,
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
       display_pin_label: bestDisplayPinLabel,
