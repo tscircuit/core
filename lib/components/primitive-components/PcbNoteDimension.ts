@@ -25,6 +25,23 @@ export class PcbNoteDimension extends PrimitiveComponent<
         this.renderError(`PcbNoteDimension could not find selector "${input}"`)
         return applyToPoint(transform, { x: 0, y: 0 })
       }
+      const targetPcbComponentId = (
+        target as PrimitiveComponent & {
+          pcb_component_id?: string
+        }
+      ).pcb_component_id
+      const root = this.root
+
+      if (targetPcbComponentId && root) {
+        const pcbComponent = root.db.pcb_component.get(targetPcbComponentId)
+        if (pcbComponent?.center) {
+          return {
+            x: pcbComponent.center.x,
+            y: pcbComponent.center.y,
+          }
+        }
+      }
+
       return target._getGlobalPcbPositionBeforeLayout()
     }
 
@@ -66,6 +83,22 @@ export class PcbNoteDimension extends PrimitiveComponent<
     })
 
     this.pcb_note_dimension_id = pcb_note_dimension.pcb_note_dimension_id
+  }
+
+  doInitialPcbLayout(): void {
+    const root = this.root
+    if (!root || root.pcbDisabled) return
+    if (!this.pcb_note_dimension_id) return
+
+    const { db } = root
+    const transform = this._computePcbGlobalTransformBeforeLayout()
+    const from = this._resolvePoint(this._parsedProps.from, transform)
+    const to = this._resolvePoint(this._parsedProps.to, transform)
+
+    db.pcb_note_dimension.update(this.pcb_note_dimension_id, {
+      from,
+      to,
+    })
   }
 
   getPcbSize(): { width: number; height: number } {

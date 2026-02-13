@@ -108,5 +108,22 @@ test("pcb edge positioning props support calc expressions and are visible in pcb
   expect(noteText).toHaveLength(1)
   expect(noteDimensions).toHaveLength(2)
 
+  const xDimension = noteDimensions.find((dimension) =>
+    (dimension.text ?? "").includes("X edge"),
+  )
+  const yDimension = noteDimensions.find((dimension) =>
+    (dimension.text ?? "").includes("Y edge"),
+  )
+
+  expect(xDimension?.from.x).toBeCloseTo(left?.center.x ?? 0)
+  expect(xDimension?.from.y).toBeCloseTo(left?.center.y ?? 0)
+  expect(xDimension?.to.x).toBeCloseTo(right?.center.x ?? 0)
+  expect(xDimension?.to.y).toBeCloseTo(right?.center.y ?? 0)
+
+  expect(yDimension?.from.x).toBeCloseTo(bottom?.center.x ?? 0)
+  expect(yDimension?.from.y).toBeCloseTo(bottom?.center.y ?? 0)
+  expect(yDimension?.to.x).toBeCloseTo(top?.center.x ?? 0)
+  expect(yDimension?.to.y).toBeCloseTo(top?.center.y ?? 0)
+
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
