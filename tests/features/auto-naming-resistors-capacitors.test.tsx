@@ -6,15 +6,10 @@ test("resistors and capacitors are auto-named R1, R2, C1, C2 etc", () => {
 
   circuit.add(
     <board>
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <resistor resistance={1000} footprint="0402" />
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <resistor resistance={1000} footprint="0402" />
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <resistor resistance={1000} footprint="0402" />
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <capacitor capacitance="10uF" footprint="0402" />
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <capacitor capacitance="10uF" footprint="0402" />
     </board>,
   )
@@ -40,12 +35,9 @@ test("auto-naming skips manually assigned names", () => {
   circuit.add(
     <board>
       <resistor name="R1" resistance={1000} footprint="0402" />
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <resistor resistance={1000} footprint="0402" />
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <resistor resistance={1000} footprint="0402" />
       <capacitor name="C2" capacitance="10uF" footprint="0402" />
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <capacitor capacitance="10uF" footprint="0402" />
     </board>,
   )
@@ -73,9 +65,7 @@ test("inductors are auto-named L1, L2 etc", () => {
 
   circuit.add(
     <board>
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <inductor inductance="10uH" footprint="0402" />
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <inductor inductance="10uH" footprint="0402" />
     </board>,
   )
@@ -95,9 +85,7 @@ test("leds are auto-named D1, D2 etc", () => {
 
   circuit.add(
     <board>
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <led footprint="0402" />
-      {/* @ts-expect-error - name is optional but TS thinks it's required */}
       <led footprint="0402" />
     </board>,
   )
