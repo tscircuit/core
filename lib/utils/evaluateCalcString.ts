@@ -34,7 +34,7 @@ export function evaluateCalcString(
   const { knownVariables, units: userUnits } = options
   const units = { ...defaultUnits, ...(userUnits ?? {}) }
 
-  const expr = extractExpression(input)
+  const expr = normalizeLegacyBoundsIdentifierCase(extractExpression(input))
   const tokens = tokenize(expr, units)
   const result = parseExpression(tokens, knownVariables)
 
@@ -42,11 +42,26 @@ export function evaluateCalcString(
 }
 
 export function extractCalcIdentifiers(input: string): string[] {
-  const expr = extractExpression(input)
+  const expr = normalizeLegacyBoundsIdentifierCase(extractExpression(input))
   const tokens = tokenize(expr, defaultUnits)
   return tokens
     .filter((token): token is StringToken => token.type === "identifier")
     .map((token) => token.value)
+}
+
+function normalizeLegacyBoundsIdentifierCase(expr: string): string {
+  const legacyBoundNameToCamelCase: Record<string, string> = {
+    minx: "minX",
+    maxx: "maxX",
+    miny: "minY",
+    maxy: "maxY",
+  }
+
+  return expr.replace(/\.(minx|maxx|miny|maxy)\b/gi, (match, boundName) => {
+    const normalizedBoundName =
+      legacyBoundNameToCamelCase[String(boundName).toLowerCase()]
+    return `.${normalizedBoundName ?? match.slice(1)}`
+  })
 }
 
 /**
