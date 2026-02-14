@@ -92,8 +92,7 @@ const getRoundedRectOutline = (
 
 export class Board
   extends Group<typeof boardProps>
-  implements BoardI, SubcircuitI
-{
+  implements BoardI, SubcircuitI {
   pcb_board_id: string | null = null
   source_board_id: string | null = null
   _drcChecksComplete = false
@@ -546,8 +545,6 @@ export class Board
       const pcbComponentOutsideErrors =
         checkPcbComponentsOutOfBoard(circuitJson)
       for (const error of pcbComponentOutsideErrors) {
-        const component = db.pcb_component.get(error.pcb_component_id)
-        if (component?.is_allowed_to_be_off_board) continue
         db.pcb_component_outside_board_error.insert(error)
       }
 
