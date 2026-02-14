@@ -11,6 +11,7 @@ import type { RootCircuitEventName } from "lib/events"
 const debug = Debug("tscircuit:renderable")
 
 export const orderedRenderPhases = [
+  "IsolatedSubcircuitRender",
   "ReactSubtreesRender",
   "InflateSubcircuitCircuitJson",
   "SourceNameDuplicateComponentRemoval",
@@ -73,6 +74,7 @@ export const renderPhaseIndexMap = new Map<RenderPhase, number>(
 // async effects originating in specific earlier phases to complete within the
 // current component's subtree.
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
+  InflateSubcircuitCircuitJson: ["IsolatedSubcircuitRender"],
   PcbFootprintLayout: ["PcbFootprintStringRender"],
   PcbComponentSizeCalculation: ["PcbFootprintStringRender"],
   PcbLayout: ["PcbFootprintStringRender"],
