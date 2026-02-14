@@ -1,4 +1,5 @@
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
+import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
 import type {
   SchematicBoxDimensions,
   SchematicBoxPortPositionWithMetadata,
@@ -17,6 +18,7 @@ import type { INormalComponent } from "lib/components/base-components/NormalComp
 export const portProps = z.object({
   name: z.string().optional(),
   pinNumber: z.number().optional(),
+  schStemLength: z.number().optional(),
   aliases: z.array(z.string()).optional(),
   layer: z.string().optional(),
   layers: z.array(z.string()).optional(),
@@ -657,14 +659,23 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const bestDisplayPinLabel = this._getBestDisplayPinLabel()
     const parentNormalComponent = this.getParentNormalComponent()
 
+    // Derive side_of_component from direction prop for custom symbols
+    const sideOfComponent =
+      localPortInfo?.side ??
+      (props.direction === "up"
+        ? "top"
+        : props.direction === "down"
+          ? "bottom"
+          : props.direction)
+
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
       schematic_component_id: parentNormalComponent?.schematic_component_id!,
       center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,
-      distance_from_component_edge: 0.4,
-      side_of_component: localPortInfo?.side,
+      distance_from_component_edge: props.schStemLength ?? 0.4,
+      side_of_component: sideOfComponent,
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
       display_pin_label: bestDisplayPinLabel,
@@ -683,6 +694,30 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const schematic_port = db.schematic_port.insert(schematicPortInsertProps)
 
     this.schematic_port_id = schematic_port.schematic_port_id
+
+    // Create schematic_line for port stem when schStemLength is specified
+    if (props.schStemLength !== undefined && props.schStemLength !== 0) {
+      const { schStemLength, direction } = props
+      let x2 = portCenter.x
+      let y2 = portCenter.y
+
+      // Line goes from port position toward the component body (opposite of direction)
+      if (direction === "right") x2 -= schStemLength
+      else if (direction === "left") x2 += schStemLength
+      else if (direction === "up") y2 -= schStemLength
+      else if (direction === "down") y2 += schStemLength
+
+      db.schematic_line.insert({
+        schematic_component_id: parentNormalComponent?.schematic_component_id!,
+        x1: portCenter.x,
+        y1: portCenter.y,
+        x2,
+        y2,
+        stroke_width: 0.02,
+        color: SCHEMATIC_COMPONENT_OUTLINE_COLOR,
+        is_dashed: false,
+      })
+    }
   }
 
   _getSubcircuitConnectivityKey(): string | undefined {
