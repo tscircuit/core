@@ -34,7 +34,7 @@ async function saveSvgSnapshotOfCircuitJson({
   let content: Buffer | string
   switch (mode) {
     case "pcb":
-      content = convertCircuitJsonToPcbSvg(soup, options)
+      content = convertCircuitJsonToPcbSvg(soup, options ?? {})
       break
     case "schematic":
       content = convertCircuitJsonToSchematicSvg(soup, options)
