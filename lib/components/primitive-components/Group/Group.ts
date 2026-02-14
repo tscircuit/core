@@ -6,7 +6,6 @@ import {
   groupProps,
 } from "@tscircuit/props"
 import {
-  type AnyCircuitElement,
   type LayerRef,
   type PcbTrace,
   type PcbVia,
@@ -16,12 +15,8 @@ import {
 } from "circuit-json"
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
-import type { Board, IsolatedCircuit, RenderPhase } from "index"
+import type { Board } from "index"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import {
-  orderedRenderPhases,
-  renderPhaseIndexMap,
-} from "lib/components/base-components/Renderable"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalAutorouter"
@@ -40,7 +35,6 @@ import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcb
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
-import { Group_doInitialRenderIsolatedSubcircuits } from "./Group_doInitialRenderIsolatedSubcircuits"
 import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
@@ -48,7 +42,6 @@ import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchema
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
-import { getSubcircuitCacheKey } from "./Group_getSubcircuitCacheKey"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
@@ -66,16 +59,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _hasStartedAsyncAutorouting = false
 
   _isInflatedFromCircuitJson = false
-
-  _isolatedCircuitJson: AnyCircuitElement[] | null = null
-
-  _isolatedCircuit: IsolatedCircuit | null = null
-
-  _subcircuitCacheKey: string | null = null
-
-  get _isIsolatedSubcircuit(): boolean {
-    return Boolean(this._parsedProps._subcircuitCachingEnabled)
-  }
 
   _normalComponentNameMap: Map<string, NormalComponent[]> | null = null
 
@@ -131,119 +114,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       zodProps: groupProps as unknown as Props,
       componentName: "Group",
     }
-  }
-
-  override runRenderCycle() {
-    if (!this._isIsolatedSubcircuit || !this.root) {
-      super.runRenderCycle()
-      return
-    }
-
-    if (!Group_doInitialRenderIsolatedSubcircuits(this)) return
-
-    super.runRenderCycle()
-  }
-
-  /**
-   * Override to intercept phase-by-phase rendering of isolated subcircuits.
-   * When this group has _subcircuitCachingEnabled, we perform the isolated
-   * render (or cache lookup) before allowing any children phases to proceed.
-   * This is necessary because nested subcircuits are rendered phase-by-phase
-   * by their parent (via runRenderPhaseForChildren), not via runRenderCycle().
-   */
-  override runRenderPhaseForChildren(phase: RenderPhase): void {
-    if (
-      this._isIsolatedSubcircuit &&
-      this.root &&
-      phase === "ReactSubtreesRender"
-    ) {
-      // Continue an in-progress isolated render
-      if (this._isolatedCircuit) {
-        this._isolatedCircuit.render()
-        if (this._isolatedCircuit._hasIncompleteAsyncEffects()) {
-          return
-        }
-        // Settled — extract results and cache
-        const circuitJson = this._isolatedCircuit.getCircuitJson()
-        this._isolatedCircuitJson = circuitJson
-        if (this._subcircuitCacheKey) {
-          this.root._cachedSubcircuitCircuitJson.set(
-            this._subcircuitCacheKey,
-            circuitJson,
-          )
-        }
-        this.children = []
-        this._normalComponentNameMap = null
-        this._isolatedCircuit = null
-        // Reset phases from Inflate onward so inflated children get rendered
-        this._resetPhasesFromInflate()
-      }
-
-      // First entry — compute cache key, check cache, or start isolated render
-      // Skip if already inflated (prevents re-inflation on subsequent cycles)
-      if (
-        !this._isolatedCircuitJson &&
-        !this._isolatedCircuit &&
-        !this._isInflatedFromCircuitJson
-      ) {
-        // Compute cache key before children are consumed
-        if (!this._subcircuitCacheKey) {
-          this._subcircuitCacheKey = getSubcircuitCacheKey(this)
-        }
-
-        // Check cache
-        const cached = this.root._cachedSubcircuitCircuitJson.get(
-          this._subcircuitCacheKey!,
-        )
-        if (cached) {
-          // Cache hit — reuse previously rendered circuit JSON
-          this._isolatedCircuitJson = cached
-          this.children = []
-          this._normalComponentNameMap = null
-          // Reset phases so inflated children get fully rendered
-          this._resetPhasesFromInflate()
-        } else {
-          // Cache miss — start isolated render
-          if (!Group_doInitialRenderIsolatedSubcircuits(this)) {
-            return
-          }
-        }
-      }
-    }
-
-    // Block all other phases while isolated render is still in progress
-    if (this._isolatedCircuit) return
-
-    super.runRenderPhaseForChildren(phase)
-  }
-
-  /**
-   * Reset all phases from InflateSubcircuitCircuitJson onward so that
-   * doInitial* handlers re-run for newly inflated children.
-   */
-  _resetPhasesFromInflate() {
-    const startIdx = renderPhaseIndexMap.get("InflateSubcircuitCircuitJson")!
-    for (let i = startIdx; i < orderedRenderPhases.length; i++) {
-      this.renderPhaseStates[orderedRenderPhases[i]].initialized = false
-    }
-  }
-
-  /**
-   * Block all render phases on this component while an isolated render is
-   * in progress. Without this, the parent would call runRenderPhase on us
-   * for phases like InflateSubcircuitCircuitJson before the isolated circuit
-   * has finished rendering.
-   */
-  override runRenderPhase(phase: RenderPhase): void {
-    if (this._isolatedCircuit) return
-    super.runRenderPhase(phase)
-  }
-
-  override _hasIncompleteAsyncEffects(): boolean {
-    if (this._isolatedCircuit?._hasIncompleteAsyncEffects()) {
-      return true
-    }
-    return super._hasIncompleteAsyncEffects()
   }
 
   doInitialSourceGroupRender() {
