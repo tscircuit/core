@@ -11,7 +11,7 @@ test("pcb calc supports component-relative references", () => {
         name="R2"
         footprint="0402"
         resistance="1k"
-        pcbX="calc(R1.maxx + 2mm)"
+        pcbX="calc(R1.maxX + 2mm)"
         pcbY="calc(R1.y)"
       />
     </board>,

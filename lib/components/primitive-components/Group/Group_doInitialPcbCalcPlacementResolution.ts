@@ -43,8 +43,8 @@ export function Group_doInitialPcbCalcPlacementResolution(
   const dependents = new Map<string, Set<string>>()
 
   for (const component of allNormalComponents) {
+    if (!shouldResolvePlacementInCalcPhase(component)) continue
     const refs = getComponentRefsForCalcPlacement(component)
-    if (refs.size === 0) continue
     if (!component.name) {
       throw new Error(
         `Invalid pcb position expression for ${component.getString()}: component-relative calc requires the component to have a name`,
@@ -55,6 +55,8 @@ export function Group_doInitialPcbCalcPlacementResolution(
   }
 
   for (const [candidateName, candidate] of candidatesByName.entries()) {
+    const referencedCandidateNames = new Set<string>()
+
     for (const token of candidate.refs) {
       const { referencePath, field } = parseComponentReferenceToken(token)
       if (!SUPPORTED_COMPONENT_FIELDS.has(field)) {
@@ -74,12 +76,16 @@ export function Group_doInitialPcbCalcPlacementResolution(
         candidatesByName.has(referencedComponentName) &&
         referencedComponentName !== candidateName
       ) {
-        inDegree.set(candidateName, (inDegree.get(candidateName) ?? 0) + 1)
-        if (!dependents.has(referencedComponentName)) {
-          dependents.set(referencedComponentName, new Set())
-        }
-        dependents.get(referencedComponentName)!.add(candidateName)
+        referencedCandidateNames.add(referencedComponentName)
       }
+    }
+
+    for (const referencedComponentName of referencedCandidateNames) {
+      inDegree.set(candidateName, (inDegree.get(candidateName) ?? 0) + 1)
+      if (!dependents.has(referencedComponentName)) {
+        dependents.set(referencedComponentName, new Set())
+      }
+      dependents.get(referencedComponentName)!.add(candidateName)
     }
   }
 
@@ -124,6 +130,34 @@ export function Group_doInitialPcbCalcPlacementResolution(
 
     const rawPcbX = (component._parsedProps as any).pcbX
     const rawPcbY = (component._parsedProps as any).pcbY
+    const rawComponentProps = component.props as any
+    const rawPcbLeftEdgeX =
+      (component._parsedProps as any).pcbLeftEdgeX ??
+      rawComponentProps.pcbLeftEdgeX
+    const rawPcbRightEdgeX =
+      (component._parsedProps as any).pcbRightEdgeX ??
+      rawComponentProps.pcbRightEdgeX
+    const rawPcbTopEdgeY =
+      (component._parsedProps as any).pcbTopEdgeY ??
+      rawComponentProps.pcbTopEdgeY
+    const rawPcbBottomEdgeY =
+      (component._parsedProps as any).pcbBottomEdgeY ??
+      rawComponentProps.pcbBottomEdgeY
+
+    if (rawPcbLeftEdgeX !== undefined && rawPcbRightEdgeX !== undefined) {
+      throw new Error(
+        `${component.componentName} cannot set both pcbLeftEdgeX and pcbRightEdgeX`,
+      )
+    }
+
+    if (rawPcbTopEdgeY !== undefined && rawPcbBottomEdgeY !== undefined) {
+      throw new Error(
+        `${component.componentName} cannot set both pcbTopEdgeY and pcbBottomEdgeY`,
+      )
+    }
+
+    const componentWidth = pcbComponent.width ?? 0
+    const componentHeight = pcbComponent.height ?? 0
 
     const nextCenter = {
       x: pcbComponent.center.x,
@@ -137,6 +171,30 @@ export function Group_doInitialPcbCalcPlacementResolution(
       })
       component._resolvedPcbCalcOffsetX = resolvedPcbX
       nextCenter.x = resolvedPcbX
+    } else if (rawPcbLeftEdgeX !== undefined) {
+      const resolvedPcbLeftEdgeX = component.resolvePcbCoordinate(
+        rawPcbLeftEdgeX,
+        "pcbX",
+        {
+          allowComponentVariables: true,
+          componentVariables: componentVars,
+        },
+      )
+      const resolvedPcbX = resolvedPcbLeftEdgeX + componentWidth / 2
+      component._resolvedPcbCalcOffsetX = resolvedPcbX
+      nextCenter.x = resolvedPcbX
+    } else if (rawPcbRightEdgeX !== undefined) {
+      const resolvedPcbRightEdgeX = component.resolvePcbCoordinate(
+        rawPcbRightEdgeX,
+        "pcbX",
+        {
+          allowComponentVariables: true,
+          componentVariables: componentVars,
+        },
+      )
+      const resolvedPcbX = resolvedPcbRightEdgeX - componentWidth / 2
+      component._resolvedPcbCalcOffsetX = resolvedPcbX
+      nextCenter.x = resolvedPcbX
     }
 
     if (rawPcbY !== undefined) {
@@ -146,11 +204,60 @@ export function Group_doInitialPcbCalcPlacementResolution(
       })
       component._resolvedPcbCalcOffsetY = resolvedPcbY
       nextCenter.y = resolvedPcbY
+    } else if (rawPcbTopEdgeY !== undefined) {
+      const resolvedPcbTopEdgeY = component.resolvePcbCoordinate(
+        rawPcbTopEdgeY,
+        "pcbY",
+        {
+          allowComponentVariables: true,
+          componentVariables: componentVars,
+        },
+      )
+      const resolvedPcbY = resolvedPcbTopEdgeY - componentHeight / 2
+      component._resolvedPcbCalcOffsetY = resolvedPcbY
+      nextCenter.y = resolvedPcbY
+    } else if (rawPcbBottomEdgeY !== undefined) {
+      const resolvedPcbBottomEdgeY = component.resolvePcbCoordinate(
+        rawPcbBottomEdgeY,
+        "pcbY",
+        {
+          allowComponentVariables: true,
+          componentVariables: componentVars,
+        },
+      )
+      const resolvedPcbY = resolvedPcbBottomEdgeY + componentHeight / 2
+      component._resolvedPcbCalcOffsetY = resolvedPcbY
+      nextCenter.y = resolvedPcbY
     }
 
     component._repositionOnPcb(nextCenter)
     updateVarsForNamedComponent(component, componentVars)
   }
+}
+
+function shouldResolvePlacementInCalcPhase(
+  component: NormalComponent,
+): boolean {
+  const parsedProps = component._parsedProps as any
+  const rawProps = component.props as any
+
+  const pcbX = parsedProps.pcbX
+  const pcbY = parsedProps.pcbY
+  const pcbLeftEdgeX = parsedProps.pcbLeftEdgeX ?? rawProps.pcbLeftEdgeX
+  const pcbRightEdgeX = parsedProps.pcbRightEdgeX ?? rawProps.pcbRightEdgeX
+  const pcbTopEdgeY = parsedProps.pcbTopEdgeY ?? rawProps.pcbTopEdgeY
+  const pcbBottomEdgeY = parsedProps.pcbBottomEdgeY ?? rawProps.pcbBottomEdgeY
+
+  if (
+    pcbLeftEdgeX !== undefined ||
+    pcbRightEdgeX !== undefined ||
+    pcbTopEdgeY !== undefined ||
+    pcbBottomEdgeY !== undefined
+  ) {
+    return true
+  }
+
+  return typeof pcbX === "string" || typeof pcbY === "string"
 }
 
 function collectNormalComponentsInSubcircuit(
@@ -180,6 +287,18 @@ function getComponentRefsForCalcPlacement(
   const refs = new Set<string>()
   const rawPcbX = (component._parsedProps as any).pcbX
   const rawPcbY = (component._parsedProps as any).pcbY
+  const rawComponentProps = component.props as any
+  const rawPcbLeftEdgeX =
+    (component._parsedProps as any).pcbLeftEdgeX ??
+    rawComponentProps.pcbLeftEdgeX
+  const rawPcbRightEdgeX =
+    (component._parsedProps as any).pcbRightEdgeX ??
+    rawComponentProps.pcbRightEdgeX
+  const rawPcbTopEdgeY =
+    (component._parsedProps as any).pcbTopEdgeY ?? rawComponentProps.pcbTopEdgeY
+  const rawPcbBottomEdgeY =
+    (component._parsedProps as any).pcbBottomEdgeY ??
+    rawComponentProps.pcbBottomEdgeY
 
   const addRefs = (rawValue: unknown) => {
     if (typeof rawValue !== "string") return
@@ -193,6 +312,10 @@ function getComponentRefsForCalcPlacement(
 
   addRefs(rawPcbX)
   addRefs(rawPcbY)
+  addRefs(rawPcbLeftEdgeX)
+  addRefs(rawPcbRightEdgeX)
+  addRefs(rawPcbTopEdgeY)
+  addRefs(rawPcbBottomEdgeY)
   return refs
 }
 
@@ -265,10 +388,10 @@ function updateVarsForNamedComponent(
   vars[`${component.name}.y`] = y
   vars[`${component.name}.width`] = width
   vars[`${component.name}.height`] = height
-  vars[`${component.name}.minx`] = x - width / 2
-  vars[`${component.name}.maxx`] = x + width / 2
-  vars[`${component.name}.miny`] = y - height / 2
-  vars[`${component.name}.maxy`] = y + height / 2
+  vars[`${component.name}.minX`] = x - width / 2
+  vars[`${component.name}.maxX`] = x + width / 2
+  vars[`${component.name}.minY`] = y - height / 2
+  vars[`${component.name}.maxY`] = y + height / 2
 
   const padElementsByReference = collectPadElementsByReference(component)
   for (const [referencePath, elements] of padElementsByReference.entries()) {
@@ -282,10 +405,10 @@ function updateVarsForNamedComponent(
     vars[`${referencePath}.y`] = (minY + maxY) / 2
     vars[`${referencePath}.width`] = maxX - minX
     vars[`${referencePath}.height`] = maxY - minY
-    vars[`${referencePath}.minx`] = minX
-    vars[`${referencePath}.maxx`] = maxX
-    vars[`${referencePath}.miny`] = minY
-    vars[`${referencePath}.maxy`] = maxY
+    vars[`${referencePath}.minX`] = minX
+    vars[`${referencePath}.maxX`] = maxX
+    vars[`${referencePath}.minY`] = minY
+    vars[`${referencePath}.maxY`] = maxY
   }
 }
 

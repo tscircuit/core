@@ -1657,10 +1657,37 @@ export class NormalComponent<
 
     const { db } = this.root!
     const props = this._parsedProps
+    const rawProps = this.props as any
+
+    const pcbLeftEdgeX = props.pcbLeftEdgeX ?? rawProps.pcbLeftEdgeX
+    const pcbRightEdgeX = props.pcbRightEdgeX ?? rawProps.pcbRightEdgeX
+    const pcbTopEdgeY = props.pcbTopEdgeY ?? rawProps.pcbTopEdgeY
+    const pcbBottomEdgeY = props.pcbBottomEdgeY ?? rawProps.pcbBottomEdgeY
 
     const hasExplicitPcbPosition =
-      props.pcbX !== undefined || props.pcbY !== undefined
+      props.pcbX !== undefined ||
+      props.pcbY !== undefined ||
+      pcbLeftEdgeX !== undefined ||
+      pcbRightEdgeX !== undefined ||
+      pcbTopEdgeY !== undefined ||
+      pcbBottomEdgeY !== undefined
     if (!hasExplicitPcbPosition) return
+
+    if (pcbLeftEdgeX !== undefined && pcbRightEdgeX !== undefined) {
+      throw new Error(
+        `${this.componentName} cannot set both pcbLeftEdgeX and pcbRightEdgeX`,
+      )
+    }
+
+    if (pcbTopEdgeY !== undefined && pcbBottomEdgeY !== undefined) {
+      throw new Error(
+        `${this.componentName} cannot set both pcbTopEdgeY and pcbBottomEdgeY`,
+      )
+    }
+
+    const pcbComponent = db.pcb_component.get(this.pcb_component_id)
+    const componentWidth = pcbComponent?.width ?? 0
+    const componentHeight = pcbComponent?.height ?? 0
 
     const parentGroup = this.getGroup()
     const positionedRelativeToGroupId = parentGroup?.pcb_group_id ?? undefined
@@ -1673,13 +1700,25 @@ export class NormalComponent<
       this._resolvedPcbCalcOffsetX ??
       (props.pcbX !== undefined
         ? this._resolvePcbCoordinate(props.pcbX, "pcbX")
-        : undefined)
+        : pcbLeftEdgeX !== undefined
+          ? this._resolvePcbCoordinate(pcbLeftEdgeX, "pcbX") +
+            componentWidth / 2
+          : pcbRightEdgeX !== undefined
+            ? this._resolvePcbCoordinate(pcbRightEdgeX, "pcbX") -
+              componentWidth / 2
+            : undefined)
 
     const resolvedPcbY =
       this._resolvedPcbCalcOffsetY ??
       (props.pcbY !== undefined
         ? this._resolvePcbCoordinate(props.pcbY, "pcbY")
-        : undefined)
+        : pcbTopEdgeY !== undefined
+          ? this._resolvePcbCoordinate(pcbTopEdgeY, "pcbY") -
+            componentHeight / 2
+          : pcbBottomEdgeY !== undefined
+            ? this._resolvePcbCoordinate(pcbBottomEdgeY, "pcbY") +
+              componentHeight / 2
+            : undefined)
 
     db.pcb_component.update(this.pcb_component_id, {
       position_mode: "relative_to_group_anchor",
@@ -1713,9 +1752,18 @@ export class NormalComponent<
    * and should not be moved by automatic packing/layout algorithms
    */
   isRelativelyPositioned(): boolean {
+    const rawProps = this.props as any
     return (
       this._parsedProps.pcbX !== undefined ||
-      this._parsedProps.pcbY !== undefined
+      this._parsedProps.pcbY !== undefined ||
+      this._parsedProps.pcbLeftEdgeX !== undefined ||
+      this._parsedProps.pcbRightEdgeX !== undefined ||
+      this._parsedProps.pcbTopEdgeY !== undefined ||
+      this._parsedProps.pcbBottomEdgeY !== undefined ||
+      rawProps.pcbLeftEdgeX !== undefined ||
+      rawProps.pcbRightEdgeX !== undefined ||
+      rawProps.pcbTopEdgeY !== undefined ||
+      rawProps.pcbBottomEdgeY !== undefined
     )
   }
 }

@@ -13,8 +13,8 @@ test("pcb coordinates can use calc expressions with board bounds", () => {
         name="R1"
         footprint="0402"
         resistance="1k"
-        pcbX="calc(board.minx + 1mm)"
-        pcbY="calc(board.maxy - 1mm)"
+        pcbX="calc(board.minX + 1mm)"
+        pcbY="calc(board.maxY - 1mm)"
       />
     </board>,
   )
@@ -32,6 +32,28 @@ test("pcb coordinates can use calc expressions with board bounds", () => {
   expect(resistor?.center.y).toBeCloseTo(4)
 })
 
+test("legacy lowercase board bounds in calc expressions remain supported", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="20mm" height="10mm">
+      <resistor
+        name="R1"
+        footprint="0402"
+        resistance="1k"
+        pcbX="calc(board.minx + 1mm)"
+        pcbY="calc(board.maxy - 1mm)"
+      />
+    </board>,
+  )
+
+  circuit.render()
+
+  const resistor = circuit.db.pcb_component.list()[0]
+  expect(resistor?.center.x).toBeCloseTo(-9)
+  expect(resistor?.center.y).toBeCloseTo(4)
+})
+
 test("calc expressions using board bounds fail for auto-sized boards", () => {
   const { circuit } = getTestFixture()
 
@@ -41,7 +63,7 @@ test("calc expressions using board bounds fail for auto-sized boards", () => {
         name="R1"
         footprint="0402"
         resistance="1k"
-        pcbX="calc(board.minx + 1mm)"
+        pcbX="calc(board.minX + 1mm)"
       />
     </board>,
   )

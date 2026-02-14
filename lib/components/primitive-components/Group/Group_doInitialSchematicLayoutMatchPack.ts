@@ -1,12 +1,12 @@
 import {
-  getCircuitJsonTree,
   type CircuitJsonTreeNode,
   type CircuitJsonUtilObjects,
+  getCircuitJsonTree,
 } from "@tscircuit/circuit-json-util"
-import { LayoutPipelineSolver, type InputProblem } from "@tscircuit/matchpack"
+import { type InputProblem, LayoutPipelineSolver } from "@tscircuit/matchpack"
 import Debug from "debug"
-import type { Group } from "./Group"
 import type { z } from "zod"
+import type { Group } from "./Group"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchpack")
@@ -50,6 +50,36 @@ function rotateDirection(
   return directions[newIndex < 0 ? newIndex + 4 : newIndex]
 }
 
+function isTreeChildExplicitlyPositioned(
+  treeChild: CircuitJsonTreeNode,
+  group: Group,
+): boolean {
+  if (treeChild.nodeType === "component" && treeChild.sourceComponent) {
+    const component = group.children.find(
+      (groupChild) =>
+        groupChild.source_component_id ===
+        treeChild.sourceComponent?.source_component_id,
+    )
+    return (
+      component?._parsedProps?.schX !== undefined ||
+      component?._parsedProps?.schY !== undefined
+    )
+  }
+
+  if (treeChild.nodeType === "group" && treeChild.sourceGroup) {
+    const nestedGroup = group.children.find(
+      (groupChild) =>
+        groupChild.source_group_id === treeChild.sourceGroup?.source_group_id,
+    )
+    return (
+      nestedGroup?._parsedProps?.schX !== undefined ||
+      nestedGroup?._parsedProps?.schY !== undefined
+    )
+  }
+
+  return false
+}
+
 // Create conversion function
 function convertTreeToInputProblem(
   tree: CircuitJsonTreeNode,
@@ -73,6 +103,13 @@ function convertTreeToInputProblem(
 
   // Process each top-level child as a "composite chip"
   tree.childNodes.forEach((child, index) => {
+    if (isTreeChildExplicitlyPositioned(child, group)) {
+      debug(
+        `[${group.name}] Skipping explicitly positioned child ${index} from matchpack`,
+      )
+      return
+    }
+
     debug(
       `[${group.name}] Processing child ${index}: nodeType=${child.nodeType}`,
     )

@@ -9,7 +9,7 @@ test("chip pcbX calc(board.*) resolves when component is attached to board", () 
       <chip
         name="U1"
         footprint="soic8"
-        pcbX="calc(board.maxx - 1mm)"
+        pcbX="calc(board.maxX - 1mm)"
         pcbY="0mm"
       />
     </board>,

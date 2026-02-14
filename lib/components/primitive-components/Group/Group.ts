@@ -16,7 +16,6 @@ import {
 } from "circuit-json"
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
-import type { Board, RenderPhase } from "index"
 import type { IsolatedCircuit } from "lib/IsolatedCircuit"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { AutorouterError } from "lib/errors/AutorouterError"
@@ -974,6 +973,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "relative" {
     const props = this._parsedProps as SubcircuitGroupProps
+    const schAutoLayoutEnabled = props.schAutoLayoutEnabled ?? false
     if (props.schLayout?.layoutMode === "none") return "relative"
     if (props.schLayout?.layoutMode === "relative") return "relative"
     if (props.schLayout?.matchAdapt) return "match-adapt"
@@ -996,8 +996,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const hasManualEdits =
       (props.manualEdits?.schematic_placements?.length ?? 0) > 0
 
-    // Use match-adapt if no explicit positioning is set, even with group children
-    // This allows nested groups to be laid out properly
+    // For boards, schAutoLayoutEnabled should keep auto layout enabled for
+    // unpositioned children even if some siblings have explicit schX/schY.
+    // Explicitly positioned children are skipped by matchpack.
+    if (schAutoLayoutEnabled && !hasManualEdits) return "match-adapt"
+
+    // Use match-adapt if no explicit positioning is set, even with group
+    // children. This allows nested groups to be laid out properly.
     if (!anyChildHasSchCoords && !hasManualEdits) return "match-adapt"
     return "relative"
   }
@@ -1037,6 +1042,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _getPcbLayoutMode(): "grid" | "flex" | "match-adapt" | "pack" | "none" {
     const props = this._parsedProps as SubcircuitGroupProps
+    const rawProps = this.props as any
     if (this._isInflatedFromCircuitJson) return "none"
     if (props.pcbRelative) return "none"
     if (props.pcbLayout?.matchAdapt) return "match-adapt"
@@ -1057,7 +1063,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // pcb coordinates and no manual edits are present. Relatively positioned
     // components (with pcbX/pcbY) will be excluded from packing, while others
     // will be packed together.
-    const groupHasCoords = props.pcbX !== undefined || props.pcbY !== undefined
+    const groupHasCoords =
+      props.pcbX !== undefined ||
+      props.pcbY !== undefined ||
+      props.pcbLeftEdgeX !== undefined ||
+      props.pcbRightEdgeX !== undefined ||
+      props.pcbTopEdgeY !== undefined ||
+      props.pcbBottomEdgeY !== undefined ||
+      rawProps.pcbLeftEdgeX !== undefined ||
+      rawProps.pcbRightEdgeX !== undefined ||
+      rawProps.pcbTopEdgeY !== undefined ||
+      rawProps.pcbBottomEdgeY !== undefined
     const hasManualEdits = (props.manualEdits?.pcb_placements?.length ?? 0) > 0
 
     const unpositionedDirectChildrenCount = this.children.reduce(
@@ -1068,8 +1084,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
 
         const childProps = child._parsedProps
+        const rawChildProps = child.props as any
         const hasCoords =
-          childProps?.pcbX !== undefined || childProps?.pcbY !== undefined
+          childProps?.pcbX !== undefined ||
+          childProps?.pcbY !== undefined ||
+          childProps?.pcbLeftEdgeX !== undefined ||
+          childProps?.pcbRightEdgeX !== undefined ||
+          childProps?.pcbTopEdgeY !== undefined ||
+          childProps?.pcbBottomEdgeY !== undefined ||
+          rawChildProps?.pcbLeftEdgeX !== undefined ||
+          rawChildProps?.pcbRightEdgeX !== undefined ||
+          rawChildProps?.pcbTopEdgeY !== undefined ||
+          rawChildProps?.pcbBottomEdgeY !== undefined
         return count + (hasCoords ? 0 : 1)
       },
       0,

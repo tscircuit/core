@@ -187,10 +187,10 @@ export class Board
     const resolvedHeight = height ?? 0
 
     return {
-      "board.minx": center.x - resolvedWidth / 2,
-      "board.maxx": center.x + resolvedWidth / 2,
-      "board.miny": center.y - resolvedHeight / 2,
-      "board.maxy": center.y + resolvedHeight / 2,
+      "board.minX": center.x - resolvedWidth / 2,
+      "board.maxX": center.x + resolvedWidth / 2,
+      "board.minY": center.y - resolvedHeight / 2,
+      "board.maxY": center.y + resolvedHeight / 2,
     }
   }
 
