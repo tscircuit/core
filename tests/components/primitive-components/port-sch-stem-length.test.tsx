@@ -60,5 +60,8 @@ test("Port schStemLength creates schematic_line from port toward component", asy
   // 4 stem lines should be created (one per port with schStemLength)
   expect(schematicLines.length).toBe(4)
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    grid: { cellSize: 1, labelCells: true },
+    drawPorts: true,
+  })
 })

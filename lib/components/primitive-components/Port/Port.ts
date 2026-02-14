@@ -712,7 +712,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         y1: portCenter.y,
         x2,
         y2,
-        stroke_width: 0.05,
+        stroke_width: 0.02,
         color: SCHEMATIC_COMPONENT_OUTLINE_COLOR,
         is_dashed: false,
       })

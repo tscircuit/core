@@ -77,5 +77,8 @@ test("Ports with schStemLength can be connected with traces", async () => {
 
   expect(traces.length).toBeGreaterThan(0)
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    grid: { cellSize: 1, labelCells: true },
+    drawPorts: true,
+  })
 })
