@@ -48,7 +48,7 @@ test("check each PCB port is connected", async () => {
     [
       {
         "error_type": "pcb_port_not_connected_error",
-        "message": "pcb_port_not_connected_error: Pcb ports [pcb_port_0, pcb_port_2] are not connected together through the same net.",
+        "message": "Ports [port, port] are not connected together through the same net.",
         "pcb_component_ids": [
           "pcb_component_0",
           "pcb_component_1",
