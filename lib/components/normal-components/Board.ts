@@ -92,7 +92,8 @@ const getRoundedRectOutline = (
 
 export class Board
   extends Group<typeof boardProps>
-  implements BoardI, SubcircuitI {
+  implements BoardI, SubcircuitI
+{
   pcb_board_id: string | null = null
   source_board_id: string | null = null
   _drcChecksComplete = false
