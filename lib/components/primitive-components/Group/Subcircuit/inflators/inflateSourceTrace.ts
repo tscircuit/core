@@ -5,11 +5,11 @@ import type {
   SourceTrace,
 } from "circuit-json"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
-import type { InflatorContext } from "../InflatorFn"
 import {
-  pcbTraceRouteToPcbPath,
   type ManualPcbPathPoint,
+  pcbTraceRouteToPcbPath,
 } from "lib/utils/pcbTraceRouteToPcbPath"
+import type { InflatorContext } from "../InflatorFn"
 
 const getSelectorPath = (
   component: { name: string; source_group_id: string | undefined },
@@ -99,13 +99,21 @@ export function inflateSourceTrace(
     pcbPath = pcbTraceRouteToPcbPath(pcbTrace.route)
   }
 
-  const traceProps: { path: string[]; pcbPath?: ManualPcbPathPoint[] } = {
+  const traceProps: {
+    path: string[]
+    pcbPath?: ManualPcbPathPoint[]
+    pcbStraightLine?: boolean
+  } = {
     path: connectedSelectors,
   }
 
-  // If pcbPath is empty, the trace will route directly between ports
+  // If pcbPath has intermediate points, use manual routing
+  // Otherwise, use straight-line routing (simple 2-point traces)
   if (pcbPath && pcbPath.length > 0) {
     traceProps.pcbPath = pcbPath
+  } else if (pcbTrace) {
+    // Simple trace with no intermediate points - use straight line
+    traceProps.pcbStraightLine = true
   }
 
   const trace = new Trace(traceProps)

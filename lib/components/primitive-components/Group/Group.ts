@@ -37,7 +37,6 @@ import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcb
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
-import { Group_doInitialRenderIsolatedSubcircuits } from "./Group_doInitialRenderIsolatedSubcircuits"
 import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"

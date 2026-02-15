@@ -19,6 +19,14 @@ export class IsolatedCircuit {
   db: CircuitJsonUtilObjects
   root: IsolatedCircuit | null = null
   isRootCircuit = false
+
+  /**
+   * Global cache for isolated subcircuit circuit JSON, keyed by prop hash.
+   * When a subcircuit with _subcircuitCachingEnabled is rendered, the result
+   * is stored here. Subsequent subcircuits with the same prop hash will reuse
+   * the cached circuit JSON instead of re-rendering.
+   */
+  cachedSubcircuits: Map<string, AnyCircuitElement[]> = new Map()
   private _schematicDisabledOverride: boolean | undefined
   get schematicDisabled(): boolean {
     if (this._schematicDisabledOverride !== undefined) {
