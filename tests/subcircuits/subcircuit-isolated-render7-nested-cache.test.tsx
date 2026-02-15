@@ -39,7 +39,7 @@ test("nested cached subcircuits with different parents share cache", async () =>
 
   // All three subcircuits have identical props (excluding name/position)
   // so they should share one cache entry
-  expect(circuit.cachedSubcircuits.size).toBe(1)
+  expect(circuit.cachedSubcircuits!.size).toBe(1)
 
   // Verify all components rendered correctly
   // 3 subcircuits × 2 components each = 6 source components

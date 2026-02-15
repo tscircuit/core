@@ -19,7 +19,8 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
 
   // Check global cache first
   const propHash = subcircuit.getSubcircuitPropHash()
-  const cached = subcircuit.root?.cachedSubcircuits.get(propHash)
+  const cachedSubcircuits = subcircuit.root?.cachedSubcircuits
+  const cached = cachedSubcircuits?.get(propHash)
 
   if (cached) {
     // Cache hit - use cached circuit JSON directly
@@ -46,6 +47,7 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
         pcbDisabled: parentRoot.pcbDisabled,
         schematicDisabled: parentRoot.schematicDisabled,
       },
+      cachedSubcircuits,
     })
 
     for (const child of childrenToRender) {
@@ -58,7 +60,7 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
     const circuitJson = isolatedCircuit.getCircuitJson()
 
     // Store in global cache for future subcircuits with same props
-    subcircuit.root?.cachedSubcircuits.set(propHash, circuitJson)
+    cachedSubcircuits?.set(propHash, circuitJson)
 
     subcircuit._isolatedCircuitJson = circuitJson
   })

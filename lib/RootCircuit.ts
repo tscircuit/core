@@ -1,6 +1,6 @@
 import type { PlatformConfig } from "@tscircuit/props"
-import { IsolatedCircuit } from "./IsolatedCircuit"
 import type { AnyCircuitElement } from "circuit-json"
+import { IsolatedCircuit } from "./IsolatedCircuit"
 
 export class RootCircuit extends IsolatedCircuit {
   override isRootCircuit = true
@@ -9,18 +9,14 @@ export class RootCircuit extends IsolatedCircuit {
     platform,
     projectUrl,
   }: { platform?: PlatformConfig; projectUrl?: string } = {}) {
-    super({ platform, projectUrl })
+    super({
+      platform,
+      projectUrl,
+      cachedSubcircuits: new Map<string, AnyCircuitElement[]>(),
+    })
     // TODO rename to rootCircuit
     this.root = this
   }
-
-  /**
-   * Global cache for isolated subcircuit circuit JSON, keyed by prop hash.
-   * When a subcircuit with _subcircuitCachingEnabled is rendered, the result
-   * is stored here. Subsequent subcircuits with the same prop hash will reuse
-   * the cached circuit JSON instead of re-rendering.
-   */
-  cachedSubcircuits: Map<string, AnyCircuitElement[]> = new Map()
 }
 
 /**
