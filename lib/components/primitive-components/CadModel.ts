@@ -130,7 +130,9 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
         typeof props.modelUnitToMmScale === "number"
           ? props.modelUnitToMmScale
           : undefined,
-      show_as_translucent_model: parent._parsedProps.showAsTranslucentModel,
+      show_as_translucent_model:
+        props.showAsTranslucentModel ??
+        parent._parsedProps.showAsTranslucentModel,
       ...urlProps,
     } as any)
 
