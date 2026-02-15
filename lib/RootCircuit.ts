@@ -1,4 +1,5 @@
 import type { PlatformConfig } from "@tscircuit/props"
+import type { AnyCircuitElement } from "circuit-json"
 import { IsolatedCircuit } from "./IsolatedCircuit"
 
 export class RootCircuit extends IsolatedCircuit {
@@ -8,7 +9,11 @@ export class RootCircuit extends IsolatedCircuit {
     platform,
     projectUrl,
   }: { platform?: PlatformConfig; projectUrl?: string } = {}) {
-    super({ platform, projectUrl })
+    super({
+      platform,
+      projectUrl,
+      cachedSubcircuits: new Map<string, AnyCircuitElement[]>(),
+    })
     // TODO rename to rootCircuit
     this.root = this
   }

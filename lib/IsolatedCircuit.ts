@@ -19,6 +19,14 @@ export class IsolatedCircuit {
   db: CircuitJsonUtilObjects
   root: IsolatedCircuit | null = null
   isRootCircuit = false
+
+  /**
+   * Optional cache for isolated subcircuit circuit JSON, keyed by prop hash.
+   * This is passed down from the RootCircuit when creating isolated circuits
+   * for subcircuit rendering.
+   */
+  cachedSubcircuits?: Map<string, AnyCircuitElement[]>
+
   private _schematicDisabledOverride: boolean | undefined
   get schematicDisabled(): boolean {
     if (this._schematicDisabledOverride !== undefined) {
@@ -67,12 +75,18 @@ export class IsolatedCircuit {
   constructor({
     platform,
     projectUrl,
-  }: { platform?: PlatformConfig; projectUrl?: string } = {}) {
+    cachedSubcircuits,
+  }: {
+    platform?: PlatformConfig
+    projectUrl?: string
+    cachedSubcircuits?: Map<string, AnyCircuitElement[]>
+  } = {}) {
     this.children = []
     this.db = su([])
     this.platform = platform
     this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false
+    this.cachedSubcircuits = cachedSubcircuits
     this.root = this
   }
 
