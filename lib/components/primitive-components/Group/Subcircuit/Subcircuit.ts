@@ -1,8 +1,10 @@
-import { Group } from "../Group"
 import { subcircuitProps } from "@tscircuit/props"
 import type { z } from "zod"
 import { inflateCircuitJson } from "../../../../utils/circuit-json/inflate-circuit-json"
+import { Group } from "../Group"
 import type { SubcircuitI } from "./SubcircuitI"
+import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "./Subcircuit_doInitialRenderIsolatedSubcircuits"
+import { Subcircuit_getSubcircuitPropHash } from "../Subcircuit_getSubcircuitPropHash"
 
 export class Subcircuit
   extends Group<typeof subcircuitProps>
@@ -14,6 +16,28 @@ export class Subcircuit
       // @ts-ignore
       subcircuit: true,
     })
+  }
+
+  /**
+   * Computes a hash of this subcircuit's props and children for caching.
+   * Position/identity props are excluded so identical subcircuits at
+   * different locations share the same hash.
+   */
+  getSubcircuitPropHash(): string {
+    return Subcircuit_getSubcircuitPropHash(this)
+  }
+
+  /**
+   * Render this subcircuit in isolation if _subcircuitCachingEnabled is set.
+   * This phase runs before InflateSubcircuitCircuitJson to prepare the
+   * isolated circuit JSON that will be inflated.
+   *
+   * The rendering is synchronous - it loops until all async effects in the
+   * isolated circuit are complete, ensuring the cache is populated before
+   * processing the next subcircuit with potentially the same props.
+   */
+  doInitialRenderIsolatedSubcircuits(): void {
+    Subcircuit_doInitialRenderIsolatedSubcircuits(this)
   }
 
   /**

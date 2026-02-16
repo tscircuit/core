@@ -16,7 +16,7 @@ import {
 } from "circuit-json"
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
-import type { IsolatedCircuit } from "lib/IsolatedCircuit"
+
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
@@ -37,7 +37,6 @@ import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcb
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
-import { Group_doInitialRenderIsolatedSubcircuits } from "./Group_doInitialRenderIsolatedSubcircuits"
 import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
@@ -64,8 +63,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _isInflatedFromCircuitJson = false
 
   _isolatedCircuitJson: AnyCircuitElement[] | null = null
-
-  _isolatedCircuit: IsolatedCircuit | null = null
 
   get _isIsolatedSubcircuit(): boolean {
     return Boolean(this._parsedProps._subcircuitCachingEnabled)
@@ -125,17 +122,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       zodProps: groupProps as unknown as Props,
       componentName: "Group",
     }
-  }
-
-  override runRenderCycle() {
-    if (!this._isIsolatedSubcircuit || !this.root) {
-      super.runRenderCycle()
-      return
-    }
-
-    if (!Group_doInitialRenderIsolatedSubcircuits(this)) return
-
-    super.runRenderCycle()
   }
 
   doInitialSourceGroupRender() {
