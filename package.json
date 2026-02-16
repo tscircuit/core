@@ -80,7 +80,7 @@
     "poppygl": "^0.0.16",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "schematic-symbols": "^0.0.208",
+    "schematic-symbols": "^0.0.215",
     "spicey": "^0.0.14",
     "ts-expect": "^1.3.0",
     "tsup": "^8.2.4"
