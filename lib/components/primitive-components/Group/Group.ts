@@ -974,10 +974,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (props.relative) return "relative"
     if (props.schRelative) return "relative"
     // If no layout method has been defined, fall back to match-adapt
-    // unless any direct child defines schX or schY
-    const anyChildHasSchCoords = this.children.some((child) => {
+    // unless any direct layout child defines schX or schY.
+    // Schematic primitives (e.g. schematictext) can have explicit coordinates
+    // without opting the entire group out of auto layout.
+    const anyLayoutChildHasSchCoords = this.children.some((child) => {
       const cProps = (child as any)._parsedProps
-      return cProps?.schX !== undefined || cProps?.schY !== undefined
+      const participatesInAutoLayout =
+        (child as any).source_component_id !== null ||
+        (child as any).source_group_id !== null
+      return (
+        participatesInAutoLayout &&
+        (cProps?.schX !== undefined || cProps?.schY !== undefined)
+      )
     })
     const hasManualEdits =
       (props.manualEdits?.schematic_placements?.length ?? 0) > 0
@@ -989,7 +997,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // Use match-adapt if no explicit positioning is set, even with group
     // children. This allows nested groups to be laid out properly.
-    if (!anyChildHasSchCoords && !hasManualEdits) return "match-adapt"
+    if (!anyLayoutChildHasSchCoords && !hasManualEdits) return "match-adapt"
     return "relative"
   }
 
