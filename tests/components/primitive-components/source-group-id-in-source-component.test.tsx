@@ -14,7 +14,7 @@ test("group id present in pcb_component, schematic_component and source_componen
     </board>,
   )
 
-  circuit.renderUntilSettled()
+  await circuit.renderUntilSettled()
 
   const schComponents = circuit.db.schematic_component.list()
   for (const schComponent of schComponents) {

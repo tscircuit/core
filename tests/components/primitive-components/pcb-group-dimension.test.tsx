@@ -11,7 +11,7 @@ test("group id present in pcb_component, schematic_component and source_componen
     </group>,
   )
 
-  circuit.renderUntilSettled()
+  await circuit.renderUntilSettled()
 
   const pcbGroups = circuit.db.pcb_group.list()
   expect(pcbGroups).toHaveLength(1)

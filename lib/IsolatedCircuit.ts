@@ -10,6 +10,7 @@ import type { PrimitiveComponent } from "./components/base-components/PrimitiveC
 import type { RenderPhase } from "./components/base-components/Renderable"
 import type { BoardI } from "./components/normal-components/BoardI"
 import { Group } from "./components/primitive-components/Group"
+import type { Subcircuit } from "./components/primitive-components/Group/Subcircuit/Subcircuit"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 
@@ -21,11 +22,14 @@ export class IsolatedCircuit {
   isRootCircuit = false
 
   /**
-   * Optional cache for isolated subcircuit circuit JSON, keyed by prop hash.
+   * Cache for isolated subcircuit circuit JSON, keyed by prop hash.
    * This is passed down from the RootCircuit when creating isolated circuits
    * for subcircuit rendering.
+   *
+   * Only stores completed `AnyCircuitElement[]` arrays. Sequential processing
+   * of isolated subcircuits ensures no race conditions.
    */
-  cachedSubcircuits?: Map<string, AnyCircuitElement[]>
+  cachedSubcircuits: Map<string, AnyCircuitElement[]>
 
   private _schematicDisabledOverride: boolean | undefined
   get schematicDisabled(): boolean {
@@ -86,7 +90,7 @@ export class IsolatedCircuit {
     this.platform = platform
     this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false
-    this.cachedSubcircuits = cachedSubcircuits
+    this.cachedSubcircuits = cachedSubcircuits ?? new Map()
     this.root = this
   }
 
@@ -177,6 +181,11 @@ export class IsolatedCircuit {
       })
     }
 
+    // First, process isolated subcircuits sequentially
+    // This must happen before the normal render loop
+    await this.processDirectIsolatedSubcircuits()
+
+    // Then run normal render loop (all phases, parallel async effects)
     this.render()
 
     while (this._hasIncompleteAsyncEffects()) {
@@ -185,6 +194,98 @@ export class IsolatedCircuit {
     }
 
     this.emit("renderComplete")
+  }
+
+  /**
+   * Find direct isolated subcircuit children (not nested inside other isolated subcircuits).
+   * Traverses through non-isolated groups but stops at isolated subcircuits.
+   */
+  findDirectIsolatedSubcircuits(): Subcircuit[] {
+    this._guessRootComponent()
+    const result: Subcircuit[] = []
+
+    const traverse = (component: PrimitiveComponent) => {
+      for (const child of component.children) {
+        if ((child as any)._isIsolatedSubcircuit) {
+          // Found an isolated subcircuit - add it and don't traverse deeper
+          result.push(child as Subcircuit)
+        } else if (child.children.length > 0) {
+          // Not isolated - traverse into children
+          traverse(child)
+        }
+      }
+    }
+
+    if (this.firstChild) {
+      // Check if firstChild itself is isolated
+      if ((this.firstChild as any)._isIsolatedSubcircuit) {
+        result.push(this.firstChild as Subcircuit)
+      } else {
+        traverse(this.firstChild)
+      }
+    }
+
+    return result
+  }
+
+  /**
+   * Process all direct isolated subcircuits sequentially.
+   * Each isolated subcircuit is fully rendered (including its own nested
+   * isolated subcircuits) before moving to the next.
+   */
+  async processDirectIsolatedSubcircuits(): Promise<void> {
+    const isolatedSubcircuits = this.findDirectIsolatedSubcircuits()
+
+    for (const subcircuit of isolatedSubcircuits) {
+      // Skip if already processed (check both flags - _isolatedCircuitJson is cleared
+      // after inflation, but _isolatedRenderCompleted persists)
+      if (
+        subcircuit._isolatedCircuitJson ||
+        subcircuit._isolatedRenderCompleted
+      ) {
+        continue
+      }
+
+      const propHash = subcircuit.getSubcircuitPropHash()
+
+      // Check cache
+      const cached = this.cachedSubcircuits.get(propHash)
+      if (cached) {
+        subcircuit._isolatedCircuitJson = cached
+        subcircuit._isolatedRenderCompleted = true
+        subcircuit.children = []
+        subcircuit._normalComponentNameMap = null
+        continue
+      }
+
+      // Render in isolation
+      const childrenToRender = [...subcircuit.children]
+      subcircuit.children = []
+      subcircuit._normalComponentNameMap = null
+
+      const isolatedCircuit = new IsolatedCircuit({
+        platform: {
+          ...this.platform,
+          pcbDisabled: this.pcbDisabled,
+          schematicDisabled: this.schematicDisabled,
+        },
+        cachedSubcircuits: this.cachedSubcircuits,
+      })
+
+      for (const child of childrenToRender) {
+        isolatedCircuit.add(child)
+      }
+
+      // This recursively processes any nested isolated subcircuits
+      await isolatedCircuit.renderUntilSettled()
+
+      const circuitJson = isolatedCircuit.getCircuitJson()
+
+      // Store in cache
+      this.cachedSubcircuits.set(propHash, circuitJson)
+      subcircuit._isolatedCircuitJson = circuitJson
+      subcircuit._isolatedRenderCompleted = true
+    }
   }
 
   _hasIncompleteAsyncEffects(): boolean {

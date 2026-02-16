@@ -64,6 +64,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _isolatedCircuitJson: AnyCircuitElement[] | null = null
 
+  /**
+   * Flag to track that this subcircuit has completed isolated rendering.
+   * This persists even after _isolatedCircuitJson is cleared during inflation.
+   */
+  _isolatedRenderCompleted = false
+
   get _isIsolatedSubcircuit(): boolean {
     return Boolean(this._parsedProps._subcircuitCachingEnabled)
   }

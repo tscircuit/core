@@ -17,7 +17,7 @@ test("Disable cadModel by setting it to null", async () => {
   )
 
   circuit.render()
-  circuit.renderUntilSettled()
+  await circuit.renderUntilSettled()
 
   expect(
     circuit.getCircuitJson().filter((x) => x.type === "cad_component").length,

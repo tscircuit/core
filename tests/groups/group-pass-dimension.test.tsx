@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("group dimension matches with the passed dimension", () => {
+test("group dimension matches with the passed dimension", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <group subcircuit width="10mm" height="10mm">
@@ -9,7 +9,7 @@ test("group dimension matches with the passed dimension", () => {
       <capacitor name="C1" capacitance="10uF" footprint="0603" />
     </group>,
   )
-  circuit.renderUntilSettled()
+  await circuit.renderUntilSettled()
 
   const pcbGroups = circuit.db.pcb_group.list()
   expect(pcbGroups.length).toBe(1)

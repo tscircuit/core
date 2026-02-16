@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("group pcb padding", () => {
+test("group pcb padding", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <group
@@ -16,7 +16,7 @@ test("group pcb padding", () => {
     </group>,
   )
 
-  circuit.renderUntilSettled()
+  await circuit.renderUntilSettled()
 
   const pcbGroups = circuit.db.pcb_group.list()
   expect(pcbGroups.length).toBe(1)
