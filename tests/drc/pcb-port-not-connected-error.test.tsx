@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -48,7 +48,7 @@ test("check each PCB port is connected", async () => {
     [
       {
         "error_type": "pcb_port_not_connected_error",
-        "message": "Ports [port, port] are not connected together through the same net.",
+        "message": "Ports [R1.pin1, R2.pin1] are not connected together through the same net.",
         "pcb_component_ids": [
           "pcb_component_0",
           "pcb_component_1",
