@@ -13,6 +13,7 @@ export class RootCircuit extends IsolatedCircuit {
       platform,
       projectUrl,
       cachedSubcircuits: new Map<string, AnyCircuitElement[]>(),
+      pendingSubcircuitRenders: new Map<string, Promise<AnyCircuitElement[]>>(),
     })
     // TODO rename to rootCircuit
     this.root = this

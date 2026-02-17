@@ -1,11 +1,11 @@
 import { cju } from "@tscircuit/circuit-json-util"
 import type { CircuitJson } from "circuit-json"
 import type { Group } from "../../components/primitive-components/Group/Group"
-import type { SubcircuitI } from "../../components/primitive-components/Group/Subcircuit/SubcircuitI"
 import type {
   InflatorContext,
   SourceGroupId,
 } from "../../components/primitive-components/Group/Subcircuit/InflatorFn"
+import type { SubcircuitI } from "../../components/primitive-components/Group/Subcircuit/SubcircuitI"
 import { inflatePcbBoard } from "../../components/primitive-components/Group/Subcircuit/inflators/inflatePcbBoard"
 import { inflateSourceCapacitor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceCapacitor"
 import { inflateSourceChip } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceChip"
@@ -37,8 +37,25 @@ export const inflateCircuitJson = (
     groupsMap,
   }
 
+  // Sort source_groups so parents are processed before children
+  // This is necessary because inflateSourceGroup needs the parent to exist
+  // in groupsMap before adding children to it
   const sourceGroups = injectionDb.source_group.list()
-  for (const sourceGroup of sourceGroups) {
+  const sortedGroups = [...sourceGroups].sort((a, b) => {
+    // Groups with no parent come first
+    if (!a.parent_source_group_id && b.parent_source_group_id) return -1
+    if (a.parent_source_group_id && !b.parent_source_group_id) return 1
+    // Then sort by how "deep" they are (count parent chain length)
+    const getDepth = (g: typeof a): number => {
+      if (!g.parent_source_group_id) return 0
+      const parent = sourceGroups.find(
+        (sg) => sg.source_group_id === g.parent_source_group_id,
+      )
+      return parent ? 1 + getDepth(parent) : 0
+    }
+    return getDepth(a) - getDepth(b)
+  })
+  for (const sourceGroup of sortedGroups) {
     inflateSourceGroup(sourceGroup, inflationCtx)
   }
 

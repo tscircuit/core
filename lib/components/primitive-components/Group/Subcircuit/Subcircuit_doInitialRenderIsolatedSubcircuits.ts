@@ -1,13 +1,21 @@
+import type { AnyCircuitElement } from "circuit-json"
 import { IsolatedCircuit } from "lib/IsolatedCircuit"
 import type { Subcircuit } from "./Subcircuit"
 
 /**
  * Renders the subcircuit's children in isolation and extracts the circuit JSON.
  * If a cached result exists for the same prop hash, uses that instead.
+ * If another subcircuit with the same props is already rendering, waits for that
+ * render to complete instead of starting a duplicate render.
  *
- * This function queues an async effect that renders the isolated circuit and
- * waits for all async effects (like autorouting) to complete before storing
- * the result in the cache.
+ * Children of isolated subcircuits are not rendered by the parent circuit
+ * (except for ReactSubtreesRender which creates component instances).
+ * Instead, each isolated subcircuit creates its own IsolatedCircuit and
+ * renders its children there, ensuring complete isolation.
+ *
+ * This function queues a single async effect that either:
+ * 1. Waits for an existing pending render if one exists
+ * 2. Performs the render and caches the result for others to use
  */
 export function Subcircuit_doInitialRenderIsolatedSubcircuits(
   subcircuit: Subcircuit,
@@ -17,51 +25,82 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
   // Skip if already has isolated circuit JSON
   if (subcircuit._isolatedCircuitJson) return
 
-  // Check global cache first
   const propHash = subcircuit.getSubcircuitPropHash()
   const cachedSubcircuits = subcircuit.root?.cachedSubcircuits
-  const cached = cachedSubcircuits?.get(propHash)
+  const pendingSubcircuitRenders = subcircuit.root?.pendingSubcircuitRenders
 
+  // Check cache first (synchronous - before async effect)
+  const cached = cachedSubcircuits?.get(propHash)
   if (cached) {
-    // Cache hit - use cached circuit JSON directly
     subcircuit._isolatedCircuitJson = cached
     subcircuit.children = []
     subcircuit._normalComponentNameMap = null
     return
   }
 
-  // Cache miss - render in isolation using an async effect
-  const parentRoot = subcircuit.root!
-
   // Capture children before clearing them
   const childrenToRender = [...subcircuit.children]
 
-  // Clear children immediately so they don't render in the parent circuit
+  // Clear children so they don't interfere with parent circuit
   subcircuit.children = []
   subcircuit._normalComponentNameMap = null
 
-  subcircuit._queueAsyncEffect("render-isolated-subcircuit", async () => {
-    const isolatedCircuit = new IsolatedCircuit({
-      platform: {
-        ...parentRoot.platform,
-        pcbDisabled: parentRoot.pcbDisabled,
-        schematicDisabled: parentRoot.schematicDisabled,
-      },
-      cachedSubcircuits,
-    })
+  const parentRoot = subcircuit.root!
 
-    for (const child of childrenToRender) {
-      isolatedCircuit.add(child)
+  subcircuit._queueAsyncEffect("render-isolated-subcircuit", async () => {
+    // Check cache again (might have been populated while waiting to execute)
+    const cachedResult = cachedSubcircuits?.get(propHash)
+    if (cachedResult) {
+      subcircuit._isolatedCircuitJson = cachedResult
+      return
     }
 
-    // Use renderUntilSettled to properly wait for all async effects
-    await isolatedCircuit.renderUntilSettled()
+    // Atomic check-and-set for pending render
+    // This is safe because JavaScript is single-threaded within an event loop tick
+    const pendingRenderPromise = pendingSubcircuitRenders?.get(propHash)
+    if (pendingRenderPromise) {
+      // Another subcircuit is already rendering - wait for it
+      subcircuit._isolatedCircuitJson = await pendingRenderPromise
+      return
+    }
 
-    const circuitJson = isolatedCircuit.getCircuitJson()
+    // We're the first - create promise and register it
+    let resolveRender!: (json: AnyCircuitElement[]) => void
+    const renderPromise = new Promise<AnyCircuitElement[]>((resolve) => {
+      resolveRender = resolve
+    })
+    pendingSubcircuitRenders?.set(propHash, renderPromise)
 
-    // Store in global cache for future subcircuits with same props
-    cachedSubcircuits?.set(propHash, circuitJson)
+    try {
+      const isolatedCircuit = new IsolatedCircuit({
+        platform: {
+          ...parentRoot.platform,
+          pcbDisabled: parentRoot.pcbDisabled,
+          schematicDisabled: parentRoot.schematicDisabled,
+        },
+        cachedSubcircuits,
+        pendingSubcircuitRenders,
+      })
 
-    subcircuit._isolatedCircuitJson = circuitJson
+      for (const child of childrenToRender) {
+        isolatedCircuit.add(child)
+      }
+
+      // Render until all async effects complete (including nested isolated subcircuits)
+      await isolatedCircuit.renderUntilSettled()
+
+      const circuitJson = isolatedCircuit.getCircuitJson()
+
+      // Store in cache for reuse by identical subcircuits
+      cachedSubcircuits?.set(propHash, circuitJson)
+
+      subcircuit._isolatedCircuitJson = circuitJson
+
+      // Resolve the promise so waiting subcircuits can use the result
+      resolveRender(circuitJson)
+    } finally {
+      // Clean up the pending render entry
+      pendingSubcircuitRenders?.delete(propHash)
+    }
   })
 }

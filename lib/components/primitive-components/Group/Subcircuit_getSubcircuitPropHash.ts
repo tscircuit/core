@@ -1,5 +1,4 @@
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import type { Group } from "./Group"
 import type { Subcircuit } from "./Subcircuit/Subcircuit"
 
 /**
@@ -21,6 +20,52 @@ const EXCLUDED_PROPS = new Set([
   "pcbRotation",
   "schRotation",
 ])
+
+/**
+ * Safely serialize a value, handling React elements and circular references.
+ * Returns a string representation suitable for hashing.
+ */
+function safeSerialize(value: any, seen = new WeakSet()): string {
+  if (value === null) return "null"
+  if (value === undefined) return "undefined"
+
+  const type = typeof value
+
+  if (type === "string") return `"${value}"`
+  if (type === "number" || type === "boolean") return String(value)
+  if (type === "function") return "[function]"
+  if (type === "symbol") return "[symbol]"
+
+  if (type === "object") {
+    // Check for circular reference
+    if (seen.has(value)) return "[circular]"
+    seen.add(value)
+
+    // Handle React elements
+    if (value.$$typeof !== undefined) {
+      // React element - serialize its type and props
+      const elementType =
+        typeof value.type === "string"
+          ? value.type
+          : value.type?.name || "[component]"
+      const propsStr = value.props ? safeSerialize(value.props, seen) : "{}"
+      return `ReactElement(${elementType},${propsStr})`
+    }
+
+    // Handle arrays
+    if (Array.isArray(value)) {
+      const items = value.map((v) => safeSerialize(v, seen)).join(",")
+      return `[${items}]`
+    }
+
+    // Handle plain objects
+    const keys = Object.keys(value).sort()
+    const pairs = keys.map((k) => `${k}:${safeSerialize(value[k], seen)}`)
+    return `{${pairs.join(",")}}`
+  }
+
+  return String(value)
+}
 
 /**
  * Filter props to only include those that affect rendering output.
@@ -66,11 +111,12 @@ function fnv1aHash(str: string): number {
  * for better collision resistance with hundreds of subcircuits.
  */
 function computeHash(data: any): string {
-  const jsonString = JSON.stringify(data)
+  // Use safe serialization to handle React elements and circular refs
+  const serialized = safeSerialize(data)
 
   // Use FNV-1a with different seeds combined for better distribution
-  const hash1 = fnv1aHash(jsonString)
-  const hash2 = fnv1aHash(jsonString + hash1.toString())
+  const hash1 = fnv1aHash(serialized)
+  const hash2 = fnv1aHash(serialized + hash1.toString())
 
   // Combine into a 16-character hex string
   return (

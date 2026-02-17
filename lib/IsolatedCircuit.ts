@@ -27,6 +27,12 @@ export class IsolatedCircuit {
    */
   cachedSubcircuits?: Map<string, AnyCircuitElement[]>
 
+  /**
+   * Map to track pending renders by prop hash. This allows multiple subcircuits
+   * with the same props to wait for a single render instead of each doing their own.
+   */
+  pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
+
   private _schematicDisabledOverride: boolean | undefined
   get schematicDisabled(): boolean {
     if (this._schematicDisabledOverride !== undefined) {
@@ -76,10 +82,12 @@ export class IsolatedCircuit {
     platform,
     projectUrl,
     cachedSubcircuits,
+    pendingSubcircuitRenders,
   }: {
     platform?: PlatformConfig
     projectUrl?: string
     cachedSubcircuits?: Map<string, AnyCircuitElement[]>
+    pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
   } = {}) {
     this.children = []
     this.db = su([])
@@ -87,6 +95,7 @@ export class IsolatedCircuit {
     this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false
     this.cachedSubcircuits = cachedSubcircuits
+    this.pendingSubcircuitRenders = pendingSubcircuitRenders
     this.root = this
   }
 
