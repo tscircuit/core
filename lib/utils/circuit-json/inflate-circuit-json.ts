@@ -37,26 +37,33 @@ export const inflateCircuitJson = (
     groupsMap,
   }
 
-  // Sort source_groups so parents are processed before children
-  // This is necessary because inflateSourceGroup needs the parent to exist
-  // in groupsMap before adding children to it
+  // Inflate source_groups in dependency order (parents before children)
+  // Using explicit dependency tracking to detect cycles
   const sourceGroups = injectionDb.source_group.list()
-  const sortedGroups = [...sourceGroups].sort((a, b) => {
-    // Groups with no parent come first
-    if (!a.parent_source_group_id && b.parent_source_group_id) return -1
-    if (a.parent_source_group_id && !b.parent_source_group_id) return 1
-    // Then sort by how "deep" they are (count parent chain length)
-    const getDepth = (g: typeof a): number => {
-      if (!g.parent_source_group_id) return 0
-      const parent = sourceGroups.find(
-        (sg) => sg.source_group_id === g.parent_source_group_id,
+  const renderedGroupIds = new Set<string>()
+  const groupsToRender = [...sourceGroups]
+
+  while (groupsToRender.length > 0) {
+    // Find a group whose parent has already been rendered (or has no parent)
+    const groupIndex = groupsToRender.findIndex(
+      (g) =>
+        !g.parent_source_group_id ||
+        renderedGroupIds.has(g.parent_source_group_id),
+    )
+
+    if (groupIndex === -1) {
+      const remainingIds = groupsToRender
+        .map((g) => g.source_group_id)
+        .join(", ")
+      throw new Error(
+        `Cannot inflate source_groups: cyclic dependency or missing parent detected. Remaining groups: ${remainingIds}`,
       )
-      return parent ? 1 + getDepth(parent) : 0
     }
-    return getDepth(a) - getDepth(b)
-  })
-  for (const sourceGroup of sortedGroups) {
-    inflateSourceGroup(sourceGroup, inflationCtx)
+
+    const groupToRender = groupsToRender[groupIndex]
+    inflateSourceGroup(groupToRender, inflationCtx)
+    renderedGroupIds.add(groupToRender.source_group_id)
+    groupsToRender.splice(groupIndex, 1)
   }
 
   const pcbBoards = injectionDb.pcb_board.list()

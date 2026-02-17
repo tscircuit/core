@@ -66,9 +66,13 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
 
     // We're the first - create promise and register it
     let resolveRender!: (json: AnyCircuitElement[]) => void
-    const renderPromise = new Promise<AnyCircuitElement[]>((resolve) => {
-      resolveRender = resolve
-    })
+    let rejectRender!: (error: Error) => void
+    const renderPromise = new Promise<AnyCircuitElement[]>(
+      (resolve, reject) => {
+        resolveRender = resolve
+        rejectRender = reject
+      },
+    )
     pendingSubcircuitRenders?.set(propHash, renderPromise)
 
     try {
@@ -98,6 +102,10 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
 
       // Resolve the promise so waiting subcircuits can use the result
       resolveRender(circuitJson)
+    } catch (error) {
+      // Reject so waiting subcircuits don't hang forever
+      rejectRender(error instanceof Error ? error : new Error(String(error)))
+      throw error
     } finally {
       // Clean up the pending render entry
       pendingSubcircuitRenders?.delete(propHash)
