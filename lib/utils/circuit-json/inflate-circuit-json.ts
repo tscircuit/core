@@ -1,11 +1,11 @@
 import { cju } from "@tscircuit/circuit-json-util"
 import type { CircuitJson } from "circuit-json"
 import type { Group } from "../../components/primitive-components/Group/Group"
-import type { SubcircuitI } from "../../components/primitive-components/Group/Subcircuit/SubcircuitI"
 import type {
   InflatorContext,
   SourceGroupId,
 } from "../../components/primitive-components/Group/Subcircuit/InflatorFn"
+import type { SubcircuitI } from "../../components/primitive-components/Group/Subcircuit/SubcircuitI"
 import { inflatePcbBoard } from "../../components/primitive-components/Group/Subcircuit/inflators/inflatePcbBoard"
 import { inflateSourceCapacitor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceCapacitor"
 import { inflateSourceChip } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceChip"
@@ -37,9 +37,33 @@ export const inflateCircuitJson = (
     groupsMap,
   }
 
+  // Inflate source_groups in dependency order (parents before children)
+  // Using explicit dependency tracking to detect cycles
   const sourceGroups = injectionDb.source_group.list()
-  for (const sourceGroup of sourceGroups) {
-    inflateSourceGroup(sourceGroup, inflationCtx)
+  const renderedGroupIds = new Set<string>()
+  const groupsToRender = [...sourceGroups]
+
+  while (groupsToRender.length > 0) {
+    // Find a group whose parent has already been rendered (or has no parent)
+    const groupIndex = groupsToRender.findIndex(
+      (g) =>
+        !g.parent_source_group_id ||
+        renderedGroupIds.has(g.parent_source_group_id),
+    )
+
+    if (groupIndex === -1) {
+      const remainingIds = groupsToRender
+        .map((g) => g.source_group_id)
+        .join(", ")
+      throw new Error(
+        `Cannot inflate source_groups: cyclic dependency or missing parent detected. Remaining groups: ${remainingIds}`,
+      )
+    }
+
+    const groupToRender = groupsToRender[groupIndex]
+    inflateSourceGroup(groupToRender, inflationCtx)
+    renderedGroupIds.add(groupToRender.source_group_id)
+    groupsToRender.splice(groupIndex, 1)
   }
 
   const pcbBoards = injectionDb.pcb_board.list()

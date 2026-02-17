@@ -118,8 +118,5 @@ export function inflateSourceTrace(
 
   const trace = new Trace(traceProps)
 
-  // Set source_trace_id on the new trace
-  trace.source_trace_id = sourceTrace.source_trace_id
-
   subcircuit.add(trace)
 }
