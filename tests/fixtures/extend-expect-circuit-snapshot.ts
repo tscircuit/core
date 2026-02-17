@@ -1,15 +1,16 @@
+import { type MatcherResult, expect } from "bun:test"
+import * as fs from "node:fs"
+import * as path from "node:path"
+import type { AnyCircuitElement } from "circuit-json"
 import {
   circuitJsonToPcbSvg,
   circuitJsonToSchematicSvg,
   convertCircuitJsonToPcbSvg,
+  convertCircuitJsonToPinoutSvg,
   convertCircuitJsonToSchematicSvg,
 } from "circuit-to-svg"
-import { expect, type MatcherResult } from "bun:test"
-import * as fs from "node:fs"
-import * as path from "node:path"
-import looksSame from "looks-same"
 import { RootCircuit } from "lib/RootCircuit"
-import type { AnyCircuitElement } from "circuit-json"
+import looksSame from "looks-same"
 
 async function saveSvgSnapshotOfCircuitJson({
   soup,
@@ -21,7 +22,7 @@ async function saveSvgSnapshotOfCircuitJson({
 }: {
   soup: AnyCircuitElement[]
   testPath: string
-  mode: "pcb" | "schematic"
+  mode: "pcb" | "schematic" | "pinout"
   updateSnapshot: boolean
   forceUpdateSnapshot: boolean
   options?: any
@@ -38,6 +39,9 @@ async function saveSvgSnapshotOfCircuitJson({
       break
     case "schematic":
       content = convertCircuitJsonToSchematicSvg(soup, options)
+      break
+    case "pinout":
+      content = convertCircuitJsonToPinoutSvg(soup, options)
       break
   }
 
@@ -157,6 +161,34 @@ expect.extend({
         Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS),
     })
   },
+  async toMatchPinoutSnapshot(
+    this: any,
+    received: unknown,
+    ...args: any[]
+  ): Promise<MatcherResult> {
+    let circuitJson: AnyCircuitElement[]
+    if (received instanceof RootCircuit) {
+      await received.renderUntilSettled()
+      circuitJson = await received.getCircuitJson()
+    } else {
+      circuitJson = received as AnyCircuitElement[]
+    }
+
+    return saveSvgSnapshotOfCircuitJson({
+      soup: circuitJson,
+      testPath: args[0],
+      mode: "pinout",
+      options: args[1],
+      updateSnapshot:
+        process.argv.includes("--update-snapshots") ||
+        process.argv.includes("-u") ||
+        Boolean(process.env.BUN_UPDATE_SNAPSHOTS),
+      forceUpdateSnapshot:
+        process.argv.includes("--force-update-snapshots") ||
+        process.argv.includes("-f") ||
+        Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS),
+    })
+  },
 })
 
 declare module "bun:test" {
@@ -168,6 +200,10 @@ declare module "bun:test" {
     toMatchSchematicSnapshot(
       testPath: string,
       options?: Parameters<typeof convertCircuitJsonToSchematicSvg>[1],
+    ): Promise<MatcherResult>
+    toMatchPinoutSnapshot(
+      testPath: string,
+      options?: Parameters<typeof convertCircuitJsonToPinoutSvg>[1],
     ): Promise<MatcherResult>
   }
 }
