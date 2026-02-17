@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test"
-import { createUseComponent } from "@tscircuit/core"
 import type { ChipProps, CommonLayoutProps } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -732,8 +731,6 @@ export const PICO_W = (props: ChipProps<typeof pinLabels>) => {
     />
   )
 }
-
-export const usePICO_W = createUseComponent(PICO_W, pinLabels)
 
 const pinAttributes: any = {}
 for (let i = 1; i <= 46; i++) {
