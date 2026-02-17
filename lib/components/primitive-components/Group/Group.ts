@@ -35,6 +35,7 @@ import { TraceHint } from "../TraceHint"
 import { Group_doInitialPcbCalcPlacementResolution } from "./Group_doInitialPcbCalcPlacementResolution"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
+import { Group_doInitialPcbLayoutRelativeConstraints } from "./Group_doInitialPcbLayoutRelativeConstraints"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
 import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
@@ -1139,6 +1140,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     } else if (pcbLayoutMode === "flex") {
       this._doInitialPcbLayoutFlex()
     }
+
+    // Apply constraints in relative layout mode (works for all modes,
+    // but primarily useful when pcbLayoutMode is "none")
+    this._doInitialPcbLayoutRelativeConstraints()
   }
 
   _doInitialPcbLayoutGrid(): void {
@@ -1151,6 +1156,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _doInitialPcbLayoutFlex(): void {
     Group_doInitialPcbLayoutFlex(this as any)
+  }
+
+  _doInitialPcbLayoutRelativeConstraints(): void {
+    Group_doInitialPcbLayoutRelativeConstraints(this as any)
   }
 
   _insertSchematicBorder() {
