@@ -1,0 +1,33 @@
+bun test v1.3.4 (5eb2145b)
+
+tests/features/component-constraints/center-constraint.test.tsx:
+Constraint props: {
+  pcb: true,
+  xDist: 5,
+  left: ".R1",
+  right: ".R2",
+  centerX: 0,
+} hasAbsoluteX: true
+34 |   const makeSet = (x: string) => {
+35 |     if (!(x in parent)) parent[x] = x
+36 |   }
+37 | 
+38 |   const getIdFromSelector = (sel: string): string | undefined => {
+39 |     const name = sel.startsWith(".") ? sel.slice(1) : sel
+                      ^
+TypeError: undefined is not an object (evaluating 'sel.startsWith')
+      at getIdFromSelector (/Users/patcharapon/Works/Freelance/core/lib/components/primitive-components/Group/Group_doInitialPcbLayoutPack/applyComponentConstraintClusters.ts:39:18)
+      at applyComponentConstraintClusters (/Users/patcharapon/Works/Freelance/core/lib/components/primitive-components/Group/Group_doInitialPcbLayoutPack/applyComponentConstraintClusters.ts:218:13)
+      at Group_doInitialPcbLayoutPack (/Users/patcharapon/Works/Freelance/core/lib/components/primitive-components/Group/Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack.ts:153:22)
+      at _doInitialPcbLayoutPack (/Users/patcharapon/Works/Freelance/core/lib/components/primitive-components/Group/Group.ts:1149:5)
+      at doInitialPcbLayout (/Users/patcharapon/Works/Freelance/core/lib/components/primitive-components/Group/Group.ts:1138:12)
+      at runRenderPhase (/Users/patcharapon/Works/Freelance/core/lib/components/base-components/Renderable.ts:380:34)
+      at runRenderCycle (/Users/patcharapon/Works/Freelance/core/lib/components/base-components/Renderable.ts:318:12)
+      at render (/Users/patcharapon/Works/Freelance/core/lib/IsolatedCircuit.ts:176:16)
+      at renderUntilSettled (/Users/patcharapon/Works/Freelance/core/lib/IsolatedCircuit.ts:189:10)
+      at renderUntilSettled (/Users/patcharapon/Works/Freelance/core/lib/IsolatedCircuit.ts:180:45)
+(fail) pcbPack respects centerX constraint [46.41ms]
+
+ 0 pass
+ 1 fail
+Ran 1 test across 1 file. [871.00ms]

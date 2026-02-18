@@ -179,7 +179,18 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
 
     packOutput = {
       ...packInput,
-      components: solver.packedComponents,
+      components: [
+        ...solver.packedComponents,
+        ...Object.values(clusterMap)
+          .filter((c) => c.isStatic && c.absoluteCenter)
+          .map((c) => ({
+            componentId: c.componentIds[0],
+            center: c.absoluteCenter!,
+            rotation: 0,
+            ccwRotationOffset: 0,
+            pads: [] as any,
+          })),
+      ],
     }
   } catch (error) {
     group.root?.emit("packing:error", {

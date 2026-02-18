@@ -7,6 +7,8 @@ export type ClusterInfo = {
   componentIds: string[]
   constraints: Constraint[]
   relativeCenters?: Record<string, { x: number; y: number }>
+  isStatic?: boolean
+  absoluteCenter?: { x: number; y: number }
 }
 
 export const applyComponentConstraintClusters = (
@@ -33,7 +35,8 @@ export const applyComponentConstraintClusters = (
     if (!(x in parent)) parent[x] = x
   }
 
-  const getIdFromSelector = (sel: string): string | undefined => {
+  const getIdFromSelector = (sel: string | undefined): string | undefined => {
+    if (!sel) return undefined
     const name = sel.startsWith(".") ? sel.slice(1) : sel
     const child = group.children.find((c) => (c as any).name === name)
     return child?.pcb_component_id ?? undefined
@@ -100,25 +103,44 @@ export const applyComponentConstraintClusters = (
       return kVars[key]
     }
     const anchor = info.componentIds[0]
-    solver.addConstraint(
-      new kiwi.Constraint(
-        getVar(anchor, "x"),
-        kiwi.Operator.Eq,
-        0,
-        kiwi.Strength.required,
-      ),
-    )
-    solver.addConstraint(
-      new kiwi.Constraint(
-        getVar(anchor, "y"),
-        kiwi.Operator.Eq,
-        0,
-        kiwi.Strength.required,
-      ),
-    )
+
+
+    let hasAbsoluteX = false
+    let hasAbsoluteY = false
 
     for (const constraint of info.constraints) {
       const props = constraint._parsedProps as any
+      if ("centerX" in props || "centerY" in props) {
+        if ("centerX" in props) hasAbsoluteX = true
+        if ("centerY" in props) hasAbsoluteY = true
+      }
+    }
+
+    if (!hasAbsoluteX) {
+      solver.addConstraint(
+        new kiwi.Constraint(
+          getVar(anchor, "x"),
+          kiwi.Operator.Eq,
+          0,
+          kiwi.Strength.required,
+        ),
+      )
+    }
+    if (!hasAbsoluteY) {
+      solver.addConstraint(
+        new kiwi.Constraint(
+          getVar(anchor, "y"),
+          kiwi.Operator.Eq,
+          0,
+          kiwi.Strength.required,
+        ),
+      )
+    }
+
+    for (const constraint of info.constraints) {
+      const props = constraint._parsedProps as any
+
+      // X-Axis Relative Constraints
       if ("xDist" in props) {
         const left = getIdFromSelector(props.left)
         const right = getIdFromSelector(props.right)
@@ -128,19 +150,6 @@ export const applyComponentConstraintClusters = (
               new kiwi.Expression(getVar(right, "x"), [-1, getVar(left, "x")]),
               kiwi.Operator.Eq,
               props.xDist,
-              kiwi.Strength.required,
-            ),
-          )
-        }
-      } else if ("yDist" in props) {
-        const top = getIdFromSelector(props.top)
-        const bottom = getIdFromSelector(props.bottom)
-        if (top && bottom) {
-          solver.addConstraint(
-            new kiwi.Constraint(
-              new kiwi.Expression(getVar(top, "y"), [-1, getVar(bottom, "y")]),
-              kiwi.Operator.Eq,
-              props.yDist,
               kiwi.Strength.required,
             ),
           )
@@ -162,6 +171,22 @@ export const applyComponentConstraintClusters = (
             )
           }
         }
+      }
+
+      // Y-Axis Relative Constraints
+      if ("yDist" in props) {
+        const top = getIdFromSelector(props.top)
+        const bottom = getIdFromSelector(props.bottom)
+        if (top && bottom) {
+          solver.addConstraint(
+            new kiwi.Constraint(
+              new kiwi.Expression(getVar(top, "y"), [-1, getVar(bottom, "y")]),
+              kiwi.Operator.Eq,
+              props.yDist,
+              kiwi.Strength.required,
+            ),
+          )
+        }
       } else if ("sameY" in props && Array.isArray(props.for)) {
         const ids = props.for
           .map((s: string) => getIdFromSelector(s))
@@ -178,6 +203,58 @@ export const applyComponentConstraintClusters = (
               ),
             )
           }
+        }
+      }
+
+      // X-Axis Absolute Constraints
+      if ("centerX" in props) {
+        const ids = props.for
+          ? props.for
+            .map((s: string) => getIdFromSelector(s))
+            .filter((s: string | undefined): s is string => !!s)
+          : [
+            getIdFromSelector(props.left),
+            getIdFromSelector(props.right),
+            getIdFromSelector(props.top),
+            getIdFromSelector(props.bottom),
+          ].filter((s): s is string => !!s)
+
+        if (ids.length > 0) {
+          const terms = ids.map((id: string) => getVar(id, "x"))
+          solver.addConstraint(
+            new kiwi.Constraint(
+              new kiwi.Expression(...terms),
+              kiwi.Operator.Eq,
+              props.centerX * ids.length,
+              kiwi.Strength.required,
+            ),
+          )
+        }
+      }
+
+      // Y-Axis Absolute Constraints
+      if ("centerY" in props) {
+        const ids = props.for
+          ? props.for
+            .map((s: string) => getIdFromSelector(s))
+            .filter((s: string | undefined): s is string => !!s)
+          : [
+            getIdFromSelector(props.left),
+            getIdFromSelector(props.right),
+            getIdFromSelector(props.top),
+            getIdFromSelector(props.bottom),
+          ].filter((s): s is string => !!s)
+
+        if (ids.length > 0) {
+          const terms = ids.map((id: string) => getVar(id, "y"))
+          solver.addConstraint(
+            new kiwi.Constraint(
+              new kiwi.Expression(...terms),
+              kiwi.Operator.Eq,
+              props.centerY * ids.length,
+              kiwi.Strength.required,
+            ),
+          )
         }
       }
     }
@@ -238,13 +315,20 @@ export const applyComponentConstraintClusters = (
     packInput.components = packInput.components.filter(
       (c) => !info.componentIds.includes(c.componentId),
     )
-    packInput.components.push({
-      componentId: info.componentIds[0],
-      pads: mergedPads,
-      availableRotationDegrees: [0],
-    })
-
-    info.relativeCenters = relCenters
+    info.isStatic = hasAbsoluteX || hasAbsoluteY
+    if (info.isStatic) {
+      info.absoluteCenter = clusterCenter
+      info.relativeCenters = relCenters
+      // Important: if it's static, we DON'T add it to packInput.components
+      // because we want it to stay exactly where it is.
+    } else {
+      packInput.components.push({
+        componentId: info.componentIds[0],
+        pads: mergedPads,
+        availableRotationDegrees: [0],
+      })
+      info.relativeCenters = relCenters
+    }
     clusterMap[info.componentIds[0]] = info
   }
 
