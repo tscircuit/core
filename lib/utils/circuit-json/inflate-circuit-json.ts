@@ -16,6 +16,7 @@ import { inflateSourcePort } from "../../components/primitive-components/Group/S
 import { inflateSourceResistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceResistor"
 import { inflateSourceTrace } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTrace"
 import { inflateSourceTransistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTransistor"
+import { inflateStandalonePcbPrimitives } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateStandalonePcbPrimitives"
 
 export const inflateCircuitJson = (
   target: SubcircuitI & Group<any>,
@@ -108,4 +109,8 @@ export const inflateCircuitJson = (
   for (const sourceTrace of sourceTraces) {
     inflateSourceTrace(sourceTrace, inflationCtx)
   }
+
+  // Inflate standalone PCB primitives (silkscreen, fab notes, pcb notes, etc.)
+  // These are elements placed directly on the board without a component association
+  inflateStandalonePcbPrimitives(inflationCtx)
 }
