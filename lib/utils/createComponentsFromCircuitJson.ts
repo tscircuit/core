@@ -1,15 +1,25 @@
+import type { PinLabelsProp } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
-import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
-import { SmtPad } from "lib/components/primitive-components/SmtPad"
-import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
+import { Cutout } from "lib/components/primitive-components/Cutout"
+import { FabricationNotePath } from "lib/components/primitive-components/FabricationNotePath"
+import { FabricationNoteRect } from "lib/components/primitive-components/FabricationNoteRect"
+import { FabricationNoteText } from "lib/components/primitive-components/FabricationNoteText"
+import { Hole } from "lib/components/primitive-components/Hole"
+import { Keepout } from "lib/components/primitive-components/Keepout"
+import { PcbNoteLine } from "lib/components/primitive-components/PcbNoteLine"
+import { PcbNotePath } from "lib/components/primitive-components/PcbNotePath"
+import { PcbNoteRect } from "lib/components/primitive-components/PcbNoteRect"
+import { PcbNoteText } from "lib/components/primitive-components/PcbNoteText"
 import { PcbTrace } from "lib/components/primitive-components/PcbTrace"
 import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
-import { Keepout } from "lib/components/primitive-components/Keepout"
-import { Hole } from "lib/components/primitive-components/Hole"
+import { SilkscreenCircle } from "lib/components/primitive-components/SilkscreenCircle"
+import { SilkscreenLine } from "lib/components/primitive-components/SilkscreenLine"
+import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
+import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRect"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
-import { Cutout } from "lib/components/primitive-components/Cutout"
+import { SmtPad } from "lib/components/primitive-components/SmtPad"
+import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
-import type { PinLabelsProp } from "@tscircuit/props"
 
 const calculateCcwRotation = (
   componentRotationStr: string | undefined | null,
@@ -281,6 +291,124 @@ export const createComponentsFromCircuitJson = (
       components.push(
         new PcbTrace({
           route: elm.route,
+        }),
+      )
+    } else if (elm.type === "pcb_silkscreen_rect") {
+      components.push(
+        new SilkscreenRect({
+          pcbX: elm.center.x,
+          pcbY: elm.center.y,
+          width: elm.width,
+          height: elm.height,
+          layer: elm.layer,
+          strokeWidth: elm.stroke_width,
+          filled: elm.is_filled,
+          cornerRadius: elm.corner_radius,
+        }),
+      )
+    } else if (elm.type === "pcb_silkscreen_circle") {
+      components.push(
+        new SilkscreenCircle({
+          pcbX: elm.center.x,
+          pcbY: elm.center.y,
+          radius: elm.radius,
+          layer: elm.layer,
+          strokeWidth: elm.stroke_width,
+        }),
+      )
+    } else if (elm.type === "pcb_silkscreen_line") {
+      components.push(
+        new SilkscreenLine({
+          x1: elm.x1,
+          y1: elm.y1,
+          x2: elm.x2,
+          y2: elm.y2,
+          layer: elm.layer,
+          strokeWidth: elm.stroke_width,
+        }),
+      )
+    } else if (elm.type === "pcb_fabrication_note_text") {
+      components.push(
+        new FabricationNoteText({
+          pcbX: elm.anchor_position.x,
+          pcbY: elm.anchor_position.y,
+          text: elm.text,
+          fontSize: elm.font_size,
+          anchorAlignment: elm.anchor_alignment,
+          color: elm.color,
+          font: elm.font,
+        }),
+      )
+    } else if (elm.type === "pcb_fabrication_note_path") {
+      components.push(
+        new FabricationNotePath({
+          route: elm.route,
+          strokeWidth: elm.stroke_width,
+          color: elm.color,
+          layer: elm.layer,
+        }),
+      )
+    } else if (elm.type === "pcb_fabrication_note_rect") {
+      components.push(
+        new FabricationNoteRect({
+          pcbX: elm.center.x,
+          pcbY: elm.center.y,
+          width: elm.width,
+          height: elm.height,
+          strokeWidth: elm.stroke_width,
+          isFilled: elm.is_filled,
+          color: elm.color,
+          layer: elm.layer,
+          cornerRadius: elm.corner_radius,
+          hasStroke: elm.has_stroke,
+          isStrokeDashed: elm.is_stroke_dashed,
+        }),
+      )
+    } else if (elm.type === "pcb_note_text") {
+      components.push(
+        new PcbNoteText({
+          pcbX: elm.anchor_position.x,
+          pcbY: elm.anchor_position.y,
+          text: elm.text ?? "",
+          fontSize: elm.font_size,
+          anchorAlignment: elm.anchor_alignment,
+          color: elm.color,
+          font: elm.font,
+        }),
+      )
+    } else if (elm.type === "pcb_note_rect") {
+      components.push(
+        new PcbNoteRect({
+          pcbX: elm.center.x,
+          pcbY: elm.center.y,
+          width: elm.width,
+          height: elm.height,
+          strokeWidth: elm.stroke_width,
+          isFilled: elm.is_filled,
+          color: elm.color,
+          cornerRadius: elm.corner_radius,
+          hasStroke: elm.has_stroke,
+          isStrokeDashed: elm.is_stroke_dashed,
+        }),
+      )
+    } else if (elm.type === "pcb_note_path") {
+      components.push(
+        new PcbNotePath({
+          route: elm.route,
+          strokeWidth: elm.stroke_width,
+          color: elm.color,
+        }),
+      )
+    } else if (elm.type === "pcb_note_line") {
+      components.push(
+        new PcbNoteLine({
+          x1: elm.x1,
+          y1: elm.y1,
+          x2: elm.x2,
+          y2: elm.y2,
+          strokeWidth: elm.stroke_width,
+          color: elm.color,
+          isDashed: elm.is_dashed,
         }),
       )
     }
