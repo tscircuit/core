@@ -99,12 +99,27 @@ export function inflateSourceTrace(
     pcbPath = pcbTraceRouteToPcbPath(pcbTrace.route)
   }
 
+  // Extract trace width from source_trace or pcb_trace route points
+  let traceWidth: number | undefined = sourceTrace.min_trace_thickness
+  if (!traceWidth && pcbTrace?.route) {
+    // Try to get width from the first wire point in the route
+    const wirePoint = pcbTrace.route.find((pt) => pt.route_type === "wire")
+    if (wirePoint && wirePoint.route_type === "wire") {
+      traceWidth = wirePoint.width
+    }
+  }
+
   const traceProps: {
     path: string[]
     pcbPath?: ManualPcbPathPoint[]
     pcbStraightLine?: boolean
+    thickness?: number
   } = {
     path: connectedSelectors,
+  }
+
+  if (traceWidth !== undefined) {
+    traceProps.thickness = traceWidth
   }
 
   // If pcbPath has intermediate points, use manual routing
