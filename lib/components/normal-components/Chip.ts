@@ -131,6 +131,9 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       do_not_place: props.doNotPlace ?? false,
       obstructs_within_bounds: props.obstructsWithinBounds ?? true,
       is_allowed_to_be_off_board: props.allowOffBoard ?? false,
+      metadata: props.kicadFootprintMetadata
+        ? { kicad_footprint: props.kicadFootprintMetadata }
+        : undefined,
     })
 
     this.pcb_component_id = pcb_component.pcb_component_id
