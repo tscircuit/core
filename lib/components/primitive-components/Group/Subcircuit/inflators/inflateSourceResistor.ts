@@ -3,9 +3,9 @@ import type {
   PcbComponent,
   SourceSimpleResistor,
 } from "circuit-json"
-import type { InflatorContext } from "../InflatorFn"
 import { Resistor } from "lib/components/normal-components/Resistor"
-import { inflatePcbComponent } from "./inflatePcbComponent"
+import type { InflatorContext } from "../InflatorFn"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 export function inflateSourceResistor(
   sourceElm: SourceSimpleResistor,
@@ -32,11 +32,16 @@ export function inflateSourceResistor(
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
 
+  // Create a Footprint component from the PCB primitives in the circuit JSON
   if (pcbElm) {
-    inflatePcbComponent(pcbElm, {
+    const footprint = inflateFootprintComponent(pcbElm, {
       ...inflatorContext,
       normalComponent: resistor,
     })
+
+    if (footprint) {
+      resistor.add(footprint)
+    }
   }
 
   // Add the resistor to its group if it has one, otherwise add to subcircuit

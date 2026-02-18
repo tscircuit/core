@@ -1,11 +1,11 @@
 import type {
-  SourceSimpleCapacitor,
-  PcbComponent,
   CadComponent,
+  PcbComponent,
+  SourceSimpleCapacitor,
 } from "circuit-json"
 import { Capacitor } from "lib/components/normal-components/Capacitor"
-import { inflatePcbComponent } from "./inflatePcbComponent"
 import type { InflatorContext } from "../InflatorFn"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 export function inflateSourceCapacitor(
   sourceElm: SourceSimpleCapacitor,
@@ -32,11 +32,16 @@ export function inflateSourceCapacitor(
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
 
+  // Create a Footprint component from the PCB primitives in the circuit JSON
   if (pcbElm) {
-    inflatePcbComponent(pcbElm, {
+    const footprint = inflateFootprintComponent(pcbElm, {
       ...inflatorContext,
       normalComponent: capacitor,
     })
+
+    if (footprint) {
+      capacitor.add(footprint)
+    }
   }
 
   // Add the capacitor to its group if it has one, otherwise add to subcircuit

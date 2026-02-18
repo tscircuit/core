@@ -789,7 +789,12 @@ export class NormalComponent<
 
     const footprint = props.footprint ?? this._getImpliedFootprintString()
 
-    if (!footprint && !this.isGroup) {
+    // Check if we have a Footprint child (e.g., from inflated circuit JSON)
+    const hasFootprintChild = this.children.some(
+      (c) => c.componentName === "Footprint",
+    )
+
+    if (!footprint && !hasFootprintChild && !this.isGroup) {
       const footprint_error = db.pcb_missing_footprint_error.insert({
         message: `No footprint found for component: ${this.getString()}`,
         source_component_id: `${this.source_component_id}`,

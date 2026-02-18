@@ -1,11 +1,11 @@
 import type {
-  SourceSimpleInductor,
-  PcbComponent,
   CadComponent,
+  PcbComponent,
+  SourceSimpleInductor,
 } from "circuit-json"
 import { Inductor } from "lib/components/normal-components/Inductor"
-import { inflatePcbComponent } from "./inflatePcbComponent"
 import type { InflatorContext } from "../InflatorFn"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
 export function inflateSourceInductor(
   sourceElm: SourceSimpleInductor,
@@ -32,11 +32,16 @@ export function inflateSourceInductor(
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   })
 
+  // Create a Footprint component from the PCB primitives in the circuit JSON
   if (pcbElm) {
-    inflatePcbComponent(pcbElm, {
+    const footprint = inflateFootprintComponent(pcbElm, {
       ...inflatorContext,
       normalComponent: inductor,
     })
+
+    if (footprint) {
+      inductor.add(footprint)
+    }
   }
 
   // Add the inductor to its group if it has one, otherwise add to subcircuit
