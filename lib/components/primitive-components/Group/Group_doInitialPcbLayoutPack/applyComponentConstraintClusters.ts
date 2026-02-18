@@ -104,7 +104,6 @@ export const applyComponentConstraintClusters = (
     }
     const anchor = info.componentIds[0]
 
-
     let hasAbsoluteX = false
     let hasAbsoluteY = false
 
@@ -210,14 +209,14 @@ export const applyComponentConstraintClusters = (
       if ("centerX" in props) {
         const ids = props.for
           ? props.for
-            .map((s: string) => getIdFromSelector(s))
-            .filter((s: string | undefined): s is string => !!s)
+              .map((s: string) => getIdFromSelector(s))
+              .filter((s: string | undefined): s is string => !!s)
           : [
-            getIdFromSelector(props.left),
-            getIdFromSelector(props.right),
-            getIdFromSelector(props.top),
-            getIdFromSelector(props.bottom),
-          ].filter((s): s is string => !!s)
+              getIdFromSelector(props.left),
+              getIdFromSelector(props.right),
+              getIdFromSelector(props.top),
+              getIdFromSelector(props.bottom),
+            ].filter((s): s is string => !!s)
 
         if (ids.length > 0) {
           const terms = ids.map((id: string) => getVar(id, "x"))
@@ -236,14 +235,14 @@ export const applyComponentConstraintClusters = (
       if ("centerY" in props) {
         const ids = props.for
           ? props.for
-            .map((s: string) => getIdFromSelector(s))
-            .filter((s: string | undefined): s is string => !!s)
+              .map((s: string) => getIdFromSelector(s))
+              .filter((s: string | undefined): s is string => !!s)
           : [
-            getIdFromSelector(props.left),
-            getIdFromSelector(props.right),
-            getIdFromSelector(props.top),
-            getIdFromSelector(props.bottom),
-          ].filter((s): s is string => !!s)
+              getIdFromSelector(props.left),
+              getIdFromSelector(props.right),
+              getIdFromSelector(props.top),
+              getIdFromSelector(props.bottom),
+            ].filter((s): s is string => !!s)
 
         if (ids.length > 0) {
           const terms = ids.map((id: string) => getVar(id, "y"))

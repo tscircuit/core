@@ -18,8 +18,12 @@ test("pcbPack respects centerX constraint even if components exceed board bounda
   const r1Source = circuit.db.source_component.getWhere({ name: "R1" })!
   const r2Source = circuit.db.source_component.getWhere({ name: "R2" })!
 
-  const r1 = circuit.db.pcb_component.getWhere({ source_component_id: r1Source.source_component_id })!
-  const r2 = circuit.db.pcb_component.getWhere({ source_component_id: r2Source.source_component_id })!
+  const r1 = circuit.db.pcb_component.getWhere({
+    source_component_id: r1Source.source_component_id,
+  })!
+  const r2 = circuit.db.pcb_component.getWhere({
+    source_component_id: r2Source.source_component_id,
+  })!
 
   const r1Center = {
     x: r1.center.x,
