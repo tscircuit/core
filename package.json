@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.1044",
+  "version": "0.0.1045",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -59,7 +59,7 @@
     "bun-match-svg": "0.0.12",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.379",
+    "circuit-json": "^0.0.383",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.23",
     "circuit-json-to-gltf": "^0.0.68",
