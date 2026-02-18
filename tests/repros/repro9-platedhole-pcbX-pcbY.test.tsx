@@ -45,6 +45,7 @@ test("board with resistor being passed schX and pcbX in mm", () => {
         "do_not_place": false,
         "height": 2.2,
         "layer": "top",
+        "metadata": undefined,
         "obstructs_within_bounds": true,
         "pcb_component_id": "pcb_component_0",
         "rotation": 0,

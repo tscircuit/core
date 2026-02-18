@@ -785,6 +785,9 @@ export class NormalComponent<
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
       do_not_place: props.doNotPlace ?? false,
       obstructs_within_bounds: props.obstructsWithinBounds ?? true,
+      metadata: props.kicadFootprintMetadata
+        ? { kicad_footprint: props.kicadFootprintMetadata }
+        : undefined,
     })
 
     const footprint = props.footprint ?? this._getImpliedFootprintString()

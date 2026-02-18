@@ -37,8 +37,14 @@ export class SymbolComponent
 
     const { _parsedProps: props } = this
 
+    const parentNormal = this.getParentNormalComponent()
+    const kicadSymbolMetadata = parentNormal?._parsedProps?.kicadSymbolMetadata
+
     const schematic_symbol = db.schematic_symbol.insert({
       name: props.name,
+      metadata: kicadSymbolMetadata
+        ? { kicad_symbol: kicadSymbolMetadata }
+        : undefined,
     })
 
     this.schematic_symbol_id = schematic_symbol.schematic_symbol_id
