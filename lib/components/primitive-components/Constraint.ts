@@ -12,21 +12,35 @@ const edgeSpecifiers = [
 
 export type EdgeSpecifier = (typeof edgeSpecifiers)[number]
 
-export class Constraint extends PrimitiveComponent<typeof constraintProps> {
+const constraintPropsWithCenter = constraintProps.and(
+  z.object({
+    centerX: z.number().optional(),
+    centerY: z.number().optional(),
+  }),
+)
+
+export class Constraint extends PrimitiveComponent<
+  typeof constraintPropsWithCenter
+> {
   get config() {
     return {
       componentName: "Constraint",
-      zodProps: constraintProps,
+      zodProps: constraintPropsWithCenter,
     }
   }
 
   constructor(props: z.input<typeof constraintProps>) {
     super(props)
     if ("xdist" in props || "ydist" in props) {
-      if (!("edgeToEdge" in props) && !("centerToCenter" in props)) {
+      if (
+        !("edgeToEdge" in props) &&
+        !("centerToCenter" in props) &&
+        !("centerX" in props) &&
+        !("centerY" in props)
+      ) {
         // TODO don't throw an error if the selectors specify an edge
         throw new Error(
-          `edgeToEdge, centerToCenter must be set for xDist or yDist for ${this}`,
+          `edgeToEdge, centerToCenter, centerX, or centerY must be set for xDist or yDist for ${this}`,
         )
       }
     }
