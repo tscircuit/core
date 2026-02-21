@@ -1,9 +1,9 @@
-import type { Group } from "./Group"
-import type { Size } from "circuit-json"
 import { getMinimumFlexContainer } from "@tscircuit/circuit-json-util"
-import { RootFlexBox, type Align, type Justify } from "@tscircuit/miniflex"
+import { type Align, type Justify, RootFlexBox } from "@tscircuit/miniflex"
+import type { Size } from "circuit-json"
 import { length } from "circuit-json"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import type { Group } from "./Group"
 import type { IGroup } from "./IGroup"
 
 type PcbChild = NormalComponent | IGroup
@@ -77,6 +77,19 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   let width = props.width ?? props.pcbWidth ?? undefined
   let height = props.height ?? props.pcbHeight ?? undefined
 
+  if (width === undefined) {
+    const parentGroup = group.parent?.getGroup?.()
+
+    if (parentGroup) {
+      const parentWidthFromProps =
+        parentGroup._parsedProps?.width ?? parentGroup._parsedProps?.pcbWidth
+
+      if (typeof parentWidthFromProps === "number") {
+        width = parentWidthFromProps
+      }
+    }
+  }
+
   // For flex groups, always calculate the container size to include gaps properly
   // Don't use existing group dimensions as they may not account for current gap settings
   const isInline = Boolean(width === undefined || height === undefined)
@@ -94,8 +107,12 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
         columnGap,
       },
     )
-    width = minFlexContainer.width
-    height = minFlexContainer.height
+    if (width === undefined) {
+      width = minFlexContainer.width
+    }
+    if (height === undefined) {
+      height = minFlexContainer.height
+    }
   }
 
   const flexBox = new RootFlexBox(width!, height!, {
