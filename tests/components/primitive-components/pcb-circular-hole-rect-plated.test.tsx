@@ -25,6 +25,15 @@ test("pcb circular hole rect plated", () => {
         pcbX={2}
         pcbY={2}
       />
+      <platedhole
+        shape="circular_hole_with_rect_pad"
+        holeDiameter={2}
+        rectPadWidth={4}
+        rectPadHeight={3}
+        pcbX={2}
+        pcbY={-2}
+        pcbRotation={45}
+      />
     </board>,
   )
 
