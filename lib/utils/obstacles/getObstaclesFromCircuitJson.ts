@@ -212,37 +212,18 @@ export const getObstaclesFromCircuitJson = (
           connectedTo: withNetId([element.pcb_plated_hole_id]),
         })
       } else if (element.shape === "circular_hole_with_rect_pad") {
-        if (element.rect_ccw_rotation) {
-          const approximatingRects = generateApproximatingRects({
-            center: { x: element.x, y: element.y },
-            width: element.rect_pad_width,
-            height: element.rect_pad_height,
-            rotation: element.rect_ccw_rotation,
-          })
-          for (const rect of approximatingRects) {
-            obstacles.push({
-              type: "rect",
-              layers: EVERY_LAYER,
-              center: rect.center,
-              width: rect.width,
-              height: rect.height,
-              connectedTo: withNetId([element.pcb_plated_hole_id]),
-            })
-          }
-        } else {
-          obstacles.push({
-            // @ts-ignore
-            type: "rect",
-            layers: EVERY_LAYER,
-            center: {
-              x: element.x,
-              y: element.y,
-            },
-            width: element.rect_pad_width,
-            height: element.rect_pad_height,
-            connectedTo: withNetId([element.pcb_plated_hole_id]),
-          })
-        }
+        obstacles.push({
+          // @ts-ignore
+          type: "rect",
+          layers: EVERY_LAYER,
+          center: {
+            x: element.x,
+            y: element.y,
+          },
+          width: element.rect_pad_width,
+          height: element.rect_pad_height,
+          connectedTo: withNetId([element.pcb_plated_hole_id]),
+        })
       } else if (element.shape === "oval" || element.shape === "pill") {
         obstacles.push({
           // @ts-ignore
