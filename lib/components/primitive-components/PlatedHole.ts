@@ -198,8 +198,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         hole_shape: "rotated_pill",
         pad_shape: "rect",
-        hole_ccw_rotation: finalRotationDegrees,
-        rect_ccw_rotation: finalRotationDegrees,
+        hole_ccw_rotation: props.pcbRotation ?? 0,
+        rect_ccw_rotation: props.pcbRotation ?? 0,
         rect_pad_width: props.outerWidth,
         rect_pad_height: props.outerHeight,
         hole_offset_x: props.holeOffsetX,
@@ -226,7 +226,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        ccw_rotation: finalRotationDegrees,
+        ccw_rotation: props.pcbRotation ?? 0,
         // NOTE: currently PcbPlatedHoleOval erroneously includes both the shape "pill" and "oval"
       } as PcbPlatedHoleOval)
 
