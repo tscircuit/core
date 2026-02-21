@@ -10,6 +10,7 @@ import type {
   PcbHoleRotatedPillWithRectPad,
   PcbHoleWithPolygonPad,
 } from "circuit-json"
+import { decomposeTSR } from "transformation-matrix"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
@@ -130,6 +131,13 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
+    const decomposedTransform = decomposeTSR(
+      this._computePcbGlobalTransformBeforeLayout(),
+    )
+    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
+    const finalRotationDegrees = normalizedRotationDegrees
+
     if (props.shape === "circle") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
@@ -190,8 +198,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         hole_shape: "rotated_pill",
         pad_shape: "rect",
-        hole_ccw_rotation: props.pcbRotation ?? 0,
-        rect_ccw_rotation: props.pcbRotation ?? 0,
+        hole_ccw_rotation: finalRotationDegrees,
+        rect_ccw_rotation: finalRotationDegrees,
         rect_pad_width: props.outerWidth,
         rect_pad_height: props.outerHeight,
         hole_offset_x: props.holeOffsetX,
@@ -218,7 +226,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        ccw_rotation: props.pcbRotation ?? 0,
+        ccw_rotation: finalRotationDegrees,
         // NOTE: currently PcbPlatedHoleOval erroneously includes both the shape "pill" and "oval"
       } as PcbPlatedHoleOval)
 
@@ -264,7 +272,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         hole_offset_x: props.holeOffsetX,
         hole_offset_y: props.holeOffsetY,
         rect_border_radius: props.rectBorderRadius ?? 0,
-        rect_ccw_rotation: props.pcbRotation ?? 0,
+        rect_ccw_rotation: finalRotationDegrees,
       } as PcbHoleCircularWithRectPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     } else if (props.shape === "pill_hole_with_rect_pad") {
