@@ -10,6 +10,7 @@ import type {
   PcbHoleRotatedPillWithRectPad,
   PcbHoleWithPolygonPad,
 } from "circuit-json"
+import { decomposeTSR } from "transformation-matrix"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
@@ -129,6 +130,13 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
+
+    const decomposedTransform = decomposeTSR(
+      this._computePcbGlobalTransformBeforeLayout(),
+    )
+    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
+    const finalRotationDegrees = normalizedRotationDegrees
 
     if (props.shape === "circle") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
@@ -264,6 +272,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         hole_offset_x: props.holeOffsetX,
         hole_offset_y: props.holeOffsetY,
         rect_border_radius: props.rectBorderRadius ?? 0,
+        rect_ccw_rotation: finalRotationDegrees,
       } as PcbHoleCircularWithRectPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     } else if (props.shape === "pill_hole_with_rect_pad") {
