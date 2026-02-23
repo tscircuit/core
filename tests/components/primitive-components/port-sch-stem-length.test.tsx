@@ -127,4 +127,9 @@ test("Port schStemLength scales with custom symbol width/height", async () => {
 
   expect(Math.abs(leftLine.x2 - leftLine.x1)).toBeCloseTo(1, 5)
   expect(Math.abs(topLine.y2 - topLine.y1)).toBeCloseTo(0.5, 5)
+
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    grid: { cellSize: 1, labelCells: true },
+    drawPorts: true,
+  })
 })
