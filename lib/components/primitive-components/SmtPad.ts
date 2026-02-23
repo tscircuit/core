@@ -135,6 +135,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         soldermask_margin: soldermaskMargin,
+        solver_mask: props.solverMask,
         x: position.x,
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -168,6 +169,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           soldermask_margin: soldermaskMargin,
+          solver_mask: props.solverMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
@@ -183,6 +185,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           soldermask_margin: soldermaskMargin,
+          solver_mask: props.solverMask,
           x: position.x,
           y: position.y,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -241,6 +244,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         soldermask_margin: soldermaskMargin,
+        solver_mask: props.solverMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
@@ -280,6 +284,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         soldermask_margin: soldermaskMargin,
+        solver_mask: props.solverMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
@@ -297,6 +302,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         soldermask_margin: soldermaskMargin,
+        solver_mask: props.solverMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPill) as PcbSmtPadPill
