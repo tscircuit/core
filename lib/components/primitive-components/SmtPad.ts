@@ -9,7 +9,7 @@ import {
   type PcbSmtPadPill,
 } from "circuit-json"
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { PrimitiveComponent, type BaseComponentConfig } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
@@ -19,7 +19,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
 
   isPcbPrimitive = true
 
-  get config() {
+  get config(): BaseComponentConfig {
     return {
       componentName: "SmtPad",
       zodProps: smtPadProps,
