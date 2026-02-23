@@ -142,7 +142,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         x: position.x,
         y: position.y,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      } as PcbSmtPadCircle) as PcbSmtPadCircle
+      } as unknown as PcbSmtPadCircle) as PcbSmtPadCircle
       if (shouldCreateSolderPaste)
         db.pcb_solder_paste.insert({
           layer: pcb_smtpad.layer,
@@ -154,7 +154,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadCircle)
+        } as unknown as PcbSmtPadCircle)
     } else if (props.shape === "rect") {
       const hasRotation = !isAxisAligned && !isRotated90Degrees
       if (hasRotation) {
@@ -175,7 +175,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           solver_mask: (props as any).solverMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
+        } as unknown as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
       } else {
         pcb_smtpad = db.pcb_smtpad.insert({
           pcb_component_id,
@@ -193,7 +193,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           y: position.y,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadRect) as PcbSmtPadRect
+        } as unknown as PcbSmtPadRect) as PcbSmtPadRect
       }
       if (shouldCreateSolderPaste) {
         if (pcb_smtpad.shape === "rect") {
@@ -208,7 +208,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
             pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
             subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
             pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-          } as PcbSmtPadRect)
+          } as unknown as PcbSmtPadRect)
         } else if (pcb_smtpad.shape === "rotated_rect") {
           db.pcb_solder_paste.insert({
             layer: maybeFlipLayer(props.layer ?? "top"),
@@ -222,7 +222,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
             pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
             subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
             pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-          } as PcbSmtPadRotatedRect)
+          } as unknown as PcbSmtPadRotatedRect)
         }
       }
     } else if (props.shape === "rotated_rect") {
@@ -250,7 +250,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         solver_mask: (props as any).solverMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
+      } as unknown as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
 
       if (shouldCreateSolderPaste)
         db.pcb_solder_paste.insert({
@@ -265,7 +265,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_smtpad_id: pcb_smtpad.pcb_smtpad_id,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        } as PcbSmtPadRotatedRect)
+        } as unknown as PcbSmtPadRotatedRect)
     } else if (props.shape === "polygon") {
       const transformedPoints = props.points.map((point) => {
         const transformed = applyToPoint(globalTransform, {
@@ -290,7 +290,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         solver_mask: (props as any).solverMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbSmtPadPolygon) as PcbSmtPadPolygon
+      } as unknown as PcbSmtPadPolygon) as PcbSmtPadPolygon
     } else if (props.shape === "pill") {
       pcb_smtpad = db.pcb_smtpad.insert({
         pcb_component_id,
@@ -308,7 +308,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         solver_mask: (props as any).solverMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbSmtPadPill) as PcbSmtPadPill
+      } as unknown as PcbSmtPadPill) as PcbSmtPadPill
     }
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
