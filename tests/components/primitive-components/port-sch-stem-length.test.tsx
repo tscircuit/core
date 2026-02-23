@@ -65,3 +65,66 @@ test("Port schStemLength creates schematic_line from port toward component", asy
     drawPorts: true,
   })
 })
+
+test("Port schStemLength scales with custom symbol width/height", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="20mm" height="20mm">
+      <chip
+        name="U2"
+        schX={0}
+        schY={0}
+        symbol={
+          <symbol width={4} height={2}>
+            <schematicrect schX={0} schY={0} width={2} height={2} />
+            <port
+              name="LEFT"
+              schX={-1}
+              schY={0}
+              direction="left"
+              schStemLength={0.5}
+            />
+            <port
+              name="TOP"
+              schX={0}
+              schY={1}
+              direction="up"
+              schStemLength={0.5}
+            />
+          </symbol>
+        }
+      />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  const circuitJson = circuit.getCircuitJson()
+  const schematicPorts = circuitJson.filter(
+    (e) => e.type === "schematic_port",
+  ) as any[]
+  const schematicLines = circuitJson.filter(
+    (e) => e.type === "schematic_line",
+  ) as any[]
+
+  const leftPort = schematicPorts.find((p) => p.display_pin_label === "LEFT")
+  const topPort = schematicPorts.find((p) => p.display_pin_label === "TOP")
+
+  expect(leftPort.distance_from_component_edge).toBeCloseTo(1, 5)
+  expect(topPort.distance_from_component_edge).toBeCloseTo(0.5, 5)
+
+  const leftLine = schematicLines.find(
+    (line) =>
+      Math.abs(line.y1 - leftPort.center.y) < 1e-6 &&
+      Math.abs(line.x1 - leftPort.center.x) < 1e-6,
+  )
+  const topLine = schematicLines.find(
+    (line) =>
+      Math.abs(line.y1 - topPort.center.y) < 1e-6 &&
+      Math.abs(line.x1 - topPort.center.x) < 1e-6,
+  )
+
+  expect(Math.abs(leftLine.x2 - leftLine.x1)).toBeCloseTo(1, 5)
+  expect(Math.abs(topLine.y2 - topLine.y1)).toBeCloseTo(0.5, 5)
+})

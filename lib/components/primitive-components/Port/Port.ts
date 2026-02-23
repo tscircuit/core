@@ -34,6 +34,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
   pcb_port_id: string | null = null
   schematic_port_id: string | null = null
+  schematic_stem_line_id: string | null = null
 
   schematicSymbolPortDef: SchSymbol["ports"][number] | null = null
   matchedComponents: PrimitiveComponent[]
@@ -668,6 +669,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           ? "bottom"
           : props.direction)
 
+    const stemDirection = props.direction ?? this.facingDirection ?? undefined
+
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
       schematic_component_id: parentNormalComponent?.schematic_component_id!,
@@ -697,7 +700,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // Create schematic_line for port stem when schStemLength is specified
     if (props.schStemLength !== undefined && props.schStemLength !== 0) {
-      const { schStemLength, direction } = props
+      const direction = stemDirection
+      const schStemLength = props.schStemLength
       let x2 = portCenter.x
       let y2 = portCenter.y
 
@@ -707,7 +711,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       else if (direction === "up") y2 -= schStemLength
       else if (direction === "down") y2 += schStemLength
 
-      db.schematic_line.insert({
+      const stemLine = db.schematic_line.insert({
         schematic_component_id: parentNormalComponent?.schematic_component_id!,
         x1: portCenter.x,
         y1: portCenter.y,
@@ -717,7 +721,50 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         color: SCHEMATIC_COMPONENT_OUTLINE_COLOR,
         is_dashed: false,
       })
+
+      this.schematic_stem_line_id = stemLine.schematic_line_id
     }
+  }
+
+  doInitialSchematicSymbolResize(): void {
+    if (this.root?.schematicDisabled) return
+    const { _parsedProps: props } = this
+
+    if (!props.schStemLength || !this.schematic_port_id) return
+
+    const symbol = this._getSymbolAncestor()
+    const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
+    const direction = props.direction ?? this.facingDirection ?? undefined
+    if (!transform || !direction) return
+
+    const { db } = this.root!
+    const schematicPort = db.schematic_port.get(this.schematic_port_id)
+    if (!schematicPort) return
+
+    const scaleX = Math.hypot(transform.a, transform.b)
+    const scaleY = Math.hypot(transform.c, transform.d)
+    const scale =
+      direction === "left" || direction === "right" ? scaleX : scaleY
+    const scaledStemLength = props.schStemLength * scale
+
+    db.schematic_port.update(this.schematic_port_id, {
+      distance_from_component_edge: scaledStemLength,
+    })
+
+    if (!this.schematic_stem_line_id) return
+
+    const stemLine = db.schematic_line.get(this.schematic_stem_line_id)
+    if (!stemLine) return
+
+    let x2 = stemLine.x1
+    let y2 = stemLine.y1
+
+    if (direction === "right") x2 -= scaledStemLength
+    else if (direction === "left") x2 += scaledStemLength
+    else if (direction === "up") y2 -= scaledStemLength
+    else if (direction === "down") y2 += scaledStemLength
+
+    db.schematic_line.update(this.schematic_stem_line_id, { x2, y2 })
   }
 
   _getSubcircuitConnectivityKey(): string | undefined {
