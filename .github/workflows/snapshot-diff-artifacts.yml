@@ -1,10 +1,10 @@
-name: Snapshot Diff Artifacts
+name: Snapshot Auto Update
 
 on:
   workflow_dispatch:
     inputs:
       branch:
-        description: "Branch/tag/SHA to test"
+        description: "Branch to test and update"
         required: true
         default: "main"
         type: string
@@ -14,16 +14,16 @@ on:
         default: ""
         type: string
 
+permissions:
+  contents: write
+
 jobs:
-  snapshot-diff:
+  update-snapshots:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      matrix:
-        node: [1, 2, 3, 4]
+    timeout-minutes: 35
 
     steps:
-      - name: Checkout selected ref
+      - name: Checkout selected branch
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
@@ -40,62 +40,59 @@ jobs:
         if: ${{ inputs.test_pattern == '' }}
         run: bun run scripts/generate-test-plan.ts
 
-      - name: Run tests for selected pattern
+      - name: Run tests for selected pattern and update snapshots
         if: ${{ inputs.test_pattern != '' }}
-        run: bun test ${{ inputs.test_pattern }} --timeout 30000
+        run: BUN_UPDATE_SNAPSHOTS=1 bun test ${{ inputs.test_pattern }} --timeout 30000
 
-      - name: Run tests for node ${{ matrix.node }}
+      - name: Run full test plan and update snapshots
         if: ${{ inputs.test_pattern == '' }}
         run: |
-          if [ ! -f ".github/test-plans/node${{ matrix.node }}-testplan.txt" ]; then
-            echo "ERROR: No test plan found for node ${{ matrix.node }}"
-            exit 1
-          fi
-
-          mapfile -t test_files < .github/test-plans/node{{ matrix.node }}-testplan.txt
-          if [ ${#test_files[@]} -eq 0 ]; then
-            echo "ERROR: No test files in plan for node ${{ matrix.node }}"
-            exit 1
-          fi
-
-          echo "Running ${#test_files[@]} test files for node ${{ matrix.node }}"
-          attempt=1
-          while [ $attempt -le 4 ]; do
-            bun test ${test_files[@]} --timeout 30000
-            code=$?
-
-            if [ $code -eq 0 ]; then
-              break
+          for node in 1 2 3 4; do
+            if [ ! -f ".github/test-plans/node${node}-testplan.txt" ]; then
+              echo "ERROR: No test plan found for node ${node}"
+              exit 1
             fi
 
-            if [ $code -ne 139 ] && [ $code -ne 132 ]; then
-              exit $code
+            mapfile -t test_files < .github/test-plans/node${node}-testplan.txt
+            if [ ${#test_files[@]} -eq 0 ]; then
+              echo "ERROR: No test files in plan for node ${node}"
+              exit 1
             fi
 
-            if [ $attempt -eq 4 ]; then
-              echo "Segmentation fault or illegal instruction detected after $attempt attempts (exit=$code)."
-              exit $code
-            fi
+            echo "Running ${#test_files[@]} test files for node ${node}"
+            attempt=1
+            while [ $attempt -le 4 ]; do
+              BUN_UPDATE_SNAPSHOTS=1 bun test ${test_files[@]} --timeout 30000
+              code=$?
 
-            attempt=$((attempt + 1))
-            echo "Segfault (139) or illegal instruction (132) detected, retrying ($attempt/4)..."
+              if [ $code -eq 0 ]; then
+                break
+              fi
+
+              if [ $code -ne 139 ] && [ $code -ne 132 ]; then
+                exit $code
+              fi
+
+              if [ $attempt -eq 4 ]; then
+                echo "Segmentation fault or illegal instruction detected after $attempt attempts (exit=$code)."
+                exit $code
+              fi
+
+              attempt=$((attempt + 1))
+              echo "Segfault (139) or illegal instruction (132) detected, retrying ($attempt/4)..."
+            done
           done
 
-      - name: Upload snapshot diffs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: snapshot-diffs-${{ matrix.node }}
-          path: |
-            tests/**/__snapshots__/*.diff.png
-          if-no-files-found: ignore
+      - name: Commit and push snapshot updates
+        run: |
+          git config user.name "tscircuitbot"
+          git config user.email "tscircuitbot@users.noreply.github.com"
 
-      - name: Upload snapshot references
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: snapshot-references-${{ matrix.node }}
-          path: |
-            tests/**/__snapshots__/*.snap.svg
-            tests/**/__snapshots__/*.snap.png
-          if-no-files-found: ignore
+          if [ -z "$(git status --porcelain -- tests/**/__snapshots__)" ]; then
+            echo "No snapshot changes to commit"
+            exit 0
+          fi
+
+          git add -A tests/**/__snapshots__
+          git commit -m "test: update snapshots from CI"
+          git push origin HEAD:${{ inputs.branch }}
