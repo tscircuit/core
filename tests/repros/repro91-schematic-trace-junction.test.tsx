@@ -410,7 +410,7 @@ it(
             GND1: sel.net.GND,
             GND2: sel.net.GND,
             CLK: sel.net.GND,
-            VS2: sel.U1.VS1,
+            VS2: sel.U1.pin22,
           }}
         />
 
@@ -420,7 +420,7 @@ it(
           footprint="0402"
           connections={{
             pin1: "net.GND",
-            pin2: sel.U1.VCC_IO,
+            pin2: sel.U1.pin15,
           }}
         />
 
@@ -431,7 +431,7 @@ it(
             footprint="0402"
             connections={{
               pin2: "net.GND",
-              pin1: sel.U1.VS1,
+              pin1: sel.U1.pin22,
             }}
           />
           <capacitor
@@ -440,7 +440,7 @@ it(
             footprint="0402"
             connections={{
               pin2: "net.GND",
-              pin1: sel.U1.VS1,
+              pin1: sel.U1.pin22,
             }}
           />
           <capacitor
@@ -449,7 +449,7 @@ it(
             footprint="0402"
             connections={{
               pin2: "net.GND",
-              pin1: sel.U1.VS1,
+              pin1: sel.U1.pin22,
             }}
           />
         </group>
@@ -468,8 +468,8 @@ it(
           capacitance="22nF"
           footprint="0402"
           connections={{
-            pin1: sel.U1.CPI,
-            pin2: sel.U1.CPO,
+            pin1: sel.U1.pin5,
+            pin2: sel.U1.pin4,
           }}
         />
 
@@ -479,7 +479,7 @@ it(
           footprint="0402"
           connections={{
             pin1: "net.VCC_3",
-            pin2: sel.U1.N_EN,
+            pin2: sel.U1.pin2,
           }}
         />
         <resistor
@@ -488,7 +488,7 @@ it(
           footprint="0402"
           connections={{
             pin1: "net.GND",
-            pin2: sel.U1.BRA,
+            pin2: sel.U1.pin23,
           }}
         />
         <resistor
@@ -497,7 +497,7 @@ it(
           footprint="0402"
           connections={{
             pin1: "net.GND",
-            pin2: sel.U1.BRB,
+            pin2: sel.U1.pin27,
           }}
         />
         <resistor
@@ -515,7 +515,7 @@ it(
           pinCount={3}
           connections={{
             pin1: "net.VCC_3",
-            pin2: sel.U1.MS1_AD0,
+            pin2: sel.U1.pin9,
             pin3: "net.GND",
           }}
         />
@@ -524,7 +524,7 @@ it(
           pinCount={3}
           connections={{
             pin1: "net.VCC_3",
-            pin2: sel.U1.MS2_AD1,
+            pin2: sel.U1.pin10,
             pin3: "net.GND",
           }}
         />
@@ -533,7 +533,7 @@ it(
           pinCount={3}
           connections={{
             pin1: "net.VCC_3",
-            pin2: sel.U1.SPREAD,
+            pin2: sel.U1.pin7,
             pin3: "net.GND",
           }}
         />
@@ -544,7 +544,7 @@ it(
           symbolName="potentiometer3_right"
           footprint="0402"
           connections={{
-            pin2: sel.U1.VREF,
+            pin2: sel.U1.pin17,
             pin3: "net.GND",
           }}
         />
