@@ -34,6 +34,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
   pcb_port_id: string | null = null
   schematic_port_id: string | null = null
+  schematic_stem_line_id: string | null = null
 
   schematicSymbolPortDef: SchSymbol["ports"][number] | null = null
   matchedComponents: PrimitiveComponent[]
@@ -707,7 +708,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       else if (direction === "up") y2 -= schStemLength
       else if (direction === "down") y2 += schStemLength
 
-      db.schematic_line.insert({
+      const stemLine = db.schematic_line.insert({
         schematic_component_id: parentNormalComponent?.schematic_component_id!,
         x1: portCenter.x,
         y1: portCenter.y,
@@ -717,6 +718,48 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         color: SCHEMATIC_COMPONENT_OUTLINE_COLOR,
         is_dashed: false,
       })
+      this.schematic_stem_line_id = stemLine.schematic_line_id
+    }
+  }
+
+  doInitialSchematicSymbolResize(): void {
+    if (this.root?.schematicDisabled) return
+    if (!this.schematic_port_id) return
+
+    const symbol = this._getSymbolAncestor()
+    const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
+    if (!transform) return
+
+    const { db } = this.root!
+
+    // Transform the schematic_port center
+    const schPort = db.schematic_port.get(this.schematic_port_id)
+    if (schPort) {
+      const newCenter = applyToPoint(transform, schPort.center)
+      db.schematic_port.update(this.schematic_port_id, {
+        center: newCenter,
+      })
+
+      // Transform the stem line endpoints
+      if (this.schematic_stem_line_id) {
+        const line = db.schematic_line.get(this.schematic_stem_line_id)
+        if (line) {
+          const p1 = applyToPoint(transform, { x: line.x1, y: line.y1 })
+          const p2 = applyToPoint(transform, { x: line.x2, y: line.y2 })
+          db.schematic_line.update(this.schematic_stem_line_id, {
+            x1: p1.x,
+            y1: p1.y,
+            x2: p2.x,
+            y2: p2.y,
+          })
+          const scaledStemLength = Math.sqrt(
+            (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2,
+          )
+          db.schematic_port.update(this.schematic_port_id!, {
+            distance_from_component_edge: scaledStemLength,
+          })
+        }
+      }
     }
   }
 
