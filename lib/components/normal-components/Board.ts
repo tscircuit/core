@@ -20,6 +20,8 @@ import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type { BoardI } from "./BoardI"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import { compose, translate, type Matrix } from "transformation-matrix"
+import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
+import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -393,7 +395,33 @@ export class Board
     this.source_board_id = source_board.source_board_id
   }
 
+  /**
+   * Computes a hash of this board's props and children for caching.
+   * Position/identity props are excluded so identical boards at
+   * different locations share the same hash.
+   */
+  getSubcircuitPropHash(): string {
+    return Subcircuit_getSubcircuitPropHash(this)
+  }
+
+  /**
+   * Render this board in isolation if _subcircuitCachingEnabled is set.
+   * This phase runs before InflateSubcircuitCircuitJson to prepare the
+   * isolated circuit JSON that will be inflated.
+   */
+  doInitialRenderIsolatedSubcircuits(): void {
+    Subcircuit_doInitialRenderIsolatedSubcircuits(this)
+  }
+
   doInitialInflateSubcircuitCircuitJson() {
+    const isolatedJson = this._isolatedCircuitJson
+    if (isolatedJson) {
+      this._isInflatedFromCircuitJson = true
+      this._isolatedCircuitJson = null
+      inflateCircuitJson(this, isolatedJson, [])
+      return
+    }
+
     const { circuitJson, children } = this._parsedProps
     if (circuitJson) {
       this._isInflatedFromCircuitJson = true

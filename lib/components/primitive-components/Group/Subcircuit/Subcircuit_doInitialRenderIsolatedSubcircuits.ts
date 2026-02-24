@@ -1,6 +1,6 @@
 import type { AnyCircuitElement } from "circuit-json"
 import { IsolatedCircuit } from "lib/IsolatedCircuit"
-import type { Subcircuit } from "./Subcircuit"
+import type { ISubcircuit } from "./ISubcircuit"
 
 /**
  * Renders the subcircuit's children in isolation and extracts the circuit JSON.
@@ -18,12 +18,14 @@ import type { Subcircuit } from "./Subcircuit"
  * 2. Performs the render and caches the result for others to use
  */
 export function Subcircuit_doInitialRenderIsolatedSubcircuits(
-  subcircuit: Subcircuit,
+  subcircuit: ISubcircuit,
 ): void {
   if (!subcircuit._isIsolatedSubcircuit) return
 
   // Skip if already has isolated circuit JSON
   if (subcircuit._isolatedCircuitJson) return
+
+  if (!subcircuit.getSubcircuitPropHash) return
 
   const propHash = subcircuit.getSubcircuitPropHash()
   const cachedSubcircuits = subcircuit.root?.cachedSubcircuits
