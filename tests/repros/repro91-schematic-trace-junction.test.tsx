@@ -331,227 +331,231 @@ const TMC2209_LA_T = (props: ChipProps<typeof pinLabels>) => {
   )
 }
 
-it("repro91: schematic trace junction", async () => {
-  const { circuit } = getTestFixture()
+it(
+  "repro91: schematic trace junction",
+  async () => {
+    const { circuit } = getTestFixture()
 
-  circuit.add(
-    <board>
-      <TMC2209_LA_T
-        name="U1"
-        schWidth={2.2}
-        schHeight={5.2}
-        schPinStyle={{
-          N_EN: {
-            marginBottom: "0.3",
-          },
-          CLK: {
-            marginBottom: "0.3",
-            marginTop: "0.3",
-          },
-          CPO: {
-            marginBottom: "0.3",
-          },
-          VCP: {
-            marginBottom: "0.3",
-          },
-          VREF: {
-            marginTop: "0.3",
-          },
-          INDEX: {
-            marginBottom: "0.3",
-            marginTop: "0.3",
-          },
-          BRA: {
-            marginTop: "0.3",
-          },
-          BRB: {
-            marginBottom: "0.3",
-          },
-        }}
-        schPinArrangement={{
-          leftSide: [
-            "pin2",
-            "pin16",
-            "pin19",
-            "pin9",
-            "pin10",
-            "pin13",
-            "pin5",
-            "pin4",
-            "pin7",
-            "pin14",
-            "pin17",
-            "pin20",
-          ],
-          rightSide: [
-            "pin15",
-            "pin22",
-            "pin28",
-            "pin8",
-            "pin6",
-            "pin11",
-            "pin12",
-            "pin24",
-            "pin26",
-            "pin21",
-            "pin1",
-            "pin23",
-            "pin27",
-            "pin25",
-            "pin29",
-            "pin18",
-            "pin3",
-          ],
-        }}
-        connections={{
-          EXP: sel.net.GND,
-          GND1: sel.net.GND,
-          GND2: sel.net.GND,
-          CLK: sel.net.GND,
-          VS2: sel.U1.VS1,
-        }}
-      />
+    circuit.add(
+      <board>
+        <TMC2209_LA_T
+          name="U1"
+          schWidth={2.2}
+          schHeight={5.2}
+          schPinStyle={{
+            N_EN: {
+              marginBottom: "0.3",
+            },
+            CLK: {
+              marginBottom: "0.3",
+              marginTop: "0.3",
+            },
+            CPO: {
+              marginBottom: "0.3",
+            },
+            VCP: {
+              marginBottom: "0.3",
+            },
+            VREF: {
+              marginTop: "0.3",
+            },
+            INDEX: {
+              marginBottom: "0.3",
+              marginTop: "0.3",
+            },
+            BRA: {
+              marginTop: "0.3",
+            },
+            BRB: {
+              marginBottom: "0.3",
+            },
+          }}
+          schPinArrangement={{
+            leftSide: [
+              "pin2",
+              "pin16",
+              "pin19",
+              "pin9",
+              "pin10",
+              "pin13",
+              "pin5",
+              "pin4",
+              "pin7",
+              "pin14",
+              "pin17",
+              "pin20",
+            ],
+            rightSide: [
+              "pin15",
+              "pin22",
+              "pin28",
+              "pin8",
+              "pin6",
+              "pin11",
+              "pin12",
+              "pin24",
+              "pin26",
+              "pin21",
+              "pin1",
+              "pin23",
+              "pin27",
+              "pin25",
+              "pin29",
+              "pin18",
+              "pin3",
+            ],
+          }}
+          connections={{
+            EXP: sel.net.GND,
+            GND1: sel.net.GND,
+            GND2: sel.net.GND,
+            CLK: sel.net.GND,
+            VS2: sel.U1.VS1,
+          }}
+        />
 
-      <capacitor
-        name="C3"
-        capacitance="0.1uF"
-        footprint="0402"
-        connections={{
-          pin1: "net.GND",
-          pin2: sel.U1.VCC_IO,
-        }}
-      />
-
-      <group>
         <capacitor
-          name="C6"
+          name="C3"
           capacitance="0.1uF"
           footprint="0402"
           connections={{
-            pin2: "net.GND",
-            pin1: sel.U1.VS1,
+            pin1: "net.GND",
+            pin2: sel.U1.VCC_IO,
           }}
         />
+
+        <group>
+          <capacitor
+            name="C6"
+            capacitance="0.1uF"
+            footprint="0402"
+            connections={{
+              pin2: "net.GND",
+              pin1: sel.U1.VS1,
+            }}
+          />
+          <capacitor
+            name="C7"
+            capacitance="0.1uF"
+            footprint="0402"
+            connections={{
+              pin2: "net.GND",
+              pin1: sel.U1.VS1,
+            }}
+          />
+          <capacitor
+            name="C8"
+            capacitance="0.1uF"
+            footprint="0402"
+            connections={{
+              pin2: "net.GND",
+              pin1: sel.U1.VS1,
+            }}
+          />
+        </group>
+
         <capacitor
-          name="C7"
+          name="C9"
           capacitance="0.1uF"
           footprint="0402"
           connections={{
-            pin2: "net.GND",
-            pin1: sel.U1.VS1,
+            pin1: "net.GND",
+            pin2: "net.VCC_5",
           }}
         />
         <capacitor
-          name="C8"
-          capacitance="0.1uF"
+          name="C12"
+          capacitance="22nF"
           footprint="0402"
           connections={{
-            pin2: "net.GND",
-            pin1: sel.U1.VS1,
+            pin1: sel.U1.CPI,
+            pin2: sel.U1.CPO,
           }}
         />
-      </group>
 
-      <capacitor
-        name="C9"
-        capacitance="0.1uF"
-        footprint="0402"
-        connections={{
-          pin1: "net.GND",
-          pin2: "net.VCC_5",
-        }}
-      />
-      <capacitor
-        name="C12"
-        capacitance="22nF"
-        footprint="0402"
-        connections={{
-          pin1: sel.U1.CPI,
-          pin2: sel.U1.CPO,
-        }}
-      />
+        <resistor
+          name="R2"
+          resistance="100ohm"
+          footprint="0402"
+          connections={{
+            pin1: "net.VCC_3",
+            pin2: sel.U1.N_EN,
+          }}
+        />
+        <resistor
+          name="R6"
+          resistance="100ohm"
+          footprint="0402"
+          connections={{
+            pin1: "net.GND",
+            pin2: sel.U1.BRA,
+          }}
+        />
+        <resistor
+          name="R7"
+          resistance="100ohm"
+          footprint="0402"
+          connections={{
+            pin1: "net.GND",
+            pin2: sel.U1.BRB,
+          }}
+        />
+        <resistor
+          name="R8"
+          resistance="100ohm"
+          footprint="0402"
+          connections={{
+            pin1: "net.VCC_5",
+            pin2: sel.R10.pin1,
+          }}
+        />
 
-      <resistor
-        name="R2"
-        resistance="100ohm"
-        footprint="0402"
-        connections={{
-          pin1: "net.VCC_3",
-          pin2: sel.U1.N_EN,
-        }}
-      />
-      <resistor
-        name="R6"
-        resistance="100ohm"
-        footprint="0402"
-        connections={{
-          pin1: "net.GND",
-          pin2: sel.U1.BRA,
-        }}
-      />
-      <resistor
-        name="R7"
-        resistance="100ohm"
-        footprint="0402"
-        connections={{
-          pin1: "net.GND",
-          pin2: sel.U1.BRB,
-        }}
-      />
-      <resistor
-        name="R8"
-        resistance="100ohm"
-        footprint="0402"
-        connections={{
-          pin1: "net.VCC_5",
-          pin2: sel.R10.pin1,
-        }}
-      />
+        <solderjumper
+          name="J1"
+          pinCount={3}
+          connections={{
+            pin1: "net.VCC_3",
+            pin2: sel.U1.MS1_AD0,
+            pin3: "net.GND",
+          }}
+        />
+        <solderjumper
+          name="J2"
+          pinCount={3}
+          connections={{
+            pin1: "net.VCC_3",
+            pin2: sel.U1.MS2_AD1,
+            pin3: "net.GND",
+          }}
+        />
+        <solderjumper
+          name="J3"
+          pinCount={3}
+          connections={{
+            pin1: "net.VCC_3",
+            pin2: sel.U1.SPREAD,
+            pin3: "net.GND",
+          }}
+        />
 
-      <solderjumper
-        name="J1"
-        pinCount={3}
-        connections={{
-          pin1: "net.VCC_3",
-          pin2: sel.U1.MS1_AD0,
-          pin3: "net.GND",
-        }}
-      />
-      <solderjumper
-        name="J2"
-        pinCount={3}
-        connections={{
-          pin1: "net.VCC_3",
-          pin2: sel.U1.MS2_AD1,
-          pin3: "net.GND",
-        }}
-      />
-      <solderjumper
-        name="J3"
-        pinCount={3}
-        connections={{
-          pin1: "net.VCC_3",
-          pin2: sel.U1.SPREAD,
-          pin3: "net.GND",
-        }}
-      />
+        <potentiometer
+          name="R10"
+          maxResistance="20kohm"
+          symbolName="potentiometer3_right"
+          footprint="0402"
+          connections={{
+            pin2: sel.U1.VREF,
+            pin3: "net.GND",
+          }}
+        />
+      </board>,
+    )
 
-      <potentiometer
-        name="R10"
-        maxResistance="20kohm"
-        symbolName="potentiometer3_right"
-        footprint="0402"
-        connections={{
-          pin2: sel.U1.VREF,
-          pin3: "net.GND",
-        }}
-      />
-    </board>,
-  )
+    await circuit.renderUntilSettled()
 
-  await circuit.renderUntilSettled()
-
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-}, {
-  timeout: 30_000,
-})
+    expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  },
+  {
+    timeout: 30_000,
+  },
+)
