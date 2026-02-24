@@ -1,0 +1,98 @@
+name: Snapshot Auto Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to test and update"
+        required: true
+        default: "main"
+        type: string
+      test_pattern:
+        description: "Optional test file pattern (example: tests/examples/**/*.test.tsx)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  update-snapshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.5
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Generate test plans
+        if: ${{ inputs.test_pattern == '' }}
+        run: bun run scripts/generate-test-plan.ts
+
+      - name: Run tests for selected pattern and update snapshots
+        if: ${{ inputs.test_pattern != '' }}
+        run: BUN_UPDATE_SNAPSHOTS=1 bun test ${{ inputs.test_pattern }} --timeout 30000
+
+      - name: Run full test plan and update snapshots
+        if: ${{ inputs.test_pattern == '' }}
+        run: |
+          for node in 1 2 3 4; do
+            if [ ! -f ".github/test-plans/node${node}-testplan.txt" ]; then
+              echo "ERROR: No test plan found for node ${node}"
+              exit 1
+            fi
+
+            mapfile -t test_files < .github/test-plans/node${node}-testplan.txt
+            if [ ${#test_files[@]} -eq 0 ]; then
+              echo "ERROR: No test files in plan for node ${node}"
+              exit 1
+            fi
+
+            echo "Running ${#test_files[@]} test files for node ${node}"
+            attempt=1
+            while [ $attempt -le 4 ]; do
+              BUN_UPDATE_SNAPSHOTS=1 bun test ${test_files[@]} --timeout 30000
+              code=$?
+
+              if [ $code -eq 0 ]; then
+                break
+              fi
+
+              if [ $code -ne 139 ] && [ $code -ne 132 ]; then
+                exit $code
+              fi
+
+              if [ $attempt -eq 4 ]; then
+                echo "Segmentation fault or illegal instruction detected after $attempt attempts (exit=$code)."
+                exit $code
+              fi
+
+              attempt=$((attempt + 1))
+              echo "Segfault (139) or illegal instruction (132) detected, retrying ($attempt/4)..."
+            done
+          done
+
+      - name: Commit and push snapshot updates
+        run: |
+          git config user.name "tscircuitbot"
+          git config user.email "tscircuitbot@users.noreply.github.com"
+
+          if [ -z "$(git status --porcelain -- tests/**/__snapshots__)" ]; then
+            echo "No snapshot changes to commit"
+            exit 0
+          fi
+
+          git add -A tests/**/__snapshots__
+          git commit -m "test: update snapshots from CI"
+          git push origin HEAD:${{ inputs.branch }}
