@@ -26,7 +26,7 @@ export type Match3dSnapshotOptions = {
 }
 
 export async function resolvePoppyglOptions(
-  soup: AnyCircuitElement[],
+  circuitJson: AnyCircuitElement[],
   options?: Match3dSnapshotOptions,
 ): Promise<PoppyglOptions> {
   const resolvedOpts: PoppyglOptions = {
@@ -47,7 +47,7 @@ export async function resolvePoppyglOptions(
     resolvedOpts.camPos = explicitCamPos
   }
 
-  const board = soup.find(
+  const board = circuitJson.find(
     (element): element is PcbBoard => element.type === "pcb_board",
   )
 
