@@ -415,46 +415,6 @@ it(
         />
 
         <capacitor
-          name="C3"
-          capacitance="0.1uF"
-          footprint="0402"
-          connections={{
-            pin1: "net.GND",
-            pin2: sel.U1.pin15,
-          }}
-        />
-
-        <group>
-          <capacitor
-            name="C6"
-            capacitance="0.1uF"
-            footprint="0402"
-            connections={{
-              pin2: "net.GND",
-              pin1: sel.U1.pin22,
-            }}
-          />
-          <capacitor
-            name="C7"
-            capacitance="0.1uF"
-            footprint="0402"
-            connections={{
-              pin2: "net.GND",
-              pin1: sel.U1.pin22,
-            }}
-          />
-          <capacitor
-            name="C8"
-            capacitance="0.1uF"
-            footprint="0402"
-            connections={{
-              pin2: "net.GND",
-              pin1: sel.U1.pin22,
-            }}
-          />
-        </group>
-
-        <capacitor
           name="C9"
           capacitance="0.1uF"
           footprint="0402"
@@ -482,24 +442,7 @@ it(
             pin2: sel.U1.pin2,
           }}
         />
-        <resistor
-          name="R6"
-          resistance="100ohm"
-          footprint="0402"
-          connections={{
-            pin1: "net.GND",
-            pin2: sel.U1.pin23,
-          }}
-        />
-        <resistor
-          name="R7"
-          resistance="100ohm"
-          footprint="0402"
-          connections={{
-            pin1: "net.GND",
-            pin2: sel.U1.pin27,
-          }}
-        />
+
         <resistor
           name="R8"
           resistance="100ohm"
@@ -545,7 +488,6 @@ it(
           footprint="0402"
           connections={{
             pin2: sel.U1.pin17,
-            pin3: "net.GND",
           }}
         />
       </board>,
