@@ -1,5 +1,5 @@
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import type { Subcircuit } from "./Subcircuit/Subcircuit"
+import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 
 /**
  * Props that should be excluded from the hash because they vary per instance
@@ -131,7 +131,7 @@ function computeHash(data: any): string {
  * placed at different locations will share the same hash.
  */
 export function Subcircuit_getSubcircuitPropHash(
-  subcircuit: Subcircuit,
+  subcircuit: ISubcircuit,
 ): string {
   const hashableData = {
     props: getHashableProps(subcircuit.props ?? {}),
