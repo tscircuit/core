@@ -1,0 +1,101 @@
+name: Snapshot Diff Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch/tag/SHA to test"
+        required: true
+        default: "main"
+        type: string
+      test_pattern:
+        description: "Optional test file pattern (example: tests/examples/**/*.test.tsx)"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  snapshot-diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        node: [1, 2, 3, 4]
+
+    steps:
+      - name: Checkout selected ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.5
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Generate test plans
+        if: ${{ inputs.test_pattern == '' }}
+        run: bun run scripts/generate-test-plan.ts
+
+      - name: Run tests for selected pattern
+        if: ${{ inputs.test_pattern != '' }}
+        run: bun test ${{ inputs.test_pattern }} --timeout 30000
+
+      - name: Run tests for node ${{ matrix.node }}
+        if: ${{ inputs.test_pattern == '' }}
+        run: |
+          if [ ! -f ".github/test-plans/node${{ matrix.node }}-testplan.txt" ]; then
+            echo "ERROR: No test plan found for node ${{ matrix.node }}"
+            exit 1
+          fi
+
+          mapfile -t test_files < .github/test-plans/node{{ matrix.node }}-testplan.txt
+          if [ ${#test_files[@]} -eq 0 ]; then
+            echo "ERROR: No test files in plan for node ${{ matrix.node }}"
+            exit 1
+          fi
+
+          echo "Running ${#test_files[@]} test files for node ${{ matrix.node }}"
+          attempt=1
+          while [ $attempt -le 4 ]; do
+            bun test ${test_files[@]} --timeout 30000
+            code=$?
+
+            if [ $code -eq 0 ]; then
+              break
+            fi
+
+            if [ $code -ne 139 ] && [ $code -ne 132 ]; then
+              exit $code
+            fi
+
+            if [ $attempt -eq 4 ]; then
+              echo "Segmentation fault or illegal instruction detected after $attempt attempts (exit=$code)."
+              exit $code
+            fi
+
+            attempt=$((attempt + 1))
+            echo "Segfault (139) or illegal instruction (132) detected, retrying ($attempt/4)..."
+          done
+
+      - name: Upload snapshot diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-diffs-${{ matrix.node }}
+          path: |
+            tests/**/__snapshots__/*.diff.png
+          if-no-files-found: ignore
+
+      - name: Upload snapshot references
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-references-${{ matrix.node }}
+          path: |
+            tests/**/__snapshots__/*.snap.svg
+            tests/**/__snapshots__/*.snap.png
+          if-no-files-found: ignore
