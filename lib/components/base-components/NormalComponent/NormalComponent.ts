@@ -637,7 +637,7 @@ export class NormalComponent<
     if (symbol) {
       const schematic_component = db.schematic_component.insert({
         center,
-        size: symbol.size,
+        size: { ...symbol.size },
         source_component_id: this.source_component_id!,
         is_box_with_pins: true,
         symbol_name,
