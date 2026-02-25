@@ -1,12 +1,87 @@
-import type { Group } from "./Group"
-import type { Size } from "circuit-json"
 import { getMinimumFlexContainer } from "@tscircuit/circuit-json-util"
-import { RootFlexBox, type Align, type Justify } from "@tscircuit/miniflex"
+import { type Align, type Justify, RootFlexBox } from "@tscircuit/miniflex"
+import type { Size } from "circuit-json"
 import { length } from "circuit-json"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import type { Group } from "./Group"
 import type { IGroup } from "./IGroup"
+import type { Board } from "lib/components/normal-components/Board"
 
 type PcbChild = NormalComponent | IGroup
+
+const getBoardContainerSize = (
+  board: Board,
+): { width?: number; height?: number } => {
+  const parsedProps = board._parsedProps
+
+  let width = parsedProps.width ?? parsedProps.pcbWidth
+  let height = parsedProps.height ?? parsedProps.pcbHeight
+
+  if ((width === undefined || height === undefined) && board.pcb_board_id) {
+    const pcbBoard = board.root?.db.pcb_board.get(board.pcb_board_id)
+    if (pcbBoard) {
+      width ??= pcbBoard.width
+      height ??= pcbBoard.height
+    }
+  }
+
+  return { width, height }
+}
+
+const resolveFlexContainerSize = (
+  group: Group,
+): { width?: number; height?: number } => {
+  const parsedProps = group._parsedProps
+
+  let width = parsedProps.width ?? parsedProps.pcbWidth
+  let height = parsedProps.height ?? parsedProps.pcbHeight
+
+  const leftEdge = parsedProps.pcbLeftEdgeX
+  const rightEdge = parsedProps.pcbRightEdgeX
+  const topEdge = parsedProps.pcbTopEdgeY
+  const bottomEdge = parsedProps.pcbBottomEdgeY
+
+  if (
+    width === undefined &&
+    leftEdge !== undefined &&
+    rightEdge !== undefined
+  ) {
+    const left = group.resolvePcbCoordinate(leftEdge, "pcbX")
+    const right = group.resolvePcbCoordinate(rightEdge, "pcbX")
+    width = Math.abs(right - left)
+  }
+
+  if (
+    height === undefined &&
+    topEdge !== undefined &&
+    bottomEdge !== undefined
+  ) {
+    const top = group.resolvePcbCoordinate(topEdge, "pcbY")
+    const bottom = group.resolvePcbCoordinate(bottomEdge, "pcbY")
+    height = Math.abs(top - bottom)
+  }
+
+  if (width !== undefined && height !== undefined) {
+    return { width, height }
+  }
+
+  const parentGroup = group.parent?.getGroup?.() as Group | Board | null
+  if (!parentGroup) return { width, height }
+
+  const isParentGroupBoard =
+    parentGroup.componentName === "Board" ||
+    parentGroup.componentName === "MountedBoard"
+
+  if (!isParentGroupBoard) {
+    return { width, height }
+  }
+
+  const boardSize = getBoardContainerSize(parentGroup as Board)
+  return {
+    width: width ?? boardSize.width,
+    height: height ?? boardSize.height,
+  }
+}
 
 export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   const { db } = group.root!
@@ -74,8 +149,9 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   }
 
   let minFlexContainer: Size | undefined
-  let width = props.width ?? props.pcbWidth ?? undefined
-  let height = props.height ?? props.pcbHeight ?? undefined
+  const resolvedContainerSize = resolveFlexContainerSize(group)
+  let width = resolvedContainerSize.width
+  let height = resolvedContainerSize.height
 
   // For flex groups, always calculate the container size to include gaps properly
   // Don't use existing group dimensions as they may not account for current gap settings
@@ -152,10 +228,20 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
 
   for (const child of flexBox.children) {
     const childMetadata = child.metadata as PcbChild
-    childMetadata._repositionOnPcb({
+    const nextCenter = {
       x: child.position.x + child.size.width / 2 + offset.x,
       y: child.position.y + child.size.height / 2 + offset.y,
-    })
+    }
+
+    childMetadata._repositionOnPcb(nextCenter)
+
+    // Update the PCB group center
+    const pcbGroupId = (childMetadata as IGroup).pcb_group_id
+    if (pcbGroupId) {
+      db.pcb_group.update(pcbGroupId, {
+        center: nextCenter,
+      })
+    }
   }
 
   // Set the new group size

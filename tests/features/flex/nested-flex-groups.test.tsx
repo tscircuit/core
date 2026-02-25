@@ -6,7 +6,7 @@ test("nested flex groups with mixed components", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board>
+    <board width="10mm" height="10mm">
       <group pcbFlex pcbFlexGap="1mm">
         <resistor name="R1" resistance="1k" footprint="0402" />
         <capacitor name="C1" capacitance="100nF" footprint="0402" />
