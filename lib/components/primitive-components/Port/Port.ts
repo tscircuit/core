@@ -740,23 +740,44 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         center: newCenter,
       })
 
-      // Transform the stem line endpoints
+      // Transform the stem line: scale the anchor (body-side) endpoint,
+      // then re-derive the outer endpoint using the original unscaled
+      // stemLength so stems don't stretch with the symbol.
       if (this.schematic_stem_line_id) {
         const line = db.schematic_line.get(this.schematic_stem_line_id)
         if (line) {
-          const p1 = applyToPoint(transform, { x: line.x1, y: line.y1 })
-          const p2 = applyToPoint(transform, { x: line.x2, y: line.y2 })
-          db.schematic_line.update(this.schematic_stem_line_id, {
-            x1: p1.x,
-            y1: p1.y,
-            x2: p2.x,
-            y2: p2.y,
-          })
-          const scaledStemLength = Math.sqrt(
-            (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2,
+          // p1 = outer (port) endpoint, p2 = anchor (body-side) endpoint
+          const originalStemLength = Math.sqrt(
+            (line.x1 - line.x2) ** 2 + (line.y1 - line.y2) ** 2,
           )
+
+          // Scale the anchor point (body side) with the transform
+          const anchorScaled = applyToPoint(transform, {
+            x: line.x2,
+            y: line.y2,
+          })
+
+          // Re-derive outer endpoint from the scaled anchor using
+          // the original stem length in the port's direction
+          const { direction } = this._parsedProps
+          let outerX = anchorScaled.x
+          let outerY = anchorScaled.y
+          if (direction === "right") outerX += originalStemLength
+          else if (direction === "left") outerX -= originalStemLength
+          else if (direction === "up") outerY += originalStemLength
+          else if (direction === "down") outerY -= originalStemLength
+
+          db.schematic_line.update(this.schematic_stem_line_id, {
+            x1: outerX,
+            y1: outerY,
+            x2: anchorScaled.x,
+            y2: anchorScaled.y,
+          })
+
+          // Update port center to the outer endpoint
           db.schematic_port.update(this.schematic_port_id!, {
-            distance_from_component_edge: scaledStemLength,
+            center: { x: outerX, y: outerY },
+            distance_from_component_edge: originalStemLength,
           })
         }
       }
