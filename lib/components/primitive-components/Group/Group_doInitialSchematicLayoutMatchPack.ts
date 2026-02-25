@@ -790,16 +790,16 @@ export function Group_doInitialSchematicLayoutMatchPack<
             `Component ${chipId} has rotation: ${placement.ccwRotationDegrees}°`,
           )
 
-          // const normalizedRotation =
-          //   ((Math.round(placement.ccwRotationDegrees) % 360) + 360) % 360
-          // if (
-          //   (normalizedRotation === 90 || normalizedRotation === 270) &&
-          //   schematicComponent.size
-          // ) {
-          //   const prevWidth = schematicComponent.size.width
-          //   schematicComponent.size.width = schematicComponent.size.height
-          //   schematicComponent.size.height = prevWidth
-          // }
+          const normalizedRotation =
+            ((Math.round(placement.ccwRotationDegrees) % 360) + 360) % 360
+          if (
+            (normalizedRotation === 90 || normalizedRotation === 270) &&
+            schematicComponent.size
+          ) {
+            const prevWidth = schematicComponent.size.width
+            schematicComponent.size.width = schematicComponent.size.height
+            schematicComponent.size.height = prevWidth
+          }
 
           // Rotate ports around the component center
           const angleRad = (placement.ccwRotationDegrees * Math.PI) / 180
