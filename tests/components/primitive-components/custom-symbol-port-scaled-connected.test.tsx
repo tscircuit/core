@@ -9,7 +9,7 @@ test("Port schStemLength in custom symbol with width/height scaling connecting t
       <chip
         name="U1"
         symbol={
-          <symbol width={2} height={2}>
+          <symbol width={4} height={2}>
             <schematicline
               x1={-0.5}
               y1={-0.7}
