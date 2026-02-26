@@ -387,9 +387,12 @@ export abstract class Renderable implements IRenderable {
       // For isolated subcircuits, skip children during RenderIsolatedSubcircuits.
       // The children will be rendered in isolation and then inflated back.
       // After inflation, the new children should run all subsequent phases.
+      // Only skip if the component has doInitialRenderIsolatedSubcircuits method
+      // to actually handle the isolated rendering.
       if (
         "_isIsolatedSubcircuit" in this &&
         this._isIsolatedSubcircuit &&
+        "doInitialRenderIsolatedSubcircuits" in this &&
         phase === "RenderIsolatedSubcircuits"
       ) {
         continue

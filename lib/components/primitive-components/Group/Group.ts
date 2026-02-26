@@ -65,7 +65,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _isolatedCircuitJson: AnyCircuitElement[] | null = null
 
   get _isIsolatedSubcircuit(): boolean {
-    return Boolean(this._parsedProps._subcircuitCachingEnabled)
+    return Boolean(this.getInheritedProperty("_subcircuitCachingEnabled"))
   }
 
   _normalComponentNameMap: Map<string, NormalComponent[]> | null = null
