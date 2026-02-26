@@ -1,5 +1,6 @@
 import { symbolProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import type { Port } from "../Port/Port"
 import type { ISymbol, SchematicSymbolBounds } from "./ISymbol"
 import { compose, translate, scale, type Matrix } from "transformation-matrix"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
@@ -83,8 +84,18 @@ export class SymbolComponent
       [key: string]: any
     }> = []
 
-    // Collect circuit-json elements from children
+    // Collect circuit-json elements from children, including ports so
+    // the full symbol (body + stems) fits within the specified width/height
     for (const child of this.children) {
+      if (child.componentName === "Port") {
+        const portId = (child as Port).schematic_port_id
+        if (portId) {
+          const port = db.schematic_port.get(portId)
+          if (port) schematicElements.push(port)
+        }
+        continue
+      }
+
       if (!child.isSchematicPrimitive) continue
 
       if (child.componentName === "SchematicLine") {
