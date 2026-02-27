@@ -1,7 +1,7 @@
 import type { PcbStyle } from "@tscircuit/props"
 
-const DEFAULT_VIA_HOLE_DIAMETER = 0.3
-const DEFAULT_VIA_PAD_DIAMETER = 0.6
+const DEFAULT_VIA_HOLE_DIAMETER = 0.2
+const DEFAULT_VIA_PAD_DIAMETER = 0.3
 
 const parseDistance = (
   value: string | number | undefined,
