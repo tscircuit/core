@@ -68,38 +68,120 @@ export const applyPackOutput = (
     if (cluster) {
       const rotationDegrees = ccwRotationDegrees ?? ccwRotationOffset ?? 0
       const angleRad = (rotationDegrees * Math.PI) / 180
+      // Use absoluteCenter if specified (from centerX/centerY props),
+      // otherwise use the packer's computed center
+      const effectiveCenter = cluster.absoluteCenter ?? center
       for (const memberId of cluster.componentIds) {
         const rel = cluster.relativeCenters![memberId]
         if (!rel) continue
-        db.pcb_component.update(memberId, {
-          position_mode: "packed",
-        })
         const rotatedRel = {
           x: rel.x * Math.cos(angleRad) - rel.y * Math.sin(angleRad),
           y: rel.x * Math.sin(angleRad) + rel.y * Math.cos(angleRad),
         }
+
+        // Try as a pcb_component first
         const member = db.pcb_component.get(memberId)
-        if (!member) continue
-        const originalCenter = member.center
-        const transformMatrix = compose(
-          group._computePcbGlobalTransformBeforeLayout(),
-          translate(center.x + rotatedRel.x, center.y + rotatedRel.y),
-          rotate(angleRad),
-          translate(-originalCenter.x, -originalCenter.y),
-        )
-        const related = db
-          .toArray()
-          .filter(
-            (elm) =>
-              "pcb_component_id" in elm && elm.pcb_component_id === memberId,
+        if (member) {
+          db.pcb_component.update(memberId, {
+            position_mode: "packed",
+          })
+          const originalCenter = member.center
+          const transformMatrix = compose(
+            group._computePcbGlobalTransformBeforeLayout(),
+            translate(effectiveCenter.x + rotatedRel.x, effectiveCenter.y + rotatedRel.y),
+            rotate(angleRad),
+            translate(-originalCenter.x, -originalCenter.y),
           )
-        transformPCBElements(related as any, transformMatrix)
-        updateCadRotation({
-          db,
-          pcbComponentId: memberId,
-          rotationDegrees,
-          layer: member.layer,
-        })
+          const related = db
+            .toArray()
+            .filter(
+              (elm) =>
+                "pcb_component_id" in elm && elm.pcb_component_id === memberId,
+            )
+          transformPCBElements(related as any, transformMatrix)
+          updateCadRotation({
+            db,
+            pcbComponentId: memberId,
+            rotationDegrees,
+            layer: member.layer,
+          })
+          continue
+        }
+
+        // Try as a group (memberId is source_group_id)
+        const pcbGroup = db.pcb_group
+          .list()
+          .find((g) => g.source_group_id === memberId)
+        if (pcbGroup) {
+          const originalCenter = pcbGroup.center
+          const transformMatrix = compose(
+            group._computePcbGlobalTransformBeforeLayout(),
+            translate(effectiveCenter.x + rotatedRel.x, effectiveCenter.y + rotatedRel.y),
+            rotate(angleRad),
+            translate(-originalCenter.x, -originalCenter.y),
+          )
+
+          // Find all elements belonging to this group and its descendants
+          const relatedElements = db.toArray().filter((elm) => {
+            if ("source_group_id" in elm && elm.source_group_id) {
+              if (elm.source_group_id === memberId) return true
+              if (isDescendantGroup(db, elm.source_group_id, memberId))
+                return true
+            }
+            if ("source_component_id" in elm && elm.source_component_id) {
+              const sourceComponent = db.source_component.get(
+                elm.source_component_id,
+              )
+              if (sourceComponent?.source_group_id) {
+                if (sourceComponent.source_group_id === memberId) return true
+                if (
+                  isDescendantGroup(
+                    db,
+                    sourceComponent.source_group_id,
+                    memberId,
+                  )
+                )
+                  return true
+              }
+            }
+            if ("pcb_component_id" in elm && elm.pcb_component_id) {
+              const pcbComp = db.pcb_component.get(elm.pcb_component_id)
+              if (pcbComp?.source_component_id) {
+                const sourceComp = db.source_component.get(
+                  pcbComp.source_component_id,
+                )
+                if (sourceComp?.source_group_id) {
+                  if (sourceComp.source_group_id === memberId) return true
+                  if (
+                    isDescendantGroup(
+                      db,
+                      sourceComp.source_group_id,
+                      memberId,
+                    )
+                  )
+                    return true
+                }
+              }
+            }
+            return false
+          })
+
+          for (const elm of relatedElements) {
+            if (elm.type === "pcb_component") {
+              db.pcb_component.update(elm.pcb_component_id, {
+                position_mode: "packed",
+              })
+            }
+          }
+
+          transformPCBElements(relatedElements as any, transformMatrix)
+          db.pcb_group.update(pcbGroup.pcb_group_id, {
+            center: {
+              x: effectiveCenter.x + rotatedRel.x,
+              y: effectiveCenter.y + rotatedRel.y,
+            },
+          })
+        }
       }
       continue
     }
