@@ -7,8 +7,9 @@ export type ClusterInfo = {
   componentIds: string[]
   constraints: Constraint[]
   relativeCenters?: Record<string, { x: number; y: number }>
-  /** When centerX/centerY is set, the cluster has an absolute position */
-  absoluteCenter?: { x: number; y: number }
+  /** When centerX/centerY is set, the cluster has an absolute position.
+   *  Each axis is undefined when not specified by the constraint. */
+  absoluteCenter?: { x: number | undefined; y: number | undefined }
 }
 
 export const applyComponentConstraintClusters = (
@@ -289,11 +290,12 @@ export const applyComponentConstraintClusters = (
 
     info.relativeCenters = relCenters
 
-    // If centerX/centerY was specified, compute absolute center for the cluster
+    // If centerX/centerY was specified, store per-axis absolute position.
+    // Unspecified axes remain undefined so the packer's value is preserved.
     if (hasCenterX || hasCenterY) {
       info.absoluteCenter = {
-        x: hasCenterX ? constraintCenterX : 0,
-        y: hasCenterY ? constraintCenterY : 0,
+        x: hasCenterX ? constraintCenterX : undefined,
+        y: hasCenterY ? constraintCenterY : undefined,
       }
     }
 

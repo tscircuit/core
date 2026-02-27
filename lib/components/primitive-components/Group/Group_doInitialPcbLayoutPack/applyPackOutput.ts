@@ -68,9 +68,14 @@ export const applyPackOutput = (
     if (cluster) {
       const rotationDegrees = ccwRotationDegrees ?? ccwRotationOffset ?? 0
       const angleRad = (rotationDegrees * Math.PI) / 180
-      // Use absoluteCenter if specified (from centerX/centerY props),
-      // otherwise use the packer's computed center
-      const effectiveCenter = cluster.absoluteCenter ?? center
+      // Use absoluteCenter per-axis if specified (from centerX/centerY props),
+      // otherwise use the packer's computed center for that axis
+      const effectiveCenter = cluster.absoluteCenter
+        ? {
+            x: cluster.absoluteCenter.x ?? center.x,
+            y: cluster.absoluteCenter.y ?? center.y,
+          }
+        : center
       for (const memberId of cluster.componentIds) {
         const rel = cluster.relativeCenters![memberId]
         if (!rel) continue
