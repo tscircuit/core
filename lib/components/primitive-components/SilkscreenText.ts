@@ -1,9 +1,15 @@
-import type { LayerRef } from "circuit-json"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { silkscreenTextProps } from "@tscircuit/props"
-import { decomposeTSR } from "transformation-matrix"
+import type { LayerRef } from "circuit-json"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 import { resolvePcbProperty } from "lib/utils/pcbSx/resolve-pcb-property"
+import {
+  applyToPoint,
+  compose,
+  decomposeTSR,
+  flipY,
+  identity,
+} from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class SilkscreenText extends PrimitiveComponent<
   typeof silkscreenTextProps
@@ -24,8 +30,6 @@ export class SilkscreenText extends PrimitiveComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
     const container = this.getPrimitiveContainer()!
-
-    const position = this._getGlobalPcbPositionBeforeLayout()
     const { maybeFlipLayer, isFlipped } = this._getPcbPrimitiveFlippedHelpers()
     const subcircuit = this.getSubcircuit()
 
@@ -60,12 +64,50 @@ export class SilkscreenText extends PrimitiveComponent<
       component: this,
     }) as number | undefined
 
+    const resolvedPcbSxPcbX = resolvePcbProperty({
+      propertyName: "pcbX",
+      resolvedPcbSx: this.getResolvedPcbSx(),
+      pathFromAmpersand: "silkscreentext",
+      component: this,
+    })
+
+    const resolvedPcbSxPcbY = resolvePcbProperty({
+      propertyName: "pcbY",
+      resolvedPcbSx: this.getResolvedPcbSx(),
+      pathFromAmpersand: "silkscreentext",
+      component: this,
+    })
+
     const fontSize =
       props.fontSize ??
       resolvedPcbSxFontSize ??
       this.getInheritedProperty("pcbStyle")?.silkscreenFontSize ??
       this._footprinterFontSize ??
       1
+
+    const hasResolvedPcbSxPosition =
+      resolvedPcbSxPcbX !== undefined || resolvedPcbSxPcbY !== undefined
+
+    const position =
+      hasResolvedPcbSxPosition && this._footprinterFontSize !== undefined
+        ? applyToPoint(
+            compose(
+              this.parent?._computePcbGlobalTransformBeforeLayout() ??
+                identity(),
+              isFlipped ? flipY() : identity(),
+            ),
+            {
+              x: this.resolvePcbCoordinate(
+                resolvedPcbSxPcbX ?? props.pcbX ?? 0,
+                "pcbX",
+              ),
+              y: this.resolvePcbCoordinate(
+                resolvedPcbSxPcbY ?? props.pcbY ?? 0,
+                "pcbY",
+              ),
+            },
+          )
+        : this._getGlobalPcbPositionBeforeLayout()
 
     // Build knockout padding object from uniform or individual padding props
     const uniformPadding = props.knockoutPadding ?? 0
