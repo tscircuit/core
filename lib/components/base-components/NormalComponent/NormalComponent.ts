@@ -484,22 +484,6 @@ export class NormalComponent<
     ) as any
   }
 
-  getPortSelector(): string {
-    const ports = this.children.filter(
-      (c) => c.componentName === "Port",
-    ) as Port[]
-    if (ports.length === 0) {
-      throw new Error(
-        `No ports found on component ${this.componentName} with name "${this.props.name}"`,
-      )
-    }
-    const port1 =
-      ports.find((p) => p.props.name === "pin1") ??
-      ports.find((p) => p.props.pinNumber === 1) ??
-      ports[0]
-    return `.${this.props.name} > port.${port1.props.name}`
-  }
-
   getInstanceForReactElement(element: ReactElement): NormalComponent | null {
     for (const subtree of this.reactSubtrees) {
       if (subtree.element === element) return subtree.component

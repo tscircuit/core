@@ -13,42 +13,47 @@ export function Trace__findConnectedPorts(trace: Trace):
       ports?: undefined
       portsWithSelectors?: undefined
     } {
-  const { parent } = trace
+  const { _parsedProps: props, parent } = trace
 
   if (!parent) throw new Error("Trace has no parent")
 
   const portSelectors = trace.getTracePortPathSelectors()
 
-  const portsWithSelectors = portSelectors.map((selector) => ({
-    selector,
-    port:
+  const portsWithSelectors = portSelectors.map((selector) => {
+    let port =
       (trace.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
-      null,
-  }))
+      null
 
-  for (let index = 0; index < portsWithSelectors.length; index++) {
-    const { selector, port } = portsWithSelectors[index]
+    // If no port found and selector has no pin suffix (bare component name),
+    // default to pin1. A dot at the start of the tail is a CSS class selector
+    // (e.g. ".R1"), not a pin separator (e.g. "R1.pin1").
+    if (!port) {
+      const lastSpace = selector.lastIndexOf(" ")
+      const tail = lastSpace === -1 ? selector : selector.slice(lastSpace + 1)
+      const pinDotIndex = tail.indexOf(".", 1) // skip leading dot if present (CSS class)
+      if (pinDotIndex === -1) {
+        port =
+          (trace
+            .getSubcircuit()
+            .selectOne(`${selector}.pin1`, { type: "port" }) as Port) ?? null
+      }
+    }
+
+    return { selector, port }
+  })
+
+  for (const { selector, port } of portsWithSelectors) {
     if (!port) {
       let parentSelector: string
       let portToken: string
       const dotIndex = selector.lastIndexOf(".")
-      const isCssSelector = selector.startsWith(".")
-      const hasMultipleDots = selector.slice(1).includes(".")
-      if (
-        dotIndex !== -1 &&
-        dotIndex > selector.lastIndexOf(" ") &&
-        !(isCssSelector && !hasMultipleDots)
-      ) {
+      if (dotIndex !== -1 && dotIndex > selector.lastIndexOf(" ")) {
         parentSelector = selector.slice(0, dotIndex)
         portToken = selector.slice(dotIndex + 1)
       } else {
         const match = selector.match(/^(.*[ >])?([^ >]+)$/)
         parentSelector = match?.[1]?.trim() ?? ""
         portToken = match?.[2] ?? selector
-      }
-      if (!parentSelector && portToken && !portToken.includes(" ")) {
-        parentSelector = portToken
-        portToken = "pin1"
       }
       let targetComponent = parentSelector
         ? trace.getSubcircuit().selectOne(parentSelector)
@@ -83,14 +88,6 @@ export function Trace__findConnectedPorts(trace: Trace):
       const portLabel = portToken.includes(".")
         ? (portToken.split(".").pop() ?? "")
         : portToken
-      const targetPort = ports.find((p) => p.isMatchingNameOrAlias(portLabel))
-      if (targetPort) {
-        portsWithSelectors[index] = {
-          selector,
-          port: targetPort,
-        }
-        continue
-      }
       const portNames = ports.flatMap((c) => c.getNameAndAliases())
       const hasCustomLabels = portNames.some((n) => !/^(pin\d+|\d+)$/.test(n))
       const labelList = Array.from(new Set(portNames)).join(", ")
