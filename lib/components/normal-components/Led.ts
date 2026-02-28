@@ -59,7 +59,6 @@ export class Led extends NormalComponent<
       wave_length: props.wavelength,
       color: props.color,
       symbol_display_value: this._getSchematicSymbolDisplayValue(),
-      // @ts-ignore
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: false,
