@@ -55,7 +55,6 @@ export class Diode extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_diode",
       name: this.name,
-      // @ts-ignore
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: false,

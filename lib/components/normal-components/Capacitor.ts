@@ -90,7 +90,6 @@ export class Capacitor extends NormalComponent<
     const source_component = db.source_component.insert({
       ftype: "simple_capacitor",
       name: this.name,
-      // @ts-ignore
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
       capacitance: props.capacitance,
