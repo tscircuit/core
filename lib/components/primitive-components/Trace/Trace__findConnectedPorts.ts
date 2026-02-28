@@ -1,6 +1,6 @@
+import { TraceConnectionError } from "../../../errors"
 import type { Port } from "../Port/Port"
 import type { Trace } from "./Trace"
-import { TraceConnectionError } from "../../../errors"
 
 export function Trace__findConnectedPorts(trace: Trace):
   | {
@@ -13,7 +13,7 @@ export function Trace__findConnectedPorts(trace: Trace):
       ports?: undefined
       portsWithSelectors?: undefined
     } {
-  const { _parsedProps: props, parent } = trace
+  const { parent } = trace
 
   if (!parent) throw new Error("Trace has no parent")
 
@@ -26,18 +26,29 @@ export function Trace__findConnectedPorts(trace: Trace):
       null,
   }))
 
-  for (const { selector, port } of portsWithSelectors) {
+  for (let index = 0; index < portsWithSelectors.length; index++) {
+    const { selector, port } = portsWithSelectors[index]
     if (!port) {
       let parentSelector: string
       let portToken: string
       const dotIndex = selector.lastIndexOf(".")
-      if (dotIndex !== -1 && dotIndex > selector.lastIndexOf(" ")) {
+      const isCssSelector = selector.startsWith(".")
+      const hasMultipleDots = selector.slice(1).includes(".")
+      if (
+        dotIndex !== -1 &&
+        dotIndex > selector.lastIndexOf(" ") &&
+        !(isCssSelector && !hasMultipleDots)
+      ) {
         parentSelector = selector.slice(0, dotIndex)
         portToken = selector.slice(dotIndex + 1)
       } else {
         const match = selector.match(/^(.*[ >])?([^ >]+)$/)
         parentSelector = match?.[1]?.trim() ?? ""
         portToken = match?.[2] ?? selector
+      }
+      if (!parentSelector && portToken && !portToken.includes(" ")) {
+        parentSelector = portToken
+        portToken = "pin1"
       }
       let targetComponent = parentSelector
         ? trace.getSubcircuit().selectOne(parentSelector)
@@ -72,6 +83,14 @@ export function Trace__findConnectedPorts(trace: Trace):
       const portLabel = portToken.includes(".")
         ? (portToken.split(".").pop() ?? "")
         : portToken
+      const targetPort = ports.find((p) => p.isMatchingNameOrAlias(portLabel))
+      if (targetPort) {
+        portsWithSelectors[index] = {
+          selector,
+          port: targetPort,
+        }
+        continue
+      }
       const portNames = ports.flatMap((c) => c.getNameAndAliases())
       const hasCustomLabels = portNames.some((n) => !/^(pin\d+|\d+)$/.test(n))
       const labelList = Array.from(new Set(portNames)).join(", ")
