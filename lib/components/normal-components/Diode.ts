@@ -5,13 +5,11 @@ import {
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { Port } from "../primitive-components/Port"
 
 export class Diode extends NormalComponent<
   typeof diodeProps,
   PolarizedPassivePorts
 > {
-  // @ts-ignore
   get config() {
     const symbolMap: Record<string, BaseSymbolName> = {
       schottky: "schottky_diode",

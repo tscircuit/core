@@ -14,8 +14,6 @@ export class Capacitor extends NormalComponent<
   PolarizedPassivePorts
 > {
   _adjustSilkscreenTextAutomatically = true
-
-  // @ts-ignore (cause the symbolName is string and not fixed)
   get config() {
     return {
       componentName: "Capacitor",
