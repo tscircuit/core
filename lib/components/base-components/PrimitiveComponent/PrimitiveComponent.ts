@@ -232,8 +232,7 @@ export abstract class PrimitiveComponent<
       )
     }
 
-    const allowBoardVariables =
-      options.allowBoardVariables ?? (this as any)._isNormalComponent === true
+    const allowBoardVariables = options.allowBoardVariables ?? true
     const allowComponentVariables = options.allowComponentVariables ?? false
     const includesBoardVariable = rawValue.includes("board.")
 
