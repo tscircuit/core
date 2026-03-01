@@ -1,4 +1,5 @@
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
+import type { AnyCircuitElement } from "circuit-json"
 import { distance } from "circuit-json"
 import type { Board } from "lib/components/normal-components/Board"
 
@@ -26,7 +27,7 @@ export const getBoardDimensionsFromProps = (
     props.circuitJson?.length
   ) {
     const pcbBoardFromJson = props.circuitJson.find(
-      (elm: any) => elm.type === "pcb_board",
+      (elm: AnyCircuitElement) => elm.type === "pcb_board",
     )
     if (pcbBoardFromJson) {
       width ??= pcbBoardFromJson.width
