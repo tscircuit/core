@@ -17,7 +17,6 @@ test("polygon smtpads with coveredWithSolderMask render correctly", async () => 
     <board width="30mm" height="20mm">
       {pads.map(({ name, pcbX, width, height }, i) => (
         <smtpad
-          key={name}
           name={name}
           shape="polygon"
           points={[
