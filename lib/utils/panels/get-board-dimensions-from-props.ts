@@ -26,7 +26,7 @@ export const getBoardDimensionsFromProps = (
     props.circuitJson?.length
   ) {
     const pcbBoardFromJson = props.circuitJson.find(
-      (elm: AnyCircuitElement ) => elm.type === "pcb_board",
+      (elm: AnyCircuitElement) => elm.type === "pcb_board",
     )
     if (pcbBoardFromJson) {
       width ??= pcbBoardFromJson.width
