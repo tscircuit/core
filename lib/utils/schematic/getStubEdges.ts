@@ -40,7 +40,7 @@ export const getStubEdges = ({
       lastDominantDirection: firstDominantDirection,
     })
       .reverse()
-      .map((e: any) => ({
+      .map((e: Edge) => ({
         from: e.to,
         to: e.from,
       }))
