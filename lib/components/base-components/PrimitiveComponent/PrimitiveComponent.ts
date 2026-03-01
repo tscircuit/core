@@ -232,7 +232,8 @@ export abstract class PrimitiveComponent<
       )
     }
 
-    const allowBoardVariables = options.allowBoardVariables ?? true
+    const allowBoardVariables =
+      options.allowBoardVariables ?? this._shouldAllowBoardVariablesByDefault()
     const allowComponentVariables = options.allowComponentVariables ?? false
     const includesBoardVariable = rawValue.includes("board.")
 
@@ -282,6 +283,39 @@ export abstract class PrimitiveComponent<
         `Invalid ${axis} value for ${this.componentName}: ${message}`,
       )
     }
+  }
+
+  private _shouldAllowBoardVariablesByDefault(): boolean {
+    const isNormalComponent = (this as any)._isNormalComponent === true
+    if (isNormalComponent) return true
+
+    return !this._isInsideFootprint() && !this._isInsideNonBoardSubcircuit()
+  }
+
+  private _isInsideFootprint(): boolean {
+    let current: PrimitiveComponent | null = this.parent
+    while (current) {
+      if ((current as any).componentName === "Footprint") {
+        return true
+      }
+      current = current.parent
+    }
+    return false
+  }
+
+  private _isInsideNonBoardSubcircuit(): boolean {
+    let current: PrimitiveComponent | null = this.parent
+    while (current) {
+      const componentName = (current as any).componentName
+      if (componentName === "Board" || componentName === "MountedBoard") {
+        return false
+      }
+      if (current.isSubcircuit) {
+        return true
+      }
+      current = current.parent
+    }
+    return false
   }
 
   resolvePcbCoordinate(

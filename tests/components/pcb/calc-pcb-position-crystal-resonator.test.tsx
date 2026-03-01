@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("pcb calc supports crystal and resonator component-relative references", () => {
+test("pcb calc supports crystal and resonator component-relative references", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="40mm" height="20mm">
+    <board title="Crystal/Resonator calc placement" width="40mm" height="20mm">
       <crystal
         name="X1"
         frequency="8MHz"
@@ -50,4 +50,6 @@ test("pcb calc supports crystal and resonator component-relative references", ()
     (x1?.center.x ?? 0) + (x1?.width ?? 0) / 2 + 2,
   )
   expect(y1?.center.y).toBeCloseTo(x1?.center.y ?? 0)
+
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

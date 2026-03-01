@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("pcb calc supports board-relative references for via", () => {
+test("pcb calc supports board-relative references for via", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="30mm" height="20mm">
+    <board title="Via board-relative calc placement" width="30mm" height="20mm">
       <via
         fromLayer="top"
         toLayer="bottom"
@@ -21,4 +21,6 @@ test("pcb calc supports board-relative references for via", () => {
   expect(via).toBeDefined()
   expect(via?.x).toBeCloseTo(-14)
   expect(via?.y).toBeCloseTo(8)
+
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
