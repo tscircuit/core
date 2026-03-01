@@ -7,6 +7,9 @@ export type ClusterInfo = {
   componentIds: string[]
   constraints: Constraint[]
   relativeCenters?: Record<string, { x: number; y: number }>
+  /** When centerX/centerY is set, the cluster has an absolute position.
+   *  Each axis is undefined when not specified by the constraint. */
+  absoluteCenter?: { x: number | undefined; y: number | undefined }
 }
 
 export const applyComponentConstraintClusters = (
@@ -33,10 +36,34 @@ export const applyComponentConstraintClusters = (
     if (!(x in parent)) parent[x] = x
   }
 
+  /**
+   * Resolve a selector like ".R1", ".group1", "R1", "group1" to a pack
+   * component ID. Supports both individual components (pcb_component_id)
+   * and groups (source_group_id used as componentId in pack).
+   */
   const getIdFromSelector = (sel: string): string | undefined => {
-    const name = sel.startsWith(".") ? sel.slice(1) : sel
+    // Strip leading dot and any edge specifier
+    const parts = sel.split(" ")
+    const namePart = parts[0]
+    const name = namePart.startsWith(".") ? namePart.slice(1) : namePart
+
+    // First try to find a component child by name
     const child = group.children.find((c) => (c as any).name === name)
-    return child?.pcb_component_id ?? undefined
+    if (child?.pcb_component_id) {
+      return child.pcb_component_id
+    }
+
+    // Then try to find a group child by name (for group constraints)
+    const groupChild = group.children.find(
+      (c) =>
+        c.componentName === "Group" && (c as any).name === name,
+    ) as Group | undefined
+    if (groupChild?.source_group_id) {
+      // Groups use source_group_id as their componentId in pack input
+      return groupChild.source_group_id
+    }
+
+    return undefined
   }
 
   for (const constraint of constraints) {
@@ -117,8 +144,25 @@ export const applyComponentConstraintClusters = (
       ),
     )
 
+    // Track centerX/centerY from constraints
+    let hasCenterX = false
+    let hasCenterY = false
+    let constraintCenterX = 0
+    let constraintCenterY = 0
+
     for (const constraint of info.constraints) {
       const props = constraint._parsedProps as any
+
+      // Capture centerX/centerY if provided
+      if ("centerX" in props && props.centerX !== undefined) {
+        hasCenterX = true
+        constraintCenterX = props.centerX
+      }
+      if ("centerY" in props && props.centerY !== undefined) {
+        hasCenterY = true
+        constraintCenterY = props.centerY
+      }
+
       if ("xDist" in props) {
         const left = getIdFromSelector(props.left)
         const right = getIdFromSelector(props.right)
@@ -245,6 +289,16 @@ export const applyComponentConstraintClusters = (
     })
 
     info.relativeCenters = relCenters
+
+    // If centerX/centerY was specified, store per-axis absolute position.
+    // Unspecified axes remain undefined so the packer's value is preserved.
+    if (hasCenterX || hasCenterY) {
+      info.absoluteCenter = {
+        x: hasCenterX ? constraintCenterX : undefined,
+        y: hasCenterY ? constraintCenterY : undefined,
+      }
+    }
+
     clusterMap[info.componentIds[0]] = info
   }
 
