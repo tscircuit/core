@@ -1,6 +1,6 @@
-import type { PCBTrace } from "circuit-json"
+import type { PcbTrace } from "circuit-json"
 
-function pdist(a: any, b: any) {
+function pdist(a: PcbTrace["route"][number], b: PcbTrace["route"][number]) {
   return Math.hypot(a.x - b.x, a.y - b.y)
 }
 
@@ -10,7 +10,7 @@ function pdist(a: any, b: any) {
  * If the end of the next route is closer to the end of the previous route,
  * reverse the next route and append it to the previous route.
  */
-export const mergeRoutes = (routes: PCBTrace["route"][]) => {
+export const mergeRoutes = (routes: PcbTrace["route"][]) => {
   if (routes.length === 1) return routes[0]
   // routes = routes.filter((route) => route.length > 0)
   if (routes.some((r) => r.length === 0)) {
@@ -19,7 +19,7 @@ export const mergeRoutes = (routes: PCBTrace["route"][]) => {
   // for (const route of routes) {
   //   console.table(route)
   // }
-  const merged: PCBTrace["route"] = []
+  const merged: PcbTrace["route"] = []
   // const reverse_log: boolean[] = []
 
   // Determine if the first route should be reversed
