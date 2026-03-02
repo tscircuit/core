@@ -556,6 +556,14 @@ export class Board
     const shouldRunPlacementChecks = !pcbDisabled
     const shouldRunRoutingChecks = !pcbDisabled && !routingDisabled
 
+    // If async trace routing is still in progress anywhere in this board subtree,
+    // wait so routing DRC sees final routed traces and doesn't mark DRC complete early.
+    if (
+      shouldRunRoutingChecks &&
+      this._hasIncompleteAsyncEffectsInSubtreeForPhase("PcbTraceRender")
+    )
+      return
+
     // Routing checks should only wait for child subcircuits when there are
     // traces that actually need routing. Otherwise placement/netlist DRC can run.
     const hasTracesToRoute = this._hasTracesToRoute()
