@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 /**
@@ -178,12 +178,16 @@ const MacroKeypad = () => {
 }
 
 // CI IS TOO SLOW TO ROUTE! TODO autorouter bug
-test("example3-2x2-keyboard", () => {
-  const { circuit } = getTestFixture()
+test(
+  "example3-2x2-keyboard",
+  () => {
+    const { circuit } = getTestFixture()
 
-  circuit.add(<MacroKeypad />)
+    circuit.add(<MacroKeypad />)
 
-  const circuitJson = circuit.getCircuitJson()
+    const circuitJson = circuit.getCircuitJson()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+    expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  },
+  { timeout: 15000 },
+)

@@ -1,7 +1,6 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "../../fixtures/get-test-fixture"
 import USBCFlashlight from "./UsbCFlashlight"
-import type { AutoroutingStartEvent } from "lib/events"
 
 test("panel autolayout, usbc-flashlight-pcb + other board", async () => {
   const { circuit } = getTestFixture()
@@ -21,6 +20,7 @@ test("panel autolayout, usbc-flashlight-pcb + other board", async () => {
 
   await circuit.renderUntilSettled()
 
+  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
   })

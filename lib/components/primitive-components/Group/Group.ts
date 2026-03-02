@@ -740,7 +740,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const debug = Debug("tscircuit:core:doInitialPcbTraceRender")
     if (!this.isSubcircuit) return
     if (this.root?.pcbDisabled) return
-    if (this.getInheritedProperty("routingDisabled")) return
+    if (
+      this.root?.pcbRoutingDisabled ||
+      this.getInheritedProperty("routingDisabled")
+    )
+      return
     if (this._isInflatedFromCircuitJson) return
     if (this._shouldUseTraceByTraceRouting()) return
 
@@ -1321,7 +1325,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialPcbDesignRuleChecks() {
     if (this.root?.pcbDisabled) return
-    if (this.getInheritedProperty("routingDisabled")) return
+    if (
+      this.root?.pcbRoutingDisabled ||
+      this.getInheritedProperty("routingDisabled")
+    )
+      return
     const { db } = this.root!
 
     if (this.isSubcircuit) {

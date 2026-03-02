@@ -1,22 +1,22 @@
-import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
-import { boardProps } from "@tscircuit/props"
-import { Group } from "../primitive-components/Group/Group"
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
-import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import {
   runAllNetlistChecks,
   runAllPlacementChecks,
   runAllRoutingChecks,
 } from "@tscircuit/checks"
-import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
-import type { RenderPhase } from "../base-components/Renderable"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
-import type { BoardI } from "./BoardI"
+import { boardProps } from "@tscircuit/props"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
-import { compose, translate, type Matrix } from "transformation-matrix"
-import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
+import { type Matrix, compose, translate } from "transformation-matrix"
+import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
+import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
+import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import type { RenderPhase } from "../base-components/Renderable"
+import { Group } from "../primitive-components/Group/Group"
+import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
+import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
+import type { BoardI } from "./BoardI"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -546,7 +546,9 @@ export class Board
   updatePcbDesignRuleChecks() {
     const { db } = this.root!
 
-    const routingDisabled = this.getInheritedProperty("routingDisabled")
+    const routingDisabled =
+      this.root?.pcbRoutingDisabled ||
+      this.getInheritedProperty("routingDisabled")
     const pcbDisabled = this.root?.pcbDisabled
 
     const shouldRunNetlistChecks = true

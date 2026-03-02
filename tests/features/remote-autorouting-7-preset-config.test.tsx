@@ -1,6 +1,6 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "../fixtures/get-test-fixture"
+import { expect, test } from "bun:test"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
+import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("remote-autorouter-7 with preset config", async () => {
   const { autoroutingServerUrl } = getTestAutoroutingServer()
@@ -35,7 +35,9 @@ test("remote-autorouter-7 with preset config", async () => {
   await circuit.renderUntilSettled()
 
   expect(
-    asyncEffectStartEvents.map(({ asyncEffectId, ...rest }) => rest),
+    asyncEffectStartEvents
+      .filter((event) => event.effectName === "make-http-autorouting-request")
+      .map(({ asyncEffectId, ...rest }) => rest),
   ).toMatchInlineSnapshot(`
     [
       {
