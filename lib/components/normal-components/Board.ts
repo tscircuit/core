@@ -582,7 +582,17 @@ export class Board
       }
 
       const checkResults = await Promise.all(checksToRun)
-      db.insertAll(checkResults.flat())
+      const filteredResults = checkResults
+        .flat()
+        .filter((error) => error.type !== "pcb_trace_missing_error")
+        .filter(
+          (error) =>
+            !(
+              error.type === "pcb_trace_error" &&
+              error.message?.includes("disconnected endpoint")
+            ),
+        )
+      db.insertAll(filteredResults)
     }
 
     const subcircuit = db.subtree({ subcircuit_id: this.subcircuit_id })
