@@ -94,6 +94,7 @@ export class IsolatedCircuit {
     this.platform = platform
     this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false
+    this.pcbRoutingDisabled = platform?.routingDisabled ?? false
     this.cachedSubcircuits = cachedSubcircuits
     this.pendingSubcircuitRenders = pendingSubcircuitRenders
     this.root = this
@@ -114,6 +115,12 @@ export class IsolatedCircuit {
     this.platform = {
       ...this.platform,
       ...platform,
+    }
+    if (platform.pcbDisabled !== undefined) {
+      this.pcbDisabled = platform.pcbDisabled
+    }
+    if (platform.routingDisabled !== undefined) {
+      this.pcbRoutingDisabled = platform.routingDisabled
     }
   }
 

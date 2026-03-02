@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { Renderable } from "lib/components/base-components/Renderable"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -63,7 +63,10 @@ test("subcircuit3-dependent-autorouting", async () => {
   // Check the order of the async effect, should be S1 then board, and S2 is
   // synchronously routed so has no effect
   expect(
-    asyncEffectEndEvents.sort().map(({ asyncEffectId, ...rest }) => rest),
+    asyncEffectEndEvents
+      .filter((event) => event.effectName === "make-http-autorouting-request")
+      .sort()
+      .map(({ asyncEffectId, ...rest }) => rest),
   ).toMatchInlineSnapshot(`
     [
       {

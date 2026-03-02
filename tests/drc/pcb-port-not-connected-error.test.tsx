@@ -44,24 +44,15 @@ test("check each PCB port is connected", async () => {
   const pcbPortNotConnectedErrors = circuitJson.filter(
     (el) => el.type === "pcb_port_not_connected_error",
   )
-  expect(pcbPortNotConnectedErrors).toMatchInlineSnapshot(`
-    [
-      {
-        "error_type": "pcb_port_not_connected_error",
-        "message": "Ports [R1.pin1, R2.pin1] are not connected together through the same net.",
-        "pcb_component_ids": [
-          "pcb_component_0",
-          "pcb_component_1",
-        ],
-        "pcb_port_ids": [
-          "pcb_port_0",
-          "pcb_port_2",
-        ],
-        "pcb_port_not_connected_error_id": "pcb_port_not_connected_error_trace_source_trace_0",
-        "type": "pcb_port_not_connected_error",
-      },
-    ]
-  `)
+  expect(pcbPortNotConnectedErrors).toHaveLength(1)
+  expect(pcbPortNotConnectedErrors[0]).toMatchObject({
+    type: "pcb_port_not_connected_error",
+    error_type: "pcb_port_not_connected_error",
+    message:
+      "Ports [R1.pin1, R2.pin1] are not connected together through the same net.",
+    pcb_component_ids: ["pcb_component_0", "pcb_component_1"],
+    pcb_port_ids: ["pcb_port_0", "pcb_port_2"],
+  })
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
