@@ -57,7 +57,7 @@ test("check each PCB port is connected", async () => {
           "pcb_port_0",
           "pcb_port_2",
         ],
-        "pcb_port_not_connected_error_id": "pcb_port_not_connected_error_trace_source_trace_0",
+        "pcb_port_not_connected_error_id": "pcb_port_not_connected_error_0",
         "type": "pcb_port_not_connected_error",
       },
     ]

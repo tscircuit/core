@@ -5,14 +5,9 @@ import { NormalComponent } from "../base-components/NormalComponent/NormalCompon
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
 import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import {
-  checkEachPcbPortConnectedToPcbTraces,
-  checkEachPcbTraceNonOverlapping,
-  checkPcbComponentsOutOfBoard,
-  checkPcbTracesOutOfBoard,
-  checkDifferentNetViaSpacing,
-  checkSameNetViaSpacing,
-  checkPcbComponentOverlap,
-  checkPinMustBeConnected,
+  runAllNetlistChecks,
+  runAllPlacementChecks,
+  runAllRoutingChecks,
 } from "@tscircuit/checks"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import type { RenderPhase } from "../base-components/Renderable"
@@ -99,6 +94,7 @@ export class Board
   pcb_board_id: string | null = null
   source_board_id: string | null = null
   _drcChecksComplete = false
+  _drcChecksInProgress = false
   _connectedSchematicPortPairs = new Set<string>()
   _panelPositionOffset: { x: number; y: number } | null = null
 
@@ -543,72 +539,64 @@ export class Board
 
   doInitialPcbDesignRuleChecks() {
     if (this.root?.pcbDisabled) return
-    if (this.getInheritedProperty("routingDisabled")) return
 
     super.doInitialPcbDesignRuleChecks()
   }
 
   updatePcbDesignRuleChecks() {
-    if (this.root?.pcbDisabled) return
-    if (this.getInheritedProperty("routingDisabled")) return
     const { db } = this.root!
 
-    if (!this._areChildSubcircuitsRouted()) return
+    const routingDisabled = this.getInheritedProperty("routingDisabled")
+    const pcbDisabled = this.root?.pcbDisabled
 
-    // Only run once after all autorouting is complete
-    if (this._drcChecksComplete) return
+    const shouldRunNetlistChecks = true
+    const shouldRunPlacementChecks = !pcbDisabled
+    const shouldRunRoutingChecks = !pcbDisabled && !routingDisabled
 
-    const runDrcChecks = (circuitJson: AnyCircuitElement[]) => {
-      const pcbTraceOverlappingErrors =
-        checkEachPcbTraceNonOverlapping(circuitJson)
-      for (const error of pcbTraceOverlappingErrors) {
-        db.pcb_trace_error.insert(error)
+    // Routing checks should only run once child subcircuits are fully routed.
+    // Netlist checks should always run, even when routing is disabled.
+    if (shouldRunRoutingChecks && !this._areChildSubcircuitsRouted()) return
+
+    // Only run once after all configured checks are complete.
+    if (this._drcChecksComplete || this._drcChecksInProgress) return
+
+    const runDrcChecks = async (circuitJson: AnyCircuitElement[]) => {
+      const checksToRun: Promise<AnyCircuitElement[]>[] = []
+
+      if (shouldRunRoutingChecks) {
+        checksToRun.push(
+          runAllRoutingChecks(circuitJson) as Promise<AnyCircuitElement[]>,
+        )
       }
 
-      const pcbPortNotConnectedErrors =
-        checkEachPcbPortConnectedToPcbTraces(circuitJson)
-      for (const error of pcbPortNotConnectedErrors) {
-        db.pcb_port_not_connected_error.insert(error)
+      if (shouldRunPlacementChecks) {
+        checksToRun.push(
+          runAllPlacementChecks(circuitJson) as Promise<AnyCircuitElement[]>,
+        )
       }
 
-      const pcbComponentOutsideErrors =
-        checkPcbComponentsOutOfBoard(circuitJson)
-      for (const error of pcbComponentOutsideErrors) {
-        db.pcb_component_outside_board_error.insert(error)
+      if (shouldRunNetlistChecks) {
+        checksToRun.push(
+          runAllNetlistChecks(circuitJson) as Promise<AnyCircuitElement[]>,
+        )
       }
 
-      const pcbTracesOutOfBoardErrors = checkPcbTracesOutOfBoard(circuitJson)
-      for (const error of pcbTracesOutOfBoardErrors) {
-        db.pcb_trace_error.insert(error)
-      }
-
-      const differentNetViaErrors = checkDifferentNetViaSpacing(circuitJson)
-      for (const error of differentNetViaErrors) {
-        db.pcb_via_clearance_error.insert(error)
-      }
-
-      const sameNetViaErrors = checkSameNetViaSpacing(circuitJson)
-      for (const error of sameNetViaErrors) {
-        db.pcb_via_clearance_error.insert(error)
-      }
-
-      const pcbComponentOverlapErrors = checkPcbComponentOverlap(circuitJson)
-      for (const error of pcbComponentOverlapErrors) {
-        db.pcb_footprint_overlap_error.insert(error)
-      }
-
-      const sourcePinMustBeConnectedErrors =
-        checkPinMustBeConnected(circuitJson)
-      for (const error of sourcePinMustBeConnectedErrors) {
-        db.source_pin_must_be_connected_error.insert(error)
-      }
+      const checkResults = await Promise.all(checksToRun)
+      db.insertAll(checkResults.flat())
     }
 
     const subcircuit = db.subtree({ subcircuit_id: this.subcircuit_id })
     const subcircuitCircuitJson = subcircuit.toArray()
 
-    runDrcChecks(subcircuitCircuitJson)
-    this._drcChecksComplete = true
+    this._drcChecksInProgress = true
+    this._queueAsyncEffect("board:drc-checks", async () => {
+      try {
+        await runDrcChecks(subcircuitCircuitJson)
+        this._drcChecksComplete = true
+      } finally {
+        this._drcChecksInProgress = false
+      }
+    })
   }
 
   override _emitRenderLifecycleEvent(
