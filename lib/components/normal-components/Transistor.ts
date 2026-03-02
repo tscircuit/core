@@ -5,6 +5,7 @@ import {
   type TransistorPorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import type { SourceSimpleTransistor } from "circuit-json"
 
 export class Transistor extends NormalComponent<
   typeof transistorProps,
@@ -59,8 +60,7 @@ export class Transistor extends NormalComponent<
       name: this.name,
       transistor_type: props.type,
       display_name: props.displayName,
-    } as any)
-
+    } as SourceSimpleTransistor)
     this.source_component_id = source_component.source_component_id
   }
 }

@@ -6,12 +6,12 @@ import {
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
+import type { SourceSimplePowerSource } from "circuit-json"
 
 export class PowerSource extends NormalComponent<
   typeof powerSourceProps,
   PolarizedPassivePorts
 > {
-  // @ts-ignore
   get config() {
     return {
       // TBD in schematic_symbol and replace then
@@ -42,7 +42,7 @@ export class PowerSource extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: false,
       display_name: props.displayName,
-    } as any)
+    } as SourceSimplePowerSource)
     this.source_component_id = source_component.source_component_id
   }
 

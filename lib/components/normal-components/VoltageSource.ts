@@ -1,7 +1,10 @@
 import { voltageSourceProps } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
-import type { SimulationAcVoltageSource } from "circuit-json"
+import type {
+  SimulationAcVoltageSource,
+  SourceSimpleVoltageSource,
+} from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
 
 import type { RenderPhase } from "lib/components/base-components/Renderable"
@@ -75,7 +78,7 @@ export class VoltageSource extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
       display_name: props.displayName,
-    } as any)
+    } as SourceSimpleVoltageSource)
     this.source_component_id = source_component.source_component_id
   }
 

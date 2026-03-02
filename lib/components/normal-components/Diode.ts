@@ -5,6 +5,7 @@ import {
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import type { SourceSimpleDiode } from "circuit-json"
 
 export class Diode extends NormalComponent<
   typeof diodeProps,
@@ -57,7 +58,7 @@ export class Diode extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: false,
       display_name: props.displayName,
-    } as any)
+    } as SourceSimpleDiode)
     this.source_component_id = source_component.source_component_id
   }
 

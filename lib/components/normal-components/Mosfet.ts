@@ -1,6 +1,7 @@
 import { mosfetProps, transistorProps } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
+import type { SourceSimpleMosfet } from "circuit-json"
 
 export class Mosfet extends NormalComponent<typeof mosfetProps> {
   get config() {
@@ -26,7 +27,7 @@ export class Mosfet extends NormalComponent<typeof mosfetProps> {
       mosfet_mode: props.mosfetMode,
       channel_type: props.channelType,
       display_name: props.displayName,
-    } as any)
+    } as SourceSimpleMosfet)
     this.source_component_id = source_component.source_component_id
   }
 }
