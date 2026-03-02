@@ -541,6 +541,7 @@ export class Board
     if (this.root?.pcbDisabled) return
 
     super.doInitialPcbDesignRuleChecks()
+    this.updatePcbDesignRuleChecks()
   }
 
   updatePcbDesignRuleChecks() {
@@ -555,9 +556,15 @@ export class Board
     const shouldRunPlacementChecks = !pcbDisabled
     const shouldRunRoutingChecks = !pcbDisabled && !routingDisabled
 
-    // Routing checks should only run once child subcircuits are fully routed.
-    // Netlist checks should always run, even when routing is disabled.
-    if (shouldRunRoutingChecks && !this._areChildSubcircuitsRouted()) return
+    // Routing checks should only wait for child subcircuits when there are
+    // traces that actually need routing. Otherwise placement/netlist DRC can run.
+    const hasTracesToRoute = this._hasTracesToRoute()
+    if (
+      shouldRunRoutingChecks &&
+      hasTracesToRoute &&
+      !this._areChildSubcircuitsRouted()
+    )
+      return
 
     // Only run once after all configured checks are complete.
     if (this._drcChecksComplete || this._drcChecksInProgress) return

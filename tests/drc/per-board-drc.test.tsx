@@ -31,12 +31,14 @@ test("multi-board DRC: panel with two boards, each has component outside board e
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    shouldDrawErrors: true,
+  })
 
   const errors = circuit
     .getCircuitJson()
     .filter((e) => e.type === "pcb_component_outside_board_error")
 
   expect(errors.length).toBe(2)
-  expect(errors[0].pcb_board_id != errors[1].pcb_board_id).toBeTrue()
+  expect(errors[0].pcb_board_id !== errors[1].pcb_board_id).toBeTrue()
 })
