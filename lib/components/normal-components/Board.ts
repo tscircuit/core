@@ -591,18 +591,14 @@ export class Board
     const subcircuitCircuitJson = subcircuit.toArray()
 
     this._drcChecksInProgress = true
-    this._queueAsyncEffect(
-      "board:drc-checks",
-      async () => {
-        try {
-          await runDrcChecks(subcircuitCircuitJson)
-          this._drcChecksComplete = true
-        } finally {
-          this._drcChecksInProgress = false
-        }
-      },
-      { silent: true },
-    )
+    this._queueAsyncEffect("board:drc-checks", async () => {
+      try {
+        await runDrcChecks(subcircuitCircuitJson)
+        this._drcChecksComplete = true
+      } finally {
+        this._drcChecksInProgress = false
+      }
+    })
   }
 
   override _emitRenderLifecycleEvent(
