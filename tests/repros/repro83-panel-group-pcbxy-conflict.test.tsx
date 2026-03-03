@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("repro83: panel with multiple boards without pcbX/pcbY and layoutMode=none should produce pcb_placement_error", () => {
@@ -20,7 +20,7 @@ test("repro83: panel with multiple boards without pcbX/pcbY and layoutMode=none 
   const errors = circuit.db.pcb_placement_error.list()
   expect(errors.length).toBe(1)
   expect(errors[0].message).toContain(
-    "Multiple boards in panel without pcbX/pcbY positions",
+    "Multiple boards/subpanels in panel without positions",
   )
   expect(errors[0].message).toContain('layoutMode="none"')
   expect(errors[0].message).toContain('layoutMode="grid"')

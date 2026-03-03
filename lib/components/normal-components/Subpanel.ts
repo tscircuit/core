@@ -1,11 +1,13 @@
 import { subpanelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
+import type { Matrix } from "transformation-matrix"
+import { compose, identity, translate } from "transformation-matrix"
 import {
   DEFAULT_TAB_LENGTH,
   DEFAULT_TAB_WIDTH,
   generatePanelTabsAndMouseBites,
 } from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
-import { packBoardsIntoGrid } from "../../utils/panels/pack-boards-into-grid"
+import { packIntoGrid } from "../../utils/panels/pack-into-grid"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Group } from "../primitive-components/Group/Group"
 import { Board } from "./Board"
@@ -55,6 +57,25 @@ export class Subpanel extends Group<typeof subpanelProps> {
 
   _cachedGridWidth = 0
   _cachedGridHeight = 0
+  _panelPositionOffset: { x: number; y: number } | null = null
+
+  override _computePcbGlobalTransformBeforeLayout(): Matrix {
+    // If we have a panel-computed offset, incorporate it into the transform
+    if (this._panelPositionOffset) {
+      // Get parent transform (typically the Panel)
+      const parentTransform =
+        this.parent?._computePcbGlobalTransformBeforeLayout?.() ?? identity()
+
+      // Compose parent transform with panel offset translation
+      // The panel offset is relative to the panel center
+      return compose(
+        parentTransform,
+        translate(this._panelPositionOffset.x, this._panelPositionOffset.y),
+      )
+    }
+    // Otherwise, fall back to the default behavior
+    return super._computePcbGlobalTransformBeforeLayout()
+  }
 
   /**
    * Get all board instances from this subpanel and nested subpanels
@@ -99,42 +120,34 @@ export class Subpanel extends Group<typeof subpanelProps> {
     if (this.root?.pcbDisabled) return
 
     const layoutMode = this._parsedProps.layoutMode ?? "none"
-
-    const childBoardInstances = this._getDirectBoardChildren()
+    const gridItems = this.children.filter(
+      (c) => c instanceof Board || c instanceof Subpanel,
+    ) as (Board | Subpanel)[]
 
     // Warn if boards have manual positioning when panel layout is automatic
     if (layoutMode !== "none") {
-      for (const board of childBoardInstances) {
-        const hasPcbX = board._parsedProps.pcbX !== undefined
-        const hasPcbY = board._parsedProps.pcbY !== undefined
-        if (hasPcbX || hasPcbY) {
-          const properties = []
-          if (hasPcbX) properties.push("pcbX")
-          if (hasPcbY) properties.push("pcbY")
-          const propertyNames = properties.join(" and ")
-
+      for (const child of gridItems) {
+        if (!(child instanceof Board)) continue
+        if (child._hasUserDefinedPcbPosition()) {
           this.root!.db.source_property_ignored_warning.insert({
-            source_component_id: board.source_component_id!,
-            property_name: propertyNames,
-            message: `Board has manual positioning (${propertyNames}) but ${this._errorComponentName} layout mode is "${layoutMode}". Manual positioning will be ignored.`,
+            source_component_id: child.source_component_id!,
+            property_name: "pcbX/pcbY",
+            message: `Board has manual positioning but ${this._errorComponentName} layout mode is "${layoutMode}". Manual positioning will be ignored.`,
             error_type: "source_property_ignored_warning",
           })
         }
       }
     }
 
-    // Error if multiple boards without pcbX/pcbY when layoutMode is "none"
-    if (layoutMode === "none" && childBoardInstances.length > 1) {
-      const boardsWithoutPosition = childBoardInstances.filter((board) => {
-        const hasPcbX = board._parsedProps.pcbX !== undefined
-        const hasPcbY = board._parsedProps.pcbY !== undefined
-        return !hasPcbX && !hasPcbY
-      })
-
-      if (boardsWithoutPosition.length > 1) {
+    // Error if multiple items without position when layoutMode is "none"
+    if (layoutMode === "none" && gridItems.length > 1) {
+      const unpositionedItems = gridItems.filter(
+        (c) => !c._hasUserDefinedPcbPosition(),
+      )
+      if (unpositionedItems.length > 1) {
         this.root!.db.pcb_placement_error.insert({
           error_type: "pcb_placement_error",
-          message: `Multiple boards in ${this._errorComponentName} without pcbX/pcbY positions. When layoutMode="none", each board must have explicit pcbX and pcbY coordinates to avoid overlapping. Either set pcbX/pcbY on each board, or use layoutMode="grid" for automatic positioning.`,
+          message: `Multiple boards/subpanels in ${this._errorComponentName} without positions. When layoutMode="none", each item must have explicit positioning. Use layoutMode="grid" for automatic positioning.`,
         })
       }
     }
@@ -181,8 +194,9 @@ export class Subpanel extends Group<typeof subpanelProps> {
       availablePanelHeight = panelHeight - edgePaddingTop - edgePaddingBottom
     }
 
-    const { positions, gridWidth, gridHeight } = packBoardsIntoGrid({
-      boards: childBoardInstances,
+    // Pack all layoutable children into a grid
+    const { positions, gridWidth, gridHeight } = packIntoGrid({
+      items: gridItems,
       row: this._parsedProps.row,
       col: this._parsedProps.col,
       cellWidth: this._parsedProps.cellWidth,
@@ -195,41 +209,51 @@ export class Subpanel extends Group<typeof subpanelProps> {
     this._cachedGridWidth = gridWidth
     this._cachedGridHeight = gridHeight
 
-    // Set subpanel position offset on each board (relative to subpanel center)
-    for (const { board, pos } of positions) {
-      board._panelPositionOffset = pos
+    // Set panel position offset on each item (board or subpanel)
+    for (const { item, pos } of positions) {
+      item._panelPositionOffset = pos
     }
   }
 
   doInitialPanelLayout() {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
-
-    const childBoardInstances = this._getDirectBoardChildren()
-
     const layoutMode = this._parsedProps.layoutMode ?? "none"
 
     if (layoutMode === "grid") {
-      // Update display offsets for boards (positions are already correct)
-      for (const board of childBoardInstances) {
-        if (!board.pcb_board_id || !board._panelPositionOffset) continue
-        db.pcb_board.update(board.pcb_board_id, {
-          position_mode: "relative_to_panel_anchor",
-          display_offset_x: `${board._panelPositionOffset.x}mm`,
-          display_offset_y: `${board._panelPositionOffset.y}mm`,
-        })
+      // Update display offsets for all boards (direct and nested in subpanels)
+      for (const child of this.children) {
+        if (child instanceof Board) {
+          if (!child.pcb_board_id || !child._panelPositionOffset) continue
+          db.pcb_board.update(child.pcb_board_id, {
+            position_mode: "relative_to_panel_anchor",
+            display_offset_x: `${child._panelPositionOffset.x}mm`,
+            display_offset_y: `${child._panelPositionOffset.y}mm`,
+          })
+        } else if (child instanceof Subpanel && child._panelPositionOffset) {
+          // Update all boards inside this subpanel with combined offset
+          for (const board of child._getAllBoardInstances()) {
+            if (!board.pcb_board_id) continue
+            const boardOffset = board._panelPositionOffset ?? { x: 0, y: 0 }
+            db.pcb_board.update(board.pcb_board_id, {
+              position_mode: "relative_to_panel_anchor",
+              display_offset_x: `${child._panelPositionOffset.x + boardOffset.x}mm`,
+              display_offset_y: `${child._panelPositionOffset.y + boardOffset.y}mm`,
+            })
+          }
+        }
       }
-
       this._updatePanelDimensions()
     } else {
-      // layoutMode is "none" or "pack" - use explicit positions
+      // layoutMode is "none" or "pack" - use positions relative to panel
       const panelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
-      for (const board of childBoardInstances) {
-        const boardDb = db.pcb_board.get(board.pcb_board_id!)
+      for (const board of this._getDirectBoardChildren()) {
+        if (!board.pcb_board_id) continue
+        const boardDb = db.pcb_board.get(board.pcb_board_id)
         if (!boardDb) continue
         const relativeX = boardDb.center.x - panelGlobalPos.x
         const relativeY = boardDb.center.y - panelGlobalPos.y
-        db.pcb_board.update(board.pcb_board_id!, {
+        db.pcb_board.update(board.pcb_board_id, {
           position_mode: "relative_to_panel_anchor",
           display_offset_x: `${relativeX}mm`,
           display_offset_y: `${relativeY}mm`,
