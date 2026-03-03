@@ -806,6 +806,13 @@ export class NormalComponent<
 
       this.pcb_missing_footprint_error_id =
         footprint_error.pcb_missing_footprint_error_id
+
+      db.source_property_ignored_warning.insert({
+        source_component_id: this.source_component_id!,
+        property_name: "footprint",
+        message: `${this.componentName.toLocaleLowerCase()} "${this.name}" has no footprint prop and will not appear on the PCB.`,
+        error_type: "source_property_ignored_warning",
+      })
     }
     this.pcb_component_id = pcb_component.pcb_component_id
 

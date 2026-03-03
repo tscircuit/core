@@ -102,6 +102,20 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { _parsedProps: props } = this
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
 
+    // Emit a warning if no footprint is provided
+    const hasFootprint =
+      !!props.footprint ||
+      !!this._getImpliedFootprintString?.() ||
+      this.children.some((c) => c.componentName === "Footprint")
+    if (!hasFootprint) {
+      db.source_property_ignored_warning.insert({
+        source_component_id: this.source_component_id!,
+        property_name: "footprint",
+        message: `${this.componentName.toLocaleLowerCase()} "${this.name}" has no footprint prop and will not appear on the PCB.`,
+        error_type: "source_property_ignored_warning",
+      })
+    }
+
     // Validate that components can only be placed on top or bottom layers
     const componentLayer = props.layer ?? "top"
     if (componentLayer !== "top" && componentLayer !== "bottom") {
