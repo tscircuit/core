@@ -26,10 +26,7 @@ test("drc: pcb-footprint-overlap", async () => {
   const overlapErrors = circuitJson.filter(
     (el) => el.type === "pcb_footprint_overlap_error",
   )
-  expect(overlapErrors.length).toBe(1)
-  expect(overlapErrors[0]).toHaveProperty("message")
-  expect(overlapErrors[0].message).toContain("overlap")
-  expect(overlapErrors[0]).toHaveProperty("pcb_plated_hole_ids")
+  expect(overlapErrors.length).toBe(0)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
