@@ -318,6 +318,22 @@ export abstract class PrimitiveComponent<
     return false
   }
 
+  /**
+   * Check if this component has a user-defined PCB position.
+   * Position can be specified via pcbX/pcbY or edge-based props.
+   */
+  _hasUserDefinedPcbPosition(): boolean {
+    const props = this._parsedProps
+    return (
+      props.pcbX !== undefined ||
+      props.pcbY !== undefined ||
+      props.pcbLeftEdgeX !== undefined ||
+      props.pcbRightEdgeX !== undefined ||
+      props.pcbTopEdgeY !== undefined ||
+      props.pcbBottomEdgeY !== undefined
+    )
+  }
+
   resolvePcbCoordinate(
     rawValue: unknown,
     axis: "pcbX" | "pcbY",

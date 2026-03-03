@@ -128,33 +128,26 @@ export class Subpanel extends Group<typeof subpanelProps> {
     if (layoutMode !== "none") {
       for (const child of gridItems) {
         if (!(child instanceof Board)) continue
-        const hasPcbX = child._parsedProps.pcbX !== undefined
-        const hasPcbY = child._parsedProps.pcbY !== undefined
-        if (hasPcbX || hasPcbY) {
-          const propertyNames = [hasPcbX && "pcbX", hasPcbY && "pcbY"]
-            .filter(Boolean)
-            .join(" and ")
+        if (child._hasUserDefinedPcbPosition()) {
           this.root!.db.source_property_ignored_warning.insert({
             source_component_id: child.source_component_id!,
-            property_name: propertyNames,
-            message: `Board has manual positioning (${propertyNames}) but ${this._errorComponentName} layout mode is "${layoutMode}". Manual positioning will be ignored.`,
+            property_name: "pcbX/pcbY",
+            message: `Board has manual positioning but ${this._errorComponentName} layout mode is "${layoutMode}". Manual positioning will be ignored.`,
             error_type: "source_property_ignored_warning",
           })
         }
       }
     }
 
-    // Error if multiple items without pcbX/pcbY when layoutMode is "none"
+    // Error if multiple items without position when layoutMode is "none"
     if (layoutMode === "none" && gridItems.length > 1) {
       const unpositionedItems = gridItems.filter(
-        (c) =>
-          c._parsedProps.pcbX === undefined &&
-          c._parsedProps.pcbY === undefined,
+        (c) => !c._hasUserDefinedPcbPosition(),
       )
       if (unpositionedItems.length > 1) {
         this.root!.db.pcb_placement_error.insert({
           error_type: "pcb_placement_error",
-          message: `Multiple boards/subpanels in ${this._errorComponentName} without pcbX/pcbY positions. When layoutMode="none", each item must have explicit pcbX and pcbY coordinates. Use layoutMode="grid" for automatic positioning.`,
+          message: `Multiple boards/subpanels in ${this._errorComponentName} without positions. When layoutMode="none", each item must have explicit positioning. Use layoutMode="grid" for automatic positioning.`,
         })
       }
     }
@@ -252,15 +245,18 @@ export class Subpanel extends Group<typeof subpanelProps> {
       }
       this._updatePanelDimensions()
     } else {
-      // layoutMode is "none" or "pack" - use explicit positions
+      // layoutMode is "none" or "pack" - use positions relative to panel
       const panelGlobalPos = this._getGlobalPcbPositionBeforeLayout()
       for (const board of this._getDirectBoardChildren()) {
-        const boardDb = db.pcb_board.get(board.pcb_board_id!)
+        if (!board.pcb_board_id) continue
+        const boardDb = db.pcb_board.get(board.pcb_board_id)
         if (!boardDb) continue
-        db.pcb_board.update(board.pcb_board_id!, {
+        const relativeX = boardDb.center.x - panelGlobalPos.x
+        const relativeY = boardDb.center.y - panelGlobalPos.y
+        db.pcb_board.update(board.pcb_board_id, {
           position_mode: "relative_to_panel_anchor",
-          display_offset_x: `${boardDb.center.x - panelGlobalPos.x}mm`,
-          display_offset_y: `${boardDb.center.y - panelGlobalPos.y}mm`,
+          display_offset_x: `${relativeX}mm`,
+          display_offset_y: `${relativeY}mm`,
         })
       }
     }
