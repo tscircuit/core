@@ -981,11 +981,9 @@ export abstract class PrimitiveComponent<
       resolvedType === "port" &&
       !selector.includes(">") &&
       !/(^|[ >])(?:pin|port)\./.test(selector)
-    const typedCacheSuffix = resolvedType ? `::type=${resolvedType}` : ""
-    const implicitPortSuffix = isImplicitSinglePortSelector
-      ? "::implicit-port"
-      : ""
-    const cacheKey = `${selectorRaw}${typedCacheSuffix}${implicitPortSuffix}`
+    const cacheKey = isImplicitSinglePortSelector
+      ? `${selectorRaw}::implicit-port`
+      : selectorRaw
     if (this._cachedSelectOneQueries.has(cacheKey)) {
       const cached = this._cachedSelectOneQueries.get(
         cacheKey,
