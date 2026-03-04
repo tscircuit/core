@@ -975,33 +975,71 @@ export abstract class PrimitiveComponent<
       schematicPrimitive?: boolean
     },
   ): T | null {
-    if (this._cachedSelectOneQueries.has(selectorRaw)) {
-      return this._cachedSelectOneQueries.get(selectorRaw) as T | null
-    }
+    const resolvedType = options?.port ? "port" : options?.type
     const selector = preprocessSelector(selectorRaw, this)
-    if (options?.port) {
-      options.type = "port"
+    const isImplicitSinglePortSelector =
+      resolvedType === "port" &&
+      !selector.includes(">") &&
+      !/(^|[ >])(?:pin|port)\./.test(selector)
+    const typedCacheSuffix = resolvedType ? `::type=${resolvedType}` : ""
+    const implicitPortSuffix = isImplicitSinglePortSelector
+      ? "::implicit-port"
+      : ""
+    const cacheKey = `${selectorRaw}${typedCacheSuffix}${implicitPortSuffix}`
+    if (this._cachedSelectOneQueries.has(cacheKey)) {
+      const cached = this._cachedSelectOneQueries.get(
+        cacheKey,
+      ) as PrimitiveComponent | null
+      if (!resolvedType || cached?.lowercaseComponentName === resolvedType) {
+        return cached as T | null
+      }
+    }
+    if (!selector.trim()) {
+      if (!isImplicitSinglePortSelector) {
+        this._cachedSelectOneQueries.set(cacheKey, null)
+      }
+      return null
     }
     let result: T | null = null
-    if (options?.type) {
+    if (resolvedType) {
       const allMatching = selectAll(
         selector,
         this,
         cssSelectOptionsInsideSubcircuit,
       )
       result = allMatching.find(
-        (n) => n.lowercaseComponentName === options.type,
+        (n) => n.lowercaseComponentName === resolvedType,
       ) as T | null
+      if (!result && isImplicitSinglePortSelector) {
+        const targetComponent = this.selectOne(
+          selectorRaw,
+        ) as PrimitiveComponent | null
+        const componentPorts =
+          (targetComponent?.children.filter(
+            (c) => c.componentName === "Port",
+          ) as PrimitiveComponent[]) ?? []
+        if (componentPorts.length === 1) {
+          result = componentPorts[0] as T
+        }
+      }
+    } else {
+      result = selectOne(
+        selector,
+        this,
+        cssSelectOptionsInsideSubcircuit,
+      ) as T | null
+
+      if (!result && !selector.includes(" ") && !/[.#\[]/.test(selector)) {
+        result = selectOne(
+          `.${selector}`,
+          this,
+          cssSelectOptionsInsideSubcircuit,
+        ) as T | null
+      }
     }
 
-    result ??= selectOne(
-      selector,
-      this,
-      cssSelectOptionsInsideSubcircuit,
-    ) as T | null
-
     if (result) {
-      this._cachedSelectOneQueries.set(selectorRaw, result as any)
+      this._cachedSelectOneQueries.set(cacheKey, result as any)
       return result
     }
 
@@ -1012,9 +1050,24 @@ export abstract class PrimitiveComponent<
     }) as ISubcircuit | null
 
     if (!subcircuit) return null
+    if (rest.length === 0) {
+      if (resolvedType) {
+        if (!isImplicitSinglePortSelector) {
+          this._cachedSelectOneQueries.set(cacheKey, null)
+        }
+        return null
+      }
+      this._cachedSelectOneQueries.set(cacheKey, subcircuit as any)
+      return subcircuit as T
+    }
 
-    result = subcircuit.selectOne(rest.join(" "), options) as T | null
-    this._cachedSelectOneQueries.set(selectorRaw, result as any)
+    result = subcircuit.selectOne(rest.join(" "), {
+      ...options,
+      type: resolvedType,
+    }) as T | null
+    if (result || !isImplicitSinglePortSelector) {
+      this._cachedSelectOneQueries.set(cacheKey, result as any)
+    }
     return result
   }
 
