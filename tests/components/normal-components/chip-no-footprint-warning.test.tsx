@@ -20,12 +20,10 @@ test("chip with no footprint should emit a warning", async () => {
 
   const circuitJson = circuit.getCircuitJson()
 
-  // Should emit a source_property_ignored_warning
-  const warnings = circuitJson.filter(
-    (el) => el.type === "source_property_ignored_warning",
+  // Should emit a pcb_missing_footprint_error
+  const errors = circuitJson.filter(
+    (el) => el.type === "pcb_missing_footprint_error",
   )
-  expect(warnings).toHaveLength(1)
-  expect(warnings[0].message).toContain(
-    'chip "U1" has no footprint prop and will not appear on the PCB.',
-  )
+  expect(errors).toHaveLength(1)
+  expect(errors[0].message).toContain("No footprint found for component:")
 })
