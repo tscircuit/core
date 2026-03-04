@@ -353,14 +353,24 @@ export class NormalComponent<
     }
 
     if (!this._getSchematicPortArrangement()) {
-      const portsFromFootprint = this.getPortsFromFootprint(opts)
-      for (const port of portsFromFootprint) {
-        if (
-          !portsToCreate.some((p) =>
+      const hasReactSymbol = isValidElement(this.props.symbol)
+      const symbolAlreadyAdded = this.children.some(
+        (c) => c.componentName === "Symbol",
+      )
+      if (hasReactSymbol && !symbolAlreadyAdded) {
+      } else {
+        const portsFromFootprint = this.getPortsFromFootprint(opts)
+        const existingPorts = this._getAllPortsFromChildren()
+        for (const port of portsFromFootprint) {
+          const alreadyInPortsToCreate = portsToCreate.some((p) =>
             p.isMatchingAnyOf(port.getNameAndAliases()),
           )
-        ) {
-          portsToCreate.push(port)
+          const alreadyInExistingPorts = existingPorts.some((p) =>
+            p.isMatchingAnyOf(port.getNameAndAliases()),
+          )
+          if (!alreadyInPortsToCreate && !alreadyInExistingPorts) {
+            portsToCreate.push(port)
+          }
         }
       }
     }
@@ -1018,10 +1028,29 @@ export class NormalComponent<
     )
   }
 
+  /**
+   * Get all ports from children, including ports inside Symbol.
+   * This doesn't use selectAll to avoid caching issues during initPorts.
+   */
+  _getAllPortsFromChildren(): Port[] {
+    const ports: Port[] = []
+    const collectPorts = (component: PrimitiveComponent) => {
+      if (component.componentName === "Port") {
+        ports.push(component as Port)
+      }
+      for (const child of component.children) {
+        collectPorts(child)
+      }
+    }
+    for (const child of this.children) {
+      collectPorts(child)
+    }
+    return ports
+  }
+
   _hasExistingPortExactly(port1: Port): boolean {
-    const existingPorts = this.children.filter(
-      (c) => c.componentName === "Port",
-    ) as Port[]
+    // Check all ports including those inside Symbol
+    const existingPorts = this._getAllPortsFromChildren()
     return existingPorts.some((port2) => {
       const aliases1 = port1.getNameAndAliases()
       const aliases2 = port2.getNameAndAliases()
@@ -1030,6 +1059,21 @@ export class NormalComponent<
         aliases1.every((alias) => aliases2.includes(alias))
       )
     })
+  }
+
+  /**
+   * Check if a port with the same pinNumber already exists.
+   * This is used to prevent duplicate ports for the same physical pin.
+   * Note: We only check pinNumber, not aliases, because different physical pins
+   * can have the same alias (e.g., multiple GND pins).
+   */
+  _hasMatchingPort(port1: Port): boolean {
+    const existingPorts = this._getAllPortsFromChildren()
+    const pinNumber1 = port1._parsedProps.pinNumber
+    if (pinNumber1 === undefined) return false
+    return existingPorts.some(
+      (port2) => port2._parsedProps.pinNumber === pinNumber1,
+    )
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
@@ -1044,18 +1088,11 @@ export class NormalComponent<
 
     if (component.componentName === "Port") {
       if (this._hasExistingPortExactly(component as Port)) return
-      // Check if this port is already contained in the children, skip if it's
-      // already defined
-      const existingPorts = this.children.filter(
-        (c) => c.componentName === "Port",
-      ) as Port[]
-      const conflictingPort = existingPorts.find((p) =>
-        p.isMatchingAnyOf(component.getNameAndAliases()),
-      )
-      if (conflictingPort) {
+      if (this._hasMatchingPort(component as Port)) {
         debug(
-          `Similar ports added. Port 1: ${conflictingPort}, Port 2: ${component}`,
+          `Skipping port ${component} because a matching port already exists`,
         )
+        return
       }
     }
 

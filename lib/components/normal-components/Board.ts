@@ -552,9 +552,20 @@ export class Board
       this.getInheritedProperty("routingDisabled")
     const pcbDisabled = this.root?.pcbDisabled
 
-    const shouldRunNetlistChecks = true
-    const shouldRunPlacementChecks = !pcbDisabled
-    const shouldRunRoutingChecks = !pcbDisabled && !routingDisabled
+    const netlistDrcChecksDisabled =
+      this.root?.platform?.netlistDrcChecksDisabled ??
+      this.getInheritedProperty("netlistDrcChecksDisabled")
+    const placementDrcChecksDisabled =
+      this.root?.platform?.placementDrcChecksDisabled ??
+      this.getInheritedProperty("placementDrcChecksDisabled")
+    const routingDrcChecksDisabled =
+      this.root?.platform?.routingDrcChecksDisabled ??
+      this.getInheritedProperty("routingDrcChecksDisabled")
+
+    const shouldRunNetlistChecks = !netlistDrcChecksDisabled
+    const shouldRunPlacementChecks = !pcbDisabled && !placementDrcChecksDisabled
+    const shouldRunRoutingChecks =
+      !pcbDisabled && !routingDisabled && !routingDrcChecksDisabled
 
     // If async trace routing is still in progress anywhere in this board subtree,
     // wait so routing DRC sees final routed traces and doesn't mark DRC complete early.
