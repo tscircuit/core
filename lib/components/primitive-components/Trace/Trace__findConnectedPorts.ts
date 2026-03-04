@@ -19,11 +19,29 @@ export function Trace__findConnectedPorts(trace: Trace):
 
   const portSelectors = trace.getTracePortPathSelectors()
 
+  const resolveImplicitSinglePort = (selector: string): Port | null => {
+    const hasExplicitPortToken =
+      selector.lastIndexOf(".") > selector.lastIndexOf(" ")
+    if (hasExplicitPortToken) return null
+
+    let targetComponent = trace.getSubcircuit().selectOne(selector)
+    if (!targetComponent && !/[.#\[]/.test(selector)) {
+      targetComponent = trace.getSubcircuit().selectOne(`.${selector}`)
+    }
+    if (!targetComponent) return null
+
+    const ports = targetComponent.children.filter(
+      (c) => c.componentName === "Port",
+    ) as Port[]
+
+    return ports.length === 1 ? ports[0] : null
+  }
+
   const portsWithSelectors = portSelectors.map((selector) => ({
     selector,
     port:
       (trace.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
-      null,
+      resolveImplicitSinglePort(selector),
   }))
 
   for (const { selector, port } of portsWithSelectors) {
