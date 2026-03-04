@@ -25,5 +25,5 @@ test("chip with no footprint should emit a warning", async () => {
     (el) => el.type === "pcb_missing_footprint_error",
   )
   expect(errors).toHaveLength(1)
-  expect(errors[0].message).toContain("No footprint found for component:")
+  expect(errors[0].message).toContain("No footprint specified for component:")
 })

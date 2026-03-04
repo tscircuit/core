@@ -102,14 +102,13 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { _parsedProps: props } = this
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
 
-    // Emit an error if no footprint is provided (consistent with base NormalComponent)
-    const hasFootprint =
-      !!props.footprint ||
-      !!this._getImpliedFootprintString?.() ||
-      this.children.some((c) => c.componentName === "Footprint")
-    if (!hasFootprint) {
+    const footprint = props.footprint ?? this._getImpliedFootprintString()
+    const hasFootprintChild = this.children.some(
+      (c) => c.componentName === "Footprint",
+    )
+    if (!footprint && !hasFootprintChild) {
       const footprint_error = db.pcb_missing_footprint_error.insert({
-        message: `No footprint found for component: ${this.getString()}`,
+        message: `No footprint specified for component: ${this.getString()}`,
         source_component_id: `${this.source_component_id}`,
         error_type: "pcb_missing_footprint_error",
       })
