@@ -896,6 +896,8 @@ export abstract class PrimitiveComponent<
   doInitialOptimizeSelectorCache() {
     if (!this.isSubcircuit) return
     const ports = this.selectAll("port")
+    const isValidShorthandName = (name: string) =>
+      /^[A-Za-z_][A-Za-z0-9_-]*$/.test(name)
 
     for (const port of ports) {
       // For ports inside primitive containers (like Symbol), use getParentNormalComponent
@@ -910,6 +912,12 @@ export abstract class PrimitiveComponent<
             `.${parentAlias} > .${portAlias}`,
             `.${parentAlias} .${portAlias}`,
           ]
+          if (
+            isValidShorthandName(parentAlias) &&
+            isValidShorthandName(portAlias)
+          ) {
+            selectors.push(`${parentAlias}.${portAlias}`)
+          }
           for (const selector of selectors) {
             const ar = this._cachedSelectAllQueries.get(selector)
             if (ar) {
