@@ -102,6 +102,20 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { _parsedProps: props } = this
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
 
+    const footprint = props.footprint ?? this._getImpliedFootprintString()
+    const hasFootprintChild = this.children.some(
+      (c) => c.componentName === "Footprint",
+    )
+    if (!footprint && !hasFootprintChild) {
+      const footprint_error = db.pcb_missing_footprint_error.insert({
+        message: `No footprint specified for component: ${this.getString()}`,
+        source_component_id: `${this.source_component_id}`,
+        error_type: "pcb_missing_footprint_error",
+      })
+      this.pcb_missing_footprint_error_id =
+        footprint_error.pcb_missing_footprint_error_id
+    }
+
     // Validate that components can only be placed on top or bottom layers
     const componentLayer = props.layer ?? "top"
     if (componentLayer !== "top" && componentLayer !== "bottom") {
