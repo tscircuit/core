@@ -99,7 +99,7 @@ test("shorthand selectors resolve ports for kicad library footprint refs", async
       footprintLibraryMap: {
         kicad: async () => {
           await new Promise((resolve) => setTimeout(resolve, 10))
-          return { footprintCircuitJson: jstConnector as any[] }
+          return { footprintCircuitJson: jstConnector }
         },
       },
     },
@@ -120,12 +120,12 @@ test("shorthand selectors resolve ports for kicad library footprint refs", async
 
   const circuitJson = circuit.getCircuitJson()
   const traceErrors = circuitJson.filter(
-    (c: any) => c.type === "source_trace_not_connected_error",
+    (c) => c.type === "source_trace_not_connected_error",
   )
 
   expect(traceErrors.length).toBe(0)
   const j1Ports = circuitJson
-    .filter((c: any) => c.type === "source_port")
-    .map((p: any) => p.name)
+    .filter((c) => c.type === "source_port")
+    .map((p) => p.name)
   expect(j1Ports).toEqual(expect.arrayContaining(["pin1", "pin2"]))
 })
