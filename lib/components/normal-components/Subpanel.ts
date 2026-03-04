@@ -42,6 +42,14 @@ export class Subpanel extends Group<typeof subpanelProps> {
     return true
   }
 
+  /**
+   * Subpanels/Panels use their own layout system (doInitialPanelBoardLayout)
+   * and should never trigger the regular Group pack/grid/flex layout.
+   */
+  override _getPcbLayoutMode(): "none" {
+    return "none"
+  }
+
   add(component: PrimitiveComponent) {
     // Subpanel can contain boards and other subpanels
     if (
@@ -320,10 +328,11 @@ export class Subpanel extends Group<typeof subpanelProps> {
     const { db } = this.root!
     const props = this._parsedProps
     const panelizationMethod = props.panelizationMethod ?? "none"
-    const childBoardInstances = this._getDirectBoardChildren()
+    // Use _getAllBoardInstances to include boards inside nested subpanels
+    const childBoardInstances = this._getAllBoardInstances()
 
     if (panelizationMethod !== "none") {
-      // Get all boards that are children of this subpanel
+      // Get all boards that are children of this panel/subpanel (including nested)
       const childBoardIds = childBoardInstances
         .map((c) => c.pcb_board_id)
         .filter((id): id is string => !!id)
