@@ -18,6 +18,6 @@ test("chip pinLabels should not allow leading or trailing spaces", async () => {
 
   expect(schematic_errors).toHaveLength(1)
   expect(schematic_errors[0].message).toContain(
-    "Invalid pin label: pin1 = 'A1 ' - excluding from component. Please use a valid pin label.",
+    "Invalid pin label: pin1 = 'A1 ' - excluding from component. Pin labels can only contain letters, numbers and underscores.",
   )
 })

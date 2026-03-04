@@ -34,7 +34,7 @@ export function filterPinLabels(
         validLabels.push(label)
       } else {
         invalidPinLabelsMessages.push(
-          `Invalid pin label: ${pin} = '${label}' - excluding from component. Please use a valid pin label.`,
+          `Invalid pin label: ${pin} = '${label}' - excluding from component. Pin labels can only contain letters, numbers and underscores.`,
         )
       }
     }

@@ -28,7 +28,7 @@ test("chip with invalid pin should be skipped", async () => {
 
   expect(source_property_ignored_warning).toHaveLength(1)
   expect(source_property_ignored_warning[0].message).toContain(
-    "Invalid pin label: pin3 = '//' - excluding from component. Please use a valid pin label.",
+    "Invalid pin label: pin3 = '//' - excluding from component. Pin labels can only contain letters, numbers and underscores.",
   )
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
