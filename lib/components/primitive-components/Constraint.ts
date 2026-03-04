@@ -1,4 +1,5 @@
 import { constraintProps } from "@tscircuit/props"
+import { distance } from "circuit-json"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
@@ -12,15 +13,54 @@ const edgeSpecifiers = [
 
 export type EdgeSpecifier = (typeof edgeSpecifiers)[number]
 
-export class Constraint extends PrimitiveComponent<typeof constraintProps> {
+/**
+ * Extended constraint props that add centerX/centerY for absolute positioning
+ * of constraint clusters. These will be upstreamed to @tscircuit/props.
+ */
+export const extendedConstraintProps = z.union([
+  z.object({
+    pcb: z.literal(true).optional(),
+    xDist: distance,
+    left: z.string(),
+    right: z.string(),
+    edgeToEdge: z.literal(true).optional(),
+    centerToCenter: z.literal(true).optional(),
+    centerX: distance.optional(),
+    centerY: distance.optional(),
+  }),
+  z.object({
+    pcb: z.literal(true).optional(),
+    yDist: distance,
+    top: z.string(),
+    bottom: z.string(),
+    edgeToEdge: z.literal(true).optional(),
+    centerToCenter: z.literal(true).optional(),
+    centerX: distance.optional(),
+    centerY: distance.optional(),
+  }),
+  z.object({
+    pcb: z.literal(true).optional(),
+    sameY: z.literal(true).optional(),
+    for: z.array(z.string()),
+  }),
+  z.object({
+    pcb: z.literal(true).optional(),
+    sameX: z.literal(true).optional(),
+    for: z.array(z.string()),
+  }),
+])
+
+export class Constraint extends PrimitiveComponent<
+  typeof extendedConstraintProps
+> {
   get config() {
     return {
       componentName: "Constraint",
-      zodProps: constraintProps,
+      zodProps: extendedConstraintProps,
     }
   }
 
-  constructor(props: z.input<typeof constraintProps>) {
+  constructor(props: z.input<typeof extendedConstraintProps>) {
     super(props)
     if ("xdist" in props || "ydist" in props) {
       if (!("edgeToEdge" in props) && !("centerToCenter" in props)) {

@@ -1,12 +1,17 @@
 import type { Group } from "../Group"
 import type { Constraint } from "../../Constraint"
 import type { PackInput } from "calculate-packing"
+import { length } from "circuit-json"
 import * as kiwi from "@lume/kiwi"
 
 export type ClusterInfo = {
   componentIds: string[]
   constraints: Constraint[]
   relativeCenters?: Record<string, { x: number; y: number }>
+  /** Absolute center X position for the cluster (from centerX prop) */
+  absoluteCenterX?: number
+  /** Absolute center Y position for the cluster (from centerY prop) */
+  absoluteCenterY?: number
 }
 
 export const applyComponentConstraintClusters = (
@@ -36,7 +41,13 @@ export const applyComponentConstraintClusters = (
   const getIdFromSelector = (sel: string): string | undefined => {
     const name = sel.startsWith(".") ? sel.slice(1) : sel
     const child = group.children.find((c) => (c as any).name === name)
-    return child?.pcb_component_id ?? undefined
+    if (!child) return undefined
+    // For regular components, use pcb_component_id
+    if (child.pcb_component_id) return child.pcb_component_id
+    // For groups, use source_group_id (matches pack input componentId for groups)
+    if ((child as Group).source_group_id)
+      return (child as Group).source_group_id!
+    return undefined
   }
 
   for (const constraint of constraints) {
@@ -245,6 +256,18 @@ export const applyComponentConstraintClusters = (
     })
 
     info.relativeCenters = relCenters
+
+    // Extract absolute center positioning from constraints (centerX/centerY)
+    for (const constraint of info.constraints) {
+      const props = constraint._parsedProps as any
+      if ("centerX" in props && props.centerX != null) {
+        info.absoluteCenterX = length.parse(props.centerX)
+      }
+      if ("centerY" in props && props.centerY != null) {
+        info.absoluteCenterY = length.parse(props.centerY)
+      }
+    }
+
     clusterMap[info.componentIds[0]] = info
   }
 

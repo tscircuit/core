@@ -72,7 +72,10 @@ export interface TscircuitElements {
   fabricationnotetext: Props.FabricationNoteTextProps
   fabricationnotepath: Props.FabricationNotePathProps
   fabricationnotedimension: Props.FabricationNoteDimensionProps
-  constraint: Props.ConstraintProps
+  constraint: Props.ConstraintProps & {
+    centerX?: number | string
+    centerY?: number | string
+  }
   constrainedlayout: Props.ConstrainedLayoutProps
   battery: Props.BatteryProps
   pinheader: Props.PinHeaderProps
