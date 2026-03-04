@@ -966,6 +966,95 @@ export abstract class PrimitiveComponent<
   }
 
   _cachedSelectOneQueries: Map<string, PrimitiveComponent | null> = new Map()
+
+  private _buildSelectOneCacheKey(
+    selectorRaw: string,
+    resolvedType: string | undefined,
+    isImplicitSinglePortSelector: boolean,
+  ): string {
+    const parts = [selectorRaw]
+    if (resolvedType) parts.push(`type=${resolvedType}`)
+    if (isImplicitSinglePortSelector) parts.push("implicit-single-port")
+    return parts.join("::")
+  }
+
+  private _getCachedSelectOneResult<T>(
+    cacheKey: string,
+    selectorRaw: string,
+    resolvedType: string | undefined,
+  ): T | null | undefined {
+    if (this._cachedSelectOneQueries.has(cacheKey)) {
+      return this._cachedSelectOneQueries.get(cacheKey) as T | null
+    }
+
+    // Backward-compatible fallback for precomputed selector cache entries
+    // (e.g. shorthand/nested symbol selectors populated without type suffixes).
+    if (resolvedType && this._cachedSelectOneQueries.has(selectorRaw)) {
+      const cached = this._cachedSelectOneQueries.get(selectorRaw)
+      if (cached?.lowercaseComponentName === resolvedType) {
+        return cached as T
+      }
+    }
+    return undefined
+  }
+
+  private _cacheSelectOneResult<T>(
+    cacheKey: string,
+    value: T | null,
+    isImplicitSinglePortSelector: boolean,
+  ): void {
+    if (value || !isImplicitSinglePortSelector) {
+      this._cachedSelectOneQueries.set(cacheKey, value as any)
+    }
+  }
+
+  private _selectOneUntypedLocal(selector: string): PrimitiveComponent | null {
+    let result = selectOne(
+      selector,
+      this,
+      cssSelectOptionsInsideSubcircuit,
+    ) as PrimitiveComponent | null
+
+    if (!result && !selector.includes(" ") && !/[.#\[]/.test(selector)) {
+      result = selectOne(
+        `.${selector}`,
+        this,
+        cssSelectOptionsInsideSubcircuit,
+      ) as PrimitiveComponent | null
+    }
+
+    return result
+  }
+
+  private _selectOneByTypeLocal(
+    selector: string,
+    type: string,
+  ): PrimitiveComponent | null {
+    const allMatching = selectAll(
+      selector,
+      this,
+      cssSelectOptionsInsideSubcircuit,
+    )
+    return (allMatching.find((n) => n.lowercaseComponentName === type) ??
+      null) as PrimitiveComponent | null
+  }
+
+  private _selectImplicitSinglePort(
+    selectorRaw: string,
+  ): PrimitiveComponent | null {
+    const targetComponent = this.selectOne(
+      selectorRaw,
+    ) as PrimitiveComponent | null
+    const componentPorts =
+      (targetComponent?.children.filter(
+        (c) => c.componentName === "Port",
+      ) as PrimitiveComponent[]) ?? []
+    if (componentPorts.length === 1) {
+      return componentPorts[0]
+    }
+    return null
+  }
+
   selectOne<T = PrimitiveComponent>(
     selectorRaw: string,
     options?: {
@@ -981,59 +1070,39 @@ export abstract class PrimitiveComponent<
       resolvedType === "port" &&
       !selector.includes(">") &&
       !/(^|[ >])(?:pin|port)\./.test(selector)
-    const cacheKey = isImplicitSinglePortSelector
-      ? `${selectorRaw}::implicit-port`
-      : selectorRaw
-    if (this._cachedSelectOneQueries.has(cacheKey)) {
-      const cached = this._cachedSelectOneQueries.get(
-        cacheKey,
-      ) as PrimitiveComponent | null
-      if (!resolvedType || cached?.lowercaseComponentName === resolvedType) {
-        return cached as T | null
-      }
+    const cacheKey = this._buildSelectOneCacheKey(
+      selectorRaw,
+      resolvedType,
+      isImplicitSinglePortSelector,
+    )
+
+    const cached = this._getCachedSelectOneResult<T>(
+      cacheKey,
+      selectorRaw,
+      resolvedType,
+    )
+    if (cached !== undefined) {
+      return cached
     }
+
     if (!selector.trim()) {
-      if (!isImplicitSinglePortSelector) {
-        this._cachedSelectOneQueries.set(cacheKey, null)
-      }
+      this._cacheSelectOneResult<T>(
+        cacheKey,
+        null,
+        isImplicitSinglePortSelector,
+      )
       return null
     }
+
     let result: T | null = null
+
     if (resolvedType) {
-      const allMatching = selectAll(
-        selector,
-        this,
-        cssSelectOptionsInsideSubcircuit,
-      )
-      result = allMatching.find(
-        (n) => n.lowercaseComponentName === resolvedType,
-      ) as T | null
+      result = this._selectOneByTypeLocal(selector, resolvedType) as T | null
       if (!result && isImplicitSinglePortSelector) {
-        const targetComponent = this.selectOne(
-          selectorRaw,
-        ) as PrimitiveComponent | null
-        const componentPorts =
-          (targetComponent?.children.filter(
-            (c) => c.componentName === "Port",
-          ) as PrimitiveComponent[]) ?? []
-        if (componentPorts.length === 1) {
-          result = componentPorts[0] as T
-        }
+        result = this._selectImplicitSinglePort(selectorRaw) as T | null
       }
     } else {
-      result = selectOne(
-        selector,
-        this,
-        cssSelectOptionsInsideSubcircuit,
-      ) as T | null
-
-      if (!result && !selector.includes(" ") && !/[.#\[]/.test(selector)) {
-        result = selectOne(
-          `.${selector}`,
-          this,
-          cssSelectOptionsInsideSubcircuit,
-        ) as T | null
-      }
+      result = this._selectOneUntypedLocal(selector) as T | null
     }
 
     if (result) {
@@ -1050,9 +1119,11 @@ export abstract class PrimitiveComponent<
     if (!subcircuit) return null
     if (rest.length === 0) {
       if (resolvedType) {
-        if (!isImplicitSinglePortSelector) {
-          this._cachedSelectOneQueries.set(cacheKey, null)
-        }
+        this._cacheSelectOneResult<T>(
+          cacheKey,
+          null,
+          isImplicitSinglePortSelector,
+        )
         return null
       }
       this._cachedSelectOneQueries.set(cacheKey, subcircuit as any)
@@ -1063,9 +1134,11 @@ export abstract class PrimitiveComponent<
       ...options,
       type: resolvedType,
     }) as T | null
-    if (result || !isImplicitSinglePortSelector) {
-      this._cachedSelectOneQueries.set(cacheKey, result as any)
-    }
+    this._cacheSelectOneResult<T>(
+      cacheKey,
+      result,
+      isImplicitSinglePortSelector,
+    )
     return result
   }
 

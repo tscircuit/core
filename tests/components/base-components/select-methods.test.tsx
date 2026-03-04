@@ -55,3 +55,25 @@ it("should correctly use selectAll and selectOne methods", () => {
   expect(groupedResistor).not.toBeNull()
   expect(groupedResistor!.props.resistance).toBe("30k")
 })
+
+it("typed selectOne misses do not poison untyped selector cache", () => {
+  const project = new RootCircuit()
+
+  project.add(
+    <board width="10mm" height="10mm">
+      <group name="S1" subcircuit>
+        <resistor name="R1" resistance="10k" footprint="0402" />
+      </group>
+    </board>,
+  )
+
+  project.render()
+
+  const board = project.firstChild!
+  const typedMiss = board.selectOne(".S1 .R1", { type: "net" })
+  expect(typedMiss).toBeNull()
+
+  const untypedMatch = board.selectOne(".S1 .R1")
+  expect(untypedMatch).not.toBeNull()
+  expect(untypedMatch!.componentName).toBe("Resistor")
+})
