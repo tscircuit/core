@@ -1104,7 +1104,13 @@ export class NormalComponent<
   }): Port[] {
     let { footprint } = this.props
 
-    if (!footprint || isValidElement(footprint)) {
+    if (
+      typeof footprint === "string" &&
+      parseLibraryFootprintRef(footprint) &&
+      this.children.some((c) => c.componentName === "Footprint")
+    ) {
+      footprint = this.children.find((c) => c.componentName === "Footprint")
+    } else if (!footprint || isValidElement(footprint)) {
       footprint = this.children.find((c) => c.componentName === "Footprint")
     }
 
