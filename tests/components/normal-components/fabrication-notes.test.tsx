@@ -125,3 +125,29 @@ test("fabricationnotedimension defaults text to measured distance in inches", as
   expect(dimensions[0].text).toBe("1in")
   expect(dimensions[1].text).toBe("0.5in")
 })
+
+test("fabricationnotetext supports pcbSx visibility", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="12mm" height="10mm">
+      <fabricationnotetext text="shown-default" pcbX={0} pcbY={0} />
+      <fabricationnotetext
+        text="hidden-by-pcbsx"
+        pcbX={0}
+        pcbY={1}
+        pcbSx={{
+          "& fabricationnotetext": {
+            visibility: "hidden",
+          },
+        }}
+      />
+    </board>,
+  )
+
+  circuit.render()
+
+  const texts = circuit.db.pcb_fabrication_note_text.list()
+  expect(texts).toHaveLength(1)
+  expect(texts[0]?.text).toBe("shown-default")
+})
