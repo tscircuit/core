@@ -1,5 +1,12 @@
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 
+const NON_PHYSICAL_PCB_PRIMITIVE_PREFIXES = [
+  "Silkscreen",
+  "PcbNote",
+  "Courtyard",
+  "FabricationNote",
+]
+
 export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
   let minX = Infinity
   let minY = Infinity
@@ -10,8 +17,9 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
   for (const child of components) {
     if (
       child.isPcbPrimitive &&
-      !child.componentName.startsWith("Silkscreen") &&
-      !child.componentName.startsWith("PcbNote")
+      !NON_PHYSICAL_PCB_PRIMITIVE_PREFIXES.some((prefix) =>
+        child.componentName.startsWith(prefix),
+      )
     ) {
       const { x, y } = child._getGlobalPcbPositionBeforeLayout()
       const { width, height } = child.getPcbSize()
