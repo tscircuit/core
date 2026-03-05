@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("connector populates pcb_component.cable_insertion_center", () => {
+test("connector populates pcb_component.cable_insertion_center", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -100,4 +100,29 @@ test("connector populates pcb_component.cable_insertion_center", () => {
   expect(pcbConnector?.cable_insertion_center).toBeDefined()
   expect(typeof pcbConnector?.cable_insertion_center?.x).toBe("number")
   expect(typeof pcbConnector?.cable_insertion_center?.y).toBe("number")
+
+  const circuitJson = await circuit.getCircuitJson()
+  const cableCenter = pcbConnector?.cable_insertion_center
+
+  if (cableCenter) {
+    circuitJson.push({
+      type: "pcb_note_rect",
+      pcb_note_rect_id: "pcb_note_rect_cable_center_J1",
+      center: {
+        x: cableCenter.x,
+        y: cableCenter.y,
+      },
+      width: 1,
+      height: 1,
+      stroke_width: 0.1,
+      is_filled: false,
+      has_stroke: true,
+      is_stroke_dashed: true,
+      color: "#00ffff",
+      text: "cable center",
+      pcb_component_id: pcbConnector?.pcb_component_id,
+    })
+  }
+
+  await expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
 })
