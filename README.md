@@ -39,19 +39,18 @@ const board = new Board({
   width: "10mm",
   height: "10mm",
 })
-project.add(board)
+circuit.add(board)
 
 const R1 = new Resistor({ resistance: "10k", footprint: "0402" })
+const L1 = new Led({ footprint: "0402" })
 board.add(R1)
-
-// You can also add elements with React
-board.add(<led footprint="0402" />)
+board.add(L1)
 
 const trace = new Trace({ width: "0.2mm" })
-trace.connect(R1.output, LED1.anode)
+trace.connect(R1.output, L1.anode)
 board.add(trace)
 
-circuit.getJson() // [{ type: "board", ...}, { type: "resistor", ...}, ...]
+circuit.getCircuitJson() // [{ type: "board", ...}, { type: "resistor", ...}, ...]
 ```
 
 ## Development
