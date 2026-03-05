@@ -923,6 +923,18 @@ export class NormalComponent<
           const text = db.schematic_text.get((child as any).schematic_text_id)
           if (text) schematicElements.push(text)
         }
+        if (
+          child.isSchematicPrimitive &&
+          child.componentName === "SchematicPath"
+        ) {
+          const pathIds = (child as any).schematic_path_ids as string[]
+          if (pathIds) {
+            for (const pathId of pathIds) {
+              const path = db.schematic_path.get(pathId)
+              if (path) schematicElements.push(path)
+            }
+          }
+        }
         // Recursively check children
         if (child.children && child.children.length > 0) {
           collectSchematicPrimitives(child.children)

@@ -51,4 +51,15 @@ export function updateSchematicPrimitivesForLayoutShift({
     arc.center.x += deltaX
     arc.center.y += deltaY
   }
+
+  // // Update schematic_path
+  const paths = db.schematic_path.list({
+    schematic_component_id: schematicComponentId,
+  })
+  for (const path of paths) {
+    for (const point of path.points) {
+      point.x += deltaX
+      point.y += deltaY
+    }
+  }
 }
