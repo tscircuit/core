@@ -6,6 +6,7 @@ import { applyToPoint, identity } from "transformation-matrix"
 import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
+import { TraceConnectionError } from "lib/errors"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -18,8 +19,27 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
 
   if (!hasPcbPath && !wantsStraightLine) return
 
-  const { allPortsFound, ports, portsWithSelectors } =
-    trace._findConnectedPorts()
+  let allPortsFound: boolean
+  let ports: Port[]
+  let portsWithSelectors: Array<{ selector: string; port: Port }>
+
+  try {
+    const connectedPorts = trace._findConnectedPorts()
+    allPortsFound = connectedPorts.allPortsFound
+    ports = connectedPorts.ports ?? []
+    portsWithSelectors = connectedPorts.portsWithSelectors ?? []
+  } catch (error) {
+    if (error instanceof TraceConnectionError) {
+      db.source_trace_not_connected_error.insert({
+        ...error.errorData,
+        error_type: "source_trace_not_connected_error",
+      })
+      trace._couldNotFindPort = true
+      return
+    }
+    throw error
+  }
+
   if (!allPortsFound) return
 
   const portsWithoutMatchedPcbPrimitive: Port[] = []

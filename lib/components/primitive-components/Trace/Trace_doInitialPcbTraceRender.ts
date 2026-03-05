@@ -13,6 +13,7 @@ import type { TraceHint } from "../TraceHint"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
+import { TraceConnectionError } from "lib/errors"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -76,7 +77,25 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     return
   }
 
-  const { allPortsFound, ports } = trace._findConnectedPorts()
+  let allPortsFound: boolean
+  let ports: Port[]
+
+  try {
+    const connectedPorts = trace._findConnectedPorts()
+    allPortsFound = connectedPorts.allPortsFound
+    ports = connectedPorts.ports ?? []
+  } catch (error) {
+    if (error instanceof TraceConnectionError) {
+      db.source_trace_not_connected_error.insert({
+        ...error.errorData,
+        error_type: "source_trace_not_connected_error",
+      })
+      trace._couldNotFindPort = true
+      return
+    }
+    throw error
+  }
+
   const portsConnectedOnPcbViaNet: Port[] = []
 
   if (!allPortsFound) return
