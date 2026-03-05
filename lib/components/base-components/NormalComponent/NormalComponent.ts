@@ -846,7 +846,6 @@ export class NormalComponent<
     if (this.root?.pcbDisabled) return
     if (!this.pcb_component_id) return
     const { db } = this.root!
-    const { _parsedProps: props } = this
 
     const bounds = getBoundsOfPcbComponents(this.children)
 
