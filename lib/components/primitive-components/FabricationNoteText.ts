@@ -1,6 +1,7 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { fabricationNoteTextProps } from "@tscircuit/props"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
+import { resolvePcbProperty } from "lib/utils/pcbSx/resolve-pcb-property"
 
 export class FabricationNoteText extends PrimitiveComponent<
   typeof fabricationNoteTextProps
@@ -22,6 +23,15 @@ export class FabricationNoteText extends PrimitiveComponent<
     const position = this._getGlobalPcbPositionBeforeLayout()
     const container = this.getPrimitiveContainer()!
     const subcircuit = this.getSubcircuit()
+    const resolvedPcbSxVisibility = resolvePcbProperty({
+      propertyName: "visibility",
+      resolvedPcbSx: this.getResolvedPcbSx(),
+      pathFromAmpersand: "fabricationnotetext",
+      component: this,
+    }) as "hidden" | "visible" | "inherit" | undefined
+
+    if (resolvedPcbSxVisibility === "hidden") return
+
     const pcb_fabrication_note_text = db.pcb_fabrication_note_text.insert({
       anchor_alignment: props.anchorAlignment,
       anchor_position: {
