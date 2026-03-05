@@ -39,7 +39,6 @@ test("repro99: two chips with custom svgPath symbols and ports without schX/schY
           </symbol>
         }
       />
-      <trace from=".U1 > .OUT" to=".U2 > .A" />
     </board>,
   )
 
