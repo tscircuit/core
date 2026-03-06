@@ -136,6 +136,12 @@ export class NormalComponent<
   _adjustSilkscreenTextAutomatically = false
 
   /**
+   * Internally connected pin name groups derived from footprint deduplication
+   * (e.g., multiple pads with the same port hint like "SH").
+   */
+  _footprintInternallyConnectedPinNames: string[][] = []
+
+  /**
    * Override this property for component defaults
    */
   get defaultInternallyConnectedPinNames(): string[][] {
@@ -146,10 +152,11 @@ export class NormalComponent<
     const rawPins =
       this._parsedProps.internallyConnectedPins ??
       this.defaultInternallyConnectedPinNames
-    return rawPins.map((pinGroup: (string | number)[]) =>
-      pinGroup.map((pin: string | number) =>
-        typeof pin === "number" ? `pin${pin}` : pin,
-      ),
+    return [...rawPins, ...this._footprintInternallyConnectedPinNames].map(
+      (pinGroup: (string | number)[]) =>
+        pinGroup.map((pin: string | number) =>
+          typeof pin === "number" ? `pin${pin}` : pin,
+        ),
     )
   }
 
@@ -455,16 +462,18 @@ export class NormalComponent<
       if (isStaticAssetPath(footprint)) return
       if (parseLibraryFootprintRef(footprint)) return
       const fpSoup = fp.string(footprint).soup()
-      const fpComponents = createComponentsFromCircuitJson(
-        {
-          componentName: this.name ?? this.componentName,
-          componentRotation: pcbRotation,
-          footprinterString: footprint,
-          pinLabels,
-          pcbPinLabels,
-        },
-        fpSoup as any,
-      ) // Remove as any when footprinter gets updated
+      const { components: fpComponents, internallyConnectedGroups } =
+        createComponentsFromCircuitJson(
+          {
+            componentName: this.name ?? this.componentName,
+            componentRotation: pcbRotation,
+            footprinterString: footprint,
+            pinLabels,
+            pcbPinLabels,
+          },
+          fpSoup as any,
+        ) // Remove as any when footprinter gets updated
+      this._footprintInternallyConnectedPinNames = internallyConnectedGroups
       this.addAll(fpComponents)
     }
   }
@@ -539,6 +548,14 @@ export class NormalComponent<
         })
       }
     }
+  }
+
+  /**
+   * Re-run after async footprint loads create new ports with
+   * footprint-derived internally connected groups.
+   */
+  updateSourceParentAttachment(): void {
+    this.doInitialSourceParentAttachment()
   }
 
   /**
