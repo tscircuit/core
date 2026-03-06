@@ -42,7 +42,8 @@ export type Obstacle = {
 export interface SimpleRouteConnection {
   name: string
   source_trace_id?: string
-  width?: number // Trace width/thickness, falls back to minTraceWidth if not specified
+  nominalTraceWidth?: number // Preferred trace width for this connection
+  width?: number // Deprecated alias for nominalTraceWidth
   pointsToConnect: Array<{
     x: number
     y: number

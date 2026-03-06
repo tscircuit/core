@@ -1,14 +1,14 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { SimpleRouteConnection } from "./SimpleRouteJson"
-import type { SimpleRouteJson } from "./SimpleRouteJson"
-import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import { su } from "@tscircuit/circuit-json-util"
+import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
-import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
+import type { SimpleRouteConnection } from "./SimpleRouteJson"
+import type { SimpleRouteJson } from "./SimpleRouteJson"
+import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -270,6 +270,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           connMap.getNetConnectedToId(trace.source_trace_id) ??
           "",
         source_trace_id: trace.source_trace_id,
+        nominalTraceWidth: trace.min_trace_thickness,
         width: trace.min_trace_thickness,
         pointsToConnect: [
           {
