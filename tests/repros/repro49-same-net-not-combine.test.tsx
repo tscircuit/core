@@ -45,9 +45,9 @@ test("Connector with resistor and solder jumper circuit layout same net not comb
   await circuit.renderUntilSettled()
   const circuitJson = circuit.getCircuitJson()
   const errors = circuitJson.filter((e) => e.type.match(/pcb_.*_error/))
-  expect(errors.length).toBe(4)
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
   })
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(errors.length).toBe(0)
 })
