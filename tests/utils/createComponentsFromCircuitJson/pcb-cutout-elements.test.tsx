@@ -16,7 +16,7 @@ test("createComponentsFromCircuitJson handles pcb_cutout elements", () => {
   expect(cutoutElement?.shape).toBe("rect")
 
   // Create components from the circuit JSON
-  const components = createComponentsFromCircuitJson(
+  const { components } = createComponentsFromCircuitJson(
     {
       componentName: "m2host",
       componentRotation: "0",

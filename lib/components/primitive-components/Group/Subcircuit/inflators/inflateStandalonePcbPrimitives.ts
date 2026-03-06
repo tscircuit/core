@@ -37,7 +37,7 @@ export function inflateStandalonePcbPrimitives(
   if (standalonePrimitives.length === 0) return
 
   // Create components from the standalone primitives
-  const components = createComponentsFromCircuitJson(
+  const { components } = createComponentsFromCircuitJson(
     {
       componentName: "",
       componentRotation: "0deg",
