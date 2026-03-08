@@ -25,7 +25,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
     if (!parent.pcb_component_id) return
 
     const { db } = this.root!
-    const { boardThickness = 0 } = this.root?._getBoard() ?? {}
+    const { boardThickness = 0 } = parent._getBoard() ?? {}
 
     const bounds = parent._getPcbCircuitJsonBounds()
     const pcb_component = db.pcb_component.get(parent.pcb_component_id)
