@@ -20,7 +20,6 @@ test("normal component cad model uses containing board thickness inside panels",
   circuit.render()
 
   const cadComponents = circuit.db.cad_component.list()
-  console.log(cadComponents[0].position.z)
   expect(cadComponents).toHaveLength(1)
   expect(cadComponents[0].position.z).toBeCloseTo(1.1) // half of the board thickness, since it's on the top layer
 })

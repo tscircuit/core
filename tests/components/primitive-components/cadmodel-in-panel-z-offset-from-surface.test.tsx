@@ -29,5 +29,4 @@ test("cadmodel primitive uses containing board thickness inside panels", () => {
   const cadComponents = circuit.db.cad_component.list()
   expect(cadComponents).toHaveLength(1)
   expect(cadComponents[0].position.z).toBeCloseTo(2.2 / 2 + 1, 5)
-  console.log(cadComponents[0].position.z)
 })
