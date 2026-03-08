@@ -1399,7 +1399,7 @@ export class NormalComponent<
     if (this._isCadModelChild) return
     if (this.props.doNotPlace) return
     const { db } = this.root!
-    const { boardThickness = 0 } = this.root?._getBoard() ?? {}
+    const { boardThickness = 0 } = this._getBoard() ?? {}
     const cadModelProp = this._parsedProps.cadModel
     const cadModel =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
