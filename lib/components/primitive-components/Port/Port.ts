@@ -490,9 +490,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           altAliases.length > 0
             ? ` (consider using alternate aliases: ${altAliases.join(", ")})`
             : ""
-        db.pcb_placement_error.insert({
-          error_type: "pcb_placement_error",
+        db.source_ambiguous_port_reference.insert({
+          error_type: "source_ambiguous_port_reference",
           message: `${componentName}.${portName} is ambiguous: ${componentName}.${portName} references multiple non-overlapping pads: ${pcbMatches.map((c) => c.getString()).join(", ")}${altMsg}`,
+          source_port_id: this.source_port_id ?? undefined,
+          source_component_id:
+            this.getParentNormalComponent()?.source_component_id ?? undefined,
         })
         return
       }

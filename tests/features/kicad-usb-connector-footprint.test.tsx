@@ -57,11 +57,11 @@ test(
 
     expect(errors).toHaveLength(0)
 
-    const placementErrors = circuitJson.filter(
-      (el) => el.type === "pcb_placement_error",
+    const ambiguousErrors = circuitJson.filter(
+      (el) => el.type === "source_ambiguous_port_reference",
     )
-    expect(placementErrors).toHaveLength(1)
-    expect((placementErrors[0] as any).message).toContain(
+    expect(ambiguousErrors).toHaveLength(1)
+    expect((ambiguousErrors[0] as any).message).toContain(
       "U1.pin10 is ambiguous",
     )
 
