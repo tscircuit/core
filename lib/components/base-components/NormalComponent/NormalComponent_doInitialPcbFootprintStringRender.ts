@@ -45,19 +45,16 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         : await resolveStaticFileImport(footprint, component.root?.platform)
       try {
         const result = await footprintParser.loadFromUrl(footprintUrl)
-        const { components: fpComponents, internallyConnectedGroups } =
-          createComponentsFromCircuitJson(
-            {
-              componentName: component.name,
-              componentRotation: pcbRotation,
-              footprinterString: footprintUrl,
-              pinLabels,
-              pcbPinLabels,
-            },
-            result.footprintCircuitJson,
-          )
-        component._footprintInternallyConnectedPinNames =
-          internallyConnectedGroups
+        const fpComponents = createComponentsFromCircuitJson(
+          {
+            componentName: component.name,
+            componentRotation: pcbRotation,
+            footprinterString: footprintUrl,
+            pinLabels,
+            pcbPinLabels,
+          },
+          result.footprintCircuitJson,
+        )
         component.addAll(fpComponents)
         component._markDirty("InitializePortsFromChildren")
       } catch (err) {
@@ -94,19 +91,16 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           throw new Error(`Failed to fetch footprint: ${res.status}`)
         }
         const soup = await res.json()
-        const { components: fpComponents, internallyConnectedGroups } =
-          createComponentsFromCircuitJson(
-            {
-              componentName: component.name,
-              componentRotation: pcbRotation,
-              footprinterString: url,
-              pinLabels,
-              pcbPinLabels,
-            },
-            soup as any,
-          )
-        component._footprintInternallyConnectedPinNames =
-          internallyConnectedGroups
+        const fpComponents = createComponentsFromCircuitJson(
+          {
+            componentName: component.name,
+            componentRotation: pcbRotation,
+            footprinterString: url,
+            pinLabels,
+            pcbPinLabels,
+          },
+          soup as any,
+        )
         component.addAll(fpComponents)
         component._markDirty("InitializePortsFromChildren")
       } catch (err) {
@@ -166,19 +160,16 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           circuitJson = result.footprintCircuitJson
         }
         if (!circuitJson) return
-        const { components: fpComponents, internallyConnectedGroups } =
-          createComponentsFromCircuitJson(
-            {
-              componentName: component.name,
-              componentRotation: pcbRotation,
-              footprinterString: footprint,
-              pinLabels,
-              pcbPinLabels,
-            },
-            circuitJson,
-          )
-        component._footprintInternallyConnectedPinNames =
-          internallyConnectedGroups
+        const fpComponents = createComponentsFromCircuitJson(
+          {
+            componentName: component.name,
+            componentRotation: pcbRotation,
+            footprinterString: footprint,
+            pinLabels,
+            pcbPinLabels,
+          },
+          circuitJson,
+        )
         // Wrap in a Footprint with src so pcbSx selectors like
         // "& footprint[src^='kicad:'] silkscreentext" can match
         const fpWrapper = new Footprint({ src: footprint })
@@ -231,19 +222,16 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
     footprint.length > 0
   ) {
     try {
-      const { components: fpComponents, internallyConnectedGroups } =
-        createComponentsFromCircuitJson(
-          {
-            componentName: component.name,
-            componentRotation: pcbRotation,
-            footprinterString: "",
-            pinLabels,
-            pcbPinLabels,
-          },
-          footprint,
-        )
-      component._footprintInternallyConnectedPinNames =
-        internallyConnectedGroups
+      const fpComponents = createComponentsFromCircuitJson(
+        {
+          componentName: component.name,
+          componentRotation: pcbRotation,
+          footprinterString: "",
+          pinLabels,
+          pcbPinLabels,
+        },
+        footprint,
+      )
       component.addAll(fpComponents)
     } catch (err) {
       const db = component.root?.db

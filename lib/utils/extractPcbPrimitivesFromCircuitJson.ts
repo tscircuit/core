@@ -54,7 +54,7 @@ export const extractPcbPrimitivesFromCircuitJson = ({
     absoluteToComponentRelativeTransform,
   )
 
-  const { components } = createComponentsFromCircuitJson(
+  const components = createComponentsFromCircuitJson(
     {
       componentName,
       componentRotation: "0deg",
