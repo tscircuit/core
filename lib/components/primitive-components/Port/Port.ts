@@ -477,9 +477,27 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (pcbMatches.length > 1) {
       if (!areAllPcbPrimitivesOverlapping(pcbMatches)) {
-        throw new Error(
-          `${this.getString()} has multiple non-overlapping pcb matches, unclear how to place pcb_port: ${pcbMatches.map((c) => c.getString()).join(", ")}. (Note: tscircuit core does not currently allow you to specify internally connected pcb primitives with the same port hints, try giving them different port hints and specifying they are connected externally- or file an issue)`,
+        // This port hint is ambiguous - multiple non-overlapping pads share the
+        // same name. Skip creating a pcb_port and record a warning instead of
+        // throwing, so the rest of the circuit can still render.
+        const portName = this.props.name!
+        const componentName =
+          this.getParentNormalComponent()?.props.name ?? "unknown"
+        const altAliases = this.getNameAndAliases().filter(
+          (h) => h !== portName,
         )
+        const altMsg =
+          altAliases.length > 0
+            ? ` (consider using alternate aliases: ${altAliases.join(", ")})`
+            : ""
+        db.source_ambiguous_port_reference.insert({
+          error_type: "source_ambiguous_port_reference",
+          message: `${componentName}.${portName} is ambiguous: ${componentName}.${portName} references multiple non-overlapping pads: ${pcbMatches.map((c) => c.getString()).join(", ")}${altMsg}`,
+          source_port_id: this.source_port_id ?? undefined,
+          source_component_id:
+            this.getParentNormalComponent()?.source_component_id ?? undefined,
+        })
+        return
       }
 
       matchCenter = getCenterOfPcbPrimitives(pcbMatches)
