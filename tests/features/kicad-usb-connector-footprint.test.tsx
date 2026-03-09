@@ -57,6 +57,14 @@ test(
 
     expect(errors).toHaveLength(0)
 
+    const placementErrors = circuitJson.filter(
+      (el) => el.type === "pcb_placement_error",
+    )
+    expect(placementErrors).toHaveLength(1)
+    expect((placementErrors[0] as any).message).toContain(
+      "U1.pin10 is ambiguous",
+    )
+
     expect(convertCircuitJsonToPcbSvg(circuitJson as any)).toMatchSvgSnapshot(
       import.meta.path,
     )
