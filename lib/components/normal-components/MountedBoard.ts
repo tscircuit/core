@@ -1,21 +1,47 @@
 import { mountedboardProps } from "@tscircuit/props"
 import { Subcircuit } from "../primitive-components/Group/Subcircuit/Subcircuit"
-import type { z } from "zod"
+import type { BoardI } from "./BoardI"
 import type { PcbBoard } from "circuit-json"
 import { Board } from "./Board"
 
-export class MountedBoard extends Subcircuit {
+export class MountedBoard extends Subcircuit implements BoardI {
   pcb_board_id: string | null = null
-
-  constructor(props: z.input<typeof mountedboardProps>) {
-    super(props)
-  }
 
   get config() {
     return {
       componentName: "MountedBoard",
       zodProps: mountedboardProps,
     }
+  }
+
+  get boardThickness() {
+    return 1.4
+  }
+
+  get allLayers() {
+    return ["top", "bottom"] as const
+  }
+
+  _connectedSchematicPortPairs = new Set<string>()
+
+  /**
+   * Returns the carrier board's calc variables so that calc(board.*)
+   * expressions in pcbX/pcbY resolve against the parent board.
+   */
+  _getBoardCalcVariables(): Record<string, number> {
+    const carrierBoard = this._findCarrierBoard()
+    return carrierBoard?._getBoardCalcVariables() ?? {}
+  }
+
+  private _findCarrierBoard(): Board | null {
+    let current = this.parent
+    while (current) {
+      if (current instanceof Board) {
+        return current
+      }
+      current = current.parent
+    }
+    return null
   }
 
   doInitialPcbComponentRender(): void {
@@ -38,22 +64,11 @@ export class MountedBoard extends Subcircuit {
   doInitialPcbBoardAutoSize(): void {
     if (!this.pcb_board_id || !this.root) return
 
-    const carrierBoardId = this._findCarrierBoardId()
-    if (carrierBoardId) {
+    const carrierBoard = this._findCarrierBoard()
+    if (carrierBoard?.pcb_board_id) {
       this.root.db.pcb_board.update(this.pcb_board_id, {
-        carrier_pcb_board_id: carrierBoardId,
+        carrier_pcb_board_id: carrierBoard.pcb_board_id,
       } as Partial<PcbBoard>)
     }
-  }
-
-  private _findCarrierBoardId(): string | null {
-    let current = this.parent
-    while (current) {
-      if (current instanceof Board) {
-        return current.pcb_board_id
-      }
-      current = current.parent
-    }
-    return null
   }
 }
