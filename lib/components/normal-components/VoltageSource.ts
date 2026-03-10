@@ -34,7 +34,16 @@ export class VoltageSource extends NormalComponent<
     }
   }
 
-  doInitialPcbComponentRender() {}
+  doInitialPcbComponentRender() {
+    const hasExplicitPcbPosition = this._hasUserDefinedPcbPosition()
+    if (!this._parsedProps.footprint) {
+      if (!hasExplicitPcbPosition) return
+      throw new Error(
+        "VoltageSource requires a footprint when pcbX/pcbY or pcb edge position props are used",
+      )
+    }
+    super.doInitialPcbComponentRender()
+  }
 
   initPorts() {
     super.initPorts({
