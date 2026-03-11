@@ -453,7 +453,7 @@ export class NormalComponent<
     if (typeof footprint === "string") {
       if (isHttpUrl(footprint)) return
       if (isStaticAssetPath(footprint)) return
-      if (parseLibraryFootprintRef(footprint)) return
+      if (footprint.includes(":")) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         {
@@ -800,7 +800,7 @@ export class NormalComponent<
         : undefined,
     })
 
-    const footprint = props.footprint ?? this._getImpliedFootprintString()
+    const footprint = this.getFootprinterString() ?? this._getImpliedFootprintString()
 
     // Check if we have a Footprint child (e.g., from inflated circuit JSON)
     const hasFootprintChild = this.children.some(
@@ -1128,7 +1128,7 @@ export class NormalComponent<
     if (typeof footprint === "string") {
       if (isHttpUrl(footprint)) return []
       if (isStaticAssetPath(footprint)) return []
-      if (parseLibraryFootprintRef(footprint)) return []
+      if (footprint.includes(":")) return []
       const fpSoup = fp.string(footprint).soup()
 
       const newPorts: Port[] = []
@@ -1389,8 +1389,13 @@ export class NormalComponent<
   }
 
   getFootprinterString(): string | null {
-    if (typeof this._parsedProps.footprint === "string") {
-      return this._parsedProps.footprint
+    const footprint = this._parsedProps.footprint
+    if (typeof footprint === "string") {
+      const libRef = parseLibraryFootprintRef(footprint)
+      if (libRef?.footprintLib === "kicad") {
+        return libRef.footprintName
+      }
+      return footprint
     }
     return null
   }
@@ -1622,10 +1627,8 @@ export class NormalComponent<
     if (!source_component) return
     if (source_component.supplier_part_numbers) return
 
-    let footprinterString: string | undefined
-    if (this.props.footprint && typeof this.props.footprint === "string") {
-      footprinterString = this.props.footprint
-    }
+    let footprinterString: string | undefined =
+      this.getFootprinterString() ?? undefined
 
     const supplierPartNumbersMaybePromise = this._getSupplierPartNumbers(
       partsEngine,
