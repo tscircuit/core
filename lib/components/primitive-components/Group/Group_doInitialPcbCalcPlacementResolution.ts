@@ -3,6 +3,7 @@ import type { AnyCircuitElement } from "circuit-json"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { extractCalcIdentifiers } from "lib/utils/evaluateCalcString"
+import { setNamedPcbComponentCalcVariables } from "lib/utils/getNamedPcbCalcVariables"
 import type { Group } from "./Group"
 
 const SUPPORTED_COMPONENT_FIELDS = new Set([
@@ -384,14 +385,12 @@ function updateVarsForNamedComponent(
   const x = pcbComponent.center.x
   const y = pcbComponent.center.y
 
-  vars[`${component.name}.x`] = x
-  vars[`${component.name}.y`] = y
-  vars[`${component.name}.width`] = width
-  vars[`${component.name}.height`] = height
-  vars[`${component.name}.minX`] = x - width / 2
-  vars[`${component.name}.maxX`] = x + width / 2
-  vars[`${component.name}.minY`] = y - height / 2
-  vars[`${component.name}.maxY`] = y + height / 2
+  setNamedPcbComponentCalcVariables({
+    vars,
+    componentName: component.name,
+    position: { x, y },
+    size: { width, height },
+  })
 
   const padElementsByReference = collectPadElementsByReference(component)
   for (const [referencePath, elements] of padElementsByReference.entries()) {
