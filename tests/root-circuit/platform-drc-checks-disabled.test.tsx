@@ -8,6 +8,13 @@ const getErrorTypes = (circuitJson: Array<{ type: string }>) =>
       .map((elm) => elm.type),
   )
 
+const getWarningTypes = (circuitJson: Array<{ type: string }>) =>
+  new Set(
+    circuitJson
+      .filter((elm) => elm.type.includes("warning"))
+      .map((elm) => elm.type),
+  )
+
 test("platform netlistDrcChecksDisabled disables netlist DRC errors", async () => {
   const { circuit } = getTestFixture({
     platform: {
@@ -61,6 +68,32 @@ test("platform placementDrcChecksDisabled disables placement DRC errors", async 
   expect(
     getErrorTypes(circuit.getCircuitJson() as Array<{ type: string }>),
   ).toEqual(new Set())
+})
+
+test("pin specification checks", async () => {
+  const { circuit } = getTestFixture({
+    platform: {
+      netlistDrcChecksDisabled: true,
+    },
+  })
+
+  circuit.add(
+    <board width="10mm" height="10mm" routingDisabled>
+      <chip name="U1" pinLabels={{ 1: "A", 2: "B", 3: "C", 4: "D" }} />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  const warningTypes = getWarningTypes(
+    circuit.getCircuitJson() as Array<{ type: string }>,
+  )
+
+  expect(warningTypes.has("source_component_pins_underspecified_warning")).toBe(
+    true,
+  )
+  expect(warningTypes.has("source_no_power_pin_defined_warning")).toBe(true)
+  expect(warningTypes.has("source_no_ground_pin_defined_warning")).toBe(true)
 })
 
 test("platform drcChecksDisabled disables all DRC errors", async () => {
