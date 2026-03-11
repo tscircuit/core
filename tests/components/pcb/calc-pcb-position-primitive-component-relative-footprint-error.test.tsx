@@ -7,21 +7,27 @@ test("pcb calc reports invalid property when primitive component-relative refs a
   circuit.add(
     <board width="40mm" height="20mm">
       <resistor name="R1" footprint="0402" resistance="1k" pcbX="8mm" />
-      <footprint>
-        <via
-          fromLayer="top"
-          toLayer="bottom"
-          pcbX="calc(R1.maxX + 1mm)"
-          pcbY="calc(R1.y)"
-        />
-      </footprint>
+      <chip
+        name="U1"
+        footprint={
+          <footprint>
+            <smtpad
+              shape="rect"
+              width="1mm"
+              height="0.5mm"
+              pcbX="calc(R1.maxX + 1mm)"
+              pcbY="calc(R1.y)"
+            />
+          </footprint>
+        }
+      />
     </board>,
   )
 
   circuit.render()
 
   const invalidPropertyErrors =
-    circuit.db.source_property_ignored_warning.list()
+    circuit.db.source_invalid_component_property_error.list()
 
   expect(invalidPropertyErrors.length).toBeGreaterThan(0)
 
@@ -32,7 +38,8 @@ test("pcb calc reports invalid property when primitive component-relative refs a
   expect(message).toContain(
     "component-relative calc references are not supported for footprint elements",
   )
-  expect(message).toContain("Via")
+  expect(message).toContain("SmtPad")
+  expect(message).toContain('expression="calc(R1.maxX + 1mm)"')
 
   expect(
     invalidPropertyErrors.some(

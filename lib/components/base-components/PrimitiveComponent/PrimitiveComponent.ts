@@ -287,13 +287,13 @@ export abstract class PrimitiveComponent<
           this.root &&
           !this._reportedInvalidPcbCalcWarnings.has(axis)
         ) {
-          this.root.db.source_property_ignored_warning.insert({
+          this.root.db.source_invalid_component_property_error.insert({
             source_component_id: this.source_component_id || "",
             property_name: axis,
             message:
               `component-relative calc references are not supported for footprint elements (${this.componentName}); ` +
-              `${axis} will be ignored.`,
-            error_type: "source_property_ignored_warning",
+              `${axis} will be ignored. expression="${rawValue}"`,
+            error_type: "source_invalid_component_property_error",
           })
           this._reportedInvalidPcbCalcWarnings.add(axis)
         }
