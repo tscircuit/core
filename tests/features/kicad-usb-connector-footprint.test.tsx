@@ -13,11 +13,15 @@ test(
           kicad: async (footprintName: string) => {
             if (footprintName === "Connector_USB/USB3_A_Molex_48393-001") {
               const filtered = usb3AFootprint.filter((el) =>
-                el?.type === "pcb_silkscreen_text" ? el?.text === "REF**" : true,
+                el?.type === "pcb_silkscreen_text"
+                  ? el?.text === "REF**"
+                  : true,
               )
               return { footprintCircuitJson: filtered }
             }
-            throw new Error(`Footprint "${footprintName}" not found in local mock`)
+            throw new Error(
+              `Footprint "${footprintName}" not found in local mock`,
+            )
           },
         },
       },

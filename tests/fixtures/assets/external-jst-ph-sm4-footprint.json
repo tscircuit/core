@@ -23,9 +23,7 @@
     "source_port_id": "source_port_0",
     "source_component_id": "source_component_0",
     "name": "1",
-    "port_hints": [
-      "1"
-    ],
+    "port_hints": ["1"],
     "pin_number": 1,
     "pin_label": "pin1"
   },
@@ -44,9 +42,7 @@
     "source_port_id": "source_port_2",
     "source_component_id": "source_component_0",
     "name": "2",
-    "port_hints": [
-      "2"
-    ],
+    "port_hints": ["2"],
     "pin_number": 2,
     "pin_label": "pin2"
   },
@@ -65,9 +61,7 @@
     "source_port_id": "source_port_4",
     "source_component_id": "source_component_0",
     "name": "MP",
-    "port_hints": [
-      "MP"
-    ]
+    "port_hints": ["MP"]
   },
   {
     "type": "schematic_port",
@@ -99,9 +93,7 @@
     "pcb_component_id": "pcb_component_0",
     "x": -1,
     "y": -0.5,
-    "layers": [
-      "top"
-    ]
+    "layers": ["top"]
   },
   {
     "type": "pcb_port",
@@ -110,9 +102,7 @@
     "pcb_component_id": "pcb_component_0",
     "x": 1,
     "y": -0.5,
-    "layers": [
-      "top"
-    ]
+    "layers": ["top"]
   },
   {
     "type": "pcb_port",
@@ -121,9 +111,7 @@
     "pcb_component_id": "pcb_component_0",
     "x": -3.4,
     "y": 1.75,
-    "layers": [
-      "top"
-    ]
+    "layers": ["top"]
   },
   {
     "type": "pcb_smtpad",
@@ -135,9 +123,7 @@
     "height": 5.5,
     "layer": "top",
     "pcb_component_id": "pcb_component_0",
-    "port_hints": [
-      "pin1"
-    ],
+    "port_hints": ["pin1"],
     "pcb_port_id": "pcb_port_0",
     "pin_number": 1,
     "pin_label": "pin1"
@@ -152,9 +138,7 @@
     "height": 5.5,
     "layer": "top",
     "pcb_component_id": "pcb_component_0",
-    "port_hints": [
-      "pin2"
-    ],
+    "port_hints": ["pin2"],
     "pcb_port_id": "pcb_port_1",
     "pin_number": 2,
     "pin_label": "pin2"
@@ -169,9 +153,7 @@
     "height": 3,
     "layer": "top",
     "pcb_component_id": "pcb_component_0",
-    "port_hints": [
-      "MP"
-    ],
+    "port_hints": ["MP"],
     "pcb_port_id": "pcb_port_2"
   },
   {
@@ -184,9 +166,7 @@
     "height": 3,
     "layer": "top",
     "pcb_component_id": "pcb_component_0",
-    "port_hints": [
-      "MP"
-    ],
+    "port_hints": ["MP"],
     "pcb_port_id": "pcb_port_2"
   },
   {

@@ -16,11 +16,15 @@ test(
               "Connector_JST/JST_PH_B2B-PH-SM4-TB_1x02-1MP_P2.00mm_Vertical"
             ) {
               const filtered = jstPhSm4Footprint.filter((el) =>
-                el?.type === "pcb_silkscreen_text" ? el?.text === "REF**" : true,
+                el?.type === "pcb_silkscreen_text"
+                  ? el?.text === "REF**"
+                  : true,
               )
               return { footprintCircuitJson: filtered }
             }
-            throw new Error(`Footprint "${footprintName}" not found in local mock`)
+            throw new Error(
+              `Footprint "${footprintName}" not found in local mock`,
+            )
           },
         },
       },
