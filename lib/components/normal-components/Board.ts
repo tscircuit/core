@@ -1,5 +1,6 @@
 import {
   runAllNetlistChecks,
+  runAllPinSpecificationChecks,
   runAllPlacementChecks,
   runAllRoutingChecks,
 } from "@tscircuit/checks"
@@ -559,6 +560,9 @@ export class Board
     const netlistDrcChecksDisabled =
       this.root?.platform?.netlistDrcChecksDisabled ??
       this.getInheritedProperty("netlistDrcChecksDisabled")
+    const pinSpecificationDrcChecksDisabled = this.getInheritedProperty(
+      "pinSpecificationDrcChecksDisabled",
+    )
     const placementDrcChecksDisabled =
       this.root?.platform?.placementDrcChecksDisabled ??
       this.getInheritedProperty("placementDrcChecksDisabled")
@@ -568,6 +572,8 @@ export class Board
 
     const shouldRunNetlistChecks =
       !drcChecksDisabled && !netlistDrcChecksDisabled
+    const shouldRunPinSpecificationChecks =
+      !drcChecksDisabled && !pinSpecificationDrcChecksDisabled
     const shouldRunPlacementChecks =
       !drcChecksDisabled && !pcbDisabled && !placementDrcChecksDisabled
     const shouldRunRoutingChecks =
@@ -615,6 +621,14 @@ export class Board
       if (shouldRunNetlistChecks) {
         checksToRun.push(
           runAllNetlistChecks(circuitJson) as Promise<AnyCircuitElement[]>,
+        )
+      }
+
+      if (shouldRunPinSpecificationChecks) {
+        checksToRun.push(
+          runAllPinSpecificationChecks(circuitJson) as Promise<
+            AnyCircuitElement[]
+          >,
         )
       }
 
