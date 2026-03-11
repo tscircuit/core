@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 
-const KICAD_FOOTPRINT_CACHE_URL = "https://kicad-mod-cache.tscircuit.com"
+import jstPhSm4Footprint from "tests/fixtures/assets/external-jst-ph-sm4-footprint.json"
 
 test(
   "kicad JST connector footprint loads correctly",
@@ -11,19 +11,16 @@ test(
       platform: {
         footprintLibraryMap: {
           kicad: async (footprintName: string) => {
-            const baseUrl = `${KICAD_FOOTPRINT_CACHE_URL}/${footprintName}`
-            const circuitJsonUrl = `${baseUrl}.circuit.json`
-            const res = await fetch(circuitJsonUrl)
-            if (!res.ok) {
-              throw new Error(
-                `Failed to load KiCad footprint "${footprintName}" (HTTP ${res.status})`,
+            if (
+              footprintName ===
+              "Connector_JST/JST_PH_B2B-PH-SM4-TB_1x02-1MP_P2.00mm_Vertical"
+            ) {
+              const filtered = jstPhSm4Footprint.filter((el) =>
+                el?.type === "pcb_silkscreen_text" ? el?.text === "REF**" : true,
               )
+              return { footprintCircuitJson: filtered }
             }
-            const raw: any[] = await res.json()
-            const filtered = raw.filter((el) =>
-              el?.type === "pcb_silkscreen_text" ? el?.text === "REF**" : true,
-            )
-            return { footprintCircuitJson: filtered }
+            throw new Error(`Footprint "${footprintName}" not found in local mock`)
           },
         },
       },
