@@ -102,7 +102,8 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { _parsedProps: props } = this
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
 
-    const footprint = this.getFootprinterString() ?? this._getImpliedFootprintString()
+    const footprint =
+      this.getFootprinterString() ?? this._getImpliedFootprintString()
     const hasFootprintChild = this.children.some(
       (c) => c.componentName === "Footprint",
     )

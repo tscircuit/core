@@ -800,7 +800,8 @@ export class NormalComponent<
         : undefined,
     })
 
-    const footprint = this.getFootprinterString() ?? this._getImpliedFootprintString()
+    const footprint =
+      this.getFootprinterString() ?? this._getImpliedFootprintString()
 
     // Check if we have a Footprint child (e.g., from inflated circuit JSON)
     const hasFootprintChild = this.children.some(
