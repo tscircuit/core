@@ -159,6 +159,7 @@ export abstract class PrimitiveComponent<
   schematic_component_id: string | null = null
   pcb_component_id: string | null = null
   cad_component_id: string | null = null
+  _reportedInvalidPcbCalcWarnings = new Set<string>()
   fallbackUnassignedName?: string
 
   constructor(props: z.input<ZodProps>) {
@@ -281,6 +282,21 @@ export abstract class PrimitiveComponent<
       )
 
       if (includesComponentVariable && !allowComponentVariables) {
+        if (
+          this._isInsideFootprint() &&
+          this.root &&
+          !this._reportedInvalidPcbCalcWarnings.has(axis)
+        ) {
+          this.root.db.source_invalid_component_property_error.insert({
+            source_component_id: this.source_component_id || "",
+            property_name: axis,
+            message:
+              `component-relative calc references are not supported for footprint elements (${this.componentName}); ` +
+              `${axis} will be ignored. expression="${rawValue}"`,
+            error_type: "source_invalid_component_property_error",
+          })
+          this._reportedInvalidPcbCalcWarnings.add(axis)
+        }
         return 0
       }
 
