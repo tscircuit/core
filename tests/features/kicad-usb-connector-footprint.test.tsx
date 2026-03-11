@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 
-import usb3AFootprint from "tests/fixtures/assets/external-usb3-a-footprint.json"
+import { kicadLoader } from "tests/fixtures/kicadLoader"
 
 test(
   "kicad USB connector footprint loads correctly",
@@ -10,19 +10,7 @@ test(
     const { circuit } = getTestFixture({
       platform: {
         footprintLibraryMap: {
-          kicad: async (footprintName: string) => {
-            if (footprintName === "Connector_USB/USB3_A_Molex_48393-001") {
-              const filtered = usb3AFootprint.filter((el) =>
-                el?.type === "pcb_silkscreen_text"
-                  ? el?.text === "REF**"
-                  : true,
-              )
-              return { footprintCircuitJson: filtered }
-            }
-            throw new Error(
-              `Footprint "${footprintName}" not found in local mock`,
-            )
-          },
+          kicad: kicadLoader,
         },
       },
     })

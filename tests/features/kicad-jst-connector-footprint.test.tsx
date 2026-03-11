@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 
-import jstPhSm4Footprint from "tests/fixtures/assets/external-jst-ph-sm4-footprint.json"
+import { kicadLoader } from "tests/fixtures/kicadLoader"
 
 test(
   "kicad JST connector footprint loads correctly",
@@ -10,22 +10,7 @@ test(
     const { circuit } = getTestFixture({
       platform: {
         footprintLibraryMap: {
-          kicad: async (footprintName: string) => {
-            if (
-              footprintName ===
-              "Connector_JST/JST_PH_B2B-PH-SM4-TB_1x02-1MP_P2.00mm_Vertical"
-            ) {
-              const filtered = jstPhSm4Footprint.filter((el) =>
-                el?.type === "pcb_silkscreen_text"
-                  ? el?.text === "REF**"
-                  : true,
-              )
-              return { footprintCircuitJson: filtered }
-            }
-            throw new Error(
-              `Footprint "${footprintName}" not found in local mock`,
-            )
-          },
+          kicad: kicadLoader,
         },
       },
     })
