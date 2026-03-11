@@ -104,12 +104,12 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       "port",
     ) as Port[]
 
-    if (!this.props.portHints) {
+    if (!this._parsedProps.portHints) {
       return
     }
 
     for (const port of parentPorts) {
-      if (port.isMatchingAnyOf(this.props.portHints)) {
+      if (port.isMatchingAnyOf(this._parsedProps.portHints)) {
         this.matchedPort = port
         port.registerMatch(this)
         return
