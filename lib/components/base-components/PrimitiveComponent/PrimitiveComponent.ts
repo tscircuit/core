@@ -15,6 +15,7 @@ import {
   evaluateCalcString,
   extractCalcIdentifiers,
 } from "lib/utils/evaluateCalcString"
+import { getSubcircuitPcbCalcVariables } from "lib/utils/getSubcircuitPcbCalcVariables"
 import { getResolvedPcbSx } from "lib/utils/pcbSx/get-resolved-pcb-sx"
 import type {
   SchematicBoxComponentDimensions,
@@ -234,7 +235,10 @@ export abstract class PrimitiveComponent<
 
     const allowBoardVariables =
       options.allowBoardVariables ?? this._shouldAllowBoardVariablesByDefault()
-    const allowComponentVariables = options.allowComponentVariables ?? false
+    const isNormalComponent = (this as any)._isNormalComponent === true
+    const allowComponentVariables =
+      options.allowComponentVariables ??
+      (!isNormalComponent && !this._isInsideFootprint())
     const includesBoardVariable = rawValue.includes("board.")
 
     const knownVariables: Record<string, number> = {}
@@ -263,6 +267,10 @@ export abstract class PrimitiveComponent<
     }
 
     if (allowComponentVariables) {
+      const db = this.root?.db
+      if (db) {
+        Object.assign(knownVariables, getSubcircuitPcbCalcVariables(db))
+      }
       Object.assign(knownVariables, options.componentVariables ?? {})
     }
 
