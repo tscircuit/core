@@ -129,9 +129,15 @@ export function Group_doInitialPcbCalcPlacementResolution(
     const pcbComponent = db.pcb_component.get(component.pcb_component_id)
     if (!pcbComponent) return
 
-    const rawPcbX = (component._parsedProps as any).pcbX
-    const rawPcbY = (component._parsedProps as any).pcbY
     const rawComponentProps = component.props as any
+    const rawPcbX =
+      typeof rawComponentProps.pcbX === "string"
+        ? rawComponentProps.pcbX
+        : (component._parsedProps as any).pcbX
+    const rawPcbY =
+      typeof rawComponentProps.pcbY === "string"
+        ? rawComponentProps.pcbY
+        : (component._parsedProps as any).pcbY
     const rawPcbLeftEdgeX =
       (component._parsedProps as any).pcbLeftEdgeX ??
       rawComponentProps.pcbLeftEdgeX
@@ -242,8 +248,10 @@ function shouldResolvePlacementInCalcPhase(
   const parsedProps = component._parsedProps as any
   const rawProps = component.props as any
 
-  const pcbX = parsedProps.pcbX
-  const pcbY = parsedProps.pcbY
+  const pcbX =
+    typeof rawProps.pcbX === "string" ? rawProps.pcbX : parsedProps.pcbX
+  const pcbY =
+    typeof rawProps.pcbY === "string" ? rawProps.pcbY : parsedProps.pcbY
   const pcbLeftEdgeX = parsedProps.pcbLeftEdgeX ?? rawProps.pcbLeftEdgeX
   const pcbRightEdgeX = parsedProps.pcbRightEdgeX ?? rawProps.pcbRightEdgeX
   const pcbTopEdgeY = parsedProps.pcbTopEdgeY ?? rawProps.pcbTopEdgeY
@@ -286,9 +294,15 @@ function getComponentRefsForCalcPlacement(
   component: NormalComponent,
 ): Set<string> {
   const refs = new Set<string>()
-  const rawPcbX = (component._parsedProps as any).pcbX
-  const rawPcbY = (component._parsedProps as any).pcbY
   const rawComponentProps = component.props as any
+  const rawPcbX =
+    typeof rawComponentProps.pcbX === "string"
+      ? rawComponentProps.pcbX
+      : (component._parsedProps as any).pcbX
+  const rawPcbY =
+    typeof rawComponentProps.pcbY === "string"
+      ? rawComponentProps.pcbY
+      : (component._parsedProps as any).pcbY
   const rawPcbLeftEdgeX =
     (component._parsedProps as any).pcbLeftEdgeX ??
     rawComponentProps.pcbLeftEdgeX
@@ -303,7 +317,12 @@ function getComponentRefsForCalcPlacement(
 
   const addRefs = (rawValue: unknown) => {
     if (typeof rawValue !== "string") return
-    const identifiers = extractCalcIdentifiers(rawValue)
+    let identifiers: string[] = []
+    try {
+      identifiers = extractCalcIdentifiers(rawValue)
+    } catch {
+      return
+    }
     for (const identifier of identifiers) {
       if (!identifier.startsWith("board.")) {
         refs.add(identifier)

@@ -160,6 +160,23 @@ export abstract class PrimitiveComponent<
   pcb_component_id: string | null = null
   cad_component_id: string | null = null
   _reportedInvalidPcbCalcWarnings = new Set<string>()
+
+  private _reportInvalidComponentPropertyError(
+    propertyName: string,
+    message: string,
+  ): void {
+    if (!this.root || this._reportedInvalidPcbCalcWarnings.has(propertyName)) {
+      return
+    }
+
+    this.root.db.source_invalid_component_property_error.insert({
+      source_component_id: this.source_component_id || "",
+      property_name: propertyName,
+      message,
+      error_type: "source_invalid_component_property_error",
+    })
+    this._reportedInvalidPcbCalcWarnings.add(propertyName)
+  }
   fallbackUnassignedName?: string
 
   constructor(props: z.input<ZodProps>) {
@@ -227,7 +244,16 @@ export abstract class PrimitiveComponent<
     } = {},
   ): number {
     if (rawValue == null) return 0
-    if (typeof rawValue === "number") return rawValue
+    if (typeof rawValue === "number") {
+      if (Number.isNaN(rawValue)) {
+        this._reportInvalidComponentPropertyError(
+          axis,
+          `Invalid ${axis} value for ${this.componentName}: value is NaN`,
+        )
+        return 0
+      }
+      return rawValue
+    }
     if (typeof rawValue !== "string") {
       throw new Error(
         `Invalid ${axis} value for ${this.componentName}: ${String(rawValue)}`,
@@ -282,20 +308,12 @@ export abstract class PrimitiveComponent<
       )
 
       if (includesComponentVariable && !allowComponentVariables) {
-        if (
-          this._isInsideFootprint() &&
-          this.root &&
-          !this._reportedInvalidPcbCalcWarnings.has(axis)
-        ) {
-          this.root.db.source_invalid_component_property_error.insert({
-            source_component_id: this.source_component_id || "",
-            property_name: axis,
-            message:
-              `component-relative calc references are not supported for footprint elements (${this.componentName}); ` +
+        if (this._isInsideFootprint() && this.root) {
+          this._reportInvalidComponentPropertyError(
+            axis,
+            `component-relative calc references are not supported for footprint elements (${this.componentName}); ` +
               `${axis} will be ignored. expression="${rawValue}"`,
-            error_type: "source_invalid_component_property_error",
-          })
-          this._reportedInvalidPcbCalcWarnings.add(axis)
+          )
         }
         return 0
       }
@@ -303,9 +321,11 @@ export abstract class PrimitiveComponent<
       return evaluateCalcString(rawValue, { knownVariables })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      throw new Error(
-        `Invalid ${axis} value for ${this.componentName}: ${message}`,
+      this._reportInvalidComponentPropertyError(
+        axis,
+        `Invalid ${axis} value for ${this.componentName}: ${message}. expression="${rawValue}"`,
       )
+      return 0
     }
   }
 
