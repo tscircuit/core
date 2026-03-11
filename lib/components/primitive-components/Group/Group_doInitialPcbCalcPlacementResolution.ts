@@ -129,9 +129,9 @@ export function Group_doInitialPcbCalcPlacementResolution(
     const pcbComponent = db.pcb_component.get(component.pcb_component_id)
     if (!pcbComponent) return
 
-    const rawComponentProps = component.props as any
     const rawPcbX = (component._parsedProps as any).pcbX
     const rawPcbY = (component._parsedProps as any).pcbY
+    const rawComponentProps = component.props as any
     const rawPcbLeftEdgeX =
       (component._parsedProps as any).pcbLeftEdgeX ??
       rawComponentProps.pcbLeftEdgeX
@@ -286,9 +286,9 @@ function getComponentRefsForCalcPlacement(
   component: NormalComponent,
 ): Set<string> {
   const refs = new Set<string>()
-  const rawComponentProps = component.props as any
   const rawPcbX = (component._parsedProps as any).pcbX
   const rawPcbY = (component._parsedProps as any).pcbY
+  const rawComponentProps = component.props as any
   const rawPcbLeftEdgeX =
     (component._parsedProps as any).pcbLeftEdgeX ??
     rawComponentProps.pcbLeftEdgeX
