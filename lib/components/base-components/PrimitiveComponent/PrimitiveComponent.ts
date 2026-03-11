@@ -246,11 +246,13 @@ export abstract class PrimitiveComponent<
     if (rawValue == null) return 0
     if (typeof rawValue === "number") {
       if (Number.isNaN(rawValue)) {
-        this._reportInvalidComponentPropertyError(
-          axis,
-          `Invalid ${axis} value for ${this.componentName}: value is NaN`,
-        )
-        return 0
+        const rawAxisProp = (this.props as any)?.[axis]
+        const hasRawCalcString =
+          typeof rawAxisProp === "string" &&
+          rawAxisProp.trim().toLowerCase().startsWith("calc")
+        if (hasRawCalcString) {
+          return this._resolvePcbCoordinate(rawAxisProp, axis, options)
+        }
       }
       return rawValue
     }

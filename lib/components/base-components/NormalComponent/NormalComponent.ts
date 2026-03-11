@@ -1721,19 +1721,14 @@ export class NormalComponent<
     const props = this._parsedProps
     const rawProps = this.props as any
 
-    const rawPcbX =
-      typeof rawProps.pcbX === "string" ? rawProps.pcbX : props.pcbX
-    const rawPcbY =
-      typeof rawProps.pcbY === "string" ? rawProps.pcbY : props.pcbY
-
     const pcbLeftEdgeX = props.pcbLeftEdgeX ?? rawProps.pcbLeftEdgeX
     const pcbRightEdgeX = props.pcbRightEdgeX ?? rawProps.pcbRightEdgeX
     const pcbTopEdgeY = props.pcbTopEdgeY ?? rawProps.pcbTopEdgeY
     const pcbBottomEdgeY = props.pcbBottomEdgeY ?? rawProps.pcbBottomEdgeY
 
     const hasExplicitPcbPosition =
-      rawPcbX !== undefined ||
-      rawPcbY !== undefined ||
+      props.pcbX !== undefined ||
+      props.pcbY !== undefined ||
       pcbLeftEdgeX !== undefined ||
       pcbRightEdgeX !== undefined ||
       pcbTopEdgeY !== undefined ||
@@ -1765,8 +1760,8 @@ export class NormalComponent<
 
     const resolvedPcbX =
       this._resolvedPcbCalcOffsetX ??
-      (rawPcbX !== undefined
-        ? this._resolvePcbCoordinate(rawPcbX, "pcbX")
+      (props.pcbX !== undefined
+        ? this._resolvePcbCoordinate(props.pcbX, "pcbX")
         : pcbLeftEdgeX !== undefined
           ? this._resolvePcbCoordinate(pcbLeftEdgeX, "pcbX") +
             componentWidth / 2
@@ -1777,8 +1772,8 @@ export class NormalComponent<
 
     const resolvedPcbY =
       this._resolvedPcbCalcOffsetY ??
-      (rawPcbY !== undefined
-        ? this._resolvePcbCoordinate(rawPcbY, "pcbY")
+      (props.pcbY !== undefined
+        ? this._resolvePcbCoordinate(props.pcbY, "pcbY")
         : pcbTopEdgeY !== undefined
           ? this._resolvePcbCoordinate(pcbTopEdgeY, "pcbY") -
             componentHeight / 2

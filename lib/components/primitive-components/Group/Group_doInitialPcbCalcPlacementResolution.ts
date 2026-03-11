@@ -130,14 +130,8 @@ export function Group_doInitialPcbCalcPlacementResolution(
     if (!pcbComponent) return
 
     const rawComponentProps = component.props as any
-    const rawPcbX =
-      typeof rawComponentProps.pcbX === "string"
-        ? rawComponentProps.pcbX
-        : (component._parsedProps as any).pcbX
-    const rawPcbY =
-      typeof rawComponentProps.pcbY === "string"
-        ? rawComponentProps.pcbY
-        : (component._parsedProps as any).pcbY
+    const rawPcbX = (component._parsedProps as any).pcbX
+    const rawPcbY = (component._parsedProps as any).pcbY
     const rawPcbLeftEdgeX =
       (component._parsedProps as any).pcbLeftEdgeX ??
       rawComponentProps.pcbLeftEdgeX
@@ -248,10 +242,8 @@ function shouldResolvePlacementInCalcPhase(
   const parsedProps = component._parsedProps as any
   const rawProps = component.props as any
 
-  const pcbX =
-    typeof rawProps.pcbX === "string" ? rawProps.pcbX : parsedProps.pcbX
-  const pcbY =
-    typeof rawProps.pcbY === "string" ? rawProps.pcbY : parsedProps.pcbY
+  const pcbX = parsedProps.pcbX
+  const pcbY = parsedProps.pcbY
   const pcbLeftEdgeX = parsedProps.pcbLeftEdgeX ?? rawProps.pcbLeftEdgeX
   const pcbRightEdgeX = parsedProps.pcbRightEdgeX ?? rawProps.pcbRightEdgeX
   const pcbTopEdgeY = parsedProps.pcbTopEdgeY ?? rawProps.pcbTopEdgeY
@@ -295,14 +287,8 @@ function getComponentRefsForCalcPlacement(
 ): Set<string> {
   const refs = new Set<string>()
   const rawComponentProps = component.props as any
-  const rawPcbX =
-    typeof rawComponentProps.pcbX === "string"
-      ? rawComponentProps.pcbX
-      : (component._parsedProps as any).pcbX
-  const rawPcbY =
-    typeof rawComponentProps.pcbY === "string"
-      ? rawComponentProps.pcbY
-      : (component._parsedProps as any).pcbY
+  const rawPcbX = (component._parsedProps as any).pcbX
+  const rawPcbY = (component._parsedProps as any).pcbY
   const rawPcbLeftEdgeX =
     (component._parsedProps as any).pcbLeftEdgeX ??
     rawComponentProps.pcbLeftEdgeX
