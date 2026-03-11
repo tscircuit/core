@@ -453,7 +453,7 @@ export class NormalComponent<
     if (typeof footprint === "string") {
       if (isHttpUrl(footprint)) return
       if (isStaticAssetPath(footprint)) return
-      if (footprint.includes(":")) return
+      if (parseLibraryFootprintRef(footprint)) return
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         {
@@ -799,9 +799,7 @@ export class NormalComponent<
         ? { kicad_footprint: props.kicadFootprintMetadata }
         : undefined,
     })
-
-    const footprint =
-      this.getFootprinterString() ?? this._getImpliedFootprintString()
+    const footprint = this.getFootprinterString()
 
     // Check if we have a Footprint child (e.g., from inflated circuit JSON)
     const hasFootprintChild = this.children.some(
@@ -1129,7 +1127,7 @@ export class NormalComponent<
     if (typeof footprint === "string") {
       if (isHttpUrl(footprint)) return []
       if (isStaticAssetPath(footprint)) return []
-      if (footprint.includes(":")) return []
+      if (parseLibraryFootprintRef(footprint)) return []
       const fpSoup = fp.string(footprint).soup()
 
       const newPorts: Port[] = []
@@ -1390,13 +1388,11 @@ export class NormalComponent<
   }
 
   getFootprinterString(): string | null {
-    const footprint = this._parsedProps.footprint
+    const footprint =
+      this._parsedProps.footprint ?? this._getImpliedFootprintString?.()
     if (typeof footprint === "string") {
       const libRef = parseLibraryFootprintRef(footprint)
-      if (libRef?.footprintLib === "kicad") {
-        return libRef.footprintName
-      }
-      return footprint
+      return libRef ? libRef.footprintName : footprint
     }
     return null
   }
@@ -1409,8 +1405,7 @@ export class NormalComponent<
     const cadModelProp = this._parsedProps.cadModel
     const cadModel =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
-    const footprint =
-      this.getFootprinterString() ?? this._getImpliedFootprintString()
+    const footprint = this.getFootprinterString()
 
     if (!this.pcb_component_id) return
     if (!cadModel && !footprint) return
