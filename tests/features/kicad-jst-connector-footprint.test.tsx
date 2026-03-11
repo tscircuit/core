@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 
-const KICAD_FOOTPRINT_CACHE_URL = "https://kicad-mod-cache.tscircuit.com"
+import { kicadLoader } from "tests/fixtures/kicadLoader"
 
 test(
   "kicad JST connector footprint loads correctly",
@@ -10,21 +10,7 @@ test(
     const { circuit } = getTestFixture({
       platform: {
         footprintLibraryMap: {
-          kicad: async (footprintName: string) => {
-            const baseUrl = `${KICAD_FOOTPRINT_CACHE_URL}/${footprintName}`
-            const circuitJsonUrl = `${baseUrl}.circuit.json`
-            const res = await fetch(circuitJsonUrl)
-            if (!res.ok) {
-              throw new Error(
-                `Failed to load KiCad footprint "${footprintName}" (HTTP ${res.status})`,
-              )
-            }
-            const raw: any[] = await res.json()
-            const filtered = raw.filter((el) =>
-              el?.type === "pcb_silkscreen_text" ? el?.text === "REF**" : true,
-            )
-            return { footprintCircuitJson: filtered }
-          },
+          kicad: kicadLoader,
         },
       },
     })

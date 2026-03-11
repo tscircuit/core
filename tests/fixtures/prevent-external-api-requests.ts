@@ -2,6 +2,7 @@ const blockedHosts = new Set([
   "registry-api.tscircuit.com",
   "api.tscircuit.com",
   "jlcsearch.tscircuit.com",
+  "kicad-mod-cache.tscircuit.com",
 ])
 
 export const preventExternalApiRequests = () => {
