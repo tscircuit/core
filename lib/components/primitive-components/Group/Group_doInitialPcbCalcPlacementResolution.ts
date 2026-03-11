@@ -3,7 +3,7 @@ import type { AnyCircuitElement } from "circuit-json"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { extractCalcIdentifiers } from "lib/utils/evaluateCalcString"
-import { setNamedPcbComponentCalcVariables } from "lib/utils/getNamedPcbCalcVariables"
+import { setSubcircuitPcbComponentCalcVariables } from "lib/utils/getSubcircuitPcbCalcVariables"
 import type { Group } from "./Group"
 
 const SUPPORTED_COMPONENT_FIELDS = new Set([
@@ -385,7 +385,7 @@ function updateVarsForNamedComponent(
   const x = pcbComponent.center.x
   const y = pcbComponent.center.y
 
-  setNamedPcbComponentCalcVariables({
+  setSubcircuitPcbComponentCalcVariables({
     vars,
     componentName: component.name,
     position: { x, y },

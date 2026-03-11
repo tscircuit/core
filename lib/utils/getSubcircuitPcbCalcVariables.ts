@@ -1,6 +1,6 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 
-export function setNamedPcbComponentCalcVariables(params: {
+export function setSubcircuitPcbComponentCalcVariables(params: {
   vars: Record<string, number>
   componentName: string
   position: { x: number; y: number }
@@ -18,7 +18,7 @@ export function setNamedPcbComponentCalcVariables(params: {
   vars[`${componentName}.maxY`] = position.y + size.height / 2
 }
 
-export function getNamedPcbCalcVariables(
+export function getSubcircuitPcbCalcVariables(
   db: CircuitJsonUtilObjects,
 ): Record<string, number> {
   const vars: Record<string, number> = {}
@@ -31,7 +31,7 @@ export function getNamedPcbCalcVariables(
     })
     if (!pcbComponent) continue
 
-    setNamedPcbComponentCalcVariables({
+    setSubcircuitPcbComponentCalcVariables({
       vars,
       componentName: sourceComponent.name,
       position: {

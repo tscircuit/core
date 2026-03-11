@@ -15,7 +15,7 @@ import {
   evaluateCalcString,
   extractCalcIdentifiers,
 } from "lib/utils/evaluateCalcString"
-import { getNamedPcbCalcVariables } from "lib/utils/getNamedPcbCalcVariables"
+import { getSubcircuitPcbCalcVariables } from "lib/utils/getSubcircuitPcbCalcVariables"
 import { getResolvedPcbSx } from "lib/utils/pcbSx/get-resolved-pcb-sx"
 import type {
   SchematicBoxComponentDimensions,
@@ -269,7 +269,7 @@ export abstract class PrimitiveComponent<
     if (allowComponentVariables) {
       const db = this.root?.db
       if (db) {
-        Object.assign(knownVariables, getNamedPcbCalcVariables(db))
+        Object.assign(knownVariables, getSubcircuitPcbCalcVariables(db))
       }
       Object.assign(knownVariables, options.componentVariables ?? {})
     }
