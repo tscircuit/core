@@ -35,11 +35,10 @@ test("pcb calc reports invalid property when primitive component-relative refs a
     .filter((element) => "message" in element)
     .map((element) => element.message)
     .join("\n")
-  expect(message).toContain(
-    "component-relative calc references are not supported for footprint elements",
-  )
-  expect(message).toContain("SmtPad")
-  expect(message).toContain('expression="calc(R1.maxX + 1mm)"')
+  expect(message).toMatchInlineSnapshot(`
+    "Invalid pcbX value for SmtPad: component-relative calc references are not supported for footprint elements (SmtPad); pcbX will be ignored. expression="calc(R1.maxX + 1mm)"
+    Invalid pcbY value for SmtPad: component-relative calc references are not supported for footprint elements (SmtPad); pcbY will be ignored. expression="calc(R1.y)""
+  `)
 
   expect(
     invalidPropertyErrors.some(

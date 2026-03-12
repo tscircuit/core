@@ -1713,6 +1713,69 @@ export class NormalComponent<
     NormalComponent_doInitialSourceDesignRuleChecks(this)
   }
 
+  doInitialValidatePcbCoordinates(): void {
+    super.doInitialValidatePcbCoordinates()
+    if (this.root?.pcbDisabled) return
+
+    const props = this._parsedProps
+    const rawProps = this.props
+
+    const pcbLeftEdgeX =
+      typeof rawProps.pcbLeftEdgeX === "string"
+        ? rawProps.pcbLeftEdgeX
+        : (props.pcbLeftEdgeX ?? rawProps.pcbLeftEdgeX)
+    const pcbRightEdgeX =
+      typeof rawProps.pcbRightEdgeX === "string"
+        ? rawProps.pcbRightEdgeX
+        : (props.pcbRightEdgeX ?? rawProps.pcbRightEdgeX)
+    const pcbTopEdgeY =
+      typeof rawProps.pcbTopEdgeY === "string"
+        ? rawProps.pcbTopEdgeY
+        : (props.pcbTopEdgeY ?? rawProps.pcbTopEdgeY)
+    const pcbBottomEdgeY =
+      typeof rawProps.pcbBottomEdgeY === "string"
+        ? rawProps.pcbBottomEdgeY
+        : (props.pcbBottomEdgeY ?? rawProps.pcbBottomEdgeY)
+
+    const hasExplicitPcbPosition =
+      props.pcbX !== undefined ||
+      props.pcbY !== undefined ||
+      pcbLeftEdgeX !== undefined ||
+      pcbRightEdgeX !== undefined ||
+      pcbTopEdgeY !== undefined ||
+      pcbBottomEdgeY !== undefined
+    if (!hasExplicitPcbPosition) return
+
+    if (pcbLeftEdgeX !== undefined) {
+      this._validatePcbCoordinateReferences({
+        rawValue: pcbLeftEdgeX,
+        axis: "pcbX",
+        propertyNameForError: "pcbLeftEdgeX",
+      })
+    }
+    if (pcbRightEdgeX !== undefined) {
+      this._validatePcbCoordinateReferences({
+        rawValue: pcbRightEdgeX,
+        axis: "pcbX",
+        propertyNameForError: "pcbRightEdgeX",
+      })
+    }
+    if (pcbTopEdgeY !== undefined) {
+      this._validatePcbCoordinateReferences({
+        rawValue: pcbTopEdgeY,
+        axis: "pcbY",
+        propertyNameForError: "pcbTopEdgeY",
+      })
+    }
+    if (pcbBottomEdgeY !== undefined) {
+      this._validatePcbCoordinateReferences({
+        rawValue: pcbBottomEdgeY,
+        axis: "pcbY",
+        propertyNameForError: "pcbBottomEdgeY",
+      })
+    }
+  }
+
   doInitialPcbLayout(): void {
     if (this.root?.pcbDisabled) return
     if (!this.pcb_component_id) return
