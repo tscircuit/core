@@ -265,23 +265,25 @@ export abstract class PrimitiveComponent<
     const allowComponentVariables =
       !isNormalComponent && !this._isInsideFootprint()
 
+    let calcIdentifiers: string[] = []
     try {
-      const calcIdentifiers = extractCalcIdentifiers(rawValue)
-      const includesComponentVariable = calcIdentifiers.some(
-        (identifier) => !identifier.startsWith("board."),
-      )
-
-      if (includesComponentVariable && !allowComponentVariables) {
-        throw new Error(
-          `component-relative calc references are not supported for footprint elements (${this.componentName}); ` +
-            `${propertyNameForError} will be ignored. expression="${rawValue}"`,
-        )
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
+      calcIdentifiers = extractCalcIdentifiers(rawValue)
+    } catch {
       this._reportInvalidComponentPropertyError(
         propertyNameForError,
-        `Invalid ${propertyNameForError} value for ${this.componentName}: ${message}. expression="${rawValue}"`,
+        `Invalid ${propertyNameForError} value for ${this.componentName}: Invalid calc() expression. expression="${rawValue}"`,
+      )
+      return
+    }
+
+    const includesComponentVariable = calcIdentifiers.some(
+      (identifier) => !identifier.startsWith("board."),
+    )
+
+    if (includesComponentVariable && !allowComponentVariables) {
+      this._reportInvalidComponentPropertyError(
+        propertyNameForError,
+        `Invalid ${propertyNameForError} value for ${this.componentName}: component-relative calc references are not supported for footprint elements (${this.componentName}); ${propertyNameForError} will be ignored. expression="${rawValue}"`,
       )
     }
   }

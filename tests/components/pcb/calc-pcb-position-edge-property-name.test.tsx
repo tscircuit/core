@@ -19,6 +19,13 @@ test("validate pcb coordinates reports original edge property name", () => {
 
   const invalidPropertyErrors =
     circuit.db.source_invalid_component_property_error.list()
+  const message = invalidPropertyErrors
+    .filter((element) => "message" in element)
+    .map((element) => element.message)
+    .join("\n")
+  expect(message).toMatchInlineSnapshot(
+    `"Invalid pcbLeftEdgeX value for Resistor: Invalid calc() expression. expression="calc board.minX + 1mm)""`,
+  )
 
   expect(
     invalidPropertyErrors.some(
