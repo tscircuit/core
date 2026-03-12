@@ -1750,28 +1750,28 @@ export class NormalComponent<
       this._validatePcbCoordinateReferences({
         rawValue: pcbLeftEdgeX,
         axis: "pcbX",
-        propertyNameForError: "pcbLeftEdgeX",
+        propertyName: "pcbLeftEdgeX",
       })
     }
     if (pcbRightEdgeX !== undefined) {
       this._validatePcbCoordinateReferences({
         rawValue: pcbRightEdgeX,
         axis: "pcbX",
-        propertyNameForError: "pcbRightEdgeX",
+        propertyName: "pcbRightEdgeX",
       })
     }
     if (pcbTopEdgeY !== undefined) {
       this._validatePcbCoordinateReferences({
         rawValue: pcbTopEdgeY,
         axis: "pcbY",
-        propertyNameForError: "pcbTopEdgeY",
+        propertyName: "pcbTopEdgeY",
       })
     }
     if (pcbBottomEdgeY !== undefined) {
       this._validatePcbCoordinateReferences({
         rawValue: pcbBottomEdgeY,
         axis: "pcbY",
-        propertyNameForError: "pcbBottomEdgeY",
+        propertyName: "pcbBottomEdgeY",
       })
     }
   }
@@ -1826,10 +1826,14 @@ export class NormalComponent<
       (props.pcbX !== undefined
         ? this._resolvePcbCoordinate(props.pcbX, "pcbX")
         : pcbLeftEdgeX !== undefined
-          ? this._resolvePcbCoordinate(pcbLeftEdgeX, "pcbX") +
+          ? this._resolvePcbCoordinate(pcbLeftEdgeX, "pcbX", {
+              propertyName: "pcbLeftEdgeX",
+            }) +
             componentWidth / 2
           : pcbRightEdgeX !== undefined
-            ? this._resolvePcbCoordinate(pcbRightEdgeX, "pcbX") -
+            ? this._resolvePcbCoordinate(pcbRightEdgeX, "pcbX", {
+                propertyName: "pcbRightEdgeX",
+              }) -
               componentWidth / 2
             : undefined)
 
@@ -1838,10 +1842,14 @@ export class NormalComponent<
       (props.pcbY !== undefined
         ? this._resolvePcbCoordinate(props.pcbY, "pcbY")
         : pcbTopEdgeY !== undefined
-          ? this._resolvePcbCoordinate(pcbTopEdgeY, "pcbY") -
+          ? this._resolvePcbCoordinate(pcbTopEdgeY, "pcbY", {
+              propertyName: "pcbTopEdgeY",
+            }) -
             componentHeight / 2
           : pcbBottomEdgeY !== undefined
-            ? this._resolvePcbCoordinate(pcbBottomEdgeY, "pcbY") +
+            ? this._resolvePcbCoordinate(pcbBottomEdgeY, "pcbY", {
+                propertyName: "pcbBottomEdgeY",
+              }) +
               componentHeight / 2
             : undefined)
 

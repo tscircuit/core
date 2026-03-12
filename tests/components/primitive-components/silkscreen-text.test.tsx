@@ -29,3 +29,31 @@ test("SilkscreenText rendering", () => {
 
   expect(project).toMatchPcbSnapshot(import.meta.path)
 })
+
+test("SilkscreenText malformed calc does not throw and reports validation error", () => {
+  const { project } = getTestFixture()
+
+  project.add(
+    <board width="10mm" height="10mm">
+      <silkscreentext text="Bad Calc" pcbX="calc board.minX + 1mm)" pcbY={0} />
+    </board>,
+  )
+
+  project.render()
+
+  const invalidPropertyErrors =
+    project.db.source_invalid_component_property_error.list()
+  expect(invalidPropertyErrors.length).toBeGreaterThan(0)
+
+  const message = invalidPropertyErrors
+    .filter((element) => "message" in element)
+    .map((element) => element.message)
+    .join("\n")
+  expect(message).toMatchInlineSnapshot(
+    `"Invalid pcbX value for SilkscreenText: Invalid calc() expression. expression="calc board.minX + 1mm)""`,
+  )
+
+  const silkscreenTexts = project.db.pcb_silkscreen_text.list()
+  expect(silkscreenTexts.length).toBe(1)
+  expect(silkscreenTexts[0].anchor_position.x).toBe(0)
+})

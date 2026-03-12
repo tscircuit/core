@@ -97,14 +97,14 @@ export class SilkscreenText extends PrimitiveComponent<
               isFlipped ? flipY() : identity(),
             ),
             {
-              x: this.resolvePcbCoordinate(
-                resolvedPcbSxPcbX ?? props.pcbX ?? 0,
-                "pcbX",
-              ),
-              y: this.resolvePcbCoordinate(
-                resolvedPcbSxPcbY ?? props.pcbY ?? 0,
-                "pcbY",
-              ),
+              x: this.resolvePcbCoordinate({
+                rawValue: resolvedPcbSxPcbX ?? props.pcbX ?? 0,
+                axis: "pcbX",
+              }),
+              y: this.resolvePcbCoordinate({
+                rawValue: resolvedPcbSxPcbY ?? props.pcbY ?? 0,
+                axis: "pcbY",
+              }),
             },
           )
         : this._getGlobalPcbPositionBeforeLayout()
