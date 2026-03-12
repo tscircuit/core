@@ -68,12 +68,18 @@ test("calc expressions using board bounds fail for auto-sized boards", () => {
     </board>,
   )
 
-  try {
-    circuit.render()
-    throw new Error("render should have thrown")
-  } catch (error) {
-    expect((error as Error).message).toContain(
-      "Cannot do calculations based on board size when the board is auto-sized",
-    )
-  }
+  circuit.render()
+
+  const invalidPropertyErrors =
+    circuit.db.source_invalid_component_property_error.list()
+  expect(invalidPropertyErrors.length).toBeGreaterThan(0)
+
+  const message = invalidPropertyErrors
+    .filter((element) => "message" in element)
+    .map((element) => element.message)
+    .join("\n")
+
+  expect(message).toContain(
+    "Cannot do calculations based on board size when the board is auto-sized",
+  )
 })

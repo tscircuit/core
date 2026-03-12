@@ -257,9 +257,11 @@ export abstract class PrimitiveComponent<
       return rawValue
     }
     if (typeof rawValue !== "string") {
-      throw new Error(
+      this._reportInvalidComponentPropertyError(
+        axis,
         `Invalid ${axis} value for ${this.componentName}: ${String(rawValue)}`,
       )
+      return 0
     }
 
     const allowBoardVariables =
@@ -277,9 +279,11 @@ export abstract class PrimitiveComponent<
       const boardVariables = board?._getBoardCalcVariables() ?? {}
 
       if (includesBoardVariable && !board) {
-        throw new Error(
-          `Cannot resolve ${axis} for ${this.componentName}: no board found for board.* variables`,
+        this._reportInvalidComponentPropertyError(
+          axis,
+          `Invalid ${axis} value for ${this.componentName}: no board found for board.* variables. expression="${rawValue}"`,
         )
+        return 0
       }
 
       if (
@@ -287,9 +291,11 @@ export abstract class PrimitiveComponent<
         board &&
         Object.keys(boardVariables).length === 0
       ) {
-        throw new Error(
-          "Cannot do calculations based on board size when the board is auto-sized",
+        this._reportInvalidComponentPropertyError(
+          axis,
+          `Invalid ${axis} value for ${this.componentName}: Cannot do calculations based on board size when the board is auto-sized. expression="${rawValue}"`,
         )
+        return 0
       }
 
       Object.assign(knownVariables, boardVariables)
