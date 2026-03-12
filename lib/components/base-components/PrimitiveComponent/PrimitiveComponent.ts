@@ -244,21 +244,21 @@ export abstract class PrimitiveComponent<
     this._validatePcbCoordinateReferences({
       rawValue: rawPcbX,
       axis: "pcbX",
-      propertyNameForError: "pcbX",
+      propertyName: "pcbX",
     })
     this._validatePcbCoordinateReferences({
       rawValue: rawPcbY,
       axis: "pcbY",
-      propertyNameForError: "pcbY",
+      propertyName: "pcbY",
     })
   }
 
   protected _validatePcbCoordinateReferences(params: {
     rawValue: unknown
     axis: "pcbX" | "pcbY"
-    propertyNameForError?: string
+    propertyName?: string
   }): void {
-    const { rawValue, axis, propertyNameForError = axis } = params
+    const { rawValue, axis, propertyName = axis } = params
     if (typeof rawValue !== "string") return
 
     const isNormalComponent = (this as any)._isNormalComponent === true
@@ -270,8 +270,8 @@ export abstract class PrimitiveComponent<
       calcIdentifiers = extractCalcIdentifiers(rawValue)
     } catch {
       this._reportInvalidComponentPropertyError(
-        propertyNameForError,
-        `Invalid ${propertyNameForError} value for ${this.componentName}: Invalid calc() expression. expression="${rawValue}"`,
+        propertyName,
+        `Invalid ${propertyName} value for ${this.componentName}: Invalid calc() expression. expression="${rawValue}"`,
       )
       return
     }
@@ -282,8 +282,8 @@ export abstract class PrimitiveComponent<
 
     if (includesComponentVariable && !allowComponentVariables) {
       this._reportInvalidComponentPropertyError(
-        propertyNameForError,
-        `Invalid ${propertyNameForError} value for ${this.componentName}: component-relative calc references are not supported for footprint elements (${this.componentName}); ${propertyNameForError} will be ignored. expression="${rawValue}"`,
+        propertyName,
+        `Invalid ${propertyName} value for ${this.componentName}: component-relative calc references are not supported for footprint elements (${this.componentName}); ${propertyName} will be ignored. expression="${rawValue}"`,
       )
     }
   }
@@ -295,10 +295,16 @@ export abstract class PrimitiveComponent<
       allowBoardVariables?: boolean
       allowComponentVariables?: boolean
       componentVariables?: Record<string, number>
+      propertyName?: string
     } = {},
   ): number {
     if (rawValue == null) return 0
-    if (typeof rawValue === "number") return rawValue
+    const propertyName = options.propertyName ?? axis
+
+    if (typeof rawValue === "number") {
+      if (Number.isFinite(rawValue)) return rawValue
+      return 0
+    }
     if (typeof rawValue !== "string") {
       throw new Error(
         `Invalid ${axis} value for ${this.componentName}: ${String(rawValue)}`,
@@ -320,9 +326,11 @@ export abstract class PrimitiveComponent<
       const boardVariables = board?._getBoardCalcVariables() ?? {}
 
       if (includesBoardVariable && !board) {
-        throw new Error(
-          `Cannot resolve ${axis} for ${this.componentName}: no board found for board.* variables`,
+        this._reportInvalidComponentPropertyError(
+          propertyName,
+          `Invalid ${propertyName} value for ${this.componentName}: no board found for board.* variables. expression="${rawValue}"`,
         )
+        return 0
       }
 
       if (
@@ -330,9 +338,11 @@ export abstract class PrimitiveComponent<
         board &&
         Object.keys(boardVariables).length === 0
       ) {
-        throw new Error(
-          "Cannot do calculations based on board size when the board is auto-sized",
+        this._reportInvalidComponentPropertyError(
+          propertyName,
+          `Invalid ${propertyName} value for ${this.componentName}: Cannot do calculations based on board size when the board is auto-sized. expression="${rawValue}"`,
         )
+        return 0
       }
 
       Object.assign(knownVariables, boardVariables)
@@ -374,9 +384,11 @@ export abstract class PrimitiveComponent<
       return evaluateCalcString(rawValue, { knownVariables })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      throw new Error(
-        `Invalid ${axis} value for ${this.componentName}: ${message}`,
+      this._reportInvalidComponentPropertyError(
+        propertyName,
+        `Invalid ${propertyName} value for ${this.componentName}: ${message}. expression="${rawValue}"`,
       )
+      return 0
     }
   }
 
@@ -429,16 +441,28 @@ export abstract class PrimitiveComponent<
     )
   }
 
-  resolvePcbCoordinate(
-    rawValue: unknown,
-    axis: "pcbX" | "pcbY",
-    options: {
-      allowBoardVariables?: boolean
-      allowComponentVariables?: boolean
-      componentVariables?: Record<string, number>
-    } = {},
-  ): number {
-    return this._resolvePcbCoordinate(rawValue, axis, options)
+  resolvePcbCoordinate(params: {
+    rawValue: unknown
+    axis: "pcbX" | "pcbY"
+    allowBoardVariables?: boolean
+    allowComponentVariables?: boolean
+    componentVariables?: Record<string, number>
+    propertyName?: string
+  }): number {
+    const {
+      rawValue,
+      axis,
+      allowBoardVariables,
+      allowComponentVariables,
+      componentVariables,
+      propertyName,
+    } = params
+    return this._resolvePcbCoordinate(rawValue, axis, {
+      allowBoardVariables,
+      allowComponentVariables,
+      componentVariables,
+      propertyName,
+    })
   }
 
   /**

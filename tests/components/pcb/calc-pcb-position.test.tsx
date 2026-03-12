@@ -68,12 +68,75 @@ test("calc expressions using board bounds fail for auto-sized boards", () => {
     </board>,
   )
 
-  try {
-    circuit.render()
-    throw new Error("render should have thrown")
-  } catch (error) {
-    expect((error as Error).message).toContain(
-      "Cannot do calculations based on board size when the board is auto-sized",
-    )
-  }
+  circuit.render()
+
+  const invalidPropertyErrors =
+    circuit.db.source_invalid_component_property_error.list()
+  expect(invalidPropertyErrors.length).toBeGreaterThan(0)
+
+  const message = invalidPropertyErrors
+    .filter((element) => "message" in element)
+    .map((element) => element.message)
+    .join("\n")
+  expect(message).toMatchInlineSnapshot(
+    `"Invalid pcbX value for Resistor: Cannot do calculations based on board size when the board is auto-sized. expression="calc(board.minX + 1mm)""`,
+  )
+})
+
+test("calc expressions on edge props fail for auto-sized boards", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board>
+      <resistor
+        name="R1"
+        footprint="0402"
+        resistance="1k"
+        pcbLeftEdgeX="calc(board.minX + 1mm)"
+        pcbTopEdgeY="calc(board.maxY - 1mm)"
+      />
+    </board>,
+  )
+
+  circuit.render()
+
+  const invalidPropertyErrors =
+    circuit.db.source_invalid_component_property_error.list()
+  expect(invalidPropertyErrors.length).toBeGreaterThan(0)
+
+  const message = invalidPropertyErrors
+    .filter((element) => "message" in element)
+    .map((element) => element.message)
+    .join("\n")
+  expect(message).toMatchInlineSnapshot(`
+    "Invalid pcbLeftEdgeX value for Resistor: Cannot do calculations based on board size when the board is auto-sized. expression="calc(board.minX + 1mm)"
+    Invalid pcbTopEdgeY value for Resistor: Cannot do calculations based on board size when the board is auto-sized. expression="calc(board.maxY - 1mm)""
+  `)
+})
+
+test("calc expressions using board bounds without a board report no-board error", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <resistor
+      name="R1"
+      footprint="0402"
+      resistance="1k"
+      pcbX="calc(board.minX + 1mm)"
+    />,
+  )
+
+  circuit.render()
+
+  const invalidPropertyErrors =
+    circuit.db.source_invalid_component_property_error.list()
+  expect(invalidPropertyErrors.length).toBeGreaterThan(0)
+
+  const message = invalidPropertyErrors
+    .filter((element) => "message" in element)
+    .map((element) => element.message)
+    .join("\n")
+  expect(message).toMatchInlineSnapshot(
+    `"Invalid pcbX value for Resistor: no board found for board.* variables. expression="calc(board.minX + 1mm)""`,
+  )
 })
