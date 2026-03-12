@@ -166,66 +166,78 @@ export function Group_doInitialPcbCalcPlacementResolution(
     }
 
     if (rawPcbX !== undefined) {
-      const resolvedPcbX = component.resolvePcbCoordinate(rawPcbX, "pcbX", {
-        allowComponentVariables: true,
-        componentVariables: componentVars,
-      })
-      component._resolvedPcbCalcOffsetX = resolvedPcbX
-      nextCenter.x = resolvedPcbX
-    } else if (rawPcbLeftEdgeX !== undefined) {
-      const resolvedPcbLeftEdgeX = component.resolvePcbCoordinate(
-        rawPcbLeftEdgeX,
+      const resolvedPcbX = component.resolvePcbCoordinateWithErrorReporting(
+        rawPcbX,
         "pcbX",
         {
           allowComponentVariables: true,
           componentVariables: componentVars,
         },
       )
+      component._resolvedPcbCalcOffsetX = resolvedPcbX
+      nextCenter.x = resolvedPcbX
+    } else if (rawPcbLeftEdgeX !== undefined) {
+      const resolvedPcbLeftEdgeX =
+        component.resolvePcbCoordinateWithErrorReporting(
+          rawPcbLeftEdgeX,
+          "pcbX",
+          {
+            allowComponentVariables: true,
+            componentVariables: componentVars,
+          },
+        )
       const resolvedPcbX = resolvedPcbLeftEdgeX + componentWidth / 2
       component._resolvedPcbCalcOffsetX = resolvedPcbX
       nextCenter.x = resolvedPcbX
     } else if (rawPcbRightEdgeX !== undefined) {
-      const resolvedPcbRightEdgeX = component.resolvePcbCoordinate(
-        rawPcbRightEdgeX,
-        "pcbX",
-        {
-          allowComponentVariables: true,
-          componentVariables: componentVars,
-        },
-      )
+      const resolvedPcbRightEdgeX =
+        component.resolvePcbCoordinateWithErrorReporting(
+          rawPcbRightEdgeX,
+          "pcbX",
+          {
+            allowComponentVariables: true,
+            componentVariables: componentVars,
+          },
+        )
       const resolvedPcbX = resolvedPcbRightEdgeX - componentWidth / 2
       component._resolvedPcbCalcOffsetX = resolvedPcbX
       nextCenter.x = resolvedPcbX
     }
 
     if (rawPcbY !== undefined) {
-      const resolvedPcbY = component.resolvePcbCoordinate(rawPcbY, "pcbY", {
-        allowComponentVariables: true,
-        componentVariables: componentVars,
-      })
-      component._resolvedPcbCalcOffsetY = resolvedPcbY
-      nextCenter.y = resolvedPcbY
-    } else if (rawPcbTopEdgeY !== undefined) {
-      const resolvedPcbTopEdgeY = component.resolvePcbCoordinate(
-        rawPcbTopEdgeY,
+      const resolvedPcbY = component.resolvePcbCoordinateWithErrorReporting(
+        rawPcbY,
         "pcbY",
         {
           allowComponentVariables: true,
           componentVariables: componentVars,
         },
       )
+      component._resolvedPcbCalcOffsetY = resolvedPcbY
+      nextCenter.y = resolvedPcbY
+    } else if (rawPcbTopEdgeY !== undefined) {
+      const resolvedPcbTopEdgeY =
+        component.resolvePcbCoordinateWithErrorReporting(
+          rawPcbTopEdgeY,
+          "pcbY",
+          {
+            allowComponentVariables: true,
+            componentVariables: componentVars,
+          },
+        )
       const resolvedPcbY = resolvedPcbTopEdgeY - componentHeight / 2
       component._resolvedPcbCalcOffsetY = resolvedPcbY
       nextCenter.y = resolvedPcbY
     } else if (rawPcbBottomEdgeY !== undefined) {
-      const resolvedPcbBottomEdgeY = component.resolvePcbCoordinate(
-        rawPcbBottomEdgeY,
-        "pcbY",
-        {
-          allowComponentVariables: true,
-          componentVariables: componentVars,
-        },
-      )
+      const resolvedPcbBottomEdgeY =
+        component.resolvePcbCoordinateWithErrorReporting(
+          rawPcbBottomEdgeY,
+          "pcbY",
+          {
+            allowComponentVariables: true,
+            componentVariables: componentVars,
+          },
+        )
       const resolvedPcbY = resolvedPcbBottomEdgeY + componentHeight / 2
       component._resolvedPcbCalcOffsetY = resolvedPcbY
       nextCenter.y = resolvedPcbY

@@ -229,8 +229,14 @@ export abstract class PrimitiveComponent<
 
   getResolvedPcbPositionProp(): { pcbX: number; pcbY: number } {
     return {
-      pcbX: this._resolvePcbCoordinate((this._parsedProps as any).pcbX, "pcbX"),
-      pcbY: this._resolvePcbCoordinate((this._parsedProps as any).pcbY, "pcbY"),
+      pcbX: this.resolvePcbCoordinateWithErrorReporting(
+        (this._parsedProps as any).pcbX,
+        "pcbX",
+      ),
+      pcbY: this.resolvePcbCoordinateWithErrorReporting(
+        (this._parsedProps as any).pcbY,
+        "pcbY",
+      ),
     }
   }
 
@@ -253,15 +259,16 @@ export abstract class PrimitiveComponent<
         if (hasRawCalcString) {
           return this._resolvePcbCoordinate(rawAxisProp, axis, options)
         }
+        throw new Error(
+          `Invalid ${axis} value for ${this.componentName}: value is NaN`,
+        )
       }
       return rawValue
     }
     if (typeof rawValue !== "string") {
-      this._reportInvalidComponentPropertyError(
-        axis,
+      throw new Error(
         `Invalid ${axis} value for ${this.componentName}: ${String(rawValue)}`,
       )
-      return 0
     }
 
     const allowBoardVariables =
@@ -279,11 +286,9 @@ export abstract class PrimitiveComponent<
       const boardVariables = board?._getBoardCalcVariables() ?? {}
 
       if (includesBoardVariable && !board) {
-        this._reportInvalidComponentPropertyError(
-          axis,
+        throw new Error(
           `Invalid ${axis} value for ${this.componentName}: no board found for board.* variables. expression="${rawValue}"`,
         )
-        return 0
       }
 
       if (
@@ -291,11 +296,9 @@ export abstract class PrimitiveComponent<
         board &&
         Object.keys(boardVariables).length === 0
       ) {
-        this._reportInvalidComponentPropertyError(
-          axis,
+        throw new Error(
           `Invalid ${axis} value for ${this.componentName}: Cannot do calculations based on board size when the board is auto-sized. expression="${rawValue}"`,
         )
-        return 0
       }
 
       Object.assign(knownVariables, boardVariables)
@@ -316,24 +319,18 @@ export abstract class PrimitiveComponent<
       )
 
       if (includesComponentVariable && !allowComponentVariables) {
-        if (this._isInsideFootprint() && this.root) {
-          this._reportInvalidComponentPropertyError(
-            axis,
-            `component-relative calc references are not supported for footprint elements (${this.componentName}); ` +
-              `${axis} will be ignored. expression="${rawValue}"`,
-          )
-        }
-        return 0
+        throw new Error(
+          `component-relative calc references are not supported for footprint elements (${this.componentName}); ` +
+            `${axis} will be ignored. expression="${rawValue}"`,
+        )
       }
 
       return evaluateCalcString(rawValue, { knownVariables })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      this._reportInvalidComponentPropertyError(
-        axis,
+      throw new Error(
         `Invalid ${axis} value for ${this.componentName}: ${message}. expression="${rawValue}"`,
       )
-      return 0
     }
   }
 
@@ -396,6 +393,24 @@ export abstract class PrimitiveComponent<
     } = {},
   ): number {
     return this._resolvePcbCoordinate(rawValue, axis, options)
+  }
+
+  resolvePcbCoordinateWithErrorReporting(
+    rawValue: unknown,
+    axis: "pcbX" | "pcbY",
+    options: {
+      allowBoardVariables?: boolean
+      allowComponentVariables?: boolean
+      componentVariables?: Record<string, number>
+    } = {},
+  ): number {
+    try {
+      return this._resolvePcbCoordinate(rawValue, axis, options)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      this._reportInvalidComponentPropertyError(axis, message)
+      return 0
+    }
   }
 
   /**
