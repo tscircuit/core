@@ -42,6 +42,7 @@ export const orderedRenderPhases = [
   "SchematicTraceRender",
   "SchematicReplaceNetLabelsWithSymbols",
   "PanelBoardLayout",
+  "ValidatePcbCoordinates",
   "PcbComponentRender",
   "PcbPrimitiveRender",
   "PcbFootprintLayout",
@@ -95,6 +96,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PartsEngineRender: ["PcbFootprintStringRender"],
   PcbComponentAnchorAlignment: ["PcbFootprintStringRender"],
   PcbCalcPlacementResolution: ["PcbFootprintStringRender"],
+  ValidatePcbCoordinates: ["PcbFootprintStringRender"],
   SourceTraceRender: ["PcbFootprintStringRender"],
 }
 

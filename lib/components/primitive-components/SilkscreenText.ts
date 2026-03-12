@@ -97,11 +97,11 @@ export class SilkscreenText extends PrimitiveComponent<
               isFlipped ? flipY() : identity(),
             ),
             {
-              x: this.resolvePcbCoordinate(
+              x: this.resolvePcbCoordinateWithErrorReporting(
                 resolvedPcbSxPcbX ?? props.pcbX ?? 0,
                 "pcbX",
               ),
-              y: this.resolvePcbCoordinate(
+              y: this.resolvePcbCoordinateWithErrorReporting(
                 resolvedPcbSxPcbY ?? props.pcbY ?? 0,
                 "pcbY",
               ),
