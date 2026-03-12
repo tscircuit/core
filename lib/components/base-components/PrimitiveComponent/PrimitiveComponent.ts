@@ -160,6 +160,7 @@ export abstract class PrimitiveComponent<
   pcb_component_id: string | null = null
   cad_component_id: string | null = null
   _reportedInvalidPcbCalcWarnings = new Set<string>()
+  _validatedPcbPositionProp?: { pcbX: number; pcbY: number }
 
   private _reportInvalidComponentPropertyError(
     propertyName: string,
@@ -228,7 +229,18 @@ export abstract class PrimitiveComponent<
   }
 
   getResolvedPcbPositionProp(): { pcbX: number; pcbY: number } {
+    if (this._validatedPcbPositionProp) {
+      return this._validatedPcbPositionProp
+    }
     return {
+      pcbX: this._resolvePcbCoordinate((this._parsedProps as any).pcbX, "pcbX"),
+      pcbY: this._resolvePcbCoordinate((this._parsedProps as any).pcbY, "pcbY"),
+    }
+  }
+
+  doInitialValidatePcbCoordinates(): void {
+    if (this.root?.pcbDisabled) return
+    this._validatedPcbPositionProp = {
       pcbX: this.resolvePcbCoordinateWithErrorReporting(
         (this._parsedProps as any).pcbX,
         "pcbX",

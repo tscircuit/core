@@ -165,79 +165,69 @@ export function Group_doInitialPcbCalcPlacementResolution(
       y: pcbComponent.center.y,
     }
 
-    if (rawPcbX !== undefined) {
-      const resolvedPcbX = component.resolvePcbCoordinateWithErrorReporting(
-        rawPcbX,
-        "pcbX",
-        {
+    const resolveCoordinateInCalcPlacement = (
+      rawValue: unknown,
+      axis: "pcbX" | "pcbY",
+    ): number => {
+      try {
+        return component.resolvePcbCoordinate(rawValue, axis, {
           allowComponentVariables: true,
           componentVariables: componentVars,
-        },
-      )
+        })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        if (!component._reportedInvalidPcbCalcWarnings.has(axis)) {
+          db.source_invalid_component_property_error.insert({
+            source_component_id: component.source_component_id || "",
+            property_name: axis,
+            message,
+            error_type: "source_invalid_component_property_error",
+          })
+          component._reportedInvalidPcbCalcWarnings.add(axis)
+        }
+        return 0
+      }
+    }
+
+    if (rawPcbX !== undefined) {
+      const resolvedPcbX = resolveCoordinateInCalcPlacement(rawPcbX, "pcbX")
       component._resolvedPcbCalcOffsetX = resolvedPcbX
       nextCenter.x = resolvedPcbX
     } else if (rawPcbLeftEdgeX !== undefined) {
-      const resolvedPcbLeftEdgeX =
-        component.resolvePcbCoordinateWithErrorReporting(
-          rawPcbLeftEdgeX,
-          "pcbX",
-          {
-            allowComponentVariables: true,
-            componentVariables: componentVars,
-          },
-        )
+      const resolvedPcbLeftEdgeX = resolveCoordinateInCalcPlacement(
+        rawPcbLeftEdgeX,
+        "pcbX",
+      )
       const resolvedPcbX = resolvedPcbLeftEdgeX + componentWidth / 2
       component._resolvedPcbCalcOffsetX = resolvedPcbX
       nextCenter.x = resolvedPcbX
     } else if (rawPcbRightEdgeX !== undefined) {
-      const resolvedPcbRightEdgeX =
-        component.resolvePcbCoordinateWithErrorReporting(
-          rawPcbRightEdgeX,
-          "pcbX",
-          {
-            allowComponentVariables: true,
-            componentVariables: componentVars,
-          },
-        )
+      const resolvedPcbRightEdgeX = resolveCoordinateInCalcPlacement(
+        rawPcbRightEdgeX,
+        "pcbX",
+      )
       const resolvedPcbX = resolvedPcbRightEdgeX - componentWidth / 2
       component._resolvedPcbCalcOffsetX = resolvedPcbX
       nextCenter.x = resolvedPcbX
     }
 
     if (rawPcbY !== undefined) {
-      const resolvedPcbY = component.resolvePcbCoordinateWithErrorReporting(
-        rawPcbY,
-        "pcbY",
-        {
-          allowComponentVariables: true,
-          componentVariables: componentVars,
-        },
-      )
+      const resolvedPcbY = resolveCoordinateInCalcPlacement(rawPcbY, "pcbY")
       component._resolvedPcbCalcOffsetY = resolvedPcbY
       nextCenter.y = resolvedPcbY
     } else if (rawPcbTopEdgeY !== undefined) {
-      const resolvedPcbTopEdgeY =
-        component.resolvePcbCoordinateWithErrorReporting(
-          rawPcbTopEdgeY,
-          "pcbY",
-          {
-            allowComponentVariables: true,
-            componentVariables: componentVars,
-          },
-        )
+      const resolvedPcbTopEdgeY = resolveCoordinateInCalcPlacement(
+        rawPcbTopEdgeY,
+        "pcbY",
+      )
       const resolvedPcbY = resolvedPcbTopEdgeY - componentHeight / 2
       component._resolvedPcbCalcOffsetY = resolvedPcbY
       nextCenter.y = resolvedPcbY
     } else if (rawPcbBottomEdgeY !== undefined) {
-      const resolvedPcbBottomEdgeY =
-        component.resolvePcbCoordinateWithErrorReporting(
-          rawPcbBottomEdgeY,
-          "pcbY",
-          {
-            allowComponentVariables: true,
-            componentVariables: componentVars,
-          },
-        )
+      const resolvedPcbBottomEdgeY = resolveCoordinateInCalcPlacement(
+        rawPcbBottomEdgeY,
+        "pcbY",
+      )
       const resolvedPcbY = resolvedPcbBottomEdgeY + componentHeight / 2
       component._resolvedPcbCalcOffsetY = resolvedPcbY
       nextCenter.y = resolvedPcbY

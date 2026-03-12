@@ -123,6 +123,17 @@ export class NormalComponent<
   }
 
   _asyncSupplierPartNumbers?: SupplierPartNumbers
+  _validatedPcbCoordinates?: Partial<
+    Record<
+      | "pcbX"
+      | "pcbY"
+      | "pcbLeftEdgeX"
+      | "pcbRightEdgeX"
+      | "pcbTopEdgeY"
+      | "pcbBottomEdgeY",
+      number
+    >
+  >
   _asyncFootprintCadModel?: CadModelProp
   _isCadModelChild?: boolean
   pcb_missing_footprint_error_id?: string
@@ -1713,6 +1724,63 @@ export class NormalComponent<
     NormalComponent_doInitialSourceDesignRuleChecks(this)
   }
 
+  doInitialValidatePcbCoordinates(): void {
+    super.doInitialValidatePcbCoordinates()
+    if (this.root?.pcbDisabled) return
+
+    const props = this._parsedProps
+    const rawProps = this.props as any
+
+    const pcbLeftEdgeX = props.pcbLeftEdgeX ?? rawProps.pcbLeftEdgeX
+    const pcbRightEdgeX = props.pcbRightEdgeX ?? rawProps.pcbRightEdgeX
+    const pcbTopEdgeY = props.pcbTopEdgeY ?? rawProps.pcbTopEdgeY
+    const pcbBottomEdgeY = props.pcbBottomEdgeY ?? rawProps.pcbBottomEdgeY
+
+    const hasExplicitPcbPosition =
+      props.pcbX !== undefined ||
+      props.pcbY !== undefined ||
+      pcbLeftEdgeX !== undefined ||
+      pcbRightEdgeX !== undefined ||
+      pcbTopEdgeY !== undefined ||
+      pcbBottomEdgeY !== undefined
+    if (!hasExplicitPcbPosition) return
+
+    const nextValidatedCoords: NonNullable<
+      typeof this._validatedPcbCoordinates
+    > = {}
+
+    if (props.pcbX !== undefined) {
+      nextValidatedCoords.pcbX = this.resolvePcbCoordinateWithErrorReporting(
+        props.pcbX,
+        "pcbX",
+      )
+    }
+    if (props.pcbY !== undefined) {
+      nextValidatedCoords.pcbY = this.resolvePcbCoordinateWithErrorReporting(
+        props.pcbY,
+        "pcbY",
+      )
+    }
+    if (pcbLeftEdgeX !== undefined) {
+      nextValidatedCoords.pcbLeftEdgeX =
+        this.resolvePcbCoordinateWithErrorReporting(pcbLeftEdgeX, "pcbX")
+    }
+    if (pcbRightEdgeX !== undefined) {
+      nextValidatedCoords.pcbRightEdgeX =
+        this.resolvePcbCoordinateWithErrorReporting(pcbRightEdgeX, "pcbX")
+    }
+    if (pcbTopEdgeY !== undefined) {
+      nextValidatedCoords.pcbTopEdgeY =
+        this.resolvePcbCoordinateWithErrorReporting(pcbTopEdgeY, "pcbY")
+    }
+    if (pcbBottomEdgeY !== undefined) {
+      nextValidatedCoords.pcbBottomEdgeY =
+        this.resolvePcbCoordinateWithErrorReporting(pcbBottomEdgeY, "pcbY")
+    }
+
+    this._validatedPcbCoordinates = nextValidatedCoords
+  }
+
   doInitialPcbLayout(): void {
     if (this.root?.pcbDisabled) return
     if (!this.pcb_component_id) return
@@ -1761,30 +1829,30 @@ export class NormalComponent<
     const resolvedPcbX =
       this._resolvedPcbCalcOffsetX ??
       (props.pcbX !== undefined
-        ? this.resolvePcbCoordinateWithErrorReporting(props.pcbX, "pcbX")
+        ? (this._validatedPcbCoordinates?.pcbX ??
+          this.resolvePcbCoordinate(props.pcbX, "pcbX"))
         : pcbLeftEdgeX !== undefined
-          ? this.resolvePcbCoordinateWithErrorReporting(pcbLeftEdgeX, "pcbX") +
+          ? (this._validatedPcbCoordinates?.pcbLeftEdgeX ??
+              this.resolvePcbCoordinate(pcbLeftEdgeX, "pcbX")) +
             componentWidth / 2
           : pcbRightEdgeX !== undefined
-            ? this.resolvePcbCoordinateWithErrorReporting(
-                pcbRightEdgeX,
-                "pcbX",
-              ) -
+            ? (this._validatedPcbCoordinates?.pcbRightEdgeX ??
+                this.resolvePcbCoordinate(pcbRightEdgeX, "pcbX")) -
               componentWidth / 2
             : undefined)
 
     const resolvedPcbY =
       this._resolvedPcbCalcOffsetY ??
       (props.pcbY !== undefined
-        ? this.resolvePcbCoordinateWithErrorReporting(props.pcbY, "pcbY")
+        ? (this._validatedPcbCoordinates?.pcbY ??
+          this.resolvePcbCoordinate(props.pcbY, "pcbY"))
         : pcbTopEdgeY !== undefined
-          ? this.resolvePcbCoordinateWithErrorReporting(pcbTopEdgeY, "pcbY") -
+          ? (this._validatedPcbCoordinates?.pcbTopEdgeY ??
+              this.resolvePcbCoordinate(pcbTopEdgeY, "pcbY")) -
             componentHeight / 2
           : pcbBottomEdgeY !== undefined
-            ? this.resolvePcbCoordinateWithErrorReporting(
-                pcbBottomEdgeY,
-                "pcbY",
-              ) +
+            ? (this._validatedPcbCoordinates?.pcbBottomEdgeY ??
+                this.resolvePcbCoordinate(pcbBottomEdgeY, "pcbY")) +
               componentHeight / 2
             : undefined)
 
