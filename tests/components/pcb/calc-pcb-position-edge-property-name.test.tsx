@@ -15,11 +15,7 @@ test("validate pcb coordinates reports original edge property name", () => {
     </board>,
   )
 
-  try {
-    circuit.render()
-  } catch {
-    // Resolution behavior is tested elsewhere; this test targets validation reporting only.
-  }
+  circuit.render()
 
   const invalidPropertyErrors =
     circuit.db.source_invalid_component_property_error.list()
