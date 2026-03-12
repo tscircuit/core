@@ -160,6 +160,23 @@ export abstract class PrimitiveComponent<
   pcb_component_id: string | null = null
   cad_component_id: string | null = null
   _reportedInvalidPcbCalcWarnings = new Set<string>()
+
+  private _reportInvalidComponentPropertyError(
+    propertyName: string,
+    message: string,
+  ): void {
+    if (!this.root || this._reportedInvalidPcbCalcWarnings.has(propertyName)) {
+      return
+    }
+
+    this.root.db.source_invalid_component_property_error.insert({
+      source_component_id: this.source_component_id || "",
+      property_name: propertyName,
+      message,
+      error_type: "source_invalid_component_property_error",
+    })
+    this._reportedInvalidPcbCalcWarnings.add(propertyName)
+  }
   fallbackUnassignedName?: string
 
   constructor(props: z.input<ZodProps>) {
@@ -214,6 +231,58 @@ export abstract class PrimitiveComponent<
     return {
       pcbX: this._resolvePcbCoordinate((this._parsedProps as any).pcbX, "pcbX"),
       pcbY: this._resolvePcbCoordinate((this._parsedProps as any).pcbY, "pcbY"),
+    }
+  }
+
+  doInitialValidatePcbCoordinates(): void {
+    if (this.root?.pcbDisabled) return
+
+    const rawProps = this.props
+    const rawPcbX = rawProps.pcbX
+    const rawPcbY = rawProps.pcbY
+
+    this._validatePcbCoordinateReferences({
+      rawValue: rawPcbX,
+      axis: "pcbX",
+      propertyNameForError: "pcbX",
+    })
+    this._validatePcbCoordinateReferences({
+      rawValue: rawPcbY,
+      axis: "pcbY",
+      propertyNameForError: "pcbY",
+    })
+  }
+
+  protected _validatePcbCoordinateReferences(params: {
+    rawValue: unknown
+    axis: "pcbX" | "pcbY"
+    propertyNameForError?: string
+  }): void {
+    const { rawValue, axis, propertyNameForError = axis } = params
+    if (typeof rawValue !== "string") return
+
+    const isNormalComponent = (this as any)._isNormalComponent === true
+    const allowComponentVariables =
+      !isNormalComponent && !this._isInsideFootprint()
+
+    try {
+      const calcIdentifiers = extractCalcIdentifiers(rawValue)
+      const includesComponentVariable = calcIdentifiers.some(
+        (identifier) => !identifier.startsWith("board."),
+      )
+
+      if (includesComponentVariable && !allowComponentVariables) {
+        throw new Error(
+          `component-relative calc references are not supported for footprint elements (${this.componentName}); ` +
+            `${propertyNameForError} will be ignored. expression="${rawValue}"`,
+        )
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      this._reportInvalidComponentPropertyError(
+        propertyNameForError,
+        `Invalid ${propertyNameForError} value for ${this.componentName}: ${message}. expression="${rawValue}"`,
+      )
     }
   }
 
