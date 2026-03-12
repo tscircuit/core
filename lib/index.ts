@@ -13,6 +13,7 @@ export * from "./hooks/use-resistor"
 export * from "./utils/public-exports"
 export * from "./sel"
 export * from "./utils/autorouting/SimpleRouteJson"
+export * from "./utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
 export type { LocalCacheEngine } from "./local-cache-engine"
 
