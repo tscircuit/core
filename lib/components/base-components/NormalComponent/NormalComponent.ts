@@ -799,8 +799,7 @@ export class NormalComponent<
         ? { kicad_footprint: props.kicadFootprintMetadata }
         : undefined,
     })
-
-    const footprint = props.footprint ?? this._getImpliedFootprintString()
+    const footprint = this.getFootprinterString()
 
     // Check if we have a Footprint child (e.g., from inflated circuit JSON)
     const hasFootprintChild = this.children.some(
@@ -1389,8 +1388,11 @@ export class NormalComponent<
   }
 
   getFootprinterString(): string | null {
-    if (typeof this._parsedProps.footprint === "string") {
-      return this._parsedProps.footprint
+    const footprint =
+      this._parsedProps.footprint ?? this._getImpliedFootprintString?.()
+    if (typeof footprint === "string") {
+      const libRef = parseLibraryFootprintRef(footprint)
+      return libRef ? libRef.footprintName : footprint
     }
     return null
   }
@@ -1403,8 +1405,7 @@ export class NormalComponent<
     const cadModelProp = this._parsedProps.cadModel
     const cadModel =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
-    const footprint =
-      this.getFootprinterString() ?? this._getImpliedFootprintString()
+    const footprint = this.getFootprinterString()
 
     if (!this.pcb_component_id) return
     if (!cadModel && !footprint) return
@@ -1622,10 +1623,8 @@ export class NormalComponent<
     if (!source_component) return
     if (source_component.supplier_part_numbers) return
 
-    let footprinterString: string | undefined
-    if (this.props.footprint && typeof this.props.footprint === "string") {
-      footprinterString = this.props.footprint
-    }
+    let footprinterString: string | undefined =
+      this.getFootprinterString() ?? undefined
 
     const supplierPartNumbersMaybePromise = this._getSupplierPartNumbers(
       partsEngine,
