@@ -34,6 +34,9 @@ export class CourtyardRect extends PrimitiveComponent<
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
 
+    const transform = this._computePcbGlobalTransformBeforeLayout()
+    const ccw_rotation = (Math.atan2(transform.b, transform.a) * 180) / Math.PI
+
     const pcb_courtyard_rect = db.pcb_courtyard_rect.insert({
       pcb_component_id,
       layer,
@@ -43,6 +46,7 @@ export class CourtyardRect extends PrimitiveComponent<
       },
       width: props.width,
       height: props.height,
+      ccw_rotation: ccw_rotation || undefined,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
     })
