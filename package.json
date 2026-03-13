@@ -33,7 +33,7 @@
     "@biomejs/biome": "^1.8.3",
     "@resvg/resvg-js": "^2.6.2",
     "@tscircuit/alphabet": "0.0.18",
-    "@tscircuit/checks": "0.0.108",
+    "@tscircuit/checks": "0.0.110",
     "@tscircuit/capacity-autorouter": "^0.0.326",
     "@tscircuit/circuit-json-util": "^0.0.82",
     "@tscircuit/common": "^0.0.20",
