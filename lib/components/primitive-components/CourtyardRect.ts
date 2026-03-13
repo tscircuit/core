@@ -1,3 +1,4 @@
+import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { courtyardRectProps } from "@tscircuit/props"
 
@@ -34,6 +35,11 @@ export class CourtyardRect extends PrimitiveComponent<
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
 
+    const decomposedTransform = decomposeTSR(
+      this._computePcbGlobalTransformBeforeLayout(),
+    )
+    const ccw_rotation = (decomposedTransform.rotation.angle * 180) / Math.PI
+
     const pcb_courtyard_rect = db.pcb_courtyard_rect.insert({
       pcb_component_id,
       layer,
@@ -43,6 +49,7 @@ export class CourtyardRect extends PrimitiveComponent<
       },
       width: props.width,
       height: props.height,
+      ccw_rotation: ccw_rotation || undefined,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
     })
