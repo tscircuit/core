@@ -1,5 +1,8 @@
 import type { PinLabelsProp } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
+import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
+import { CourtyardOutline } from "lib/components/primitive-components/CourtyardOutline"
+import { CourtyardRect } from "lib/components/primitive-components/CourtyardRect"
 import { Cutout } from "lib/components/primitive-components/Cutout"
 import { FabricationNotePath } from "lib/components/primitive-components/FabricationNotePath"
 import { FabricationNoteRect } from "lib/components/primitive-components/FabricationNoteRect"
@@ -409,6 +412,32 @@ export const createComponentsFromCircuitJson = (
           strokeWidth: elm.stroke_width,
           color: elm.color,
           isDashed: elm.is_dashed,
+        }),
+      )
+    } else if (elm.type === "pcb_courtyard_rect") {
+      components.push(
+        new CourtyardRect({
+          pcbX: elm.center.x,
+          pcbY: elm.center.y,
+          width: elm.width,
+          height: elm.height,
+          layer: elm.layer,
+        }),
+      )
+    } else if (elm.type === "pcb_courtyard_circle") {
+      components.push(
+        new CourtyardCircle({
+          pcbX: elm.center.x,
+          pcbY: elm.center.y,
+          radius: elm.radius,
+          layer: elm.layer,
+        }),
+      )
+    } else if (elm.type === "pcb_courtyard_outline") {
+      components.push(
+        new CourtyardOutline({
+          outline: elm.outline,
+          layer: elm.layer,
         }),
       )
     }
