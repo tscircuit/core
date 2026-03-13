@@ -62,5 +62,6 @@ test("design rule check detects overlapping PCB component pads", async () => {
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
+    showCourtyards: true,
   })
 })

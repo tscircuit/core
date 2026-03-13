@@ -48,5 +48,6 @@ test("design rule check detects pad overlap between different component types", 
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
+    showCourtyards: true,
   })
 })
