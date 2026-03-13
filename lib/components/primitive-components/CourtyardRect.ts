@@ -1,3 +1,4 @@
+import { decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { courtyardRectProps } from "@tscircuit/props"
 
@@ -34,8 +35,10 @@ export class CourtyardRect extends PrimitiveComponent<
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
 
-    const transform = this._computePcbGlobalTransformBeforeLayout()
-    const ccw_rotation = (Math.atan2(transform.b, transform.a) * 180) / Math.PI
+    const decomposedTransform = decomposeTSR(
+      this._computePcbGlobalTransformBeforeLayout(),
+    )
+    const ccw_rotation = (decomposedTransform.rotation.angle * 180) / Math.PI
 
     const pcb_courtyard_rect = db.pcb_courtyard_rect.insert({
       pcb_component_id,
