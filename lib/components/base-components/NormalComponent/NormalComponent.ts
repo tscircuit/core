@@ -1422,13 +1422,8 @@ export class NormalComponent<
     const rotationOffset = rotation3.parse({
       x: 0,
       y: 0,
-      z:
-        typeof sourceRotationOffset === "number"
-          ? sourceRotationOffset
-          : 0,
-      ...(typeof sourceRotationOffset === "object"
-        ? sourceRotationOffset
-        : {}),
+      z: typeof sourceRotationOffset === "number" ? sourceRotationOffset : 0,
+      ...(typeof sourceRotationOffset === "object" ? sourceRotationOffset : {}),
     })
 
     const positionOffset = point3.parse({

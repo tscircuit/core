@@ -44,8 +44,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
     const accumulatedRotation =
       (decomposedTransform.rotation.angle * 180) / Math.PI
 
-    const sourceRotationOffset =
-      props.pcbRotationOffset ?? props.rotationOffset
+    const sourceRotationOffset = props.pcbRotationOffset ?? props.rotationOffset
     const rotationOffset = rotation3.parse({ x: 0, y: 0, z: 0 })
     if (typeof sourceRotationOffset === "number") {
       rotationOffset.z = Number(sourceRotationOffset)
