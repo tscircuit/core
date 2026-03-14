@@ -46,10 +46,14 @@ test("capacitive touch slider - 5 segment polygon smtpads with soldermask", () =
               const offsetX = (i - (NUM_PADS - 1) / 2) * SPACING
               return (
                 <smtpad
-                  key={i}
                   name={`pad${i + 1}`}
                   shape="polygon"
-                  points={diamondPoints(PAD_HALF_WIDTH, PAD_HALF_HEIGHT, offsetX, 0)}
+                  points={diamondPoints(
+                    PAD_HALF_WIDTH,
+                    PAD_HALF_HEIGHT,
+                    offsetX,
+                    0,
+                  )}
                   portHints={[`pin${i + 1}`]}
                   coveredWithSolderMask={true}
                 />
