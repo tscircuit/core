@@ -1417,15 +1417,17 @@ export class NormalComponent<
       throw new Error("String cadModel not yet implemented")
     }
 
+    const sourceRotationOffset =
+      cadModel?.pcbRotationOffset ?? cadModel?.rotationOffset
     const rotationOffset = rotation3.parse({
       x: 0,
       y: 0,
       z:
-        typeof cadModel?.pcbRotationOffset === "number"
-          ? cadModel.pcbRotationOffset
+        typeof sourceRotationOffset === "number"
+          ? sourceRotationOffset
           : 0,
-      ...(typeof cadModel?.pcbRotationOffset === "object"
-        ? (cadModel.pcbRotationOffset ?? {})
+      ...(typeof sourceRotationOffset === "object"
+        ? sourceRotationOffset
         : {}),
     })
 
