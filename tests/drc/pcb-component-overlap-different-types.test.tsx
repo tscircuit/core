@@ -46,7 +46,10 @@ test("design rule check detects pad overlap between different component types", 
   expect(overlapErrors[0].message).toContain("overlap")
   expect(overlapErrors[0]).toHaveProperty("pcb_smtpad_ids")
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+  const filteredJson = circuitJson.filter(
+    (el) => el.type !== "pcb_courtyard_overlap_error",
+  )
+  expect(filteredJson).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
   })
 })

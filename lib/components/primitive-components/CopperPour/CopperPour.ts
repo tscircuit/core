@@ -8,6 +8,7 @@ import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import type { Net } from "../Net"
 import type { PcbCopperPour, SourceNet } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-inside-copper-pour"
 
 export type { CopperPourProps }
 
@@ -80,7 +81,7 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
       const coveredWithSolderMask = props.coveredWithSolderMask ?? false
 
       for (const brep_shape of brep_shapes) {
-        db.pcb_copper_pour.insert({
+        const insertedPour = db.pcb_copper_pour.insert({
           shape: "brep",
           layer: props.layer,
           brep_shape,
@@ -88,6 +89,11 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           covered_with_solder_mask: coveredWithSolderMask,
         } as PcbCopperPour)
+
+        markTraceSegmentsInsideCopperPour({
+          db,
+          copperPour: insertedPour,
+        })
       }
     })
   }

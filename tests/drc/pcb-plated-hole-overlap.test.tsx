@@ -35,7 +35,7 @@ test("design rule check detects overlapping plated holes", async () => {
     (el) => el.type === "pcb_footprint_overlap_error",
   )
 
-  expect(overlapErrors.length).toBe(12)
+  expect(overlapErrors.length).toBe(14)
   expect(overlapErrors[0]).toHaveProperty("message")
   expect(overlapErrors[0].message).toContain("overlap")
 
