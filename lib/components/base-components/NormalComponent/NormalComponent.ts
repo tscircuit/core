@@ -1417,16 +1417,13 @@ export class NormalComponent<
       throw new Error("String cadModel not yet implemented")
     }
 
+    const sourceRotationOffset =
+      cadModel?.pcbRotationOffset ?? cadModel?.rotationOffset
     const rotationOffset = rotation3.parse({
       x: 0,
       y: 0,
-      z:
-        typeof cadModel?.rotationOffset === "number"
-          ? cadModel.rotationOffset
-          : 0,
-      ...(typeof cadModel?.rotationOffset === "object"
-        ? (cadModel.rotationOffset ?? {})
-        : {}),
+      z: typeof sourceRotationOffset === "number" ? sourceRotationOffset : 0,
+      ...(typeof sourceRotationOffset === "object" ? sourceRotationOffset : {}),
     })
 
     const positionOffset = point3.parse({
@@ -1516,6 +1513,10 @@ export class NormalComponent<
         typeof cadModel?.modelUnitToMmScale === "number"
           ? cadModel.modelUnitToMmScale
           : undefined,
+      model_board_normal_direction: cadModel?.modelBoardNormalDirection,
+      model_origin_alignment: "center_of_component_on_board_surface",
+      anchor_alignment: "center_of_component_on_board_surface",
+      model_origin_position: cadModel?.modelOriginPosition,
 
       footprinter_string:
         typeof footprint === "string" && !cadModel ? footprint : undefined,

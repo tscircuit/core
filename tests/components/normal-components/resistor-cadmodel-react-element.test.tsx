@@ -10,7 +10,7 @@ it("resistor with cadmodel react element", async () => {
   circuit.add(
     <board width="10mm" height="10mm">
       <resistor
-        name="R1"
+        name="R1_cadModel_offset"
         resistance={1000}
         footprint="0402"
         cadModel={
