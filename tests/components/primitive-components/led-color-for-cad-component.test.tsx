@@ -15,13 +15,17 @@ test("color for  cad model", async () => {
   const cad_component = circuit.db.cad_component.list()[0]
   expect(cad_component).toMatchInlineSnapshot(`
     {
+      "anchor_alignment": "center_of_component_on_board_surface",
       "cad_component_id": "cad_component_0",
       "footprinter_string": "0402_color(red)",
+      "model_board_normal_direction": undefined,
       "model_glb_url": undefined,
       "model_gltf_url": undefined,
       "model_jscad": undefined,
       "model_mtl_url": undefined,
       "model_obj_url": undefined,
+      "model_origin_alignment": "center_of_component_on_board_surface",
+      "model_origin_position": undefined,
       "model_step_url": undefined,
       "model_stl_url": undefined,
       "model_unit_to_mm_scale_factor": undefined,

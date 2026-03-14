@@ -45,10 +45,10 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
       (decomposedTransform.rotation.angle * 180) / Math.PI
 
     const rotationOffset = rotation3.parse({ x: 0, y: 0, z: 0 })
-    if (typeof props.rotationOffset === "number") {
-      rotationOffset.z = Number(props.rotationOffset)
-    } else if (typeof props.rotationOffset === "object") {
-      const parsed = rotation3.parse(props.rotationOffset)
+    if (typeof props.pcbRotationOffset === "number") {
+      rotationOffset.z = Number(props.pcbRotationOffset)
+    } else if (typeof props.pcbRotationOffset === "object") {
+      const parsed = rotation3.parse(props.pcbRotationOffset)
       rotationOffset.x = Number(parsed.x)
       rotationOffset.y = Number(parsed.y)
       rotationOffset.z = Number(parsed.z)
@@ -125,6 +125,10 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
             : accumulatedRotation + Number(rotationOffset.z),
       },
       pcb_component_id: parent.pcb_component_id,
+      model_board_normal_direction: props.modelBoardNormalDirection,
+      model_origin_alignment: "center_of_component_on_board_surface",
+      anchor_alignment: "center_of_component_on_board_surface",
+      model_origin_position: props.modelOriginPosition,
       source_component_id: parent.source_component_id,
       model_unit_to_mm_scale_factor:
         typeof props.modelUnitToMmScale === "number"
@@ -134,7 +138,7 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
         props.showAsTranslucentModel ??
         parent._parsedProps.showAsTranslucentModel,
       ...urlProps,
-    } as any)
+    } as CadComponent)
 
     this.cad_component_id = cad.cad_component_id
   }

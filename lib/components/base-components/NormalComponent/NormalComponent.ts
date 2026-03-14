@@ -1421,11 +1421,11 @@ export class NormalComponent<
       x: 0,
       y: 0,
       z:
-        typeof cadModel?.rotationOffset === "number"
-          ? cadModel.rotationOffset
+        typeof cadModel?.pcbRotationOffset === "number"
+          ? cadModel.pcbRotationOffset
           : 0,
-      ...(typeof cadModel?.rotationOffset === "object"
-        ? (cadModel.rotationOffset ?? {})
+      ...(typeof cadModel?.pcbRotationOffset === "object"
+        ? (cadModel.pcbRotationOffset ?? {})
         : {}),
     })
 
@@ -1516,6 +1516,10 @@ export class NormalComponent<
         typeof cadModel?.modelUnitToMmScale === "number"
           ? cadModel.modelUnitToMmScale
           : undefined,
+      model_board_normal_direction: cadModel?.modelBoardNormalDirection,
+      model_origin_alignment: "center_of_component_on_board_surface",
+      anchor_alignment: "center_of_component_on_board_surface",
+      model_origin_position: cadModel?.modelOriginPosition,
 
       footprinter_string:
         typeof footprint === "string" && !cadModel ? footprint : undefined,
