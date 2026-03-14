@@ -1,0 +1,52 @@
+name: Update Autorouter
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-autorouter:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Update autorouter
+        run: bun update --latest @tscircuit/capacity-autorouter
+
+      - name: Update snapshots
+        run: bun test
+        env:
+          BUN_UPDATE_SNAPSHOTS: "1"
+
+      - name: Read autorouter version
+        run: |
+          VERSION=$(node -p "require('./package.json').devDependencies['@tscircuit/capacity-autorouter'].replace(/^[^0-9]*/, '')")
+          echo "CAPACITY_AUTOROUTER_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+          commit-message: Update autorouter to v${{ env.CAPACITY_AUTOROUTER_VERSION }}
+          branch: update-autorouter-v${{ env.CAPACITY_AUTOROUTER_VERSION }}
+          delete-branch: true
+          title: Update Autorouter to v${{ env.CAPACITY_AUTOROUTER_VERSION }}
+          body: |
+            Updates `@tscircuit/capacity-autorouter` to `v${{ env.CAPACITY_AUTOROUTER_VERSION }}` and refreshes Bun snapshots.
+          author: tscircuitbot <tscircuitbot@users.noreply.github.com>
+          committer: tscircuitbot <tscircuitbot@users.noreply.github.com>
