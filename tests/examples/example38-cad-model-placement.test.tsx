@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("example31 simple 3d snapshot", async () => {
+test("example38 cad model placement snapshot", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
