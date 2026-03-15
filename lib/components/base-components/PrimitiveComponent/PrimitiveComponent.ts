@@ -568,7 +568,7 @@ export abstract class PrimitiveComponent<
   }
 
   /**
-   * Replaces template placeholders like {NAME}, {REF}, and {REFERENCE} with the
+   * Replaces text like {NAME}, {REF}, and {REFERENCE} with the
    * reference designator (name) of the parent NormalComponent.
    */
   protected _resolveText(text: string | null | undefined): string {
