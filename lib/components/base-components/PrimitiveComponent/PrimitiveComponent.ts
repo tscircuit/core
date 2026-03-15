@@ -568,6 +568,24 @@ export abstract class PrimitiveComponent<
   }
 
   /**
+   * Replaces template placeholders like {NAME}, {REFDES}, {REF}, and {REFERENCE} with the
+   * reference designator (name) of the parent NormalComponent.
+   */
+  protected _resolveText(text: string | null | undefined): string {
+    if (!text) return ""
+
+    // Fast path: avoid regex and parent lookup if no placeholders are found
+    if (!text.includes("{")) return text
+
+    const parentNormalComponent = this.getParentNormalComponent()
+    const refdes = parentNormalComponent?.name
+
+    if (!refdes) return text
+
+    return text.replace(/\{(NAME|REFDES|REF|REFERENCE)\}/g, refdes)
+  }
+
+  /**
    * Emit a warning when coveredWithSolderMask is true but solderMaskMargin is also set
    */
   emitSolderMaskMarginWarning(
