@@ -568,21 +568,28 @@ export abstract class PrimitiveComponent<
   }
 
   /**
-   * Replaces template placeholders like {NAME}, {REFDES}, {REF}, and {REFERENCE} with the
+   * Replaces template placeholders like {NAME}, {REF}, and {REFERENCE} with the
    * reference designator (name) of the parent NormalComponent.
    */
   protected _resolveText(text: string | null | undefined): string {
     if (!text) return ""
-
-    // Fast path: avoid regex and parent lookup if no placeholders are found
-    if (!text.includes("{")) return text
+    if (
+      !text.includes("{NAME}") &&
+      !text.includes("{REF}") &&
+      !text.includes("{REFERENCE}")
+    ) {
+      return text
+    }
 
     const parentNormalComponent = this.getParentNormalComponent()
     const refdes = parentNormalComponent?.name
 
     if (!refdes) return text
 
-    return text.replace(/\{(NAME|REFDES|REF|REFERENCE)\}/g, refdes)
+    return text
+      .replace(/\{NAME\}/g, refdes)
+      .replace(/\{REF\}/g, refdes)
+      .replace(/\{REFERENCE\}/g, refdes)
   }
 
   /**
