@@ -39,7 +39,7 @@ test("schematictext should replace {NAME} with the component's reference designa
           <schematictext schX={-0.35} schY={-0.35} text="-" fontSize={0.3} />
 
           <port
-            name="IN+"
+            name="IN_POS"
             schX={-1}
             schY={0.35}
             direction="left"
@@ -47,7 +47,7 @@ test("schematictext should replace {NAME} with the component's reference designa
           />
 
           <port
-            name="IN-"
+            name="IN_NEG"
             schX={-1}
             schY={-0.35}
             direction="left"

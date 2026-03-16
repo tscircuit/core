@@ -34,14 +34,14 @@ test("Port schStemLength in custom symbol with width/height scaling", async () =
             <schematictext schX={-0.35} schY={0.35} text="+" fontSize={0.3} />
             <schematictext schX={-0.35} schY={-0.35} text="-" fontSize={0.3} />
             <port
-              name="IN+"
+              name="IN_POS"
               schX={-1}
               schY={0.35}
               direction="left"
               schStemLength={0.5}
             />
             <port
-              name="IN-"
+              name="IN_NEG"
               schX={-1}
               schY={-0.35}
               direction="left"

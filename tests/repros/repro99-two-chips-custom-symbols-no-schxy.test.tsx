@@ -20,8 +20,8 @@ test("repro99: two chips with custom svgPath symbols and ports without schX/schY
               strokeWidth={0.05}
               isFilled={false}
             />
-            <port name="IN+" direction="left" />
-            <port name="IN-" direction="left" />
+            <port name="IN_POS" direction="left" />
+            <port name="IN_NEG" direction="left" />
             <port name="OUT" direction="right" />
           </symbol>
         }
