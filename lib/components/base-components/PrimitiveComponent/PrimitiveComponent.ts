@@ -571,7 +571,8 @@ export abstract class PrimitiveComponent<
    * Replaces text like {NAME}, {REF}, and {REFERENCE} with the
    * reference designator (name) of the parent NormalComponent.
    */
-  protected _resolveText(text: string | null | undefined): string {
+  protected _resolveText(): string {
+    const text = this._parsedProps.text
     if (!text) return ""
     if (
       !text.includes("{NAME}") &&
