@@ -568,6 +568,32 @@ export abstract class PrimitiveComponent<
   }
 
   /**
+   * Replaces text like {NAME}, {REF}, and {REFERENCE} with the
+   * reference designator (name) of the parent NormalComponent.
+   */
+  protected _resolveText(): string {
+    const text = this._parsedProps.text
+    if (!text) return ""
+    if (
+      !text.includes("{NAME}") &&
+      !text.includes("{REF}") &&
+      !text.includes("{REFERENCE}")
+    ) {
+      return text
+    }
+
+    const parentNormalComponent = this.getParentNormalComponent()
+    const refdes = parentNormalComponent?.name
+
+    if (!refdes) return text
+
+    return text
+      .replace(/\{NAME\}/g, refdes)
+      .replace(/\{REF\}/g, refdes)
+      .replace(/\{REFERENCE\}/g, refdes)
+  }
+
+  /**
    * Emit a warning when coveredWithSolderMask is true but solderMaskMargin is also set
    */
   emitSolderMaskMarginWarning(
