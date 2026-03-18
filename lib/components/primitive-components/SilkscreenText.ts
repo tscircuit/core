@@ -126,7 +126,7 @@ export class SilkscreenText extends PrimitiveComponent<
           bottom: props.knockoutPaddingBottom ?? uniformPadding,
         }
       : undefined
-
+    const text = this._resolveText()
     for (const layer of targetLayers) {
       const pcb_silkscreen_text = db.pcb_silkscreen_text.insert({
         anchor_alignment: props.anchorAlignment,
@@ -137,7 +137,7 @@ export class SilkscreenText extends PrimitiveComponent<
         font: props.font ?? "tscircuit2024",
         font_size: fontSize,
         layer: maybeFlipLayer(layer) as "top" | "bottom",
-        text: normalizeTextForCircuitJson(props.text ?? ""),
+        text: normalizeTextForCircuitJson(text),
         ccw_rotation: rotation,
         pcb_component_id: container.pcb_component_id!,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -167,7 +167,7 @@ export class SilkscreenText extends PrimitiveComponent<
       this.getInheritedProperty("pcbStyle")?.silkscreenFontSize ??
       this._footprinterFontSize ??
       1
-    const text = props.text ?? ""
+    const text = this._resolveText()
     const textWidth = text.length * fontSize
     const textHeight = fontSize
     return { width: textWidth * fontSize, height: textHeight * fontSize }
