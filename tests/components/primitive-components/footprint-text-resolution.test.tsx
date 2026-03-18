@@ -93,6 +93,5 @@ test("footprint text resolution", async () => {
 
   expect(silkscreenText).toBeDefined()
   expect((silkscreenText as any).text).toBe("U1")
-  // add pcbbbb snapshot test
   expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
 })
