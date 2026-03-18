@@ -126,7 +126,7 @@ export class SilkscreenText extends PrimitiveComponent<
           bottom: props.knockoutPaddingBottom ?? uniformPadding,
         }
       : undefined
-    let text = this._resolveText()
+    const text = this._resolveText()
     for (const layer of targetLayers) {
       const pcb_silkscreen_text = db.pcb_silkscreen_text.insert({
         anchor_alignment: props.anchorAlignment,
