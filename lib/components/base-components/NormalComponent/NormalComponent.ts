@@ -1453,10 +1453,7 @@ export class NormalComponent<
     const decomposedTransform = decomposeTSR(globalTransform)
     const preLayoutRotation =
       (decomposedTransform.rotation.angle * 180) / Math.PI
-    const totalRotation =
-      pcbComponent?.position_mode === "packed"
-        ? (pcbComponent.rotation ?? preLayoutRotation)
-        : preLayoutRotation
+    const totalRotation = pcbComponent?.rotation ?? preLayoutRotation
     const isBottomLayer = computedLayer === "bottom"
 
     const rotationWithOffset = totalRotation + (rotationOffset.z ?? 0)
