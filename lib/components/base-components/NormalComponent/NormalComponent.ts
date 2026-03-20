@@ -58,6 +58,7 @@ import { CadAssembly } from "../../primitive-components/CadAssembly"
 import { CadModel } from "../../primitive-components/CadModel"
 import { Footprint } from "../../primitive-components/Footprint"
 import { Port } from "../../primitive-components/Port"
+import { SilkscreenText } from "../../primitive-components/SilkscreenText"
 import { PrimitiveComponent } from "../PrimitiveComponent"
 import type { INormalComponent } from "./INormalComponent"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
@@ -1002,6 +1003,11 @@ export class NormalComponent<
       if (!hasFootprintChild) {
         this.add(fpElm)
       }
+
+      // Ensure the inline footprint has a silkscreen reference designator text.
+      // String-based footprints get this automatically from the footprinter, but
+      // inline <footprint> elements don't include one by default.
+      this._ensureInlineFootprintHasRefText()
     }
 
     // Add React-based symbol subtree if provided
@@ -1393,6 +1399,50 @@ export class NormalComponent<
       return this._parsedProps.footprint
     }
     return null
+  }
+
+  /**
+   * When a component uses an inline <footprint> React element, the footprint
+   * children (smtpads, silkscreen paths, etc.) are added directly through the
+   * React reconciler. Unlike string-based footprints (which go through the
+   * footprinter and always include a pcb_silkscreen_text for the reference
+   * designator), inline footprints may not include a SilkscreenText child.
+   *
+   * This method checks if the footprint subtree already contains a
+   * SilkscreenText child and, if not, adds one with the component's name so
+   * that the KiCad PCB export (and other tooling) can identify the component
+   * via its fp_text reference.
+   */
+  _ensureInlineFootprintHasRefText(): void {
+    const hasSilkscreenText = (component: PrimitiveComponent): boolean => {
+      if (component.componentName === "SilkscreenText") return true
+      return component.children.some(hasSilkscreenText)
+    }
+
+    // Check if any existing child (including the footprint subtree) already
+    // contains a SilkscreenText
+    if (this.children.some(hasSilkscreenText)) return
+
+    const componentName = this.name ?? this.componentName
+    if (!componentName) return
+
+    // Find the footprint child to add the silkscreen text inside it
+    const footprintChild = this.children.find(
+      (c) => c.componentName === "Footprint",
+    )
+
+    const silkscreenText = new SilkscreenText({
+      text: componentName,
+      pcbX: 0,
+      pcbY: 0,
+      anchorAlignment: "center",
+    })
+
+    if (footprintChild) {
+      footprintChild.add(silkscreenText)
+    } else {
+      this.add(silkscreenText)
+    }
   }
 
   doInitialCadModelRender(): void {
