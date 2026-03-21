@@ -2,7 +2,7 @@ import { it, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("repro67: pinheader default facingDirection for autolayout", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
 
   circuit.add(
     <board routingDisabled>
