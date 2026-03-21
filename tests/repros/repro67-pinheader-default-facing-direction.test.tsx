@@ -5,7 +5,7 @@ it("repro67: pinheader default facingDirection for autolayout", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board>
+    <board routingDisabled>
       <pinheader name="P1" pinCount={4} />
       <pinheader name="P2" pinCount={4} />
       <trace from="P1.pin1" to="P2.pin1" />
