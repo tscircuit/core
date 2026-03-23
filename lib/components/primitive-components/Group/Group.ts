@@ -949,6 +949,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       height: 0,
       schematic_component_ids: [],
       source_group_id: this.source_group_id!,
+      show_as_schematic_box: props.showAsSchematicBox ?? false,
     })
     this.schematic_group_id = schematic_group.schematic_group_id
 
