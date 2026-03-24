@@ -42,7 +42,7 @@ jobs:
 
       - name: Run tests for selected pattern and update snapshots
         if: ${{ inputs.test_pattern != '' }}
-        run: BUN_UPDATE_SNAPSHOTS=1 bun test ${{ inputs.test_pattern }} --timeout 30000
+        run: BUN_UPDATE_SNAPSHOTS=1 bun test ${{ inputs.test_pattern }} --timeout 120000
 
       - name: Run full test plan and update snapshots
         if: ${{ inputs.test_pattern == '' }}
@@ -62,7 +62,7 @@ jobs:
             echo "Running ${#test_files[@]} test files for node ${node}"
             attempt=1
             while [ $attempt -le 4 ]; do
-              BUN_UPDATE_SNAPSHOTS=1 bun test ${test_files[@]} --timeout 30000
+              BUN_UPDATE_SNAPSHOTS=1 bun test ${test_files[@]} --timeout 120000
               code=$?
 
               if [ $code -eq 0 ]; then
