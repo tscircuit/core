@@ -73,14 +73,14 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipeline1_OriginalUnravel"
     } else if (autorouterVersion === "v3") {
       solverName = "AutoroutingPipelineSolver3_HgPortPointPathing"
-    } else if (autorouterVersion === "v4") {
+    } else if (autorouterVersion === "v4" || autorouterVersion === "latest") {
       solverName = "AutoroutingPipelineSolver4"
     } else if (useAutoJumperSolver) {
       solverName = "AssignableAutoroutingPipeline3"
     } else if (useAssignableSolver) {
       solverName = "AssignableAutoroutingPipeline2"
     } else {
-      solverName = "AutoroutingPipelineSolver"
+      solverName = "AutoroutingPipelineSolver4"
     }
     const SolverClass = SOLVERS[solverName]
 
