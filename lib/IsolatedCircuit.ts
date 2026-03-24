@@ -47,7 +47,12 @@ export class IsolatedCircuit {
       | { _parsedProps?: { schematicDisabled?: boolean } }
       | undefined
 
-    return board?._parsedProps?.schematicDisabled ?? false
+    if (board?._parsedProps?.schematicDisabled !== undefined) {
+      return board._parsedProps.schematicDisabled
+    }
+
+    // Default to true if the root component is a panel (since they don't have schematics)
+    return this.children.some((c) => c.lowercaseComponentName === "panel")
   }
 
   set schematicDisabled(value: boolean) {
@@ -189,8 +194,13 @@ export class IsolatedCircuit {
     if (!existing) {
       this.db.source_project_metadata.insert({
         software_used_string: `@tscircuit/core@${this.getCoreVersion()}`,
+        schematic_disabled: this.schematicDisabled,
         ...(this.projectUrl ? { project_url: this.projectUrl } : {}),
-      })
+      } as any)
+    } else {
+      this.db.source_project_metadata.update((existing as any).source_project_metadata_id, {
+        schematic_disabled: this.schematicDisabled,
+      } as any)
     }
 
     this.render()
