@@ -93,6 +93,4 @@ test(
     //expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
 
     expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
-  },
-  { timeout: 60000 },
-)
+  })
