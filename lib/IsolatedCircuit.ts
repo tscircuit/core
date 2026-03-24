@@ -32,9 +32,20 @@ export class IsolatedCircuit {
    * with the same props to wait for a single render instead of each doing their own.
    */
   pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
-
+  private _cachedBoard: ((PrimitiveComponent & BoardI) | undefined) | null =
+    null
   private _schematicDisabledOverride: boolean | undefined
+  private _schematicDisabledCache: boolean | null = null
   get schematicDisabled(): boolean {
+    if (this._schematicDisabledCache !== null) {
+      return this._schematicDisabledCache
+    }
+    const val = this._getSchematicDisabled()
+    this._schematicDisabledCache = val
+    return val
+  }
+
+  _getSchematicDisabled(): boolean {
     if (this._schematicDisabledOverride !== undefined) {
       return this._schematicDisabledOverride
     }
@@ -133,11 +144,14 @@ export class IsolatedCircuit {
    * Get the main board for this Circuit.
    */
   _getBoard(): (PrimitiveComponent & BoardI) | undefined {
+    if (this._cachedBoard !== null) return this._cachedBoard
     const directBoard = this.children.find((c) => c.componentName === "Board")
     if (directBoard) {
-      return directBoard as any
+      this._cachedBoard = directBoard as any
+      return this._cachedBoard as any
     }
 
+    this._cachedBoard = undefined
     return undefined
   }
 
@@ -179,6 +193,8 @@ export class IsolatedCircuit {
   }
 
   render() {
+    this._cachedBoard = null
+    this._schematicDisabledCache = null
     if (!this.firstChild) {
       this._guessRootComponent()
     }
@@ -198,9 +214,12 @@ export class IsolatedCircuit {
         ...(this.projectUrl ? { project_url: this.projectUrl } : {}),
       } as any)
     } else {
-      this.db.source_project_metadata.update((existing as any).source_project_metadata_id, {
-        schematic_disabled: this.schematicDisabled,
-      } as any)
+      this.db.source_project_metadata.update(
+        (existing as any).source_project_metadata_id,
+        {
+          schematic_disabled: this.schematicDisabled,
+        } as any,
+      )
     }
 
     this.render()

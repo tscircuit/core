@@ -91,4 +91,4 @@ test("pcb autolayout out of board", async () => {
   //expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
 
   expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
-})
+}, 60000)

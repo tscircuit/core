@@ -234,7 +234,6 @@ export class NormalComponent<
       ignoreSymbolPorts?: boolean
     } = {},
   ) {
-    if (this.root?.schematicDisabled) return
     const { config } = this
     const portsToCreate: Port[] = []
 
