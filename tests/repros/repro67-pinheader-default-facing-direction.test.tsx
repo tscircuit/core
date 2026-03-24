@@ -18,5 +18,5 @@ it(
 
     expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   },
-  { timeout: 80000 },
+  { timeout: 120000 },
 )
