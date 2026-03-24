@@ -5,7 +5,13 @@ test("false positive accidental contact DRC (simplified) - fixed", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="40mm" height="28mm" schematicDisabled outlineOffsetX="-7.5mm">
+    <board
+      width="40mm"
+      height="28mm"
+      schematicDisabled
+      outlineOffsetX="-7.5mm"
+      autorouterVersion="v3"
+    >
       <group name="greenpill">
         <chip
           name="U1"
