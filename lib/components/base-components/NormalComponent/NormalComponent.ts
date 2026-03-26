@@ -1524,8 +1524,7 @@ export class NormalComponent<
       anchor_alignment: "center_of_component_on_board_surface",
       model_origin_position: cadModel?.modelOriginPosition,
 
-      footprinter_string:
-        typeof footprint === "string" && !cadModel ? footprint : undefined,
+      footprinter_string: typeof footprint === "string" ? footprint : undefined,
       show_as_translucent_model: this._parsedProps.showAsTranslucentModel,
     } as any)
     this.cad_component_id = cad_model.cad_component_id
