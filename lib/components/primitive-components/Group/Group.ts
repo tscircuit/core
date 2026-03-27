@@ -568,6 +568,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       subcircuit_id: this.subcircuit_id,
     })
 
+    // Early exit if there's nothing to route
+    if (simpleRouteJson.connections.length === 0) {
+      this._asyncAutoroutingResult = {
+        output_pcb_traces: [],
+        output_jumpers: [],
+      }
+      this._markDirty("PcbTraceRender")
+      return
+    }
+
     // Enable jumpers for auto_jumper preset
     if (isAutoJumperPreset) {
       simpleRouteJson.allowJumpers = true
