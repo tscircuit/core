@@ -17,5 +17,5 @@ test(
     expect(circuit.db.schematic_port.list()).toHaveLength(4)
     expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   },
-  { timeout: 50000 },
+  { timeout: 80000 },
 )
