@@ -772,6 +772,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (!this.isSubcircuit) return
     if (this._isInflatedFromCircuitJson) return
     if (
+      this.root?.pcbRoutingDisabled ||
+      this.getInheritedProperty("routingDisabled")
+    )
+      return
+    if (
       this._shouldRouteAsync() &&
       this._hasTracesToRoute() &&
       !this._hasStartedAsyncAutorouting
