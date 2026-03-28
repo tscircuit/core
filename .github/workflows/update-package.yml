@@ -1,0 +1,67 @@
+name: Update @tscircuit Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_names:
+        description: "Package names to update (comma-separated, e.g., @tscircuit/core,@tscircuit/props)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  PACKAGE_NAMES: ${{ inputs.package_names }}
+
+jobs:
+  update-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Update packages
+        run: |
+          IFS=',' read -ra PACKAGES <<< "${{ env.PACKAGE_NAMES }}"
+          for package in "${PACKAGES[@]}"; do
+            if [[ -n "$package" ]]; then
+              bun update --latest "$package"
+            fi
+          done
+      - name: Close existing PRs
+        run: |
+          gh pr list --repo ${{ github.repository }} --state open --author "tscircuitbot" --json number,title --jq '.[] | select(.title | startswith("chore: update packages ")) | .number' | xargs -r -I{} gh pr close {} --comment "Closing in favor of a new update PR"
+        env:
+          GH_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code || echo "changes=true" >> $GITHUB_OUTPUT
+      - name: Create Pull Request
+        if: steps.git-check.outputs.changes == 'true'
+        id: create-pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: update packages ${{ env.PACKAGE_NAMES }}"
+          title: "chore: update packages ${{ env.PACKAGE_NAMES }}"
+          body: "Automated package update"
+          branch: update-packages-${{ github.run_number }}
+          base: main
+          delete-branch: true
+          token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+          committer: tscircuitbot <tscircuitbot@users.noreply.github.com>
+          author: tscircuitbot <tscircuitbot@users.noreply.github.com>
+      - name: Enable auto-merge with CI checks
+        if: steps.create-pr.outputs.pull-request-number != ''
+        run: |
+          gh pr merge ${{ steps.create-pr.outputs.pull-request-number }} --auto --squash --delete-branch
+        env:
+          GH_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
