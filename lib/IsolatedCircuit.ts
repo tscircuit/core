@@ -77,6 +77,16 @@ export class IsolatedCircuit {
   _hasRenderedAtleastOnce = false
   private _asyncEffectIdsByPhase = new Map<RenderPhase, Set<string>>()
   private _asyncEffectPhaseById = new Map<string, RenderPhase>()
+  private _runningAsyncEffectsById = new Map<
+    string,
+    {
+      asyncEffectId: string
+      effectName?: string
+      componentDisplayName?: string
+      phase?: RenderPhase
+      error?: string
+    }
+  >()
 
   constructor({
     platform,
@@ -212,6 +222,16 @@ export class IsolatedCircuit {
     return (this._asyncEffectIdsByPhase.get(phase)?.size ?? 0) > 0
   }
 
+  getRunningAsyncEffects(): Array<{
+    asyncEffectId: string
+    effectName?: string
+    componentDisplayName?: string
+    phase?: RenderPhase
+    error?: string
+  }> {
+    return Array.from(this._runningAsyncEffectsById.values())
+  }
+
   getCircuitJson(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
     return this.db.toArray()
@@ -338,7 +358,10 @@ export class IsolatedCircuit {
 
   private _registerAsyncEffectStart(payload: {
     asyncEffectId?: string
+    effectName?: string
+    componentDisplayName?: string
     phase?: RenderPhase
+    error?: string
   }) {
     if (!payload?.asyncEffectId || !payload.phase) return
     const { asyncEffectId, phase } = payload
@@ -351,6 +374,13 @@ export class IsolatedCircuit {
     }
     this._asyncEffectIdsByPhase.get(phase)!.add(asyncEffectId)
     this._asyncEffectPhaseById.set(asyncEffectId, phase)
+    this._runningAsyncEffectsById.set(asyncEffectId, {
+      asyncEffectId,
+      effectName: payload.effectName,
+      componentDisplayName: payload.componentDisplayName,
+      phase,
+      error: payload.error,
+    })
   }
 
   private _registerAsyncEffectEnd(payload: {
@@ -368,5 +398,6 @@ export class IsolatedCircuit {
       }
     }
     this._asyncEffectPhaseById.delete(asyncEffectId)
+    this._runningAsyncEffectsById.delete(asyncEffectId)
   }
 }
