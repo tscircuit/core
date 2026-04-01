@@ -1551,7 +1551,7 @@ export class NormalComponent<
     })
   }
 
-  private async _getSupplierPartNumbers(
+  protected async _getSupplierPartNumbers(
     partsEngine: any,
     source_component: any,
     footprinterString: string | undefined,
