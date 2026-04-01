@@ -8,6 +8,22 @@ import { Chip } from "./Chip"
 export class Connector<
   PinLabels extends string = never,
 > extends Chip<PinLabels> {
+  private _hasExplicitFootprint(): boolean {
+    const props = this._parsedProps as ConnectorProps
+    return (
+      props.footprint !== undefined ||
+      this.children.some((child) => child.componentName === "Footprint")
+    )
+  }
+
+  private _shouldUseStandardPartsEngineCircuitJsonFlow(): boolean {
+    const props = this._parsedProps as ConnectorProps
+    if (!props.standard) return false
+    if (this._hasExplicitFootprint()) return false
+    if (this.getInheritedProperty("partsEngineDisabled")) return false
+    return true
+  }
+
   get config() {
     return {
       componentName: "Connector",
@@ -33,9 +49,7 @@ export class Connector<
   }
 
   private _isUsingStandardPartsEngineCircuitJsonFlow() {
-    const props = this._parsedProps as ConnectorProps
-    if (!props.standard) return false
-    if (this.getInheritedProperty("partsEngineDisabled")) return false
+    if (!this._shouldUseStandardPartsEngineCircuitJsonFlow()) return false
     const partsEngine = this.getInheritedProperty("partsEngine")
     return Boolean(partsEngine?.fetchPartCircuitJson)
   }
@@ -45,9 +59,21 @@ export class Connector<
     const standard = props.standard
 
     if (!standard) return
+    if (this._hasExplicitFootprint()) return
     if (this._hasStartedFootprintUrlLoad) return
     if (this.getInheritedProperty("partsEngineDisabled")) return
+    const { db } = this.root!
     const partsEngine = this.getInheritedProperty("partsEngine")
+    if (partsEngine && !partsEngine.fetchPartCircuitJson) {
+      const errorObj = unknown_error_finding_part.parse({
+        type: "unknown_error_finding_part",
+        message: `Failed to fetch circuit JSON for ${this.getString()} (standard="${standard}"): partsEngine.fetchPartCircuitJson is not configured`,
+        source_component_id: this.source_component_id ?? undefined,
+        subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+      })
+      db.unknown_error_finding_part.insert(errorObj)
+      return
+    }
     if (!partsEngine?.fetchPartCircuitJson) return
 
     this._hasStartedFootprintUrlLoad = true
@@ -140,7 +166,7 @@ export class Connector<
           type: "unknown_error_finding_part",
           message: `Failed to fetch circuit JSON for ${this.getString()} (standard="${standard}"): ${error.message}`,
           source_component_id: this.source_component_id ?? undefined,
-          subcircuit_id: this.getSubcircuit()?.subcircuit_id,
+          subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
         })
         db.unknown_error_finding_part.insert(errorObj)
       }
