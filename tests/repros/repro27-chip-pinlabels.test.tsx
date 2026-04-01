@@ -6,10 +6,6 @@ test(
   async () => {
     const { circuit } = getTestFixture()
 
-    circuit.setPlatform({
-      drcChecksDisabled: true,
-      pcbDisabled: true,
-    })
 
     circuit.add(
       <board width="10mm" height="10mm">
@@ -22,5 +18,5 @@ test(
     expect(circuit.db.schematic_port.list()).toHaveLength(4)
     expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   },
-  { timeout: 80000 },
+  { timeout: 90000 },
 )
