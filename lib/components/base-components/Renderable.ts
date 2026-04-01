@@ -78,10 +78,6 @@ export const renderPhaseIndexMap = new Map<RenderPhase, number>(
 // current component's subtree.
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   InflateSubcircuitCircuitJson: ["RenderIsolatedSubcircuits"],
-  InitializePortsFromChildren: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
   PcbFootprintLayout: ["PcbFootprintStringRender"],
   PcbComponentSizeCalculation: ["PcbFootprintStringRender"],
   PcbLayout: ["PcbFootprintStringRender"],
@@ -270,6 +266,18 @@ export abstract class Renderable implements IRenderable {
     return this.children.some((child) =>
       typeof (child as Renderable)._hasIncompleteAsyncEffects === "function"
         ? (child as Renderable)._hasIncompleteAsyncEffects()
+        : false,
+    )
+  }
+
+  _hasDirtyPhasesInSubtree(): boolean {
+    if (Object.values(this.renderPhaseStates).some((phase) => phase.dirty)) {
+      return true
+    }
+
+    return this.children.some((child) =>
+      typeof (child as Renderable)._hasDirtyPhasesInSubtree === "function"
+        ? (child as Renderable)._hasDirtyPhasesInSubtree()
         : false,
     )
   }

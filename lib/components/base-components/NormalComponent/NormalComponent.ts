@@ -992,6 +992,10 @@ export class NormalComponent<
     this.initPorts()
   }
 
+  updateInitializePortsFromChildren(): void {
+    this.initPorts()
+  }
+
   doInitialReactSubtreesRender(): void {
     // Add React-based footprint subtree if provided
     const fpElm = this.props.footprint
