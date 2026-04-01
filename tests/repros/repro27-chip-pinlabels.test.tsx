@@ -12,7 +12,7 @@ test(
       </board>,
     )
 
-    circuit.render()
+    await circuit.renderUntilSettled()
 
     expect(circuit.db.schematic_port.list()).toHaveLength(4)
     expect(circuit).toMatchSchematicSnapshot(import.meta.path)
