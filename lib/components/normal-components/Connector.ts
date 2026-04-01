@@ -1,5 +1,5 @@
 import { guessCableInsertCenter } from "@tscircuit/infer-cable-insertion-point"
-import { chipProps, type ConnectorProps } from "@tscircuit/props"
+import { connectorProps, type ConnectorProps } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { unknown_error_finding_part } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
@@ -11,15 +11,14 @@ export class Connector<
   get config() {
     return {
       componentName: "Connector",
-      zodProps: chipProps,
+      zodProps: connectorProps,
       shouldRenderAsSchematicBox: true,
     }
   }
 
   doInitialSourceRender(): void {
     const { db } = this.root!
-    const { _parsedProps: props } = this
-    const connectorProps = this.props as ConnectorProps
+    const props = this._parsedProps as ConnectorProps
 
     const source_component = db.source_component.insert({
       ftype: "simple_connector",
@@ -27,24 +26,23 @@ export class Connector<
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
-      standard: connectorProps.standard,
+      standard: props.standard,
     } as SourceSimpleConnector)
 
     this.source_component_id = source_component.source_component_id!
   }
 
   private _isUsingStandardPartsEngineCircuitJsonFlow() {
-    const connectorProps = this.props as ConnectorProps
-    if (!connectorProps.standard) return false
+    const props = this._parsedProps as ConnectorProps
+    if (!props.standard) return false
     if (this.getInheritedProperty("partsEngineDisabled")) return false
     const partsEngine = this.getInheritedProperty("partsEngine")
     return Boolean(partsEngine?.fetchPartCircuitJson)
   }
 
   doInitialStandardConnectorCircuitJsonRender(): void {
-    const { _parsedProps: props } = this
-    const connectorProps = this.props as ConnectorProps
-    const standard = connectorProps.standard
+    const props = this._parsedProps as ConnectorProps
+    const standard = props.standard
 
     if (!standard) return
     if (this._hasStartedFootprintUrlLoad) return
