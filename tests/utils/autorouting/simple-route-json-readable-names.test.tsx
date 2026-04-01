@@ -22,8 +22,6 @@ test("verify ID mapping fix", async () => {
   const pcb_port = circuit.db.pcb_port.list()[0]
 
   const readableName = getReadableName(circuit.db, pcb_port?.pcb_port_id)
-  console.log("Resolved Readable Name:", readableName)
 
-  expect(typeof readableName).toBe("string")
-  expect(readableName).toContain(".")
+  expect(readableName).toMatchInlineSnapshot(`"R1.pin1"`)
 })
