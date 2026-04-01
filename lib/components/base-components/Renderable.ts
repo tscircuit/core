@@ -78,73 +78,31 @@ export const renderPhaseIndexMap = new Map<RenderPhase, number>(
 // current component's subtree.
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   InflateSubcircuitCircuitJson: ["RenderIsolatedSubcircuits"],
-  PcbFootprintLayout: [
+  InitializePortsFromChildren: [
     "PcbFootprintStringRender",
     "StandardConnectorCircuitJsonRender",
   ],
-  PcbComponentSizeCalculation: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PcbLayout: ["PcbFootprintStringRender", "StandardConnectorCircuitJsonRender"],
-  PcbBoardAutoSize: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PcbTraceHintRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PcbManualTraceRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
+  PcbFootprintLayout: ["PcbFootprintStringRender"],
+  PcbComponentSizeCalculation: ["PcbFootprintStringRender"],
+  PcbLayout: ["PcbFootprintStringRender"],
+  PcbBoardAutoSize: ["PcbFootprintStringRender"],
+  PcbTraceHintRender: ["PcbFootprintStringRender"],
+  PcbManualTraceRender: ["PcbFootprintStringRender"],
   PcbCopperPourRender: [
     "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
     "PcbTraceRender",
     "PcbRouteNetIslands",
   ],
-  PcbTraceRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PcbRouteNetIslands: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PcbDesignRuleChecks: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  SilkscreenOverlapAdjustment: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  CadModelRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PartsEngineRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PcbComponentAnchorAlignment: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PcbCalcPlacementResolution: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  ValidatePcbCoordinates: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  SourceTraceRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
+  PcbTraceRender: ["PcbFootprintStringRender"],
+  PcbRouteNetIslands: ["PcbFootprintStringRender"],
+  PcbDesignRuleChecks: ["PcbFootprintStringRender"],
+  SilkscreenOverlapAdjustment: ["PcbFootprintStringRender"],
+  CadModelRender: ["PcbFootprintStringRender"],
+  PartsEngineRender: ["PcbFootprintStringRender"],
+  PcbComponentAnchorAlignment: ["PcbFootprintStringRender"],
+  PcbCalcPlacementResolution: ["PcbFootprintStringRender"],
+  ValidatePcbCoordinates: ["PcbFootprintStringRender"],
+  SourceTraceRender: ["PcbFootprintStringRender"],
 }
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
