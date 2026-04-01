@@ -6,7 +6,6 @@ test(
   async () => {
     const { circuit } = getTestFixture()
 
-
     circuit.add(
       <board width="10mm" height="10mm">
         <chip name="U1" pinLabels={{ 1: "A", 2: "B", 3: "C", 4: "D" }} />

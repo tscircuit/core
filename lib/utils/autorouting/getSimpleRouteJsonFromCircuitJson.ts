@@ -1,5 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { su } from "@tscircuit/circuit-json-util"
+import { su, getReadableNameForPcbPort } from "@tscircuit/circuit-json-util"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import {
   ConnectivityMap,
@@ -9,24 +9,6 @@ import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircui
 import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
-
-/**
- * Get a readable name for a Port (e.g. U1.pin1)
- */
-export const getReadableName = (
-  db: CircuitJsonUtilObjects,
-  portId?: string,
-): string | undefined => {
-  if (!portId) return undefined
-  const pcbPort = db.pcb_port?.get(portId)
-  if (!pcbPort?.source_port_id) return portId
-  const sourcePort = db.source_port?.get(pcbPort.source_port_id)
-  if (!sourcePort) return portId
-  const sourceComponent = db.source_component?.get(
-    sourcePort.source_component_id as string,
-  )
-  return `${sourceComponent?.name ?? "unknown"}.${sourcePort.name}`
-}
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -245,21 +227,21 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       // TODO handle trace.connected_source_net_ids
       const [portA, portB] = connectedPorts
 
-      if (portA.x === undefined || portA.y === undefined) {
-        const readablePortA = getReadableName(db, portA.pcb_port_id)
+      if (!portA.pcb_port_id || portA.x === undefined || portA.y === undefined) {
+        const readablePortA = portA.pcb_port_id
+          ? getReadableNameForPcbPort(db.toArray(), portA.pcb_port_id)
+          : "unknown"
         console.error(
-          `(pcb_port_id: ${readablePortA ?? portA.pcb_port_id}) for trace ${
-            trace.source_trace_id
-          } does not have x/y coordinates. Skipping this trace.`,
+          `(${readablePortA}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
         )
         return null
       }
-      if (portB.x === undefined || portB.y === undefined) {
-        const readablePortB = getReadableName(db, portB.pcb_port_id)
+      if (!portB.pcb_port_id || portB.x === undefined || portB.y === undefined) {
+        const readablePortB = portB.pcb_port_id
+          ? getReadableNameForPcbPort(db.toArray(), portB.pcb_port_id)
+          : "unknown"
         console.error(
-          `(pcb_port_id: ${readablePortB ?? portB.pcb_port_id}) for trace ${
-            trace.source_trace_id
-          } does not have x/y coordinates. Skipping this trace.`,
+          `(${readablePortB}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
         )
         return null
       }
