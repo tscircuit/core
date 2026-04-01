@@ -316,18 +316,6 @@ export abstract class Renderable implements IRenderable {
     )
   }
 
-  _hasDirtyPhasesInSubtree(): boolean {
-    if (Object.values(this.renderPhaseStates).some((phase) => phase.dirty)) {
-      return true
-    }
-
-    return this.children.some((child) =>
-      typeof (child as Renderable)._hasDirtyPhasesInSubtree === "function"
-        ? (child as Renderable)._hasDirtyPhasesInSubtree()
-        : false,
-    )
-  }
-
   _hasIncompleteAsyncEffectsInSubtreeForPhase(phase: RenderPhase): boolean {
     // Check self
     for (const e of this._asyncEffects) {
