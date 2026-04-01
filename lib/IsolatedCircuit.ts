@@ -205,16 +205,8 @@ export class IsolatedCircuit {
 
     this.render()
 
-    while (true) {
-      while (this._hasIncompleteAsyncEffects()) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        this.render()
-      }
-
-      if (!this._hasDirtyRenderPhases()) {
-        break
-      }
-
+    while (this._hasIncompleteAsyncEffects()) {
+      await new Promise((resolve) => setTimeout(resolve, 100))
       this.render()
     }
 
@@ -224,10 +216,6 @@ export class IsolatedCircuit {
   _hasIncompleteAsyncEffects(): boolean {
     if (this._asyncEffectPhaseById.size > 0) return true
     return this.children.some((child) => child._hasIncompleteAsyncEffects())
-  }
-
-  _hasDirtyRenderPhases(): boolean {
-    return this.children.some((child) => child._hasDirtyPhasesInSubtree())
   }
 
   _hasIncompleteAsyncEffectsForPhase(phase: RenderPhase): boolean {
