@@ -6,7 +6,10 @@ test(
   async () => {
     const { circuit } = getTestFixture()
 
-    circuit.setPlatform({ drcChecksDisabled: true })
+    circuit.setPlatform({ 
+      drcChecksDisabled: true,
+      pcbDisabled: true,
+    })
 
     circuit.add(
       <board width="10mm" height="10mm">
