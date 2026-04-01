@@ -1,5 +1,9 @@
 import { guessCableInsertCenter } from "@tscircuit/infer-cable-insertion-point"
-import { connectorProps, type ConnectorProps } from "@tscircuit/props"
+import {
+  connectorProps,
+  type ConnectorProps,
+  type PartsEngine,
+} from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { unknown_error_finding_part } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
@@ -8,8 +12,12 @@ import { Chip } from "./Chip"
 export class Connector<
   PinLabels extends string = never,
 > extends Chip<PinLabels> {
+  private _getConnectorProps(): ConnectorProps {
+    return this._parsedProps as ConnectorProps
+  }
+
   private _hasExplicitFootprint(): boolean {
-    const props = this._parsedProps as ConnectorProps
+    const props = this._getConnectorProps()
     return (
       props.footprint !== undefined ||
       this.children.some((child) => child.componentName === "Footprint")
@@ -17,11 +25,91 @@ export class Connector<
   }
 
   private _shouldUseStandardPartsEngineCircuitJsonFlow(): boolean {
-    const props = this._parsedProps as ConnectorProps
+    const props = this._getConnectorProps()
     if (!props.standard) return false
     if (this._hasExplicitFootprint()) return false
     if (this.getInheritedProperty("partsEngineDisabled")) return false
     return true
+  }
+
+  private _insertStandardConnectorCircuitJsonError(
+    standard: string,
+    message: string,
+  ): void {
+    const { db } = this.root!
+    const errorObj = unknown_error_finding_part.parse({
+      type: "unknown_error_finding_part",
+      message: `Failed to fetch circuit JSON for ${this.getString()} (standard="${standard}"): ${message}`,
+      source_component_id: this.source_component_id ?? undefined,
+      subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+    })
+    db.unknown_error_finding_part.insert(errorObj)
+  }
+
+  private _getSupplierPartNumbersToTry(
+    supplierPartNumbers: Record<string, string[] | undefined> | undefined,
+  ): string[] {
+    const partNumbers: string[] = []
+    for (const supplier of Object.keys(supplierPartNumbers ?? {})) {
+      const nums = supplierPartNumbers?.[supplier]
+      if (Array.isArray(nums) && nums.length > 0) {
+        partNumbers.push(nums[0])
+      }
+    }
+    return partNumbers
+  }
+
+  private async _tryFetchPartCircuitJson(
+    fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>,
+    params: { supplierPartNumber?: string; manufacturerPartNumber?: string },
+  ): Promise<AnyCircuitElement[] | null> {
+    const maybeCircuitJson =
+      (await Promise.resolve(fetchPartCircuitJson(params))) ?? null
+    if (Array.isArray(maybeCircuitJson) && maybeCircuitJson.length > 0) {
+      return maybeCircuitJson
+    }
+    return null
+  }
+
+  private async _fetchStandardConnectorCircuitJson(
+    fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>,
+    supplierPartNumbers: Record<string, string[] | undefined> | undefined,
+    manufacturerPartNumber?: string,
+  ): Promise<AnyCircuitElement[] | null> {
+    for (const supplierPartNumber of this._getSupplierPartNumbersToTry(
+      supplierPartNumbers,
+    )) {
+      const circuitJson = await this._tryFetchPartCircuitJson(
+        fetchPartCircuitJson,
+        { supplierPartNumber },
+      )
+      if (circuitJson) return circuitJson
+    }
+
+    if (!manufacturerPartNumber) return null
+
+    return this._tryFetchPartCircuitJson(fetchPartCircuitJson, {
+      manufacturerPartNumber,
+    })
+  }
+
+  private _addConnectorFootprintFromCircuitJson(
+    standard: string,
+    circuitJson: AnyCircuitElement[],
+  ): void {
+    const props = this._getConnectorProps()
+    const fpComponents = createComponentsFromCircuitJson(
+      {
+        componentName: this.name,
+        componentRotation: String(props.pcbRotation ?? 0),
+        footprinterString: `standard:${standard}`,
+        pinLabels: props.pinLabels,
+        pcbPinLabels: props.pcbPinLabels,
+      },
+      circuitJson,
+    )
+    this.addAll(fpComponents)
+    this._markDirty("InitializePortsFromChildren")
   }
 
   get config() {
@@ -34,7 +122,7 @@ export class Connector<
 
   doInitialSourceRender(): void {
     const { db } = this.root!
-    const props = this._parsedProps as ConnectorProps
+    const props = this._getConnectorProps()
 
     const source_component = db.source_component.insert({
       ftype: "simple_connector",
@@ -55,26 +143,24 @@ export class Connector<
   }
 
   doInitialStandardConnectorCircuitJsonRender(): void {
-    const props = this._parsedProps as ConnectorProps
+    const props = this._getConnectorProps()
     const standard = props.standard
 
     if (!standard) return
-    if (this._hasExplicitFootprint()) return
+    if (!this._shouldUseStandardPartsEngineCircuitJsonFlow()) return
     if (this._hasStartedFootprintUrlLoad) return
-    if (this.getInheritedProperty("partsEngineDisabled")) return
-    const { db } = this.root!
-    const partsEngine = this.getInheritedProperty("partsEngine")
+    const partsEngine = this.getInheritedProperty("partsEngine") as
+      | PartsEngine
+      | undefined
     if (partsEngine && !partsEngine.fetchPartCircuitJson) {
-      const errorObj = unknown_error_finding_part.parse({
-        type: "unknown_error_finding_part",
-        message: `Failed to fetch circuit JSON for ${this.getString()} (standard="${standard}"): partsEngine.fetchPartCircuitJson is not configured`,
-        source_component_id: this.source_component_id ?? undefined,
-        subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-      })
-      db.unknown_error_finding_part.insert(errorObj)
+      this._insertStandardConnectorCircuitJsonError(
+        standard,
+        "partsEngine.fetchPartCircuitJson is not configured",
+      )
       return
     }
-    if (!partsEngine?.fetchPartCircuitJson) return
+    const fetchPartCircuitJson = partsEngine?.fetchPartCircuitJson
+    if (!fetchPartCircuitJson) return
 
     this._hasStartedFootprintUrlLoad = true
 
@@ -91,7 +177,6 @@ export class Connector<
     this._queueAsyncEffect("load-standard-connector-circuit-json", async () => {
       const { db } = this.root!
       try {
-        // Step 1: findPart → supplier part numbers
         const supplierPartNumbers = await this._getSupplierPartNumbers(
           partsEngine,
           sourceComponentForQuery,
@@ -104,71 +189,16 @@ export class Connector<
           })
         }
 
-        // Step 2: fetchPartCircuitJson with first available supplier part number
-        let circuitJson: AnyCircuitElement[] | null = null
-        for (const supplier of Object.keys(supplierPartNumbers ?? {})) {
-          const nums = supplierPartNumbers[supplier]
-          if (Array.isArray(nums) && nums.length > 0) {
-            const maybeCircuitJson =
-              (await Promise.resolve(
-                partsEngine.fetchPartCircuitJson({
-                  supplierPartNumber: nums[0],
-                }),
-              )) ?? null
-            if (
-              Array.isArray(maybeCircuitJson) &&
-              maybeCircuitJson.length > 0
-            ) {
-              circuitJson = maybeCircuitJson
-              break
-            }
-          }
-        }
+        const circuitJson = await this._fetchStandardConnectorCircuitJson(
+          fetchPartCircuitJson,
+          supplierPartNumbers,
+          sourceComponentForQuery.manufacturer_part_number,
+        )
+        if (!circuitJson) return
 
-        // Fallback: manufacturer part number
-        if (
-          (!circuitJson || circuitJson.length === 0) &&
-          sourceComponentForQuery.manufacturer_part_number
-        ) {
-          const maybeCircuitJson =
-            (await Promise.resolve(
-              partsEngine.fetchPartCircuitJson({
-                manufacturerPartNumber:
-                  sourceComponentForQuery.manufacturer_part_number,
-              }),
-            )) ?? null
-          if (Array.isArray(maybeCircuitJson) && maybeCircuitJson.length > 0) {
-            circuitJson = maybeCircuitJson
-          }
-        }
-
-        if (circuitJson && circuitJson.length > 0) {
-          const fpComponents = createComponentsFromCircuitJson(
-            {
-              componentName: this.name,
-              componentRotation: String(props.pcbRotation ?? 0),
-              footprinterString: `standard:${standard}`,
-              pinLabels: props.pinLabels,
-              pcbPinLabels: props.pcbPinLabels,
-            },
-            circuitJson,
-          )
-          this.addAll(fpComponents)
-          this._markDirty("InitializePortsFromChildren")
-        }
+        this._addConnectorFootprintFromCircuitJson(standard, circuitJson)
       } catch (error: any) {
-        if (this.source_component_id) {
-          db.source_component.update(this.source_component_id, {
-            supplier_part_numbers: {},
-          })
-        }
-        const errorObj = unknown_error_finding_part.parse({
-          type: "unknown_error_finding_part",
-          message: `Failed to fetch circuit JSON for ${this.getString()} (standard="${standard}"): ${error.message}`,
-          source_component_id: this.source_component_id ?? undefined,
-          subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-        })
-        db.unknown_error_finding_part.insert(errorObj)
+        this._insertStandardConnectorCircuitJsonError(standard, error.message)
       }
     })
   }
