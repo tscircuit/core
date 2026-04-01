@@ -6,7 +6,7 @@ test(
   async () => {
     const { circuit } = getTestFixture()
 
-    circuit.setPlatform({ 
+    circuit.setPlatform({
       drcChecksDisabled: true,
       pcbDisabled: true,
     })
