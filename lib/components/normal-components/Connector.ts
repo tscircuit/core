@@ -41,10 +41,6 @@ export class Connector<
     return Boolean(partsEngine?.fetchPartCircuitJson)
   }
 
-  doInitialPcbFootprintStringRender(): void {
-    super.doInitialPcbFootprintStringRender()
-  }
-
   doInitialStandardConnectorCircuitJsonRender(): void {
     const { _parsedProps: props } = this
     const connectorProps = this.props as ConnectorProps
