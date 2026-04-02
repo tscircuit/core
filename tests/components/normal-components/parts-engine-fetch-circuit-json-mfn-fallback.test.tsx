@@ -2,6 +2,7 @@ import { test, expect } from "bun:test"
 import type { PartsEngine } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import usbCC2765186CircuitJson from "tests/fixtures/assets/usb-c-C2765186.circuit.json"
 
 /**
  * When findPart returns no supplier part numbers, core falls back to calling
@@ -9,39 +10,6 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
  */
 test("connector usb_c falls back to manufacturerPartNumber when findPart returns no supplier parts", async () => {
   const { circuit } = getTestFixture()
-
-  const mockCircuitJson = [
-    {
-      type: "pcb_smtpad",
-      x: 0,
-      y: 0,
-      width: 0.6,
-      height: 0.6,
-      shape: "rect",
-      layer: "top",
-      port_hints: ["1"],
-    },
-    {
-      type: "pcb_smtpad",
-      x: 1,
-      y: 0,
-      width: 0.6,
-      height: 0.6,
-      shape: "rect",
-      layer: "top",
-      port_hints: ["2"],
-    },
-    {
-      type: "pcb_silkscreen_text",
-      pcb_silkscreen_text_id: "silk1",
-      text: "USB",
-      anchor_position: { x: 0.5, y: -1 },
-      anchor_alignment: "center",
-      layer: "top",
-      font: "tscircuit2024",
-      font_size: 1,
-    },
-  ]
 
   const mockPartsEngine: PartsEngine = {
     findPart: async () => {
@@ -56,7 +24,7 @@ test("connector usb_c falls back to manufacturerPartNumber when findPart returns
       manufacturerPartNumber?: string
     }) => {
       if (manufacturerPartNumber === "USB4135-GF-A") {
-        return mockCircuitJson as AnyCircuitElement[]
+        return usbCC2765186CircuitJson as AnyCircuitElement[]
       }
       return undefined
     },
@@ -80,7 +48,25 @@ test("connector usb_c falls back to manufacturerPartNumber when findPart returns
   expect(sourceComponent).toBeTruthy()
   expect((sourceComponent as any).standard).toBe("usb_c")
 
+  const sourcePorts = circuit.db.source_port
+    .list()
+    .filter(
+      (sp: any) =>
+        sp.source_component_id === sourceComponent!.source_component_id,
+    )
+  const pin1Port = sourcePorts.find((sp: any) => sp.pin_number === 1)
+  const pin2Port = sourcePorts.find((sp: any) => sp.pin_number === 2)
+  const pin7Port = sourcePorts.find((sp: any) => sp.pin_number === 7)
+  const pin13Port = sourcePorts.find((sp: any) => sp.pin_number === 13)
+
+  expect(pin1Port?.port_hints).toContain("GND1")
+  expect(pin2Port?.port_hints).toContain("VBUS1")
+  expect(pin7Port?.port_hints).toContain("DM1")
+  expect(pin7Port?.port_hints).toContain("DN1")
+  expect(pin13Port?.port_hints).toContain("SHELL1")
+
   const pads = circuit.db.pcb_smtpad.list()
   expect(pads.length).toBeGreaterThan(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

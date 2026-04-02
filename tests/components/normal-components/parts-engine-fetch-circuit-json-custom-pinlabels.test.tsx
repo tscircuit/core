@@ -4,7 +4,7 @@ import type { AnyCircuitElement } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import usbCC165948CircuitJson from "tests/fixtures/assets/usb-c-C165948.circuit.json"
 
-test("connector with standard='usb_c' fetches circuit json from parts engine", async () => {
+test("connector usb_c applies custom pinLabels when footprint is fetched from parts engine", async () => {
   const { circuit } = getTestFixture()
 
   const mockPartsEngine: PartsEngine = {
@@ -17,12 +17,7 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
       }
       return {}
     },
-    fetchPartCircuitJson: async ({
-      supplierPartNumber,
-    }: {
-      supplierPartNumber?: string
-      manufacturerPartNumber?: string
-    }) => {
+    fetchPartCircuitJson: async ({ supplierPartNumber }: any) => {
       if (supplierPartNumber === "C165948") {
         return usbCC165948CircuitJson as AnyCircuitElement[]
       }
@@ -32,21 +27,24 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
 
   circuit.add(
     <board partsEngine={mockPartsEngine} width="20mm" height="20mm">
-      <connector name="USB1" standard="usb_c" />
+      <connector
+        name="USB1"
+        standard="usb_c"
+        pinLabels={{
+          pin1: "GND_CUSTOM",
+          pin2: ["VBUS_CUSTOM", "VBUS_ALT"],
+          pin13: "SHIELD_CUSTOM",
+        }}
+      />
     </board>,
   )
 
   await circuit.renderUntilSettled()
 
-  // Verify supplier part numbers were stored on the source component
   const sourceComponent = circuit.db.source_component
     .list()
     .find((c: any) => c.name === "USB1")
   expect(sourceComponent).toBeTruthy()
-  expect(sourceComponent!.supplier_part_numbers).toEqual({
-    jlcpcb: ["C165948"],
-  })
-  expect((sourceComponent as any).standard).toBe("usb_c")
 
   const sourcePorts = circuit.db.source_port
     .list()
@@ -56,19 +54,13 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
     )
   const pin1Port = sourcePorts.find((sp: any) => sp.pin_number === 1)
   const pin2Port = sourcePorts.find((sp: any) => sp.pin_number === 2)
-  const pin7Port = sourcePorts.find((sp: any) => sp.pin_number === 7)
   const pin13Port = sourcePorts.find((sp: any) => sp.pin_number === 13)
 
-  expect(pin1Port?.port_hints).toContain("GND1")
-  expect(pin2Port?.port_hints).toContain("VBUS1")
-  expect(pin7Port?.port_hints).toContain("DM1")
-  expect(pin7Port?.port_hints).toContain("DN1")
-  expect(pin13Port?.port_hints).toContain("SHELL1")
-  expect(pin13Port?.port_hints).toContain("EH1")
+  expect(pin1Port?.port_hints).toContain("GND_CUSTOM")
+  expect(pin2Port?.port_hints).toContain("VBUS_CUSTOM")
+  expect(pin2Port?.port_hints).toContain("VBUS_ALT")
+  expect(pin13Port?.port_hints).toContain("SHIELD_CUSTOM")
 
-  // Verify footprint pads were added from the fetched circuit JSON
-  const pads = circuit.db.pcb_smtpad.list()
-  expect(pads.length).toBeGreaterThan(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
