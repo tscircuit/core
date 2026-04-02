@@ -100,4 +100,7 @@ test("connector standard usb_c exposes stable pin labels and aliases when footpr
   expect(pin6Hints).toContain("A5")
 
   expect(circuit.db.unknown_error_finding_part.list().length).toBe(0)
+
+  await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

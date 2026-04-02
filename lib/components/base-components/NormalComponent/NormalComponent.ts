@@ -1322,6 +1322,20 @@ export class NormalComponent<
       return Object.keys(pinLabels).length
     }
 
+    // If ports are already initialized on the component, infer pin count from
+    // those ports so schematic rendering can still show pins/labels even when
+    // pinLabels/footprint/schPortArrangement props are omitted.
+    const existingPorts = this._getAllPortsFromChildren()
+    if (existingPorts.length > 0) {
+      const pinNumbers = existingPorts
+        .map((port) => port.props.pinNumber)
+        .filter((pinNumber): pinNumber is number => pinNumber !== undefined)
+      if (pinNumbers.length > 0) {
+        return Math.max(...pinNumbers)
+      }
+      return existingPorts.length
+    }
+
     return 0
   }
 

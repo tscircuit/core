@@ -63,8 +63,8 @@ test("connector standard usb_c prefers user pinLabels over default usb_c labels"
         name="USB1"
         standard="usb_c"
         pinLabels={{
-          pin1: ["GND_CUSTOM", "A1"],
-          pin6: ["CC_CUSTOM", "A5"],
+          pin1: ["CUSTOM", "A1"],
+          pin6: ["CC", "A5"],
         }}
       />
     </board>,
@@ -86,19 +86,22 @@ test("connector standard usb_c prefers user pinLabels over default usb_c labels"
 
   const pin1 = usbPorts.find((p: any) => p.pin_number === 1)
   expect(pin1).toBeTruthy()
-  expect(pin1?.name).toBe("GND_CUSTOM")
+  expect(pin1?.name).toBe("CUSTOM")
   const pin1Hints = pin1?.port_hints ?? []
-  expect(pin1Hints).toContain("GND_CUSTOM")
+  expect(pin1Hints).toContain("CUSTOM")
   expect(pin1Hints).toContain("A1")
   expect(pin1Hints).not.toContain("GND1")
 
   const pin6 = usbPorts.find((p: any) => p.pin_number === 6)
   expect(pin6).toBeTruthy()
-  expect(pin6?.name).toBe("CC_CUSTOM")
+  expect(pin6?.name).toBe("CC")
   const pin6Hints = pin6?.port_hints ?? []
-  expect(pin6Hints).toContain("CC_CUSTOM")
+  expect(pin6Hints).toContain("CC")
   expect(pin6Hints).toContain("A5")
   expect(pin6Hints).not.toContain("CC1")
 
   expect(circuit.db.unknown_error_finding_part.list().length).toBe(0)
+
+  await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
