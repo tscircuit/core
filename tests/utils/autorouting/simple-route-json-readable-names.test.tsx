@@ -10,6 +10,7 @@ test("verify human-readable errors in autorouter diagnostics", async () => {
     <board width={10} height={10}>
       <resistor name="R1" pcbX={-2} pcbY={0} resistance="1k" footprint="0402" />
       <resistor name="R2" pcbX={2} pcbY={0} resistance="1k" footprint="0402" />
+      <net name="MY_NET" />
       <trace from=".R1 > .pin1" to=".R2 > .pin1" />
     </board>,
   )
@@ -23,11 +24,14 @@ test("verify human-readable errors in autorouter diagnostics", async () => {
     circuit.db.pcb_trace.delete(pcb_trace.pcb_trace_id)
   }
 
-  getSimpleRouteJsonFromCircuitJson({ db: circuit.db })
-  const pcb_errors = circuit.db.pcb_trace_error.list()
+  const consoleSpy = spyOn(console, "error").mockImplementation(() => {})
 
-  expect(pcb_errors.length).toBeGreaterThan(0)
-  expect(pcb_errors[0].message).toMatchInlineSnapshot(
-    `"Port pcb_port[.R1 > .pin1] on trace source_trace_0 does not have x/y coordinates. Skipping this trace."`,
+  getSimpleRouteJsonFromCircuitJson({ db: circuit.db })
+
+  expect(consoleSpy).toHaveBeenCalled()
+  expect(consoleSpy.mock.calls[0][0]).toMatchInlineSnapshot(
+    `"(pcb_port[.R1 > .pin1]) for trace source_trace_0 does not have x/y coordinates. Skipping this trace."`,
   )
+
+  consoleSpy.mockRestore()
 })
