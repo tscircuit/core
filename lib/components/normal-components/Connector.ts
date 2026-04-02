@@ -109,7 +109,6 @@ export class Connector<
       circuitJson,
     )
     this.addAll(fpComponents)
-    this._markDirty("InitializePortsFromChildren")
   }
 
   get config() {
