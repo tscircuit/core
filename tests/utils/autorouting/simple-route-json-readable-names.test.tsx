@@ -25,7 +25,7 @@ test("verify human-readable errors in autorouter diagnostics", async () => {
   }
 
   getSimpleRouteJsonFromCircuitJson({ db: circuit.db })
-  
+
   const pcb_trace_errors = circuit.db.pcb_trace_error.list()
   expect(pcb_trace_errors).toHaveLength(1)
   expect(pcb_trace_errors[0].message).toMatchInlineSnapshot(

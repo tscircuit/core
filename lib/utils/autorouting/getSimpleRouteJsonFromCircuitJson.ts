@@ -243,7 +243,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             ? `.${source_component.name} > .${source_port.name}`
             : portA.pcb_port_id
               ? getReadableNameForPcbPort(db.toArray(), portA.pcb_port_id)
-              : portA.source_port_id ?? "unknown"
+              : (portA.source_port_id ?? "unknown")
 
         db.pcb_trace_error.insert({
           error_type: "pcb_trace_error",
@@ -267,7 +267,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             ? `.${source_component.name} > .${source_port.name}`
             : portB.pcb_port_id
               ? getReadableNameForPcbPort(db.toArray(), portB.pcb_port_id)
-              : portB.source_port_id ?? "unknown"
+              : (portB.source_port_id ?? "unknown")
 
         db.pcb_trace_error.insert({
           error_type: "pcb_trace_error",
@@ -492,4 +492,3 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     connMap,
   }
 }
-
