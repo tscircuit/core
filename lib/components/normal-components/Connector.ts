@@ -3,17 +3,92 @@ import {
   connectorProps,
   type ConnectorProps,
   type PartsEngine,
+  type PinLabelsProp,
 } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { unknown_error_finding_part } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { Chip } from "./Chip"
 
+const USB_C_STANDARD_PIN_LABELS = {
+  pin1: ["GND1", "A1"],
+  pin2: ["GND2", "B12"],
+  pin3: ["VBUS1", "A4"],
+  pin4: ["VBUS2", "B9"],
+  pin5: ["SBU2", "B8"],
+  pin6: ["CC1", "A5"],
+  pin7: ["DM2", "B7"],
+  pin8: ["DP1", "A6"],
+  pin9: ["DM1", "A7"],
+  pin10: ["DP2", "B6"],
+  pin11: ["SBU1", "A8"],
+  pin12: ["CC2", "B5"],
+  pin13: ["VBUS1", "A9"],
+  pin14: ["VBUS2", "B4"],
+  pin15: ["GND1", "A12"],
+  pin16: ["GND2", "B1"],
+} as const
+
 export class Connector<
   PinLabels extends string = never,
 > extends Chip<PinLabels> {
   private _getConnectorProps(): ConnectorProps {
     return this._parsedProps as ConnectorProps
+  }
+
+  private _getStandardPinLabels(): PinLabelsProp | undefined {
+    const props = this._getConnectorProps()
+    if (props.standard === "usb_c") return USB_C_STANDARD_PIN_LABELS
+    return undefined
+  }
+
+  private _getResolvedPinLabels(): PinLabelsProp | undefined {
+    const props = this._getConnectorProps()
+    return props.pinLabels ?? this._getStandardPinLabels()
+  }
+
+  override initPorts(
+    opts: {
+      additionalAliases?: Record<`pin${number}`, string[]>
+      pinCount?: number
+      ignoreSymbolPorts?: boolean
+    } = {},
+  ): void {
+    const props = this._getConnectorProps()
+    const standardPinLabels = this._getStandardPinLabels()
+
+    if (
+      props.pinLabels ||
+      !standardPinLabels ||
+      Array.isArray(standardPinLabels)
+    ) {
+      super.initPorts(opts)
+      return
+    }
+
+    const additionalAliases: Record<`pin${number}`, string[]> = {
+      ...(opts.additionalAliases ?? {}),
+    }
+
+    for (const [pinName, labels] of Object.entries(standardPinLabels)) {
+      const pinKey = pinName as `pin${number}`
+      const aliases = Array.isArray(labels)
+        ? (labels as readonly string[])
+        : ([labels] as string[])
+      additionalAliases[pinKey] = [
+        ...aliases,
+        ...(additionalAliases[pinKey] ?? []),
+      ]
+    }
+
+    super.initPorts({
+      ...opts,
+      additionalAliases,
+      pinCount: Math.max(
+        opts.pinCount ?? 0,
+        Object.keys(standardPinLabels).length,
+      ),
+    })
   }
 
   private _hasExplicitFootprint(): boolean {
@@ -98,12 +173,13 @@ export class Connector<
     circuitJson: AnyCircuitElement[],
   ): void {
     const props = this._getConnectorProps()
+    const resolvedPinLabels = this._getResolvedPinLabels()
     const fpComponents = createComponentsFromCircuitJson(
       {
         componentName: this.name,
         componentRotation: String(props.pcbRotation ?? 0),
         footprinterString: `standard:${standard}`,
-        pinLabels: props.pinLabels,
+        pinLabels: resolvedPinLabels,
         pcbPinLabels: props.pcbPinLabels,
       },
       circuitJson,
