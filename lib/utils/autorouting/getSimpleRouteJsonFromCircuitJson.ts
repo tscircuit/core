@@ -70,13 +70,18 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     board = db.pcb_board.list()[0]
   }
 
-
-
   const connMap = getFullConnectivityMapFromCircuitJson(subcircuitElements)
 
   const obstacles = getObstaclesFromCircuitJson(
     subcircuitElements.filter((e: any) =>
-      ["pcb_component", "pcb_smtpad", "pcb_plated_hole", "pcb_hole", "pcb_via", "pcb_cutout"].includes(e.type),
+      [
+        "pcb_component",
+        "pcb_smtpad",
+        "pcb_plated_hole",
+        "pcb_hole",
+        "pcb_via",
+        "pcb_cutout",
+      ].includes(e.type),
     ),
     connMap,
   )
@@ -105,7 +110,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   // Build mapping from pcb_smtpad_id/pcb_plated_hole_id to source_port_id via pcb_port
   const pcbElementIdToSourcePortId = new Map<string, string>()
-  for (const pcbPort of subcircuitElements.filter((e: any) => e.type === "pcb_port") as any[]) {
+  for (const pcbPort of subcircuitElements.filter(
+    (e: any) => e.type === "pcb_port",
+  ) as any[]) {
     if (pcbPort.source_port_id) {
       // Find the smtpad or plated hole associated with this port
       const smtpad = db.pcb_smtpad.getWhere({
@@ -201,22 +208,21 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   )
 
   // Create connections from traces
-  const directTraceConnections = (subcircuitElements.filter(
-    (e: any) => e.type === "source_trace",
-  ) as any[])
-    .filter(
-      (trace: any) =>
-        !routedTraceIds.has(trace.source_trace_id),
-    )
+  const directTraceConnections = (
+    subcircuitElements.filter((e: any) => e.type === "source_trace") as any[]
+  )
+    .filter((trace: any) => !routedTraceIds.has(trace.source_trace_id))
     .map((trace: any) => {
-      const connectedPorts = trace.connected_source_port_ids.map((id: string) => {
-        const source_port = db.source_port.get(id)
-        const pcb_port = db.pcb_port.getWhere({ source_port_id: id })
-        return {
-          ...source_port,
-          ...pcb_port,
-        }
-      })
+      const connectedPorts = trace.connected_source_port_ids.map(
+        (id: string) => {
+          const source_port = db.source_port.get(id)
+          const pcb_port = db.pcb_port.getWhere({ source_port_id: id })
+          return {
+            ...source_port,
+            ...pcb_port,
+          }
+        },
+      )
 
       if (connectedPorts.length < 2) return null
 
@@ -324,7 +330,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     directTraceConnections.map((c) => [c.source_trace_id, c]),
   )
 
-  const source_nets = subcircuitElements.filter((e: any) => e.type === "source_net") as any[]
+  const source_nets = subcircuitElements.filter(
+    (e: any) => e.type === "source_net",
+  ) as any[]
 
   const connectionsFromNets: SimpleRouteConnection[] = []
   for (const net of source_nets) {
@@ -352,7 +360,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
   }
 
-  const breakoutPoints = subcircuitElements.filter((e: any) => e.type === "pcb_breakout_point") as any[]
+  const breakoutPoints = subcircuitElements.filter(
+    (e: any) => e.type === "pcb_breakout_point",
+  ) as any[]
 
   const connectionsFromBreakoutPoints: SimpleRouteConnection[] = []
   const breakoutTraceConnectionsById = new Map<string, SimpleRouteConnection>()
@@ -425,7 +435,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   // ----- 3. Walk existing pcb_traces to find already-connected port groups
-  const existingTraces = subcircuitElements.filter((e: any) => e.type === "pcb_trace") as any[]
+  const existingTraces = subcircuitElements.filter(
+    (e: any) => e.type === "pcb_trace",
+  ) as any[]
 
   for (const tr of existingTraces) {
     const tracePortIds = new Set<string>()
