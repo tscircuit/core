@@ -75,8 +75,7 @@ export interface TscircuitElements {
   constraint: Props.ConstraintProps
   constrainedlayout: Props.ConstrainedLayoutProps
   battery: Props.BatteryProps
-  // TODO use ConnectorProps once it gets merged in @tscircuit/props
-  connector: Props.ChipProps
+  connector: Props.ConnectorProps
   pinheader: Props.PinHeaderProps
   resonator: Props.ResonatorProps
   subcircuit: Props.SubcircuitGroupProps
