@@ -49,7 +49,7 @@ export interface SimpleRouteConnection {
     y: number
     layer: string
     pointId?: string // NEW – identifier used by the solver
-    pcb_port_id?: string // (kept for convenience, was already used)
+    source_port_id?: string
   }>
   externallyConnectedPointIds?: string[][] // NEW – groups of pointIds
 }
