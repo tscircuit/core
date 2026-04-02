@@ -91,6 +91,24 @@ export class Connector<
     })
   }
 
+  override _getPinCount(): number {
+    const pinCountFromBase = super._getPinCount()
+    if (pinCountFromBase > 0) return pinCountFromBase
+
+    const existingPorts = this._getAllPortsFromChildren().filter(
+      (port) => port.getParentNormalComponent() === this,
+    )
+    if (existingPorts.length === 0) return 0
+
+    const pinNumbers = existingPorts
+      .map((port) => port.props.pinNumber)
+      .filter((pinNumber): pinNumber is number => pinNumber !== undefined)
+    if (pinNumbers.length > 0) {
+      return Math.max(...pinNumbers)
+    }
+    return existingPorts.length
+  }
+
   private _hasExplicitFootprint(): boolean {
     const props = this._getConnectorProps()
     return (
