@@ -1,4 +1,4 @@
-import { expect, test, spyOn } from "bun:test"
+import { expect, test } from "bun:test"
 import { RootCircuit } from "lib/RootCircuit"
 import "lib/register-catalogue"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
@@ -24,14 +24,11 @@ test("verify human-readable errors in autorouter diagnostics", async () => {
     circuit.db.pcb_trace.delete(pcb_trace.pcb_trace_id)
   }
 
-  const consoleSpy = spyOn(console, "error").mockImplementation(() => {})
-
   getSimpleRouteJsonFromCircuitJson({ db: circuit.db })
-
-  expect(consoleSpy).toHaveBeenCalled()
-  expect(consoleSpy.mock.calls[0][0]).toMatchInlineSnapshot(
+  
+  const pcb_trace_errors = circuit.db.pcb_trace_error.list()
+  expect(pcb_trace_errors).toHaveLength(1)
+  expect(pcb_trace_errors[0].message).toMatchInlineSnapshot(
     `"(pcb_port[.R1 > .pin1]) for trace source_trace_0 does not have x/y coordinates. Skipping this trace."`,
   )
-
-  consoleSpy.mockRestore()
 })
