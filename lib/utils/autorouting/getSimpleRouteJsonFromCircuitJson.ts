@@ -1,5 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { su, getReadableNameForPcbPort } from "@tscircuit/circuit-json-util"
+import { getReadableNameForPcbPort, su } from "@tscircuit/circuit-json-util"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import {
   ConnectivityMap,
@@ -73,7 +73,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const subcircuitDb = su(subcircuitElements)
 
-  const connMap = getFullConnectivityMapFromCircuitJson(db.toArray())
+  const connMap = getFullConnectivityMapFromCircuitJson(subcircuitElements)
 
   const obstacles = getObstaclesFromCircuitJson(
     [
@@ -230,7 +230,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       const [portA, portB] = connectedPorts
 
       if (
-        !portA.source_port_id ||
+        !portA.source_port_id || // Required for routing system to track connections
         portA.x === undefined ||
         portA.y === undefined
       ) {
@@ -244,19 +244,34 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           source_component && source_port
             ? `.${source_component.name} > .${source_port.name}`
             : portA.pcb_port_id
-              ? getReadableNameForPcbPort(db.toArray(), portA.pcb_port_id)
+              ? `pcb_port_id:${portA.pcb_port_id}`
               : (portA.source_port_id ?? "unknown")
+
+        // Build readable trace name from both ports
+        const portBSourcePort = portB.source_port_id
+          ? db.source_port.get(portB.source_port_id)
+          : null
+        const portBSourceComponent = portBSourcePort
+          ? db.source_component.get(portBSourcePort.source_component_id!)
+          : null
+        const readablePortB =
+          portBSourceComponent && portBSourcePort
+            ? `.${portBSourceComponent.name} > .${portBSourcePort.name}`
+            : portB.pcb_port_id
+              ? `pcb_port_id:${portB.pcb_port_id}`
+              : (portB.source_port_id ?? "unknown")
+        const readableTraceName = `${readablePortA} ↔ ${readablePortB}`
 
         db.pcb_trace_error.insert({
           error_type: "pcb_trace_error",
-          message: `(pcb_port[${readablePortA}]) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
+          message: `(port[${readablePortA}]) for trace ${readableTraceName} does not have x/y coordinates. Skipping this trace.`,
           source_trace_id: trace.source_trace_id,
           source_port_ids: portA.source_port_id ? [portA.source_port_id] : [],
         } as any)
         return null
       }
       if (
-        !portB.source_port_id ||
+        !portB.source_port_id || // Required for routing system to track connections
         portB.x === undefined ||
         portB.y === undefined
       ) {
@@ -270,12 +285,27 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           source_component && source_port
             ? `.${source_component.name} > .${source_port.name}`
             : portB.pcb_port_id
-              ? getReadableNameForPcbPort(db.toArray(), portB.pcb_port_id)
+              ? `pcb_port_id:${portB.pcb_port_id}`
               : (portB.source_port_id ?? "unknown")
+
+        // Build readable trace name from both ports
+        const portASourcePort = portA.source_port_id
+          ? db.source_port.get(portA.source_port_id)
+          : null
+        const portASourceComponent = portASourcePort
+          ? db.source_component.get(portASourcePort.source_component_id!)
+          : null
+        const readablePortA =
+          portASourceComponent && portASourcePort
+            ? `.${portASourceComponent.name} > .${portASourcePort.name}`
+            : portA.pcb_port_id
+              ? `pcb_port_id:${portA.pcb_port_id}`
+              : (portA.source_port_id ?? "unknown")
+        const readableTraceName = `${readablePortA} ↔ ${readablePortB}`
 
         db.pcb_trace_error.insert({
           error_type: "pcb_trace_error",
-          message: `(pcb_port[${readablePortB}]) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
+          message: `(port[${readablePortB}]) for trace ${readableTraceName} does not have x/y coordinates. Skipping this trace.`,
           source_trace_id: trace.source_trace_id,
           source_port_ids: portB.source_port_id ? [portB.source_port_id] : [],
         } as any)
@@ -321,7 +351,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             x: portA.x!,
             y: portA.y!,
             layer: layerA,
-            pointId: portA.source_port_id,
+            pointId: portA.source_port_id, // Use source_port_id for consistent routing logic with existing traces
             pcb_port_id: portA.pcb_port_id,
           },
           ...hintPoints,
@@ -329,7 +359,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             x: portB.x!,
             y: portB.y!,
             layer: layerB,
-            pointId: portB.source_port_id,
+            pointId: portB.source_port_id, // Use source_port_id for consistent routing logic with existing traces
             pcb_port_id: portB.pcb_port_id,
           },
         ],

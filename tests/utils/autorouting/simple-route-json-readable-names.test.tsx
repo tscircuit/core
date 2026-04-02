@@ -29,6 +29,6 @@ test("verify human-readable errors in autorouter diagnostics", async () => {
   const pcb_trace_errors = circuit.db.pcb_trace_error.list()
   expect(pcb_trace_errors).toHaveLength(1)
   expect(pcb_trace_errors[0].message).toMatchInlineSnapshot(
-    `"(pcb_port[.R1 > .pin1]) for trace source_trace_0 does not have x/y coordinates. Skipping this trace."`,
+    `"(port[.R1 > .pin1]) for trace .R1 > .pin1 ↔ .R2 > .pin1 does not have x/y coordinates. Skipping this trace."`,
   )
 })
