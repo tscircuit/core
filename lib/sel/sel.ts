@@ -96,6 +96,15 @@ type ChipSel = Record<
   Record<CommonPinNames | PinNumbers100, string> & ChipFnSel
 >
 
+/**
+ * `sel.net` supports two usage patterns:
+ * - `sel.net.GND` for the built-in common net names
+ * - `sel.net<"USB_DP_RAW" | "USB_DM_RAW">().USB_DP_RAW` for custom nets
+ *
+ * The callable form is required for custom net typing so TypeScript can infer
+ * the additional net names without making every arbitrary `sel.net.FOO`
+ * property access type-check.
+ */
 type NetSelFn<N extends string = CommonNetNames> = (<
   N2 extends string,
 >() => Record<N | N2, string>) &

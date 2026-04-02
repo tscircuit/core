@@ -19,6 +19,18 @@ test("sel1 - invalid net", () => {
   const someval = sel.net.ASDF1
 })
 
+test("sel1 - custom net typing requires callable sel.net form", () => {
+  const customNets = sel.net<"USB_DP_RAW" | "USB_DM_RAW">()
+
+  expect(customNets.USB_DP_RAW).toBe("net.USB_DP_RAW")
+  expect(customNets.USB_DM_RAW).toBe("net.USB_DM_RAW")
+})
+
+test("sel1 - custom net property access without generic call is a type error", () => {
+  // @ts-expect-error
+  const someval = sel.net.USB_DP_RAW
+})
+
 test("sel1 - invalid pin number", () => {
   // @ts-expect-error
   const someval = sel.R1.pin3
