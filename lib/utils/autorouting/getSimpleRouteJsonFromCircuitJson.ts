@@ -1,5 +1,9 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { getReadableNameForPcbPort, su } from "@tscircuit/circuit-json-util"
+import {
+  getReadableNameForPcbPort,
+  getReadableNameForPcbTrace,
+  su,
+} from "@tscircuit/circuit-json-util"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import {
   ConnectivityMap,
@@ -50,11 +54,28 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
-  const subcircuitElements = (circuitJson ?? db.toArray()).filter(
-    (e) =>
-      !subcircuit_id ||
-      ("subcircuit_id" in e && relevantSubcircuitIds!.has(e.subcircuit_id!)),
-  )
+  const subcircuitElements =
+    circuitJson ??
+    [
+      ...db.source_component.list(),
+      ...db.source_port.list(),
+      ...db.source_trace.list(),
+      ...db.source_net.list(),
+      ...db.source_component_internal_connection.list(),
+      ...db.pcb_component.list(),
+      ...db.pcb_port.list(),
+      ...db.pcb_trace.list(),
+      ...db.pcb_smtpad.list(),
+      ...db.pcb_plated_hole.list(),
+      ...db.pcb_hole.list(),
+      ...db.pcb_via.list(),
+      ...db.pcb_board.list(),
+      ...db.pcb_cutout.list(),
+    ].filter(
+      (e) =>
+        !subcircuit_id ||
+        ("subcircuit_id" in e && relevantSubcircuitIds!.has(e.subcircuit_id!)),
+    )
 
   let board: PcbBoard | undefined | null = null
   if (subcircuit_id) {
@@ -230,37 +251,30 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       const [portA, portB] = connectedPorts
 
       if (
-        !portA.source_port_id || // Required for routing system to track connections
+        !portA.source_port_id ||
         portA.x === undefined ||
         portA.y === undefined
       ) {
-        const source_port = portA.source_port_id
-          ? db.source_port.get(portA.source_port_id)
-          : null
-        const source_component = source_port
-          ? db.source_component.get(source_port.source_component_id!)
-          : null
-        const readablePortA =
-          source_component && source_port
-            ? `.${source_component.name} > .${source_port.name}`
-            : portA.pcb_port_id
-              ? `pcb_port_id:${portA.pcb_port_id}`
-              : (portA.source_port_id ?? "unknown")
+        const readablePortA = portA.pcb_port_id
+          ? getReadableNameForPcbPort(subcircuitElements, portA.pcb_port_id)
+          : (portA.source_port_id ?? "unknown")
 
-        // Build readable trace name from both ports
-        const portBSourcePort = portB.source_port_id
-          ? db.source_port.get(portB.source_port_id)
-          : null
-        const portBSourceComponent = portBSourcePort
-          ? db.source_component.get(portBSourcePort.source_component_id!)
-          : null
-        const readablePortB =
-          portBSourceComponent && portBSourcePort
-            ? `.${portBSourceComponent.name} > .${portBSourcePort.name}`
-            : portB.pcb_port_id
-              ? `pcb_port_id:${portB.pcb_port_id}`
-              : (portB.source_port_id ?? "unknown")
-        const readableTraceName = `${readablePortA} ↔ ${readablePortB}`
+        // Build readable trace name
+        const pcb_trace = db.pcb_trace.getWhere({
+          source_trace_id: trace.source_trace_id,
+        })
+        let readableTraceName: string
+        if (pcb_trace) {
+          readableTraceName = getReadableNameForPcbTrace(
+            subcircuitElements,
+            pcb_trace.pcb_trace_id,
+          )
+        } else {
+          const readablePortB = portB.pcb_port_id
+            ? getReadableNameForPcbPort(subcircuitElements, portB.pcb_port_id)
+            : (portB.source_port_id ?? "unknown")
+          readableTraceName = `${readablePortA} ↔ ${readablePortB}`
+        }
 
         db.pcb_trace_error.insert({
           error_type: "pcb_trace_error",
@@ -271,37 +285,30 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         return null
       }
       if (
-        !portB.source_port_id || // Required for routing system to track connections
+        !portB.source_port_id ||
         portB.x === undefined ||
         portB.y === undefined
       ) {
-        const source_port = portB.source_port_id
-          ? db.source_port.get(portB.source_port_id)
-          : null
-        const source_component = source_port
-          ? db.source_component.get(source_port.source_component_id!)
-          : null
-        const readablePortB =
-          source_component && source_port
-            ? `.${source_component.name} > .${source_port.name}`
-            : portB.pcb_port_id
-              ? `pcb_port_id:${portB.pcb_port_id}`
-              : (portB.source_port_id ?? "unknown")
+        const readablePortB = portB.pcb_port_id
+          ? getReadableNameForPcbPort(subcircuitElements, portB.pcb_port_id)
+          : (portB.source_port_id ?? "unknown")
 
-        // Build readable trace name from both ports
-        const portASourcePort = portA.source_port_id
-          ? db.source_port.get(portA.source_port_id)
-          : null
-        const portASourceComponent = portASourcePort
-          ? db.source_component.get(portASourcePort.source_component_id!)
-          : null
-        const readablePortA =
-          portASourceComponent && portASourcePort
-            ? `.${portASourceComponent.name} > .${portASourcePort.name}`
-            : portA.pcb_port_id
-              ? `pcb_port_id:${portA.pcb_port_id}`
-              : (portA.source_port_id ?? "unknown")
-        const readableTraceName = `${readablePortA} ↔ ${readablePortB}`
+        // Build readable trace name
+        const pcb_trace = db.pcb_trace.getWhere({
+          source_trace_id: trace.source_trace_id,
+        })
+        let readableTraceName: string
+        if (pcb_trace) {
+          readableTraceName = getReadableNameForPcbTrace(
+            subcircuitElements,
+            pcb_trace.pcb_trace_id,
+          )
+        } else {
+          const readablePortA = portA.pcb_port_id
+            ? getReadableNameForPcbPort(subcircuitElements, portA.pcb_port_id)
+            : (portA.source_port_id ?? "unknown")
+          readableTraceName = `${readablePortA} ↔ ${readablePortB}`
+        }
 
         db.pcb_trace_error.insert({
           error_type: "pcb_trace_error",
