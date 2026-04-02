@@ -141,7 +141,7 @@ export class Connector<
     return Boolean(partsEngine?.fetchPartCircuitJson)
   }
 
-  doInitialStandardConnectorCircuitJsonRender(): void {
+  doInitialFetchPartFootprint(): void {
     const props = this._getConnectorProps()
     const standard = props.standard
 
@@ -204,7 +204,7 @@ export class Connector<
 
   doInitialPartsEngineRender(): void {
     // For standard connectors, supplier part numbers are already resolved
-    // during StandardConnectorCircuitJsonRender via findPart + fetchPartCircuitJson
+    // during FetchPartFootprint via findPart + fetchPartCircuitJson
     if (this._isUsingStandardPartsEngineCircuitJsonFlow()) return
     super.doInitialPartsEngineRender()
   }

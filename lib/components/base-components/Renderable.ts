@@ -16,7 +16,7 @@ export const orderedRenderPhases = [
   "InflateSubcircuitCircuitJson",
   "SourceNameDuplicateComponentRemoval",
   "PcbFootprintStringRender",
-  "StandardConnectorCircuitJsonRender",
+  "FetchPartFootprint",
   "InitializePortsFromChildren",
   "CreateNetsFromProps",
   "AssignFallbackProps",
@@ -78,73 +78,40 @@ export const renderPhaseIndexMap = new Map<RenderPhase, number>(
 // current component's subtree.
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   InflateSubcircuitCircuitJson: ["RenderIsolatedSubcircuits"],
-  PcbFootprintLayout: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
+  PcbFootprintLayout: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbComponentSizeCalculation: [
     "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
+    "FetchPartFootprint",
   ],
-  PcbLayout: ["PcbFootprintStringRender", "StandardConnectorCircuitJsonRender"],
-  PcbBoardAutoSize: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PcbTraceHintRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PcbManualTraceRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
+  PcbLayout: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  PcbBoardAutoSize: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  PcbTraceHintRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  PcbManualTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbCopperPourRender: [
     "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
+    "FetchPartFootprint",
     "PcbTraceRender",
     "PcbRouteNetIslands",
   ],
-  PcbTraceRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PcbRouteNetIslands: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PcbDesignRuleChecks: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
+  PcbTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  PcbRouteNetIslands: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  PcbDesignRuleChecks: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SilkscreenOverlapAdjustment: [
     "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
+    "FetchPartFootprint",
   ],
-  CadModelRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  PartsEngineRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
+  CadModelRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  PartsEngineRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbComponentAnchorAlignment: [
     "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
+    "FetchPartFootprint",
   ],
   PcbCalcPlacementResolution: [
     "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
+    "FetchPartFootprint",
   ],
-  ValidatePcbCoordinates: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
-  SourceTraceRender: [
-    "PcbFootprintStringRender",
-    "StandardConnectorCircuitJsonRender",
-  ],
+  ValidatePcbCoordinates: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SourceTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
 }
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =
