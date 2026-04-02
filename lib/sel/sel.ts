@@ -83,6 +83,16 @@ type CommonNetNames =
   | "FLASH_N_HOLD"
   | "INT"
   | "N_INT"
+  | "VBUS"
+  | "SWCLK"
+  | "USB_DM"
+  | "USB_DP"
+  | "QSPI_SS"
+  | "XIN"
+  | "XOUT"
+  | "RUN"
+  | "SWD"
+  | `GPIO${Nums40}`
 
 type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
 
