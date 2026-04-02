@@ -227,7 +227,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       // TODO handle trace.connected_source_net_ids
       const [portA, portB] = connectedPorts
 
-      if (!portA.pcb_port_id || portA.x === undefined || portA.y === undefined) {
+      if (
+        !portA.pcb_port_id ||
+        portA.x === undefined ||
+        portA.y === undefined
+      ) {
         const readablePortA = portA.pcb_port_id
           ? getReadableNameForPcbPort(db.toArray(), portA.pcb_port_id)
           : "unknown"
@@ -236,7 +240,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         )
         return null
       }
-      if (!portB.pcb_port_id || portB.x === undefined || portB.y === undefined) {
+      if (
+        !portB.pcb_port_id ||
+        portB.x === undefined ||
+        portB.y === undefined
+      ) {
         const readablePortB = portB.pcb_port_id
           ? getReadableNameForPcbPort(db.toArray(), portB.pcb_port_id)
           : "unknown"

@@ -17,11 +17,9 @@ test("verify human-readable errors in autorouter diagnostics", async () => {
 
   await circuit.renderUntilSettled()
 
-  // Simulate an error by removing coordinates from a port
   const pcb_port = circuit.db.pcb_port.list()[0]
   pcb_port.x = undefined as any
 
-  // Remove existing traces so the autorouter attempts to route them again
   for (const pcb_trace of circuit.db.pcb_trace.list()) {
     circuit.db.pcb_trace.delete(pcb_trace.pcb_trace_id)
   }
