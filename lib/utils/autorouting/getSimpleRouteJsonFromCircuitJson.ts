@@ -234,7 +234,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         portA.x === undefined ||
         portA.y === undefined
       ) {
-        const source_port = db.source_port.get(portA.source_port_id!)
+        const source_port = portA.source_port_id
+          ? db.source_port.get(portA.source_port_id)
+          : null
         const source_component = source_port
           ? db.source_component.get(source_port.source_component_id!)
           : null
@@ -258,7 +260,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         portB.x === undefined ||
         portB.y === undefined
       ) {
-        const source_port = db.source_port.get(portB.source_port_id!)
+        const source_port = portB.source_port_id
+          ? db.source_port.get(portB.source_port_id)
+          : null
         const source_component = source_port
           ? db.source_component.get(source_port.source_component_id!)
           : null
