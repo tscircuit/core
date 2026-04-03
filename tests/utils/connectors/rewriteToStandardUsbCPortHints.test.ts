@@ -27,7 +27,7 @@ const makePad = (pin: number): AnyCircuitElement =>
     pcb_component_id: "pcb_component_0",
   }) as any
 
-test("rewriteToStandardUsbCPortHints adds every USB-C standard hint to the corresponding pin hints", () => {
+test("rewriteToStandardUsbCPortHints rewrites USB-C hints without remapping pins", () => {
   const standardHints = [
     "GND1",
     "VBUS1",
@@ -47,19 +47,19 @@ test("rewriteToStandardUsbCPortHints adds every USB-C standard hint to the corre
     "SHELL4",
   ]
 
-  const input: AnyCircuitElement[] = []
+  const standardInput: AnyCircuitElement[] = []
   for (let i = 0; i < standardHints.length; i++) {
     const pin = i + 1
-    input.push(makeSourcePort(pin, [standardHints[i]]))
-    input.push(makePad(pin))
+    standardInput.push(makeSourcePort(pin, [standardHints[i]]))
+    standardInput.push(makePad(pin))
   }
 
-  const rewritten = rewriteToStandardUsbCPortHints(input)
+  const standardRewritten = rewriteToStandardUsbCPortHints(standardInput)
 
   for (let i = 0; i < standardHints.length; i++) {
     const pin = i + 1
     const expectedHint = standardHints[i]
-    const pad = rewritten.find(
+    const pad = standardRewritten.find(
       (e: any) =>
         e.type === "pcb_smtpad" &&
         Array.isArray(e.port_hints) &&
@@ -68,10 +68,8 @@ test("rewriteToStandardUsbCPortHints adds every USB-C standard hint to the corre
     expect(pad).toBeTruthy()
     expect(pad.port_hints).toContain(expectedHint)
   }
-})
 
-test("rewriteToStandardUsbCPortHints adds DN/DM aliases and preserves non-standard source aliases", () => {
-  const input: AnyCircuitElement[] = [
+  const aliasInput: AnyCircuitElement[] = [
     makeSourcePort(7, ["DN1"]),
     makeSourcePort(8, ["DM2"]),
     makeSourcePort(2, ["EH1"]),
@@ -80,15 +78,15 @@ test("rewriteToStandardUsbCPortHints adds DN/DM aliases and preserves non-standa
     makePad(2),
   ]
 
-  const rewritten = rewriteToStandardUsbCPortHints(input)
+  const aliasRewritten = rewriteToStandardUsbCPortHints(aliasInput)
 
-  const pin7Pad = rewritten.find(
+  const pin7Pad = aliasRewritten.find(
     (e: any) => e.type === "pcb_smtpad" && e.port_hints?.includes("pin7"),
   ) as any
-  const pin8Pad = rewritten.find(
+  const pin8Pad = aliasRewritten.find(
     (e: any) => e.type === "pcb_smtpad" && e.port_hints?.includes("pin8"),
   ) as any
-  const pin2Pad = rewritten.find(
+  const pin2Pad = aliasRewritten.find(
     (e: any) => e.type === "pcb_smtpad" && e.port_hints?.includes("pin2"),
   ) as any
 
@@ -96,25 +94,22 @@ test("rewriteToStandardUsbCPortHints adds DN/DM aliases and preserves non-standa
   expect(pin7Pad.port_hints).toContain("DM1")
   expect(pin8Pad.port_hints).toContain("DM2")
   expect(pin8Pad.port_hints).toContain("DN2")
-
   expect(pin2Pad.port_hints).toContain("EH1")
   expect(pin2Pad.port_hints).not.toContain("SHELL1")
-})
 
-test("rewriteToStandardUsbCPortHints does not change source_port pin_number or name", () => {
-  const input: AnyCircuitElement[] = [
+  const noRemapInput: AnyCircuitElement[] = [
     makeSourcePort(13, ["A1B12", "GND1"]),
     makeSourcePort(15, ["B4A9", "VBUS1"]),
     makePad(13),
     makePad(15),
   ]
 
-  const rewritten = rewriteToStandardUsbCPortHints(input)
+  const noRemapRewritten = rewriteToStandardUsbCPortHints(noRemapInput)
 
-  const sourcePortsBefore = input.filter(
+  const sourcePortsBefore = noRemapInput.filter(
     (e: any) => e.type === "source_port",
   ) as any[]
-  const sourcePortsAfter = rewritten.filter(
+  const sourcePortsAfter = noRemapRewritten.filter(
     (e: any) => e.type === "source_port",
   ) as any[]
 
