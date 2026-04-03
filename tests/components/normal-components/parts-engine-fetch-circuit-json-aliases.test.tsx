@@ -61,7 +61,7 @@ test("connector usb_c adds DM aliases without remapping pin numbers or shell lab
   expect(gnd1Port?.pin_number).toBe(13)
   expect(vbus1Port?.pin_number).toBe(15)
 
-  // We preserve EH labels as-is and do not canonicalize to SHELL*.
+  // We preserve EH aliases and do not introduce shell canonical labels.
   expect(sourcePorts.some((sp: any) => sp.port_hints?.includes("EH1"))).toBe(
     true,
   )
