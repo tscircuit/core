@@ -160,8 +160,16 @@ export class NormalComponent<
     // Apply invalid pin label filtering for object-based pinLabels only
     // Array-based pinLabels (used by PinHeader) are left unfiltered
     if (filteredProps.pinLabels && !Array.isArray(filteredProps.pinLabels)) {
-      const { validPinLabels, invalidPinLabelsMessages: messages } =
-        filterPinLabels(filteredProps.pinLabels)
+      const {
+        validPinLabels,
+        invalidPinLabelsMessages: messages,
+        invalidKeyMessages,
+      } = filterPinLabels(filteredProps.pinLabels)
+
+      if (invalidKeyMessages.length > 0) {
+        throw new Error(invalidKeyMessages.join("\n"))
+      }
+
       filteredProps.pinLabels = validPinLabels
       invalidPinLabelsMessages = messages
     }

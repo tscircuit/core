@@ -13,17 +13,27 @@ export function filterPinLabels(
 ): {
   validPinLabels: Record<string, string | string[]> | undefined
   invalidPinLabelsMessages: string[]
+  invalidKeyMessages: string[]
 } {
   if (!pinLabels)
     return {
       validPinLabels: pinLabels as undefined,
       invalidPinLabelsMessages: [],
+      invalidKeyMessages: [],
     }
 
   const validPinLabels: Record<string, string | string[]> = {}
   const invalidPinLabelsMessages: string[] = []
+  const invalidKeyMessages: string[] = []
 
   for (const [pin, labelOrLabels] of Object.entries(pinLabels)) {
+    if (!pin.match(/^pin\d+$/)) {
+      invalidKeyMessages.push(
+        `Invalid pinLabels key "${pin}". Expected "pin<number>" (e.g. pin1, pin2).`,
+      )
+      continue
+    }
+
     const labels: string[] = Array.isArray(labelOrLabels)
       ? (labelOrLabels as string[]).slice() // Convert readonly to mutable
       : [labelOrLabels as string]
@@ -51,6 +61,7 @@ export function filterPinLabels(
     validPinLabels:
       Object.keys(validPinLabels).length > 0 ? validPinLabels : undefined,
     invalidPinLabelsMessages,
+    invalidKeyMessages,
   }
 }
 
