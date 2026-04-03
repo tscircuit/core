@@ -27,7 +27,7 @@ export function filterPinLabels(
   const invalidPinLabelsKeyMessages: string[] = []
 
   for (const [pin, labelOrLabels] of Object.entries(pinLabels)) {
-    if (!pin.match(/^pin\d+$/)) {
+    if (!pin.match(/^(pin)?\d+$/)) {
       invalidPinLabelsKeyMessages.push(
         `Invalid pinLabels key "${pin}". Expected "pin<number>" (e.g. pin1, pin2).`,
       )
