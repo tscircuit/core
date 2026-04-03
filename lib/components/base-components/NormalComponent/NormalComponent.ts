@@ -163,11 +163,11 @@ export class NormalComponent<
       const {
         validPinLabels,
         invalidPinLabelsMessages: messages,
-        invalidKeyMessages,
+        invalidPinLabelsKeyMessages,
       } = filterPinLabels(filteredProps.pinLabels)
 
-      if (invalidKeyMessages.length > 0) {
-        throw new Error(invalidKeyMessages.join("\n"))
+      if (invalidPinLabelsKeyMessages.length > 0) {
+        throw new Error(invalidPinLabelsKeyMessages.join("\n"))
       }
 
       filteredProps.pinLabels = validPinLabels
