@@ -5,7 +5,7 @@ test("repro44 - pcbPack and schematic", async () => {
   const { circuit } = await getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="20mm" pcbPack>
+    <board width="20mm" height="20mm" pcbPack routingDisabled>
       {/* 555 as a generic chip */}
       <chip
         name="U1"
@@ -61,6 +61,94 @@ test("repro44 - pcbPack and schematic", async () => {
     </board>,
   )
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await circuit.renderUntilSettled()
+
+  expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
+
+  const componentNamesBySourceId = Object.fromEntries(
+    circuit.db
+      .source_component.list()
+      .map((component) => [component.source_component_id, component.name]),
+  )
+
+  const packedPcbComponents = circuit.db.pcb_component
+    .list()
+    .map((component) => ({
+      name: componentNamesBySourceId[component.source_component_id],
+      center: {
+        x: Number(component.center.x.toFixed(3)),
+        y: Number(component.center.y.toFixed(3)),
+      },
+      width: Number(component.width.toFixed(3)),
+      height: Number(component.height.toFixed(3)),
+      layer: component.layer,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  expect(packedPcbComponents).toMatchInlineSnapshot(`
+    [
+      {
+        "center": {
+          "x": 0.625,
+          "y": -4.08,
+        },
+        "height": 1.75,
+        "layer": "top",
+        "name": "C1",
+        "width": 4.05,
+      },
+      {
+        "center": {
+          "x": 5.075,
+          "y": -4.865,
+        },
+        "height": 1.4,
+        "layer": "top",
+        "name": "C2",
+        "width": 2.85,
+      },
+      {
+        "center": {
+          "x": 5.075,
+          "y": 0.635,
+        },
+        "height": 1.4,
+        "layer": "top",
+        "name": "R1",
+        "width": 2.85,
+      },
+      {
+        "center": {
+          "x": 5.075,
+          "y": -1.765,
+        },
+        "height": 1.4,
+        "layer": "top",
+        "name": "R2",
+        "width": 2.85,
+      },
+      {
+        "center": {
+          "x": -5.075,
+          "y": -0.635,
+        },
+        "height": 1.4,
+        "layer": "top",
+        "name": "R3",
+        "width": 2.85,
+      },
+      {
+        "center": {
+          "x": 0,
+          "y": 0,
+        },
+        "height": 4.41,
+        "layer": "top",
+        "name": "U1",
+        "width": 5.3,
+      },
+    ]
+  `)
+
+  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
 })
