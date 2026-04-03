@@ -78,6 +78,21 @@ export const renderPhaseIndexMap = new Map<RenderPhase, number>(
 // current component's subtree.
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   InflateSubcircuitCircuitJson: ["RenderIsolatedSubcircuits"],
+  SchematicComponentRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SchematicPortRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SymbolContainerRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SchematicPrimitiveRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SchematicSymbolResize: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SchematicComponentSizeCalculation: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+  ],
+  SchematicLayout: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SchematicTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SchematicReplaceNetLabelsWithSymbols: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+  ],
   PcbFootprintLayout: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbComponentSizeCalculation: [
     "PcbFootprintStringRender",

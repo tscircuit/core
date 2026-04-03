@@ -96,6 +96,15 @@ export const createComponentsFromCircuitJson = (
           layer: elm.layer,
         }),
       )
+    } else if (elm.type === "pcb_smtpad" && elm.shape === "polygon") {
+      components.push(
+        new SmtPad({
+          shape: "polygon",
+          points: elm.points,
+          portHints: elm.port_hints,
+          layer: elm.layer,
+        }),
+      )
     } else if (elm.type === "pcb_silkscreen_path") {
       components.push(
         new SilkscreenPath({
