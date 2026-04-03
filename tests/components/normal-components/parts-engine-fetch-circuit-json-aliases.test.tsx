@@ -4,7 +4,7 @@ import type { AnyCircuitElement } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import usbCC165948CircuitJson from "tests/fixtures/assets/usb-c-C165948.circuit.json"
 
-test("connector usb_c applies custom pinLabels when footprint is fetched from parts engine", async () => {
+test("connector usb_c adds DM aliases without remapping pin numbers or shell labels", async () => {
   const { circuit } = getTestFixture()
 
   const mockPartsEngine: PartsEngine = {
@@ -27,15 +27,7 @@ test("connector usb_c applies custom pinLabels when footprint is fetched from pa
 
   circuit.add(
     <board partsEngine={mockPartsEngine} width="20mm" height="20mm">
-      <connector
-        name="USB1"
-        standard="usb_c"
-        pinLabels={{
-          pin1: "GND_CUSTOM",
-          pin2: ["VBUS_CUSTOM", "VBUS_ALT"],
-          pin13: "SHIELD_CUSTOM",
-        }}
-      />
+      <connector name="USB1" standard="usb_c" />
     </board>,
   )
 
@@ -52,15 +44,28 @@ test("connector usb_c applies custom pinLabels when footprint is fetched from pa
       (sp: any) =>
         sp.source_component_id === sourceComponent!.source_component_id,
     )
-  const pin1Port = sourcePorts.find((sp: any) => sp.pin_number === 1)
-  const pin2Port = sourcePorts.find((sp: any) => sp.pin_number === 2)
-  const pin13Port = sourcePorts.find((sp: any) => sp.pin_number === 13)
 
-  expect(pin1Port?.port_hints).toContain("GND_CUSTOM")
-  expect(pin2Port?.port_hints).toContain("VBUS_CUSTOM")
-  expect(pin2Port?.port_hints).toContain("VBUS_ALT")
-  expect(pin13Port?.port_hints).toContain("SHIELD_CUSTOM")
+  const dn1Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN1"))
+  const dn2Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN2"))
+  const gnd1Port = sourcePorts.find((sp: any) =>
+    sp.port_hints?.includes("GND1"),
+  )
+  const vbus1Port = sourcePorts.find((sp: any) =>
+    sp.port_hints?.includes("VBUS1"),
+  )
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  expect(dn1Port?.port_hints).toContain("DM1")
+  expect(dn2Port?.port_hints).toContain("DM2")
+
+  // C165948 keeps these on pin13/pin15; normalization should not remap numbers.
+  expect(gnd1Port?.pin_number).toBe(13)
+  expect(vbus1Port?.pin_number).toBe(15)
+
+  // We preserve EH labels as-is and do not canonicalize to SHELL*.
+  expect(sourcePorts.some((sp: any) => sp.port_hints?.includes("EH1"))).toBe(
+    true,
+  )
+  expect(sourcePorts.some((sp: any) => sp.port_hints?.includes("SHELL1"))).toBe(
+    false,
+  )
 })

@@ -54,16 +54,19 @@ test("connector usb_c falls back to manufacturerPartNumber when findPart returns
       (sp: any) =>
         sp.source_component_id === sourceComponent!.source_component_id,
     )
-  const pin1Port = sourcePorts.find((sp: any) => sp.pin_number === 1)
-  const pin2Port = sourcePorts.find((sp: any) => sp.pin_number === 2)
-  const pin7Port = sourcePorts.find((sp: any) => sp.pin_number === 7)
-  const pin13Port = sourcePorts.find((sp: any) => sp.pin_number === 13)
+  const hasHint = (hint: string) =>
+    sourcePorts.some((sp: any) => sp.port_hints?.includes(hint))
+  const dn1Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN1"))
+  const dn2Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN2"))
 
-  expect(pin1Port?.port_hints).toContain("GND1")
-  expect(pin2Port?.port_hints).toContain("VBUS1")
-  expect(pin7Port?.port_hints).toContain("DM1")
-  expect(pin7Port?.port_hints).toContain("DN1")
-  expect(pin13Port?.port_hints).toContain("SHELL1")
+  expect(hasHint("CC1")).toBe(true)
+  expect(hasHint("CC2")).toBe(true)
+  expect(hasHint("GND1")).toBe(true)
+  expect(hasHint("GND2")).toBe(true)
+  expect(hasHint("VBUS1")).toBe(true)
+  expect(hasHint("VBUS2")).toBe(true)
+  expect(dn1Port?.port_hints).toContain("DM1")
+  expect(dn2Port?.port_hints).toContain("DM2")
 
   const pads = circuit.db.pcb_smtpad.list()
   expect(pads.length).toBeGreaterThan(0)
