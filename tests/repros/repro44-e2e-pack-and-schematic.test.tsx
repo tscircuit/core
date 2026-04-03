@@ -66,8 +66,8 @@ test("repro44 - pcbPack and schematic", async () => {
   expect(circuit.getCircuitJson()).toMatchSchematicSnapshot(import.meta.path)
 
   const componentNamesBySourceId = Object.fromEntries(
-    circuit.db
-      .source_component.list()
+    circuit.db.source_component
+      .list()
       .map((component) => [component.source_component_id, component.name]),
   )
 
