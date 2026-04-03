@@ -18,7 +18,7 @@ test("CopperText rendering", () => {
       <coppertext
         text="KOT2"
         fontSize={1.5}
-        pcbY={2}
+        pcbY={1.5}
         pcbX={-3}
         knockout={true}
         pcbRotation={45}
