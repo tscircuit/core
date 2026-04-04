@@ -362,13 +362,22 @@ export class NormalComponent<
         const portsFromFootprint = this.getPortsFromFootprint(opts)
         const existingPorts = this._getAllPortsFromChildren()
         for (const port of portsFromFootprint) {
-          const alreadyInPortsToCreate = portsToCreate.some((p) =>
-            p.isMatchingAnyOf(port.getNameAndAliases()),
-          )
-          const alreadyInExistingPorts = existingPorts.some((p) =>
-            p.isMatchingAnyOf(port.getNameAndAliases()),
-          )
-          if (!alreadyInPortsToCreate && !alreadyInExistingPorts) {
+          const matchingPort =
+            existingPorts.find((p) =>
+              p.isMatchingAnyOf(port.getNameAndAliases()),
+            ) ??
+            portsToCreate.find((p) =>
+              p.isMatchingAnyOf(port.getNameAndAliases()),
+            )
+
+          if (matchingPort) {
+            const mergedAliases = port
+              .getNameAndAliases()
+              .filter(
+                (alias) => !matchingPort.getNameAndAliases().includes(alias),
+              )
+            matchingPort.externallyAddedAliases.push(...mergedAliases)
+          } else {
             portsToCreate.push(port)
           }
         }
@@ -524,20 +533,29 @@ export class NormalComponent<
   doInitialSourceParentAttachment(): void {
     const { db } = this.root!
 
-    const internallyConnectedPorts = this._getInternallyConnectedPins()
+    const internallyConnectedSourcePortIds = this._getInternallyConnectedPins()
+      .map((ports) =>
+        ports
+          .map((port: Port) => port.source_port_id)
+          .filter((id): id is string => id !== null),
+      )
+      .filter((sourcePortIds) => sourcePortIds.length >= 2)
 
-    for (const ports of internallyConnectedPorts) {
-      const sourcePortIds = ports
-        .map((port: Port) => port.source_port_id)
-        .filter((id): id is string => id !== null)
+    if (
+      this.source_component_id &&
+      internallyConnectedSourcePortIds.length > 0
+    ) {
+      db.source_component.update(this.source_component_id, {
+        internally_connected_source_port_ids: internallyConnectedSourcePortIds,
+      })
+    }
 
-      if (sourcePortIds.length >= 2) {
-        db.source_component_internal_connection.insert({
-          source_component_id: this.source_component_id!,
-          subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
-          source_port_ids: sourcePortIds,
-        })
-      }
+    for (const sourcePortIds of internallyConnectedSourcePortIds) {
+      db.source_component_internal_connection.insert({
+        source_component_id: this.source_component_id!,
+        subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
+        source_port_ids: sourcePortIds,
+      })
     }
   }
 
@@ -1167,10 +1185,11 @@ export class NormalComponent<
         if (filteredPortHints.length === 0) continue
 
         let portHintsList = filteredPortHints
-        const hasPinPrefix = portHintsList.some((hint: string) =>
-          hint.startsWith("pin"),
+        const hasPinIdentifier = portHintsList.some(
+          (hint: string) =>
+            hint.startsWith("pin") || /^(?:pin)?\d+$/.test(hint),
         )
-        if (!hasPinPrefix) {
+        if (!hasPinIdentifier) {
           portHintsList = [...portHintsList, `pin${pinNumber}`]
         }
         pinNumber++
