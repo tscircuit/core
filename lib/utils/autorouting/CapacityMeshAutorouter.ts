@@ -56,6 +56,17 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
   private stepDelay: number
   private timeoutId?: number
 
+  private async stepSolver(): Promise<void> {
+    if (
+      "stepAsync" in this.solver &&
+      typeof this.solver.stepAsync === "function"
+    ) {
+      await this.solver.stepAsync()
+      return
+    }
+    this.solver.step()
+  }
+
   constructor(input: SimpleRouteJson, options: AutorouterOptions = {}) {
     this.input = input
     const {
@@ -122,13 +133,13 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     this.cycleCount = 0
 
     // Start the routing process with steps
-    this.runCycleAndQueueNextCycle()
+    void this.runCycleAndQueueNextCycle()
   }
 
   /**
    * Execute the next routing step and schedule the following one if needed
    */
-  private runCycleAndQueueNextCycle(): void {
+  private async runCycleAndQueueNextCycle(): Promise<void> {
     if (!this.isRouting) return
 
     try {
@@ -158,7 +169,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         !this.solver.failed &&
         !this.solver.solved
       ) {
-        this.solver.step()
+        await this.stepSolver()
       }
       const iterationsPerSecond =
         ((this.solver.iterations - startIterations) /
@@ -184,13 +195,13 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       // Schedule the next step
       if (this.stepDelay > 0) {
         this.timeoutId = setTimeout(
-          () => this.runCycleAndQueueNextCycle(),
+          () => void this.runCycleAndQueueNextCycle(),
           this.stepDelay,
         ) as unknown as number
       } else {
         // Use setImmediate or setTimeout with 0 to prevent blocking the event loop
         this.timeoutId = setTimeout(
-          () => this.runCycleAndQueueNextCycle(),
+          () => void this.runCycleAndQueueNextCycle(),
           0,
         ) as unknown as number
       }
