@@ -43,18 +43,37 @@ export const createComponentsFromSoup = (
         }),
       )
     } else if (elm.type === "pcb_plated_hole" && elm.shape === "circle") {
-      if (elm.shape === "circle") {
-        components.push(
-          new PlatedHole({
-            pcbX: elm.x,
-            pcbY: elm.y,
-            shape: "circle",
-            holeDiameter: elm.hole_diameter,
-            outerDiameter: elm.outer_diameter,
-            portHints: elm.port_hints,
-          }),
-        )
-      }
+      components.push(
+        new PlatedHole({
+          pcbX: elm.x,
+          pcbY: elm.y,
+          shape: "circle",
+          holeDiameter: elm.hole_diameter,
+          outerDiameter: elm.outer_diameter,
+          portHints: elm.port_hints,
+        }),
+      )
+    } else if (
+      elm.type === "pcb_plated_hole" &&
+      elm.shape === "circular_hole_with_rect_pad"
+    ) {
+      components.push(
+        new PlatedHole({
+          pcbX: elm.x,
+          pcbY: elm.y,
+          shape: "circle",
+          holeDiameter: elm.hole_diameter,
+          // Older core only understands circular plated holes. Use the
+          // rectangular pad's maximum dimension so the pad stays attachable
+          // and keeps roughly the same footprint bounds.
+          outerDiameter: Math.max(
+            elm.rect_pad_width ?? 0,
+            elm.rect_pad_height ?? 0,
+            elm.hole_diameter,
+          ),
+          portHints: elm.port_hints,
+        }),
+      )
     } else if (elm.type === "pcb_keepout" && elm.shape === "circle") {
       components.push(
         new Keepout({
