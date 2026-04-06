@@ -6,6 +6,7 @@ import type {
 import { Transistor } from "lib/components/normal-components/Transistor"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
+import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourceTransistor(
   sourceElm: SourceSimpleTransistor,
@@ -21,12 +22,18 @@ export function inflateSourceTransistor(
     source_component_id: sourceElm.source_component_id,
   }) as CadComponent | null
 
+  const { pcbX, pcbY } = getInflatedPcbPlacement({
+    pcbComponent: pcbElm,
+    sourceGroupId: sourceElm.source_group_id,
+    inflatorContext,
+  })
+
   const transistor = new Transistor({
     name: sourceElm.name,
     type: sourceElm.transistor_type,
     layer: pcbElm?.layer,
-    pcbX: pcbElm?.center?.x,
-    pcbY: pcbElm?.center?.y,
+    pcbX,
+    pcbY,
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
