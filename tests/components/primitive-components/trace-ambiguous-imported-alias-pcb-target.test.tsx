@@ -43,7 +43,7 @@ test("ambiguous imported alias pin fails with a clear pcb trace error", async ()
     [
       {
         "error_type": "pcb_trace_error",
-        "message": "Trace selector ".J1 .A1" resolved to "J1.pin1", but that target maps to multiple non-overlapping PCB pads: <smtpad#15(.pin1, .A1) />, <smtpad#16(.pin2, .A1) />. Use a raw pin selector like "J1.pin1" or "J1.pin2".",
+        "message": "Trace selector ".J1 .A1" resolved to "J1.pin1", but that target maps to multiple non-overlapping PCB pads: <smtpad(.pin1, .A1) />, <smtpad(.pin2, .A1) />. Use a raw pin selector like "J1.pin1" or "J1.pin2".",
         "pcb_component_ids": [],
         "pcb_port_ids": [
           "pcb_port_0",
