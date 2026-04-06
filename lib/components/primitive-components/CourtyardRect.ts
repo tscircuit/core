@@ -39,10 +39,10 @@ export class CourtyardRect extends PrimitiveComponent<
       this._computePcbGlobalTransformBeforeLayout(),
     )
     const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
-    let ccwRotationDegrees = ((rotationDegrees % 360) + 360) % 360
+    let ccw_rotation = ((rotationDegrees % 360) + 360) % 360
 
     if (isFlipped) {
-      ccwRotationDegrees = (180 - ccwRotationDegrees + 360) % 360
+      ccw_rotation = (180 - ccw_rotation + 360) % 360
     }
 
     const pcb_courtyard_rect = db.pcb_courtyard_rect.insert({
@@ -54,7 +54,7 @@ export class CourtyardRect extends PrimitiveComponent<
       },
       width: props.width,
       height: props.height,
-      ccw_rotation: ccwRotationDegrees || undefined,
+      ccw_rotation: ccw_rotation || undefined,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
     })
