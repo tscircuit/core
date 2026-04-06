@@ -174,6 +174,7 @@ export class Connector<
     // the first await in this async effect synchronous phases complete and
     // source_component_id will be available for db updates.
     const sourceComponentForQuery = {
+      type: "source_component",
       ftype: "simple_connector",
       name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
