@@ -8,6 +8,7 @@ import type {
 import { Chip } from "lib/components/normal-components/Chip"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
+import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 const mapInternallyConnectedSourcePortIdsToPinLabels = (
   sourcePortIds: string[][] | undefined,
@@ -64,6 +65,11 @@ export const inflateSourceChip = (
     )
 
   const footprinterString = cadElm?.footprinter_string ?? null
+  const { pcbX, pcbY } = getInflatedPcbPlacement({
+    pcbComponent: pcbElm,
+    sourceGroupId: sourceElm.source_group_id,
+    inflatorContext,
+  })
 
   const chip = new Chip({
     name: sourceElm.name,
@@ -76,8 +82,8 @@ export const inflateSourceChip = (
     schX: schematicElm?.center?.x,
     schY: schematicElm?.center?.y,
     layer: pcbElm?.layer,
-    pcbX: pcbElm?.center?.x,
-    pcbY: pcbElm?.center?.y,
+    pcbX,
+    pcbY,
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,

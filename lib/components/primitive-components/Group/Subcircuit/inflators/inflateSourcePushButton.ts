@@ -6,6 +6,7 @@ import type {
 import { PushButton } from "lib/components/normal-components/PushButton"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
+import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourcePushButton(
   sourceElm: SourceSimplePushButton,
@@ -21,11 +22,17 @@ export function inflateSourcePushButton(
     source_component_id: sourceElm.source_component_id,
   }) as CadComponent | null
 
+  const { pcbX, pcbY } = getInflatedPcbPlacement({
+    pcbComponent: pcbElm,
+    sourceGroupId: sourceElm.source_group_id,
+    inflatorContext,
+  })
+
   const pushButton = new PushButton({
     name: sourceElm.name,
     layer: pcbElm?.layer,
-    pcbX: pcbElm?.center?.x,
-    pcbY: pcbElm?.center?.y,
+    pcbX,
+    pcbY,
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,

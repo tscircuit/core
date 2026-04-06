@@ -6,6 +6,7 @@ import type {
 import { Resistor } from "lib/components/normal-components/Resistor"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
+import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourceResistor(
   sourceElm: SourceSimpleResistor,
@@ -21,12 +22,18 @@ export function inflateSourceResistor(
     source_component_id: sourceElm.source_component_id,
   }) as CadComponent | null
 
+  const { pcbX, pcbY } = getInflatedPcbPlacement({
+    pcbComponent: pcbElm,
+    sourceGroupId: sourceElm.source_group_id,
+    inflatorContext,
+  })
+
   const resistor = new Resistor({
     name: sourceElm.name,
     resistance: sourceElm.resistance,
     layer: pcbElm?.layer,
-    pcbX: pcbElm?.center?.x,
-    pcbY: pcbElm?.center?.y,
+    pcbX,
+    pcbY,
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,

@@ -6,6 +6,7 @@ import type {
 import { Capacitor } from "lib/components/normal-components/Capacitor"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
+import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourceCapacitor(
   sourceElm: SourceSimpleCapacitor,
@@ -21,12 +22,18 @@ export function inflateSourceCapacitor(
     source_component_id: sourceElm.source_component_id,
   }) as CadComponent | null
 
+  const { pcbX, pcbY } = getInflatedPcbPlacement({
+    pcbComponent: pcbElm,
+    sourceGroupId: sourceElm.source_group_id,
+    inflatorContext,
+  })
+
   const capacitor = new Capacitor({
     name: sourceElm.name,
     capacitance: sourceElm.capacitance,
     layer: pcbElm?.layer,
-    pcbX: pcbElm?.center?.x,
-    pcbY: pcbElm?.center?.y,
+    pcbX,
+    pcbY,
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
