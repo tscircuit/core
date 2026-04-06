@@ -15,20 +15,5 @@ test("repro-keypad-errors-comparison", async () => {
 
   await circuit.renderUntilSettled()
 
-  const originalJson = keypadCircuitJson
-  const inflatedJson = circuit.getCircuitJson()
-
-  const originalErrorCount = originalJson.filter((el) =>
-    el?.type?.includes("error"),
-  ).length
-
-  const inflatedErrorCount = inflatedJson.filter((el) =>
-    el?.type?.includes("error"),
-  ).length
-
-  console.log("Original error count:", originalErrorCount)
-  console.log("Inflated error count:", inflatedErrorCount)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  // expect(originalErrorCount).toBe(0)
-  // expect(inflatedErrorCount).toBe(0)
 })
