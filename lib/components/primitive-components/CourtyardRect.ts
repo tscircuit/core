@@ -38,8 +38,9 @@ export class CourtyardRect extends PrimitiveComponent<
     const decomposedTransform = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
     )
-    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
-    let ccw_rotation = ((rotationDegrees % 360) + 360) % 360
+    const ccwRotationDegrees =
+      (decomposedTransform.rotation.angle * 180) / Math.PI
+    let ccw_rotation = ((ccwRotationDegrees % 360) + 360) % 360
 
     if (isFlipped) {
       ccw_rotation = (180 - ccw_rotation + 360) % 360
