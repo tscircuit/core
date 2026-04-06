@@ -44,10 +44,7 @@ import {
   isExplicitPinMappingArrangement,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
-import {
-  buildInvalidPinLabelsKeyMessage,
-  getPinNumberFromPinLabelsKeyOrThrow,
-} from "lib/utils/schematic/getPinNumberFromPinLabelsKeyOrThrow"
+import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFromPinLabelsKey"
 import { getPinsFromSideDefinition } from "lib/utils/schematic/normalizePinSideDefinition"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
 import {
@@ -175,21 +172,16 @@ export class NormalComponent<
 
     if (filteredProps.pinLabels && !Array.isArray(filteredProps.pinLabels)) {
       const invalidPinKey = Object.keys(filteredProps.pinLabels).find(
-        (pinKey) => {
-          try {
-            getPinNumberFromPinLabelsKeyOrThrow(pinKey)
-            return false
-          } catch {
-            return true
-          }
-        },
+        (pinKey) => getPinNumberFromPinLabelsKey(pinKey) === null,
       )
 
       if (invalidPinKey) {
         throw new InvalidProps(this.lowercaseComponentName, this.props, {
           _errors: [],
           pinLabels: {
-            _errors: [buildInvalidPinLabelsKeyMessage(invalidPinKey)],
+            _errors: [
+              `Invalid pinLabels key "${invalidPinKey}". Expected "pin<number>" (e.g. pin1, pin2).`,
+            ],
           },
         } as any)
       }
@@ -317,7 +309,12 @@ export class NormalComponent<
       this._parsedProps.pinLabels
     if (pinLabels) {
       for (const [pinKey, label] of Object.entries(pinLabels)) {
-        const pinNumber = getPinNumberFromPinLabelsKeyOrThrow(pinKey)
+        const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
+        if (pinNumber === null) {
+          throw new Error(
+            `Invalid pinLabels key "${pinKey}". Expected "pin<number>" (e.g. pin1, pin2).`,
+          )
+        }
         let existingPort = portsToCreate.find(
           (p) => p._parsedProps.pinNumber === pinNumber,
         )
@@ -1357,8 +1354,8 @@ export class NormalComponent<
       }
 
       const pinNumbers = Object.keys(pinLabels)
-        .map((k) => getPinNumberFromPinLabelsKeyOrThrow(k))
-        .filter((n) => !Number.isNaN(n))
+        .map((k) => getPinNumberFromPinLabelsKey(k))
+        .filter((n): n is number => n !== null && !Number.isNaN(n))
 
       if (pinNumbers.length > 0) {
         return Math.max(...pinNumbers)
