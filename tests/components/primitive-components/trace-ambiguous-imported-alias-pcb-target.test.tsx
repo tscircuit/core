@@ -39,9 +39,20 @@ test("ambiguous imported alias pin fails with a clear pcb trace error", async ()
 
   const errors = circuit.db.pcb_trace_error.list()
 
-  expect(errors).toHaveLength(1)
-  expect(errors[0].message).toContain('Trace selector ".J1 .A1"')
-  expect(errors[0].message).toContain("multiple non-overlapping PCB pads")
-  expect(errors[0].message).toContain('"J1.pin1"')
-  expect(errors[0].message).toContain('"J1.pin2"')
+  expect(errors).toMatchInlineSnapshot(`
+    [
+      {
+        "error_type": "pcb_trace_error",
+        "message": "Trace selector ".J1 .A1" resolved to "J1.pin1", but that target maps to multiple non-overlapping PCB pads: <smtpad#15(.pin1, .A1) />, <smtpad#16(.pin2, .A1) />. Use a raw pin selector like "J1.pin1" or "J1.pin2".",
+        "pcb_component_ids": [],
+        "pcb_port_ids": [
+          "pcb_port_0",
+        ],
+        "pcb_trace_error_id": "pcb_trace_error_0",
+        "pcb_trace_id": null,
+        "source_trace_id": "source_trace_0",
+        "type": "pcb_trace_error",
+      },
+    ]
+  `)
 })

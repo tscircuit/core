@@ -5,8 +5,17 @@ test("chip with invalid pinLabels key fails with a clear error", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm">
-      <chip name="U1" footprint="soic8" pinLabels={{ A1: "VCC" }} />
+    <board width="20mm" height="20mm">
+      <connector
+        name="J1"
+        footprint="usb_c_16p"
+        pinLabels={{
+          A1: "GND",
+          B12: "GND",
+          A5: "CC1",
+          B5: "CC2",
+        }}
+      />
     </board>,
   )
 

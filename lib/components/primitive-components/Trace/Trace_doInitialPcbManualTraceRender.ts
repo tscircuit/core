@@ -7,7 +7,7 @@ import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtP
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
-import { Trace_getPcbSelectorError } from "./Trace_getPcbSelectorError"
+import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -44,7 +44,9 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (!allPortsFound) return
 
   const pcbSelectorError = portsWithSelectors
-    .map(({ selector, port }) => Trace_getPcbSelectorError(selector, port))
+    .map(({ selector, port }) =>
+      getPcbSelectorErrorForTracePort(selector, port),
+    )
     .find(Boolean)
   if (pcbSelectorError) {
     db.pcb_trace_error.insert({
@@ -213,7 +215,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         continue
       }
 
-      const pcbTargetError = Trace_getPcbSelectorError(pt, resolvedPort)
+      const pcbTargetError = getPcbSelectorErrorForTracePort(pt, resolvedPort)
       if (pcbTargetError) {
         db.pcb_trace_error.insert({
           error_type: "pcb_trace_error",

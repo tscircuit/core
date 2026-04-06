@@ -1,10 +1,10 @@
 import type { Port } from "../Port"
 import { areAllPcbPrimitivesOverlapping } from "../Port/areAllPcbPrimitivesOverlapping"
 
-export const Trace_getPcbSelectorError = (
+export function getPcbSelectorErrorForTracePort(
   selector: string,
   port: Port,
-): string | null => {
+): string | null {
   if (port.pcb_port_id) return null
 
   const pcbMatches = port.matchedComponents.filter((c) => c.isPcbPrimitive)

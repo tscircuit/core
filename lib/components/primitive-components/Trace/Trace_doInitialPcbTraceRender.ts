@@ -14,7 +14,7 @@ import { getTraceLength } from "./trace-utils/compute-trace-length"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { TraceConnectionError } from "lib/errors"
-import { Trace_getPcbSelectorError } from "./Trace_getPcbSelectorError"
+import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -104,7 +104,9 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   if (!allPortsFound) return
 
   const pcbSelectorError = portsWithSelectors
-    .map(({ selector, port }) => Trace_getPcbSelectorError(selector, port))
+    .map(({ selector, port }) =>
+      getPcbSelectorErrorForTracePort(selector, port),
+    )
     .find(Boolean)
   if (pcbSelectorError) {
     db.pcb_trace_error.insert({
