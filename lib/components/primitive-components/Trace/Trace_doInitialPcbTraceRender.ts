@@ -14,6 +14,7 @@ import { getTraceLength } from "./trace-utils/compute-trace-length"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { TraceConnectionError } from "lib/errors"
+import { Trace_getPcbSelectorError } from "./Trace_getPcbSelectorError"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -79,11 +80,13 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
 
   let allPortsFound: boolean
   let ports: Port[]
+  let portsWithSelectors: Array<{ selector: string; port: Port }>
 
   try {
     const connectedPorts = trace._findConnectedPorts()
     allPortsFound = connectedPorts.allPortsFound
     ports = connectedPorts.ports ?? []
+    portsWithSelectors = connectedPorts.portsWithSelectors ?? []
   } catch (error) {
     if (error instanceof TraceConnectionError) {
       db.source_trace_not_connected_error.insert({
@@ -99,6 +102,21 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const portsConnectedOnPcbViaNet: Port[] = []
 
   if (!allPortsFound) return
+
+  const pcbSelectorError = portsWithSelectors
+    .map(({ selector, port }) => Trace_getPcbSelectorError(selector, port))
+    .find(Boolean)
+  if (pcbSelectorError) {
+    db.pcb_trace_error.insert({
+      error_type: "pcb_trace_error",
+      source_trace_id: trace.source_trace_id!,
+      message: pcbSelectorError,
+      pcb_trace_id: trace.pcb_trace_id!,
+      pcb_component_ids: [],
+      pcb_port_ids: ports.map((p) => p.pcb_port_id!).filter(Boolean),
+    })
+    return
+  }
 
   const portsWithoutMatchedPcbPrimitive: Port[] = []
   for (const port of ports) {
