@@ -13,6 +13,7 @@ import { inflateSourceDiode } from "../../components/primitive-components/Group/
 import { inflateSourceGroup } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceGroup"
 import { inflateSourceInductor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceInductor"
 import { inflateSourcePort } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourcePort"
+import { inflateSourcePushButton } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourcePushButton"
 import { inflateSourceResistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceResistor"
 import { inflateSourceTrace } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTrace"
 import { inflateSourceTransistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTransistor"
@@ -92,6 +93,9 @@ export const inflateCircuitJson = (
         break
       case "simple_transistor":
         inflateSourceTransistor(sourceComponent, inflationCtx)
+        break
+      case "simple_push_button":
+        inflateSourcePushButton(sourceComponent, inflationCtx)
         break
       default:
         throw new Error(
