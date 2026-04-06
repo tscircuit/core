@@ -7,6 +7,7 @@ import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtP
 import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
 import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
+import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -41,6 +42,23 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   }
 
   if (!allPortsFound) return
+
+  const pcbSelectorError = portsWithSelectors
+    .map(({ selector, port }) =>
+      getPcbSelectorErrorForTracePort(selector, port),
+    )
+    .find(Boolean)
+  if (pcbSelectorError) {
+    db.pcb_trace_error.insert({
+      error_type: "pcb_trace_error",
+      source_trace_id: trace.source_trace_id!,
+      message: pcbSelectorError,
+      pcb_trace_id: trace.pcb_trace_id!,
+      pcb_component_ids: [],
+      pcb_port_ids: ports.map((p) => p.pcb_port_id!).filter(Boolean),
+    })
+    return
+  }
 
   const portsWithoutMatchedPcbPrimitive: Port[] = []
   for (const port of ports) {
@@ -195,6 +213,19 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
           pcb_port_ids: [],
         })
         continue
+      }
+
+      const pcbTargetError = getPcbSelectorErrorForTracePort(pt, resolvedPort)
+      if (pcbTargetError) {
+        db.pcb_trace_error.insert({
+          error_type: "pcb_trace_error",
+          source_trace_id: trace.source_trace_id!,
+          message: pcbTargetError,
+          pcb_trace_id: trace.pcb_trace_id!,
+          pcb_component_ids: [],
+          pcb_port_ids: [],
+        })
+        return
       }
 
       // Get the global position of the resolved port (already in global coordinates)
