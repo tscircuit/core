@@ -180,7 +180,7 @@ export class NormalComponent<
           _errors: [],
           pinLabels: {
             _errors: [
-              `Invalid pinLabels key "${invalidPinKey}". Expected "pin<number>" (e.g. pin1, pin2).`,
+              `Invalid pinLabels key "${invalidPinKey}". Expected "pin\${number}" (e.g. pin1, pin2).`,
             ],
           },
         } as any)
@@ -312,7 +312,7 @@ export class NormalComponent<
         const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
         if (pinNumber === null) {
           throw new Error(
-            `Invalid pinLabels key "${pinKey}". Expected "pin<number>" (e.g. pin1, pin2).`,
+            `Invalid pinLabels key "${pinKey}". Expected "pin\${number}" (e.g. pin1, pin2).`,
           )
         }
         let existingPort = portsToCreate.find(
