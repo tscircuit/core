@@ -396,6 +396,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return traces.length > 0
   }
 
+  _markAsyncAutoroutingFailedAsSettled() {
+    // A routing failure should not block later PCB phases like placement DRC.
+    // Treat the subcircuit as settled with no routed traces and re-run PCB
+    // trace/render-dependent phases to surface any non-routing errors.
+    this._asyncAutoroutingResult = {
+      output_pcb_traces: [],
+    }
+    this._markDirty("PcbTraceRender")
+  }
+
   async _runEffectMakeHttpAutoroutingRequest() {
     const { db } = this.root!
     const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
@@ -540,6 +550,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           error_type: "pcb_autorouting_error",
           message: err.message,
         })
+        this._markAsyncAutoroutingFailedAsSettled()
         throw err
       }
 
@@ -705,6 +716,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         error_type: "pcb_autorouting_error",
         message: error instanceof Error ? error.message : String(error),
       })
+
+      this._markAsyncAutoroutingFailedAsSettled()
 
       this.root?.emit("autorouting:error", {
         subcircuit_id: this.subcircuit_id,

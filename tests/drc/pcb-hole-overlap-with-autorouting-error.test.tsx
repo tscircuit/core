@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { createBasicAutorouter } from "../fixtures/createBasicAutorouter"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test.skip("design rule check detects pad and hole overlap even after autorouting error", async () => {
+test("design rule check detects pad and hole overlap even after autorouting error", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
