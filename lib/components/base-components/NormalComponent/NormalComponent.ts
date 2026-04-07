@@ -486,6 +486,12 @@ export class NormalComponent<
       if (isHttpUrl(footprint)) return
       if (isStaticAssetPath(footprint)) return
       if (parseLibraryFootprintRef(footprint)) return
+      if (footprint.includes("/")) {
+        throw new Error(
+          `Footprint "${footprint}" looks like a KiCad library path. ` +
+            `Add the "kicad:" prefix: footprint="kicad:${footprint}"`,
+        )
+      }
       const fpSoup = fp.string(footprint).soup()
       const fpComponents = createComponentsFromCircuitJson(
         {
@@ -1174,6 +1180,12 @@ export class NormalComponent<
       if (isHttpUrl(footprint)) return []
       if (isStaticAssetPath(footprint)) return []
       if (parseLibraryFootprintRef(footprint)) return []
+      if (footprint.includes("/")) {
+        throw new Error(
+          `Footprint "${footprint}" looks like a KiCad library path. ` +
+            `Add the "kicad:" prefix: footprint="kicad:${footprint}"`,
+        )
+      }
       const fpSoup = fp.string(footprint).soup()
 
       const newPorts: Port[] = []
