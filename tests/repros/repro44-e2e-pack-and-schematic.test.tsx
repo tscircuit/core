@@ -109,6 +109,16 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       {
         "center": {
+          "x": 0,
+          "y": 0,
+        },
+        "height": 0,
+        "layer": "top",
+        "name": "D1",
+        "width": 0,
+      },
+      {
+        "center": {
           "x": 5.075,
           "y": 0.635,
         },
