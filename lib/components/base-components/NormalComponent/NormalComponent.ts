@@ -13,6 +13,7 @@ import type {
   SupplierPartNumbers,
 } from "@tscircuit/props"
 import {
+  type AnyCircuitElement,
   distance,
   pcb_component_invalid_layer_error,
   pcb_manual_edit_conflict_warning,
@@ -55,13 +56,13 @@ import {
 import { type SchSymbol, symbols } from "schematic-symbols"
 import { decomposeTSR } from "transformation-matrix"
 import { ZodType, z } from "zod"
+import { InvalidProps } from "../../../errors/InvalidProps"
 import { CadAssembly } from "../../primitive-components/CadAssembly"
 import { CadModel } from "../../primitive-components/CadModel"
 import { Footprint } from "../../primitive-components/Footprint"
 import { Port } from "../../primitive-components/Port"
 import { PrimitiveComponent } from "../PrimitiveComponent"
 import type { INormalComponent } from "./INormalComponent"
-import { InvalidProps } from "../../../errors/InvalidProps"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
@@ -129,6 +130,7 @@ export class NormalComponent<
   _isCadModelChild?: boolean
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false
+  private _invalidFootprintPropMessages: string[] = []
 
   private _invalidPinLabelMessages: string[] = []
 
@@ -486,7 +488,13 @@ export class NormalComponent<
       if (isHttpUrl(footprint)) return
       if (isStaticAssetPath(footprint)) return
       if (parseLibraryFootprintRef(footprint)) return
-      const fpSoup = fp.string(footprint).soup()
+      let fpSoup: AnyCircuitElement[]
+      try {
+        fpSoup = fp.string(footprint).soup() as AnyCircuitElement[]
+      } catch (error) {
+        this._queueInvalidFootprintPropMessage(footprint, error)
+        return
+      }
       const fpComponents = createComponentsFromCircuitJson(
         {
           componentName: this.name ?? this.componentName,
@@ -1174,7 +1182,13 @@ export class NormalComponent<
       if (isHttpUrl(footprint)) return []
       if (isStaticAssetPath(footprint)) return []
       if (parseLibraryFootprintRef(footprint)) return []
-      const fpSoup = fp.string(footprint).soup()
+      let fpSoup: AnyCircuitElement[]
+      try {
+        fpSoup = fp.string(footprint).soup() as AnyCircuitElement[]
+      } catch (error) {
+        this._queueInvalidFootprintPropMessage(footprint, error)
+        return []
+      }
 
       const newPorts: Port[] = []
       for (const elm of fpSoup) {
@@ -1237,6 +1251,26 @@ export class NormalComponent<
       }
     }
     return newPorts
+  }
+
+  private _queueInvalidFootprintPropMessage(
+    footprint: string,
+    error: unknown,
+  ): void {
+    const componentLabel = this.name
+      ? `${this.lowercaseComponentName} "${this.name}"`
+      : `${this.lowercaseComponentName} (unnamed)`
+    const rawErrorMessage =
+      error instanceof Error ? error.message : String(error)
+    const isLikelyMissingLibraryPrefix =
+      footprint.includes("/") && !footprint.includes(":")
+    const helpfulHint = isLikelyMissingLibraryPrefix
+      ? ` If this is a KiCad footprint, use "kicad:${footprint}".`
+      : ""
+    const message = `Invalid footprint prop on ${componentLabel}: "${footprint}".${helpfulHint} Parser details: ${rawErrorMessage}`
+    if (!this._invalidFootprintPropMessages.includes(message)) {
+      this._invalidFootprintPropMessages.push(message)
+    }
   }
 
   getPortsFromSchematicSymbol(): Port[] {
@@ -1767,6 +1801,16 @@ export class NormalComponent<
   }
 
   doInitialValidatePcbCoordinates(): void {
+    for (const message of this._invalidFootprintPropMessages) {
+      this.root!.db.source_invalid_component_property_error.insert({
+        source_component_id: this.source_component_id || "",
+        property_name: "footprint",
+        message,
+        error_type: "source_invalid_component_property_error",
+      })
+    }
+    this._invalidFootprintPropMessages = []
+
     super.doInitialValidatePcbCoordinates()
     if (this.root?.pcbDisabled) return
 
