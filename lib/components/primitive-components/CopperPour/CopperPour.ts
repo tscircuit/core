@@ -14,6 +14,7 @@ export type { CopperPourProps }
 
 export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
   isPcbPrimitive = true
+  pcb_copper_pour_ids: string[] = []
 
   get config() {
     return {
@@ -85,6 +86,7 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
       const { brep_shapes } = solver.getOutput()
 
       const coveredWithSolderMask = props.coveredWithSolderMask ?? false
+      const pcbCopperPourIds: string[] = []
 
       for (const brep_shape of brep_shapes) {
         const insertedPour = db.pcb_copper_pour.insert({
@@ -94,14 +96,16 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
           source_net_id: net.source_net_id,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           covered_with_solder_mask: coveredWithSolderMask,
-          unbroken: props.unbroken,
-        } as any as PcbCopperPour)
+        } as PcbCopperPour)
+        pcbCopperPourIds.push(insertedPour.pcb_copper_pour_id)
 
         markTraceSegmentsInsideCopperPour({
           db,
           copperPour: insertedPour,
         })
       }
+
+      this.pcb_copper_pour_ids = pcbCopperPourIds
     })
   }
 }

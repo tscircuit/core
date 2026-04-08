@@ -12,6 +12,7 @@ import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
+import { getUnbrokenCopperPourIds } from "lib/utils/obstacles/getUnbrokenCopperPourIds"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
@@ -253,7 +254,10 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   // Cache the PCB obstacles, they'll be needed for each segment between
   // ports/hints
   const [obstacles, errGettingObstacles] = tryNow(
-    () => getObstaclesFromCircuitJson(trace.root!.db.toArray() as any, connMap), // Remove as any when autorouting-dataset gets updated
+    () =>
+      getObstaclesFromCircuitJson(trace.root!.db.toArray() as any, connMap, {
+        unbrokenCopperPourIds: getUnbrokenCopperPourIds(trace.root),
+      }), // Remove as any when autorouting-dataset gets updated
   )
 
   if (errGettingObstacles) {

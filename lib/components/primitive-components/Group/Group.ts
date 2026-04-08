@@ -438,6 +438,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
                 nominalTraceWidth: this.props.nominalTraceWidth,
                 subcircuit_id: this.subcircuit_id,
+                selectableRoot: this.root ?? undefined,
               }).simpleRouteJson,
               subcircuit_id: this.subcircuit_id!,
             }),
@@ -566,6 +567,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
       nominalTraceWidth: this.props.nominalTraceWidth,
       subcircuit_id: this.subcircuit_id,
+      selectableRoot: this.root ?? undefined,
     })
 
     // Enable jumpers for auto_jumper preset

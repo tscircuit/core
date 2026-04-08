@@ -13,12 +13,11 @@ const EVERY_LAYER = ["top", "inner1", "inner2", "bottom"]
 const COPPER_POUR_RECT_HEIGHT = 0.6
 
 const getUnbrokenCopperPourObstacles = (
-  element: Extract<AnyCircuitElement, { type: "pcb_copper_pour" }> & {
-    unbroken?: boolean
-  },
+  element: Extract<AnyCircuitElement, { type: "pcb_copper_pour" }>,
   withNetId: (ids: string[]) => string[],
+  unbrokenCopperPourIds: Set<string>,
 ): Obstacle[] => {
-  if (!element.unbroken) return []
+  if (!unbrokenCopperPourIds.has(element.pcb_copper_pour_id)) return []
 
   const connectedTo = element.source_net_id
     ? withNetId([element.source_net_id])
@@ -79,6 +78,9 @@ const getUnbrokenCopperPourObstacles = (
 export const getObstaclesFromCircuitJson = (
   soup: AnyCircuitElement[],
   connMap?: ConnectivityMap,
+  options?: {
+    unbrokenCopperPourIds?: Set<string>
+  },
 ) => {
   const withNetId = (idList: string[]) =>
     connMap
@@ -87,6 +89,7 @@ export const getObstaclesFromCircuitJson = (
         )
       : idList
   const obstacles: Obstacle[] = []
+  const unbrokenCopperPourIds = options?.unbrokenCopperPourIds ?? new Set()
   for (const element of soup) {
     if (element.type === "pcb_smtpad") {
       if (element.shape === "circle") {
@@ -333,7 +336,11 @@ export const getObstaclesFromCircuitJson = (
       }
     } else if (element.type === "pcb_copper_pour") {
       obstacles.push(
-        ...getUnbrokenCopperPourObstacles(element as any, withNetId),
+        ...getUnbrokenCopperPourObstacles(
+          element,
+          withNetId,
+          unbrokenCopperPourIds,
+        ),
       )
     } else if (element.type === "pcb_trace") {
       const traceObstacles = getObstaclesFromRoute(
