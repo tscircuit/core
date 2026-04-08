@@ -253,7 +253,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   // Cache the PCB obstacles, they'll be needed for each segment between
   // ports/hints
   const [obstacles, errGettingObstacles] = tryNow(
-    () => getObstaclesFromCircuitJson(trace.root!.db.toArray() as any), // Remove as any when autorouting-dataset gets updated
+    () => getObstaclesFromCircuitJson(trace.root!.db.toArray() as any, connMap), // Remove as any when autorouting-dataset gets updated
   )
 
   if (errGettingObstacles) {
@@ -276,7 +276,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     if (connectedTo.length > 0) {
       const netId = connMap.getNetConnectedToId(obstacle.connectedTo[0])
       if (netId) {
-        obstacle.connectedTo.push(netId)
+        obstacle.connectedTo = Array.from(new Set([...connectedTo, netId]))
       }
     }
   }
