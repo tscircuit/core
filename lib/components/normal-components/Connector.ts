@@ -7,6 +7,7 @@ import {
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { unknown_error_finding_part } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
+import { rewriteToStandardUsbCPortHints } from "lib/utils/connectors/rewriteToStandardUsbCPortHints"
 import { Chip } from "./Chip"
 
 export class Connector<
@@ -97,6 +98,11 @@ export class Connector<
     standard: string,
     circuitJson: AnyCircuitElement[],
   ): void {
+    const rewrittenCircuitJson =
+      standard === "usb_c"
+        ? rewriteToStandardUsbCPortHints(circuitJson)
+        : circuitJson
+
     const props = this._getConnectorProps()
     const fpComponents = createComponentsFromCircuitJson(
       {
@@ -106,9 +112,10 @@ export class Connector<
         pinLabels: props.pinLabels,
         pcbPinLabels: props.pcbPinLabels,
       },
-      circuitJson,
+      rewrittenCircuitJson,
     )
     this.addAll(fpComponents)
+    this._markDirty("InitializePortsFromChildren")
   }
 
   get config() {
@@ -167,6 +174,7 @@ export class Connector<
     // the first await in this async effect synchronous phases complete and
     // source_component_id will be available for db updates.
     const sourceComponentForQuery = {
+      type: "source_component",
       ftype: "simple_connector",
       name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,

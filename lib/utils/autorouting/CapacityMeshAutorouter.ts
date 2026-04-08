@@ -5,6 +5,7 @@ import {
   AutoroutingPipeline1_OriginalUnravel,
   AutoroutingPipelineSolver3_HgPortPointPathing,
   AutoroutingPipelineSolver4,
+  AutoroutingPipelineSolver5,
 } from "@tscircuit/capacity-autorouter"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
@@ -23,7 +24,7 @@ export interface AutorouterOptions {
   stepDelay?: number
   useAssignableSolver?: boolean
   useAutoJumperSolver?: boolean
-  autorouterVersion?: "v1" | "v2" | "v3" | "v4" | "latest"
+  autorouterVersion?: "v1" | "v2" | "v3" | "v4" | "v5" | "latest"
   effort?: number
   onSolverStarted?: (details: {
     solverName: string
@@ -41,6 +42,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     | AutoroutingPipeline1_OriginalUnravel
     | AutoroutingPipelineSolver3_HgPortPointPathing
     | AutoroutingPipelineSolver4
+    | AutoroutingPipelineSolver5
   private eventHandlers: {
     complete: Array<(ev: AutorouterCompleteEvent) => void>
     error: Array<(ev: AutorouterErrorEvent) => void>
@@ -75,6 +77,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipelineSolver3_HgPortPointPathing"
     } else if (autorouterVersion === "v4" || autorouterVersion === "latest") {
       solverName = "AutoroutingPipelineSolver4"
+    } else if (autorouterVersion === "v5") {
+      solverName = "AutoroutingPipelineSolver5"
     } else if (useAutoJumperSolver) {
       solverName = "AssignableAutoroutingPipeline3"
     } else if (useAssignableSolver) {
@@ -118,13 +122,25 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     this.cycleCount = 0
 
     // Start the routing process with steps
-    this.runCycleAndQueueNextCycle()
+    void this.runCycleAndQueueNextCycle()
+  }
+
+  private async stepSolver(): Promise<void> {
+    if (
+      "stepAsync" in this.solver &&
+      typeof this.solver.stepAsync === "function"
+    ) {
+      await this.solver.stepAsync()
+      return
+    }
+
+    this.solver.step()
   }
 
   /**
    * Execute the next routing step and schedule the following one if needed
    */
-  private runCycleAndQueueNextCycle(): void {
+  private async runCycleAndQueueNextCycle(): Promise<void> {
     if (!this.isRouting) return
 
     try {
@@ -154,7 +170,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         !this.solver.failed &&
         !this.solver.solved
       ) {
-        this.solver.step()
+        await this.stepSolver()
       }
       const iterationsPerSecond =
         ((this.solver.iterations - startIterations) /
@@ -180,13 +196,13 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       // Schedule the next step
       if (this.stepDelay > 0) {
         this.timeoutId = setTimeout(
-          () => this.runCycleAndQueueNextCycle(),
+          () => void this.runCycleAndQueueNextCycle(),
           this.stepDelay,
         ) as unknown as number
       } else {
         // Use setImmediate or setTimeout with 0 to prevent blocking the event loop
         this.timeoutId = setTimeout(
-          () => this.runCycleAndQueueNextCycle(),
+          () => void this.runCycleAndQueueNextCycle(),
           0,
         ) as unknown as number
       }

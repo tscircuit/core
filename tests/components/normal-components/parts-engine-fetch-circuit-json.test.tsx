@@ -2,47 +2,10 @@ import { test, expect } from "bun:test"
 import type { PartsEngine } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import usbCC165948CircuitJson from "tests/fixtures/assets/usb-c-C165948.circuit.json"
 
 test("connector with standard='usb_c' fetches circuit json from parts engine", async () => {
   const { circuit } = getTestFixture()
-
-  const mockCircuitJson = [
-    {
-      type: "pcb_smtpad",
-      pcb_smtpad_id: "pad1",
-      x: 0,
-      y: 0,
-      width: 0.6,
-      height: 0.6,
-      shape: "rect",
-      layer: "top",
-      port_hints: ["1"],
-      pcb_component_id: "U1",
-    },
-    {
-      type: "pcb_smtpad",
-      pcb_smtpad_id: "pad2",
-      x: 1,
-      y: 0,
-      width: 0.6,
-      height: 0.6,
-      shape: "rect",
-      layer: "top",
-      port_hints: ["2"],
-      pcb_component_id: "U1",
-    },
-    {
-      type: "pcb_silkscreen_text",
-      pcb_silkscreen_text_id: "silk1",
-      pcb_component_id: "U1",
-      text: "USB",
-      anchor_position: { x: 0.5, y: -1 },
-      anchor_alignment: "center",
-      layer: "top",
-      font: "tscircuit2024",
-      font_size: 1,
-    },
-  ]
 
   const mockPartsEngine: PartsEngine = {
     findPart: async ({ sourceComponent }: any) => {
@@ -61,7 +24,7 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
       manufacturerPartNumber?: string
     }) => {
       if (supplierPartNumber === "C165948") {
-        return mockCircuitJson as AnyCircuitElement[]
+        return usbCC165948CircuitJson as AnyCircuitElement[]
       }
       return undefined
     },
@@ -85,8 +48,29 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
   })
   expect((sourceComponent as any).standard).toBe("usb_c")
 
+  const sourcePorts = circuit.db.source_port
+    .list()
+    .filter(
+      (sp: any) =>
+        sp.source_component_id === sourceComponent!.source_component_id,
+    )
+  const hasHint = (hint: string) =>
+    sourcePorts.some((sp: any) => sp.port_hints?.includes(hint))
+  const dn1Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN1"))
+  const dn2Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN2"))
+
+  expect(hasHint("CC1")).toBe(true)
+  expect(hasHint("CC2")).toBe(true)
+  expect(hasHint("GND1")).toBe(true)
+  expect(hasHint("GND2")).toBe(true)
+  expect(hasHint("VBUS1")).toBe(true)
+  expect(hasHint("VBUS2")).toBe(true)
+  expect(dn1Port?.port_hints).toContain("DM1")
+  expect(dn2Port?.port_hints).toContain("DM2")
+
   // Verify footprint pads were added from the fetched circuit JSON
   const pads = circuit.db.pcb_smtpad.list()
   expect(pads.length).toBeGreaterThan(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

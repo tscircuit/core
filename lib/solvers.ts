@@ -6,6 +6,7 @@ import {
   AssignableAutoroutingPipeline3,
   AutoroutingPipelineSolver3_HgPortPointPathing,
   AutoroutingPipelineSolver4,
+  AutoroutingPipelineSolver5,
 } from "@tscircuit/capacity-autorouter"
 import { CopperPourPipelineSolver } from "@tscircuit/copper-pour-solver"
 
@@ -17,6 +18,7 @@ export const SOLVERS = {
   AutoroutingPipeline1_OriginalUnravel,
   AutoroutingPipelineSolver3_HgPortPointPathing,
   AutoroutingPipelineSolver4,
+  AutoroutingPipelineSolver5,
   CopperPourPipelineSolver,
 }
 

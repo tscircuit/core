@@ -1,3 +1,5 @@
+import { getPinNumberFromPinLabelsKey } from "./getPinNumberFromPinLabelsKey"
+
 export const parsePinNumberFromLabelsOrThrow = (
   pinNumberOrLabel: string | number,
   pinLabels?: Record<string, string[] | string> | null,
@@ -6,9 +8,15 @@ export const parsePinNumberFromLabelsOrThrow = (
     return pinNumberOrLabel
   }
 
+  const directPinNumber = getPinNumberFromPinLabelsKey(pinNumberOrLabel)
+  if (directPinNumber !== null) {
+    return directPinNumber
+  }
+
   if (pinNumberOrLabel.startsWith("pin")) {
-    const pinNumber = Number(pinNumberOrLabel.slice(3))
-    return pinNumber
+    throw new Error(
+      `Invalid pinLabels key "${pinNumberOrLabel}". Expected "pin\${number}" (e.g. pin1, pin2).`,
+    )
   }
 
   if (!pinLabels) {
@@ -23,7 +31,13 @@ export const parsePinNumberFromLabelsOrThrow = (
       : [pinLabels[pinNumberKey]]
 
     if (aliases.includes(pinNumberOrLabel)) {
-      return Number(pinNumberKey.replace("pin", ""))
+      const pinNumber = getPinNumberFromPinLabelsKey(pinNumberKey)
+      if (pinNumber === null) {
+        throw new Error(
+          `Invalid pinLabels key "${pinNumberKey}". Expected "pin\${number}" (e.g. pin1, pin2).`,
+        )
+      }
+      return pinNumber
     }
   }
 

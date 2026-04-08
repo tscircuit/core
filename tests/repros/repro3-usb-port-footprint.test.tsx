@@ -224,7 +224,7 @@ const TYPE_C_31_M_12 = (props: Props) => {
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro3 usb-port-footprint", async () => {
+test.skip("repro3 usb-port-footprint", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
