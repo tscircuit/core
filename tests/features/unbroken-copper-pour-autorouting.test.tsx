@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import type { PcbTrace, SourceTrace } from "circuit-json"
+import type { PcbTrace, SourcePort, SourceTrace } from "circuit-json"
 import type { Board } from "lib/components/normal-components/Board"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -26,16 +26,15 @@ test("unbroken copper pour acts as a same-net autorouter obstacle", async () => 
           pin6: "net.GND",
         }}
       />
-      <chip name="J1" footprint="soic4" pcbX={8.5} pcbY={0} pcbRotation={180} />
-      <via
-        name="VGND"
-        pcbX={0}
+      <chip
+        name="J1"
+        footprint="soic4"
+        pcbX={8.5}
         pcbY={0}
-        connectsTo="net.GND"
-        fromLayer="top"
-        toLayer="bottom"
-        outerDiameter="0.9mm"
-        holeDiameter="0.45mm"
+        pcbRotation={180}
+        connections={{
+          pin4: "net.GND",
+        }}
       />
       <copperpour connectsTo="net.GND" layer="bottom" unbroken />
     </board>,
@@ -51,6 +50,7 @@ test("unbroken copper pour acts as a same-net autorouter obstacle", async () => 
   expect(board).toBeDefined()
   board!.add(<trace from=".U1 > .pin1" to=".J1 > .pin1" />)
   board!.add(<trace from=".U1 > .pin2" to=".J1 > .pin2" />)
+  board!.add(<trace from=".U1 > .pin5" to=".J1 > .pin4" />)
 
   await circuit.renderUntilSettled()
 
@@ -66,18 +66,44 @@ test("unbroken copper pour acts as a same-net autorouter obstacle", async () => 
       .list()
       .map((sourceTrace) => [sourceTrace.source_trace_id, sourceTrace]),
   )
+  const sourcePortById = new Map<string, SourcePort>(
+    circuit.db.source_port
+      .list()
+      .map((sourcePort) => [sourcePort.source_port_id, sourcePort]),
+  )
+  const gndConnectivityKey = gndNet!.subcircuit_connectivity_map_key
 
   const nonGndTraces = pcbTraces.filter((trace) => {
     const sourceTrace = trace.source_trace_id
       ? sourceTraceById.get(trace.source_trace_id)
       : null
-    return !sourceTrace?.connected_source_net_ids.includes(
-      gndNet!.source_net_id,
+    const isGndTrace =
+      sourceTrace?.connected_source_net_ids.includes(gndNet!.source_net_id) ||
+      sourceTrace?.connected_source_port_ids.some(
+        (sourcePortId) =>
+          sourcePortById.get(sourcePortId)?.subcircuit_connectivity_map_key ===
+          gndConnectivityKey,
+      )
+
+    return !isGndTrace
+  })
+  const gndTraces = pcbTraces.filter((trace) => {
+    const sourceTrace = trace.source_trace_id
+      ? sourceTraceById.get(trace.source_trace_id)
+      : null
+    return (
+      sourceTrace?.connected_source_net_ids.includes(gndNet!.source_net_id) ||
+      sourceTrace?.connected_source_port_ids.some(
+        (sourcePortId) =>
+          sourcePortById.get(sourcePortId)?.subcircuit_connectivity_map_key ===
+          gndConnectivityKey,
+      )
     )
   })
 
   expect(nonGndTraces).toHaveLength(2)
   expect(nonGndTraces.filter(traceHasBottomWireSegment)).toHaveLength(0)
+  expect(gndTraces.length).toBeGreaterThan(0)
 
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     db: circuit.db,
