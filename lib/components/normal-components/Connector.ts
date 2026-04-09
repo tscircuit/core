@@ -8,7 +8,9 @@ import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { unknown_error_finding_part } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { rewriteToStandardUsbCPortHints } from "lib/utils/connectors/rewriteToStandardUsbCPortHints"
+import { symbols } from "schematic-symbols"
 import { Chip } from "./Chip"
+import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolInSchematicBox"
 
 export class Connector<
   PinLabels extends string = never,
@@ -220,6 +222,20 @@ export class Connector<
   updatePartsEngineRender(): void {
     if (this._isUsingStandardPartsEngineCircuitJsonFlow()) return
     super.updatePartsEngineRender()
+  }
+
+  doInitialSchematicComponentRender(): void {
+    super.doInitialSchematicComponentRender()
+    if (
+      !this.root?.schematicDisabled &&
+      this.schematic_component_id &&
+      this._getConnectorProps().standard === "usb_c"
+    ) {
+      const usbcSymbol = symbols.usbc
+      if (usbcSymbol) {
+        insertInnerSymbolInSchematicBox(this, usbcSymbol)
+      }
+    }
   }
 
   doInitialPcbComponentSizeCalculation(): void {
