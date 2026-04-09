@@ -39,6 +39,7 @@ export class PcbNotePath extends PrimitiveComponent<typeof pcbNotePathProps> {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: group?.pcb_group_id ?? undefined,
       route: transformedRoute,
+      layer: props.layer === "bottom" ? "bottom" : "top",
       stroke_width: props.strokeWidth ?? 0.1,
       color: props.color,
     })
