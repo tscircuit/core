@@ -1806,8 +1806,11 @@ export class NormalComponent<
   }
 
   doInitialSourceDesignRuleChecks(): void {
-    this._insertInvalidFootprintPropErrors()
     NormalComponent_doInitialSourceDesignRuleChecks(this)
+  }
+
+  doInitialSourceComponentPropertyValidation(): void {
+    this._insertInvalidFootprintPropErrors()
   }
 
   doInitialValidatePcbCoordinates(): void {
