@@ -1270,6 +1270,18 @@ export class NormalComponent<
     }
   }
 
+  private _insertInvalidFootprintPropErrors(): void {
+    for (const message of this._invalidFootprintPropMessages) {
+      this.root!.db.source_invalid_component_property_error.insert({
+        source_component_id: this.source_component_id || "",
+        property_name: "footprint",
+        message,
+        error_type: "source_invalid_component_property_error",
+      })
+    }
+    this._invalidFootprintPropMessages = []
+  }
+
   getPortsFromSchematicSymbol(): Port[] {
     if (this.root?.schematicDisabled) return []
     const { config } = this
@@ -1794,20 +1806,11 @@ export class NormalComponent<
   }
 
   doInitialSourceDesignRuleChecks(): void {
+    this._insertInvalidFootprintPropErrors()
     NormalComponent_doInitialSourceDesignRuleChecks(this)
   }
 
   doInitialValidatePcbCoordinates(): void {
-    for (const message of this._invalidFootprintPropMessages) {
-      this.root!.db.source_invalid_component_property_error.insert({
-        source_component_id: this.source_component_id || "",
-        property_name: "footprint",
-        message,
-        error_type: "source_invalid_component_property_error",
-      })
-    }
-    this._invalidFootprintPropMessages = []
-
     super.doInitialValidatePcbCoordinates()
     if (this.root?.pcbDisabled) return
 
