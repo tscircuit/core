@@ -114,6 +114,7 @@ test("connector populates pcb_component.cable_insertion_center", async () => {
       },
       width: 1,
       height: 1,
+      layer: "top",
       stroke_width: 0.1,
       is_filled: false,
       has_stroke: true,
