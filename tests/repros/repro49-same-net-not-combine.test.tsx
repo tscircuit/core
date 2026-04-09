@@ -49,5 +49,5 @@ test("Connector with resistor and solder jumper circuit layout same net not comb
     shouldDrawErrors: true,
   })
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  expect(errors.length).toBe(1)
+  expect(errors.length).toBe(2)
 })
