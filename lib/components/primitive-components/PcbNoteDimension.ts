@@ -78,6 +78,7 @@ export class PcbNoteDimension extends PrimitiveComponent<
       text,
       font: props.font ?? "tscircuit2024",
       font_size: props.fontSize ?? 1,
+      layer: props.layer === "bottom" ? "bottom" : "top",
       color: props.color,
       arrow_size: props.arrowSize ?? 1,
     })

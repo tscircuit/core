@@ -37,6 +37,7 @@ export class PcbNoteText extends PrimitiveComponent<typeof pcbNoteTextProps> {
       text: normalizeTextForCircuitJson(props.text),
       anchor_position: anchorPosition,
       anchor_alignment: props.anchorAlignment ?? "center",
+      layer: props.layer === "bottom" ? "bottom" : "top",
       color: props.color,
     })
 
