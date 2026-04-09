@@ -14,6 +14,7 @@ import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
 import type { PinAttributeMap } from "@tscircuit/props"
 import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
+import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
 
 export const portProps = z.object({
   name: z.string().optional(),
@@ -367,12 +368,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // Get pin attributes from parent component and apply them to this port
     const pinAttributes = this._getMatchingPinAttributes()
-    const portAttributesFromParent: any = {}
+    const portAttributesFromParent: Record<string, unknown> = {}
 
     for (const attributes of pinAttributes) {
-      if (attributes.mustBeConnected !== undefined) {
-        portAttributesFromParent.must_be_connected = attributes.mustBeConnected
-      }
+      applyPinAttributesToSourcePort(portAttributesFromParent, attributes)
     }
 
     const source_port = db.source_port.insert({
