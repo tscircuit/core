@@ -488,9 +488,9 @@ export class NormalComponent<
       if (isHttpUrl(footprint)) return
       if (isStaticAssetPath(footprint)) return
       if (parseLibraryFootprintRef(footprint)) return
-      let fpSoup: AnyCircuitElement[]
+      let fpCircuitJson: AnyCircuitElement[]
       try {
-        fpSoup = fp.string(footprint).soup() as AnyCircuitElement[]
+        fpCircuitJson = fp.string(footprint).soup() as AnyCircuitElement[]
       } catch (error) {
         this._queueInvalidFootprintPropMessage(footprint, error)
         return
@@ -503,8 +503,8 @@ export class NormalComponent<
           pinLabels,
           pcbPinLabels,
         },
-        fpSoup as any,
-      ) // Remove as any when footprinter gets updated
+        fpCircuitJson,
+      )
       this.addAll(fpComponents)
     }
   }
@@ -1182,16 +1182,16 @@ export class NormalComponent<
       if (isHttpUrl(footprint)) return []
       if (isStaticAssetPath(footprint)) return []
       if (parseLibraryFootprintRef(footprint)) return []
-      let fpSoup: AnyCircuitElement[]
+      let fpCircuitJson: AnyCircuitElement[]
       try {
-        fpSoup = fp.string(footprint).soup() as AnyCircuitElement[]
+        fpCircuitJson = fp.string(footprint).soup() as AnyCircuitElement[]
       } catch (error) {
         this._queueInvalidFootprintPropMessage(footprint, error)
         return []
       }
 
       const newPorts: Port[] = []
-      for (const elm of fpSoup) {
+      for (const elm of fpCircuitJson) {
         if ("port_hints" in elm && elm.port_hints) {
           const newPort = getPortFromHints(elm.port_hints, opts)
           if (!newPort) continue
@@ -1257,9 +1257,6 @@ export class NormalComponent<
     footprint: string,
     error: unknown,
   ): void {
-    const componentLabel = this.name
-      ? `${this.lowercaseComponentName} "${this.name}"`
-      : `${this.lowercaseComponentName} (unnamed)`
     const rawErrorMessage =
       error instanceof Error ? error.message : String(error)
     const isLikelyMissingLibraryPrefix =
@@ -1267,7 +1264,7 @@ export class NormalComponent<
     const helpfulHint = isLikelyMissingLibraryPrefix
       ? ` If this is a KiCad footprint, use "kicad:${footprint}".`
       : ""
-    const message = `Invalid footprint prop on ${componentLabel}: "${footprint}".${helpfulHint} Parser details: ${rawErrorMessage}`
+    const message = `Invalid footprint prop on ${this.getDisplayName()}: "${footprint}".${helpfulHint} Parser details: ${rawErrorMessage}`
     if (!this._invalidFootprintPropMessages.includes(message)) {
       this._invalidFootprintPropMessages.push(message)
     }
