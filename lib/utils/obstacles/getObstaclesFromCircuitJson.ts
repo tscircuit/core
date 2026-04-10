@@ -10,10 +10,77 @@ import { fillCircleWithRects } from "./fillCircleWithRects"
 import type { Obstacle } from "./types"
 
 const EVERY_LAYER = ["top", "inner1", "inner2", "bottom"]
+const COPPER_POUR_RECT_HEIGHT = 0.6
+
+const getUnbrokenCopperPourObstacles = (
+  element: Extract<AnyCircuitElement, { type: "pcb_copper_pour" }>,
+  withNetId: (ids: string[]) => string[],
+  unbrokenCopperPourIds: Set<string>,
+): Obstacle[] => {
+  if (!unbrokenCopperPourIds.has(element.pcb_copper_pour_id)) return []
+
+  const connectedTo = element.source_net_id
+    ? withNetId([element.source_net_id])
+    : []
+
+  if (element.shape === "rect") {
+    if (element.rotation) {
+      const approximatingRects = generateApproximatingRects({
+        center: element.center,
+        width: element.width,
+        height: element.height,
+        rotation: element.rotation,
+      })
+
+      return approximatingRects.map((rect) => ({
+        type: "rect",
+        layers: [element.layer],
+        center: rect.center,
+        width: rect.width,
+        height: rect.height,
+        connectedTo: [...connectedTo],
+      }))
+    }
+
+    return [
+      {
+        type: "rect",
+        layers: [element.layer],
+        center: element.center,
+        width: element.width,
+        height: element.height,
+        connectedTo,
+      },
+    ]
+  }
+
+  if (element.shape === "brep") {
+    const outerRing = element.brep_shape.outer_ring.vertices.map((vertex) => ({
+      x: vertex.x,
+      y: vertex.y,
+    }))
+
+    return fillPolygonWithRects(outerRing, {
+      rectHeight: COPPER_POUR_RECT_HEIGHT,
+    }).map((rect) => ({
+      type: "rect",
+      layers: [element.layer],
+      center: rect.center,
+      width: rect.width,
+      height: rect.height,
+      connectedTo: [...connectedTo],
+    }))
+  }
+
+  return []
+}
 
 export const getObstaclesFromCircuitJson = (
   soup: AnyCircuitElement[],
   connMap?: ConnectivityMap,
+  options?: {
+    unbrokenCopperPourIds?: Set<string>
+  },
 ) => {
   const withNetId = (idList: string[]) =>
     connMap
@@ -22,6 +89,7 @@ export const getObstaclesFromCircuitJson = (
         )
       : idList
   const obstacles: Obstacle[] = []
+  const unbrokenCopperPourIds = options?.unbrokenCopperPourIds ?? new Set()
   for (const element of soup) {
     if (element.type === "pcb_smtpad") {
       if (element.shape === "circle") {
@@ -266,6 +334,14 @@ export const getObstaclesFromCircuitJson = (
           })
         }
       }
+    } else if (element.type === "pcb_copper_pour") {
+      obstacles.push(
+        ...getUnbrokenCopperPourObstacles(
+          element,
+          withNetId,
+          unbrokenCopperPourIds,
+        ),
+      )
     } else if (element.type === "pcb_trace") {
       const traceObstacles = getObstaclesFromRoute(
         element.route.map((rp) => ({

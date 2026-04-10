@@ -14,6 +14,7 @@ export type { CopperPourProps }
 
 export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
   isPcbPrimitive = true
+  pcb_copper_pour_ids: string[] = []
 
   get config() {
     return {
@@ -44,6 +45,9 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
       }
       const subcircuit = this.getSubcircuit()
       const circuitJson = db.toArray()
+      const copperPourCircuitJson = props.unbroken
+        ? circuitJson.filter((element) => element.type !== "pcb_trace")
+        : circuitJson
       const sourceNet = circuitJson.find(
         (elm) => elm.type === "source_net" && elm.name === net.name,
       ) as SourceNet | undefined
@@ -58,15 +62,18 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
         ""
 
       const clearance = props.clearance ?? 0.2
-      const inputProblem = convertCircuitJsonToInputProblem(circuitJson, {
-        layer: props.layer,
-        pour_connectivity_key: pourConnectivityKey,
-        pad_margin: props.padMargin ?? clearance,
-        trace_margin: props.traceMargin ?? clearance,
-        board_edge_margin: props.boardEdgeMargin ?? clearance,
-        cutout_margin: props.cutoutMargin ?? clearance,
-        outline: props.outline,
-      })
+      const inputProblem = convertCircuitJsonToInputProblem(
+        copperPourCircuitJson,
+        {
+          layer: props.layer,
+          pour_connectivity_key: pourConnectivityKey,
+          pad_margin: props.padMargin ?? clearance,
+          trace_margin: props.traceMargin ?? clearance,
+          board_edge_margin: props.boardEdgeMargin ?? clearance,
+          cutout_margin: props.cutoutMargin ?? clearance,
+          outline: props.outline,
+        },
+      )
 
       const solver = new CopperPourPipelineSolver(inputProblem)
 
@@ -79,6 +86,7 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
       const { brep_shapes } = solver.getOutput()
 
       const coveredWithSolderMask = props.coveredWithSolderMask ?? false
+      const pcbCopperPourIds: string[] = []
 
       for (const brep_shape of brep_shapes) {
         const insertedPour = db.pcb_copper_pour.insert({
@@ -89,12 +97,15 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           covered_with_solder_mask: coveredWithSolderMask,
         } as PcbCopperPour)
+        pcbCopperPourIds.push(insertedPour.pcb_copper_pour_id)
 
         markTraceSegmentsInsideCopperPour({
           db,
           copperPour: insertedPour,
         })
       }
+
+      this.pcb_copper_pour_ids = pcbCopperPourIds
     })
   }
 }

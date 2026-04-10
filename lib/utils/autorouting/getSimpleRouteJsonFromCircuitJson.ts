@@ -6,9 +6,14 @@ import {
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
+import { getUnbrokenCopperPourIds } from "../obstacles/getUnbrokenCopperPourIds"
 import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
+
+type SelectableRoot = {
+  selectAll(selector: string): unknown[]
+}
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -19,12 +24,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuit_id,
   minTraceWidth = 0.1,
   nominalTraceWidth,
+  selectableRoot,
 }: {
   db?: CircuitJsonUtilObjects
   circuitJson?: AnyCircuitElement[]
   subcircuit_id?: string | null
   minTraceWidth?: number
   nominalTraceWidth?: number
+  selectableRoot?: SelectableRoot
 }): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
   if (!db && circuitJson) {
     db = su(circuitJson)
@@ -81,6 +88,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_plated_hole.list(),
       ...db.pcb_hole.list(),
       ...db.pcb_via.list(),
+      ...db.pcb_copper_pour.list(),
       ...db.pcb_cutout.list(),
       // getObstaclesFromSoup is old and doesn't support diagonal traces
       // ...db.pcb_trace.list(),
@@ -88,6 +96,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
     connMap,
+    {
+      unbrokenCopperPourIds: getUnbrokenCopperPourIds(selectableRoot),
+    },
   )
 
   // Add everything in the connMap to the connectedTo array of each obstacle
