@@ -1289,6 +1289,14 @@ export abstract class PrimitiveComponent<
     }
     return `<${cname}#${this._renderId} />`
   }
+
+  getDisplayName(): string {
+    if (this.name) {
+      return `${this.lowercaseComponentName} "${this.name}"`
+    }
+    return `${this.lowercaseComponentName} (unnamed)`
+  }
+
   get [Symbol.toStringTag](): string {
     return this.getString()
   }

@@ -34,6 +34,7 @@ export class PcbNoteRect extends PrimitiveComponent<typeof pcbNoteRectProps> {
       center,
       width: props.width,
       height: props.height,
+      layer: props.layer === "bottom" ? "bottom" : "top",
       stroke_width: props.strokeWidth ?? 0.1,
       is_filled: props.isFilled ?? false,
       has_stroke: props.hasStroke ?? true,

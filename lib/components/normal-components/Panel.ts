@@ -42,6 +42,7 @@ export class Panel extends Subpanel {
     const inserted = db.pcb_panel.insert({
       width: props.width !== undefined ? distance.parse(props.width) : 0,
       height: props.height !== undefined ? distance.parse(props.height) : 0,
+      thickness: 1.6,
       center: this._getGlobalPcbPositionBeforeLayout(),
       covered_with_solder_mask: !(props.noSolderMask ?? false),
     })

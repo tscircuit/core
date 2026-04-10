@@ -37,6 +37,7 @@ export class PcbNoteLine extends PrimitiveComponent<typeof pcbNoteLineProps> {
       y1: start.y,
       x2: end.x,
       y2: end.y,
+      layer: props.layer === "bottom" ? "bottom" : "top",
       stroke_width: props.strokeWidth ?? 0.1,
       color: props.color,
       is_dashed: props.isDashed,
