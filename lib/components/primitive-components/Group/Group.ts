@@ -30,6 +30,7 @@ import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefault
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
+import type { Net } from "../Net"
 import type { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
 import { Group_doInitialPcbCalcPlacementResolution } from "./Group_doInitialPcbCalcPlacementResolution"
@@ -49,6 +50,11 @@ import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jump
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
+
+type RoutingPhasePlan = {
+  phaseIndex: number | null
+  sourceTraceIds: string[]
+}
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -396,12 +402,119 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return traces.length > 0
   }
 
+  _getRoutingPhasePlans(): RoutingPhasePlan[] {
+    const traces = this.selectAll("trace") as Trace[]
+    const nets = this.selectAll("net") as Net[]
+
+    const sourceNetPhaseById = new Map<string, number | null>()
+    for (const net of nets) {
+      if (!net.source_net_id) continue
+      sourceNetPhaseById.set(net.source_net_id, net.routingPhaseIndex)
+    }
+
+    const sourceTracePhaseById = new Map<string, number | null>()
+    for (const trace of traces) {
+      if (!trace.source_trace_id) continue
+
+      let routingPhaseIndex = trace.routingPhaseIndex
+      if (routingPhaseIndex == null) {
+        const inheritedNetPhases = [
+          ...new Set(
+            trace
+              ._findConnectedNets()
+              .nets.map((net) =>
+                net.source_net_id
+                  ? (sourceNetPhaseById.get(net.source_net_id) ?? null)
+                  : null,
+              )
+              .filter((phase): phase is number => phase != null),
+          ),
+        ]
+
+        if (inheritedNetPhases.length > 1) {
+          throw new Error(
+            `Trace ${trace.getString()} is connected to nets with conflicting routingPhaseIndex values: ${inheritedNetPhases.join(", ")}`,
+          )
+        }
+
+        routingPhaseIndex = inheritedNetPhases[0] ?? null
+      }
+
+      const existingRoutingPhaseIndex = sourceTracePhaseById.get(
+        trace.source_trace_id,
+      )
+      if (
+        existingRoutingPhaseIndex !== undefined &&
+        existingRoutingPhaseIndex !== routingPhaseIndex
+      ) {
+        throw new Error(
+          `source_trace ${trace.source_trace_id} was assigned conflicting routingPhaseIndex values: ${existingRoutingPhaseIndex} and ${routingPhaseIndex}`,
+        )
+      }
+
+      sourceTracePhaseById.set(trace.source_trace_id, routingPhaseIndex)
+    }
+
+    const numericPhases = [
+      ...new Set(
+        [...sourceTracePhaseById.values()].filter(
+          (phase): phase is number => phase != null,
+        ),
+      ),
+    ].sort((a, b) => a - b)
+
+    const phasePlans: RoutingPhasePlan[] = numericPhases.map((phaseIndex) => ({
+      phaseIndex,
+      sourceTraceIds: [...sourceTracePhaseById.entries()]
+        .filter(([, phase]) => phase === phaseIndex)
+        .map(([sourceTraceId]) => sourceTraceId),
+    }))
+
+    const nullPhaseSourceTraceIds = [...sourceTracePhaseById.entries()]
+      .filter(([, phase]) => phase == null)
+      .map(([sourceTraceId]) => sourceTraceId)
+
+    if (nullPhaseSourceTraceIds.length > 0) {
+      phasePlans.push({
+        phaseIndex: null,
+        sourceTraceIds: nullPhaseSourceTraceIds,
+      })
+    }
+
+    return phasePlans
+  }
+
+  _createPhaseObstaclePcbTraces(
+    routedTraces: SimplifiedPcbTrace[],
+    phaseIndex: number | null,
+  ): AnyCircuitElement[] {
+    const phaseLabel = phaseIndex == null ? "null" : `${phaseIndex}`
+    return routedTraces.map((routedTrace, index) => ({
+      type: "pcb_trace",
+      pcb_trace_id: `__phase_obstacle_${this.subcircuit_id}_${phaseLabel}_${index}`,
+      source_trace_id: `__phase_obstacle_source_trace_${this.subcircuit_id}_${phaseLabel}_${index}`,
+      subcircuit_id: this.subcircuit_id ?? undefined,
+      route: routedTrace.route as any,
+    }))
+  }
+
+  _getPcbAndSourceCircuitJson(): AnyCircuitElement[] {
+    return this.root!.db.toArray().filter(
+      (element) =>
+        element.type.startsWith("source_") || element.type.startsWith("pcb_"),
+    )
+  }
+
   async _runEffectMakeHttpAutoroutingRequest() {
     const { db } = this.root!
     const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
-    const props = this._parsedProps as SubcircuitGroupProps
 
     const autorouterConfig = this._getAutorouterConfig()
+    const phasePlans = this._getRoutingPhasePlans()
+    const hasExplicitRoutingPhases = phasePlans.some(
+      (phasePlan) => phasePlan.phaseIndex != null,
+    )
+    const basePcbAndSourceCircuitJson = this._getPcbAndSourceCircuitJson()
 
     // Remote autorouting
     const serverUrl = autorouterConfig.serverUrl!
@@ -416,37 +529,71 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return fetch(url, options)
     }
 
-    // Only include source and pcb elements
-    const pcbAndSourceCircuitJson = this.root!.db.toArray().filter(
-      (element) => {
-        return (
-          element.type.startsWith("source_") || element.type.startsWith("pcb_")
-        )
-      },
-    )
+    const solveSimplifiedPhase = async (
+      phasePlan: RoutingPhasePlan,
+      obstacleCircuitJson: AnyCircuitElement[],
+    ) => {
+      const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+        circuitJson: [...basePcbAndSourceCircuitJson, ...obstacleCircuitJson],
+        minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
+        nominalTraceWidth: this.props.nominalTraceWidth,
+        subcircuit_id: this.subcircuit_id,
+        connectionSourceTraceIds: phasePlan.sourceTraceIds,
+        includePcbTracesAsObstacles: obstacleCircuitJson.length > 0,
+      })
+
+      if (simpleRouteJson.connections.length === 0) {
+        return { simpleRouteJson, traces: [] as SimplifiedPcbTrace[] }
+      }
+
+      const { autorouting_result } = await fetchWithDebug(
+        `${serverUrl}/autorouting/solve`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            input_simple_route_json: simpleRouteJson,
+            subcircuit_id: this.subcircuit_id!,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      ).then((r) => r.json())
+
+      const traces =
+        autorouting_result?.output_simple_route_json?.traces ??
+        autorouting_result?.output_pcb_traces ??
+        []
+
+      return {
+        simpleRouteJson,
+        traces: traces as SimplifiedPcbTrace[],
+      }
+    }
 
     if (serverMode === "solve-endpoint") {
-      // Legacy solve endpoint mode
-      if (this.props.autorouter?.inputFormat === "simplified") {
-        const { autorouting_result } = await fetchWithDebug(
-          `${serverUrl}/autorouting/solve`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              input_simple_route_json: getSimpleRouteJsonFromCircuitJson({
-                db,
-                minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
-                nominalTraceWidth: this.props.nominalTraceWidth,
-                subcircuit_id: this.subcircuit_id,
-              }).simpleRouteJson,
-              subcircuit_id: this.subcircuit_id!,
-            }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ).then((r) => r.json())
-        this._asyncAutoroutingResult = autorouting_result
+      if (
+        this.props.autorouter?.inputFormat === "simplified" ||
+        hasExplicitRoutingPhases
+      ) {
+        const accumulatedTraces: SimplifiedPcbTrace[] = []
+        let obstacleCircuitJson: AnyCircuitElement[] = []
+
+        for (const phasePlan of phasePlans) {
+          const { traces } = await solveSimplifiedPhase(
+            phasePlan,
+            obstacleCircuitJson,
+          )
+          if (traces.length === 0) continue
+          accumulatedTraces.push(...traces)
+          obstacleCircuitJson = obstacleCircuitJson.concat(
+            this._createPhaseObstaclePcbTraces(traces, phasePlan.phaseIndex),
+          )
+        }
+
+        this._asyncAutoroutingResult = {
+          output_pcb_traces: accumulatedTraces as any,
+        }
         this._markDirty("PcbTraceRender")
         return
       }
@@ -456,7 +603,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         {
           method: "POST",
           body: JSON.stringify({
-            input_circuit_json: pcbAndSourceCircuitJson,
+            input_circuit_json: basePcbAndSourceCircuitJson,
             subcircuit_id: this.subcircuit_id!,
           }),
           headers: {
@@ -469,12 +616,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return
     }
 
+    if (hasExplicitRoutingPhases) {
+      throw new AutorouterError(
+        "routingPhaseIndex is only supported for remote autorouting in solve-endpoint mode",
+      )
+    }
+
     const { autorouting_job } = await fetchWithDebug(
       `${serverUrl}/autorouting/jobs/create`,
       {
         method: "POST",
         body: JSON.stringify({
-          input_circuit_json: pcbAndSourceCircuitJson,
+          input_circuit_json: basePcbAndSourceCircuitJson,
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,
@@ -553,153 +706,180 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
    */
   async _runLocalAutorouting() {
     const { db } = this.root!
-    const props = this._parsedProps as SubcircuitGroupProps
     const debug = Debug("tscircuit:core:_runLocalAutorouting")
     debug(`[${this.getString()}] starting local autorouting`)
     const autorouterConfig = this._getAutorouterConfig()
     const isLaserPrefabPreset = this._isLaserPrefabAutorouter(autorouterConfig)
     const isAutoJumperPreset = this._isAutoJumperAutorouter(autorouterConfig)
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
+    const phasePlans = this._getRoutingPhasePlans()
+    const basePcbAndSourceCircuitJson = this._getPcbAndSourceCircuitJson()
+    const accumulatedTraces: SimplifiedPcbTrace[] = []
+    const accumulatedJumpers: Array<{
+      jumper_footprint: string
+      center: { x: number; y: number }
+      orientation: string
+      pads: Array<{
+        center: { x: number; y: number }
+        width: number
+        height: number
+        layer: string
+      }>
+    }> = []
+    let obstacleCircuitJson: AnyCircuitElement[] = []
 
-    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-      db,
-      minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
-      nominalTraceWidth: this.props.nominalTraceWidth,
-      subcircuit_id: this.subcircuit_id,
-    })
+    const solvePhase = async (phasePlan: RoutingPhasePlan) => {
+      const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+        circuitJson: [...basePcbAndSourceCircuitJson, ...obstacleCircuitJson],
+        minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
+        nominalTraceWidth: this.props.nominalTraceWidth,
+        subcircuit_id: this.subcircuit_id,
+        connectionSourceTraceIds: phasePlan.sourceTraceIds,
+        includePcbTracesAsObstacles: obstacleCircuitJson.length > 0,
+      })
 
-    // Enable jumpers for auto_jumper preset
-    if (isAutoJumperPreset) {
-      simpleRouteJson.allowJumpers = true
-      if (autorouterConfig.availableJumperTypes) {
-        simpleRouteJson.availableJumperTypes =
-          autorouterConfig.availableJumperTypes
+      if (simpleRouteJson.connections.length === 0) {
+        return {
+          simpleRouteJson,
+          traces: [] as SimplifiedPcbTrace[],
+          outputJumpers: [] as typeof accumulatedJumpers,
+        }
       }
-    }
 
-    if (debug.enabled) {
-      ;(global as any).debugOutputArray?.push({
-        name: `simpleroutejson-${this.props.name}.json`,
-        obj: simpleRouteJson,
-      })
-    }
+      if (isAutoJumperPreset) {
+        simpleRouteJson.allowJumpers = true
+        if (autorouterConfig.availableJumperTypes) {
+          simpleRouteJson.availableJumperTypes =
+            autorouterConfig.availableJumperTypes
+        }
+      }
 
-    if (debug.enabled) {
-      const graphicsObject = convertSrjToGraphicsObject(
-        simpleRouteJson as any,
-      ) as GraphicsObject
-      graphicsObject.title = `autorouting-${this.props.name}`
-      ;(global as any).debugGraphics?.push(graphicsObject)
-    }
-
-    this.root?.emit("autorouting:start", {
-      subcircuit_id: this.subcircuit_id,
-      componentDisplayName: this.getString(),
-      simpleRouteJson,
-    })
-
-    // Create the autorouter instance
-    let autorouter: GenericLocalAutorouter
-    if (autorouterConfig.algorithmFn) {
-      autorouter = await autorouterConfig.algorithmFn(simpleRouteJson)
-    } else {
-      const autorouterVersion = this.props.autorouterVersion
-      const effortLevel = this.props.autorouterEffortLevel
-      const effort = effortLevel
-        ? Number.parseInt(effortLevel.replace("x", ""), 10)
-        : undefined
-      autorouter = new TscircuitAutorouter(simpleRouteJson, {
-        // Optional configuration parameters
-        capacityDepth: this.props.autorouter?.capacityDepth,
-        targetMinCapacity: this.props.autorouter?.targetMinCapacity,
-        useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
-        useAutoJumperSolver: isAutoJumperPreset,
-        autorouterVersion,
-        effort,
-        onSolverStarted: ({ solverName, solverParams }) =>
-          this.root?.emit("solver:started", {
-            type: "solver:started",
-            solverName,
-            solverParams,
-            componentName: this.getString(),
-          }),
-      })
-    }
-
-    // Create a promise that will resolve when autorouting is complete
-    const routingPromise = new Promise<SimplifiedPcbTrace[]>(
-      (resolve, reject) => {
-        autorouter.on("complete", (event) => {
-          debug(`[${this.getString()}] local autorouting complete`)
-          resolve(event.traces)
+      if (debug.enabled) {
+        const phaseLabel =
+          phasePlan.phaseIndex == null ? "null" : `${phasePlan.phaseIndex}`
+        ;(global as any).debugOutputArray?.push({
+          name: `simpleroutejson-${this.props.name}-phase-${phaseLabel}.json`,
+          obj: simpleRouteJson,
         })
+      }
 
-        autorouter.on("error", (event) => {
-          debug(
-            `[${this.getString()}] local autorouting error: ${event.error.message}`,
-          )
-          reject(event.error)
-        })
-      },
-    )
+      if (debug.enabled) {
+        const graphicsObject = convertSrjToGraphicsObject(
+          simpleRouteJson as any,
+        ) as GraphicsObject
+        const phaseLabel =
+          phasePlan.phaseIndex == null ? "null" : `${phasePlan.phaseIndex}`
+        graphicsObject.title = `autorouting-${this.props.name}-phase-${phaseLabel}`
+        ;(global as any).debugGraphics?.push(graphicsObject)
+      }
 
-    autorouter.on("progress", (event) => {
-      this.root?.emit("autorouting:progress", {
+      this.root?.emit("autorouting:start", {
         subcircuit_id: this.subcircuit_id,
         componentDisplayName: this.getString(),
-        ...event,
+        simpleRouteJson,
       })
-    })
 
-    // Start the autorouting process
-    autorouter.start()
+      let autorouter: GenericLocalAutorouter | null = null
+      try {
+        if (autorouterConfig.algorithmFn) {
+          autorouter = await autorouterConfig.algorithmFn(simpleRouteJson)
+        } else {
+          const autorouterVersion = this.props.autorouterVersion
+          const effortLevel = this.props.autorouterEffortLevel
+          const effort = effortLevel
+            ? Number.parseInt(effortLevel.replace("x", ""), 10)
+            : undefined
+          autorouter = new TscircuitAutorouter(simpleRouteJson, {
+            capacityDepth: this.props.autorouter?.capacityDepth,
+            targetMinCapacity: this.props.autorouter?.targetMinCapacity,
+            useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
+            useAutoJumperSolver: isAutoJumperPreset,
+            autorouterVersion,
+            effort,
+            onSolverStarted: ({ solverName, solverParams }) =>
+              this.root?.emit("solver:started", {
+                type: "solver:started",
+                solverName,
+                solverParams,
+                componentName: this.getString(),
+              }),
+          })
+        }
+
+        const activeAutorouter = autorouter!
+        const routingPromise = new Promise<SimplifiedPcbTrace[]>(
+          (resolve, reject) => {
+            activeAutorouter.on("complete", (event) => {
+              debug(`[${this.getString()}] local autorouting complete`)
+              resolve(event.traces)
+            })
+
+            activeAutorouter.on("error", (event) => {
+              debug(
+                `[${this.getString()}] local autorouting error: ${event.error.message}`,
+              )
+              reject(event.error)
+            })
+          },
+        )
+
+        activeAutorouter.on("progress", (event) => {
+          this.root?.emit("autorouting:progress", {
+            subcircuit_id: this.subcircuit_id,
+            componentDisplayName: this.getString(),
+            ...event,
+          })
+        })
+
+        activeAutorouter.start()
+
+        const traces = await routingPromise
+
+        if (activeAutorouter.getConnectedOffboardObstacles) {
+          const connectedOffboardObstacles =
+            activeAutorouter.getConnectedOffboardObstacles()
+          createSourceTracesFromOffboardConnections({
+            db,
+            connectedOffboardObstacles,
+            simpleRouteJson,
+            subcircuit_id: this.subcircuit_id,
+          })
+        }
+
+        let outputJumpers: typeof accumulatedJumpers = []
+        const solver = (activeAutorouter as any).solver
+        if (solver?.getOutputJumpers) {
+          outputJumpers = solver.getOutputJumpers() || []
+        }
+
+        return { simpleRouteJson, traces, outputJumpers }
+      } finally {
+        autorouter?.stop()
+      }
+    }
+
+    let lastSimpleRouteJson: SimpleRouteJson | null = null
 
     try {
-      // Wait for the autorouting to complete
-      const traces = await routingPromise
-
-      // Create source_traces for interconnect ports that were connected via
-      // off-board paths during routing. This allows DRC to understand that
-      // these ports are intentionally connected.
-      if (autorouter.getConnectedOffboardObstacles) {
-        const connectedOffboardObstacles =
-          autorouter.getConnectedOffboardObstacles()
-        createSourceTracesFromOffboardConnections({
-          db,
-          connectedOffboardObstacles,
-          simpleRouteJson,
-          subcircuit_id: this.subcircuit_id,
-        })
+      for (const phasePlan of phasePlans) {
+        const { simpleRouteJson, traces, outputJumpers } =
+          await solvePhase(phasePlan)
+        lastSimpleRouteJson = simpleRouteJson
+        if (traces.length === 0) continue
+        accumulatedTraces.push(...traces)
+        accumulatedJumpers.push(...outputJumpers)
+        obstacleCircuitJson = obstacleCircuitJson.concat(
+          this._createPhaseObstaclePcbTraces(traces, phasePlan.phaseIndex),
+        )
       }
 
-      // Get jumper output from solver
-      let outputJumpers: Array<{
-        jumper_footprint: string
-        center: { x: number; y: number }
-        orientation: string
-        pads: Array<{
-          center: { x: number; y: number }
-          width: number
-          height: number
-          layer: string
-        }>
-      }> = []
-      const solver = (autorouter as any).solver
-      if (solver?.getOutputJumpers) {
-        outputJumpers = solver.getOutputJumpers() || []
-      }
-
-      // Store the result
       this._asyncAutoroutingResult = {
-        output_pcb_traces: traces as any,
-        output_jumpers: outputJumpers,
+        output_pcb_traces: accumulatedTraces as any,
+        output_jumpers: accumulatedJumpers,
       }
 
-      // Mark the component as needing to re-render the PCB traces
       this._markDirty("PcbTraceRender")
     } catch (error) {
-      const { db } = this.root!
-      // Record the error
       db.pcb_autorouting_error.insert({
         pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
         error_type: "pcb_autorouting_error",
@@ -712,13 +892,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         error: {
           message: error instanceof Error ? error.message : String(error),
         },
-        simpleRouteJson,
+        simpleRouteJson: lastSimpleRouteJson ?? undefined,
       })
 
       throw error
-    } finally {
-      // Ensure the autorouter is stopped
-      autorouter.stop()
     }
   }
 

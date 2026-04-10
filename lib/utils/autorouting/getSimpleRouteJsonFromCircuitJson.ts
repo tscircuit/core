@@ -19,12 +19,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuit_id,
   minTraceWidth = 0.1,
   nominalTraceWidth,
+  connectionSourceTraceIds,
+  includePcbTracesAsObstacles = false,
 }: {
   db?: CircuitJsonUtilObjects
   circuitJson?: AnyCircuitElement[]
   subcircuit_id?: string | null
   minTraceWidth?: number
   nominalTraceWidth?: number
+  connectionSourceTraceIds?: string[] | Set<string>
+  includePcbTracesAsObstacles?: boolean
 }): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
   if (!db && circuitJson) {
     db = su(circuitJson)
@@ -33,6 +37,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   if (!db) {
     throw new Error("db or circuitJson is required")
   }
+
+  const connectionSourceTraceIdSet = connectionSourceTraceIds
+    ? new Set(connectionSourceTraceIds)
+    : null
 
   const traceHints = db.pcb_trace_hint.list()
 
@@ -82,8 +90,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_hole.list(),
       ...db.pcb_via.list(),
       ...db.pcb_cutout.list(),
-      // getObstaclesFromSoup is old and doesn't support diagonal traces
-      // ...db.pcb_trace.list(),
+      ...(includePcbTracesAsObstacles ? db.pcb_trace.list() : []),
     ].filter(
       (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
@@ -211,6 +218,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // Create connections from traces
   const directTraceConnections = db.source_trace
     .list()
+    .filter(
+      (trace) =>
+        !connectionSourceTraceIdSet ||
+        connectionSourceTraceIdSet.has(trace.source_trace_id),
+    )
     .filter((trace) => !routedTraceIds.has(trace.source_trace_id))
     .map((trace) => {
       const connectedPorts = trace.connected_source_port_ids.map((id) => {

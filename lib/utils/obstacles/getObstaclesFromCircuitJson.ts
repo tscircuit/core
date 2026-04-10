@@ -272,6 +272,7 @@ export const getObstaclesFromCircuitJson = (
           x: rp.x,
           y: rp.y,
           layer: "layer" in rp ? rp.layer : rp.from_layer,
+          width: "width" in rp ? rp.width : undefined,
         })),
         element.source_trace_id!,
       )

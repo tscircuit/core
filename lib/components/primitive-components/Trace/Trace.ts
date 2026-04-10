@@ -69,6 +69,10 @@ export class Trace
     return this._parsedProps.thickness ?? this._parsedProps.width
   }
 
+  get routingPhaseIndex(): number | null {
+    return this._parsedProps.routingPhaseIndex ?? null
+  }
+
   get config() {
     return {
       zodProps: traceProps,
