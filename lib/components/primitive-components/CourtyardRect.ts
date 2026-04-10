@@ -20,7 +20,7 @@ export class CourtyardRect extends PrimitiveComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
     const position = this._getGlobalPcbPositionBeforeLayout()
-    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const { maybeFlipLayer, isFlipped } = this._getPcbPrimitiveFlippedHelpers()
     const layer = maybeFlipLayer(props.layer ?? "top") as "top" | "bottom"
 
     if (layer !== "top" && layer !== "bottom") {
@@ -38,7 +38,13 @@ export class CourtyardRect extends PrimitiveComponent<
     const decomposedTransform = decomposeTSR(
       this._computePcbGlobalTransformBeforeLayout(),
     )
-    const ccw_rotation = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const ccwRotationDegrees =
+      (decomposedTransform.rotation.angle * 180) / Math.PI
+    let ccw_rotation = ((ccwRotationDegrees % 360) + 360) % 360
+
+    if (isFlipped) {
+      ccw_rotation = (180 - ccw_rotation + 360) % 360
+    }
 
     const pcb_courtyard_rect = db.pcb_courtyard_rect.insert({
       pcb_component_id,

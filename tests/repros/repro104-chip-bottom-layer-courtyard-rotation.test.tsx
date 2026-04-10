@@ -42,7 +42,7 @@ test("repro104: chip on bottom layer with rotation", async () => {
   )
 
   // Bug: ccw_rotation should be 45
-  expect(pcbCourtyards[0].ccw_rotation).toBe(135)
+  expect(pcbCourtyards[0].ccw_rotation).toBe(45)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showCourtyards: true,
