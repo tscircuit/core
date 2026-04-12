@@ -6,6 +6,7 @@ import {
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
+import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
 import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
@@ -19,12 +20,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuit_id,
   minTraceWidth = 0.1,
   nominalTraceWidth,
+  subcircuitComponent,
 }: {
   db?: CircuitJsonUtilObjects
   circuitJson?: AnyCircuitElement[]
   subcircuit_id?: string | null
   minTraceWidth?: number
   nominalTraceWidth?: number
+  subcircuitComponent?: {
+    selectAll(selector: string): unknown[]
+  }
 }): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
   if (!db && circuitJson) {
     db = su(circuitJson)
@@ -71,6 +76,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   db = su(subcircuitElements)
+  const pcbGroup = subcircuit_id
+    ? db.pcb_group.getWhere({ subcircuit_id })
+    : undefined
 
   const connMap = getFullConnectivityMapFromCircuitJson(subcircuitElements)
 
@@ -88,6 +96,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
     connMap,
+  )
+  obstacles.push(
+    ...getUnbrokenCopperPourObstacles({
+      connMap,
+      subcircuitComponent,
+      board,
+      group: pcbGroup,
+    }),
   )
 
   // Add everything in the connMap to the connectedTo array of each obstacle
@@ -184,21 +200,18 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
-  if (subcircuit_id) {
-    const group = db.pcb_group.getWhere({ subcircuit_id })
-    if (group?.width && group.height) {
-      const groupBounds = {
-        minX: group.center.x - group.width / 2,
-        maxX: group.center.x + group.width / 2,
-        minY: group.center.y - group.height / 2,
-        maxY: group.center.y + group.height / 2,
-      }
-      bounds = {
-        minX: Math.min(bounds.minX, groupBounds.minX),
-        maxX: Math.max(bounds.maxX, groupBounds.maxX),
-        minY: Math.min(bounds.minY, groupBounds.minY),
-        maxY: Math.max(bounds.maxY, groupBounds.maxY),
-      }
+  if (pcbGroup?.width && pcbGroup.height) {
+    const groupBounds = {
+      minX: pcbGroup.center.x - pcbGroup.width / 2,
+      maxX: pcbGroup.center.x + pcbGroup.width / 2,
+      minY: pcbGroup.center.y - pcbGroup.height / 2,
+      maxY: pcbGroup.center.y + pcbGroup.height / 2,
+    }
+    bounds = {
+      minX: Math.min(bounds.minX, groupBounds.minX),
+      maxX: Math.max(bounds.maxX, groupBounds.maxX),
+      minY: Math.min(bounds.minY, groupBounds.minY),
+      maxY: Math.max(bounds.maxY, groupBounds.maxY),
     }
   }
   const routedTraceIds = new Set(
