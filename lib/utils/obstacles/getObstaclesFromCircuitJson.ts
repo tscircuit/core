@@ -10,6 +10,37 @@ import { fillCircleWithRects } from "./fillCircleWithRects"
 import type { Obstacle } from "./types"
 
 const EVERY_LAYER = ["top", "inner1", "inner2", "bottom"]
+const QUARTER_TURN_TOLERANCE_DEGREES = 0.01
+
+const getAxisAlignedRectFromRotatedRect = (
+  rotatedRect: RotatedRect,
+): {
+  center: { x: number; y: number }
+  width: number
+  height: number
+} | null => {
+  const normalizedRotation = ((rotatedRect.rotation % 360) + 360) % 360
+  const axisAlignedAngles = [0, 90, 180, 270] as const
+
+  for (const angle of axisAlignedAngles) {
+    const angularDistance = Math.min(
+      Math.abs(normalizedRotation - angle),
+      360 - Math.abs(normalizedRotation - angle),
+    )
+
+    if (angularDistance > QUARTER_TURN_TOLERANCE_DEGREES) continue
+
+    const isVertical = angle === 90 || angle === 270
+
+    return {
+      center: rotatedRect.center,
+      width: isVertical ? rotatedRect.height : rotatedRect.width,
+      height: isVertical ? rotatedRect.width : rotatedRect.height,
+    }
+  }
+
+  return null
+}
 
 export const getObstaclesFromCircuitJson = (
   soup: AnyCircuitElement[],
@@ -56,8 +87,12 @@ export const getObstaclesFromCircuitJson = (
           height: element.height,
           rotation: element.ccw_rotation,
         }
-        const approximatingRects = generateApproximatingRects(rotatedRect)
-        for (const rect of approximatingRects) {
+        const singleRect = getAxisAlignedRectFromRotatedRect(rotatedRect)
+        const rects = singleRect
+          ? [singleRect]
+          : generateApproximatingRects(rotatedRect)
+
+        for (const rect of rects) {
           obstacles.push({
             type: "rect",
             layers: [element.layer],
