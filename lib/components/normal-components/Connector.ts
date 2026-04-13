@@ -7,7 +7,7 @@ import {
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { unknown_error_finding_part } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
-import { rewriteToStandardUsbCPortHints } from "lib/utils/connectors/rewriteToStandardUsbCPortHints"
+import { deriveUsbCStandardPinLabels } from "lib/utils/connectors/deriveUsbCStandardPinLabels"
 import { symbols } from "schematic-symbols"
 import { Chip } from "./Chip"
 import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolInSchematicBox"
@@ -15,8 +15,37 @@ import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolIn
 export class Connector<
   PinLabels extends string = never,
 > extends Chip<PinLabels> {
+  /**
+   * Labels derived from the fetched part's circuit JSON (e.g. standard
+   * USB-C signal names). Applied as additional per-pin aliases in initPorts
+   * so they flow to source_port.port_hints and the schematic display.
+   */
+  private _derivedStandardPinLabels: Record<string, string> | null = null
+
   private _getConnectorProps(): ConnectorProps {
     return this._parsedProps as ConnectorProps
+  }
+
+  initPorts(
+    opts: {
+      additionalAliases?: Record<`pin${number}`, string[]>
+      pinCount?: number
+      ignoreSymbolPorts?: boolean
+    } = {},
+  ): void {
+    if (!this._derivedStandardPinLabels) {
+      super.initPorts(opts)
+      return
+    }
+    const additionalAliases: Record<`pin${number}`, string[]> = {
+      ...(opts.additionalAliases ?? {}),
+    }
+    for (const [pinKey, label] of Object.entries(
+      this._derivedStandardPinLabels,
+    ) as Array<[`pin${number}`, string]>) {
+      additionalAliases[pinKey] = [...(additionalAliases[pinKey] ?? []), label]
+    }
+    super.initPorts({ ...opts, additionalAliases })
   }
 
   private _hasExplicitFootprint(): boolean {
@@ -100,12 +129,15 @@ export class Connector<
     standard: string,
     circuitJson: AnyCircuitElement[],
   ): void {
-    const rewrittenCircuitJson =
-      standard === "usb_c"
-        ? rewriteToStandardUsbCPortHints(circuitJson)
-        : circuitJson
-
     const props = this._getConnectorProps()
+
+    // For USB-C, derive canonical pin labels (GND1, VBUS1, CC1, ...) by
+    // matching each standard signal against the fetched source_ports. The
+    // derived labels are applied as per-pin additionalAliases in initPorts.
+    if (standard === "usb_c") {
+      this._derivedStandardPinLabels = deriveUsbCStandardPinLabels(circuitJson)
+    }
+
     const fpComponents = createComponentsFromCircuitJson(
       {
         componentName: this.name,
@@ -114,7 +146,7 @@ export class Connector<
         pinLabels: props.pinLabels,
         pcbPinLabels: props.pcbPinLabels,
       },
-      rewrittenCircuitJson,
+      circuitJson,
     )
     this.addAll(fpComponents)
     this._markDirty("InitializePortsFromChildren")

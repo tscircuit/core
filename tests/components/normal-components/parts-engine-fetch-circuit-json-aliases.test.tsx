@@ -4,7 +4,7 @@ import type { AnyCircuitElement } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import usbCC165948CircuitJson from "tests/fixtures/assets/usb-c-C165948.circuit.json"
 
-test("connector usb_c adds DM aliases without remapping pin numbers or shell labels", async () => {
+test("connector usb_c derives standard pin labels without remapping pin numbers", async () => {
   const { circuit } = getTestFixture()
 
   const mockPartsEngine: PartsEngine = {
@@ -45,27 +45,21 @@ test("connector usb_c adds DM aliases without remapping pin numbers or shell lab
         sp.source_component_id === sourceComponent!.source_component_id,
     )
 
-  const dn1Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN1"))
-  const dn2Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN2"))
-  const gnd1Port = sourcePorts.find((sp: any) =>
-    sp.port_hints?.includes("GND1"),
-  )
-  const vbus1Port = sourcePorts.find((sp: any) =>
-    sp.port_hints?.includes("VBUS1"),
-  )
+  const portByLabel = (label: string) =>
+    sourcePorts.find((sp: any) => sp.port_hints?.includes(label))
 
-  expect(dn1Port?.port_hints).toContain("DM1")
-  expect(dn2Port?.port_hints).toContain("DM2")
+  // DN1/DN2 from the raw JSON get canonicalized to DM1/DM2.
+  expect(portByLabel("DM1")).toBeTruthy()
+  expect(portByLabel("DM2")).toBeTruthy()
 
-  // C165948 keeps these on pin13/pin15; normalization should not remap numbers.
-  expect(gnd1Port?.pin_number).toBe(13)
-  expect(vbus1Port?.pin_number).toBe(15)
+  // C165948 keeps these signals on pin13/pin15; derivation must not remap
+  // manufacturer pin numbers.
+  expect(portByLabel("GND1")?.pin_number).toBe(13)
+  expect(portByLabel("VBUS1")?.pin_number).toBe(15)
 
-  // We preserve EH aliases and do not introduce shell canonical labels.
-  expect(sourcePorts.some((sp: any) => sp.port_hints?.includes("EH1"))).toBe(
-    true,
-  )
-  expect(sourcePorts.some((sp: any) => sp.port_hints?.includes("SHELL1"))).toBe(
-    false,
-  )
+  // Standard shell labels are derived from the part's EH* mounting pins.
+  expect(portByLabel("SHELL1")).toBeTruthy()
+  expect(portByLabel("SHELL2")).toBeTruthy()
+  expect(portByLabel("SHELL3")).toBeTruthy()
+  expect(portByLabel("SHELL4")).toBeTruthy()
 })

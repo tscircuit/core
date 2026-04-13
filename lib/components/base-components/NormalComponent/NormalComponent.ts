@@ -732,7 +732,11 @@ export class NormalComponent<
     const { _parsedProps: props } = this
     const dimensions = this._getSchematicBoxDimensions()!
 
-    const primaryPortLabels: Record<string, string> = {}
+    // Merge port-derived labels (e.g. from footprint port_hints) with user-
+    // supplied pinLabels; user pinLabels win on pin-by-pin basis.
+    const primaryPortLabels: Record<string, string> = {
+      ...this._getPinLabelsFromPorts(),
+    }
     if (Array.isArray(props.pinLabels)) {
       props.pinLabels.forEach((label: string, index: number) => {
         primaryPortLabels[String(index + 1)] = label
@@ -1245,7 +1249,7 @@ export class NormalComponent<
     if (!footprint) {
       for (const child of this.children) {
         if (child.props.portHints && child.isPcbPrimitive) {
-          const port = getPortFromHints(child.props.portHints)
+          const port = getPortFromHints(child.props.portHints, opts)
           if (port) newPorts.push(port)
         }
       }
