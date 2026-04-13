@@ -56,17 +56,22 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
     )
   const hasHint = (hint: string) =>
     sourcePorts.some((sp: any) => sp.port_hints?.includes(hint))
-  const dn1Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN1"))
-  const dn2Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN2"))
 
+  // Standard USB-C pin labels should be derived from the fetched circuit json
+  // and applied to the corresponding ports regardless of manufacturer pin
+  // numbering.
   expect(hasHint("CC1")).toBe(true)
   expect(hasHint("CC2")).toBe(true)
   expect(hasHint("GND1")).toBe(true)
   expect(hasHint("GND2")).toBe(true)
   expect(hasHint("VBUS1")).toBe(true)
   expect(hasHint("VBUS2")).toBe(true)
-  expect(dn1Port?.port_hints).toContain("DM1")
-  expect(dn2Port?.port_hints).toContain("DM2")
+  expect(hasHint("DM1")).toBe(true)
+  expect(hasHint("DM2")).toBe(true)
+  expect(hasHint("DP1")).toBe(true)
+  expect(hasHint("DP2")).toBe(true)
+  expect(hasHint("SBU1")).toBe(true)
+  expect(hasHint("SBU2")).toBe(true)
 
   // Verify footprint pads were added from the fetched circuit JSON
   const pads = circuit.db.pcb_smtpad.list()

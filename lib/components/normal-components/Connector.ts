@@ -7,7 +7,7 @@ import {
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { unknown_error_finding_part } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
-import { rewriteToStandardUsbCPortHints } from "lib/utils/connectors/rewriteToStandardUsbCPortHints"
+import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
 import { symbols } from "schematic-symbols"
 import { Chip } from "./Chip"
 import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolInSchematicBox"
@@ -100,12 +100,12 @@ export class Connector<
     standard: string,
     circuitJson: AnyCircuitElement[],
   ): void {
-    const rewrittenCircuitJson =
+    const props = this._getConnectorProps()
+    const standardizedCircuitJson =
       standard === "usb_c"
-        ? rewriteToStandardUsbCPortHints(circuitJson)
+        ? convertCircuitJsonToUsbCStandardCircuitJson(circuitJson)
         : circuitJson
 
-    const props = this._getConnectorProps()
     const fpComponents = createComponentsFromCircuitJson(
       {
         componentName: this.name,
@@ -114,7 +114,7 @@ export class Connector<
         pinLabels: props.pinLabels,
         pcbPinLabels: props.pcbPinLabels,
       },
-      rewrittenCircuitJson,
+      standardizedCircuitJson,
     )
     this.addAll(fpComponents)
     this._markDirty("InitializePortsFromChildren")

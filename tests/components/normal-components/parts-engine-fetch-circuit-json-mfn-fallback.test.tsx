@@ -56,8 +56,6 @@ test("connector usb_c falls back to manufacturerPartNumber when findPart returns
     )
   const hasHint = (hint: string) =>
     sourcePorts.some((sp: any) => sp.port_hints?.includes(hint))
-  const dn1Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN1"))
-  const dn2Port = sourcePorts.find((sp: any) => sp.port_hints?.includes("DN2"))
 
   expect(hasHint("CC1")).toBe(true)
   expect(hasHint("CC2")).toBe(true)
@@ -65,8 +63,8 @@ test("connector usb_c falls back to manufacturerPartNumber when findPart returns
   expect(hasHint("GND2")).toBe(true)
   expect(hasHint("VBUS1")).toBe(true)
   expect(hasHint("VBUS2")).toBe(true)
-  expect(dn1Port?.port_hints).toContain("DM1")
-  expect(dn2Port?.port_hints).toContain("DM2")
+  expect(hasHint("DM1")).toBe(true)
+  expect(hasHint("DM2")).toBe(true)
 
   const pads = circuit.db.pcb_smtpad.list()
   expect(pads.length).toBeGreaterThan(0)
