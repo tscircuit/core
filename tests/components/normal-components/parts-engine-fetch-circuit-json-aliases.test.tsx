@@ -52,12 +52,12 @@ test("connector usb_c derives standard pin labels without remapping pin numbers"
   expect(portByLabel("DM1")).toBeTruthy()
   expect(portByLabel("DM2")).toBeTruthy()
 
-  // C165948 keeps these signals on pin13/pin15; derivation must not remap
+  // C165948 keeps these signals on pin13/pin15; resolution must not remap
   // manufacturer pin numbers.
   expect(portByLabel("GND1")?.pin_number).toBe(13)
   expect(portByLabel("VBUS1")?.pin_number).toBe(15)
 
-  // Standard shell labels are derived from the part's EH* mounting pins.
+  // Standard shell labels are resolved against the part's EH* mounting pins.
   expect(portByLabel("SHELL1")).toBeTruthy()
   expect(portByLabel("SHELL2")).toBeTruthy()
   expect(portByLabel("SHELL3")).toBeTruthy()

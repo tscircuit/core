@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import type { AnyCircuitElement } from "circuit-json"
-import { deriveUsbCStandardPinLabels } from "../../../lib/utils/connectors/deriveUsbCStandardPinLabels"
+import { getStandardUsbCPinLabels } from "../../../lib/utils/connectors/getStandardUsbCPinLabels"
 
 const makeSourcePort = (pin: number, hints: string[]): AnyCircuitElement =>
   ({
@@ -13,7 +13,7 @@ const makeSourcePort = (pin: number, hints: string[]): AnyCircuitElement =>
     port_hints: hints,
   }) as any
 
-test("deriveUsbCStandardPinLabels maps each standard signal to the matching pin", () => {
+test("each standard USB-C pin label is matched to a pin_number in the circuit json", () => {
   // Mirrors the shape of the C165948 USB-C fixture.
   const circuitJson: AnyCircuitElement[] = [
     makeSourcePort(5, ["B8", "SBU2"]),
@@ -34,7 +34,7 @@ test("deriveUsbCStandardPinLabels maps each standard signal to the matching pin"
     makeSourcePort(4, ["EH3"]),
   ]
 
-  expect(deriveUsbCStandardPinLabels(circuitJson)).toEqual({
+  expect(getStandardUsbCPinLabels(circuitJson)).toEqual({
     pin5: "SBU2",
     pin6: "CC1",
     pin7: "DM2",
@@ -54,27 +54,27 @@ test("deriveUsbCStandardPinLabels maps each standard signal to the matching pin"
   })
 })
 
-test("deriveUsbCStandardPinLabels consumes each port only once", () => {
+test("each port is consumed by at most one standard pin label", () => {
   // Pin 1 claims both SBU1 and SBU2; the greedy match should give SBU1 to
-  // pin 1 (first in order) and leave SBU2 for pin 2.
+  // pin 1 (first in canonical order) and leave SBU2 for pin 2.
   const circuitJson: AnyCircuitElement[] = [
     makeSourcePort(1, ["SBU1", "SBU2"]),
     makeSourcePort(2, ["SBU2"]),
   ]
 
-  expect(deriveUsbCStandardPinLabels(circuitJson)).toEqual({
+  expect(getStandardUsbCPinLabels(circuitJson)).toEqual({
     pin1: "SBU1",
     pin2: "SBU2",
   })
 })
 
-test("deriveUsbCStandardPinLabels skips signals with no matching port", () => {
+test("standard pin labels with no matching port are omitted from the result", () => {
   const circuitJson: AnyCircuitElement[] = [
     makeSourcePort(1, ["CC1"]),
     makeSourcePort(2, ["GND1"]),
   ]
 
-  expect(deriveUsbCStandardPinLabels(circuitJson)).toEqual({
+  expect(getStandardUsbCPinLabels(circuitJson)).toEqual({
     pin1: "CC1",
     pin2: "GND1",
   })

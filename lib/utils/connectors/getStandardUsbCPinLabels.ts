@@ -1,11 +1,13 @@
 import type { AnyCircuitElement } from "circuit-json"
 
 /**
- * Ordered list of standard USB-C signal labels with known aliases. The order
- * matters: labels earlier in the list get first pick when scanning the
- * source_port pool.
+ * The canonical USB-C pin labels every USB-C connector's schematic symbol
+ * should display, regardless of manufacturer. These are the targets ports
+ * are matched against. The order matters: earlier labels get first pick
+ * when multiple unassigned ports could match. Aliases are alternative
+ * names manufacturers may use in their circuit JSON (e.g. "DN1" for "DM1").
  */
-const STANDARD_USB_C_SIGNALS: Array<{ label: string; aliases: string[] }> = [
+const STANDARD_USB_C_PIN_LABELS: Array<{ label: string; aliases: string[] }> = [
   { label: "GND1", aliases: [] },
   { label: "VBUS1", aliases: [] },
   { label: "CC1", aliases: [] },
@@ -25,21 +27,20 @@ const STANDARD_USB_C_SIGNALS: Array<{ label: string; aliases: string[] }> = [
 ]
 
 /**
- * Derive standard USB-C pin labels by matching each canonical signal against
- * the source_ports' port_hints in the fetched part circuit JSON.
+ * Match the ports in a part's circuit JSON against the canonical USB-C
+ * pin labels. The standard labels are the target; the circuit JSON is the
+ * subject being matched. For each standard signal, we scan the part's
+ * source_ports for one whose `port_hints` contain the label (or an
+ * alias), record the match as a `pin${pin_number} → <label>` entry, and
+ * consume that port so it cannot match another signal.
  *
- * Algorithm (greedy):
- *   for each standard signal in order:
- *     scan remaining source_port pool
- *     find first port whose hints contain the signal label or any alias
- *     assign `pin${pin_number}: <signal>` and remove port from pool
- *
- * Result: `{ pin5: "SBU2", pin6: "CC1", pin13: "GND1", ... }` — always the
- * same labels for any USB-C part, regardless of manufacturer pin numbering.
+ * The output is ready to use as `additionalAliases`, so every USB-C
+ * connector's schematic symbol displays the same canonical pin labels
+ * regardless of manufacturer.
  */
-export const deriveUsbCStandardPinLabels = (
+export const getStandardUsbCPinLabels = (
   circuitJson: AnyCircuitElement[],
-): Record<string, string> => {
+): Record<`pin${number}`, string> => {
   const unassignedPorts: Array<{
     pinNumber: number
     upperCaseHints: Set<string>
@@ -60,11 +61,11 @@ export const deriveUsbCStandardPinLabels = (
     unassignedPorts.push({ pinNumber, upperCaseHints })
   }
 
-  const pinLabels: Record<string, string> = {}
-  for (const { label, aliases } of STANDARD_USB_C_SIGNALS) {
-    const matchTargets = [label, ...aliases].map((s) => s.toUpperCase())
+  const pinLabels: Record<`pin${number}`, string> = {}
+  for (const { label, aliases } of STANDARD_USB_C_PIN_LABELS) {
+    const labelAndAliasesUpper = [label, ...aliases].map((s) => s.toUpperCase())
     const matchIndex = unassignedPorts.findIndex((port) =>
-      matchTargets.some((target) => port.upperCaseHints.has(target)),
+      labelAndAliasesUpper.some((name) => port.upperCaseHints.has(name)),
     )
     if (matchIndex === -1) continue
     const { pinNumber } = unassignedPorts[matchIndex]
