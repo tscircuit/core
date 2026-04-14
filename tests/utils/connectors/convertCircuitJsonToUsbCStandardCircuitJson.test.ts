@@ -67,8 +67,10 @@ test("converts part circuit json to USB-C-standardized circuit json", () => {
     "SHELL1",
   )
 
+  // Keep original pin hints while appending canonical USB-C label.
   const pad = rewritten.find((elm: any) => elm.type === "pcb_smtpad") as any
   expect(pad.port_hints).toContain("DM2")
+  expect(pad.port_hints).toContain("pin7")
 })
 
 test("each source_port is consumed by at most one canonical label", () => {
