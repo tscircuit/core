@@ -13,6 +13,7 @@ export const netProps = z.object({
       message: `Net names cannot contain "+" or "-" (component "Net" received "${val}"). Try using underscores instead, e.g. VCC_P`,
     }),
   ),
+  routingPhaseIndex: z.number().nullable().optional(),
 })
 
 export class Net extends PrimitiveComponent<typeof netProps> {

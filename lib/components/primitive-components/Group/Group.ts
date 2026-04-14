@@ -46,6 +46,11 @@ import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSim
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
+import {
+  Group_filterSimpleRouteJsonForPhase,
+  Group_getObstaclesFromRoutedTraces,
+  Group_hasPhasedAutorouting,
+} from "./Group_phasedAutoroutingUtils"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
@@ -572,166 +577,190 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const isAutoJumperPreset = this._isAutoJumperAutorouter(autorouterConfig)
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
-    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-      db,
-      minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
-      nominalTraceWidth: this.props.nominalTraceWidth,
-      subcircuit_id: this.subcircuit_id,
-      subcircuitComponent: this,
-    })
-
-    // Enable jumpers for auto_jumper preset
-    if (isAutoJumperPreset) {
-      simpleRouteJson.allowJumpers = true
-      if (autorouterConfig.availableJumperTypes) {
-        simpleRouteJson.availableJumperTypes =
-          autorouterConfig.availableJumperTypes
-      }
-    }
-
-    if (debug.enabled) {
-      ;(global as any).debugOutputArray?.push({
-        name: `simpleroutejson-${this.props.name}.json`,
-        obj: simpleRouteJson,
-      })
-    }
-
-    if (debug.enabled) {
-      const graphicsObject = convertSrjToGraphicsObject(
-        simpleRouteJson as any,
-      ) as GraphicsObject
-      graphicsObject.title = `autorouting-${this.props.name}`
-      ;(global as any).debugGraphics?.push(graphicsObject)
-    }
-
-    this.root?.emit("autorouting:start", {
-      subcircuit_id: this.subcircuit_id,
-      componentDisplayName: this.getString(),
-      simpleRouteJson,
-    })
-
-    // Create the autorouter instance
-    let autorouter: GenericLocalAutorouter
-    if (autorouterConfig.algorithmFn) {
-      autorouter = await autorouterConfig.algorithmFn(simpleRouteJson)
-    } else {
-      const autorouterVersion = this.props.autorouterVersion
-      const effortLevel = this.props.autorouterEffortLevel
-      const effort = effortLevel
-        ? Number.parseInt(effortLevel.replace("x", ""), 10)
-        : undefined
-      autorouter = new TscircuitAutorouter(simpleRouteJson, {
-        // Optional configuration parameters
-        capacityDepth: this.props.autorouter?.capacityDepth,
-        targetMinCapacity: this.props.autorouter?.targetMinCapacity,
-        useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
-        useAutoJumperSolver: isAutoJumperPreset,
-        autorouterVersion,
-        effort,
-        onSolverStarted: ({ solverName, solverParams }) =>
-          this.root?.emit("solver:started", {
-            type: "solver:started",
-            solverName,
-            solverParams,
-            componentName: this.getString(),
-          }),
-      })
-    }
-
-    // Create a promise that will resolve when autorouting is complete
-    const routingPromise = new Promise<SimplifiedPcbTrace[]>(
-      (resolve, reject) => {
-        autorouter.on("complete", (event) => {
-          debug(`[${this.getString()}] local autorouting complete`)
-          resolve(event.traces)
-        })
-
-        autorouter.on("error", (event) => {
-          debug(
-            `[${this.getString()}] local autorouting error: ${event.error.message}`,
-          )
-          reject(event.error)
-        })
-      },
-    )
-
-    autorouter.on("progress", (event) => {
-      this.root?.emit("autorouting:progress", {
+    const { simpleRouteJson: baseSimpleRouteJson } =
+      getSimpleRouteJsonFromCircuitJson({
+        db,
+        minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
+        nominalTraceWidth: this.props.nominalTraceWidth,
         subcircuit_id: this.subcircuit_id,
-        componentDisplayName: this.getString(),
-        ...event,
+        subcircuitComponent: this,
       })
-    })
-
-    // Start the autorouting process
-    autorouter.start()
-
-    try {
-      // Wait for the autorouting to complete
-      const traces = await routingPromise
-
-      // Create source_traces for interconnect ports that were connected via
-      // off-board paths during routing. This allows DRC to understand that
-      // these ports are intentionally connected.
-      if (autorouter.getConnectedOffboardObstacles) {
-        const connectedOffboardObstacles =
-          autorouter.getConnectedOffboardObstacles()
-        createSourceTracesFromOffboardConnections({
-          db,
-          connectedOffboardObstacles,
-          simpleRouteJson,
-          subcircuit_id: this.subcircuit_id,
-        })
-      }
-
-      // Get jumper output from solver
-      let outputJumpers: Array<{
-        jumper_footprint: string
+    const routingPhasePlans = this._getRoutingPhasePlans()
+    const hasPhasedAutorouting = Group_hasPhasedAutorouting(routingPhasePlans)
+    const outputTraces: SimplifiedPcbTrace[] = []
+    const outputJumpers: Array<{
+      jumper_footprint: string
+      center: { x: number; y: number }
+      orientation: string
+      pads: Array<{
         center: { x: number; y: number }
-        orientation: string
-        pads: Array<{
-          center: { x: number; y: number }
-          width: number
-          height: number
-          layer: string
-        }>
-      }> = []
-      const solver = (autorouter as any).solver
-      if (solver?.getOutputJumpers) {
-        outputJumpers = solver.getOutputJumpers() || []
+        width: number
+        height: number
+        layer: string
+      }>
+    }> = []
+
+    for (const routingPhasePlan of routingPhasePlans) {
+      let simpleRouteJson = baseSimpleRouteJson
+      if (hasPhasedAutorouting) {
+        simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
+          baseSimpleRouteJson,
+          routingPhasePlan,
+        )
+        simpleRouteJson.obstacles = [
+          ...simpleRouteJson.obstacles,
+          ...Group_getObstaclesFromRoutedTraces(outputTraces),
+        ]
       }
 
-      // Store the result
-      this._asyncAutoroutingResult = {
-        output_pcb_traces: traces as any,
-        output_jumpers: outputJumpers,
+      if (hasPhasedAutorouting && simpleRouteJson.connections.length === 0) {
+        continue
       }
 
-      // Mark the component as needing to re-render the PCB traces
-      this._markDirty("PcbTraceRender")
-    } catch (error) {
-      const { db } = this.root!
-      // Record the error
-      db.pcb_autorouting_error.insert({
-        pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
-        error_type: "pcb_autorouting_error",
-        message: error instanceof Error ? error.message : String(error),
-      })
+      // Enable jumpers for auto_jumper preset
+      if (isAutoJumperPreset) {
+        simpleRouteJson.allowJumpers = true
+        if (autorouterConfig.availableJumperTypes) {
+          simpleRouteJson.availableJumperTypes =
+            autorouterConfig.availableJumperTypes
+        }
+      }
 
-      this.root?.emit("autorouting:error", {
+      if (debug.enabled) {
+        ;(global as any).debugOutputArray?.push({
+          name: `simpleroutejson-${this.props.name}.json`,
+          obj: simpleRouteJson,
+        })
+      }
+
+      if (debug.enabled) {
+        const graphicsObject = convertSrjToGraphicsObject(
+          simpleRouteJson as any,
+        ) as GraphicsObject
+        graphicsObject.title = `autorouting-${this.props.name}`
+        ;(global as any).debugGraphics?.push(graphicsObject)
+      }
+
+      this.root?.emit("autorouting:start", {
         subcircuit_id: this.subcircuit_id,
         componentDisplayName: this.getString(),
-        error: {
-          message: error instanceof Error ? error.message : String(error),
-        },
         simpleRouteJson,
       })
 
-      throw error
-    } finally {
-      // Ensure the autorouter is stopped
-      autorouter.stop()
+      // Create the autorouter instance
+      let autorouter: GenericLocalAutorouter
+      if (autorouterConfig.algorithmFn) {
+        autorouter = await autorouterConfig.algorithmFn(simpleRouteJson)
+      } else {
+        const autorouterVersion = this.props.autorouterVersion
+        const effortLevel = this.props.autorouterEffortLevel
+        const effort = effortLevel
+          ? Number.parseInt(effortLevel.replace("x", ""), 10)
+          : undefined
+        autorouter = new TscircuitAutorouter(simpleRouteJson, {
+          // Optional configuration parameters
+          capacityDepth: this.props.autorouter?.capacityDepth,
+          targetMinCapacity: this.props.autorouter?.targetMinCapacity,
+          useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
+          useAutoJumperSolver: isAutoJumperPreset,
+          autorouterVersion,
+          effort,
+          onSolverStarted: ({ solverName, solverParams }) =>
+            this.root?.emit("solver:started", {
+              type: "solver:started",
+              solverName,
+              solverParams,
+              componentName: this.getString(),
+            }),
+        })
+      }
+
+      // Create a promise that will resolve when autorouting is complete
+      const routingPromise = new Promise<SimplifiedPcbTrace[]>(
+        (resolve, reject) => {
+          autorouter.on("complete", (event) => {
+            debug(`[${this.getString()}] local autorouting complete`)
+            resolve(event.traces)
+          })
+
+          autorouter.on("error", (event) => {
+            debug(
+              `[${this.getString()}] local autorouting error: ${event.error.message}`,
+            )
+            reject(event.error)
+          })
+        },
+      )
+
+      autorouter.on("progress", (event) => {
+        this.root?.emit("autorouting:progress", {
+          subcircuit_id: this.subcircuit_id,
+          componentDisplayName: this.getString(),
+          ...event,
+        })
+      })
+
+      // Start the autorouting process
+      autorouter.start()
+
+      try {
+        // Wait for the autorouting to complete
+        const traces = await routingPromise
+
+        // Create source_traces for interconnect ports that were connected via
+        // off-board paths during routing. This allows DRC to understand that
+        // these ports are intentionally connected.
+        if (autorouter.getConnectedOffboardObstacles) {
+          const connectedOffboardObstacles =
+            autorouter.getConnectedOffboardObstacles()
+          createSourceTracesFromOffboardConnections({
+            db,
+            connectedOffboardObstacles,
+            simpleRouteJson,
+            subcircuit_id: this.subcircuit_id,
+          })
+        }
+
+        // Get jumper output from solver
+        const solver = (autorouter as any).solver
+        if (solver?.getOutputJumpers) {
+          outputJumpers.push(...(solver.getOutputJumpers() || []))
+        }
+
+        outputTraces.push(...traces)
+      } catch (error) {
+        const { db } = this.root!
+        // Record the error
+        db.pcb_autorouting_error.insert({
+          pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
+          error_type: "pcb_autorouting_error",
+          message: error instanceof Error ? error.message : String(error),
+        })
+
+        this.root?.emit("autorouting:error", {
+          subcircuit_id: this.subcircuit_id,
+          componentDisplayName: this.getString(),
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+          },
+          simpleRouteJson,
+        })
+
+        throw error
+      } finally {
+        // Ensure the autorouter is stopped
+        autorouter.stop()
+      }
     }
+
+    // Store the result
+    this._asyncAutoroutingResult = {
+      output_pcb_traces: outputTraces as any,
+      output_jumpers: outputJumpers,
+    }
+
+    // Mark the component as needing to re-render the PCB traces
+    this._markDirty("PcbTraceRender")
   }
 
   _startAsyncAutorouting() {
