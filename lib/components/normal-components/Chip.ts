@@ -106,7 +106,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const hasFootprintChild = this.children.some(
       (c) => c.componentName === "Footprint",
     )
-    if (!footprint && !hasFootprintChild) {
+    if (!footprint && !hasFootprintChild && !this._hasStartedFootprintUrlLoad) {
       const footprint_error = db.pcb_missing_footprint_error.insert({
         message: `No footprint specified for component: ${this.getString()}`,
         source_component_id: `${this.source_component_id}`,
