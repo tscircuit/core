@@ -54,7 +54,6 @@ const USB_C_CANONICAL_LABELS = new Set<string>([
 ])
 
 type SinglePinStyle = NonNullable<SchematicPinStyle[string]>
-
 const USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL: ReadonlyArray<
   readonly [UsbCCanonicalLabel, SinglePinStyle]
 > = [
@@ -260,7 +259,7 @@ export class Connector<
       resolvedDefaultSchPinStyle[`pin${pinNumber}`] = style
     }
 
-    const mergedSchPinStyle: SchematicPinStyle = {
+    const mergedSchPinStyle = {
       ...resolvedDefaultSchPinStyle,
       ...(props.schPinStyle ?? {}),
     }
