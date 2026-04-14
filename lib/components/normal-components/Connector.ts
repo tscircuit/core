@@ -15,6 +15,7 @@ import {
   type SchematicBoxDimensions,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
+import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import { symbols } from "schematic-symbols"
 import { Chip } from "./Chip"
 import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolInSchematicBox"
@@ -170,6 +171,14 @@ export class Connector<
       },
       standardizedCircuitJson,
     )
+
+    const fetchedCadModel = extractCadModelFromCircuitJson(
+      standardizedCircuitJson,
+    )
+    if (fetchedCadModel) {
+      this._asyncFootprintCadModel = fetchedCadModel
+    }
+
     this.addAll(fpComponents)
     this._markDirty("InitializePortsFromChildren")
   }
