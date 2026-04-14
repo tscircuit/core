@@ -20,25 +20,7 @@ import { Chip } from "./Chip"
 import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolInSchematicBox"
 import type { Port } from "../primitive-components/Port"
 
-type UsbCCanonicalLabel =
-  | "VBUS1"
-  | "CC1"
-  | "DP1"
-  | "DM1"
-  | "SBU1"
-  | "GND1"
-  | "VBUS2"
-  | "CC2"
-  | "DP2"
-  | "DM2"
-  | "SBU2"
-  | "GND2"
-  | "SHELL1"
-  | "SHELL2"
-  | "SHELL3"
-  | "SHELL4"
-
-const USB_C_SIGNAL_LABELS_IN_ORDER: UsbCCanonicalLabel[] = [
+const USB_C_SIGNAL_LABELS_IN_ORDER = [
   "VBUS1",
   "VBUS2",
   "CC1",
@@ -51,33 +33,38 @@ const USB_C_SIGNAL_LABELS_IN_ORDER: UsbCCanonicalLabel[] = [
   "SBU2",
   "GND1",
   "GND2",
-]
+] as const
 
-const USB_C_SHELL_LABELS_IN_ORDER: UsbCCanonicalLabel[] = [
+const USB_C_SHELL_LABELS_IN_ORDER = [
   "SHELL1",
   "SHELL2",
   "SHELL3",
   "SHELL4",
-]
+] as const
 
-const USB_C_CANONICAL_LABELS = new Set<string>([
+const USB_C_CANONICAL_LABELS_IN_ORDER = [
   ...USB_C_SIGNAL_LABELS_IN_ORDER,
   ...USB_C_SHELL_LABELS_IN_ORDER,
+] as const
+
+type UsbCCanonicalLabel = (typeof USB_C_CANONICAL_LABELS_IN_ORDER)[number]
+
+const USB_C_CANONICAL_LABELS = new Set<string>([
+  ...USB_C_CANONICAL_LABELS_IN_ORDER,
 ])
 
 type SinglePinStyle = NonNullable<SchematicPinStyle[string]>
 
-const USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL: ReadonlyArray<{
-  label: UsbCCanonicalLabel
-  style: SinglePinStyle
-}> = [
+const USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL: ReadonlyArray<
+  readonly [UsbCCanonicalLabel, SinglePinStyle]
+> = [
   // Group spacing on right side
-  { label: "CC1", style: { marginTop: 0.15 } },
-  { label: "DP1", style: { marginTop: 0.15 } },
-  { label: "SBU1", style: { marginTop: 0.15 } },
-  { label: "GND1", style: { marginTop: 0.15 } },
+  ["CC1", { marginTop: 0.15 }],
+  ["DP1", { marginTop: 0.15 }],
+  ["SBU1", { marginTop: 0.15 }],
+  ["GND1", { marginTop: 0.15 }],
   // Bottom-side label spacing uses horizontal margins.
-  { label: "SHELL4", style: { marginRight: 0.15 } },
+  ["SHELL4", { marginRight: 0.15 }],
 ]
 
 export class Connector<
@@ -267,7 +254,7 @@ export class Connector<
 
     const labelToPinNumber = this._getUsbCCanonicalLabelToPinNumberMap()
     const resolvedDefaultSchPinStyle: SchematicPinStyle = {}
-    for (const { label, style } of USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL) {
+    for (const [label, style] of USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL) {
       const pinNumber = labelToPinNumber.get(label)
       if (typeof pinNumber !== "number") continue
       resolvedDefaultSchPinStyle[`pin${pinNumber}`] = style
