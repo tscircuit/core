@@ -44,6 +44,8 @@ import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchema
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
+import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
+import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
@@ -389,11 +391,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return false
   }
 
+  _getRoutingPhasePlans(): RoutingPhasePlan[] {
+    return Group_getRoutingPhasePlans(this)
+  }
+
   _hasTracesToRoute(): boolean {
     const debug = Debug("tscircuit:core:_hasTracesToRoute")
-    const traces = this.selectAll("trace") as Trace[]
-    debug(`[${this.getString()}] has ${traces.length} traces to route`)
-    return traces.length > 0
+    const routingPhasePlans = this._getRoutingPhasePlans()
+    let traceCount = 0
+    for (const routingPhasePlan of routingPhasePlans) {
+      traceCount += routingPhasePlan.traces.length
+    }
+    debug(`[${this.getString()}] has ${traceCount} traces to route`)
+    return traceCount > 0
   }
 
   async _runEffectMakeHttpAutoroutingRequest() {

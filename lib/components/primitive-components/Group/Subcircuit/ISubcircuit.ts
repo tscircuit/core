@@ -3,9 +3,11 @@ import type { NormalComponent } from "lib/components/base-components/NormalCompo
 import type { AutorouterConfig, subcircuitGroupProps } from "@tscircuit/props"
 import { z } from "zod"
 import type { AnyCircuitElement } from "circuit-json"
+import type { RoutingPhasePlan } from "../GroupRoutingPhasePlan"
 
 export interface ISubcircuit extends PrimitiveComponent {
   _shouldUseTraceByTraceRouting(): boolean
+  _getRoutingPhasePlans(): RoutingPhasePlan[]
   _parsedProps: z.infer<typeof subcircuitGroupProps>
   _getAutorouterConfig(): AutorouterConfig
   _isAutoJumperAutorouter(autorouterConfig?: AutorouterConfig): boolean
