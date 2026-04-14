@@ -321,8 +321,19 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       .list()
       .filter((st) => st.connected_source_net_ids?.includes(net.source_net_id))
 
+    let nominalTraceWidthFromConnectedTraces: number | undefined
+    for (const sourceTrace of connectedSourceTraces) {
+      if (sourceTrace.min_trace_thickness === undefined) continue
+      nominalTraceWidthFromConnectedTraces = Math.max(
+        nominalTraceWidthFromConnectedTraces ?? 0,
+        sourceTrace.min_trace_thickness,
+      )
+    }
+
     connectionsFromNets.push({
       name: net.source_net_id ?? connMap.getNetConnectedToId(net.source_net_id),
+      nominalTraceWidth: nominalTraceWidthFromConnectedTraces,
+      width: nominalTraceWidthFromConnectedTraces,
       pointsToConnect: connectedSourceTraces.flatMap((st) => {
         const pcb_ports = db.pcb_port
           .list()

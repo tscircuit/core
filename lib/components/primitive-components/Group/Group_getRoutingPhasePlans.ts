@@ -1,18 +1,85 @@
+import type { Net } from "../Net"
 import type { Trace } from "../Trace/Trace"
 import type { Group } from "./Group"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
+
+function getPhaseSortValue(routingPhaseIndex: number | null): number {
+  return routingPhaseIndex === null
+    ? Number.POSITIVE_INFINITY
+    : routingPhaseIndex
+}
+
+function compareRoutingPhasePlans(
+  a: RoutingPhasePlan,
+  b: RoutingPhasePlan,
+): number {
+  return (
+    getPhaseSortValue(a.routingPhaseIndex) -
+    getPhaseSortValue(b.routingPhaseIndex)
+  )
+}
+
+function getOrCreateRoutingPhasePlan(
+  plansByPhaseIndex: Map<number | null, RoutingPhasePlan>,
+  routingPhaseIndex: number | null,
+): RoutingPhasePlan {
+  let plan = plansByPhaseIndex.get(routingPhaseIndex)
+  if (!plan) {
+    plan = { routingPhaseIndex, nets: [], traces: [] }
+    plansByPhaseIndex.set(routingPhaseIndex, plan)
+  }
+  return plan
+}
+
+function getNetRoutingPhaseIndex(net: Net): number | null {
+  return net.props.routingPhaseIndex ?? null
+}
+
+function getTraceRoutingPhaseIndex(trace: Trace): number | null {
+  const traceRoutingPhaseIndex = trace.props.routingPhaseIndex
+  if (traceRoutingPhaseIndex !== undefined) return traceRoutingPhaseIndex
+
+  let routingPhaseIndex: number | null = null
+  const connectedNets = trace._findConnectedNets().nets
+  for (const net of connectedNets) {
+    const netRoutingPhaseIndex = net.props.routingPhaseIndex
+    if (typeof netRoutingPhaseIndex === "number") {
+      if (
+        routingPhaseIndex === null ||
+        netRoutingPhaseIndex < routingPhaseIndex
+      ) {
+        routingPhaseIndex = netRoutingPhaseIndex
+      }
+    }
+  }
+
+  return routingPhaseIndex
+}
 
 export function Group_getRoutingPhasePlans(
   group: Group<any>,
 ): RoutingPhasePlan[] {
   const traces = group.selectAll("trace") as Trace[]
+  const nets = group.selectAll("net") as Net[]
 
-  if (traces.length === 0) return []
+  if (traces.length === 0 && nets.length === 0) return []
 
-  return [
-    {
-      routingPhaseIndex: null,
-      traces,
-    },
-  ]
+  const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
+
+  for (const net of nets) {
+    const routingPhaseIndex = getNetRoutingPhaseIndex(net)
+    getOrCreateRoutingPhasePlan(plansByPhaseIndex, routingPhaseIndex).nets.push(
+      net,
+    )
+  }
+
+  for (const trace of traces) {
+    const routingPhaseIndex = getTraceRoutingPhaseIndex(trace)
+    getOrCreateRoutingPhasePlan(
+      plansByPhaseIndex,
+      routingPhaseIndex,
+    ).traces.push(trace)
+  }
+
+  return Array.from(plansByPhaseIndex.values()).sort(compareRoutingPhasePlans)
 }
