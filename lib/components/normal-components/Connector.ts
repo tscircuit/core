@@ -8,6 +8,7 @@ import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { unknown_error_finding_part } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
+import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import { symbols } from "schematic-symbols"
 import { Chip } from "./Chip"
 import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolInSchematicBox"
@@ -116,6 +117,14 @@ export class Connector<
       },
       standardizedCircuitJson,
     )
+
+    const fetchedCadModel = extractCadModelFromCircuitJson(
+      standardizedCircuitJson,
+    )
+    if (fetchedCadModel) {
+      this._asyncFootprintCadModel = fetchedCadModel
+    }
+
     this.addAll(fpComponents)
     this._markDirty("InitializePortsFromChildren")
   }
