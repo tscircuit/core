@@ -1,19 +1,10 @@
+import { netProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { z } from "zod"
 import type { Port } from "./Port"
 import type { Trace } from "./Trace/Trace"
 import { pairs } from "lib/utils/pairs"
 import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import { autoroute } from "@tscircuit/infgrid-ijump-astar"
-
-export const netProps = z.object({
-  name: z.string().refine(
-    (val) => !/[+-]/.test(val),
-    (val) => ({
-      message: `Net names cannot contain "+" or "-" (component "Net" received "${val}"). Try using underscores instead, e.g. VCC_P`,
-    }),
-  ),
-})
 
 export class Net extends PrimitiveComponent<typeof netProps> {
   source_net_id?: string

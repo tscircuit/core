@@ -76,6 +76,16 @@ test("connector with standard='usb_c' fetches circuit json from parts engine", a
   // Verify footprint pads were added from the fetched circuit JSON
   const pads = circuit.db.pcb_smtpad.list()
   expect(pads.length).toBeGreaterThan(0)
+
+  // Verify CAD model metadata is preserved from fetched part circuit JSON.
+  const cadComponents = circuit.db.cad_component
+    .list()
+    .filter(
+      (cad: any) =>
+        cad.source_component_id === sourceComponent!.source_component_id,
+    )
+  expect(cadComponents).toHaveLength(1)
+  expect(cadComponents[0].model_obj_url).toBeDefined()
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

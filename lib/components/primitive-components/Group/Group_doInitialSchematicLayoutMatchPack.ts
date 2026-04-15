@@ -860,6 +860,25 @@ export function Group_doInitialSchematicLayoutMatchPack<
                   `_${rotateDirection(schematicSymbolDirection[1], placement.ccwRotationDegrees)}`,
                 )
             }
+
+            const schematicSymbolOrientation =
+              schematicComponent.symbol_name.match(/_(horz|vert)$/)
+            if (schematicSymbolOrientation) {
+              const normalizedRotation =
+                ((placement.ccwRotationDegrees % 360) + 360) % 360
+              const shouldSwapOrientation =
+                normalizedRotation === 90 || normalizedRotation === 270
+
+              if (shouldSwapOrientation) {
+                schematicComponent.symbol_name =
+                  schematicComponent.symbol_name.replace(
+                    schematicSymbolOrientation[0],
+                    schematicSymbolOrientation[1] === "horz"
+                      ? "_vert"
+                      : "_horz",
+                  )
+              }
+            }
           }
         }
       }

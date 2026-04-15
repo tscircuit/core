@@ -69,6 +69,7 @@ import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalCo
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
+import { getLogicalPortsFromPortHintGroups } from "./utils/getLogicalPortsFromPortHintGroups"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
@@ -1190,17 +1191,19 @@ export class NormalComponent<
         return []
       }
 
-      const newPorts: Port[] = []
-      for (const elm of fpCircuitJson) {
-        if ("port_hints" in elm && elm.port_hints) {
-          const newPort = getPortFromHints(elm.port_hints, opts)
-          if (!newPort) continue
-          newPort.originDescription = `footprint:string:${footprint}:port_hints[0]:${elm.port_hints[0]}`
-          newPorts.push(newPort)
-        }
-      }
-
-      return newPorts
+      return getLogicalPortsFromPortHintGroups(
+        fpCircuitJson.flatMap((elm) =>
+          "port_hints" in elm && elm.port_hints
+            ? [
+                {
+                  hints: elm.port_hints,
+                  originDescription: `footprint:string:${footprint}:port_hints[0]:${elm.port_hints[0]}`,
+                },
+              ]
+            : [],
+        ),
+        opts,
+      )
     }
     if (
       !isValidElement(footprint) &&
@@ -1209,35 +1212,19 @@ export class NormalComponent<
     ) {
       const fp = footprint as Footprint
 
-      let pinNumber = 1
-      const newPorts: Port[] = []
-      for (const fpChild of fp.children) {
-        if (!fpChild.props.portHints) continue
-
-        // Filter out empty strings from port hints
-        const filteredPortHints = fpChild.props.portHints.filter(
-          (hint: string) => hint && hint.trim() !== "",
-        )
-
-        if (filteredPortHints.length === 0) continue
-
-        let portHintsList = filteredPortHints
-        const hasPinIdentifier = portHintsList.some(
-          (hint: string) =>
-            hint.startsWith("pin") || /^(?:pin)?\d+$/.test(hint),
-        )
-        if (!hasPinIdentifier) {
-          portHintsList = [...portHintsList, `pin${pinNumber}`]
-        }
-        pinNumber++
-        const newPort = getPortFromHints(portHintsList)
-        if (!newPort) continue
-        newPort.originDescription = `footprint:${footprint}`
-        newPorts.push(newPort)
-      }
-
-      // If no ports were found, return an empty array instead of throwing an error
-      return newPorts
+      return getLogicalPortsFromPortHintGroups(
+        fp.children.flatMap((fpChild) =>
+          fpChild.props.portHints
+            ? [
+                {
+                  hints: fpChild.props.portHints,
+                  originDescription: `footprint:${footprint}`,
+                },
+              ]
+            : [],
+        ),
+        opts,
+      )
     }
 
     // Explore children for possible smtpads etc.

@@ -3,14 +3,69 @@ import {
   connectorProps,
   type ConnectorProps,
   type PartsEngine,
+  type SchematicPinStyle,
+  type SchematicPortArrangement,
 } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
 import { unknown_error_finding_part } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
+import {
+  getAllDimensionsForSchematicBox,
+  type SchematicBoxDimensions,
+} from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
+import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 import { symbols } from "schematic-symbols"
 import { Chip } from "./Chip"
 import { insertInnerSymbolInSchematicBox } from "./Connector_insertInnerSymbolInSchematicBox"
+import type { Port } from "../primitive-components/Port"
+
+const USB_C_SIGNAL_LABELS_IN_ORDER = [
+  "VBUS1",
+  "VBUS2",
+  "CC1",
+  "CC2",
+  "DP1",
+  "DP2",
+  "DM1",
+  "DM2",
+  "SBU1",
+  "SBU2",
+  "GND1",
+  "GND2",
+] as const
+
+const USB_C_SHELL_LABELS_IN_ORDER = [
+  "SHELL1",
+  "SHELL2",
+  "SHELL3",
+  "SHELL4",
+] as const
+
+const USB_C_CANONICAL_LABELS_IN_ORDER = [
+  ...USB_C_SIGNAL_LABELS_IN_ORDER,
+  ...USB_C_SHELL_LABELS_IN_ORDER,
+] as const
+
+type UsbCCanonicalLabel = (typeof USB_C_CANONICAL_LABELS_IN_ORDER)[number]
+
+const USB_C_CANONICAL_LABELS = new Set<string>([
+  ...USB_C_CANONICAL_LABELS_IN_ORDER,
+])
+
+type SinglePinStyle = NonNullable<SchematicPinStyle[string]>
+const USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL: ReadonlyArray<
+  readonly [UsbCCanonicalLabel, SinglePinStyle]
+> = [
+  // Group spacing on right side
+  ["CC1", { marginTop: 0.15 }],
+  ["DP1", { marginTop: 0.15 }],
+  ["SBU1", { marginTop: 0.15 }],
+  ["GND1", { marginTop: 0.15 }],
+  // Bottom-side label spacing uses horizontal margins.
+  ["SHELL4", { marginRight: 0.15 }],
+]
 
 export class Connector<
   PinLabels extends string = never,
@@ -121,8 +176,121 @@ export class Connector<
       },
       standardizedCircuitJson,
     )
+
+    const fetchedCadModel = extractCadModelFromCircuitJson(
+      standardizedCircuitJson,
+    )
+    if (fetchedCadModel) {
+      this._asyncFootprintCadModel = fetchedCadModel
+    }
+
     this.addAll(fpComponents)
     this._markDirty("InitializePortsFromChildren")
+  }
+
+  private _getUsbCCanonicalLabelToPinNumberMap(): Map<
+    UsbCCanonicalLabel,
+    number
+  > {
+    const labelToPinNumber = new Map<UsbCCanonicalLabel, number>()
+    const ports = this.selectAll("port") as Port[]
+
+    for (const port of ports) {
+      const pinNumber = port.props.pinNumber
+      if (typeof pinNumber !== "number") continue
+
+      for (const alias of port.getNameAndAliases()) {
+        const normalizedAlias = alias.trim().toUpperCase()
+        if (!USB_C_CANONICAL_LABELS.has(normalizedAlias)) continue
+        const label = normalizedAlias as UsbCCanonicalLabel
+        if (!labelToPinNumber.has(label)) {
+          labelToPinNumber.set(label, pinNumber)
+        }
+      }
+    }
+
+    return labelToPinNumber
+  }
+
+  _getSchematicPortArrangement(): SchematicPortArrangement | null {
+    const arrangement = super._getSchematicPortArrangement()
+    if (arrangement && Object.keys(arrangement).length > 0) return arrangement
+
+    if (this._getConnectorProps().standard !== "usb_c") return arrangement
+
+    const labelToPinNumber = this._getUsbCCanonicalLabelToPinNumberMap()
+    const rightPins = USB_C_SIGNAL_LABELS_IN_ORDER.map((label) =>
+      labelToPinNumber.get(label),
+    ).filter((pin): pin is number => typeof pin === "number")
+    const bottomPins = USB_C_SHELL_LABELS_IN_ORDER.map((label) =>
+      labelToPinNumber.get(label),
+    ).filter((pin): pin is number => typeof pin === "number")
+
+    if (rightPins.length === 0 && bottomPins.length === 0) return arrangement
+
+    const canonicalArrangement: SchematicPortArrangement = {}
+    if (rightPins.length > 0) {
+      canonicalArrangement.rightSide = {
+        pins: rightPins,
+        direction: "top-to-bottom",
+      }
+    }
+    if (bottomPins.length > 0) {
+      canonicalArrangement.bottomSide = {
+        pins: bottomPins,
+        direction: "left-to-right",
+      }
+    }
+
+    return canonicalArrangement
+  }
+
+  _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
+    if (this._getConnectorProps().standard !== "usb_c") {
+      return super._getSchematicBoxDimensions()
+    }
+    if (this.getSchematicSymbol()) return null
+    if (!this.config.shouldRenderAsSchematicBox) return null
+
+    const { _parsedProps: props } = this
+    const pinCount = this._getPinCount()
+    const pinSpacing = props.schPinSpacing ?? 0.2
+    const pinLabelsFromPorts = this._getPinLabelsFromPorts()
+    const allPinLabels: Record<string, string> = {
+      ...pinLabelsFromPorts,
+    }
+    if (props.pinLabels) {
+      for (const [k, v] of Object.entries(props.pinLabels)) {
+        if (typeof v === "string") allPinLabels[k] = v
+      }
+    }
+
+    const labelToPinNumber = this._getUsbCCanonicalLabelToPinNumberMap()
+    const resolvedDefaultSchPinStyle: SchematicPinStyle = {}
+    for (const [label, style] of USB_C_DEFAULT_SCH_PIN_STYLE_BY_LABEL) {
+      const pinNumber = labelToPinNumber.get(label)
+      if (typeof pinNumber !== "number") continue
+      resolvedDefaultSchPinStyle[`pin${pinNumber}`] = style
+    }
+
+    const mergedSchPinStyle = {
+      ...resolvedDefaultSchPinStyle,
+      ...(props.schPinStyle ?? {}),
+    }
+    const schPortArrangement = this._getSchematicPortArrangement()
+
+    return getAllDimensionsForSchematicBox({
+      schWidth: props.schWidth,
+      schHeight: props.schHeight,
+      schPinSpacing: pinSpacing,
+      numericSchPinStyle: getNumericSchPinStyle(
+        mergedSchPinStyle,
+        allPinLabels,
+      ),
+      pinCount,
+      schPortArrangement: schPortArrangement ?? undefined,
+      pinLabels: allPinLabels,
+    })
   }
 
   get config() {

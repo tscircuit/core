@@ -2,10 +2,13 @@ import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
 import type { SchSymbol } from "schematic-symbols"
 import type { Connector } from "./Connector"
 
+const INNER_SYMBOL_SCALE_FACTOR = 0.5
+const INNER_SYMBOL_LEFT_SHIFT_FACTOR = 0.15
+
 /**
  * Insert a schematic-symbols symbol as inner primitives inside the
  * schematic box. The primitives are scaled to 50% of the box size and
- * centered.
+ * slightly shifted left to reduce overlap with right-side pin labels.
  */
 export function insertInnerSymbolInSchematicBox(
   connector: Connector,
@@ -20,9 +23,9 @@ export function insertInnerSymbolInSchematicBox(
   if (!schematicComponent) return
   if (schematicComponent.symbol_name) return
 
-  const innerScaleFactor = 0.5
-  const targetWidth = schematicComponent.size.width * innerScaleFactor
-  const targetHeight = schematicComponent.size.height * innerScaleFactor
+  const targetWidth = schematicComponent.size.width * INNER_SYMBOL_SCALE_FACTOR
+  const targetHeight =
+    schematicComponent.size.height * INNER_SYMBOL_SCALE_FACTOR
   const scaleFactor = Math.min(
     targetWidth / symbol.size.width,
     targetHeight / symbol.size.height,
@@ -32,9 +35,11 @@ export function insertInnerSymbolInSchematicBox(
   const subcircuit_id = connector.getSubcircuit()?.subcircuit_id ?? undefined
   const center = schematicComponent.center
   const symbolCenter = symbol.center
+  const centerOffsetX =
+    -schematicComponent.size.width * INNER_SYMBOL_LEFT_SHIFT_FACTOR
 
   const transformPoint = (point: { x: number; y: number }) => ({
-    x: center.x + (point.x - symbolCenter.x) * scaleFactor,
+    x: center.x + centerOffsetX + (point.x - symbolCenter.x) * scaleFactor,
     y: center.y + (point.y - symbolCenter.y) * scaleFactor,
   })
 

@@ -322,7 +322,7 @@ export const getObstaclesFromCircuitJson = (
           x: element.x,
           y: element.y,
         },
-        connectedTo: [], // TODO we can associate source_ports with this via
+        connectedTo: withNetId([element.pcb_via_id]),
         width: element.outer_diameter,
         height: element.outer_diameter,
         netIsAssignable: netIsAssignable || undefined,

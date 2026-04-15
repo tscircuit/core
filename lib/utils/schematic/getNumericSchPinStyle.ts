@@ -1,4 +1,6 @@
 import type { SchematicPinStyle } from "@tscircuit/props"
+import { distance } from "circuit-json"
+import type { NumericSchPinStyle } from "./getAllDimensionsForSchematicBox"
 import { parsePinNumberFromLabelsOrThrow } from "./parsePinNumberFromLabelsOrThrow"
 
 /**
@@ -10,34 +12,35 @@ import { parsePinNumberFromLabelsOrThrow } from "./parsePinNumberFromLabelsOrThr
  * @returns A pin styles object using only numeric pin numbers as keys
  */
 export const getNumericSchPinStyle = (
-  pinStyles: Record<string, SchematicPinStyle> | undefined,
+  pinStyles: SchematicPinStyle | undefined,
   pinLabels?: Record<string, string[] | string> | null,
-):
-  | Record<`pin${number}` | number | `${number}`, SchematicPinStyle>
-  | undefined => {
+): NumericSchPinStyle | undefined => {
   if (!pinStyles) return undefined
 
-  const numericPinStyles: Record<
-    `pin${number}` | number | `${number}`,
-    SchematicPinStyle
-  > = {}
+  const numericPinStyles: NumericSchPinStyle = {}
 
   // Convert each pin style key to a numeric pin number
   for (const [pinNameOrLabel, pinStyle] of Object.entries(pinStyles)) {
     const pinNumber = parsePinNumberFromLabelsOrThrow(pinNameOrLabel, pinLabels)
+    const leftMargin = pinStyle.marginLeft ?? pinStyle.leftMargin
+    const rightMargin = pinStyle.marginRight ?? pinStyle.rightMargin
+    const topMargin = pinStyle.marginTop ?? pinStyle.topMargin
+    const bottomMargin = pinStyle.marginBottom ?? pinStyle.bottomMargin
 
-    const pinStyleWithSideFirst = {
-      leftMargin: pinStyle.marginLeft ?? pinStyle.leftMargin,
-      rightMargin: pinStyle.marginRight ?? pinStyle.rightMargin,
-      topMargin: pinStyle.marginTop ?? pinStyle.topMargin,
-      bottomMargin: pinStyle.marginBottom ?? pinStyle.bottomMargin,
+    const existingStyle = numericPinStyles[`pin${pinNumber}`] ?? {}
+    const nextStyle = { ...existingStyle }
+
+    if (leftMargin !== undefined)
+      nextStyle.leftMargin = distance.parse(leftMargin)
+    if (rightMargin !== undefined) {
+      nextStyle.rightMargin = distance.parse(rightMargin)
+    }
+    if (topMargin !== undefined) nextStyle.topMargin = distance.parse(topMargin)
+    if (bottomMargin !== undefined) {
+      nextStyle.bottomMargin = distance.parse(bottomMargin)
     }
 
-    // Merge with any existing styles for this pin number
-    numericPinStyles[`pin${pinNumber}`] = {
-      ...numericPinStyles[`pin${pinNumber}`],
-      ...pinStyleWithSideFirst,
-    }
+    numericPinStyles[`pin${pinNumber}`] = nextStyle
   }
 
   return numericPinStyles
