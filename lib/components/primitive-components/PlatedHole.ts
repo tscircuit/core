@@ -276,26 +276,54 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       } as PcbHoleCircularWithRectPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     } else if (props.shape === "pill_hole_with_rect_pad") {
-      const pcb_plated_hole = db.pcb_plated_hole.insert({
-        pcb_component_id,
-        pcb_port_id: this.matchedPort?.pcb_port_id!,
-        hole_width: props.holeWidth,
-        hole_height: props.holeHeight,
-        rect_pad_width: props.rectPadWidth,
-        rect_pad_height: props.rectPadHeight,
-        hole_offset_x: props.holeOffsetX,
-        hole_offset_y: props.holeOffsetY,
-        shape: "pill_hole_with_rect_pad" as const,
-        port_hints: this.getNameAndAliases(),
-        x: position.x,
-        y: position.y,
-        layers: ["top", "bottom"],
-        soldermask_margin: soldermaskMargin,
-        is_covered_with_solder_mask: isCoveredWithSolderMask,
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbHolePillWithRectPad)
-      this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+      if (props.pcbRotation && props.pcbRotation !== 0) {
+        const pcb_plated_hole = db.pcb_plated_hole.insert({
+          pcb_component_id,
+          pcb_port_id: this.matchedPort?.pcb_port_id!,
+          hole_width: props.holeWidth,
+          hole_height: props.holeHeight,
+          rect_pad_width: props.rectPadWidth,
+          rect_pad_height: props.rectPadHeight,
+          hole_offset_x: props.holeOffsetX,
+          hole_offset_y: props.holeOffsetY,
+          shape: "rotated_pill_hole_with_rect_pad" as const,
+          type: "pcb_plated_hole",
+          hole_shape: "rotated_pill",
+          pad_shape: "rect",
+          hole_ccw_rotation: props.pcbRotation,
+          rect_ccw_rotation: props.pcbRotation,
+          port_hints: this.getNameAndAliases(),
+          x: position.x,
+          y: position.y,
+          layers: ["top", "bottom"],
+          soldermask_margin: soldermaskMargin,
+          is_covered_with_solder_mask: isCoveredWithSolderMask,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        } as PcbHoleRotatedPillWithRectPad)
+        this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+      } else {
+        const pcb_plated_hole = db.pcb_plated_hole.insert({
+          pcb_component_id,
+          pcb_port_id: this.matchedPort?.pcb_port_id!,
+          hole_width: props.holeWidth,
+          hole_height: props.holeHeight,
+          rect_pad_width: props.rectPadWidth,
+          rect_pad_height: props.rectPadHeight,
+          hole_offset_x: props.holeOffsetX,
+          hole_offset_y: props.holeOffsetY,
+          shape: "pill_hole_with_rect_pad" as const,
+          port_hints: this.getNameAndAliases(),
+          x: position.x,
+          y: position.y,
+          layers: ["top", "bottom"],
+          soldermask_margin: soldermaskMargin,
+          is_covered_with_solder_mask: isCoveredWithSolderMask,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        } as PcbHolePillWithRectPad)
+        this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
+      }
     } else if (props.shape === "hole_with_polygon_pad") {
       // Pad outline points are relative to the hole position (x, y)
       const padOutline = (props.padOutline || []).map((point) => {
