@@ -299,17 +299,28 @@ export class Connector<
   doInitialSourceRender(): void {
     const { db } = this.root!
     const props = this._getConnectorProps()
+    const manufacturerPartNumber = props.manufacturerPartNumber ?? props.mfn
 
     const source_component = db.source_component.insert({
       ftype: "simple_connector",
       name: this.name,
-      manufacturer_part_number: props.manufacturerPartNumber ?? props.mfn,
+      manufacturer_part_number: manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
       standard: props.standard,
     } as SourceSimpleConnector)
 
     this.source_component_id = source_component.source_component_id!
+
+    if (props.standard && !manufacturerPartNumber) {
+      db.source_missing_manufacturer_part_number_warning.insert({
+        source_component_id: this.source_component_id,
+        standard: props.standard,
+        subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+        warning_type: "source_missing_manufacturer_part_number_warning",
+        message: `${this.getString()} has standard="${props.standard}" but no manufacturerPartNumber (mfn). Add mfn if you do not want the USB-C part to change in future.`,
+      })
+    }
   }
 
   private _isUsingStandardPartsEngineCircuitJsonFlow() {

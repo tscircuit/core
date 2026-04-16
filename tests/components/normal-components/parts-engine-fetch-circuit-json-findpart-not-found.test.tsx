@@ -31,4 +31,25 @@ test("connector with standard='usb_c' handles findPart returning 'Not found' wit
   expect(fetchCalls).toBe(0)
   expect(circuit.db.pcb_smtpad.list().length).toBe(0)
   expect(circuit.db.unknown_error_finding_part.list().length).toBe(0)
+
+  const missingMfnWarnings = circuit
+    .getCircuitJson()
+    .filter(
+      (el: any) =>
+        el.type === "source_missing_manufacturer_part_number_warning",
+    )
+  expect(missingMfnWarnings).toHaveLength(1)
+  expect(missingMfnWarnings).toMatchInlineSnapshot(`
+    [
+      {
+        "message": "<connector#152 name=".USB1" /> has standard="usb_c" but no manufacturerPartNumber (mfn). Add mfn if you do not want the USB-C part to change in future.",
+        "source_component_id": "source_component_0",
+        "source_missing_manufacturer_part_number_warning_id": "source_missing_manufacturer_part_number_warning_0",
+        "standard": "usb_c",
+        "subcircuit_id": "subcircuit_source_group_0",
+        "type": "source_missing_manufacturer_part_number_warning",
+        "warning_type": "source_missing_manufacturer_part_number_warning",
+      },
+    ]
+  `)
 })
