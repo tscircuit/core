@@ -1139,11 +1139,13 @@ export abstract class PrimitiveComponent<
       ) as T | null
     }
 
-    result ??= selectOne(
-      selector,
-      this,
-      cssSelectOptionsInsideSubcircuit,
-    ) as T | null
+    if (!options?.type) {
+      result ??= selectOne(
+        selector,
+        this,
+        cssSelectOptionsInsideSubcircuit,
+      ) as T | null
+    }
 
     if (result) {
       this._cachedSelectOneQueries.set(selectorRaw, result as any)
