@@ -296,18 +296,28 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   private _getMatchingPinAttributes(): PinAttributeMap[] {
-    const pinAttributes = (this.parent as any)?._parsedProps?.pinAttributes as
+    const parentProps = (this.parent as any)?._parsedProps
+    const pinAttributes = parentProps?.pinAttributes as
       | Record<string, PinAttributeMap>
       | undefined
-
-    if (!pinAttributes) return []
+    const noConnect = parentProps?.noConnect as string[] | undefined
 
     const matches: PinAttributeMap[] = []
     for (const alias of this.getNameAndAliases()) {
-      const attributes = pinAttributes[alias]
-      if (attributes) {
-        matches.push(attributes)
+      if (pinAttributes) {
+        const attributes = pinAttributes[alias]
+        if (attributes) {
+          matches.push(attributes)
+        }
       }
+
+      if (noConnect?.includes(alias)) {
+        matches.push({ doNotConnect: true })
+      }
+    }
+
+    if (matches.length === 0) {
+      return []
     }
 
     return matches

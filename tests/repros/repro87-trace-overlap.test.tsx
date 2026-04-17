@@ -4,32 +4,32 @@ import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const pinLabels1 = {
-  1: ["GND1", "A1"],
-  2: ["GND2", "B12"],
-  3: ["VBUS1", "A4"],
-  4: ["VBUS2", "B9"],
-  5: ["SBU2", "B8"],
-  6: ["CC1", "A5"],
-  7: ["DM2", "B7"],
-  8: ["DP1", "A6"],
-  9: ["DM1", "A7"],
-  10: ["DP2", "B6"],
-  11: ["SBU1", "A8"],
-  12: ["CC2", "B5"],
-  13: ["VBUS1", "A9"],
-  14: ["VBUS2", "B4"],
-  15: ["GND1", "A12"],
-  16: ["GND2", "B1"],
+  pin1: ["GND1", "A1"],
+  pin2: ["GND2", "B12"],
+  pin3: ["VBUS1", "A4"],
+  pin4: ["VBUS2", "B9"],
+  pin5: ["SBU2", "B8"],
+  pin6: ["CC1", "A5"],
+  pin7: ["DM2", "B7"],
+  pin8: ["DP1", "A6"],
+  pin9: ["DM1", "A7"],
+  pin10: ["DP2", "B6"],
+  pin11: ["SBU1", "A8"],
+  pin12: ["CC2", "B5"],
+  pin13: ["VBUS1", "A9"],
+  pin14: ["VBUS2", "B4"],
+  pin15: ["GND1", "A12"],
+  pin16: ["GND2", "B1"],
 } as const
 
-interface Props extends ChipProps<typeof pinLabels1> {
+interface SmdUsbCProps extends ChipProps<typeof pinLabels1> {
   name: string
 }
 
 /**
  * USB Type C connector (C165948)
  */
-export const SmdUsbC = (props: Props) => {
+export const SmdUsbC = (props: SmdUsbCProps) => {
   return (
     <chip
       {...props}
@@ -308,11 +308,11 @@ const pinLabels2 = {
 } as const
 const pinNames2 = Object.values(pinLabels2)
 
-interface Props extends CommonLayoutProps {
+interface RedLedProps extends CommonLayoutProps {
   name: string
 }
 
-export const RedLed = (props: Props) => {
+export const RedLed = (props: RedLedProps) => {
   return (
     <led
       {...props}
@@ -452,11 +452,11 @@ const pinLabels = {
 } as const
 const pinNames = Object.values(pinLabels)
 
-interface Props extends CommonLayoutProps {
+interface Ne555Props extends CommonLayoutProps {
   name: string
 }
 
-export const NE555P = (props: Props) => {
+export const NE555P = (props: Ne555Props) => {
   return (
     <chip
       {...props}
