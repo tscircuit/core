@@ -202,6 +202,10 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         rect_ccw_rotation: props.pcbRotation ?? 0,
         rect_pad_width: props.outerWidth,
         rect_pad_height: props.outerHeight,
+        rect_border_radius:
+          (this.props as any).rectBorderRadius ??
+          (this.props as any).cornerRadius ??
+          0,
         hole_offset_x: props.holeOffsetX,
         hole_offset_y: props.holeOffsetY,
       } as PcbHoleRotatedPillWithRectPad)
@@ -271,7 +275,10 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         hole_offset_x: props.holeOffsetX,
         hole_offset_y: props.holeOffsetY,
-        rect_border_radius: props.rectBorderRadius ?? 0,
+        rect_border_radius:
+          (this.props as any).rectBorderRadius ??
+          (this.props as any).cornerRadius ??
+          0,
         rect_ccw_rotation: finalRotationDegrees,
       } as PcbHoleCircularWithRectPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
@@ -292,6 +299,10 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           pad_shape: "rect",
           hole_ccw_rotation: props.pcbRotation,
           rect_ccw_rotation: props.pcbRotation,
+          rect_border_radius:
+            (this.props as any).rectBorderRadius ??
+            (this.props as any).cornerRadius ??
+            0,
           port_hints: this.getNameAndAliases(),
           x: position.x,
           y: position.y,
@@ -312,6 +323,10 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           rect_pad_height: props.rectPadHeight,
           hole_offset_x: props.holeOffsetX,
           hole_offset_y: props.holeOffsetY,
+          rect_border_radius:
+            (this.props as any).rectBorderRadius ??
+            (this.props as any).cornerRadius ??
+            0,
           shape: "pill_hole_with_rect_pad" as const,
           port_hints: this.getNameAndAliases(),
           x: position.x,
