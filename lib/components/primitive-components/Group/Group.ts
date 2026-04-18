@@ -31,7 +31,6 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { z } from "zod"
 import {
   getMinViaRuleValues,
-  minViaRuleProps,
   type MinViaRuleProps,
 } from "../../../utils/autorouting/min-via-rules"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
@@ -62,14 +61,7 @@ import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 
-const groupPropsWithMinViaRules = z.discriminatedUnion("subcircuit", [
-  groupProps.options[0],
-  groupProps.options[1].extend(minViaRuleProps),
-])
-
-export class Group<
-    Props extends z.ZodType<any, any, any> = typeof groupPropsWithMinViaRules,
-  >
+export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
   implements ISubcircuit
 {
@@ -138,7 +130,7 @@ export class Group<
 
   get config() {
     return {
-      zodProps: groupPropsWithMinViaRules as unknown as Props,
+      zodProps: groupProps as unknown as Props,
       componentName: "Group",
     }
   }
@@ -146,7 +138,7 @@ export class Group<
   doInitialSourceGroupRender() {
     const { db } = this.root!
     const { minViaDiameter, minViaHole } = getMinViaRuleValues(
-      this._parsedProps as MinViaRuleProps,
+      this.props as MinViaRuleProps,
     )
     const hasExplicitName =
       typeof (this._parsedProps as { name?: unknown }).name === "string" &&
@@ -203,7 +195,7 @@ export class Group<
     const groupProps = props as SubcircuitGroupProps
     const hasOutline = groupProps.outline && groupProps.outline.length > 0
     const { minViaDiameter, minViaHole } = getMinViaRuleValues(
-      props as SubcircuitGroupProps & MinViaRuleProps,
+      this.props as MinViaRuleProps,
     )
 
     const numericOutline = hasOutline
