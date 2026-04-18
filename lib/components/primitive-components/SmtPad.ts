@@ -161,7 +161,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           shape: "rotated_rect",
           width: props.width!,
           height: props.height!,
-          corner_radius: props.cornerRadius ?? undefined,
+          rect_border_radius:
+            (this.props as any).rect_border_radius ??
+            (this.props as any).cornerRadius ??
+            undefined,
           x: position.x,
           y: position.y,
           ccw_rotation: finalRotationDegrees,
@@ -179,7 +182,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           shape: "rect",
           width: isRotated90Degrees ? props.height! : props.width!,
           height: isRotated90Degrees ? props.width! : props.height!,
-          corner_radius: props.cornerRadius ?? undefined,
+          rect_border_radius:
+            (this.props as any).rect_border_radius ??
+            (this.props as any).cornerRadius ??
+            undefined,
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           soldermask_margin: soldermaskMargin,
