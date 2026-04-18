@@ -28,6 +28,10 @@ export function inflatePcbBoard(
   const boardProps: BoardProps & MinViaRuleProps = {
     name: "inflated_board",
   }
+  const pcbBoardWithMinViaRules = pcbBoard as PcbBoard & {
+    min_via_diameter?: number
+    min_via_hole?: number
+  }
 
   // Add PCB-specific properties
   if (pcbBoard.width) boardProps.width = pcbBoard.width
@@ -39,11 +43,11 @@ export function inflatePcbBoard(
   if (pcbBoard.outline) boardProps.outline = pcbBoard.outline
   if (pcbBoard.thickness) boardProps.thickness = pcbBoard.thickness
   if (pcbBoard.material) boardProps.material = pcbBoard.material
-  if ((pcbBoard as any).min_via_diameter != null) {
-    boardProps.minViaDiameter = (pcbBoard as any).min_via_diameter
+  if (pcbBoardWithMinViaRules.min_via_diameter != null) {
+    boardProps.minViaDiameter = pcbBoardWithMinViaRules.min_via_diameter
   }
-  if ((pcbBoard as any).min_via_hole != null) {
-    boardProps.minViaHole = (pcbBoard as any).min_via_hole
+  if (pcbBoardWithMinViaRules.min_via_hole != null) {
+    boardProps.minViaHole = pcbBoardWithMinViaRules.min_via_hole
   }
 
   // Create the Board instance
