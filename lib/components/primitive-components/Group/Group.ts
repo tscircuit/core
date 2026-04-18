@@ -29,6 +29,11 @@ import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { z } from "zod"
+import {
+  getMinViaRuleValues,
+  minViaRuleProps,
+  type MinViaRuleProps,
+} from "../../../utils/autorouting/min-via-rules"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
@@ -57,7 +62,14 @@ import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 
-export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
+const groupPropsWithMinViaRules = z.discriminatedUnion("subcircuit", [
+  groupProps.options[0],
+  groupProps.options[1].extend(minViaRuleProps),
+])
+
+export class Group<
+    Props extends z.ZodType<any, any, any> = typeof groupPropsWithMinViaRules,
+  >
   extends NormalComponent<Props>
   implements ISubcircuit
 {
@@ -126,13 +138,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   get config() {
     return {
-      zodProps: groupProps as unknown as Props,
+      zodProps: groupPropsWithMinViaRules as unknown as Props,
       componentName: "Group",
     }
   }
 
   doInitialSourceGroupRender() {
     const { db } = this.root!
+    const { minViaDiameter, minViaHole } = getMinViaRuleValues(
+      this._parsedProps as MinViaRuleProps,
+    )
     const hasExplicitName =
       typeof (this._parsedProps as { name?: unknown }).name === "string" &&
       (this._parsedProps as { name?: string }).name!.length > 0
@@ -141,7 +156,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       name: this.name,
       is_subcircuit: this.isSubcircuit,
       was_automatically_named: !hasExplicitName,
-    })
+      ...(minViaDiameter != null ? { min_via_diameter: minViaDiameter } : {}),
+      ...(minViaHole != null ? { min_via_hole: minViaHole } : {}),
+    } as any)
     this.source_group_id = source_group.source_group_id
     if (this.isSubcircuit) {
       this.subcircuit_id = `subcircuit_${source_group.source_group_id}` as any
@@ -185,6 +202,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const groupProps = props as SubcircuitGroupProps
     const hasOutline = groupProps.outline && groupProps.outline.length > 0
+    const { minViaDiameter, minViaHole } = getMinViaRuleValues(
+      props as SubcircuitGroupProps & MinViaRuleProps,
+    )
 
     const numericOutline = hasOutline
       ? groupProps.outline!.map((point) => ({
@@ -211,7 +231,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
         : undefined,
       anchor_alignment: props.pcbAnchorAlignment ?? null,
-    })
+      ...(minViaDiameter != null ? { min_via_diameter: minViaDiameter } : {}),
+      ...(minViaHole != null ? { min_via_hole: minViaHole } : {}),
+    } as any)
     this.pcb_group_id = pcb_group.pcb_group_id
 
     for (const child of this.children) {
@@ -609,7 +631,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         )
         simpleRouteJson.obstacles = [
           ...simpleRouteJson.obstacles,
-          ...Group_getObstaclesFromRoutedTraces(outputTraces),
+          ...Group_getObstaclesFromRoutedTraces(
+            outputTraces,
+            baseSimpleRouteJson.minViaDiameter,
+          ),
         ]
       }
 
@@ -904,6 +929,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Apply each routed trace to the corresponding circuit trace
     const pcbStyle = this.getInheritedMergedProperty("pcbStyle")
     const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+    const { minViaDiameter, minViaHole } = getMinViaRuleValues(
+      this._parsedProps as MinViaRuleProps,
+    )
 
     // First, create jumper components from getOutputJumpers() result
     if (output_jumpers && output_jumpers.length > 0) {
@@ -958,12 +986,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (pcb_trace.type === "pcb_trace") {
         for (const point of pcb_trace.route) {
           if (point.route_type === "via") {
+            const routeVia = point as typeof point & {
+              via_diameter?: number
+              via_hole_diameter?: number
+            }
             db.pcb_via.insert({
               pcb_trace_id: pcb_trace.pcb_trace_id,
               x: point.x,
               y: point.y,
-              hole_diameter: holeDiameter,
-              outer_diameter: padDiameter,
+              hole_diameter:
+                routeVia.via_hole_diameter ?? minViaHole ?? holeDiameter,
+              outer_diameter:
+                routeVia.via_diameter ?? minViaDiameter ?? padDiameter,
               layers: [
                 point.from_layer as LayerRef,
                 point.to_layer as LayerRef,

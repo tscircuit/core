@@ -1,5 +1,11 @@
 import type * as Props from "@tscircuit/props"
 import type { DetailedHTMLProps, SVGProps } from "react"
+import type { MinViaRuleProps } from "lib/utils/autorouting/min-via-rules"
+
+type BoardPropsWithMinViaRules = Props.BoardProps & MinViaRuleProps
+type GroupPropsWithMinViaRules = Props.GroupProps & MinViaRuleProps
+type SubcircuitGroupPropsWithMinViaRules = Props.SubcircuitGroupProps &
+  MinViaRuleProps
 
 export interface TscircuitElements {
   resistor: Props.ResistorProps
@@ -9,7 +15,7 @@ export interface TscircuitElements {
   diode: Props.DiodeProps
   fuse: Props.FuseProps
   led: Props.LedProps
-  board: Props.BoardProps
+  board: BoardPropsWithMinViaRules
   mountedboard: Props.MountedBoardProps
   panel: Props.PanelProps
   subpanel: Props.SubpanelProps
@@ -37,7 +43,7 @@ export interface TscircuitElements {
   keepout: Props.PcbKeepoutProps
   hole: Props.HoleProps
   port: Props.PortProps
-  group: Props.GroupProps
+  group: GroupPropsWithMinViaRules
   netlabel: Props.NetLabelProps
   opamp: Props.OpAmpProps
   cadmodel: Props.CadModelProps
@@ -77,7 +83,7 @@ export interface TscircuitElements {
   connector: Props.ConnectorProps
   pinheader: Props.PinHeaderProps
   resonator: Props.ResonatorProps
-  subcircuit: Props.SubcircuitGroupProps
+  subcircuit: SubcircuitGroupPropsWithMinViaRules
   transistor: Props.TransistorProps
   switch: Props.SwitchProps
   mosfet: Props.MosfetProps

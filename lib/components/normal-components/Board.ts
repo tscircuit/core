@@ -9,6 +9,10 @@ import { boardProps } from "@tscircuit/props"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import { type Matrix, compose, translate } from "transformation-matrix"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
+import {
+  getMinViaRuleValues,
+  minViaRuleProps,
+} from "../../utils/autorouting/min-via-rules"
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
@@ -20,6 +24,7 @@ import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/
 import type { BoardI } from "./BoardI"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
+const boardPropsWithMinViaRules = boardProps.extend(minViaRuleProps)
 
 const getRoundedRectOutline = (
   width: number,
@@ -89,7 +94,7 @@ const getRoundedRectOutline = (
 }
 
 export class Board
-  extends Group<typeof boardProps>
+  extends Group<typeof boardPropsWithMinViaRules>
   implements BoardI, SubcircuitI
 {
   pcb_board_id: string | null = null
@@ -110,7 +115,7 @@ export class Board
   get config() {
     return {
       componentName: "Board",
-      zodProps: boardProps,
+      zodProps: boardPropsWithMinViaRules,
     }
   }
 
@@ -383,11 +388,16 @@ export class Board
     super.doInitialSourceRender()
 
     const { db } = this.root!
+    const { minViaDiameter, minViaHole } = getMinViaRuleValues(
+      this._parsedProps,
+    )
 
     const source_board = db.source_board.insert({
       source_group_id: this.source_group_id!,
       title: this.props.title || this.props.name,
-    })
+      ...(minViaDiameter != null ? { min_via_diameter: minViaDiameter } : {}),
+      ...(minViaHole != null ? { min_via_hole: minViaHole } : {}),
+    } as any)
 
     this.source_board_id = source_board.source_board_id
   }
@@ -509,6 +519,8 @@ export class Board
       }
     }
 
+    const { minViaDiameter, minViaHole } = getMinViaRuleValues(props)
+
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
       center,
@@ -523,6 +535,8 @@ export class Board
         y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
       })),
       material: props.material,
+      ...(minViaDiameter != null ? { min_via_diameter: minViaDiameter } : {}),
+      ...(minViaHole != null ? { min_via_hole: minViaHole } : {}),
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
     this.pcb_board_id = pcb_board.pcb_board_id!
