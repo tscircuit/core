@@ -11,7 +11,7 @@ import { type Matrix, compose, translate } from "transformation-matrix"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import {
   getMinViaRuleValues,
-  minViaRuleProps,
+  type MinViaRuleProps,
 } from "../../utils/autorouting/min-via-rules"
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
@@ -24,7 +24,6 @@ import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/
 import type { BoardI } from "./BoardI"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
-const boardPropsWithMinViaRules = boardProps.extend(minViaRuleProps)
 
 const getRoundedRectOutline = (
   width: number,
@@ -94,7 +93,7 @@ const getRoundedRectOutline = (
 }
 
 export class Board
-  extends Group<typeof boardPropsWithMinViaRules>
+  extends Group<typeof boardProps>
   implements BoardI, SubcircuitI
 {
   pcb_board_id: string | null = null
@@ -115,7 +114,7 @@ export class Board
   get config() {
     return {
       componentName: "Board",
-      zodProps: boardPropsWithMinViaRules,
+      zodProps: boardProps,
     }
   }
 
@@ -389,7 +388,7 @@ export class Board
 
     const { db } = this.root!
     const { minViaDiameter, minViaHole } = getMinViaRuleValues(
-      this._parsedProps,
+      this.props as MinViaRuleProps,
     )
 
     const source_board = db.source_board.insert({
@@ -519,7 +518,9 @@ export class Board
       }
     }
 
-    const { minViaDiameter, minViaHole } = getMinViaRuleValues(props)
+    const { minViaDiameter, minViaHole } = getMinViaRuleValues(
+      this.props as MinViaRuleProps,
+    )
 
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,

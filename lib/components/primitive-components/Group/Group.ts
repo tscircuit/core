@@ -930,7 +930,7 @@ export class Group<
     const pcbStyle = this.getInheritedMergedProperty("pcbStyle")
     const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
     const { minViaDiameter, minViaHole } = getMinViaRuleValues(
-      this._parsedProps as MinViaRuleProps,
+      this.props as MinViaRuleProps,
     )
 
     // First, create jumper components from getOutputJumpers() result
