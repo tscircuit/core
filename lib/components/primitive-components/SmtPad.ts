@@ -310,7 +310,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     db.pcb_smtpad.update(this.pcb_smtpad_id!, {
-      pcb_port_id: this.matchedPort?.pcb_port_id!,
+      pcb_port_id: this.matchedPort?._getPcbPortIdForMatchedComponent(this)!,
     })
   }
 
@@ -431,7 +431,7 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       })
     }
 
-    this.matchedPort?._setPositionFromLayout(newCenter)
+    this.matchedPort?._setPositionFromLayoutForMatchedComponent(this, newCenter)
   }
 
   _moveCircuitJsonElements({
@@ -463,7 +463,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         x: this._getPcbCircuitJsonBounds().center.x + deltaX / 2,
         y: this._getPcbCircuitJsonBounds().center.y + deltaY / 2,
       }
-      this.matchedPort?._setPositionFromLayout(newCenter)
+      this.matchedPort?._setPositionFromLayoutForMatchedComponent(
+        this,
+        newCenter,
+      )
     }
   }
 }

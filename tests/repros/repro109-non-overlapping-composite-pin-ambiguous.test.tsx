@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test"
+import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro109: repeated portHints on non-overlapping pads are ambiguous", async () => {
+test("repro109: repeated portHints on non-overlapping pads create implicit pcb ports", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -41,22 +42,17 @@ test("repro109: repeated portHints on non-overlapping pads are ambiguous", async
     source_component_id: circuit.db.source_component.getWhere({ name: "U1" })
       ?.source_component_id,
   })
-  const ambiguousRefs = circuit.db.source_ambiguous_port_reference.list()
   const pcbPorts = circuit.db.pcb_port.list()
 
   expect(sourcePorts).toHaveLength(1)
+  expect(circuit.db.source_ambiguous_port_reference.list()).toHaveLength(0)
   expect(
-    ambiguousRefs.map((error) => ({
-      error_type: error.error_type,
-      message: error.message.replaceAll(/#\d+/g, "#<id>"),
-    })),
-  ).toMatchInlineSnapshot(`
-    [
-      {
-        "error_type": "source_ambiguous_port_reference",
-        "message": "U1.SIG is ambiguous: U1.SIG references multiple non-overlapping pads: <smtpad#<id>(.pin1) />, <smtpad#<id>(.pin1) /> (consider using alternate aliases: pin1, 1)",
-      },
-    ]
-  `)
-  expect(pcbPorts).toHaveLength(0)
+    pcbPorts.filter(
+      (port) => port.source_port_id === sourcePorts[0].source_port_id,
+    ),
+  ).toHaveLength(2)
+
+  expect(
+    convertCircuitJsonToPcbSvg(circuit.getCircuitJson()),
+  ).toMatchSvgSnapshot(import.meta.path)
 })

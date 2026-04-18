@@ -31,25 +31,31 @@ test(
     const errors = circuitJson.filter(
       (el) => el.type === "external_footprint_load_error",
     )
-    console.log("Footprint load errors:", JSON.stringify(errors, null, 2))
-
-    const pcbComponents = circuitJson.filter(
-      (el: any) => el.type === "pcb_component",
-    )
-    console.log("PCB components:", pcbComponents.length)
-
-    const pcbSmtpads = circuitJson.filter((el: any) => el.type === "pcb_smtpad")
-    console.log("PCB SMT pads:", pcbSmtpads.length)
 
     expect(errors).toHaveLength(0)
 
     const ambiguousErrors = circuitJson.filter(
       (el) => el.type === "source_ambiguous_port_reference",
     )
-    expect(ambiguousErrors).toHaveLength(1)
-    expect((ambiguousErrors[0] as any).message).toContain(
-      "U1.pin10 is ambiguous",
-    )
+    expect(ambiguousErrors).toHaveLength(0)
+
+    const u1SourceComponent = circuit.db.source_component.getWhere({
+      name: "U1",
+    })
+    const multiPcbPortSourcePorts = circuit.db.source_port
+      .list({
+        source_component_id: u1SourceComponent!.source_component_id,
+      })
+      .filter(
+        (sourcePort) =>
+          circuit.db.pcb_port
+            .list()
+            .filter(
+              (pcbPort) => pcbPort.source_port_id === sourcePort.source_port_id,
+            ).length > 1,
+      )
+      .map((sourcePort) => sourcePort.name)
+    expect(multiPcbPortSourcePorts).toContain("pin10")
 
     expect(convertCircuitJsonToPcbSvg(circuitJson as any)).toMatchSvgSnapshot(
       import.meta.path,

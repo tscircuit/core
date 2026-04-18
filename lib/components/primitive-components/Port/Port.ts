@@ -39,6 +39,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   schematicSymbolPortDef: SchSymbol["ports"][number] | null = null
   matchedComponents: PrimitiveComponent[]
+  matchedPcbPrimitivePortIds: Map<PrimitiveComponent, string>
   facingDirection: "up" | "down" | "left" | "right" | null = null
 
   originDescription: string | null = null
@@ -64,6 +65,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       this.originDescription = opts.originDescription
     }
     this.matchedComponents = []
+    this.matchedPcbPrimitivePortIds = new Map()
   }
 
   isGroupPort(): boolean {
@@ -281,6 +283,66 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   registerMatch(component: PrimitiveComponent) {
     this.matchedComponents.push(component)
   }
+
+  _getPcbPortIdForMatchedComponent(
+    component: PrimitiveComponent,
+  ): string | null {
+    return this.matchedPcbPrimitivePortIds.get(component) ?? this.pcb_port_id
+  }
+
+  _setPositionFromLayoutForMatchedComponent(
+    component: PrimitiveComponent,
+    newCenter: { x: number; y: number },
+  ): void {
+    const { db } = this.root!
+    const pcbPortId = this._getPcbPortIdForMatchedComponent(component)
+    if (!pcbPortId) return
+
+    db.pcb_port.update(pcbPortId, {
+      x: newCenter.x,
+      y: newCenter.y,
+    })
+  }
+
+  private _insertPcbPortForMatch({
+    matchCenter,
+    layers,
+    parentPcbComponentId,
+    matchedComponent,
+  }: {
+    matchCenter: { x: number; y: number }
+    layers: string[]
+    parentPcbComponentId: string
+    matchedComponent?: PrimitiveComponent
+  }): string {
+    const { db } = this.root!
+    const subcircuit = this.getSubcircuit()
+    const isBoardPinout = this._shouldIncludeInBoardPinout()
+
+    const pcb_port = db.pcb_port.insert({
+      pcb_component_id: parentPcbComponentId,
+      layers: layers as LayerRef[],
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+      ...(isBoardPinout ? { is_board_pinout: true } : {}),
+      ...matchCenter,
+
+      source_port_id: this.source_port_id!,
+      is_board_pinout: this._isBoardPinoutFromAttributes(),
+    })
+
+    if (!this.pcb_port_id) {
+      this.pcb_port_id = pcb_port.pcb_port_id
+    }
+    if (matchedComponent) {
+      this.matchedPcbPrimitivePortIds.set(
+        matchedComponent,
+        pcb_port.pcb_port_id,
+      )
+    }
+
+    return pcb_port.pcb_port_id
+  }
   getNameAndAliases() {
     const { _parsedProps: props } = this
     return Array.from(
@@ -486,26 +548,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (pcbMatches.length > 1) {
       if (!areAllPcbPrimitivesOverlapping(pcbMatches)) {
-        // This port hint is ambiguous - multiple non-overlapping pads share the
-        // same name. Skip creating a pcb_port and record a warning instead of
-        // throwing, so the rest of the circuit can still render.
-        const portName = this.props.name!
-        const componentName =
-          this.getParentNormalComponent()?.props.name ?? "unknown"
-        const altAliases = this.getNameAndAliases().filter(
-          (h) => h !== portName,
-        )
-        const altMsg =
-          altAliases.length > 0
-            ? ` (consider using alternate aliases: ${altAliases.join(", ")})`
-            : ""
-        db.source_ambiguous_port_reference.insert({
-          error_type: "source_ambiguous_port_reference",
-          message: `${componentName}.${portName} is ambiguous: ${componentName}.${portName} references multiple non-overlapping pads: ${pcbMatches.map((c) => c.getString()).join(", ")}${altMsg}`,
-          source_port_id: this.source_port_id ?? undefined,
-          source_component_id:
-            this.getParentNormalComponent()?.source_component_id ?? undefined,
-        })
+        for (const pcbMatch of pcbMatches) {
+          this._insertPcbPortForMatch({
+            matchCenter: pcbMatch._getPcbCircuitJsonBounds().center,
+            layers: pcbMatch.getAvailablePcbLayers(),
+            parentPcbComponentId: parentWithPcbComponentId.pcb_component_id!,
+            matchedComponent: pcbMatch,
+          })
+        }
         return
       }
 
@@ -513,21 +563,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     if (matchCenter) {
-      const subcircuit = this.getSubcircuit()
-      const isBoardPinout = this._shouldIncludeInBoardPinout()
-
-      const pcb_port = db.pcb_port.insert({
-        pcb_component_id: parentWithPcbComponentId.pcb_component_id!,
+      this._insertPcbPortForMatch({
+        matchCenter,
         layers: this.getAvailablePcbLayers(),
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        ...(isBoardPinout ? { is_board_pinout: true } : {}),
-        ...matchCenter,
-
-        source_port_id: this.source_port_id!,
-        is_board_pinout: this._isBoardPinoutFromAttributes(),
+        parentPcbComponentId: parentWithPcbComponentId.pcb_component_id!,
       })
-      this.pcb_port_id = pcb_port.pcb_port_id
     } else {
       const pcbMatch: any = pcbMatches[0]
       throw new Error(
@@ -578,7 +618,23 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
     if (pcbMatches.length > 1) {
       try {
-        if (areAllPcbPrimitivesOverlapping(pcbMatches as any)) {
+        if (!areAllPcbPrimitivesOverlapping(pcbMatches as any)) {
+          const parentNormalComponent = this.getParentNormalComponent()
+          const parentWithPcbComponentId = this.parent?.pcb_component_id
+            ? this.parent
+            : parentNormalComponent
+          if (!parentWithPcbComponentId?.pcb_component_id) return
+
+          for (const pcbMatch of pcbMatches) {
+            this._insertPcbPortForMatch({
+              matchCenter: pcbMatch._getPcbCircuitJsonBounds().center,
+              layers: pcbMatch.getAvailablePcbLayers(),
+              parentPcbComponentId: parentWithPcbComponentId.pcb_component_id,
+              matchedComponent: pcbMatch,
+            })
+          }
+          return
+        } else {
           matchCenter = getCenterOfPcbPrimitives(pcbMatches as any)
         }
       } catch {}
@@ -591,19 +647,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       ? this.parent
       : parentNormalComponent
 
-    const subcircuit = this.getSubcircuit()
-    const isBoardPinout = this._shouldIncludeInBoardPinout()
-    const pcb_port = db.pcb_port.insert({
-      pcb_component_id: parentWithPcbComponentId?.pcb_component_id!,
+    this._insertPcbPortForMatch({
+      matchCenter,
       layers: this.getAvailablePcbLayers(),
-      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      ...(isBoardPinout ? { is_board_pinout: true } : {}),
-      ...matchCenter,
-      source_port_id: this.source_port_id!,
-      is_board_pinout: this._isBoardPinoutFromAttributes(),
+      parentPcbComponentId: parentWithPcbComponentId?.pcb_component_id!,
     })
-    this.pcb_port_id = pcb_port.pcb_port_id
   }
 
   /**

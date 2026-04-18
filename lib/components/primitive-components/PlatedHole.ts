@@ -96,7 +96,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       x: newCenter.x,
       y: newCenter.y,
     })
-    this.matchedPort?._setPositionFromLayout(newCenter)
+    this.matchedPort?._setPositionFromLayoutForMatchedComponent(this, newCenter)
   }
 
   doInitialPortMatching(): void {
@@ -371,7 +371,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     db.pcb_plated_hole.update(this.pcb_plated_hole_id!, {
-      pcb_port_id: this.matchedPort?.pcb_port_id!,
+      pcb_port_id: this.matchedPort?._getPcbPortIdForMatchedComponent(this)!,
     })
   }
 
