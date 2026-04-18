@@ -45,6 +45,12 @@ export const applyPcbEditEventsToManualEditsFile = ({
       } else {
         updatedManualEditsFile.pcb_placements.push(newPlacement)
       }
+    } else if ((editEvent as any).edit_event_type === "edit_pcb_board_size") {
+      ;(updatedManualEditsFile as any).pcb_board = {
+        width: (editEvent as any).new_width,
+        height: (editEvent as any).new_height,
+        center: (editEvent as any).new_center,
+      }
     }
   }
 

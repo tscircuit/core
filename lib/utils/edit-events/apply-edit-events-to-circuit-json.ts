@@ -62,6 +62,18 @@ export const applyEditEvents = ({
       })
     } else if (editEvent.edit_event_type === "edit_pcb_trace_hint") {
       circuitJson = applyTraceHintEditEvent(circuitJson, editEvent)
+    } else if ((editEvent as any).edit_event_type === "edit_pcb_board_size") {
+      circuitJson = (circuitJson as any[]).map((e: any) => {
+        if (e.type === "pcb_board") {
+          return {
+            ...e,
+            width: (editEvent as any).new_width,
+            height: (editEvent as any).new_height,
+            center: (editEvent as any).new_center,
+          }
+        }
+        return e
+      })
     }
   }
 
