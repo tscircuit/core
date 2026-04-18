@@ -38,6 +38,12 @@ export function inflatePcbBoard(
   if (pcbBoard.outline) boardProps.outline = pcbBoard.outline
   if (pcbBoard.thickness) boardProps.thickness = pcbBoard.thickness
   if (pcbBoard.material) boardProps.material = pcbBoard.material
+  if (pcbBoard.min_via_diameter != null) {
+    boardProps.minViaDiameter = pcbBoard.min_via_diameter
+  }
+  if (pcbBoard.min_via_hole != null) {
+    boardProps.minViaHole = pcbBoard.min_via_hole
+  }
 
   // Create the Board instance
   const board = new Board(boardProps)

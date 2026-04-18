@@ -464,6 +464,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       // subcircuit
       layerCount: board?.num_layers ?? 2,
       minTraceWidth,
+      minViaDiameter: board?.min_via_diameter ?? pcbGroup?.min_via_diameter,
+      minViaHole: board?.min_via_hole ?? pcbGroup?.min_via_hole,
       nominalTraceWidth,
       outline: board?.outline?.map((point) => ({ ...point })),
     },

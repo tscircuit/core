@@ -114,14 +114,15 @@ function createViaObstacle(
   point: Extract<RoutePoint, { route_type: "via" }>,
   connectedTo: string,
   obstacleIndex: number,
+  defaultViaDiameter: number,
 ): Obstacle {
   return {
     obstacleId: `${connectedTo}_phase_via_obstacle_${obstacleIndex}`,
     type: "rect",
     layers: [point.from_layer, point.to_layer],
     center: { x: point.x, y: point.y },
-    width: 0.6,
-    height: 0.6,
+    width: point.via_diameter ?? defaultViaDiameter,
+    height: point.via_diameter ?? defaultViaDiameter,
     connectedTo: [connectedTo],
   }
 }
@@ -129,13 +130,21 @@ function createViaObstacle(
 function addTraceObstacles(
   obstacles: Obstacle[],
   trace: SimplifiedPcbTrace,
+  defaultViaDiameter: number,
 ): void {
   const connectedTo = getTraceConnectionName(trace)
 
   for (let routeIndex = 0; routeIndex < trace.route.length; routeIndex++) {
     const routePoint = trace.route[routeIndex]
     if (isViaPoint(routePoint)) {
-      obstacles.push(createViaObstacle(routePoint, connectedTo, routeIndex))
+      obstacles.push(
+        createViaObstacle(
+          routePoint,
+          connectedTo,
+          routeIndex,
+          defaultViaDiameter,
+        ),
+      )
     } else if (isJumperPoint(routePoint)) {
       obstacles.push(createJumperObstacle(routePoint, connectedTo, routeIndex))
     }
@@ -198,10 +207,11 @@ export function Group_filterSimpleRouteJsonForPhase(
 
 export function Group_getObstaclesFromRoutedTraces(
   traces: SimplifiedPcbTrace[],
+  defaultViaDiameter = 0.6,
 ): Obstacle[] {
   const obstacles: Obstacle[] = []
   for (const trace of traces) {
-    addTraceObstacles(obstacles, trace)
+    addTraceObstacles(obstacles, trace, defaultViaDiameter)
   }
   return obstacles
 }

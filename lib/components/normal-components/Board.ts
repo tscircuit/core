@@ -383,10 +383,13 @@ export class Board
     super.doInitialSourceRender()
 
     const { db } = this.root!
+    const { minViaDiameter, minViaHole } = this._parsedProps
 
     const source_board = db.source_board.insert({
       source_group_id: this.source_group_id!,
       title: this.props.title || this.props.name,
+      ...(minViaDiameter != null ? { min_via_diameter: minViaDiameter } : {}),
+      ...(minViaHole != null ? { min_via_hole: minViaHole } : {}),
     })
 
     this.source_board_id = source_board.source_board_id
@@ -509,6 +512,8 @@ export class Board
       }
     }
 
+    const { minViaDiameter, minViaHole } = this._parsedProps
+
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
       center,
@@ -523,6 +528,8 @@ export class Board
         y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
       })),
       material: props.material,
+      ...(minViaDiameter != null ? { min_via_diameter: minViaDiameter } : {}),
+      ...(minViaHole != null ? { min_via_hole: minViaHole } : {}),
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
     this.pcb_board_id = pcb_board.pcb_board_id!
