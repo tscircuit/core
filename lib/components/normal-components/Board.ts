@@ -9,10 +9,6 @@ import { boardProps } from "@tscircuit/props"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import { type Matrix, compose, translate } from "transformation-matrix"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
-import {
-  getMinViaRuleValues,
-  type MinViaRuleProps,
-} from "../../utils/autorouting/min-via-rules"
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
@@ -387,16 +383,14 @@ export class Board
     super.doInitialSourceRender()
 
     const { db } = this.root!
-    const { minViaDiameter, minViaHole } = getMinViaRuleValues(
-      this.props as MinViaRuleProps,
-    )
+    const { minViaDiameter, minViaHole } = this._parsedProps
 
     const source_board = db.source_board.insert({
       source_group_id: this.source_group_id!,
       title: this.props.title || this.props.name,
       ...(minViaDiameter != null ? { min_via_diameter: minViaDiameter } : {}),
       ...(minViaHole != null ? { min_via_hole: minViaHole } : {}),
-    } as any)
+    })
 
     this.source_board_id = source_board.source_board_id
   }
@@ -518,9 +512,7 @@ export class Board
       }
     }
 
-    const { minViaDiameter, minViaHole } = getMinViaRuleValues(
-      this.props as MinViaRuleProps,
-    )
+    const { minViaDiameter, minViaHole } = this._parsedProps
 
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,

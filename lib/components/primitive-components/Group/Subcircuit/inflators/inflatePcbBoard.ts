@@ -2,7 +2,6 @@ import type { PcbBoard } from "circuit-json"
 import type { InflatorContext } from "../InflatorFn"
 import { Board } from "lib/components/normal-components/Board"
 import type { BoardProps } from "@tscircuit/props"
-import type { MinViaRuleProps } from "lib/utils/autorouting/min-via-rules"
 
 export function inflatePcbBoard(
   pcbBoard: PcbBoard,
@@ -25,12 +24,8 @@ export function inflatePcbBoard(
   }
 
   // Create board props from PCB data
-  const boardProps: BoardProps & MinViaRuleProps = {
+  const boardProps: BoardProps = {
     name: "inflated_board",
-  }
-  const pcbBoardWithMinViaRules = pcbBoard as PcbBoard & {
-    min_via_diameter?: number
-    min_via_hole?: number
   }
 
   // Add PCB-specific properties
@@ -43,11 +38,11 @@ export function inflatePcbBoard(
   if (pcbBoard.outline) boardProps.outline = pcbBoard.outline
   if (pcbBoard.thickness) boardProps.thickness = pcbBoard.thickness
   if (pcbBoard.material) boardProps.material = pcbBoard.material
-  if (pcbBoardWithMinViaRules.min_via_diameter != null) {
-    boardProps.minViaDiameter = pcbBoardWithMinViaRules.min_via_diameter
+  if (pcbBoard.min_via_diameter != null) {
+    boardProps.minViaDiameter = pcbBoard.min_via_diameter
   }
-  if (pcbBoardWithMinViaRules.min_via_hole != null) {
-    boardProps.minViaHole = pcbBoardWithMinViaRules.min_via_hole
+  if (pcbBoard.min_via_hole != null) {
+    boardProps.minViaHole = pcbBoard.min_via_hole
   }
 
   // Create the Board instance
