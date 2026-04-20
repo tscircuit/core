@@ -18,6 +18,10 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
   } = args
   const { db } = group.root!
 
+  // Track which nets already have a label placed to avoid duplicates
+  // When multiple traces share the same net, we only want to place one label
+  const netsWithLabels = new Set<string>()
+
   for (const trace of displayLabelTraces as any[]) {
     const label = trace._parsedProps?.schDisplayLabel
     if (!label) continue
@@ -35,6 +39,9 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
           anchor_side: side as any,
           text: label,
         })
+
+        // Check if this net already has a label placed
+        if (netsWithLabels.has(label)) continue
 
         // // Deduplicate: if a label with the same text is already at this anchor position, skip
         const alreadyExists = db.schematic_net_label.list().some((nl) => {
@@ -57,6 +64,9 @@ export function insertNetLabelsForTracesExcludedFromRouting(args: {
             ? { source_trace_id: trace.source_trace_id }
             : {}),
         })
+
+        // Mark this net as having a label placed
+        netsWithLabels.add(label)
       }
     } catch {}
   }

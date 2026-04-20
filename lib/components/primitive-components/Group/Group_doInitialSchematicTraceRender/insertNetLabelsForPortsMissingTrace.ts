@@ -20,6 +20,11 @@ export const insertNetLabelsForPortsMissingTrace = ({
 }) => {
   const { db } = group.root!
 
+  // Track which nets already have a label placed to avoid duplicates
+  // When multiple ports share the same net (e.g., C1.pin1 and C2.pin1 both connected to GND),
+  // we only want to place one label, not one per port
+  const netsWithLabels = new Set<string>()
+
   // Create net labels for ports connected only to a net (no trace connected)
   for (const schOrSrcPortId of Array.from(
     allSourceAndSchematicPortIdsInScope,
@@ -37,6 +42,10 @@ export const insertNetLabelsForPortsMissingTrace = ({
     if (!sourceNet) {
       continue
     }
+
+    // Check if this net already has a label placed
+    const netId = sourceNet.source_net_id || sourceNet.name || key
+    if (netsWithLabels.has(netId)) continue
 
     // Avoid duplicate labels at this port anchor position
     // Use a larger tolerance to account for placement discrepancy between
@@ -73,5 +82,8 @@ export const insertNetLabelsForPortsMissingTrace = ({
         ? { source_net_id: sourceNet.source_net_id }
         : {}),
     })
+
+    // Mark this net as having a label placed
+    netsWithLabels.add(netId)
   }
 }
