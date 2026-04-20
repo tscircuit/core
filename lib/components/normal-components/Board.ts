@@ -525,7 +525,7 @@ export class Board
       })),
       material: props.material,
 
-      min_trace_width: subcircuitProps.minTraceWidth ?? 0.16,
+      min_trace_width: subcircuitProps.minTraceWidth ?? 0.1,
       min_via_hole_diameter: subcircuitProps.minViaHoleDiameter ?? 0.2,
       min_via_pad_diameter: subcircuitProps.minViaPadDiameter ?? 0.3,
       min_trace_to_pad_spacing: subcircuitProps.minTraceToPadSpacing ?? 0.1,

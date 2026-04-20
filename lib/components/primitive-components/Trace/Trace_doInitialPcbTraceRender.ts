@@ -327,7 +327,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     const minTraceWidth =
       trace._getExplicitTraceThickness() ??
       trace.getSubcircuit()._parsedProps.minTraceWidth ??
-      0.16
+      0.1
 
     const ijump = new MultilayerIjump({
       OBSTACLE_MARGIN: minTraceWidth * 2,

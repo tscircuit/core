@@ -86,7 +86,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const width =
     trace._getExplicitTraceThickness() ??
     trace.getSubcircuit()._parsedProps.minTraceWidth ??
-    0.16
+    0.1
 
   if (wantsStraightLine && !hasPcbPath) {
     if (!ports || ports.length < 2) {
