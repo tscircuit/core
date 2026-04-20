@@ -46,7 +46,7 @@ test("footprint library map 3", async () => {
         "material": "fr4",
         "min_pad_to_pad_spacing": 0.1,
         "min_trace_to_pad_spacing": 0.1,
-        "min_trace_width": 0.16,
+        "min_trace_width": 0.1,
         "min_via_hole_diameter": 0.2,
         "min_via_pad_diameter": 0.3,
         "num_layers": 2,
