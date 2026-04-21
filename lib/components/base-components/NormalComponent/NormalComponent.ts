@@ -69,7 +69,8 @@ import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalCo
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
-import { getLogicalPortsFromPortHintGroups } from "./utils/getLogicalPortsFromPortHintGroups"
+import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
+import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
 import { inferInternallyConnectedPinNamesFromPorts } from "./utils/inferInternallyConnectedPinNamesFromPorts"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
@@ -263,20 +264,6 @@ export class NormalComponent<
     this._inferredInternallyConnectedPinNames = []
     const { config } = this
     const portsToCreate: Port[] = []
-    const canMergePortDefinitions = (a: Port, b: Port) => {
-      const aPinNumber = a._parsedProps.pinNumber
-      const bPinNumber = b._parsedProps.pinNumber
-
-      if (
-        aPinNumber !== undefined &&
-        bPinNumber !== undefined &&
-        aPinNumber !== bPinNumber
-      ) {
-        return false
-      }
-
-      return a.isMatchingAnyOf(b.getNameAndAliases())
-    }
 
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement()
@@ -435,7 +422,7 @@ export class NormalComponent<
     // Add ports that we know must exist because we know the pin count and
     // missing pin numbers, and they are inside the pins array of the
     // schPortArrangement
-    const requiredPinCount = opts.pinCount ?? this._getLogicalPinCount() ?? 0
+    const requiredPinCount = opts.pinCount ?? this._getPrimaryPinCount() ?? 0
     for (let pn = 1; pn <= requiredPinCount; pn++) {
       if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
       if (!schPortArrangement) {
@@ -469,7 +456,7 @@ export class NormalComponent<
         ].some((key) => key in schPortArrangement)
       ) {
         explicitlyListedPinNumbersInSchPortArrangement = Array.from(
-          { length: this._getLogicalPinCount() },
+          { length: this._getPrimaryPinCount() },
           (_, i) => i + 1,
         )
       }
@@ -1203,7 +1190,7 @@ export class NormalComponent<
         this._inferredInternallyConnectedPinNames
     }
 
-    const logicalPortOpts = {
+    const primaryPortOpts = {
       ...opts,
       inferredInternallyConnectedPinNames,
     }
@@ -1231,7 +1218,7 @@ export class NormalComponent<
         return []
       }
 
-      return getLogicalPortsFromPortHintGroups(
+      return getPrimaryPortsFromPortHintGroups(
         fpCircuitJson.flatMap((elm) =>
           "port_hints" in elm && elm.port_hints
             ? [
@@ -1242,7 +1229,7 @@ export class NormalComponent<
               ]
             : [],
         ),
-        logicalPortOpts,
+        primaryPortOpts,
       )
     }
     if (
@@ -1252,7 +1239,7 @@ export class NormalComponent<
     ) {
       const fp = footprint as Footprint
 
-      return getLogicalPortsFromPortHintGroups(
+      return getPrimaryPortsFromPortHintGroups(
         fp.children.flatMap((fpChild) =>
           fpChild.props.portHints
             ? [
@@ -1264,7 +1251,7 @@ export class NormalComponent<
               ]
             : [],
         ),
-        logicalPortOpts,
+        primaryPortOpts,
       )
     }
 
@@ -1401,7 +1388,7 @@ export class NormalComponent<
     )
   }
 
-  _getLogicalPinCount(): number {
+  _getPrimaryPinCount(): number {
     const schPortArrangement = this._getSchematicPortArrangement()
 
     // If schPortArrangement exists, use only that for pin count
@@ -1476,7 +1463,7 @@ export class NormalComponent<
 
     const { _parsedProps: props } = this
 
-    const pinCount = this._getLogicalPinCount()
+    const pinCount = this._getPrimaryPinCount()
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 

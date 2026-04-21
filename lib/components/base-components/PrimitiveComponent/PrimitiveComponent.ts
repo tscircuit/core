@@ -1216,10 +1216,10 @@ export abstract class PrimitiveComponent<
   }
 
   /**
-   * Return the number of logical pins in this component, this is important for
+   * Return the number of primary pins in this component, this is important for
    * NormalComponents
    */
-  _getLogicalPinCount(): number {
+  _getPrimaryPinCount(): number {
     return 0
   }
 

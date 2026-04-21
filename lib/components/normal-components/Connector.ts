@@ -248,7 +248,7 @@ export class Connector<
     if (!this.config.shouldRenderAsSchematicBox) return null
 
     const { _parsedProps: props } = this
-    const pinCount = this._getLogicalPinCount()
+    const pinCount = this._getPrimaryPinCount()
     const pinSpacing = props.schPinSpacing ?? 0.2
     const pinLabelsFromPorts = this._getPinLabelsFromPorts()
     const allPinLabels: Record<string, string> = {
