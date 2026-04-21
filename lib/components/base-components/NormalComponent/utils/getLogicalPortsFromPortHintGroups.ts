@@ -2,6 +2,7 @@ import { Port } from "lib/components/primitive-components/Port"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { getConnectedPcbPrimitiveClustersBeforeRender } from "lib/components/primitive-components/Port/pcbPrimitiveOverlapBeforeRender"
 import { getPortFromHints } from "lib/utils/getPortFromHints"
+import { inferInternallyConnectedPinNamesFromPorts } from "./inferInternallyConnectedPinNamesFromPorts"
 
 type PortHintGroup = {
   hints: string[]
@@ -136,36 +137,11 @@ export function getLogicalPortsFromPortHintGroups(
     opts?.inferredInternallyConnectedPinNames?.push(internallyConnectedPinNames)
   }
 
-  const inferredInternalGroups = opts?.inferredInternallyConnectedPinNames ?? []
-  const hasInternalGroup = (portNames: string[]) => {
-    const sortedPortNames = portNames.toSorted()
-    return inferredInternalGroups.some((group) => {
-      const sortedGroup = group.toSorted()
-      return (
-        sortedGroup.length === sortedPortNames.length &&
-        sortedGroup.every((name, index) => name === sortedPortNames[index])
-      )
-    })
-  }
-
-  const portsByAlias = new Map<string, Port[]>()
-  for (const port of ports) {
-    for (const alias of port.getNameAndAliases()) {
-      if (/^(pin)?\d+$/.test(alias)) continue
-      if (alias.startsWith("__")) continue
-      if (!portsByAlias.has(alias)) portsByAlias.set(alias, [])
-      portsByAlias.get(alias)!.push(port)
-    }
-  }
-
-  for (const aliasPorts of portsByAlias.values()) {
-    const uniquePorts = Array.from(new Set(aliasPorts))
-    if (uniquePorts.length < 2) continue
-
-    const portNames = uniquePorts.map((port) => port.props.name!)
-    if (hasInternalGroup(portNames)) continue
-
-    inferredInternalGroups.push(portNames)
+  if (opts?.inferredInternallyConnectedPinNames) {
+    inferInternallyConnectedPinNamesFromPorts(
+      ports,
+      opts.inferredInternallyConnectedPinNames,
+    )
   }
 
   return ports

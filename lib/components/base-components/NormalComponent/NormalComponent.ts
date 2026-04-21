@@ -70,6 +70,7 @@ import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalCompo
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { getLogicalPortsFromPortHintGroups } from "./utils/getLogicalPortsFromPortHintGroups"
+import { inferInternallyConnectedPinNamesFromPorts } from "./utils/inferInternallyConnectedPinNamesFromPorts"
 import { isHttpUrl } from "./utils/isHttpUrl"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { parseLibraryFootprintRef } from "./utils/parseLibraryFootprintRef"
@@ -487,6 +488,13 @@ export class NormalComponent<
         ),
       )
     }
+
+    inferInternallyConnectedPinNamesFromPorts(
+      Array.from(
+        new Set([...this._getAllPortsFromChildren(), ...portsToCreate]),
+      ),
+      this._inferredInternallyConnectedPinNames,
+    )
 
     // If no ports were created, don't throw an error
     if (portsToCreate.length > 0) {
