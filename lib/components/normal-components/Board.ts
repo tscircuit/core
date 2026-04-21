@@ -510,6 +510,9 @@ export class Board
       }
     }
     const subcircuitProps = this.getSubcircuit()._parsedProps
+    const jlcMinTolerancesWithLegacy = jlcMinTolerances as Partial<
+      Record<string, number>
+    >
 
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
@@ -536,13 +539,16 @@ export class Board
         jlcMinTolerances.min_via_pad_diameter,
       min_via_to_via_clearance:
         subcircuitProps.minViaToViaClearance ??
-        jlcMinTolerances.min_via_to_via_clearance,
+        jlcMinTolerances.min_via_to_via_clearance ??
+        jlcMinTolerancesWithLegacy.min_via_to_via_spacing,
       min_trace_to_pad_clearance:
         subcircuitProps.minTraceToPadClearance ??
-        jlcMinTolerances.min_trace_to_pad_clearance,
+        jlcMinTolerances.min_trace_to_pad_clearance ??
+        jlcMinTolerancesWithLegacy.min_trace_to_pad_spacing,
       min_pad_to_pad_clearance:
         subcircuitProps.minPadToPadClearance ??
-        jlcMinTolerances.min_pad_to_pad_clearance,
+        jlcMinTolerances.min_pad_to_pad_clearance ??
+        jlcMinTolerancesWithLegacy.min_pad_to_pad_spacing,
       min_board_edge_clearance:
         subcircuitProps.minBoardEdgeClearance ??
         jlcMinTolerances.min_board_edge_clearance,
