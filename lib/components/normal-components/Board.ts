@@ -534,6 +534,9 @@ export class Board
       min_via_pad_diameter:
         subcircuitProps.minViaPadDiameter ??
         jlcMinTolerances.min_via_pad_diameter,
+      min_via_to_via_clearance:
+        subcircuitProps.minViaToViaClearance ??
+        jlcMinTolerances.min_via_to_via_clearance,
       min_trace_to_pad_clearance:
         subcircuitProps.minTraceToPadClearance ??
         jlcMinTolerances.min_trace_to_pad_clearance,
