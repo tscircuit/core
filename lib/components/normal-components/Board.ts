@@ -18,6 +18,7 @@ import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/Subci
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
+import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -525,11 +526,20 @@ export class Board
       })),
       material: props.material,
 
-      min_trace_width: subcircuitProps.minTraceWidth ?? 0.1,
-      min_via_hole_diameter: subcircuitProps.minViaHoleDiameter ?? 0.2,
-      min_via_pad_diameter: subcircuitProps.minViaPadDiameter ?? 0.3,
-      min_trace_to_pad_spacing: subcircuitProps.minTraceToPadSpacing ?? 0.1,
-      min_pad_to_pad_spacing: subcircuitProps.minPadToPadSpacing ?? 0.1,
+      min_trace_width:
+        subcircuitProps.minTraceWidth ?? jlcMinTolerances.min_trace_width,
+      min_via_hole_diameter:
+        subcircuitProps.minViaHoleDiameter ??
+        jlcMinTolerances.min_via_hole_diameter,
+      min_via_pad_diameter:
+        subcircuitProps.minViaPadDiameter ??
+        jlcMinTolerances.min_via_pad_diameter,
+      min_trace_to_pad_spacing:
+        subcircuitProps.minTraceToPadSpacing ??
+        jlcMinTolerances.min_trace_to_pad_spacing,
+      min_pad_to_pad_spacing:
+        subcircuitProps.minPadToPadSpacing ??
+        jlcMinTolerances.min_pad_to_pad_spacing,
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
     this.pcb_board_id = pcb_board.pcb_board_id!

@@ -8,6 +8,7 @@ import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDe
 import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
+import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -86,7 +87,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const width =
     trace._getExplicitTraceThickness() ??
     trace.getSubcircuit()._parsedProps.minTraceWidth ??
-    0.1
+    jlcMinTolerances.min_trace_width!
 
   if (wantsStraightLine && !hasPcbPath) {
     if (!ports || ports.length < 2) {
