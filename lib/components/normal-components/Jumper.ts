@@ -67,13 +67,18 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
+    const globalTransformRotation = this.getGlobalTransformRotation()
 
     const pcb_component = db.pcb_component.insert({
       center: { x: pcbX, y: pcbY },
       width: 2, // Default width, adjust as needed
       height: 3, // Default height, adjust as needed
       layer: props.layer ?? "top",
-      rotation: props.pcbRotation ?? 0,
+      rotation: props.pcbRotation ?? globalTransformRotation,
+      insertion_direction: this._getPcbComponentInsertionDirection(
+        props.layer ?? "top",
+        globalTransformRotation,
+      ),
       source_component_id: this.source_component_id!,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       do_not_place: props.doNotPlace ?? false,
