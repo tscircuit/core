@@ -15,6 +15,7 @@ import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFro
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
+import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -327,7 +328,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     const minTraceWidth =
       trace._getExplicitTraceThickness() ??
       trace.getSubcircuit()._parsedProps.minTraceWidth ??
-      0.1
+      jlcMinTolerances.min_trace_width!
 
     const ijump = new MultilayerIjump({
       OBSTACLE_MARGIN: minTraceWidth * 2,
