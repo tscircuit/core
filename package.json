@@ -38,7 +38,7 @@
     "@tscircuit/circuit-json-util": "^0.0.93",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.23",
-    "@tscircuit/footprinter": "^0.0.349",
+    "@tscircuit/footprinter": "^0.0.351",
     "@tscircuit/infer-cable-insertion-point": "^0.0.2",
     "@tscircuit/infgrid-ijump-astar": "^0.0.35",
     "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#fa54ff1f9eabca1b852a0b035db907061e5c4a2f",
