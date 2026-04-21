@@ -8,7 +8,7 @@ import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDe
 import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
-import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
+import { jlcMinTolerances } from "lib/utils/pcb/jlc-manufacturing-tolerances"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return

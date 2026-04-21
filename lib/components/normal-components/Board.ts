@@ -18,7 +18,7 @@ import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/Subci
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
-import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
+import { jlcMinTolerances } from "../../utils/pcb/jlc-manufacturing-tolerances"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -534,12 +534,15 @@ export class Board
       min_via_pad_diameter:
         subcircuitProps.minViaPadDiameter ??
         jlcMinTolerances.min_via_pad_diameter,
-      min_trace_to_pad_spacing:
-        subcircuitProps.minTraceToPadSpacing ??
-        jlcMinTolerances.min_trace_to_pad_spacing,
-      min_pad_to_pad_spacing:
-        subcircuitProps.minPadToPadSpacing ??
-        jlcMinTolerances.min_pad_to_pad_spacing,
+      min_via_to_via_clearance:
+        subcircuitProps.minViaToViaClearance ??
+        jlcMinTolerances.min_via_to_via_clearance,
+      min_trace_to_pad_clearance:
+        subcircuitProps.minTraceToPadClearance ??
+        jlcMinTolerances.min_trace_to_pad_clearance,
+      min_pad_to_pad_clearance:
+        subcircuitProps.minPadToPadClearance ??
+        jlcMinTolerances.min_pad_to_pad_clearance,
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
     this.pcb_board_id = pcb_board.pcb_board_id!
