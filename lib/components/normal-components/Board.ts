@@ -534,12 +534,15 @@ export class Board
       min_via_pad_diameter:
         subcircuitProps.minViaPadDiameter ??
         jlcMinTolerances.min_via_pad_diameter,
-      min_trace_to_pad_spacing:
-        subcircuitProps.minTraceToPadSpacing ??
-        jlcMinTolerances.min_trace_to_pad_spacing,
-      min_pad_to_pad_spacing:
-        subcircuitProps.minPadToPadSpacing ??
-        jlcMinTolerances.min_pad_to_pad_spacing,
+      min_trace_to_pad_clearance:
+        subcircuitProps.minTraceToPadClearance ??
+        jlcMinTolerances.min_trace_to_pad_clearance,
+      min_pad_to_pad_clearance:
+        subcircuitProps.minPadToPadClearance ??
+        jlcMinTolerances.min_pad_to_pad_clearance,
+      min_board_edge_clearance:
+        subcircuitProps.minBoardEdgeClearance ??
+        jlcMinTolerances.min_board_edge_clearance,
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
     this.pcb_board_id = pcb_board.pcb_board_id!
