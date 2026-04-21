@@ -11,6 +11,7 @@ import type {
   PcbHoleWithPolygonPad,
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
+import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
@@ -108,13 +109,15 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       return
     }
 
-    for (const port of parentPorts) {
-      if (port.isMatchingAnyOf(this._parsedProps.portHints)) {
-        this.matchedPort = port
-        port.registerMatch(this)
-        return
-      }
-    }
+    const port = selectPortForPcbPrimitive(
+      parentPorts,
+      this,
+      this._parsedProps.portHints,
+    )
+    if (!port) return
+
+    this.matchedPort = port
+    port.registerMatch(this)
   }
 
   doInitialPcbPrimitiveRender(): void {

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("ambiguous imported alias pin fails with a clear pcb trace error", async () => {
+test("ambiguous imported alias pin connects through inferred internal ports", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -37,22 +37,29 @@ test("ambiguous imported alias pin fails with a clear pcb trace error", async ()
 
   await circuit.renderUntilSettled()
 
-  const errors = circuit.db.pcb_trace_error.list()
+  const j1SourceComponent = circuit.db.source_component.getWhere({ name: "J1" })
+  const j1SourcePorts = circuit.db.source_port.list({
+    source_component_id: j1SourceComponent!.source_component_id,
+  })
+  const j1PcbPorts = circuit.db.pcb_port
+    .list()
+    .filter((pcbPort) =>
+      j1SourcePorts.some(
+        (sourcePort) => sourcePort.source_port_id === pcbPort.source_port_id,
+      ),
+    )
+  const internalConnection = circuit.db.source_component_internal_connection
+    .list()
+    .find(
+      (connection) =>
+        connection.source_component_id ===
+        j1SourceComponent!.source_component_id,
+    )
 
-  expect(errors).toMatchInlineSnapshot(`
-    [
-      {
-        "error_type": "pcb_trace_error",
-        "message": "Trace selector ".J1 .A1" resolved to "J1.pin1", but that target maps to multiple non-overlapping PCB pads: <smtpad(.pin1, .A1) />, <smtpad(.pin2, .A1) />. Use a raw pin selector like "J1.pin1" or "J1.pin2".",
-        "pcb_component_ids": [],
-        "pcb_port_ids": [
-          "pcb_port_0",
-        ],
-        "pcb_trace_error_id": "pcb_trace_error_0",
-        "pcb_trace_id": null,
-        "source_trace_id": "source_trace_0",
-        "type": "pcb_trace_error",
-      },
-    ]
-  `)
+  expect(j1SourcePorts).toHaveLength(2)
+  expect(j1PcbPorts).toHaveLength(2)
+  expect(internalConnection?.source_port_ids.toSorted()).toEqual(
+    j1SourcePorts.map((port) => port.source_port_id).toSorted(),
+  )
+  expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
 })

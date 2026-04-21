@@ -11,6 +11,7 @@ import {
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
+import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -72,13 +73,15 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       return
     }
 
-    for (const port of parentPorts) {
-      if (port.isMatchingAnyOf(this.props.portHints)) {
-        this.matchedPort = port
-        port.registerMatch(this)
-        return
-      }
-    }
+    const port = selectPortForPcbPrimitive(
+      parentPorts,
+      this,
+      this.props.portHints,
+    )
+    if (!port) return
+
+    this.matchedPort = port
+    port.registerMatch(this)
   }
 
   doInitialPcbPrimitiveRender(): void {

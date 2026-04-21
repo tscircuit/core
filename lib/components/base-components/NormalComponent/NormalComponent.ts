@@ -129,6 +129,7 @@ export class NormalComponent<
   _asyncSupplierPartNumbers?: SupplierPartNumbers
   _asyncFootprintCadModel?: CadModelProp
   _isCadModelChild?: boolean
+  _inferredInternallyConnectedPinNames: string[][] = []
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false
   private _invalidFootprintPropMessages: string[] = []
@@ -151,10 +152,11 @@ export class NormalComponent<
     const rawPins =
       this._parsedProps.internallyConnectedPins ??
       this.defaultInternallyConnectedPinNames
-    return rawPins.map((pinGroup: (string | number)[]) =>
-      pinGroup.map((pin: string | number) =>
-        typeof pin === "number" ? `pin${pin}` : pin,
-      ),
+    return [...rawPins, ...this._inferredInternallyConnectedPinNames].map(
+      (pinGroup: (string | number)[]) =>
+        pinGroup.map((pin: string | number) =>
+          typeof pin === "number" ? `pin${pin}` : pin,
+        ),
     )
   }
 
@@ -257,6 +259,7 @@ export class NormalComponent<
     } = {},
   ) {
     if (this.root?.schematicDisabled) return
+    this._inferredInternallyConnectedPinNames = []
     const { config } = this
     const portsToCreate: Port[] = []
 
@@ -385,15 +388,31 @@ export class NormalComponent<
       )
       if (hasReactSymbol && !symbolAlreadyAdded) {
       } else {
-        const portsFromFootprint = this.getPortsFromFootprint(opts)
+        const portsFromFootprint = this.getPortsFromFootprint({
+          ...opts,
+          collectInferredInternallyConnectedPins: true,
+        })
         const existingPorts = this._getAllPortsFromChildren()
         for (const port of portsFromFootprint) {
+          if (port._isInferredInternalPhysicalPort) {
+            portsToCreate.push(port)
+            continue
+          }
+
           const matchingPort =
             existingPorts.find((p) =>
-              p.isMatchingAnyOf(port.getNameAndAliases()),
+              p._parsedProps.pinNumber !== undefined &&
+              port._parsedProps.pinNumber !== undefined &&
+              p._parsedProps.pinNumber !== port._parsedProps.pinNumber
+                ? false
+                : p.isMatchingAnyOf(port.getNameAndAliases()),
             ) ??
             portsToCreate.find((p) =>
-              p.isMatchingAnyOf(port.getNameAndAliases()),
+              p._parsedProps.pinNumber !== undefined &&
+              port._parsedProps.pinNumber !== undefined &&
+              p._parsedProps.pinNumber !== port._parsedProps.pinNumber
+                ? false
+                : p.isMatchingAnyOf(port.getNameAndAliases()),
             )
 
           if (matchingPort) {
@@ -1166,7 +1185,15 @@ export class NormalComponent<
 
   getPortsFromFootprint(opts?: {
     additionalAliases?: Record<string, string[]>
+    collectInferredInternallyConnectedPins?: boolean
   }): Port[] {
+    const logicalPortOpts = {
+      ...opts,
+      inferredInternallyConnectedPinNames:
+        opts?.collectInferredInternallyConnectedPins === true
+          ? this._inferredInternallyConnectedPinNames
+          : undefined,
+    }
     let { footprint } = this.props
 
     if (
@@ -1202,7 +1229,7 @@ export class NormalComponent<
               ]
             : [],
         ),
-        opts,
+        logicalPortOpts,
       )
     }
     if (
@@ -1219,11 +1246,12 @@ export class NormalComponent<
                 {
                   hints: fpChild.props.portHints,
                   originDescription: `footprint:${footprint}`,
+                  component: fpChild,
                 },
               ]
             : [],
         ),
-        opts,
+        logicalPortOpts,
       )
     }
 
@@ -1373,7 +1401,9 @@ export class NormalComponent<
 
     const portsFromFootprint = this.getPortsFromFootprint()
     if (portsFromFootprint.length > 0) {
-      return portsFromFootprint.length
+      return portsFromFootprint.filter(
+        (port) => !port._isInferredInternalPhysicalPort,
+      ).length
     }
 
     // If no footprint ports, try to infer from pinLabels
