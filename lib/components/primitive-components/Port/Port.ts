@@ -39,8 +39,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   schematicSymbolPortDef: SchSymbol["ports"][number] | null = null
   matchedComponents: PrimitiveComponent[]
-  _isInferredInternalPhysicalPort = false
-  _inferredPrimaryPinNumber: number | null = null
+  _isPrimaryPort = true
+  _primaryPinNumber: number | null = null
   facingDirection: "up" | "down" | "left" | "right" | null = null
 
   originDescription: string | null = null

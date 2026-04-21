@@ -119,11 +119,11 @@ export function getLogicalPortsFromPortHintGroups(
       }
 
       const internalPort = new Port({
-        name: `__pin${pinNumber}_internal_${clusterIndex}`,
+        name: `pin${pinNumber}_internal_${clusterIndex}`,
         aliases: primaryPort.getNameAndAliases(),
       })
-      internalPort._isInferredInternalPhysicalPort = true
-      internalPort._inferredPrimaryPinNumber = pinNumber
+      internalPort._isPrimaryPort = false
+      internalPort._primaryPinNumber = pinNumber
       internalPort.originDescription = `implicitInternalPhysicalPort:pin${pinNumber}:${clusterIndex}`
 
       for (const entry of clusterEntries) {

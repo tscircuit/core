@@ -28,7 +28,7 @@ export function selectPortForPcbPrimitive(
       : matchingPorts.filter(
           (port) =>
             port._parsedProps.pinNumber === pinNumber ||
-            port._inferredPrimaryPinNumber === pinNumber,
+            port._primaryPinNumber === pinNumber,
         )
   const candidates =
     pinMatchedPorts.length > 0 ? pinMatchedPorts : matchingPorts

@@ -1,6 +1,6 @@
 import { Port } from "lib/components/primitive-components/Port"
 
-const hasSameMembers = (a: string[], b: string[]): boolean => {
+const hasExactSameMembers = (a: string[], b: string[]): boolean => {
   const sortedA = a.toSorted()
   const sortedB = b.toSorted()
 
@@ -10,14 +10,14 @@ const hasSameMembers = (a: string[], b: string[]): boolean => {
   )
 }
 
-const getRawPinName = (port: Port): string | null =>
+const getPinNumberedName = (port: Port): string | null =>
   port.getNameAndAliases().find((alias) => /^pin\d+$/.test(alias)) ?? null
 
 const getPortReferenceName = (
   port: Port,
   portNameCounts: Map<string, number>,
 ): string | null => {
-  if (port.props.name?.startsWith("__")) {
+  if (!port._isPrimaryPort && port.props.name) {
     return port.props.name
   }
 
@@ -25,8 +25,8 @@ const getPortReferenceName = (
     return port.props.name
   }
 
-  const rawPinName = getRawPinName(port)
-  if (rawPinName) return rawPinName
+  const pinNumberedName = getPinNumberedName(port)
+  if (pinNumberedName) return pinNumberedName
 
   return port.props.name ?? null
 }
@@ -40,7 +40,9 @@ export function inferInternallyConnectedPinNamesFromPorts(
   for (const port of ports) {
     for (const alias of new Set(port.getNameAndAliases())) {
       if (/^(pin)?\d+$/.test(alias)) continue
-      if (alias.startsWith("__")) continue
+      if (!port._isPrimaryPort && alias === port.props.name) {
+        continue
+      }
       if (!portsByAlias.has(alias)) portsByAlias.set(alias, [])
       portsByAlias.get(alias)!.push(port)
     }
@@ -68,7 +70,7 @@ export function inferInternallyConnectedPinNamesFromPorts(
 
     if (
       inferredInternallyConnectedPinNames.some((group) =>
-        hasSameMembers(group, uniquePortNames),
+        hasExactSameMembers(group, uniquePortNames),
       )
     ) {
       continue

@@ -263,6 +263,20 @@ export class NormalComponent<
     this._inferredInternallyConnectedPinNames = []
     const { config } = this
     const portsToCreate: Port[] = []
+    const canMergePortDefinitions = (a: Port, b: Port) => {
+      const aPinNumber = a._parsedProps.pinNumber
+      const bPinNumber = b._parsedProps.pinNumber
+
+      if (
+        aPinNumber !== undefined &&
+        bPinNumber !== undefined &&
+        aPinNumber !== bPinNumber
+      ) {
+        return false
+      }
+
+      return a.isMatchingAnyOf(b.getNameAndAliases())
+    }
 
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement()
@@ -395,26 +409,14 @@ export class NormalComponent<
         })
         const existingPorts = this._getAllPortsFromChildren()
         for (const port of portsFromFootprint) {
-          if (port._isInferredInternalPhysicalPort) {
+          if (!port._isPrimaryPort) {
             portsToCreate.push(port)
             continue
           }
 
           const matchingPort =
-            existingPorts.find((p) =>
-              p._parsedProps.pinNumber !== undefined &&
-              port._parsedProps.pinNumber !== undefined &&
-              p._parsedProps.pinNumber !== port._parsedProps.pinNumber
-                ? false
-                : p.isMatchingAnyOf(port.getNameAndAliases()),
-            ) ??
-            portsToCreate.find((p) =>
-              p._parsedProps.pinNumber !== undefined &&
-              port._parsedProps.pinNumber !== undefined &&
-              p._parsedProps.pinNumber !== port._parsedProps.pinNumber
-                ? false
-                : p.isMatchingAnyOf(port.getNameAndAliases()),
-            )
+            existingPorts.find((p) => canMergePortDefinitions(p, port)) ??
+            portsToCreate.find((p) => canMergePortDefinitions(p, port))
 
           if (matchingPort) {
             const mergedAliases = port
@@ -433,7 +435,7 @@ export class NormalComponent<
     // Add ports that we know must exist because we know the pin count and
     // missing pin numbers, and they are inside the pins array of the
     // schPortArrangement
-    const requiredPinCount = opts.pinCount ?? this._getPinCount() ?? 0
+    const requiredPinCount = opts.pinCount ?? this._getLogicalPinCount() ?? 0
     for (let pn = 1; pn <= requiredPinCount; pn++) {
       if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
       if (!schPortArrangement) {
@@ -467,7 +469,7 @@ export class NormalComponent<
         ].some((key) => key in schPortArrangement)
       ) {
         explicitlyListedPinNumbersInSchPortArrangement = Array.from(
-          { length: this._getPinCount() },
+          { length: this._getLogicalPinCount() },
           (_, i) => i + 1,
         )
       }
@@ -1195,12 +1197,15 @@ export class NormalComponent<
     additionalAliases?: Record<string, string[]>
     collectInferredInternallyConnectedPins?: boolean
   }): Port[] {
+    let inferredInternallyConnectedPinNames: string[][] | undefined = undefined
+    if (opts?.collectInferredInternallyConnectedPins) {
+      inferredInternallyConnectedPinNames =
+        this._inferredInternallyConnectedPinNames
+    }
+
     const logicalPortOpts = {
       ...opts,
-      inferredInternallyConnectedPinNames:
-        opts?.collectInferredInternallyConnectedPins === true
-          ? this._inferredInternallyConnectedPinNames
-          : undefined,
+      inferredInternallyConnectedPinNames,
     }
     let { footprint } = this.props
 
@@ -1396,7 +1401,7 @@ export class NormalComponent<
     )
   }
 
-  _getPinCount(): number {
+  _getLogicalPinCount(): number {
     const schPortArrangement = this._getSchematicPortArrangement()
 
     // If schPortArrangement exists, use only that for pin count
@@ -1409,9 +1414,7 @@ export class NormalComponent<
 
     const portsFromFootprint = this.getPortsFromFootprint()
     if (portsFromFootprint.length > 0) {
-      return portsFromFootprint.filter(
-        (port) => !port._isInferredInternalPhysicalPort,
-      ).length
+      return portsFromFootprint.filter((port) => port._isPrimaryPort).length
     }
 
     // If no footprint ports, try to infer from pinLabels
@@ -1473,7 +1476,7 @@ export class NormalComponent<
 
     const { _parsedProps: props } = this
 
-    const pinCount = this._getPinCount()
+    const pinCount = this._getLogicalPinCount()
 
     const pinSpacing = props.schPinSpacing ?? 0.2
 
