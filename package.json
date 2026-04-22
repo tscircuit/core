@@ -67,7 +67,7 @@
     "circuit-json-to-gltf": "^0.0.91",
     "circuit-json-to-simple-3d": "^0.0.9",
     "circuit-json-to-spice": "^0.0.34",
-    "circuit-to-svg": "^0.0.343",
+    "circuit-to-svg": "^0.0.345",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.0",
     "debug": "^4.3.6",

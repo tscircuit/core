@@ -89,6 +89,18 @@ test(
     )
     expect(differentialProbe).toBeDefined()
 
+    const transientGraphs = circuitJson.filter(
+      (el) => el.type === "simulation_transient_voltage_graph",
+    )
+    const differentialGraph = transientGraphs.find(
+      (graph) => graph.name !== "VP_IN1",
+    )
+    expect(differentialGraph).toBeDefined()
+    if (!differentialGraph) return
+    expect(differentialProbe).toBeDefined()
+    if (!differentialProbe) return
+    expect(differentialGraph.color).toBe(differentialProbe.color)
+
     expect(circuit).toMatchSimulationSnapshot(import.meta.path)
   },
   { timeout: 20000 },
