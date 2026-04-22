@@ -510,7 +510,6 @@ export class Board
       }
     }
     const subcircuitProps = this.getSubcircuit()._parsedProps
-
     const pcb_board = db.pcb_board.insert({
       source_board_id: this.source_board_id,
       center,
@@ -543,6 +542,9 @@ export class Board
       min_pad_to_pad_clearance:
         subcircuitProps.minPadToPadClearance ??
         jlcMinTolerances.min_pad_to_pad_clearance,
+      min_board_edge_clearance:
+        subcircuitProps.minBoardEdgeClearance ??
+        jlcMinTolerances.min_board_edge_clearance,
     } as Omit<PcbBoard, "type" | "pcb_board_id">)
 
     this.pcb_board_id = pcb_board.pcb_board_id!

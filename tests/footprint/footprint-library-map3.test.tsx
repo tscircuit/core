@@ -44,6 +44,7 @@ test("footprint library map 3", async () => {
         },
         "height": 4.64,
         "material": "fr4",
+        "min_board_edge_clearance": 0.2,
         "min_pad_to_pad_clearance": 0.1,
         "min_trace_to_pad_clearance": 0.1,
         "min_trace_width": 0.1,

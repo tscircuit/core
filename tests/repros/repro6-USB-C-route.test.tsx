@@ -284,5 +284,7 @@ test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () =>
 
   circuit.render()
 
+  expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
+  expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
