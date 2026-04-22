@@ -7,7 +7,6 @@ import {
 import type { PackOutput } from "calculate-packing"
 import type { ClusterInfo } from "./applyComponentConstraintClusters"
 import { normalizeDegrees } from "@tscircuit/math-utils"
-import { updatePcbInsertionDirection } from "./updatePcbInsertionDirection"
 
 const updateCadRotation = ({
   db,
@@ -101,11 +100,6 @@ export const applyPackOutput = (
           rotationDegrees,
           layer: member.layer,
         })
-        updatePcbInsertionDirection({
-          db,
-          pcbComponentId: memberId,
-          rotationDegrees,
-        })
       }
       continue
     }
@@ -148,11 +142,6 @@ export const applyPackOutput = (
         pcbComponentId: componentId,
         rotationDegrees,
         layer: pcbComponent.layer,
-      })
-      updatePcbInsertionDirection({
-        db,
-        pcbComponentId: componentId,
-        rotationDegrees,
       })
       continue
     }
@@ -223,15 +212,6 @@ export const applyPackOutput = (
     }
 
     transformPCBElements(relatedElements as any, transformMatrix)
-    for (const elm of relatedElements) {
-      if (elm.type === "pcb_component") {
-        updatePcbInsertionDirection({
-          db,
-          pcbComponentId: elm.pcb_component_id,
-          rotationDegrees,
-        })
-      }
-    }
     db.pcb_group.update(pcbGroup.pcb_group_id, { center })
   }
 }
