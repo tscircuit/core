@@ -15,6 +15,7 @@ test("PlatedHole pill hole with rect pad shape preserves rotation", () => {
         holeHeight="3mm"
         rectPadWidth="6mm"
         rectPadHeight="4mm"
+        rectBorderRadius="0.6mm"
         pcbRotation="45"
       />
     </board>,
@@ -31,6 +32,7 @@ test("PlatedHole pill hole with rect pad shape preserves rotation", () => {
 
   expect(platedHoles[0].hole_ccw_rotation).toBe(45)
   expect(platedHoles[0].rect_ccw_rotation).toBe(45)
+  expect(platedHoles[0].rect_border_radius).toBe(0.6)
 
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
