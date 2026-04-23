@@ -2,8 +2,6 @@ import { normalizeDegrees } from "@tscircuit/math-utils"
 import type { FootprintInsertionDirection } from "@tscircuit/props"
 import type { LayerRef, PcbComponent } from "circuit-json"
 
-// type PcbInsertionDirection = NonNullable<PcbComponent["insertion_direction"]>
-
 const directionToVector: Record<
   Exclude<FootprintInsertionDirection, "from_above">,
   { x: number; y: number }
