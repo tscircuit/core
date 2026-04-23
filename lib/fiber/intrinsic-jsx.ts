@@ -38,6 +38,7 @@ export interface TscircuitElements {
   hole: Props.HoleProps
   port: Props.PortProps
   group: Props.GroupProps
+  pcbgroup: Props.GroupProps
   netlabel: Props.NetLabelProps
   opamp: Props.OpAmpProps
   cadmodel: Props.CadModelProps
