@@ -18,7 +18,7 @@ import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/Subci
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
-import { jlcMinTolerances } from "../../utils/pcb/jlc-manufacturing-tolerances"
+import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
