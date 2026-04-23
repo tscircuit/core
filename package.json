@@ -19,7 +19,7 @@
     "url": "https://github.com/tscircuit/core"
   },
   "scripts": {
-    "build": "tsup-node index.ts --format esm --dts",
+    "build": "tsup-node",
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
