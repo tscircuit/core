@@ -904,6 +904,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Apply each routed trace to the corresponding circuit trace
     const pcbStyle = this.getInheritedMergedProperty("pcbStyle")
     const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+    const board = db.pcb_board.list()[0]
+    const routedViaHoleDiameter = board?.min_via_hole_diameter ?? holeDiameter
+    const routedViaPadDiameter = board?.min_via_pad_diameter ?? padDiameter
 
     // First, create jumper components from getOutputJumpers() result
     if (output_jumpers && output_jumpers.length > 0) {
@@ -958,12 +961,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (pcb_trace.type === "pcb_trace") {
         for (const point of pcb_trace.route) {
           if (point.route_type === "via") {
+            const routedViaPoint = point as typeof point & {
+              via_diameter?: number
+              via_hole_diameter?: number
+              outer_diameter?: number
+              hole_diameter?: number
+            }
             db.pcb_via.insert({
               pcb_trace_id: pcb_trace.pcb_trace_id,
               x: point.x,
               y: point.y,
-              hole_diameter: holeDiameter,
-              outer_diameter: padDiameter,
+              hole_diameter:
+                routedViaPoint.via_hole_diameter ??
+                routedViaPoint.hole_diameter ??
+                routedViaHoleDiameter,
+              outer_diameter:
+                routedViaPoint.via_diameter ??
+                routedViaPoint.outer_diameter ??
+                routedViaPadDiameter,
               layers: [
                 point.from_layer as LayerRef,
                 point.to_layer as LayerRef,
