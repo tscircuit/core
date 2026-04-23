@@ -16,6 +16,7 @@ import {
   extractCalcIdentifiers,
 } from "lib/utils/evaluateCalcString"
 import { getSubcircuitPcbCalcVariables } from "lib/utils/getSubcircuitPcbCalcVariables"
+import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import { getResolvedPcbSx } from "lib/utils/pcbSx/get-resolved-pcb-sx"
 import type {
   SchematicBoxComponentDimensions,
@@ -511,17 +512,14 @@ export abstract class PrimitiveComponent<
     // If this is a primitive, and the parent primitive container is flipped,
     // we flip it's position
     if (this.isPcbPrimitive) {
-      const primitiveContainer = this.getPrimitiveContainer()
-      if (primitiveContainer) {
-        const isFlipped = primitiveContainer._parsedProps.layer === "bottom"
+      const { isFlipped } = this._getPcbPrimitiveFlippedHelpers()
 
-        if (isFlipped) {
-          return compose(
-            this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-            flipY(),
-            this.computePcbPropsTransform(),
-          )
-        }
+      if (isFlipped) {
+        return compose(
+          this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
+          flipY(),
+          this.computePcbPropsTransform(),
+        )
       }
     }
 
@@ -529,6 +527,17 @@ export abstract class PrimitiveComponent<
       this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
       this.computePcbPropsTransform(),
     )
+  }
+
+  private _getEnclosingFootprint(): PrimitiveComponent | null {
+    let current: PrimitiveComponent | null = this.parent
+    while (current) {
+      if (current.componentName === "Footprint") {
+        return current
+      }
+      current = current.parent
+    }
+    return null
   }
 
   getPrimitiveContainer(): PrimitiveComponent | null {
@@ -643,9 +652,14 @@ export abstract class PrimitiveComponent<
     maybeFlipLayer: (layer: LayerRef) => LayerRef
   } {
     const container = this.getPrimitiveContainer()
+    const footprint =
+      this.componentName === "Footprint" ? this : this._getEnclosingFootprint()
     const isFlipped = !container
       ? false
-      : container._parsedProps.layer === "bottom"
+      : isFootprintFlipped({
+          componentLayer: container._parsedProps.layer,
+          originalLayer: footprint?._parsedProps.originalLayer,
+        })
     const maybeFlipLayer = (layer: LayerRef) => {
       if (isFlipped) {
         return layer === "top" ? "bottom" : "top"

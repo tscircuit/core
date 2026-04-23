@@ -9,11 +9,14 @@ import type {
   CadModelStep,
   CadModelStl,
   CadModelWrl,
+  FootprintInsertionDirection,
   SchematicPortArrangement,
   SupplierPartNumbers,
 } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
+  type LayerRef,
+  type PcbComponent,
   distance,
   pcb_component_invalid_layer_error,
   pcb_manual_edit_conflict_warning,
@@ -39,6 +42,10 @@ import {
   getPinNumberFromLabels,
   getPortFromHints,
 } from "lib/utils/getPortFromHints"
+import {
+  isFootprintFlipped,
+  transformFootprintInsertionDirection,
+} from "lib/utils/pcb/transform-footprint-insertion-direction"
 import {
   type SchematicBoxDimensions,
   getAllDimensionsForSchematicBox,
@@ -842,10 +849,7 @@ export class NormalComponent<
     }
 
     // Calculate accumulated rotation from parent transforms
-    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
-    const decomposedTransform = decomposeTSR(globalTransform)
-    const accumulatedRotation =
-      (decomposedTransform.rotation.angle * 180) / Math.PI
+    const globalTransformRotation = this.getGlobalTransformRotation()
 
     const pcb_component = db.pcb_component.insert({
       center: this._getGlobalPcbPositionBeforeLayout(),
@@ -856,7 +860,11 @@ export class NormalComponent<
         componentLayer === "top" || componentLayer === "bottom"
           ? componentLayer
           : "top",
-      rotation: props.pcbRotation ?? accumulatedRotation,
+      rotation: props.pcbRotation ?? globalTransformRotation,
+      insertion_direction: this._getPcbComponentInsertionDirection(
+        componentLayer,
+        globalTransformRotation,
+      ),
       source_component_id: this.source_component_id!,
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
       do_not_place: props.doNotPlace ?? false,
@@ -1060,6 +1068,73 @@ export class NormalComponent<
 
   updateInitializePortsFromChildren(): void {
     this.initPorts()
+  }
+
+  protected getGlobalTransformRotation(): number {
+    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
+    const decomposedTransform = decomposeTSR(globalTransform)
+    return (decomposedTransform.rotation.angle * 180) / Math.PI
+  }
+
+  private _getFootprintMetadataForPcbComponent():
+    | {
+        insertionDirection?: FootprintInsertionDirection
+        originalLayer?: LayerRef
+      }
+    | undefined {
+    const footprintChild = this.children.find(
+      (c) => c.componentName === "Footprint",
+    )
+
+    if (footprintChild) {
+      return {
+        insertionDirection: footprintChild._parsedProps.insertionDirection,
+        originalLayer: footprintChild._parsedProps.originalLayer,
+      }
+    }
+
+    const footprint = this.props.footprint
+
+    if (isValidElement(footprint)) {
+      const footprintProps = footprint.props as {
+        insertionDirection?: FootprintInsertionDirection
+        originalLayer?: LayerRef
+      }
+      return {
+        insertionDirection: footprintProps.insertionDirection,
+        originalLayer: footprintProps.originalLayer,
+      }
+    }
+
+    if (footprint?.componentName === "Footprint") {
+      return {
+        insertionDirection:
+          footprint._parsedProps?.insertionDirection ??
+          footprint.props?.insertionDirection,
+        originalLayer:
+          footprint._parsedProps?.originalLayer ??
+          footprint.props?.originalLayer,
+      }
+    }
+
+    return undefined
+  }
+
+  protected _getPcbComponentInsertionDirection(
+    componentLayer: LayerRef,
+    rotationDegrees: number = this.getGlobalTransformRotation(),
+  ): PcbComponent["insertion_direction"] | undefined {
+    const footprintMetadata = this._getFootprintMetadataForPcbComponent()
+    if (!footprintMetadata?.insertionDirection) return undefined
+
+    return transformFootprintInsertionDirection({
+      insertionDirection: footprintMetadata.insertionDirection,
+      rotationDegrees,
+      isFlipped: isFootprintFlipped({
+        componentLayer,
+        originalLayer: footprintMetadata.originalLayer,
+      }),
+    })
   }
 
   doInitialReactSubtreesRender(): void {

@@ -131,6 +131,8 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       // Still create the component but with 'top' as fallback to avoid cascading errors
     }
 
+    const globalTransformRotation = this.getGlobalTransformRotation()
+
     const pcb_component = db.pcb_component.insert({
       center: { x: pcbX, y: pcbY },
       width: 2, // Default width, adjust as needed
@@ -139,7 +141,11 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
         componentLayer === "top" || componentLayer === "bottom"
           ? componentLayer
           : "top",
-      rotation: props.pcbRotation ?? 0,
+      rotation: props.pcbRotation ?? globalTransformRotation,
+      insertion_direction: this._getPcbComponentInsertionDirection(
+        componentLayer,
+        globalTransformRotation,
+      ),
       source_component_id: this.source_component_id!,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       do_not_place: props.doNotPlace ?? false,
