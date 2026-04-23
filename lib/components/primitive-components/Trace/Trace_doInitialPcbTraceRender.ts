@@ -15,7 +15,7 @@ import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFro
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
-import { jlcMinTolerances } from "lib/utils/pcb/jlc-manufacturing-tolerances"
+import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 
 type PcbRouteObjective =
   | RouteHintPoint
