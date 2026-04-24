@@ -11,6 +11,7 @@ import type {
   PcbHoleWithPolygonPad,
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
+import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
@@ -108,13 +109,15 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       return
     }
 
-    for (const port of parentPorts) {
-      if (port.isMatchingAnyOf(this._parsedProps.portHints)) {
-        this.matchedPort = port
-        port.registerMatch(this)
-        return
-      }
-    }
+    const port = selectPortForPcbPrimitive(
+      parentPorts,
+      this,
+      this._parsedProps.portHints,
+    )
+    if (!port) return
+
+    this.matchedPort = port
+    port.registerMatch(this)
   }
 
   doInitialPcbPrimitiveRender(): void {
@@ -292,6 +295,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           pad_shape: "rect",
           hole_ccw_rotation: props.pcbRotation,
           rect_ccw_rotation: props.pcbRotation,
+          rect_border_radius: props.rectBorderRadius,
           port_hints: this.getNameAndAliases(),
           x: position.x,
           y: position.y,
@@ -313,6 +317,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           hole_offset_x: props.holeOffsetX,
           hole_offset_y: props.holeOffsetY,
           shape: "pill_hole_with_rect_pad" as const,
+          rect_border_radius: props.rectBorderRadius,
           port_hints: this.getNameAndAliases(),
           x: position.x,
           y: position.y,

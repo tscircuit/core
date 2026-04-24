@@ -37,10 +37,7 @@ test(
     const ambiguousErrors = circuitJson.filter(
       (el) => el.type === "source_ambiguous_port_reference",
     )
-    expect(ambiguousErrors).toHaveLength(1)
-    expect((ambiguousErrors[0] as any).message).toContain(
-      "U1.pin3 is ambiguous",
-    )
+    expect(ambiguousErrors).toHaveLength(0)
 
     expect(convertCircuitJsonToPcbSvg(circuitJson as any)).toMatchSvgSnapshot(
       import.meta.path,

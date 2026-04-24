@@ -31,6 +31,7 @@ test("do not place part should be skipped", async () => {
         },
         "do_not_place": true,
         "height": 4.41,
+        "insertion_direction": undefined,
         "is_allowed_to_be_off_board": false,
         "layer": "top",
         "metadata": undefined,

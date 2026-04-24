@@ -4,6 +4,7 @@ import Debug from "debug"
 import { getSpiceyEngine } from "../../../spice/get-spicey-engine"
 import type { AnalogSimulation } from "../AnalogSimulation"
 import { resetSimulationColorState } from "lib/utils/simulation/getSimulationColorForId"
+import { getTransientVoltageGraphNamesFromSpiceNetlist } from "lib/utils/simulation/get-transient-voltage-graph-names-from-spice-netlist"
 import type { VoltageProbe } from "../VoltageProbe"
 
 const debug = Debug("tscircuit:core:Group_doInitialSimulationSpiceEngineRender")
@@ -42,6 +43,40 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   } catch (error) {
     debug(`Failed to convert circuit JSON to SPICE: ${error}`)
     return
+  }
+
+  const graphNameToProbe = new Map<string, VoltageProbe>()
+  for (const probe of voltageProbes) {
+    if (probe.finalProbeName) {
+      graphNameToProbe.set(probe.finalProbeName, probe)
+    }
+  }
+
+  const voltageProbesById = new Map(
+    voltageProbes
+      .filter((probe) => probe.simulation_voltage_probe_id)
+      .map((probe) => [probe.simulation_voltage_probe_id!, probe] as const),
+  )
+  const orderedSimulationProbes = root.db.simulation_voltage_probe
+    .list()
+    .filter((probe) => voltageProbesById.has(probe.simulation_voltage_probe_id))
+  const graphNamesFromNetlist =
+    getTransientVoltageGraphNamesFromSpiceNetlist(spiceNetlist)
+
+  if (graphNamesFromNetlist.length === orderedSimulationProbes.length) {
+    for (const [index, simulationProbe] of orderedSimulationProbes.entries()) {
+      const probe = voltageProbesById.get(
+        simulationProbe.simulation_voltage_probe_id,
+      )
+      const graphName = graphNamesFromNetlist[index]
+      if (probe && graphName) {
+        graphNameToProbe.set(graphName, probe)
+      }
+    }
+  } else {
+    debug(
+      `Skipping probe-to-graph order mapping because counts differ: probes=${orderedSimulationProbes.length} graphNames=${graphNamesFromNetlist.length}`,
+    )
   }
 
   // Run simulation for each analogsimulation component
@@ -84,9 +119,9 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
             element.simulation_experiment_id =
               simulationExperiment.simulation_experiment_id
 
-            const probeMatch = voltageProbes.find(
-              (p) => p.finalProbeName === element.name,
-            )
+            const probeMatch = element.name
+              ? graphNameToProbe.get(element.name)
+              : undefined
             if (probeMatch) element.color = probeMatch.color
           }
 
