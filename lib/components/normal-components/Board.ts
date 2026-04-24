@@ -533,15 +533,18 @@ export class Board
       min_via_pad_diameter:
         subcircuitProps.minViaPadDiameter ??
         jlcMinTolerances.min_via_pad_diameter,
-      min_via_to_via_clearance:
-        subcircuitProps.minViaToViaClearance ??
-        jlcMinTolerances.min_via_to_via_clearance,
-      min_trace_to_pad_clearance:
-        subcircuitProps.minTraceToPadClearance ??
-        jlcMinTolerances.min_trace_to_pad_clearance,
-      min_pad_to_pad_clearance:
-        subcircuitProps.minPadToPadClearance ??
-        jlcMinTolerances.min_pad_to_pad_clearance,
+      min_via_hole_edge_to_via_hole_edge_clearance:
+        subcircuitProps.minViaHoleEdgeToViaHoleEdgeClearance ??
+        jlcMinTolerances.min_via_hole_edge_to_via_hole_edge_clearance,
+      min_trace_to_pad_edge_clearance:
+        subcircuitProps.minTraceToPadEdgeClearance ??
+        jlcMinTolerances.min_trace_to_pad_edge_clearance,
+      min_pad_edge_to_pad_edge_clearance:
+        subcircuitProps.minPadEdgeToPadEdgeClearance ??
+        jlcMinTolerances.min_pad_edge_to_pad_edge_clearance,
+      min_plated_hole_drill_edge_to_drill_edge_clearance:
+        subcircuitProps.minPlatedHoleDrillEdgeToDrillEdgeClearance ??
+        jlcMinTolerances.min_plated_hole_drill_edge_to_drill_edge_clearance,
       min_board_edge_clearance:
         subcircuitProps.minBoardEdgeClearance ??
         jlcMinTolerances.min_board_edge_clearance,
