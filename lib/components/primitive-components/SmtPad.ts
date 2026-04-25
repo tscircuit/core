@@ -7,11 +7,13 @@ import {
   type PcbSmtPadPolygon,
   type PcbSmtPadRotatedRect,
   type PcbSmtPadPill,
+  type PcbSmtPadRotatedPill,
 } from "circuit-json"
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
+import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -36,14 +38,11 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       return { width: props.width!, height: props.height! }
     }
     if (props.shape === "rotated_rect") {
-      const rotationDegrees = props.ccwRotation ?? 0
-      const angleRad = (rotationDegrees * Math.PI) / 180
-      const cosAngle = Math.cos(angleRad)
-      const sinAngle = Math.sin(angleRad)
-      const width =
-        Math.abs(props.width! * cosAngle) + Math.abs(props.height! * sinAngle)
-      const height =
-        Math.abs(props.width! * sinAngle) + Math.abs(props.height! * cosAngle)
+      const { width, height } = getAxisAlignedSizeFromRotatedRect({
+        width: props.width!,
+        height: props.height!,
+        ccwRotationDegrees: props.ccwRotation ?? 0,
+      })
       return { width, height }
     }
     if (props.shape === "polygon") {
@@ -287,22 +286,42 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadPolygon) as PcbSmtPadPolygon
     } else if (props.shape === "pill") {
-      pcb_smtpad = db.pcb_smtpad.insert({
-        pcb_component_id,
-        pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
-        layer: maybeFlipLayer(props.layer ?? "top"),
-        shape: "pill",
-        x: position.x,
-        y: position.y,
-        radius: props.radius!,
-        height: props.height!,
-        width: props.width!,
-        port_hints: portHints,
-        is_covered_with_solder_mask: isCoveredWithSolderMask,
-        soldermask_margin: soldermaskMargin,
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-      } as PcbSmtPadPill) as PcbSmtPadPill
+      if (finalRotationDegrees !== 0) {
+        pcb_smtpad = db.pcb_smtpad.insert({
+          pcb_component_id,
+          pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
+          layer: maybeFlipLayer(props.layer ?? "top"),
+          shape: "rotated_pill",
+          x: position.x,
+          y: position.y,
+          radius: props.radius!,
+          height: props.height!,
+          width: props.width!,
+          ccw_rotation: finalRotationDegrees,
+          port_hints: portHints,
+          is_covered_with_solder_mask: isCoveredWithSolderMask,
+          soldermask_margin: soldermaskMargin,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        } as PcbSmtPadRotatedPill)
+      } else {
+        pcb_smtpad = db.pcb_smtpad.insert({
+          pcb_component_id,
+          pcb_port_id: this.matchedPort?.pcb_port_id!, // port likely isn't matched
+          layer: maybeFlipLayer(props.layer ?? "top"),
+          shape: "pill",
+          x: position.x,
+          y: position.y,
+          radius: props.radius!,
+          height: props.height!,
+          width: props.width!,
+          port_hints: portHints,
+          is_covered_with_solder_mask: isCoveredWithSolderMask,
+          soldermask_margin: soldermaskMargin,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
+        } as PcbSmtPadPill)
+      }
     }
     if (pcb_smtpad) {
       this.pcb_smtpad_id = pcb_smtpad.pcb_smtpad_id
@@ -340,15 +359,12 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       }
     }
     if (smtpad.shape === "rotated_rect") {
-      const angleRad = (smtpad.ccw_rotation * Math.PI) / 180
-      const cosAngle = Math.cos(angleRad)
-      const sinAngle = Math.sin(angleRad)
-
-      const w2 = smtpad.width / 2
-      const h2 = smtpad.height / 2
-
-      const xExtent = Math.abs(w2 * cosAngle) + Math.abs(h2 * sinAngle)
-      const yExtent = Math.abs(w2 * sinAngle) + Math.abs(h2 * cosAngle)
+      const { width, height, xExtent, yExtent } =
+        getAxisAlignedSizeFromRotatedRect({
+          width: smtpad.width,
+          height: smtpad.height,
+          ccwRotationDegrees: smtpad.ccw_rotation,
+        })
 
       return {
         center: { x: smtpad.x, y: smtpad.y },
@@ -358,8 +374,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           top: smtpad.y - yExtent,
           bottom: smtpad.y + yExtent,
         },
-        width: xExtent * 2,
-        height: yExtent * 2,
+        width,
+        height,
       }
     }
     if (smtpad.shape === "circle") {
@@ -412,6 +428,26 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         height: smtpad.height,
       }
     }
+    if (smtpad.shape === "rotated_pill") {
+      const { width, height, xExtent, yExtent } =
+        getAxisAlignedSizeFromRotatedRect({
+          width: smtpad.width,
+          height: smtpad.height,
+          ccwRotationDegrees: smtpad.ccw_rotation,
+        })
+
+      return {
+        center: { x: smtpad.x, y: smtpad.y },
+        bounds: {
+          left: smtpad.x - xExtent,
+          right: smtpad.x + xExtent,
+          top: smtpad.y - yExtent,
+          bottom: smtpad.y + yExtent,
+        },
+        width,
+        height,
+      }
+    }
     throw new Error(
       `circuitJson bounds calculation not implemented for shape "${(smtpad as any).shape}"`,
     )
@@ -451,7 +487,8 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       pad.shape === "rect" ||
       pad.shape === "circle" ||
       pad.shape === "rotated_rect" ||
-      pad.shape === "pill"
+      pad.shape === "pill" ||
+      pad.shape === "rotated_pill"
     ) {
       this._setPositionFromLayout({ x: pad.x + deltaX, y: pad.y + deltaY })
     } else if (pad.shape === "polygon") {

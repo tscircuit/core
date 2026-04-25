@@ -103,6 +103,21 @@ export const getObstaclesFromCircuitJson = (
             connectedTo: withNetId([element.pcb_smtpad_id]),
           })
         }
+      } else if (element.shape === "pill" || element.shape === "rotated_pill") {
+        obstacles.push({
+          type: "rect",
+          layers: [element.layer],
+          center: {
+            x: element.x,
+            y: element.y,
+          },
+          width: element.width,
+          height: element.height,
+          ...(element.shape === "rotated_pill"
+            ? { ccwRotationDegrees: element.ccw_rotation }
+            : {}),
+          connectedTo: withNetId([element.pcb_smtpad_id]),
+        })
       }
     } else if (element.type === "pcb_keepout") {
       if (element.shape === "circle") {
@@ -192,6 +207,24 @@ export const getObstaclesFromCircuitJson = (
           height: element.hole_height,
           connectedTo: [],
         })
+      } else if (
+        element.hole_shape === "pill" ||
+        element.hole_shape === "rotated_pill"
+      ) {
+        obstacles.push({
+          type: "rect",
+          layers: EVERY_LAYER,
+          center: {
+            x: element.x,
+            y: element.y,
+          },
+          width: element.hole_width,
+          height: element.hole_height,
+          ...(element.hole_shape === "rotated_pill"
+            ? { ccwRotationDegrees: element.ccw_rotation }
+            : {}),
+          connectedTo: [],
+        })
       } else if (element.hole_shape === "rect") {
         obstacles.push({
           type: "rect",
@@ -260,7 +293,7 @@ export const getObstaclesFromCircuitJson = (
           height: element.rect_pad_height,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
         })
-      } else if (element.shape === "oval" || element.shape === "pill") {
+      } else if (element.shape === "oval") {
         obstacles.push({
           // @ts-ignore
           type: "oval",
@@ -271,6 +304,19 @@ export const getObstaclesFromCircuitJson = (
           },
           width: element.outer_width,
           height: element.outer_height,
+          connectedTo: withNetId([element.pcb_plated_hole_id]),
+        })
+      } else if (element.shape === "pill") {
+        obstacles.push({
+          type: "rect",
+          layers: EVERY_LAYER,
+          center: {
+            x: element.x,
+            y: element.y,
+          },
+          width: element.outer_width,
+          height: element.outer_height,
+          ccwRotationDegrees: element.ccw_rotation,
           connectedTo: withNetId([element.pcb_plated_hole_id]),
         })
       } else if (element.shape === "hole_with_polygon_pad") {
