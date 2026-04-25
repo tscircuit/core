@@ -99,6 +99,7 @@ export const getObstaclesFromCircuitJson = (
             center: rect.center,
             width: rect.width,
             height: rect.height,
+            ...(singleRect ? {} : { ccwRotationDegrees: element.ccw_rotation }),
             connectedTo: withNetId([element.pcb_smtpad_id]),
           })
         }

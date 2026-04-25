@@ -37,6 +37,7 @@ export type Obstacle = {
   center: { x: number; y: number }
   width: number
   height: number
+  ccwRotationDegrees?: number
   connectedTo: string[]
   isCopperPour?: boolean
   netIsAssignable?: boolean
