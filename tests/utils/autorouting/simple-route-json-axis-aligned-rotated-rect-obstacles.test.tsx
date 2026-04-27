@@ -78,7 +78,7 @@ test("axis-aligned rotated_rect pads become single simple-route obstacles", asyn
     )
 
     if (pad.ccw_rotation === 45) {
-      expect(matchingObstacles.length).toBeGreaterThan(1)
+      expect(matchingObstacles.length).toBe(1)
       continue
     }
 

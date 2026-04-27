@@ -1,10 +1,7 @@
 import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
 import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { AnyCircuitElement } from "circuit-json"
-import {
-  generateApproximatingRects,
-  type RotatedRect,
-} from "./generateApproximatingRects"
+import type { RotatedRect } from "./generateApproximatingRects"
 import { fillPolygonWithRects } from "./fillPolygonWithRects"
 import { fillCircleWithRects } from "./fillCircleWithRects"
 import type { Obstacle } from "./types"
@@ -88,21 +85,17 @@ export const getObstaclesFromCircuitJson = (
           rotation: element.ccw_rotation,
         }
         const singleRect = getAxisAlignedRectFromRotatedRect(rotatedRect)
-        const rects = singleRect
-          ? [singleRect]
-          : generateApproximatingRects(rotatedRect)
+        const rect = singleRect ?? rotatedRect
 
-        for (const rect of rects) {
-          obstacles.push({
-            type: "rect",
-            layers: [element.layer],
-            center: rect.center,
-            width: rect.width,
-            height: rect.height,
-            ...(singleRect ? {} : { ccwRotationDegrees: element.ccw_rotation }),
-            connectedTo: withNetId([element.pcb_smtpad_id]),
-          })
-        }
+        obstacles.push({
+          type: "rect",
+          layers: [element.layer],
+          center: rect.center,
+          width: rect.width,
+          height: rect.height,
+          ...(singleRect ? {} : { ccwRotationDegrees: element.ccw_rotation }),
+          connectedTo: withNetId([element.pcb_smtpad_id]),
+        })
       } else if (element.shape === "pill" || element.shape === "rotated_pill") {
         obstacles.push({
           type: "rect",

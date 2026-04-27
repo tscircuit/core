@@ -31,8 +31,11 @@ test("45 degree rects bug", () => {
     db: circuit.db,
   })
 
-  // we should only be seeing one obstacle here, but we see 2
-  expect(simpleRouteJson.obstacles.length).toBe(2)
+  expect(simpleRouteJson.obstacles.length).toBe(1)
+  expect(simpleRouteJson.obstacles[0]?.ccwRotationDegrees).toBe(45)
+  expect(simpleRouteJson.obstacles[0]?.height).toBe(0.9)
+  expect(simpleRouteJson.obstacles[0]?.width).toBe(3.9)
+
   expect(simpleRouteJson).toMatchInlineSnapshot(`
     {
       "bounds": {
@@ -54,8 +57,8 @@ test("45 degree rects bug", () => {
         {
           "ccwRotationDegrees": 45,
           "center": {
-            "x": 0.6894291116568839,
-            "y": 0.6894291116568838,
+            "x": 0,
+            "y": 0,
           },
           "connectedTo": [
             "pcb_smtpad_0",
@@ -64,32 +67,12 @@ test("45 degree rects bug", () => {
             "pcb_smtpad_0",
             "pcb_port_0",
           ],
-          "height": 2.0152543263816605,
+          "height": 0.9,
           "layers": [
             "top",
           ],
           "type": "rect",
-          "width": 2.145,
-        },
-        {
-          "ccwRotationDegrees": 45,
-          "center": {
-            "x": -0.6894291116568839,
-            "y": -0.6894291116568838,
-          },
-          "connectedTo": [
-            "pcb_smtpad_0",
-            "connectivity_net2",
-            "source_port_0",
-            "pcb_smtpad_0",
-            "pcb_port_0",
-          ],
-          "height": 2.0152543263816605,
-          "layers": [
-            "top",
-          ],
-          "type": "rect",
-          "width": 2.145,
+          "width": 3.9,
         },
       ],
       "outline": undefined,
