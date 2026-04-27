@@ -1,5 +1,6 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
+import { isRectOverlappingPolygon } from "@tscircuit/math-utils"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import {
   ConnectivityMap,
@@ -10,6 +11,27 @@ import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles
 import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
+
+const obstacleOverlapsOutline = (
+  obstacle: SimpleRouteJson["obstacles"][number],
+  outline: Array<{ x: number; y: number }>,
+) => {
+  if (
+    typeof obstacle.width !== "number" ||
+    typeof obstacle.height !== "number"
+  ) {
+    return true
+  }
+
+  return isRectOverlappingPolygon(
+    {
+      center: obstacle.center,
+      width: obstacle.width,
+      height: obstacle.height,
+    },
+    outline,
+  )
+}
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -82,7 +104,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const connMap = getFullConnectivityMapFromCircuitJson(subcircuitElements)
 
-  const obstacles = getObstaclesFromCircuitJson(
+  let obstacles = getObstaclesFromCircuitJson(
     [
       ...db.pcb_component.list(),
       ...db.pcb_smtpad.list(),
@@ -105,6 +127,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       group: pcbGroup,
     }),
   )
+
+  if (board?.outline && board.outline.length >= 3) {
+    obstacles = obstacles.filter((obstacle) => {
+      if (obstacle.connectedTo.length > 0) return true
+      return obstacleOverlapsOutline(obstacle, board.outline!)
+    })
+  }
 
   // Add everything in the connMap to the connectedTo array of each obstacle
   for (const obstacle of obstacles) {
