@@ -1,5 +1,6 @@
 import type { ChipProps } from "@tscircuit/props"
 import { test, expect } from "bun:test"
+import type { PcbPlatedHoleOval } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const pinLabels = {
@@ -296,6 +297,14 @@ test("repro113-usb-c-31-m-12", async () => {
   )
 
   await circuit.render()
+
+  const platedHoles = circuit.db.pcb_plated_hole.list() as PcbPlatedHoleOval[]
+  expect(platedHoles).toHaveLength(4)
+
+  for (const platedHole of platedHoles) {
+    expect(platedHole.shape).toBe("pill")
+    expect(platedHole.ccw_rotation).toBeCloseTo(270, 5)
+  }
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
