@@ -76,6 +76,7 @@ import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalCo
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
+import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
 import { inferInternallyConnectedPinNamesFromPorts } from "./utils/inferInternallyConnectedPinNamesFromPorts"
@@ -141,6 +142,7 @@ export class NormalComponent<
   _inferredInternallyConnectedPinNames: string[][] = []
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false
+  _hasStartedSupplierFootprintMismatchWarningCheck = false
   private _invalidFootprintPropMessages: string[] = []
 
   private _invalidPinLabelMessages: string[] = []
@@ -1863,6 +1865,17 @@ export class NormalComponent<
       })
       return
     }
+  }
+
+  doInitialSupplierFootprintMismatchWarning(): void {
+    NormalComponent_doInitialSupplierFootprintMismatchWarning(
+      this,
+      (name, effect) => this._queueAsyncEffect(name, effect),
+    )
+  }
+
+  updateSupplierFootprintMismatchWarning(): void {
+    this.doInitialSupplierFootprintMismatchWarning()
   }
 
   doInitialAssignFallbackProps(): void {

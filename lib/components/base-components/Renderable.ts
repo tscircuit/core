@@ -65,6 +65,7 @@ export const orderedRenderPhases = [
   "SilkscreenOverlapAdjustment",
   "CadModelRender",
   "PartsEngineRender",
+  "SupplierFootprintMismatchWarning",
   "SimulationSpiceEngineRender",
 ] as const
 
@@ -118,6 +119,11 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   ],
   CadModelRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PartsEngineRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SupplierFootprintMismatchWarning: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "PartsEngineRender",
+  ],
   PcbComponentAnchorAlignment: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
