@@ -84,8 +84,8 @@ export const getObstaclesFromCircuitJson = (
           height: element.height,
           rotation: element.ccw_rotation,
         }
-        const singleRect = getAxisAlignedRectFromRotatedRect(rotatedRect)
-        const rect = singleRect ?? rotatedRect
+        const axisAlignedRect = getAxisAlignedRectFromRotatedRect(rotatedRect)
+        const rect = axisAlignedRect ?? rotatedRect
 
         obstacles.push({
           type: "rect",
