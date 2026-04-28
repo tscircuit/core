@@ -71,19 +71,15 @@ export const getTraceObstacles = (
         rotation: rotationDeg,
       }
 
-      const approximatingRects = generateApproximatingRects(rotatedRect)
-
-      for (const rect of approximatingRects) {
-        traceObstacles.push({
-          type: "rect",
-          layers: [p1.layer] as LayerRef[],
-          center: rect.center,
-          width: rect.width,
-          height: rect.height,
-          connectedTo: connectedTo,
-          obstacle_type: "trace",
-        } as any)
-      }
+      traceObstacles.push({
+        type: "rect",
+        layers: [p1.layer] as LayerRef[],
+        center: rotatedRect.center,
+        width: rotatedRect.width,
+        height: rotatedRect.height,
+        connectedTo: connectedTo,
+        obstacle_type: "trace",
+      } as any)
     }
   }
   return traceObstacles
