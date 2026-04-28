@@ -2,6 +2,7 @@ import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import type { Group } from "./Group"
 import type { Port } from "../Port/Port"
+import type { SchematicComponent } from "circuit-json"
 
 const parsePinNumberFromPortName = (
   name: string | undefined,
@@ -89,14 +90,18 @@ export const Group_doInitialSchematicBoxComponentRender = (
     size,
     source_group_id: group.source_group_id!,
     schematic_group_id: group.schematic_group_id ?? undefined,
-    subcircuit_id: group.subcircuit_id ?? group.getSubcircuit()?.subcircuit_id,
+    subcircuit_id:
+      group.subcircuit_id ?? group.getSubcircuit()?.subcircuit_id ?? undefined,
     is_schematic_group: true,
     is_box_with_pins: true,
     port_arrangement: underscorifyPortArrangement(schPortArrangement!),
     pin_spacing: props.schPinSpacing ?? 0.2,
-    pin_styles: underscorifyPinStyles(props.schPinStyle, portLabels),
+    pin_styles: underscorifyPinStyles(
+      props.schPinStyle,
+      portLabels,
+    ) as SchematicComponent["pin_styles"],
     port_labels: portLabels,
-  } as any)
+  })
 
   group.schematic_component_id = schematicComponent.schematic_component_id
 

@@ -1074,7 +1074,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this.schematic_group_id = schematic_group.schematic_group_id
 
     if (props.showAsSchematicBox) {
-      Group_doInitialSchematicBoxComponentRender(this as any)
+      Group_doInitialSchematicBoxComponentRender(this)
     }
 
     for (const child of this.children) {
