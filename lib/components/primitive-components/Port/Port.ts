@@ -704,7 +704,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,
-      distance_from_component_edge: props.schStemLength ?? 0.4,
+      distance_from_component_edge:
+        props.schStemLength ??
+        (parentNormalComponent?.props as any)?.schPinLength ??
+        0.4,
       side_of_component: sideOfComponent,
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
@@ -725,9 +728,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     this.schematic_port_id = schematic_port.schematic_port_id
 
-    // Create schematic_line for port stem when schStemLength is specified
-    if (props.schStemLength !== undefined && props.schStemLength !== 0) {
-      const { schStemLength, direction } = props
+    // Create schematic_line for port stem when schStemLength or parent schPinLength is specified
+    const effectiveStemLength =
+      props.schStemLength ??
+      (parentNormalComponent?.props as any)?.schPinLength
+    if (effectiveStemLength !== undefined && effectiveStemLength !== 0) {
+      const schStemLength = effectiveStemLength
+      const { direction } = props
       let x2 = portCenter.x
       let y2 = portCenter.y
 
