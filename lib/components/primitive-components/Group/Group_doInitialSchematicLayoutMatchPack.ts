@@ -80,6 +80,19 @@ function isTreeChildExplicitlyPositioned(
   return false
 }
 
+function getTreeChildChipId(
+  child: CircuitJsonTreeNode,
+  index: number,
+): string | null {
+  if (child.nodeType === "component" && child.sourceComponent) {
+    return child.sourceComponent.name || `chip_${index}`
+  }
+  if (child.nodeType === "group" && child.sourceGroup) {
+    return child.sourceGroup.name || `group_${index}`
+  }
+  return null
+}
+
 // Create conversion function
 function convertTreeToInputProblem(
   tree: CircuitJsonTreeNode,
@@ -120,7 +133,7 @@ function convertTreeToInputProblem(
       debug(`[${group.name}] - Group: ${child.sourceGroup?.name}`)
     }
     if (child.nodeType === "component" && child.sourceComponent) {
-      const chipId = child.sourceComponent.name || `chip_${index}`
+      const chipId = getTreeChildChipId(child, index)!
       const schematicComponent = db.schematic_component.getWhere({
         source_component_id: child.sourceComponent.source_component_id,
       })
@@ -228,7 +241,7 @@ function convertTreeToInputProblem(
       }
     } else if (child.nodeType === "group" && child.sourceGroup) {
       // Handle nested groups as composite chips
-      const groupId = child.sourceGroup.name || `group_${index}`
+      const groupId = getTreeChildChipId(child, index)!
       debug(`[${group.name}] Processing nested group: ${groupId}`)
 
       const schematicGroup = db.schematic_group?.getWhere?.({
@@ -375,14 +388,9 @@ function convertTreeToInputProblem(
 
       // Find the port by looking through all ports in the chip's components
       const treeNode = tree.childNodes.find((child) => {
-        if (child.nodeType === "component" && child.sourceComponent) {
-          return child.sourceComponent.name === chipId
-        }
-        if (child.nodeType === "group" && child.sourceGroup) {
-          const expectedChipId = `group_${tree.childNodes.indexOf(child)}`
-          return expectedChipId === chipId
-        }
-        return false
+        return (
+          getTreeChildChipId(child, tree.childNodes.indexOf(child)) === chipId
+        )
       })
 
       if (treeNode?.nodeType === "group" && treeNode.sourceGroup) {
@@ -512,17 +520,12 @@ function convertTreeToInputProblem(
                   // Check if this port belongs to the right component for this pin
                   const chipId = pinId.split(".")[0]
                   const treeNode = tree.childNodes.find((child) => {
-                    if (
-                      child.nodeType === "component" &&
-                      child.sourceComponent
-                    ) {
-                      return child.sourceComponent.name === chipId
-                    }
-                    if (child.nodeType === "group" && child.sourceGroup) {
-                      const expectedChipId = `group_${tree.childNodes.indexOf(child)}`
-                      return expectedChipId === chipId
-                    }
-                    return false
+                    return (
+                      getTreeChildChipId(
+                        child,
+                        tree.childNodes.indexOf(child),
+                      ) === chipId
+                    )
                   })
 
                   if (
@@ -695,24 +698,13 @@ export function Group_doInitialSchematicLayoutMatchPack<
 
     // Find the corresponding tree node
     const treeNode = tree.childNodes.find((child) => {
-      if (child.nodeType === "component" && child.sourceComponent) {
-        const matches = child.sourceComponent.name === chipId
-        debug(
-          `  Checking component ${child.sourceComponent.name}: matches=${matches}`,
-        )
-        return matches
-      }
-      if (child.nodeType === "group" && child.sourceGroup) {
-        // For groups, we created chipId as "group_N" where N is the index
-        const groupName = child.sourceGroup.name
-        const expectedChipId = `group_${tree.childNodes.indexOf(child)}`
-        const matches = expectedChipId === chipId
-        debug(
-          `  Checking group ${groupName} (expected chipId: ${expectedChipId}): matches=${matches}`,
-        )
-        return matches
-      }
-      return false
+      const expectedChipId = getTreeChildChipId(
+        child,
+        tree.childNodes.indexOf(child),
+      )
+      const matches = expectedChipId === chipId
+      debug(`  Checking child ${expectedChipId}: matches=${matches}`)
+      return matches
     })
 
     if (!treeNode) {
@@ -725,10 +717,7 @@ export function Group_doInitialSchematicLayoutMatchPack<
             child.nodeType === "component"
               ? child.sourceComponent?.name
               : child.sourceGroup?.name,
-          expectedChipId:
-            child.nodeType === "group"
-              ? `group_${idx}`
-              : child.sourceComponent?.name,
+          expectedChipId: getTreeChildChipId(child, idx),
         })),
       )
       continue

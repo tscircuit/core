@@ -196,9 +196,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     const parentBoxDim = parentNormalComponent?._getSchematicBoxDimensions()
-    if (parentBoxDim && this.props.pinNumber !== undefined) {
+    if (parentBoxDim && this._parsedProps.pinNumber !== undefined) {
       const localPortPosition = parentBoxDim.getPortPositionByPinNumber(
-        this.props.pinNumber!,
+        this._parsedProps.pinNumber!,
       )
       if (localPortPosition) return true
     }
@@ -240,9 +240,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     const parentBoxDim = parentNormalComponent?._getSchematicBoxDimensions()
-    if (parentBoxDim && this.props.pinNumber !== undefined) {
+    if (parentBoxDim && this._parsedProps.pinNumber !== undefined) {
       const localPortPosition = parentBoxDim.getPortPositionByPinNumber(
-        this.props.pinNumber!,
+        this._parsedProps.pinNumber!,
       )
       if (!localPortPosition) {
         throw new Error(
@@ -641,6 +641,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   doInitialSchematicPortRender(): void {
+    const collapsedAncestor = this.getCollapsedSchematicBoxAncestor()
+    if (collapsedAncestor && this.parent !== collapsedAncestor) return
+
     const { db } = this.root!
     const { _parsedProps: props } = this
 

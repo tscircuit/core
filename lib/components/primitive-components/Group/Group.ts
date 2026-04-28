@@ -41,6 +41,10 @@ import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLa
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
+import {
+  getGroupSchematicBoxPinLabels,
+  Group_doInitialSchematicBoxComponentRender,
+} from "./Group_doInitialSchematicBoxComponentRender"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
@@ -56,6 +60,7 @@ import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jump
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
+import { Port } from "../Port/Port"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -129,6 +134,64 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       zodProps: groupProps as unknown as Props,
       componentName: "Group",
     }
+  }
+
+  private _ensureSchematicBoxPortsFromConnections() {
+    if (!this._parsedProps?.showAsSchematicBox) return
+    if (!this._parsedProps?.connections) return
+
+    for (const [pinName, target] of Object.entries(
+      this._parsedProps.connections,
+    )) {
+      const existingPort = this.children.find(
+        (child) =>
+          child.componentName === "Port" &&
+          (child as Port).isMatchingAnyOf([pinName]),
+      )
+      if (existingPort) continue
+
+      const pinNumberMatch =
+        pinName.match(/^pin(\d+)$/i) ?? pinName.match(/^(\d+)$/)
+      const pinNumber = pinNumberMatch ? Number(pinNumberMatch[1]) : undefined
+
+      this.add(
+        new Port({
+          name: pinName,
+          pinNumber,
+          connectsTo: target as any,
+        }),
+      )
+    }
+  }
+
+  override doInitialInitializePortsFromChildren(): void {
+    super.doInitialInitializePortsFromChildren()
+    this._ensureSchematicBoxPortsFromConnections()
+  }
+
+  override updateInitializePortsFromChildren(): void {
+    super.updateInitializePortsFromChildren()
+    this._ensureSchematicBoxPortsFromConnections()
+  }
+
+  override _getPrimaryPinCount(): number {
+    const superPinCount = super._getPrimaryPinCount()
+    if (!this._parsedProps?.showAsSchematicBox) return superPinCount
+
+    const directPortPinNumbers = this.children
+      .filter((child): child is Port => child.componentName === "Port")
+      .map((port) => port._parsedProps.pinNumber)
+      .filter((pinNumber): pinNumber is number => pinNumber !== undefined)
+
+    if (directPortPinNumbers.length === 0) return superPinCount
+    return Math.max(superPinCount, ...directPortPinNumbers)
+  }
+
+  override _getPinLabelsFromPorts(): Record<string, string> {
+    if (!this._parsedProps?.showAsSchematicBox) {
+      return super._getPinLabelsFromPorts()
+    }
+    return getGroupSchematicBoxPinLabels(this as any)
   }
 
   doInitialSourceGroupRender() {
@@ -804,6 +867,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   doInitialSchematicTraceRender() {
+    if (this._parsedProps.showAsSchematicBox) return
     Group_doInitialSchematicTraceRender(this as any)
   }
 
@@ -1009,7 +1073,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
     this.schematic_group_id = schematic_group.schematic_group_id
 
+    if (props.showAsSchematicBox) {
+      Group_doInitialSchematicBoxComponentRender(this)
+    }
+
     for (const child of this.children) {
+      if ((child as any)._parsedProps?.showAsSchematicBox) continue
       if (child.schematic_component_id) {
         db.schematic_component.update(child.schematic_component_id, {
           schematic_group_id: schematic_group.schematic_group_id,
@@ -1064,6 +1133,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSchematicLayout(): void {
     // The schematic_components are rendered in our children
+    if (this._parsedProps.showAsSchematicBox) {
+      this._insertSchematicBorder()
+      return
+    }
+
     const schematicLayoutMode = this._getSchematicLayoutMode()
 
     if (schematicLayoutMode === "match-adapt") {

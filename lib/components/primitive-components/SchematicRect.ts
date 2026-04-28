@@ -22,6 +22,7 @@ export class SchematicRect extends PrimitiveComponent<
 
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
+    if (this.getCollapsedSchematicBoxAncestor()) return
     const { db } = this.root!
     const { _parsedProps: props } = this
 

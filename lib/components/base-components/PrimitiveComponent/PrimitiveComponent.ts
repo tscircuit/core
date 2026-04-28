@@ -577,6 +577,25 @@ export abstract class PrimitiveComponent<
   }
 
   /**
+   * Returns the nearest ancestor group that should be collapsed into a single
+   * schematic box. Schematic render phases use this to suppress internal
+   * schematic elements while still allowing direct group ports to render.
+   */
+  getCollapsedSchematicBoxAncestor(): PrimitiveComponent | null {
+    let current: PrimitiveComponent | null = this.parent
+    while (current) {
+      if (
+        current.componentName === "Group" &&
+        current._parsedProps?.showAsSchematicBox
+      ) {
+        return current
+      }
+      current = current.parent
+    }
+    return null
+  }
+
+  /**
    * Replaces text like {NAME}, {REF}, and {REFERENCE} with the
    * reference designator (name) of the parent NormalComponent.
    */

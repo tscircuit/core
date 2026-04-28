@@ -24,19 +24,32 @@ test("group schematic box", () => {
           "x": 0,
           "y": 0,
         },
-        "height": 0,
+        "height": 0.4,
         "is_subcircuit": undefined,
         "name": "G1",
-        "schematic_component_ids": [],
+        "schematic_component_ids": [
+          "schematic_component_0",
+        ],
         "schematic_group_id": "schematic_group_0",
         "show_as_schematic_box": true,
         "source_group_id": "source_group_0",
         "subcircuit_id": null,
         "type": "schematic_group",
-        "width": 0,
+        "width": 0.4,
       },
     ]
   `)
+
+  const schematicComponent = circuit.db.schematic_component.getWhere({
+    source_group_id: schematic_group[0].source_group_id,
+  })
+  expect(schematicComponent).toMatchObject({
+    is_schematic_group: true,
+    is_box_with_pins: true,
+    source_group_id: schematic_group[0].source_group_id,
+    schematic_group_id: schematic_group[0].schematic_group_id,
+    size: { width: 0.4, height: 0.4 },
+  })
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

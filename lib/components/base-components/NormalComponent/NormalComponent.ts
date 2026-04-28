@@ -625,6 +625,7 @@ export class NormalComponent<
    */
   doInitialSchematicComponentRender() {
     if (this.root?.schematicDisabled) return
+    if (this.getCollapsedSchematicBoxAncestor()) return
     const { db } = this.root!
 
     // Insert warnings for invalid pin labels
@@ -1536,7 +1537,12 @@ export class NormalComponent<
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     // Only valid if we don't have a schematic symbol
     if (this.getSchematicSymbol()) return null
-    if (!this.config.shouldRenderAsSchematicBox) return null
+    if (
+      !this.config.shouldRenderAsSchematicBox &&
+      !this._parsedProps?.showAsSchematicBox
+    ) {
+      return null
+    }
 
     const { _parsedProps: props } = this
 
