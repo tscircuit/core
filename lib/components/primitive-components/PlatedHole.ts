@@ -201,8 +201,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         hole_shape: "rotated_pill",
         pad_shape: "rect",
-        hole_ccw_rotation: props.pcbRotation ?? 0,
-        rect_ccw_rotation: props.pcbRotation ?? 0,
+        hole_ccw_rotation: finalRotationDegrees,
+        rect_ccw_rotation: finalRotationDegrees,
         rect_pad_width: props.outerWidth,
         rect_pad_height: props.outerHeight,
         hole_offset_x: props.holeOffsetX,
@@ -229,7 +229,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        ccw_rotation: props.pcbRotation ?? 0,
+        ccw_rotation: finalRotationDegrees,
         // NOTE: currently PcbPlatedHoleOval erroneously includes both the shape "pill" and "oval"
       } as PcbPlatedHoleOval)
 
@@ -279,7 +279,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       } as PcbHoleCircularWithRectPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     } else if (props.shape === "pill_hole_with_rect_pad") {
-      if (props.pcbRotation && props.pcbRotation !== 0) {
+      if (finalRotationDegrees !== 0) {
         const pcb_plated_hole = db.pcb_plated_hole.insert({
           pcb_component_id,
           pcb_port_id: this.matchedPort?.pcb_port_id!,
@@ -293,8 +293,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           type: "pcb_plated_hole",
           hole_shape: "rotated_pill",
           pad_shape: "rect",
-          hole_ccw_rotation: props.pcbRotation,
-          rect_ccw_rotation: props.pcbRotation,
+          hole_ccw_rotation: finalRotationDegrees,
+          rect_ccw_rotation: finalRotationDegrees,
           rect_border_radius: props.rectBorderRadius,
           port_hints: this.getNameAndAliases(),
           x: position.x,
