@@ -1,8 +1,12 @@
 import { getBoundsOfPcbElements } from "@tscircuit/circuit-json-util"
-import type { PartsEngine, SupplierPartNumbers } from "@tscircuit/props"
+import {
+  type PartsEngine,
+  type SupplierName,
+  type SupplierPartNumbers,
+  supplierProps,
+} from "@tscircuit/props"
 import {
   type AnyCircuitElement,
-  type SupplierName,
   supplier_footprint_mismatch_warning,
   unknown_error_finding_part,
 } from "circuit-json"
@@ -16,14 +20,8 @@ type SupplierPartCandidate = {
   supplierPartNumber: string
 }
 
-const supplierNames: SupplierName[] = [
-  "jlcpcb",
-  "macrofab",
-  "pcbway",
-  "digikey",
-  "mouser",
-  "lcsc",
-]
+const supplierNames = supplierProps.shape.supplierPartNumbers.unwrap().keySchema
+  .options satisfies SupplierName[]
 
 const isCopperElement = (elm: AnyCircuitElement) =>
   elm.type === "pcb_smtpad" || elm.type === "pcb_plated_hole"
@@ -97,7 +95,6 @@ const getSupplierPartCandidates = (
 
 export function NormalComponent_doInitialSupplierFootprintMismatchWarning(
   component: NormalComponent<any, any>,
-  queueAsyncEffect: (name: string, effect: () => Promise<void>) => void,
 ) {
   if (component.root?.pcbDisabled) return
   if (component.props.doNotPlace) return
@@ -134,7 +131,7 @@ export function NormalComponent_doInitialSupplierFootprintMismatchWarning(
 
   component._hasStartedSupplierFootprintMismatchWarningCheck = true
 
-  queueAsyncEffect("check-supplier-footprint-mismatch", async () => {
+  component._queueAsyncEffect("check-supplier-footprint-mismatch", async () => {
     const { db } = component.root!
     const fetchPartCircuitJson = partsEngine.fetchPartCircuitJson!
 

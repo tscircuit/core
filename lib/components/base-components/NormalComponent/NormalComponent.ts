@@ -1868,10 +1868,7 @@ export class NormalComponent<
   }
 
   doInitialSupplierFootprintMismatchWarning(): void {
-    NormalComponent_doInitialSupplierFootprintMismatchWarning(
-      this,
-      (name, effect) => this._queueAsyncEffect(name, effect),
-    )
+    NormalComponent_doInitialSupplierFootprintMismatchWarning(this)
   }
 
   updateSupplierFootprintMismatchWarning(): void {
