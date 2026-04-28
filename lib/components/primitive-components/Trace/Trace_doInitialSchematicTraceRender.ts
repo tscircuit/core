@@ -30,6 +30,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   if (trace.root?._featureMspSchematicTraceRouting) return
   if (trace._couldNotFindPort) return
   if (trace.root?.schematicDisabled) return
+  if (trace.getCollapsedSchematicBoxAncestor()) return
   // if (trace.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
   const { db } = trace.root!
   const { _parsedProps: props, parent } = trace

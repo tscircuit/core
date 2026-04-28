@@ -576,6 +576,20 @@ export abstract class PrimitiveComponent<
     return null
   }
 
+  getCollapsedSchematicBoxAncestor(): PrimitiveComponent | null {
+    let current: PrimitiveComponent | null = this.parent
+    while (current) {
+      if (
+        current.componentName === "Group" &&
+        current._parsedProps?.showAsSchematicBox
+      ) {
+        return current
+      }
+      current = current.parent
+    }
+    return null
+  }
+
   /**
    * Replaces text like {NAME}, {REF}, and {REFERENCE} with the
    * reference designator (name) of the parent NormalComponent.
