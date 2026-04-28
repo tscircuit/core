@@ -118,11 +118,13 @@ export class Connector<
   }
 
   private async _tryFetchPartCircuitJson(
-    fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>,
+    partsEngine: PartsEngine & {
+      fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>
+    },
     params: { supplierPartNumber?: string; manufacturerPartNumber?: string },
   ): Promise<AnyCircuitElement[] | null> {
     const maybeCircuitJson =
-      (await Promise.resolve(fetchPartCircuitJson(params))) ?? null
+      (await Promise.resolve(partsEngine.fetchPartCircuitJson(params))) ?? null
     if (Array.isArray(maybeCircuitJson) && maybeCircuitJson.length > 0) {
       return maybeCircuitJson
     }
@@ -130,23 +132,24 @@ export class Connector<
   }
 
   private async _fetchStandardConnectorCircuitJson(
-    fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>,
+    partsEngine: PartsEngine & {
+      fetchPartCircuitJson: NonNullable<PartsEngine["fetchPartCircuitJson"]>
+    },
     supplierPartNumbers: Record<string, string[] | undefined> | undefined,
     manufacturerPartNumber?: string,
   ): Promise<AnyCircuitElement[] | null> {
     for (const supplierPartNumber of this._getSupplierPartNumbersToTry(
       supplierPartNumbers,
     )) {
-      const circuitJson = await this._tryFetchPartCircuitJson(
-        fetchPartCircuitJson,
-        { supplierPartNumber },
-      )
+      const circuitJson = await this._tryFetchPartCircuitJson(partsEngine, {
+        supplierPartNumber,
+      })
       if (circuitJson) return circuitJson
     }
 
     if (!manufacturerPartNumber) return null
 
-    return this._tryFetchPartCircuitJson(fetchPartCircuitJson, {
+    return this._tryFetchPartCircuitJson(partsEngine, {
       manufacturerPartNumber,
     })
   }
@@ -346,8 +349,7 @@ export class Connector<
       )
       return
     }
-    const fetchPartCircuitJson = partsEngine?.fetchPartCircuitJson
-    if (!fetchPartCircuitJson) return
+    if (!partsEngine?.fetchPartCircuitJson) return
 
     this._hasStartedFootprintUrlLoad = true
 
@@ -378,7 +380,11 @@ export class Connector<
         }
 
         const circuitJson = await this._fetchStandardConnectorCircuitJson(
-          fetchPartCircuitJson,
+          partsEngine as PartsEngine & {
+            fetchPartCircuitJson: NonNullable<
+              PartsEngine["fetchPartCircuitJson"]
+            >
+          },
           supplierPartNumbers,
           sourceComponentForQuery.manufacturer_part_number,
         )
