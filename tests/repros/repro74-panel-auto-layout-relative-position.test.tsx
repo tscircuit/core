@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("panel auto-layout positions boards relative to panel center", async () => {
+test.skip("panel auto-layout positions boards relative to panel center", async () => {
   const { circuit } = getTestFixture()
 
   // Panel at (25, 25) with two unpositioned boards

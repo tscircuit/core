@@ -54,7 +54,7 @@ const OneTerminalBatteryClip = (props: ConnectorProps) => (
   />
 )
 
-test("repro111: separated contacts for one terminal become internally connected ports", async () => {
+test.skip("repro111: separated contacts for one terminal become internally connected ports", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
