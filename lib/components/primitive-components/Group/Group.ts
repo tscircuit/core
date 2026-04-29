@@ -644,7 +644,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       getSimpleRouteJsonFromCircuitJson({
         db,
         minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-        nominalTraceWidth: Number(props.nominalTraceWidth ?? 0.15),
+        nominalTraceWidth: Number(props.nominalTraceWidth),
         subcircuit_id: this.subcircuit_id,
         subcircuitComponent: this,
       })
