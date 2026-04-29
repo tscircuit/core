@@ -1,20 +1,51 @@
-import { copperPourProps, type CopperPourProps } from "@tscircuit/props"
 import {
   CopperPourPipelineSolver,
   convertCircuitJsonToInputProblem,
   initializeManifoldGeometry,
 } from "@tscircuit/copper-pour-solver"
-import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
-import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
-import type { Net } from "../Net"
+import { type CopperPourProps, copperPourProps } from "@tscircuit/props"
 import type { PcbCopperPour, SourceNet } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
+import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
+import type { Net } from "../Net"
 import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-inside-copper-pour"
 
 export type { CopperPourProps }
 
 export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
   isPcbPrimitive = true
+  private static _manifoldGeometryInitialized = false
+  private static _manifoldGeometryInitializationPromise: Promise<void> | null =
+    null
+  private static _manifoldGeometryInitializationError: string | null = null
+
+  private static async _initializeManifoldGeometryOnce() {
+    if (CopperPour._manifoldGeometryInitialized) return
+
+    CopperPour._manifoldGeometryInitializationPromise ??=
+      initializeManifoldGeometry()
+        .then(() => {
+          CopperPour._manifoldGeometryInitialized = true
+          CopperPour._manifoldGeometryInitializationError = null
+        })
+        .catch((error) => {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
+          CopperPour._manifoldGeometryInitialized = false
+          CopperPour._manifoldGeometryInitializationPromise = null
+          CopperPour._manifoldGeometryInitializationError = [
+            "Copper pour rendering requires manifold-3d to be initialized before solving geometry.",
+            `initializeManifoldGeometry() failed: ${errorMessage}`,
+            "Install manifold-3d in the runtime environment and ensure your bundler/serverless deployment includes manifold-3d/lib/wasm.js and the manifold WASM asset.",
+          ].join(" ")
+          throw new Error(CopperPour._manifoldGeometryInitializationError, {
+            cause: error,
+          })
+        })
+
+    await CopperPour._manifoldGeometryInitializationPromise
+  }
 
   get config() {
     return {
@@ -30,6 +61,25 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
   doInitialCreateNetsFromProps(): void {
     const { _parsedProps: props } = this
     createNetsFromProps(this, [props.connectsTo])
+  }
+
+  doInitialInitializeAsyncModules() {
+    if (CopperPour._manifoldGeometryInitialized) return
+    this._queueAsyncEffect("InitializeManifoldGeometry", async () => {
+      try {
+        await CopperPour._initializeManifoldGeometryOnce()
+      } catch (error) {
+        this.renderError({
+          type: "pcb_placement_error",
+          pcb_placement_error_id: `${this._renderId}_copper_pour_manifold_init_error`,
+          error_type: "pcb_placement_error",
+          message:
+            CopperPour._manifoldGeometryInitializationError ??
+            (error instanceof Error ? error.message : String(error)),
+          subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+        })
+      }
+    })
   }
 
   doInitialPcbCopperPourRender() {
@@ -58,19 +108,35 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
         sourceNet?.subcircuit_connectivity_map_key ||
         ""
 
-      const clearance = props.clearance ?? 0.2
-      const inputProblem = convertCircuitJsonToInputProblem(circuitJson, {
-        layer: props.layer,
-        pour_connectivity_key: pourConnectivityKey,
-        pad_margin: props.padMargin ?? clearance,
-        trace_margin: props.traceMargin ?? clearance,
-        board_edge_margin: props.boardEdgeMargin ?? clearance,
-        cutout_margin: props.cutoutMargin ?? clearance,
-        outline: props.outline,
-      })
+      if (!CopperPour._manifoldGeometryInitialized) return
 
-      await initializeManifoldGeometry()
-      const solver = new CopperPourPipelineSolver(inputProblem)
+      const clearance = props.clearance ?? 0.2
+      let inputProblem: ReturnType<typeof convertCircuitJsonToInputProblem>
+      let solver: InstanceType<typeof CopperPourPipelineSolver>
+      try {
+        inputProblem = convertCircuitJsonToInputProblem(circuitJson, {
+          layer: props.layer,
+          pour_connectivity_key: pourConnectivityKey,
+          pad_margin: props.padMargin ?? clearance,
+          trace_margin: props.traceMargin ?? clearance,
+          board_edge_margin: props.boardEdgeMargin ?? clearance,
+          cutout_margin: props.cutoutMargin ?? clearance,
+          outline: props.outline,
+        })
+
+        solver = new CopperPourPipelineSolver(inputProblem)
+      } catch (error) {
+        this.renderError({
+          type: "pcb_placement_error",
+          pcb_placement_error_id: `${this._renderId}_copper_pour_solver_prepare_error`,
+          error_type: "pcb_placement_error",
+          message: `Failed to prepare copper pour solver: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        })
+        return
+      }
 
       this.root!.emit("solver:started", {
         solverName: "CopperPourPipelineSolver",
@@ -78,7 +144,21 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
         componentName: this.props.name,
       })
 
-      const { brep_shapes } = solver.getOutput()
+      let brep_shapes: ReturnType<typeof solver.getOutput>["brep_shapes"]
+      try {
+        brep_shapes = solver.getOutput().brep_shapes
+      } catch (error) {
+        this.renderError({
+          type: "pcb_placement_error",
+          pcb_placement_error_id: `${this._renderId}_copper_pour_solver_output_error`,
+          error_type: "pcb_placement_error",
+          message: `Failed to solve copper pour geometry: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        })
+        return
+      }
 
       const coveredWithSolderMask = props.coveredWithSolderMask ?? false
 

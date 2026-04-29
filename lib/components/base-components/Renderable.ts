@@ -19,6 +19,7 @@ export const orderedRenderPhases = [
   "FetchPartFootprint",
   "InitializePortsFromChildren",
   "CreateNetsFromProps",
+  "InitializeAsyncModules",
   "AssignFallbackProps",
   "CreateTracesFromProps",
   "CreateTracesFromNetLabels",
@@ -105,6 +106,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PcbTraceHintRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbManualTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbCopperPourRender: [
+    "InitializeAsyncModules",
     "PcbFootprintStringRender",
     "FetchPartFootprint",
     "PcbTraceRender",
