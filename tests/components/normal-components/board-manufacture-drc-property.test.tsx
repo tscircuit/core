@@ -8,7 +8,7 @@ test("board manufacture DRC properties are set correctly", async () => {
   circuit.add(
     <board
       height={20}
-      minTraceWidth={0.5}
+      minTraceWidth={0.3}
       minViaHoleDiameter={0.2}
       minViaPadDiameter={0.3}
       minViaHoleEdgeToViaHoleEdgeClearance={0.15}
@@ -33,7 +33,7 @@ test("board manufacture DRC properties are set correctly", async () => {
   const circuitJson = await circuit.getCircuitJson()
 
   const pcb_board = circuit.db.pcb_board.list()[0]
-  expect(pcb_board.min_trace_width).toBe(0.5)
+  expect(pcb_board.min_trace_width).toBe(0.3)
   expect(pcb_board.min_via_hole_diameter).toBe(0.2)
   expect(pcb_board.min_via_pad_diameter).toBe(0.3)
   expect(pcb_board.min_via_hole_edge_to_via_hole_edge_clearance).toBe(0.15)
@@ -44,7 +44,13 @@ test("board manufacture DRC properties are set correctly", async () => {
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     db: circuit.db,
   })
-  expect(simpleRouteJson.minTraceWidth).toBe(0.5)
+  expect(simpleRouteJson.minTraceWidth).toBe(0.3)
+
+  const pcbTrace = circuit.db.pcb_trace.list()[0]
+  const routeWireWidths = pcbTrace.route
+    .filter((point) => point.route_type === "wire")
+    .map((point) => point.width)
+  expect(routeWireWidths).toEqual([0.3, 0.3])
 
   expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
 })

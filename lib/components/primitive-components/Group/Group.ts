@@ -513,7 +513,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             body: JSON.stringify({
               input_simple_route_json: getSimpleRouteJsonFromCircuitJson({
                 db,
-                minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
+                minTraceWidth: Number(props.minTraceWidth ?? 0.15),
                 nominalTraceWidth: this.props.nominalTraceWidth,
                 subcircuit_id: this.subcircuit_id,
                 subcircuitComponent: this,
@@ -643,8 +643,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
         db,
-        minTraceWidth: this.props.autorouter?.minTraceWidth ?? 0.15,
-        nominalTraceWidth: this.props.nominalTraceWidth,
+        minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+        nominalTraceWidth: Number(props.nominalTraceWidth),
         subcircuit_id: this.subcircuit_id,
         subcircuitComponent: this,
       })
