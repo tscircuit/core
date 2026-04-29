@@ -2,13 +2,13 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
-test("board manufacture DRC properties are set correctly", () => {
+test("board manufacture DRC properties are set correctly", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board
       height={20}
-      minTraceWidth={0.2}
+      minTraceWidth={0.5}
       minViaHoleDiameter={0.2}
       minViaPadDiameter={0.3}
       minViaHoleEdgeToViaHoleEdgeClearance={0.15}
@@ -17,13 +17,23 @@ test("board manufacture DRC properties are set correctly", () => {
       minPlatedHoleDrillEdgeToDrillEdgeClearance={0.2}
     >
       <resistor name="R1" resistance="10k" footprint="0402" pcbX={5} pcbY={5} />
+      <resistor
+        name="R2"
+        resistance="10k"
+        footprint="0402"
+        pcbX={5}
+        pcbY={15}
+      />
+      <trace from=".R1 > .pin1" to=".R2 > .pin1" />
     </board>,
   )
 
-  circuit.render()
+  await circuit.renderUntilSettled()
+
+  const circuitJson = await circuit.getCircuitJson()
 
   const pcb_board = circuit.db.pcb_board.list()[0]
-  expect(pcb_board.min_trace_width).toBe(0.2)
+  expect(pcb_board.min_trace_width).toBe(0.5)
   expect(pcb_board.min_via_hole_diameter).toBe(0.2)
   expect(pcb_board.min_via_pad_diameter).toBe(0.3)
   expect(pcb_board.min_via_hole_edge_to_via_hole_edge_clearance).toBe(0.15)
@@ -34,5 +44,7 @@ test("board manufacture DRC properties are set correctly", () => {
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     db: circuit.db,
   })
-  expect(simpleRouteJson.minTraceWidth).toBe(0.2)
+  expect(simpleRouteJson.minTraceWidth).toBe(0.5)
+
+  expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
 })
