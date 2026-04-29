@@ -50,6 +50,15 @@ export class Subpanel extends Group<typeof subpanelProps> {
     return "none"
   }
 
+  /**
+   * Subpanels/Panels are PCB panelization containers. Their child boards render
+   * schematics independently, so the container itself should not create a
+   * schematic group, run schematic layout, or invoke schematic trace solving.
+   */
+  override doInitialSchematicComponentRender(): void {}
+  override doInitialSchematicLayout(): void {}
+  override doInitialSchematicTraceRender(): void {}
+
   add(component: PrimitiveComponent) {
     // Subpanel can contain boards and other subpanels
     if (
