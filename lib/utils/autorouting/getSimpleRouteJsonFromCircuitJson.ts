@@ -18,7 +18,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   db,
   circuitJson,
   subcircuit_id,
-  minTraceWidth = 0.1,
+  minTraceWidth,
   nominalTraceWidth,
   subcircuitComponent,
 }: {
@@ -463,7 +463,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       // TODO add traces so that we don't run into things routed by another
       // subcircuit
       layerCount: board?.num_layers ?? 2,
-      minTraceWidth,
+      minTraceWidth: minTraceWidth ?? board?.min_trace_width ?? 0.1,
       minViaDiameter: board?.min_via_pad_diameter,
       minViaHoleDiameter: board?.min_via_hole_diameter,
       minViaPadDiameter: board?.min_via_pad_diameter,
