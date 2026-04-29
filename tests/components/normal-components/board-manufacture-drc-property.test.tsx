@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
 test("board manufacture DRC properties are set correctly", () => {
   const { circuit } = getTestFixture()
@@ -29,4 +30,9 @@ test("board manufacture DRC properties are set correctly", () => {
   expect(pcb_board.min_trace_to_pad_edge_clearance).toBe(0.1)
   expect(pcb_board.min_pad_edge_to_pad_edge_clearance).toBe(0.1)
   expect(pcb_board.min_plated_hole_drill_edge_to_drill_edge_clearance).toBe(0.2)
+
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    db: circuit.db,
+  })
+  expect(simpleRouteJson.minTraceWidth).toBe(0.2)
 })
