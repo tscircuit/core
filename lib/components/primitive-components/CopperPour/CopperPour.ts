@@ -2,6 +2,7 @@ import { copperPourProps, type CopperPourProps } from "@tscircuit/props"
 import {
   CopperPourPipelineSolver,
   convertCircuitJsonToInputProblem,
+  initializeManifoldGeometry,
 } from "@tscircuit/copper-pour-solver"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
@@ -68,6 +69,7 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
         outline: props.outline,
       })
 
+      await initializeManifoldGeometry()
       const solver = new CopperPourPipelineSolver(inputProblem)
 
       this.root!.emit("solver:started", {
