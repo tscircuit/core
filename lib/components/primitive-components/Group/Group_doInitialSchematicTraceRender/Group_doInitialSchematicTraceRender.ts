@@ -32,8 +32,26 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     userNetIdToSck,
   } = createSchematicTraceSolverInputProblem(group)
 
+  if (inputProblem.chips.length === 0) return
+
   const schematicPortIdsWithPreExistingNetLabels =
     getSchematicPortIdsWithAssignedNetLabels(group)
+
+  const hasRouteableSchematicConnections =
+    inputProblem.directConnections.length > 0 ||
+    inputProblem.netConnections.length > 0
+
+  if (!hasRouteableSchematicConnections) {
+    insertNetLabelsForPortsMissingTrace({
+      group,
+      allSourceAndSchematicPortIdsInScope,
+      schPortIdToSourcePortId,
+      sckToSourceNet,
+      pinIdToSchematicPortId,
+      schematicPortIdsWithPreExistingNetLabels,
+    })
+    return
+  }
 
   // Optional debug output
   if (debug.enabled) {
