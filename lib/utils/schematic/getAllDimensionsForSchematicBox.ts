@@ -456,10 +456,14 @@ export const getAllDimensionsForSchematicBox = (
       return {
         width:
           resolvedSchWidth +
-          (sidePinCounts.leftSize || sidePinCounts.rightSize ? 0.4 : 0),
+          (sidePinCounts.leftSize || sidePinCounts.rightSize
+            ? portDistanceFromEdge
+            : 0),
         height:
           schHeight +
-          (sidePinCounts.topSize || sidePinCounts.bottomSize ? 0.4 : 0),
+          (sidePinCounts.topSize || sidePinCounts.bottomSize
+            ? portDistanceFromEdge
+            : 0),
       }
     },
     pinCount,

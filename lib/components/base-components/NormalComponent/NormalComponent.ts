@@ -1561,6 +1561,7 @@ export class NormalComponent<
       schWidth: props.schWidth,
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
+      portDistanceFromEdge: (props as any).schPinLength,
       numericSchPinStyle: getNumericSchPinStyle(
         props.schPinStyle,
         allPinLabels,
