@@ -730,8 +730,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // Create schematic_line for port stem when schStemLength or parent schPinLength is specified
     const effectiveStemLength =
-      props.schStemLength ??
-      (parentNormalComponent?.props as any)?.schPinLength
+      props.schStemLength ?? (parentNormalComponent?.props as any)?.schPinLength
     if (effectiveStemLength !== undefined && effectiveStemLength !== 0) {
       const schStemLength = effectiveStemLength
       const { direction } = props

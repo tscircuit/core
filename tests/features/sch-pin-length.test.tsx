@@ -17,7 +17,7 @@ test("schPinLength controls the schematic pin stem length", async () => {
       <chip
         name="U2"
         schX={5}
-        schPinLength={1}
+        {...({ schPinLength: 1 } as any)}
         footprint="soic8"
         schPinArrangement={{
           leftSide: { pins: [1, 2, 3, 4], direction: "top-to-bottom" },
