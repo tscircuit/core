@@ -249,7 +249,7 @@ export class Connector<
 
     const { _parsedProps: props } = this
     const pinCount = this._getPrimaryPinCount()
-    const pinSpacing = props.schPinSpacing ?? 0.2
+    const pinSpacing = 0.2
     const pinLabelsFromPorts = this._getPinLabelsFromPorts()
     const allPinLabels: Record<string, string> = {
       ...pinLabelsFromPorts,

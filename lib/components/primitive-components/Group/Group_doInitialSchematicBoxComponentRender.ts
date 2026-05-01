@@ -75,6 +75,16 @@ export const Group_doInitialSchematicBoxComponentRender = (
   const { db } = group.root!
   const props = group._parsedProps
 
+  if (props.schPinSpacing !== undefined) {
+    db.source_property_ignored_warning.insert({
+      source_component_id: group.source_group_id ?? "",
+      property_name: "schPinSpacing",
+      error_type: "source_property_ignored_warning",
+      message:
+        "schPinSpacing is deprecated and will be ignored. Pin spacing is always 0.2.",
+    })
+  }
+
   normalizeGroupSchematicBoxPorts(group)
 
   const dimensions = group._getSchematicBoxDimensions()
@@ -95,7 +105,7 @@ export const Group_doInitialSchematicBoxComponentRender = (
     is_schematic_group: true,
     is_box_with_pins: true,
     port_arrangement: underscorifyPortArrangement(schPortArrangement!),
-    pin_spacing: props.schPinSpacing ?? 0.2,
+    pin_spacing: 0.2,
     pin_styles: underscorifyPinStyles(
       props.schPinStyle,
       portLabels,
