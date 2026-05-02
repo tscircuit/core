@@ -97,14 +97,17 @@ test("repro114 KiCad SMD switch duplicate pad numbers are not split into routabl
     .list()
     .find(
       (component) =>
-        component.source_component_id === swSourceComponent?.source_component_id,
+        component.source_component_id ===
+        swSourceComponent?.source_component_id,
     )
   const pads = circuit.db.pcb_smtpad
     .list()
     .filter((pad) => pad.pcb_component_id === swPcbComponent?.pcb_component_id)
   const ports = circuit.db.pcb_port
     .list()
-    .filter((port) => port.pcb_component_id === swPcbComponent?.pcb_component_id)
+    .filter(
+      (port) => port.pcb_component_id === swPcbComponent?.pcb_component_id,
+    )
 
   expect(pads.map((pad) => pad.port_hints?.join(","))).toEqual([
     "1",
