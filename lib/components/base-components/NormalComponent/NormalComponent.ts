@@ -498,6 +498,24 @@ export class NormalComponent<
     if (portsToCreate.length > 0) {
       this.addAll(portsToCreate)
     }
+    this._markPcbPrimitivePortMatchesDirty()
+  }
+
+  private _markPcbPrimitivePortMatchesDirty(): void {
+    const markPcbPrimitiveChildren = (component: any) => {
+      for (const child of component.children ?? []) {
+        if (child.isPcbPrimitive) {
+          if (child.renderPhaseStates?.PortMatching?.initialized) {
+            child.updatePortMatching?.()
+          } else {
+            child._markDirty?.("PortMatching")
+          }
+        }
+        markPcbPrimitiveChildren(child)
+      }
+    }
+
+    markPcbPrimitiveChildren(this)
   }
 
   _getImpliedFootprintString(): string | null {

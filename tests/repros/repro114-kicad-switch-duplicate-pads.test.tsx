@@ -62,7 +62,7 @@ const kicadSmdSwitchWithDuplicatePads = [
   },
 ] as any[]
 
-test("repro114 KiCad SMD switch duplicate pad numbers are not split into routable physical ports", async () => {
+test("repro114 KiCad SMD switch duplicate pad numbers split into routable physical ports", async () => {
   const { circuit } = getTestFixture({
     platform: {
       footprintLibraryMap: {
@@ -97,14 +97,17 @@ test("repro114 KiCad SMD switch duplicate pad numbers are not split into routabl
     .list()
     .find(
       (component) =>
-        component.source_component_id === swSourceComponent?.source_component_id,
+        component.source_component_id ===
+        swSourceComponent?.source_component_id,
     )
   const pads = circuit.db.pcb_smtpad
     .list()
     .filter((pad) => pad.pcb_component_id === swPcbComponent?.pcb_component_id)
   const ports = circuit.db.pcb_port
     .list()
-    .filter((port) => port.pcb_component_id === swPcbComponent?.pcb_component_id)
+    .filter(
+      (port) => port.pcb_component_id === swPcbComponent?.pcb_component_id,
+    )
 
   expect(pads.map((pad) => pad.port_hints?.join(","))).toEqual([
     "1",
@@ -112,7 +115,7 @@ test("repro114 KiCad SMD switch duplicate pad numbers are not split into routabl
     "2",
     "2",
   ])
-  expect(pads.every((pad) => pad.pcb_port_id === null)).toBe(true)
-  expect(ports).toHaveLength(0)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(pads.every((pad) => pad.pcb_port_id !== null)).toBe(true)
+  expect(ports).toHaveLength(4)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
 })

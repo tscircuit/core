@@ -83,6 +83,19 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     port.registerMatch(this)
   }
 
+  updatePortMatching(): void {
+    if (this.matchedPort) {
+      this.matchedPort.matchedComponents =
+        this.matchedPort.matchedComponents.filter(
+          (component) => component !== this,
+        )
+    }
+    this.matchedPort = null
+    this.doInitialPortMatching()
+    const matchedPort = this.matchedPort as Port | null
+    matchedPort?._markDirty("PcbPortRender")
+  }
+
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
@@ -334,6 +347,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     db.pcb_smtpad.update(this.pcb_smtpad_id!, {
       pcb_port_id: this.matchedPort?.pcb_port_id!,
     })
+  }
+
+  updatePcbPortAttachment(): void {
+    this.doInitialPcbPortAttachment()
   }
 
   _getPcbCircuitJsonBounds(): {

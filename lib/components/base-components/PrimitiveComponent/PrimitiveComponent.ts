@@ -983,6 +983,7 @@ export abstract class PrimitiveComponent<
     component.onAddToParent(this)
     component.parent = this
     this.children.push(component)
+    this._clearSelectorCacheToRoot()
   }
 
   addAll(components: PrimitiveComponent[]) {
@@ -995,6 +996,13 @@ export abstract class PrimitiveComponent<
     this.children = this.children.filter((c) => c !== component)
     this.childrenPendingRemoval.push(component)
     component.shouldBeRemoved = true
+    this._clearSelectorCacheToRoot()
+  }
+
+  _clearSelectorCacheToRoot() {
+    this._cachedSelectAllQueries.clear()
+    this._cachedSelectOneQueries.clear()
+    this.parent?._clearSelectorCacheToRoot?.()
   }
 
   getSubcircuitSelector(): string {
