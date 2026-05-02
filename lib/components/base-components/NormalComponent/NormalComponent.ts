@@ -648,6 +648,17 @@ export class NormalComponent<
       }
     }
 
+    // Warn when the deprecated schPinSpacing prop is passed
+    if (this._parsedProps.schPinSpacing !== undefined && this.root?.db) {
+      this.root.db.source_property_ignored_warning.insert({
+        source_component_id: this.source_component_id!,
+        property_name: "schPinSpacing",
+        error_type: "source_property_ignored_warning",
+        message:
+          "schPinSpacing is deprecated and will be ignored. Pin spacing is always 0.2.",
+      })
+    }
+
     const { schematicSymbolName } = this.config
     const { _parsedProps: props } = this
 
@@ -782,7 +793,7 @@ export class NormalComponent<
 
       port_arrangement: underscorifyPortArrangement(schPortArrangement!),
 
-      pin_spacing: props.schPinSpacing ?? 0.2,
+      pin_spacing: 0.2,
 
       // @ts-ignore soup needs to support distance for pin_styles
       pin_styles: underscorifyPinStyles(props.schPinStyle, props.pinLabels),
@@ -1548,7 +1559,7 @@ export class NormalComponent<
 
     const pinCount = this._getPrimaryPinCount()
 
-    const pinSpacing = props.schPinSpacing ?? 0.2
+    const pinSpacing = 0.2
 
     const pinLabelsFromPorts = this._getPinLabelsFromPorts()
     // Merge with props.pinLabels for label-to-pin-number mapping
