@@ -273,12 +273,12 @@ test("USB-C PCB traces not routing as intended for GND & VBUS pins", async () =>
           </footprint>
         }
       />
-      <trace from=".PB1 > .pin2" to=".U1 > .VBUS1" />
+      <trace from=".PB1 > .pin3" to=".U1 > .VBUS1" />
       <trace from=".PB1 > .pin1" to=".U1 > .GND2" />
 
       {/* if you uncomment these traces, it will route */}
-      {/* <trace from=".PB1 > .pin2" to=".U1 > .GND1" /> */}
-      {/* <trace from=".PB1 > .pin2" to=".U1 > .VBUS2" /> */}
+      {/* <trace from=".PB1 > .pin3" to=".U1 > .GND1" /> */}
+      {/* <trace from=".PB1 > .pin3" to=".U1 > .VBUS2" /> */}
     </board>,
   )
 

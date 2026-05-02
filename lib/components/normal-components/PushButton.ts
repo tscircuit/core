@@ -24,7 +24,38 @@ export class PushButton extends NormalComponent<
   }
 
   get defaultInternallyConnectedPinNames(): string[][] {
-    return []
+    const { pinLabels } = this._parsedProps
+
+    if (pinLabels) {
+      if (Array.isArray(pinLabels) && pinLabels.length < 4) {
+        return []
+      }
+
+      if (
+        !Array.isArray(pinLabels) &&
+        !("pin3" in pinLabels) &&
+        !("pin4" in pinLabels)
+      ) {
+        return []
+      }
+    }
+
+    const pinNumbers = new Set(
+      this._getAllPortsFromChildren()
+        .map((port) => port.props.pinNumber)
+        .filter(
+          (pinNumber): pinNumber is number => typeof pinNumber === "number",
+        ),
+    )
+
+    if (![1, 2, 3, 4].every((pinNumber) => pinNumbers.has(pinNumber))) {
+      return []
+    }
+
+    return [
+      ["pin1", "pin2"],
+      ["pin3", "pin4"],
+    ]
   }
 
   override initPorts() {
@@ -38,26 +69,35 @@ export class PushButton extends NormalComponent<
     const symPort1 = symbol.ports.find((p) => p.labels.includes("1"))
     const symPort2 = symbol.ports.find((p) => p.labels.includes("2"))
 
-    const ports = this.selectAll("port")
-    const pin1Port = ports.find((p) => p.props.pinNumber === 1)! as Port
-    const pin2Port = ports.find((p) => p.props.pinNumber === 2)! as Port
-    const pin3Port = ports.find((p) => p.props.pinNumber === 3)! as Port
-    const pin4Port = ports.find((p) => p.props.pinNumber === 4)! as Port
+    const ports = this.selectAll("port") as Port[]
+    const pin1Port = ports.find((p) => p.props.pinNumber === 1) as
+      | Port
+      | undefined
+    const pin2Port = ports.find((p) => p.props.pinNumber === 2) as
+      | Port
+      | undefined
 
-    const { internallyConnectedPins } = this._parsedProps
+    const internallyConnectedPins = this.internallyConnectedPinNames
+
+    if (!pin1Port || !pin2Port) return
 
     pin1Port.schematicSymbolPortDef = symPort1!
 
     if (!internallyConnectedPins || internallyConnectedPins.length === 0) {
       pin2Port.schematicSymbolPortDef = symPort2!
+      return
     }
 
     // Find the lowest-numbered pin that's not connected to pin1
-    for (const [pn, port] of [
-      [2, pin2Port],
-      [3, pin3Port],
-      [4, pin4Port],
-    ] as const) {
+    for (const port of ports
+      .filter((port) => {
+        const pinNumber = port.props.pinNumber
+        return typeof pinNumber === "number" && pinNumber >= 2 && pinNumber <= 4
+      })
+      .sort(
+        (portA, portB) => portA.props.pinNumber! - portB.props.pinNumber!,
+      )) {
+      const pn = port.props.pinNumber!
       const internallyConnectedRow = internallyConnectedPins?.find(
         ([pin1, pin2]) => pin1 === `pin${pn}` || pin2 === `pin${pn}`,
       )
