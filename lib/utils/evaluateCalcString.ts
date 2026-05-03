@@ -21,10 +21,10 @@ type Token = NumberToken | StringToken
 
 const defaultUnits: Record<string, number> = {
   mm: 1,
-  // You can add more if you need them:
-  // cm: 10,
-  // in: 25.4,
-  // mil: 0.0254,
+  cm: 10,
+  in: 25.4,
+  mil: 0.0254,
+  thou: 0.0254,
 }
 
 export function evaluateCalcString(

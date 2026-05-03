@@ -184,6 +184,51 @@ export class NormalComponent<
       invalidPinLabelsMessages = messages
     }
 
+    // Normalize alphanumeric pinLabels keys (e.g. KiCad-style "A1", "GND", "CC1")
+    // to sequential "pin<N>" format. The original alphanumeric key is preserved as an
+    // extra alias so pins remain addressable by their original name.
+    if (filteredProps.pinLabels && !Array.isArray(filteredProps.pinLabels)) {
+      const hasAlphanumericKey = Object.keys(filteredProps.pinLabels).some(
+        (k) => getPinNumberFromPinLabelsKey(k) === null,
+      )
+
+      if (hasAlphanumericKey) {
+        const normalized: Record<string, string | string[]> = {}
+        // First pass: collect all explicitly-assigned numeric keys to avoid collision
+        const usedPinNumbers = new Set<number>()
+        for (const k of Object.keys(filteredProps.pinLabels)) {
+          const n = getPinNumberFromPinLabelsKey(k)
+          if (n !== null) usedPinNumbers.add(n)
+        }
+        let nextPin = 1
+        for (const [k, labelOrLabels] of Object.entries(
+          filteredProps.pinLabels as Record<string, string | string[]>,
+        )) {
+          const numericPinNumber = getPinNumberFromPinLabelsKey(k)
+          if (numericPinNumber !== null) {
+            // Already a numeric key — keep as-is
+            normalized[k] = labelOrLabels
+          } else {
+            // Alphanumeric key — find next available pin number
+            while (usedPinNumbers.has(nextPin)) nextPin++
+            const pinKey = `pin${nextPin}`
+            usedPinNumbers.add(nextPin)
+            nextPin++
+            // Include the original alphanumeric key as an alias
+            const labels: string[] = Array.isArray(labelOrLabels)
+              ? [...(labelOrLabels as string[])]
+              : [labelOrLabels as string]
+            // Only add the key as an alias if it's not already listed
+            if (!labels.includes(k)) {
+              labels.push(k)
+            }
+            normalized[pinKey] = labels
+          }
+        }
+        filteredProps.pinLabels = normalized
+      }
+    }
+
     super(filteredProps)
 
     if (filteredProps.pinLabels && !Array.isArray(filteredProps.pinLabels)) {
