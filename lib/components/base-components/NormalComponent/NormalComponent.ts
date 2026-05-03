@@ -68,6 +68,7 @@ import { CadAssembly } from "../../primitive-components/CadAssembly"
 import { CadModel } from "../../primitive-components/CadModel"
 import { Footprint } from "../../primitive-components/Footprint"
 import { Port } from "../../primitive-components/Port"
+import { SilkscreenText } from "../../primitive-components/SilkscreenText"
 import { PrimitiveComponent } from "../PrimitiveComponent"
 import type { INormalComponent } from "./INormalComponent"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
@@ -1160,6 +1161,29 @@ export class NormalComponent<
       )
       if (!hasFootprintChild) {
         this.add(fpElm)
+      }
+
+      // Add a fallback reference designator silkscreen text if the inline
+      // footprint does not already include one. Built-in (string) footprints
+      // generate a pcb_silkscreen_text via @tscircuit/footprinter, but inline
+      // <footprint> JSX only contains the pads/holes the user explicitly wrote.
+      // Without this, the KiCad PCB export has no fp_text reference element.
+      const footprintChild = this.children.find(
+        (c) => c.componentName === "Footprint",
+      ) as Footprint | undefined
+      if (footprintChild) {
+        const hasSilkscreenText = footprintChild.children.some(
+          (c) => c.componentName === "SilkscreenText",
+        )
+        if (!hasSilkscreenText && this.name) {
+          const refText = new SilkscreenText({
+            text: this.name,
+            pcbX: 0,
+            pcbY: 0,
+            anchorAlignment: "center",
+          })
+          footprintChild.add(refText)
+        }
       }
     }
 
