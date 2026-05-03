@@ -19,6 +19,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   circuitJson,
   subcircuit_id,
   minTraceWidth,
+  minTraceToPadEdgeClearance,
   nominalTraceWidth,
   subcircuitComponent,
 }: {
@@ -27,6 +28,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuit_id?: string | null
   minTraceWidth?: number
   nominalTraceWidth?: number
+  minTraceToPadEdgeClearance?: number
   subcircuitComponent?: {
     selectAll(selector: string): unknown[]
   }
@@ -469,6 +471,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       minViaPadDiameter: board?.min_via_pad_diameter,
       min_via_hole_diameter: board?.min_via_hole_diameter,
       min_via_pad_diameter: board?.min_via_pad_diameter,
+      minTraceToPadEdgeClearance:
+        minTraceToPadEdgeClearance ?? board?.min_trace_to_pad_edge_clearance,
       nominalTraceWidth,
       outline: board?.outline?.map((point) => ({ ...point })),
     },

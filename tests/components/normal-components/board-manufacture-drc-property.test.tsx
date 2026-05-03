@@ -45,6 +45,7 @@ test("board manufacture DRC properties are set correctly", async () => {
     db: circuit.db,
   })
   expect(simpleRouteJson.minTraceWidth).toBe(0.3)
+  expect(simpleRouteJson.minTraceToPadEdgeClearance).toBe(0.1)
 
   const pcbTrace = circuit.db.pcb_trace.list()[0]
   const routeWireWidths = pcbTrace.route
