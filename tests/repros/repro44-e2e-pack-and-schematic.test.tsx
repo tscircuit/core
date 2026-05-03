@@ -89,23 +89,23 @@ test("repro44 - pcbPack and schematic", async () => {
     [
       {
         "center": {
-          "x": 0.625,
-          "y": -4.08,
+          "x": 1.77,
+          "y": -6.11,
         },
-        "height": 1.75,
+        "height": 4.05,
         "layer": "top",
         "name": "C1",
-        "width": 4.05,
+        "width": 1.75,
       },
       {
         "center": {
-          "x": 5.075,
-          "y": -4.865,
+          "x": 4.85,
+          "y": -5.895,
         },
-        "height": 1.4,
+        "height": 2.85,
         "layer": "top",
         "name": "C2",
-        "width": 2.85,
+        "width": 1.4,
       },
       {
         "center": {
@@ -119,7 +119,7 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       {
         "center": {
-          "x": 5.075,
+          "x": 5.58,
           "y": 0.635,
         },
         "height": 1.4,
@@ -129,8 +129,8 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       {
         "center": {
-          "x": 5.075,
-          "y": -1.765,
+          "x": 5.58,
+          "y": -2.265,
         },
         "height": 1.4,
         "layer": "top",
@@ -139,7 +139,7 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       {
         "center": {
-          "x": -5.075,
+          "x": -5.58,
           "y": -0.635,
         },
         "height": 1.4,
