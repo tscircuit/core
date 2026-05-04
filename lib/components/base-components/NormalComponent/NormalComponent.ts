@@ -2107,6 +2107,7 @@ export class NormalComponent<
    * Returns true if this component has explicit PCB positioning (pcbX or pcbY)
    * and should not be moved by automatic packing/layout algorithms
    */
+
   isRelativelyPositioned(): boolean {
     const rawProps = this.props as any
     return (
