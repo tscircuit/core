@@ -6,6 +6,19 @@ import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { formatSiUnit } from "format-si-unit"
 
+const RESISTOR_FOOTPRINT_ALIASES = new Set([
+  "01005",
+  "0201",
+  "0402",
+  "0603",
+  "0805",
+  "1206",
+  "1210",
+  "1812",
+  "2010",
+  "2512",
+])
+
 export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
@@ -28,6 +41,14 @@ export class Resistor extends NormalComponent<
         pin2: ["cathode", "neg", "right"],
       },
     })
+  }
+
+  getFootprinterString(): string | null {
+    const baseFootprint = super.getFootprinterString()
+    if (baseFootprint && RESISTOR_FOOTPRINT_ALIASES.has(baseFootprint)) {
+      return `res${baseFootprint}`
+    }
+    return baseFootprint
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
