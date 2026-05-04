@@ -504,10 +504,16 @@ export class NormalComponent<
     return null
   }
 
+  getResolvedFootprint(): any {
+    if (typeof this.props.footprint === "string") {
+      return this.getFootprinterString() ?? this.props.footprint
+    }
+    return this.props.footprint ?? this._getImpliedFootprintString?.()
+  }
+
   _addChildrenFromStringFootprint() {
     const { pcbRotation, pinLabels, pcbPinLabels } = this.props
-    let { footprint } = this.props
-    footprint ??= this._getImpliedFootprintString?.()
+    const footprint = this.getResolvedFootprint()
     if (!footprint) return
 
     if (typeof footprint === "string") {
@@ -888,7 +894,7 @@ export class NormalComponent<
         : undefined,
     })
 
-    const footprint = props.footprint ?? this._getImpliedFootprintString()
+    const footprint = this.getResolvedFootprint()
 
     // Check if we have a Footprint child (e.g., from inflated circuit JSON)
     const hasFootprintChild = this.children.some(
@@ -1283,7 +1289,7 @@ export class NormalComponent<
       ...opts,
       inferredInternallyConnectedPinNames,
     }
-    let { footprint } = this.props
+    let footprint = this.getResolvedFootprint()
 
     if (
       typeof footprint === "string" &&
@@ -1601,8 +1607,9 @@ export class NormalComponent<
     const cadModelProp = this._parsedProps.cadModel
     const cadModel =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
+    const resolvedFootprint = this.getResolvedFootprint()
     const footprint =
-      this.getFootprinterString() ?? this._getImpliedFootprintString()
+      typeof resolvedFootprint === "string" ? resolvedFootprint : null
 
     if (!this.pcb_component_id) return
     if (!cadModel && !footprint) return
@@ -1827,10 +1834,9 @@ export class NormalComponent<
     if (!source_component) return
     if (source_component.supplier_part_numbers) return
 
-    let footprinterString: string | undefined
-    if (this.props.footprint && typeof this.props.footprint === "string") {
-      footprinterString = this.props.footprint
-    }
+    const resolvedFootprint = this.getResolvedFootprint()
+    const footprinterString =
+      typeof resolvedFootprint === "string" ? resolvedFootprint : undefined
 
     const supplierPartNumbersMaybePromise = this._getSupplierPartNumbers(
       partsEngine,
