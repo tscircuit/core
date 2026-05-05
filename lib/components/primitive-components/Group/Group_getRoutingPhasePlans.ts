@@ -1,5 +1,8 @@
+import type { AutorouterProp } from "@tscircuit/props"
+import type { z } from "zod"
 import type { Net } from "../Net"
 import type { Trace } from "../Trace/Trace"
+import type { AutoroutingPhase } from "../AutoroutingPhase"
 import type { Group } from "./Group"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
 
@@ -42,7 +45,7 @@ function getTraceRoutingPhaseIndex(trace: Trace): number | null {
   let routingPhaseIndex: number | null = null
   const connectedNets = trace._findConnectedNets().nets
   for (const net of connectedNets) {
-    const netRoutingPhaseIndex = net.props.routingPhaseIndex
+    const netRoutingPhaseIndex = getNetRoutingPhaseIndex(net)
     if (typeof netRoutingPhaseIndex === "number") {
       if (
         routingPhaseIndex === null ||
@@ -56,8 +59,25 @@ function getTraceRoutingPhaseIndex(trace: Trace): number | null {
   return routingPhaseIndex
 }
 
+function getAutoroutersByPhaseIndex(
+  group: Group<z.ZodType>,
+): Map<number | null, AutorouterProp> {
+  const autoroutingPhases = group.selectAll(
+    "autoroutingphase",
+  ) as AutoroutingPhase[]
+  const autoroutersByPhaseIndex = new Map<number | null, AutorouterProp>()
+
+  for (const autoroutingPhase of autoroutingPhases) {
+    const { phaseIndex, autorouter } = autoroutingPhase._parsedProps
+    if (autorouter === undefined) continue
+    autoroutersByPhaseIndex.set(phaseIndex ?? null, autorouter)
+  }
+
+  return autoroutersByPhaseIndex
+}
+
 export function Group_getRoutingPhasePlans(
-  group: Group<any>,
+  group: Group<z.ZodType>,
 ): RoutingPhasePlan[] {
   const traces = group.selectAll("trace") as Trace[]
   const nets = group.selectAll("net") as Net[]
@@ -65,6 +85,7 @@ export function Group_getRoutingPhasePlans(
   if (traces.length === 0 && nets.length === 0) return []
 
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
+  const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
 
   for (const net of nets) {
     const routingPhaseIndex = getNetRoutingPhaseIndex(net)
@@ -81,5 +102,11 @@ export function Group_getRoutingPhasePlans(
     ).traces.push(trace)
   }
 
-  return Array.from(plansByPhaseIndex.values()).sort(compareRoutingPhasePlans)
+  const plans = Array.from(plansByPhaseIndex.values()).sort(
+    compareRoutingPhasePlans,
+  )
+  for (const plan of plans) {
+    plan.autorouter = autoroutersByPhaseIndex.get(plan.routingPhaseIndex)
+  }
+  return plans
 }
