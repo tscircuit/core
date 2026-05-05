@@ -3,7 +3,7 @@ import type { PcbGroup } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { renderToCircuitJson } from "tests/fixtures/renderToCircuitJson"
 
-test.skip("subcircuit-circuit-json11 - pcbAnchorAlignment positions autosized circuitJson subcircuit", async () => {
+test("subcircuit-circuit-json11 - pcbAnchorAlignment positions autosized circuitJson subcircuit", async () => {
   const { circuit } = getTestFixture()
 
   const subcircuitCircuitJson = await renderToCircuitJson(

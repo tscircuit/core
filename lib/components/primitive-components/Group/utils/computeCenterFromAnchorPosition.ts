@@ -9,7 +9,6 @@ export function computeCenterFromAnchorPosition(
   const alignment = pcbAnchorAlignment
 
   if (typeof width !== "number" || typeof height !== "number") {
-    console.log("width or height is not a number")
     return anchorPosition
   }
 
