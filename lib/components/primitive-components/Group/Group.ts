@@ -350,18 +350,44 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       centerY += (padTop - padBottom) / 2
     }
 
-    // Preserve explicit positioning when pcbX/pcbY are set
-    // Otherwise use calculated center from child bounds
-    const center = hasExplicitPositioning
-      ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
+    const resolvedWidth = Number(props.width ?? width)
+    const resolvedHeight = Number(props.height ?? height)
+    const existingPcbGroup = db.pcb_group.get(this.pcb_group_id)
+
+    // Preserve explicit positioning when pcbX/pcbY are set. If an anchor
+    // alignment is provided, recompute the center after auto-sizing so the
+    // requested pcbX/pcbY corresponds to that anchor rather than the center.
+    let center = hasExplicitPositioning
+      ? (existingPcbGroup?.center ?? {
           x: centerX,
           y: centerY,
         })
       : { x: centerX, y: centerY }
 
+    if (hasExplicitPositioning && props.pcbAnchorAlignment) {
+      const anchorPosition = this._getGlobalPcbPositionBeforeLayout()
+      const anchorAlignedCenter = computeCenterFromAnchorPosition(
+        anchorPosition,
+        {
+          ...this.props,
+          width: resolvedWidth,
+          height: resolvedHeight,
+        },
+      )
+
+      if (
+        Math.abs(anchorAlignedCenter.x - center.x) > 1e-6 ||
+        Math.abs(anchorAlignedCenter.y - center.y) > 1e-6
+      ) {
+        this._repositionOnPcb(anchorAlignedCenter)
+      }
+
+      center = anchorAlignedCenter
+    }
+
     db.pcb_group.update(this.pcb_group_id, {
-      width: Number(props.width ?? width),
-      height: Number(props.height ?? height),
+      width: resolvedWidth,
+      height: resolvedHeight,
       center,
     })
   }
