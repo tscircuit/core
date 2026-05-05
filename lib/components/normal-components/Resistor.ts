@@ -6,6 +6,8 @@ import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { formatSiUnit } from "format-si-unit"
 
+const GENERIC_PASSIVE_FOOTPRINT_REGEX = /^\d{4,5}$/
+
 export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
@@ -32,6 +34,17 @@ export class Resistor extends NormalComponent<
 
   _getSchematicSymbolDisplayValue(): string | undefined {
     return `${formatSiUnit(this._parsedProps.resistance)}Ω`
+  }
+
+  getRenderableFootprintString(): string | null {
+    const footprint = super.getRenderableFootprintString()
+    if (!footprint) return null
+    if (!GENERIC_PASSIVE_FOOTPRINT_REGEX.test(footprint)) return footprint
+    return `res${footprint}`
+  }
+
+  getFootprinterString(): string | null {
+    return this.getRenderableFootprintString()
   }
 
   doInitialCreateNetsFromProps() {
