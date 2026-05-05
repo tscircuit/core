@@ -21,6 +21,7 @@ export interface TscircuitElements {
   chip: Props.ChipProps
   pinout: Props.PinoutProps
   powersource: Props.PowerSourceProps
+  schematicsection: Props.SchematicSectionProps
   via: Props.ViaProps
   schematicbox: Props.SchematicBoxProps
   schematicline: Props.SchematicLineProps
