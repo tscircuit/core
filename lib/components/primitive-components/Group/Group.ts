@@ -24,7 +24,10 @@ import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalA
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
-import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import {
+  getPresetAutoroutingConfig,
+  type NormalizedAutorouterConfig,
+} from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
@@ -664,6 +667,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }> = []
 
     for (const routingPhasePlan of routingPhasePlans) {
+      const phaseAutorouterConfig: NormalizedAutorouterConfig =
+        routingPhasePlan.autorouter
+          ? getPresetAutoroutingConfig(routingPhasePlan.autorouter)
+          : autorouterConfig
       let simpleRouteJson = baseSimpleRouteJson
       if (hasPhasedAutorouting) {
         simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
@@ -681,11 +688,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       // Enable jumpers for auto_jumper preset
-      if (isAutoJumperPreset) {
+      const phaseIsAutoJumperPreset =
+        routingPhasePlan.autorouter !== undefined
+          ? this._isAutoJumperAutorouter(phaseAutorouterConfig)
+          : isAutoJumperPreset
+      const phaseIsLaserPrefabPreset =
+        routingPhasePlan.autorouter !== undefined
+          ? this._isLaserPrefabAutorouter(phaseAutorouterConfig)
+          : isLaserPrefabPreset
+
+      if (phaseIsAutoJumperPreset) {
         simpleRouteJson.allowJumpers = true
-        if (autorouterConfig.availableJumperTypes) {
+        if (phaseAutorouterConfig.availableJumperTypes) {
           simpleRouteJson.availableJumperTypes =
-            autorouterConfig.availableJumperTypes
+            phaseAutorouterConfig.availableJumperTypes
         }
       }
 
@@ -712,8 +728,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       // Create the autorouter instance
       let autorouter: GenericLocalAutorouter
-      if (autorouterConfig.algorithmFn) {
-        autorouter = await autorouterConfig.algorithmFn(simpleRouteJson)
+      if (phaseAutorouterConfig.algorithmFn) {
+        autorouter = await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
       } else {
         const autorouterVersion = this.props.autorouterVersion
         const effortLevel = this.props.autorouterEffortLevel
@@ -722,10 +738,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           : undefined
         autorouter = new TscircuitAutorouter(simpleRouteJson, {
           // Optional configuration parameters
-          capacityDepth: this.props.autorouter?.capacityDepth,
-          targetMinCapacity: this.props.autorouter?.targetMinCapacity,
-          useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
-          useAutoJumperSolver: isAutoJumperPreset,
+          capacityDepth: phaseAutorouterConfig.capacityDepth,
+          targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
+          useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
+          useAutoJumperSolver: phaseIsAutoJumperPreset,
           autorouterVersion,
           effort,
           onSolverStarted: ({ solverName, solverParams }) =>

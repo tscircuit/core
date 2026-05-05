@@ -1,8 +1,13 @@
-import type { AutorouterConfig } from "@tscircuit/props"
+import type { AutorouterConfig, AutorouterProp } from "@tscircuit/props"
+
+export type NormalizedAutorouterConfig = AutorouterConfig & {
+  capacityDepth?: number
+  targetMinCapacity?: number
+}
 
 export function getPresetAutoroutingConfig(
-  autorouterConfig: AutorouterConfig | undefined,
-): AutorouterConfig {
+  autorouterConfig: AutorouterProp | undefined,
+): NormalizedAutorouterConfig {
   const defaults = {
     serverUrl: "https://registry-api.tscircuit.com",
     serverMode: "job" as const,
