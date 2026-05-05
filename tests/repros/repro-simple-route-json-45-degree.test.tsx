@@ -46,6 +46,7 @@ test("45 degree rects bug", () => {
       "minTraceToPadEdgeClearance": 0.1,
       "minTraceWidth": 0.1,
       "minViaDiameter": 0.3,
+      "minViaEdgeToPadEdgeClearance": 0.1,
       "minViaHoleDiameter": 0.2,
       "minViaPadDiameter": 0.3,
       "min_via_hole_diameter": 0.2,
