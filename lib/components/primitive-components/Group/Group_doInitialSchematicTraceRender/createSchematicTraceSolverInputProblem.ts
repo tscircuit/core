@@ -124,13 +124,18 @@ export function createSchematicTraceSolverInputProblem(
       })
     }
 
+    let sectionId: string | undefined
+    if (sourceComponent?.name) {
+      sectionId = componentNameToSectionId.get(sourceComponent.name)
+    }
+
     chips.push({
       chipId,
       center: schematicComponent.center,
       width: schematicComponent.size.width,
       height: schematicComponent.size.height,
       pins,
-      sectionId: componentNameToSectionId.get(sourceComponent!.name),
+      sectionId,
     })
   }
 
