@@ -36,15 +36,53 @@ export class Resistor extends NormalComponent<
     return `${formatSiUnit(this._parsedProps.resistance)}Ω`
   }
 
-  getRenderableFootprintString(): string | null {
-    const footprint = super.getRenderableFootprintString()
-    if (!footprint) return null
+  private _getNormalizedFootprintString(): string | null {
+    const footprint =
+      typeof this.props.footprint === "string"
+        ? this.props.footprint
+        : this._getImpliedFootprintString()
+    if (typeof footprint !== "string") return null
     if (!GENERIC_PASSIVE_FOOTPRINT_REGEX.test(footprint)) return footprint
     return `res${footprint}`
   }
 
   getFootprinterString(): string | null {
-    return this.getRenderableFootprintString()
+    return this._getNormalizedFootprintString()
+  }
+
+  private _withNormalizedFootprint<T>(fn: () => T): T {
+    const normalizedFootprint = this._getNormalizedFootprintString()
+    const originalFootprint = this.props.footprint
+
+    if (
+      typeof originalFootprint !== "string" ||
+      !normalizedFootprint ||
+      normalizedFootprint === originalFootprint
+    ) {
+      return fn()
+    }
+    this.props.footprint = normalizedFootprint
+    try {
+      return fn()
+    } finally {
+      this.props.footprint = originalFootprint
+    }
+  }
+
+  _addChildrenFromStringFootprint() {
+    return this._withNormalizedFootprint(() =>
+      super._addChildrenFromStringFootprint(),
+    )
+  }
+
+  doInitialPcbFootprintStringRender(): void {
+    this._withNormalizedFootprint(() =>
+      super.doInitialPcbFootprintStringRender(),
+    )
+  }
+
+  doInitialPartsEngineRender(): void {
+    this._withNormalizedFootprint(() => super.doInitialPartsEngineRender())
   }
 
   doInitialCreateNetsFromProps() {

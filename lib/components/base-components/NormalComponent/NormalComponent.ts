@@ -504,16 +504,10 @@ export class NormalComponent<
     return null
   }
 
-  getRenderableFootprintString(): string | null {
-    if (typeof this._parsedProps.footprint === "string") {
-      return this._parsedProps.footprint
-    }
-    return this._getImpliedFootprintString?.() ?? null
-  }
-
   _addChildrenFromStringFootprint() {
     const { pcbRotation, pinLabels, pcbPinLabels } = this.props
-    const footprint = this.getRenderableFootprintString()
+    let { footprint } = this.props
+    footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
 
     if (typeof footprint === "string") {
