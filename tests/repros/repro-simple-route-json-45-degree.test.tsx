@@ -43,6 +43,7 @@ test("45 degree rects bug", () => {
       },
       "connections": [],
       "layerCount": 2,
+      "minPadEdgeToPadEdgeClearance": 0.1,
       "minTraceToPadEdgeClearance": 0.1,
       "minTraceWidth": 0.1,
       "minViaDiameter": 0.3,
