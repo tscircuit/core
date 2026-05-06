@@ -2085,7 +2085,12 @@ export class NormalComponent<
             : undefined)
 
     db.pcb_component.update(this.pcb_component_id, {
-      position_mode: "relative_to_group_anchor",
+      // Honour an explicit `pcbPositionMode` prop if the user set one;
+      // otherwise default to relative_to_group_anchor (the historical
+      // behaviour). This makes the prop have an observable effect on
+      // the resulting pcb_component, which it previously did not.
+      position_mode:
+        this._parsedProps.pcbPositionMode ?? "relative_to_group_anchor",
       positioned_relative_to_pcb_group_id: positionedRelativeToGroupId,
       positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
       display_offset_x: resolvedPcbX as any,
@@ -2124,6 +2129,10 @@ export class NormalComponent<
       this._parsedProps.pcbRightEdgeX !== undefined ||
       this._parsedProps.pcbTopEdgeY !== undefined ||
       this._parsedProps.pcbBottomEdgeY !== undefined ||
+      // An explicit pcbPositionMode counts as evidence that the user
+      // intends absolute positioning, even if the coordinates default
+      // to (0, 0). The packer should treat the component as static.
+      this._parsedProps.pcbPositionMode !== undefined ||
       rawProps.pcbLeftEdgeX !== undefined ||
       rawProps.pcbRightEdgeX !== undefined ||
       rawProps.pcbTopEdgeY !== undefined ||
