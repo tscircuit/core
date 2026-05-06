@@ -478,7 +478,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         minTraceToPadEdgeClearance ?? board?.min_trace_to_pad_edge_clearance,
       minViaEdgeToPadEdgeClearance:
         minViaEdgeToPadEdgeClearance ??
-        board?.min_pad_edge_to_pad_edge_clearance,
+        board?.min_via_edge_to_pad_edge_clearance,
       nominalTraceWidth,
       outline: board?.outline?.map((point) => ({ ...point })),
     },
