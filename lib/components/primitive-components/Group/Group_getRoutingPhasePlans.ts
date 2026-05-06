@@ -1,4 +1,4 @@
-import type { AutorouterProp } from "@tscircuit/props"
+import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
 import type { z } from "zod"
 import type { Net } from "../Net"
 import type { Trace } from "../Trace/Trace"
@@ -76,6 +76,22 @@ function getAutoroutersByPhaseIndex(
   return autoroutersByPhaseIndex
 }
 
+function getAutoroutingPhasePropsByPhaseIndex(
+  group: Group<z.ZodType>,
+): Map<number | null, AutoroutingPhaseProps> {
+  const autoroutingPhases = group.selectAll(
+    "autoroutingphase",
+  ) as AutoroutingPhase[]
+  const propsByPhaseIndex = new Map<number | null, AutoroutingPhaseProps>()
+
+  for (const autoroutingPhase of autoroutingPhases) {
+    const props = autoroutingPhase._parsedProps as AutoroutingPhaseProps
+    propsByPhaseIndex.set(props.phaseIndex ?? null, props)
+  }
+
+  return propsByPhaseIndex
+}
+
 export function Group_getRoutingPhasePlans(
   group: Group<z.ZodType>,
 ): RoutingPhasePlan[] {
@@ -86,6 +102,7 @@ export function Group_getRoutingPhasePlans(
 
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
+  const phasePropsByPhaseIndex = getAutoroutingPhasePropsByPhaseIndex(group)
 
   for (const net of nets) {
     const routingPhaseIndex = getNetRoutingPhaseIndex(net)
@@ -102,11 +119,20 @@ export function Group_getRoutingPhasePlans(
     ).traces.push(trace)
   }
 
+  for (const [phaseIndex, phaseProps] of phasePropsByPhaseIndex) {
+    if (phaseProps.reroute) {
+      getOrCreateRoutingPhasePlan(plansByPhaseIndex, phaseIndex)
+    }
+  }
+
   const plans = Array.from(plansByPhaseIndex.values()).sort(
     compareRoutingPhasePlans,
   )
   for (const plan of plans) {
     plan.autorouter = autoroutersByPhaseIndex.get(plan.routingPhaseIndex)
+    const phaseProps = phasePropsByPhaseIndex.get(plan.routingPhaseIndex)
+    plan.reroute = phaseProps?.reroute
+    plan.region = phaseProps?.region
   }
   return plans
 }

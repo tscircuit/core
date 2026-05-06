@@ -1,4 +1,12 @@
-export type SimplifiedPcbTrace = {
+import type {
+  SimpleRouteJson as AutorouterSimpleRouteJson,
+  SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
+} from "@tscircuit/capacity-autorouter"
+
+export type SimplifiedPcbTrace = Omit<
+  AutorouterSimplifiedPcbTrace,
+  "connection_name" | "route"
+> & {
   type: "pcb_trace"
   pcb_trace_id: string
   connection_name?: string
@@ -26,8 +34,17 @@ export type SimplifiedPcbTrace = {
         footprint: "0603" | "1206" | "1206x4_pair"
         layer: string
       }
+    | {
+        route_type: "through_obstacle"
+        start: { x: number; y: number }
+        end: { x: number; y: number }
+        from_layer: string
+        to_layer: string
+        width: number
+      }
   >
 }
+
 export type Obstacle = {
   obstacleId?: string
   // TODO include ovals
@@ -44,22 +61,42 @@ export type Obstacle = {
   offBoardConnectsTo?: string[]
 }
 
-export interface SimpleRouteConnection {
+export type SimpleRouteConnection = {
   name: string
   source_trace_id?: string
-  nominalTraceWidth?: number // Preferred trace width for this connection
-  width?: number // Deprecated alias for nominalTraceWidth
+  rootConnectionName?: string
+  mergedConnectionNames?: string[]
+  isOffBoard?: boolean
+  netConnectionName?: string
+  nominalTraceWidth?: number
+  /** @deprecated Use `nominalTraceWidth` instead. */
+  width?: number
   pointsToConnect: Array<{
     x: number
     y: number
     layer: string
-    pointId?: string // NEW – identifier used by the solver
-    pcb_port_id?: string // (kept for convenience, was already used)
+    layers?: string[]
+    pointId?: string
+    pcb_port_id?: string
+    terminalVia?: {
+      toLayer: string
+      viaDiameter?: number
+    }
   }>
-  externallyConnectedPointIds?: string[][] // NEW – groups of pointIds
+  /** @deprecated DO NOT USE **/
+  externallyConnectedPointIds?: string[][]
 }
 
-export interface SimpleRouteJson {
+export type SimpleRouteJson = Omit<
+  AutorouterSimpleRouteJson,
+  | "connections"
+  | "traces"
+  | "obstacles"
+  | "bounds"
+  | "outline"
+  | "allowJumpers"
+  | "availableJumperTypes"
+> & {
   layerCount: number
   minTraceWidth: number
   nominalTraceWidth?: number
@@ -69,16 +106,23 @@ export interface SimpleRouteJson {
   minViaPadDiameter?: number
   min_via_hole_diameter?: number
   min_via_pad_diameter?: number
-
+  defaultObstacleMargin?: number
   minTraceToPadEdgeClearance?: number
   minViaEdgeToPadEdgeClearance?: number
-
   obstacles: Obstacle[]
-  connections: Array<SimpleRouteConnection>
+  connections: SimpleRouteConnection[]
   bounds: { minX: number; maxX: number; minY: number; maxY: number }
   outline?: Array<{ x: number; y: number }>
   // NOTE: this is only present after an autorouter solves the input
   traces?: SimplifiedPcbTrace[]
+  jumpers?: Array<{
+    jumper_footprint: "0603" | "1206x4"
+    center: { x: number; y: number }
+    orientation: "horizontal" | "vertical"
+    width: number
+    height: number
+    pads: Obstacle[]
+  }>
   // Enable jumper-based routing for single-layer boards
   allowJumpers?: boolean
   availableJumperTypes?: Array<"1206x4" | "0603">
