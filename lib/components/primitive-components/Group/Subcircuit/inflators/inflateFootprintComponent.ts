@@ -26,7 +26,7 @@ export const inflateFootprintComponent = (
 
   if (primitives.length === 0) return null
 
-  const footprint = new Footprint({})
+  const footprint = new Footprint({ originalLayer: pcbElm.layer })
   footprint.addAll(primitives)
 
   return footprint
