@@ -15,7 +15,7 @@ test("board manufacture DRC properties are set correctly", async () => {
       minTraceToPadEdgeClearance={0.1}
       minPadEdgeToPadEdgeClearance={0.1}
       minPlatedHoleDrillEdgeToDrillEdgeClearance={0.2}
-      minViaEdgeToPadEdgeClearance={0.1}
+      minViaEdgeToPadEdgeClearance={0.5}
     >
       <resistor name="R1" resistance="10k" footprint="0402" pcbX={5} pcbY={5} />
       <resistor
@@ -41,14 +41,14 @@ test("board manufacture DRC properties are set correctly", async () => {
   expect(pcb_board.min_trace_to_pad_edge_clearance).toBe(0.1)
   expect(pcb_board.min_pad_edge_to_pad_edge_clearance).toBe(0.1)
   expect(pcb_board.min_plated_hole_drill_edge_to_drill_edge_clearance).toBe(0.2)
-  expect(pcb_board.min_via_edge_to_pad_edge_clearance).toBe(0.1)
+  expect(pcb_board.min_via_edge_to_pad_edge_clearance).toBe(0.5)
 
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     db: circuit.db,
   })
   expect(simpleRouteJson.minTraceWidth).toBe(0.3)
   expect(simpleRouteJson.minTraceToPadEdgeClearance).toBe(0.1)
-  expect(simpleRouteJson.minViaEdgeToPadEdgeClearance).toBe(0.1)
+  expect(simpleRouteJson.minViaEdgeToPadEdgeClearance).toBe(0.5)
 
   const pcbTrace = circuit.db.pcb_trace.list()[0]
   const routeWireWidths = pcbTrace.route
