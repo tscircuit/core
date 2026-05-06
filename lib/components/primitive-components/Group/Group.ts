@@ -1,4 +1,10 @@
-import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
+import {
+  convertSrjToGraphicsObject,
+  getRerouteSimpleRouteJson,
+  reconnectReroutedSimpleRouteJsonRegion,
+  type RerouteRectRegion,
+  type SimpleRouteJson as AutorouterSimpleRouteJson,
+} from "@tscircuit/capacity-autorouter"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   type AutorouterConfig,
@@ -792,7 +798,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ? getPresetAutoroutingConfig(routingPhasePlan.autorouter)
           : autorouterConfig
       let simpleRouteJson = baseSimpleRouteJson
-      if (hasPhasedAutorouting) {
+      const isReroutePhase = Boolean(
+        routingPhasePlan.reroute && routingPhasePlan.region,
+      )
+      const rerouteOriginalSrj = isReroutePhase
+        ? {
+            ...baseSimpleRouteJson,
+            traces: outputTraces,
+          }
+        : null
+
+      if (isReroutePhase) {
+        simpleRouteJson = getRerouteSimpleRouteJson(
+          rerouteOriginalSrj as unknown as AutorouterSimpleRouteJson,
+          {
+            shape: "rect",
+            ...routingPhasePlan.region,
+          } as RerouteRectRegion,
+        ) as unknown as SimpleRouteJson
+      } else if (hasPhasedAutorouting) {
         simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
@@ -926,7 +950,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           outputJumpers.push(...(solver.getOutputJumpers() || []))
         }
 
-        outputTraces.push(...traces)
+        if (isReroutePhase && rerouteOriginalSrj) {
+          const reconnectedSrj = reconnectReroutedSimpleRouteJsonRegion(
+            rerouteOriginalSrj as unknown as AutorouterSimpleRouteJson,
+            {
+              ...simpleRouteJson,
+              traces: [...(simpleRouteJson.traces ?? []), ...traces],
+            } as unknown as AutorouterSimpleRouteJson,
+          ) as unknown as SimpleRouteJson
+          outputTraces.splice(
+            0,
+            outputTraces.length,
+            ...(reconnectedSrj.traces ?? []),
+          )
+        } else {
+          outputTraces.push(...traces)
+        }
       } catch (error) {
         const { db } = this.root!
         // Record the error
