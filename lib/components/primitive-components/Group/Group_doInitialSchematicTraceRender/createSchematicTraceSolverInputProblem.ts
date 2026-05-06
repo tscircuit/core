@@ -82,6 +82,16 @@ export function createSchematicTraceSolverInputProblem(
     .list()
     .filter((a) => allSchematicGroupIds.includes(a.schematic_group_id!))
 
+  const componentNameToSectionId = new Map<string, string>()
+  for (const component of group.getDescendants() as any[]) {
+    if (component.name && component._parsedProps?.schSectionName) {
+      componentNameToSectionId.set(
+        component.name,
+        component._parsedProps.schSectionName,
+      )
+    }
+  }
+
   // Build chips and pinId maps
   const chips: InputChip[] = []
   const pinIdToSchematicPortId = new Map<string, string>()
@@ -114,12 +124,18 @@ export function createSchematicTraceSolverInputProblem(
       })
     }
 
+    let sectionId: string | undefined
+    if (sourceComponent?.name) {
+      sectionId = componentNameToSectionId.get(sourceComponent.name)
+    }
+
     chips.push({
       chipId,
       center: schematicComponent.center,
       width: schematicComponent.size.width,
       height: schematicComponent.size.height,
       pins,
+      sectionId,
     })
   }
 

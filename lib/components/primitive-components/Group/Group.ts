@@ -24,7 +24,10 @@ import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalA
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
-import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import {
+  getPresetAutoroutingConfig,
+  type NormalizedAutorouterConfig,
+} from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
@@ -347,18 +350,44 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       centerY += (padTop - padBottom) / 2
     }
 
-    // Preserve explicit positioning when pcbX/pcbY are set
-    // Otherwise use calculated center from child bounds
-    const center = hasExplicitPositioning
-      ? (db.pcb_group.get(this.pcb_group_id)?.center ?? {
+    const resolvedWidth = Number(props.width ?? width)
+    const resolvedHeight = Number(props.height ?? height)
+    const existingPcbGroup = db.pcb_group.get(this.pcb_group_id)
+
+    // Preserve explicit positioning when pcbX/pcbY are set. If an anchor
+    // alignment is provided, recompute the center after auto-sizing so the
+    // requested pcbX/pcbY corresponds to that anchor rather than the center.
+    let center = hasExplicitPositioning
+      ? (existingPcbGroup?.center ?? {
           x: centerX,
           y: centerY,
         })
       : { x: centerX, y: centerY }
 
+    if (hasExplicitPositioning && props.pcbAnchorAlignment) {
+      const anchorPosition = this._getGlobalPcbPositionBeforeLayout()
+      const anchorAlignedCenter = computeCenterFromAnchorPosition(
+        anchorPosition,
+        {
+          ...this.props,
+          width: resolvedWidth,
+          height: resolvedHeight,
+        },
+      )
+
+      if (
+        Math.abs(anchorAlignedCenter.x - center.x) > 1e-6 ||
+        Math.abs(anchorAlignedCenter.y - center.y) > 1e-6
+      ) {
+        this._repositionOnPcb(anchorAlignedCenter)
+      }
+
+      center = anchorAlignedCenter
+    }
+
     db.pcb_group.update(this.pcb_group_id, {
-      width: Number(props.width ?? width),
-      height: Number(props.height ?? height),
+      width: resolvedWidth,
+      height: resolvedHeight,
       center,
     })
   }
@@ -664,6 +693,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }> = []
 
     for (const routingPhasePlan of routingPhasePlans) {
+      const phaseAutorouterConfig: NormalizedAutorouterConfig =
+        routingPhasePlan.autorouter
+          ? getPresetAutoroutingConfig(routingPhasePlan.autorouter)
+          : autorouterConfig
       let simpleRouteJson = baseSimpleRouteJson
       if (hasPhasedAutorouting) {
         simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
@@ -681,11 +714,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       // Enable jumpers for auto_jumper preset
-      if (isAutoJumperPreset) {
+      const phaseIsAutoJumperPreset =
+        routingPhasePlan.autorouter !== undefined
+          ? this._isAutoJumperAutorouter(phaseAutorouterConfig)
+          : isAutoJumperPreset
+      const phaseIsLaserPrefabPreset =
+        routingPhasePlan.autorouter !== undefined
+          ? this._isLaserPrefabAutorouter(phaseAutorouterConfig)
+          : isLaserPrefabPreset
+
+      if (phaseIsAutoJumperPreset) {
         simpleRouteJson.allowJumpers = true
-        if (autorouterConfig.availableJumperTypes) {
+        if (phaseAutorouterConfig.availableJumperTypes) {
           simpleRouteJson.availableJumperTypes =
-            autorouterConfig.availableJumperTypes
+            phaseAutorouterConfig.availableJumperTypes
         }
       }
 
@@ -712,8 +754,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       // Create the autorouter instance
       let autorouter: GenericLocalAutorouter
-      if (autorouterConfig.algorithmFn) {
-        autorouter = await autorouterConfig.algorithmFn(simpleRouteJson)
+      if (phaseAutorouterConfig.algorithmFn) {
+        autorouter = await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
       } else {
         const autorouterVersion = this.props.autorouterVersion
         const effortLevel = this.props.autorouterEffortLevel
@@ -722,10 +764,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           : undefined
         autorouter = new TscircuitAutorouter(simpleRouteJson, {
           // Optional configuration parameters
-          capacityDepth: this.props.autorouter?.capacityDepth,
-          targetMinCapacity: this.props.autorouter?.targetMinCapacity,
-          useAssignableSolver: isLaserPrefabPreset || isSingleLayerBoard,
-          useAutoJumperSolver: isAutoJumperPreset,
+          capacityDepth: phaseAutorouterConfig.capacityDepth,
+          targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
+          useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
+          useAutoJumperSolver: phaseIsAutoJumperPreset,
           autorouterVersion,
           effort,
           onSolverStarted: ({ solverName, solverParams }) =>
