@@ -126,6 +126,10 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "FetchPartFootprint",
     "PartsEngineRender",
   ],
+  SourceAddConnectivityMapKey: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+  ],
   PcbComponentAnchorAlignment: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
