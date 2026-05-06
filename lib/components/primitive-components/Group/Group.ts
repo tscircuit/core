@@ -808,14 +808,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
         : null
 
-      if (isReroutePhase) {
+      if (isReroutePhase && rerouteOriginalSrj) {
         simpleRouteJson = getRerouteSimpleRouteJson(
-          rerouteOriginalSrj as unknown as AutorouterSimpleRouteJson,
+          rerouteOriginalSrj as AutorouterSimpleRouteJson,
           {
             shape: "rect",
             ...routingPhasePlan.region,
           } as RerouteRectRegion,
-        ) as unknown as SimpleRouteJson
+        ) as SimpleRouteJson
       } else if (hasPhasedAutorouting) {
         simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
@@ -952,12 +952,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
         if (isReroutePhase && rerouteOriginalSrj) {
           const reconnectedSrj = reconnectReroutedSimpleRouteJsonRegion(
-            rerouteOriginalSrj as unknown as AutorouterSimpleRouteJson,
+            rerouteOriginalSrj as AutorouterSimpleRouteJson,
             {
               ...simpleRouteJson,
               traces: [...(simpleRouteJson.traces ?? []), ...traces],
-            } as unknown as AutorouterSimpleRouteJson,
-          ) as unknown as SimpleRouteJson
+            } as AutorouterSimpleRouteJson,
+          ) as SimpleRouteJson
           outputTraces.splice(
             0,
             outputTraces.length,

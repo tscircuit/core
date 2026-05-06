@@ -46,11 +46,13 @@ function getSegmentLayer(start: RoutePoint, end: RoutePoint): string | null {
 
 function getRoutePointX(point: RoutePoint): number | null {
   if (isJumperPoint(point)) return null
+  if (point.route_type === "through_obstacle") return null
   return point.x
 }
 
 function getRoutePointY(point: RoutePoint): number | null {
   if (isJumperPoint(point)) return null
+  if (point.route_type === "through_obstacle") return null
   return point.y
 }
 
