@@ -74,6 +74,61 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   schematic_group_id: string | null = null
   subcircuit_id: string | null = null
 
+  /**
+   * Override of `NormalComponent.isRelativelyPositioned()` that also
+   * returns true if any descendant component has
+   * `pcbPositionMode="relative_to_board_anchor"`.
+   *
+   * Why: when a deeply-nested chip declares board-absolute positioning,
+   * none of its parent groups should be moved by the auto-placer —
+   * otherwise the chip's "absolute" coordinates end up shifted by
+   * whatever offset the parent's pack assigned to the group as a unit.
+   * Adding the cascade here marks every ancestor group up to the board
+   * as static-for-packer, so the chip lands at the requested
+   * (pcbX, pcbY) relative to the board.
+   */
+  override isRelativelyPositioned(): boolean {
+    if (super.isRelativelyPositioned()) return true
+    return this._hasDescendantWithBoardAnchorPositioning()
+  }
+
+  private _boardAnchorDescendantCache: boolean | null = null
+  /**
+   * Recursively check children for a component with
+   * `pcbPositionMode="relative_to_board_anchor"`. Memoised per-instance
+   * so repeated calls during a single pack pass don't re-walk the tree.
+   */
+  _hasDescendantWithBoardAnchorPositioning(): boolean {
+    if (this._boardAnchorDescendantCache !== null) {
+      return this._boardAnchorDescendantCache
+    }
+    const visit = (component: any): boolean => {
+      if (!component) return false
+      if (
+        component._parsedProps?.pcbPositionMode === "relative_to_board_anchor"
+      ) {
+        return true
+      }
+      if (Array.isArray(component.children)) {
+        for (const child of component.children) {
+          if (visit(child)) return true
+        }
+      }
+      return false
+    }
+    let found = false
+    if (Array.isArray(this.children)) {
+      for (const child of this.children) {
+        if (visit(child)) {
+          found = true
+          break
+        }
+      }
+    }
+    this._boardAnchorDescendantCache = found
+    return found
+  }
+
   _hasStartedAsyncAutorouting = false
 
   _isInflatedFromCircuitJson = false

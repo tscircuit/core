@@ -28,7 +28,9 @@ test("pcbPositionMode='relative_to_board_anchor' is reflected in pcb_component.p
 
   const pcbComp = circuit.db.pcb_component.list()[0]
   expect(pcbComp).toBeDefined()
-  expect(pcbComp?.position_mode).toBe("relative_to_board_anchor")
+  // circuit-json's position_mode union doesn't yet include
+  // "relative_to_board_anchor"; props does. Cast for the assertion.
+  expect(pcbComp?.position_mode as string).toBe("relative_to_board_anchor")
 })
 
 test("pcbPositionMode unset preserves the historical 'relative_to_group_anchor' default", async () => {
@@ -46,6 +48,6 @@ test("pcbPositionMode unset preserves the historical 'relative_to_group_anchor' 
   expect(pcbComp).toBeDefined()
   // No prop → default mode (may become "packed" after the auto-placer).
   expect(["relative_to_group_anchor", "packed"]).toContain(
-    pcbComp?.position_mode,
+    pcbComp?.position_mode as string,
   )
 })
