@@ -6,6 +6,8 @@ import { Port } from "../primitive-components/Port"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { formatSiUnit } from "format-si-unit"
 
+const GENERIC_PASSIVE_FOOTPRINT_REGEX = /^\d{4,5}$/
+
 export class Resistor extends NormalComponent<
   typeof resistorProps,
   PassivePorts
@@ -32,6 +34,55 @@ export class Resistor extends NormalComponent<
 
   _getSchematicSymbolDisplayValue(): string | undefined {
     return `${formatSiUnit(this._parsedProps.resistance)}Ω`
+  }
+
+  private _getNormalizedFootprintString(): string | null {
+    const footprint =
+      typeof this.props.footprint === "string"
+        ? this.props.footprint
+        : this._getImpliedFootprintString()
+    if (typeof footprint !== "string") return null
+    if (!GENERIC_PASSIVE_FOOTPRINT_REGEX.test(footprint)) return footprint
+    return `res${footprint}`
+  }
+
+  getFootprinterString(): string | null {
+    return this._getNormalizedFootprintString()
+  }
+
+  private _withNormalizedFootprint<T>(fn: () => T): T {
+    const normalizedFootprint = this._getNormalizedFootprintString()
+    const originalFootprint = this.props.footprint
+
+    if (
+      typeof originalFootprint !== "string" ||
+      !normalizedFootprint ||
+      normalizedFootprint === originalFootprint
+    ) {
+      return fn()
+    }
+    this.props.footprint = normalizedFootprint
+    try {
+      return fn()
+    } finally {
+      this.props.footprint = originalFootprint
+    }
+  }
+
+  _addChildrenFromStringFootprint() {
+    return this._withNormalizedFootprint(() =>
+      super._addChildrenFromStringFootprint(),
+    )
+  }
+
+  doInitialPcbFootprintStringRender(): void {
+    this._withNormalizedFootprint(() =>
+      super.doInitialPcbFootprintStringRender(),
+    )
+  }
+
+  doInitialPartsEngineRender(): void {
+    this._withNormalizedFootprint(() => super.doInitialPartsEngineRender())
   }
 
   doInitialCreateNetsFromProps() {

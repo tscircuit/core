@@ -109,13 +109,13 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       {
         "center": {
-          "x": 0,
-          "y": 0,
+          "x": 8.625,
+          "y": 5.545,
         },
-        "height": 0,
+        "height": 2.45,
         "layer": "top",
         "name": "D1",
-        "width": 0,
+        "width": 0.95,
       },
       {
         "center": {
@@ -139,13 +139,13 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       {
         "center": {
-          "x": -5.58,
-          "y": -0.635,
+          "x": 5.325,
+          "y": 4.265,
         },
-        "height": 1.4,
+        "height": 2.85,
         "layer": "top",
         "name": "R3",
-        "width": 2.85,
+        "width": 1.4,
       },
       {
         "center": {
