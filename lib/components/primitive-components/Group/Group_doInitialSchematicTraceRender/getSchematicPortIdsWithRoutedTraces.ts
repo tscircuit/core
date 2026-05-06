@@ -7,11 +7,21 @@ export const getSchematicPortIdsWithRoutedTraces = ({
   solver: SchematicTracePipelineSolver
   pinIdToSchematicPortId: Map<string, string>
 }): Set<string> => {
-  const solvedTraces = solver.schematicTraceLinesSolver!.solvedTracePaths
+  const solvedTraces =
+    solver.traceCleanupSolver?.getOutput().traces ??
+    solver.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
+    solver.schematicTraceLinesSolver?.solvedTracePaths ??
+    []
   const schematicPortIdsWithRoutedTraces = new Set<string>()
 
   for (const solvedTrace of solvedTraces) {
-    for (const pinId of solvedTrace.pinIds) {
+    const points = solvedTrace?.tracePath as Array<{ x: number; y: number }>
+    if (!Array.isArray(points) || points.length < 2) continue
+    const pinIds = Array.isArray(solvedTrace.pins)
+      ? solvedTrace.pins.map((pin) => pin.pinId)
+      : solvedTrace.pinIds
+
+    for (const pinId of pinIds) {
       const schPortId = pinIdToSchematicPortId.get(pinId)
       if (schPortId) {
         schematicPortIdsWithRoutedTraces.add(schPortId)

@@ -1,7 +1,6 @@
 import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { getSide, type AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
 import { Port } from "../../Port"
@@ -41,6 +40,14 @@ export function applyNetLabelPlacements(args: {
     solver.netLabelPlacementSolver?.netLabelPlacements ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().netLabelPlacements ??
     []
+  const netLabelPlacementCountByGlobalNetId = new Map<string, number>()
+  for (const placement of netLabelPlacements) {
+    netLabelPlacementCountByGlobalNetId.set(
+      placement.globalConnNetId,
+      (netLabelPlacementCountByGlobalNetId.get(placement.globalConnNetId) ??
+        0) + 1,
+    )
+  }
   const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
 
   for (const placement of netLabelPlacements) {
@@ -105,6 +112,8 @@ export function applyNetLabelPlacements(args: {
 
     if (
       !wasAssignedDisplayLabel &&
+      (netLabelPlacementCountByGlobalNetId.get(placement.globalConnNetId) ??
+        0) <= 1 &&
       schPortIds.some((schPortId) =>
         schematicPortIdsWithRoutedTraces.has(schPortId),
       )
