@@ -7,7 +7,7 @@ test("group schematic box participates in parent group schematic layout", () => 
     <board routingDisabled>
       <group name="PARENT" schWidth={6} schHeight={4}>
         <group name="G1" showAsSchematicBox>
-          <port name="OUT" direction="right" />
+          <port name="OUT" direction="left" />
           <resistor name="R_INTERNAL" resistance="1k" footprint="0402" />
         </group>
         <resistor

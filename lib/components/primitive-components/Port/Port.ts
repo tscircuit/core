@@ -12,24 +12,9 @@ import type { Trace } from "../Trace/Trace"
 import type { LayerRef, SchematicPort } from "circuit-json"
 import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
-import type { PinAttributeMap } from "@tscircuit/props"
+import { type PinAttributeMap, portProps } from "@tscircuit/props"
 import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
 import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
-
-export const portProps = z.object({
-  name: z.string().optional(),
-  pinNumber: z.number().optional(),
-  schStemLength: z.number().optional(),
-  aliases: z.array(z.string()).optional(),
-  layer: z.string().optional(),
-  layers: z.array(z.string()).optional(),
-  schX: z.number().optional(),
-  schY: z.number().optional(),
-  direction: z.enum(["up", "down", "left", "right"]).optional(),
-  connectsTo: z.union([z.string(), z.array(z.string())]).optional(),
-})
-
-export type PortProps = z.infer<typeof portProps>
 
 export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
