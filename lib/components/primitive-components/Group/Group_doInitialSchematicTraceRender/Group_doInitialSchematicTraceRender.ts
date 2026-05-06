@@ -19,6 +19,17 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   if (!group.isSubcircuit) return
   if (group.root?.schematicDisabled) return
 
+  // `schTraceAutoLabelEnabled` is a tri-state:
+  //   - undefined (default): existing behaviour
+  //   - true : opt INTO net labels for complex traces (handled
+  //            in Trace_doInitialSchematicTraceRender)
+  //   - false: opt OUT of auto-generated net labels for ports
+  //            connected to a net via no explicit trace. Useful
+  //            when you'd rather see drawn wires (or accept
+  //            visually disconnected ports) over auto labels.
+  const autoLabelExplicitlyDisabled =
+    group._parsedProps.schTraceAutoLabelEnabled === false
+
   // Prepare the solver input and context
   const {
     inputProblem,
@@ -42,14 +53,16 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     inputProblem.netConnections.length > 0
 
   if (!hasRouteableSchematicConnections) {
-    insertNetLabelsForPortsMissingTrace({
-      group,
-      allSourceAndSchematicPortIdsInScope,
-      schPortIdToSourcePortId,
-      sckToSourceNet,
-      pinIdToSchematicPortId,
-      schematicPortIdsWithPreExistingNetLabels,
-    })
+    if (!autoLabelExplicitlyDisabled) {
+      insertNetLabelsForPortsMissingTrace({
+        group,
+        allSourceAndSchematicPortIdsInScope,
+        schPortIdToSourcePortId,
+        sckToSourceNet,
+        pinIdToSchematicPortId,
+        schematicPortIdsWithPreExistingNetLabels,
+      })
+    }
     return
   }
 
@@ -93,14 +106,16 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     schematicPortIdsWithRoutedTraces,
   })
 
-  insertNetLabelsForPortsMissingTrace({
-    group,
-    allSourceAndSchematicPortIdsInScope,
-    schPortIdToSourcePortId,
-    sckToSourceNet,
-    pinIdToSchematicPortId,
-    schematicPortIdsWithPreExistingNetLabels,
-  })
+  if (!autoLabelExplicitlyDisabled) {
+    insertNetLabelsForPortsMissingTrace({
+      group,
+      allSourceAndSchematicPortIdsInScope,
+      schPortIdToSourcePortId,
+      sckToSourceNet,
+      pinIdToSchematicPortId,
+      schematicPortIdsWithPreExistingNetLabels,
+    })
+  }
 
   // Insert labels for traces that explicitly asked for schDisplayLabel
   // insertNetLabelsForTracesExcludedFromRouting({
