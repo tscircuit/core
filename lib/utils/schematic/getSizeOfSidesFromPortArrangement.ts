@@ -27,6 +27,19 @@ export const hasExplicitPinMapping = (
   )
 }
 
+export const getPinsFromPortArrangement = (
+  pa: PortArrangement | null | undefined,
+): (number | string)[] => {
+  if (!pa || !hasExplicitPinMapping(pa)) return []
+
+  return [
+    ...getPinsFromSideDefinition(pa.leftSide),
+    ...getPinsFromSideDefinition(pa.rightSide),
+    ...getPinsFromSideDefinition(pa.topSide),
+    ...getPinsFromSideDefinition(pa.bottomSide),
+  ]
+}
+
 export const getSizeOfSidesFromPortArrangement = (
   pa: PortArrangement,
 ): {

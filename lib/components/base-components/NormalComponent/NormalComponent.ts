@@ -51,9 +51,9 @@ import {
   getAllDimensionsForSchematicBox,
   isExplicitPinMappingArrangement,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFromPinLabelsKey"
-import { getPinsFromSideDefinition } from "lib/utils/schematic/normalizePinSideDefinition"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
 import {
   type ReactElement,
@@ -443,14 +443,10 @@ export class NormalComponent<
         )
         continue
       }
-      let explicitlyListedPinNumbersInSchPortArrangement = [
-        ...getPinsFromSideDefinition(schPortArrangement.leftSide),
-        ...getPinsFromSideDefinition(schPortArrangement.rightSide),
-        ...getPinsFromSideDefinition(schPortArrangement.topSide),
-        ...getPinsFromSideDefinition(schPortArrangement.bottomSide),
-      ].map((pn) =>
-        parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
-      )
+      let explicitlyListedPinNumbersInSchPortArrangement =
+        getPinsFromPortArrangement(schPortArrangement).map((pn) =>
+          parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
+        )
 
       if (
         [
@@ -1468,13 +1464,31 @@ export class NormalComponent<
       )
     }
 
-    const { leftSide, rightSide, topSide, bottomSide } = schPortArrangement
-    return Math.max(
-      ...(leftSide?.pins ?? []),
-      ...(rightSide?.pins ?? []),
-      ...(topSide?.pins ?? []),
-      ...(bottomSide?.pins ?? []),
-    )
+    const pins = getPinsFromPortArrangement(schPortArrangement)
+    let maxPinNumber = 0
+
+    for (const pin of pins) {
+      if (typeof pin === "number") {
+        maxPinNumber = Math.max(maxPinNumber, pin)
+        continue
+      }
+
+      const directPinNumber = getPinNumberFromPinLabelsKey(pin)
+      if (directPinNumber !== null) {
+        maxPinNumber = Math.max(maxPinNumber, directPinNumber)
+        continue
+      }
+
+      const pinLabels = this._parsedProps.pinLabels
+      if (pinLabels) {
+        maxPinNumber = Math.max(
+          maxPinNumber,
+          parsePinNumberFromLabelsOrThrow(pin, pinLabels),
+        )
+      }
+    }
+
+    return Math.max(maxPinNumber, pins.length)
   }
 
   _getPrimaryPinCount(): number {
