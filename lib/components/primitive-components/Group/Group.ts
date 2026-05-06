@@ -31,6 +31,7 @@ import {
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
+import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import type { Trace } from "../Trace/Trace"
@@ -137,6 +138,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       zodProps: groupProps as unknown as Props,
       componentName: "Group",
     }
+  }
+
+  override initPorts(opts: Parameters<NormalComponent["initPorts"]>[0] = {}) {
+    const schPinArrangement = this._getSchematicPortArrangement()
+    const hasUnresolvedNamedPins =
+      this._parsedProps?.showAsSchematicBox &&
+      !this._parsedProps.pinLabels &&
+      schPinArrangement &&
+      getPinsFromPortArrangement(schPinArrangement).some(
+        (pin) => typeof pin === "string",
+      )
+
+    if (hasUnresolvedNamedPins) return
+
+    super.initPorts(opts)
   }
 
   private _ensureSchematicBoxPortsFromConnections() {
