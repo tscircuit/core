@@ -1,27 +1,14 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("group schematic box ports respect schPinArrangement", () => {
+test("group schematic box ports use direction as arrangement", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board routingDisabled>
-      <group
-        name="G1"
-        showAsSchematicBox
-        schPinArrangement={{
-          rightSide: {
-            pins: ["VIN", "VOUT"],
-            direction: "top-to-bottom",
-          },
-          bottomSide: {
-            pins: ["GND"],
-            direction: "left-to-right",
-          },
-        }}
-      >
-        <port name="VIN" direction="left" />
-        <port name="GND" direction="left" />
-        <port name="VOUT" direction="left" />
+      <group name="G1" showAsSchematicBox>
+        <port name="VIN" direction="right" />
+        <port name="GND" direction="down" />
+        <port name="VOUT" direction="right" />
       </group>
     </board>,
   )
