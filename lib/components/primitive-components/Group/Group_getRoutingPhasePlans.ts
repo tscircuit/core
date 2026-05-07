@@ -4,7 +4,10 @@ import type { Net } from "../Net"
 import type { Trace } from "../Trace/Trace"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
 import type { Group } from "./Group"
-import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
+import type {
+  RoutingPhaseDrcTolerances,
+  RoutingPhasePlan,
+} from "./GroupRoutingPhasePlan"
 
 function getPhaseSortValue(routingPhaseIndex: number | null): number {
   return routingPhaseIndex === null
@@ -92,6 +95,61 @@ function getAutoroutingPhasePropsByPhaseIndex(
   return propsByPhaseIndex
 }
 
+function toParsedDistance(value: unknown): number | undefined {
+  if (value === undefined) return undefined
+  return Number(value)
+}
+
+function getDrcTolerancesFromAutoroutingPhaseProps(
+  phaseProps: AutoroutingPhaseProps,
+): RoutingPhaseDrcTolerances | undefined {
+  const {
+    minTraceWidth,
+    minViaHoleEdgeToViaHoleEdgeClearance,
+    minPlatedHoleDrillEdgeToDrillEdgeClearance,
+    minTraceToPadEdgeClearance,
+    minPadEdgeToPadEdgeClearance,
+    minBoardEdgeClearance,
+    minViaEdgeToPadEdgeClearance,
+    minViaHoleDiameter,
+    minViaPadDiameter,
+  } = phaseProps
+
+  if (
+    minTraceWidth === undefined &&
+    minViaHoleEdgeToViaHoleEdgeClearance === undefined &&
+    minPlatedHoleDrillEdgeToDrillEdgeClearance === undefined &&
+    minTraceToPadEdgeClearance === undefined &&
+    minPadEdgeToPadEdgeClearance === undefined &&
+    minBoardEdgeClearance === undefined &&
+    minViaEdgeToPadEdgeClearance === undefined &&
+    minViaHoleDiameter === undefined &&
+    minViaPadDiameter === undefined
+  ) {
+    return undefined
+  }
+
+  return {
+    minTraceWidth: toParsedDistance(minTraceWidth),
+    minViaHoleEdgeToViaHoleEdgeClearance: toParsedDistance(
+      minViaHoleEdgeToViaHoleEdgeClearance,
+    ),
+    minPlatedHoleDrillEdgeToDrillEdgeClearance: toParsedDistance(
+      minPlatedHoleDrillEdgeToDrillEdgeClearance,
+    ),
+    minTraceToPadEdgeClearance: toParsedDistance(minTraceToPadEdgeClearance),
+    minPadEdgeToPadEdgeClearance: toParsedDistance(
+      minPadEdgeToPadEdgeClearance,
+    ),
+    minBoardEdgeClearance: toParsedDistance(minBoardEdgeClearance),
+    minViaEdgeToPadEdgeClearance: toParsedDistance(
+      minViaEdgeToPadEdgeClearance,
+    ),
+    minViaHoleDiameter: toParsedDistance(minViaHoleDiameter),
+    minViaPadDiameter: toParsedDistance(minViaPadDiameter),
+  }
+}
+
 export function Group_getRoutingPhasePlans(
   group: Group<z.ZodType>,
 ): RoutingPhasePlan[] {
@@ -133,6 +191,9 @@ export function Group_getRoutingPhasePlans(
     const phaseProps = phasePropsByPhaseIndex.get(plan.routingPhaseIndex)
     plan.reroute = phaseProps?.reroute
     plan.region = phaseProps?.region
+    plan.drcTolerances = phaseProps
+      ? getDrcTolerancesFromAutoroutingPhaseProps(phaseProps)
+      : undefined
   }
 
   const defaultPhaseProps = phasePropsByPhaseIndex.get(null)

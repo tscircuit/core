@@ -195,6 +195,24 @@ export abstract class PrimitiveComponent<
     const parsePropsResult = zodProps.safeParse(props ?? {})
     if (parsePropsResult.success) {
       this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
+    } else if (this.props.name == null) {
+      const parsePropsWithFallbackNameResult = this.config.zodProps.safeParse({
+        ...(props ?? {}),
+        name: "__tscircuit_unnamed_component__",
+      })
+      if (parsePropsWithFallbackNameResult.success) {
+        const parsedProps = {
+          ...parsePropsWithFallbackNameResult.data,
+        }
+        delete parsedProps.name
+        this._parsedProps = parsedProps as z.infer<ZodProps>
+      } else {
+        throw new InvalidProps(
+          this.lowercaseComponentName,
+          this.props,
+          parsePropsResult.error.format(),
+        )
+      }
     } else {
       throw new InvalidProps(
         this.lowercaseComponentName,

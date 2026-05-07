@@ -109,6 +109,10 @@ export type SimpleRouteJson = Omit<
   defaultObstacleMargin?: number
   minTraceToPadEdgeClearance?: number
   minViaEdgeToPadEdgeClearance?: number
+  minViaHoleEdgeToViaHoleEdgeClearance?: number
+  minPlatedHoleDrillEdgeToDrillEdgeClearance?: number
+  minPadEdgeToPadEdgeClearance?: number
+  minBoardEdgeClearance?: number
   obstacles: Obstacle[]
   connections: SimpleRouteConnection[]
   bounds: { minX: number; maxX: number; minY: number; maxY: number }
