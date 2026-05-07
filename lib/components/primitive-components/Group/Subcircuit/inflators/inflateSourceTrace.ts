@@ -11,6 +11,22 @@ import {
 } from "lib/utils/pcbTraceRouteToPcbPath"
 import type { InflatorContext } from "../InflatorFn"
 
+const getPortSelectorName = (
+  sourcePort: { name: string; pin_number?: number | null },
+  sourceComponent: { name: string },
+): string => {
+  if (sourcePort.pin_number !== undefined && sourcePort.pin_number !== null) {
+    return `pin${sourcePort.pin_number}`
+  }
+
+  const componentNamePrefix = `${sourceComponent.name}.`
+  if (sourcePort.name.startsWith(componentNamePrefix)) {
+    return sourcePort.name.slice(componentNamePrefix.length)
+  }
+
+  return sourcePort.name
+}
+
 const getSelectorPath = (
   component: { name: string; source_group_id: string | undefined },
   inflatorContext: InflatorContext,
@@ -65,7 +81,7 @@ export function inflateSourceTrace(
           },
           inflatorContext,
         )
-        selector = `${path} > .${sourcePort.name}`
+        selector = `${path} > .${getPortSelectorName(sourcePort, sourceComponent)}`
       }
     } else {
       // This is a port on a group, usually the root group of the subcircuit.
