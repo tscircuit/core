@@ -84,8 +84,5 @@ test("autoroutingphase can reroute a region with a squiggly route", async () => 
 
   await circuit.renderUntilSettled()
 
-  // const pcbTraces = circuit.db.pcb_trace.list()
-  // expect(pcbTraces).toHaveLength(3)
-
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

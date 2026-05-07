@@ -134,5 +134,24 @@ export function Group_getRoutingPhasePlans(
     plan.reroute = phaseProps?.reroute
     plan.region = phaseProps?.region
   }
+
+  const defaultPhaseProps = phasePropsByPhaseIndex.get(null)
+  if (
+    phasePropsByPhaseIndex.size === 1 &&
+    defaultPhaseProps?.reroute &&
+    plans.length === 1 &&
+    plans[0]?.routingPhaseIndex === null
+  ) {
+    const reroutePlan = plans[0]
+    return [
+      {
+        routingPhaseIndex: null,
+        nets: [...reroutePlan.nets],
+        traces: [...reroutePlan.traces],
+      },
+      reroutePlan,
+    ]
+  }
+
   return plans
 }
