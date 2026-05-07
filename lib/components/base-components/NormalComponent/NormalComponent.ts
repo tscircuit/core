@@ -1279,8 +1279,7 @@ export class NormalComponent<
       ...opts,
       inferredInternallyConnectedPinNames,
     }
-    let footprint = this._parsedProps.footprint ?? this.props.footprint
-
+    let { footprint } = this.props
     if (
       typeof footprint === "string" &&
       parseLibraryFootprintRef(footprint) &&
@@ -1841,8 +1840,10 @@ export class NormalComponent<
     if (!source_component) return
     if (source_component.supplier_part_numbers) return
 
-    const footprinterString = this.getFootprinterString() ?? undefined
-
+    let footprinterString: string | undefined
+    if (this.props.footprint && typeof this.props.footprint === "string") {
+      footprinterString = this.props.footprint
+    }
     const supplierPartNumbersMaybePromise = this._getSupplierPartNumbers(
       partsEngine,
       source_component,

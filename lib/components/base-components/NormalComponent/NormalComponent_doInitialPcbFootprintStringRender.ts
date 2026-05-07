@@ -22,7 +22,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
   component: NormalComponent<any, any>,
   queueAsyncEffect: (name: string, effect: () => Promise<void>) => void,
 ) {
-  let footprint = component._parsedProps.footprint ?? component.props.footprint
+  let { footprint } = component.props
   footprint ??= component._getImpliedFootprintString?.()
 
   if (!footprint) return
