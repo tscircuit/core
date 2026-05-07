@@ -38,6 +38,46 @@ export const insertNetLabelsForPortsMissingTrace = ({
       continue
     }
 
+    const text = sourceNet.name || sourceNet.source_net_id || key
+    const side =
+      getEnteringEdgeFromDirection(
+        (schPort.facing_direction as any) || "right",
+      ) || "right"
+    const center = computeSchematicNetLabelCenter({
+      anchor_position: schPort.center,
+      anchor_side: side as any,
+      text,
+    })
+
+    const connectedPortCountForKey = Array.from(
+      allSourceAndSchematicPortIdsInScope,
+    ).filter((portId) => {
+      const sourcePortId = schPortIdToSourcePortId.get(portId)
+      if (!sourcePortId) return false
+      return (
+        db.source_port.get(sourcePortId)?.subcircuit_connectivity_map_key ===
+        key
+      )
+    }).length
+
+    if (connectedPortCountForKey <= 1) {
+      const existingNetLabel = db.schematic_net_label.list().find((nl) => {
+        if (sourceNet.source_net_id && nl.source_net_id) {
+          return nl.source_net_id === sourceNet.source_net_id
+        }
+        return nl.text === (sourceNet.name || key)
+      })
+      if (existingNetLabel) {
+        db.schematic_net_label.update(existingNetLabel.schematic_net_label_id, {
+          text,
+          anchor_position: schPort.center,
+          center,
+          anchor_side: side as any,
+        })
+        continue
+      }
+    }
+
     // Avoid duplicate labels at this port anchor position
     // Use a larger tolerance to account for placement discrepancy between
     // different net label algorithms (solver vs port-based placement)
@@ -53,16 +93,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
     })
     if (existingAtPort) continue
 
-    const text = sourceNet.name || sourceNet.source_net_id || key
-    const side =
-      getEnteringEdgeFromDirection(
-        (schPort.facing_direction as any) || "right",
-      ) || "right"
-    const center = computeSchematicNetLabelCenter({
-      anchor_position: schPort.center,
-      anchor_side: side as any,
-      text,
-    })
     // @ts-ignore
     db.schematic_net_label.insert({
       text,

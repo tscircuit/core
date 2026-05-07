@@ -42,5 +42,10 @@ test("opamp without power connections", async () => {
 
   await circuit.renderUntilSettled()
 
+  const outLabels = circuit.db.schematic_net_label
+    .list()
+    .filter((label) => label.text === "out")
+  expect(outLabels).toHaveLength(1)
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path + "-no-power")
 })
