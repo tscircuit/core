@@ -126,7 +126,11 @@ export function inflateSourceTrace(
   // Otherwise, use straight-line routing (simple 2-point traces)
   if (pcbPath && pcbPath.length > 0) {
     traceProps.pcbPath = pcbPath
-  } else if (!pcbTrace) {
+  } else if (
+    !pcbTrace &&
+    sourceTrace.connected_source_port_ids.length === 2 &&
+    sourceTrace.connected_source_net_ids.length === 0
+  ) {
     // If the injected JSON has no routed pcb_trace, preserve the logical
     // connection by letting the manual trace phase create a direct PCB trace.
     traceProps.pcbStraightLine = true
