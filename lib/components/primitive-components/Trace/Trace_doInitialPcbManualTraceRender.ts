@@ -91,8 +91,24 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     jlcMinTolerances.min_trace_width!
 
   if (inflatedPcbTrace) {
+    const { maybeFlipLayer } = trace._getPcbPrimitiveFlippedHelpers()
+    const transform = trace._computePcbGlobalTransformBeforeLayout()
+    const transformedRoute = inflatedPcbTrace.route.map((point) => {
+      const { x, y, ...restOfPoint } = point
+      const transformedPoint = applyToPoint(transform, { x, y })
+      if (point.route_type === "wire" && point.layer) {
+        return {
+          ...transformedPoint,
+          ...restOfPoint,
+          layer: maybeFlipLayer(point.layer),
+        } as PcbTraceRoutePoint
+      }
+      return { ...transformedPoint, ...restOfPoint } as PcbTraceRoutePoint
+    })
+
     const pcb_trace = db.pcb_trace.insert({
       ...inflatedPcbTrace,
+      route: transformedRoute,
       source_trace_id: trace.source_trace_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
