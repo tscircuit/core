@@ -98,7 +98,7 @@ export function NormalComponent_doInitialSupplierFootprintMismatchWarning(
 ) {
   if (component.root?.pcbDisabled) return
   if (component.props.doNotPlace) return
-  if (component.props.footprint === undefined) return
+  if (component._parsedProps.footprint === undefined) return
   if (component.getInheritedProperty("bomDisabled")) return
   if (component.getInheritedProperty("partsEngineDisabled")) return
 
@@ -152,10 +152,10 @@ export function NormalComponent_doInitialSupplierFootprintMismatchWarning(
           return
         }
 
-        const footprintLabel =
-          typeof component.props.footprint === "string"
-            ? `"${component.props.footprint}"`
-            : "the provided footprint"
+        const resolvedFootprinterString = component.getFootprinterString()
+        const footprintLabel = resolvedFootprinterString
+          ? `"${resolvedFootprinterString}"`
+          : "the provided footprint"
         const roundedIou = Number(footprintCopperIou.toFixed(4))
         const warning = supplier_footprint_mismatch_warning.parse({
           type: "supplier_footprint_mismatch_warning",

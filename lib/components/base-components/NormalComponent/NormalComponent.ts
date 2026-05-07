@@ -502,7 +502,7 @@ export class NormalComponent<
 
   _addChildrenFromStringFootprint() {
     const { pcbRotation, pinLabels, pcbPinLabels } = this.props
-    let { footprint } = this.props
+    let footprint = this._parsedProps.footprint ?? this.props.footprint
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
 
@@ -1279,7 +1279,7 @@ export class NormalComponent<
       ...opts,
       inferredInternallyConnectedPinNames,
     }
-    let { footprint } = this.props
+    let footprint = this._parsedProps.footprint ?? this.props.footprint
 
     if (
       typeof footprint === "string" &&
@@ -1841,10 +1841,7 @@ export class NormalComponent<
     if (!source_component) return
     if (source_component.supplier_part_numbers) return
 
-    let footprinterString: string | undefined
-    if (this.props.footprint && typeof this.props.footprint === "string") {
-      footprinterString = this.props.footprint
-    }
+    const footprinterString = this.getFootprinterString() ?? undefined
 
     const supplierPartNumbersMaybePromise = this._getSupplierPartNumbers(
       partsEngine,
