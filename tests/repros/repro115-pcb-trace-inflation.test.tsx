@@ -15,7 +15,7 @@ test("repro115: pcb trace inflation missing", async () => {
 
   circuit.add(
     <board width="20mm" height="20mm">
-      <subcircuit name="S1" circuitJson={subcircuitCircuitJson}/>
+      <subcircuit name="S1" circuitJson={subcircuitCircuitJson} />
     </board>,
   )
 
