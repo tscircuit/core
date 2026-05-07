@@ -795,7 +795,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     for (const routingPhasePlan of routingPhasePlans) {
       const phaseAutorouterConfig: NormalizedAutorouterConfig =
         routingPhasePlan.autorouter
-          ? getPresetAutoroutingConfig(routingPhasePlan.autorouter)
+          ? getPresetAutoroutingConfig(
+              routingPhasePlan.autorouter,
+              this.root?.platform,
+            )
           : autorouterConfig
       let simpleRouteJson = baseSimpleRouteJson
       const isReroutePhase = Boolean(
@@ -1578,7 +1581,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _getAutorouterConfig(): AutorouterConfig {
     const autorouter =
       this._parsedProps.autorouter || this.getInheritedProperty("autorouter")
-    return getPresetAutoroutingConfig(autorouter)
+    return getPresetAutoroutingConfig(autorouter, this.root?.platform)
   }
 
   _isLaserPrefabAutorouter(
