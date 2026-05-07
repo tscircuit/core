@@ -1,7 +1,14 @@
-import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
+import {
+  convertSrjToGraphicsObject,
+  getRerouteSimpleRouteJson,
+  reconnectReroutedSimpleRouteJsonRegion,
+  type RerouteRectRegion,
+  type SimpleRouteJson as AutorouterSimpleRouteJson,
+} from "@tscircuit/capacity-autorouter"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   type AutorouterConfig,
+  type SchematicPortArrangement,
   type SubcircuitGroupProps,
   groupProps,
 } from "@tscircuit/props"
@@ -153,6 +160,83 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (hasUnresolvedNamedPins) return
 
     super.initPorts(opts)
+  }
+
+  _getSchematicPortArrangementFromPortDirections(): SchematicPortArrangement | null {
+    if (!this._parsedProps?.showAsSchematicBox) return null
+
+    const sidePins = {
+      leftSide: [] as Array<number | string>,
+      rightSide: [] as Array<number | string>,
+      topSide: [] as Array<number | string>,
+      bottomSide: [] as Array<number | string>,
+    }
+
+    for (const port of this.children) {
+      if (port.componentName !== "Port") continue
+
+      const direction = port._parsedProps.direction
+      if (!direction) continue
+
+      const pin =
+        port._parsedProps.pinNumber ?? port._parsedProps.name ?? undefined
+      if (pin === undefined) continue
+
+      const side =
+        direction === "left"
+          ? "leftSide"
+          : direction === "right"
+            ? "rightSide"
+            : direction === "up"
+              ? "topSide"
+              : "bottomSide"
+
+      sidePins[side].push(pin)
+    }
+
+    if (
+      sidePins.leftSide.length === 0 &&
+      sidePins.rightSide.length === 0 &&
+      sidePins.topSide.length === 0 &&
+      sidePins.bottomSide.length === 0
+    ) {
+      return null
+    }
+
+    const arrangement: SchematicPortArrangement = {}
+    if (sidePins.leftSide.length > 0) {
+      arrangement.leftSide = {
+        pins: sidePins.leftSide,
+        direction: "top-to-bottom",
+      }
+    }
+    if (sidePins.rightSide.length > 0) {
+      arrangement.rightSide = {
+        pins: sidePins.rightSide,
+        direction: "top-to-bottom",
+      }
+    }
+    if (sidePins.topSide.length > 0) {
+      arrangement.topSide = {
+        pins: sidePins.topSide,
+        direction: "left-to-right",
+      }
+    }
+    if (sidePins.bottomSide.length > 0) {
+      arrangement.bottomSide = {
+        pins: sidePins.bottomSide,
+        direction: "left-to-right",
+      }
+    }
+
+    return arrangement
+  }
+
+  override _getSchematicPortArrangement(): SchematicPortArrangement | null {
+    return (
+      super._getSchematicPortArrangement() ??
+      this._getSchematicPortArrangementFromPortDirections()
+    )
   }
 
   private _ensureSchematicBoxPortsFromConnections() {
@@ -714,7 +798,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ? getPresetAutoroutingConfig(routingPhasePlan.autorouter)
           : autorouterConfig
       let simpleRouteJson = baseSimpleRouteJson
-      if (hasPhasedAutorouting) {
+      const isReroutePhase = Boolean(
+        routingPhasePlan.reroute && routingPhasePlan.region,
+      )
+      const rerouteOriginalSrj = isReroutePhase
+        ? {
+            ...baseSimpleRouteJson,
+            traces: outputTraces,
+          }
+        : null
+
+      if (isReroutePhase && rerouteOriginalSrj) {
+        simpleRouteJson = getRerouteSimpleRouteJson(
+          rerouteOriginalSrj as AutorouterSimpleRouteJson,
+          {
+            shape: "rect",
+            ...routingPhasePlan.region,
+          } as RerouteRectRegion,
+        ) as SimpleRouteJson
+      } else if (hasPhasedAutorouting) {
         simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
           routingPhasePlan,
@@ -848,7 +950,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           outputJumpers.push(...(solver.getOutputJumpers() || []))
         }
 
-        outputTraces.push(...traces)
+        if (isReroutePhase && rerouteOriginalSrj) {
+          const reconnectedSrj = reconnectReroutedSimpleRouteJsonRegion(
+            rerouteOriginalSrj as AutorouterSimpleRouteJson,
+            {
+              ...simpleRouteJson,
+              traces: [...(simpleRouteJson.traces ?? []), ...traces],
+            } as AutorouterSimpleRouteJson,
+          ) as SimpleRouteJson
+          outputTraces.splice(
+            0,
+            outputTraces.length,
+            ...(reconnectedSrj.traces ?? []),
+          )
+        } else {
+          outputTraces.push(...traces)
+        }
       } catch (error) {
         const { db } = this.root!
         // Record the error
