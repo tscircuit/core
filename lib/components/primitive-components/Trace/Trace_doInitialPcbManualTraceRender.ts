@@ -18,8 +18,9 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
 
   const hasPcbPath = props.pcbPath !== undefined
   const wantsStraightLine = Boolean(props.pcbStraightLine)
+  const inflatedPcbTrace = trace._inflatedPcbTrace
 
-  if (!hasPcbPath && !wantsStraightLine) return
+  if (!hasPcbPath && !wantsStraightLine && !inflatedPcbTrace) return
 
   let allPortsFound: boolean
   let ports: Port[]
@@ -88,6 +89,19 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     trace._getExplicitTraceThickness() ??
     trace.getSubcircuit()._parsedProps.minTraceWidth ??
     jlcMinTolerances.min_trace_width!
+
+  if (inflatedPcbTrace) {
+    const pcb_trace = db.pcb_trace.insert({
+      ...inflatedPcbTrace,
+      source_trace_id: trace.source_trace_id!,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+    })
+    trace._portsRoutedOnPcb = ports
+    trace.pcb_trace_id = pcb_trace.pcb_trace_id
+    trace._insertErrorIfTraceIsOutsideBoard(pcb_trace.route, ports)
+    return
+  }
 
   if (wantsStraightLine && !hasPcbPath) {
     if (!ports || ports.length < 2) {

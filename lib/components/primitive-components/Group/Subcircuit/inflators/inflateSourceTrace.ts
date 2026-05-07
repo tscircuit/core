@@ -126,12 +126,14 @@ export function inflateSourceTrace(
   // Otherwise, use straight-line routing (simple 2-point traces)
   if (pcbPath && pcbPath.length > 0) {
     traceProps.pcbPath = pcbPath
-  } else if (pcbTrace) {
-    // Simple trace with no intermediate points - use straight line
+  } else if (!pcbTrace) {
+    // If the injected JSON has no routed pcb_trace, preserve the logical
+    // connection by letting the manual trace phase create a direct PCB trace.
     traceProps.pcbStraightLine = true
   }
 
   const trace = new Trace(traceProps)
+  trace._inflatedPcbTrace = pcbTrace ?? undefined
 
   subcircuit.add(trace)
 }
