@@ -4,7 +4,10 @@ import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
-import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
+import {
+  mergeRoutes,
+  replaceThroughObstacleRoutePoints,
+} from "lib/utils/autorouting/mergeRoutes"
 import { getClosest } from "lib/utils/getClosest"
 import { pairs } from "lib/utils/pairs"
 import { tryNow } from "lib/utils/try-now"
@@ -387,7 +390,10 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       })
       return
     }
-    const [autoroutedTrace] = traces as PcbTrace[]
+    const [autoroutedTrace] = traces as [
+      SimplifiedPcbTrace,
+      ...SimplifiedPcbTrace[],
+    ]
 
     // If the autorouter didn't specify a layer, use the dominant layer
     // Some of the single-layer autorouters don't add the layer property
@@ -400,15 +406,18 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       })
     }
 
-    if (pcbPortA && autoroutedTrace.route[0].route_type === "wire") {
-      autoroutedTrace.route[0].start_pcb_port_id = pcbPortA
+    const autoroutedRoute = replaceThroughObstacleRoutePoints(
+      autoroutedTrace.route,
+    )
+
+    if (pcbPortA && autoroutedRoute[0].route_type === "wire") {
+      autoroutedRoute[0].start_pcb_port_id = pcbPortA
     }
-    const lastRoutePoint =
-      autoroutedTrace.route[autoroutedTrace.route.length - 1]
+    const lastRoutePoint = autoroutedRoute[autoroutedRoute.length - 1]
     if (pcbPortB && lastRoutePoint.route_type === "wire") {
       lastRoutePoint.end_pcb_port_id = pcbPortB
     }
-    routes.push(autoroutedTrace.route)
+    routes.push(autoroutedRoute)
   }
   const mergedRoute = mergeRoutes(routes)
 

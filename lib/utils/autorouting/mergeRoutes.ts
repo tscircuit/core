@@ -1,7 +1,43 @@
-import type { PcbTrace } from "circuit-json"
+import type { LayerRef, PcbTrace } from "circuit-json"
+import type { SimplifiedPcbTrace } from "./SimpleRouteJson"
+
+type AutoroutedRoutePoint = SimplifiedPcbTrace["route"][number]
+type RoutePoint = AutoroutedRoutePoint | PcbTrace["route"][number]
 
 function pdist(a: PcbTrace["route"][number], b: PcbTrace["route"][number]) {
   return Math.hypot(a.x - b.x, a.y - b.y)
+}
+
+export function replaceThroughObstacleRoutePoints(
+  route: RoutePoint[],
+): PcbTrace["route"] {
+  return route.flatMap((point): PcbTrace["route"] => {
+    if (point.route_type !== "through_obstacle") {
+      return [point as PcbTrace["route"][number]]
+    }
+
+    const circuitJsonRoutePoints: PcbTrace["route"] = [
+      {
+        route_type: "via",
+        x: point.start.x,
+        y: point.start.y,
+        from_layer: point.from_layer as LayerRef,
+        to_layer: point.to_layer as LayerRef,
+      },
+    ]
+
+    if (point.start.x !== point.end.x || point.start.y !== point.end.y) {
+      circuitJsonRoutePoints.push({
+        route_type: "wire",
+        x: point.end.x,
+        y: point.end.y,
+        width: point.width,
+        layer: point.to_layer as LayerRef,
+      })
+    }
+
+    return circuitJsonRoutePoints
+  })
 }
 
 /**
