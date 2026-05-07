@@ -1,4 +1,8 @@
-import type { AutorouterConfig, AutorouterProp } from "@tscircuit/props"
+import type {
+  AutorouterConfig,
+  AutorouterProp,
+  PlatformConfig,
+} from "@tscircuit/props"
 
 export type NormalizedAutorouterConfig = AutorouterConfig & {
   capacityDepth?: number
@@ -7,6 +11,7 @@ export type NormalizedAutorouterConfig = AutorouterConfig & {
 
 export function getPresetAutoroutingConfig(
   autorouterConfig: AutorouterProp | undefined,
+  platformConfig?: PlatformConfig,
 ): NormalizedAutorouterConfig {
   const defaults = {
     serverUrl: "https://registry-api.tscircuit.com",
@@ -36,6 +41,20 @@ export function getPresetAutoroutingConfig(
 
   const normalizedPreset =
     typeof preset === "string" ? preset.replace(/_/g, "-") : preset
+
+  const platformAutorouter =
+    normalizedPreset && typeof normalizedPreset === "string"
+      ? platformConfig?.autorouterMap?.[normalizedPreset]
+      : undefined
+
+  if (platformAutorouter) {
+    return {
+      local: true,
+      groupMode: "subcircuit",
+      algorithmFn: async (simpleRouteJson) =>
+        platformAutorouter.createAutorouter(simpleRouteJson),
+    }
+  }
 
   switch (normalizedPreset) {
     case "auto-local":
