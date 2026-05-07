@@ -13,6 +13,7 @@ import {
 } from "transformation-matrix"
 import { calculateElbow } from "calculate-elbow"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
+import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 
 export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   source_net_label_id?: string
@@ -38,8 +39,12 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     const connectedPorts = this._getConnectedPorts()
     if (connectedPorts.length === 0) return "right"
 
-    const connectedPortPosition =
-      connectedPorts[0]._getGlobalSchematicPositionBeforeLayout()
+    const port = connectedPorts[0]
+    if (port.facingDirection) {
+      return getEnteringEdgeFromDirection(port.facingDirection as any)
+    }
+
+    const connectedPortPosition = port._getGlobalSchematicPositionBeforeLayout()
 
     const dx = connectedPortPosition.x - anchorPos.x
     const dy = connectedPortPosition.y - anchorPos.y
@@ -101,7 +106,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       `net.${this._getNetName()!}`,
     )! as Net
 
-    const anchorSide = props.anchorSide ?? "right"
+    const anchorSide = this._getAnchorSide()
     const center = computeSchematicNetLabelCenter({
       anchor_position: anchorPos,
       anchor_side: anchorSide,
@@ -113,7 +118,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       source_net_id: net.source_net_id!,
       anchor_position: anchorPos,
       center,
-      anchor_side: this._getAnchorSide(),
+      anchor_side: anchorSide,
     })
 
     this.source_net_label_id = netLabel.source_net_id
