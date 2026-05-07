@@ -666,6 +666,27 @@ export abstract class PrimitiveComponent<
    * TODO use footprint.originalLayer instead of assuming everything is defined
    * relative to the top layer
    */
+  /**
+   * Walks up the parent chain (starting at `start`, defaulting to
+   * `this`) returning the nearest explicit `layer` prop
+   * ("top" | "bottom"). Used to cascade a parent `<group layer="bottom">`
+   * flag to its component children when the child does not specify its
+   * own `layer`. Returns undefined if no ancestor sets a valid layer.
+   */
+  _getInheritedPcbLayer(
+    start: PrimitiveComponent | null = this,
+  ): "top" | "bottom" | undefined {
+    let current: any = start
+    while (current) {
+      const ownLayer = current._parsedProps?.layer
+      if (ownLayer === "top" || ownLayer === "bottom") {
+        return ownLayer
+      }
+      current = current.parent
+    }
+    return undefined
+  }
+
   _getPcbPrimitiveFlippedHelpers(): {
     isFlipped: boolean
     maybeFlipLayer: (layer: LayerRef) => LayerRef
@@ -676,7 +697,9 @@ export abstract class PrimitiveComponent<
     const isFlipped = !container
       ? false
       : isFootprintFlipped({
-          componentLayer: container._parsedProps.layer,
+          componentLayer:
+            container._parsedProps.layer ??
+            container._getInheritedPcbLayer(container.parent),
           originalLayer: footprint?._parsedProps.originalLayer,
         })
     const maybeFlipLayer = (layer: LayerRef) => {

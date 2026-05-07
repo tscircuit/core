@@ -844,8 +844,13 @@ export class NormalComponent<
     const { _parsedProps: props } = this
     const subcircuit = this.getSubcircuit()
 
-    // Validate that components can only be placed on top or bottom layers
-    const componentLayer = props.layer ?? "top"
+    // Validate that components can only be placed on top or bottom layers.
+    // Layer cascades from the nearest ancestor with an explicit `layer`
+    // prop — typically a parent <group layer="bottom"> wrapping the
+    // component. Setting `layer` on the component itself takes precedence.
+    // (Helper lives on PrimitiveComponent — also used by SmtPad/etc.)
+    const componentLayer =
+      props.layer ?? this._getInheritedPcbLayer(this.parent) ?? "top"
     if (componentLayer !== "top" && componentLayer !== "bottom") {
       const error = pcb_component_invalid_layer_error.parse({
         type: "pcb_component_invalid_layer_error",
@@ -1085,6 +1090,7 @@ export class NormalComponent<
     const decomposedTransform = decomposeTSR(globalTransform)
     return (decomposedTransform.rotation.angle * 180) / Math.PI
   }
+
 
   private _getFootprintMetadataForPcbComponent():
     | {
