@@ -1,7 +1,8 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { platedHoleProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
-import type { Port } from "./Port"
+import { Port } from "./Port"
+import { Trace } from "./Trace/Trace"
 import type {
   PCBPlatedHoleInput,
   PcbPlatedHoleOval,
@@ -12,17 +13,41 @@ import type {
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
+import type { z } from "zod"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
   matchedPort: Port | null = null
   isPcbPrimitive = true
 
+  constructor(props: z.input<typeof platedHoleProps>) {
+    super(props)
+    this.initPorts()
+  }
+
   get config() {
     return {
       componentName: "PlatedHole",
       zodProps: platedHoleProps,
     }
+  }
+
+  /**
+   * Standalone `<platedhole connectsTo="net.X">` (i.e., not nested
+   * inside a chip footprint with `portHints`) needs its own `pin1` Port
+   * so that the trace machinery — `doInitialCreateTracesFromProps` below
+   * — has an endpoint to connect from. Inside a chip footprint, the
+   * existing `doInitialPortMatching` path matches a parent Port via
+   * `portHints` instead, so we leave that case alone.
+   */
+  initPorts() {
+    if (this._parsedProps.portHints) return // chip-footprint case
+    if (!this._parsedProps.connectsTo) return // nothing to connect
+
+    const port = new Port({ name: "pin1" })
+    port.registerMatch(this)
+    this.matchedPort = port
+    this.add(port)
   }
 
   getAvailablePcbLayers(): string[] {
@@ -118,6 +143,81 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
 
     this.matchedPort = port
     port.registerMatch(this)
+  }
+
+  /**
+   * Standalone `<platedhole connectsTo="...">` needs a `source_component`
+   * so the `pin1` port created in `initPorts` has somewhere to attach
+   * during `doInitialSourceParentAttachment`. Inside a chip footprint
+   * the parent chip already supplies the source_component, so skip.
+   */
+  doInitialSourceRender(): void {
+    if (this._parsedProps.portHints) return // chip-internal
+    if (!this._parsedProps.connectsTo) return // not creating a port
+
+    const { db } = this.root!
+    const source_component = db.source_component.insert({
+      ftype: "simple_pin_header",
+      name: this.name,
+    })
+    this.source_component_id = source_component.source_component_id!
+  }
+
+  /**
+   * Standalone case also needs a `pcb_component` so the `pin1` port
+   * has a `pcb_component_id` parent during `doInitialPcbPortRender`.
+   * Sized to the platedhole's outer pad. Chip-footprint case is left
+   * to the parent chip's pcb_component.
+   */
+  doInitialPcbComponentRender(): void {
+    if (this.root?.pcbDisabled) return
+    if (this._parsedProps.portHints) return // chip-internal
+    if (!this._parsedProps.connectsTo) return
+
+    const { db } = this.root!
+    const position = this._getGlobalPcbPositionBeforeLayout()
+    const subcircuit = this.getSubcircuit()
+    const size = this.getPcbSize()
+    const pcb_component = db.pcb_component.insert({
+      center: position,
+      width: size.width,
+      height: size.height,
+      layer: "top",
+      rotation: 0,
+      source_component_id: this.source_component_id!,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+    })
+    this.pcb_component_id = pcb_component.pcb_component_id
+  }
+
+  /**
+   * Mirror of `NormalComponent._createTracesFromConnectionsProp`: read
+   * the `connectsTo` prop and emit a `<Trace>` child from this plated
+   * hole's `pin1` port to each named target (typically `"net.X"`).
+   * Without this, a standalone `<platedhole connectsTo="net.X">`
+   * appears in the schematic with the requested net label but is
+   * electrically disconnected — the prop typechecks but is never
+   * consumed at runtime.
+   *
+   * The chip-footprint case (`portHints` set, no own port created)
+   * is left to its existing port-matching path.
+   */
+  doInitialCreateTracesFromProps(): void {
+    const { _parsedProps: props } = this
+    if (!props.connectsTo) return
+    if (props.portHints) return // chip-internal — port matching handles it
+
+    const targets = Array.isArray(props.connectsTo)
+      ? props.connectsTo
+      : [props.connectsTo]
+    for (const target of targets) {
+      this.add(
+        new Trace({
+          from: `.${this.name} > .pin1`,
+          to: String(target),
+        }),
+      )
+    }
   }
 
   doInitialPcbPrimitiveRender(): void {
