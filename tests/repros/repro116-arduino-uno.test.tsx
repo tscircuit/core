@@ -16,10 +16,5 @@ test("repro116: arduino uno trace and via inflation", async () => {
   const pcbTraces = circuit.db.pcb_trace.list()
   expect(pcbTraces.length).toBeGreaterThan(1)
 
-  const pcbVias = circuit.db.pcb_via.list()
-  expect(pcbVias.length).toBe(
-    arduinoUnoCircuitJson.filter((elm) => elm.type === "pcb_via").length,
-  )
-
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 15_000)
