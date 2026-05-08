@@ -4,7 +4,10 @@ import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
-import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
+import type {
+  RoutingPhaseDrcTolerances,
+  RoutingPhasePlan,
+} from "./GroupRoutingPhasePlan"
 
 type RoutePoint = SimplifiedPcbTrace["route"][number]
 
@@ -195,6 +198,80 @@ export function Group_filterSimpleRouteJsonForPhase(
   return {
     ...simpleRouteJson,
     connections,
+  }
+}
+
+function hasDrcTolerances(
+  drcTolerances: RoutingPhaseDrcTolerances | undefined,
+): drcTolerances is RoutingPhaseDrcTolerances {
+  if (!drcTolerances) return false
+  return Object.values(drcTolerances).some((value) => value !== undefined)
+}
+
+function applyMinTraceWidthToConnections(
+  connections: SimpleRouteConnection[],
+  minTraceWidth: number | undefined,
+): SimpleRouteConnection[] {
+  if (minTraceWidth === undefined) return connections
+
+  return connections.map((connection) => ({
+    ...connection,
+    nominalTraceWidth: Math.max(
+      connection.nominalTraceWidth ?? minTraceWidth,
+      minTraceWidth,
+    ),
+    width: Math.max(connection.width ?? minTraceWidth, minTraceWidth),
+  }))
+}
+
+export function Group_applyDrcTolerancesToSimpleRouteJson(
+  simpleRouteJson: SimpleRouteJson,
+  drcTolerances: RoutingPhaseDrcTolerances | undefined,
+): SimpleRouteJson {
+  if (!hasDrcTolerances(drcTolerances)) return simpleRouteJson
+
+  const minTraceWidth =
+    drcTolerances.minTraceWidth ?? simpleRouteJson.minTraceWidth
+  const minViaHoleDiameter =
+    drcTolerances.minViaHoleDiameter ?? simpleRouteJson.minViaHoleDiameter
+  const minViaPadDiameter =
+    drcTolerances.minViaPadDiameter ?? simpleRouteJson.minViaPadDiameter
+  const minTraceToPadEdgeClearance =
+    drcTolerances.minTraceToPadEdgeClearance ??
+    simpleRouteJson.minTraceToPadEdgeClearance
+  const minViaEdgeToPadEdgeClearance =
+    drcTolerances.minViaEdgeToPadEdgeClearance ??
+    simpleRouteJson.minViaEdgeToPadEdgeClearance
+  const minViaHoleEdgeToViaHoleEdgeClearance =
+    drcTolerances.minViaHoleEdgeToViaHoleEdgeClearance ??
+    simpleRouteJson.minViaHoleEdgeToViaHoleEdgeClearance
+  const minPlatedHoleDrillEdgeToDrillEdgeClearance =
+    drcTolerances.minPlatedHoleDrillEdgeToDrillEdgeClearance ??
+    simpleRouteJson.minPlatedHoleDrillEdgeToDrillEdgeClearance
+  const minPadEdgeToPadEdgeClearance =
+    drcTolerances.minPadEdgeToPadEdgeClearance ??
+    simpleRouteJson.minPadEdgeToPadEdgeClearance
+  const minBoardEdgeClearance =
+    drcTolerances.minBoardEdgeClearance ?? simpleRouteJson.minBoardEdgeClearance
+
+  return {
+    ...simpleRouteJson,
+    connections: applyMinTraceWidthToConnections(
+      simpleRouteJson.connections,
+      drcTolerances.minTraceWidth,
+    ),
+    minTraceWidth,
+    minViaDiameter: minViaPadDiameter,
+    minViaHoleDiameter,
+    minViaPadDiameter,
+    min_via_hole_diameter: minViaHoleDiameter,
+    min_via_pad_diameter: minViaPadDiameter,
+    minTraceToPadEdgeClearance,
+    minViaEdgeToPadEdgeClearance,
+    minViaHoleEdgeToViaHoleEdgeClearance,
+    minPlatedHoleDrillEdgeToDrillEdgeClearance,
+    minPadEdgeToPadEdgeClearance,
+    minBoardEdgeClearance,
   }
 }
 

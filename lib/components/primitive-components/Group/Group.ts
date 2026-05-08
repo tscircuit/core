@@ -62,6 +62,7 @@ import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSou
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import {
+  Group_applyDrcTolerancesToSimpleRouteJson,
   Group_filterSimpleRouteJsonForPhase,
   Group_getObstaclesFromRoutedTraces,
   Group_hasPhasedAutorouting,
@@ -829,6 +830,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ...Group_getObstaclesFromRoutedTraces(outputTraces),
         ]
       }
+      simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
+        simpleRouteJson,
+        routingPhasePlan.drcTolerances,
+      )
 
       if (hasPhasedAutorouting && simpleRouteJson.connections.length === 0) {
         continue

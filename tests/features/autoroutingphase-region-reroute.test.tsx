@@ -161,6 +161,15 @@ test("autoroutingphase can reroute middle components with a zigzag route", async
           <autoroutingphase
             phaseIndex={1}
             reroute
+            minTraceWidth="0.42mm"
+            minViaHoleDiameter={0.24}
+            minViaPadDiameter={0.62}
+            minViaHoleEdgeToViaHoleEdgeClearance={0.13}
+            minPlatedHoleDrillEdgeToDrillEdgeClearance={0.21}
+            minTraceToPadEdgeClearance={0.11}
+            minPadEdgeToPadEdgeClearance={0.12}
+            minBoardEdgeClearance={0.31}
+            minViaEdgeToPadEdgeClearance={0.14}
             region={{
               shape: "rect",
               minX: -2,
@@ -204,6 +213,18 @@ test("autoroutingphase can reroute middle components with a zigzag route", async
     minY: -1,
     maxY: 1,
   })
+  expect(phaseInputs[0]!.minTraceWidth).toBe(0.42)
+  expect(phaseInputs[0]!.minViaHoleDiameter).toBe(0.24)
+  expect(phaseInputs[0]!.minViaPadDiameter).toBe(0.62)
+  expect(phaseInputs[0]!.min_via_hole_diameter).toBe(0.24)
+  expect(phaseInputs[0]!.min_via_pad_diameter).toBe(0.62)
+  expect(phaseInputs[0]!.minViaHoleEdgeToViaHoleEdgeClearance).toBe(0.13)
+  expect(phaseInputs[0]!.minPlatedHoleDrillEdgeToDrillEdgeClearance).toBe(0.21)
+  expect(phaseInputs[0]!.minTraceToPadEdgeClearance).toBe(0.11)
+  expect(phaseInputs[0]!.minPadEdgeToPadEdgeClearance).toBe(0.12)
+  expect(phaseInputs[0]!.minBoardEdgeClearance).toBe(0.31)
+  expect(phaseInputs[0]!.minViaEdgeToPadEdgeClearance).toBe(0.14)
+  expect(phaseInputs[0]!.connections[0]!.nominalTraceWidth).toBe(0.42)
   expect(rerouteConnectionNames).toHaveLength(1)
   expect(rerouteConnectionNames[0]).toContain("_reroute_")
   expect(pcbTraces).toHaveLength(5)
@@ -228,6 +249,16 @@ test("autoroutingphase can reroute middle components with a zigzag route", async
         ) &&
         trace.route.some(
           (point) => point.route_type === "wire" && point.y === -0.8,
+        ),
+    ),
+  ).toBe(true)
+  expect(
+    pcbTraces.some(
+      (trace) =>
+        trace.route.filter((point) => point.route_type === "wire").length ===
+          6 &&
+        trace.route.every(
+          (point) => point.route_type === "wire" && point.width === 0.42,
         ),
     ),
   ).toBe(true)
