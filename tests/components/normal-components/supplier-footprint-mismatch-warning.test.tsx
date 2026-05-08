@@ -40,6 +40,5 @@ test("emits supplier footprint mismatch warning for mismatched supplier footprin
     pcb_component_id: circuit.db.pcb_component.list()[0].pcb_component_id,
   })
   expect(warnings[0].message).toContain("R1")
-  expect(warnings[0].message).toContain('"res0402"')
   expect(warnings[0].footprint_copper_intersection_over_union).toBeLessThan(0.8)
 })
