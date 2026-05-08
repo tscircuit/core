@@ -3,7 +3,7 @@ import { pcb_trace as pcbTraceSchema } from "circuit-json"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("autorouted through_obstacle route points are not written to pcb_trace", async () => {
+test("autorouted through_pad route points are not written to pcb_trace", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -17,11 +17,11 @@ test("autorouted through_obstacle route points are not written to pcb_trace", as
         algorithmFn: createBasicAutorouter(async () => [
           {
             type: "pcb_trace",
-            pcb_trace_id: "pcb_trace_repro_through_obstacle",
+            pcb_trace_id: "pcb_trace_repro_through_pad",
             route: [
               { route_type: "wire", x: -5, y: 0, width: 0.15, layer: "top" },
               {
-                route_type: "through_obstacle",
+                route_type: "through_pad",
                 start: { x: -5, y: 0 },
                 end: { x: 5, y: 0 },
                 from_layer: "top",
@@ -51,7 +51,7 @@ test("autorouted through_obstacle route points are not written to pcb_trace", as
     "wire",
   ])
   expect(pcb_trace.route).not.toContainEqual(
-    expect.objectContaining({ route_type: "through_obstacle" }),
+    expect.objectContaining({ route_type: "through_pad" }),
   )
   expect(pcbTraceSchema.safeParse(pcb_trace).success).toBe(true)
 })

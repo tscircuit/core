@@ -35,7 +35,7 @@ import {
   getPresetAutoroutingConfig,
   type NormalizedAutorouterConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
-import { replaceThroughObstacleRoutePoints } from "lib/utils/autorouting/mergeRoutes"
+import { replaceThroughPadRoutePoints } from "lib/utils/autorouting/mergeRoutes"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
@@ -1109,7 +1109,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // TODO use upsert to make sure we're not re-creating traces
       const pcb_trace = db.pcb_trace.insert({
         subcircuit_id: this.subcircuit_id!,
-        route: replaceThroughObstacleRoutePoints(routedTrace.route),
+        route: replaceThroughPadRoutePoints(routedTrace.route),
         // source_trace_id: circuitTrace.source_trace_id!,
       })
       // circuitTrace.pcb_trace_id = pcb_trace.pcb_trace_id
@@ -1176,7 +1176,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       segments = segments.map((segment) =>
-        replaceThroughObstacleRoutePoints(segment),
+        replaceThroughPadRoutePoints(segment),
       )
 
       // Add port IDs to trace segments at jumper pad locations

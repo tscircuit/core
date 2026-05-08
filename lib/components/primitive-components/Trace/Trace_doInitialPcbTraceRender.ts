@@ -6,7 +6,7 @@ import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import {
   mergeRoutes,
-  replaceThroughObstacleRoutePoints,
+  replaceThroughPadRoutePoints,
 } from "lib/utils/autorouting/mergeRoutes"
 import { getClosest } from "lib/utils/getClosest"
 import { pairs } from "lib/utils/pairs"
@@ -406,9 +406,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       })
     }
 
-    const autoroutedRoute = replaceThroughObstacleRoutePoints(
-      autoroutedTrace.route,
-    )
+    const autoroutedRoute = replaceThroughPadRoutePoints(autoroutedTrace.route)
 
     if (pcbPortA && autoroutedRoute[0].route_type === "wire") {
       autoroutedRoute[0].start_pcb_port_id = pcbPortA

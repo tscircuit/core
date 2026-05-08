@@ -35,7 +35,7 @@ export type SimplifiedPcbTrace = Omit<
         layer: string
       }
     | {
-        route_type: "through_obstacle"
+        route_type: "through_pad"
         start: { x: number; y: number }
         end: { x: number; y: number }
         from_layer: string

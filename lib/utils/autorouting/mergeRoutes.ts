@@ -8,11 +8,11 @@ function pdist(a: PcbTrace["route"][number], b: PcbTrace["route"][number]) {
   return Math.hypot(a.x - b.x, a.y - b.y)
 }
 
-export function replaceThroughObstacleRoutePoints(
+export function replaceThroughPadRoutePoints(
   route: RoutePoint[],
 ): PcbTrace["route"] {
   return route.flatMap((point): PcbTrace["route"] => {
-    if (point.route_type !== "through_obstacle") {
+    if (point.route_type !== "through_pad") {
       return [point as PcbTrace["route"][number]]
     }
 
