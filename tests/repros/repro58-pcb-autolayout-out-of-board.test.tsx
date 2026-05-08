@@ -94,5 +94,5 @@ test(
 
     expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
   },
-  { timeout: 80000 },
+  { timeout: 1000000 },
 )

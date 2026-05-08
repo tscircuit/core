@@ -81,7 +81,9 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       width: Number(component.width.toFixed(3)),
       height: Number(component.height.toFixed(3)),
+      rotation: Number(component.rotation.toFixed(3)),
       layer: component.layer,
+      positionMode: component.position_mode,
     }))
     .sort((a, b) => a.name.localeCompare(b.name))
 
@@ -95,6 +97,8 @@ test("repro44 - pcbPack and schematic", async () => {
         "height": 4.05,
         "layer": "top",
         "name": "C1",
+        "positionMode": "packed",
+        "rotation": -90,
         "width": 1.75,
       },
       {
@@ -105,17 +109,21 @@ test("repro44 - pcbPack and schematic", async () => {
         "height": 2.85,
         "layer": "top",
         "name": "C2",
+        "positionMode": "packed",
+        "rotation": -90,
         "width": 1.4,
       },
       {
         "center": {
-          "x": 0,
-          "y": 0,
+          "x": 8.625,
+          "y": 5.545,
         },
-        "height": 0,
+        "height": 2.45,
         "layer": "top",
         "name": "D1",
-        "width": 0,
+        "positionMode": "packed",
+        "rotation": 90,
+        "width": 0.95,
       },
       {
         "center": {
@@ -125,6 +133,8 @@ test("repro44 - pcbPack and schematic", async () => {
         "height": 1.4,
         "layer": "top",
         "name": "R1",
+        "positionMode": "packed",
+        "rotation": 180,
         "width": 2.85,
       },
       {
@@ -135,17 +145,21 @@ test("repro44 - pcbPack and schematic", async () => {
         "height": 1.4,
         "layer": "top",
         "name": "R2",
+        "positionMode": "packed",
+        "rotation": 180,
         "width": 2.85,
       },
       {
         "center": {
-          "x": -5.58,
-          "y": -0.635,
+          "x": 5.325,
+          "y": 4.265,
         },
-        "height": 1.4,
+        "height": 2.85,
         "layer": "top",
         "name": "R3",
-        "width": 2.85,
+        "positionMode": "packed",
+        "rotation": 90,
+        "width": 1.4,
       },
       {
         "center": {
@@ -155,6 +169,8 @@ test("repro44 - pcbPack and schematic", async () => {
         "height": 4.41,
         "layer": "top",
         "name": "U1",
+        "positionMode": "packed",
+        "rotation": 0,
         "width": 5.3,
       },
     ]

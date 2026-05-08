@@ -502,7 +502,7 @@ export class NormalComponent<
 
   _addChildrenFromStringFootprint() {
     const { pcbRotation, pinLabels, pcbPinLabels } = this.props
-    let { footprint } = this.props
+    let footprint = this._parsedProps.footprint ?? this.props.footprint
     footprint ??= this._getImpliedFootprintString?.()
     if (!footprint) return
 
@@ -1280,7 +1280,6 @@ export class NormalComponent<
       inferredInternallyConnectedPinNames,
     }
     let { footprint } = this.props
-
     if (
       typeof footprint === "string" &&
       parseLibraryFootprintRef(footprint) &&
@@ -1845,7 +1844,6 @@ export class NormalComponent<
     if (this.props.footprint && typeof this.props.footprint === "string") {
       footprinterString = this.props.footprint
     }
-
     const supplierPartNumbersMaybePromise = this._getSupplierPartNumbers(
       partsEngine,
       source_component,
