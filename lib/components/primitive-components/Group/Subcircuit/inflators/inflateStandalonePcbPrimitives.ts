@@ -24,14 +24,17 @@ export function inflateStandalonePcbPrimitives(
     "pcb_note_rect",
     "pcb_note_path",
     "pcb_note_line",
+    "pcb_via",
   ]
 
   const standalonePrimitives = injectionDb.toArray().filter(
     (elm) =>
       standalonePrimitiveTypes.includes(elm.type) &&
-      // Check for null or undefined pcb_component_id
-      "pcb_component_id" in elm &&
-      (elm.pcb_component_id === null || elm.pcb_component_id === undefined),
+      // Check for null or undefined pcb_component_id. Some standalone
+      // primitives, such as pcb_via, do not define pcb_component_id at all.
+      (!("pcb_component_id" in elm) ||
+        elm.pcb_component_id === null ||
+        elm.pcb_component_id === undefined),
   )
 
   if (standalonePrimitives.length === 0) return

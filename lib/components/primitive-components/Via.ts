@@ -165,14 +165,15 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       this._getResolvedViaDiameters(pcbStyle)
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()
+    const layers = this._getLayers()
     const pcb_via = db.pcb_via.insert({
       x: position.x,
       y: position.y,
       hole_diameter: holeDiameter,
       outer_diameter: padDiameter,
-      layers: ["bottom", "top"],
-      from_layer: this._parsedProps.fromLayer || "bottom",
-      to_layer: this._parsedProps.toLayer || "top",
+      layers,
+      from_layer: layers[0],
+      to_layer: layers[layers.length - 1],
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       subcircuit_connectivity_map_key:
         this.subcircuit_connectivity_map_key ?? undefined,
