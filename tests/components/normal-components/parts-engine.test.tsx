@@ -28,7 +28,7 @@ test("parts engine modifies source component", async () => {
   await circuit.renderUntilSettled()
 
   const sourceComponent = circuit.db.source_component.list()[0]
-  expect(findPartCalls).toEqual([{ footprinterString: "res0402" }])
+  expect(findPartCalls).toEqual([{ footprinterString: "0402" }])
   expect(sourceComponent.supplier_part_numbers).toEqual({
     digikey: ["123-456"],
     mouser: ["789-012"],
