@@ -20,6 +20,7 @@ import {
   type SchematicComponent,
   type SchematicPort,
   distance,
+  length,
 } from "circuit-json"
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
@@ -1448,6 +1449,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
     }
 
+    // Snap children flagged with `shouldBeOnEdgeOfBoard` to the
+    // nearest edge of this group's bounds BEFORE the layout mode
+    // dispatch. Runs regardless of which layout mode applies (or
+    // even if it's "none"), because the prop's whole purpose is to
+    // override the packer's auto-placement for parts that must
+    // touch a board edge (connectors, through-holes).
+    this._doInitialPcbEdgeSnap()
+
     const pcbLayoutMode = this._getPcbLayoutMode()
 
     if (pcbLayoutMode === "grid") {
@@ -1456,6 +1465,96 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this._doInitialPcbLayoutPack()
     } else if (pcbLayoutMode === "flex") {
       this._doInitialPcbLayoutFlex()
+    }
+  }
+
+  /**
+   * Implements `shouldBeOnEdgeOfBoard`. For every direct child whose
+   * `_parsedProps.shouldBeOnEdgeOfBoard` is true, find the nearest
+   * edge of this group's bounds (only runs if `width` and `height`
+   * are specified) and shift the child so its courtyard touches that
+   * edge. Picks edge by which is closest to the child's CURRENT
+   * center — so explicit `pcbX`/`pcbY` acts as a directional hint
+   * while only the perpendicular dimension is snapped.
+   */
+  _doInitialPcbEdgeSnap(): void {
+    if (this.root?.pcbDisabled) return
+    const props = this._parsedProps as any
+    if (props.width === undefined || props.height === undefined) return
+
+    const { db } = this.root!
+    const widthMm = length.parse(props.width)
+    const heightMm = length.parse(props.height)
+    const bounds = {
+      minX: -widthMm / 2,
+      maxX: widthMm / 2,
+      minY: -heightMm / 2,
+      maxY: heightMm / 2,
+    }
+
+    for (const child of this.children) {
+      const childAny = child as any
+      if (!childAny._parsedProps?.shouldBeOnEdgeOfBoard) continue
+      if (!childAny.pcb_component_id) continue
+
+      const pcbComponent = db.pcb_component.get(childAny.pcb_component_id)
+      if (!pcbComponent) continue
+
+      let size = { width: 0, height: 0 }
+      if (typeof childAny.getPcbSize === "function") {
+        try {
+          size = childAny.getPcbSize()
+        } catch {
+          size = {
+            width: pcbComponent.width ?? 0,
+            height: pcbComponent.height ?? 0,
+          }
+        }
+      } else {
+        size = {
+          width: pcbComponent.width ?? 0,
+          height: pcbComponent.height ?? 0,
+        }
+      }
+
+      // Read the user's positional hint from display_offset_x/y (where
+      // explicit pcbX/pcbY get stamped during _initializePcbDisplayOffset)
+      // rather than pcb_component.center, which is still (0,0) at this
+      // phase.
+      const hintX =
+        typeof (pcbComponent as any).display_offset_x === "number"
+          ? ((pcbComponent as any).display_offset_x as number)
+          : pcbComponent.center.x
+      const hintY =
+        typeof (pcbComponent as any).display_offset_y === "number"
+          ? ((pcbComponent as any).display_offset_y as number)
+          : pcbComponent.center.y
+
+      const distLeft = Math.abs(hintX - bounds.minX)
+      const distRight = Math.abs(bounds.maxX - hintX)
+      const distTop = Math.abs(bounds.maxY - hintY)
+      const distBottom = Math.abs(hintY - bounds.minY)
+      const minDist = Math.min(distLeft, distRight, distTop, distBottom)
+
+      const newCenter = { x: hintX, y: hintY }
+      if (minDist === distLeft) {
+        newCenter.x = bounds.minX + size.width / 2
+      } else if (minDist === distRight) {
+        newCenter.x = bounds.maxX - size.width / 2
+      } else if (minDist === distTop) {
+        newCenter.y = bounds.maxY - size.height / 2
+      } else {
+        newCenter.y = bounds.minY + size.height / 2
+      }
+
+      // Update both center (used by getBounds and downstream consumers)
+      // AND display_offset_x/y (used by the packer / applyPackOutput
+      // pipeline) so the snapped position survives subsequent phases.
+      db.pcb_component.update(childAny.pcb_component_id, {
+        center: newCenter,
+        display_offset_x: newCenter.x as any,
+        display_offset_y: newCenter.y as any,
+      })
     }
   }
 

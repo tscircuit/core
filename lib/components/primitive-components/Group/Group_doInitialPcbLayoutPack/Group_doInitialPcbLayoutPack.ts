@@ -133,6 +133,19 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     }
   }
 
+  // shouldBeOnEdgeOfBoard children are pre-snapped + marked static
+  // by `_doInitialPcbEdgeSnap` (runs in `doInitialPcbLayout` before
+  // mode dispatch). Pick them up here so the packer leaves them put.
+  for (const child of group.children) {
+    const childAny = child as any
+    if (
+      childAny._parsedProps?.shouldBeOnEdgeOfBoard &&
+      childAny.pcb_component_id
+    ) {
+      staticPcbComponentIds.add(childAny.pcb_component_id)
+    }
+  }
+
   const packInput: PackInput = {
     ...convertPackOutputToPackInput(
       convertCircuitJsonToPackOutput(filteredCircuitJson, {
