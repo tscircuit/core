@@ -18,8 +18,9 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
 
   const hasPcbPath = props.pcbPath !== undefined
   const wantsStraightLine = Boolean(props.pcbStraightLine)
+  const inflatedPcbTrace = trace._inflatedPcbTrace
 
-  if (!hasPcbPath && !wantsStraightLine) return
+  if (!hasPcbPath && !wantsStraightLine && !inflatedPcbTrace) return
 
   let allPortsFound: boolean
   let ports: Port[]
@@ -88,6 +89,51 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     trace._getExplicitTraceThickness() ??
     trace.getSubcircuit()._parsedProps.minTraceWidth ??
     jlcMinTolerances.min_trace_width!
+
+  if (inflatedPcbTrace) {
+    const { maybeFlipLayer } = trace._getPcbPrimitiveFlippedHelpers()
+    const transform = trace._computePcbGlobalTransformBeforeLayout()
+    const transformedRoute = inflatedPcbTrace.route.map((point) => {
+      const { x, y, ...restOfPoint } = point
+      const transformedPoint = applyToPoint(transform, { x, y })
+      if (point.route_type === "wire" && point.layer) {
+        return {
+          ...transformedPoint,
+          ...restOfPoint,
+          layer: maybeFlipLayer(point.layer),
+        } as PcbTraceRoutePoint
+      }
+      return { ...transformedPoint, ...restOfPoint } as PcbTraceRoutePoint
+    })
+
+    const pcb_trace = db.pcb_trace.insert({
+      ...inflatedPcbTrace,
+      route: transformedRoute,
+      source_trace_id: trace.source_trace_id!,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+    })
+    const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
+    const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+    for (const point of transformedRoute) {
+      if (point.route_type === "via") {
+        db.pcb_via.insert({
+          pcb_trace_id: pcb_trace.pcb_trace_id,
+          x: point.x,
+          y: point.y,
+          hole_diameter: holeDiameter,
+          outer_diameter: padDiameter,
+          layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
+          from_layer: point.from_layer as LayerRef,
+          to_layer: point.to_layer as LayerRef,
+        })
+      }
+    }
+    trace._portsRoutedOnPcb = ports
+    trace.pcb_trace_id = pcb_trace.pcb_trace_id
+    trace._insertErrorIfTraceIsOutsideBoard(pcb_trace.route, ports)
+    return
+  }
 
   if (wantsStraightLine && !hasPcbPath) {
     if (!ports || ports.length < 2) {
