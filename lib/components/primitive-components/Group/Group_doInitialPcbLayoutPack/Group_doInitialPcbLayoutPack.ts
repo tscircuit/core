@@ -115,7 +115,13 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   // Keep all circuit elements; static components will remain fixed during packing
   const filteredCircuitJson = db.toArray()
 
-  // Calculate bounds if width and height are specified
+  // Calculate bounds if width and height are specified.
+  // If the group itself doesn't have them, walk up to the nearest
+  // ancestor that does (typically the board) and shrink/translate
+  // that ancestor's bounds to this group's local packing frame.
+  // Without this fallback, packers on inner groups have no bounds
+  // and pack components in an unbounded column off the board —
+  // see tscircuit/core#2272.
   let bounds:
     | { minX: number; minY: number; maxX: number; maxY: number }
     | undefined
@@ -130,6 +136,44 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       maxX: widthMm / 2,
       minY: -heightMm / 2,
       maxY: heightMm / 2,
+    }
+  } else {
+    // Inherit from nearest ancestor with width/height. Walk parents,
+    // accumulating each step's pcbX/pcbY so the resulting bounds end
+    // up in THIS group's local packing frame (centered at 0,0).
+    let cumulativeOffsetX = 0
+    let cumulativeOffsetY = 0
+    let ancestor: any = group.parent
+    while (ancestor) {
+      const apProps = ancestor._parsedProps
+      if (typeof apProps?.pcbX === "number") cumulativeOffsetX += apProps.pcbX
+      if (typeof apProps?.pcbY === "number") cumulativeOffsetY += apProps.pcbY
+      if (apProps?.width !== undefined && apProps?.height !== undefined) {
+        const widthMm = length.parse(apProps.width)
+        const heightMm = length.parse(apProps.height)
+        // Ancestor bounds in ITS local frame, centered at (0, 0) of ancestor.
+        // To express in THIS group's local frame: subtract the chain of
+        // pcb offsets (the group's center in ancestor coords, summed
+        // through any intermediate offsets we passed through).
+        // Note: the group's OWN pcbX/pcbY is the offset from its parent;
+        // by walking up from group.parent we already start one level
+        // above the group, so we need to subtract the group's own
+        // offset too.
+        const groupOwnX =
+          typeof props.pcbX === "number" ? props.pcbX : 0
+        const groupOwnY =
+          typeof props.pcbY === "number" ? props.pcbY : 0
+        const totalOffsetX = cumulativeOffsetX + groupOwnX
+        const totalOffsetY = cumulativeOffsetY + groupOwnY
+        bounds = {
+          minX: -widthMm / 2 - totalOffsetX,
+          maxX: widthMm / 2 - totalOffsetX,
+          minY: -heightMm / 2 - totalOffsetY,
+          maxY: heightMm / 2 - totalOffsetY,
+        }
+        break
+      }
+      ancestor = ancestor.parent
     }
   }
 
