@@ -24,15 +24,34 @@ export function inflateStandalonePcbPrimitives(
     "pcb_note_rect",
     "pcb_note_path",
     "pcb_note_line",
+    "pcb_via",
   ]
 
-  const standalonePrimitives = injectionDb.toArray().filter(
-    (elm) =>
-      standalonePrimitiveTypes.includes(elm.type) &&
-      // Check for null or undefined pcb_component_id
+  const standalonePrimitives = injectionDb.toArray().filter((elm) => {
+    if (!standalonePrimitiveTypes.includes(elm.type)) return false
+    if (elm.type === "pcb_via") {
+      if (!elm.pcb_trace_id) return true
+
+      const pcbTrace = injectionDb.pcb_trace.get(elm.pcb_trace_id)
+      const sourceTraceId = pcbTrace?.source_trace_id
+      const isHandledByInflatedTrace =
+        sourceTraceId &&
+        injectionDb.source_trace.get(sourceTraceId) &&
+        pcbTrace?.route.some(
+          (point) =>
+            point.route_type === "via" &&
+            Math.abs(point.x - elm.x) < 0.0001 &&
+            Math.abs(point.y - elm.y) < 0.0001,
+        )
+
+      return !isHandledByInflatedTrace
+    }
+    // Check for null or undefined pcb_component_id
+    return (
       "pcb_component_id" in elm &&
-      (elm.pcb_component_id === null || elm.pcb_component_id === undefined),
-  )
+      (elm.pcb_component_id === null || elm.pcb_component_id === undefined)
+    )
+  })
 
   if (standalonePrimitives.length === 0) return
 

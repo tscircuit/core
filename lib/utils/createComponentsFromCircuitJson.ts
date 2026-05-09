@@ -14,6 +14,7 @@ import { PcbNotePath } from "lib/components/primitive-components/PcbNotePath"
 import { PcbNoteRect } from "lib/components/primitive-components/PcbNoteRect"
 import { PcbNoteText } from "lib/components/primitive-components/PcbNoteText"
 import { PcbTrace } from "lib/components/primitive-components/PcbTrace"
+import { PcbVia } from "lib/components/primitive-components/PcbVia"
 import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 import { SilkscreenCircle } from "lib/components/primitive-components/SilkscreenCircle"
 import { SilkscreenLine } from "lib/components/primitive-components/SilkscreenLine"
@@ -323,6 +324,23 @@ export const createComponentsFromCircuitJson = (
       components.push(
         new PcbTrace({
           route: elm.route,
+        }),
+      )
+    } else if (elm.type === "pcb_via") {
+      const layers = elm.layers ?? []
+      components.push(
+        new PcbVia({
+          pcbX: elm.x,
+          pcbY: elm.y,
+          holeDiameter: elm.hole_diameter,
+          outerDiameter: elm.outer_diameter,
+          fromLayer: elm.from_layer ?? layers[0],
+          toLayer: elm.to_layer ?? layers[layers.length - 1],
+          layers,
+          pcbTraceId: elm.pcb_trace_id,
+          netIsAssignable: elm.net_is_assignable,
+          netAssigned: elm.net_assigned,
+          isTented: elm.is_tented,
         }),
       )
     } else if (elm.type === "pcb_silkscreen_rect") {

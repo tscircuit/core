@@ -1,4 +1,4 @@
-import type { LayerRef, PcbTraceRoutePoint } from "circuit-json"
+import type { LayerRef, PcbTraceRoutePoint, PcbVia } from "circuit-json"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
@@ -9,6 +9,20 @@ import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
+
+const findInflatedPcbViaForPoint = (
+  vias: PcbVia[] | undefined,
+  point: PcbTraceRoutePoint,
+): PcbVia | undefined => {
+  if (point.route_type !== "via") return undefined
+  return vias?.find(
+    (via) =>
+      Math.abs(via.x - point.x) < 0.0001 &&
+      Math.abs(via.y - point.y) < 0.0001 &&
+      (!via.from_layer || via.from_layer === point.from_layer) &&
+      (!via.to_layer || via.to_layer === point.to_layer),
+  )
+}
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -115,17 +129,43 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     })
     const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
     const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
-    for (const point of transformedRoute) {
+    for (let index = 0; index < transformedRoute.length; index++) {
+      const point = transformedRoute[index]
       if (point.route_type === "via") {
+        const originalPoint = inflatedPcbTrace.route[index]
+        const inflatedPcbVia = findInflatedPcbViaForPoint(
+          trace._inflatedPcbVias,
+          originalPoint,
+        )
+        const fromLayer = maybeFlipLayer(
+          (inflatedPcbVia?.from_layer ?? point.from_layer) as LayerRef,
+        )
+        const toLayer = maybeFlipLayer(
+          (inflatedPcbVia?.to_layer ?? point.to_layer) as LayerRef,
+        )
+        const layers = (
+          inflatedPcbVia?.layers ?? [
+            point.from_layer as LayerRef,
+            point.to_layer,
+          ]
+        ).map((layer) => maybeFlipLayer(layer as LayerRef))
+
         db.pcb_via.insert({
           pcb_trace_id: pcb_trace.pcb_trace_id,
           x: point.x,
           y: point.y,
-          hole_diameter: holeDiameter,
-          outer_diameter: padDiameter,
-          layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
-          from_layer: point.from_layer as LayerRef,
-          to_layer: point.to_layer as LayerRef,
+          hole_diameter: inflatedPcbVia?.hole_diameter ?? holeDiameter,
+          outer_diameter: inflatedPcbVia?.outer_diameter ?? padDiameter,
+          layers,
+          from_layer: fromLayer,
+          to_layer: toLayer,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+          subcircuit_connectivity_map_key:
+            inflatedPcbVia?.subcircuit_connectivity_map_key,
+          net_is_assignable: inflatedPcbVia?.net_is_assignable,
+          net_assigned: inflatedPcbVia?.net_assigned,
+          is_tented: inflatedPcbVia?.is_tented,
         })
       }
     }
