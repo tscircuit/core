@@ -170,7 +170,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       y: position.y,
       hole_diameter: holeDiameter,
       outer_diameter: padDiameter,
-      layers: ["bottom", "top"],
+      layers: this._getLayers(),
       from_layer: this._parsedProps.fromLayer || "bottom",
       to_layer: this._parsedProps.toLayer || "top",
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
