@@ -328,21 +328,20 @@ export const createComponentsFromCircuitJson = (
       )
     } else if (elm.type === "pcb_via") {
       const layers = elm.layers ?? []
-      components.push(
-        new PcbVia({
-          pcbX: elm.x,
-          pcbY: elm.y,
-          holeDiameter: elm.hole_diameter,
-          outerDiameter: elm.outer_diameter,
-          fromLayer: elm.from_layer ?? layers[0],
-          toLayer: elm.to_layer ?? layers[layers.length - 1],
-          layers,
-          pcbTraceId: elm.pcb_trace_id,
-          netIsAssignable: elm.net_is_assignable,
-          netAssigned: elm.net_assigned,
-          isTented: elm.is_tented,
-        }),
-      )
+      const pcbVia = new PcbVia({
+        pcbX: elm.x,
+        pcbY: elm.y,
+        holeDiameter: elm.hole_diameter,
+        outerDiameter: elm.outer_diameter,
+        fromLayer: elm.from_layer ?? layers[0],
+        toLayer: elm.to_layer ?? layers[layers.length - 1],
+        layers,
+        netIsAssignable: elm.net_is_assignable,
+        netAssigned: elm.net_assigned,
+        isTented: elm.is_tented,
+      })
+      pcbVia._importedPcbTraceId = elm.pcb_trace_id
+      components.push(pcbVia)
     } else if (elm.type === "pcb_silkscreen_rect") {
       components.push(
         new SilkscreenRect({
