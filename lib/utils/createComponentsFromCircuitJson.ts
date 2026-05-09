@@ -337,7 +337,6 @@ export const createComponentsFromCircuitJson = (
         toLayer: elm.to_layer ?? layers[layers.length - 1],
         layers,
         netIsAssignable: elm.net_is_assignable,
-        netAssigned: elm.net_assigned,
         isTented: elm.is_tented,
       })
       pcbVia._importedPcbTraceId = elm.pcb_trace_id

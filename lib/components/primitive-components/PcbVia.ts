@@ -10,7 +10,6 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 export const pcbViaProps = viaProps
   .extend({
     layers: z.array(layer_ref).optional(),
-    netAssigned: z.boolean().optional(),
     isTented: z.boolean().optional(),
   })
   .partial({
@@ -20,7 +19,6 @@ export const pcbViaProps = viaProps
 
 export interface PcbViaProps extends Partial<ViaProps> {
   layers?: LayerRef[]
-  netAssigned?: boolean
   isTented?: boolean
 }
 
@@ -87,13 +85,8 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
-    const {
-      holeDiameter,
-      outerDiameter,
-      netIsAssignable,
-      netAssigned,
-      isTented,
-    } = this._parsedProps
+    const { holeDiameter, outerDiameter, netIsAssignable, isTented } =
+      this._parsedProps
     const subcircuit = this.getSubcircuit()
     const position = this._getGlobalPcbPositionBeforeLayout()
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
@@ -119,7 +112,6 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       net_is_assignable: netIsAssignable,
-      net_assigned: netAssigned,
       is_tented: isTented,
     } as Omit<CircuitJsonPcbVia, "type" | "pcb_via_id">)
 

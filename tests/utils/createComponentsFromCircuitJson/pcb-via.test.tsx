@@ -40,6 +40,6 @@ test("createComponentsFromCircuitJson handles pcb_via elements", () => {
   expect(via!._parsedProps.toLayer).toBe("inner1")
   expect(via!._parsedProps.layers).toEqual(["top", "inner1"])
   expect(via!._parsedProps.netIsAssignable).toBe(true)
-  expect(via!._parsedProps.netAssigned).toBe(true)
+  expect("netAssigned" in via!._parsedProps).toBe(false)
   expect(via!._parsedProps.isTented).toBe(true)
 })
