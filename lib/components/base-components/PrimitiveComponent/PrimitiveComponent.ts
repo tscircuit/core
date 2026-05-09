@@ -499,13 +499,19 @@ export abstract class PrimitiveComponent<
       this.props.pcbX === undefined &&
       this.props.pcbY === undefined
     ) {
+      // `manualPlacement` is already in subcircuit-global coordinates —
+      // `_getPcbManualPlacementForComponent` returns
+      //   applyToPoint(subcircuit.globalTransform, position.center)
+      // so the value is the absolute (board-frame) position the user
+      // dragged the component to. Composing it with the parent's
+      // transform on top of that translates by the parent's anchor a
+      // second time, double-counting any positioned ancestor group: a
+      // cap manually placed at (11.4, 4.3) inside `<group pcbX={16}>`
+      // ended up at (27.4, 4.3). Just translate to the absolute pos.
       const rotation = this._getPcbRotationBeforeLayout() ?? 0
       return compose(
-        this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-        compose(
-          translate(manualPlacement.x, manualPlacement.y),
-          rotate((rotation * Math.PI) / 180),
-        ),
+        translate(manualPlacement.x, manualPlacement.y),
+        rotate((rotation * Math.PI) / 180),
       )
     }
 

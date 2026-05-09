@@ -106,9 +106,6 @@ export const applyPackOutput = (
 
     const pcbComponent = db.pcb_component.get(componentId)
     if (pcbComponent) {
-      db.pcb_component.update(componentId, {
-        position_mode: "packed",
-      })
       const currentGroupId = group.source_group_id
       const sourceComponent = db.source_component.get(
         pcbComponent.source_component_id,
@@ -120,6 +117,32 @@ export const applyPackOutput = (
       ) {
         continue
       }
+
+      // If a manual placement positioned this component, skip the
+      // pack transform — `pcb_component.center` is already at the
+      // absolute manual position (set by
+      // `_computePcbGlobalTransformBeforeLayout`), and the static
+      // pack output's `center` is also in board-absolute coords, so
+      // composing the group's transform on top would double-count
+      // the group anchor (a cap manually placed at (11.4, 4.3) inside
+      // `<group pcbX={16}>` would land at (27.4, 4.3)). The child
+      // pcb primitives were already placed at the absolute position
+      // during initial render — nothing to do here.
+      const manualEdits = (group as any).getSubcircuit?.()?._parsedProps
+        ?.manualEdits
+      if (manualEdits?.pcb_placements && sourceComponent?.name) {
+        const hit = manualEdits.pcb_placements.find(
+          (p: any) => p.selector === sourceComponent.name,
+        )
+        if (hit) {
+          db.pcb_component.update(componentId, { position_mode: "packed" })
+          continue
+        }
+      }
+
+      db.pcb_component.update(componentId, {
+        position_mode: "packed",
+      })
 
       const originalCenter = pcbComponent.center
       const rotationDegrees = ccwRotationDegrees ?? ccwRotationOffset ?? 0
