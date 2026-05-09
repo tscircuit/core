@@ -112,6 +112,24 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     }
   }
 
+  // Also mark any descendant component that has a manualEdits placement
+  // as static — otherwise the packer would happily reposition it on top
+  // of the user's pinned location, silently undoing the manual edit.
+  // Walk every NormalComponent under this group; if its nearest subcircuit
+  // resolves a manual placement for it, treat it like any other relatively
+  // positioned child.
+  const collectManuallyPlacedDescendants = (comp: any) => {
+    const subcircuit = comp?.getSubcircuit?.()
+    const manualPlacement = subcircuit?._getPcbManualPlacementForComponent?.(
+      comp,
+    )
+    if (manualPlacement && comp?.pcb_component_id) {
+      staticPcbComponentIds.add(comp.pcb_component_id)
+    }
+    if (comp?.children) comp.children.forEach(collectManuallyPlacedDescendants)
+  }
+  collectManuallyPlacedDescendants(group)
+
   // Keep all circuit elements; static components will remain fixed during packing
   const filteredCircuitJson = db.toArray()
 
