@@ -138,6 +138,15 @@ export function inflateSourceTrace(
 
   const trace = new Trace(traceProps)
   trace._inflatedPcbTrace = pcbTrace ?? undefined
+  const inflatedPcbVias = pcbTrace
+    ? injectionDb.pcb_via
+        .list()
+        .filter((via) => via.pcb_trace_id === pcbTrace.pcb_trace_id)
+    : undefined
+  trace._inflatedPcbVias = inflatedPcbVias
+  for (const via of inflatedPcbVias ?? []) {
+    inflatorContext.inflatedPcbViaIds?.add(via.pcb_via_id)
+  }
 
   subcircuit.add(trace)
 }

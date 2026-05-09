@@ -37,6 +37,7 @@ export const inflateCircuitJson = (
     injectionDb,
     subcircuit: target,
     groupsMap,
+    inflatedPcbViaIds: new Set(),
   }
 
   // Inflate source_groups in dependency order (parents before children)

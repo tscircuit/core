@@ -12,6 +12,7 @@ export interface InflatorContext {
 
   normalComponent?: NormalComponent
   groupsMap?: Map<SourceGroupId, Group<any>>
+  inflatedPcbViaIds?: Set<string>
 }
 
 export type InflatorFn<T extends SourceComponentBase> = (

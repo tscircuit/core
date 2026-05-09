@@ -1,4 +1,4 @@
-import type { LayerRef, PcbTraceRoutePoint } from "circuit-json"
+import type { LayerRef, PcbTraceRoutePoint, PcbVia } from "circuit-json"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
@@ -93,6 +93,10 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (inflatedPcbTrace) {
     const { maybeFlipLayer } = trace._getPcbPrimitiveFlippedHelpers()
     const transform = trace._computePcbGlobalTransformBeforeLayout()
+    const maybeFlipOuterLayer = (layer: LayerRef): LayerRef => {
+      if (layer === "top" || layer === "bottom") return maybeFlipLayer(layer)
+      return layer
+    }
     const transformedRoute = inflatedPcbTrace.route.map((point) => {
       const { x, y, ...restOfPoint } = point
       const transformedPoint = applyToPoint(transform, { x, y })
@@ -100,7 +104,15 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         return {
           ...transformedPoint,
           ...restOfPoint,
-          layer: maybeFlipLayer(point.layer),
+          layer: maybeFlipOuterLayer(point.layer),
+        } as PcbTraceRoutePoint
+      }
+      if (point.route_type === "via") {
+        return {
+          ...transformedPoint,
+          ...restOfPoint,
+          from_layer: maybeFlipOuterLayer(point.from_layer as LayerRef),
+          to_layer: maybeFlipOuterLayer(point.to_layer as LayerRef),
         } as PcbTraceRoutePoint
       }
       return { ...transformedPoint, ...restOfPoint } as PcbTraceRoutePoint
@@ -113,20 +125,51 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
     })
-    const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-    const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
-    for (const point of transformedRoute) {
-      if (point.route_type === "via") {
+    const inflatedPcbVias = trace._inflatedPcbVias ?? []
+    if (inflatedPcbVias.length > 0) {
+      for (const via of inflatedPcbVias) {
+        const viaPosition = applyToPoint(transform, { x: via.x, y: via.y })
+        const fromLayer = maybeFlipOuterLayer(via.from_layer as LayerRef)
+        const toLayer = maybeFlipOuterLayer(via.to_layer as LayerRef)
+        const layers = via.layers?.map((layer) =>
+          maybeFlipOuterLayer(layer as LayerRef),
+        ) ?? [fromLayer, toLayer]
+
         db.pcb_via.insert({
           pcb_trace_id: pcb_trace.pcb_trace_id,
-          x: point.x,
-          y: point.y,
-          hole_diameter: holeDiameter,
-          outer_diameter: padDiameter,
-          layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
-          from_layer: point.from_layer as LayerRef,
-          to_layer: point.to_layer as LayerRef,
-        })
+          x: viaPosition.x,
+          y: viaPosition.y,
+          hole_diameter: via.hole_diameter,
+          outer_diameter: via.outer_diameter,
+          layers,
+          from_layer: fromLayer,
+          to_layer: toLayer,
+          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+          subcircuit_connectivity_map_key:
+            via.subcircuit_connectivity_map_key ?? undefined,
+          pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+          net_is_assignable: (via as any).net_is_assignable ?? undefined,
+        } as Omit<
+          PcbVia & { net_is_assignable?: boolean },
+          "type" | "pcb_via_id"
+        >)
+      }
+    } else {
+      const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
+      const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
+      for (const point of transformedRoute) {
+        if (point.route_type === "via") {
+          db.pcb_via.insert({
+            pcb_trace_id: pcb_trace.pcb_trace_id,
+            x: point.x,
+            y: point.y,
+            hole_diameter: holeDiameter,
+            outer_diameter: padDiameter,
+            layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
+            from_layer: point.from_layer as LayerRef,
+            to_layer: point.to_layer as LayerRef,
+          })
+        }
       }
     }
     trace._portsRoutedOnPcb = ports

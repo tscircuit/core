@@ -24,15 +24,22 @@ export function inflateStandalonePcbPrimitives(
     "pcb_note_rect",
     "pcb_note_path",
     "pcb_note_line",
+    "pcb_via",
   ]
 
-  const standalonePrimitives = injectionDb.toArray().filter(
-    (elm) =>
-      standalonePrimitiveTypes.includes(elm.type) &&
+  const standalonePrimitives = injectionDb.toArray().filter((elm) => {
+    if (!standalonePrimitiveTypes.includes(elm.type)) return false
+
+    if (elm.type === "pcb_via") {
+      return !inflatorContext.inflatedPcbViaIds?.has(elm.pcb_via_id)
+    }
+
+    return (
       // Check for null or undefined pcb_component_id
       "pcb_component_id" in elm &&
-      (elm.pcb_component_id === null || elm.pcb_component_id === undefined),
-  )
+      (elm.pcb_component_id === null || elm.pcb_component_id === undefined)
+    )
+  })
 
   if (standalonePrimitives.length === 0) return
 

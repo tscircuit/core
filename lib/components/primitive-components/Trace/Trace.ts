@@ -3,6 +3,7 @@ import { traceProps } from "@tscircuit/props"
 import {
   type LayerRef,
   type PcbTrace,
+  type PcbVia,
   type PcbTraceRoutePoint,
   type RouteHintPoint,
   type SchematicNetLabel,
@@ -53,6 +54,7 @@ export class Trace
   pcb_trace_id: string | null = null
   schematic_trace_id: string | null = null
   _inflatedPcbTrace?: PcbTrace
+  _inflatedPcbVias?: PcbVia[]
   _portsRoutedOnPcb: Port[]
   subcircuit_connectivity_map_key: string | null = null
   _traceConnectionHash: string | null = null

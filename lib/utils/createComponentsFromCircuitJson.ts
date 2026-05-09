@@ -21,6 +21,7 @@ import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPa
 import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRect"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
+import { Via } from "lib/components/primitive-components/Via"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
 
@@ -325,6 +326,20 @@ export const createComponentsFromCircuitJson = (
           route: elm.route,
         }),
       )
+    } else if (elm.type === "pcb_via") {
+      const via = new Via({
+        pcbX: elm.x,
+        pcbY: elm.y,
+        holeDiameter: elm.hole_diameter,
+        outerDiameter: elm.outer_diameter,
+        fromLayer: elm.from_layer ?? elm.layers?.[0],
+        toLayer: elm.to_layer ?? elm.layers?.[elm.layers.length - 1],
+        netIsAssignable: (elm as any).net_is_assignable,
+      })
+      via._inflatedPcbTraceId = elm.pcb_trace_id ?? null
+      via.subcircuit_connectivity_map_key =
+        (elm as any).subcircuit_connectivity_map_key ?? null
+      components.push(via)
     } else if (elm.type === "pcb_silkscreen_rect") {
       components.push(
         new SilkscreenRect({

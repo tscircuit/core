@@ -11,6 +11,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   matchedPort: Port | null = null
   isPcbPrimitive = true
   source_manually_placed_via_id: string | null = null
+  _inflatedPcbTraceId: string | null = null
   subcircuit_connectivity_map_key: string | null = null
 
   constructor(props: z.input<typeof viaProps>) {
@@ -176,6 +177,7 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       subcircuit_connectivity_map_key:
         this.subcircuit_connectivity_map_key ?? undefined,
+      pcb_trace_id: this._inflatedPcbTraceId ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       net_is_assignable: this._parsedProps.netIsAssignable ?? undefined,
     } as Omit<PcbVia & { net_is_assignable?: boolean }, "type" | "pcb_via_id">)
