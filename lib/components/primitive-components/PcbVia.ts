@@ -1,6 +1,5 @@
-import { commonLayoutProps } from "@tscircuit/props"
+import { type ViaProps, viaProps } from "@tscircuit/props"
 import {
-  distance,
   layer_ref,
   type LayerRef,
   type PcbVia as CircuitJsonPcbVia,
@@ -8,22 +7,25 @@ import {
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
-export const pcbViaProps = commonLayoutProps.extend({
-  holeDiameter: distance.optional(),
-  outerDiameter: distance.optional(),
-  fromLayer: layer_ref.optional(),
-  toLayer: layer_ref.optional(),
-  layers: z.array(layer_ref).optional(),
-  pcbTraceId: z.string().optional(),
-  netIsAssignable: z.boolean().optional(),
-  netAssigned: z.boolean().optional(),
-  isTented: z.boolean().optional(),
-})
+export const pcbViaProps = viaProps
+  .extend({
+    layers: z.array(layer_ref).optional(),
+    isTented: z.boolean().optional(),
+  })
+  .partial({
+    fromLayer: true,
+    toLayer: true,
+  })
 
-export type PcbViaProps = z.infer<typeof pcbViaProps>
+export interface PcbViaProps extends Partial<ViaProps> {
+  layers?: LayerRef[]
+  isTented?: boolean
+}
 
 export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
   pcb_via_id: string | null = null
+  // pcb_trace_id copied from imported circuit-json; not a public JSX prop.
+  _importedPcbTraceId?: string
   isPcbPrimitive = true
 
   get config() {
@@ -83,14 +85,8 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
-    const {
-      holeDiameter,
-      outerDiameter,
-      pcbTraceId,
-      netIsAssignable,
-      netAssigned,
-      isTented,
-    } = this._parsedProps
+    const { holeDiameter, outerDiameter, netIsAssignable, isTented } =
+      this._parsedProps
     const subcircuit = this.getSubcircuit()
     const position = this._getGlobalPcbPositionBeforeLayout()
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
@@ -112,11 +108,10 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
       layers,
       from_layer: fromLayer,
       to_layer: toLayer,
-      pcb_trace_id: pcbTraceId,
+      pcb_trace_id: this._importedPcbTraceId,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       net_is_assignable: netIsAssignable,
-      net_assigned: netAssigned,
       is_tented: isTented,
     } as Omit<CircuitJsonPcbVia, "type" | "pcb_via_id">)
 
