@@ -156,11 +156,15 @@ export function Group_getRoutingPhasePlans(
   const traces = group.selectAll("trace") as Trace[]
   const nets = group.selectAll("net") as Net[]
 
-  if (traces.length === 0 && nets.length === 0) return []
-
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
   const phasePropsByPhaseIndex = getAutoroutingPhasePropsByPhaseIndex(group)
+  const hasDirectRoutingTargets = traces.length > 0 || nets.length > 0
+  const hasReroutePhase = Array.from(phasePropsByPhaseIndex.values()).some(
+    (phaseProps) => phaseProps.reroute,
+  )
+
+  if (!hasDirectRoutingTargets && !hasReroutePhase) return []
 
   for (const net of nets) {
     const routingPhaseIndex = getNetRoutingPhaseIndex(net)
@@ -198,6 +202,7 @@ export function Group_getRoutingPhasePlans(
 
   const defaultPhaseProps = phasePropsByPhaseIndex.get(null)
   if (
+    hasDirectRoutingTargets &&
     phasePropsByPhaseIndex.size === 1 &&
     defaultPhaseProps?.reroute &&
     plans.length === 1 &&

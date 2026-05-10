@@ -31,6 +31,7 @@ import type { GenericLocalAutorouter } from "lib/utils/autorouting/GenericLocalA
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
+import { getDescendantSubcircuitIds } from "lib/utils/autorouting/getAncestorSubcircuitIds"
 import {
   getPresetAutoroutingConfig,
   type NormalizedAutorouterConfig,
@@ -73,6 +74,35 @@ import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 import { Port } from "../Port/Port"
+
+function addPossibleReplacementSourceTraceId(
+  sourceTraceIds: Set<string>,
+  value: unknown,
+) {
+  if (typeof value !== "string" || value.length === 0) return
+
+  sourceTraceIds.add(value)
+
+  const rerouteSuffixIndex = value.indexOf("_reroute_")
+  if (rerouteSuffixIndex > 0) {
+    sourceTraceIds.add(value.slice(0, rerouteSuffixIndex))
+  }
+}
+
+function convertPcbTraceToSimplifiedPcbTrace(
+  trace: PcbTrace,
+): SimplifiedPcbTrace {
+  return {
+    ...(trace as any),
+    type: "pcb_trace",
+    pcb_trace_id: trace.pcb_trace_id,
+    connection_name:
+      (trace as any).connection_name ??
+      trace.source_trace_id ??
+      trace.pcb_trace_id,
+    route: trace.route.map((point) => ({ ...point })) as any,
+  }
+}
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -593,15 +623,130 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return Group_getRoutingPhasePlans(this)
   }
 
+  _getRelevantSubcircuitIds(): Set<string> {
+    const relevantSubcircuitIds = new Set<string>()
+    if (!this.subcircuit_id) return relevantSubcircuitIds
+
+    relevantSubcircuitIds.add(this.subcircuit_id)
+
+    const db = this.root?.db
+    if (!db) return relevantSubcircuitIds
+
+    for (const subcircuitId of getDescendantSubcircuitIds(
+      db,
+      this.subcircuit_id,
+    )) {
+      relevantSubcircuitIds.add(subcircuitId)
+    }
+
+    return relevantSubcircuitIds
+  }
+
+  _getExistingPcbTracesForReroute(): PcbTrace[] {
+    const db = this.root?.db
+    if (!db) return []
+
+    const relevantSubcircuitIds = this._getRelevantSubcircuitIds()
+
+    return db.pcb_trace.list().filter((trace) => {
+      if (!trace.route || trace.route.length < 2) return false
+      if (!this.subcircuit_id) return true
+
+      return Boolean(
+        trace.subcircuit_id && relevantSubcircuitIds.has(trace.subcircuit_id),
+      )
+    })
+  }
+
+  _getExistingSimplifiedPcbTracesForReroute(): SimplifiedPcbTrace[] {
+    return this._getExistingPcbTracesForReroute().map(
+      convertPcbTraceToSimplifiedPcbTrace,
+    )
+  }
+
+  _deleteExistingPcbTracesReplacedBy(
+    outputPcbTraces: Array<SimplifiedPcbTrace | PcbVia>,
+  ) {
+    const db = this.root?.db
+    if (!db) return
+
+    const replacementPcbTraceIds = new Set<string>()
+    const replacementSourceTraceIds = new Set<string>()
+
+    for (const trace of outputPcbTraces) {
+      if (trace.type !== "pcb_trace") continue
+
+      replacementPcbTraceIds.add(trace.pcb_trace_id)
+      addPossibleReplacementSourceTraceId(
+        replacementSourceTraceIds,
+        (trace as any).source_trace_id,
+      )
+      addPossibleReplacementSourceTraceId(
+        replacementSourceTraceIds,
+        trace.connection_name,
+      )
+      addPossibleReplacementSourceTraceId(
+        replacementSourceTraceIds,
+        (trace as any).rootConnectionName,
+      )
+    }
+
+    if (
+      replacementPcbTraceIds.size === 0 &&
+      replacementSourceTraceIds.size === 0
+    ) {
+      return
+    }
+
+    const tracesToDelete = this._getExistingPcbTracesForReroute().filter(
+      (trace) =>
+        replacementPcbTraceIds.has(trace.pcb_trace_id) ||
+        Boolean(
+          trace.source_trace_id &&
+            replacementSourceTraceIds.has(trace.source_trace_id),
+        ),
+    )
+
+    if (tracesToDelete.length === 0) return
+
+    const deletedPcbTraceIds = new Set(
+      tracesToDelete.map((trace) => trace.pcb_trace_id),
+    )
+
+    for (const via of db.pcb_via.list()) {
+      if (via.pcb_trace_id && deletedPcbTraceIds.has(via.pcb_trace_id)) {
+        db.pcb_via.delete(via.pcb_via_id)
+      }
+    }
+
+    for (const trace of tracesToDelete) {
+      db.pcb_trace.delete(trace.pcb_trace_id)
+    }
+  }
+
   _hasTracesToRoute(): boolean {
     const debug = Debug("tscircuit:core:_hasTracesToRoute")
     const routingPhasePlans = this._getRoutingPhasePlans()
     let traceCount = 0
+    let hasReroutePhaseWithRegion = false
     for (const routingPhasePlan of routingPhasePlans) {
       traceCount += routingPhasePlan.traces.length
+      hasReroutePhaseWithRegion ||= Boolean(
+        routingPhasePlan.reroute && routingPhasePlan.region,
+      )
     }
     debug(`[${this.getString()}] has ${traceCount} traces to route`)
-    return traceCount > 0
+    if (traceCount > 0) return true
+
+    if (hasReroutePhaseWithRegion) {
+      const existingTraceCount = this._getExistingPcbTracesForReroute().length
+      debug(
+        `[${this.getString()}] has ${existingTraceCount} existing pcb traces available for reroute`,
+      )
+      return existingTraceCount > 0
+    }
+
+    return false
   }
 
   async _runEffectMakeHttpAutoroutingRequest() {
@@ -792,6 +937,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         layer: string
       }>
     }> = []
+    const existingRerouteSeedTraces =
+      this._getExistingSimplifiedPcbTracesForReroute()
 
     for (const routingPhasePlan of routingPhasePlans) {
       const phaseAutorouterConfig: NormalizedAutorouterConfig =
@@ -808,7 +955,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const rerouteOriginalSrj = isReroutePhase
         ? {
             ...baseSimpleRouteJson,
-            traces: outputTraces,
+            traces: [...existingRerouteSeedTraces, ...outputTraces],
           }
         : null
 
@@ -835,7 +982,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         routingPhasePlan.drcTolerances,
       )
 
-      if (hasPhasedAutorouting && simpleRouteJson.connections.length === 0) {
+      if (
+        (hasPhasedAutorouting || isReroutePhase) &&
+        simpleRouteJson.connections.length === 0
+      ) {
         continue
       }
 
@@ -1164,15 +1314,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
     }
 
+    this._deleteExistingPcbTracesReplacedBy(output_pcb_traces as any)
+
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
-      pcb_trace.subcircuit_id = this.subcircuit_id!
 
-      if ((pcb_trace as any).connection_name) {
-        const sourceTraceId = (pcb_trace as any).connection_name
+      const sourceTraceId =
+        (pcb_trace as any).source_trace_id ?? (pcb_trace as any).connection_name
+      if (sourceTraceId) {
         pcb_trace.source_trace_id = sourceTraceId
       }
+      pcb_trace.subcircuit_id ??=
+        (sourceTraceId
+          ? db.source_trace.get(sourceTraceId)?.subcircuit_id
+          : undefined) ?? this.subcircuit_id!
 
       // Split traces at jumper locations (based on explicit jumper route markers)
       let segments = splitPcbTracesOnJumperSegments(pcb_trace.route)
