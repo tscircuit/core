@@ -24,6 +24,20 @@ const findInflatedPcbViaForPoint = (
   )
 }
 
+const getViaDiameterFromRoutePoint = (point: PcbTraceRoutePoint) => {
+  const viaPoint = point as PcbTraceRoutePoint & {
+    hole_diameter?: number
+    outer_diameter?: number
+    via_hole_diameter?: number
+    via_diameter?: number
+  }
+
+  return {
+    holeDiameter: viaPoint.hole_diameter ?? viaPoint.via_hole_diameter,
+    outerDiameter: viaPoint.outer_diameter ?? viaPoint.via_diameter,
+  }
+}
+
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
   const { db } = trace.root!
@@ -137,6 +151,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
           trace._inflatedPcbVias,
           originalPoint,
         )
+        const routePointViaDiameter = getViaDiameterFromRoutePoint(point)
         const fromLayer = maybeFlipLayer(
           (inflatedPcbVia?.from_layer ?? point.from_layer) as LayerRef,
         )
@@ -154,8 +169,14 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
           pcb_trace_id: pcb_trace.pcb_trace_id,
           x: point.x,
           y: point.y,
-          hole_diameter: inflatedPcbVia?.hole_diameter ?? holeDiameter,
-          outer_diameter: inflatedPcbVia?.outer_diameter ?? padDiameter,
+          hole_diameter:
+            inflatedPcbVia?.hole_diameter ??
+            routePointViaDiameter.holeDiameter ??
+            holeDiameter,
+          outer_diameter:
+            inflatedPcbVia?.outer_diameter ??
+            routePointViaDiameter.outerDiameter ??
+            padDiameter,
           layers,
           from_layer: fromLayer,
           to_layer: toLayer,

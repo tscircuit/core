@@ -70,6 +70,11 @@ import {
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
+import {
+  deleteExistingPcbTracesReplacedBy,
+  getExistingPcbTracesForReroute,
+  getExistingSimplifiedPcbTracesForReroute,
+} from "./region-replacement"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 import { Port } from "../Port/Port"
@@ -597,11 +602,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const debug = Debug("tscircuit:core:_hasTracesToRoute")
     const routingPhasePlans = this._getRoutingPhasePlans()
     let traceCount = 0
+    let hasReroutePhaseWithRegion = false
     for (const routingPhasePlan of routingPhasePlans) {
       traceCount += routingPhasePlan.traces.length
+      hasReroutePhaseWithRegion ||= Boolean(
+        routingPhasePlan.reroute && routingPhasePlan.region,
+      )
     }
     debug(`[${this.getString()}] has ${traceCount} traces to route`)
-    return traceCount > 0
+    if (traceCount > 0) return true
+
+    if (hasReroutePhaseWithRegion) {
+      const existingTraceCount = getExistingPcbTracesForReroute(this).length
+      debug(
+        `[${this.getString()}] has ${existingTraceCount} existing pcb traces available for reroute`,
+      )
+      return existingTraceCount > 0
+    }
+
+    return false
   }
 
   async _runEffectMakeHttpAutoroutingRequest() {
@@ -792,6 +811,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         layer: string
       }>
     }> = []
+    const existingRerouteSeedTraces =
+      getExistingSimplifiedPcbTracesForReroute(this)
 
     for (const routingPhasePlan of routingPhasePlans) {
       const phaseAutorouterConfig: NormalizedAutorouterConfig =
@@ -808,7 +829,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const rerouteOriginalSrj = isReroutePhase
         ? {
             ...baseSimpleRouteJson,
-            traces: outputTraces,
+            traces: [...existingRerouteSeedTraces, ...outputTraces],
           }
         : null
 
@@ -835,7 +856,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         routingPhasePlan.drcTolerances,
       )
 
-      if (hasPhasedAutorouting && simpleRouteJson.connections.length === 0) {
+      if (
+        (hasPhasedAutorouting || isReroutePhase) &&
+        simpleRouteJson.connections.length === 0
+      ) {
         continue
       }
 
@@ -1164,15 +1188,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
     }
 
+    deleteExistingPcbTracesReplacedBy({
+      group: this,
+      outputPcbTraces: output_pcb_traces,
+    })
+
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
-      pcb_trace.subcircuit_id = this.subcircuit_id!
 
-      if ((pcb_trace as any).connection_name) {
-        const sourceTraceId = (pcb_trace as any).connection_name
+      const sourceTraceId =
+        (pcb_trace as any).source_trace_id ?? (pcb_trace as any).connection_name
+      if (sourceTraceId) {
         pcb_trace.source_trace_id = sourceTraceId
       }
+      pcb_trace.subcircuit_id ??=
+        (sourceTraceId
+          ? db.source_trace.get(sourceTraceId)?.subcircuit_id
+          : undefined) ?? this.subcircuit_id!
 
       // Split traces at jumper locations (based on explicit jumper route markers)
       let segments = splitPcbTracesOnJumperSegments(pcb_trace.route)
