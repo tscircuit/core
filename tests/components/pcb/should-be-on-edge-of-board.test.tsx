@@ -21,7 +21,14 @@ const probeChip = (name: string, extra: Record<string, unknown> = {}) => (
     pinLabels={{ pin1: ["A"] }}
     footprint={
       <footprint>
-        <smtpad shape="rect" width="2mm" height="2mm" pcbX="0mm" pcbY="0mm" portHints={["pin1"]} />
+        <smtpad
+          shape="rect"
+          width="2mm"
+          height="2mm"
+          pcbX="0mm"
+          pcbY="0mm"
+          portHints={["pin1"]}
+        />
       </footprint>
     }
     {...extra}
@@ -36,7 +43,9 @@ test("snaps a component to the nearest edge (right edge wins on a wide board)", 
   // Body width = 2 mm; right edge at +20 mm; expected center.x = +19.
   const { circuit } = getTestFixture()
   circuit.add(
-    <board width="40mm" height="20mm">{probeChip("J_RIGHT", { pcbX: 10, pcbY: 0 })}</board>,
+    <board width="40mm" height="20mm">
+      {probeChip("J_RIGHT", { pcbX: 10, pcbY: 0 })}
+    </board>,
   )
   circuit.render()
   const placed = circuit.db.pcb_component.list()[0]
@@ -50,7 +59,9 @@ test("hint near left edge snaps left, Y preserved", async () => {
   // distRight=35, distTop=6, distBottom=14. Left wins.
   const { circuit } = getTestFixture()
   circuit.add(
-    <board width="40mm" height="20mm">{probeChip("J_LEFT", { pcbX: -15, pcbY: 4 })}</board>,
+    <board width="40mm" height="20mm">
+      {probeChip("J_LEFT", { pcbX: -15, pcbY: 4 })}
+    </board>,
   )
   circuit.render()
   const placed = circuit.db.pcb_component.list()[0]
@@ -63,7 +74,9 @@ test("hint near top edge snaps top, X preserved", async () => {
   // distRight=20, distTop=2, distBottom=18. Top wins.
   const { circuit } = getTestFixture()
   circuit.add(
-    <board width="40mm" height="20mm">{probeChip("J_TOP", { pcbX: 0, pcbY: 8 })}</board>,
+    <board width="40mm" height="20mm">
+      {probeChip("J_TOP", { pcbX: 0, pcbY: 8 })}
+    </board>,
   )
   circuit.render()
   const placed = circuit.db.pcb_component.list()[0]
@@ -76,7 +89,9 @@ test("hint near bottom edge snaps bottom", async () => {
   // distRight=20, distTop=18, distBottom=2. Bottom wins.
   const { circuit } = getTestFixture()
   circuit.add(
-    <board width="40mm" height="20mm">{probeChip("J_BOTTOM", { pcbX: 0, pcbY: -8 })}</board>,
+    <board width="40mm" height="20mm">
+      {probeChip("J_BOTTOM", { pcbX: 0, pcbY: -8 })}
+    </board>,
   )
   circuit.render()
   const placed = circuit.db.pcb_component.list()[0]
