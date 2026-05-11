@@ -60,7 +60,12 @@ test("inner group inherits bounds from its board ancestor", () => {
     expect(pcbComp.center.x).toBeLessThanOrEqual(25)
     // Allow a tiny tolerance on the Y assertion — the small parts
     // get packed snugly on the inside of the board edge.
-    expect(pcbComp.center.y, `${sc?.name} y out of bounds`).toBeGreaterThanOrEqual(-7)
-    expect(pcbComp.center.y, `${sc?.name} y out of bounds`).toBeLessThanOrEqual(7)
+    expect(
+      pcbComp.center.y,
+      `${sc?.name} y out of bounds`,
+    ).toBeGreaterThanOrEqual(-7)
+    expect(pcbComp.center.y, `${sc?.name} y out of bounds`).toBeLessThanOrEqual(
+      7,
+    )
   }
 })

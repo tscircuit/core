@@ -159,10 +159,8 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
         // by walking up from group.parent we already start one level
         // above the group, so we need to subtract the group's own
         // offset too.
-        const groupOwnX =
-          typeof props.pcbX === "number" ? props.pcbX : 0
-        const groupOwnY =
-          typeof props.pcbY === "number" ? props.pcbY : 0
+        const groupOwnX = typeof props.pcbX === "number" ? props.pcbX : 0
+        const groupOwnY = typeof props.pcbY === "number" ? props.pcbY : 0
         const totalOffsetX = cumulativeOffsetX + groupOwnX
         const totalOffsetY = cumulativeOffsetY + groupOwnY
         bounds = {
