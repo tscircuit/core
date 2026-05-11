@@ -87,12 +87,7 @@ test(
 
     await circuit.renderUntilSettled()
 
-    const circuitJson = circuit.getCircuitJson()
-
-    // TODO uncomment when fixed
-    //expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
-
-    expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
+    expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
   },
   { timeout: 1000000 },
 )
