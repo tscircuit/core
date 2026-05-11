@@ -15,8 +15,20 @@ test("layer='bottom' on a <group> cascades to its component children", async () 
   circuit.add(
     <board width="20mm" height="20mm">
       <group pcbX={0} pcbY={0} layer="bottom">
-        <resistor name="R1" resistance="1k" footprint="0402" pcbX={0} pcbY={0} />
-        <capacitor name="C1" capacitance="1uF" footprint="0402" pcbX={2} pcbY={0} />
+        <resistor
+          name="R1"
+          resistance="1k"
+          footprint="0402"
+          pcbX={0}
+          pcbY={0}
+        />
+        <capacitor
+          name="C1"
+          capacitance="1uF"
+          footprint="0402"
+          pcbX={2}
+          pcbY={0}
+        />
       </group>
     </board>,
   )
@@ -104,7 +116,13 @@ test("no layer anywhere defaults to 'top' (regression)", async () => {
   circuit.add(
     <board width="20mm" height="20mm">
       <group pcbX={0} pcbY={0}>
-        <resistor name="R1" resistance="1k" footprint="0402" pcbX={0} pcbY={0} />
+        <resistor
+          name="R1"
+          resistance="1k"
+          footprint="0402"
+          pcbX={0}
+          pcbY={0}
+        />
       </group>
     </board>,
   )

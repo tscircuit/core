@@ -1091,7 +1091,6 @@ export class NormalComponent<
     return (decomposedTransform.rotation.angle * 180) / Math.PI
   }
 
-
   private _getFootprintMetadataForPcbComponent():
     | {
         insertionDirection?: FootprintInsertionDirection
