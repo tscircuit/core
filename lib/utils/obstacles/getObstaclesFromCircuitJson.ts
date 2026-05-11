@@ -111,6 +111,25 @@ export const getObstaclesFromCircuitJson = (
             : {}),
           connectedTo: withNetId([element.pcb_smtpad_id]),
         })
+      } else if (element.shape === "polygon") {
+        const xs = element.points.map((point) => point.x)
+        const ys = element.points.map((point) => point.y)
+        const minX = Math.min(...xs)
+        const maxX = Math.max(...xs)
+        const minY = Math.min(...ys)
+        const maxY = Math.max(...ys)
+
+        obstacles.push({
+          type: "rect",
+          layers: [element.layer],
+          center: {
+            x: (minX + maxX) / 2,
+            y: (minY + maxY) / 2,
+          },
+          width: maxX - minX,
+          height: maxY - minY,
+          connectedTo: withNetId([element.pcb_smtpad_id]),
+        })
       }
     } else if (element.type === "pcb_keepout") {
       if (element.shape === "circle") {
