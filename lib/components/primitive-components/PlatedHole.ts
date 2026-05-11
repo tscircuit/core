@@ -186,6 +186,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       rotation: 0,
       source_component_id: this.source_component_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      obstructs_within_bounds: true,
     })
     this.pcb_component_id = pcb_component.pcb_component_id
   }

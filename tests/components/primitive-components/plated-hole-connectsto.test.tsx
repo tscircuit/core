@@ -72,10 +72,22 @@ test("connectsTo with multiple targets emits a source_trace per target", async (
 
   circuit.add(
     <board width="20mm" height="20mm">
-      <resistor name="R1" resistance="10k" footprint="0402" pcbX={-3} pcbY={0}
-        connections={{ pin1: "net.A", pin2: "net.GND" }} />
-      <resistor name="R2" resistance="10k" footprint="0402" pcbX={3} pcbY={0}
-        connections={{ pin1: "net.B", pin2: "net.GND" }} />
+      <resistor
+        name="R1"
+        resistance="10k"
+        footprint="0402"
+        pcbX={-3}
+        pcbY={0}
+        connections={{ pin1: "net.A", pin2: "net.GND" }}
+      />
+      <resistor
+        name="R2"
+        resistance="10k"
+        footprint="0402"
+        pcbX={3}
+        pcbY={0}
+        connections={{ pin1: "net.B", pin2: "net.GND" }}
+      />
       <platedhole
         name="PH_AB"
         connectsTo={["net.A", "net.B"]}
@@ -93,8 +105,9 @@ test("connectsTo with multiple targets emits a source_trace per target", async (
   // The hole's pin1 should appear in both connectivity groups (A and B).
   const phRecord = circuit.db.pcb_plated_hole.list()[0]
   expect(phRecord!.pcb_port_id).toBeTruthy()
-  const sourcePortId = circuit.db.pcb_port.get(phRecord!.pcb_port_id!)
-    ?.source_port_id
+  const sourcePortId = circuit.db.pcb_port.get(
+    phRecord!.pcb_port_id!,
+  )?.source_port_id
   expect(sourcePortId).toBeTruthy()
 
   const traces = circuit.db.source_trace.list()
