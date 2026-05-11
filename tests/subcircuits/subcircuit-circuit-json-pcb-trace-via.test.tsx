@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import type { CircuitJson, PcbVia } from "circuit-json"
+import type { CircuitJson, PcbTrace, PcbVia } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("subcircuit circuitJson inflation preserves pcb_via properties for routed trace vias", async () => {
@@ -43,10 +43,26 @@ test("subcircuit circuitJson inflation preserves pcb_via properties for routed t
   expect(sourceVia.hole_diameter).toBe(0.45)
   expect(sourceVia.outer_diameter).toBe(0.9)
 
+  const circuitJsonWithRouteViaDiameters = sourceJson.filter(
+    (elm) => elm.type !== "pcb_via",
+  ) as CircuitJson
+  const sourcePcbTrace = circuitJsonWithRouteViaDiameters.find(
+    (elm): elm is PcbTrace => elm.type === "pcb_trace",
+  )
+  expect(sourcePcbTrace).toBeDefined()
+  for (const routePoint of sourcePcbTrace!.route) {
+    if (routePoint.route_type !== "via") continue
+    ;(routePoint as any).hole_diameter = sourceVia.hole_diameter
+    ;(routePoint as any).outer_diameter = sourceVia.outer_diameter
+  }
+
   const { circuit: targetCircuit } = getTestFixture()
   targetCircuit.add(
     <board width="20mm" height="20mm">
-      <subcircuit name="Inflated" circuitJson={sourceJson as CircuitJson} />
+      <subcircuit
+        name="Inflated"
+        circuitJson={circuitJsonWithRouteViaDiameters}
+      />
     </board>,
   )
 
