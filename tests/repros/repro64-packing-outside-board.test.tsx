@@ -46,9 +46,5 @@ test("pcb packing outside board", async () => {
 
   await circuit.renderUntilSettled()
 
-  const circuitJson = circuit.getCircuitJson()
-
-  // console.log(circuitJson)
-
-  expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
+  expect(circuit.db.pcb_component_outside_board_error.list()).toEqual([])
 })
