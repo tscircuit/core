@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import type { PcbSmtPad, PcbTrace, PcbVia } from "circuit-json"
+import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("subcircuit-circuit-json02 - chip inflation", async () => {
@@ -157,19 +158,23 @@ test("subcircuit-circuit-json02 - chip inflation", async () => {
     // Check if the routes match in either direction.
     const routesMatchForward = originalRoute.every((origPt, j) => {
       const inflPt = inflatedRoute[j]
+      const originalPosition = getRoutePointPosition(origPt)
+      const inflatedPosition = getRoutePointPosition(inflPt)
       return (
         origPt.route_type === inflPt.route_type &&
-        Math.abs(origPt.x - inflPt.x) < 0.0001 &&
-        Math.abs(origPt.y - inflPt.y) < 0.0001
+        Math.abs(originalPosition.x - inflatedPosition.x) < 0.0001 &&
+        Math.abs(originalPosition.y - inflatedPosition.y) < 0.0001
       )
     })
 
     const routesMatchReverse = originalRoute.every((origPt, j) => {
       const inflPt = inflatedRoute[originalRoute.length - 1 - j]
+      const originalPosition = getRoutePointPosition(origPt)
+      const inflatedPosition = getRoutePointPosition(inflPt)
       return (
         origPt.route_type === inflPt.route_type &&
-        Math.abs(origPt.x - inflPt.x) < 0.0001 &&
-        Math.abs(origPt.y - inflPt.y) < 0.0001
+        Math.abs(originalPosition.x - inflatedPosition.x) < 0.0001 &&
+        Math.abs(originalPosition.y - inflatedPosition.y) < 0.0001
       )
     })
 

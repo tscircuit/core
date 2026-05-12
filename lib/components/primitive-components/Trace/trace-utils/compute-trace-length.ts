@@ -1,4 +1,5 @@
 import type { PcbTrace } from "circuit-json"
+import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 
 /**
  * Computes the total length of a PCB trace by summing the lengths of all wire segments
@@ -16,8 +17,10 @@ export function getTraceLength(route: PcbTrace["route"]): number {
       // For wire segments, compute straight-line distance
       const nextPoint = route[i + 1]
       if (nextPoint) {
-        const dx = nextPoint.x - point.x
-        const dy = nextPoint.y - point.y
+        const nextPosition = getRoutePointPosition(nextPoint)
+        const position = getRoutePointPosition(point)
+        const dx = nextPosition.x - position.x
+        const dy = nextPosition.y - position.y
         totalLength += Math.sqrt(dx * dx + dy * dy)
       }
     } else if (point.route_type === "via") {

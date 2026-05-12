@@ -3,6 +3,7 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 import { su } from "@tscircuit/circuit-json-util"
+import { getRoutePointPositions } from "lib/utils/pcb-trace-route-point-utils"
 
 test("autorouter uses breakout point", async () => {
   const { circuit } = getTestFixture()
@@ -35,7 +36,12 @@ test("autorouter uses breakout point", async () => {
 
   const pcb_trace = su(circuit.getCircuitJson()).pcb_trace.list()
   const hasPointNear = pcb_trace.some((t) =>
-    t.route.some((pt) => Math.abs(pt.x - 5) < 0.6 && Math.abs(pt.y - 5) < 0.6),
+    t.route.some((pt) =>
+      getRoutePointPositions(pt).some(
+        (position) =>
+          Math.abs(position.x - 5) < 0.6 && Math.abs(position.y - 5) < 0.6,
+      ),
+    ),
   )
   expect(hasPointNear).toBe(true)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

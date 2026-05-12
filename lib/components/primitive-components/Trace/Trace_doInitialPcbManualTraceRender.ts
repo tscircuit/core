@@ -108,16 +108,34 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     const { maybeFlipLayer } = trace._getPcbPrimitiveFlippedHelpers()
     const transform = trace._computePcbGlobalTransformBeforeLayout()
     const transformedRoute = inflatedPcbTrace.route.map((point) => {
-      const { x, y, ...restOfPoint } = point
-      const transformedPoint = applyToPoint(transform, { x, y })
-      if (point.route_type === "wire" && point.layer) {
+      if (point.route_type === "wire") {
+        const { x, y, ...restOfPoint } = point
+        const transformedPoint = applyToPoint(transform, { x, y })
         return {
-          ...transformedPoint,
           ...restOfPoint,
+          ...transformedPoint,
           layer: maybeFlipLayer(point.layer),
         } as PcbTraceRoutePoint
       }
-      return { ...transformedPoint, ...restOfPoint } as PcbTraceRoutePoint
+
+      if (point.route_type === "via") {
+        const { x, y, ...restOfPoint } = point
+        const transformedPoint = applyToPoint(transform, { x, y })
+        return {
+          ...restOfPoint,
+          ...transformedPoint,
+          from_layer: maybeFlipLayer(point.from_layer),
+          to_layer: maybeFlipLayer(point.to_layer),
+        } as PcbTraceRoutePoint
+      }
+
+      return {
+        ...point,
+        start: applyToPoint(transform, point.start),
+        end: applyToPoint(transform, point.end),
+        start_layer: maybeFlipLayer(point.start_layer),
+        end_layer: maybeFlipLayer(point.end_layer),
+      } as PcbTraceRoutePoint
     })
 
     const pcb_trace = db.pcb_trace.insert({

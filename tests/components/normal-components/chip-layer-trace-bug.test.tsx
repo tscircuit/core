@@ -56,8 +56,11 @@ test("chip with flipped layer should have traces on correct layer", async () => 
   const traces = circuit.db.pcb_trace.list()
 
   const routeLayers = traces[0].route.flatMap((point) => {
-    if ("layer" in point) {
+    if (point.route_type === "wire") {
       return [point.layer]
+    }
+    if (point.route_type === "through_pad") {
+      return [point.start_layer, point.end_layer]
     }
     return [point.to_layer, point.from_layer]
   })

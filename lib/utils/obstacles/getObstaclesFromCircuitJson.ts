@@ -343,11 +343,30 @@ export const getObstaclesFromCircuitJson = (
       }
     } else if (element.type === "pcb_trace") {
       const traceObstacles = getObstaclesFromRoute(
-        element.route.map((rp) => ({
-          x: rp.x,
-          y: rp.y,
-          layer: "layer" in rp ? rp.layer : rp.from_layer,
-        })),
+        element.route.flatMap((rp) => {
+          if (rp.route_type === "through_pad") {
+            return [
+              {
+                x: rp.start.x,
+                y: rp.start.y,
+                layer: rp.start_layer,
+              },
+              {
+                x: rp.end.x,
+                y: rp.end.y,
+                layer: rp.end_layer,
+              },
+            ]
+          }
+
+          return [
+            {
+              x: rp.x,
+              y: rp.y,
+              layer: rp.route_type === "wire" ? rp.layer : rp.from_layer,
+            },
+          ]
+        }),
         element.source_trace_id!,
       )
       obstacles.push(...traceObstacles)
