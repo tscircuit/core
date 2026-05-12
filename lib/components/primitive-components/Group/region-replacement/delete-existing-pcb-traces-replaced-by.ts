@@ -16,9 +16,15 @@ function addPossibleReplacementSourceTraceId(
 
   sourceTraceIds.add(value)
 
-  const rerouteSuffixIndex = value.indexOf("_reroute_")
-  if (rerouteSuffixIndex > 0) {
-    sourceTraceIds.add(value.slice(0, rerouteSuffixIndex))
+  for (const connectionNamePart of value.split("__")) {
+    if (connectionNamePart.length === 0) continue
+
+    sourceTraceIds.add(connectionNamePart)
+
+    const rerouteSuffixIndex = connectionNamePart.indexOf("_reroute_")
+    if (rerouteSuffixIndex > 0) {
+      sourceTraceIds.add(connectionNamePart.slice(0, rerouteSuffixIndex))
+    }
   }
 }
 
