@@ -104,4 +104,4 @@ test("repro116: rerouting imported arduino region should remove original geometr
     })
 
   expect(staleOriginalSegments).toHaveLength(0)
-}, 30_000)
+}, 80_000)

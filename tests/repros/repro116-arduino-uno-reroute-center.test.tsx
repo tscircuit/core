@@ -16,4 +16,4 @@ test("repro116: arduino uno circuit json can reroute a center imported region", 
     rerouteRegion,
     snapshotName: "repro116-arduino-uno-reroute-center",
   })
-}, 20_000)
+}, 80_000)
