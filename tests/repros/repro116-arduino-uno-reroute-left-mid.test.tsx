@@ -3,17 +3,17 @@ import { expectArduinoUnoRerouteRegion } from "./repro116-arduino-uno-reroute-ut
 
 const rerouteRegion = {
   shape: "rect" as const,
-  minX: 8,
-  maxX: 18,
-  minY: 8,
-  maxY: 18,
+  minX: -16,
+  maxX: -6,
+  minY: -2,
+  maxY: 8,
 }
 
-test("repro116: arduino uno circuit json can reroute an imported region with the builtin autorouter", async () => {
+test("repro116: arduino uno circuit json can reroute a left middle imported region", async () => {
   await expectArduinoUnoRerouteRegion({
-    dataTestId: "arduino-uno-reroute-left-right-stack",
     importMetaPath: import.meta.path,
+    label: "REROUTED LEFT MID 10MM",
     rerouteRegion,
-    snapshotName: "repro116-arduino-uno-reroute-left-right",
+    snapshotName: "repro116-arduino-uno-reroute-left-mid",
   })
 }, 20_000)
