@@ -12,7 +12,7 @@ const rerouteRegion = {
   maxY: 8,
 }
 
-test("repro116: rerouting imported arduino region currently creates pcb traces with invalid source_trace_id", async () => {
+test("repro116: rerouting imported arduino region should not create pcb traces with invalid source_trace_id", async () => {
   const { afterRerouteCircuit, beforeRerouteCircuit } =
     await renderArduinoUnoRerouteRegion({
       label: "INVALID SOURCE ID REPRO",

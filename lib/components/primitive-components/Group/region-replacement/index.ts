@@ -3,3 +3,4 @@ export { deleteExistingPcbTracesReplacedBy } from "./delete-existing-pcb-traces-
 export { getExistingPcbTracesForReroute } from "./get-existing-pcb-traces-for-reroute"
 export { getExistingSimplifiedPcbTracesForReroute } from "./get-existing-simplified-pcb-traces-for-reroute"
 export { getRelevantSubcircuitIdsForReroute } from "./get-relevant-subcircuit-ids-for-reroute"
+export { getSourceTraceIdsFromRerouteName } from "./get-source-trace-ids-from-reroute-name"
