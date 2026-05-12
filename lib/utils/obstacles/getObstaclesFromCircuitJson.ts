@@ -40,7 +40,7 @@ const getAxisAlignedRectFromRotatedRect = (
 }
 
 export const getObstaclesFromCircuitJson = (
-  soup: AnyCircuitElement[],
+  circuitJson: AnyCircuitElement[],
   connMap?: ConnectivityMap,
 ) => {
   const withNetId = (idList: string[]) =>
@@ -50,10 +50,14 @@ export const getObstaclesFromCircuitJson = (
         )
       : idList
   const obstacles: Obstacle[] = []
-  for (const element of soup) {
+  for (const element of circuitJson) {
+    // @ts-ignore
+    const pcbComponentId = element.pcb_component_id ?? undefined
+
     if (element.type === "pcb_smtpad") {
       if (element.shape === "circle") {
         obstacles.push({
+          componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
           layers: [element.layer],
@@ -67,6 +71,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "rect") {
         obstacles.push({
+          componentId: pcbComponentId,
           type: "rect",
           layers: [element.layer],
           center: {
@@ -88,6 +93,7 @@ export const getObstaclesFromCircuitJson = (
         const rect = axisAlignedRect ?? rotatedRect
 
         obstacles.push({
+          componentId: pcbComponentId,
           type: "rect",
           layers: [element.layer],
           center: rect.center,
@@ -98,6 +104,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "pill" || element.shape === "rotated_pill") {
         obstacles.push({
+          componentId: pcbComponentId,
           type: "rect",
           layers: [element.layer],
           center: {
@@ -120,6 +127,7 @@ export const getObstaclesFromCircuitJson = (
         const maxY = Math.max(...ys)
 
         obstacles.push({
+          componentId: pcbComponentId,
           type: "rect",
           layers: [element.layer],
           center: {
@@ -134,6 +142,7 @@ export const getObstaclesFromCircuitJson = (
     } else if (element.type === "pcb_keepout") {
       if (element.shape === "circle") {
         obstacles.push({
+          componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
           layers: element.layers,
@@ -147,6 +156,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "rect") {
         obstacles.push({
+          componentId: pcbComponentId,
           type: "rect",
           layers: element.layers,
           center: {
@@ -161,6 +171,7 @@ export const getObstaclesFromCircuitJson = (
     } else if (element.type === "pcb_cutout") {
       if (element.shape === "rect") {
         obstacles.push({
+          componentId: pcbComponentId,
           type: "rect",
           layers: EVERY_LAYER,
           center: {
@@ -182,6 +193,7 @@ export const getObstaclesFromCircuitJson = (
 
         for (const rect of approximatingRects) {
           obstacles.push({
+            componentId: pcbComponentId,
             type: "rect",
             layers: EVERY_LAYER,
             center: rect.center,
@@ -197,6 +209,7 @@ export const getObstaclesFromCircuitJson = (
 
         for (const rect of approximatingRects) {
           obstacles.push({
+            componentId: pcbComponentId,
             type: "rect",
             layers: EVERY_LAYER,
             center: rect.center,
@@ -209,6 +222,7 @@ export const getObstaclesFromCircuitJson = (
     } else if (element.type === "pcb_hole") {
       if (element.hole_shape === "oval") {
         obstacles.push({
+          componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
           center: {
@@ -224,6 +238,7 @@ export const getObstaclesFromCircuitJson = (
         element.hole_shape === "rotated_pill"
       ) {
         obstacles.push({
+          componentId: pcbComponentId,
           type: "rect",
           layers: EVERY_LAYER,
           center: {
@@ -239,6 +254,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.hole_shape === "rect") {
         obstacles.push({
+          componentId: pcbComponentId,
           type: "rect",
           layers: EVERY_LAYER,
           center: {
@@ -251,6 +267,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.hole_shape === "square") {
         obstacles.push({
+          componentId: pcbComponentId,
           type: "rect",
           layers: EVERY_LAYER,
           center: {
@@ -267,6 +284,7 @@ export const getObstaclesFromCircuitJson = (
         element.hole_shape === "circle"
       ) {
         obstacles.push({
+          componentId: pcbComponentId,
           type: "rect",
           layers: EVERY_LAYER,
           center: {
@@ -281,6 +299,7 @@ export const getObstaclesFromCircuitJson = (
     } else if (element.type === "pcb_plated_hole") {
       if (element.shape === "circle") {
         obstacles.push({
+          componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
           layers: EVERY_LAYER,
@@ -294,6 +313,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "circular_hole_with_rect_pad") {
         obstacles.push({
+          componentId: pcbComponentId,
           // @ts-ignore
           type: "rect",
           layers: EVERY_LAYER,
@@ -307,6 +327,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "oval") {
         obstacles.push({
+          componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
           layers: EVERY_LAYER,
@@ -320,6 +341,7 @@ export const getObstaclesFromCircuitJson = (
         })
       } else if (element.shape === "pill") {
         obstacles.push({
+          componentId: pcbComponentId,
           type: "rect",
           layers: EVERY_LAYER,
           center: {
@@ -347,6 +369,7 @@ export const getObstaclesFromCircuitJson = (
           const centerX = (minX + maxX) / 2
           const centerY = (minY + maxY) / 2
           obstacles.push({
+            componentId: pcbComponentId,
             // @ts-ignore
             type: "rect",
             layers: EVERY_LAYER,
@@ -388,12 +411,18 @@ export const getObstaclesFromCircuitJson = (
         }),
         element.source_trace_id!,
       )
-      obstacles.push(...traceObstacles)
+      obstacles.push(
+        ...traceObstacles.map((obstacle) => ({
+          ...obstacle,
+          componentId: pcbComponentId,
+        })),
+      )
     } else if (element.type === "pcb_via") {
       const netIsAssignable = Boolean(
         (element as any).net_is_assignable ?? (element as any).netIsAssignable,
       )
       obstacles.push({
+        componentId: pcbComponentId,
         type: "rect",
         layers: element.layers,
         center: {
