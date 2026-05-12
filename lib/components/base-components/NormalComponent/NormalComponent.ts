@@ -269,7 +269,6 @@ export class NormalComponent<
       ignoreSymbolPorts?: boolean
     } = {},
   ) {
-    if (this.root?.schematicDisabled) return
     this._inferredInternallyConnectedPinNames = []
     const { config } = this
     const portsToCreate: Port[] = []
