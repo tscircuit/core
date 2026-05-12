@@ -30,6 +30,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     displayLabelTraces,
     allScks,
     userNetIdToSck,
+    scksWithExplicitPortNetTraces,
   } = createSchematicTraceSolverInputProblem(group)
 
   if (inputProblem.chips.length === 0) return
@@ -47,8 +48,6 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       allSourceAndSchematicPortIdsInScope,
       schPortIdToSourcePortId,
       sckToSourceNet,
-      pinIdToSchematicPortId,
-      schematicPortIdsWithPreExistingNetLabels,
     })
     return
   }
@@ -77,6 +76,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     solver,
     pinIdToSchematicPortId,
     userNetIdToSck,
+    schematicPortIdsWithPreExistingNetLabels,
   })
 
   // Apply net labels (from solver placements and net-only ports)
@@ -89,6 +89,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     pinIdToSchematicPortId,
     allScks,
     userNetIdToSck,
+    scksWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
   })
@@ -98,8 +99,6 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
     sckToSourceNet,
-    pinIdToSchematicPortId,
-    schematicPortIdsWithPreExistingNetLabels,
   })
 
   // Insert labels for traces that explicitly asked for schDisplayLabel

@@ -13,6 +13,7 @@ import {
 } from "transformation-matrix"
 import { calculateElbow } from "calculate-elbow"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
+import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 
 export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   source_net_label_id?: string
@@ -31,6 +32,11 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     const connectsTo = this._resolveConnectsTo()
     if (!connectsTo) return "right"
 
+    // Power/ground nets always use vertical orientation (consistent with solver)
+    const netName = this._getNetName()
+    if (/^(gnd|vee|vss|v-)/i.test(netName)) return "top"
+    if (/^v/i.test(netName)) return "bottom"
+
     // Get relative position of the net label and the thing(s) it connects
     // to
     const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
@@ -38,8 +44,12 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     const connectedPorts = this._getConnectedPorts()
     if (connectedPorts.length === 0) return "right"
 
-    const connectedPortPosition =
-      connectedPorts[0]._getGlobalSchematicPositionBeforeLayout()
+    const port = connectedPorts[0]
+    if (port.facingDirection) {
+      return getEnteringEdgeFromDirection(port.facingDirection as any)
+    }
+
+    const connectedPortPosition = port._getGlobalSchematicPositionBeforeLayout()
 
     const dx = connectedPortPosition.x - anchorPos.x
     const dy = connectedPortPosition.y - anchorPos.y
@@ -101,7 +111,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       `net.${this._getNetName()!}`,
     )! as Net
 
-    const anchorSide = props.anchorSide ?? "right"
+    const anchorSide = this._getAnchorSide()
     const center = computeSchematicNetLabelCenter({
       anchor_position: anchorPos,
       anchor_side: anchorSide,
@@ -113,7 +123,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       source_net_id: net.source_net_id!,
       anchor_position: anchorPos,
       center,
-      anchor_side: this._getAnchorSide(),
+      anchor_side: anchorSide,
     })
 
     this.source_net_label_id = netLabel.source_net_id

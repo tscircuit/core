@@ -12,12 +12,20 @@ export function applyTracesFromSolverOutput(args: {
   solver: SchematicTracePipelineSolver
   pinIdToSchematicPortId: Map<string, string>
   userNetIdToSck: Map<string, string>
+  schematicPortIdsWithPreExistingNetLabels: Set<string>
 }) {
-  const { group, solver, pinIdToSchematicPortId, userNetIdToSck } = args
+  const {
+    group,
+    solver,
+    pinIdToSchematicPortId,
+    userNetIdToSck,
+    schematicPortIdsWithPreExistingNetLabels,
+  } = args
   const { db } = group.root!
 
   // Use the overlap-corrected traces from the pipeline
   const traces =
+    solver.netLabelTraceCollisionSolver?.getOutput().traces ??
     solver.traceCleanupSolver?.getOutput().traces ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
     solver.schematicTraceLinesSolver?.solvedTracePaths
@@ -30,6 +38,23 @@ export function applyTracesFromSolverOutput(args: {
   debug(`Traces inside SchematicTraceSolver output: ${(traces ?? []).length}`)
 
   for (const solvedTracePath of traces ?? []) {
+    const uniquePinIds = Array.from(new Set(solvedTracePath.pinIds ?? []))
+    const solvedTraceSchematicPortIds = uniquePinIds
+      .map((pinId) => pinIdToSchematicPortId.get(pinId))
+      .filter((id): id is string => Boolean(id))
+    const isNetLabelStubTrace =
+      uniquePinIds.length <= 1 &&
+      solvedTraceSchematicPortIds.length > 0 &&
+      solvedTraceSchematicPortIds.every((id) =>
+        schematicPortIdsWithPreExistingNetLabels.has(id),
+      )
+    if (isNetLabelStubTrace) {
+      debug(
+        `Skipping solver netlabel stub trace ${solvedTracePath?.mspPairId} because schematic port already has a netlabel`,
+      )
+      continue
+    }
+
     const points = solvedTracePath?.tracePath as Array<{ x: number; y: number }>
     if (!Array.isArray(points) || points.length < 2) {
       debug(

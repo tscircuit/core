@@ -75,6 +75,38 @@ test(
 
     circuit.render()
 
+    const u1SourceComponent = circuit.db.source_component.getWhere({
+      name: "U1",
+    })
+    const u1GndSourcePort = circuit.db.source_port.list().find((port) => {
+      if (port.source_component_id !== u1SourceComponent?.source_component_id) {
+        return false
+      }
+      return (
+        port.name === "GND" ||
+        (port as any).pin_label === "GND" ||
+        port.port_hints?.includes("GND") ||
+        port.port_hints?.includes("pin1")
+      )
+    })
+    const u1GndSchematicPort = circuit.db.schematic_port.list().find((port) => {
+      return port.source_port_id === u1GndSourcePort?.source_port_id
+    })
+    expect(u1GndSchematicPort).toBeDefined()
+
+    const gndLabelsNearU1Gnd = circuit.db.schematic_net_label
+      .list()
+      .filter((label) => {
+        if (label.text !== "GND") return false
+        const dx = label.anchor_position!.x - u1GndSchematicPort!.center.x
+        const dy = label.anchor_position!.y - u1GndSchematicPort!.center.y
+        return dx * dx + dy * dy < 0.5 * 0.5
+      })
+    expect(gndLabelsNearU1Gnd).toHaveLength(1)
+    expect(gndLabelsNearU1Gnd[0]!.anchor_position).toEqual(
+      u1GndSchematicPort!.center,
+    )
+
     expect(circuit).toMatchSchematicSnapshot(import.meta.path)
     expect(circuit).toMatchPcbSnapshot(import.meta.path)
   },

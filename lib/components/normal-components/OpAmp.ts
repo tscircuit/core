@@ -1,37 +1,52 @@
-import { opampProps, type OpAmpPinLabels } from "@tscircuit/props"
-import { type Ftype, type BaseSymbolName } from "lib/utils/constants"
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { type OpAmpPinLabels, opampProps } from "@tscircuit/props"
 import type { SimulationOpAmp, SourceSimpleOpAmp } from "circuit-json"
+import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 
 export class OpAmp extends NormalComponent<typeof opampProps, OpAmpPinLabels> {
-  get config() {
+  getSchematicSymbolName(): BaseSymbolName {
     const hasPowerConnections =
       this.props.connections?.positive_supply ||
       this.props.connections?.negative_supply
 
-    const symbolName: BaseSymbolName = this.props.symbolName
+    return this.props.symbolName
       ? (this.props.symbolName as BaseSymbolName)
       : hasPowerConnections
         ? "opamp_with_power"
         : "opamp_no_power"
+  }
 
+  get config() {
     return {
       componentName: "OpAmp",
-      schematicSymbolName: symbolName,
+      schematicSymbolName: this.getSchematicSymbolName(),
       zodProps: opampProps,
       sourceFtype: "simple_op_amp" as Ftype,
     }
   }
 
   initPorts() {
+    const hasPowerSymbol = this.getSchematicSymbolName() === "opamp_with_power"
+
+    // opamp_with_power symbol (schematic-symbols >= 0.0.165): pin4=output, pin5=V+, pin3=V-
+    // opamp_no_power symbol: pin3=output, pin4=V+, pin5=V-
+    // pin4/pin5 always created so traces to positive_supply/negative_supply work on no-power variant
     super.initPorts({
       pinCount: 5,
       additionalAliases: {
         pin1: ["non_inverting_input"],
         pin2: ["inverting_input"],
-        pin3: ["output"],
-        pin4: ["positive_supply", "vcc", "vdd"],
-        pin5: ["negative_supply", "vee", "vss", "gnd"],
+        ...(hasPowerSymbol
+          ? {
+              pin4: ["output"],
+              pin5: ["positive_supply", "vcc", "vdd"],
+              pin3: ["negative_supply", "vee", "vss", "gnd"],
+            }
+          : {
+              pin3: ["output"],
+              pin4: ["positive_supply", "vcc", "vdd"],
+              pin5: ["negative_supply", "vee", "vss", "gnd"],
+            }),
       },
     })
   }

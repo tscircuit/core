@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("opamp component", async () => {
@@ -21,6 +21,9 @@ test("opamp component", async () => {
 
   await circuit.renderUntilSettled()
 
+  const netLabels = circuit.db.schematic_net_label.list().map((l) => l.text)
+  expect(netLabels).toEqual(["in_pos", "in_neg", "out", "vcc", "vee"])
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
 
@@ -42,5 +45,5 @@ test("opamp without power connections", async () => {
 
   await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path + "-no-power")
+  expect(circuit).toMatchSchematicSnapshot(`${import.meta.path}-no-power`)
 })
