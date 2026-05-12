@@ -4,7 +4,6 @@ import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import Debug from "debug"
-import { SOLVER_SOURCE_TRACE_ID_PREFIX } from "lib/utils/schematic/netLabelUtils"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -12,14 +11,14 @@ export function applyTracesFromSolverOutput(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
   pinIdToSchematicPortId: Map<string, string>
-  userNetIdToSck: Map<string, string>
+  userNetIdToConnKey: Map<string, string>
   schematicPortIdsWithPreExistingNetLabels: Set<string>
 }) {
   const {
     group,
     solver,
     pinIdToSchematicPortId,
-    userNetIdToSck,
+    userNetIdToConnKey,
     schematicPortIdsWithPreExistingNetLabels,
   } = args
   const { db } = group.root!
@@ -72,7 +71,7 @@ export function applyTracesFromSolverOutput(args: {
       })
     }
 
-    const source_trace_id = `${SOLVER_SOURCE_TRACE_ID_PREFIX}${solvedTracePath?.mspPairId!}`
+    const source_trace_id = String(solvedTracePath?.mspPairId)
     let subcircuit_connectivity_map_key: string | undefined
     if (
       Array.isArray(solvedTracePath?.pins) &&
@@ -87,13 +86,13 @@ export function applyTracesFromSolverOutput(args: {
           if (existing) db.schematic_port.update(schPid, { is_connected: true })
         }
 
-        subcircuit_connectivity_map_key = userNetIdToSck.get(
+        subcircuit_connectivity_map_key = userNetIdToConnKey.get(
           String(solvedTracePath.userNetId),
         )
       }
     }
     if (!subcircuit_connectivity_map_key) {
-      subcircuit_connectivity_map_key = userNetIdToSck.get(
+      subcircuit_connectivity_map_key = userNetIdToConnKey.get(
         String(solvedTracePath.userNetId),
       )
     }

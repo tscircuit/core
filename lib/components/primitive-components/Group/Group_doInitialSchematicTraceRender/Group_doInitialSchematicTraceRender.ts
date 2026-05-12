@@ -22,12 +22,11 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   const {
     inputProblem,
     pinIdToSchematicPortId,
-    sckToSourceNet,
+    connKeyToSourceNet,
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
-    allScks,
-    userNetIdToSck,
-    scksWithExplicitPortNetTraces,
+    userNetIdToConnKey,
+    subcircuitConnKeysWithExplicitPortNetTraces,
   } = createSchematicTraceSolverInputProblem(group)
 
   if (inputProblem.chips.length === 0) return
@@ -44,7 +43,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       group,
       allSourceAndSchematicPortIdsInScope,
       schPortIdToSourcePortId,
-      sckToSourceNet,
+      connKeyToSourceNet,
     })
     return
   }
@@ -72,7 +71,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     group,
     solver,
     pinIdToSchematicPortId,
-    userNetIdToSck,
+    userNetIdToConnKey,
     schematicPortIdsWithPreExistingNetLabels,
   })
 
@@ -80,13 +79,10 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   applyNetLabelPlacements({
     group,
     solver,
-    sckToSourceNet,
-    allSourceAndSchematicPortIdsInScope,
-    schPortIdToSourcePortId,
+    connKeyToSourceNet,
     pinIdToSchematicPortId,
-    allScks,
-    userNetIdToSck,
-    scksWithExplicitPortNetTraces,
+    userNetIdToConnKey,
+    subcircuitConnKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
   })
@@ -95,6 +91,6 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     group,
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
-    sckToSourceNet,
+    connKeyToSourceNet,
   })
 }

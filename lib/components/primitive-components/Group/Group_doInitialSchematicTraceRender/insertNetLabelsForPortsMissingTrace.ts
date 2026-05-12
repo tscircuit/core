@@ -1,10 +1,8 @@
 import type { Group } from "lib/components"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
-import {
-  SCHEMATIC_LABEL_ANCHOR_SIDE,
-  type SchematicLabelAnchorSide,
-} from "lib/utils/schematic/netLabelUtils"
+import type { SchematicLabelAnchorSide } from "lib/utils/schematic/netLabelUtils"
+import type { SchematicNetLabel, SourceNet } from "circuit-json"
 
 const NEAR_EXISTING_NET_LABEL_DISTANCE = 0.5
 const SAME_ANCHOR_POSITION_DISTANCE = 0.1
@@ -13,12 +11,12 @@ export const insertNetLabelsForPortsMissingTrace = ({
   allSourceAndSchematicPortIdsInScope,
   group,
   schPortIdToSourcePortId,
-  sckToSourceNet: connKeyToNet,
+  connKeyToSourceNet,
 }: {
   group: Group<any>
   allSourceAndSchematicPortIdsInScope: Set<string>
   schPortIdToSourcePortId: Map<string, string>
-  sckToSourceNet: Map<string, any>
+  connKeyToSourceNet: Map<string, SourceNet>
 }) => {
   const { db } = group.root!
 
@@ -35,7 +33,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
     const sourcePort = db.source_port.get(srcPortId)
     const key = sourcePort?.subcircuit_connectivity_map_key
     if (!key) continue
-    const sourceNet = connKeyToNet.get(key)
+    const sourceNet = connKeyToSourceNet.get(key)
     if (!sourceNet) {
       continue
     }
@@ -56,15 +54,14 @@ export const insertNetLabelsForPortsMissingTrace = ({
     const usePowerSymbolSide = connectedPortCountForKey > 1
     let side: SchematicLabelAnchorSide
     if (usePowerSymbolSide && isGndNet) {
-      side = SCHEMATIC_LABEL_ANCHOR_SIDE.top
+      side = "top"
     } else if (usePowerSymbolSide && isPowerNet) {
-      side = SCHEMATIC_LABEL_ANCHOR_SIDE.bottom
+      side = "bottom"
     } else {
       side =
         getEnteringEdgeFromDirection(
-          (schPort.facing_direction as any) ||
-            SCHEMATIC_LABEL_ANCHOR_SIDE.right,
-        ) || SCHEMATIC_LABEL_ANCHOR_SIDE.right
+          (schPort.facing_direction as any) || "right",
+        ) || "right"
     }
     const center = computeSchematicNetLabelCenter({
       anchor_position: schPort.center,
@@ -123,16 +120,17 @@ export const insertNetLabelsForPortsMissingTrace = ({
       if (existingAtPort) continue
     }
 
-    // @ts-ignore
-    const netLabel: any = {
+    const netLabel = {
       text,
       anchor_position: schPort.center,
       center,
       anchor_side: side as any,
-    }
+    } satisfies Partial<SchematicNetLabel>
     if (sourceNet.source_net_id) {
-      netLabel.source_net_id = sourceNet.source_net_id
+      Object.assign(netLabel, { source_net_id: sourceNet.source_net_id })
     }
-    db.schematic_net_label.insert(netLabel)
+    db.schematic_net_label.insert(
+      netLabel as Parameters<typeof db.schematic_net_label.insert>[0],
+    )
   }
 }

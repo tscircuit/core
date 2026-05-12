@@ -3,19 +3,6 @@ import type { SimulationOpAmp, SourceSimpleOpAmp } from "circuit-json"
 import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 
-const OPAMP_COMPONENT_NAME = "OpAmp"
-const OPAMP_SOURCE_FTYPE = "simple_op_amp"
-const OPAMP_SYMBOL_WITH_POWER = "opamp_with_power"
-const OPAMP_SYMBOL_WITHOUT_POWER = "opamp_no_power"
-
-const OPAMP_INPUT_ALIASES = {
-  pin1: ["non_inverting_input"],
-  pin2: ["inverting_input"],
-}
-
-const OPAMP_POWER_ALIASES = ["positive_supply", "vcc", "vdd"]
-const OPAMP_NEGATIVE_POWER_ALIASES = ["negative_supply", "vee", "vss", "gnd"]
-
 export class OpAmp extends NormalComponent<typeof opampProps, OpAmpPinLabels> {
   getSchematicSymbolName(): BaseSymbolName {
     if (this.props.symbolName) {
@@ -27,37 +14,39 @@ export class OpAmp extends NormalComponent<typeof opampProps, OpAmpPinLabels> {
       this.props.connections?.negative_supply
 
     if (hasPowerConnections) {
-      return OPAMP_SYMBOL_WITH_POWER
+      return "opamp_with_power"
     }
 
-    return OPAMP_SYMBOL_WITHOUT_POWER
+    return "opamp_no_power"
   }
 
   get config() {
     return {
-      componentName: OPAMP_COMPONENT_NAME,
+      componentName: "OpAmp",
       schematicSymbolName: this.getSchematicSymbolName(),
       zodProps: opampProps,
-      sourceFtype: OPAMP_SOURCE_FTYPE as Ftype,
+      sourceFtype: "simple_op_amp" as Ftype,
     }
   }
 
   initPorts() {
-    const additionalAliases = { ...OPAMP_INPUT_ALIASES }
-    const hasPowerSymbol =
-      this.getSchematicSymbolName() === OPAMP_SYMBOL_WITH_POWER
+    const additionalAliases: Record<string, string[]> = {
+      pin1: ["non_inverting_input"],
+      pin2: ["inverting_input"],
+    }
+    const hasPowerSymbol = this.getSchematicSymbolName() === "opamp_with_power"
 
     if (hasPowerSymbol) {
       Object.assign(additionalAliases, {
         pin4: ["output"],
-        pin5: OPAMP_POWER_ALIASES,
-        pin3: OPAMP_NEGATIVE_POWER_ALIASES,
+        pin5: ["positive_supply", "vcc", "vdd"],
+        pin3: ["negative_supply", "vee", "vss", "gnd"],
       })
     } else {
       Object.assign(additionalAliases, {
         pin3: ["output"],
-        pin4: OPAMP_POWER_ALIASES,
-        pin5: OPAMP_NEGATIVE_POWER_ALIASES,
+        pin4: ["positive_supply", "vcc", "vdd"],
+        pin5: ["negative_supply", "vee", "vss", "gnd"],
       })
     }
 
@@ -75,7 +64,7 @@ export class OpAmp extends NormalComponent<typeof opampProps, OpAmpPinLabels> {
     const { _parsedProps: props } = this
 
     const source_component = db.source_component.insert({
-      ftype: OPAMP_SOURCE_FTYPE,
+      ftype: "simple_op_amp",
       name: this.name,
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,

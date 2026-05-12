@@ -6,32 +6,27 @@ import { oppositeSide } from "./oppositeSide"
 import { Port } from "../../Port"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import Debug from "debug"
+import type { SchematicNetLabel, SourceNet } from "circuit-json"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
 export function applyNetLabelPlacements(args: {
   group: Group<any>
   solver: SchematicTracePipelineSolver
-  userNetIdToSck: Map<string, string>
-  sckToSourceNet: Map<string, any>
-  allSourceAndSchematicPortIdsInScope: Set<string>
-  schPortIdToSourcePortId: Map<string, string>
-  allScks: Set<string>
+  userNetIdToConnKey: Map<string, string>
+  connKeyToSourceNet: Map<string, SourceNet>
   pinIdToSchematicPortId: Map<string, string>
-  scksWithExplicitPortNetTraces: Set<string>
+  subcircuitConnKeysWithExplicitPortNetTraces: Set<string>
   schematicPortIdsWithPreExistingNetLabels: Set<string>
   schematicPortIdsWithRoutedTraces: Set<string>
 }) {
   const {
     group,
     solver,
-    sckToSourceNet,
-    allScks,
-    allSourceAndSchematicPortIdsInScope,
-    schPortIdToSourcePortId,
-    userNetIdToSck,
+    connKeyToSourceNet,
+    userNetIdToConnKey,
     pinIdToSchematicPortId,
-    scksWithExplicitPortNetTraces,
+    subcircuitConnKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
   } = args
@@ -58,17 +53,17 @@ export function applyNetLabelPlacements(args: {
 
     const placementUserNetId = globalConnMap
       .getIdsConnectedToNet(placement.globalConnNetId)
-      .find((id) => userNetIdToSck.get(id))
-    const placementSck = userNetIdToSck.get(placementUserNetId!)
+      .find((id) => userNetIdToConnKey.get(id))
+    const placementConnKey = userNetIdToConnKey.get(placementUserNetId!)
 
     const anchor_position = placement.anchorPoint
 
     const orientation = placement.orientation as AxisDirection
     const anchor_side = oppositeSide(orientation)
 
-    let sourceNet
-    if (placementSck) {
-      sourceNet = sckToSourceNet.get(placementSck)
+    let sourceNet: SourceNet | undefined
+    if (placementConnKey) {
+      sourceNet = connKeyToSourceNet.get(placementConnKey)
     }
 
     const schPortIds = placement.pinIds.map(
@@ -88,9 +83,8 @@ export function applyNetLabelPlacements(args: {
 
     if (sourceNet) {
       const isPowerOrGroundNet = sourceNet.is_ground || sourceNet.is_power
-      const hasExplicitPortNetTrace = scksWithExplicitPortNetTraces.has(
-        placementSck!,
-      )
+      const hasExplicitPortNetTrace =
+        subcircuitConnKeysWithExplicitPortNetTraces.has(placementConnKey!)
       const hasRoutedTraceForPlacementPort = schPortIds.some((id) =>
         schematicPortIdsWithRoutedTraces.has(id),
       )
@@ -118,23 +112,24 @@ export function applyNetLabelPlacements(args: {
         text,
       })
 
-      // @ts-ignore
-      const netLabel: any = {
+      const netLabel = {
         text,
         anchor_position,
         center,
         anchor_side: anchor_side as any,
-      }
+      } satisfies Partial<SchematicNetLabel>
       if (sourceNet.source_net_id) {
-        netLabel.source_net_id = sourceNet.source_net_id
+        Object.assign(netLabel, { source_net_id: sourceNet.source_net_id })
       }
-      db.schematic_net_label.insert(netLabel)
+      db.schematic_net_label.insert(
+        netLabel as Parameters<typeof db.schematic_net_label.insert>[0],
+      )
       continue
     }
 
     const ports = group
       .selectAll<Port>("port")
-      .filter((p) => p._getSubcircuitConnectivityKey() === placementSck)
+      .filter((p) => p._getSubcircuitConnectivityKey() === placementConnKey)
 
     const { name: text, wasAssignedDisplayLabel } = getNetNameFromPorts(ports)
 
@@ -158,12 +153,14 @@ export function applyNetLabelPlacements(args: {
       text,
     })
 
-    // @ts-ignore
-    db.schematic_net_label.insert({
+    const netLabel = {
       text,
       anchor_position,
       center,
       anchor_side: anchor_side as any,
-    })
+    } satisfies Partial<SchematicNetLabel>
+    db.schematic_net_label.insert(
+      netLabel as Parameters<typeof db.schematic_net_label.insert>[0],
+    )
   }
 }

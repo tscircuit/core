@@ -26,7 +26,7 @@ export type SolverInputContext = {
    *   }, ...
    * )
    */
-  sckToSourceNet: Map<string, SourceNet>
+  connKeyToSourceNet: Map<string, SourceNet>
 
   /**
    * User net id to subcircuit connectivity key
@@ -37,18 +37,16 @@ export type SolverInputContext = {
    *   ...
    * )
    */
-  userNetIdToSck: Map<string, string>
+  userNetIdToConnKey: Map<string, string>
 
   /**
    * Subcircuit connectivity keys that came from explicit port-to-net traces,
    * e.g. <trace from=".D1 > .pin1" to="net.VCC" />.
    */
-  scksWithExplicitPortNetTraces: Set<string>
+  subcircuitConnKeysWithExplicitPortNetTraces: Set<string>
 
   allSourceAndSchematicPortIdsInScope: Set<string>
   schPortIdToSourcePortId: Map<string, string>
-
-  allScks: Set<string>
 }
 
 export function createSchematicTraceSolverInputProblem(
@@ -56,8 +54,7 @@ export function createSchematicTraceSolverInputProblem(
 ): SolverInputContext {
   const { db } = group.root!
 
-  const sckToSourceNet = new Map<string, any>()
-  const allScks = new Set<string>()
+  const connKeyToSourceNet = new Map<string, SourceNet>()
 
   const traces = group.selectAll("trace")
 
@@ -133,7 +130,7 @@ export function createSchematicTraceSolverInputProblem(
   const allSourceAndSchematicPortIdsInScope = new Set<string>()
   const schPortIdToSourcePortId = new Map<string, string>()
   const sourcePortIdToSchPortId = new Map<string, string>()
-  const userNetIdToSck = new Map<string, string>()
+  const userNetIdToConnKey = new Map<string, string>()
   for (const sc of schematicComponents) {
     const ports = db.schematic_port.list({
       schematic_component_id: sc.schematic_component_id,
@@ -180,7 +177,7 @@ export function createSchematicTraceSolverInputProblem(
   const directConnections: Array<{ pinIds: [string, string]; netId?: string }> =
     []
   const connectedPairKeys = new Set<string>()
-  const scksWithExplicitPortNetTraces = new Set<string>()
+  const subcircuitConnKeysWithExplicitPortNetTraces = new Set<string>()
   for (const trace of traces as any[]) {
     if (trace.parent !== group) continue
     const sourceTraceId = trace.source_trace_id
@@ -191,7 +188,7 @@ export function createSchematicTraceSolverInputProblem(
       (sourceTrace.connected_source_port_ids?.length ?? 0) > 0 &&
       (sourceTrace.connected_source_net_ids?.length ?? 0) > 0
     ) {
-      scksWithExplicitPortNetTraces.add(
+      subcircuitConnKeysWithExplicitPortNetTraces.add(
         sourceTrace.subcircuit_connectivity_map_key,
       )
     }
@@ -216,8 +213,7 @@ export function createSchematicTraceSolverInputProblem(
         connectedPairKeys.add(pairKey)
         const userNetId = st.display_name ?? st.source_trace_id
         if (st.subcircuit_connectivity_map_key) {
-          allScks.add(st.subcircuit_connectivity_map_key)
-          userNetIdToSck.set(userNetId, st.subcircuit_connectivity_map_key)
+          userNetIdToConnKey.set(userNetId, st.subcircuit_connectivity_map_key)
         }
         directConnections.push({
           pinIds: [a, b].map((id) => schematicPortIdToPinId.get(id)!) as [
@@ -242,31 +238,29 @@ export function createSchematicTraceSolverInputProblem(
       (n) => !n.subcircuit_id || allowedSubcircuitIds.has(n.subcircuit_id!),
     )) {
     if (net.subcircuit_connectivity_map_key) {
-      allScks.add(net.subcircuit_connectivity_map_key)
-      sckToSourceNet.set(net.subcircuit_connectivity_map_key, net)
+      connKeyToSourceNet.set(net.subcircuit_connectivity_map_key, net)
     }
   }
 
   /**
    * Subcircuit connectivity map key to schematic port ids
    */
-  const sckToPinIds = new Map<string, string[]>()
+  const connKeyToPinIds = new Map<string, string[]>()
   for (const [schId, srcPortId] of schPortIdToSourcePortId) {
     const sp = db.source_port.get(srcPortId)
     if (!sp?.subcircuit_connectivity_map_key) continue
-    const sck = sp.subcircuit_connectivity_map_key
-    allScks.add(sck)
-    if (!sckToPinIds.has(sck)) sckToPinIds.set(sck, [])
-    sckToPinIds.get(sck)!.push(schId)
+    const connKey = sp.subcircuit_connectivity_map_key
+    if (!connKeyToPinIds.has(connKey)) connKeyToPinIds.set(connKey, [])
+    connKeyToPinIds.get(connKey)!.push(schId)
   }
 
-  for (const [subcircuitConnectivityKey, schematicPortIds] of sckToPinIds) {
-    const sourceNet = sckToSourceNet.get(subcircuitConnectivityKey)
+  for (const [connKey, schematicPortIds] of connKeyToPinIds) {
+    const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet && schematicPortIds.length >= 1) {
       const userNetId = String(
-        sourceNet.name || sourceNet.source_net_id || subcircuitConnectivityKey,
+        sourceNet.name || sourceNet.source_net_id || connKey,
       )
-      userNetIdToSck.set(userNetId, subcircuitConnectivityKey)
+      userNetIdToConnKey.set(userNetId, connKey)
 
       const netLabelWidth = Number(
         getSchematicNetLabelTextWidth({ text: String(userNetId) }).toFixed(2),
@@ -318,11 +312,10 @@ export function createSchematicTraceSolverInputProblem(
   return {
     inputProblem,
     pinIdToSchematicPortId,
-    sckToSourceNet,
-    userNetIdToSck,
-    scksWithExplicitPortNetTraces,
+    connKeyToSourceNet,
+    userNetIdToConnKey,
+    subcircuitConnKeysWithExplicitPortNetTraces,
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
-    allScks,
   }
 }
