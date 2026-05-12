@@ -1670,7 +1670,7 @@ export class NormalComponent<
     const isBottomLayer = computedLayer === "bottom"
 
     if (!cadModel && !footprint) {
-      const cad_model = db.cad_component.insert({
+      const cad_component = db.cad_component.insert({
         position: {
           x: bounds.center.x,
           y: bounds.center.y,
@@ -1691,7 +1691,7 @@ export class NormalComponent<
         show_as_bounding_box: true,
         show_as_translucent_model: this._parsedProps.showAsTranslucentModel,
       } as any)
-      this.cad_component_id = cad_model.cad_component_id
+      this.cad_component_id = cad_component.cad_component_id
       return
     }
 
