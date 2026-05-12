@@ -1,7 +1,10 @@
 import type { PcbTrace } from "circuit-json"
+import { getRoutePointPosition } from "../pcb-trace-route-point-utils"
 
 function pdist(a: PcbTrace["route"][number], b: PcbTrace["route"][number]) {
-  return Math.hypot(a.x - b.x, a.y - b.y)
+  const aPosition = getRoutePointPosition(a)
+  const bPosition = getRoutePointPosition(b)
+  return Math.hypot(aPosition.x - bPosition.x, aPosition.y - bPosition.y)
 }
 
 /**

@@ -1618,7 +1618,6 @@ export class NormalComponent<
       this.getFootprinterString() ?? this._getImpliedFootprintString()
 
     if (!this.pcb_component_id) return
-    if (!cadModel && !footprint) return
     if (cadModel === null) return
 
     // Use post-layout bounds
@@ -1669,6 +1668,32 @@ export class NormalComponent<
         ? (pcbComponent.rotation ?? preLayoutRotation)
         : preLayoutRotation
     const isBottomLayer = computedLayer === "bottom"
+
+    if (!cadModel && !footprint) {
+      const cad_component = db.cad_component.insert({
+        position: {
+          x: bounds.center.x,
+          y: bounds.center.y,
+          z:
+            computedLayer === "bottom"
+              ? -boardThickness / 2
+              : boardThickness / 2,
+        },
+        rotation: {
+          x: 0,
+          y: isBottomLayer ? 180 : 0,
+          z: normalizeDegrees(isBottomLayer ? -totalRotation : totalRotation),
+        },
+        pcb_component_id: this.pcb_component_id,
+        source_component_id: this.source_component_id!,
+        model_origin_alignment: "center_of_component_on_board_surface",
+        anchor_alignment: "center_of_component_on_board_surface",
+        show_as_bounding_box: true,
+        show_as_translucent_model: this._parsedProps.showAsTranslucentModel,
+      } as any)
+      this.cad_component_id = cad_component.cad_component_id
+      return
+    }
 
     const rotationWithOffset = totalRotation + (rotationOffset.z ?? 0)
     const cadRotationZ = normalizeDegrees(rotationWithOffset)

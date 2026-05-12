@@ -1,7 +1,7 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { z } from "zod"
 import { pcb_trace_route_point, type PcbTraceRoutePoint } from "circuit-json"
-import { compose, translate, scale, applyToPoint } from "transformation-matrix"
+import { applyToPoint } from "transformation-matrix"
 
 export const pcbTraceProps = z.object({
   route: z.array(pcb_trace_route_point),
@@ -35,16 +35,34 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     const parentTransform = this._computePcbGlobalTransformBeforeLayout()
 
     const transformedRoute = props.route.map((point) => {
-      const { x, y, ...restOfPoint } = point
-      const transformedPoint = applyToPoint(parentTransform, { x, y })
-      if (point.route_type === "wire" && point.layer) {
+      if (point.route_type === "wire") {
+        const { x, y, ...restOfPoint } = point
+        const transformedPoint = applyToPoint(parentTransform, { x, y })
         return {
-          ...transformedPoint,
           ...restOfPoint,
+          ...transformedPoint,
           layer: maybeFlipLayer(point.layer),
         } as PcbTraceRoutePoint
       }
-      return { ...transformedPoint, ...restOfPoint } as PcbTraceRoutePoint
+
+      if (point.route_type === "via") {
+        const { x, y, ...restOfPoint } = point
+        const transformedPoint = applyToPoint(parentTransform, { x, y })
+        return {
+          ...restOfPoint,
+          ...transformedPoint,
+          from_layer: maybeFlipLayer(point.from_layer),
+          to_layer: maybeFlipLayer(point.to_layer),
+        } as PcbTraceRoutePoint
+      }
+
+      return {
+        ...point,
+        start: applyToPoint(parentTransform, point.start),
+        end: applyToPoint(parentTransform, point.end),
+        start_layer: maybeFlipLayer(point.start_layer),
+        end_layer: maybeFlipLayer(point.end_layer),
+      } as PcbTraceRoutePoint
     })
 
     const pcb_trace = db.pcb_trace.insert({
@@ -69,16 +87,44 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
       maxY = -Infinity
 
     for (const point of props.route) {
-      minX = Math.min(minX, point.x)
-      maxX = Math.max(maxX, point.x)
-      minY = Math.min(minY, point.y)
-      maxY = Math.max(maxY, point.y)
-      // Consider trace width for a more accurate bounding box if necessary
+      if (point.route_type === "through_pad") {
+        minX = Math.min(minX, point.start.x, point.end.x)
+        maxX = Math.max(maxX, point.start.x, point.end.x)
+        minY = Math.min(minY, point.start.y, point.end.y)
+        maxY = Math.max(maxY, point.start.y, point.end.y)
+      } else {
+        minX = Math.min(minX, point.x)
+        maxX = Math.max(maxX, point.x)
+        minY = Math.min(minY, point.y)
+        maxY = Math.max(maxY, point.y)
+      }
+
       if (point.route_type === "wire") {
         minX = Math.min(minX, point.x - point.width / 2)
         maxX = Math.max(maxX, point.x + point.width / 2)
         minY = Math.min(minY, point.y - point.width / 2)
         maxY = Math.max(maxY, point.y + point.width / 2)
+      } else if (point.route_type === "through_pad") {
+        minX = Math.min(
+          minX,
+          point.start.x - point.width / 2,
+          point.end.x - point.width / 2,
+        )
+        maxX = Math.max(
+          maxX,
+          point.start.x + point.width / 2,
+          point.end.x + point.width / 2,
+        )
+        minY = Math.min(
+          minY,
+          point.start.y - point.width / 2,
+          point.end.y - point.width / 2,
+        )
+        maxY = Math.max(
+          maxY,
+          point.start.y + point.width / 2,
+          point.end.y + point.width / 2,
+        )
       }
     }
 

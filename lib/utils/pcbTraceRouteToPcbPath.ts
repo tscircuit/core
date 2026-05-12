@@ -1,4 +1,5 @@
 import type { LayerRef, PcbTraceRoutePoint } from "circuit-json"
+import { getRoutePointPosition } from "./pcb-trace-route-point-utils"
 
 export type ManualPcbPathPoint = {
   x: number
@@ -28,8 +29,13 @@ export function pcbTraceRouteToPcbPath(
     .slice(1, -1)
     .filter((point) => {
       // Filter out points that duplicate the start or end position
-      const isSameAsFirst = point.x === firstPoint.x && point.y === firstPoint.y
-      const isSameAsLast = point.x === lastPoint.x && point.y === lastPoint.y
+      const position = getRoutePointPosition(point)
+      const firstPosition = getRoutePointPosition(firstPoint)
+      const lastPosition = getRoutePointPosition(lastPoint)
+      const isSameAsFirst =
+        position.x === firstPosition.x && position.y === firstPosition.y
+      const isSameAsLast =
+        position.x === lastPosition.x && position.y === lastPosition.y
       return !isSameAsFirst && !isSameAsLast
     })
     .map((point) => {
@@ -42,6 +48,7 @@ export function pcbTraceRouteToPcbPath(
           toLayer: point.to_layer as LayerRef,
         }
       }
-      return { x: point.x, y: point.y }
+      const position = getRoutePointPosition(point)
+      return { x: position.x, y: position.y }
     })
 }

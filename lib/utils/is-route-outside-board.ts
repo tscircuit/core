@@ -2,6 +2,7 @@ import { point } from "@flatten-js/core"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { PcbTraceRoutePoint } from "circuit-json"
 import { getPcbBoardOutlinePolygon } from "./get-pcb-board-outline-polygon"
+import { getRoutePointPositions } from "./pcb-trace-route-point-utils"
 
 export const isRouteOutsideBoard = ({
   mergedRoute,
@@ -20,8 +21,10 @@ export const isRouteOutsideBoard = ({
 
   // Check if any route point is outside the board
   return !mergedRoute
-    .flat()
-    .every((routePoint) =>
-      boardOutlinePolygon.contains(point(routePoint.x, routePoint.y)),
+    .flatMap(getRoutePointPositions)
+    .every((routePointPosition) =>
+      boardOutlinePolygon.contains(
+        point(routePointPosition.x, routePointPosition.y),
+      ),
     )
 }
