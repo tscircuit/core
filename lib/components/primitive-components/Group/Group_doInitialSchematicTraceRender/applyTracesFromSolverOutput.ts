@@ -4,6 +4,7 @@ import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import Debug from "debug"
+import { SOLVER_SOURCE_TRACE_ID_PREFIX } from "lib/utils/schematic/netLabelUtils"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -12,12 +13,20 @@ export function applyTracesFromSolverOutput(args: {
   solver: SchematicTracePipelineSolver
   pinIdToSchematicPortId: Map<string, string>
   userNetIdToSck: Map<string, string>
+  schematicPortIdsWithPreExistingNetLabels: Set<string>
 }) {
-  const { group, solver, pinIdToSchematicPortId, userNetIdToSck } = args
+  const {
+    group,
+    solver,
+    pinIdToSchematicPortId,
+    userNetIdToSck,
+    schematicPortIdsWithPreExistingNetLabels,
+  } = args
   const { db } = group.root!
 
   // Use the overlap-corrected traces from the pipeline
   const traces =
+    solver.netLabelTraceCollisionSolver?.getOutput().traces ??
     solver.traceCleanupSolver?.getOutput().traces ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
     solver.schematicTraceLinesSolver?.solvedTracePaths
@@ -30,6 +39,23 @@ export function applyTracesFromSolverOutput(args: {
   debug(`Traces inside SchematicTraceSolver output: ${(traces ?? []).length}`)
 
   for (const solvedTracePath of traces ?? []) {
+    const uniquePinIds = Array.from(new Set(solvedTracePath.pinIds ?? []))
+    const solvedTraceSchematicPortIds = uniquePinIds
+      .map((pinId) => pinIdToSchematicPortId.get(pinId))
+      .filter((id): id is string => Boolean(id))
+    const isNetLabelStubTrace =
+      uniquePinIds.length <= 1 &&
+      solvedTraceSchematicPortIds.length > 0 &&
+      solvedTraceSchematicPortIds.every((id) =>
+        schematicPortIdsWithPreExistingNetLabels.has(id),
+      )
+    if (isNetLabelStubTrace) {
+      debug(
+        `Skipping solver netlabel stub trace ${solvedTracePath?.mspPairId} because schematic port already has a netlabel`,
+      )
+      continue
+    }
+
     const points = solvedTracePath?.tracePath as Array<{ x: number; y: number }>
     if (!Array.isArray(points) || points.length < 2) {
       debug(
@@ -46,8 +72,7 @@ export function applyTracesFromSolverOutput(args: {
       })
     }
 
-    // Try to associate with an existing source_trace_id when this is a direct connection
-    let source_trace_id: string | null = null
+    const source_trace_id = `${SOLVER_SOURCE_TRACE_ID_PREFIX}${solvedTracePath?.mspPairId!}`
     let subcircuit_connectivity_map_key: string | undefined
     if (
       Array.isArray(solvedTracePath?.pins) &&
@@ -67,9 +92,7 @@ export function applyTracesFromSolverOutput(args: {
         )
       }
     }
-
-    if (!source_trace_id) {
-      source_trace_id = `solver_${solvedTracePath?.mspPairId!}`
+    if (!subcircuit_connectivity_map_key) {
       subcircuit_connectivity_map_key = userNetIdToSck.get(
         String(solvedTracePath.userNetId),
       )

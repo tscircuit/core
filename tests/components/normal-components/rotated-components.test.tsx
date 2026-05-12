@@ -51,5 +51,11 @@ test("rotated resistor/diode/inductor/led/capacitor schematic", () => {
   expect(symbolNames.includes("boxresistor_up")).toBeTruthy()
   expect(symbolNames.includes("diode_up")).toBeTruthy()
 
+  const netLabelTexts = circuit.db.schematic_net_label
+    .list()
+    .map((label) => label.text)
+  expect(netLabelTexts).toContain("VCC")
+  expect(netLabelTexts).toContain("GND")
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
