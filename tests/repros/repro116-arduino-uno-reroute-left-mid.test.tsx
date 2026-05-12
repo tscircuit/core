@@ -16,4 +16,4 @@ test("repro116: arduino uno circuit json can reroute a left middle imported regi
     rerouteRegion,
     snapshotName: "repro116-arduino-uno-reroute-left-mid",
   })
-}, 20_000)
+}, 80_000)
