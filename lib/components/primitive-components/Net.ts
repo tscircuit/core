@@ -25,8 +25,9 @@ export class Net extends PrimitiveComponent<typeof netProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const isGround = props.name.startsWith("GND")
-    const isPositiveVoltageSource = props.name.startsWith("V")
+    const isGround = props.isGroundNet ?? props.name.startsWith("GND")
+    const isPositiveVoltageSource =
+      props.isPowerNet ?? props.name.startsWith("V")
 
     const net = db.source_net.insert({
       name: props.name,

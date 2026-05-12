@@ -49,5 +49,6 @@ test("netlabel connection traces", () => {
 
   circuit.render()
 
+  expect(circuit.db.schematic_trace.list()).toHaveLength(2)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

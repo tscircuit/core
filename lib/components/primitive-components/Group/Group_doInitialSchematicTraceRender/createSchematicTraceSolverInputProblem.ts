@@ -6,11 +6,12 @@ import {
   type InputProblem,
 } from "@tscircuit/schematic-trace-solver"
 import type { AxisDirection } from "./getSide"
+import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { DEFAULT_SCHEMATIC_MAX_TRACE_DISTANCE } from "lib/utils/schematic/netLabelUtils"
 
 export type SolverInputContext = {
   inputProblem: InputProblem
   pinIdToSchematicPortId: Map<string, string>
-  pairKeyToSourceTraceId: Map<string, string>
   /**
    * Subcircuit connectivity map key to source_net
    * e.g.
@@ -28,17 +29,6 @@ export type SolverInputContext = {
   sckToSourceNet: Map<string, SourceNet>
 
   /**
-   * Subcircuit connectivity key to user net id
-   * e.g.
-   * Map(
-   *   "unnamedsubcircuit52_connectivity_net2": "V3_3",
-   *   "unnamedsubcircuit52_connectivity_net3": "GND",
-   *   ...
-   * )
-   */
-  sckToUserNetId: Map<string, string>
-
-  /**
    * User net id to subcircuit connectivity key
    * e.g.
    * Map(
@@ -49,9 +39,14 @@ export type SolverInputContext = {
    */
   userNetIdToSck: Map<string, string>
 
+  /**
+   * Subcircuit connectivity keys that came from explicit port-to-net traces,
+   * e.g. <trace from=".D1 > .pin1" to="net.VCC" />.
+   */
+  scksWithExplicitPortNetTraces: Set<string>
+
   allSourceAndSchematicPortIdsInScope: Set<string>
   schPortIdToSourcePortId: Map<string, string>
-  displayLabelTraces: any[]
 
   allScks: Set<string>
 }
@@ -62,14 +57,9 @@ export function createSchematicTraceSolverInputProblem(
   const { db } = group.root!
 
   const sckToSourceNet = new Map<string, any>()
-  const sckToUserNetId = new Map<string, string>()
   const allScks = new Set<string>()
 
-  // Traces excluded from routing (only need labels)
   const traces = group.selectAll("trace")
-  const displayLabelTraces = traces.filter(
-    (t: any) => t._parsedProps?.schDisplayLabel,
-  )
 
   // Gather all schematic components in scope (this group and child groups)
   const childGroups = group.selectAll("group") as Group<any>[]
@@ -189,7 +179,24 @@ export function createSchematicTraceSolverInputProblem(
   // Direct connections derived from explicit source_traces
   const directConnections: Array<{ pinIds: [string, string]; netId?: string }> =
     []
-  const pairKeyToSourceTraceId = new Map<string, string>()
+  const connectedPairKeys = new Set<string>()
+  const scksWithExplicitPortNetTraces = new Set<string>()
+  for (const trace of traces as any[]) {
+    if (trace.parent !== group) continue
+    const sourceTraceId = trace.source_trace_id
+    if (!sourceTraceId) continue
+    const sourceTrace = db.source_trace.get(sourceTraceId)
+    if (
+      sourceTrace?.subcircuit_connectivity_map_key &&
+      (sourceTrace.connected_source_port_ids?.length ?? 0) > 0 &&
+      (sourceTrace.connected_source_net_ids?.length ?? 0) > 0
+    ) {
+      scksWithExplicitPortNetTraces.add(
+        sourceTrace.subcircuit_connectivity_map_key,
+      )
+    }
+  }
+
   for (const st of db.source_trace.list()) {
     if (st.subcircuit_id && !allowedSubcircuitIds.has(st.subcircuit_id)) {
       continue
@@ -205,13 +212,12 @@ export function createSchematicTraceSolverInputProblem(
     if (connected.length >= 2) {
       const [a, b] = connected.slice(0, 2)
       const pairKey = [a, b].sort().join("::")
-      if (!pairKeyToSourceTraceId.has(pairKey)) {
-        pairKeyToSourceTraceId.set(pairKey, st.source_trace_id)
+      if (!connectedPairKeys.has(pairKey)) {
+        connectedPairKeys.add(pairKey)
         const userNetId = st.display_name ?? st.source_trace_id
         if (st.subcircuit_connectivity_map_key) {
           allScks.add(st.subcircuit_connectivity_map_key)
           userNetIdToSck.set(userNetId, st.subcircuit_connectivity_map_key)
-          sckToUserNetId.set(st.subcircuit_connectivity_map_key, userNetId)
         }
         directConnections.push({
           pinIds: [a, b].map((id) => schematicPortIdToPinId.get(id)!) as [
@@ -256,19 +262,14 @@ export function createSchematicTraceSolverInputProblem(
 
   for (const [subcircuitConnectivityKey, schematicPortIds] of sckToPinIds) {
     const sourceNet = sckToSourceNet.get(subcircuitConnectivityKey)
-    if (sourceNet && schematicPortIds.length >= 2) {
+    if (sourceNet && schematicPortIds.length >= 1) {
       const userNetId = String(
         sourceNet.name || sourceNet.source_net_id || subcircuitConnectivityKey,
       )
       userNetIdToSck.set(userNetId, subcircuitConnectivityKey)
-      sckToUserNetId.set(subcircuitConnectivityKey, userNetId)
 
-      // Estimate net label width using same heuristic as computeSchematicNetLabelCenter
-      // Default font_size is 0.18 and charWidth = 0.1 * (font_size / 0.18)
-      const fontSize = 0.18
-      const charWidth = 0.1 * (fontSize / 0.18)
       const netLabelWidth = Number(
-        (String(userNetId).length * charWidth).toFixed(2),
+        getSchematicNetLabelTextWidth({ text: String(userNetId) }).toFixed(2),
       )
 
       netConnections.push({
@@ -293,9 +294,9 @@ export function createSchematicTraceSolverInputProblem(
         )) {
         if (!net.name) continue
         if (!presentNetIds.has(net.name)) continue
-        if (net.is_ground || net.name.toLowerCase().startsWith("gnd")) {
+        if (net.is_ground) {
           netToAllowedOrientations[net.name] = ["y-"]
-        } else if (net.is_power || net.name.toLowerCase().startsWith("v")) {
+        } else if (net.is_power) {
           netToAllowedOrientations[net.name] = ["y+"]
         } else {
           netToAllowedOrientations[net.name] = ["x-", "x+"]
@@ -309,19 +310,19 @@ export function createSchematicTraceSolverInputProblem(
     directConnections,
     netConnections,
     availableNetLabelOrientations,
-    maxMspPairDistance: group._parsedProps.schMaxTraceDistance ?? 2.4,
+    maxMspPairDistance:
+      group._parsedProps.schMaxTraceDistance ??
+      DEFAULT_SCHEMATIC_MAX_TRACE_DISTANCE,
   }
 
   return {
     inputProblem,
     pinIdToSchematicPortId,
-    pairKeyToSourceTraceId,
     sckToSourceNet,
-    sckToUserNetId,
     userNetIdToSck,
+    scksWithExplicitPortNetTraces,
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
-    displayLabelTraces,
     allScks,
   }
 }
