@@ -1,3 +1,16 @@
+export const getSchematicNetLabelTextWidth = ({
+  text,
+  font_size = 0.18,
+}: {
+  text: string
+  font_size?: number
+}) => {
+  const fontScale = font_size / 0.18
+  const charWidth = 0.12 * fontScale
+  const horizontalPadding = 0.12 * fontScale
+  return text.length * charWidth + horizontalPadding
+}
+
 export const computeSchematicNetLabelCenter = ({
   anchor_position,
   anchor_side,
@@ -9,8 +22,7 @@ export const computeSchematicNetLabelCenter = ({
   text: string
   font_size?: number
 }) => {
-  const charWidth = 0.1 * (font_size / 0.18)
-  const width = text.length * charWidth
+  const width = getSchematicNetLabelTextWidth({ text, font_size })
   const height = font_size
   const center = { ...anchor_position }
   switch (anchor_side) {

@@ -56,5 +56,11 @@ it("repro89: schematic text autoLayout", async () => {
 
   await circuit.renderUntilSettled()
 
+  const netLabelTexts = circuit.db.schematic_net_label
+    .list()
+    .map((label) => label.text)
+  expect(netLabelTexts).toContain("GND")
+  expect(netLabelTexts).toContain("VCC_5")
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
