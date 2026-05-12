@@ -18,6 +18,7 @@ export function applyNetLabelPlacements(args: {
   schPortIdToSourcePortId: Map<string, string>
   allScks: Set<string>
   pinIdToSchematicPortId: Map<string, string>
+  scksWithExplicitPortNetTraces: Set<string>
   schematicPortIdsWithPreExistingNetLabels: Set<string>
   schematicPortIdsWithRoutedTraces: Set<string>
 }) {
@@ -30,6 +31,7 @@ export function applyNetLabelPlacements(args: {
     schPortIdToSourcePortId,
     userNetIdToSck,
     pinIdToSchematicPortId,
+    scksWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
   } = args
@@ -37,6 +39,7 @@ export function applyNetLabelPlacements(args: {
 
   // Place net labels suggested by the solver
   const netLabelPlacements =
+    solver.netLabelTraceCollisionSolver?.getOutput().netLabelPlacements ??
     solver.netLabelPlacementSolver?.netLabelPlacements ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().netLabelPlacements ??
     []
@@ -63,9 +66,10 @@ export function applyNetLabelPlacements(args: {
     const orientation = placement.orientation as AxisDirection
     const anchor_side = oppositeSide(orientation)
 
-    const sourceNet = placementSck
-      ? sckToSourceNet.get(placementSck)
-      : undefined
+    let sourceNet
+    if (placementSck) {
+      sourceNet = sckToSourceNet.get(placementSck)
+    }
 
     const schPortIds = placement.pinIds.map(
       (pinId) => pinIdToSchematicPortId.get(pinId)!,
@@ -83,6 +87,29 @@ export function applyNetLabelPlacements(args: {
     }
 
     if (sourceNet) {
+      const isPowerOrGroundNet = sourceNet.is_ground || sourceNet.is_power
+      const hasExplicitPortNetTrace = scksWithExplicitPortNetTraces.has(
+        placementSck!,
+      )
+      const hasRoutedTraceForPlacementPort = schPortIds.some((id) =>
+        schematicPortIdsWithRoutedTraces.has(id),
+      )
+      const hasSingleLabelPlacement =
+        (netLabelPlacementCountByGlobalNetId.get(placement.globalConnNetId) ??
+          0) <= 1
+      const shouldSkipImplicitSignalNetLabel =
+        !hasExplicitPortNetTrace &&
+        !isPowerOrGroundNet &&
+        hasRoutedTraceForPlacementPort &&
+        hasSingleLabelPlacement
+
+      if (shouldSkipImplicitSignalNetLabel) {
+        debug(
+          `skipping net label placement for "${placement.netId!}" REASON:schematic port has routed trace`,
+        )
+        continue
+      }
+
       const text = sourceNet.name
 
       const center = computeSchematicNetLabelCenter({
@@ -92,15 +119,16 @@ export function applyNetLabelPlacements(args: {
       })
 
       // @ts-ignore
-      db.schematic_net_label.insert({
+      const netLabel: any = {
         text,
         anchor_position,
         center,
         anchor_side: anchor_side as any,
-        ...(sourceNet?.source_net_id
-          ? { source_net_id: sourceNet.source_net_id }
-          : {}),
-      })
+      }
+      if (sourceNet.source_net_id) {
+        netLabel.source_net_id = sourceNet.source_net_id
+      }
+      db.schematic_net_label.insert(netLabel)
       continue
     }
 

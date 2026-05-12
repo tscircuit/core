@@ -167,6 +167,9 @@ test("example7 voltage regulator with connections", async () => {
 
   circuit.add(
     <board width="10mm" height="10mm">
+      <net name="v5" isPowerNet />
+      <net name="v3_3" isPowerNet />
+      <net name="gnd" isGroundNet />
       <Reg5vTo3v3 name="U1" />
     </board>,
   )

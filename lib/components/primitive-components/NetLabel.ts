@@ -13,6 +13,12 @@ import {
 } from "transformation-matrix"
 import { calculateElbow } from "calculate-elbow"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
+import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import {
+  SCHEMATIC_LABEL_ANCHOR_SIDE,
+  SCHEMATIC_LABEL_AXIS_DIRECTION,
+  type SchematicLabelAnchorSide,
+} from "lib/utils/schematic/netLabelUtils"
 
 export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   source_net_label_id?: string
@@ -24,35 +30,49 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     }
   }
 
-  _getAnchorSide(): "top" | "bottom" | "left" | "right" {
+  _getAnchorSide(): SchematicLabelAnchorSide {
     const { _parsedProps: props } = this
     if (props.anchorSide) return props.anchorSide
 
     const connectsTo = this._resolveConnectsTo()
-    if (!connectsTo) return "right"
+    if (!connectsTo) return SCHEMATIC_LABEL_ANCHOR_SIDE.right
+
+    const net = this.getSubcircuit().selectOne(
+      `net.${this._getNetName()!}`,
+    ) as Net | null
+    let sourceNet
+    if (net?.source_net_id) {
+      sourceNet = this.root?.db.source_net.get(net.source_net_id)
+    }
+    if (sourceNet?.is_ground) return SCHEMATIC_LABEL_ANCHOR_SIDE.top
+    if (sourceNet?.is_power) return SCHEMATIC_LABEL_ANCHOR_SIDE.bottom
 
     // Get relative position of the net label and the thing(s) it connects
     // to
     const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
 
     const connectedPorts = this._getConnectedPorts()
-    if (connectedPorts.length === 0) return "right"
+    if (connectedPorts.length === 0) return SCHEMATIC_LABEL_ANCHOR_SIDE.right
 
-    const connectedPortPosition =
-      connectedPorts[0]._getGlobalSchematicPositionBeforeLayout()
+    const port = connectedPorts[0]
+    if (port.facingDirection) {
+      return getEnteringEdgeFromDirection(port.facingDirection as any)
+    }
+
+    const connectedPortPosition = port._getGlobalSchematicPositionBeforeLayout()
 
     const dx = connectedPortPosition.x - anchorPos.x
     const dy = connectedPortPosition.y - anchorPos.y
 
     if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 0) return "right"
-      if (dx < 0) return "left"
+      if (dx > 0) return SCHEMATIC_LABEL_ANCHOR_SIDE.right
+      if (dx < 0) return SCHEMATIC_LABEL_ANCHOR_SIDE.left
     } else {
-      if (dy > 0) return "top"
-      if (dy < 0) return "bottom"
+      if (dy > 0) return SCHEMATIC_LABEL_ANCHOR_SIDE.top
+      if (dy < 0) return SCHEMATIC_LABEL_ANCHOR_SIDE.bottom
     }
 
-    return "right"
+    return SCHEMATIC_LABEL_ANCHOR_SIDE.right
   }
 
   _getConnectedPorts(): Port[] {
@@ -101,7 +121,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       `net.${this._getNetName()!}`,
     )! as Net
 
-    const anchorSide = props.anchorSide ?? "right"
+    const anchorSide = this._getAnchorSide()
     const center = computeSchematicNetLabelCenter({
       anchor_position: anchorPos,
       anchor_side: anchorSide,
@@ -113,7 +133,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       source_net_id: net.source_net_id!,
       anchor_position: anchorPos,
       center,
-      anchor_side: this._getAnchorSide(),
+      anchor_side: anchorSide,
     })
 
     this.source_net_label_id = netLabel.source_net_id
@@ -176,16 +196,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     // Determine the anchor position and orientation at the net label
     const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
     const anchorSide = this._getAnchorSide()
-    const sideToAxisDir: Record<
-      "left" | "right" | "top" | "bottom",
-      "x+" | "x-" | "y+" | "y-"
-    > = {
-      left: "x-",
-      right: "x+",
-      top: "y+",
-      bottom: "y-",
-    }
-    const anchorFacing = sideToAxisDir[anchorSide]
+    const anchorFacing = SCHEMATIC_LABEL_AXIS_DIRECTION[anchorSide]
 
     // Resolve the target net to find a matching source_trace (port <-> net)
     const net = this.getSubcircuit().selectOne(
@@ -221,8 +232,8 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       const portPos = port._getGlobalSchematicPositionAfterLayout()
       const portFacing =
         convertFacingDirectionToElbowDirection(
-          (port.facingDirection as any) ?? "right",
-        ) ?? "x+"
+          (port.facingDirection as any) ?? SCHEMATIC_LABEL_ANCHOR_SIDE.right,
+        ) ?? SCHEMATIC_LABEL_AXIS_DIRECTION.right
 
       const path = calculateElbow(
         {

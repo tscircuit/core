@@ -1,16 +1,36 @@
+import {
+  DEFAULT_SCHEMATIC_NET_LABEL_CHAR_WIDTH,
+  DEFAULT_SCHEMATIC_NET_LABEL_FONT_SIZE,
+  DEFAULT_SCHEMATIC_NET_LABEL_HORIZONTAL_PADDING,
+  type SchematicLabelAnchorSide,
+} from "./netLabelUtils"
+
+export const getSchematicNetLabelTextWidth = ({
+  text,
+  font_size = DEFAULT_SCHEMATIC_NET_LABEL_FONT_SIZE,
+}: {
+  text: string
+  font_size?: number
+}) => {
+  const fontScale = font_size / DEFAULT_SCHEMATIC_NET_LABEL_FONT_SIZE
+  const charWidth = DEFAULT_SCHEMATIC_NET_LABEL_CHAR_WIDTH * fontScale
+  const horizontalPadding =
+    DEFAULT_SCHEMATIC_NET_LABEL_HORIZONTAL_PADDING * fontScale
+  return text.length * charWidth + horizontalPadding
+}
+
 export const computeSchematicNetLabelCenter = ({
   anchor_position,
   anchor_side,
   text,
-  font_size = 0.18,
+  font_size = DEFAULT_SCHEMATIC_NET_LABEL_FONT_SIZE,
 }: {
   anchor_position: { x: number; y: number }
-  anchor_side: "top" | "bottom" | "left" | "right"
+  anchor_side: SchematicLabelAnchorSide
   text: string
   font_size?: number
 }) => {
-  const charWidth = 0.1 * (font_size / 0.18)
-  const width = text.length * charWidth
+  const width = getSchematicNetLabelTextWidth({ text, font_size })
   const height = font_size
   const center = { ...anchor_position }
   switch (anchor_side) {
