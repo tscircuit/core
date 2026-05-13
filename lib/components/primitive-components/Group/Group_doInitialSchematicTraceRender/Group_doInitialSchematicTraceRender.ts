@@ -4,7 +4,6 @@ import Debug from "debug"
 import { createSchematicTraceSolverInputProblem } from "./createSchematicTraceSolverInputProblem"
 import { applyTracesFromSolverOutput } from "./applyTracesFromSolverOutput"
 import { applyNetLabelPlacements } from "./applyNetLabelPlacements"
-import { insertNetLabelsForTracesExcludedFromRouting } from "./insertNetLabelsForTracesExcludedFromRouting"
 import { insertNetLabelsForPortsMissingTrace } from "./insertNetLabelsForPortsMissingTrace"
 import { getSchematicPortIdsWithAssignedNetLabels } from "./getSchematicPortIdsWithAssignedNetLabels"
 import { getSchematicPortIdsWithRoutedTraces } from "./getSchematicPortIdsWithRoutedTraces"
@@ -23,13 +22,11 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   const {
     inputProblem,
     pinIdToSchematicPortId,
-    pairKeyToSourceTraceId,
-    sckToSourceNet,
+    connKeyToSourceNet,
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
-    displayLabelTraces,
-    allScks,
-    userNetIdToSck,
+    userNetIdToConnKey,
+    connKeysWithExplicitPortNetTraces,
   } = createSchematicTraceSolverInputProblem(group)
 
   if (inputProblem.chips.length === 0) return
@@ -46,9 +43,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
       group,
       allSourceAndSchematicPortIdsInScope,
       schPortIdToSourcePortId,
-      sckToSourceNet,
-      pinIdToSchematicPortId,
-      schematicPortIdsWithPreExistingNetLabels,
+      connKeyToSourceNet,
     })
     return
   }
@@ -76,19 +71,18 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     group,
     solver,
     pinIdToSchematicPortId,
-    userNetIdToSck,
+    userNetIdToConnKey,
+    schematicPortIdsWithPreExistingNetLabels,
   })
 
   // Apply net labels (from solver placements and net-only ports)
   applyNetLabelPlacements({
     group,
     solver,
-    sckToSourceNet,
-    allSourceAndSchematicPortIdsInScope,
-    schPortIdToSourcePortId,
+    connKeyToSourceNet,
     pinIdToSchematicPortId,
-    allScks,
-    userNetIdToSck,
+    userNetIdToConnKey,
+    connKeysWithExplicitPortNetTraces,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
   })
@@ -97,17 +91,6 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     group,
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
-    sckToSourceNet,
-    pinIdToSchematicPortId,
-    schematicPortIdsWithPreExistingNetLabels,
+    connKeyToSourceNet,
   })
-
-  // Insert labels for traces that explicitly asked for schDisplayLabel
-  // insertNetLabelsForTracesExcludedFromRouting({
-  //   group,
-  //   solver,
-  //   displayLabelTraces,
-  //   pinIdToSchematicPortId,
-  //   schematicPortIdsWithPreExistingNetLabels,
-  // })
 }
