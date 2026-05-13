@@ -34,6 +34,9 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   // if (trace.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
   const { db } = trace.root!
   const { _parsedProps: props, parent } = trace
+  const shouldInsertAutoNetLabels =
+    trace.getInheritedProperty("schTraceAutoLabelEnabled") !== false &&
+    trace._getBoard()?._parsedProps.schTraceAutoLabelEnabled !== false
 
   if (!parent) throw new Error("Trace has no parent")
 
@@ -165,6 +168,8 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
 
       return
     }
+
+    if (!shouldInsertAutoNetLabels) return
 
     const side = getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
     const netLabel = db.schematic_net_label.insert({

@@ -43,6 +43,7 @@ export type SolverInputContext = {
    * e.g. <trace from=".D1 > .pin1" to="net.VCC" />.
    */
   connKeysWithExplicitPortNetTraces: Set<string>
+  explicitPortNetDisplayLabelsByConnKey: Map<string, string>
 
   allSourceAndSchematicPortIdsInScope: Set<string>
   schPortIdToSourcePortId: Map<string, string>
@@ -177,6 +178,7 @@ export function createSchematicTraceSolverInputProblem(
     []
   const connectedPairKeys = new Set<string>()
   const connKeysWithExplicitPortNetTraces = new Set<string>()
+  const explicitPortNetDisplayLabelsByConnKey = new Map<string, string>()
   for (const trace of traces as any[]) {
     if (trace.parent !== group) continue
     const sourceTraceId = trace.source_trace_id
@@ -190,6 +192,12 @@ export function createSchematicTraceSolverInputProblem(
       connKeysWithExplicitPortNetTraces.add(
         sourceTrace.subcircuit_connectivity_map_key,
       )
+      if (trace.props.schDisplayLabel) {
+        explicitPortNetDisplayLabelsByConnKey.set(
+          sourceTrace.subcircuit_connectivity_map_key,
+          trace.props.schDisplayLabel,
+        )
+      }
     }
   }
 
@@ -312,6 +320,7 @@ export function createSchematicTraceSolverInputProblem(
     connKeyToSourceNet,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
+    explicitPortNetDisplayLabelsByConnKey,
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
   }
