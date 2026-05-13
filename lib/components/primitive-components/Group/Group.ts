@@ -74,6 +74,7 @@ import {
   deleteExistingPcbTracesReplacedBy,
   getExistingPcbTracesForReroute,
   getExistingSimplifiedPcbTracesForReroute,
+  getSourceTraceIdsFromRerouteName,
 } from "./region-replacement"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
@@ -1197,14 +1198,32 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
 
+      const possibleSourceTraceIds = [
+        ...getSourceTraceIdsFromRerouteName((pcb_trace as any).source_trace_id),
+        ...getSourceTraceIdsFromRerouteName((pcb_trace as any).connection_name),
+        ...getSourceTraceIdsFromRerouteName(
+          (pcb_trace as any).rootConnectionName,
+        ),
+      ]
+      const validSourceTraceIds = Array.from(
+        new Set(possibleSourceTraceIds),
+      ).filter((possibleSourceTraceId) =>
+        Boolean(
+          db.source_trace.get(possibleSourceTraceId) ??
+            db.source_net.get(possibleSourceTraceId),
+        ),
+      )
       const sourceTraceId =
-        (pcb_trace as any).source_trace_id ?? (pcb_trace as any).connection_name
+        validSourceTraceIds.length === 1 ? validSourceTraceIds[0] : undefined
       if (sourceTraceId) {
         pcb_trace.source_trace_id = sourceTraceId
+      } else {
+        delete (pcb_trace as any).source_trace_id
       }
       pcb_trace.subcircuit_id ??=
         (sourceTraceId
-          ? db.source_trace.get(sourceTraceId)?.subcircuit_id
+          ? (db.source_trace.get(sourceTraceId)?.subcircuit_id ??
+            db.source_net.get(sourceTraceId)?.subcircuit_id)
           : undefined) ?? this.subcircuit_id!
 
       // Split traces at jumper locations (based on explicit jumper route markers)

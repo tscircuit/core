@@ -2,6 +2,7 @@ import type { PcbTrace, PcbVia } from "circuit-json"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { Group } from "../Group"
 import { getExistingPcbTracesForReroute } from "./get-existing-pcb-traces-for-reroute"
+import { getSourceTraceIdsFromRerouteName } from "./get-source-trace-ids-from-reroute-name"
 
 /**
  * Adds both the routed trace identifier and its pre-reroute source trace
@@ -16,15 +17,8 @@ function addPossibleReplacementSourceTraceId(
 
   sourceTraceIds.add(value)
 
-  for (const connectionNamePart of value.split("__")) {
-    if (connectionNamePart.length === 0) continue
-
-    sourceTraceIds.add(connectionNamePart)
-
-    const rerouteSuffixIndex = connectionNamePart.indexOf("_reroute_")
-    if (rerouteSuffixIndex > 0) {
-      sourceTraceIds.add(connectionNamePart.slice(0, rerouteSuffixIndex))
-    }
+  for (const sourceTraceId of getSourceTraceIdsFromRerouteName(value)) {
+    sourceTraceIds.add(sourceTraceId)
   }
 }
 
