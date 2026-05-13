@@ -1208,7 +1208,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const validSourceTraceIds = Array.from(
         new Set(possibleSourceTraceIds),
       ).filter((possibleSourceTraceId) =>
-        db.source_trace.get(possibleSourceTraceId),
+        Boolean(
+          db.source_trace.get(possibleSourceTraceId) ??
+            db.source_net.get(possibleSourceTraceId),
+        ),
       )
       const sourceTraceId =
         validSourceTraceIds.length === 1 ? validSourceTraceIds[0] : undefined
@@ -1219,7 +1222,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
       pcb_trace.subcircuit_id ??=
         (sourceTraceId
-          ? db.source_trace.get(sourceTraceId)?.subcircuit_id
+          ? (db.source_trace.get(sourceTraceId)?.subcircuit_id ??
+            db.source_net.get(sourceTraceId)?.subcircuit_id)
           : undefined) ?? this.subcircuit_id!
 
       // Split traces at jumper locations (based on explicit jumper route markers)
