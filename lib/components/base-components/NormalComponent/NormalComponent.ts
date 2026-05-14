@@ -1359,9 +1359,15 @@ export class NormalComponent<
       error instanceof Error ? error.message : String(error)
     const isLikelyMissingLibraryPrefix =
       footprint.includes("/") && !footprint.includes(":")
+    const isLikelyJlcpcbPartNumber = /^c\d+$/i.test(footprint)
+    const resolvedJlcpcbPartNumber = isLikelyJlcpcbPartNumber
+      ? `C${footprint.replace(/^c/i, "")}`
+      : null
     const helpfulHint = isLikelyMissingLibraryPrefix
       ? ` If this is a KiCad footprint, use "kicad:${footprint}".`
-      : ""
+      : resolvedJlcpcbPartNumber
+        ? ` If this is a JLCPCB part number, use "jlcpcb:${resolvedJlcpcbPartNumber}".`
+        : ""
     const message = `Invalid footprint prop on ${this.getDisplayName()}: "${footprint}".${helpfulHint} Parser details: ${rawErrorMessage}`
     if (!this._invalidFootprintPropMessages.includes(message)) {
       this._invalidFootprintPropMessages.push(message)
