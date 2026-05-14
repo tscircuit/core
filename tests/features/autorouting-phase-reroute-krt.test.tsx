@@ -22,17 +22,7 @@ test("autoroutingphase fails to reroute a subcircuit using krt-wasm", async () =
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board
-      width="18mm"
-      height="12mm"
-      autorouter={{
-        algorithmFn: createKiCadRoutingToolsAutorouter({
-          gridStep: 0.1,
-          clearance: 0.2,
-          maxIterations: 300_000,
-        }),
-      }}
-    >
+    <board width="18mm" height="12mm">
       <subcircuit circuitJson={subcircuitCircuitJson} />
 
       <autoroutingphase
@@ -43,6 +33,13 @@ test("autoroutingphase fails to reroute a subcircuit using krt-wasm", async () =
           maxX: 1,
           minY: -1,
           maxY: 1,
+        }}
+        autorouter={{
+          algorithmFn: createKiCadRoutingToolsAutorouter({
+            gridStep: 0.1,
+            clearance: 0.2,
+            maxIterations: 300_000,
+          }),
         }}
       />
     </board>,
