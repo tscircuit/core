@@ -18,7 +18,7 @@ const subcircuitCircuitJson = await renderToCircuitJson(
   </board>,
 )
 
-test("autoroutingphase fails to reroute a subcircuit using krt-wasm", async () => {
+test("autoroutingphase reroutes a subcircuit using krt-wasm", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -47,5 +47,6 @@ test("autoroutingphase fails to reroute a subcircuit using krt-wasm", async () =
 
   await circuit.renderUntilSettled()
 
+  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
