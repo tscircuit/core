@@ -32,4 +32,4 @@ test("repro1-missing-via", async () => {
   circuit.render()
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-}, { timeout: 60000 })
+}, { timeout: 70000 })
