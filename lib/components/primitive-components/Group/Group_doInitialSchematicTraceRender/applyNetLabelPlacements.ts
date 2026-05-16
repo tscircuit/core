@@ -17,8 +17,10 @@ export function applyNetLabelPlacements(args: {
   connKeyToSourceNet: Map<string, SourceNet>
   pinIdToSchematicPortId: Map<string, string>
   connKeysWithExplicitPortNetTraces: Set<string>
+  explicitPortNetDisplayLabelsByConnKey: Map<string, string>
   schematicPortIdsWithPreExistingNetLabels: Set<string>
   schematicPortIdsWithRoutedTraces: Set<string>
+  shouldInsertAutoNetLabels?: boolean
 }) {
   const {
     group,
@@ -27,8 +29,10 @@ export function applyNetLabelPlacements(args: {
     userNetIdToConnKey,
     pinIdToSchematicPortId,
     connKeysWithExplicitPortNetTraces,
+    explicitPortNetDisplayLabelsByConnKey,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
+    shouldInsertAutoNetLabels = true,
   } = args
   const { db } = group.root!
 
@@ -86,6 +90,9 @@ export function applyNetLabelPlacements(args: {
       const hasExplicitPortNetTrace = connKeysWithExplicitPortNetTraces.has(
         placementConnKey!,
       )
+      const explicitDisplayLabel = placementConnKey
+        ? explicitPortNetDisplayLabelsByConnKey.get(placementConnKey)
+        : undefined
       const hasRoutedTraceForPlacementPort = schPortIds.some((id) =>
         schematicPortIdsWithRoutedTraces.has(id),
       )
@@ -105,7 +112,11 @@ export function applyNetLabelPlacements(args: {
         continue
       }
 
-      const text = sourceNet.name
+      if (!shouldInsertAutoNetLabels && !explicitDisplayLabel) continue
+
+      const text = shouldInsertAutoNetLabels
+        ? sourceNet.name
+        : (explicitDisplayLabel ?? sourceNet.name)
 
       const center = computeSchematicNetLabelCenter({
         anchor_position,
@@ -129,6 +140,8 @@ export function applyNetLabelPlacements(args: {
       .filter((p) => p._getSubcircuitConnectivityKey() === placementConnKey)
 
     const { name: text, wasAssignedDisplayLabel } = getNetNameFromPorts(ports)
+
+    if (!shouldInsertAutoNetLabels && !wasAssignedDisplayLabel) continue
 
     if (
       !wasAssignedDisplayLabel &&

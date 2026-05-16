@@ -18,6 +18,10 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   if (!group.isSubcircuit) return
   if (group.root?.schematicDisabled) return
 
+  const shouldInsertAutoNetLabels =
+    group.getInheritedProperty("schTraceAutoLabelEnabled") !== false &&
+    group._getBoard()?._parsedProps.schTraceAutoLabelEnabled !== false
+
   // Prepare the solver input and context
   const {
     inputProblem,
@@ -27,6 +31,7 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     schPortIdToSourcePortId,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
+    explicitPortNetDisplayLabelsByConnKey,
   } = createSchematicTraceSolverInputProblem(group)
 
   if (inputProblem.chips.length === 0) return
@@ -39,12 +44,14 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     inputProblem.netConnections.length > 0
 
   if (!hasRouteableSchematicConnections) {
-    insertNetLabelsForPortsMissingTrace({
-      group,
-      allSourceAndSchematicPortIdsInScope,
-      schPortIdToSourcePortId,
-      connKeyToSourceNet,
-    })
+    if (shouldInsertAutoNetLabels) {
+      insertNetLabelsForPortsMissingTrace({
+        group,
+        allSourceAndSchematicPortIdsInScope,
+        schPortIdToSourcePortId,
+        connKeyToSourceNet,
+      })
+    }
     return
   }
 
@@ -83,14 +90,18 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     pinIdToSchematicPortId,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
+    explicitPortNetDisplayLabelsByConnKey,
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
+    shouldInsertAutoNetLabels,
   })
 
-  insertNetLabelsForPortsMissingTrace({
-    group,
-    allSourceAndSchematicPortIdsInScope,
-    schPortIdToSourcePortId,
-    connKeyToSourceNet,
-  })
+  if (shouldInsertAutoNetLabels) {
+    insertNetLabelsForPortsMissingTrace({
+      group,
+      allSourceAndSchematicPortIdsInScope,
+      schPortIdToSourcePortId,
+      connKeyToSourceNet,
+    })
+  }
 }
