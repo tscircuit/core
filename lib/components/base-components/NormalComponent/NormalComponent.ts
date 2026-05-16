@@ -1621,6 +1621,12 @@ export class NormalComponent<
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
     const footprint =
       this.getFootprinterString() ?? this._getImpliedFootprintString()
+    const footprintString = typeof footprint === "string" ? footprint : null
+    const canUseFootprinterStringFallback =
+      !!footprintString &&
+      !parseLibraryFootprintRef(footprintString) &&
+      !isHttpUrl(footprintString) &&
+      !isStaticAssetPath(footprintString)
 
     if (!this.pcb_component_id) return
     if (cadModel === null) return
@@ -1674,7 +1680,7 @@ export class NormalComponent<
         : preLayoutRotation
     const isBottomLayer = computedLayer === "bottom"
 
-    if (!cadModel && !footprint) {
+    if (!cadModel && !canUseFootprinterStringFallback) {
       const cad_component = db.cad_component.insert({
         position: {
           x: bounds.center.x,
@@ -1766,7 +1772,9 @@ export class NormalComponent<
       model_origin_position: cadModel?.modelOriginPosition,
 
       footprinter_string:
-        typeof footprint === "string" && !cadModel ? footprint : undefined,
+        canUseFootprinterStringFallback && !cadModel
+          ? footprintString
+          : undefined,
       show_as_translucent_model: this._parsedProps.showAsTranslucentModel,
     } as any)
     this.cad_component_id = cad_model.cad_component_id
