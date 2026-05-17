@@ -1621,12 +1621,18 @@ export class NormalComponent<
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
     const footprint =
       this.getFootprinterString() ?? this._getImpliedFootprintString()
-    const footprintString = typeof footprint === "string" ? footprint : null
-    const canUseFootprinterStringFallback =
-      !!footprintString &&
-      !parseLibraryFootprintRef(footprintString) &&
-      !isHttpUrl(footprintString) &&
-      !isStaticAssetPath(footprintString)
+    let footprintString: string | undefined
+    if (typeof footprint === "string") {
+      footprintString = footprint
+    }
+
+    let footprintIsFootprinterString = false
+    if (footprintString) {
+      footprintIsFootprinterString =
+        !parseLibraryFootprintRef(footprintString) &&
+        !isHttpUrl(footprintString) &&
+        !isStaticAssetPath(footprintString)
+    }
 
     if (!this.pcb_component_id) return
     if (cadModel === null) return
@@ -1680,7 +1686,7 @@ export class NormalComponent<
         : preLayoutRotation
     const isBottomLayer = computedLayer === "bottom"
 
-    if (!cadModel && !canUseFootprinterStringFallback) {
+    if (!cadModel && !footprintIsFootprinterString) {
       const cad_component = db.cad_component.insert({
         position: {
           x: bounds.center.x,
@@ -1708,6 +1714,10 @@ export class NormalComponent<
 
     const rotationWithOffset = totalRotation + (rotationOffset.z ?? 0)
     const cadRotationZ = normalizeDegrees(rotationWithOffset)
+    let footprinterStringForCadComponent: string | undefined
+    if (!cadModel && footprintIsFootprinterString) {
+      footprinterStringForCadComponent = footprintString
+    }
 
     const cad_model = db.cad_component.insert({
       // TODO z maybe depends on layer
@@ -1770,11 +1780,7 @@ export class NormalComponent<
       model_origin_alignment: "center_of_component_on_board_surface",
       anchor_alignment: "center_of_component_on_board_surface",
       model_origin_position: cadModel?.modelOriginPosition,
-
-      footprinter_string:
-        canUseFootprinterStringFallback && !cadModel
-          ? footprintString
-          : undefined,
+      footprinter_string: footprinterStringForCadComponent,
       show_as_translucent_model: this._parsedProps.showAsTranslucentModel,
     } as any)
     this.cad_component_id = cad_model.cad_component_id
