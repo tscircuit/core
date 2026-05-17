@@ -12,6 +12,7 @@ import {
 import { getFileExtension } from "./utils/getFileExtension"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
+import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
 
 interface FootprintLibraryResult {
   footprintCircuitJson: any[]
@@ -175,9 +176,9 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         const fpWrapper = new Footprint({ src: footprint })
         for (const c of fpComponents) fpWrapper.add(c)
         component.add(fpWrapper)
-        if (!Array.isArray(result) && result.cadModel) {
-          component._asyncFootprintCadModel = result.cadModel
-        }
+        component._asyncFootprintCadModel =
+          (!Array.isArray(result) && result.cadModel) ||
+          extractCadModelFromCircuitJson(circuitJson)
         // Ensure existing Ports re-run PcbPortRender now that pads exist
         for (const child of component.children) {
           if (child.componentName === "Port") {
