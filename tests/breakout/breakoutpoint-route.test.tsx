@@ -1,17 +1,15 @@
 import React from "react"
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { getTestAutoroutingServer } from "tests/fixtures/get-test-autorouting-server"
 import { su } from "@tscircuit/circuit-json-util"
 import { getRoutePointPositions } from "lib/utils/pcb-trace-route-point-utils"
 
-test("autorouter uses breakout point", async () => {
+test("breakout point is projected to boundary", async () => {
   const { circuit } = getTestFixture()
-  const { autoroutingServerUrl } = getTestAutoroutingServer()
 
   circuit.add(
     <board width="20mm" height="20mm">
-      <breakout autorouter={{ serverUrl: autoroutingServerUrl }}>
+      <breakout name="B1">
         <resistor
           name="R1"
           resistance="1k"
@@ -26,20 +24,35 @@ test("autorouter uses breakout point", async () => {
           pcbX={2}
           pcbY={0}
         />
-        <trace from="R1.2" to="C1.1" />
-        <breakoutpoint connection="R1.1" pcbX={5} pcbY={5} />
+        <breakoutpoint connection="R1.1" pcbX={2} pcbY={2} />
       </breakout>
+      <trace from="R1.2" to="C1.1" />
     </board>,
   )
 
   await circuit.renderUntilSettled()
 
-  const pcb_trace = su(circuit.getCircuitJson()).pcb_trace.list()
+  const circuitJson = su(circuit.getCircuitJson())
+  const breakoutGroup = circuitJson.pcb_group.getWhere({ name: "B1" })!
+  const breakoutPoint = circuitJson.pcb_breakout_point.list()[0]
+  const left = breakoutGroup.center.x - breakoutGroup.width! / 2
+  const right = breakoutGroup.center.x + breakoutGroup.width! / 2
+  const bottom = breakoutGroup.center.y - breakoutGroup.height! / 2
+  const top = breakoutGroup.center.y + breakoutGroup.height! / 2
+  const isOnBoundary =
+    Math.abs(breakoutPoint.x - left) < 1e-6 ||
+    Math.abs(breakoutPoint.x - right) < 1e-6 ||
+    Math.abs(breakoutPoint.y - bottom) < 1e-6 ||
+    Math.abs(breakoutPoint.y - top) < 1e-6
+  expect(isOnBoundary).toBe(true)
+
+  const pcb_trace = circuitJson.pcb_trace.list()
   const hasPointNear = pcb_trace.some((t) =>
     t.route.some((pt) =>
       getRoutePointPositions(pt).some(
         (position) =>
-          Math.abs(position.x - 5) < 0.6 && Math.abs(position.y - 5) < 0.6,
+          Math.abs(position.x - breakoutPoint.x) < 0.6 &&
+          Math.abs(position.y - breakoutPoint.y) < 0.6,
       ),
     ),
   )
