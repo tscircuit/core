@@ -965,6 +965,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       try {
         // Wait for the autorouting to complete
         const traces = await routingPromise
+        const outputSimpleRouteJson = {
+          ...simpleRouteJson,
+          traces,
+        }
+
+        this.root?.emit("autorouting:end", {
+          type: "autorouting:end",
+          subcircuit_id: this.subcircuit_id,
+          componentDisplayName: this.getString(),
+          srj: outputSimpleRouteJson,
+          simpleRouteJson: outputSimpleRouteJson,
+        })
 
         // Create source_traces for interconnect ports that were connected via
         // off-board paths during routing. This allows DRC to understand that
