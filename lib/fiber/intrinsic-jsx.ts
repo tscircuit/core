@@ -47,6 +47,8 @@ export interface TscircuitElements {
   trace: Props.TraceProps
   breakout: Props.BreakoutProps
   breakoutpoint: Props.BreakoutPointProps
+  fanout: Props.BreakoutProps
+  fanoutpoint: Props.BreakoutPointProps
   autoroutingphase: Props.AutoroutingPhaseProps
   custom: any
   component: Props.ComponentProps
