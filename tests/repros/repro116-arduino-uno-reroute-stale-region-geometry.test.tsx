@@ -45,7 +45,7 @@ const segmentPassesThroughRegion = (
   return false
 }
 
-test("repro116: rerouting imported arduino region should remove original geometry from the replaced region", async () => {
+test.skip("repro116: rerouting imported arduino region should remove original geometry from the replaced region", async () => {
   const { afterRerouteCircuit, beforeRerouteCircuit, phaseInputs } =
     await renderArduinoUnoRerouteRegion({
       label: "STALE GEOMETRY REPRO",

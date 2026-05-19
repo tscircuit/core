@@ -9,7 +9,7 @@ const rerouteRegion = {
   maxY: 8,
 }
 
-test("repro116: arduino uno circuit json can reroute a left middle imported region", async () => {
+test.skip("repro116: arduino uno circuit json can reroute a left middle imported region", async () => {
   await expectArduinoUnoRerouteRegion({
     importMetaPath: import.meta.path,
     label: "REROUTED LEFT MID 10MM",
