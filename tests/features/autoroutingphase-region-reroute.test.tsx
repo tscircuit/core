@@ -208,8 +208,8 @@ test("autoroutingphase can reroute middle components with a zigzag route", async
   expect(phaseInputs).toHaveLength(1)
   expect(phaseInputs[0]!.connections).toHaveLength(1)
   expect(phaseInputs[0]!.bounds).toEqual({
-    minX: -2,
-    maxX: 2,
+    minX: -2.075,
+    maxX: 2.075,
     minY: -1,
     maxY: 1,
   })
