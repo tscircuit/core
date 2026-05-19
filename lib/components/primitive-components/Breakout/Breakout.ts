@@ -1,6 +1,7 @@
 import { breakoutProps } from "@tscircuit/props"
 import { Group } from "../Group/Group"
 import type { z } from "zod"
+import { Breakout_doInitialPcbLayout } from "./Breakout_doInitialPcbLayout"
 
 export class Breakout extends Group<typeof breakoutProps> {
   constructor(props: z.input<typeof breakoutProps>) {
@@ -30,5 +31,10 @@ export class Breakout extends Group<typeof breakoutProps> {
         y: pcb_group.center.y + (padTop - padBottom) / 2,
       },
     })
+  }
+
+  doInitialPcbLayout(): void {
+    super.doInitialPcbLayout()
+    Breakout_doInitialPcbLayout(this)
   }
 }

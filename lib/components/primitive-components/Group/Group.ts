@@ -613,6 +613,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     debug(`[${this.getString()}] has ${traceCount} traces to route`)
     if (traceCount > 0) return true
 
+    if (this.pcb_group_id) {
+      const breakoutPointCount = this.root!.db.pcb_breakout_point.list().filter(
+        (point) => point.pcb_group_id === this.pcb_group_id,
+      ).length
+      debug(
+        `[${this.getString()}] has ${breakoutPointCount} breakout points to route`,
+      )
+      if (breakoutPointCount > 0) return true
+    }
+
     if (hasReroutePhaseWithRegion) {
       const existingTraceCount = getExistingPcbTracesForReroute(this).length
       debug(
@@ -801,7 +811,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuit_id: this.subcircuit_id,
         subcircuitComponent: this,
       })
-    const routingPhasePlans = this._getRoutingPhasePlans()
+    let routingPhasePlans = this._getRoutingPhasePlans()
+    if (
+      routingPhasePlans.length === 0 &&
+      baseSimpleRouteJson.connections.length > 0
+    ) {
+      routingPhasePlans = [{ routingPhaseIndex: null, nets: [], traces: [] }]
+    }
     const hasPhasedAutorouting = Group_hasPhasedAutorouting(routingPhasePlans)
     const outputTraces: SimplifiedPcbTrace[] = []
     const outputJumpers: Array<{
