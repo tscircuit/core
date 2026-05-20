@@ -1,6 +1,11 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement, PcbBoard } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  PcbBoard,
+  PcbBreakoutPoint,
+  SourceTrace,
+} from "circuit-json"
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
@@ -10,6 +15,44 @@ import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles
 import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
+
+const getSourcePortIdsForTraceRouteConnection = (
+  trace: SourceTrace,
+  traceBreakoutPoints: PcbBreakoutPoint[],
+) => {
+  const breakoutSourcePortIds = new Set(
+    traceBreakoutPoints
+      .map((breakoutPoint) => breakoutPoint.source_port_id)
+      .filter((sourcePortId): sourcePortId is string => Boolean(sourcePortId)),
+  )
+
+  if (breakoutSourcePortIds.size === 0) return trace.connected_source_port_ids
+
+  return trace.connected_source_port_ids.filter((sourcePortId) =>
+    breakoutSourcePortIds.has(sourcePortId),
+  )
+}
+
+const isInCurrentRoutingSubcircuit = (
+  element: { subcircuit_id?: string | null },
+  subcircuit_id?: string | null,
+) => !subcircuit_id || element.subcircuit_id === subcircuit_id
+
+const addPointToConnection = (
+  conn: SimpleRouteConnection,
+  point: SimpleRouteConnection["pointsToConnect"][number],
+) => {
+  const pointAlreadyExists = conn.pointsToConnect.some(
+    (existingPoint) =>
+      existingPoint.pointId === point.pointId ||
+      (existingPoint.x === point.x &&
+        existingPoint.y === point.y &&
+        existingPoint.layer === point.layer),
+  )
+  if (!pointAlreadyExists) {
+    conn.pointsToConnect.push(point)
+  }
+}
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -234,16 +277,39 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const routedTraceIds = new Set(
     db.pcb_trace
       .list()
+      .filter((trace) => isInCurrentRoutingSubcircuit(trace, subcircuit_id))
       .map((t) => t.source_trace_id)
       .filter((id): id is string => Boolean(id)),
   )
 
+  const breakoutPoints = db.pcb_breakout_point
+    .list()
+    .filter((breakoutPoint) =>
+      isInCurrentRoutingSubcircuit(breakoutPoint, subcircuit_id),
+    )
+  const breakoutPointsBySourceTraceId = new Map<string, PcbBreakoutPoint[]>()
+  for (const breakoutPoint of breakoutPoints) {
+    if (!breakoutPoint.source_trace_id) continue
+    const points =
+      breakoutPointsBySourceTraceId.get(breakoutPoint.source_trace_id) ?? []
+    points.push(breakoutPoint)
+    breakoutPointsBySourceTraceId.set(breakoutPoint.source_trace_id, points)
+  }
+
   // Create connections from traces
   const directTraceConnections = db.source_trace
     .list()
+    .filter((trace) => isInCurrentRoutingSubcircuit(trace, subcircuit_id))
     .filter((trace) => !routedTraceIds.has(trace.source_trace_id))
     .map((trace) => {
-      const connectedPorts = trace.connected_source_port_ids.map((id) => {
+      const traceBreakoutPoints =
+        breakoutPointsBySourceTraceId.get(trace.source_trace_id) ?? []
+      const connectedSourcePortIds = getSourcePortIdsForTraceRouteConnection(
+        trace,
+        traceBreakoutPoints,
+      )
+
+      const connectedPorts = connectedSourcePortIds.map((id) => {
         const source_port = db.source_port.get(id)
         const pcb_port = db.pcb_port.getWhere({ source_port_id: id })
         return {
@@ -252,7 +318,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       })
 
-      if (connectedPorts.length < 2) return null
+      if (connectedPorts.length < (traceBreakoutPoints.length > 0 ? 1 : 2)) {
+        return null
+      }
 
       // TODO handle trace.connected_source_net_ids
       const [portA, portB] = connectedPorts
@@ -263,7 +331,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         )
         return null
       }
-      if (portB.x === undefined || portB.y === undefined) {
+      if (portB && (portB.x === undefined || portB.y === undefined)) {
         console.error(
           `(source_port_id: ${portB.source_port_id}) for trace ${trace.source_trace_id} does not have x/y coordinates. Skipping this trace.`,
         )
@@ -271,13 +339,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       }
 
       const layerA = portA.layers?.[0] ?? "top"
-      const layerB = portB.layers?.[0] ?? "top"
+      const layerB = portB?.layers?.[0] ?? "top"
 
       // Collect all traceHints that apply to either port
       const matchingHints = traceHints.filter(
         (hint) =>
           hint.pcb_port_id === portA.pcb_port_id ||
-          hint.pcb_port_id === portB.pcb_port_id,
+          hint.pcb_port_id === portB?.pcb_port_id,
       )
 
       const hintPoints: { x: number; y: number; layer: string }[] = []
@@ -294,6 +362,26 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       }
 
+      const portPoints: SimpleRouteConnection["pointsToConnect"] = [
+        {
+          x: portA.x!,
+          y: portA.y!,
+          layer: layerA,
+          pointId: portA.pcb_port_id,
+          pcb_port_id: portA.pcb_port_id,
+        },
+      ]
+
+      if (portB) {
+        portPoints.push({
+          x: portB.x!,
+          y: portB.y!,
+          layer: layerB,
+          pointId: portB.pcb_port_id,
+          pcb_port_id: portB.pcb_port_id,
+        })
+      }
+
       return {
         name:
           trace.source_trace_id ??
@@ -302,23 +390,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         source_trace_id: trace.source_trace_id,
         nominalTraceWidth: trace.min_trace_thickness,
         width: trace.min_trace_thickness,
-        pointsToConnect: [
-          {
-            x: portA.x!,
-            y: portA.y!,
-            layer: layerA,
-            pointId: portA.pcb_port_id,
-            pcb_port_id: portA.pcb_port_id,
-          },
-          ...hintPoints,
-          {
-            x: portB.x!,
-            y: portB.y!,
-            layer: layerB,
-            pointId: portB.pcb_port_id,
-            pcb_port_id: portB.pcb_port_id,
-          },
-        ],
+        pointsToConnect: [...portPoints, ...hintPoints],
       } as SimpleRouteConnection
     })
     .filter((c): c is SimpleRouteConnection => c !== null)
@@ -369,24 +441,23 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
   }
 
-  const breakoutPoints = db.pcb_breakout_point
-    .list()
-    .filter(
-      (bp) => !subcircuit_id || relevantSubcircuitIds?.has(bp.subcircuit_id!),
-    )
-
   const connectionsFromBreakoutPoints: SimpleRouteConnection[] = []
   const breakoutTraceConnectionsById = new Map<string, SimpleRouteConnection>()
 
   for (const bp of breakoutPoints) {
-    const pt = { x: bp.x, y: bp.y, layer: "top" as const }
+    const pt = {
+      x: bp.x,
+      y: bp.y,
+      layer: "top" as const,
+      pointId: bp.pcb_breakout_point_id,
+    }
     if (bp.source_trace_id) {
       const conn =
         directTraceConnectionsById.get(bp.source_trace_id) ??
         breakoutTraceConnectionsById.get(bp.source_trace_id)
       if (conn) {
-        conn.pointsToConnect.push(pt)
-      } else {
+        addPointToConnection(conn, pt)
+      } else if (!bp.source_port_id) {
         const newConn: SimpleRouteConnection = {
           name: bp.source_trace_id,
           source_trace_id: bp.source_trace_id,
@@ -394,6 +465,26 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
         connectionsFromBreakoutPoints.push(newConn)
         breakoutTraceConnectionsById.set(bp.source_trace_id, newConn)
+      } else {
+        const pcb_port = db.pcb_port.getWhere({
+          source_port_id: bp.source_port_id,
+        })
+        if (pcb_port) {
+          connectionsFromBreakoutPoints.push({
+            name: bp.source_trace_id,
+            source_trace_id: bp.source_trace_id,
+            pointsToConnect: [
+              {
+                x: pcb_port.x!,
+                y: pcb_port.y!,
+                layer: (pcb_port.layers?.[0] as any) ?? "top",
+                pointId: pcb_port.pcb_port_id,
+                pcb_port_id: pcb_port.pcb_port_id,
+              },
+              pt,
+            ],
+          })
+        }
       }
     } else if (bp.source_net_id) {
       const conn = connectionsFromNets.find((c) => c.name === bp.source_net_id)
@@ -405,22 +496,19 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           pointsToConnect: [pt],
         })
       }
-    } else if ((bp as any).source_port_id) {
+    } else if (bp.source_port_id) {
       const pcb_port = db.pcb_port.getWhere({
-        source_port_id: (bp as any).source_port_id,
+        source_port_id: bp.source_port_id,
       })
       if (pcb_port) {
         connectionsFromBreakoutPoints.push({
-          name: (bp as any).source_port_id,
-          // direct connection from port to breakout point
-          source_trace_id: undefined as any,
+          name: bp.source_port_id,
           pointsToConnect: [
             {
               x: pcb_port.x!,
               y: pcb_port.y!,
               layer: (pcb_port.layers?.[0] as any) ?? "top",
               pointId: pcb_port.pcb_port_id,
-              // @ts-ignore
               pcb_port_id: pcb_port.pcb_port_id,
             },
             pt,

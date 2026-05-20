@@ -3,9 +3,16 @@ import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import type { AutoroutingPhaseIo } from "tests/fixtures/create-autorouting-phase-io-stack"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
+import { convertPcbTraceToSimplifiedPcbTrace } from "lib/components/primitive-components/Group/region-replacement"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import { stackSvgsVertically } from "stack-svgs"
+import looksSame from "looks-same"
+
+interface AutoroutingPhaseSnapshotOptions {
+  finalBoardCircuit?: unknown
+}
 
 const createPanelLabelSvg = (label: string) => `<svg
   xmlns="http://www.w3.org/2000/svg"
@@ -45,51 +52,76 @@ function createLabeledSrjSvg(label: string, srj: SimpleRouteJson) {
 function getAutoroutingPhasesSvg({
   autoroutingPhaseIoStack,
   snapshotName,
+  finalSimpleRouteJson,
 }: {
   autoroutingPhaseIoStack: AutoroutingPhaseIo[]
   snapshotName: string
+  finalSimpleRouteJson?: SimpleRouteJson | null
 }) {
-  return stackSvgsVertically(
-    autoroutingPhaseIoStack
-      .flatMap((phase, index) => {
-        const phaseNumber = index + 1
-        const phaseSvgs: string[] = []
+  const phaseSvgs = autoroutingPhaseIoStack
+    .flatMap((phase, index) => {
+      const phaseNumber = index + 1
+      const phaseSvgs: string[] = []
 
-        if (phase.startSimpleRouteJson) {
-          const srj = phase.startSimpleRouteJson
-          phaseSvgs.push(
-            createLabeledSrjSvg(
-              `AUTOROUTING PHASE ${phaseNumber} START: ${srj.connections.length} CONNECTIONS, ${
-                srj.traces?.length ?? 0
-              } TRACES`,
-              srj,
-            ),
-          )
-        }
+      if (phase.startSimpleRouteJson) {
+        const srj = phase.startSimpleRouteJson
+        phaseSvgs.push(
+          createLabeledSrjSvg(
+            `AUTOROUTING PHASE ${phaseNumber} START: ${srj.connections.length} CONNECTIONS, ${
+              srj.traces?.length ?? 0
+            } TRACES`,
+            srj,
+          ),
+        )
+      }
 
-        if (phase.endSimpleRouteJson) {
-          const srj = phase.endSimpleRouteJson
-          phaseSvgs.push(
-            createLabeledSrjSvg(
-              `AUTOROUTING PHASE ${phaseNumber} END: ${srj.connections.length} CONNECTIONS, ${
-                srj.traces?.length ?? 0
-              } TRACES`,
-              srj,
-            ),
-          )
-        }
+      if (phase.endSimpleRouteJson) {
+        const srj = phase.endSimpleRouteJson
+        phaseSvgs.push(
+          createLabeledSrjSvg(
+            `AUTOROUTING PHASE ${phaseNumber} END: ${srj.connections.length} CONNECTIONS, ${
+              srj.traces?.length ?? 0
+            } TRACES`,
+            srj,
+          ),
+        )
+      }
 
-        return phaseSvgs
-      })
-      .reverse(),
-    {
-      gap: 16,
-      normalizeSize: false,
-      rootAttributes: {
-        "data-testid": `${snapshotName}-autorouting-srj-stack`,
-      },
+      return phaseSvgs
+    })
+    .reverse()
+
+  if (finalSimpleRouteJson) {
+    phaseSvgs.unshift(
+      createLabeledSrjSvg(
+        `FINAL ROUTED PCB TRACES: ${
+          finalSimpleRouteJson.traces?.length ?? 0
+        } TRACES`,
+        finalSimpleRouteJson,
+      ),
+    )
+  }
+
+  return stackSvgsVertically(phaseSvgs, {
+    gap: 16,
+    normalizeSize: false,
+    rootAttributes: {
+      "data-testid": `${snapshotName}-autorouting-srj-stack`,
     },
-  )
+  })
+}
+
+function getFinalSimpleRouteJson(circuit: any): SimpleRouteJson | null {
+  if (!circuit?.db) return null
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    db: circuit.db,
+  })
+  return {
+    ...simpleRouteJson,
+    traces: circuit.db.pcb_trace
+      .list()
+      .map(convertPcbTraceToSimplifiedPcbTrace),
+  }
 }
 
 expect.extend({
@@ -109,6 +141,7 @@ expect.extend({
     const svg = getAutoroutingPhasesSvg({
       autoroutingPhaseIoStack,
       snapshotName: args[1],
+      finalSimpleRouteJson: getFinalSimpleRouteJson(args[2]?.finalBoardCircuit),
     })
     const testPath = args[0].replace(/\.test\.tsx?$/, "")
     const snapshotDir = path.join(path.dirname(testPath), "__snapshots__")
@@ -144,7 +177,36 @@ expect.extend({
       }
     }
 
-    return expect(svg).toMatchSvgSnapshot(args[0], args[1])
+    const existingSnapshot = fs.readFileSync(filePath, "utf-8")
+    const result: any = await looksSame(
+      Buffer.from(svg),
+      Buffer.from(existingSnapshot),
+      {
+        strict: true,
+        shouldCluster: true,
+        clustersSize: 10,
+      },
+    )
+
+    if (result.equal) {
+      return {
+        message: () => "Snapshot matches",
+        pass: true,
+      }
+    }
+
+    const diffPath = filePath.replace(".snap.svg", ".diff.png")
+    await looksSame.createDiff({
+      reference: Buffer.from(existingSnapshot),
+      current: Buffer.from(svg),
+      diff: diffPath,
+      highlightColor: "#ff00ff",
+    })
+
+    return {
+      message: () => `Snapshot does not match. Diff saved at ${diffPath}`,
+      pass: false,
+    }
   },
 })
 
@@ -153,6 +215,7 @@ declare module "bun:test" {
     toMatchAutoroutingPhaseIoStackSnapshot(
       testPath: string,
       snapshotName: string,
+      options?: AutoroutingPhaseSnapshotOptions,
     ): Promise<MatcherResult>
   }
 }

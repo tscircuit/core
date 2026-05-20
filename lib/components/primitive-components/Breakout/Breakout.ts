@@ -1,8 +1,11 @@
 import { breakoutProps } from "@tscircuit/props"
 import { Group } from "../Group/Group"
 import type { z } from "zod"
+import { Breakout_insertAutomaticBreakoutPoints } from "./Breakout_insertAutomaticBreakoutPoints"
 
 export class Breakout extends Group<typeof breakoutProps> {
+  _hasInsertedAutomaticBreakoutPoints = false
+
   constructor(props: z.input<typeof breakoutProps>) {
     super({
       ...props,
@@ -30,5 +33,9 @@ export class Breakout extends Group<typeof breakoutProps> {
         y: pcb_group.center.y + (padTop - padBottom) / 2,
       },
     })
+  }
+
+  doInitialPcbTraceHintRender(): void {
+    Breakout_insertAutomaticBreakoutPoints(this)
   }
 }

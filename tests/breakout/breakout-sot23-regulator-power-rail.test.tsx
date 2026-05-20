@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getRoutePointPositions } from "lib/utils/pcb-trace-route-point-utils"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -78,11 +79,33 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
   })
 
   expect(breakoutPcbGroup).toBeDefined()
-  expect(circuit.db.pcb_breakout_point.list()).toHaveLength(0)
+  const breakoutPoints = circuit.db.pcb_breakout_point.list()
+  expect(breakoutPoints).toHaveLength(10)
+  expect(
+    breakoutPoints.every(
+      (point) => point.source_port_id || point.source_trace_id,
+    ),
+  ).toBe(true)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(7)
+  expect(
+    circuit.db.pcb_trace.list().filter((trace) => trace.route.length < 2),
+  ).toHaveLength(0)
+  const routePositions = circuit.db.pcb_trace
+    .list()
+    .flatMap((trace) => trace.route.flatMap(getRoutePointPositions))
+  for (const breakoutPoint of breakoutPoints) {
+    expect(
+      routePositions.some(
+        (position) =>
+          Math.abs(position.x - breakoutPoint.x) <= 0.25 &&
+          Math.abs(position.y - breakoutPoint.y) <= 0.25,
+      ),
+    ).toBe(true)
+  }
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "breakout-sot23-regulator-power-rail-autorouting-srj",
+    { finalBoardCircuit: circuit },
   )
 })
