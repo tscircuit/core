@@ -48,6 +48,9 @@ export interface AutoroutingProgressEvent {
 
 export interface AutoroutingEndEvent {
   type: "autorouting:end"
+  subcircuit_id: string
+  componentDisplayName: string
+  simpleRouteJson: SimpleRouteJson
 }
 
 export interface PackingStartEvent {
