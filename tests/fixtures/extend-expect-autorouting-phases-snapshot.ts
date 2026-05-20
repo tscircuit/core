@@ -54,7 +54,7 @@ function getAutoroutingPhasesSvg({
       .reverse()
       .map(({ phaseNumber, srj }) =>
         createLabeledSrjSvg(
-          `AUTOROUTING PHASE ${phaseNumber}: ${srj.connections.length} CONNECTIONS, ${
+          `AUTOROUTING PHASE ${phaseNumber} END: ${srj.connections.length} CONNECTIONS, ${
             srj.traces?.length ?? 0
           } TRACES`,
           srj,

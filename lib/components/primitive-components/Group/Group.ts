@@ -974,7 +974,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           type: "autorouting:end",
           subcircuit_id: this.subcircuit_id,
           componentDisplayName: this.getString(),
-          srj: outputSimpleRouteJson,
           simpleRouteJson: outputSimpleRouteJson,
         })
 

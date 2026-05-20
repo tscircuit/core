@@ -5,8 +5,8 @@ export function createAutoroutingEndPhaseStack(circuit: {
 }) {
   const autoroutingEndPhaseStack: SimpleRouteJson[] = []
 
-  circuit.on("autorouting:end", ({ srj, simpleRouteJson }) => {
-    autoroutingEndPhaseStack.push(structuredClone(srj ?? simpleRouteJson))
+  circuit.on("autorouting:end", ({ simpleRouteJson }) => {
+    autoroutingEndPhaseStack.push(structuredClone(simpleRouteJson))
   })
 
   return autoroutingEndPhaseStack

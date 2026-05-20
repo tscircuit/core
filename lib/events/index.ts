@@ -50,7 +50,6 @@ export interface AutoroutingEndEvent {
   type: "autorouting:end"
   subcircuit_id: string
   componentDisplayName: string
-  srj: SimpleRouteJson
   simpleRouteJson: SimpleRouteJson
 }
 
