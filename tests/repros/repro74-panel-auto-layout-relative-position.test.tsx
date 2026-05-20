@@ -17,9 +17,9 @@ test("panel auto-layout positions boards relative to panel center", async () => 
     </panel>,
   )
 
-  await circuit.renderUntilSettled()
+  circuit.render()
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+  expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path, {
     showAnchorOffsets: true,
   })
 })
