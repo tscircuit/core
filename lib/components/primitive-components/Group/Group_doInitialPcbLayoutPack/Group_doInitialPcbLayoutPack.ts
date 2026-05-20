@@ -112,6 +112,18 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
     }
   }
 
+  const collectManuallyPlacedDescendants = (comp: any) => {
+    const subcircuit = comp?.getSubcircuit?.()
+    const manualPlacement =
+      subcircuit?._getPcbManualPlacementForComponent?.(comp)
+    if (manualPlacement && comp?.pcb_component_id) {
+      staticPcbComponentIds.add(comp.pcb_component_id)
+    }
+    if (comp?.children) comp.children.forEach(collectManuallyPlacedDescendants)
+  }
+
+  collectManuallyPlacedDescendants(group)
+
   // Keep all circuit elements; static components will remain fixed during packing
   const filteredCircuitJson = db.toArray()
 

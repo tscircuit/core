@@ -501,11 +501,8 @@ export abstract class PrimitiveComponent<
     ) {
       const rotation = this._getPcbRotationBeforeLayout() ?? 0
       return compose(
-        this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-        compose(
-          translate(manualPlacement.x, manualPlacement.y),
-          rotate((rotation * Math.PI) / 180),
-        ),
+        translate(manualPlacement.x, manualPlacement.y),
+        rotate((rotation * Math.PI) / 180),
       )
     }
 
@@ -890,10 +887,7 @@ export abstract class PrimitiveComponent<
         component.props.name === position.selector
       ) {
         if (position.relative_to === "group_center") {
-          return compose(
-            this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-            translate(position.center.x, position.center.y),
-          )
+          return translate(position.center.x, position.center.y)
         }
       }
     }

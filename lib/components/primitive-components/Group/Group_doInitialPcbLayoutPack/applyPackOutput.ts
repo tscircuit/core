@@ -59,6 +59,19 @@ export const applyPackOutput = (
   clusterMap: Record<string, ClusterInfo>,
 ) => {
   const { db } = group.root!
+  const manuallyPlacedPcbComponentIds = new Set<string>()
+
+  const collectManuallyPlacedDescendants = (comp: any) => {
+    const subcircuit = comp?.getSubcircuit?.()
+    const manualPlacement =
+      subcircuit?._getPcbManualPlacementForComponent?.(comp)
+    if (manualPlacement && comp?.pcb_component_id) {
+      manuallyPlacedPcbComponentIds.add(comp.pcb_component_id)
+    }
+    if (comp?.children) comp.children.forEach(collectManuallyPlacedDescendants)
+  }
+
+  collectManuallyPlacedDescendants(group)
 
   for (const packedComponent of packOutput.components) {
     const { center, componentId, ccwRotationOffset, ccwRotationDegrees } =
@@ -106,6 +119,8 @@ export const applyPackOutput = (
 
     const pcbComponent = db.pcb_component.get(componentId)
     if (pcbComponent) {
+      if (manuallyPlacedPcbComponentIds.has(componentId)) continue
+
       db.pcb_component.update(componentId, {
         position_mode: "packed",
       })
@@ -183,6 +198,9 @@ export const applyPackOutput = (
         }
       }
       if ("pcb_component_id" in elm && elm.pcb_component_id) {
+        if (manuallyPlacedPcbComponentIds.has(elm.pcb_component_id)) {
+          return false
+        }
         const pcbComp = db.pcb_component.get(elm.pcb_component_id)
         if (pcbComp?.source_component_id) {
           const sourceComp = db.source_component.get(
