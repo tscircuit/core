@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test"
-import { createAutoroutingEndPhaseStack } from "tests/fixtures/create-autorouting-end-phase-stack"
+import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("breakout routes sot23 regulator power rail parts without breakoutpoints", async () => {
   const { circuit } = getTestFixture()
-  const autoroutingEndPhaseStack = createAutoroutingEndPhaseStack(circuit)
+  const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(
     <board width="18mm" height="12mm">
@@ -81,9 +81,7 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
   expect(circuit.db.pcb_breakout_point.list()).toHaveLength(0)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(7)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  await expect(
-    autoroutingEndPhaseStack,
-  ).toMatchAutoroutingEndPhaseStackSnapshot(
+  await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "breakout-sot23-regulator-power-rail-autorouting-srj",
   )

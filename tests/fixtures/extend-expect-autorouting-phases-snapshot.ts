@@ -1,6 +1,7 @@
 import { type MatcherResult, expect } from "bun:test"
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import { getSvgFromGraphicsObject } from "graphics-debug"
+import type { AutoroutingPhaseIo } from "tests/fixtures/create-autorouting-phase-io-stack"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import * as fs from "node:fs"
 import * as path from "node:path"
@@ -42,24 +43,45 @@ function createLabeledSrjSvg(label: string, srj: SimpleRouteJson) {
 }
 
 function getAutoroutingPhasesSvg({
-  autoroutingEndPhaseStack,
+  autoroutingPhaseIoStack,
   snapshotName,
 }: {
-  autoroutingEndPhaseStack: SimpleRouteJson[]
+  autoroutingPhaseIoStack: AutoroutingPhaseIo[]
   snapshotName: string
 }) {
   return stackSvgsVertically(
-    autoroutingEndPhaseStack
-      .map((srj, index) => ({ phaseNumber: index + 1, srj }))
-      .reverse()
-      .map(({ phaseNumber, srj }) =>
-        createLabeledSrjSvg(
-          `AUTOROUTING PHASE ${phaseNumber} END: ${srj.connections.length} CONNECTIONS, ${
-            srj.traces?.length ?? 0
-          } TRACES`,
-          srj,
-        ),
-      ),
+    autoroutingPhaseIoStack
+      .flatMap((phase, index) => {
+        const phaseNumber = index + 1
+        const phaseSvgs: string[] = []
+
+        if (phase.startSimpleRouteJson) {
+          const srj = phase.startSimpleRouteJson
+          phaseSvgs.push(
+            createLabeledSrjSvg(
+              `AUTOROUTING PHASE ${phaseNumber} START: ${srj.connections.length} CONNECTIONS, ${
+                srj.traces?.length ?? 0
+              } TRACES`,
+              srj,
+            ),
+          )
+        }
+
+        if (phase.endSimpleRouteJson) {
+          const srj = phase.endSimpleRouteJson
+          phaseSvgs.push(
+            createLabeledSrjSvg(
+              `AUTOROUTING PHASE ${phaseNumber} END: ${srj.connections.length} CONNECTIONS, ${
+                srj.traces?.length ?? 0
+              } TRACES`,
+              srj,
+            ),
+          )
+        }
+
+        return phaseSvgs
+      })
+      .reverse(),
     {
       gap: 16,
       normalizeSize: false,
@@ -71,13 +93,13 @@ function getAutoroutingPhasesSvg({
 }
 
 expect.extend({
-  async toMatchAutoroutingEndPhaseStackSnapshot(
+  async toMatchAutoroutingPhaseIoStackSnapshot(
     this: any,
     received: unknown,
     ...args: any[]
   ): Promise<MatcherResult> {
-    const autoroutingEndPhaseStack = (await received) as SimpleRouteJson[]
-    if (autoroutingEndPhaseStack.length === 0) {
+    const autoroutingPhaseIoStack = (await received) as AutoroutingPhaseIo[]
+    if (autoroutingPhaseIoStack.length === 0) {
       return {
         message: () => "Expected at least one autorouting phase SRJ",
         pass: false,
@@ -85,7 +107,7 @@ expect.extend({
     }
 
     const svg = getAutoroutingPhasesSvg({
-      autoroutingEndPhaseStack,
+      autoroutingPhaseIoStack,
       snapshotName: args[1],
     })
     const testPath = args[0].replace(/\.test\.tsx?$/, "")
@@ -128,7 +150,7 @@ expect.extend({
 
 declare module "bun:test" {
   interface Matchers<T = unknown> {
-    toMatchAutoroutingEndPhaseStackSnapshot(
+    toMatchAutoroutingPhaseIoStackSnapshot(
       testPath: string,
       snapshotName: string,
     ): Promise<MatcherResult>
