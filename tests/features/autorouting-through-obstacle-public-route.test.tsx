@@ -25,7 +25,9 @@ test("through_obstacle route points are normalized before writing pcb_trace.rout
                   route_type: "wire",
                   x: start.x,
                   y: start.y,
-                  width: connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth,
+                  width:
+                    connection.nominalTraceWidth ??
+                    simpleRouteJson.minTraceWidth,
                   layer: start.layer,
                 },
                 {
@@ -34,7 +36,9 @@ test("through_obstacle route points are normalized before writing pcb_trace.rout
                   end: { x: end.x, y: end.y },
                   from_layer: start.layer,
                   to_layer: end.layer,
-                  width: connection.nominalTraceWidth ?? simpleRouteJson.minTraceWidth,
+                  width:
+                    connection.nominalTraceWidth ??
+                    simpleRouteJson.minTraceWidth,
                 },
               ],
             },
@@ -42,7 +46,13 @@ test("through_obstacle route points are normalized before writing pcb_trace.rout
         }),
       }}
     >
-      <resistor name="R1" resistance="10k" footprint="0402" pcbX={-5} pcbY={0} />
+      <resistor
+        name="R1"
+        resistance="10k"
+        footprint="0402"
+        pcbX={-5}
+        pcbY={0}
+      />
       <resistor name="R2" resistance="1k" footprint="0402" pcbX={5} pcbY={0} />
       <trace from=".R1 > .pin2" to=".R2 > .pin1" />
     </board>,
@@ -51,8 +61,13 @@ test("through_obstacle route points are normalized before writing pcb_trace.rout
   await circuit.renderUntilSettled()
 
   const routedTrace = circuit.db.pcb_trace.list()[0]
-  expect(routedTrace.route.some((p) => p.route_type === "through_obstacle")).toBe(
-    false,
+  const throughPadPoints = routedTrace.route.filter(
+    (p) => p.route_type === "through_pad",
   )
-  expect(routedTrace.route.some((p) => p.route_type === "through_pad")).toBe(true)
+
+  expect(throughPadPoints).toHaveLength(1)
+  expect(throughPadPoints[0]).toMatchObject({
+    start_layer: "top",
+    end_layer: "top",
+  })
 })
