@@ -1208,7 +1208,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Apply each routed trace to the corresponding circuit trace
     // const circuitTraces = this.selectAll("trace") as Trace[]
     for (const routedTrace of routedTraces) {
-      const publicRoute = routedTrace.route.map((point) => {
+      const cjRoute = routedTrace.route.map((point) => {
         if (point.route_type !== "through_obstacle") return point
 
         return {
