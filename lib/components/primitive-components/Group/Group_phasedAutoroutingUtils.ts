@@ -157,7 +157,7 @@ function addTraceObstacles(
   }
 }
 
-export function Group_connectionIsInRoutingPhase(
+export function connectionIsInRoutingPhase(
   connection: SimpleRouteConnection,
   phasePlan: RoutingPhasePlan,
 ): boolean {
@@ -194,7 +194,7 @@ export function Group_filterSimpleRouteJsonForPhase(
 ): SimpleRouteJson {
   const connections: SimpleRouteConnection[] = []
   for (const connection of simpleRouteJson.connections) {
-    if (Group_connectionIsInRoutingPhase(connection, phasePlan)) {
+    if (connectionIsInRoutingPhase(connection, phasePlan)) {
       connections.push(connection)
     }
   }

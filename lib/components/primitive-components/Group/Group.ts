@@ -63,10 +63,10 @@ import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import {
   Group_applyDrcTolerancesToSimpleRouteJson,
-  Group_connectionIsInRoutingPhase,
   Group_filterSimpleRouteJsonForPhase,
   Group_getObstaclesFromRoutedTraces,
   Group_hasPhasedAutorouting,
+  connectionIsInRoutingPhase,
 } from "./Group_phasedAutoroutingUtils"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
@@ -832,7 +832,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       ])
 
       return baseSimpleRouteJson.connections.some((connection) => {
-        if (!Group_connectionIsInRoutingPhase(connection, routingPhasePlan)) {
+        if (!connectionIsInRoutingPhase(connection, routingPhasePlan)) {
           return false
         }
         return (
