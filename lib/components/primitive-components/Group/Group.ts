@@ -1313,7 +1313,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             db.source_net.get(sourceTraceId)?.subcircuit_id)
           : undefined) ?? this.subcircuit_id!
 
-      const publicRoute = pcb_trace.route.map((point: any) => {
+      const cjRoute = pcb_trace.route.map((point: any) => {
         if (point.route_type !== "through_obstacle") return point
         return {
           route_type: "through_pad",
