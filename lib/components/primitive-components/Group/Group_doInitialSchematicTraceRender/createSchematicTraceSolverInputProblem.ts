@@ -8,6 +8,7 @@ import {
 import type { AxisDirection } from "./getSide"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 
+const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 export type SolverInputContext = {
   inputProblem: InputProblem
   pinIdToSchematicPortId: Map<string, string>
@@ -219,25 +220,29 @@ export function createSchematicTraceSolverInputProblem(
         }
         const portA = db.schematic_port.get(a)
         const portB = db.schematic_port.get(b)
-        const portDistance =
-          portA && portB
-            ? Math.sqrt(
-                (portA.center.x - portB.center.x) ** 2 +
-                  (portA.center.y - portB.center.y) ** 2,
-              )
-            : 0
-        const maxMspDist = group._parsedProps.schMaxTraceDistance ?? 2.4
-        const netLabelWidth =
+        let portDistance = 0
+        if (portA && portB) {
+          portDistance = Math.sqrt(
+            (portA.center.x - portB.center.x) ** 2 +
+              (portA.center.y - portB.center.y) ** 2,
+          )
+        }
+        const maxMspDist =
+          group._parsedProps.schMaxTraceDistance ??
+          DEFAULT_MAX_MSP_PAIR_DISTANCE
+        let netLabelWidth: number | undefined
+        if (
           st.display_name &&
           !st.display_name.startsWith(".") &&
           portDistance > maxMspDist
-            ? Number(
-                getSchematicNetLabelTextWidth({
-                  text: String(st.display_name),
-                  font_size: 0.14,
-                }).toFixed(2),
-              )
-            : undefined
+        ) {
+          netLabelWidth = Number(
+            getSchematicNetLabelTextWidth({
+              text: String(st.display_name),
+              font_size: 0.14,
+            }).toFixed(2),
+          )
+        }
         directConnections.push({
           pinIds: [a, b].map((id) => schematicPortIdToPinId.get(id)!) as [
             string,
@@ -328,7 +333,8 @@ export function createSchematicTraceSolverInputProblem(
     directConnections,
     netConnections,
     availableNetLabelOrientations,
-    maxMspPairDistance: group._parsedProps.schMaxTraceDistance ?? 2.4,
+    maxMspPairDistance:
+      group._parsedProps.schMaxTraceDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE,
   }
 
   return {
