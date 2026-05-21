@@ -10,8 +10,6 @@ test("through_obstacle route points are normalized before writing pcb_trace.rout
       width="20mm"
       height="20mm"
       autorouter={{
-        local: true,
-        groupMode: "subcircuit",
         algorithmFn: createBasicAutorouter(async (simpleRouteJson) => {
           const connection = simpleRouteJson.connections[0]
           const [start, end] = connection.pointsToConnect
