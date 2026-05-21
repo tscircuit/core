@@ -173,8 +173,11 @@ export function createSchematicTraceSolverInputProblem(
   }
 
   // Direct connections derived from explicit source_traces
-  const directConnections: Array<{ pinIds: [string, string]; netId?: string }> =
-    []
+  const directConnections: Array<{
+    pinIds: [string, string]
+    netId?: string
+    netLabelWidth?: number
+  }> = []
   const connectedPairKeys = new Set<string>()
   const connKeysWithExplicitPortNetTraces = new Set<string>()
   for (const trace of traces as any[]) {
@@ -214,12 +217,34 @@ export function createSchematicTraceSolverInputProblem(
         if (st.subcircuit_connectivity_map_key) {
           userNetIdToConnKey.set(userNetId, st.subcircuit_connectivity_map_key)
         }
+        const portA = db.schematic_port.get(a)
+        const portB = db.schematic_port.get(b)
+        const portDistance =
+          portA && portB
+            ? Math.sqrt(
+                (portA.center.x - portB.center.x) ** 2 +
+                  (portA.center.y - portB.center.y) ** 2,
+              )
+            : 0
+        const maxMspDist = group._parsedProps.schMaxTraceDistance ?? 2.4
+        const netLabelWidth =
+          st.display_name &&
+          !st.display_name.startsWith(".") &&
+          portDistance > maxMspDist
+            ? Number(
+                getSchematicNetLabelTextWidth({
+                  text: String(st.display_name),
+                  font_size: 0.14,
+                }).toFixed(2),
+              )
+            : undefined
         directConnections.push({
           pinIds: [a, b].map((id) => schematicPortIdToPinId.get(id)!) as [
             string,
             string,
           ],
           netId: userNetId,
+          netLabelWidth,
         })
       }
     }

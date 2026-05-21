@@ -50,7 +50,7 @@
     "@tscircuit/ngspice-spice-engine": "^0.0.8",
     "@tscircuit/props": "^0.0.531",
     "@tscircuit/schematic-match-adapt": "^0.0.16",
-    "@tscircuit/schematic-trace-solver": "^0.0.57",
+    "@tscircuit/schematic-trace-solver": "file:.yalc/@tscircuit/schematic-trace-solver",
     "@tscircuit/solver-utils": "^0.0.3",
     "@tscircuit/soup-util": "^0.0.41",
     "@types/bun": "^1.2.16",
