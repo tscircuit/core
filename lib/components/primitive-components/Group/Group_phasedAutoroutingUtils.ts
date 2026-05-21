@@ -157,7 +157,7 @@ function addTraceObstacles(
   }
 }
 
-function connectionIsInRoutingPhase(
+export function Group_connectionIsInRoutingPhase(
   connection: SimpleRouteConnection,
   phasePlan: RoutingPhasePlan,
 ): boolean {
@@ -165,6 +165,10 @@ function connectionIsInRoutingPhase(
     if (!trace.source_trace_id) continue
     if (connection.source_trace_id === trace.source_trace_id) return true
     if (connection.name === trace.source_trace_id) return true
+    if (connection.rootConnectionName === trace.source_trace_id) return true
+    if (connection.mergedConnectionNames?.includes(trace.source_trace_id)) {
+      return true
+    }
   }
 
   for (const net of phasePlan.nets) {
@@ -190,7 +194,7 @@ export function Group_filterSimpleRouteJsonForPhase(
 ): SimpleRouteJson {
   const connections: SimpleRouteConnection[] = []
   for (const connection of simpleRouteJson.connections) {
-    if (connectionIsInRoutingPhase(connection, phasePlan)) {
+    if (Group_connectionIsInRoutingPhase(connection, phasePlan)) {
       connections.push(connection)
     }
   }
