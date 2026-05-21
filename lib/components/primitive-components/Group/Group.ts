@@ -1228,7 +1228,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // TODO use upsert to make sure we're not re-creating traces
       const pcb_trace = db.pcb_trace.insert({
         subcircuit_id: this.subcircuit_id!,
-        route: publicRoute as any,
+        route: cjRoute as any,
         // source_trace_id: circuitTrace.source_trace_id!,
       })
       // circuitTrace.pcb_trace_id = pcb_trace.pcb_trace_id
