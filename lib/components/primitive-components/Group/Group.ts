@@ -973,6 +973,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
           useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
           useAutoJumperSolver: phaseIsAutoJumperPreset,
+          useLaserPrefabSolver: phaseIsLaserPrefabPreset,
           autorouterVersion,
           effort,
           onSolverStarted: ({ solverName, solverParams }) =>

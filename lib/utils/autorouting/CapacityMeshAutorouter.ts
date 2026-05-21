@@ -6,6 +6,7 @@ import {
   AutoroutingPipelineSolver3_HgPortPointPathing,
   AutoroutingPipelineSolver4,
   AutoroutingPipelineSolver5,
+  AutoroutingPipelineSolver8,
 } from "@tscircuit/capacity-autorouter"
 import { AutorouterError } from "lib/errors/AutorouterError"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
@@ -24,6 +25,7 @@ export interface AutorouterOptions {
   stepDelay?: number
   useAssignableSolver?: boolean
   useAutoJumperSolver?: boolean
+  useLaserPrefabSolver?: boolean
   autorouterVersion?: "v1" | "v2" | "v3" | "v4" | "v5" | "latest"
   effort?: number
   onSolverStarted?: (details: {
@@ -43,6 +45,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     | AutoroutingPipelineSolver3_HgPortPointPathing
     | AutoroutingPipelineSolver4
     | AutoroutingPipelineSolver5
+    | AutoroutingPipelineSolver8
   private eventHandlers: {
     complete: Array<(ev: AutorouterCompleteEvent) => void>
     error: Array<(ev: AutorouterErrorEvent) => void>
@@ -65,6 +68,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       useAssignableSolver = false,
       useAutoJumperSolver = false,
       autorouterVersion,
+      useLaserPrefabSolver = false,
       effort,
       onSolverStarted,
     } = options
@@ -79,6 +83,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipelineSolver4"
     } else if (autorouterVersion === "v5") {
       solverName = "AutoroutingPipelineSolver5"
+    } else if (useLaserPrefabSolver) {
+      solverName = "AutoroutingPipelineSolver8"
     } else if (useAutoJumperSolver) {
       solverName = "AssignableAutoroutingPipeline3"
     } else if (useAssignableSolver) {
