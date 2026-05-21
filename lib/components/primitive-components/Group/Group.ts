@@ -1208,7 +1208,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Apply each routed trace to the corresponding circuit trace
     // const circuitTraces = this.selectAll("trace") as Trace[]
     for (const routedTrace of routedTraces) {
-      const publicRoute = routedTrace.route.map((point) => {
+      const cjRoute = routedTrace.route.map((point) => {
         if (point.route_type !== "through_obstacle") return point
 
         return {
@@ -1228,7 +1228,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // TODO use upsert to make sure we're not re-creating traces
       const pcb_trace = db.pcb_trace.insert({
         subcircuit_id: this.subcircuit_id!,
-        route: publicRoute as any,
+        route: cjRoute as any,
         // source_trace_id: circuitTrace.source_trace_id!,
       })
       // circuitTrace.pcb_trace_id = pcb_trace.pcb_trace_id
@@ -1313,7 +1313,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             db.source_net.get(sourceTraceId)?.subcircuit_id)
           : undefined) ?? this.subcircuit_id!
 
-      const publicRoute = pcb_trace.route.map((point: any) => {
+      const cjRoute = pcb_trace.route.map((point: any) => {
         if (point.route_type !== "through_obstacle") return point
         return {
           route_type: "through_pad",
@@ -1326,11 +1326,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
 
       // Split traces at jumper locations (based on explicit jumper route markers)
-      let segments = splitPcbTracesOnJumperSegments(publicRoute)
+      let segments = splitPcbTracesOnJumperSegments(cjRoute)
 
       // If no explicit jumper splits, use the original route
       if (segments === null) {
-        segments = [publicRoute]
+        segments = [cjRoute]
       }
 
       // Add port IDs to trace segments at jumper pad locations
