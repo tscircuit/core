@@ -4,6 +4,10 @@ import type {
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
+import {
+  createAutoroutingPhaseIoStack,
+  type AutoroutingPhaseIo,
+} from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const createStraightAutorouter = () =>
@@ -122,15 +126,21 @@ const createZigzagRerouteAutorouter = () =>
   })
 
 test("autoroutingphase reroute supports connection props", async () => {
-  const renderCircuitAndMatchPcbSnapshot = async (
+  const renderCircuitAndMatchAutoroutingPhaseSnapshot = async (
     circuit: ReturnType<typeof getTestFixture>["circuit"],
+    autoroutingPhaseIoStack: AutoroutingPhaseIo[],
     snapshotName: string,
   ) => {
     await circuit.renderUntilSettled()
-    expect(circuit).toMatchPcbSnapshot(snapshotName)
+    await expect(
+      autoroutingPhaseIoStack,
+    ).toMatchAutoroutingPhaseIoStackSnapshot(import.meta.path, snapshotName)
   }
 
   const { circuit: singleConnectionCircuit } = getTestFixture()
+  const singleConnectionAutoroutingPhaseIoStack = createAutoroutingPhaseIoStack(
+    singleConnectionCircuit,
+  )
 
   singleConnectionCircuit.add(
     <board width="20mm" height="18mm">
@@ -184,12 +194,16 @@ test("autoroutingphase reroute supports connection props", async () => {
     </board>,
   )
 
-  await renderCircuitAndMatchPcbSnapshot(
+  await renderCircuitAndMatchAutoroutingPhaseSnapshot(
     singleConnectionCircuit,
-    `${import.meta.path}-single-connection`,
+    singleConnectionAutoroutingPhaseIoStack,
+    "autoroutingphase-connection-reroute-single-connection",
   )
 
   const { circuit: connectionsArrayCircuit } = getTestFixture()
+  const connectionsArrayAutoroutingPhaseIoStack = createAutoroutingPhaseIoStack(
+    connectionsArrayCircuit,
+  )
 
   connectionsArrayCircuit.add(
     <board width="20mm" height="18mm">
@@ -243,8 +257,9 @@ test("autoroutingphase reroute supports connection props", async () => {
     </board>,
   )
 
-  await renderCircuitAndMatchPcbSnapshot(
+  await renderCircuitAndMatchAutoroutingPhaseSnapshot(
     connectionsArrayCircuit,
-    `${import.meta.path}-connections-array`,
+    connectionsArrayAutoroutingPhaseIoStack,
+    "autoroutingphase-connection-reroute-connections-array",
   )
 })

@@ -1,16 +1,26 @@
 import { expect, test } from "bun:test"
+import {
+  createAutoroutingPhaseIoStack,
+  type AutoroutingPhaseIo,
+} from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("autoroutingphase connection props assign phase index order", async () => {
-  const renderCircuitAndMatchPcbSnapshot = async (
+  const renderCircuitAndMatchAutoroutingPhaseSnapshot = async (
     circuit: ReturnType<typeof getTestFixture>["circuit"],
+    autoroutingPhaseIoStack: AutoroutingPhaseIo[],
     snapshotName: string,
   ) => {
     await circuit.renderUntilSettled()
-    expect(circuit).toMatchPcbSnapshot(snapshotName)
+    await expect(
+      autoroutingPhaseIoStack,
+    ).toMatchAutoroutingPhaseIoStackSnapshot(import.meta.path, snapshotName)
   }
 
   const { circuit: horizontalFirstCircuit } = getTestFixture()
+  const horizontalFirstAutoroutingPhaseIoStack = createAutoroutingPhaseIoStack(
+    horizontalFirstCircuit,
+  )
 
   horizontalFirstCircuit.add(
     <board width="12mm" height="12mm">
@@ -25,12 +35,15 @@ test("autoroutingphase connection props assign phase index order", async () => {
     </board>,
   )
 
-  await renderCircuitAndMatchPcbSnapshot(
+  await renderCircuitAndMatchAutoroutingPhaseSnapshot(
     horizontalFirstCircuit,
-    `${import.meta.path}-horizontal-first`,
+    horizontalFirstAutoroutingPhaseIoStack,
+    "autoroutingphase-connection-phase-index-horizontal-first",
   )
 
   const { circuit: verticalFirstCircuit } = getTestFixture()
+  const verticalFirstAutoroutingPhaseIoStack =
+    createAutoroutingPhaseIoStack(verticalFirstCircuit)
 
   verticalFirstCircuit.add(
     <board width="12mm" height="12mm">
@@ -45,12 +58,15 @@ test("autoroutingphase connection props assign phase index order", async () => {
     </board>,
   )
 
-  await renderCircuitAndMatchPcbSnapshot(
+  await renderCircuitAndMatchAutoroutingPhaseSnapshot(
     verticalFirstCircuit,
-    `${import.meta.path}-vertical-first`,
+    verticalFirstAutoroutingPhaseIoStack,
+    "autoroutingphase-connection-phase-index-vertical-first",
   )
 
   const { circuit: arraysHorizontalFirstCircuit } = getTestFixture()
+  const arraysHorizontalFirstAutoroutingPhaseIoStack =
+    createAutoroutingPhaseIoStack(arraysHorizontalFirstCircuit)
 
   arraysHorizontalFirstCircuit.add(
     <board width="18mm" height="18mm">
@@ -83,12 +99,15 @@ test("autoroutingphase connection props assign phase index order", async () => {
     </board>,
   )
 
-  await renderCircuitAndMatchPcbSnapshot(
+  await renderCircuitAndMatchAutoroutingPhaseSnapshot(
     arraysHorizontalFirstCircuit,
-    `${import.meta.path}-arrays-horizontal-first`,
+    arraysHorizontalFirstAutoroutingPhaseIoStack,
+    "autoroutingphase-connection-phase-index-arrays-horizontal-first",
   )
 
   const { circuit: arraysVerticalFirstCircuit } = getTestFixture()
+  const arraysVerticalFirstAutoroutingPhaseIoStack =
+    createAutoroutingPhaseIoStack(arraysVerticalFirstCircuit)
 
   arraysVerticalFirstCircuit.add(
     <board width="18mm" height="18mm">
@@ -121,8 +140,9 @@ test("autoroutingphase connection props assign phase index order", async () => {
     </board>,
   )
 
-  await renderCircuitAndMatchPcbSnapshot(
+  await renderCircuitAndMatchAutoroutingPhaseSnapshot(
     arraysVerticalFirstCircuit,
-    `${import.meta.path}-arrays-vertical-first`,
+    arraysVerticalFirstAutoroutingPhaseIoStack,
+    "autoroutingphase-connection-phase-index-arrays-vertical-first",
   )
 })
