@@ -157,7 +157,7 @@ function addTraceObstacles(
   }
 }
 
-function connectionIsInRoutingPhase(
+export function connectionIsInRoutingPhase(
   connection: SimpleRouteConnection,
   phasePlan: RoutingPhasePlan,
 ): boolean {
@@ -165,6 +165,10 @@ function connectionIsInRoutingPhase(
     if (!trace.source_trace_id) continue
     if (connection.source_trace_id === trace.source_trace_id) return true
     if (connection.name === trace.source_trace_id) return true
+    if (connection.rootConnectionName === trace.source_trace_id) return true
+    if (connection.mergedConnectionNames?.includes(trace.source_trace_id)) {
+      return true
+    }
   }
 
   for (const net of phasePlan.nets) {

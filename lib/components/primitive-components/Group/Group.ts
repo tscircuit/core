@@ -66,6 +66,7 @@ import {
   Group_filterSimpleRouteJsonForPhase,
   Group_getObstaclesFromRoutedTraces,
   Group_hasPhasedAutorouting,
+  connectionIsInRoutingPhase,
 } from "./Group_phasedAutoroutingUtils"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
@@ -818,6 +819,37 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const existingRerouteSeedTraces =
       getExistingSimplifiedPcbTracesForReroute(this)
 
+    const traceMatchesRoutingPhase = (
+      trace: SimplifiedPcbTrace,
+      routingPhasePlan: RoutingPhasePlan,
+    ): boolean => {
+      const connectionName = trace.connection_name ?? trace.pcb_trace_id
+      const sourceTraceIds = new Set([
+        connectionName,
+        trace.pcb_trace_id,
+        ...getSourceTraceIdsFromRerouteName(connectionName),
+        ...getSourceTraceIdsFromRerouteName(trace.pcb_trace_id),
+      ])
+
+      return baseSimpleRouteJson.connections.some((connection) => {
+        if (!connectionIsInRoutingPhase(connection, routingPhasePlan)) {
+          return false
+        }
+        return (
+          sourceTraceIds.has(connection.name) ||
+          (connection.source_trace_id
+            ? sourceTraceIds.has(connection.source_trace_id)
+            : false) ||
+          (connection.rootConnectionName
+            ? sourceTraceIds.has(connection.rootConnectionName)
+            : false) ||
+          connection.mergedConnectionNames?.some((name) =>
+            sourceTraceIds.has(name),
+          )
+        )
+      })
+    }
+
     for (const routingPhasePlan of routingPhasePlans) {
       const phaseAutorouterConfig: NormalizedAutorouterConfig =
         routingPhasePlan.autorouter
@@ -827,17 +859,23 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             )
           : autorouterConfig
       let simpleRouteJson = baseSimpleRouteJson
-      const isReroutePhase = Boolean(
+      const isRegionReroutePhase = Boolean(
         routingPhasePlan.reroute && routingPhasePlan.region,
       )
-      const rerouteOriginalSrj = isReroutePhase
+      const isConnectionReroutePhase = Boolean(
+        routingPhasePlan.reroute &&
+          !routingPhasePlan.region &&
+          routingPhasePlan.traces.length > 0,
+      )
+      const isReroutePhase = isRegionReroutePhase || isConnectionReroutePhase
+      const rerouteOriginalSrj = isRegionReroutePhase
         ? {
             ...baseSimpleRouteJson,
             traces: [...existingRerouteSeedTraces, ...outputTraces],
           }
         : null
 
-      if (isReroutePhase && rerouteOriginalSrj) {
+      if (isRegionReroutePhase && rerouteOriginalSrj) {
         simpleRouteJson = getRerouteSimpleRouteJson(
           rerouteOriginalSrj as AutorouterSimpleRouteJson,
           {
@@ -845,6 +883,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             ...routingPhasePlan.region,
           } as RerouteRectRegion,
         ) as SimpleRouteJson
+      } else if (isConnectionReroutePhase) {
+        simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
+          baseSimpleRouteJson,
+          routingPhasePlan,
+        )
+        simpleRouteJson.obstacles = [
+          ...simpleRouteJson.obstacles,
+          ...Group_getObstaclesFromRoutedTraces(
+            outputTraces.filter(
+              (trace) => !traceMatchesRoutingPhase(trace, routingPhasePlan),
+            ),
+          ),
+        ]
       } else if (hasPhasedAutorouting) {
         simpleRouteJson = Group_filterSimpleRouteJsonForPhase(
           baseSimpleRouteJson,
@@ -997,7 +1048,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           outputJumpers.push(...(solver.getOutputJumpers() || []))
         }
 
-        if (isReroutePhase && rerouteOriginalSrj) {
+        if (isRegionReroutePhase && rerouteOriginalSrj) {
           const reconnectedSrj = reconnectReroutedSimpleRouteJsonRegion(
             rerouteOriginalSrj as AutorouterSimpleRouteJson,
             {
@@ -1009,6 +1060,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             0,
             outputTraces.length,
             ...(reconnectedSrj.traces ?? []),
+          )
+        } else if (isConnectionReroutePhase) {
+          outputTraces.splice(
+            0,
+            outputTraces.length,
+            ...outputTraces.filter(
+              (trace) => !traceMatchesRoutingPhase(trace, routingPhasePlan),
+            ),
+            ...traces,
           )
         } else {
           outputTraces.push(...traces)
