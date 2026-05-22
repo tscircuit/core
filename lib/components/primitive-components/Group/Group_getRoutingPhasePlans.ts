@@ -62,6 +62,37 @@ function getTraceRoutingPhaseIndex(trace: Trace): number | null {
   return routingPhaseIndex
 }
 
+function convertPortSelectorToEndpointKey(selector: string): string {
+  return selector
+    .trim()
+    .replace(/\s*>\s*/g, ".")
+    .replace(/\s+/g, ".")
+    .replace(/^\./, "")
+    .replace(/\.\./g, ".")
+}
+
+function getConnectionSelectorsFromAutoroutingPhaseProps(
+  phaseProps: AutoroutingPhaseProps,
+): string[] {
+  return [
+    ...(phaseProps.connection ? [phaseProps.connection] : []),
+    ...(phaseProps.connections ?? []),
+  ]
+}
+
+function traceHasEndpointMatchingConnectionSelector(
+  trace: Trace,
+  connectionSelectorEndpointKey: string,
+): boolean {
+  return trace
+    .getTracePortPathSelectors()
+    .some(
+      (selector) =>
+        convertPortSelectorToEndpointKey(selector) ===
+        connectionSelectorEndpointKey,
+    )
+}
+
 function getAutoroutersByPhaseIndex(
   group: Group<z.ZodType>,
 ): Map<number | null, AutorouterProp> {
@@ -163,8 +194,19 @@ export function Group_getRoutingPhasePlans(
   const hasReroutePhase = Array.from(phasePropsByPhaseIndex.values()).some(
     (phaseProps) => phaseProps.reroute,
   )
+  const hasConnectionTargetedPhase = Array.from(
+    phasePropsByPhaseIndex.values(),
+  ).some(
+    (phaseProps) =>
+      getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps).length > 0,
+  )
 
-  if (!hasDirectRoutingTargets && !hasReroutePhase) return []
+  if (
+    !hasDirectRoutingTargets &&
+    !hasReroutePhase &&
+    !hasConnectionTargetedPhase
+  )
+    return []
 
   for (const net of nets) {
     const routingPhaseIndex = getNetRoutingPhaseIndex(net)
@@ -182,6 +224,35 @@ export function Group_getRoutingPhasePlans(
   }
 
   for (const [phaseIndex, phaseProps] of phasePropsByPhaseIndex) {
+    const connectionSelectors =
+      getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps)
+    if (connectionSelectors.length > 0) {
+      const plan = getOrCreateRoutingPhasePlan(plansByPhaseIndex, phaseIndex)
+      const connectionSelectorEndpointKeys = connectionSelectors.map(
+        convertPortSelectorToEndpointKey,
+      )
+      plan.connectionSelectors = connectionSelectors
+
+      for (const trace of traces) {
+        if (
+          connectionSelectorEndpointKeys.some((endpointKey) =>
+            traceHasEndpointMatchingConnectionSelector(trace, endpointKey),
+          )
+        ) {
+          if (!phaseProps.reroute) {
+            for (const existingPlan of plansByPhaseIndex.values()) {
+              if (existingPlan === plan) continue
+              existingPlan.traces = existingPlan.traces.filter(
+                (existingTrace) => existingTrace !== trace,
+              )
+            }
+          }
+          if (plan.traces.includes(trace)) continue
+          plan.traces.push(trace)
+        }
+      }
+    }
+
     if (phaseProps.reroute) {
       getOrCreateRoutingPhasePlan(plansByPhaseIndex, phaseIndex)
     }
@@ -195,6 +266,9 @@ export function Group_getRoutingPhasePlans(
     const phaseProps = phasePropsByPhaseIndex.get(plan.routingPhaseIndex)
     plan.reroute = phaseProps?.reroute
     plan.region = phaseProps?.region
+    plan.connectionSelectors = phaseProps
+      ? getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps)
+      : undefined
     plan.drcTolerances = phaseProps
       ? getDrcTolerancesFromAutoroutingPhaseProps(phaseProps)
       : undefined
