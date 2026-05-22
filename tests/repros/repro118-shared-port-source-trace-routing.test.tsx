@@ -60,15 +60,9 @@ test("repro118: shared source port routes should not report missing pcb traces",
   expect(sourceTraces).toHaveLength(2)
   expect(pcbTraces.length).toBeGreaterThan(0)
 
-  // The autorouter can merge shared-port routes into one PCB trace whose
-  // source_trace_id contains multiple source_trace ids joined with "__".
-  for (const sourceTrace of sourceTraces) {
-    expect(
-      pcbTraces.some((pcbTrace) =>
-        pcbTrace.source_trace_id
-          ?.split("__")
-          .includes(sourceTrace.source_trace_id),
-      ),
-    ).toBe(true)
-  }
+  // The autorouter can merge shared-port routes into one PCB connection. Keep
+  // the joined source_trace_id so routing DRC can map it back to both traces.
+  expect(
+    new Set(pcbTraces.map((pcbTrace) => pcbTrace.source_trace_id)),
+  ).toEqual(new Set(["source_trace_0__source_trace_1"]))
 })

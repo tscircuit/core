@@ -39,4 +39,4 @@ test("Jumper internallyConnectedPins chooses missing schematic symbol", async ()
   expect(errors.length).toBe(0)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-}, 120_000)
+})

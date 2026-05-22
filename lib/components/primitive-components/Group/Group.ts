@@ -1213,6 +1213,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (pcb_trace.type !== "pcb_trace") continue
 
       const possibleSourceTraceIds = [
+        ...getSourceTraceIdsFromRerouteName((pcb_trace as any).pcb_trace_id),
         ...getSourceTraceIdsFromRerouteName((pcb_trace as any).source_trace_id),
         ...getSourceTraceIdsFromRerouteName((pcb_trace as any).connection_name),
         ...getSourceTraceIdsFromRerouteName(
@@ -1227,8 +1228,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             db.source_net.get(possibleSourceTraceId),
         ),
       )
-      const sourceTraceId =
-        validSourceTraceIds.length === 1 ? validSourceTraceIds[0] : undefined
+      let sourceTraceId: string | undefined
+      if (validSourceTraceIds.length === 1) {
+        sourceTraceId = validSourceTraceIds[0]
+      } else if (
+        validSourceTraceIds.length > 1 &&
+        validSourceTraceIds.every((validSourceTraceId) =>
+          Boolean(db.source_trace.get(validSourceTraceId)),
+        )
+      ) {
+        sourceTraceId = validSourceTraceIds.join("__")
+      }
       if (sourceTraceId) {
         pcb_trace.source_trace_id = sourceTraceId
       } else {
