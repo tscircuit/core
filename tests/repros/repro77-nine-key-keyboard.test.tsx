@@ -450,4 +450,4 @@ test("repro77 nine key keyboard", () => {
   circuit.render()
 
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
-},20000)
+}, 20000)
