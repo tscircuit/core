@@ -111,8 +111,20 @@ type BoundsEntry = {
   bounds: Bounds
 }
 
+type DetectSchematicCollisionsOptions = {
+  includeText?: boolean
+  includeNetLabels?: boolean
+  minOverlapArea?: number
+}
+
+const DEFAULT_MIN_OVERLAP_AREA = 1e-9
+
 export function getSchematicBoundsEntries(
   circuitJson: AnyCircuitElement[],
+  opts: Pick<
+    DetectSchematicCollisionsOptions,
+    "includeText" | "includeNetLabels"
+  > = {},
 ): BoundsEntry[] {
   const entries: BoundsEntry[] = []
 
@@ -128,7 +140,7 @@ export function getSchematicBoundsEntries(
           bounds,
         })
       }
-    } else if (el.type === "schematic_text") {
+    } else if (opts.includeText && el.type === "schematic_text") {
       const t = el as SchematicText
       const bounds = getTextBounds(t)
       if (bounds) {
@@ -141,7 +153,7 @@ export function getSchematicBoundsEntries(
           bounds,
         })
       }
-    } else if (el.type === "schematic_net_label") {
+    } else if (opts.includeNetLabels && el.type === "schematic_net_label") {
       const nl = el as SchematicNetLabel
       const bounds = getNetLabelBounds(nl)
       if (bounds) {
@@ -161,9 +173,11 @@ export function getSchematicBoundsEntries(
 
 export function detectSchematicCollisions(
   circuitJson: AnyCircuitElement[],
+  opts: DetectSchematicCollisionsOptions = {},
 ): CollisionPair[] {
-  const entries = getSchematicBoundsEntries(circuitJson)
+  const entries = getSchematicBoundsEntries(circuitJson, opts)
   const collisions: CollisionPair[] = []
+  const minOverlapArea = opts.minOverlapArea ?? DEFAULT_MIN_OVERLAP_AREA
 
   for (let i = 0; i < entries.length; i++) {
     for (let j = i + 1; j < entries.length; j++) {
@@ -194,7 +208,7 @@ export function detectSchematicCollisions(
         continue
 
       const area = getOverlapArea(a.bounds, b.bounds)
-      if (area > 0) {
+      if (area > minOverlapArea) {
         collisions.push({ a: a.ref, b: b.ref, overlapArea: area })
       }
     }
