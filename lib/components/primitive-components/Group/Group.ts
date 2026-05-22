@@ -1220,23 +1220,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           (pcb_trace as any).rootConnectionName,
         ),
       ]
-      const possibleSourceTraceIdSet = new Set(possibleSourceTraceIds)
-      const sourceTraceIds = Array.from(possibleSourceTraceIdSet).filter(
-        (possibleSourceTraceId) =>
-          Boolean(db.source_trace.get(possibleSourceTraceId)),
+      const validSourceTraceIds = Array.from(
+        new Set(possibleSourceTraceIds),
+      ).filter((possibleSourceTraceId) =>
+        Boolean(
+          db.source_trace.get(possibleSourceTraceId) ??
+            db.source_net.get(possibleSourceTraceId),
+        ),
       )
-      const sourceNetIds = Array.from(possibleSourceTraceIdSet).filter(
-        (possibleSourceTraceId) =>
-          Boolean(db.source_net.get(possibleSourceTraceId)),
-      )
-
       let sourceTraceId: string | undefined
-      if (sourceTraceIds.length === 1 && sourceNetIds.length === 0) {
-        sourceTraceId = sourceTraceIds[0]
-      } else if (sourceTraceIds.length > 1 && sourceNetIds.length === 0) {
-        sourceTraceId = sourceTraceIds.join("__")
-      } else if (sourceTraceIds.length === 0 && sourceNetIds.length === 1) {
-        sourceTraceId = sourceNetIds[0]
+      if (validSourceTraceIds.length === 1) {
+        sourceTraceId = validSourceTraceIds[0]
+      } else if (
+        validSourceTraceIds.length > 1 &&
+        validSourceTraceIds.every((validSourceTraceId) =>
+          Boolean(db.source_trace.get(validSourceTraceId)),
+        )
+      ) {
+        sourceTraceId = validSourceTraceIds.join("__")
       }
       if (sourceTraceId) {
         pcb_trace.source_trace_id = sourceTraceId
