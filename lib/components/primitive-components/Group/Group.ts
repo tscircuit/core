@@ -57,6 +57,7 @@ import {
   Group_doInitialSchematicBoxComponentRender,
 } from "./Group_doInitialSchematicBoxComponentRender"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
+import { Group_doSchematicCollisionResolution } from "./Group_doSchematicCollisionResolution"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
@@ -1147,6 +1148,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     )
     if (!this._hasTracesToRoute()) return
     this._startAsyncAutorouting()
+  }
+
+  doInitialSchematicCollisionResolution() {
+    if (this._parsedProps.showAsSchematicBox) return
+    Group_doSchematicCollisionResolution(this as any)
   }
 
   doInitialSchematicTraceRender() {

@@ -42,6 +42,7 @@ export const orderedRenderPhases = [
   "SchematicComponentSizeCalculation",
   "SchematicLayout",
   "SchematicSectionRender",
+  "SchematicCollisionResolution",
   "SchematicTraceRender",
   "SchematicReplaceNetLabelsWithSymbols",
   "PanelBoardLayout",
