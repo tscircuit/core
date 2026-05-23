@@ -15,4 +15,5 @@ test("pinheader female gender changes the implied CAD footprint", async () => {
   const cadComponent = circuit.db.cad_component.list()[0]
   expect(cadComponent).toBeDefined()
   expect(cadComponent?.footprinter_string).toContain("_female")
+  expect(circuit).toMatchSimple3dSnapshot(import.meta.path)
 })
