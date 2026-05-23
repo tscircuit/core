@@ -33,6 +33,7 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
     const pitch = this._parsedProps.pitch
     const showSilkscreenPinLabels = this._parsedProps.showSilkscreenPinLabels
     const rows = this._parsedProps.doubleRow ? 2 : 1
+    const gender = this._parsedProps.gender
 
     if (pinCount > 0) {
       let footprintString: string
@@ -55,6 +56,10 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
       // Default behavior (undefined/false) hides pin labels
       if (showSilkscreenPinLabels !== true) {
         footprintString += "_nopinlabels"
+      }
+
+      if (gender === "female") {
+        footprintString += "_female"
       }
 
       if (rows > 1) {
