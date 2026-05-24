@@ -28,7 +28,7 @@
     "port_hints": ["pin2", "cathode", "neg", "right", "2"],
     "source_component_id": "source_component_0",
     "subcircuit_id": "subcircuit_source_group_0",
-    "subcircuit_connectivity_map_key": "unnamedsubcircuit23_connectivity_net0"
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0"
   },
   {
     "type": "source_component",
@@ -48,7 +48,7 @@
     "port_hints": ["pin1", "anode", "pos", "left", "1"],
     "source_component_id": "source_component_1",
     "subcircuit_id": "subcircuit_source_group_0",
-    "subcircuit_connectivity_map_key": "unnamedsubcircuit23_connectivity_net0"
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0"
   },
   {
     "type": "source_port",
@@ -81,7 +81,7 @@
     "connected_source_net_ids": [],
     "subcircuit_id": "subcircuit_source_group_0",
     "display_name": ".R1 > .pin2 to .R2 > .pin1",
-    "subcircuit_connectivity_map_key": "unnamedsubcircuit23_connectivity_net0"
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0"
   },
   {
     "type": "source_pin_missing_trace_warning",
@@ -189,7 +189,7 @@
     "source_trace_id": "solver_R1.2-R2.1",
     "edges": [{ "from": { "x": 0.55, "y": 0 }, "to": { "x": 1.25, "y": 0 } }],
     "junctions": [],
-    "subcircuit_connectivity_map_key": "unnamedsubcircuit23_connectivity_net0"
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0"
   },
   {
     "type": "pcb_component",
