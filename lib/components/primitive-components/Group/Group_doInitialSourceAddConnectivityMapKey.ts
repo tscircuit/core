@@ -46,7 +46,7 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
     if (!trace.source_trace_id) continue
     const connNetId = connMap.getNetConnectedToId(trace.source_trace_id)
     if (!connNetId) continue
-    trace.subcircuit_connectivity_map_key = `${subcircuitName ?? `unnamedsubcircuit${group.subcircuit_id ?? group.source_group_id ?? ""}`}_${connNetId}`
+    trace.subcircuit_connectivity_map_key = `${subcircuitName ?? `unnamedsubcircuit${group.subcircuit_id ?? group.source_group_id ?? group._renderId}`}_${connNetId}`
     db.source_trace.update(trace.source_trace_id, {
       subcircuit_connectivity_map_key: trace.subcircuit_connectivity_map_key!,
     })
@@ -68,7 +68,7 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
   for (const portId of allSourcePortIds) {
     const connNetId = connMap.getNetConnectedToId(portId)
     if (!connNetId) continue
-    const connectivityMapKey = `${subcircuitName ?? `unnamedsubcircuit${group.subcircuit_id ?? group.source_group_id ?? ""}`}_${connNetId}`
+    const connectivityMapKey = `${subcircuitName ?? `unnamedsubcircuit${group.subcircuit_id ?? group.source_group_id ?? group._renderId}`}_${connNetId}`
     db.source_port.update(portId, {
       subcircuit_connectivity_map_key: connectivityMapKey,
     })
@@ -96,7 +96,7 @@ export function Group_doInitialSourceAddConnectivityMapKey(group: Group<any>) {
   for (const netId of allSourceNetIds) {
     const connNetId = connMap.getNetConnectedToId(netId)
     if (!connNetId) continue
-    const connectivityMapKey = `${subcircuitName ?? `unnamedsubcircuit${group.subcircuit_id ?? group.source_group_id ?? ""}`}_${connNetId}`
+    const connectivityMapKey = `${subcircuitName ?? `unnamedsubcircuit${group.subcircuit_id ?? group.source_group_id ?? group._renderId}`}_${connNetId}`
     db.source_net.update(netId, {
       subcircuit_connectivity_map_key: connectivityMapKey,
     })
