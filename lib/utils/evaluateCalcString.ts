@@ -38,7 +38,7 @@ export function evaluateCalcString(
   const tokens = tokenize(expr, units)
   const result = parseExpression(tokens, knownVariables)
 
-  return result
+  return result === 0 ? 0 : result
 }
 
 export function extractCalcIdentifiers(input: string): string[] {
@@ -122,10 +122,24 @@ function tokenize(expr: string, units: Record<string, number>): Token[] {
         }
       }
 
+      // optional scientific notation (e.g. 1.1368683772161603e-13)
+      if (i < expr.length && (expr[i] === "e" || expr[i] === "E")) {
+        i++
+        if (i < expr.length && (expr[i] === "+" || expr[i] === "-")) i++
+        const expStart = i
+        while (i < expr.length && isDigit(expr[i])) i++
+        if (i === expStart) throw new Error(`Invalid exponent in number`)
+      }
+
       const numberText = expr.slice(start, i)
       let num = Number(numberText)
       if (Number.isNaN(num)) {
         throw new Error(`Invalid number: "${numberText}"`)
+      }
+
+      // Snap sub-nm float dust to zero (common in CAD-imported footprints)
+      if (Math.abs(num) < 1e-9) {
+        num = 0
       }
 
       // Optional unit directly after number (e.g. "1mm")
