@@ -137,11 +137,6 @@ function tokenize(expr: string, units: Record<string, number>): Token[] {
         throw new Error(`Invalid number: "${numberText}"`)
       }
 
-      // Snap sub-nm float dust to zero (common in CAD-imported footprints)
-      if (Math.abs(num) < 1e-9) {
-        num = 0
-      }
-
       // Optional unit directly after number (e.g. "1mm")
       const unitStart = i
       while (i < expr.length && /[A-Za-z]/.test(expr[i])) {
