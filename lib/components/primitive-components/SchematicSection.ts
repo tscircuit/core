@@ -106,7 +106,7 @@ export class SchematicSection extends PrimitiveComponent<
         y2: line.end.y,
         stroke_width: STROKE_WIDTH,
         color: "#000000",
-        is_dashed: false,
+        is_dashed: true,
       })
     }
 

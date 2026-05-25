@@ -42,6 +42,9 @@ test("SchematicSection draws dashed box around member components", () => {
   const schematicBoxes = circuitJson.filter((c) => c.type === "schematic_box")
   expect(schematicBoxes).toHaveLength(0)
 
+  const schematicLines = circuitJson.filter((c) => c.type === "schematic_line")
+  expect(schematicLines.every((line) => (line as any).is_dashed)).toBe(true)
+
   const schematicTexts = circuitJson.filter(
     (c) => c.type === "schematic_text" && (c as any).text === "Power Supply",
   )
