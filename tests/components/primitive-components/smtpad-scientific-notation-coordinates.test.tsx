@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { PcbSmtPadRect } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("smtpad with scientific notation pcb coordinates does not emit property errors", () => {
@@ -29,7 +30,7 @@ test("smtpad with scientific notation pcb coordinates does not emit property err
     circuit.db.source_invalid_component_property_error.list()
   expect(invalidPropertyErrors.length).toBe(0)
 
-  const smtPads = circuit.db.pcb_smtpad.list()
+  const smtPads = circuit.db.pcb_smtpad.list() as PcbSmtPadRect[]
   expect(smtPads.length).toBe(1)
-  expect(smtPads[0]?.x).toBeCloseTo(-1.1368683772161603e-13)
+  expect(smtPads[0].x).toBeCloseTo(-1.1368683772161603e-13)
 })
