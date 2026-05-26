@@ -16,6 +16,8 @@ type RouteEndpointPoint = {
   end_pcb_port_id?: string
 }
 
+const BOUNDS_EDGE_TOLERANCE = 1e-6
+
 /**
  * This function can only be called in the PcbTraceRender phase or later
  */
@@ -229,11 +231,25 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       minY: pcbGroup.center.y - pcbGroup.height / 2,
       maxY: pcbGroup.center.y + pcbGroup.height / 2,
     }
-    bounds = {
-      minX: Math.min(bounds.minX, groupBounds.minX),
-      maxX: Math.max(bounds.maxX, groupBounds.maxX),
-      minY: Math.min(bounds.minY, groupBounds.minY),
-      maxY: Math.max(bounds.maxY, groupBounds.maxY),
+    const hasBreakoutPointsForPcbGroup = db.pcb_breakout_point
+      .list()
+      .some(
+        (breakoutPoint) => breakoutPoint.pcb_group_id === pcbGroup.pcb_group_id,
+      )
+    if (hasBreakoutPointsForPcbGroup) {
+      bounds = {
+        minX: groupBounds.minX - BOUNDS_EDGE_TOLERANCE,
+        maxX: groupBounds.maxX + BOUNDS_EDGE_TOLERANCE,
+        minY: groupBounds.minY - BOUNDS_EDGE_TOLERANCE,
+        maxY: groupBounds.maxY + BOUNDS_EDGE_TOLERANCE,
+      }
+    } else {
+      bounds = {
+        minX: Math.min(bounds.minX, groupBounds.minX),
+        maxX: Math.max(bounds.maxX, groupBounds.maxX),
+        minY: Math.min(bounds.minY, groupBounds.minY),
+        maxY: Math.max(bounds.maxY, groupBounds.maxY),
+      }
     }
   }
   const routedTraceIds = new Set(
