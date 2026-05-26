@@ -92,9 +92,10 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
             .list()
             .filter((trace) =>
               [trace.route[0], trace.route.at(-1)].some(
-                (routePoint: { x?: number; y?: number } | undefined) =>
-                  routePoint?.x !== undefined &&
-                  routePoint.y !== undefined &&
+                (routePoint) =>
+                  routePoint !== undefined &&
+                  "x" in routePoint &&
+                  "y" in routePoint &&
                   Math.abs(routePoint.x - point.x) < 0.01 &&
                   Math.abs(routePoint.y - point.y) < 0.01,
               ),

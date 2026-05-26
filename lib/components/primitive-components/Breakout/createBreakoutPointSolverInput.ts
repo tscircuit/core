@@ -187,7 +187,8 @@ export const createBreakoutPointSolverInput = (
       const dimensions = getSmtPadDimensions(pad)
       return {
         ...dimensions,
-        ccwRotationDegrees: pad.ccw_rotation,
+        ccwRotationDegrees:
+          "ccw_rotation" in pad ? pad.ccw_rotation : undefined,
         sourcePortIds: getPadSourcePortIds(db, pad.pcb_port_id),
         layer: asPcbLayer(pad.layer),
         label: pad.pcb_smtpad_id,

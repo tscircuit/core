@@ -1349,11 +1349,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             processedSegments.length > 1
               ? `${pcb_trace.pcb_trace_id}_${this.subcircuit_id}_${segmentIndex}`
               : `${pcb_trace.pcb_trace_id}_${this.subcircuit_id}`
-          db.pcb_trace.insert({
+          const pcbTraceToInsert = {
             ...pcb_trace,
-            pcb_trace_id: pcbTraceId,
             route: segment,
-          })
+          }
+          pcbTraceToInsert.pcb_trace_id = pcbTraceId
+          db.pcb_trace.insert(pcbTraceToInsert)
         }
       }
     }
