@@ -588,6 +588,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     for (const subcircuitChild of subcircuitChildren) {
       if (
         subcircuitChild._shouldRouteAsync() &&
+        !subcircuitChild._isInflatedFromCircuitJson &&
+        subcircuitChild._hasTracesToRoute() &&
         !subcircuitChild._asyncAutoroutingResult
       ) {
         return false
@@ -1289,6 +1291,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     deleteExistingPcbTracesReplacedBy({
       group: this,
       outputPcbTraces: output_pcb_traces,
+      includeDescendantSubcircuits: this._getRoutingPhasePlans().some(
+        (phasePlan) => phasePlan.reroute,
+      ),
     })
 
     for (const pcb_trace of output_pcb_traces) {
