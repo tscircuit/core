@@ -121,8 +121,12 @@ test("autoroutingphase reroutes an imported circuit json region with the builtin
     .list()
     .filter((trace) => trace.source_trace_id === sourceTraceId)
     .map((trace) => trace.route)
+  const allTraceRouteSignatures = circuit.db.pcb_trace
+    .list()
+    .map((trace) => routeSignature(trace.route))
 
   expect(targetTraceRoutes.length).toBeGreaterThan(0)
+  expect(allTraceRouteSignatures).not.toContain(originalRouteSignature)
   expect(targetTraceRoutes.map(routeSignature)).not.toContain(
     originalRouteSignature,
   )

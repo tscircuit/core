@@ -26,8 +26,15 @@ const createPanelLabelSvg = (label: string) => `<svg
 </svg>`
 
 function createLabeledSrjSvg(label: string, srj: SimpleRouteJson) {
+  const snapshotSrj = {
+    ...srj,
+    obstacles: srj.obstacles.filter(
+      (obstacle) => obstacle.obstacleSource !== "pcb_trace",
+    ),
+  }
+
   const srjSvg = getSvgFromGraphicsObject(
-    convertSrjToGraphicsObject(srj as any),
+    convertSrjToGraphicsObject(snapshotSrj as any),
     {
       backgroundColor: "#fff",
       hideInlineLabels: true,

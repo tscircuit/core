@@ -1,6 +1,5 @@
-import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
 import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import type { AnyCircuitElement } from "circuit-json"
+import type { AnyCircuitElement, PcbTrace } from "circuit-json"
 import { type RotatedRect } from "./generateApproximatingRects"
 import { fillPolygonWithRects } from "./fillPolygonWithRects"
 import { fillCircleWithRects } from "./fillCircleWithRects"
@@ -8,6 +7,123 @@ import type { Obstacle } from "./types"
 
 const EVERY_LAYER = ["top", "inner1", "inner2", "bottom"]
 const QUARTER_TURN_TOLERANCE_DEGREES = 0.01
+
+const getPcbTraceConnectedToIds = (
+  element: AnyCircuitElement,
+  connMap?: ConnectivityMap,
+) => {
+  if (element.type !== "pcb_trace") return []
+
+  const connectedToIds = new Set<string>([element.pcb_trace_id])
+  if (element.source_trace_id) connectedToIds.add(element.source_trace_id)
+  for (const id of [element.pcb_trace_id, element.source_trace_id]) {
+    if (!id) continue
+    for (const sourceTraceId of id.match(/source_trace_\d+/g) ?? []) {
+      connectedToIds.add(sourceTraceId)
+    }
+  }
+
+  for (const point of element.route) {
+    if ("start_pcb_port_id" in point && point.start_pcb_port_id) {
+      connectedToIds.add(point.start_pcb_port_id)
+    }
+    if ("end_pcb_port_id" in point && point.end_pcb_port_id) {
+      connectedToIds.add(point.end_pcb_port_id)
+    }
+  }
+
+  if (connMap) {
+    for (const id of Array.from(connectedToIds)) {
+      const netId = connMap.getNetConnectedToId(id)
+      if (netId) connectedToIds.add(netId)
+    }
+  }
+
+  return Array.from(connectedToIds)
+}
+
+const getRoutePointPosition = (
+  point: PcbTrace["route"][number] | any,
+): { x: number; y: number } | null => {
+  if (point.route_type === "wire" || point.route_type === "via") {
+    return { x: point.x, y: point.y }
+  }
+  if (point.route_type === "through_pad") return point.end
+  if (point.route_type === "jumper") return point.end
+  return null
+}
+
+const getRouteSegmentLayer = (
+  start: PcbTrace["route"][number] | any,
+  end: PcbTrace["route"][number] | any,
+): string | null => {
+  if (start.route_type === "wire") return start.layer
+  if (end.route_type === "wire") return end.layer
+  if (start.route_type === "jumper") return start.layer
+  if (end.route_type === "jumper") return end.layer
+  if (start.route_type === "through_pad") return start.end_layer
+  if (end.route_type === "through_pad") return end.start_layer
+  if (start.route_type === "via") return start.to_layer
+  if (end.route_type === "via") return end.from_layer
+  return null
+}
+
+const getRoutePointWidth = (point: PcbTrace["route"][number] | any) => {
+  if (point.route_type === "wire" || point.route_type === "through_pad") {
+    return point.width
+  }
+  return 0.1
+}
+
+const getPcbTraceObstacles = (
+  element: PcbTrace,
+  connMap?: ConnectivityMap,
+): Obstacle[] => {
+  const obstacles: Obstacle[] = []
+  const connectedTo = getPcbTraceConnectedToIds(element, connMap)
+
+  for (const point of element.route) {
+    if (point.route_type !== "via") continue
+    const diameter = (point as any).via_diameter ?? 0.5
+    obstacles.push({
+      obstacleId: `${element.pcb_trace_id}_trace_via_obstacle_${obstacles.length}`,
+      obstacleSource: "pcb_trace",
+      type: "rect",
+      layers: [point.from_layer, point.to_layer],
+      center: { x: point.x, y: point.y },
+      width: diameter,
+      height: diameter,
+      connectedTo,
+    })
+  }
+
+  for (let i = 0; i < element.route.length - 1; i++) {
+    const start = element.route[i]
+    const end = element.route[i + 1]
+    const startPosition = getRoutePointPosition(start)
+    const endPosition = getRoutePointPosition(end)
+    const layer = getRouteSegmentLayer(start, end)
+
+    if (!startPosition || !endPosition || !layer) continue
+
+    const width = Math.max(getRoutePointWidth(start), getRoutePointWidth(end))
+    obstacles.push({
+      obstacleId: `${element.pcb_trace_id}_trace_obstacle_${i}`,
+      obstacleSource: "pcb_trace",
+      type: "rect",
+      layers: [layer],
+      center: {
+        x: (startPosition.x + endPosition.x) / 2,
+        y: (startPosition.y + endPosition.y) / 2,
+      },
+      width: Math.abs(startPosition.x - endPosition.x) + width,
+      height: Math.abs(startPosition.y - endPosition.y) + width,
+      connectedTo,
+    })
+  }
+
+  return obstacles
+}
 
 const getAxisAlignedRectFromRotatedRect = (
   rotatedRect: RotatedRect,
@@ -384,35 +500,8 @@ export const getObstaclesFromCircuitJson = (
         }
       }
     } else if (element.type === "pcb_trace") {
-      const traceObstacles = getObstaclesFromRoute(
-        element.route.flatMap((rp) => {
-          if (rp.route_type === "through_pad") {
-            return [
-              {
-                x: rp.start.x,
-                y: rp.start.y,
-                layer: rp.start_layer,
-              },
-              {
-                x: rp.end.x,
-                y: rp.end.y,
-                layer: rp.end_layer,
-              },
-            ]
-          }
-
-          return [
-            {
-              x: rp.x,
-              y: rp.y,
-              layer: rp.route_type === "wire" ? rp.layer : rp.from_layer,
-            },
-          ]
-        }),
-        element.source_trace_id!,
-      )
       obstacles.push(
-        ...traceObstacles.map((obstacle) => ({
+        ...getPcbTraceObstacles(element, connMap).map((obstacle) => ({
           ...obstacle,
           componentId: pcbComponentId,
         })),

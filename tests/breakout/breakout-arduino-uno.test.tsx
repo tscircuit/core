@@ -165,6 +165,11 @@ test("breakout routes Arduino Uno ATmega pins to board headers", async () => {
   expect(autoroutingPhaseIoStack.length).toBeGreaterThanOrEqual(2)
   expect(circuit.db.source_trace.list().length).toBeGreaterThanOrEqual(36)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(
+    circuit.db.pcb_trace_error
+      .list()
+      .filter((error) => error.pcb_trace_error_id?.startsWith("overlap_")),
+  ).toEqual([])
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(

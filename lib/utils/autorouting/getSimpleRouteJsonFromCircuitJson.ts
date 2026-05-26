@@ -114,8 +114,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_via.list(),
       ...db.pcb_keepout.list(),
       ...db.pcb_cutout.list(),
-      // getObstaclesFromSoup is old and doesn't support diagonal traces
-      // ...db.pcb_trace.list(),
+      ...db.pcb_trace.list(),
     ].filter(
       (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
@@ -563,8 +562,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       bounds,
       obstacles,
       connections: allConns,
-      // TODO add traces so that we don't run into things routed by another
-      // subcircuit
       layerCount: board?.num_layers ?? 2,
       minTraceWidth: minTraceWidth ?? board?.min_trace_width ?? 0.1,
       minViaDiameter: resolvedMinViaPadDiameter,
