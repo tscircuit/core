@@ -45,7 +45,9 @@ test("repro119", async () => {
   })
 
   const json = circuit.getCircuitJson()
-  const schNetLabels = json.filter((el: any) => el.type === "schematic_net_label")
+  const schNetLabels = json.filter(
+    (el: any) => el.type === "schematic_net_label",
+  )
   const distinctNets = new Set(schNetLabels.map((l: any) => l.source_net_id))
 
   // All 5 connectivity nets should have at least one label
