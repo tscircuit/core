@@ -1291,9 +1291,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     deleteExistingPcbTracesReplacedBy({
       group: this,
       outputPcbTraces: output_pcb_traces,
-      includeDescendantSubcircuits: this._getRoutingPhasePlans().some(
-        (phasePlan) => phasePlan.reroute,
-      ),
     })
 
     for (const pcb_trace of output_pcb_traces) {
@@ -1348,18 +1345,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const processedSegments = addPortIdsToTracesAtJumperPads(segments, db)
 
       // Insert each segment as a separate trace
-      for (const [segmentIndex, segment] of processedSegments.entries()) {
+      for (const segment of processedSegments) {
         if (segment.length > 0) {
-          const pcbTraceId =
-            processedSegments.length > 1
-              ? `${pcb_trace.pcb_trace_id}_${this.subcircuit_id}_${segmentIndex}`
-              : `${pcb_trace.pcb_trace_id}_${this.subcircuit_id}`
-          const pcbTraceToInsert = {
+          db.pcb_trace.insert({
             ...pcb_trace,
             route: segment,
-          }
-          pcbTraceToInsert.pcb_trace_id = pcbTraceId
-          db.pcb_trace.insert(pcbTraceToInsert)
+          })
         }
       }
     }

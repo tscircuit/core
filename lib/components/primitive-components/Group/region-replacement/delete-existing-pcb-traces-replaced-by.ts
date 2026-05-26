@@ -29,11 +29,9 @@ function addPossibleReplacementSourceTraceId(
 export function deleteExistingPcbTracesReplacedBy({
   group,
   outputPcbTraces,
-  includeDescendantSubcircuits = false,
 }: {
   group: Group<any>
   outputPcbTraces: Array<SimplifiedPcbTrace | PcbTrace | PcbVia>
-  includeDescendantSubcircuits?: boolean
 }) {
   const db = group.root?.db
   if (!db) return
@@ -73,8 +71,7 @@ export function deleteExistingPcbTracesReplacedBy({
 
   const tracesToDelete = getExistingPcbTracesForReroute(group).filter(
     (trace) =>
-      (includeDescendantSubcircuits ||
-        trace.subcircuit_id === group.subcircuit_id) &&
+      trace.subcircuit_id === group.subcircuit_id &&
       (replacementPcbTraceIds.has(trace.pcb_trace_id) ||
         Boolean(
           trace.source_trace_id &&
