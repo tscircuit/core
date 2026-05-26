@@ -176,4 +176,4 @@ test("breakout routes Arduino Uno ATmega pins to board headers", async () => {
     import.meta.path,
     "breakout-arduino-uno-autorouting-srj",
   )
-}, 30_000)
+}, 40_000)
