@@ -44,5 +44,18 @@ test("repro119", async () => {
     }
   })
 
+  const json = circuit.getCircuitJson()
+  const schNetLabels = json.filter((el: any) => el.type === "schematic_net_label")
+  const distinctNets = new Set(schNetLabels.map((l: any) => l.source_net_id))
+
+  // All 5 connectivity nets should have at least one label
+  expect(distinctNets.size).toBeGreaterThanOrEqual(5)
+
+  // U2's connections to U1 (chip-to-chip) were previously missing labels
+  const u2Labels = schNetLabels.filter(
+    (l: any) => l.text && l.text.includes("U2"),
+  )
+  expect(u2Labels.length).toBeGreaterThan(0)
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
