@@ -572,9 +572,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _areChildSubcircuitsRouted(): boolean {
-    const subcircuitChildren = this.selectAll("group").filter(
-      (g) => g.isSubcircuit,
-    ) as Group[]
+    const subcircuitChildren: Group[] = []
+    const pendingComponents = [...this.children] as PrimitiveComponent[]
+
+    while (pendingComponents.length > 0) {
+      const component = pendingComponents.pop()!
+      if (component instanceof Group && component.isSubcircuit) {
+        subcircuitChildren.push(component)
+      }
+      for (const child of component.children) {
+        pendingComponents.push(child as PrimitiveComponent)
+      }
+    }
+
     for (const subcircuitChild of subcircuitChildren) {
       if (
         subcircuitChild._shouldRouteAsync() &&
@@ -1307,11 +1317,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       } else {
         delete (pcb_trace as any).source_trace_id
       }
-      pcb_trace.subcircuit_id ??=
-        (sourceTraceId
-          ? (db.source_trace.get(sourceTraceId)?.subcircuit_id ??
-            db.source_net.get(sourceTraceId)?.subcircuit_id)
-          : undefined) ?? this.subcircuit_id!
+      pcb_trace.subcircuit_id = this.subcircuit_id!
 
       const cjRoute = pcb_trace.route.map((point: any) => {
         if (point.route_type !== "through_obstacle") return point
@@ -1337,10 +1343,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const processedSegments = addPortIdsToTracesAtJumperPads(segments, db)
 
       // Insert each segment as a separate trace
-      for (const segment of processedSegments) {
+      for (const [segmentIndex, segment] of processedSegments.entries()) {
         if (segment.length > 0) {
+          const pcbTraceId =
+            processedSegments.length > 1
+              ? `${pcb_trace.pcb_trace_id}_${this.subcircuit_id}_${segmentIndex}`
+              : `${pcb_trace.pcb_trace_id}_${this.subcircuit_id}`
           db.pcb_trace.insert({
             ...pcb_trace,
+            pcb_trace_id: pcbTraceId,
             route: segment,
           })
         }

@@ -71,11 +71,12 @@ export function deleteExistingPcbTracesReplacedBy({
 
   const tracesToDelete = getExistingPcbTracesForReroute(group).filter(
     (trace) =>
-      replacementPcbTraceIds.has(trace.pcb_trace_id) ||
-      Boolean(
-        trace.source_trace_id &&
-          replacementSourceTraceIds.has(trace.source_trace_id),
-      ),
+      trace.subcircuit_id === group.subcircuit_id &&
+      (replacementPcbTraceIds.has(trace.pcb_trace_id) ||
+        Boolean(
+          trace.source_trace_id &&
+            replacementSourceTraceIds.has(trace.source_trace_id),
+        )),
   )
 
   if (tracesToDelete.length === 0) return

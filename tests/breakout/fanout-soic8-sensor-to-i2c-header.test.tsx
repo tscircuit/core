@@ -76,8 +76,28 @@ test("fanout routes soic8 sensor support parts to an i2c header without fanoutpo
   })
 
   expect(fanoutPcbGroup).toBeDefined()
-  expect(circuit.db.pcb_breakout_point.list()).toHaveLength(0)
+  expect(circuit.db.pcb_breakout_point.list()).toHaveLength(4)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(6)
+  expect(
+    circuit.db.pcb_trace.list().every((trace) => trace.route.length > 1),
+  ).toBe(true)
+  expect(
+    circuit.db.pcb_breakout_point
+      .list()
+      .every(
+        (point) =>
+          circuit.db.pcb_trace
+            .list()
+            .filter((trace) =>
+              [trace.route[0], trace.route.at(-1)].some(
+                (routePoint) =>
+                  routePoint &&
+                  Math.abs((routePoint as any).x - point.x) < 0.01 &&
+                  Math.abs((routePoint as any).y - point.y) < 0.01,
+              ),
+            ).length >= 2,
+      ),
+  ).toBe(true)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
