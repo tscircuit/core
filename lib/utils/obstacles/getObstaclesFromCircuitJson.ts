@@ -87,7 +87,6 @@ const getPcbTraceObstacles = (
     const diameter = (point as any).via_diameter ?? 0.5
     obstacles.push({
       obstacleId: `${element.pcb_trace_id}_trace_via_obstacle_${obstacles.length}`,
-      obstacleSource: "pcb_trace",
       type: "rect",
       layers: [point.from_layer, point.to_layer],
       center: { x: point.x, y: point.y },
@@ -109,7 +108,6 @@ const getPcbTraceObstacles = (
     const width = Math.max(getRoutePointWidth(start), getRoutePointWidth(end))
     obstacles.push({
       obstacleId: `${element.pcb_trace_id}_trace_obstacle_${i}`,
-      obstacleSource: "pcb_trace",
       type: "rect",
       layers: [layer],
       center: {

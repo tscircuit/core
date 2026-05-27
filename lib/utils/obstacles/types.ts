@@ -1,6 +1,5 @@
 export type Obstacle = {
   obstacleId?: string
-  obstacleSource?: "pcb_trace"
   componentId?: string
   // TODO include ovals
   type: "rect" // NOTE: most datasets do not contain ovals

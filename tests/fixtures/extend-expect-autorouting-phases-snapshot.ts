@@ -26,10 +26,14 @@ const createPanelLabelSvg = (label: string) => `<svg
 </svg>`
 
 function createLabeledSrjSvg(label: string, srj: SimpleRouteJson) {
+  const traceIds = new Set(srj.traces?.map((trace) => trace.pcb_trace_id))
   const snapshotSrj = {
     ...srj,
     obstacles: srj.obstacles.filter(
-      (obstacle) => obstacle.obstacleSource !== "pcb_trace",
+      (obstacle) =>
+        !obstacle.connectedTo.some((connectedToId) =>
+          traceIds.has(connectedToId),
+        ),
     ),
   }
 

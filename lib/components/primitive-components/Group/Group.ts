@@ -833,6 +833,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }> = []
     const existingRerouteSeedTraces =
       getExistingSimplifiedPcbTracesForReroute(this)
+    const existingRerouteSeedTraceIds = new Set(
+      existingRerouteSeedTraces.map((trace) => trace.pcb_trace_id),
+    )
 
     const traceMatchesRoutingPhase = (
       trace: SimplifiedPcbTrace,
@@ -887,7 +890,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         ? {
             ...baseSimpleRouteJson,
             obstacles: baseSimpleRouteJson.obstacles.filter(
-              (obstacle) => obstacle.obstacleSource !== "pcb_trace",
+              (obstacle) =>
+                !obstacle.connectedTo.some((connectedToId) =>
+                  existingRerouteSeedTraceIds.has(connectedToId),
+                ),
             ),
             traces: [...existingRerouteSeedTraces, ...outputTraces],
           }

@@ -114,7 +114,15 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_via.list(),
       ...db.pcb_keepout.list(),
       ...db.pcb_cutout.list(),
-      ...db.pcb_trace.list(),
+      ...db.pcb_trace
+        .list()
+        .filter(
+          (trace) =>
+            subcircuit_id &&
+            trace.subcircuit_id &&
+            trace.subcircuit_id !== subcircuit_id &&
+            relevantSubcircuitIds?.has(trace.subcircuit_id),
+        ),
     ].filter(
       (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
