@@ -1,5 +1,6 @@
 import type { BreakoutPointSolverOutput } from "@tscircuit/breakout-point-solver"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import { BreakoutPoint } from "../BreakoutPoint"
 import type { Breakout } from "./Breakout"
 
 const getSourceNetIdForBreakoutPoint = ({
@@ -38,7 +39,13 @@ export const applyBreakoutPointSolverOutput = ({
     breakout.subcircuit_id ?? breakout.getSubcircuit()?.subcircuit_id
 
   for (const point of output.breakoutPoints) {
-    db.pcb_breakout_point.insert({
+    const breakoutPoint = new BreakoutPoint({
+      connection: point.sourcePortId,
+      pcbX: point.x,
+      pcbY: point.y,
+    })
+    breakout.add(breakoutPoint)
+    const pcbBreakoutPoint = db.pcb_breakout_point.insert({
       pcb_group_id: breakout.pcb_group_id,
       subcircuit_id: subcircuitId ?? undefined,
       source_port_id: point.sourcePortId,
@@ -51,5 +58,6 @@ export const applyBreakoutPointSolverOutput = ({
       x: point.x,
       y: point.y,
     })
+    breakoutPoint.pcb_breakout_point_id = pcbBreakoutPoint.pcb_breakout_point_id
   }
 }
