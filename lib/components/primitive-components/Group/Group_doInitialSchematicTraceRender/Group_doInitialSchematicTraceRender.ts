@@ -37,14 +37,18 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   const hasRouteableSchematicConnections =
     inputProblem.directConnections.length > 0 ||
     inputProblem.netConnections.length > 0
+  const autoNetLabelsEnabled =
+    group.getSubcircuit()._parsedProps.schTraceAutoLabelEnabled !== false
 
   if (!hasRouteableSchematicConnections) {
-    insertNetLabelsForPortsMissingTrace({
-      group,
-      allSourceAndSchematicPortIdsInScope,
-      schPortIdToSourcePortId,
-      connKeyToSourceNet,
-    })
+    if (autoNetLabelsEnabled) {
+      insertNetLabelsForPortsMissingTrace({
+        group,
+        allSourceAndSchematicPortIdsInScope,
+        schPortIdToSourcePortId,
+        connKeyToSourceNet,
+      })
+    }
     return
   }
 
@@ -76,21 +80,23 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   })
 
   // Apply net labels (from solver placements and net-only ports)
-  applyNetLabelPlacements({
-    group,
-    solver,
-    connKeyToSourceNet,
-    pinIdToSchematicPortId,
-    userNetIdToConnKey,
-    connKeysWithExplicitPortNetTraces,
-    schematicPortIdsWithPreExistingNetLabels,
-    schematicPortIdsWithRoutedTraces,
-  })
+  if (autoNetLabelsEnabled) {
+    applyNetLabelPlacements({
+      group,
+      solver,
+      connKeyToSourceNet,
+      pinIdToSchematicPortId,
+      userNetIdToConnKey,
+      connKeysWithExplicitPortNetTraces,
+      schematicPortIdsWithPreExistingNetLabels,
+      schematicPortIdsWithRoutedTraces,
+    })
 
-  insertNetLabelsForPortsMissingTrace({
-    group,
-    allSourceAndSchematicPortIdsInScope,
-    schPortIdToSourcePortId,
-    connKeyToSourceNet,
-  })
+    insertNetLabelsForPortsMissingTrace({
+      group,
+      allSourceAndSchematicPortIdsInScope,
+      schPortIdToSourcePortId,
+      connKeyToSourceNet,
+    })
+  }
 }
