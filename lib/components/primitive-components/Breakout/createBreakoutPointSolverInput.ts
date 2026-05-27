@@ -6,61 +6,25 @@ import type {
   PcbLayer,
 } from "@tscircuit/breakout-point-solver"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type {
-  PcbPlatedHole,
-  PcbPort,
-  PcbSmtPad,
-  SourceTrace,
-} from "circuit-json"
+import type { PcbPlatedHole, PcbSmtPad, SourceTrace } from "circuit-json"
+import {
+  doBoundsOverlap,
+  getBoundFromCenteredRect,
+  isPointInsideBounds,
+} from "@tscircuit/math-utils"
 import type { Breakout } from "./Breakout"
 
 const asPcbLayer = (layer: unknown): PcbLayer | undefined =>
   layer === "top" || layer === "bottom" ? layer : undefined
 
-const isPointInBounds = (
-  point: { x: number; y: number },
-  bounds: BreakoutPointSolverInput["bounds"],
-) =>
-  point.x >= bounds.minX &&
-  point.x <= bounds.maxX &&
-  point.y >= bounds.minY &&
-  point.y <= bounds.maxY
-
-const rectIntersectsBounds = (
-  rect: {
-    center: { x: number; y: number }
-    width: number
-    height: number
-  },
-  bounds: BreakoutPointSolverInput["bounds"],
-) => {
-  const halfWidth = rect.width / 2
-  const halfHeight = rect.height / 2
-  return (
-    rect.center.x + halfWidth >= bounds.minX &&
-    rect.center.x - halfWidth <= bounds.maxX &&
-    rect.center.y + halfHeight >= bounds.minY &&
-    rect.center.y - halfHeight <= bounds.maxY
-  )
-}
-
-const getPcbPortForSourcePort = (
-  db: CircuitJsonUtilObjects,
-  sourcePortId: string,
-): PcbPort | null => {
-  const pcbPort = db.pcb_port.getWhere({ source_port_id: sourcePortId })
-  if (!pcbPort || pcbPort.x === undefined || pcbPort.y === undefined) {
-    return null
-  }
-  return pcbPort
-}
-
 const getBreakoutPort = (
   db: CircuitJsonUtilObjects,
   sourcePortId: string,
 ): BreakoutPort | null => {
-  const pcbPort = getPcbPortForSourcePort(db, sourcePortId)
-  if (!pcbPort) return null
+  const pcbPort = db.pcb_port.getWhere({ source_port_id: sourcePortId })
+  if (!pcbPort || pcbPort.x === undefined || pcbPort.y === undefined) {
+    return null
+  }
   const sourcePort = db.source_port.get(sourcePortId)
   return {
     sourcePortId,
@@ -166,10 +130,10 @@ export const createBreakoutPointSolverInput = (
         .map((sourcePortId: string) => getBreakoutPort(db, sourcePortId))
         .filter((port): port is BreakoutPort => Boolean(port))
       const insidePorts = ports.filter((port) =>
-        isPointInBounds(port.position, breakoutBounds),
+        isPointInsideBounds(port.position, breakoutBounds),
       )
       const outsidePorts = ports.filter(
-        (port) => !isPointInBounds(port.position, breakoutBounds),
+        (port) => !isPointInsideBounds(port.position, breakoutBounds),
       )
       if (insidePorts.length === 0 || outsidePorts.length === 0) return null
       return {
@@ -217,7 +181,7 @@ export const createBreakoutPointSolverInput = (
       Number.isFinite(pad.center.y) &&
       Number.isFinite(pad.width) &&
       Number.isFinite(pad.height) &&
-      rectIntersectsBounds(pad, breakoutBounds),
+      doBoundsOverlap(getBoundFromCenteredRect(pad), breakoutBounds),
   )
 
   const usedBoundaryPoints = db.pcb_breakout_point
