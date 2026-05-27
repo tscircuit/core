@@ -11,12 +11,7 @@ import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 
-type RouteEndpointPoint = {
-  start_pcb_port_id?: string
-  end_pcb_port_id?: string
-}
-
-const BOUNDS_EDGE_TOLERANCE = 1e-6
+const ROUTING_BOUNDS_EPSILON = 1e-6
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -245,10 +240,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       )
     if (hasBreakoutPointsForPcbGroup) {
       bounds = {
-        minX: groupBounds.minX - BOUNDS_EDGE_TOLERANCE,
-        maxX: groupBounds.maxX + BOUNDS_EDGE_TOLERANCE,
-        minY: groupBounds.minY - BOUNDS_EDGE_TOLERANCE,
-        maxY: groupBounds.maxY + BOUNDS_EDGE_TOLERANCE,
+        minX: groupBounds.minX - ROUTING_BOUNDS_EPSILON,
+        maxX: groupBounds.maxX + ROUTING_BOUNDS_EPSILON,
+        minY: groupBounds.minY - ROUTING_BOUNDS_EPSILON,
+        maxY: groupBounds.maxY + ROUTING_BOUNDS_EPSILON,
       }
     } else {
       bounds = {
@@ -267,11 +262,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         const sourceTrace = db.source_trace.get(pcbTrace.source_trace_id)
         if (!sourceTrace) return false
         const routedPcbPortIds = new Set<string>()
-        for (const routePoint of pcbTrace.route as RouteEndpointPoint[]) {
-          if (routePoint.start_pcb_port_id) {
+        for (const routePoint of pcbTrace.route) {
+          if (
+            "start_pcb_port_id" in routePoint &&
+            routePoint.start_pcb_port_id
+          ) {
             routedPcbPortIds.add(routePoint.start_pcb_port_id)
           }
-          if (routePoint.end_pcb_port_id) {
+          if ("end_pcb_port_id" in routePoint && routePoint.end_pcb_port_id) {
             routedPcbPortIds.add(routePoint.end_pcb_port_id)
           }
         }
@@ -528,9 +526,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   for (const tr of existingTraces) {
     const tracePortIds = new Set<string>()
-    for (const seg of tr.route as RouteEndpointPoint[]) {
-      if (seg.start_pcb_port_id) tracePortIds.add(seg.start_pcb_port_id)
-      if (seg.end_pcb_port_id) tracePortIds.add(seg.end_pcb_port_id)
+    for (const seg of tr.route) {
+      if ("start_pcb_port_id" in seg && seg.start_pcb_port_id) {
+        tracePortIds.add(seg.start_pcb_port_id)
+      }
+      if ("end_pcb_port_id" in seg && seg.end_pcb_port_id) {
+        tracePortIds.add(seg.end_pcb_port_id)
+      }
     }
     if (tracePortIds.size < 2) continue
 
