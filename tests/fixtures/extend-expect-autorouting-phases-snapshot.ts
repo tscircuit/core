@@ -31,8 +31,17 @@ function createLabeledSrjSvg(label: string, srj: SimpleRouteJson) {
     ...srj,
     obstacles: srj.obstacles.filter(
       (obstacle) =>
-        !obstacle.connectedTo.some((connectedToId) =>
-          traceIds.has(connectedToId),
+        !(
+          obstacle.obstacleId?.includes("_wire_obstacle_") &&
+          obstacle.connectedTo.some((connectedToId) =>
+            traceIds.has(connectedToId),
+          )
+        ) &&
+        !(
+          obstacle.obstacleId?.includes("_via_obstacle_") &&
+          obstacle.connectedTo.some((connectedToId) =>
+            traceIds.has(connectedToId),
+          )
         ),
     ),
   }
