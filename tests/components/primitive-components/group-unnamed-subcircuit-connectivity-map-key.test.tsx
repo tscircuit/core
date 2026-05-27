@@ -2,22 +2,6 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("unnamed subcircuit connectivity map keys are deterministic across renders", async () => {
-  const sortEntries = <T extends Record<string, unknown>>(entries: T[]) =>
-    entries.toSorted((a, b) =>
-      JSON.stringify(a).localeCompare(JSON.stringify(b)),
-    )
-
-  const countByKey = (keys: Array<string | null | undefined>) =>
-    Object.fromEntries(
-      Object.entries(
-        keys.reduce<Record<string, number>>((counts, key) => {
-          if (!key) return counts
-          counts[key] = (counts[key] ?? 0) + 1
-          return counts
-        }, {}),
-      ).sort(([a], [b]) => a.localeCompare(b)),
-    )
-
   const renderCircuit = async () => {
     const { circuit } = getTestFixture()
 
@@ -83,27 +67,18 @@ test("unnamed subcircuit connectivity map keys are deterministic across renders"
       ),
     ).sort()
 
-    const netKeys = sortEntries(
-      circuit.db.source_net.list().map((net) => ({
+    return {
+      traceKeys: circuit.db.source_trace
+        .list()
+        .map((trace) => trace.subcircuit_connectivity_map_key),
+      portKeys: circuit.db.source_port.list().map((port) => ({
+        name: port.name,
+        key: port.subcircuit_connectivity_map_key,
+      })),
+      netKeys: circuit.db.source_net.list().map((net) => ({
         name: net.name,
         key: net.subcircuit_connectivity_map_key,
       })),
-    )
-    const netKeySet = new Set(netKeys.map((net) => net.key))
-
-    return {
-      netKeys,
-      traceKeyCounts: countByKey(
-        circuit.db.source_trace
-          .list()
-          .map((trace) => trace.subcircuit_connectivity_map_key),
-      ),
-      portKeyCounts: countByKey(
-        circuit.db.source_port
-          .list()
-          .filter((port) => netKeySet.has(port.subcircuit_connectivity_map_key))
-          .map((port) => port.subcircuit_connectivity_map_key),
-      ),
       schematicKeys,
     }
   }
@@ -112,25 +87,77 @@ test("unnamed subcircuit connectivity map keys are deterministic across renders"
   const secondRender = await renderCircuit()
 
   expect(firstRender).toEqual(secondRender)
-  expect(firstRender.netKeys.map(({ name }) => name).sort()).toEqual([
-    "GND",
-    "REF",
-    "SIG",
-    "VCC",
-  ])
 
-  const keys = firstRender.netKeys
-    .map(({ key }) => key)
-    .filter((key): key is string => typeof key === "string")
-  expect(keys).toHaveLength(firstRender.netKeys.length)
-  expect(new Set(keys).size).toBe(4)
-  expect(keys.every((key) => key.startsWith("unnamedsubcircuit"))).toBe(true)
-  expect(keys.every((key) => key.includes("_connectivity_net"))).toBe(true)
-  expect(firstRender.schematicKeys).toEqual(keys.toSorted())
-  expect(firstRender.traceKeyCounts).toEqual(
-    Object.fromEntries(keys.toSorted().map((key) => [key, 2])),
-  )
-  expect(firstRender.portKeyCounts).toEqual(
-    Object.fromEntries(keys.toSorted().map((key) => [key, 2])),
-  )
+  expect(firstRender).toMatchInlineSnapshot(`
+{
+  "netKeys": [
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0",
+      "name": "VCC",
+    },
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net1",
+      "name": "GND",
+    },
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net0",
+      "name": "SIG",
+    },
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net1",
+      "name": "REF",
+    },
+  ],
+  "portKeys": [
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0",
+      "name": "pin1",
+    },
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net1",
+      "name": "pin2",
+    },
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0",
+      "name": "pin1",
+    },
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net1",
+      "name": "pin2",
+    },
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net0",
+      "name": "pin1",
+    },
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net1",
+      "name": "pin2",
+    },
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net0",
+      "name": "pin1",
+    },
+    {
+      "key": "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net1",
+      "name": "pin2",
+    },
+  ],
+  "schematicKeys": [
+    "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0",
+    "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net1",
+    "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net0",
+    "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net1",
+  ],
+  "traceKeys": [
+    "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0",
+    "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0",
+    "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net1",
+    "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net1",
+    "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net0",
+    "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net0",
+    "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net1",
+    "unnamedsubcircuitsubcircuit_source_group_1_connectivity_net1",
+  ],
+}
+`)
 })
