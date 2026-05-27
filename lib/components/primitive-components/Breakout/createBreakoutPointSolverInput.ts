@@ -6,12 +6,13 @@ import type {
   PcbLayer,
 } from "@tscircuit/breakout-point-solver"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { PcbPlatedHole, PcbSmtPad, SourceTrace } from "circuit-json"
+import type { SourceTrace } from "circuit-json"
 import {
   doBoundsOverlap,
   getBoundFromCenteredRect,
   isPointInsideBounds,
 } from "@tscircuit/math-utils"
+import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import type { Breakout } from "./Breakout"
 
 const asPcbLayer = (layer: unknown): PcbLayer | undefined => {
@@ -43,69 +44,6 @@ const getSourcePortIdsForPcbPort = (
   const pcbPort = db.pcb_port.get(pcbPortId)
   if (!pcbPort?.source_port_id) return undefined
   return [pcbPort.source_port_id]
-}
-
-const getSmtPadDimensions = (pad: PcbSmtPad) => {
-  if (pad.shape === "circle") {
-    return {
-      center: { x: pad.x, y: pad.y },
-      width: pad.radius * 2,
-      height: pad.radius * 2,
-    }
-  }
-  if (pad.shape === "polygon") {
-    const xs = pad.points.map((point: { x: number }) => point.x)
-    const ys = pad.points.map((point: { y: number }) => point.y)
-    const minX = Math.min(...xs)
-    const maxX = Math.max(...xs)
-    const minY = Math.min(...ys)
-    const maxY = Math.max(...ys)
-    return {
-      center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
-      width: maxX - minX,
-      height: maxY - minY,
-    }
-  }
-  return {
-    center: { x: pad.x, y: pad.y },
-    width: pad.width,
-    height: pad.height,
-  }
-}
-
-const getPlatedHoleDimensions = (hole: PcbPlatedHole) => {
-  if (hole.shape === "circle") {
-    return {
-      center: { x: hole.x, y: hole.y },
-      width: hole.outer_diameter,
-      height: hole.outer_diameter,
-    }
-  }
-  if (
-    hole.shape === "circular_hole_with_rect_pad" ||
-    hole.shape === "pill_hole_with_rect_pad" ||
-    hole.shape === "rotated_pill_hole_with_rect_pad"
-  ) {
-    return {
-      center: { x: hole.x, y: hole.y },
-      width: hole.rect_pad_width,
-      height: hole.rect_pad_height,
-    }
-  }
-  if (hole.shape === "hole_with_polygon_pad" && hole.pad_outline?.length) {
-    const xs = hole.pad_outline.map((point: { x: number }) => hole.x + point.x)
-    const ys = hole.pad_outline.map((point: { y: number }) => hole.y + point.y)
-    const minX = Math.min(...xs)
-    const maxX = Math.max(...xs)
-    const minY = Math.min(...ys)
-    const maxY = Math.max(...ys)
-    return {
-      center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
-      width: maxX - minX,
-      height: maxY - minY,
-    }
-  }
-  return null
 }
 
 export const createBreakoutPointSolverInput = (
@@ -149,32 +87,35 @@ export const createBreakoutPointSolverInput = (
     )
 
   const pads = [
-    ...db.pcb_smtpad.list().map((pad): BreakoutPad => {
-      const dimensions = getSmtPadDimensions(pad)
+    ...db.pcb_smtpad.list().flatMap((pad): BreakoutPad[] => {
+      const [obstacle] = getObstaclesFromCircuitJson([pad])
+      if (!obstacle) return []
       let ccwRotationDegrees: number | undefined
-      if ("ccw_rotation" in pad) {
-        ccwRotationDegrees = pad.ccw_rotation
+      if (obstacle.ccwRotationDegrees !== undefined) {
+        ccwRotationDegrees = obstacle.ccwRotationDegrees
       }
       let sourcePortIds: string[] | undefined
       if (pad.pcb_port_id) {
         sourcePortIds = getSourcePortIdsForPcbPort(db, pad.pcb_port_id)
       }
-      return {
-        ...dimensions,
-        ccwRotationDegrees,
-        sourcePortIds,
-        layer: asPcbLayer(pad.layer),
-        label: pad.pcb_smtpad_id,
-      }
+      return [
+        {
+          center: obstacle.center,
+          width: obstacle.width,
+          height: obstacle.height,
+          ccwRotationDegrees,
+          sourcePortIds,
+          layer: asPcbLayer(pad.layer),
+          label: pad.pcb_smtpad_id,
+        },
+      ]
     }),
     ...db.pcb_plated_hole.list().flatMap((hole): BreakoutPad[] => {
-      const dimensions = getPlatedHoleDimensions(hole)
-      if (!dimensions) return []
+      const [obstacle] = getObstaclesFromCircuitJson([hole])
+      if (!obstacle) return []
       let ccwRotationDegrees: number | undefined
-      if ("ccw_rotation" in hole) {
-        ccwRotationDegrees = hole.ccw_rotation
-      } else if ("rect_ccw_rotation" in hole) {
-        ccwRotationDegrees = hole.rect_ccw_rotation
+      if (obstacle.ccwRotationDegrees !== undefined) {
+        ccwRotationDegrees = obstacle.ccwRotationDegrees
       }
       let sourcePortIds: string[] | undefined
       if (hole.pcb_port_id) {
@@ -182,7 +123,9 @@ export const createBreakoutPointSolverInput = (
       }
       return [
         {
-          ...dimensions,
+          center: obstacle.center,
+          width: obstacle.width,
+          height: obstacle.height,
           ccwRotationDegrees,
           sourcePortIds,
           label: hole.pcb_plated_hole_id,
