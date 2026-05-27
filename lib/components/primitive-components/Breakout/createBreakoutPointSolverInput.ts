@@ -14,8 +14,10 @@ import {
 } from "@tscircuit/math-utils"
 import type { Breakout } from "./Breakout"
 
-const asPcbLayer = (layer: unknown): PcbLayer | undefined =>
-  layer === "top" || layer === "bottom" ? layer : undefined
+const asPcbLayer = (layer: unknown): PcbLayer | undefined => {
+  if (layer === "top" || layer === "bottom") return layer
+  return undefined
+}
 
 const getBreakoutPort = (
   db: CircuitJsonUtilObjects,
@@ -34,13 +36,13 @@ const getBreakoutPort = (
   }
 }
 
-const getPadSourcePortIds = (
+const getSourcePortIdsForPcbPort = (
   db: CircuitJsonUtilObjects,
-  pcbPortId: string | undefined,
+  pcbPortId: string,
 ) => {
-  if (!pcbPortId) return undefined
   const pcbPort = db.pcb_port.get(pcbPortId)
-  return pcbPort?.source_port_id ? [pcbPort.source_port_id] : undefined
+  if (!pcbPort?.source_port_id) return undefined
+  return [pcbPort.source_port_id]
 }
 
 const getSmtPadDimensions = (pad: PcbSmtPad) => {
@@ -149,11 +151,18 @@ export const createBreakoutPointSolverInput = (
   const pads = [
     ...db.pcb_smtpad.list().map((pad): BreakoutPad => {
       const dimensions = getSmtPadDimensions(pad)
+      let ccwRotationDegrees: number | undefined
+      if ("ccw_rotation" in pad) {
+        ccwRotationDegrees = pad.ccw_rotation
+      }
+      let sourcePortIds: string[] | undefined
+      if (pad.pcb_port_id) {
+        sourcePortIds = getSourcePortIdsForPcbPort(db, pad.pcb_port_id)
+      }
       return {
         ...dimensions,
-        ccwRotationDegrees:
-          "ccw_rotation" in pad ? pad.ccw_rotation : undefined,
-        sourcePortIds: getPadSourcePortIds(db, pad.pcb_port_id),
+        ccwRotationDegrees,
+        sourcePortIds,
         layer: asPcbLayer(pad.layer),
         label: pad.pcb_smtpad_id,
       }
@@ -161,16 +170,21 @@ export const createBreakoutPointSolverInput = (
     ...db.pcb_plated_hole.list().flatMap((hole): BreakoutPad[] => {
       const dimensions = getPlatedHoleDimensions(hole)
       if (!dimensions) return []
+      let ccwRotationDegrees: number | undefined
+      if ("ccw_rotation" in hole) {
+        ccwRotationDegrees = hole.ccw_rotation
+      } else if ("rect_ccw_rotation" in hole) {
+        ccwRotationDegrees = hole.rect_ccw_rotation
+      }
+      let sourcePortIds: string[] | undefined
+      if (hole.pcb_port_id) {
+        sourcePortIds = getSourcePortIdsForPcbPort(db, hole.pcb_port_id)
+      }
       return [
         {
           ...dimensions,
-          ccwRotationDegrees:
-            "ccw_rotation" in hole
-              ? hole.ccw_rotation
-              : "rect_ccw_rotation" in hole
-                ? hole.rect_ccw_rotation
-                : undefined,
-          sourcePortIds: getPadSourcePortIds(db, hole.pcb_port_id),
+          ccwRotationDegrees,
+          sourcePortIds,
           label: hole.pcb_plated_hole_id,
         },
       ]
