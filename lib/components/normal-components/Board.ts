@@ -14,6 +14,7 @@ import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-jso
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { RenderPhase } from "../base-components/Renderable"
 import { Group } from "../primitive-components/Group/Group"
+import { DrcCheck } from "../primitive-components/DrcCheck"
 import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
@@ -658,6 +659,12 @@ export class Board
             AnyCircuitElement[]
           >,
         )
+      }
+
+      if (!drcChecksDisabled) {
+        for (const drcCheck of this.selectAll<DrcCheck>("drccheck")) {
+          checksToRun.push(drcCheck.runCustomDrcCheck(circuitJson))
+        }
       }
 
       const checkResults = await Promise.all(checksToRun)
