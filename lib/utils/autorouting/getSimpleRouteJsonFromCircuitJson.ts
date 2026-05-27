@@ -1,6 +1,11 @@
-import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { su } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement, PcbBoard } from "circuit-json"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import {
+  type Bounds,
+  getBoundFromCenteredRect,
+  getBoundsFromPoints,
+} from "@tscircuit/math-utils"
+import type { AnyCircuitElement, PcbBoard, PcbTrace } from "circuit-json"
 import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
@@ -11,7 +16,59 @@ import type { SimpleRouteConnection } from "./SimpleRouteJson"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 
-const ROUTING_BOUNDS_EPSILON = 1e-6
+const BOUNDARY_CONNECTION_BOUNDS_PADDING = 1e-6
+
+const getBoundsContainingBounds = (
+  boundsA: Bounds,
+  boundsB: Bounds,
+): Bounds => {
+  const bounds = getBoundsFromPoints([
+    { x: boundsA.minX, y: boundsA.minY },
+    { x: boundsA.maxX, y: boundsA.maxY },
+    { x: boundsB.minX, y: boundsB.minY },
+    { x: boundsB.maxX, y: boundsB.maxY },
+  ])
+  if (!bounds) return boundsA
+  return bounds
+}
+
+const getBoundsWithPadding = (bounds: Bounds, padding: number): Bounds => {
+  const paddedBounds = getBoundsFromPoints([
+    { x: bounds.minX - padding, y: bounds.minY - padding },
+    { x: bounds.maxX + padding, y: bounds.maxY + padding },
+  ])
+  if (!paddedBounds) return bounds
+  return paddedBounds
+}
+
+const isPointOnBoundsEdge = (point: { x: number; y: number }, bounds: Bounds) =>
+  point.x === bounds.minX ||
+  point.x === bounds.maxX ||
+  point.y === bounds.minY ||
+  point.y === bounds.maxY
+
+const hasConnectionPointOnBoundsEdge = (
+  connections: SimpleRouteConnection[],
+  bounds: Bounds,
+) =>
+  connections.some((connection) =>
+    connection.pointsToConnect.some((point) =>
+      isPointOnBoundsEdge(point, bounds),
+    ),
+  )
+
+const getPcbPortIdsReferencedByRoute = (route: PcbTrace["route"]) => {
+  const pcbPortIds = new Set<string>()
+  for (const routePoint of route) {
+    if ("start_pcb_port_id" in routePoint && routePoint.start_pcb_port_id) {
+      pcbPortIds.add(routePoint.start_pcb_port_id)
+    }
+    if ("end_pcb_port_id" in routePoint && routePoint.end_pcb_port_id) {
+      pcbPortIds.add(routePoint.end_pcb_port_id)
+    }
+  }
+  return pcbPortIds
+}
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -208,7 +265,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ])
     .concat(board?.outline ?? [])
 
-  let bounds: { minX: number; maxX: number; minY: number; maxY: number }
+  let bounds: Bounds
+  let groupBounds: Bounds | null = null
 
   if (board && !board.outline) {
     bounds = {
@@ -227,32 +285,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   }
 
   if (pcbGroup?.width && pcbGroup.height) {
-    const groupBounds = {
-      minX: pcbGroup.center.x - pcbGroup.width / 2,
-      maxX: pcbGroup.center.x + pcbGroup.width / 2,
-      minY: pcbGroup.center.y - pcbGroup.height / 2,
-      maxY: pcbGroup.center.y + pcbGroup.height / 2,
-    }
-    const hasBreakoutPointsForPcbGroup = db.pcb_breakout_point
-      .list()
-      .some(
-        (breakoutPoint) => breakoutPoint.pcb_group_id === pcbGroup.pcb_group_id,
-      )
-    if (hasBreakoutPointsForPcbGroup) {
-      bounds = {
-        minX: groupBounds.minX - ROUTING_BOUNDS_EPSILON,
-        maxX: groupBounds.maxX + ROUTING_BOUNDS_EPSILON,
-        minY: groupBounds.minY - ROUTING_BOUNDS_EPSILON,
-        maxY: groupBounds.maxY + ROUTING_BOUNDS_EPSILON,
-      }
-    } else {
-      bounds = {
-        minX: Math.min(bounds.minX, groupBounds.minX),
-        maxX: Math.max(bounds.maxX, groupBounds.maxX),
-        minY: Math.min(bounds.minY, groupBounds.minY),
-        maxY: Math.max(bounds.maxY, groupBounds.maxY),
-      }
-    }
+    groupBounds = getBoundFromCenteredRect({
+      center: pcbGroup.center,
+      width: pcbGroup.width,
+      height: pcbGroup.height,
+    })
+    bounds = getBoundsContainingBounds(bounds, groupBounds)
   }
   const routedTraceIds = new Set(
     db.pcb_trace
@@ -261,18 +299,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         if (!pcbTrace.source_trace_id) return false
         const sourceTrace = db.source_trace.get(pcbTrace.source_trace_id)
         if (!sourceTrace) return false
-        const routedPcbPortIds = new Set<string>()
-        for (const routePoint of pcbTrace.route) {
-          if (
-            "start_pcb_port_id" in routePoint &&
-            routePoint.start_pcb_port_id
-          ) {
-            routedPcbPortIds.add(routePoint.start_pcb_port_id)
-          }
-          if ("end_pcb_port_id" in routePoint && routePoint.end_pcb_port_id) {
-            routedPcbPortIds.add(routePoint.end_pcb_port_id)
-          }
-        }
+        const routedPcbPortIds = getPcbPortIdsReferencedByRoute(pcbTrace.route)
         return sourceTrace.connected_source_port_ids.every((sourcePortId) => {
           const pcbPort = db.pcb_port.getWhere({ source_port_id: sourcePortId })
           return pcbPort ? routedPcbPortIds.has(pcbPort.pcb_port_id) : false
@@ -508,6 +535,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...connectionsFromNets,
     ...connectionsFromBreakoutPoints,
   ]
+  if (groupBounds && hasConnectionPointOnBoundsEdge(allConns, groupBounds)) {
+    bounds = getBoundsWithPadding(
+      groupBounds,
+      BOUNDARY_CONNECTION_BOUNDS_PADDING,
+    )
+  }
 
   // ----- 2. Map every pointId -> its parent connection
   const pointIdToConn = new Map<string, SimpleRouteConnection>()
@@ -525,15 +558,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     )
 
   for (const tr of existingTraces) {
-    const tracePortIds = new Set<string>()
-    for (const seg of tr.route) {
-      if ("start_pcb_port_id" in seg && seg.start_pcb_port_id) {
-        tracePortIds.add(seg.start_pcb_port_id)
-      }
-      if ("end_pcb_port_id" in seg && seg.end_pcb_port_id) {
-        tracePortIds.add(seg.end_pcb_port_id)
-      }
-    }
+    const tracePortIds = getPcbPortIdsReferencedByRoute(tr.route)
     if (tracePortIds.size < 2) continue
 
     const firstId = tracePortIds.values().next().value
