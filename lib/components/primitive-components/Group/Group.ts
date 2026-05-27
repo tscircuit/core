@@ -134,8 +134,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
-    output_pcb_traces?: (PcbTrace | PcbVia)[]
-    allow_descendant_trace_replacement?: boolean
+    output_pcb_traces?: (PcbTrace | PcbVia | SimplifiedPcbTrace)[]
     output_jumpers?: Array<{
       jumper_footprint: string
       center: { x: number; y: number }
@@ -819,7 +818,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const routingPhasePlans = this._getRoutingPhasePlans()
     const hasPhasedAutorouting = Group_hasPhasedAutorouting(routingPhasePlans)
     const outputTraces: SimplifiedPcbTrace[] = []
-    let allowDescendantTraceReplacement = false
     const outputJumpers: Array<{
       jumper_footprint: string
       center: { x: number; y: number }
@@ -1086,7 +1084,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             outputTraces.length,
             ...(reconnectedSrj.traces ?? []),
           )
-          allowDescendantTraceReplacement = true
         } else if (isConnectionReroutePhase) {
           outputTraces.splice(
             0,
@@ -1126,9 +1123,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // Store the result
     this._asyncAutoroutingResult = {
-      output_pcb_traces: outputTraces as any,
+      output_pcb_traces: outputTraces,
       output_jumpers: outputJumpers,
-      allow_descendant_trace_replacement: allowDescendantTraceReplacement,
     }
 
     // Mark the component as needing to re-render the PCB traces
@@ -1278,11 +1274,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _updatePcbTraceRenderFromPcbTraces() {
-    const {
-      output_pcb_traces,
-      output_jumpers,
-      allow_descendant_trace_replacement,
-    } = this._asyncAutoroutingResult!
+    const { output_pcb_traces, output_jumpers } = this._asyncAutoroutingResult!
     if (!output_pcb_traces) return
 
     const { db } = this.root!
@@ -1309,20 +1301,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     deleteExistingPcbTracesReplacedBy({
       group: this,
       outputPcbTraces: output_pcb_traces,
-      allowDescendantTraceReplacement:
-        allow_descendant_trace_replacement ?? false,
     })
 
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
 
+      const connectionName =
+        "connection_name" in pcb_trace ? pcb_trace.connection_name : undefined
+      const rootConnectionName =
+        "rootConnectionName" in pcb_trace
+          ? pcb_trace.rootConnectionName
+          : undefined
       const possibleSourceTraceIds = [
-        ...getSourceTraceIdsFromRerouteName((pcb_trace as any).source_trace_id),
-        ...getSourceTraceIdsFromRerouteName((pcb_trace as any).connection_name),
-        ...getSourceTraceIdsFromRerouteName(
-          (pcb_trace as any).rootConnectionName,
-        ),
+        ...getSourceTraceIdsFromRerouteName(pcb_trace.source_trace_id),
+        ...getSourceTraceIdsFromRerouteName(connectionName),
+        ...getSourceTraceIdsFromRerouteName(rootConnectionName),
       ]
       const validSourceTraceIds = Array.from(
         new Set(possibleSourceTraceIds),
@@ -1343,19 +1337,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ),
         ),
       )
-      const sourceTraceId =
+      const sourceTraceOrNetId =
         validSourceTraceIds.length === 1
           ? validSourceTraceIds[0]
           : connectedSourceNetIds.length === 1
             ? connectedSourceNetIds[0]
             : validSourceNetIds.length === 1
               ? validSourceNetIds[0]
-              : ((pcb_trace as any).rootConnectionName ??
-                (pcb_trace as any).connection_name)
-      if (sourceTraceId) {
-        pcb_trace.source_trace_id = sourceTraceId
+              : undefined
+      if (sourceTraceOrNetId) {
+        pcb_trace.source_trace_id = sourceTraceOrNetId
       } else {
-        delete (pcb_trace as any).source_trace_id
+        delete pcb_trace.source_trace_id
       }
       pcb_trace.subcircuit_id = this.subcircuit_id!
 

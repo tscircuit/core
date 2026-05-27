@@ -22,6 +22,21 @@ function addPossibleReplacementSourceTraceId(
   }
 }
 
+function getInflatedDescendantSubcircuitIds(group: Group<any>): Set<string> {
+  const subcircuitIds = new Set<string>()
+
+  for (const component of group.getDescendants()) {
+    if (!component.isSubcircuit) continue
+
+    const subcircuit = component.getSubcircuit()
+    if (!subcircuit._isInflatedFromCircuitJson || !subcircuit.subcircuit_id)
+      continue
+    subcircuitIds.add(subcircuit.subcircuit_id)
+  }
+
+  return subcircuitIds
+}
+
 /**
  * Removes existing PCB traces, plus their vias, when a reroute phase returns
  * replacement traces for the same source connection.
@@ -29,17 +44,17 @@ function addPossibleReplacementSourceTraceId(
 export function deleteExistingPcbTracesReplacedBy({
   group,
   outputPcbTraces,
-  allowDescendantTraceReplacement = false,
 }: {
   group: Group<any>
   outputPcbTraces: Array<SimplifiedPcbTrace | PcbTrace | PcbVia>
-  allowDescendantTraceReplacement?: boolean
 }) {
   const db = group.root?.db
   if (!db) return
 
   const replacementPcbTraceIds = new Set<string>()
   const replacementSourceTraceIds = new Set<string>()
+  const inflatedDescendantSubcircuitIds =
+    getInflatedDescendantSubcircuitIds(group)
 
   for (const trace of outputPcbTraces) {
     if (trace.type !== "pcb_trace") continue
@@ -72,14 +87,23 @@ export function deleteExistingPcbTracesReplacedBy({
   }
 
   const tracesToDelete = getExistingPcbTracesForReroute(group).filter(
-    (trace) =>
-      (allowDescendantTraceReplacement ||
-        trace.subcircuit_id === group.subcircuit_id) &&
-      (replacementPcbTraceIds.has(trace.pcb_trace_id) ||
+    (trace) => {
+      const canReplaceTrace =
+        trace.subcircuit_id === group.subcircuit_id ||
         Boolean(
-          trace.source_trace_id &&
-            replacementSourceTraceIds.has(trace.source_trace_id),
-        )),
+          trace.subcircuit_id &&
+            inflatedDescendantSubcircuitIds.has(trace.subcircuit_id),
+        )
+      if (!canReplaceTrace) return false
+      if (replacementPcbTraceIds.has(trace.pcb_trace_id)) return true
+      if (
+        !trace.source_trace_id ||
+        !replacementSourceTraceIds.has(trace.source_trace_id)
+      ) {
+        return false
+      }
+      return true
+    },
   )
 
   if (tracesToDelete.length === 0) return
