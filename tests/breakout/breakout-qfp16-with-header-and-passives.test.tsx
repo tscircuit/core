@@ -84,5 +84,6 @@ test("breakout routes qfp16 controller pins to header and passives without break
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "breakout-qfp16-with-header-and-passives-autorouting-srj",
+    circuit,
   )
 })

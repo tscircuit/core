@@ -84,5 +84,6 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "breakout-sot23-regulator-power-rail-autorouting-srj",
+    circuit,
   )
 })
