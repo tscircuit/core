@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("fanout routes soic8 sensor support parts to an i2c header without fanoutpoints", async () => {
+test("fanout routes soic8 sensor support parts to an i2c header with auto fanoutpoints", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
@@ -76,11 +76,16 @@ test("fanout routes soic8 sensor support parts to an i2c header without fanoutpo
   })
 
   expect(fanoutPcbGroup).toBeDefined()
-  expect(circuit.db.pcb_breakout_point.list()).toHaveLength(0)
+  expect(circuit.db.pcb_breakout_point.list()).toHaveLength(6)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(6)
+  const drcErrors_fanout = circuit.getCircuitJson().filter((e: any) =>
+    e.type?.includes("error"),
+  )
+  expect(drcErrors_fanout).toHaveLength(59)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "fanout-soic8-sensor-to-i2c-header-autorouting-srj",
+    circuit,
   )
 })

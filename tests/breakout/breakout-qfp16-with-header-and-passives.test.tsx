@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("breakout routes qfp16 controller pins to header and passives without breakoutpoints", async () => {
+test("breakout routes qfp16 controller pins to header and passives with auto breakoutpoints", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
@@ -77,12 +77,17 @@ test("breakout routes qfp16 controller pins to header and passives without break
   })
 
   expect(breakoutPcbGroup).toBeDefined()
-  expect(circuit.db.pcb_breakout_point.list()).toHaveLength(0)
+  expect(circuit.db.pcb_breakout_point.list()).toHaveLength(5)
   expect(autoroutingPhaseIoStack.length).toBeGreaterThanOrEqual(2)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(6)
+  const drcErrors_qfp16 = circuit.getCircuitJson().filter((e: any) =>
+    e.type?.includes("error"),
+  )
+  expect(drcErrors_qfp16).toHaveLength(12)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "breakout-qfp16-with-header-and-passives-autorouting-srj",
+    circuit,
   )
 })
