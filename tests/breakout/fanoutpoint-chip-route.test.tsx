@@ -70,9 +70,7 @@ test("fanout routes a chip pin through a fanoutpoint", async () => {
 
   expect(traceThroughFanoutPoint).toBeDefined()
   const circuitJson = circuit.getCircuitJson()
-  const drcErrors = circuitJson.filter((e: any) =>
-    e.type?.includes("error"),
-  )
+  const drcErrors = circuitJson.filter((e: any) => e.type?.includes("error"))
   expect(drcErrors).toHaveLength(3)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

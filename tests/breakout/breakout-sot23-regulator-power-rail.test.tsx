@@ -80,9 +80,9 @@ test("breakout routes sot23 regulator power rail parts with auto breakoutpoints"
   expect(breakoutPcbGroup).toBeDefined()
   expect(circuit.db.pcb_breakout_point.list()).toHaveLength(5)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(7)
-  const drcErrors_sot23 = circuit.getCircuitJson().filter((e: any) =>
-    e.type?.includes("error"),
-  )
+  const drcErrors_sot23 = circuit
+    .getCircuitJson()
+    .filter((e: any) => e.type?.includes("error"))
   expect(drcErrors_sot23).toHaveLength(40)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(

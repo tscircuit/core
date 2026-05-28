@@ -80,9 +80,9 @@ test("breakout routes qfp16 controller pins to header and passives with auto bre
   expect(circuit.db.pcb_breakout_point.list()).toHaveLength(5)
   expect(autoroutingPhaseIoStack.length).toBeGreaterThanOrEqual(2)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(6)
-  const drcErrors_qfp16 = circuit.getCircuitJson().filter((e: any) =>
-    e.type?.includes("error"),
-  )
+  const drcErrors_qfp16 = circuit
+    .getCircuitJson()
+    .filter((e: any) => e.type?.includes("error"))
   expect(drcErrors_qfp16).toHaveLength(12)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(

@@ -45,9 +45,7 @@ test("autorouter uses breakout point", async () => {
   )
   expect(hasPointNear).toBe(true)
   const circuitJson = circuit.getCircuitJson()
-  const drcErrors = circuitJson.filter((e: any) =>
-    e.type?.includes("error"),
-  )
+  const drcErrors = circuitJson.filter((e: any) => e.type?.includes("error"))
   expect(drcErrors).toHaveLength(3)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

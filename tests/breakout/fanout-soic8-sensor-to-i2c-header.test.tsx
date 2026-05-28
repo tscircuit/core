@@ -78,9 +78,9 @@ test("fanout routes soic8 sensor support parts to an i2c header with auto fanout
   expect(fanoutPcbGroup).toBeDefined()
   expect(circuit.db.pcb_breakout_point.list()).toHaveLength(6)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(6)
-  const drcErrors_fanout = circuit.getCircuitJson().filter((e: any) =>
-    e.type?.includes("error"),
-  )
+  const drcErrors_fanout = circuit
+    .getCircuitJson()
+    .filter((e: any) => e.type?.includes("error"))
   expect(drcErrors_fanout).toHaveLength(59)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
