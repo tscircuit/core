@@ -19,7 +19,6 @@ export class BreakoutPoint extends PrimitiveComponent<
   }
 
   _matchConnection(): void {
-    if (this.matchedPort) return
     const { connection } = this._parsedProps
     const subcircuit = this.getSubcircuit()
     if (!subcircuit) return
@@ -51,7 +50,6 @@ export class BreakoutPoint extends PrimitiveComponent<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    if (this.pcb_breakout_point_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     this._matchConnection()

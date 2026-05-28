@@ -23,7 +23,7 @@ export const orderedRenderPhases = [
   "CreateTracesFromProps",
   "CreateTracesFromNetLabels",
   "CreateTraceHintsFromProps",
-  "PcbFindAutoBreakoutPoints",
+  "CreateAutoplacedBreakoutPoints",
   "SourceGroupRender",
   "AssignNameToUnnamedComponents",
   "SourceRender",
