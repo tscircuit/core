@@ -23,6 +23,7 @@ export const orderedRenderPhases = [
   "CreateTracesFromProps",
   "CreateTracesFromNetLabels",
   "CreateTraceHintsFromProps",
+  "CreateAutoplacedBreakoutPoints",
   "SourceGroupRender",
   "AssignNameToUnnamedComponents",
   "SourceRender",
