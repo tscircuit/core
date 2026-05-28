@@ -525,6 +525,11 @@ export class Board
         y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
       })),
       material: props.material,
+      // W15.P4.C (EnergyCitizen fork): propagate solderMaskColor prop
+      // (BoardColor enum: green/red/blue/purple/black/white/yellow) to
+      // pcb_board so downstream renderers (circuit-json-to-gltf, custom
+      // viewers) can apply the requested fab solder mask color.
+      solder_mask_color: props.solderMaskColor,
 
       min_trace_width:
         subcircuitProps.minTraceWidth ?? jlcMinTolerances.min_trace_width,
