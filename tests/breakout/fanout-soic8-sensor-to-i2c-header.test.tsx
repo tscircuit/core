@@ -82,5 +82,6 @@ test("fanout routes soic8 sensor support parts to an i2c header with auto fanout
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "fanout-soic8-sensor-to-i2c-header-autorouting-srj",
+    circuit,
   )
 })
