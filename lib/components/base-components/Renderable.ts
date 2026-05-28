@@ -57,6 +57,8 @@ export const orderedRenderPhases = [
   "PcbLayout",
   "PcbBoardAutoSize",
   "PanelLayout",
+  "PcbAutoBreakoutPointRender",
+  "PcbBreakoutPointRender",
   "PcbTraceHintRender",
   "PcbManualTraceRender",
   "PcbTraceRender",
