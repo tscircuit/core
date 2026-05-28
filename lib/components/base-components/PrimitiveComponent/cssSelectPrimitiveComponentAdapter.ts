@@ -42,6 +42,18 @@ export const cssSelectPrimitiveComponentAdapter: Required<
           : null
     }
 
+    const matchingParsedPropName = Object.keys(node._parsedProps ?? {}).find(
+      (propName) => propName.toLowerCase() === name,
+    )
+    if (matchingParsedPropName) {
+      const value = node._parsedProps[matchingParsedPropName]
+      return typeof value === "string"
+        ? value
+        : value !== null && value !== undefined
+          ? String(value)
+          : null
+    }
+
     // Check for properties directly on the node
     if (name in node) {
       const value = (node as any)[name]
@@ -77,6 +89,13 @@ export const cssSelectPrimitiveComponentAdapter: Required<
     }
     // Check for other attributes based on props
     if (node._parsedProps && name in node._parsedProps) {
+      return true
+    }
+    if (
+      Object.keys(node._parsedProps ?? {}).some(
+        (propName) => propName.toLowerCase() === name,
+      )
+    ) {
       return true
     }
     // Check for properties directly on the node

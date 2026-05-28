@@ -10,6 +10,7 @@ export interface TscircuitElements {
   fuse: Props.FuseProps
   led: Props.LedProps
   board: Props.BoardProps
+  drccheck: Props.DrcCheckProps
   mountedboard: Props.MountedBoardProps
   panel: Props.PanelProps
   subpanel: Props.SubpanelProps
