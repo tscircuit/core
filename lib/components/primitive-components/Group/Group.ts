@@ -35,6 +35,7 @@ import {
   getPresetAutoroutingConfig,
   type NormalizedAutorouterConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import { getDescendantSubcircuitIds } from "lib/utils/autorouting/getAncestorSubcircuitIds"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
@@ -1292,6 +1293,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           (pcb_trace as any).rootConnectionName,
         ),
       ]
+      const isRerouteOutputTrace = [
+        (pcb_trace as any).pcb_trace_id,
+        (pcb_trace as any).source_trace_id,
+        (pcb_trace as any).connection_name,
+        (pcb_trace as any).rootConnectionName,
+      ].some(
+        (value) => typeof value === "string" && value.includes("_reroute_"),
+      )
       const validSourceTraceIds = Array.from(
         new Set(possibleSourceTraceIds),
       ).filter((possibleSourceTraceId) =>
@@ -1312,6 +1321,41 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           ? (db.source_trace.get(sourceTraceId)?.subcircuit_id ??
             db.source_net.get(sourceTraceId)?.subcircuit_id)
           : undefined) ?? this.subcircuit_id!
+      const isBreakoutOwnedTrace =
+        sourceTraceId &&
+        db.pcb_breakout_point
+          .list()
+          .some(
+            (point) =>
+              point.source_trace_id === sourceTraceId &&
+              point.subcircuit_id === this.subcircuit_id,
+          )
+      const sourceTraceHasBreakoutPoint =
+        sourceTraceId &&
+        db.pcb_breakout_point
+          .list()
+          .some((point) => point.source_trace_id === sourceTraceId)
+      if (
+        sourceTraceId &&
+        db.pcb_breakout_point.list().length > 0 &&
+        !isRerouteOutputTrace &&
+        !sourceTraceHasBreakoutPoint
+      ) {
+        const descendantSubcircuitIds = this.subcircuit_id
+          ? new Set(getDescendantSubcircuitIds(db, this.subcircuit_id))
+          : new Set<string>()
+        const hasExistingChildTraceForSourceTrace = db.pcb_trace
+          .list()
+          .some(
+            (trace) =>
+              trace.source_trace_id === sourceTraceId &&
+              Boolean(
+                trace.subcircuit_id &&
+                  descendantSubcircuitIds.has(trace.subcircuit_id),
+              ),
+          )
+        if (hasExistingChildTraceForSourceTrace) continue
+      }
 
       const cjRoute = pcb_trace.route.map((point: any) => {
         if (point.route_type !== "through_obstacle") return point
@@ -1337,10 +1381,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const processedSegments = addPortIdsToTracesAtJumperPads(segments, db)
 
       // Insert each segment as a separate trace
-      for (const segment of processedSegments) {
+      for (const [segmentIndex, segment] of processedSegments.entries()) {
         if (segment.length > 0) {
+          const pcbTraceId = (pcb_trace as any).pcb_trace_id
+          const traceToInsert =
+            isBreakoutOwnedTrace && pcbTraceId
+              ? {
+                  ...pcb_trace,
+                  pcb_trace_id: `${pcbTraceId}_${this.subcircuit_id ?? "root"}_${segmentIndex}`,
+                }
+              : pcb_trace
           db.pcb_trace.insert({
-            ...pcb_trace,
+            ...traceToInsert,
             route: segment,
           })
         }

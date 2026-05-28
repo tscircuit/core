@@ -3,6 +3,14 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import type { Net } from "./Net"
 
+export interface ResolvedBreakoutPointTarget {
+  sourcePortId: string
+  sourceTraceId: string
+  x: number
+  y: number
+  layer?: "top" | "bottom"
+}
+
 export class BreakoutPoint extends PrimitiveComponent<
   typeof breakoutPointProps
 > {
@@ -10,6 +18,15 @@ export class BreakoutPoint extends PrimitiveComponent<
   matchedPort: Port | null = null
   matchedNet: Net | null = null
   isPcbPrimitive = true
+  private resolvedTarget: ResolvedBreakoutPointTarget | null = null
+
+  setResolvedTarget(target: ResolvedBreakoutPointTarget): void {
+    this.resolvedTarget = target
+  }
+
+  hasResolvedTarget(): boolean {
+    return this.resolvedTarget !== null
+  }
 
   get config() {
     return {
@@ -49,14 +66,33 @@ export class BreakoutPoint extends PrimitiveComponent<
     return trace?.connected_source_net_ids[0]
   }
 
-  doInitialPcbPrimitiveRender(): void {
+  _renderPcbBreakoutPoint(): void {
+    if (this.pcb_breakout_point_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
-    this._matchConnection()
-    const position = this._getGlobalPcbPositionBeforeLayout()
+    const position = this.resolvedTarget
+      ? { x: this.resolvedTarget.x, y: this.resolvedTarget.y }
+      : this._getGlobalPcbPositionBeforeLayout()
     const group = this.parent?.getGroup()
     const subcircuit = this.getSubcircuit()
     if (!group || !group.pcb_group_id) return
+
+    if (this.resolvedTarget) {
+      const sourceTrace = db.source_trace.get(this.resolvedTarget.sourceTraceId)
+      const pcb_breakout_point = db.pcb_breakout_point.insert({
+        pcb_group_id: group.pcb_group_id,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        source_port_id: this.resolvedTarget.sourcePortId,
+        source_trace_id: this.resolvedTarget.sourceTraceId,
+        source_net_id: sourceTrace?.connected_source_net_ids[0],
+        x: position.x,
+        y: position.y,
+      })
+      this.pcb_breakout_point_id = pcb_breakout_point.pcb_breakout_point_id
+      return
+    }
+
+    this._matchConnection()
     const pcb_breakout_point = db.pcb_breakout_point.insert({
       pcb_group_id: group.pcb_group_id,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -73,6 +109,16 @@ export class BreakoutPoint extends PrimitiveComponent<
       y: position.y,
     })
     this.pcb_breakout_point_id = pcb_breakout_point.pcb_breakout_point_id
+  }
+
+  doInitialPcbPrimitiveRender(): void {
+    if (this.resolvedTarget) return
+    this._renderPcbBreakoutPoint()
+  }
+
+  doInitialPcbBreakoutPointRender(): void {
+    if (!this.resolvedTarget) return
+    this._renderPcbBreakoutPoint()
   }
 
   _getPcbCircuitJsonBounds() {
