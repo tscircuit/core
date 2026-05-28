@@ -9,19 +9,23 @@ test("custom drc check connectivity helpers accept ports, nets, and components",
       <chip
         name="U1"
         footprint="soic8"
+        manufacturerPartNumber="STM32F030F4P6"
         pinLabels={{
-          pin1: "ADDR1",
+          pin1: "BOOT0",
+          pin2: "NRST",
+          pin3: "VDD",
           pin4: "GND",
         }}
       />
-      <resistor name="R_ADDR1" resistance="10k" footprint="0402" pcbY={-5} />
+      <resistor name="R_BOOT0" resistance="1k" footprint="0402" pcbY={-5} />
 
+      <trace from=".U1 > .VDD" to="net.V3_3" />
       <trace from=".U1 > .GND" to="net.GND" />
-      <trace from=".U1 > .ADDR1" to=".R_ADDR1 > .pin1" />
-      <trace from=".R_ADDR1 > .pin2" to="net.GND" />
+      <trace from=".U1 > .BOOT0" to=".R_BOOT0 > .pin1" />
+      <trace from=".R_BOOT0 > .pin2" to="net.GND" />
 
       <drccheck
-        name="connectivity-helper-check"
+        name="stm32-boot0-pulldown-resistance-check"
         checkFn={({
           select,
           selectAll,
@@ -30,22 +34,22 @@ test("custom drc check connectivity helpers accept ports, nets, and components",
           getResistanceBetween,
         }) => {
           const [chip] = selectAll("chip")
-          const addr1 = select("U1.ADDR1")
+          const boot0 = select("U1.BOOT0")
           const gnd = select("net.GND")
-          if (!chip || !addr1 || !gnd) return
+          if (!chip || !boot0 || !gnd) return
 
           if (
             isConnected(chip, gnd) &&
-            isPulledDown(addr1) &&
-            getResistanceBetween(addr1, gnd) === 10_000
+            isPulledDown(boot0) &&
+            getResistanceBetween(boot0, gnd) === 1_000
           ) {
             return {
               error_type: "source_component_misconfigured_error",
-              message: "Connectivity helpers detected ADDR1 pull-down",
+              message: "U1 BOOT0 pull-down resistance must be at least 10k",
               source_component_ids: [
                 chip.getSourceComponent()!.source_component_id,
               ],
-              source_port_ids: [addr1.getSourcePort()!.source_port_id],
+              source_port_ids: [boot0.getSourcePort()!.source_port_id],
             }
           }
         }}
@@ -60,7 +64,7 @@ test("custom drc check connectivity helpers accept ports, nets, and components",
     .filter(
       (elm) =>
         elm.type === "source_component_misconfigured_error" &&
-        elm.message === "Connectivity helpers detected ADDR1 pull-down",
+        elm.message === "U1 BOOT0 pull-down resistance must be at least 10k",
     )
 
   expect(customErrors).toHaveLength(1)
