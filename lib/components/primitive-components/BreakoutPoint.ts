@@ -19,6 +19,7 @@ export class BreakoutPoint extends PrimitiveComponent<
   }
 
   _matchConnection(): void {
+    if (this.matchedPort) return
     const { connection } = this._parsedProps
     const subcircuit = this.getSubcircuit()
     if (!subcircuit) return
@@ -49,7 +50,8 @@ export class BreakoutPoint extends PrimitiveComponent<
     return trace?.connected_source_net_ids[0]
   }
 
-  doInitialPcbPrimitiveRender(): void {
+  _renderPcbBreakoutPoint(): void {
+    if (this.pcb_breakout_point_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     this._matchConnection()
@@ -73,6 +75,14 @@ export class BreakoutPoint extends PrimitiveComponent<
       y: position.y,
     })
     this.pcb_breakout_point_id = pcb_breakout_point.pcb_breakout_point_id
+  }
+
+  doInitialPcbPrimitiveRender(): void {
+    this._renderPcbBreakoutPoint()
+  }
+
+  doInitialPcbBreakoutPointRender(): void {
+    this._renderPcbBreakoutPoint()
   }
 
   _getPcbCircuitJsonBounds() {
