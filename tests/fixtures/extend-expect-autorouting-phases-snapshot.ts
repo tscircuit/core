@@ -2,7 +2,11 @@ import { type MatcherResult, expect } from "bun:test"
 import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import type { AutoroutingPhaseIo } from "tests/fixtures/create-autorouting-phase-io-stack"
-import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import type {
+  SimpleRouteJson,
+  SimplifiedPcbTrace,
+} from "lib/utils/autorouting/SimpleRouteJson"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import { stackSvgsVertically } from "stack-svgs"
@@ -106,10 +110,34 @@ expect.extend({
       }
     }
 
-    const svg = getAutoroutingPhasesSvg({
+    const circuit = args[2] as { getCircuitJson(): any[] } | undefined
+
+    const phaseSvg = getAutoroutingPhasesSvg({
       autoroutingPhaseIoStack,
       snapshotName: args[1],
     })
+
+    let svg: string
+    if (circuit) {
+      const circuitJson = circuit.getCircuitJson()
+      const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+        circuitJson,
+      })
+      const pcbTraces = circuitJson.filter((e: any) => e.type === "pcb_trace")
+      simpleRouteJson.traces = pcbTraces as SimplifiedPcbTrace[]
+
+      const fullCircuitSvg = createLabeledSrjSvg(
+        `FULL ROUTED CIRCUIT: ${simpleRouteJson.connections.length} CONNECTIONS, ${pcbTraces.length} TRACES`,
+        simpleRouteJson,
+      )
+
+      svg = stackSvgsVertically([fullCircuitSvg, phaseSvg], {
+        gap: 16,
+        normalizeSize: false,
+      })
+    } else {
+      svg = phaseSvg
+    }
     const testPath = args[0].replace(/\.test\.tsx?$/, "")
     const snapshotDir = path.join(path.dirname(testPath), "__snapshots__")
     const filePath = path.join(snapshotDir, `${args[1]}.snap.svg`)
@@ -153,6 +181,7 @@ declare module "bun:test" {
     toMatchAutoroutingPhaseIoStackSnapshot(
       testPath: string,
       snapshotName: string,
+      circuit?: { getCircuitJson(): any[] },
     ): Promise<MatcherResult>
   }
 }
