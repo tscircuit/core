@@ -3,6 +3,8 @@ import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import type { AutoroutingPhaseIo } from "tests/fixtures/create-autorouting-phase-io-stack"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import type { AnyCircuitElement } from "circuit-json"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import { stackSvgsVertically } from "stack-svgs"
@@ -45,51 +47,80 @@ function createLabeledSrjSvg(label: string, srj: SimpleRouteJson) {
 function getAutoroutingPhasesSvg({
   autoroutingPhaseIoStack,
   snapshotName,
+  circuitJson,
 }: {
   autoroutingPhaseIoStack: AutoroutingPhaseIo[]
   snapshotName: string
+  circuitJson?: AnyCircuitElement[]
 }) {
-  return stackSvgsVertically(
-    autoroutingPhaseIoStack
-      .flatMap((phase, index) => {
-        const phaseNumber = index + 1
-        const phaseSvgs: string[] = []
+  const phasePanels = autoroutingPhaseIoStack
+    .flatMap((phase, index) => {
+      const phaseNumber = index + 1
+      const phaseSvgs: string[] = []
 
-        if (phase.startSimpleRouteJson) {
-          const srj = phase.startSimpleRouteJson
-          phaseSvgs.push(
-            createLabeledSrjSvg(
-              `AUTOROUTING PHASE ${phaseNumber} START: ${srj.connections.length} CONNECTIONS, ${
-                srj.traces?.length ?? 0
-              } TRACES`,
-              srj,
-            ),
-          )
-        }
+      if (phase.startSimpleRouteJson) {
+        const srj = phase.startSimpleRouteJson
+        phaseSvgs.push(
+          createLabeledSrjSvg(
+            `AUTOROUTING PHASE ${phaseNumber} START: ${srj.connections.length} CONNECTIONS, ${
+              srj.traces?.length ?? 0
+            } TRACES`,
+            srj,
+          ),
+        )
+      }
 
-        if (phase.endSimpleRouteJson) {
-          const srj = phase.endSimpleRouteJson
-          phaseSvgs.push(
-            createLabeledSrjSvg(
-              `AUTOROUTING PHASE ${phaseNumber} END: ${srj.connections.length} CONNECTIONS, ${
-                srj.traces?.length ?? 0
-              } TRACES`,
-              srj,
-            ),
-          )
-        }
+      if (phase.endSimpleRouteJson) {
+        const srj = phase.endSimpleRouteJson
+        phaseSvgs.push(
+          createLabeledSrjSvg(
+            `AUTOROUTING PHASE ${phaseNumber} END: ${srj.connections.length} CONNECTIONS, ${
+              srj.traces?.length ?? 0
+            } TRACES`,
+            srj,
+          ),
+        )
+      }
 
-        return phaseSvgs
-      })
-      .reverse(),
-    {
-      gap: 16,
-      normalizeSize: false,
-      rootAttributes: {
-        "data-testid": `${snapshotName}-autorouting-srj-stack`,
-      },
+      return phaseSvgs
+    })
+    .reverse()
+
+  // Prepend a full routed circuit panel when circuitJson is provided
+  if (circuitJson) {
+    const { simpleRouteJson: fullSrj } = getSimpleRouteJsonFromCircuitJson({
+      circuitJson,
+    })
+
+    // Populate traces from pcb_trace elements for visualization
+    const pcbTraces = circuitJson.filter(
+      (e): e is Extract<typeof e, { type: "pcb_trace" }> =>
+        e.type === "pcb_trace",
+    )
+    fullSrj.traces = pcbTraces.map((t) => ({
+      type: "pcb_trace" as const,
+      pcb_trace_id: t.pcb_trace_id,
+      connection_name: t.source_trace_id ?? t.pcb_trace_id,
+      route: t.route as any,
+    }))
+
+    phasePanels.unshift(
+      createLabeledSrjSvg(
+        `FULL ROUTED CIRCUIT: ${fullSrj.connections.length} CONNECTIONS, ${
+          fullSrj.traces.length
+        } TRACES`,
+        fullSrj,
+      ),
+    )
+  }
+
+  return stackSvgsVertically(phasePanels, {
+    gap: 16,
+    normalizeSize: false,
+    rootAttributes: {
+      "data-testid": `${snapshotName}-autorouting-srj-stack`,
     },
-  )
+  })
 }
 
 expect.extend({
@@ -106,9 +137,17 @@ expect.extend({
       }
     }
 
+    // Optional 3rd arg: circuit object with getCircuitJson() method
+    const circuitArg = args[2]
+    const circuitJson =
+      circuitArg && typeof circuitArg.getCircuitJson === "function"
+        ? circuitArg.getCircuitJson()
+        : undefined
+
     const svg = getAutoroutingPhasesSvg({
       autoroutingPhaseIoStack,
       snapshotName: args[1],
+      circuitJson,
     })
     const testPath = args[0].replace(/\.test\.tsx?$/, "")
     const snapshotDir = path.join(path.dirname(testPath), "__snapshots__")
@@ -153,6 +192,7 @@ declare module "bun:test" {
     toMatchAutoroutingPhaseIoStackSnapshot(
       testPath: string,
       snapshotName: string,
+      circuit?: { getCircuitJson(): AnyCircuitElement[] },
     ): Promise<MatcherResult>
   }
 }
