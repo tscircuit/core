@@ -22,6 +22,10 @@ function addPossibleReplacementSourceTraceId(
   }
 }
 
+function isRerouteReplacementName(value: unknown): boolean {
+  return typeof value === "string" && value.includes("_reroute_")
+}
+
 /**
  * Removes existing PCB traces, plus their vias, when a reroute phase returns
  * replacement traces for the same source connection.
@@ -38,6 +42,7 @@ export function deleteExistingPcbTracesReplacedBy({
 
   const replacementPcbTraceIds = new Set<string>()
   const replacementSourceTraceIds = new Set<string>()
+  let hasRerouteReplacement = false
 
   for (const trace of outputPcbTraces) {
     if (trace.type !== "pcb_trace") continue
@@ -46,6 +51,12 @@ export function deleteExistingPcbTracesReplacedBy({
       SimplifiedPcbTrace & {
         rootConnectionName?: string
       }
+    hasRerouteReplacement ||= [
+      replacementTrace.pcb_trace_id,
+      replacementTrace.source_trace_id,
+      replacementTrace.connection_name,
+      replacementTrace.rootConnectionName,
+    ].some(isRerouteReplacementName)
 
     replacementPcbTraceIds.add(replacementTrace.pcb_trace_id)
     addPossibleReplacementSourceTraceId(
@@ -63,8 +74,8 @@ export function deleteExistingPcbTracesReplacedBy({
   }
 
   if (
-    replacementPcbTraceIds.size === 0 &&
-    replacementSourceTraceIds.size === 0
+    !hasRerouteReplacement ||
+    (replacementPcbTraceIds.size === 0 && replacementSourceTraceIds.size === 0)
   ) {
     return
   }

@@ -91,6 +91,25 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     board = db.pcb_board.list()[0]
   }
 
+  const sourceTracePcbPortsById = new Map<
+    string,
+    ReturnType<typeof db.pcb_port.list>
+  >()
+  for (const sourceTrace of db.source_trace.list()) {
+    sourceTracePcbPortsById.set(
+      sourceTrace.source_trace_id,
+      db.pcb_port
+        .list()
+        .filter(
+          (port) =>
+            sourceTrace.connected_source_port_ids.includes(
+              port.source_port_id,
+            ) &&
+            (!subcircuit_id || relevantSubcircuitIds?.has(port.subcircuit_id!)),
+        ),
+    )
+  }
+
   db = su(subcircuitElements)
   const pcbGroup = subcircuit_id
     ? db.pcb_group.getWhere({ subcircuit_id })
@@ -385,12 +404,31 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         directTraceConnectionsById.get(bp.source_trace_id) ??
         breakoutTraceConnectionsById.get(bp.source_trace_id)
       if (conn) {
+        const sourcePortId = (bp as any).source_port_id
+        if (sourcePortId) {
+          conn.pointsToConnect = conn.pointsToConnect.filter((point: any) => {
+            if (!point.pcb_port_id) return true
+            const pcbPort = db.pcb_port.get(point.pcb_port_id)
+            return pcbPort?.source_port_id !== sourcePortId
+          })
+        }
         conn.pointsToConnect.push(pt)
       } else {
+        const sourceTracePcbPorts =
+          sourceTracePcbPortsById.get(bp.source_trace_id) ?? []
         const newConn: SimpleRouteConnection = {
           name: bp.source_trace_id,
           source_trace_id: bp.source_trace_id,
-          pointsToConnect: [pt],
+          pointsToConnect: [
+            ...sourceTracePcbPorts.map((port) => ({
+              x: port.x!,
+              y: port.y!,
+              layer: (port.layers?.[0] as any) ?? "top",
+              pointId: port.pcb_port_id,
+              pcb_port_id: port.pcb_port_id,
+            })),
+            pt,
+          ],
         }
         connectionsFromBreakoutPoints.push(newConn)
         breakoutTraceConnectionsById.set(bp.source_trace_id, newConn)
