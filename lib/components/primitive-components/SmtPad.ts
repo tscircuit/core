@@ -1,6 +1,7 @@
 import { smtPadProps } from "@tscircuit/props"
 import {
   distance,
+  type LayerRef,
   type PcbSmtPad,
   type PcbSmtPadCircle,
   type PcbSmtPadRect,
@@ -115,7 +116,15 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         ? 0
         : normalizedRotationDegrees
     const transformRotationBeforeFlip = finalRotationDegrees
-    const { maybeFlipLayer, isFlipped } = this._getPcbPrimitiveFlippedHelpers()
+    const { maybeFlipLayer: maybeFlipDefaultLayer, isFlipped } =
+      this._getPcbPrimitiveFlippedHelpers()
+    const primitiveContainer = this.getPrimitiveContainer()
+    const primitiveContainerLayer =
+      primitiveContainer?.props?.layer !== undefined
+        ? primitiveContainer?._parsedProps.layer
+        : undefined
+    const maybeFlipLayer = (layer: LayerRef) =>
+      primitiveContainerLayer ?? maybeFlipDefaultLayer(layer)
 
     if (isFlipped) {
       finalRotationDegrees = (360 - finalRotationDegrees + 360) % 360
@@ -334,6 +343,19 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     db.pcb_smtpad.update(this.pcb_smtpad_id!, {
       pcb_port_id: this.matchedPort?.pcb_port_id!,
     })
+  }
+
+  getAvailablePcbLayers(): string[] {
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const primitiveContainer = this.getPrimitiveContainer()
+    const primitiveContainerLayer =
+      primitiveContainer?.props?.layer !== undefined
+        ? primitiveContainer?._parsedProps.layer
+        : undefined
+    return [
+      primitiveContainerLayer ??
+        maybeFlipLayer(this._parsedProps.layer ?? "top"),
+    ]
   }
 
   _getPcbCircuitJsonBounds(): {
