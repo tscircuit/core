@@ -77,9 +77,6 @@ export class Breakout extends Group<typeof breakoutProps> {
   doInitialPcbAutoplaceBreakoutPoints(): void {
     if (this.root?.pcbDisabled) return
 
-    const props = this._parsedProps as z.infer<typeof breakoutProps>
-    if (!props.autorouter) return
-
     const solverInput = createBreakoutPointSolverInput(this)
     if (!solverInput) return
 
