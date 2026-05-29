@@ -1,10 +1,12 @@
 import { breakoutProps } from "@tscircuit/props"
+import { BreakoutPointSolver } from "@tscircuit/breakout-point-solver"
 import { Group } from "../Group/Group"
 import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { BreakoutPoint } from "../BreakoutPoint"
 import { Trace } from "../Trace/Trace"
 import type { Port } from "../Port"
 import type { z } from "zod"
+import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
 
 export class Breakout extends Group<typeof breakoutProps> {
   constructor(props: z.input<typeof breakoutProps>) {
@@ -68,6 +70,37 @@ export class Breakout extends Group<typeof breakoutProps> {
         const breakoutPoint = new AutoplacedBreakoutPoint({})
         breakoutPoint.matchedPort = port
         this.add(breakoutPoint)
+      }
+    }
+  }
+
+  doInitialPcbAutoBreakoutPointRender(): void {
+    if (this.root?.pcbDisabled) return
+
+    const props = this._parsedProps as z.infer<typeof breakoutProps>
+    if (!props.autorouter) return
+
+    const solverInput = createBreakoutPointSolverInput(this)
+    if (!solverInput) return
+
+    const solver = new BreakoutPointSolver(solverInput)
+    solver.solve()
+    const output = solver.getOutput()
+
+    const autoBreakoutPoints = this.children.filter(
+      (c) => c instanceof AutoplacedBreakoutPoint,
+    ) as AutoplacedBreakoutPoint[]
+
+    for (const solvedPoint of output.breakoutPoints) {
+      const match = autoBreakoutPoints.find(
+        (child) =>
+          child.matchedPort?.source_port_id === solvedPoint.sourcePortId,
+      )
+      if (match) {
+        match._renderPcbBreakoutPoint({
+          x: solvedPoint.x,
+          y: solvedPoint.y,
+        })
       }
     }
   }

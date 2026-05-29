@@ -42,11 +42,11 @@ export class BaseBreakoutPoint<
     return trace?.connected_source_net_ids[0]
   }
 
-  _renderPcbBreakoutPoint(): void {
+  _renderPcbBreakoutPoint(position?: { x: number; y: number }): void {
     if (this.pcb_breakout_point_id) return
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
-    const position = this._getGlobalPcbPositionBeforeLayout()
+    const pos = position ?? this._getGlobalPcbPositionBeforeLayout()
     const group = this.parent?.getGroup()
     const subcircuit = this.getSubcircuit()
     if (!group || !group.pcb_group_id) return
@@ -62,8 +62,8 @@ export class BaseBreakoutPoint<
         : this.matchedPort
           ? this._getSourceNetIdForPort(this.matchedPort)
           : undefined,
-      x: position.x,
-      y: position.y,
+      x: pos.x,
+      y: pos.y,
     })
     this.pcb_breakout_point_id = pcb_breakout_point.pcb_breakout_point_id
   }
