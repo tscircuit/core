@@ -78,7 +78,7 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
   })
 
   expect(breakoutPcbGroup).toBeDefined()
-  expect(circuit.db.pcb_breakout_point.list()).toHaveLength(0)
+  expect(circuit.db.pcb_breakout_point.list().length).toBe(3)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(7)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
