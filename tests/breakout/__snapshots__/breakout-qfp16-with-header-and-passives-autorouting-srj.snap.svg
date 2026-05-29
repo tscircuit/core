@@ -1,4 +1,4 @@
-<svg width="800" height="2592" viewBox="0 0 800 2592" xmlns="http://www.w3.org/2000/svg">
+<svg width="800" height="3244" viewBox="0 0 800 3244" xmlns="http://www.w3.org/2000/svg">
   <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
     <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
     <rect x="0" y="0" width="800" height="36" fill="#121212" />
@@ -10,77 +10,72 @@
     font-size="18"
     font-weight="700"
     text-anchor="middle"
-  >FULL ROUTED CIRCUIT: 6 CONNECTIONS, 2 TRACES</text>
+  >FULL ROUTED CIRCUIT: 5 CONNECTIONS, 11 TRACES</text>
   </g>
   <g transform="translate(0, 36) scale(1, 1) translate(0, 0)">
-    <rect width="100%" height="100%" fill="#fff"/><g><polyline data-points="-2.4,-0.25 -3.124616788702222,-0.25" data-type="line" data-label="" points="246.9183673469388,313.265306122449 208.4693132525352,313.265306122449" fill="none" stroke="red" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.124616788702222,-0.25 -3.1425126915215413,-0.23210409718068037" data-type="line" data-label="" points="208.4693132525352,313.265306122449 207.5197347355917,312.31572760550546" fill="none" stroke="red" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.1425126915215413,-0.23210409718068037 -3.2548959028193196,-0.23210409718068037" data-type="line" data-label="" points="207.5197347355917,312.31572760550546 201.5565439320361,312.31572760550546" fill="none" stroke="red" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.2548959028193196,-0.23210409718068037 -3.273,-0.214" data-type="line" data-label="" points="201.5565439320361,312.31572760550546 200.59591836734694,311.35510204081635" fill="none" stroke="red" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.273,-0.214 -3.273,1.4748540601891502" data-type="line" data-label="" points="200.59591836734694,311.35510204081635 200.59591836734694,221.74243762261654" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="7.959183673469386" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.273,1.4748540601891502 -3.2304576711472914,1.517396389041859" data-type="line" data-label="" points="200.59591836734694,221.74243762261654 202.85326642891926,219.48508956104422" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="7.959183673469386" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.2304576711472914,1.517396389041859 -3.2304576711472914,1.5285423288527085" data-type="line" data-label="" points="202.85326642891926,219.48508956104422 202.85326642891926,218.893672346591" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="7.959183673469386" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.2304576711472914,1.5285423288527085 -3.219,1.54" data-type="line" data-label="" points="202.85326642891926,218.893672346591 203.46122448979594,218.28571428571428" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="7.959183673469386" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.219,1.54 -3.219,2.1710000000000003" data-type="line" data-label="" points="203.46122448979594,218.28571428571428 203.46122448979594,184.80408163265307" fill="none" stroke="red" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.219,2.1710000000000003 -2.99,2.4" data-type="line" data-label="" points="203.46122448979594,184.80408163265307 215.6122448979592,172.65306122448982" fill="none" stroke="red" stroke-width="7.959183673469386"/></g><g><polyline data-points="-2.4,0.75 -2.981158241961397,0.75" data-type="line" data-label="" points="246.9183673469388,260.2040816326531 216.08139940612998,260.2040816326531" fill="none" stroke="red" stroke-width="7.959183673469386"/></g><g><polyline data-points="-2.981158241961397,0.75 -3.9192464819790573,1.6880882400176604" data-type="line" data-label="" points="216.08139940612998,260.2040816326531 166.30528871131534,210.42797093783844" fill="none" stroke="red" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.9192464819790573,1.6880882400176604 -3.9192464819790573,2.3092464819790575" data-type="line" data-label="" points="166.30528871131534,210.42797093783844 166.30528871131534,177.46855401743778" fill="none" stroke="red" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.9192464819790573,2.3092464819790575 -4.01,2.4" data-type="line" data-label="" points="166.30528871131534,177.46855401743778 161.48979591836738,172.65306122448982" fill="none" stroke="red" stroke-width="7.959183673469386"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="0.75" x="220.38775510204084" y="253.5714285714286" width="53.061224489795904" height="13.265306122448948" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="0.25" x="220.38775510204084" y="280.1020408163265" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="-0.25" x="220.38775510204084" y="306.63265306122446" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="-0.75" x="220.38775510204084" y="333.1632653061224" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_4" data-x="-0.75" data-y="-2.4" x="327.8367346938776" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_5" data-x="-0.25" data-y="-2.4" x="354.36734693877554" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_6" data-x="0.25" data-y="-2.4" x="380.8979591836735" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_7" data-x="0.75" data-y="-2.4" x="407.42857142857144" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_2" data-x="2.4" data-y="-0.75" x="475.0816326530612" y="333.1632653061224" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.25" x="475.0816326530612" y="306.63265306122446" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.25" x="475.0816326530612" y="280.1020408163265" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.75" x="475.0816326530612" y="253.5714285714286" width="53.061224489795904" height="13.265306122448948" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="2.4" x="407.42857142857144" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="2.4" x="380.8979591836735" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="2.4" x="354.36734693877554" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="2.4" x="327.8367346938776" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-4.01" data-y="2.4" x="147.16326530612247" y="155.67346938775512" width="28.65306122448979" height="33.95918367346937" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-2.99" data-y="2.4" x="201.28571428571428" y="155.67346938775512" width="28.65306122448979" height="33.95918367346937" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_2" data-x="-5.51" data-y="-2.4" x="67.57142857142864" y="410.36734693877554" width="28.653061224489704" height="33.95918367346934" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_net_0" data-x="-4.49" data-y="-2.4" x="121.69387755102046" y="410.36734693877554" width="28.653061224489733" height="33.95918367346934" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_4
+    <rect width="100%" height="100%" fill="#fff"/><g><polyline data-points="-0.25,-2.4 -0.75,-2.4" data-type="line" data-label="" points="358.09210526315786,436.84210526315786 329.5833333333333,436.84210526315786" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-0.25,-2.4 0.25,-2.4" data-type="line" data-label="" points="358.09210526315786,436.84210526315786 386.6008771929824,436.84210526315786" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="0.25,-2.4 0.75,-2.4" data-type="line" data-label="" points="386.6008771929824,436.84210526315786 415.10964912280696,436.84210526315786" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="0,0 0,-2.15" data-type="line" data-label="" points="372.34649122807014,300 372.34649122807014,422.5877192982456" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="0,-2.15 -0.25,-2.4" data-type="line" data-label="" points="372.34649122807014,422.5877192982456 358.09210526315786,436.84210526315786" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="6,-1.27 6,-3.81" data-type="line" data-label="" points="714.4517543859648,372.4122807017544 714.4517543859648,517.2368421052631" fill="none" stroke="red" stroke-width="5.701754385964912"/></g><g><polyline data-points="6,-1.27 6,1.27" data-type="line" data-label="" points="714.4517543859648,372.4122807017544 714.4517543859648,227.58771929824562" fill="none" stroke="red" stroke-width="5.701754385964912"/></g><g><polyline data-points="6,1.27 6,3.81" data-type="line" data-label="" points="714.4517543859648,227.58771929824562 714.4517543859648,82.76315789473688" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="6,-1.27 1.88,-1.27" data-type="line" data-label="" points="714.4517543859648,372.4122807017544 479.53947368421046,372.4122807017544" fill="none" stroke="red" stroke-width="5.701754385964912"/></g><g><polyline data-points="1.88,-1.27 0.75,-2.4" data-type="line" data-label="" points="479.53947368421046,372.4122807017544 415.10964912280696,436.84210526315786" fill="none" stroke="red" stroke-width="5.701754385964912"/></g><g><polyline data-points="2.4,-0.75 -0.9265322389066704,-0.75" data-type="line" data-label="" points="509.188596491228,342.7631578947368 319.5178986588302,342.7631578947368" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-0.9265322389066704,-0.75 -2.2865291801773924,-2.109996941270722" data-type="line" data-label="" points="319.5178986588302,342.7631578947368 241.97421341093812,420.30684314262885" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-2.2865291801773924,-2.109996941270722 -2.359003058729278,-2.109996941270722" data-type="line" data-label="" points="241.97421341093812,420.30684314262885 237.84193086192712,420.30684314262885" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-2.359003058729278,-2.109996941270722 -2.36,-2.109" data-type="line" data-label="" points="237.84193086192712,420.30684314262885 237.78508771929822,420.25" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-2.36,-2.109 -2.6124476371275103,-1.8565523628724898" data-type="line" data-label="" points="237.78508771929822,420.25 223.39114349711562,405.8560557778174" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-2.6124476371275103,-1.8565523628724898 -4.9665523628724895,-1.8565523628724898" data-type="line" data-label="" points="223.39114349711562,405.8560557778174 89.16587404674402,405.8560557778174" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-4.9665523628724895,-1.8565523628724898 -5.51,-2.4" data-type="line" data-label="" points="89.16587404674402,405.8560557778174 58.17982456140351,436.84210526315786" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-2.4,-0.25 -3.124616788702222,-0.25" data-type="line" data-label="" points="235.50438596491227,314.2543859649123 194.18851643364522,314.2543859649123" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.124616788702222,-0.25 -3.1425126915215413,-0.23210409718068037" data-type="line" data-label="" points="194.18851643364522,314.2543859649123 193.16813600973666,313.2340055410037" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.1425126915215413,-0.23210409718068037 -3.2548959028193196,-0.23210409718068037" data-type="line" data-label="" points="193.16813600973666,313.2340055410037 186.76032133047738,313.2340055410037" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.2548959028193196,-0.23210409718068037 -3.273,-0.214" data-type="line" data-label="" points="186.76032133047738,313.2340055410037 185.72807017543857,312.20175438596493" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.273,-0.214 -3.273,1.4748540601891502" data-type="line" data-label="" points="185.72807017543857,312.20175438596493 185.72807017543857,215.90744393658355" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.273,1.4748540601891502 -3.2304576711472914,1.517396389041859" data-type="line" data-label="" points="185.72807017543857,215.90744393658355 188.15372927668952,213.48178483533263" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.2304576711472914,1.517396389041859 -3.2304576711472914,1.5285423288527085" data-type="line" data-label="" points="188.15372927668952,213.48178483533263 188.15372927668952,212.8462707233105" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.2304576711472914,1.5285423288527085 -3.219,1.54" data-type="line" data-label="" points="188.15372927668952,212.8462707233105 188.80701754385964,212.19298245614036" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.219,1.54 -3.219,2.1710000000000003" data-type="line" data-label="" points="188.80701754385964,212.19298245614036 188.80701754385964,176.21491228070175" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.219,2.1710000000000003 -2.99,2.4" data-type="line" data-label="" points="188.80701754385964,176.21491228070175 201.86403508771926,163.15789473684214" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-2.4,0.75 -2.981158241961397,0.75" data-type="line" data-label="" points="235.50438596491227,257.2368421052632 202.36817041448174,257.2368421052632" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-2.981158241961397,0.75 -3.9192464819790573,1.6880882400176604" data-type="line" data-label="" points="202.36817041448174,257.2368421052632 148.88068304505373,203.74935473583514" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.9192464819790573,1.6880882400176604 -3.9192464819790573,2.3092464819790575" data-type="line" data-label="" points="148.88068304505373,203.74935473583514 148.88068304505373,168.33243743101866" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.9192464819790573,2.3092464819790575 -4.01,2.4" data-type="line" data-label="" points="148.88068304505373,168.33243743101866 143.7061403508772,163.15789473684214" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="0.75" x="206.99561403508773" y="250.10964912280704" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="0.25" x="206.99561403508773" y="278.61842105263156" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="-0.25" x="206.99561403508773" y="307.1271929824561" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="-0.75" x="206.99561403508773" y="335.63596491228066" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_5, source_trace_4, source_trace_6, source_trace_7" data-x="-0.75" data-y="-2.4" x="322.45614035087715" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_5, source_trace_4, source_trace_6, source_trace_7" data-x="-0.25" data-y="-2.4" x="350.9649122807017" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_5, source_trace_4, source_trace_6, source_trace_7" data-x="0.25" data-y="-2.4" x="379.47368421052624" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_5, source_trace_4, source_trace_6, source_trace_7" data-x="0.75" data-y="-2.4" x="407.9824561403508" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.75" x="480.6798245614034" y="335.63596491228066" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.25" x="480.6798245614034" y="307.1271929824561" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.25" x="480.6798245614034" y="278.61842105263156" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.75" x="480.6798245614034" y="250.10964912280704" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="2.4" x="407.9824561403508" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="2.4" x="379.47368421052624" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="2.4" x="350.9649122807017" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="2.4" x="322.45614035087715" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-4.01" data-y="2.4" x="128.31140350877195" y="144.9122807017544" width="30.78947368421052" height="36.491228070175424" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-2.99" data-y="2.4" x="186.469298245614" y="144.9122807017544" width="30.78947368421052" height="36.491228070175424" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-5.51" data-y="-2.4" x="42.785087719298275" y="418.59649122807014" width="30.789473684210463" height="36.49122807017545" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_net_0" data-x="-4.49" data-y="-2.4" x="100.94298245614034" y="418.59649122807014" width="30.789473684210492" height="36.49122807017545" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 inner1
-source_trace_4
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 inner2
-source_trace_4
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 bottom
-source_trace_4" data-x="6" data-y="-3.81" x="652.8367346938776" y="462.3673469387754" width="79.59183673469374" height="79.59183673469391" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_5
+source_trace_5, source_trace_4, source_trace_6, source_trace_7" data-x="6" data-y="-3.81" x="671.688596491228" y="474.47368421052624" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 inner1
-source_trace_5
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 inner2
-source_trace_5
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 bottom
-source_trace_5" data-x="6" data-y="-1.27" x="652.8367346938776" y="327.5918367346939" width="79.59183673469374" height="79.59183673469386" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_6
+source_trace_5, source_trace_4, source_trace_6, source_trace_7" data-x="6" data-y="-1.27" x="671.688596491228" y="329.64912280701753" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 inner1
-source_trace_6
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 inner2
-source_trace_6
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 bottom
-source_trace_6" data-x="6" data-y="1.27" x="652.8367346938776" y="192.81632653061223" width="79.59183673469374" height="79.59183673469389" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_7
+source_trace_5, source_trace_4, source_trace_6, source_trace_7" data-x="6" data-y="1.27" x="671.688596491228" y="184.82456140350877" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 inner1
-source_trace_7
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 inner2
-source_trace_7
+source_trace_5, source_trace_4, source_trace_6, source_trace_7
 bottom
-source_trace_7" data-x="6" data-y="3.81" x="652.8367346938776" y="58.04081632653063" width="79.59183673469374" height="79.59183673469391" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-bottom" data-x="-3.273" data-y="-0.214" x="192.63673469387754" y="303.395918367347" width="15.918367346938766" height="15.918367346938737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="bottom
-top" data-x="-3.219" data-y="1.54" x="195.50204081632654" y="210.32653061224488" width="15.918367346938766" height="15.918367346938766" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><circle data-type="circle" data-label="" data-x="-3.273" data-y="-0.214" cx="200.59591836734694" cy="311.35510204081635" r="7.959183673469386" fill="blue" stroke="none" stroke-width="0.01884615384615385"/><circle data-type="circle" data-label="" data-x="-3.219" data-y="1.54" cx="203.46122448979594" cy="218.28571428571428" r="7.959183673469386" fill="blue" stroke="none" stroke-width="0.01884615384615385"/><g><circle data-type="point" data-label="source_trace_2
-source_trace_2
-top" data-x="-5.51" data-y="-2.4" cx="81.89795918367349" cy="427.3469387755102" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_2
-source_trace_2
-top" data-x="2.4" data-y="-0.75" cx="501.61224489795916" cy="339.7959183673469" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
+source_trace_5, source_trace_4, source_trace_6, source_trace_7" data-x="6" data-y="3.81" x="671.688596491228" y="40.00000000000003" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="bottom
+top" data-x="-2.36" data-y="-2.109" x="229.23245614035085" y="411.6973684210526" width="17.10526315789471" height="17.10526315789474" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+bottom" data-x="-3.273" data-y="-0.214" x="177.1754385964912" y="303.64912280701753" width="17.10526315789474" height="17.10526315789474" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="bottom
+top" data-x="-3.219" data-y="1.54" x="180.25438596491227" y="203.640350877193" width="17.10526315789474" height="17.10526315789474" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><circle data-type="circle" data-label="" data-x="-2.36" data-y="-2.109" cx="237.78508771929822" cy="420.25" r="8.552631578947366" fill="blue" stroke="none" stroke-width="0.01753846153846154"/><circle data-type="circle" data-label="" data-x="-3.273" data-y="-0.214" cx="185.72807017543857" cy="312.20175438596493" r="8.552631578947366" fill="blue" stroke="none" stroke-width="0.01753846153846154"/><circle data-type="circle" data-label="" data-x="-3.219" data-y="1.54" cx="188.80701754385964" cy="212.19298245614036" r="8.552631578947366" fill="blue" stroke="none" stroke-width="0.01753846153846154"/><g><circle data-type="point" data-label="source_trace_4
 source_trace_4
-top" data-x="6" data-y="-3.81" cx="692.6326530612245" cy="502.1632653061224" r="3" fill="hsl(56.666666666666664, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
+top" data-x="6" data-y="-3.81" cx="714.4517543859648" cy="517.2368421052631" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
 source_trace_4
-top" data-x="-0.75" data-y="-2.4" cx="334.46938775510205" cy="427.3469387755102" r="3" fill="hsl(56.666666666666664, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
+top" data-x="-0.75" data-y="-2.4" cx="329.5833333333333" cy="436.84210526315786" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
 source_trace_4
-top" data-x="0.7200000000000006" data-y="-4.9" cx="412.46938775510205" cy="560" r="3" fill="hsl(56.666666666666664, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
 source_trace_5
-top" data-x="6" data-y="-1.27" cx="692.6326530612245" cy="367.38775510204084" r="3" fill="hsl(113.33333333333333, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
+top" data-x="6" data-y="-1.27" cx="714.4517543859648" cy="372.4122807017544" r="3" fill="hsl(68, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
 source_trace_5
-top" data-x="-0.25" data-y="-2.4" cx="361" cy="427.3469387755102" r="3" fill="hsl(113.33333333333333, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
+top" data-x="-0.25" data-y="-2.4" cx="358.09210526315786" cy="436.84210526315786" r="3" fill="hsl(68, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
 source_trace_5
-top" data-x="1.2200000000000006" data-y="-4.9" cx="439" cy="560" r="3" fill="hsl(113.33333333333333, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(68, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
 source_trace_6
-top" data-x="6" data-y="1.27" cx="692.6326530612245" cy="232.6122448979592" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
+top" data-x="6" data-y="1.27" cx="714.4517543859648" cy="227.58771929824562" r="3" fill="hsl(136, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
 source_trace_6
-top" data-x="0.25" data-y="-2.4" cx="387.53061224489795" cy="427.3469387755102" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
+top" data-x="0.25" data-y="-2.4" cx="386.6008771929824" cy="436.84210526315786" r="3" fill="hsl(136, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
 source_trace_6
-top" data-x="3.7200000000000006" data-y="4.9" cx="571.6530612244898" cy="40" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(136, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
 source_trace_7
-top" data-x="6" data-y="3.81" cx="692.6326530612245" cy="97.83673469387759" r="3" fill="hsl(226.66666666666666, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
+top" data-x="6" data-y="3.81" cx="714.4517543859648" cy="82.76315789473688" r="3" fill="hsl(204, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
 source_trace_7
-top" data-x="0.75" data-y="-2.4" cx="414.0612244897959" cy="427.3469387755102" r="3" fill="hsl(226.66666666666666, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
+top" data-x="0.75" data-y="-2.4" cx="415.10964912280696" cy="436.84210526315786" r="3" fill="hsl(204, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
 source_trace_7
-top" data-x="4.9" data-y="0.09999999999999964" cx="634.2653061224489" cy="294.6938775510204" r="3" fill="hsl(226.66666666666666, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_net_0
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(204, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_net_0
 source_net_0
-top" data-x="-4.49" data-y="-2.4" cx="136.02040816326533" cy="427.3469387755102" r="3" fill="hsl(283.3333333333333, 100%, 50%)"/></g><g id="crosshair__stack1" style="display: none"><line id="crosshair-h__stack1" y1="0" y2="600" stroke="#666" stroke-width="0.5"/><line id="crosshair-v__stack1" x1="0" x2="800" stroke="#666" stroke-width="0.5"/><text id="coordinates__stack1" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+top" data-x="-4.49" data-y="-2.4" cx="116.33771929824559" cy="436.84210526315786" r="3" fill="hsl(272, 100%, 50%)"/></g><g id="crosshair__stack1" style="display: none"><line id="crosshair-h__stack1" y1="0" y2="600" stroke="#666" stroke-width="0.5"/><line id="crosshair-v__stack1" x1="0" x2="800" stroke="#666" stroke-width="0.5"/><text id="coordinates__stack1" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
               document.currentScript.parentElement.addEventListener('mousemove', (e) => {
                 const svg = e.currentTarget;
                 const rect = svg.getBoundingClientRect();
@@ -102,7 +97,7 @@ top" data-x="-4.49" data-y="-2.4" cx="136.02040816326533" cy="427.3469387755102"
                 v.setAttribute('y2', '600');
 
                 // Calculate real coordinates using inverse transformation
-                const matrix = {"a":53.06122448979591,"c":0,"e":374.265306122449,"b":0,"d":-53.06122448979591,"f":300};
+                const matrix = {"a":57.017543859649116,"c":0,"e":372.34649122807014,"b":0,"d":-57.017543859649116,"f":300};
                 // Manually invert and apply the affine transform
                 // Since we only use translate and scale, we can directly compute:
                 // x' = (x - tx) / sx
@@ -128,6 +123,143 @@ top" data-x="-4.49" data-y="-2.4" cx="136.02040816326533" cy="427.3469387755102"
   </g>
   <g transform="translate(0, 652) scale(1, 1) translate(0, 0)">
     <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
+    <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
+    <rect x="0" y="0" width="800" height="36" fill="#121212" />
+  <text
+    x="400"
+    y="23"
+    fill="#f4f4f4"
+    font-family="Arial, sans-serif"
+    font-size="18"
+    font-weight="700"
+    text-anchor="middle"
+  >AUTOROUTING PHASE 2 END: 8 CONNECTIONS, 11 TRACES</text>
+  </g>
+  <g transform="translate(0, 36) scale(1, 1) translate(0, 0)">
+    <rect width="100%" height="100%" fill="#fff"/><g><polyline data-points="-0.25,-2.4 -0.75,-2.4" data-type="line" data-label="" points="358.09210526315786,436.84210526315786 329.5833333333333,436.84210526315786" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="-0.25,-2.4 0.25,-2.4" data-type="line" data-label="" points="358.09210526315786,436.84210526315786 386.6008771929824,436.84210526315786" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="0.25,-2.4 0.75,-2.4" data-type="line" data-label="" points="386.6008771929824,436.84210526315786 415.10964912280696,436.84210526315786" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="0,0 0,-2.15" data-type="line" data-label="" points="372.34649122807014,300 372.34649122807014,422.5877192982456" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="0,-2.15 -0.25,-2.4" data-type="line" data-label="" points="372.34649122807014,422.5877192982456 358.09210526315786,436.84210526315786" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="6,-1.27 6,-3.81" data-type="line" data-label="" points="714.4517543859648,372.4122807017544 714.4517543859648,517.2368421052631" fill="none" stroke="red" stroke-width="5.701754385964912"/></g><g><polyline data-points="6,-1.27 6,1.27" data-type="line" data-label="" points="714.4517543859648,372.4122807017544 714.4517543859648,227.58771929824562" fill="none" stroke="red" stroke-width="5.701754385964912"/></g><g><polyline data-points="6,1.27 6,3.81" data-type="line" data-label="" points="714.4517543859648,227.58771929824562 714.4517543859648,82.76315789473688" fill="none" stroke="red" stroke-width="8.552631578947366"/></g><g><polyline data-points="6,-1.27 1.88,-1.27" data-type="line" data-label="" points="714.4517543859648,372.4122807017544 479.53947368421046,372.4122807017544" fill="none" stroke="red" stroke-width="5.701754385964912"/></g><g><polyline data-points="1.88,-1.27 0.75,-2.4" data-type="line" data-label="" points="479.53947368421046,372.4122807017544 415.10964912280696,436.84210526315786" fill="none" stroke="red" stroke-width="5.701754385964912"/></g><g><polyline data-points="2.4,-0.75 -0.9265322389066704,-0.75" data-type="line" data-label="" points="509.188596491228,342.7631578947368 319.5178986588302,342.7631578947368" fill="none" stroke="rgba(149,255,0,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-0.9265322389066704,-0.75 -2.2865291801773924,-2.109996941270722" data-type="line" data-label="" points="319.5178986588302,342.7631578947368 241.97421341093812,420.30684314262885" fill="none" stroke="rgba(149,255,0,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-2.2865291801773924,-2.109996941270722 -2.359003058729278,-2.109996941270722" data-type="line" data-label="" points="241.97421341093812,420.30684314262885 237.84193086192712,420.30684314262885" fill="none" stroke="rgba(149,255,0,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-2.359003058729278,-2.109996941270722 -2.36,-2.109" data-type="line" data-label="" points="237.84193086192712,420.30684314262885 237.78508771929822,420.25" fill="none" stroke="rgba(149,255,0,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-2.36,-2.109 -2.6124476371275103,-1.8565523628724898" data-type="line" data-label="" points="237.78508771929822,420.25 223.39114349711562,405.8560557778174" fill="none" stroke="hsl(85, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-2.6124476371275103,-1.8565523628724898 -4.9665523628724895,-1.8565523628724898" data-type="line" data-label="" points="223.39114349711562,405.8560557778174 89.16587404674402,405.8560557778174" fill="none" stroke="hsl(85, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-4.9665523628724895,-1.8565523628724898 -5.51,-2.4" data-type="line" data-label="" points="89.16587404674402,405.8560557778174 58.17982456140351,436.84210526315786" fill="none" stroke="hsl(85, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-2.4,-0.25 -3.124616788702222,-0.25" data-type="line" data-label="" points="235.50438596491227,314.2543859649123 194.18851643364522,314.2543859649123" fill="none" stroke="hsl(42.5, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.124616788702222,-0.25 -3.1425126915215413,-0.23210409718068037" data-type="line" data-label="" points="194.18851643364522,314.2543859649123 193.16813600973666,313.2340055410037" fill="none" stroke="hsl(42.5, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.1425126915215413,-0.23210409718068037 -3.2548959028193196,-0.23210409718068037" data-type="line" data-label="" points="193.16813600973666,313.2340055410037 186.76032133047738,313.2340055410037" fill="none" stroke="hsl(42.5, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.2548959028193196,-0.23210409718068037 -3.273,-0.214" data-type="line" data-label="" points="186.76032133047738,313.2340055410037 185.72807017543857,312.20175438596493" fill="none" stroke="hsl(42.5, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.273,-0.214 -3.273,1.4748540601891502" data-type="line" data-label="" points="185.72807017543857,312.20175438596493 185.72807017543857,215.90744393658355" fill="none" stroke="rgba(255,179,0,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.273,1.4748540601891502 -3.2304576711472914,1.517396389041859" data-type="line" data-label="" points="185.72807017543857,215.90744393658355 188.15372927668952,213.48178483533263" fill="none" stroke="rgba(255,179,0,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.2304576711472914,1.517396389041859 -3.2304576711472914,1.5285423288527085" data-type="line" data-label="" points="188.15372927668952,213.48178483533263 188.15372927668952,212.8462707233105" fill="none" stroke="rgba(255,179,0,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.2304576711472914,1.5285423288527085 -3.219,1.54" data-type="line" data-label="" points="188.15372927668952,212.8462707233105 188.80701754385964,212.19298245614036" fill="none" stroke="rgba(255,179,0,0.5)" stroke-width="8.552631578947366" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.219,1.54 -3.219,2.1710000000000003" data-type="line" data-label="" points="188.80701754385964,212.19298245614036 188.80701754385964,176.21491228070175" fill="none" stroke="hsl(42.5, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.219,2.1710000000000003 -2.99,2.4" data-type="line" data-label="" points="188.80701754385964,176.21491228070175 201.86403508771926,163.15789473684214" fill="none" stroke="hsl(42.5, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-2.4,0.75 -2.981158241961397,0.75" data-type="line" data-label="" points="235.50438596491227,257.2368421052632 202.36817041448174,257.2368421052632" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-2.981158241961397,0.75 -3.9192464819790573,1.6880882400176604" data-type="line" data-label="" points="202.36817041448174,257.2368421052632 148.88068304505373,203.74935473583514" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.9192464819790573,1.6880882400176604 -3.9192464819790573,2.3092464819790575" data-type="line" data-label="" points="148.88068304505373,203.74935473583514 148.88068304505373,168.33243743101866" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><polyline data-points="-3.9192464819790573,2.3092464819790575 -4.01,2.4" data-type="line" data-label="" points="148.88068304505373,168.33243743101866 143.7061403508772,163.15789473684214" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="8.552631578947366"/></g><g><rect data-type="rect" data-label="top
+source_trace_0" data-x="-2.4" data-y="0.75" x="206.99561403508773" y="250.10964912280704" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="0.25" x="206.99561403508773" y="278.61842105263156" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_1" data-x="-2.4" data-y="-0.25" x="206.99561403508773" y="307.1271929824561" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="-0.75" x="206.99561403508773" y="335.63596491228066" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_4" data-x="-0.75" data-y="-2.4" x="322.45614035087715" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_5" data-x="-0.25" data-y="-2.4" x="350.9649122807017" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_6" data-x="0.25" data-y="-2.4" x="379.47368421052624" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_7" data-x="0.75" data-y="-2.4" x="407.9824561403508" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_2" data-x="2.4" data-y="-0.75" x="480.6798245614034" y="335.63596491228066" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.25" x="480.6798245614034" y="307.1271929824561" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.25" x="480.6798245614034" y="278.61842105263156" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.75" x="480.6798245614034" y="250.10964912280704" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="2.4" x="407.9824561403508" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="2.4" x="379.47368421052624" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="2.4" x="350.9649122807017" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="2.4" x="322.45614035087715" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_0" data-x="-4.01" data-y="2.4" x="128.31140350877195" y="144.9122807017544" width="30.78947368421052" height="36.491228070175424" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_1" data-x="-2.99" data-y="2.4" x="186.469298245614" y="144.9122807017544" width="30.78947368421052" height="36.491228070175424" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_2" data-x="-5.51" data-y="-2.4" x="42.785087719298275" y="418.59649122807014" width="30.789473684210463" height="36.49122807017545" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_net_0" data-x="-4.49" data-y="-2.4" x="100.94298245614034" y="418.59649122807014" width="30.789473684210492" height="36.49122807017545" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_4
+inner1
+source_trace_4
+inner2
+source_trace_4
+bottom
+source_trace_4" data-x="6" data-y="-3.81" x="671.688596491228" y="474.47368421052624" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_5
+inner1
+source_trace_5
+inner2
+source_trace_5
+bottom
+source_trace_5" data-x="6" data-y="-1.27" x="671.688596491228" y="329.64912280701753" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_6
+inner1
+source_trace_6
+inner2
+source_trace_6
+bottom
+source_trace_6" data-x="6" data-y="1.27" x="671.688596491228" y="184.82456140350877" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_7
+inner1
+source_trace_7
+inner2
+source_trace_7
+bottom
+source_trace_7" data-x="6" data-y="3.81" x="671.688596491228" y="40.00000000000003" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><circle data-type="circle" data-label="" data-x="-2.36" data-y="-2.109" cx="237.78508771929822" cy="420.25" r="8.552631578947366" fill="blue" stroke="none" stroke-width="0.01753846153846154"/><circle data-type="circle" data-label="" data-x="-3.273" data-y="-0.214" cx="185.72807017543857" cy="312.20175438596493" r="8.552631578947366" fill="blue" stroke="none" stroke-width="0.01753846153846154"/><circle data-type="circle" data-label="" data-x="-3.219" data-y="1.54" cx="188.80701754385964" cy="212.19298245614036" r="8.552631578947366" fill="blue" stroke="none" stroke-width="0.01753846153846154"/><g><circle data-type="point" data-label="source_trace_0
+source_trace_0
+top" data-x="-4.01" data-y="2.4" cx="143.7061403508772" cy="163.15789473684214" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_0
+source_trace_0
+top" data-x="-2.4" data-y="0.75" cx="235.50438596491227" cy="257.2368421052632" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
+source_trace_1
+top" data-x="-2.99" data-y="2.4" cx="201.86403508771926" cy="163.15789473684214" r="3" fill="hsl(42.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
+source_trace_1
+top" data-x="-2.4" data-y="-0.25" cx="235.50438596491227" cy="314.2543859649123" r="3" fill="hsl(42.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_2
+source_trace_2
+top" data-x="-5.51" data-y="-2.4" cx="58.17982456140351" cy="436.84210526315786" r="3" fill="hsl(85, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_2
+source_trace_2
+top" data-x="2.4" data-y="-0.75" cx="509.188596491228" cy="342.7631578947368" r="3" fill="hsl(85, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
+source_trace_4
+top" data-x="6" data-y="-3.81" cx="714.4517543859648" cy="517.2368421052631" r="3" fill="hsl(127.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
+source_trace_4
+top" data-x="-0.75" data-y="-2.4" cx="329.5833333333333" cy="436.84210526315786" r="3" fill="hsl(127.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
+source_trace_4
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(127.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
+source_trace_5
+top" data-x="6" data-y="-1.27" cx="714.4517543859648" cy="372.4122807017544" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
+source_trace_5
+top" data-x="-0.25" data-y="-2.4" cx="358.09210526315786" cy="436.84210526315786" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
+source_trace_5
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
+source_trace_6
+top" data-x="6" data-y="1.27" cx="714.4517543859648" cy="227.58771929824562" r="3" fill="hsl(212.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
+source_trace_6
+top" data-x="0.25" data-y="-2.4" cx="386.6008771929824" cy="436.84210526315786" r="3" fill="hsl(212.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
+source_trace_6
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(212.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
+source_trace_7
+top" data-x="6" data-y="3.81" cx="714.4517543859648" cy="82.76315789473688" r="3" fill="hsl(255, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
+source_trace_7
+top" data-x="0.75" data-y="-2.4" cx="415.10964912280696" cy="436.84210526315786" r="3" fill="hsl(255, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
+source_trace_7
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(255, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_net_0
+source_net_0
+top" data-x="-4.49" data-y="-2.4" cx="116.33771929824559" cy="436.84210526315786" r="3" fill="hsl(297.5, 100%, 50%)"/></g><g id="crosshair__stack1__stack1" style="display: none"><line id="crosshair-h__stack1__stack1" y1="0" y2="600" stroke="#666" stroke-width="0.5"/><line id="crosshair-v__stack1__stack1" x1="0" x2="800" stroke="#666" stroke-width="0.5"/><text id="coordinates__stack1__stack1" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const crosshair = svg.getElementById('crosshair');
+                const h = svg.getElementById('crosshair-h');
+                const v = svg.getElementById('crosshair-v');
+                const coords = svg.getElementById('coordinates');
+                
+                crosshair.style.display = 'block';
+                h.setAttribute('x1', '0');
+                h.setAttribute('x2', '800');
+                h.setAttribute('y1', y);
+                h.setAttribute('y2', y);
+                v.setAttribute('x1', x);
+                v.setAttribute('x2', x);
+                v.setAttribute('y1', '0');
+                v.setAttribute('y2', '600');
+
+                // Calculate real coordinates using inverse transformation
+                const matrix = {"a":57.017543859649116,"c":0,"e":372.34649122807014,"b":0,"d":-57.017543859649116,"f":300};
+                // Manually invert and apply the affine transform
+                // Since we only use translate and scale, we can directly compute:
+                // x' = (x - tx) / sx
+                // y' = (y - ty) / sy
+                const sx = matrix.a;
+                const sy = matrix.d;
+                const tx = matrix.e; 
+                const ty = matrix.f;
+                const realPoint = {
+                  x: (x - tx) / sx,
+                  y: (y - ty) / sy // Flip y back since we used negative scale
+                }
+                
+                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+                coords.setAttribute('x', (x + 5).toString());
+                coords.setAttribute('y', (y - 5).toString());
+              });
+              document.currentScript.parentElement.addEventListener('mouseleave', () => {
+                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+              });
+            ]]></script>
+  </g>
+  </g>
+  <g transform="translate(0, 652) scale(1, 1) translate(0, 0)">
     <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
     <rect x="0" y="0" width="800" height="36" fill="#121212" />
   <text
@@ -142,83 +274,83 @@ top" data-x="-4.49" data-y="-2.4" cx="136.02040816326533" cy="427.3469387755102"
   </g>
   <g transform="translate(0, 36) scale(1, 1) translate(0, 0)">
     <rect width="100%" height="100%" fill="#fff"/><g><rect data-type="rect" data-label="top
-source_trace_0" data-x="-2.4" data-y="0.75" x="220.38775510204084" y="253.5714285714286" width="53.061224489795904" height="13.265306122448948" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="0.25" x="220.38775510204084" y="280.1020408163265" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_1" data-x="-2.4" data-y="-0.25" x="220.38775510204084" y="306.63265306122446" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="-0.75" x="220.38775510204084" y="333.1632653061224" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_4" data-x="-0.75" data-y="-2.4" x="327.8367346938776" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_5" data-x="-0.25" data-y="-2.4" x="354.36734693877554" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_6" data-x="0.25" data-y="-2.4" x="380.8979591836735" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_7" data-x="0.75" data-y="-2.4" x="407.42857142857144" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_2" data-x="2.4" data-y="-0.75" x="475.0816326530612" y="333.1632653061224" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.25" x="475.0816326530612" y="306.63265306122446" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.25" x="475.0816326530612" y="280.1020408163265" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.75" x="475.0816326530612" y="253.5714285714286" width="53.061224489795904" height="13.265306122448948" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="2.4" x="407.42857142857144" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="2.4" x="380.8979591836735" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="2.4" x="354.36734693877554" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="2.4" x="327.8367346938776" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_0" data-x="-4.01" data-y="2.4" x="147.16326530612247" y="155.67346938775512" width="28.65306122448979" height="33.95918367346937" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_1" data-x="-2.99" data-y="2.4" x="201.28571428571428" y="155.67346938775512" width="28.65306122448979" height="33.95918367346937" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_2" data-x="-5.51" data-y="-2.4" x="67.57142857142864" y="410.36734693877554" width="28.653061224489704" height="33.95918367346934" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_net_0" data-x="-4.49" data-y="-2.4" x="121.69387755102046" y="410.36734693877554" width="28.653061224489733" height="33.95918367346934" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
+source_trace_0" data-x="-2.4" data-y="0.75" x="206.99561403508773" y="250.10964912280704" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="0.25" x="206.99561403508773" y="278.61842105263156" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_1" data-x="-2.4" data-y="-0.25" x="206.99561403508773" y="307.1271929824561" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="-0.75" x="206.99561403508773" y="335.63596491228066" width="57.01754385964912" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_4" data-x="-0.75" data-y="-2.4" x="322.45614035087715" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_5" data-x="-0.25" data-y="-2.4" x="350.9649122807017" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_6" data-x="0.25" data-y="-2.4" x="379.47368421052624" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_7" data-x="0.75" data-y="-2.4" x="407.9824561403508" y="408.33333333333326" width="14.254385964912274" height="57.01754385964915" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_2" data-x="2.4" data-y="-0.75" x="480.6798245614034" y="335.63596491228066" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.25" x="480.6798245614034" y="307.1271929824561" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.25" x="480.6798245614034" y="278.61842105263156" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.75" x="480.6798245614034" y="250.10964912280704" width="57.01754385964915" height="14.254385964912274" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="2.4" x="407.9824561403508" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="2.4" x="379.47368421052624" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="2.4" x="350.9649122807017" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="2.4" x="322.45614035087715" y="134.6491228070176" width="14.254385964912274" height="57.01754385964912" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_0" data-x="-4.01" data-y="2.4" x="128.31140350877195" y="144.9122807017544" width="30.78947368421052" height="36.491228070175424" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_1" data-x="-2.99" data-y="2.4" x="186.469298245614" y="144.9122807017544" width="30.78947368421052" height="36.491228070175424" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_trace_2" data-x="-5.51" data-y="-2.4" x="42.785087719298275" y="418.59649122807014" width="30.789473684210463" height="36.49122807017545" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
+source_net_0" data-x="-4.49" data-y="-2.4" x="100.94298245614034" y="418.59649122807014" width="30.789473684210492" height="36.49122807017545" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
 source_trace_4
 inner1
 source_trace_4
 inner2
 source_trace_4
 bottom
-source_trace_4" data-x="6" data-y="-3.81" x="652.8367346938776" y="462.3673469387754" width="79.59183673469374" height="79.59183673469391" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
+source_trace_4" data-x="6" data-y="-3.81" x="671.688596491228" y="474.47368421052624" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
 source_trace_5
 inner1
 source_trace_5
 inner2
 source_trace_5
 bottom
-source_trace_5" data-x="6" data-y="-1.27" x="652.8367346938776" y="327.5918367346939" width="79.59183673469374" height="79.59183673469386" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
+source_trace_5" data-x="6" data-y="-1.27" x="671.688596491228" y="329.64912280701753" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
 source_trace_6
 inner1
 source_trace_6
 inner2
 source_trace_6
 bottom
-source_trace_6" data-x="6" data-y="1.27" x="652.8367346938776" y="192.81632653061223" width="79.59183673469374" height="79.59183673469389" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
+source_trace_6" data-x="6" data-y="1.27" x="671.688596491228" y="184.82456140350877" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><rect data-type="rect" data-label="top
 source_trace_7
 inner1
 source_trace_7
 inner2
 source_trace_7
 bottom
-source_trace_7" data-x="6" data-y="3.81" x="652.8367346938776" y="58.04081632653063" width="79.59183673469374" height="79.59183673469391" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><circle data-type="point" data-label="source_trace_0
+source_trace_7" data-x="6" data-y="3.81" x="671.688596491228" y="40.00000000000003" width="85.52631578947364" height="85.5263157894737" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01753846153846154"/></g><g><circle data-type="point" data-label="source_trace_0
 source_trace_0
-top" data-x="-4.01" data-y="2.4" cx="161.48979591836738" cy="172.65306122448982" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_0
+top" data-x="-4.01" data-y="2.4" cx="143.7061403508772" cy="163.15789473684214" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_0
 source_trace_0
-top" data-x="-2.4" data-y="0.75" cx="246.9183673469388" cy="260.2040816326531" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
+top" data-x="-2.4" data-y="0.75" cx="235.50438596491227" cy="257.2368421052632" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
 source_trace_1
-top" data-x="-2.99" data-y="2.4" cx="215.6122448979592" cy="172.65306122448982" r="3" fill="hsl(42.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
+top" data-x="-2.99" data-y="2.4" cx="201.86403508771926" cy="163.15789473684214" r="3" fill="hsl(42.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
 source_trace_1
-top" data-x="-2.4" data-y="-0.25" cx="246.9183673469388" cy="313.265306122449" r="3" fill="hsl(42.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_2
+top" data-x="-2.4" data-y="-0.25" cx="235.50438596491227" cy="314.2543859649123" r="3" fill="hsl(42.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_2
 source_trace_2
-top" data-x="-5.51" data-y="-2.4" cx="81.89795918367349" cy="427.3469387755102" r="3" fill="hsl(85, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_2
+top" data-x="-5.51" data-y="-2.4" cx="58.17982456140351" cy="436.84210526315786" r="3" fill="hsl(85, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_2
 source_trace_2
-top" data-x="2.4" data-y="-0.75" cx="501.61224489795916" cy="339.7959183673469" r="3" fill="hsl(85, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
+top" data-x="2.4" data-y="-0.75" cx="509.188596491228" cy="342.7631578947368" r="3" fill="hsl(85, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
 source_trace_4
-top" data-x="6" data-y="-3.81" cx="692.6326530612245" cy="502.1632653061224" r="3" fill="hsl(127.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
+top" data-x="6" data-y="-3.81" cx="714.4517543859648" cy="517.2368421052631" r="3" fill="hsl(127.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
 source_trace_4
-top" data-x="-0.75" data-y="-2.4" cx="334.46938775510205" cy="427.3469387755102" r="3" fill="hsl(127.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
+top" data-x="-0.75" data-y="-2.4" cx="329.5833333333333" cy="436.84210526315786" r="3" fill="hsl(127.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
 source_trace_4
-top" data-x="0.7200000000000006" data-y="-4.9" cx="412.46938775510205" cy="560" r="3" fill="hsl(127.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(127.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
 source_trace_5
-top" data-x="6" data-y="-1.27" cx="692.6326530612245" cy="367.38775510204084" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
+top" data-x="6" data-y="-1.27" cx="714.4517543859648" cy="372.4122807017544" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
 source_trace_5
-top" data-x="-0.25" data-y="-2.4" cx="361" cy="427.3469387755102" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
+top" data-x="-0.25" data-y="-2.4" cx="358.09210526315786" cy="436.84210526315786" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
 source_trace_5
-top" data-x="1.2200000000000006" data-y="-4.9" cx="439" cy="560" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
 source_trace_6
-top" data-x="6" data-y="1.27" cx="692.6326530612245" cy="232.6122448979592" r="3" fill="hsl(212.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
+top" data-x="6" data-y="1.27" cx="714.4517543859648" cy="227.58771929824562" r="3" fill="hsl(212.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
 source_trace_6
-top" data-x="0.25" data-y="-2.4" cx="387.53061224489795" cy="427.3469387755102" r="3" fill="hsl(212.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
+top" data-x="0.25" data-y="-2.4" cx="386.6008771929824" cy="436.84210526315786" r="3" fill="hsl(212.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
 source_trace_6
-top" data-x="3.7200000000000006" data-y="4.9" cx="571.6530612244898" cy="40" r="3" fill="hsl(212.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(212.5, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
 source_trace_7
-top" data-x="6" data-y="3.81" cx="692.6326530612245" cy="97.83673469387759" r="3" fill="hsl(255, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
+top" data-x="6" data-y="3.81" cx="714.4517543859648" cy="82.76315789473688" r="3" fill="hsl(255, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
 source_trace_7
-top" data-x="0.75" data-y="-2.4" cx="414.0612244897959" cy="427.3469387755102" r="3" fill="hsl(255, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
+top" data-x="0.75" data-y="-2.4" cx="415.10964912280696" cy="436.84210526315786" r="3" fill="hsl(255, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
 source_trace_7
-top" data-x="4.9" data-y="0.09999999999999964" cx="634.2653061224489" cy="294.6938775510204" r="3" fill="hsl(255, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_net_0
+top" data-x="0" data-y="0" cx="372.34649122807014" cy="300" r="3" fill="hsl(255, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_net_0
 source_net_0
-top" data-x="-4.49" data-y="-2.4" cx="136.02040816326533" cy="427.3469387755102" r="3" fill="hsl(297.5, 100%, 50%)"/></g><g id="crosshair__stack1__stack1" style="display: none"><line id="crosshair-h__stack1__stack1" y1="0" y2="600" stroke="#666" stroke-width="0.5"/><line id="crosshair-v__stack1__stack1" x1="0" x2="800" stroke="#666" stroke-width="0.5"/><text id="coordinates__stack1__stack1" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+top" data-x="-4.49" data-y="-2.4" cx="116.33771929824559" cy="436.84210526315786" r="3" fill="hsl(297.5, 100%, 50%)"/></g><g id="crosshair__stack1__stack1__stack1" style="display: none"><line id="crosshair-h__stack1__stack1__stack1" y1="0" y2="600" stroke="#666" stroke-width="0.5"/><line id="crosshair-v__stack1__stack1__stack1" x1="0" x2="800" stroke="#666" stroke-width="0.5"/><text id="coordinates__stack1__stack1__stack1" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
               document.currentScript.parentElement.addEventListener('mousemove', (e) => {
                 const svg = e.currentTarget;
                 const rect = svg.getBoundingClientRect();
@@ -240,87 +372,7 @@ top" data-x="-4.49" data-y="-2.4" cx="136.02040816326533" cy="427.3469387755102"
                 v.setAttribute('y2', '600');
 
                 // Calculate real coordinates using inverse transformation
-                const matrix = {"a":53.06122448979591,"c":0,"e":374.265306122449,"b":0,"d":-53.06122448979591,"f":300};
-                // Manually invert and apply the affine transform
-                // Since we only use translate and scale, we can directly compute:
-                // x' = (x - tx) / sx
-                // y' = (y - ty) / sy
-                const sx = matrix.a;
-                const sy = matrix.d;
-                const tx = matrix.e; 
-                const ty = matrix.f;
-                const realPoint = {
-                  x: (x - tx) / sx,
-                  y: (y - ty) / sy // Flip y back since we used negative scale
-                }
-                
-                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
-                coords.setAttribute('x', (x + 5).toString());
-                coords.setAttribute('y', (y - 5).toString());
-              });
-              document.currentScript.parentElement.addEventListener('mouseleave', () => {
-                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
-              });
-            ]]></script>
-  </g>
-  </g>
-  <g transform="translate(0, 652) scale(1, 1) translate(0, 0)">
-    <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
-    <rect x="0" y="0" width="800" height="36" fill="#121212" />
-  <text
-    x="400"
-    y="23"
-    fill="#f4f4f4"
-    font-family="Arial, sans-serif"
-    font-size="18"
-    font-weight="700"
-    text-anchor="middle"
-  >AUTOROUTING PHASE 1 END: 6 CONNECTIONS, 2 TRACES</text>
-  </g>
-  <g transform="translate(0, 36) scale(1, 1) translate(0, 0)">
-    <rect width="100%" height="100%" fill="#fff"/><g><polyline data-points="-2.4,-0.25 -3.124616788702222,-0.25" data-type="line" data-label="" points="256.2040816326531,313.265306122449 217.75502753824946,313.265306122449" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.124616788702222,-0.25 -3.1425126915215413,-0.23210409718068037" data-type="line" data-label="" points="217.75502753824946,313.265306122449 216.80544902130598,312.31572760550546" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.1425126915215413,-0.23210409718068037 -3.2548959028193196,-0.23210409718068037" data-type="line" data-label="" points="216.80544902130598,312.31572760550546 210.84225821775038,312.31572760550546" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.2548959028193196,-0.23210409718068037 -3.273,-0.214" data-type="line" data-label="" points="210.84225821775038,312.31572760550546 209.88163265306122,311.35510204081635" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.273,-0.214 -3.273,1.4748540601891502" data-type="line" data-label="" points="209.88163265306122,311.35510204081635 209.88163265306122,221.74243762261654" fill="none" stroke="rgba(255,238,0,0.5)" stroke-width="7.959183673469386" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.273,1.4748540601891502 -3.2304576711472914,1.517396389041859" data-type="line" data-label="" points="209.88163265306122,221.74243762261654 212.13898071463353,219.48508956104422" fill="none" stroke="rgba(255,238,0,0.5)" stroke-width="7.959183673469386" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.2304576711472914,1.517396389041859 -3.2304576711472914,1.5285423288527085" data-type="line" data-label="" points="212.13898071463353,219.48508956104422 212.13898071463353,218.893672346591" fill="none" stroke="rgba(255,238,0,0.5)" stroke-width="7.959183673469386" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.2304576711472914,1.5285423288527085 -3.219,1.54" data-type="line" data-label="" points="212.13898071463353,218.893672346591 212.74693877551022,218.28571428571428" fill="none" stroke="rgba(255,238,0,0.5)" stroke-width="7.959183673469386" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.219,1.54 -3.219,2.1710000000000003" data-type="line" data-label="" points="212.74693877551022,218.28571428571428 212.74693877551022,184.80408163265307" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.219,2.1710000000000003 -2.99,2.4" data-type="line" data-label="" points="212.74693877551022,184.80408163265307 224.89795918367346,172.65306122448982" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="7.959183673469386"/></g><g><polyline data-points="-2.4,0.75 -2.981158241961397,0.75" data-type="line" data-label="" points="256.2040816326531,260.2040816326531 225.36711369184425,260.2040816326531" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="7.959183673469386"/></g><g><polyline data-points="-2.981158241961397,0.75 -3.9192464819790573,1.6880882400176604" data-type="line" data-label="" points="225.36711369184425,260.2040816326531 175.59100299702962,210.42797093783844" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.9192464819790573,1.6880882400176604 -3.9192464819790573,2.3092464819790575" data-type="line" data-label="" points="175.59100299702962,210.42797093783844 175.59100299702962,177.46855401743778" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="7.959183673469386"/></g><g><polyline data-points="-3.9192464819790573,2.3092464819790575 -4.01,2.4" data-type="line" data-label="" points="175.59100299702962,177.46855401743778 170.77551020408166,172.65306122448982" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="7.959183673469386"/></g><g><rect data-type="rect" data-label="top
-source_trace_0" data-x="-2.4" data-y="0.75" x="229.67346938775512" y="253.5714285714286" width="53.061224489795904" height="13.265306122448948" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="0.25" x="229.67346938775512" y="280.1020408163265" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_1" data-x="-2.4" data-y="-0.25" x="229.67346938775512" y="306.63265306122446" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="-0.75" x="229.67346938775512" y="333.1632653061224" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="-2.4" x="337.1224489795918" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="-2.4" x="363.65306122448976" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="-2.4" x="390.1836734693877" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="-2.4" x="416.71428571428567" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.75" x="484.36734693877554" y="333.1632653061224" width="53.06122448979585" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.25" x="484.36734693877554" y="306.63265306122446" width="53.06122448979585" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.25" x="484.36734693877554" y="280.1020408163265" width="53.06122448979585" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.75" x="484.36734693877554" y="253.5714285714286" width="53.06122448979585" height="13.265306122448948" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="2.4" x="416.71428571428567" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="2.4" x="390.1836734693877" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="2.4" x="363.65306122448976" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="2.4" x="337.1224489795918" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_0" data-x="-4.01" data-y="2.4" x="156.44897959183675" y="155.67346938775512" width="28.65306122448979" height="33.95918367346937" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_1" data-x="-2.99" data-y="2.4" x="210.57142857142856" y="155.67346938775512" width="28.65306122448979" height="33.95918367346937" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><circle data-type="circle" data-label="" data-x="-3.273" data-y="-0.214" cx="209.88163265306122" cy="311.35510204081635" r="7.959183673469386" fill="blue" stroke="none" stroke-width="0.01884615384615385"/><circle data-type="circle" data-label="" data-x="-3.219" data-y="1.54" cx="212.74693877551022" cy="218.28571428571428" r="7.959183673469386" fill="blue" stroke="none" stroke-width="0.01884615384615385"/><g><circle data-type="point" data-label="source_trace_0
-source_trace_0
-top" data-x="-4.01" data-y="2.4" cx="170.77551020408166" cy="172.65306122448982" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_0
-source_trace_0
-top" data-x="-2.4" data-y="0.75" cx="256.2040816326531" cy="260.2040816326531" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
-source_trace_1
-top" data-x="-2.99" data-y="2.4" cx="224.89795918367346" cy="172.65306122448982" r="3" fill="hsl(56.666666666666664, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
-source_trace_1
-top" data-x="-2.4" data-y="-0.25" cx="256.2040816326531" cy="313.265306122449" r="3" fill="hsl(56.666666666666664, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
-source_trace_4
-top" data-x="0.7200000000000006" data-y="-4.9" cx="421.7551020408163" cy="560" r="3" fill="hsl(113.33333333333333, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
-source_trace_5
-top" data-x="1.2200000000000006" data-y="-4.9" cx="448.28571428571433" cy="560" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
-source_trace_6
-top" data-x="3.7200000000000006" data-y="4.9" cx="580.9387755102041" cy="40" r="3" fill="hsl(226.66666666666666, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
-source_trace_7
-top" data-x="4.9" data-y="0.09999999999999964" cx="643.5510204081633" cy="294.6938775510204" r="3" fill="hsl(283.3333333333333, 100%, 50%)"/></g><g id="crosshair__stack1__stack1__stack1" style="display: none"><line id="crosshair-h__stack1__stack1__stack1" y1="0" y2="600" stroke="#666" stroke-width="0.5"/><line id="crosshair-v__stack1__stack1__stack1" x1="0" x2="800" stroke="#666" stroke-width="0.5"/><text id="coordinates__stack1__stack1__stack1" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
-              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
-                const svg = e.currentTarget;
-                const rect = svg.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const crosshair = svg.getElementById('crosshair');
-                const h = svg.getElementById('crosshair-h');
-                const v = svg.getElementById('crosshair-v');
-                const coords = svg.getElementById('coordinates');
-                
-                crosshair.style.display = 'block';
-                h.setAttribute('x1', '0');
-                h.setAttribute('x2', '800');
-                h.setAttribute('y1', y);
-                h.setAttribute('y2', y);
-                v.setAttribute('x1', x);
-                v.setAttribute('x2', x);
-                v.setAttribute('y1', '0');
-                v.setAttribute('y2', '600');
-
-                // Calculate real coordinates using inverse transformation
-                const matrix = {"a":53.06122448979591,"c":0,"e":383.55102040816325,"b":0,"d":-53.06122448979591,"f":300};
+                const matrix = {"a":57.017543859649116,"c":0,"e":372.34649122807014,"b":0,"d":-57.017543859649116,"f":300};
                 // Manually invert and apply the affine transform
                 // Since we only use translate and scale, we can directly compute:
                 // x' = (x - tx) / sx
@@ -355,30 +407,30 @@ top" data-x="4.9" data-y="0.09999999999999964" cx="643.5510204081633" cy="294.69
     font-size="18"
     font-weight="700"
     text-anchor="middle"
-  >AUTOROUTING PHASE 1 START: 6 CONNECTIONS, 0 TRACES</text>
+  >AUTOROUTING PHASE 1 END: 6 CONNECTIONS, 2 TRACES</text>
   </g>
   <g transform="translate(0, 36) scale(1, 1) translate(0, 0)">
-    <rect width="100%" height="100%" fill="#fff"/><g><rect data-type="rect" data-label="top
-source_trace_0" data-x="-2.4" data-y="0.75" x="229.67346938775512" y="253.5714285714286" width="53.061224489795904" height="13.265306122448948" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="0.25" x="229.67346938775512" y="280.1020408163265" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_1" data-x="-2.4" data-y="-0.25" x="229.67346938775512" y="306.63265306122446" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="-0.75" x="229.67346938775512" y="333.1632653061224" width="53.061224489795904" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="-2.4" x="337.1224489795918" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="-2.4" x="363.65306122448976" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="-2.4" x="390.1836734693877" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="-2.4" x="416.71428571428567" y="400.81632653061223" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.75" x="484.36734693877554" y="333.1632653061224" width="53.06122448979585" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.25" x="484.36734693877554" y="306.63265306122446" width="53.06122448979585" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.25" x="484.36734693877554" y="280.1020408163265" width="53.06122448979585" height="13.265306122448976" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.75" x="484.36734693877554" y="253.5714285714286" width="53.06122448979585" height="13.265306122448948" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="2.4" x="416.71428571428567" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="2.4" x="390.1836734693877" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="2.4" x="363.65306122448976" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="2.4" x="337.1224489795918" y="146.12244897959187" width="13.265306122448976" height="53.061224489795904" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_0" data-x="-4.01" data-y="2.4" x="156.44897959183675" y="155.67346938775512" width="28.65306122448979" height="33.95918367346937" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><rect data-type="rect" data-label="top
-source_trace_1" data-x="-2.99" data-y="2.4" x="210.57142857142856" y="155.67346938775512" width="28.65306122448979" height="33.95918367346937" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.01884615384615385"/></g><g><circle data-type="point" data-label="source_trace_0
+    <rect width="100%" height="100%" fill="#fff"/><g><polyline data-points="-2.4,-0.25 -3.124616788702222,-0.25" data-type="line" data-label="" points="246.68965517241375,322.41379310344826 181.72401204738696,322.41379310344826" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="13.448275862068966"/></g><g><polyline data-points="-3.124616788702222,-0.25 -3.1425126915215413,-0.23210409718068037" data-type="line" data-label="" points="181.72401204738696,322.41379310344826 180.1195517946204,320.8093328506817" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="13.448275862068966"/></g><g><polyline data-points="-3.1425126915215413,-0.23210409718068037 -3.2548959028193196,-0.23210409718068037" data-type="line" data-label="" points="180.1195517946204,320.8093328506817 170.04381560930233,320.8093328506817" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="13.448275862068966"/></g><g><polyline data-points="-3.2548959028193196,-0.23210409718068037 -3.273,-0.214" data-type="line" data-label="" points="170.04381560930233,320.8093328506817 168.42068965517234,319.1862068965517" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="13.448275862068966"/></g><g><polyline data-points="-3.273,-0.214 -3.273,1.4748540601891502" data-type="line" data-label="" points="168.42068965517234,319.1862068965517 168.42068965517234,167.77170494855895" fill="none" stroke="rgba(255,238,0,0.5)" stroke-width="13.448275862068966" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.273,1.4748540601891502 -3.2304576711472914,1.517396389041859" data-type="line" data-label="" points="168.42068965517234,167.77170494855895 172.23482948334623,163.95756512038506" fill="none" stroke="rgba(255,238,0,0.5)" stroke-width="13.448275862068966" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.2304576711472914,1.517396389041859 -3.2304576711472914,1.5285423288527085" data-type="line" data-label="" points="172.23482948334623,163.95756512038506 172.23482948334623,162.9582739649296" fill="none" stroke="rgba(255,238,0,0.5)" stroke-width="13.448275862068966" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.2304576711472914,1.5285423288527085 -3.219,1.54" data-type="line" data-label="" points="172.23482948334623,162.9582739649296 173.2620689655172,161.9310344827586" fill="none" stroke="rgba(255,238,0,0.5)" stroke-width="13.448275862068966" stroke-dasharray="0.2 0.2"/></g><g><polyline data-points="-3.219,1.54 -3.219,2.1710000000000003" data-type="line" data-label="" points="173.2620689655172,161.9310344827586 173.2620689655172,105.35862068965514" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="13.448275862068966"/></g><g><polyline data-points="-3.219,2.1710000000000003 -2.99,2.4" data-type="line" data-label="" points="173.2620689655172,105.35862068965514 193.79310344827582,84.82758620689654" fill="none" stroke="hsl(56.666666666666664, 100%, 50%)" stroke-width="13.448275862068966"/></g><g><polyline data-points="-2.4,0.75 -2.981158241961397,0.75" data-type="line" data-label="" points="246.68965517241375,232.75862068965517 194.58581278966784,232.75862068965517" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="13.448275862068966"/></g><g><polyline data-points="-2.981158241961397,0.75 -3.9192464819790573,1.6880882400176604" data-type="line" data-label="" points="194.58581278966784,232.75862068965517 110.48134989153272,148.65415779152008" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="13.448275862068966"/></g><g><polyline data-points="-3.9192464819790573,1.6880882400176604 -3.9192464819790573,2.3092464819790575" data-type="line" data-label="" points="110.48134989153272,148.65415779152008 110.48134989153272,92.96410851222242" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="13.448275862068966"/></g><g><polyline data-points="-3.9192464819790573,2.3092464819790575 -4.01,2.4" data-type="line" data-label="" points="110.48134989153272,92.96410851222242 102.34482758620686,84.82758620689654" fill="none" stroke="hsl(0, 100%, 50%)" stroke-width="13.448275862068966"/></g><g><rect data-type="rect" data-label="top
+source_trace_0" data-x="-2.4" data-y="0.75" x="201.86206896551718" y="221.55172413793105" width="89.65517241379314" height="22.413793103448256" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="0.25" x="201.86206896551718" y="266.37931034482756" width="89.65517241379314" height="22.413793103448313" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top
+source_trace_1" data-x="-2.4" data-y="-0.25" x="201.86206896551718" y="311.20689655172407" width="89.65517241379314" height="22.413793103448313" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="-0.75" x="201.86206896551718" y="356.0344827586207" width="89.65517241379314" height="22.413793103448256" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="-2.4" x="383.41379310344826" y="470.3448275862069" width="22.413793103448256" height="89.65517241379314" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="-2.4" x="428.24137931034477" y="470.3448275862069" width="22.413793103448313" height="89.65517241379314" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="-2.4" x="473.0689655172413" y="470.3448275862069" width="22.413793103448313" height="89.65517241379314" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="-2.4" x="517.8965517241379" y="470.3448275862069" width="22.413793103448256" height="89.65517241379314" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.75" x="632.2068965517242" y="356.0344827586207" width="89.65517241379314" height="22.413793103448256" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.25" x="632.2068965517242" y="311.20689655172407" width="89.65517241379314" height="22.413793103448313" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.25" x="632.2068965517242" y="266.37931034482756" width="89.65517241379314" height="22.413793103448313" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.75" x="632.2068965517242" y="221.55172413793105" width="89.65517241379314" height="22.413793103448256" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="2.4" x="517.8965517241379" y="39.999999999999986" width="22.413793103448256" height="89.65517241379311" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="2.4" x="473.0689655172413" y="39.999999999999986" width="22.413793103448313" height="89.65517241379311" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="2.4" x="428.24137931034477" y="39.999999999999986" width="22.413793103448313" height="89.65517241379311" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="2.4" x="383.41379310344826" y="39.999999999999986" width="22.413793103448256" height="89.65517241379311" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top
+source_trace_0" data-x="-4.01" data-y="2.4" x="78.13793103448273" y="56.13793103448276" width="48.413793103448256" height="57.37931034482756" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top
+source_trace_1" data-x="-2.99" data-y="2.4" x="169.58620689655166" y="56.13793103448276" width="48.41379310344831" height="57.37931034482756" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><circle data-type="circle" data-label="" data-x="-3.273" data-y="-0.214" cx="168.42068965517234" cy="319.1862068965517" r="13.448275862068966" fill="blue" stroke="none" stroke-width="0.011153846153846153"/><circle data-type="circle" data-label="" data-x="-3.219" data-y="1.54" cx="173.2620689655172" cy="161.9310344827586" r="13.448275862068966" fill="blue" stroke="none" stroke-width="0.011153846153846153"/><g><circle data-type="point" data-label="source_trace_0
 source_trace_0
-top" data-x="-4.01" data-y="2.4" cx="170.77551020408166" cy="172.65306122448982" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_0
+top" data-x="-4.01" data-y="2.4" cx="102.34482758620686" cy="84.82758620689654" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_0
 source_trace_0
-top" data-x="-2.4" data-y="0.75" cx="256.2040816326531" cy="260.2040816326531" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
+top" data-x="-2.4" data-y="0.75" cx="246.68965517241375" cy="232.75862068965517" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
 source_trace_1
-top" data-x="-2.99" data-y="2.4" cx="224.89795918367346" cy="172.65306122448982" r="3" fill="hsl(56.666666666666664, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
+top" data-x="-2.99" data-y="2.4" cx="193.79310344827582" cy="84.82758620689654" r="3" fill="hsl(56.666666666666664, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
 source_trace_1
-top" data-x="-2.4" data-y="-0.25" cx="256.2040816326531" cy="313.265306122449" r="3" fill="hsl(56.666666666666664, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
+top" data-x="-2.4" data-y="-0.25" cx="246.68965517241375" cy="322.41379310344826" r="3" fill="hsl(56.666666666666664, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
 source_trace_4
-top" data-x="0.7200000000000006" data-y="-4.9" cx="421.7551020408163" cy="560" r="3" fill="hsl(113.33333333333333, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
+top" data-x="0" data-y="0" cx="461.8620689655172" cy="300" r="3" fill="hsl(113.33333333333333, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
 source_trace_5
-top" data-x="1.2200000000000006" data-y="-4.9" cx="448.28571428571433" cy="560" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
+top" data-x="0" data-y="0" cx="461.8620689655172" cy="300" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
 source_trace_6
-top" data-x="3.7200000000000006" data-y="4.9" cx="580.9387755102041" cy="40" r="3" fill="hsl(226.66666666666666, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
+top" data-x="0" data-y="0" cx="461.8620689655172" cy="300" r="3" fill="hsl(226.66666666666666, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
 source_trace_7
-top" data-x="4.9" data-y="0.09999999999999964" cx="643.5510204081633" cy="294.6938775510204" r="3" fill="hsl(283.3333333333333, 100%, 50%)"/></g><g id="crosshair__stack1__stack2__stack1" style="display: none"><line id="crosshair-h__stack1__stack2__stack1" y1="0" y2="600" stroke="#666" stroke-width="0.5"/><line id="crosshair-v__stack1__stack2__stack1" x1="0" x2="800" stroke="#666" stroke-width="0.5"/><text id="coordinates__stack1__stack2__stack1" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+top" data-x="0" data-y="0" cx="461.8620689655172" cy="300" r="3" fill="hsl(283.3333333333333, 100%, 50%)"/></g><g id="crosshair__stack1__stack2__stack1" style="display: none"><line id="crosshair-h__stack1__stack2__stack1" y1="0" y2="600" stroke="#666" stroke-width="0.5"/><line id="crosshair-v__stack1__stack2__stack1" x1="0" x2="800" stroke="#666" stroke-width="0.5"/><text id="coordinates__stack1__stack2__stack1" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
               document.currentScript.parentElement.addEventListener('mousemove', (e) => {
                 const svg = e.currentTarget;
                 const rect = svg.getBoundingClientRect();
@@ -400,7 +452,87 @@ top" data-x="4.9" data-y="0.09999999999999964" cx="643.5510204081633" cy="294.69
                 v.setAttribute('y2', '600');
 
                 // Calculate real coordinates using inverse transformation
-                const matrix = {"a":53.06122448979591,"c":0,"e":383.55102040816325,"b":0,"d":-53.06122448979591,"f":300};
+                const matrix = {"a":89.65517241379311,"c":0,"e":461.8620689655172,"b":0,"d":-89.65517241379311,"f":300};
+                // Manually invert and apply the affine transform
+                // Since we only use translate and scale, we can directly compute:
+                // x' = (x - tx) / sx
+                // y' = (y - ty) / sy
+                const sx = matrix.a;
+                const sy = matrix.d;
+                const tx = matrix.e; 
+                const ty = matrix.f;
+                const realPoint = {
+                  x: (x - tx) / sx,
+                  y: (y - ty) / sy // Flip y back since we used negative scale
+                }
+                
+                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+                coords.setAttribute('x', (x + 5).toString());
+                coords.setAttribute('y', (y - 5).toString());
+              });
+              document.currentScript.parentElement.addEventListener('mouseleave', () => {
+                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+              });
+            ]]></script>
+  </g>
+  </g>
+  <g transform="translate(0, 1956) scale(1, 1) translate(0, 0)">
+    <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
+    <rect x="0" y="0" width="800" height="36" fill="#121212" />
+  <text
+    x="400"
+    y="23"
+    fill="#f4f4f4"
+    font-family="Arial, sans-serif"
+    font-size="18"
+    font-weight="700"
+    text-anchor="middle"
+  >AUTOROUTING PHASE 1 START: 6 CONNECTIONS, 0 TRACES</text>
+  </g>
+  <g transform="translate(0, 36) scale(1, 1) translate(0, 0)">
+    <rect width="100%" height="100%" fill="#fff"/><g><rect data-type="rect" data-label="top
+source_trace_0" data-x="-2.4" data-y="0.75" x="201.86206896551718" y="221.55172413793105" width="89.65517241379314" height="22.413793103448256" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="0.25" x="201.86206896551718" y="266.37931034482756" width="89.65517241379314" height="22.413793103448313" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top
+source_trace_1" data-x="-2.4" data-y="-0.25" x="201.86206896551718" y="311.20689655172407" width="89.65517241379314" height="22.413793103448313" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-2.4" data-y="-0.75" x="201.86206896551718" y="356.0344827586207" width="89.65517241379314" height="22.413793103448256" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="-2.4" x="383.41379310344826" y="470.3448275862069" width="22.413793103448256" height="89.65517241379314" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="-2.4" x="428.24137931034477" y="470.3448275862069" width="22.413793103448313" height="89.65517241379314" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="-2.4" x="473.0689655172413" y="470.3448275862069" width="22.413793103448313" height="89.65517241379314" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="-2.4" x="517.8965517241379" y="470.3448275862069" width="22.413793103448256" height="89.65517241379314" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.75" x="632.2068965517242" y="356.0344827586207" width="89.65517241379314" height="22.413793103448256" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="-0.25" x="632.2068965517242" y="311.20689655172407" width="89.65517241379314" height="22.413793103448313" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.25" x="632.2068965517242" y="266.37931034482756" width="89.65517241379314" height="22.413793103448313" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="2.4" data-y="0.75" x="632.2068965517242" y="221.55172413793105" width="89.65517241379314" height="22.413793103448256" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="0.75" data-y="2.4" x="517.8965517241379" y="39.999999999999986" width="22.413793103448256" height="89.65517241379311" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="0.25" data-y="2.4" x="473.0689655172413" y="39.999999999999986" width="22.413793103448313" height="89.65517241379311" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-0.25" data-y="2.4" x="428.24137931034477" y="39.999999999999986" width="22.413793103448313" height="89.65517241379311" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top" data-x="-0.75" data-y="2.4" x="383.41379310344826" y="39.999999999999986" width="22.413793103448256" height="89.65517241379311" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top
+source_trace_0" data-x="-4.01" data-y="2.4" x="78.13793103448273" y="56.13793103448276" width="48.413793103448256" height="57.37931034482756" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><rect data-type="rect" data-label="top
+source_trace_1" data-x="-2.99" data-y="2.4" x="169.58620689655166" y="56.13793103448276" width="48.41379310344831" height="57.37931034482756" fill="rgba(255,0,0,0.5)" stroke="black" stroke-width="0.011153846153846153"/></g><g><circle data-type="point" data-label="source_trace_0
+source_trace_0
+top" data-x="-4.01" data-y="2.4" cx="102.34482758620686" cy="84.82758620689654" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_0
+source_trace_0
+top" data-x="-2.4" data-y="0.75" cx="246.68965517241375" cy="232.75862068965517" r="3" fill="hsl(0, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
+source_trace_1
+top" data-x="-2.99" data-y="2.4" cx="193.79310344827582" cy="84.82758620689654" r="3" fill="hsl(56.666666666666664, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_1
+source_trace_1
+top" data-x="-2.4" data-y="-0.25" cx="246.68965517241375" cy="322.41379310344826" r="3" fill="hsl(56.666666666666664, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_4
+source_trace_4
+top" data-x="0" data-y="0" cx="461.8620689655172" cy="300" r="3" fill="hsl(113.33333333333333, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_5
+source_trace_5
+top" data-x="0" data-y="0" cx="461.8620689655172" cy="300" r="3" fill="hsl(170, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_6
+source_trace_6
+top" data-x="0" data-y="0" cx="461.8620689655172" cy="300" r="3" fill="hsl(226.66666666666666, 100%, 50%)"/></g><g><circle data-type="point" data-label="source_trace_7
+source_trace_7
+top" data-x="0" data-y="0" cx="461.8620689655172" cy="300" r="3" fill="hsl(283.3333333333333, 100%, 50%)"/></g><g id="crosshair__stack1__stack3__stack1" style="display: none"><line id="crosshair-h__stack1__stack3__stack1" y1="0" y2="600" stroke="#666" stroke-width="0.5"/><line id="crosshair-v__stack1__stack3__stack1" x1="0" x2="800" stroke="#666" stroke-width="0.5"/><text id="coordinates__stack1__stack3__stack1" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const crosshair = svg.getElementById('crosshair');
+                const h = svg.getElementById('crosshair-h');
+                const v = svg.getElementById('crosshair-v');
+                const coords = svg.getElementById('coordinates');
+                
+                crosshair.style.display = 'block';
+                h.setAttribute('x1', '0');
+                h.setAttribute('x2', '800');
+                h.setAttribute('y1', y);
+                h.setAttribute('y2', y);
+                v.setAttribute('x1', x);
+                v.setAttribute('x2', x);
+                v.setAttribute('y1', '0');
+                v.setAttribute('y2', '600');
+
+                // Calculate real coordinates using inverse transformation
+                const matrix = {"a":89.65517241379311,"c":0,"e":461.8620689655172,"b":0,"d":-89.65517241379311,"f":300};
                 // Manually invert and apply the affine transform
                 // Since we only use translate and scale, we can directly compute:
                 // x' = (x - tx) / sx
