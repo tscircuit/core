@@ -74,7 +74,7 @@ export class Breakout extends Group<typeof breakoutProps> {
     }
   }
 
-  doInitialPcbAutoBreakoutPointRender(): void {
+  doInitialPcbAutoplaceBreakoutPoints(): void {
     if (this.root?.pcbDisabled) return
 
     const props = this._parsedProps as z.infer<typeof breakoutProps>
@@ -92,12 +92,12 @@ export class Breakout extends Group<typeof breakoutProps> {
     ) as AutoplacedBreakoutPoint[]
 
     for (const solvedPoint of output.breakoutPoints) {
-      const match = autoBreakoutPoints.find(
+      const matchingBreakoutPoint = autoBreakoutPoints.find(
         (child) =>
           child.matchedPort?.source_port_id === solvedPoint.sourcePortId,
       )
-      if (match) {
-        match._renderPcbBreakoutPoint({
+      if (matchingBreakoutPoint) {
+        matchingBreakoutPoint._setPositionFromLayout({
           x: solvedPoint.x,
           y: solvedPoint.y,
         })
