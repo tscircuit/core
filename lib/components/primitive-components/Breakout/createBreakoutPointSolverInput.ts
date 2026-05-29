@@ -1,19 +1,13 @@
-import type { BreakoutPointSolverInput } from "@tscircuit/breakout-point-solver"
+import type {
+  BreakoutPointSolverInput,
+  PcbLayer,
+} from "@tscircuit/breakout-point-solver"
 import {
   type CircuitJsonUtilObjects,
   findBoundsAndCenter,
 } from "@tscircuit/circuit-json-util"
 import type { PcbPort } from "circuit-json"
 import type { Breakout } from "./Breakout"
-
-type BreakoutPcbLayer = "top" | "bottom"
-
-const toBreakoutPcbLayer = (
-  layer: string | undefined,
-): BreakoutPcbLayer | undefined => {
-  if (layer === "top" || layer === "bottom") return layer
-  return undefined
-}
 
 const getPortLabel = (db: CircuitJsonUtilObjects, sourcePortId?: string) => {
   if (!sourcePortId) return undefined
@@ -42,7 +36,7 @@ const toBreakoutPort = (db: CircuitJsonUtilObjects, pcbPort: PcbPort) => {
     sourcePortId: pcbPort.source_port_id!,
     position: { x: pcbPort.x!, y: pcbPort.y! },
     ...(padBounds ? { width: padBounds.width, height: padBounds.height } : {}),
-    layer: toBreakoutPcbLayer(pcbPort.layers?.[0]) ?? "top",
+    layer: (pcbPort.layers?.[0] as PcbLayer) ?? "top",
     label: getPortLabel(db, pcbPort.source_port_id),
   }
 }
@@ -114,7 +108,7 @@ export const createBreakoutPointSolverInput = (
       center: padBounds.center,
       width: padBounds.width,
       height: padBounds.height,
-      layer: toBreakoutPcbLayer((pad as any).layer) ?? "top",
+      layer: ((pad as any).layer as PcbLayer) ?? "top",
       sourcePortIds: pcbPort?.source_port_id ? [pcbPort.source_port_id] : [],
       label: getPortLabel(db, pcbPort?.source_port_id),
     })
@@ -128,7 +122,7 @@ export const createBreakoutPointSolverInput = (
       width: component.width,
       height: component.height,
       ccwRotationDegrees: component.rotation,
-      layer: toBreakoutPcbLayer(component.layer),
+      layer: component.layer as PcbLayer | undefined,
       label: component.pcb_component_id,
     }))
 
