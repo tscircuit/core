@@ -7,7 +7,7 @@ test("breakout routes qfp16 controller pins to header and passives without break
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(
-    <board width="18mm" height="14mm">
+    <board width="20mm" height="16mm">
       <breakout name="MCU_BREAKOUT" autorouter="auto" padding="1mm">
         <chip
           footprint="qfp16"
@@ -48,7 +48,7 @@ test("breakout routes qfp16 controller pins to header and passives without break
         pinCount={4}
         footprint="pinrow4"
         pinLabels={["VCC", "GND", "SDA", "SCL"]}
-        pcbX={6}
+        pcbX={7}
         pcbY={0}
         pcbRotation={90}
       />
@@ -79,7 +79,7 @@ test("breakout routes qfp16 controller pins to header and passives without break
   expect(breakoutPcbGroup).toBeDefined()
   expect(circuit.db.pcb_breakout_point.list().length).toBe(4)
   expect(autoroutingPhaseIoStack.length).toBeGreaterThanOrEqual(2)
-  // expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(6)
+  expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(6)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
