@@ -1,5 +1,9 @@
 import { breakoutProps } from "@tscircuit/props"
 import { Group } from "../Group/Group"
+import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
+import { BreakoutPoint } from "../BreakoutPoint"
+import { Trace } from "../Trace/Trace"
+import type { Port } from "../Port"
 import type { z } from "zod"
 
 export class Breakout extends Group<typeof breakoutProps> {
@@ -9,6 +13,63 @@ export class Breakout extends Group<typeof breakoutProps> {
       // @ts-ignore
       subcircuit: true,
     })
+  }
+
+  /**
+   * Find ports inside this breakout group that are connected to traces
+   * crossing the breakout boundary, and create auto-placed BreakoutPoint
+   * children for them. Positions are not set here — they will be determined
+   * after PcbLayout.
+   */
+  doInitialCreateAutoplacedBreakoutPoints(): void {
+    const portsInBreakout = this.selectAll("port") as Port[]
+    const breakoutPortSet = new Set(portsInBreakout)
+
+    // Find ports that already have manual breakout points
+    const manualBreakoutPoints = this.children.filter(
+      (c) => c instanceof BreakoutPoint,
+    ) as BreakoutPoint[]
+    const manuallyMappedPorts = new Set(
+      manualBreakoutPoints
+        .map((bp) => {
+          bp._matchConnection()
+          return bp.matchedPort
+        })
+        .filter(Boolean),
+    )
+
+    // Walk traces on the parent board to find cross-boundary connections
+    const board = this.parent
+    if (!board) return
+
+    const allTraces = board.children.filter(
+      (c) => c instanceof Trace,
+    ) as Trace[]
+
+    const autoPlacedPorts = new Set<Port>()
+
+    for (const trace of allTraces) {
+      const result = trace._findConnectedPorts()
+      if (!result.allPortsFound || !result.ports) continue
+
+      for (const port of result.ports) {
+        // Port is inside breakout and trace crosses boundary
+        const isInside = breakoutPortSet.has(port)
+        const hasOutsidePort = result.ports.some((p) => !breakoutPortSet.has(p))
+        if (!isInside || !hasOutsidePort) continue
+
+        // Skip if already covered by a manual or auto breakout point
+        if (manuallyMappedPorts.has(port)) continue
+        if (autoPlacedPorts.has(port)) continue
+
+        autoPlacedPorts.add(port)
+
+        // Create auto-placed breakout point (no position yet)
+        const breakoutPoint = new AutoplacedBreakoutPoint({})
+        breakoutPoint.matchedPort = port
+        this.add(breakoutPoint)
+      }
+    }
   }
 
   doInitialPcbPrimitiveRender(): void {
