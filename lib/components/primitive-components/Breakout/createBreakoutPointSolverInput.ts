@@ -1,5 +1,8 @@
 import type { BreakoutPointSolverInput } from "@tscircuit/breakout-point-solver"
-import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import {
+  type CircuitJsonUtilObjects,
+  findBoundsAndCenter,
+} from "@tscircuit/circuit-json-util"
 import type { PcbPort } from "circuit-json"
 import type { Breakout } from "./Breakout"
 
@@ -10,39 +13,6 @@ const toBreakoutPcbLayer = (
 ): BreakoutPcbLayer | undefined => {
   if (layer === "top" || layer === "bottom") return layer
   return undefined
-}
-
-const getPcbPortPad = (db: CircuitJsonUtilObjects, pcbPortId: string) => {
-  return (
-    db.pcb_smtpad.getWhere({ pcb_port_id: pcbPortId }) ??
-    db.pcb_plated_hole.getWhere({ pcb_port_id: pcbPortId })
-  )
-}
-
-const getPortSize = (
-  db: CircuitJsonUtilObjects,
-  pcbPort: PcbPort,
-): { width?: number; height?: number; ccwRotationDegrees?: number } => {
-  const pad = getPcbPortPad(db, pcbPort.pcb_port_id) as any
-  if (!pad) return {}
-  if (pad.shape === "circle") {
-    return { width: pad.radius * 2, height: pad.radius * 2 }
-  }
-  if (pad.shape === "pill" || pad.shape === "rotated_pill") {
-    return {
-      width: pad.width,
-      height: pad.height,
-      ccwRotationDegrees: pad.ccw_rotation,
-    }
-  }
-  if (pad.shape === "rect" || pad.shape === "rotated_rect") {
-    return {
-      width: pad.width,
-      height: pad.height,
-      ccwRotationDegrees: pad.ccw_rotation,
-    }
-  }
-  return {}
 }
 
 const getPortLabel = (db: CircuitJsonUtilObjects, sourcePortId?: string) => {
@@ -57,42 +27,24 @@ const getPortLabel = (db: CircuitJsonUtilObjects, sourcePortId?: string) => {
     : sourcePort.name
 }
 
-const toBreakoutPort = (db: CircuitJsonUtilObjects, pcbPort: PcbPort) => ({
-  sourcePortId: pcbPort.source_port_id!,
-  position: { x: pcbPort.x!, y: pcbPort.y! },
-  ...getPortSize(db, pcbPort),
-  layer: toBreakoutPcbLayer(pcbPort.layers?.[0]) ?? "top",
-  label: getPortLabel(db, pcbPort.source_port_id),
-})
+const getPadElement = (db: CircuitJsonUtilObjects, pcbPortId: string) => {
+  return (
+    db.pcb_smtpad.getWhere({ pcb_port_id: pcbPortId }) ??
+    db.pcb_plated_hole.getWhere({ pcb_port_id: pcbPortId })
+  )
+}
 
-const getPadDimensions = (pad: any) => {
-  if (pad.shape === "circle") {
-    return {
-      width: pad.radius * 2,
-      height: pad.radius * 2,
-    }
+const toBreakoutPort = (db: CircuitJsonUtilObjects, pcbPort: PcbPort) => {
+  const pad = getPadElement(db, pcbPort.pcb_port_id)
+  const padBounds = pad ? findBoundsAndCenter([pad]) : null
+
+  return {
+    sourcePortId: pcbPort.source_port_id!,
+    position: { x: pcbPort.x!, y: pcbPort.y! },
+    ...(padBounds ? { width: padBounds.width, height: padBounds.height } : {}),
+    layer: toBreakoutPcbLayer(pcbPort.layers?.[0]) ?? "top",
+    label: getPortLabel(db, pcbPort.source_port_id),
   }
-  if (pad.shape === "rect" || pad.shape === "rotated_rect") {
-    return {
-      width: pad.width,
-      height: pad.height,
-      ccwRotationDegrees: pad.ccw_rotation,
-    }
-  }
-  if (pad.shape === "pill" || pad.shape === "rotated_pill") {
-    return {
-      width: pad.width,
-      height: pad.height,
-      ccwRotationDegrees: pad.ccw_rotation,
-    }
-  }
-  if (pad.shape === "oval" || pad.shape === "circular_hole_with_rect_pad") {
-    return {
-      width: pad.outer_width ?? pad.width ?? pad.outer_diameter,
-      height: pad.outer_height ?? pad.height ?? pad.outer_diameter,
-    }
-  }
-  return null
 }
 
 export const createBreakoutPointSolverInput = (
@@ -150,20 +102,19 @@ export const createBreakoutPointSolverInput = (
 
   if (traces.length === 0) return null
 
+  const allPadElements = [...db.pcb_smtpad.list(), ...db.pcb_plated_hole.list()]
   const pads: BreakoutPointSolverInput["pads"] = []
-  for (const pad of [
-    ...db.pcb_smtpad.list(),
-    ...db.pcb_plated_hole.list(),
-  ] as any[]) {
-    const dimensions = getPadDimensions(pad)
-    if (!dimensions?.width || !dimensions?.height) continue
-    const pcbPort = pad.pcb_port_id ? db.pcb_port.get(pad.pcb_port_id) : null
+  for (const pad of allPadElements) {
+    const padBounds = findBoundsAndCenter([pad])
+    if (!padBounds.width || !padBounds.height) continue
+    const pcbPort = (pad as any).pcb_port_id
+      ? db.pcb_port.get((pad as any).pcb_port_id)
+      : null
     pads.push({
-      center: { x: pad.x, y: pad.y },
-      width: dimensions.width,
-      height: dimensions.height,
-      ccwRotationDegrees: dimensions.ccwRotationDegrees,
-      layer: toBreakoutPcbLayer(pad.layer) ?? "top",
+      center: padBounds.center,
+      width: padBounds.width,
+      height: padBounds.height,
+      layer: toBreakoutPcbLayer((pad as any).layer) ?? "top",
       sourcePortIds: pcbPort?.source_port_id ? [pcbPort.source_port_id] : [],
       label: getPortLabel(db, pcbPort?.source_port_id),
     })
