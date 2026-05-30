@@ -99,6 +99,17 @@ function convertTreeToInputProblem(
   db: CircuitJsonUtilObjects,
   group: Group<any>,
 ): InputProblem {
+  // Opt into the force-directed packer (fixes the O(n^3) greedy blowup behind
+  // tscircuit#3208) via schLayout.packPlacementStrategy (or the top-level
+  // shortcut). Default keeps the greedy packer.
+  const layoutProps = group._parsedProps as {
+    packPlacementStrategy?: string
+    schLayout?: { packPlacementStrategy?: string }
+  }
+  const packPlacementStrategy =
+    layoutProps.schLayout?.packPlacementStrategy ??
+    layoutProps.packPlacementStrategy
+
   const problem: InputProblem = {
     chipMap: {},
     chipPinMap: {},
@@ -108,6 +119,9 @@ function convertTreeToInputProblem(
     chipGap: 0.6,
     decouplingCapsGap: 0.4,
     partitionGap: 1.2,
+    ...(packPlacementStrategy === "force_directed"
+      ? { packPlacementStrategy: "force_directed" as const }
+      : {}),
   }
 
   debug(
