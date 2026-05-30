@@ -3,6 +3,7 @@ import type { AnyCircuitElement } from "circuit-json"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
 import { CourtyardOutline } from "lib/components/primitive-components/CourtyardOutline"
 import { CourtyardRect } from "lib/components/primitive-components/CourtyardRect"
+import { CopperText } from "lib/components/primitive-components/CopperText"
 import { Cutout } from "lib/components/primitive-components/Cutout"
 import { FabricationNotePath } from "lib/components/primitive-components/FabricationNotePath"
 import { FabricationNoteRect } from "lib/components/primitive-components/FabricationNoteRect"
@@ -112,6 +113,20 @@ export const createComponentsFromCircuitJson = (
           layer: elm.layer,
           route: elm.route,
           strokeWidth: elm.stroke_width,
+        }),
+      )
+    } else if (elm.type === "pcb_copper_text") {
+      components.push(
+        new CopperText({
+          text: elm.text,
+          pcbX: elm.anchor_position.x,
+          pcbY: elm.anchor_position.y,
+          pcbRotation: elm.ccw_rotation,
+          anchorAlignment: elm.anchor_alignment,
+          fontSize: elm.font_size,
+          layer: elm.layer,
+          mirrored: elm.is_mirrored,
+          knockout: elm.is_knockout,
         }),
       )
     } else if (elm.type === "pcb_plated_hole") {
