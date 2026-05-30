@@ -8,7 +8,7 @@ test("fanout routes soic8 sensor support parts to an i2c header without fanoutpo
 
   circuit.add(
     <board width="20mm" height="16mm">
-      <fanout name="SENSOR_FANOUT" autorouter="auto" padding="0.8mm">
+      <fanout name="SENSOR_FANOUT" padding="0.8mm">
         <chip
           name="U1"
           footprint="soic8"

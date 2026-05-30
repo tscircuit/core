@@ -98,6 +98,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const connMap = getFullConnectivityMapFromCircuitJson(subcircuitElements)
 
+  const breakoutPoints = db.pcb_breakout_point
+    .list()
+    .filter(
+      (bp) => !subcircuit_id || relevantSubcircuitIds?.has(bp.subcircuit_id!),
+    )
+
   const obstacles = getObstaclesFromCircuitJson(
     [
       ...db.pcb_component.list(),
@@ -238,10 +244,29 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       .filter((id): id is string => Boolean(id)),
   )
 
-  // Create connections from traces
+  // Build a map of source_port_id → breakout point for adding breakout
+  // waypoints to cross-boundary trace connections.
+  const sourcePortIdToBreakoutPoint = new Map<
+    string,
+    (typeof breakoutPoints)[0]
+  >()
+  for (const bp of breakoutPoints) {
+    const spId = (bp as any).source_port_id as string | undefined
+    if (spId) sourcePortIdToBreakoutPoint.set(spId, bp)
+  }
+
+  // Create connections from traces. Only include traces that belong to
+  // this subcircuit — traces from descendant subcircuits (e.g. inside a
+  // breakout) are already routed by the descendant's autorouter.
+  // For cross-boundary traces, add breakout points as additional
+  // waypoints so the autorouter routes through the boundary.
   const directTraceConnections = db.source_trace
     .list()
     .filter((trace) => !routedTraceIds.has(trace.source_trace_id))
+    .filter(
+      (trace) =>
+        !subcircuit_id || (trace as any).subcircuit_id === subcircuit_id,
+    )
     .map((trace) => {
       const connectedPorts = trace.connected_source_port_ids.map((id) => {
         const source_port = db.source_port.get(id)
@@ -294,6 +319,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       }
 
+      // For cross-boundary traces, add breakout points to pointsToConnect.
+      // The MST will create edges that include the breakout point,
+      // ensuring the trace passes through the boundary crossing.
+      const breakoutWaypoints: { x: number; y: number; layer: string }[] = []
+      for (const spId of trace.connected_source_port_ids) {
+        const bp = sourcePortIdToBreakoutPoint.get(spId)
+        if (bp && bp.subcircuit_id !== subcircuit_id) {
+          breakoutWaypoints.push({ x: bp.x, y: bp.y, layer: "top" })
+        }
+      }
+
       return {
         name:
           trace.source_trace_id ??
@@ -311,6 +347,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             pcb_port_id: portA.pcb_port_id,
           },
           ...hintPoints,
+          ...breakoutWaypoints,
           {
             x: portB.x!,
             y: portB.y!,
@@ -369,33 +406,42 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
   }
 
-  const breakoutPoints = db.pcb_breakout_point
-    .list()
-    .filter(
-      (bp) => !subcircuit_id || relevantSubcircuitIds?.has(bp.subcircuit_id!),
-    )
-
   const connectionsFromBreakoutPoints: SimpleRouteConnection[] = []
-  const breakoutTraceConnectionsById = new Map<string, SimpleRouteConnection>()
 
   for (const bp of breakoutPoints) {
+    const bpSourcePortId = (bp as any).source_port_id as string | undefined
     const pt = { x: bp.x, y: bp.y, layer: "top" as const }
-    if (bp.source_trace_id) {
-      const conn =
-        directTraceConnectionsById.get(bp.source_trace_id) ??
-        breakoutTraceConnectionsById.get(bp.source_trace_id)
-      if (conn) {
-        conn.pointsToConnect.push(pt)
-      } else {
-        const newConn: SimpleRouteConnection = {
-          name: bp.source_trace_id,
-          source_trace_id: bp.source_trace_id,
-          pointsToConnect: [pt],
-        }
-        connectionsFromBreakoutPoints.push(newConn)
-        breakoutTraceConnectionsById.set(bp.source_trace_id, newConn)
+
+    if (bpSourcePortId) {
+      const pcb_port = db.pcb_port.getWhere({
+        source_port_id: bpSourcePortId,
+      })
+      if (!pcb_port) continue
+
+      const portPt = {
+        x: pcb_port.x!,
+        y: pcb_port.y!,
+        layer: (pcb_port.layers?.[0] as any) ?? "top",
+        pointId: pcb_port.pcb_port_id,
+        pcb_port_id: pcb_port.pcb_port_id,
       }
-    } else if (bp.source_net_id) {
+
+      // Breakout points with a cross-boundary trace are already included
+      // as a 3rd point in the cross-boundary connection above. The MST
+      // will route through them. No separate connection needed.
+      if (bp.source_trace_id) continue
+
+      // Manual breakout point with no cross-boundary trace — create a
+      // direct [port, bp] connection so the autorouter routes to it.
+      connectionsFromBreakoutPoints.push({
+        name: bpSourcePortId,
+        pointsToConnect: [portPt, pt],
+      })
+      continue
+    }
+
+    // Net-based breakout points
+    if (bp.source_net_id) {
       const conn = connectionsFromNets.find((c) => c.name === bp.source_net_id)
       if (conn) {
         conn.pointsToConnect.push(pt)
@@ -403,28 +449,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         connectionsFromBreakoutPoints.push({
           name: bp.source_net_id,
           pointsToConnect: [pt],
-        })
-      }
-    } else if ((bp as any).source_port_id) {
-      const pcb_port = db.pcb_port.getWhere({
-        source_port_id: (bp as any).source_port_id,
-      })
-      if (pcb_port) {
-        connectionsFromBreakoutPoints.push({
-          name: (bp as any).source_port_id,
-          // direct connection from port to breakout point
-          source_trace_id: undefined as any,
-          pointsToConnect: [
-            {
-              x: pcb_port.x!,
-              y: pcb_port.y!,
-              layer: (pcb_port.layers?.[0] as any) ?? "top",
-              pointId: pcb_port.pcb_port_id,
-              // @ts-ignore
-              pcb_port_id: pcb_port.pcb_port_id,
-            },
-            pt,
-          ],
         })
       }
     }
