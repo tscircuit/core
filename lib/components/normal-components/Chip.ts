@@ -117,7 +117,7 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     }
 
     // Validate that components can only be placed on top or bottom layers
-    const componentLayer = props.layer ?? "top"
+    const componentLayer = this._getPcbComponentLayer()
     if (componentLayer !== "top" && componentLayer !== "bottom") {
       const subcircuit = this.getSubcircuit()
       const error = pcb_component_invalid_layer_error.parse({

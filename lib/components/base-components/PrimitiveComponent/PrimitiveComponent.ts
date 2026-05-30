@@ -659,6 +659,10 @@ export abstract class PrimitiveComponent<
     }
   }
 
+  protected _getPcbComponentLayer(): LayerRef | undefined {
+    return this._parsedProps.layer
+  }
+
   /**
    * Determine if this pcb primitive should be flipped because the primitive
    * container is flipped
@@ -673,10 +677,11 @@ export abstract class PrimitiveComponent<
     const container = this.getPrimitiveContainer()
     const footprint =
       this.componentName === "Footprint" ? this : this._getEnclosingFootprint()
+    const componentLayer = container?._getPcbComponentLayer()
     const isFlipped = !container
       ? false
       : isFootprintFlipped({
-          componentLayer: container._parsedProps.layer,
+          componentLayer,
           originalLayer: footprint?._parsedProps.originalLayer,
         })
     const maybeFlipLayer = (layer: LayerRef) => {
