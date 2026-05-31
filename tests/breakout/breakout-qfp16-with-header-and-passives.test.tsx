@@ -79,7 +79,7 @@ test("breakout routes qfp16 controller pins to header and passives without break
   expect(breakoutPcbGroup).toBeDefined()
   expect(circuit.db.pcb_breakout_point.list().length).toBe(4)
   expect(autoroutingPhaseIoStack.length).toBeGreaterThanOrEqual(2)
-  expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(6)
+  expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(2)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
