@@ -319,15 +319,35 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       }
 
-      // For cross-boundary traces, use the breakout point instead of the
-      // matched inner port. The inner port is excluded so the autorouter
-      // routes to the breakout boundary, not directly to the inner port.
-      const spIdA = trace.connected_source_port_ids[0]
-      const spIdB = trace.connected_source_port_ids[1]
-      const bpA = sourcePortIdToBreakoutPoint.get(spIdA)
-      const bpB = sourcePortIdToBreakoutPoint.get(spIdB)
-      const replaceA = bpA && bpA.subcircuit_id !== subcircuit_id
-      const replaceB = bpB && bpB.subcircuit_id !== subcircuit_id
+      // For cross-boundary traces, use the breakout point instead of
+      // the matched inner port so the autorouter routes to the breakout
+      // boundary, not directly to the inner port.
+      const pointA = {
+        x: portA.x!,
+        y: portA.y!,
+        layer: layerA,
+        pointId: portA.pcb_port_id,
+        pcb_port_id: portA.pcb_port_id,
+      }
+      const pointB = {
+        x: portB.x!,
+        y: portB.y!,
+        layer: layerB,
+        pointId: portB.pcb_port_id,
+        pcb_port_id: portB.pcb_port_id,
+      }
+
+      for (const spId of trace.connected_source_port_ids) {
+        const bp = sourcePortIdToBreakoutPoint.get(spId)
+        if (!bp || bp.subcircuit_id === subcircuit_id) continue
+        const target =
+          spId === trace.connected_source_port_ids[0] ? pointA : pointB
+        target.x = bp.x
+        target.y = bp.y
+        target.layer = "top"
+        delete (target as any).pointId
+        delete (target as any).pcb_port_id
+      }
 
       return {
         name:
@@ -337,27 +357,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         source_trace_id: trace.source_trace_id,
         nominalTraceWidth: trace.min_trace_thickness,
         width: trace.min_trace_thickness,
-        pointsToConnect: [
-          replaceA
-            ? { x: bpA.x, y: bpA.y, layer: "top" as string }
-            : {
-                x: portA.x!,
-                y: portA.y!,
-                layer: layerA,
-                pointId: portA.pcb_port_id,
-                pcb_port_id: portA.pcb_port_id,
-              },
-          ...hintPoints,
-          replaceB
-            ? { x: bpB.x, y: bpB.y, layer: "top" as string }
-            : {
-                x: portB.x!,
-                y: portB.y!,
-                layer: layerB,
-                pointId: portB.pcb_port_id,
-                pcb_port_id: portB.pcb_port_id,
-              },
-        ],
+        pointsToConnect: [pointA, ...hintPoints, pointB],
       } as SimpleRouteConnection
     })
     .filter((c): c is SimpleRouteConnection => c !== null)
