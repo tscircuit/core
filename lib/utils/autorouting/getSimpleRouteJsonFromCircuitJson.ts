@@ -319,16 +319,15 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       }
 
-      // For cross-boundary traces, add breakout points to pointsToConnect.
-      // The MST will create edges that include the breakout point,
-      // ensuring the trace passes through the boundary crossing.
-      const breakoutWaypoints: { x: number; y: number; layer: string }[] = []
-      for (const spId of trace.connected_source_port_ids) {
-        const bp = sourcePortIdToBreakoutPoint.get(spId)
-        if (bp && bp.subcircuit_id !== subcircuit_id) {
-          breakoutWaypoints.push({ x: bp.x, y: bp.y, layer: "top" })
-        }
-      }
+      // For cross-boundary traces, use the breakout point instead of the
+      // matched inner port. The inner port is excluded so the autorouter
+      // routes to the breakout boundary, not directly to the inner port.
+      const spIdA = trace.connected_source_port_ids[0]
+      const spIdB = trace.connected_source_port_ids[1]
+      const bpA = sourcePortIdToBreakoutPoint.get(spIdA)
+      const bpB = sourcePortIdToBreakoutPoint.get(spIdB)
+      const replaceA = bpA && bpA.subcircuit_id !== subcircuit_id
+      const replaceB = bpB && bpB.subcircuit_id !== subcircuit_id
 
       return {
         name:
@@ -339,29 +338,29 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         nominalTraceWidth: trace.min_trace_thickness,
         width: trace.min_trace_thickness,
         pointsToConnect: [
-          {
-            x: portA.x!,
-            y: portA.y!,
-            layer: layerA,
-            pointId: portA.pcb_port_id,
-            pcb_port_id: portA.pcb_port_id,
-          },
+          replaceA
+            ? { x: bpA.x, y: bpA.y, layer: "top" as string }
+            : {
+                x: portA.x!,
+                y: portA.y!,
+                layer: layerA,
+                pointId: portA.pcb_port_id,
+                pcb_port_id: portA.pcb_port_id,
+              },
           ...hintPoints,
-          ...breakoutWaypoints,
-          {
-            x: portB.x!,
-            y: portB.y!,
-            layer: layerB,
-            pointId: portB.pcb_port_id,
-            pcb_port_id: portB.pcb_port_id,
-          },
+          replaceB
+            ? { x: bpB.x, y: bpB.y, layer: "top" as string }
+            : {
+                x: portB.x!,
+                y: portB.y!,
+                layer: layerB,
+                pointId: portB.pcb_port_id,
+                pcb_port_id: portB.pcb_port_id,
+              },
         ],
       } as SimpleRouteConnection
     })
     .filter((c): c is SimpleRouteConnection => c !== null)
-  const directTraceConnectionsById = new Map(
-    directTraceConnections.map((c) => [c.source_trace_id, c]),
-  )
 
   const source_nets = db.source_net
     .list()
@@ -426,17 +425,26 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         pcb_port_id: pcb_port.pcb_port_id,
       }
 
-      // Breakout points with a cross-boundary trace are already included
-      // as a 3rd point in the cross-boundary connection above. The MST
-      // will route through them. No separate connection needed.
-      if (bp.source_trace_id) continue
+      // Inner routing (same subcircuit): create [port → bp] so the
+      // inner autorouter connects the chip pin to the boundary.
+      // Outer routing (parent): the cross-boundary trace already
+      // uses the bp instead of the inner port — no connection needed.
+      if (bp.subcircuit_id === subcircuit_id) {
+        connectionsFromBreakoutPoints.push({
+          name: bpSourcePortId,
+          pointsToConnect: [portPt, pt],
+        })
+        continue
+      }
 
       // Manual breakout point with no cross-boundary trace — create a
-      // direct [port, bp] connection so the autorouter routes to it.
-      connectionsFromBreakoutPoints.push({
-        name: bpSourcePortId,
-        pointsToConnect: [portPt, pt],
-      })
+      // direct [port, bp] connection as fallback.
+      if (!bp.source_trace_id) {
+        connectionsFromBreakoutPoints.push({
+          name: bpSourcePortId,
+          pointsToConnect: [portPt, pt],
+        })
+      }
       continue
     }
 
