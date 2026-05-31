@@ -1130,11 +1130,14 @@ export class NormalComponent<
   }
 
   protected _getPcbComponentLayer(): LayerRef {
-    const footprintMetadata = this._getFootprintMetadataForPcbComponent()
     return (
       this._parsedProps.layer ??
-      (footprintMetadata?.originalLayer === "bottom" ? "bottom" : "top")
+      (this._getFootprintOriginalLayer() === "bottom" ? "bottom" : "top")
     )
+  }
+
+  protected _getFootprintOriginalLayer(): LayerRef | undefined {
+    return this._getFootprintMetadataForPcbComponent()?.originalLayer
   }
 
   protected _getPcbComponentInsertionDirection(
