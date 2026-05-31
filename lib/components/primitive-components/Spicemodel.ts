@@ -7,10 +7,10 @@ import { parseSpiceNetlist } from "spicets"
 import { Port } from "./Port"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
-export class Spicemodel extends PrimitiveComponent<typeof spicemodelProps> {
+export class SpiceModel extends PrimitiveComponent<typeof spicemodelProps> {
   get config() {
     return {
-      componentName: "Spicemodel",
+      componentName: "SpiceModel",
       zodProps: spicemodelProps,
     }
   }

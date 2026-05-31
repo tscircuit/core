@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import type { ResistorProps, SpicemodelElement } from "@tscircuit/props"
+import type { ResistorProps, SpiceModelElement } from "@tscircuit/props"
 import type { SourceSimpleResistor } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -15,7 +15,7 @@ test("normal component spiceModel emits simulation_spice_subcircuit", async () =
     name: "RSPICE",
     resistance: "1k",
     spiceModel: <spicemodel source={precisionResistorModel} />,
-  } satisfies ResistorProps & { spiceModel: SpicemodelElement }
+  } satisfies ResistorProps & { spiceModel: SpiceModelElement }
 
   circuit.add(
     <board>
