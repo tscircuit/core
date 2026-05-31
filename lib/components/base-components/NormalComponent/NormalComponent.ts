@@ -11,6 +11,7 @@ import type {
   CadModelWrl,
   FootprintInsertionDirection,
   SchematicPortArrangement,
+  SpiceModelElement,
   SupplierPartNumbers,
 } from "@tscircuit/props"
 import {
@@ -1194,6 +1195,17 @@ export class NormalComponent<
       )
       if (!hasCadAssemblyChild && !hasCadModelChild) {
         this.add(cmElm)
+      }
+    }
+
+    const spiceModelElm = (this.props as { spiceModel?: SpiceModelElement })
+      .spiceModel
+    if (isValidElement(spiceModelElm)) {
+      const hasSpiceModelChild = this.children.some(
+        (c) => c.componentName === "SpiceModel",
+      )
+      if (!hasSpiceModelChild) {
+        this.add(spiceModelElm)
       }
     }
   }
