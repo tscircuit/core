@@ -1,10 +1,14 @@
 import { chipProps } from "@tscircuit/props"
-import { pcb_component_invalid_layer_error } from "circuit-json"
+import {
+  type SimulationSpiceSubcircuitInput,
+  pcb_component_invalid_layer_error,
+} from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
 import type { z } from "zod"
+import { parseSpiceSubckt } from "lib/utils/spice/parse-spice-subckt"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
@@ -180,6 +184,8 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { db } = this.root!
     const { pinAttributes } = this.props as any
 
+    this._renderSpiceModelSimulationElement()
+
     if (!pinAttributes) return
 
     let powerPort: Port | null = null
@@ -232,6 +238,107 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
       negative_source_port_id: groundPort.source_port_id!,
       negative_source_net_id: groundNet.source_net_id,
       voltage: voltage,
+    })
+  }
+
+  private _renderSpiceModelSimulationElement() {
+    const { db } = this.root!
+    const { spiceModel } = this.props
+
+    if (!spiceModel) return
+
+    if (
+      typeof spiceModel !== "object" ||
+      spiceModel.type !== "spicemodel" ||
+      !spiceModel.props
+    ) {
+      this._insertSpiceModelError(
+        "spiceModel must be a <spicemodel /> element.",
+        spiceModel,
+      )
+      return
+    }
+
+    const { source, spicePinMapping } = spiceModel.props as {
+      source?: string
+      spicePinMapping?: Record<string, string>
+    }
+
+    if (!source) {
+      this._insertSpiceModelError(
+        "spiceModel <spicemodel /> requires a source prop.",
+        spiceModel.props,
+      )
+      return
+    }
+
+    const parsedSubckt = parseSpiceSubckt(source)
+    if (!parsedSubckt) {
+      this._insertSpiceModelError(
+        "spiceModel source must contain a .subckt declaration with a model name and pins.",
+        source,
+      )
+      return
+    }
+
+    const mapping = spicePinMapping ?? {}
+    for (const spicePinName of Object.keys(mapping)) {
+      if (!parsedSubckt.pinNames.includes(spicePinName)) {
+        this._insertSpiceModelError(
+          `spicePinMapping references SPICE pin "${spicePinName}", but it is not present in .subckt ${parsedSubckt.modelName}.`,
+          mapping,
+        )
+        return
+      }
+    }
+
+    const spicePinToSourcePortMap: Record<string, string> = {}
+    const seenSourcePortIds = new Set<string>()
+
+    for (const spicePinName of parsedSubckt.pinNames) {
+      const chipPinName = mapping[spicePinName] ?? spicePinName
+      const matchingPorts = this.selectAll("port").filter(
+        (port): port is Port =>
+          port instanceof Port && port.isMatchingAnyOf([chipPinName]),
+      )
+
+      if (matchingPorts.length !== 1 || !matchingPorts[0].source_port_id) {
+        this._insertSpiceModelError(
+          `Could not resolve SPICE pin "${spicePinName}" to exactly one chip port using "${chipPinName}".`,
+          mapping,
+        )
+        return
+      }
+
+      const sourcePortId = matchingPorts[0].source_port_id
+      if (seenSourcePortIds.has(sourcePortId)) {
+        this._insertSpiceModelError(
+          `spicePinMapping maps more than one SPICE pin to chip port "${chipPinName}".`,
+          mapping,
+        )
+        return
+      }
+
+      seenSourcePortIds.add(sourcePortId)
+      spicePinToSourcePortMap[spicePinName] = sourcePortId
+    }
+    db.simulation_spice_subcircuit.insert({
+      source_component_id: this.source_component_id!,
+      spice_pin_to_source_port_map: spicePinToSourcePortMap,
+      subcircuit_source: source,
+    } satisfies Omit<
+      SimulationSpiceSubcircuitInput,
+      "type" | "simulation_spice_subcircuit_id"
+    >)
+  }
+
+  private _insertSpiceModelError(message: string, propertyValue?: unknown) {
+    this.root!.db.source_invalid_component_property_error.insert({
+      source_component_id: this.source_component_id || "",
+      property_name: "spiceModel",
+      property_value: propertyValue,
+      message,
+      error_type: "source_invalid_component_property_error",
     })
   }
 }
