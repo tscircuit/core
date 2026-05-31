@@ -121,7 +121,7 @@ export class SchematicSection extends PrimitiveComponent<
     // Top boundary = nearest horizontal divider above cell.minY, else outer.maxY.
     // Left boundary = nearest vertical divider left of rawBounds.minX, else outer.minX.
     for (const { section, cell, rawBounds } of sectionData) {
-      const { displayName } = section._parsedProps
+      const { displayName, sectionTitleFontSize } = section._parsedProps
       if (!displayName) continue
 
       const dividersAbove = hDividers
@@ -139,7 +139,7 @@ export class SchematicSection extends PrimitiveComponent<
       db.schematic_text.insert({
         anchor: "top_left",
         text: displayName,
-        font_size: 0.18,
+        font_size: sectionTitleFontSize ?? 0.18,
         color: "#000000",
         position: {
           x: leftBoundary + LABEL_PADDING,

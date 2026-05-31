@@ -6,7 +6,11 @@ test("SchematicSection draws dashed box around member components", () => {
 
   circuit.add(
     <board width="20mm" height="20mm" routingDisabled>
-      <schematicsection name="pwr" displayName="Power Supply" />
+      <schematicsection
+        name="pwr"
+        displayName="Power Supply"
+        sectionTitleFontSize={0.32}
+      />
       <schematicsection name="gnd" displayName="GND" />
       <resistor
         name="R1"
@@ -46,6 +50,7 @@ test("SchematicSection draws dashed box around member components", () => {
     (c) => c.type === "schematic_text" && (c as any).text === "Power Supply",
   )
   expect(schematicTexts).toHaveLength(1)
+  expect((schematicTexts[0] as any).font_size).toBe(0.32)
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
