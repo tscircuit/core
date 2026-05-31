@@ -322,31 +322,22 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       // For cross-boundary traces, use the breakout point instead of
       // the matched inner port so the autorouter routes to the breakout
       // boundary, not directly to the inner port.
-      const pointA = {
-        x: portA.x!,
-        y: portA.y!,
-        layer: layerA,
-        pointId: portA.pcb_port_id,
-        pcb_port_id: portA.pcb_port_id,
-      }
-      const pointB = {
-        x: portB.x!,
-        y: portB.y!,
-        layer: layerB,
-        pointId: portB.pcb_port_id,
-        pcb_port_id: portB.pcb_port_id,
-      }
-
-      for (const spId of trace.connected_source_port_ids) {
-        const bp = sourcePortIdToBreakoutPoint.get(spId)
-        if (!bp || bp.subcircuit_id === subcircuit_id) continue
-        const target =
-          spId === trace.connected_source_port_ids[0] ? pointA : pointB
-        target.x = bp.x
-        target.y = bp.y
-        target.layer = "top"
-        delete (target as any).pointId
-        delete (target as any).pcb_port_id
+      const getPortOrBreakoutPoint = (
+        port: (typeof connectedPorts)[0],
+        layer: string,
+        sourcePortId: string,
+      ) => {
+        const bp = sourcePortIdToBreakoutPoint.get(sourcePortId)
+        if (bp && bp.subcircuit_id !== subcircuit_id) {
+          return { x: bp.x, y: bp.y, layer: "top" }
+        }
+        return {
+          x: port.x!,
+          y: port.y!,
+          layer,
+          pointId: port.pcb_port_id,
+          pcb_port_id: port.pcb_port_id,
+        }
       }
 
       return {
@@ -357,7 +348,19 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         source_trace_id: trace.source_trace_id,
         nominalTraceWidth: trace.min_trace_thickness,
         width: trace.min_trace_thickness,
-        pointsToConnect: [pointA, ...hintPoints, pointB],
+        pointsToConnect: [
+          getPortOrBreakoutPoint(
+            portA,
+            layerA,
+            trace.connected_source_port_ids[0],
+          ),
+          ...hintPoints,
+          getPortOrBreakoutPoint(
+            portB,
+            layerB,
+            trace.connected_source_port_ids[1],
+          ),
+        ],
       } as SimpleRouteConnection
     })
     .filter((c): c is SimpleRouteConnection => c !== null)
