@@ -572,10 +572,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _areChildSubcircuitsRouted(): boolean {
-    const subcircuitChildren = this.selectAll("group").filter(
-      (g) => g.isSubcircuit,
-    ) as Group[]
+    const subcircuitChildren = this._findDirectChildSubcircuits()
     for (const subcircuitChild of subcircuitChildren) {
+      // Skip children that will never produce an autorouting result:
+      // - inflated subcircuits are already fully routed from circuitJson
+      // - subcircuits with no traces to route never start autorouting
+      if (subcircuitChild._isInflatedFromCircuitJson) continue
+      if (!subcircuitChild._hasTracesToRoute()) continue
       if (
         subcircuitChild._shouldRouteAsync() &&
         !subcircuitChild._asyncAutoroutingResult
@@ -584,6 +587,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
     }
     return true
+  }
+
+  /**
+   * Find subcircuit groups that are direct children of this subcircuit in
+   * the component tree. Unlike selectAll("group"), this walks the children
+   * array directly because the css-select adapter used by selectAll
+   * intentionally skips subcircuit boundaries.
+   */
+  _findDirectChildSubcircuits(): Group[] {
+    const result: Group[] = []
+    const visit = (children: typeof this.children) => {
+      for (const child of children) {
+        if ((child as Group).isSubcircuit && child !== this) {
+          result.push(child as Group)
+        } else {
+          visit(child.children)
+        }
+      }
+    }
+    visit(this.children)
+    return result
   }
 
   _shouldRouteAsync(): boolean {

@@ -7,8 +7,11 @@ import {
 } from "circuit-json-to-connectivity-map"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
-import type { SimpleRouteConnection } from "./SimpleRouteJson"
-import type { SimpleRouteJson } from "./SimpleRouteJson"
+import type {
+  SimpleRouteConnection,
+  SimpleRouteJson,
+  SimplifiedPcbTrace,
+} from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 
 /**
@@ -113,8 +116,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_via.list(),
       ...db.pcb_keepout.list(),
       ...db.pcb_cutout.list(),
-      // getObstaclesFromSoup is old and doesn't support diagonal traces
-      // ...db.pcb_trace.list(),
     ].filter(
       (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
@@ -128,6 +129,27 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       group: pcbGroup,
     }),
   )
+
+  // Collect pcb_traces from descendant subcircuits (already routed by
+  // inner autorouters). Included in the SRJ traces field so the
+  // autorouter can avoid collisions and they appear in debug
+  // visualizations. We strip connection metadata so the solver treats
+  // them purely as geometry to route around, not as connections to merge.
+  const descendantTraces: SimplifiedPcbTrace[] = subcircuit_id
+    ? db.pcb_trace
+        .list()
+        .filter(
+          (t) =>
+            t.subcircuit_id &&
+            t.subcircuit_id !== subcircuit_id &&
+            relevantSubcircuitIds!.has(t.subcircuit_id),
+        )
+        .map((t) => ({
+          type: "pcb_trace" as const,
+          pcb_trace_id: t.pcb_trace_id,
+          route: t.route as SimplifiedPcbTrace["route"],
+        }))
+    : []
 
   // Add everything in the connMap to the connectedTo array of each obstacle
   for (const obstacle of obstacles) {
@@ -531,8 +553,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       bounds,
       obstacles,
       connections: allConns,
-      // TODO add traces so that we don't run into things routed by another
-      // subcircuit
+      traces: descendantTraces.length > 0 ? descendantTraces : undefined,
       layerCount: board?.num_layers ?? 2,
       minTraceWidth: minTraceWidth ?? board?.min_trace_width ?? 0.1,
       minViaDiameter: resolvedMinViaPadDiameter,
