@@ -844,7 +844,7 @@ export class NormalComponent<
     const subcircuit = this.getSubcircuit()
 
     // Validate that components can only be placed on top or bottom layers
-    const componentLayer = props.layer ?? "top"
+    const componentLayer = this._getPcbComponentLayer()
     if (componentLayer !== "top" && componentLayer !== "bottom") {
       const error = pcb_component_invalid_layer_error.parse({
         type: "pcb_component_invalid_layer_error",
@@ -1127,6 +1127,17 @@ export class NormalComponent<
     }
 
     return undefined
+  }
+
+  protected _getPcbComponentLayer(): LayerRef {
+    return (
+      this._parsedProps.layer ??
+      (this._getFootprintOriginalLayer() === "bottom" ? "bottom" : "top")
+    )
+  }
+
+  protected _getFootprintOriginalLayer(): LayerRef | undefined {
+    return this._getFootprintMetadataForPcbComponent()?.originalLayer
   }
 
   protected _getPcbComponentInsertionDirection(
