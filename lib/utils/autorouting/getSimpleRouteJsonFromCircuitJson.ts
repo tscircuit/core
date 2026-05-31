@@ -329,7 +329,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ) => {
         const bp = sourcePortIdToBreakoutPoint.get(sourcePortId)
         if (bp && bp.subcircuit_id !== subcircuit_id) {
-          return { x: bp.x, y: bp.y, layer: "top" }
+          return { x: bp.x, y: bp.y, layer }
         }
         return {
           x: port.x!,
