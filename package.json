@@ -36,7 +36,7 @@
     "@tscircuit/breakout-point-solver": "github:tscircuit/breakout-point-solver#bac9629",
     "@tscircuit/capacity-autorouter": "^0.0.529",
     "@tscircuit/checks": "0.0.133",
-    "@tscircuit/circuit-json-util": "^0.0.94",
+    "@tscircuit/circuit-json-util": "^0.0.95",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.29",
     "@tscircuit/footprinter": "^0.0.357",

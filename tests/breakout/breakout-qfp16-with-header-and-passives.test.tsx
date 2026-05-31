@@ -8,7 +8,7 @@ test("breakout routes qfp16 controller pins to header and passives without break
 
   circuit.add(
     <board width="20mm" height="16mm">
-      <breakout name="MCU_BREAKOUT" autorouter="auto" padding="1mm">
+      <breakout name="MCU_BREAKOUT" padding="1mm">
         <chip
           footprint="qfp16"
           name="U1"

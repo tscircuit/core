@@ -80,6 +80,7 @@ test("45 degree rects bug", () => {
         },
       ],
       "outline": undefined,
+      "traces": undefined,
     }
   `)
 })
