@@ -1,0 +1,89 @@
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+test("breakout points use cross-boundary source trace ids", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="18mm" height="12mm">
+      <breakout name="REG_BREAKOUT" padding="0.7mm">
+        <chip
+          name="U1"
+          footprint="sot23"
+          pinLabels={{
+            pin1: "VIN",
+            pin2: "GND",
+            pin3: "VOUT",
+          }}
+          pcbX={0}
+          pcbY={0}
+        />
+        <capacitor
+          name="CIN"
+          capacitance="1uF"
+          footprint="0402"
+          pcbX={-3.2}
+          pcbY={1.7}
+          connections={{ pin1: "U1.VIN", pin2: "U1.GND" }}
+        />
+        <capacitor
+          name="COUT"
+          capacitance="1uF"
+          footprint="0402"
+          pcbX={3.2}
+          pcbY={1.7}
+          connections={{ pin1: "U1.VOUT", pin2: "U1.GND" }}
+        />
+      </breakout>
+      <pinheader
+        name="JIN"
+        pinCount={2}
+        footprint="pinrow2"
+        pinLabels={["VIN", "GND"]}
+        pcbX={-6}
+        pcbY={-1}
+      />
+      <pinheader
+        name="JOUT"
+        pinCount={2}
+        footprint="pinrow2"
+        pinLabels={["VOUT", "GND"]}
+        pcbX={6}
+        pcbY={-1}
+      />
+      <resistor
+        name="RLED"
+        resistance="1k"
+        footprint="0402"
+        pcbX={4.4}
+        pcbY={4}
+        connections={{ pin1: "U1.VOUT", pin2: "net.PWR_LED" }}
+      />
+      <trace from="JIN.VIN" to="U1.VIN" />
+      <trace from="JIN.GND" to="U1.GND" />
+      <trace from="JOUT.VOUT" to="U1.VOUT" />
+      <trace from="JOUT.GND" to="U1.GND" />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  const breakoutPoints = circuit.db.pcb_breakout_point.list()
+
+  expect(breakoutPoints).toHaveLength(3)
+
+  for (const breakoutPoint of breakoutPoints) {
+    expect(breakoutPoint.source_trace_id).toBeDefined()
+    expect(breakoutPoint.source_port_id).toBeDefined()
+
+    const sourceTrace = circuit.db.source_trace.get(
+      breakoutPoint.source_trace_id!,
+    )
+
+    expect(sourceTrace).toBeDefined()
+    expect(sourceTrace!.connected_source_port_ids).toContain(
+      breakoutPoint.source_port_id!,
+    )
+    expect(sourceTrace!.subcircuit_id).not.toBe(breakoutPoint.subcircuit_id)
+  }
+})
