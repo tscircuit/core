@@ -39,8 +39,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
     if (!connKey) continue
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (!sourceNet) {
-      // No explicit source_net (e.g. connections made via the `connections`
-      // prop without a named <net>). Derive label text from connected ports.
       const portsOnSameNet = group
         .selectAll<Port>("port")
         .filter((p: Port) => p._getSubcircuitConnectivityKey() === connKey)
@@ -57,33 +55,26 @@ export const insertNetLabelsForPortsMissingTrace = ({
         text,
       })
 
-      const sameNetLabelNearPort = db.schematic_net_label.list().find((nl) => {
+      const existingLabelNearPort = db.schematic_net_label.list().find((nl) => {
         if (nl.source_net_id !== connKey) return false
         const dx = (nl.anchor_position?.x ?? 0) - schPort.center.x
         const dy = (nl.anchor_position?.y ?? 0) - schPort.center.y
-        return (
-          dx * dx + dy * dy <
-          PORT_LABEL_PROXIMITY_DISTANCE * PORT_LABEL_PROXIMITY_DISTANCE
-        )
+        return dx * dx + dy * dy < PORT_LABEL_PROXIMITY_DISTANCE ** 2
       })
-      if (sameNetLabelNearPort) {
+      if (existingLabelNearPort) {
         db.schematic_net_label.update(
-          sameNetLabelNearPort.schematic_net_label_id,
+          existingLabelNearPort.schematic_net_label_id,
           { anchor_position: schPort.center, center, anchor_side: side },
         )
         continue
       }
 
-      // Skip if any label already sits exactly at this port position
-      const hasLabelAtPort = db.schematic_net_label.list().some((nl) => {
+      const portAlreadyHasLabel = db.schematic_net_label.list().some((nl) => {
         const dx = (nl.anchor_position?.x ?? 0) - schPort.center.x
         const dy = (nl.anchor_position?.y ?? 0) - schPort.center.y
-        return (
-          dx * dx + dy * dy <
-          SAME_ANCHOR_POSITION_DISTANCE * SAME_ANCHOR_POSITION_DISTANCE
-        )
+        return dx * dx + dy * dy < SAME_ANCHOR_POSITION_DISTANCE ** 2
       })
-      if (hasLabelAtPort) continue
+      if (portAlreadyHasLabel) continue
 
       db.schematic_net_label.insert({
         text,
