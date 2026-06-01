@@ -262,6 +262,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const routedTraceIds = new Set(
     db.pcb_trace
       .list()
+      .filter((t) => !subcircuit_id || t.subcircuit_id === subcircuit_id)
       .map((t) => t.source_trace_id)
       .filter((id): id is string => Boolean(id)),
   )
@@ -457,6 +458,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       if (bp.subcircuit_id === subcircuit_id) {
         connectionsFromBreakoutPoints.push({
           name: bpSourcePortId,
+          source_trace_id: bp.source_trace_id,
           pointsToConnect: [portPt, pt],
         })
         continue

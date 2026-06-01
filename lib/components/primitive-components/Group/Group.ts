@@ -135,6 +135,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: (PcbTrace | PcbVia)[]
+    pcb_trace_ids_to_delete?: string[]
+    input_simple_route_json?: SimpleRouteJson
     output_jumpers?: Array<{
       jumper_footprint: string
       center: { x: number; y: number }
@@ -840,6 +842,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         layer: string
       }>
     }> = []
+    const pcbTraceIdsToDelete = new Set<string>()
     const existingRerouteSeedTraces =
       getExistingSimplifiedPcbTracesForReroute(this)
 
@@ -1074,6 +1077,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
 
         if (isRegionReroutePhase && rerouteOriginalSrj) {
+          for (const trace of rerouteOriginalSrj.traces ?? []) {
+            if (trace.type === "pcb_trace") {
+              pcbTraceIdsToDelete.add(trace.pcb_trace_id)
+            }
+          }
           const reconnectedSrj = reconnectReroutedSimpleRouteJsonRegion(
             rerouteOriginalSrj as AutorouterSimpleRouteJson,
             {
@@ -1127,6 +1135,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this._asyncAutoroutingResult = {
       output_pcb_traces: outputTraces as any,
       output_jumpers: outputJumpers,
+      pcb_trace_ids_to_delete: [...pcbTraceIdsToDelete],
+      input_simple_route_json: baseSimpleRouteJson,
     }
 
     // Mark the component as needing to re-render the PCB traces
@@ -1276,7 +1286,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _updatePcbTraceRenderFromPcbTraces() {
-    const { output_pcb_traces, output_jumpers } = this._asyncAutoroutingResult!
+    const {
+      output_pcb_traces,
+      output_jumpers,
+      pcb_trace_ids_to_delete,
+      input_simple_route_json,
+    } = this._asyncAutoroutingResult!
     if (!output_pcb_traces) return
 
     const { db } = this.root!
@@ -1303,14 +1318,29 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     deleteExistingPcbTracesReplacedBy({
       group: this,
       outputPcbTraces: output_pcb_traces,
+      pcbTraceIdsToDelete: pcb_trace_ids_to_delete,
     })
+
+    const sourceTraceIdByConnectionName = new Map<string, string>()
+    for (const connection of input_simple_route_json?.connections ?? []) {
+      if (connection.source_trace_id) {
+        sourceTraceIdByConnectionName.set(
+          connection.name,
+          connection.source_trace_id,
+        )
+      }
+    }
 
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
 
+      const inputConnectionSourceTraceId = sourceTraceIdByConnectionName.get(
+        (pcb_trace as any).connection_name,
+      )
       const possibleSourceTraceIds = [
         ...getSourceTraceIdsFromRerouteName((pcb_trace as any).source_trace_id),
+        ...(inputConnectionSourceTraceId ? [inputConnectionSourceTraceId] : []),
         ...getSourceTraceIdsFromRerouteName((pcb_trace as any).connection_name),
         ...getSourceTraceIdsFromRerouteName(
           (pcb_trace as any).rootConnectionName,
@@ -1331,11 +1361,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       } else {
         delete (pcb_trace as any).source_trace_id
       }
-      pcb_trace.subcircuit_id ??=
-        (sourceTraceId
-          ? (db.source_trace.get(sourceTraceId)?.subcircuit_id ??
-            db.source_net.get(sourceTraceId)?.subcircuit_id)
-          : undefined) ?? this.subcircuit_id!
+      pcb_trace.subcircuit_id ??= this.subcircuit_id!
 
       const cjRoute = pcb_trace.route.map((point: any) => {
         if (point.route_type !== "through_obstacle") return point

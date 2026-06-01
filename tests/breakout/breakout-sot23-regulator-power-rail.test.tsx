@@ -86,4 +86,22 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
     "breakout-sot23-regulator-power-rail-autorouting-srj",
     circuit,
   )
+
+  const drcErrors = circuit.db.pcb_trace_error.list()
+
+  expect(drcErrors).toHaveLength(20)
+  expect(
+    drcErrors.filter((error) => error.message.includes("overlaps")),
+  ).toHaveLength(11)
+  expect(
+    drcErrors.filter((error) => error.message.includes("too close")),
+  ).toHaveLength(2)
+  expect(
+    drcErrors.filter((error) =>
+      error.message.includes("disconnected endpoint"),
+    ),
+  ).toHaveLength(4)
+  expect(
+    drcErrors.filter((error) => error.message.includes("missing a connection")),
+  ).toHaveLength(3)
 })

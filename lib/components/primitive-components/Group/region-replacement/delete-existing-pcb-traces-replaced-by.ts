@@ -29,14 +29,16 @@ function addPossibleReplacementSourceTraceId(
 export function deleteExistingPcbTracesReplacedBy({
   group,
   outputPcbTraces,
+  pcbTraceIdsToDelete = [],
 }: {
   group: Group<any>
   outputPcbTraces: Array<SimplifiedPcbTrace | PcbTrace | PcbVia>
+  pcbTraceIdsToDelete?: string[]
 }) {
   const db = group.root?.db
   if (!db) return
 
-  const replacementPcbTraceIds = new Set<string>()
+  const replacementPcbTraceIds = new Set<string>(pcbTraceIdsToDelete)
   const replacementSourceTraceIds = new Set<string>()
 
   for (const trace of outputPcbTraces) {
@@ -74,6 +76,7 @@ export function deleteExistingPcbTracesReplacedBy({
       replacementPcbTraceIds.has(trace.pcb_trace_id) ||
       Boolean(
         trace.source_trace_id &&
+          trace.subcircuit_id === group.subcircuit_id &&
           replacementSourceTraceIds.has(trace.source_trace_id),
       ),
   )
