@@ -9,6 +9,10 @@ import type { AxisDirection } from "./getSide"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
+const DEFAULT_NET_LABEL_HEIGHT = 0.2
+const POWER_OR_GROUND_NET_LABEL_HEIGHT = Number(
+  (DEFAULT_NET_LABEL_HEIGHT + 0.5).toFixed(1),
+)
 export type SolverInputContext = {
   inputProblem: InputProblem
   pinIdToSchematicPortId: Map<string, string>
@@ -260,6 +264,7 @@ export function createSchematicTraceSolverInputProblem(
     netId: string
     pinIds: string[]
     netLabelWidth?: number
+    netLabelHeight?: number
   }> = []
   for (const net of db.source_net
     .list()
@@ -295,12 +300,18 @@ export function createSchematicTraceSolverInputProblem(
         getSchematicNetLabelTextWidth({ text: String(userNetId) }).toFixed(2),
       )
 
+      const netLabelHeight =
+        sourceNet.is_ground || sourceNet.is_power
+          ? POWER_OR_GROUND_NET_LABEL_HEIGHT
+          : undefined
+
       netConnections.push({
         netId: userNetId,
         pinIds: schematicPortIds.map(
           (portId) => schematicPortIdToPinId.get(portId)!,
         ),
         netLabelWidth,
+        netLabelHeight,
       })
     }
   }
