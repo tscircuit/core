@@ -18,13 +18,17 @@ export class SchematicSection extends PrimitiveComponent<
     }
   }
 
-  _computeSectionBounds(board: PrimitiveComponent): Bounds | null {
+  // Pass null to compute bounds for components with no schSectionName
+  _computeSectionBounds(
+    board: PrimitiveComponent,
+    sectionName: string | null = this._parsedProps.name,
+  ): Bounds | null {
     const { db } = this.root!
-    const { name } = this._parsedProps
 
-    const members = board
-      .getDescendants()
-      .filter((c: any) => c.props?.schSectionName === name)
+    const members = board.getDescendants().filter((c: any) => {
+      if (sectionName === null) return c.props?.schSectionName == null
+      return c.props?.schSectionName === sectionName
+    })
 
     if (members.length === 0) return null
 
@@ -69,13 +73,13 @@ export class SchematicSection extends PrimitiveComponent<
     const STROKE_WIDTH = 0.02
     const TOL = 0.001
 
-    // Collect each section's raw and padded bbox
-    const sectionData = allSections
+    const namedSectionsWithBounds = allSections
       .map((section) => {
         const bounds = section._computeSectionBounds(board)
         if (!bounds) return null
         return {
-          section,
+          displayName: section._parsedProps.displayName,
+          sectionTitleFontSize: section._parsedProps.sectionTitleFontSize,
           rawBounds: bounds,
           cell: {
             minX: bounds.minX - PADDING,
@@ -86,6 +90,22 @@ export class SchematicSection extends PrimitiveComponent<
         }
       })
       .filter((s): s is NonNullable<typeof s> => s !== null)
+
+    // Include unsectioned components (no schSectionName) as a virtual section
+    const unnamedSectionBounds = this._computeSectionBounds(board, null)
+    const sectionData = [...namedSectionsWithBounds]
+    if (unnamedSectionBounds)
+      sectionData.push({
+        displayName: undefined,
+        sectionTitleFontSize: undefined,
+        rawBounds: unnamedSectionBounds,
+        cell: {
+          minX: unnamedSectionBounds.minX - PADDING,
+          maxX: unnamedSectionBounds.maxX + PADDING,
+          minY: unnamedSectionBounds.minY - PADDING,
+          maxY: unnamedSectionBounds.maxY + PADDING,
+        },
+      })
 
     if (sectionData.length === 0) return
 
@@ -123,11 +143,11 @@ export class SchematicSection extends PrimitiveComponent<
       (l) => Math.abs(l.start.x - l.end.x) < TOL,
     )
 
-    // Label for each section at the top-left of its region within the outer box.
-    // Top boundary = nearest horizontal divider above rawBounds.maxY, else outer.maxY.
-    // Left boundary = nearest vertical divider left of rawBounds.minX, else outer.minX.
-    for (const { section, rawBounds } of sectionData) {
-      const { displayName, sectionTitleFontSize } = section._parsedProps
+    for (const {
+      displayName,
+      sectionTitleFontSize,
+      rawBounds,
+    } of sectionData) {
       if (!displayName) continue
 
       const dividersAbove = hDividers
