@@ -1,4 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import { distance, pointToSegmentDistance } from "@tscircuit/math-utils"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type {
   PcbPlatedHole,
@@ -21,49 +22,38 @@ type RoutePointWithPortIds = {
   end_pcb_port_id?: string
 }
 
-function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
-  return Math.hypot(a.x - b.x, a.y - b.y)
-}
-
 const POINT_EPSILON = 1e-6
 
-function isPointOnWireSegment(
-  point: { x: number; y: number; layer?: string },
-  segmentStart: { x: number; y: number; layer?: string },
-  segmentEnd: { x: number; y: number; layer?: string },
-) {
-  if (point.layer && segmentStart.layer && point.layer !== segmentStart.layer) {
+function isPointOnWireSegment({
+  point,
+  segmentStart,
+  segmentEnd,
+}: {
+  point: { x: number; y: number; layer?: string }
+  segmentStart: { x: number; y: number; layer?: string }
+  segmentEnd: { x: number; y: number; layer?: string }
+}) {
+  if (
+    point.layer &&
+    (segmentStart.layer !== point.layer || segmentEnd.layer !== point.layer)
+  ) {
     return false
   }
 
-  const segmentLength = distance(segmentStart, segmentEnd)
-  if (segmentLength <= POINT_EPSILON) {
-    return distance(point, segmentStart) <= POINT_EPSILON
-  }
-
-  const distanceToSegment =
-    Math.abs(
-      (segmentEnd.y - segmentStart.y) * point.x -
-        (segmentEnd.x - segmentStart.x) * point.y +
-        segmentEnd.x * segmentStart.y -
-        segmentEnd.y * segmentStart.x,
-    ) / segmentLength
-  if (distanceToSegment > POINT_EPSILON) return false
-
-  const dot =
-    (point.x - segmentStart.x) * (segmentEnd.x - segmentStart.x) +
-    (point.y - segmentStart.y) * (segmentEnd.y - segmentStart.y)
-  if (dot < -POINT_EPSILON) return false
-  if (dot - segmentLength ** 2 > POINT_EPSILON) return false
-
-  return true
+  return (
+    pointToSegmentDistance(point, segmentStart, segmentEnd) <= POINT_EPSILON
+  )
 }
 
-function isPointInSmtPad(
-  point: { x: number; y: number },
-  pad: PcbSmtPad,
+function isPointInSmtPad({
+  point,
+  pad,
   traceWidth = 0,
-) {
+}: {
+  point: { x: number; y: number }
+  pad: PcbSmtPad
+  traceWidth?: number
+}) {
   if (pad.shape === "rect" || pad.shape === "rotated_rect") {
     return (
       Math.abs(point.x - pad.x) <= (pad as any).width / 2 + traceWidth / 2 &&
@@ -78,11 +68,15 @@ function isPointInSmtPad(
   return false
 }
 
-function isPointInPlatedHole(
-  point: { x: number; y: number },
-  hole: PcbPlatedHole,
+function isPointInPlatedHole({
+  point,
+  hole,
   traceWidth = 0,
-) {
+}: {
+  point: { x: number; y: number }
+  hole: PcbPlatedHole
+  traceWidth?: number
+}) {
   return (
     distance(point, hole) <=
     ((hole as any).outer_diameter ?? (hole as any).hole_diameter ?? 0) / 2 +
@@ -114,14 +108,28 @@ function getEndpointSourcePortIdsFromGeometry(
 
     for (const smtpad of db.pcb_smtpad.list()) {
       if (!smtpad.pcb_port_id) continue
-      if (!isPointInSmtPad(endpoint, smtpad, endpoint.width)) continue
+      if (
+        !isPointInSmtPad({
+          point: endpoint,
+          pad: smtpad,
+          traceWidth: endpoint.width,
+        })
+      )
+        continue
       const sourcePortId = db.pcb_port.get(smtpad.pcb_port_id)?.source_port_id
       if (sourcePortId) sourcePortIds.add(sourcePortId)
     }
 
     for (const hole of db.pcb_plated_hole.list()) {
       if (!hole.pcb_port_id) continue
-      if (!isPointInPlatedHole(endpoint, hole, endpoint.width)) continue
+      if (
+        !isPointInPlatedHole({
+          point: endpoint,
+          hole,
+          traceWidth: endpoint.width,
+        })
+      )
+        continue
       const sourcePortId = db.pcb_port.get(hole.pcb_port_id)?.source_port_id
       if (sourcePortId) sourcePortIds.add(sourcePortId)
     }
@@ -180,7 +188,13 @@ function getSourceIdsFromConnectedPcbTraces(
       const segmentEnd = existingRoute[i + 1]
       if (!segmentStart || !segmentEnd) continue
       for (const endpoint of endpoints) {
-        if (isPointOnWireSegment(endpoint, segmentStart, segmentEnd)) {
+        if (
+          isPointOnWireSegment({
+            point: endpoint,
+            segmentStart,
+            segmentEnd,
+          })
+        ) {
           sourceIds.add(existingTrace.source_trace_id)
         }
       }
