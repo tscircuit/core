@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import React from "react"
 import "lib/register-catalogue"
-import "lib/fiber/intrinsic-jsx"
+import "lib/fiber/react-jsx-compat"
 
 test("Chip should support pin labels in schPinStyle", () => {
   const { circuit } = getTestFixture()

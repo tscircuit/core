@@ -33,4 +33,4 @@ export { createElement } from "react"
 export { kicadFootprintStrings } from "@tscircuit/props"
 
 import "./register-catalogue"
-import "./fiber/intrinsic-jsx"
+import "./fiber/react-jsx-compat"
