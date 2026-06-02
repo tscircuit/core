@@ -1,5 +1,9 @@
 import type * as Props from "@tscircuit/props"
-import type { DetailedHTMLProps, SVGProps } from "react"
+
+type TscircuitElementsWithoutReactConflicts = Omit<TscircuitElements, "switch">
+type SwitchSvgAttributeProps = Partial<
+  Omit<Props.SwitchProps, "children" | "type">
+>
 
 export interface TscircuitElements {
   resistor: Props.ResistorProps
@@ -98,17 +102,17 @@ export interface TscircuitElements {
 }
 
 declare module "react" {
+  interface SVGAttributes<T> extends SwitchSvgAttributeProps {}
+
   namespace JSX {
-    interface IntrinsicElements extends TscircuitElements {}
+    interface IntrinsicElements
+      extends TscircuitElementsWithoutReactConflicts {}
   }
 }
 
 declare module "react/jsx-runtime" {
   namespace JSX {
-    interface IntrinsicElements extends TscircuitElements {
-      switch:
-        | DetailedHTMLProps<SVGProps<SVGSwitchElement>, SVGSwitchElement>
-        | TscircuitElements["switch"]
-    }
+    interface IntrinsicElements
+      extends TscircuitElementsWithoutReactConflicts {}
   }
 }
