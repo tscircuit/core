@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import { runBenchmark } from "benchmarking/benchmark-lib/run-benchmark"
 import { BENCHMARKS } from "benchmarking/all-benchmarks"
 import { RenderTimingsBar } from "./RenderTimingsBar"

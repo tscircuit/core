@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import { orderedRenderPhases } from "lib"
 import React from "react"
 

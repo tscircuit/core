@@ -1,10 +1,5 @@
 import type * as Props from "@tscircuit/props"
 
-type TscircuitElementsWithoutReactConflicts = Omit<TscircuitElements, "switch">
-type SwitchSvgAttributeProps = Partial<
-  Omit<Props.SwitchProps, "children" | "type">
->
-
 export interface TscircuitElements {
   resistor: Props.ResistorProps
   capacitor: Props.CapacitorProps
@@ -38,6 +33,7 @@ export interface TscircuitElements {
   schematictable: Props.SchematicTableProps
   schematicrow: Props.SchematicRowProps
   schematiccell: Props.SchematicCellProps
+  symbol: Props.SymbolProps & { children: any }
   smtpad: Props.SmtPadProps
   platedhole: Props.PlatedHoleProps
   keepout: Props.PcbKeepoutProps
@@ -99,20 +95,4 @@ export interface TscircuitElements {
   spicemodel: Props.SpiceModelProps
   fiducial: Props.FiducialProps
   jscad: any
-}
-
-declare module "react" {
-  interface SVGAttributes<T> extends SwitchSvgAttributeProps {}
-
-  namespace JSX {
-    interface IntrinsicElements
-      extends TscircuitElementsWithoutReactConflicts {}
-  }
-}
-
-declare module "react/jsx-runtime" {
-  namespace JSX {
-    interface IntrinsicElements
-      extends TscircuitElementsWithoutReactConflicts {}
-  }
 }
