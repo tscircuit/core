@@ -91,7 +91,7 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
 
   expect(drcErrors).toHaveLength(20)
   expect(
-    drcErrors.filter((error) => error.message.includes("overlaps")),
+    drcErrors.filter((error) => error.message.includes("overlaps with")),
   ).toHaveLength(11)
   expect(
     drcErrors.filter((error) => error.message.includes("too close")),

@@ -45,4 +45,22 @@ test("autorouter uses breakout point", async () => {
   )
   expect(hasPointNear).toBe(true)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
+
+  const drcErrors = circuit.db.pcb_trace_error.list()
+
+  expect(drcErrors).toHaveLength(2)
+  expect(
+    drcErrors.filter((error) => error.message.includes("overlaps with")),
+  ).toHaveLength(1)
+  expect(
+    drcErrors.filter((error) => error.message.includes("too close")),
+  ).toHaveLength(0)
+  expect(
+    drcErrors.filter((error) =>
+      error.message.includes("disconnected endpoint"),
+    ),
+  ).toHaveLength(1)
+  expect(
+    drcErrors.filter((error) => error.message.includes("missing a connection")),
+  ).toHaveLength(0)
 })
