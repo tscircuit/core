@@ -24,6 +24,7 @@ export class BaseBreakoutPoint<
   pcb_breakout_point_id: string | null = null
   matchedPort: Port | null = null
   matchedNet: Net | null = null
+  matchedSourceTraceId: string | null = null
   isPcbPrimitive = true
 
   _getSourceTraceIdForPort(port: Port): string | undefined {
@@ -55,7 +56,8 @@ export class BaseBreakoutPoint<
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       source_port_id: this.matchedPort?.source_port_id ?? undefined,
       source_trace_id: this.matchedPort
-        ? this._getSourceTraceIdForPort(this.matchedPort)
+        ? (this.matchedSourceTraceId ??
+          this._getSourceTraceIdForPort(this.matchedPort))
         : undefined,
       source_net_id: this.matchedNet
         ? this.matchedNet.source_net_id
@@ -86,10 +88,18 @@ export class BaseBreakoutPoint<
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
     const { db } = this.root!
     if (!this.pcb_breakout_point_id) return
-    db.pcb_breakout_point.update(this.pcb_breakout_point_id, {
+    const updatedProperties: {
+      x: number
+      y: number
+      source_trace_id?: string
+    } = {
       x: newCenter.x,
       y: newCenter.y,
-    })
+    }
+    if (this.matchedSourceTraceId) {
+      updatedProperties.source_trace_id = this.matchedSourceTraceId
+    }
+    db.pcb_breakout_point.update(this.pcb_breakout_point_id, updatedProperties)
   }
 
   _moveCircuitJsonElements({

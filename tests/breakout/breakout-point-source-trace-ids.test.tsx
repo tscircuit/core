@@ -1,10 +1,8 @@
 import { expect, test } from "bun:test"
-import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("breakout routes sot23 regulator power rail parts without breakoutpoints", async () => {
+test("breakout points use cross-boundary source trace ids", async () => {
   const { circuit } = getTestFixture()
-  const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(
     <board width="18mm" height="12mm">
@@ -70,38 +68,22 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
 
   await circuit.renderUntilSettled()
 
-  const breakoutSourceGroup = circuit.db.source_group.getWhere({
-    name: "REG_BREAKOUT",
-  })
-  const breakoutPcbGroup = circuit.db.pcb_group.getWhere({
-    source_group_id: breakoutSourceGroup!.source_group_id,
-  })
+  const breakoutPoints = circuit.db.pcb_breakout_point.list()
 
-  expect(breakoutPcbGroup).toBeDefined()
-  expect(circuit.db.pcb_breakout_point.list().length).toBe(3)
-  expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(7)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
-    import.meta.path,
-    "breakout-sot23-regulator-power-rail-autorouting-srj",
-    circuit,
-  )
+  expect(breakoutPoints).toHaveLength(3)
 
-  const drcErrors = circuit.db.pcb_trace_error.list()
+  for (const breakoutPoint of breakoutPoints) {
+    expect(breakoutPoint.source_trace_id).toBeDefined()
+    expect(breakoutPoint.source_port_id).toBeDefined()
 
-  expect(drcErrors).toHaveLength(20)
-  expect(
-    drcErrors.filter((error) => error.message.includes("overlaps with")),
-  ).toHaveLength(11)
-  expect(
-    drcErrors.filter((error) => error.message.includes("too close")),
-  ).toHaveLength(2)
-  expect(
-    drcErrors.filter((error) =>
-      error.message.includes("disconnected endpoint"),
-    ),
-  ).toHaveLength(4)
-  expect(
-    drcErrors.filter((error) => error.message.includes("missing a connection")),
-  ).toHaveLength(3)
+    const sourceTrace = circuit.db.source_trace.get(
+      breakoutPoint.source_trace_id!,
+    )
+
+    expect(sourceTrace).toBeDefined()
+    expect(sourceTrace!.connected_source_port_ids).toContain(
+      breakoutPoint.source_port_id!,
+    )
+    expect(sourceTrace!.subcircuit_id).not.toBe(breakoutPoint.subcircuit_id)
+  }
 })

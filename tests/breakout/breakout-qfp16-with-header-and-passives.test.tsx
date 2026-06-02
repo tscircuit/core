@@ -86,4 +86,21 @@ test("breakout routes qfp16 controller pins to header and passives without break
     "breakout-qfp16-with-header-and-passives-autorouting-srj",
     circuit,
   )
+  const drcErrors = circuit.db.pcb_trace_error.list()
+
+  expect(drcErrors).toHaveLength(8)
+  expect(
+    drcErrors.filter((error) => error.message.includes("overlaps with")),
+  ).toHaveLength(0)
+  expect(
+    drcErrors.filter((error) => error.message.includes("too close")),
+  ).toHaveLength(0)
+  expect(
+    drcErrors.filter((error) =>
+      error.message.includes("disconnected endpoint"),
+    ),
+  ).toHaveLength(0)
+  expect(
+    drcErrors.filter((error) => error.message.includes("missing a connection")),
+  ).toHaveLength(8)
 })

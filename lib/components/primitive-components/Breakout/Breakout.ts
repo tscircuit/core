@@ -69,6 +69,7 @@ export class Breakout extends Group<typeof breakoutProps> {
         // Create auto-placed breakout point (no position yet)
         const breakoutPoint = new AutoplacedBreakoutPoint({})
         breakoutPoint.matchedPort = port
+        breakoutPoint.matchedSourceTraceId = trace.source_trace_id
         this.add(breakoutPoint)
       }
     }
@@ -94,6 +95,7 @@ export class Breakout extends Group<typeof breakoutProps> {
           child.matchedPort?.source_port_id === solvedPoint.sourcePortId,
       )
       if (matchingBreakoutPoint) {
+        matchingBreakoutPoint.matchedSourceTraceId = solvedPoint.sourceTraceId
         matchingBreakoutPoint._setPositionFromLayout({
           x: solvedPoint.x,
           y: solvedPoint.y,
