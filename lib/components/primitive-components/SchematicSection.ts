@@ -95,8 +95,14 @@ export class SchematicSection extends PrimitiveComponent<
 
     // Internal dividing lines: use raw (unpadded) bounds so adjacent sections
     // with small gaps don't overlap and prevent divider generation
+    const CELL_MARGIN = 1
     const dividers = calculateCellBoundaries(
-      sectionData.map((s) => s.rawBounds),
+      sectionData.map((s) => ({
+        minX: s.rawBounds.minX - CELL_MARGIN,
+        maxX: s.rawBounds.maxX + CELL_MARGIN,
+        minY: s.rawBounds.minY - CELL_MARGIN,
+        maxY: s.rawBounds.maxY + CELL_MARGIN,
+      })),
     )
     for (const line of dividers) {
       db.schematic_line.insert({
@@ -118,15 +124,15 @@ export class SchematicSection extends PrimitiveComponent<
     )
 
     // Label for each section at the top-left of its region within the outer box.
-    // Top boundary = nearest horizontal divider above cell.minY, else outer.maxY.
+    // Top boundary = nearest horizontal divider above rawBounds.maxY, else outer.maxY.
     // Left boundary = nearest vertical divider left of rawBounds.minX, else outer.minX.
-    for (const { section, cell, rawBounds } of sectionData) {
+    for (const { section, rawBounds } of sectionData) {
       const { displayName, sectionTitleFontSize } = section._parsedProps
       if (!displayName) continue
 
       const dividersAbove = hDividers
         .map((l) => l.start.y)
-        .filter((y) => y > cell.minY)
+        .filter((y) => y > rawBounds.maxY)
       const topBoundary =
         dividersAbove.length > 0 ? Math.min(...dividersAbove) : outer.maxY
 
