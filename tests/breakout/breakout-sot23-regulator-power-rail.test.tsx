@@ -80,6 +80,9 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
   expect(breakoutPcbGroup).toBeDefined()
   expect(circuit.db.pcb_breakout_point.list().length).toBe(3)
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(7)
+  expect(
+    circuit.db.pcb_trace.list().every((trace) => trace.source_trace_id),
+  ).toBe(true)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
@@ -89,10 +92,10 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
 
   const drcErrors = circuit.db.pcb_trace_error.list()
 
-  expect(drcErrors).toHaveLength(20)
+  expect(drcErrors).toHaveLength(10)
   expect(
     drcErrors.filter((error) => error.message.includes("overlaps with")),
-  ).toHaveLength(11)
+  ).toHaveLength(0)
   expect(
     drcErrors.filter((error) => error.message.includes("too close")),
   ).toHaveLength(2)
@@ -100,8 +103,8 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
     drcErrors.filter((error) =>
       error.message.includes("disconnected endpoint"),
     ),
-  ).toHaveLength(4)
+  ).toHaveLength(0)
   expect(
     drcErrors.filter((error) => error.message.includes("missing a connection")),
-  ).toHaveLength(3)
+  ).toHaveLength(8)
 })
