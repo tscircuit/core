@@ -135,7 +135,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _asyncAutoroutingResult: {
     output_simple_route_json?: SimpleRouteJson
     output_pcb_traces?: (PcbTrace | PcbVia)[]
-    pcb_trace_ids_to_delete?: string[]
+    // PCB traces that are being re-routed
+    pcb_trace_ids_to_be_replaced?: string[]
     input_simple_route_json?: SimpleRouteJson
     output_jumpers?: Array<{
       jumper_footprint: string
@@ -1135,7 +1136,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this._asyncAutoroutingResult = {
       output_pcb_traces: outputTraces as any,
       output_jumpers: outputJumpers,
-      pcb_trace_ids_to_delete: [...pcbTraceIdsToDelete],
+      pcb_trace_ids_to_be_replaced: [...pcbTraceIdsToDelete],
       input_simple_route_json: baseSimpleRouteJson,
     }
 
@@ -1289,7 +1290,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const {
       output_pcb_traces,
       output_jumpers,
-      pcb_trace_ids_to_delete,
+      pcb_trace_ids_to_be_replaced,
       input_simple_route_json,
     } = this._asyncAutoroutingResult!
     if (!output_pcb_traces) return
@@ -1318,7 +1319,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     deleteExistingPcbTracesReplacedBy({
       group: this,
       outputPcbTraces: output_pcb_traces,
-      pcbTraceIdsToDelete: pcb_trace_ids_to_delete,
+      pcbTraceIdsToReplace: pcb_trace_ids_to_be_replaced,
     })
 
     const sourceTraceIdByConnectionName = new Map<string, string>()

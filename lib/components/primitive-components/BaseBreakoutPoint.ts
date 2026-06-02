@@ -88,14 +88,18 @@ export class BaseBreakoutPoint<
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
     const { db } = this.root!
     if (!this.pcb_breakout_point_id) return
-    const update: { x: number; y: number; source_trace_id?: string } = {
+    const updatedProperties: {
+      x: number
+      y: number
+      source_trace_id?: string
+    } = {
       x: newCenter.x,
       y: newCenter.y,
     }
     if (this.matchedSourceTraceId) {
-      update.source_trace_id = this.matchedSourceTraceId
+      updatedProperties.source_trace_id = this.matchedSourceTraceId
     }
-    db.pcb_breakout_point.update(this.pcb_breakout_point_id, update)
+    db.pcb_breakout_point.update(this.pcb_breakout_point_id, updatedProperties)
   }
 
   _moveCircuitJsonElements({
