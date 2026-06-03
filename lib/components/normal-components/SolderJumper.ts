@@ -34,21 +34,22 @@ const getPinNumberFromNameOrLabel = (
 }
 
 const getSolderJumperFootprintParts = (footprint: string) => {
-  const withoutBridgeMatch = footprint.match(/^solderjumper([23])((?:_.+)?)$/)
-  if (withoutBridgeMatch) {
-    return {
-      pinCount: Number(withoutBridgeMatch[1]),
-      suffix: withoutBridgeMatch[2] ?? "",
-      alreadyBridged: false,
-    }
-  }
-
+  // If the footprint already encodes a bridge, keep it as the source of truth.
   const bridgedMatch = footprint.match(/^solderjumper[23]_bridged\d+(?:_.+)?$/)
   if (bridgedMatch) {
     return {
       pinCount: null,
       suffix: "",
       alreadyBridged: true,
+    }
+  }
+
+  const withoutBridgeMatch = footprint.match(/^solderjumper([23])((?:_.+)?)$/)
+  if (withoutBridgeMatch) {
+    return {
+      pinCount: Number(withoutBridgeMatch[1]),
+      suffix: withoutBridgeMatch[2] ?? "",
+      alreadyBridged: false,
     }
   }
 
