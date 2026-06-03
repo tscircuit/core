@@ -1525,12 +1525,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     const hasAnySectionName = this.children.some(
-      (c) => c.source_component_id !== null && c._parsedProps?.schSectionName !== undefined,
+      (c) =>
+        c.source_component_id !== null &&
+        c._parsedProps?.schSectionName !== undefined,
     )
     const hasAnyExplicitPosition = this.children.some(
       (c) =>
         c.source_component_id !== null &&
-        (c._parsedProps?.schX !== undefined || c._parsedProps?.schY !== undefined),
+        (c._parsedProps?.schX !== undefined ||
+          c._parsedProps?.schY !== undefined),
     )
     const hasSections = hasAnySectionName && !hasAnyExplicitPosition
     if (hasSections) {

@@ -17,7 +17,11 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
     source_group_id: group.source_group_id!,
   })
 
-  if (subtreeCircuitJson.filter((item) => item.type === "source_component").length <= 1) return
+  if (
+    subtreeCircuitJson.filter((item) => item.type === "source_component")
+      .length <= 1
+  )
+    return
 
   const floatingGraph = convertCircuitJsonToBpc(subtreeCircuitJson)
 

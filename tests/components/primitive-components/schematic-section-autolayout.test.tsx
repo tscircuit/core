@@ -105,16 +105,7 @@ test("SchematicSection auto-layout places components within sections then arrang
           },
           rightSide: {
             direction: "top-to-bottom",
-            pins: [
-              "TX",
-              "RX",
-              "ADC0",
-              "ADC1",
-              "LED",
-              "RST",
-              "XTAL1",
-              "XTAL2",
-            ],
+            pins: ["TX", "RX", "ADC0", "ADC1", "LED", "RST", "XTAL1", "XTAL2"],
           },
         }}
         connections={{
