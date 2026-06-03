@@ -597,10 +597,7 @@ function convertTreeToInputProblem(
 
 export function Group_doInitialSchematicLayoutMatchPack<
   Props extends z.ZodType<any, any, any>,
->(
-  group: Group<Props>,
-  options?: { sectionFilter?: string | null },
-): void {
+>(group: Group<Props>): void {
   const { db } = group.root!
 
   // Get the tree structure - top level children are "composite chips"
@@ -614,8 +611,7 @@ export function Group_doInitialSchematicLayoutMatchPack<
       if (child.nodeType !== "component" || !child.sourceComponent) return false
       const component = group.children.find(
         (c) =>
-          c.source_component_id ===
-          child.sourceComponent?.source_component_id,
+          c.source_component_id === child.sourceComponent?.source_component_id,
       )
       const compSection = component?._parsedProps?.schSectionName ?? null
       if (sectionFilter === null) return compSection === null

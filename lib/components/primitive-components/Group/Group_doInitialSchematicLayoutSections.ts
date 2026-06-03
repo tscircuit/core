@@ -8,43 +8,45 @@ export function Group_doInitialSchematicLayoutSections<
 >(group: Group<Props>): void {
   const { db } = group.root!
 
-  const usedSectionNames = new Set<string>()
-  let hasUnsectioned = false
+  const sectionNamesUsedByChildren = new Set<string>()
+  let hasChildrenWithoutSection = false
   for (const child of group.children) {
     if (!child.source_component_id) continue
-    const sectionName = child._parsedProps?.schSectionName ?? null
+    const sectionName = child.getSchematicSectionName()
     if (sectionName !== null) {
-      usedSectionNames.add(sectionName)
+      sectionNamesUsedByChildren.add(sectionName)
     } else {
-      hasUnsectioned = true
+      hasChildrenWithoutSection = true
     }
   }
 
-  const sectionsToLayout: (string | null)[] = Array.from(usedSectionNames)
-  if (hasUnsectioned) sectionsToLayout.push(null)
+  const sectionNamesToLayout: string[] = Array.from(sectionNamesUsedByChildren)
 
-  if (sectionsToLayout.length === 0) return
+  if (sectionNamesToLayout.length === 0 || hasChildrenWithoutSection) return
 
   // Phase 1: lay out components within each section independently
-  for (const sectionFilter of sectionsToLayout) {
-    Group_doInitialSchematicLayoutMatchPack(group, { sectionFilter })
+  for (const sectionName of sectionNamesToLayout) {
+    Group_doInitialSchematicLayoutMatchPack(group)
   }
 
-  if (sectionsToLayout.length <= 1) return
+  const needToPackSections =
+    sectionNamesToLayout.length > 1 ||
+    (sectionNamesToLayout.length >= 1 && hasChildrenWithoutSection)
+
+  if (!needToPackSections) return
 
   // Phase 2: compute section bounding boxes from positions set by phase 1
-
   type SectionInfo = {
-    sectionId: string
+    sectionName: string
     center: { x: number; y: number }
     size: { x: number; y: number }
     sourceCompIds: Set<string>
   }
 
-  const sectionInfoMap = new Map<string, SectionInfo>()
+  const sectionNameToInfo = new Map<string, SectionInfo>()
 
-  for (const sectionFilter of sectionsToLayout) {
-    const sectionId = sectionFilter ?? "__unsectioned__"
+  for (const sectionName of [...sectionNamesToLayout, null]) {
+    const sectionForComponentsWithoutSectionName = !sectionName
     let minX = Infinity
     let maxX = -Infinity
     let minY = Infinity
@@ -52,21 +54,24 @@ export function Group_doInitialSchematicLayoutSections<
     const sourceCompIds = new Set<string>()
 
     for (const child of group.children) {
-      const srcId = child.source_component_id
-      if (!srcId) continue
-      const compSection = child._parsedProps?.schSectionName ?? null
-      if (sectionFilter === null) {
-        if (compSection !== null) continue
-      } else if (compSection !== sectionFilter) {
+      const sourceComponentId = child.source_component_id
+      if (!sourceComponentId) continue
+
+      const compSectionName = child.getSchematicSectionName()
+      const compHasSection = compSectionName === null
+      if (sectionForComponentsWithoutSectionName && compHasSection) {
+        continue
+      }
+      if (compSectionName !== sectionName) {
         continue
       }
 
       const schComp = db.schematic_component.getWhere({
-        source_component_id: srcId,
+        source_component_id: sourceComponentId,
       })
       if (!schComp) continue
 
-      sourceCompIds.add(srcId)
+      sourceCompIds.add(sourceComponentId)
       const hw = schComp.size.width / 2
       const hh = schComp.size.height / 2
       minX = Math.min(minX, schComp.center.x - hw)
@@ -77,20 +82,20 @@ export function Group_doInitialSchematicLayoutSections<
 
     if (!isFinite(minX) || sourceCompIds.size === 0) continue
 
-    sectionInfoMap.set(sectionId, {
-      sectionId,
+    sectionNameToInfo.set(sectionName, {
+      sectionName,
       center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
       size: { x: maxX - minX, y: maxY - minY },
       sourceCompIds,
     })
   }
 
-  if (sectionInfoMap.size <= 1) return
+  if (sectionNameToInfo.size <= 1) return
 
   // Phase 3: pack sections into rows
   const SECTION_GAP = 1.0 // schematic units between sections
   const MARGIN = 1.5 // padding around each section's bounding box
-  const sections = Array.from(sectionInfoMap.values())
+  const sections = Array.from(sectionNameToInfo.values())
 
   // target width = sqrt(total area) * 2 for a wide aspect ratio
   const totalArea = sections.reduce((sum, s) => {
@@ -100,7 +105,12 @@ export function Group_doInitialSchematicLayoutSections<
   }, 0)
   const targetRowWidth = Math.sqrt(totalArea) * 2
 
-  type RowEntry = { sectionId: string; x: number; width: number; height: number }
+  type RowEntry = {
+    sectionId: string
+    x: number
+    width: number
+    height: number
+  }
   const rows: RowEntry[][] = []
   let currentRow: RowEntry[] = []
   let currentRowWidth = 0
@@ -119,7 +129,7 @@ export function Group_doInitialSchematicLayoutSections<
 
     let x = 0
     if (currentRowWidth > 0) x = currentRowWidth + SECTION_GAP
-    currentRow.push({ sectionId: info.sectionId, x, width: w, height: h })
+    currentRow.push({ sectionId: info.sectionName, x, width: w, height: h })
     currentRowWidth = x + w
   }
   if (currentRow.length > 0) rows.push(currentRow)
@@ -130,8 +140,7 @@ export function Group_doInitialSchematicLayoutSections<
 
   for (const row of rows) {
     const rowHeight = Math.max(...row.map((e) => e.height))
-    const rowTotalWidth =
-      row[row.length - 1]!.x + row[row.length - 1]!.width
+    const rowTotalWidth = row[row.length - 1]!.x + row[row.length - 1]!.width
     const rowOffsetX = -rowTotalWidth / 2
 
     for (const entry of row) {
@@ -144,15 +153,15 @@ export function Group_doInitialSchematicLayoutSections<
   }
 
   for (const [sectionId, placement] of sectionPlacements) {
-    const info = sectionInfoMap.get(sectionId)
-    if (!info) continue
+    const sectionInfo = sectionNameToInfo.get(sectionId)
+    if (!sectionInfo) continue
 
     const delta = {
-      x: placement.x - info.center.x,
-      y: placement.y - info.center.y,
+      x: placement.x - sectionInfo.center.x,
+      y: placement.y - sectionInfo.center.y,
     }
 
-    for (const srcId of info.sourceCompIds) {
+    for (const srcId of sectionInfo.sourceCompIds) {
       const schComp = db.schematic_component.getWhere({
         source_component_id: srcId,
       })
