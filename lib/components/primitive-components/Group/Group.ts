@@ -70,6 +70,7 @@ import {
 } from "./Group_phasedAutoroutingUtils"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
+import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import {
   deleteExistingPcbTracesReplacedBy,
@@ -1322,46 +1323,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       pcbTraceIdsToReplace: pcb_trace_ids_to_be_replaced,
     })
 
-    const sourceTraceIdByConnectionName = new Map<string, string>()
-    for (const connection of input_simple_route_json?.connections ?? []) {
-      if (connection.source_trace_id) {
-        sourceTraceIdByConnectionName.set(
-          connection.name,
-          connection.source_trace_id,
-        )
-      }
-    }
-
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
       if (pcb_trace.type !== "pcb_trace") continue
 
-      const inputConnectionSourceTraceId = sourceTraceIdByConnectionName.get(
-        (pcb_trace as any).connection_name,
-      )
-      const possibleSourceTraceIds = [
-        ...getSourceTraceIdsFromRerouteName((pcb_trace as any).source_trace_id),
-        ...(inputConnectionSourceTraceId ? [inputConnectionSourceTraceId] : []),
-        ...getSourceTraceIdsFromRerouteName((pcb_trace as any).connection_name),
-        ...getSourceTraceIdsFromRerouteName(
-          (pcb_trace as any).rootConnectionName,
-        ),
-      ]
-      const validSourceTraceIds = Array.from(
-        new Set(possibleSourceTraceIds),
-      ).filter((possibleSourceTraceId) =>
-        Boolean(
-          db.source_trace.get(possibleSourceTraceId) ??
-            db.source_net.get(possibleSourceTraceId),
-        ),
-      )
-      const sourceTraceId =
-        validSourceTraceIds.length === 1 ? validSourceTraceIds[0] : undefined
-      if (sourceTraceId) {
-        pcb_trace.source_trace_id = sourceTraceId
-      } else {
-        delete (pcb_trace as any).source_trace_id
-      }
       pcb_trace.subcircuit_id ??= this.subcircuit_id!
 
       const cjRoute = pcb_trace.route.map((point: any) => {
@@ -1390,8 +1355,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Insert each segment as a separate trace
       for (const segment of processedSegments) {
         if (segment.length > 0) {
+          const sourceTraceId = getSourceTraceIdForRoutedTrace({
+            db,
+            trace: {
+              ...pcb_trace,
+              route: segment,
+            },
+            subcircuit_id: this.subcircuit_id,
+          })
           db.pcb_trace.insert({
             ...pcb_trace,
+            source_trace_id: sourceTraceId,
             route: segment,
           })
         }
