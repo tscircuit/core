@@ -6,7 +6,7 @@ test("solderjumper bridged props resolve bridged PCB footprints", async () => {
 
   circuit.add(
     <board width="20mm" height="8mm">
-      {/* bridgedPins should create PCB copper bridges even when the footprint string is unbridged. */}
+      {/* Repro: bridgedPins should add PCB copper bridges for unbridged footprint strings. */}
       <solderjumper
         name="SJ1"
         footprint="solderjumper2"
