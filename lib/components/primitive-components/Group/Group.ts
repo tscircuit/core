@@ -52,6 +52,7 @@ import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLa
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
+import { Group_doInitialSchematicLayoutSections } from "./Group_doInitialSchematicLayoutSections"
 import {
   getGroupSchematicBoxPinLabels,
   Group_doInitialSchematicBoxComponentRender,
@@ -1497,6 +1498,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return
     }
 
+    const hasAnySectionName = this.children.some(
+      (c) =>
+        c.source_component_id !== null &&
+        c._parsedProps?.schSectionName !== undefined,
+    )
+    const hasAnyExplicitPosition = this.children.some(
+      (c) =>
+        c.source_component_id !== null &&
+        (c._parsedProps?.schX !== undefined ||
+          c._parsedProps?.schY !== undefined),
+    )
+    const hasSections = hasAnySectionName && !hasAnyExplicitPosition
+    if (hasSections) {
+      this._doInitialSchematicLayoutSections()
+      this._insertSchematicBorder()
+      return
+    }
+
     const schematicLayoutMode = this._getSchematicLayoutMode()
 
     if (schematicLayoutMode === "match-adapt") {
@@ -1510,6 +1529,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
 
     this._insertSchematicBorder()
+  }
+
+  _doInitialSchematicLayoutSections(): void {
+    Group_doInitialSchematicLayoutSections(this as any)
   }
 
   _doInitialSchematicLayoutMatchAdapt(): void {

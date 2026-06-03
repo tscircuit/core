@@ -17,27 +17,21 @@ export function Group_doInitialSchematicLayoutMatchAdapt<
     source_group_id: group.source_group_id!,
   })
 
-  const bpcGraphBeforeGeneratedNetLabels =
-    convertCircuitJsonToBpc(subtreeCircuitJson)
+  const shouldSkip =
+    subtreeCircuitJson.filter((item) => item.type === "source_component")
+      .length <= 1
+
+  if (shouldSkip) return
+
+  const floatingGraph = convertCircuitJsonToBpc(subtreeCircuitJson)
 
   if (debug.enabled && global?.debugGraphics) {
     global.debugGraphics?.push(
-      getGraphicsForBpcGraph(bpcGraphBeforeGeneratedNetLabels, {
+      getGraphicsForBpcGraph(floatingGraph, {
         title: `floatingBpcGraph-${group.name}`,
       }),
     )
   }
-
-  // console.log("Writing subtreeCircuitJson.svg")
-  // Bun.write(
-  //   "subtreeCircuitJson.svg",
-  //   convertCircuitJsonToSchematicSvg(subtreeCircuitJson),
-  // )
-
-  // Convert the subtree circuit json into a bpc graph
-  const floatingGraph = convertCircuitJsonToBpc(
-    subtreeCircuitJson, // .concat(implicitNetLabels),
-  )
 
   const floatingGraphNoNotConnected = {
     boxes: floatingGraph.boxes,
