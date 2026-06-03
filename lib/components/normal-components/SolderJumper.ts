@@ -8,6 +8,75 @@ export class SolderJumper<
 > extends NormalComponent<typeof solderjumperProps, PinLabels> {
   schematicDimensions: SchematicBoxDimensions | null = null
 
+  private _getPinCountFromFootprintString(footprint: string): 2 | 3 | null {
+    const match = footprint.match(/^solderjumper([23])(?:_|$)/)
+    if (!match) return null
+    return Number(match[1]) as 2 | 3
+  }
+
+  private _getPinNumberFromBridgedPinsProp(pinName: string): number | null {
+    const numericPinMatch = pinName.match(/^(?:pin)?(\d+)$/i)
+    if (numericPinMatch) return Number(numericPinMatch[1])
+
+    const pinLabels = this._parsedProps.pinLabels ?? this.props.pinLabels
+    if (Array.isArray(pinLabels)) {
+      const labelIndex = pinLabels.findIndex((label) => label === pinName)
+      return labelIndex >= 0 ? labelIndex + 1 : null
+    }
+
+    if (pinLabels && typeof pinLabels === "object") {
+      for (const [pinKey, labelOrLabels] of Object.entries(pinLabels)) {
+        const labels = Array.isArray(labelOrLabels)
+          ? labelOrLabels
+          : [labelOrLabels]
+        if (!labels.includes(pinName)) continue
+
+        const pinNumberMatch = pinKey.match(/^(?:pin)?(\d+)$/i)
+        return pinNumberMatch ? Number(pinNumberMatch[1]) : null
+      }
+    }
+
+    return null
+  }
+
+  private _getBridgedPinNumbersForFootprint(pinCount: 2 | 3): number[] {
+    const props = this._parsedProps ?? this.props
+    if (Array.isArray(props.bridgedPins) && props.bridgedPins.length > 0) {
+      return Array.from(
+        new Set(
+          props.bridgedPins
+            .flat()
+            .map((pinName: string) =>
+              this._getPinNumberFromBridgedPinsProp(pinName),
+            )
+            .filter((pinNumber): pinNumber is number => pinNumber !== null),
+        ),
+      ).sort((a, b) => a - b)
+    }
+
+    if (!props.bridged) return []
+    return Array.from({ length: pinCount }, (_, index) => index + 1)
+  }
+
+  resolveFootprint() {
+    const footprint = super.resolveFootprint()
+    if (typeof footprint !== "string") return footprint
+
+    const pinCount = this._getPinCountFromFootprintString(footprint)
+    if (!pinCount) return footprint
+
+    // Respect explicit low-level footprint variants like solderjumper3_bridged23.
+    if (/_bridged\d+/.test(footprint)) return footprint
+
+    const bridgedPinNumbers = this._getBridgedPinNumbersForFootprint(pinCount)
+    if (bridgedPinNumbers.length === 0) return footprint
+
+    return footprint.replace(
+      /^solderjumper[23]/,
+      `solderjumper${pinCount}_bridged${bridgedPinNumbers.join("")}`,
+    )
+  }
+
   _getPinNumberFromBridgedPinName(pinName: string): number | null {
     const port = this.selectOne(`port.${pinName}`, {
       type: "port",

@@ -11,13 +11,19 @@ test("solderjumper bridged props resolve bridged PCB footprints", async () => {
         name="SJ1"
         footprint="solderjumper2"
         bridgedPins={[["1", "2"]]}
-        pcbX={-3}
+        pcbX={-5}
       />
       <solderjumper
         name="SJ2"
         footprint="solderjumper3"
         bridgedPins={[["2", "3"]]}
-        pcbX={3}
+        pcbX={0}
+      />
+      <solderjumper
+        name="SJ3"
+        footprint="solderjumper3"
+        bridged
+        pcbX={5}
       />
     </board>,
   )
