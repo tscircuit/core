@@ -500,10 +500,18 @@ export class NormalComponent<
     return null
   }
 
+  // Override to choose the effective footprint without rewriting user props.
+  resolveFootprint() {
+    return (
+      this._parsedProps.footprint ??
+      this.props.footprint ??
+      this._getImpliedFootprintString?.()
+    )
+  }
+
   _addChildrenFromStringFootprint() {
     const { pcbRotation, pinLabels, pcbPinLabels } = this.props
-    let footprint = this._parsedProps.footprint ?? this.props.footprint
-    footprint ??= this._getImpliedFootprintString?.()
+    const footprint = this.resolveFootprint()
     if (!footprint) return
 
     if (typeof footprint === "string") {
@@ -884,7 +892,7 @@ export class NormalComponent<
         : undefined,
     })
 
-    const footprint = props.footprint ?? this._getImpliedFootprintString()
+    const footprint = this.resolveFootprint()
 
     // Check if we have a Footprint child (e.g., from inflated circuit JSON)
     const hasFootprintChild = this.children.some(
@@ -1628,8 +1636,9 @@ export class NormalComponent<
   }
 
   getFootprinterString(): string | null {
-    if (typeof this._parsedProps.footprint === "string") {
-      return this._parsedProps.footprint
+    const footprint = this.resolveFootprint()
+    if (typeof footprint === "string") {
+      return footprint
     }
     return null
   }
@@ -1642,12 +1651,7 @@ export class NormalComponent<
     const cadModelProp = this._parsedProps.cadModel
     const cadModel =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
-    const footprint =
-      this.getFootprinterString() ?? this._getImpliedFootprintString()
-    let footprintString: string | undefined
-    if (typeof footprint === "string") {
-      footprintString = footprint
-    }
+    const footprintString = this.getFootprinterString() ?? undefined
 
     let footprintIsFootprinterString = false
     if (footprintString) {
@@ -1907,10 +1911,9 @@ export class NormalComponent<
     if (!source_component) return
     if (source_component.supplier_part_numbers) return
 
-    let footprinterString: string | undefined
-    if (this.props.footprint && typeof this.props.footprint === "string") {
-      footprinterString = this.props.footprint
-    }
+    const footprint = this.props.footprint ?? this._getImpliedFootprintString()
+    const footprinterString =
+      typeof footprint === "string" ? footprint : undefined
     const supplierPartNumbersMaybePromise = this._getSupplierPartNumbers(
       partsEngine,
       source_component,
