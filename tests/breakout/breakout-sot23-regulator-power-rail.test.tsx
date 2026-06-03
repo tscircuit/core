@@ -92,7 +92,7 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
 
   const drcErrors = circuit.db.pcb_trace_error.list()
 
-  expect(drcErrors).toHaveLength(10)
+  expect(drcErrors).toHaveLength(2)
   expect(
     drcErrors.filter((error) => error.message.includes("overlaps with")),
   ).toHaveLength(0)
@@ -106,5 +106,5 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
   ).toHaveLength(0)
   expect(
     drcErrors.filter((error) => error.message.includes("missing a connection")),
-  ).toHaveLength(8)
+  ).toHaveLength(0)
 })

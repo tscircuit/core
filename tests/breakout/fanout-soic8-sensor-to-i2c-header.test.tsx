@@ -87,7 +87,7 @@ test("fanout routes soic8 sensor support parts to an i2c header without fanoutpo
 
   const drcErrors = circuit.db.pcb_trace_error.list()
 
-  expect(drcErrors).toHaveLength(16)
+  expect(drcErrors).toHaveLength(6)
   expect(
     drcErrors.filter((error) => error.message.includes("overlaps with")),
   ).toHaveLength(2)
@@ -101,5 +101,5 @@ test("fanout routes soic8 sensor support parts to an i2c header without fanoutpo
   ).toHaveLength(0)
   expect(
     drcErrors.filter((error) => error.message.includes("missing a connection")),
-  ).toHaveLength(10)
+  ).toHaveLength(0)
 })
