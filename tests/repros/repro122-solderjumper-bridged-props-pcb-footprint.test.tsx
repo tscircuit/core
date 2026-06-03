@@ -5,7 +5,7 @@ test("solderjumper bridged props resolve bridged PCB footprints", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="14mm" height="8mm">
+    <board width="20mm" height="8mm">
       <solderjumper
         name="SJ1"
         footprint="solderjumper2"
