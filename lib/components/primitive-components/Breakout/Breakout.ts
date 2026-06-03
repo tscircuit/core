@@ -89,6 +89,25 @@ export class Breakout extends Group<typeof breakoutProps> {
       (c) => c instanceof AutoplacedBreakoutPoint,
     ) as AutoplacedBreakoutPoint[]
 
+    // The solver places breakout points exactly on the group boundary
+    // (bounds.minX/maxX/minY/maxY). When the autorouter later builds a
+    // quadtree mesh over the same bounds, repeated halving introduces
+    // floating-point drift (≈4e-16) so a point exactly at the boundary
+    // can fall outside the nearest mesh node. Nudge solved positions a
+    // fraction of a micrometer inward to keep them strictly inside.
+    const BOUNDARY_INSET_MM = 1e-4 // 0.1 μm – well below PCB manufacturing precision
+    const { bounds } = solverInput
+    const insetWithinBounds = (x: number, y: number) => ({
+      x: Math.max(
+        bounds.minX + BOUNDARY_INSET_MM,
+        Math.min(bounds.maxX - BOUNDARY_INSET_MM, x),
+      ),
+      y: Math.max(
+        bounds.minY + BOUNDARY_INSET_MM,
+        Math.min(bounds.maxY - BOUNDARY_INSET_MM, y),
+      ),
+    })
+
     for (const solvedPoint of output.breakoutPoints) {
       const matchingBreakoutPoint = autoBreakoutPoints.find(
         (child) =>
@@ -96,9 +115,10 @@ export class Breakout extends Group<typeof breakoutProps> {
       )
       if (matchingBreakoutPoint) {
         matchingBreakoutPoint.matchedSourceTraceId = solvedPoint.sourceTraceId
+        const insetPoint = insetWithinBounds(solvedPoint.x, solvedPoint.y)
         matchingBreakoutPoint._setPositionFromLayout({
-          x: solvedPoint.x,
-          y: solvedPoint.y,
+          x: insetPoint.x,
+          y: insetPoint.y,
         })
       }
     }
