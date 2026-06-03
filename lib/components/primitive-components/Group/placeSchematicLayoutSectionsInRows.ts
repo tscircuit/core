@@ -1,15 +1,12 @@
-export type SchematicLayoutSectionForRowPlacement = {
-  sectionId: string
-  size: { x: number; y: number }
-}
+import type { Point } from "@tscircuit/math-utils"
+import type { SectionBlock } from "./Group_doInitialSchematicLayoutSections"
 
-export type SchematicLayoutSectionPlacement = {
-  x: number
-  y: number
+export type PlacedSectionBlock = SectionBlock & {
+  sectionCenterAfterPlacement: Point
 }
-
+type SectionName = string
 type RowEntry = {
-  sectionId: string
+  sectionName: string
   x: number
   width: number
   height: number
@@ -18,15 +15,15 @@ type RowEntry = {
 const SECTION_GAP = 1.0 // schematic units between sections
 const MARGIN = 1.5 // padding around each section's bounding box
 
-export function placeSchematicLayoutSectionsInRows({
-  sections,
-  groupOffset,
+export function computeSchematicSectionLayoutUsingRows({
+  sectionBlocks,
+  groupSchPositionBeforeLayout: groupOffset,
 }: {
-  sections: SchematicLayoutSectionForRowPlacement[]
-  groupOffset: { x: number; y: number }
-}): Map<string, SchematicLayoutSectionPlacement> {
+  sectionBlocks: SectionBlock[]
+  groupSchPositionBeforeLayout: { x: number; y: number }
+}): Map<SectionName, PlacedSectionBlock> {
   // target width = sqrt(total area) * 2 for a wide aspect ratio
-  const totalArea = sections.reduce((sum, s) => {
+  const totalArea = sectionBlocks.reduce((sum, s) => {
     const w = Math.max(s.size.x, 0.5) + MARGIN * 2
     const h = Math.max(s.size.y, 0.5) + MARGIN * 2
     return sum + w * h
@@ -37,7 +34,7 @@ export function placeSchematicLayoutSectionsInRows({
   let currentRow: RowEntry[] = []
   let currentRowWidth = 0
 
-  for (const section of sections) {
+  for (const section of sectionBlocks) {
     const w = Math.max(section.size.x, 0.5) + MARGIN * 2
     const h = Math.max(section.size.y, 0.5) + MARGIN * 2
     let neededWidth = w
@@ -51,12 +48,17 @@ export function placeSchematicLayoutSectionsInRows({
 
     let x = 0
     if (currentRowWidth > 0) x = currentRowWidth + SECTION_GAP
-    currentRow.push({ sectionId: section.sectionId, x, width: w, height: h })
+    currentRow.push({
+      sectionName: section.sectionName,
+      x,
+      width: w,
+      height: h,
+    })
     currentRowWidth = x + w
   }
   if (currentRow.length > 0) rows.push(currentRow)
 
-  const sectionPlacements = new Map<string, SchematicLayoutSectionPlacement>()
+  const sectionPlacements = new Map<SectionName, PlacedSectionBlock>()
   let rowY = 0
 
   for (const row of rows) {
@@ -65,7 +67,8 @@ export function placeSchematicLayoutSectionsInRows({
     const rowOffsetX = -rowTotalWidth / 2
 
     for (const entry of row) {
-      sectionPlacements.set(entry.sectionId, {
+      sectionPlacements.set(entry.sectionName, {
+        ...entry,
         x: rowOffsetX + entry.x + entry.width / 2 + groupOffset.x,
         y: rowY - rowHeight / 2 + groupOffset.y,
       })

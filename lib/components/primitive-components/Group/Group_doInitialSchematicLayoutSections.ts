@@ -2,8 +2,15 @@ import { getCircuitJsonTree } from "@tscircuit/circuit-json-util"
 import type { z } from "zod"
 import type { Group } from "./Group"
 import { applySchematicMatchPackLayoutToTree } from "./Group_doInitialSchematicLayoutMatchPack"
-import { placeSchematicLayoutSectionsInRows } from "./placeSchematicLayoutSectionsInRows"
+import { computeSchematicSectionLayoutUsingRows } from "./placeSchematicLayoutSectionsInRows"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
+
+export type SectionBlock = {
+  sectionName: string
+  center: { x: number; y: number }
+  size: { x: number; y: number }
+  sourceCompIds: Set<string>
+}
 
 export function Group_doInitialSchematicLayoutSections<
   Props extends z.ZodType<any, any, any>,
@@ -49,14 +56,7 @@ export function Group_doInitialSchematicLayoutSections<
   if (!needToPackSections) return
 
   // Phase 2: compute section bounding boxes from positions set by phase 1
-  type SectionInfo = {
-    sectionName: string
-    center: { x: number; y: number }
-    size: { x: number; y: number }
-    sourceCompIds: Set<string>
-  }
-
-  const sectionNameToInfo = new Map<string, SectionInfo>()
+  const sectionNameToInfo = new Map<string, SectionBlock>()
 
   for (const sectionName of sectionNamesToLayout) {
     let minX = Infinity
@@ -101,13 +101,14 @@ export function Group_doInitialSchematicLayoutSections<
   if (sectionNameToInfo.size <= 1) return
 
   // Phase 3: pack sections into rows
-  const groupOffset = group._getGlobalSchematicPositionBeforeLayout()
-  const sectionPlacements = placeSchematicLayoutSectionsInRows({
-    sections: Array.from(sectionNameToInfo.values()).map((info) => ({
+  const groupSchPositionBeforeLayout =
+    group._getGlobalSchematicPositionBeforeLayout()
+  const sectionPlacements = computeSchematicSectionLayoutUsingRows({
+    sectionBlocks: Array.from(sectionNameToInfo.values()).map((info) => ({
       sectionId: info.sectionName,
       size: info.size,
     })),
-    groupOffset,
+    groupSchPositionBeforeLayout: groupSchPositionBeforeLayout,
   })
 
   for (const [sectionId, placement] of sectionPlacements) {
@@ -119,9 +120,9 @@ export function Group_doInitialSchematicLayoutSections<
       y: placement.y - sectionInfo.center.y,
     }
 
-    for (const srcId of sectionInfo.sourceCompIds) {
+    for (const sourceComponentId of sectionInfo.sourceCompIds) {
       const schComp = db.schematic_component.getWhere({
-        source_component_id: srcId,
+        source_component_id: sourceComponentId,
       })
       if (!schComp) continue
 
