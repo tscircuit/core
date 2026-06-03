@@ -24,5 +24,6 @@ test("solderjumper bridged props resolve bridged PCB footprints", async () => {
 
   await circuit.renderUntilSettled()
 
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
