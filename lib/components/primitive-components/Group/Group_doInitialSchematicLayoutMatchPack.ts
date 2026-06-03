@@ -595,29 +595,10 @@ function convertTreeToInputProblem(
   return problem
 }
 
-export function Group_doInitialSchematicLayoutMatchPack<
+export function applySchematicMatchPackLayoutToTree<
   Props extends z.ZodType<any, any, any>,
->(group: Group<Props>): void {
+>(group: Group<Props>, tree: CircuitJsonTreeNode): void {
   const { db } = group.root!
-
-  // Get the tree structure - top level children are "composite chips"
-  const tree = getCircuitJsonTree(db.toArray(), {
-    source_group_id: group.source_group_id!,
-  })
-
-  if (options?.sectionFilter !== undefined) {
-    const sectionFilter = options.sectionFilter
-    tree.childNodes = tree.childNodes.filter((child) => {
-      if (child.nodeType !== "component" || !child.sourceComponent) return false
-      const component = group.children.find(
-        (c) =>
-          c.source_component_id === child.sourceComponent?.source_component_id,
-      )
-      const compSection = component?._parsedProps?.schSectionName ?? null
-      if (sectionFilter === null) return compSection === null
-      return compSection === sectionFilter
-    })
-  }
 
   debug(
     `[${group.name}] Starting matchpack layout with ${tree.childNodes.length} children`,
@@ -963,4 +944,17 @@ export function Group_doInitialSchematicLayoutMatchPack<
   }
 
   debug("Matchpack layout completed successfully")
+}
+
+export function Group_doInitialSchematicLayoutMatchPack<
+  Props extends z.ZodType<any, any, any>,
+>(group: Group<Props>): void {
+  const { db } = group.root!
+
+  // Get the tree structure - top level children are "composite chips"
+  const tree = getCircuitJsonTree(db.toArray(), {
+    source_group_id: group.source_group_id!,
+  })
+
+  applySchematicMatchPackLayoutToTree(group, tree)
 }

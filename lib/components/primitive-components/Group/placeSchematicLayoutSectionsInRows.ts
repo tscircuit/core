@@ -1,0 +1,77 @@
+export type SchematicLayoutSectionForRowPlacement = {
+  sectionId: string
+  size: { x: number; y: number }
+}
+
+export type SchematicLayoutSectionPlacement = {
+  x: number
+  y: number
+}
+
+type RowEntry = {
+  sectionId: string
+  x: number
+  width: number
+  height: number
+}
+
+const SECTION_GAP = 1.0 // schematic units between sections
+const MARGIN = 1.5 // padding around each section's bounding box
+
+export function placeSchematicLayoutSectionsInRows({
+  sections,
+  groupOffset,
+}: {
+  sections: SchematicLayoutSectionForRowPlacement[]
+  groupOffset: { x: number; y: number }
+}): Map<string, SchematicLayoutSectionPlacement> {
+  // target width = sqrt(total area) * 2 for a wide aspect ratio
+  const totalArea = sections.reduce((sum, s) => {
+    const w = Math.max(s.size.x, 0.5) + MARGIN * 2
+    const h = Math.max(s.size.y, 0.5) + MARGIN * 2
+    return sum + w * h
+  }, 0)
+  const targetRowWidth = Math.sqrt(totalArea) * 2
+
+  const rows: RowEntry[][] = []
+  let currentRow: RowEntry[] = []
+  let currentRowWidth = 0
+
+  for (const section of sections) {
+    const w = Math.max(section.size.x, 0.5) + MARGIN * 2
+    const h = Math.max(section.size.y, 0.5) + MARGIN * 2
+    let neededWidth = w
+    if (currentRowWidth > 0) neededWidth = currentRowWidth + SECTION_GAP + w
+
+    if (currentRow.length > 0 && neededWidth > targetRowWidth) {
+      rows.push(currentRow)
+      currentRow = []
+      currentRowWidth = 0
+    }
+
+    let x = 0
+    if (currentRowWidth > 0) x = currentRowWidth + SECTION_GAP
+    currentRow.push({ sectionId: section.sectionId, x, width: w, height: h })
+    currentRowWidth = x + w
+  }
+  if (currentRow.length > 0) rows.push(currentRow)
+
+  const sectionPlacements = new Map<string, SchematicLayoutSectionPlacement>()
+  let rowY = 0
+
+  for (const row of rows) {
+    const rowHeight = Math.max(...row.map((e) => e.height))
+    const rowTotalWidth = row[row.length - 1]!.x + row[row.length - 1]!.width
+    const rowOffsetX = -rowTotalWidth / 2
+
+    for (const entry of row) {
+      sectionPlacements.set(entry.sectionId, {
+        x: rowOffsetX + entry.x + entry.width / 2 + groupOffset.x,
+        y: rowY - rowHeight / 2 + groupOffset.y,
+      })
+    }
+    rowY -= rowHeight + SECTION_GAP
+  }
+
+  return sectionPlacements
+}
