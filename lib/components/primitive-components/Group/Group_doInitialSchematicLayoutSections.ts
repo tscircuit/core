@@ -56,7 +56,10 @@ export function Group_doInitialSchematicLayoutSections<
   if (sectionNamesToLayout.length <= 1) return
 
   // Phase 2: compute section bounding boxes from positions set by phase 1
-  const sectionNameToInfo = new Map<string | null, SectionBoundsWithChildren>()
+  const sectionNameToBoundsWithChildren = new Map<
+    string | null,
+    SectionBoundsWithChildren
+  >()
 
   for (const sectionName of sectionNamesToLayout) {
     let minX = Infinity
@@ -88,7 +91,7 @@ export function Group_doInitialSchematicLayoutSections<
 
     if (!Number.isFinite(minX) || sourceCompIds.size === 0) continue
 
-    sectionNameToInfo.set(sectionName, {
+    sectionNameToBoundsWithChildren.set(sectionName, {
       sectionName,
       center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
       size: { x: maxX - minX, y: maxY - minY },
@@ -96,29 +99,31 @@ export function Group_doInitialSchematicLayoutSections<
     })
   }
 
-  if (sectionNameToInfo.size <= 1) return
+  if (sectionNameToBoundsWithChildren.size <= 1) return
 
   // Phase 3: pack sections into rows
   const groupSchPositionBeforeLayout =
     group._getGlobalSchematicPositionBeforeLayout()
   const sectionPlacements = computeSchematicSectionLayoutUsingRows({
-    sectionBlocks: Array.from(sectionNameToInfo.values()).map((info) => ({
-      sectionName: info.sectionName,
-      size: info.size,
-    })),
+    sectionBlocks: Array.from(sectionNameToBoundsWithChildren.values()).map(
+      (bounds) => ({
+        sectionName: bounds.sectionName,
+        size: bounds.size,
+      }),
+    ),
     groupSchPositionBeforeLayout,
   })
 
   for (const [sectionName, placement] of sectionPlacements) {
-    const info = sectionNameToInfo.get(sectionName)
-    if (!info) continue
+    const boundsWithChildren = sectionNameToBoundsWithChildren.get(sectionName)
+    if (!boundsWithChildren) continue
 
     const delta = {
-      x: placement.x - info.center.x,
-      y: placement.y - info.center.y,
+      x: placement.x - boundsWithChildren.center.x,
+      y: placement.y - boundsWithChildren.center.y,
     }
 
-    for (const sourceComponentId of info.sourceCompIds) {
+    for (const sourceComponentId of boundsWithChildren.sourceCompIds) {
       const schComp = db.schematic_component.getWhere({
         source_component_id: sourceComponentId,
       })
