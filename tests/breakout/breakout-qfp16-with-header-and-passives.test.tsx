@@ -88,7 +88,7 @@ test("breakout routes qfp16 controller pins to header and passives without break
   )
   const drcErrors = circuit.db.pcb_trace_error.list()
 
-  expect(drcErrors).toHaveLength(8)
+  expect(drcErrors).toHaveLength(0)
   expect(
     drcErrors.filter((error) => error.message.includes("overlaps with")),
   ).toHaveLength(0)
@@ -102,5 +102,5 @@ test("breakout routes qfp16 controller pins to header and passives without break
   ).toHaveLength(0)
   expect(
     drcErrors.filter((error) => error.message.includes("missing a connection")),
-  ).toHaveLength(8)
+  ).toHaveLength(0)
 })
