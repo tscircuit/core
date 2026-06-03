@@ -14,6 +14,7 @@ export class SolderJumper<
     return Number(match[1]) as 2 | 3
   }
 
+  // Used during footprint resolution before ports can be selected.
   private _getPinNumberFromBridgedPinsProp(pinName: string): number | null {
     const numericPinMatch = pinName.match(/^(?:pin)?(\d+)$/i)
     if (numericPinMatch) return Number(numericPinMatch[1])
@@ -49,7 +50,10 @@ export class SolderJumper<
             .map((pinName: string) =>
               this._getPinNumberFromBridgedPinsProp(pinName),
             )
-            .filter((pinNumber): pinNumber is number => pinNumber !== null),
+            .filter(
+              (pinNumber): pinNumber is number =>
+                pinNumber !== null && pinNumber >= 1 && pinNumber <= pinCount,
+            ),
         ),
       ).sort((a, b) => a - b)
     }
