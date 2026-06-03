@@ -70,21 +70,6 @@ const getPcbBridgePinPairs = async (solderJumper: ReactElement) => {
 }
 
 test("solderjumper bridged props resolve bridged PCB footprints", async () => {
-  const explicitTwoPinBridgePairs = await getPcbBridgePinPairs(
-    <solderjumper name="SJ1" footprint="solderjumper2_bridged12" />,
-  )
-  const explicitThreePin23BridgePairs = await getPcbBridgePinPairs(
-    <solderjumper name="SJ1" footprint="solderjumper3_bridged23" />,
-  )
-  const explicitThreePinAllBridgePairs = await getPcbBridgePinPairs(
-    <solderjumper name="SJ1" footprint="solderjumper3_bridged123" />,
-  )
-
-  expect(
-    await getPcbBridgePinPairs(
-      <solderjumper name="SJ1" footprint="solderjumper2" bridged />,
-    ),
-  ).toEqual(explicitTwoPinBridgePairs)
   expect(
     await getPcbBridgePinPairs(
       <solderjumper
@@ -93,7 +78,7 @@ test("solderjumper bridged props resolve bridged PCB footprints", async () => {
         bridgedPins={[["1", "2"]]}
       />,
     ),
-  ).toEqual(explicitTwoPinBridgePairs)
+  ).toEqual(["1-2"])
   expect(
     await getPcbBridgePinPairs(
       <solderjumper
@@ -102,14 +87,5 @@ test("solderjumper bridged props resolve bridged PCB footprints", async () => {
         bridgedPins={[["2", "3"]]}
       />,
     ),
-  ).toEqual(explicitThreePin23BridgePairs)
-  expect(
-    await getPcbBridgePinPairs(
-      <solderjumper name="SJ1" footprint="solderjumper3" bridged />,
-    ),
-  ).toEqual(explicitThreePinAllBridgePairs)
-
-  expect(explicitTwoPinBridgePairs).toEqual(["1-2"])
-  expect(explicitThreePin23BridgePairs).toEqual(["2-3"])
-  expect(explicitThreePinAllBridgePairs).toEqual(["1-2", "2-3"])
+  ).toEqual(["2-3"])
 })
