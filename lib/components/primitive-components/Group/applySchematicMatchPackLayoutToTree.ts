@@ -89,7 +89,7 @@ function getTreeChildChipId(
   return null
 }
 
-function convertTreeToInputProblem(
+function convertTreeToMatchPackInputProblem(
   tree: CircuitJsonTreeNode,
   db: CircuitJsonUtilObjects,
   group: Group<any>,
@@ -566,7 +566,7 @@ export function applySchematicMatchPackLayoutToTree<
   }
 
   debug("Converting circuit tree to InputProblem...")
-  const inputProblem = convertTreeToInputProblem(tree, db, group)
+  const inputProblem = convertTreeToMatchPackInputProblem(tree, db, group)
 
   if (debug.enabled) {
     group.root?.emit("debug:logOutput", {

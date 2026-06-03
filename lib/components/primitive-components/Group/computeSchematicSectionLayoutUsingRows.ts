@@ -1,5 +1,7 @@
+type SectionName = string
+
 type SectionLayoutInput = {
-  sectionName: string
+  sectionName: SectionName
   size: { x: number; y: number }
 }
 
@@ -19,7 +21,7 @@ export function computeSchematicSectionLayoutUsingRows({
 }: {
   sectionBlocks: SectionLayoutInput[]
   groupSchPositionBeforeLayout: { x: number; y: number }
-}): Map<string, { x: number; y: number }> {
+}): Map<SectionName, { x: number; y: number }> {
   const totalArea = sectionBlocks.reduce((sum, block) => {
     const paddedWidth = Math.max(block.size.x, 0.5) + MARGIN * 2
     const paddedHeight = Math.max(block.size.y, 0.5) + MARGIN * 2

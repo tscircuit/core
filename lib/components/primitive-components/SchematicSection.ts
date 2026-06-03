@@ -18,17 +18,20 @@ export class SchematicSection extends PrimitiveComponent<
     }
   }
 
+  resolveSchematicSectionName(): string | null {
+    return this._parsedProps.name
+  }
+
   // Pass null to compute bounds for components with no schSectionName
   _computeSectionBounds(
     board: PrimitiveComponent,
-    sectionName: string | null = this._parsedProps.name,
+    sectionName: string | null,
   ): Bounds | null {
     const { db } = this.root!
 
-    const members = board.getDescendants().filter((c: any) => {
-      if (sectionName === null) return c.props?.schSectionName == null
-      return c.props?.schSectionName === sectionName
-    })
+    const members = board
+      .getDescendants()
+      .filter((c) => c.getSchematicSectionName() === sectionName)
 
     if (members.length === 0) return null
 
@@ -75,7 +78,10 @@ export class SchematicSection extends PrimitiveComponent<
 
     const namedSectionsWithBounds = allSections
       .map((section) => {
-        const bounds = section._computeSectionBounds(board)
+        const bounds = section._computeSectionBounds(
+          board,
+          section.resolveSchematicSectionName(),
+        )
         if (!bounds) return null
         return {
           displayName: section._parsedProps.displayName,
@@ -92,24 +98,24 @@ export class SchematicSection extends PrimitiveComponent<
       .filter((s): s is NonNullable<typeof s> => s !== null)
 
     // Include unsectioned components (no schSectionName) as a virtual section
-    const unnamedSectionBounds = this._computeSectionBounds(board, null)
-    const sectionData = [...namedSectionsWithBounds]
-    if (unnamedSectionBounds)
-      sectionData.push({
+    const unsectionedBounds = this._computeSectionBounds(board, null)
+    const allSectionsWithBounds = [...namedSectionsWithBounds]
+    if (unsectionedBounds)
+      allSectionsWithBounds.push({
         displayName: undefined,
         sectionTitleFontSize: undefined,
-        rawBounds: unnamedSectionBounds,
+        rawBounds: unsectionedBounds,
         cell: {
-          minX: unnamedSectionBounds.minX - PADDING,
-          maxX: unnamedSectionBounds.maxX + PADDING,
-          minY: unnamedSectionBounds.minY - PADDING,
-          maxY: unnamedSectionBounds.maxY + PADDING,
+          minX: unsectionedBounds.minX - PADDING,
+          maxX: unsectionedBounds.maxX + PADDING,
+          minY: unsectionedBounds.minY - PADDING,
+          maxY: unsectionedBounds.maxY + PADDING,
         },
       })
 
-    if (sectionData.length === 0) return
+    if (allSectionsWithBounds.length === 0) return
 
-    const allCells = sectionData.map((s) => s.cell)
+    const allCells = allSectionsWithBounds.map((s) => s.cell)
 
     const outer = computeBoundsFromCellContents(allCells)
 
@@ -117,7 +123,7 @@ export class SchematicSection extends PrimitiveComponent<
     // with small gaps don't overlap and prevent divider generation
     const CELL_MARGIN = 1
     const dividers = calculateCellBoundaries(
-      sectionData.map((s) => ({
+      allSectionsWithBounds.map((s) => ({
         minX: s.rawBounds.minX - CELL_MARGIN,
         maxX: s.rawBounds.maxX + CELL_MARGIN,
         minY: s.rawBounds.minY - CELL_MARGIN,
@@ -147,7 +153,7 @@ export class SchematicSection extends PrimitiveComponent<
       displayName,
       sectionTitleFontSize,
       rawBounds,
-    } of sectionData) {
+    } of allSectionsWithBounds) {
       if (!displayName) continue
 
       const dividersAbove = hDividers
