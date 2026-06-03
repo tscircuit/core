@@ -1,12 +1,110 @@
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { solderjumperProps } from "@tscircuit/props"
+import { solderjumperProps, type SolderJumperProps } from "@tscircuit/props"
 import { Port } from "../primitive-components/Port"
 import type { SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+
+const getPinNumberFromNameOrLabel = (
+  pinName: string,
+  pinLabels?: SolderJumperProps["pinLabels"],
+): number | null => {
+  const directPinNumber = pinName.match(/^(?:pin)?(\d+)$/i)?.[1]
+  if (directPinNumber) return Number(directPinNumber)
+
+  if (!pinLabels || Array.isArray(pinLabels) || typeof pinLabels !== "object") {
+    return null
+  }
+
+  for (const [pinKey, labelOrLabels] of Object.entries(pinLabels)) {
+    const labels = Array.isArray(labelOrLabels)
+      ? labelOrLabels.filter(
+          (label): label is string => typeof label === "string",
+        )
+      : typeof labelOrLabels === "string"
+        ? [labelOrLabels]
+        : []
+    if (pinName !== pinKey && !labels.includes(pinName)) {
+      continue
+    }
+
+    const pinNumber = pinKey.match(/^(?:pin)?(\d+)$/i)?.[1]
+    return pinNumber ? Number(pinNumber) : null
+  }
+
+  return null
+}
+
+const getSolderJumperFootprintParts = (footprint: string) => {
+  const withoutBridgeMatch = footprint.match(/^solderjumper([23])((?:_.+)?)$/)
+  if (withoutBridgeMatch) {
+    return {
+      pinCount: Number(withoutBridgeMatch[1]),
+      suffix: withoutBridgeMatch[2] ?? "",
+      alreadyBridged: false,
+    }
+  }
+
+  const bridgedMatch = footprint.match(/^solderjumper[23]_bridged\d+(?:_.+)?$/)
+  if (bridgedMatch) {
+    return {
+      pinCount: null,
+      suffix: "",
+      alreadyBridged: true,
+    }
+  }
+
+  return null
+}
+
+const getBridgedPinNumbers = (props: SolderJumperProps, pinCount: number) => {
+  const { bridged, bridgedPins, pinLabels } = props
+
+  if (bridgedPins && bridgedPins.length > 0) {
+    return Array.from(
+      new Set(
+        bridgedPins
+          .flat()
+          .map((pinName) => getPinNumberFromNameOrLabel(pinName, pinLabels))
+          .filter((n): n is number => n !== null && n <= pinCount),
+      ),
+    ).sort((a, b) => a - b)
+  }
+
+  if (bridged) {
+    return Array.from({ length: pinCount }, (_, i) => i + 1)
+  }
+
+  return []
+}
+
+const resolveSolderJumperFootprintFromBridgeProps = (
+  props: SolderJumperProps,
+) => {
+  const { footprint, bridged, bridgedPins } = props
+  if (typeof footprint !== "string") return props
+  if (!bridged && !bridgedPins?.length) return props
+
+  const footprintParts = getSolderJumperFootprintParts(footprint)
+  if (!footprintParts) return props
+  if (footprintParts.alreadyBridged) return props
+  if (footprintParts.pinCount == null) return props
+
+  const bridgedPinNumbers = getBridgedPinNumbers(props, footprintParts.pinCount)
+  if (bridgedPinNumbers.length === 0) return props
+
+  return {
+    ...props,
+    footprint: `solderjumper${footprintParts.pinCount}_bridged${bridgedPinNumbers.join("")}${footprintParts.suffix}`,
+  }
+}
 
 export class SolderJumper<
   PinLabels extends string = never,
 > extends NormalComponent<typeof solderjumperProps, PinLabels> {
   schematicDimensions: SchematicBoxDimensions | null = null
+
+  constructor(props: SolderJumperProps) {
+    super(resolveSolderJumperFootprintFromBridgeProps(props))
+  }
 
   _getPinNumberFromBridgedPinName(pinName: string): number | null {
     const port = this.selectOne(`port.${pinName}`, {
