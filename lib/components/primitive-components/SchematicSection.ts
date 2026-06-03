@@ -18,18 +18,6 @@ export class SchematicSection extends PrimitiveComponent<
     }
   }
 
-  resolveSchematicSectionName(): string | null {
-    return this._parsedProps.name
-  }
-
-  resolveSchematicSectionDisplayName(): string | undefined {
-    return this._parsedProps.displayName
-  }
-
-  resolveSchematicSectionFontSize(): number | undefined {
-    return this._parsedProps.sectionTitleFontSize
-  }
-
   // Pass null to compute bounds for components with no schSectionName
   _computeSectionBounds(
     board: PrimitiveComponent,
@@ -88,12 +76,12 @@ export class SchematicSection extends PrimitiveComponent<
       .map((section) => {
         const bounds = section._computeSectionBounds(
           board,
-          section.resolveSchematicSectionName(),
+          section._parsedProps.name,
         )
         if (!bounds) return null
         return {
-          displayName: section.resolveSchematicSectionDisplayName(),
-          sectionTitleFontSize: section.resolveSchematicSectionFontSize(),
+          displayName: section._parsedProps.displayName,
+          sectionTitleFontSize: section._parsedProps.sectionTitleFontSize,
           rawBounds: bounds,
           cell: {
             minX: bounds.minX - PADDING,
