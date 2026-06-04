@@ -243,17 +243,17 @@ test("breakout routes rp2040 pins to nearby capacitors and resistors", async () 
     minY: breakoutPcbGroup!.center.y - breakoutPcbGroup!.height! / 2,
     maxY: breakoutPcbGroup!.center.y + breakoutPcbGroup!.height! / 2,
   }
-
-  expect(breakoutSimpleRouteJson.bounds).toEqual(expectedBreakoutBounds)
-  expect(directBreakoutSimpleRouteJson.bounds).toEqual(expectedBreakoutBounds)
-  // expect(circuit.db.pcb_breakout_point.list().length).toBe(22)
-  expect(autoroutingPhaseIoStack.length).toBeGreaterThanOrEqual(2)
-  // expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(21)
-  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "breakout-rp2040-with-passives-autorouting-srj",
     circuit,
   )
+
+  expect(breakoutSimpleRouteJson.bounds).toEqual(expectedBreakoutBounds)
+  expect(directBreakoutSimpleRouteJson.bounds).toEqual(expectedBreakoutBounds)
+  expect(circuit.db.pcb_breakout_point.list().length).toBe(24)
+  expect(autoroutingPhaseIoStack.length).toBeGreaterThanOrEqual(2)
+  expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(21)
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
 }, 60_000)
