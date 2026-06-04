@@ -332,5 +332,7 @@ test("SchematicSection manual placement: each section has at least one manually 
   expect(d1.x).toBeCloseTo(12, 1)
   expect(d1.y).toBeCloseTo(-6, 1)
 
-  expect(createSchematicSectionFixtureSvg(circuit, circuitJson)).toMatchSvgSnapshot(import.meta.path)
+  expect(
+    createSchematicSectionFixtureSvg(circuit, circuitJson),
+  ).toMatchSvgSnapshot(import.meta.path)
 })

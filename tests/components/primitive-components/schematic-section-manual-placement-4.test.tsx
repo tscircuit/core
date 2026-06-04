@@ -306,5 +306,7 @@ test("SchematicSection manual placement: multiple components fixed per section",
     expect(isFinite((comp as any).center.y)).toBe(true)
   }
 
-  expect(createSchematicSectionFixtureSvg(circuit, circuitJson)).toMatchSvgSnapshot(import.meta.path)
+  expect(
+    createSchematicSectionFixtureSvg(circuit, circuitJson),
+  ).toMatchSvgSnapshot(import.meta.path)
 })

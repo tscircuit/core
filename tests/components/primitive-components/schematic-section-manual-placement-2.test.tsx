@@ -296,5 +296,7 @@ test("SchematicSection manual placement: passives manually placed, chips auto", 
     expect(isFinite((comp as any).center.y)).toBe(true)
   }
 
-  expect(createSchematicSectionFixtureSvg(circuit, circuitJson)).toMatchSvgSnapshot(import.meta.path)
+  expect(
+    createSchematicSectionFixtureSvg(circuit, circuitJson),
+  ).toMatchSvgSnapshot(import.meta.path)
 })
