@@ -105,21 +105,24 @@ function convertTreeToMatchPackInputProblem(
     partitionGap: 1.2,
   }
 
+  const groupOffset = group._getGlobalSchematicPositionBeforeLayout()
+
   debug(
     `[${group.name}] Processing ${tree.childNodes.length} child nodes for input problem`,
   )
 
   tree.childNodes.forEach((child, index) => {
-    if (isTreeChildExplicitlyPositioned(child, group)) {
-      debug(
-        `[${group.name}] Skipping explicitly positioned child ${index} from matchpack`,
-      )
-      return
-    }
+    const explicitlyPositioned = isTreeChildExplicitlyPositioned(child, group)
 
-    debug(
-      `[${group.name}] Processing child ${index}: nodeType=${child.nodeType}`,
-    )
+    if (explicitlyPositioned) {
+      debug(
+        `[${group.name}] Child ${index} explicitly positioned, including as fixed chip`,
+      )
+    } else {
+      debug(
+        `[${group.name}] Processing child ${index}: nodeType=${child.nodeType}`,
+      )
+    }
 
     if (child.nodeType === "component") {
       debug(`[${group.name}] - Component: ${child.sourceComponent?.name}`)
@@ -191,6 +194,12 @@ function convertTreeToMatchPackInputProblem(
           y: (schematicComponent.size?.height || 1) + marginTop + marginBottom,
         },
         availableRotations,
+        ...(explicitlyPositioned && {
+          fixedPosition: {
+            x: schematicComponent.center.x - groupOffset.x,
+            y: schematicComponent.center.y - groupOffset.y,
+          },
+        }),
       }
 
       const ports = db.schematic_port.list({
@@ -667,6 +676,19 @@ export function applySchematicMatchPackLayoutToTree<
     }
 
     if (treeNode.nodeType === "component" && treeNode.sourceComponent) {
+      const groupChild = group.children.find(
+        (c: any) =>
+          c.source_component_id ===
+          treeNode.sourceComponent?.source_component_id,
+      ) as any
+      if (
+        groupChild?._parsedProps?.schX !== undefined ||
+        groupChild?._parsedProps?.schY !== undefined
+      ) {
+        debug(`Skipping position update for fixed chip ${chipId}`)
+        continue
+      }
+
       const schematicComponent = db.schematic_component.getWhere({
         source_component_id: treeNode.sourceComponent.source_component_id,
       })
