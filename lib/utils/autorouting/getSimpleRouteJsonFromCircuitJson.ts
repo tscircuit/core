@@ -137,20 +137,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // autorouter can avoid collisions and they appear in debug
   // visualizations. We strip connection metadata so the solver treats
   // them purely as geometry to route around, not as connections to merge.
-  //
-  // Traces whose route starts or ends at a breakout point are excluded:
-  // they are the inner half of cross-boundary connections and the outer
-  // autorouter needs unobstructed access to the same breakout points.
-  const breakoutPointPositions = breakoutPoints.map((bp) => ({
-    x: bp.x,
-    y: bp.y,
-  }))
-  const touchesBreakoutPoint = (x: number, y: number) => {
-    const EPS = 0.01
-    return breakoutPointPositions.some(
-      (bp) => Math.abs(bp.x - x) < EPS && Math.abs(bp.y - y) < EPS,
-    )
-  }
   const descendantTraces: SimplifiedPcbTrace[] = subcircuit_id
     ? db.pcb_trace
         .list()
@@ -165,20 +151,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           pcb_trace_id: t.pcb_trace_id,
           route: t.route as SimplifiedPcbTrace["route"],
         }))
-        .filter((t) => {
-          if (breakoutPointPositions.length === 0) return true
-          const wires = t.route.filter((s) => s.route_type === "wire") as {
-            x: number
-            y: number
-          }[]
-          if (wires.length === 0) return true
-          const first = wires[0]
-          const last = wires[wires.length - 1]
-          return (
-            !touchesBreakoutPoint(first.x, first.y) &&
-            !touchesBreakoutPoint(last.x, last.y)
-          )
-        })
     : []
 
   // Add everything in the connMap to the connectedTo array of each obstacle
