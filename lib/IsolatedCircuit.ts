@@ -77,6 +77,7 @@ export class IsolatedCircuit {
   _hasRenderedAtleastOnce = false
   private _asyncEffectIdsByPhase = new Map<RenderPhase, Set<string>>()
   private _asyncEffectPhaseById = new Map<string, RenderPhase>()
+  private _hasUnrenderedUpdatesFromAsyncEffects = false
   private _runningAsyncEffectsById = new Map<
     string,
     {
@@ -191,6 +192,7 @@ export class IsolatedCircuit {
     if (!firstChild) throw new Error("IsolatedCircuit has no root component")
     firstChild.parent = this as any
     firstChild.runRenderCycle()
+    this._hasUnrenderedUpdatesFromAsyncEffects = false
     this._hasRenderedAtleastOnce = true
   }
 
@@ -205,7 +207,7 @@ export class IsolatedCircuit {
 
     this.render()
 
-    while (this._hasIncompleteAsyncEffects()) {
+    while (!this.isDoneRendering()) {
       await new Promise((resolve) => setTimeout(resolve, 100))
       this.render()
     }
@@ -213,8 +215,13 @@ export class IsolatedCircuit {
     this.emit("renderComplete")
   }
 
+  isDoneRendering(): boolean {
+    return this._hasRenderedAtleastOnce && !this._hasIncompleteAsyncEffects()
+  }
+
   _hasIncompleteAsyncEffects(): boolean {
     if (this._asyncEffectPhaseById.size > 0) return true
+    if (this._hasUnrenderedUpdatesFromAsyncEffects) return true
     return this.children.some((child) => child._hasIncompleteAsyncEffects())
   }
 
@@ -399,5 +406,6 @@ export class IsolatedCircuit {
     }
     this._asyncEffectPhaseById.delete(asyncEffectId)
     this._runningAsyncEffectsById.delete(asyncEffectId)
+    this._hasUnrenderedUpdatesFromAsyncEffects = true
   }
 }
