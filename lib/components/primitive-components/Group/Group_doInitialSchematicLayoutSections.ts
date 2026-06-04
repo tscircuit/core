@@ -1,6 +1,9 @@
 import { getCircuitJsonTree } from "@tscircuit/circuit-json-util"
+import Debug from "debug"
 import type { z } from "zod"
 import type { Group } from "./Group"
+
+const debug = Debug("Group_doInitialSchematicLayoutSections")
 import { applySchematicMatchPackLayoutToTree } from "./Group_doInitialSchematicLayoutMatchPack"
 import { computeSchematicSectionLayoutUsingRows } from "./computeSchematicSectionLayoutUsingRows"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
@@ -101,6 +104,17 @@ export function Group_doInitialSchematicLayoutSections<
 
   if (sectionNameToBoundsWithChildren.size <= 1) return
 
+  // Sections containing a manually positioned component are anchored — their
+  // position is already set by phase 1 and must not be overridden by row packing.
+  const anchoredSections = new Set<string | null>()
+  for (const child of group.children) {
+    if (!child.source_component_id) continue
+    const props = (child as any)._parsedProps
+    if (props?.schX !== undefined || props?.schY !== undefined) {
+      anchoredSections.add(child.getSchematicSectionName())
+    }
+  }
+
   // Phase 3: pack sections into rows
   const groupSchPositionBeforeLayout =
     group._getGlobalSchematicPositionBeforeLayout()
@@ -117,6 +131,13 @@ export function Group_doInitialSchematicLayoutSections<
   for (const [sectionName, placement] of sectionPlacements) {
     const boundsWithChildren = sectionNameToBoundsWithChildren.get(sectionName)
     if (!boundsWithChildren) continue
+
+    if (anchoredSections.has(sectionName)) {
+      debug(
+        `[${group.name}] Section "${sectionName}" anchored by manual position, skipping shift`,
+      )
+      continue
+    }
 
     const delta = {
       x: placement.x - boundsWithChildren.center.x,
