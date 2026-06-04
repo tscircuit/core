@@ -42,6 +42,7 @@ test("async footprint library map can complete after last render pass", async ()
 
   expect(circuit.isDoneRendering()).toBe(true)
   const circuitJsonAtRenderComplete = circuit.getCircuitJson()
-  expect(circuitJsonAtRenderComplete.some((el) => el.type === "pcb_smtpad"))
-    .toBe(true)
+  expect(
+    circuitJsonAtRenderComplete.some((el) => el.type === "pcb_smtpad"),
+  ).toBe(true)
 })
