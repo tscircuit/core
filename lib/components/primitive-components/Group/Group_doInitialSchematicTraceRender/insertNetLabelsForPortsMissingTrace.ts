@@ -122,8 +122,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
       text,
     })
 
-    const existingNetLabelForCurrentSourceConnection =
-      db.schematic_net_label.list().find((nl) => {
+    const existingNetLabelForCurrentSourceConnection = db.schematic_net_label
+      .list()
+      .find((nl) => {
         return doesSchematicNetLabelRepresentCurrentSourceConnection({
           nl,
           connKey,
@@ -197,10 +198,12 @@ export const insertNetLabelsForPortsMissingTrace = ({
 
         const isAttachedToConnectedPort = connectedSourcePortIdsForKey.some(
           (sourcePortId) => {
-            const schPortId = Array.from(schPortIdToSourcePortId.entries()).find(
-              ([, id]) => id === sourcePortId,
-            )?.[0]
-            let connectedSchPort: ReturnType<typeof db.schematic_port.get> | undefined
+            const schPortId = Array.from(
+              schPortIdToSourcePortId.entries(),
+            ).find(([, id]) => id === sourcePortId)?.[0]
+            let connectedSchPort:
+              | ReturnType<typeof db.schematic_port.get>
+              | undefined
             if (schPortId) {
               connectedSchPort = db.schematic_port.get(schPortId)
             }
