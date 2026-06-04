@@ -38,17 +38,45 @@ export function applyNetLabelPlacements(args: {
     solver.netLabelPlacementSolver?.netLabelPlacements ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().netLabelPlacements ??
     []
-  const netLabelPlacementCountByGlobalNetId = new Map<string, number>()
+  const dedupedNetLabelPlacements: typeof netLabelPlacements = []
+  const netLabelPlacementKeys = new Set<string>()
   for (const placement of netLabelPlacements) {
+    const pinIds = [...(placement.pinIds ?? [])].sort()
+    const key = `${placement.globalConnNetId}|${pinIds.join("::")}|${placement.netId ?? ""}`
+    if (netLabelPlacementKeys.has(key)) {
+      debug(
+        `skipping duplicate placement for "${placement.netId}" REASON:identical net label placement`,
+      )
+      continue
+    }
+    netLabelPlacementKeys.add(key)
+    dedupedNetLabelPlacements.push(placement)
+  }
+
+  const netLabelPlacementCountByGlobalNetId = new Map<string, number>()
+  const routedPairKeysByGlobalNetId = new Map<string, Set<string>>()
+  const globalNetIdsWithPortOnlyPlacements = new Set<string>()
+  for (const placement of dedupedNetLabelPlacements) {
     netLabelPlacementCountByGlobalNetId.set(
       placement.globalConnNetId,
       (netLabelPlacementCountByGlobalNetId.get(placement.globalConnNetId) ??
         0) + 1,
     )
+    if ((placement.pinIds?.length ?? 0) > 1) {
+      if (!routedPairKeysByGlobalNetId.has(placement.globalConnNetId)) {
+        routedPairKeysByGlobalNetId.set(placement.globalConnNetId, new Set())
+      }
+      routedPairKeysByGlobalNetId
+        .get(placement.globalConnNetId)!
+        .add(placement.pinIds.slice().sort().join("::"))
+    }
+    if ((placement.pinIds?.length ?? 0) <= 1) {
+      globalNetIdsWithPortOnlyPlacements.add(placement.globalConnNetId)
+    }
   }
   const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
 
-  for (const placement of netLabelPlacements) {
+  for (const placement of dedupedNetLabelPlacements) {
     debug(`processing placement: ${placement.netId}`)
 
     const placementUserNetId = globalConnMap
@@ -129,11 +157,16 @@ export function applyNetLabelPlacements(args: {
       .filter((p) => p._getSubcircuitConnectivityKey() === placementConnKey)
 
     const { name: text, wasAssignedDisplayLabel } = getNetNameFromPorts(ports)
+    const isRoutedPairPlacement = (placement.pinIds?.length ?? 0) > 1
+    const shouldKeepRoutedPairLabel =
+      isRoutedPairPlacement &&
+      (globalNetIdsWithPortOnlyPlacements.has(placement.globalConnNetId) ||
+        (routedPairKeysByGlobalNetId.get(placement.globalConnNetId)?.size ??
+          0) > 1)
 
     if (
       !wasAssignedDisplayLabel &&
-      (netLabelPlacementCountByGlobalNetId.get(placement.globalConnNetId) ??
-        0) <= 1 &&
+      !shouldKeepRoutedPairLabel &&
       schPortIds.some((schPortId) =>
         schematicPortIdsWithRoutedTraces.has(schPortId),
       )
