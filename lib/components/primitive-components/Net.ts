@@ -3,7 +3,10 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import type { Trace } from "./Trace/Trace"
 import { pairs } from "lib/utils/pairs"
-import { GROUND_NET_REGEX, POWER_NET_REGEX } from "lib/utils/gnd-power-net-regex"
+import {
+  GROUND_NET_REGEX,
+  POWER_NET_REGEX,
+} from "lib/utils/gnd-power-net-regex"
 import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import { autoroute } from "@tscircuit/infgrid-ijump-astar"
 

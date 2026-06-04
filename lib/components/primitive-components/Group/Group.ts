@@ -82,7 +82,10 @@ import {
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 import { Port } from "../Port/Port"
-import { GROUND_NET_REGEX, POWER_NET_REGEX } from "lib/utils/gnd-power-net-regex"
+import {
+  GROUND_NET_REGEX,
+  POWER_NET_REGEX,
+} from "lib/utils/gnd-power-net-regex"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
