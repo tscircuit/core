@@ -80,7 +80,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   )
 
   let board: PcbBoard | undefined | null = null
-  let boardMatchesSubcircuit = false
+  let subcircuitIsBoard = false
   if (subcircuit_id) {
     const source_group_id = subcircuit_id.replace(/^subcircuit_/, "")
     const source_board = db.source_board.getWhere({ source_group_id })
@@ -88,7 +88,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       board = db.pcb_board.getWhere({
         source_board_id: source_board.source_board_id,
       })
-      if (board) boardMatchesSubcircuit = true
+      if (board) subcircuitIsBoard = true
     }
   }
 
@@ -233,14 +233,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   // For non-board subcircuits (e.g. breakout regions), the pcb_group
   // defines the routing boundary, not the parent board.
-  const useGroupBoundsAsPrimary = !!(
+  const useGroupBoundsAsSrjBounds = !!(
     pcbGroup?.width &&
     pcbGroup.height &&
     subcircuit_id &&
-    !boardMatchesSubcircuit
+    !subcircuitIsBoard
   )
 
-  if (useGroupBoundsAsPrimary) {
+  if (useGroupBoundsAsSrjBounds) {
     bounds = {
       minX: pcbGroup!.center.x - pcbGroup!.width! / 2,
       maxX: pcbGroup!.center.x + pcbGroup!.width! / 2,
@@ -263,7 +263,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
-  if (pcbGroup?.width && pcbGroup.height && !useGroupBoundsAsPrimary) {
+  if (pcbGroup?.width && pcbGroup.height && !useGroupBoundsAsSrjBounds) {
     const groupBounds = {
       minX: pcbGroup.center.x - pcbGroup.width / 2,
       maxX: pcbGroup.center.x + pcbGroup.width / 2,
