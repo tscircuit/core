@@ -13,11 +13,15 @@ import { getFileExtension } from "./utils/getFileExtension"
 import { isStaticAssetPath } from "./utils/isStaticAssetPath"
 import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
 import { extractCadModelFromCircuitJson } from "lib/utils/connectors/extractCadModelFromCircuitJson"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 
 interface FootprintLibraryResult {
   footprintCircuitJson: any[]
   cadModel?: CadModelProp
 }
+
+const shouldAddOutsideFootprintWrapper = (component: PrimitiveComponent) =>
+  component.componentName === "Symbol" || component.isSchematicPrimitive
 
 export function NormalComponent_doInitialPcbFootprintStringRender(
   component: NormalComponent<any, any>,
@@ -173,8 +177,17 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         // Wrap in a Footprint with src so pcbSx selectors like
         // "& footprint[src^='kicad:'] silkscreentext" can match
         const fpWrapper = new Footprint({ src: footprint })
-        for (const c of fpComponents) fpWrapper.add(c)
+        const componentsOutsideFootprint: typeof fpComponents = []
+        for (const c of fpComponents) {
+          // TODO: Remove this when we have a schematic symbol render and don't need to add in here
+          if (shouldAddOutsideFootprintWrapper(c)) {
+            componentsOutsideFootprint.push(c)
+          } else {
+            fpWrapper.add(c)
+          }
+        }
         component.add(fpWrapper)
+        component.addAll(componentsOutsideFootprint)
         component._asyncFootprintCadModel =
           (!Array.isArray(result) && result.cadModel) ||
           extractCadModelFromCircuitJson(circuitJson)
