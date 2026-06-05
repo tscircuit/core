@@ -49,6 +49,17 @@ test("gnd power label detection test", async () => {
       />
       <trace from=".R5 > .pin1" to="net.V3V" />
       <trace from=".R5 > .pin2" to="net.DGND" />
+
+      {/* Digital ground DGND + numeric voltage 3V3 */}
+      <resistor
+        name="R6"
+        resistance="10k"
+        footprint="0402"
+        pcbX={10}
+        pcbY={0}
+      />
+      <trace from=".R6 > .pin1" to="net.V3_3" />
+      <trace from=".R6 > .pin2" to="net.GND" />
     </board>,
   )
 
