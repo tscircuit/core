@@ -131,6 +131,19 @@ export const createBreakoutPointSolverInput = (
     .filter((point) => point.pcb_group_id === breakout.pcb_group_id)
     .map((point) => ({ x: point.x, y: point.y }))
 
+  // Derive the breakout-point spacing from the board's design rules rather
+  // than hardcoding it. Adjacent breakout points each carry one escape route
+  // out of the breakout; for a dense edge those routes must be able to fan
+  // out AND drop a via to swap layers without colliding with the neighbouring
+  // route. That needs room for a via pad in the middle with a trace +
+  // clearance on each side, so the spacing scales with the board's trace
+  // width, via size, and clearance.
+  const board = db.pcb_board.list()[0]
+  const traceWidth = board?.min_trace_width ?? 0.15
+  const clearance = board?.min_trace_to_pad_edge_clearance ?? 0.2
+  const viaPadDiameter = board?.min_via_pad_diameter ?? 0.3
+  const boundaryPointSpacing = viaPadDiameter + 2 * (traceWidth + clearance)
+
   return {
     bounds: {
       minX: boundsMinX,
@@ -138,7 +151,7 @@ export const createBreakoutPointSolverInput = (
       minY: boundsMinY,
       maxY: boundsMaxY,
     },
-    boundaryPointSpacing: 0.5,
+    boundaryPointSpacing,
     traces,
     pads,
     components,

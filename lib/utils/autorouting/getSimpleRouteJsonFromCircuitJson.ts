@@ -7,6 +7,7 @@ import {
 } from "circuit-json-to-connectivity-map"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
+import { trimRouteEndsAtBreakoutPoints } from "./trimRouteEndsAtBreakoutPoints"
 import type {
   SimpleRouteConnection,
   SimpleRouteJson,
@@ -80,6 +81,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   )
 
   let board: PcbBoard | undefined | null = null
+  let subcircuitIsBoard = false
   if (subcircuit_id) {
     const source_group_id = subcircuit_id.replace(/^subcircuit_/, "")
     const source_board = db.source_board.getWhere({ source_group_id })
@@ -87,6 +89,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       board = db.pcb_board.getWhere({
         source_board_id: source_board.source_board_id,
       })
+      if (board) subcircuitIsBoard = true
     }
   }
 
@@ -133,8 +136,32 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // Collect pcb_traces from descendant subcircuits (already routed by
   // inner autorouters). Included in the SRJ traces field so the
   // autorouter can avoid collisions and they appear in debug
-  // visualizations. We strip connection metadata so the solver treats
-  // them purely as geometry to route around, not as connections to merge.
+  // visualizations. Keep source-trace metadata so parent routes can
+  // recognize child fanout copper that belongs to the same connected net.
+  //
+  // The inner autorouter routes each cross-boundary pin up to its breakout
+  // point and stops, so this descendant "handoff" copper ends exactly on the
+  // breakout point. Since the breakout point is also the parent route's
+  // terminal, the copper would otherwise bury that terminal and leave the
+  // parent autorouter no free cell to start/end the route. We trim the
+  // copper back a short distance from each breakout point so the terminal
+  // stays routable while the rest of the copper still blocks other nets. (Only
+  // the obstacle copy is trimmed; the real pcb_trace still reaches the
+  // breakout point, and the parent route meets it there on the same net.)
+  const breakoutPointPositions = breakoutPoints.map((bp) => ({
+    x: bp.x,
+    y: bp.y,
+  }))
+  // Derive the trim distance from the board's design rules instead of a fixed
+  // value, so it scales with a user-specified trace width. The trimmed-back
+  // region has to free a cell big enough for the escape route to enter and
+  // drop a via: a via pad plus a trace and clearance.
+  const breakoutHandoffTrimMm =
+    (minViaPadDiameter ?? board?.min_via_pad_diameter ?? 0.3) +
+    2 * (minTraceWidth ?? board?.min_trace_width ?? 0.15) +
+    (minTraceToPadEdgeClearance ??
+      board?.min_trace_to_pad_edge_clearance ??
+      0.1)
   const descendantTraces: SimplifiedPcbTrace[] = subcircuit_id
     ? db.pcb_trace
         .list()
@@ -147,8 +174,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         .map((t) => ({
           type: "pcb_trace" as const,
           pcb_trace_id: t.pcb_trace_id,
-          route: t.route as SimplifiedPcbTrace["route"],
+          source_trace_id: t.source_trace_id,
+          connection_name:
+            t.source_trace_id ?? (t as any).connection_name ?? t.pcb_trace_id,
+          route: trimRouteEndsAtBreakoutPoints({
+            route: t.route as SimplifiedPcbTrace["route"],
+            breakoutPointPositions,
+            trimMm: breakoutHandoffTrimMm,
+          }),
         }))
+        .filter((t) => t.route.length >= 2)
     : []
 
   // Add everything in the connMap to the connectedTo array of each obstacle
@@ -229,7 +264,23 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   let bounds: { minX: number; maxX: number; minY: number; maxY: number }
 
-  if (board && !board.outline) {
+  // For non-board subcircuits (e.g. breakout regions), the pcb_group
+  // defines the routing boundary, not the parent board.
+  const useGroupBoundsAsSrjBounds = !!(
+    pcbGroup?.width &&
+    pcbGroup.height &&
+    subcircuit_id &&
+    !subcircuitIsBoard
+  )
+
+  if (useGroupBoundsAsSrjBounds) {
+    bounds = {
+      minX: pcbGroup!.center.x - pcbGroup!.width! / 2,
+      maxX: pcbGroup!.center.x + pcbGroup!.width! / 2,
+      minY: pcbGroup!.center.y - pcbGroup!.height! / 2,
+      maxY: pcbGroup!.center.y + pcbGroup!.height! / 2,
+    }
+  } else if (board && !board.outline) {
     bounds = {
       minX: board.center.x - board.width! / 2,
       maxX: board.center.x + board.width! / 2,
@@ -245,7 +296,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
-  if (pcbGroup?.width && pcbGroup.height) {
+  if (pcbGroup?.width && pcbGroup.height && !useGroupBoundsAsSrjBounds) {
     const groupBounds = {
       minX: pcbGroup.center.x - pcbGroup.width / 2,
       maxX: pcbGroup.center.x + pcbGroup.width / 2,
@@ -362,7 +413,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           pcb_port_id: port.pcb_port_id,
         }
       }
-
       return {
         name:
           trace.source_trace_id ??
