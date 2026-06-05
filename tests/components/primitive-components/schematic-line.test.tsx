@@ -49,6 +49,8 @@ test("SchematicLine Test", () => {
     [
       {
         "color": "rgba(132, 0, 0)",
+        "dash_gap": undefined,
+        "dash_length": undefined,
         "is_dashed": false,
         "schematic_component_id": "schematic_component_0",
         "schematic_line_id": "schematic_line_0",
