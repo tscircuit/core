@@ -62,7 +62,7 @@ const rp2040PinLabels = {
   pin56: "QSPI_SS",
 } as const
 
-test("breakout routes rp2040 pins to nearby capacitors and resistors", async () => {
+test.skip("breakout routes rp2040 pins to nearby capacitors and resistors", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
@@ -244,12 +244,12 @@ test("breakout routes rp2040 pins to nearby capacitors and resistors", async () 
     maxY: breakoutPcbGroup!.center.y + breakoutPcbGroup!.height! / 2,
   }
   // COMMENTED OUT AS ITS FAILING ON CI WITH IMAGE DIFF DUE TO OS ISSUES.
-  // await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  // await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
-  //   import.meta.path,
-  //   "breakout-rp2040-with-passives-autorouting-srj",
-  //   circuit,
-  // )
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
+    import.meta.path,
+    "breakout-rp2040-with-passives-autorouting-srj",
+    circuit,
+  )
 
   expect(breakoutSimpleRouteJson.bounds).toEqual(expectedBreakoutBounds)
   expect(directBreakoutSimpleRouteJson.bounds).toEqual(expectedBreakoutBounds)

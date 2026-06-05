@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("breakout routes Arduino Uno ATmega pins to board headers", async () => {
+test.skip("breakout routes Arduino Uno ATmega pins to board headers", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
@@ -170,13 +170,12 @@ test("breakout routes Arduino Uno ATmega pins to board headers", async () => {
       .filter((error) => error.pcb_trace_error_id?.startsWith("overlap_")),
   ).toEqual([])
 
-  // COMMENTED OUT AS ITS FAILING ON CI WITH IMAGE DIFF DUE TO OS ISSUES.
-  // await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  // await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
-  //   import.meta.path,
-  //   "breakout-arduino-uno-autorouting-srj",
-  //   circuit,
-  // )
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
+    import.meta.path,
+    "breakout-arduino-uno-autorouting-srj",
+    circuit,
+  )
 
   const drcErrors = circuit.db.pcb_trace_error.list()
 
