@@ -396,6 +396,166 @@ export const getAllDimensionsForSchematicBox = (
     )
   }
 
+  // Enforce minimum dimensions only when current inner label rectangles overlap.
+  if (params.pinLabels) {
+    const CHAR_WIDTH = 0.13 // FALLBACK_CHARACTER_WIDTH
+    const LABEL_EDGE_OFFSET = 0.1 // PIN_LABEL_EDGE_PADDING in the renderer
+    const HALF_TEXT = 0.075 // PIN_LABEL_TEXT_HEIGHT / 2
+    type LabelRect = {
+      minX: number
+      maxX: number
+      minY: number
+      maxY: number
+    }
+
+    const getLabelLen = (pinNumber: number): number => {
+      const label =
+        params.pinLabels![`pin${pinNumber}`] ??
+        params.pinLabels![`${pinNumber}`]
+      return label ? label.length * CHAR_WIDTH : 0
+    }
+
+    const leftLabels = orderedTruePorts
+      .filter((p) => p.side === "left")
+      .map((p) => ({
+        y: sideLengths.left / 2 - p.distanceFromOrthogonalEdge,
+        len: getLabelLen(p.pinNumber),
+      }))
+      .filter((p) => p.len > 0)
+    const rightLabels = orderedTruePorts
+      .filter((p) => p.side === "right")
+      .map((p) => ({
+        y: -sideLengths.right / 2 + p.distanceFromOrthogonalEdge,
+        len: getLabelLen(p.pinNumber),
+      }))
+      .filter((p) => p.len > 0)
+    const topLabels = orderedTruePorts
+      .filter((p) => p.side === "top")
+      .map((p) => ({
+        x: sideLengths.top / 2 - p.distanceFromOrthogonalEdge,
+        len: getLabelLen(p.pinNumber),
+      }))
+      .filter((p) => p.len > 0)
+    const bottomLabels = orderedTruePorts
+      .filter((p) => p.side === "bottom")
+      .map((p) => ({
+        x: -sideLengths.bottom / 2 + p.distanceFromOrthogonalEdge,
+        len: getLabelLen(p.pinNumber),
+      }))
+      .filter((p) => p.len > 0)
+
+    const rectsOverlap = (a: LabelRect, b: LabelRect) =>
+      Math.min(a.maxX, b.maxX) > Math.max(a.minX, b.minX) &&
+      Math.min(a.maxY, b.maxY) > Math.max(a.minY, b.minY)
+
+    const getLeftRect = (
+      label: (typeof leftLabels)[number],
+      width: number,
+    ): LabelRect => ({
+      minX: -width / 2 + LABEL_EDGE_OFFSET,
+      maxX: -width / 2 + LABEL_EDGE_OFFSET + label.len,
+      minY: label.y - HALF_TEXT,
+      maxY: label.y + HALF_TEXT,
+    })
+
+    const getRightRect = (
+      label: (typeof rightLabels)[number],
+      width: number,
+    ): LabelRect => ({
+      minX: width / 2 - LABEL_EDGE_OFFSET - label.len,
+      maxX: width / 2 - LABEL_EDGE_OFFSET,
+      minY: label.y - HALF_TEXT,
+      maxY: label.y + HALF_TEXT,
+    })
+
+    const getTopRect = (
+      label: (typeof topLabels)[number],
+      height: number,
+    ): LabelRect => ({
+      minX: label.x - HALF_TEXT,
+      maxX: label.x + HALF_TEXT,
+      minY: height / 2 - LABEL_EDGE_OFFSET - label.len,
+      maxY: height / 2 - LABEL_EDGE_OFFSET,
+    })
+
+    const getBottomRect = (
+      label: (typeof bottomLabels)[number],
+      height: number,
+    ): LabelRect => ({
+      minX: label.x - HALF_TEXT,
+      maxX: label.x + HALF_TEXT,
+      minY: -height / 2 + LABEL_EDGE_OFFSET,
+      maxY: -height / 2 + LABEL_EDGE_OFFSET + label.len,
+    })
+
+    if (!params.schHeight) {
+      let hasTopBottomLabelCollision = false
+
+      for (const topLabel of topLabels) {
+        for (const bottomLabel of bottomLabels) {
+          if (
+            rectsOverlap(
+              getTopRect(topLabel, schHeight),
+              getBottomRect(bottomLabel, schHeight),
+            )
+          ) {
+            hasTopBottomLabelCollision = true
+            schHeight = Math.max(
+              schHeight,
+              topLabel.len + bottomLabel.len + 2 * LABEL_EDGE_OFFSET,
+            )
+          }
+        }
+      }
+
+      if (hasTopBottomLabelCollision) {
+        for (const topLabel of topLabels) {
+          const topRect = getTopRect(topLabel, schHeight)
+          for (const leftLabel of leftLabels) {
+            const leftRect = getLeftRect(leftLabel, resolvedSchWidth)
+            if (rectsOverlap(topRect, leftRect)) {
+              schHeight = Math.max(
+                schHeight,
+                2 * (leftRect.maxY + LABEL_EDGE_OFFSET + topLabel.len),
+              )
+            }
+          }
+          for (const rightLabel of rightLabels) {
+            const rightRect = getRightRect(rightLabel, resolvedSchWidth)
+            if (rectsOverlap(topRect, rightRect)) {
+              schHeight = Math.max(
+                schHeight,
+                2 * (rightRect.maxY + LABEL_EDGE_OFFSET + topLabel.len),
+              )
+            }
+          }
+        }
+
+        for (const bottomLabel of bottomLabels) {
+          const bottomRect = getBottomRect(bottomLabel, schHeight)
+          for (const leftLabel of leftLabels) {
+            const leftRect = getLeftRect(leftLabel, resolvedSchWidth)
+            if (rectsOverlap(bottomRect, leftRect)) {
+              schHeight = Math.max(
+                schHeight,
+                2 * (LABEL_EDGE_OFFSET + bottomLabel.len - leftRect.minY),
+              )
+            }
+          }
+          for (const rightLabel of rightLabels) {
+            const rightRect = getRightRect(rightLabel, resolvedSchWidth)
+            if (rectsOverlap(bottomRect, rightRect)) {
+              schHeight = Math.max(
+                schHeight,
+                2 * (LABEL_EDGE_OFFSET + bottomLabel.len - rightRect.minY),
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+
   const trueEdgePositions = {
     // Top left corner
     left: {
