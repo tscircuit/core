@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("SchematicPath supports dash_length and dash_gap", () => {
+test("SchematicPath supports dash_length and dash_gap test", () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
