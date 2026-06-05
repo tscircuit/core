@@ -3,6 +3,10 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 import type { Trace } from "./Trace/Trace"
 import { pairs } from "lib/utils/pairs"
+import {
+  GROUND_NET_REGEX,
+  POWER_NET_REGEX,
+} from "lib/utils/gnd-power-net-regex"
 import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import { autoroute } from "@tscircuit/infgrid-ijump-astar"
 
@@ -25,9 +29,9 @@ export class Net extends PrimitiveComponent<typeof netProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const isGround = props.isGroundNet ?? props.name.startsWith("GND")
+    const isGround = props.isGroundNet ?? GROUND_NET_REGEX.test(props.name)
     const isPositiveVoltageSource =
-      props.isPowerNet ?? props.name.startsWith("V")
+      props.isPowerNet ?? POWER_NET_REGEX.test(props.name)
 
     const net = db.source_net.insert({
       name: props.name,

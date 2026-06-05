@@ -82,6 +82,10 @@ import {
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 import { Port } from "../Port/Port"
+import {
+  GROUND_NET_REGEX,
+  POWER_NET_REGEX,
+} from "lib/utils/gnd-power-net-regex"
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -1884,14 +1888,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const net = subtree.source_net.get(nl.source_net_id)
       const text = nl.text || net?.name || ""
 
-      if (nl.anchor_side === "top" && /^gnd/i.test(text)) {
+      if (nl.anchor_side === "top" && GROUND_NET_REGEX.test(text)) {
         subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "rail_down",
         })
         continue
       }
 
-      if (nl.anchor_side === "bottom" && /^v/i.test(text)) {
+      if (nl.anchor_side === "bottom" && POWER_NET_REGEX.test(text)) {
         subtree.schematic_net_label.update(nl.schematic_net_label_id, {
           symbol_name: "rail_up",
         })
