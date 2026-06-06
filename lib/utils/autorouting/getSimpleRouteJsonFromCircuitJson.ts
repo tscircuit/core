@@ -7,12 +7,7 @@ import {
 } from "circuit-json-to-connectivity-map"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
-import { trimRouteEndsAtBreakoutPoints } from "./trimRouteEndsAtBreakoutPoints"
-import type {
-  SimpleRouteConnection,
-  SimpleRouteJson,
-  SimplifiedPcbTrace,
-} from "./SimpleRouteJson"
+import type { SimpleRouteConnection, SimpleRouteJson } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 
 /**
@@ -133,36 +128,20 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }),
   )
 
-  // Collect pcb_traces from descendant subcircuits (already routed by
-  // inner autorouters). Included in the SRJ traces field so the
-  // autorouter can avoid collisions and they appear in debug
-  // visualizations. Keep source-trace metadata so parent routes can
-  // recognize child fanout copper that belongs to the same connected net.
+  // Already-routed pcb_traces from descendant subcircuits (e.g. inside a
+  // breakout) are added to the parent SRJ as obstacles so the parent route
+  // avoids foreign copper. getObstaclesFromCircuitJson keeps each obstacle's
+  // net via `connectedTo` (seeded from source_trace_id, expanded to the full
+  // net by the connectivity loop below), so same-net handoff copper is
+  // connectable while other nets still route around it.
   //
-  // The inner autorouter routes each cross-boundary pin up to its breakout
-  // point and stops, so this descendant "handoff" copper ends exactly on the
-  // breakout point. Since the breakout point is also the parent route's
-  // terminal, the copper would otherwise bury that terminal and leave the
-  // parent autorouter no free cell to start/end the route. We trim the
-  // copper back a short distance from each breakout point so the terminal
-  // stays routable while the rest of the copper still blocks other nets. (Only
-  // the obstacle copy is trimmed; the real pcb_trace still reaches the
-  // breakout point, and the parent route meets it there on the same net.)
-  const breakoutPointPositions = breakoutPoints.map((bp) => ({
-    x: bp.x,
-    y: bp.y,
-  }))
-  // Derive the trim distance from the board's design rules instead of a fixed
-  // value, so it scales with a user-specified trace width. The trimmed-back
-  // region has to free a cell big enough for the escape route to enter and
-  // drop a via: a via pad plus a trace and clearance.
-  const breakoutHandoffTrimMm =
-    (minViaPadDiameter ?? board?.min_via_pad_diameter ?? 0.3) +
-    2 * (minTraceWidth ?? board?.min_trace_width ?? 0.15) +
-    (minTraceToPadEdgeClearance ??
-      board?.min_trace_to_pad_edge_clearance ??
-      0.1)
-  const descendantTraces: SimplifiedPcbTrace[] = subcircuit_id
+  // NOTE: this currently exposes an autorouter limitation — a breakout-point
+  // terminal sitting on thin same-net copper still fails to resolve a region
+  // ("could not find start region"), because region resolution is geometric and
+  // the copper occupies the terminal's layer. `trimRouteEndsAtBreakoutPoints`
+  // is the workaround that frees the terminal; it's kept as a reference while
+  // the autorouter is fixed to honor same-net obstacles at breakout points.
+  const descendantPcbTraces = subcircuit_id
     ? db.pcb_trace
         .list()
         .filter(
@@ -171,20 +150,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             t.subcircuit_id !== subcircuit_id &&
             relevantSubcircuitIds!.has(t.subcircuit_id),
         )
-        .map((t) => ({
-          type: "pcb_trace" as const,
-          pcb_trace_id: t.pcb_trace_id,
-          source_trace_id: t.source_trace_id,
-          connection_name:
-            t.source_trace_id ?? (t as any).connection_name ?? t.pcb_trace_id,
-          route: trimRouteEndsAtBreakoutPoints({
-            route: t.route as SimplifiedPcbTrace["route"],
-            breakoutPointPositions,
-            trimMm: breakoutHandoffTrimMm,
-          }),
-        }))
-        .filter((t) => t.route.length >= 2)
     : []
+  obstacles.push(
+    ...getObstaclesFromCircuitJson(
+      descendantPcbTraces as AnyCircuitElement[],
+      connMap,
+    ),
+  )
 
   // Add everything in the connMap to the connectedTo array of each obstacle
   for (const obstacle of obstacles) {
@@ -605,7 +577,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       bounds,
       obstacles,
       connections: allConns,
-      traces: descendantTraces.length > 0 ? descendantTraces : undefined,
+      // Descendant copper is modeled as net-aware obstacles (see above), not
+      // as pre-routed traces — the solver populates `traces` with its output.
+      traces: undefined,
       layerCount: board?.num_layers ?? 2,
       minTraceWidth: minTraceWidth ?? board?.min_trace_width ?? 0.1,
       minViaDiameter: resolvedMinViaPadDiameter,

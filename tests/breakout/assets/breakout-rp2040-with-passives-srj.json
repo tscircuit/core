@@ -1,0 +1,6696 @@
+{
+  "bounds": {
+    "minX": -36,
+    "maxX": 36,
+    "minY": -24,
+    "maxY": 24
+  },
+  "obstacles": [
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": 3.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_0",
+        "connectivity_net303",
+        "source_port_0_0",
+        "source_trace_10",
+        "source_port_0",
+        "source_port_66",
+        "pcb_smtpad_0",
+        "pcb_port_0",
+        "pcb_smtpad_66",
+        "pcb_port_66"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": 2.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_1",
+        "connectivity_net291",
+        "source_port_1_0",
+        "source_trace_22",
+        "source_port_1",
+        "source_port_78",
+        "pcb_smtpad_1",
+        "pcb_port_1",
+        "pcb_smtpad_78",
+        "pcb_port_78"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": 2.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_2",
+        "connectivity_net290",
+        "source_port_2_0",
+        "source_trace_23",
+        "source_port_2",
+        "source_port_79",
+        "pcb_smtpad_2",
+        "pcb_port_2",
+        "pcb_smtpad_79",
+        "pcb_port_79"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": 1.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_3",
+        "connectivity_net289",
+        "source_port_3_0",
+        "source_trace_24",
+        "source_port_3",
+        "source_port_80",
+        "pcb_smtpad_3",
+        "pcb_port_3",
+        "pcb_smtpad_80",
+        "pcb_port_80"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": 1.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_4",
+        "connectivity_net288",
+        "source_port_4_0",
+        "source_trace_25",
+        "source_port_4",
+        "source_port_81",
+        "pcb_smtpad_4",
+        "pcb_port_4",
+        "pcb_smtpad_81",
+        "pcb_port_81"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": 0.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_5",
+        "connectivity_net256",
+        "source_port_5",
+        "pcb_smtpad_5",
+        "pcb_port_5"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": 0.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_6",
+        "connectivity_net257",
+        "source_port_6",
+        "pcb_smtpad_6",
+        "pcb_port_6"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": -0.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_7",
+        "connectivity_net258",
+        "source_port_7",
+        "pcb_smtpad_7",
+        "pcb_port_7"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": -0.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_8",
+        "connectivity_net259",
+        "source_port_8",
+        "pcb_smtpad_8",
+        "pcb_port_8"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": -1.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_9",
+        "connectivity_net313",
+        "source_trace_0_0",
+        "source_trace_0",
+        "source_port_9",
+        "source_port_56",
+        "pcb_smtpad_9",
+        "pcb_port_9",
+        "pcb_smtpad_56",
+        "pcb_port_56"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": -1.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_10",
+        "connectivity_net260",
+        "source_port_10",
+        "pcb_smtpad_10",
+        "pcb_port_10"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": -2.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_11",
+        "connectivity_net261",
+        "source_port_11",
+        "pcb_smtpad_11",
+        "pcb_port_11"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": -2.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_12",
+        "connectivity_net262",
+        "source_port_12",
+        "pcb_smtpad_12",
+        "pcb_port_12"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9625,
+        "y": -3.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_13",
+        "connectivity_net263",
+        "source_port_13",
+        "pcb_smtpad_13",
+        "pcb_port_13"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.25,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_14",
+        "connectivity_net264",
+        "source_port_14",
+        "pcb_smtpad_14",
+        "pcb_port_14"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -2.75,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_15",
+        "connectivity_net265",
+        "source_port_15",
+        "pcb_smtpad_15",
+        "pcb_port_15"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -2.25,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_16",
+        "connectivity_net266",
+        "source_port_16",
+        "pcb_smtpad_16",
+        "pcb_port_16"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.75,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_17",
+        "connectivity_net267",
+        "source_port_17",
+        "pcb_smtpad_17",
+        "pcb_port_17"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.25,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_18",
+        "connectivity_net311",
+        "source_trace_2_0",
+        "source_trace_2",
+        "source_port_18",
+        "source_port_58",
+        "pcb_smtpad_18",
+        "pcb_port_18",
+        "pcb_smtpad_58",
+        "pcb_port_58"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.75,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_19",
+        "connectivity_net268",
+        "source_port_19",
+        "pcb_smtpad_19",
+        "pcb_port_19"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.25,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_20",
+        "connectivity_net269",
+        "source_port_20",
+        "pcb_smtpad_20",
+        "pcb_port_20"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.25,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_21",
+        "connectivity_net305",
+        "source_port_21_0",
+        "source_trace_8",
+        "source_port_21",
+        "source_port_64",
+        "pcb_smtpad_21",
+        "pcb_port_21",
+        "pcb_smtpad_64",
+        "pcb_port_64"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.75,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_22",
+        "connectivity_net309",
+        "source_port_22_0",
+        "source_trace_4",
+        "source_port_22",
+        "source_port_60",
+        "pcb_smtpad_22",
+        "pcb_port_22",
+        "pcb_smtpad_60",
+        "pcb_port_60"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.25,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_23",
+        "connectivity_net270",
+        "source_port_23",
+        "pcb_smtpad_23",
+        "pcb_port_23"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.75,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_24",
+        "connectivity_net271",
+        "source_port_24",
+        "pcb_smtpad_24",
+        "pcb_port_24"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.25,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_25",
+        "connectivity_net272",
+        "source_port_25",
+        "pcb_smtpad_25",
+        "pcb_port_25"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.75,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_26",
+        "connectivity_net273",
+        "source_port_26",
+        "pcb_smtpad_26",
+        "pcb_port_26"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.25,
+        "y": -3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_27",
+        "connectivity_net274",
+        "source_port_27",
+        "pcb_smtpad_27",
+        "pcb_port_27"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": -3.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_28",
+        "connectivity_net275",
+        "source_port_28",
+        "pcb_smtpad_28",
+        "pcb_port_28"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": -2.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_29",
+        "connectivity_net276",
+        "source_port_29",
+        "pcb_smtpad_29",
+        "pcb_port_29"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": -2.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_30",
+        "connectivity_net312",
+        "source_trace_1_0",
+        "source_trace_1",
+        "source_port_30",
+        "source_port_57",
+        "pcb_smtpad_30",
+        "pcb_port_30",
+        "pcb_smtpad_57",
+        "pcb_port_57"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": -1.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_31",
+        "connectivity_net277",
+        "source_port_31",
+        "pcb_smtpad_31",
+        "pcb_port_31"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": -1.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_32",
+        "connectivity_net304",
+        "source_port_32_0",
+        "source_trace_9",
+        "source_port_32",
+        "source_port_65",
+        "pcb_smtpad_32",
+        "pcb_port_32",
+        "pcb_smtpad_65",
+        "pcb_port_65"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": -0.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_33",
+        "connectivity_net310",
+        "source_trace_3_0",
+        "source_trace_3",
+        "source_port_33",
+        "source_port_59",
+        "pcb_smtpad_33",
+        "pcb_port_33",
+        "pcb_smtpad_59",
+        "pcb_port_59"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": -0.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_34",
+        "connectivity_net297",
+        "source_port_34_0",
+        "source_trace_16",
+        "source_port_34",
+        "source_port_72",
+        "pcb_smtpad_34",
+        "pcb_port_34",
+        "pcb_smtpad_72",
+        "pcb_port_72"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": 0.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_35",
+        "connectivity_net296",
+        "source_port_35_0",
+        "source_trace_17",
+        "source_port_35",
+        "source_port_73",
+        "pcb_smtpad_35",
+        "pcb_port_35",
+        "pcb_smtpad_73",
+        "pcb_port_73"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": 0.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_36",
+        "connectivity_net295",
+        "source_port_36_0",
+        "source_trace_18",
+        "source_port_36",
+        "source_port_74",
+        "pcb_smtpad_36",
+        "pcb_port_36",
+        "pcb_smtpad_74",
+        "pcb_port_74"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": 1.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_37",
+        "connectivity_net294",
+        "source_port_37_0",
+        "source_trace_19",
+        "source_port_37",
+        "source_port_75",
+        "pcb_smtpad_37",
+        "pcb_port_37",
+        "pcb_smtpad_75",
+        "pcb_port_75"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": 1.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_38",
+        "connectivity_net293",
+        "source_port_38_0",
+        "source_trace_20",
+        "source_port_38",
+        "source_port_76",
+        "pcb_smtpad_38",
+        "pcb_port_38",
+        "pcb_smtpad_76",
+        "pcb_port_76"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": 2.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_39",
+        "connectivity_net292",
+        "source_port_39_0",
+        "source_trace_21",
+        "source_port_39",
+        "source_port_77",
+        "pcb_smtpad_39",
+        "pcb_port_39",
+        "pcb_smtpad_77",
+        "pcb_port_77"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": 2.75
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_40",
+        "connectivity_net298",
+        "source_port_40_0",
+        "source_trace_15",
+        "source_port_40",
+        "source_port_71",
+        "pcb_smtpad_40",
+        "pcb_port_40",
+        "pcb_smtpad_71",
+        "pcb_port_71"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.9625,
+        "y": 3.25
+      },
+      "width": 0.875,
+      "height": 0.25,
+      "connectedTo": [
+        "pcb_smtpad_41",
+        "connectivity_net302",
+        "source_port_41_0",
+        "source_trace_11",
+        "source_port_41",
+        "source_port_67",
+        "pcb_smtpad_41",
+        "pcb_port_41",
+        "pcb_smtpad_67",
+        "pcb_port_67"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.25,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_42",
+        "connectivity_net299",
+        "source_port_42_0",
+        "source_trace_14",
+        "source_port_42",
+        "source_port_70",
+        "pcb_smtpad_42",
+        "pcb_port_42",
+        "pcb_smtpad_70",
+        "pcb_port_70"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.75,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_43",
+        "connectivity_net306",
+        "source_port_43_0",
+        "source_trace_7",
+        "source_port_43",
+        "source_port_63",
+        "pcb_smtpad_43",
+        "pcb_port_43",
+        "pcb_smtpad_63",
+        "pcb_port_63"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.25,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_44",
+        "connectivity_net308",
+        "source_port_44_0",
+        "source_trace_5",
+        "source_port_44",
+        "source_port_61",
+        "pcb_smtpad_44",
+        "pcb_port_44",
+        "pcb_smtpad_61",
+        "pcb_port_61"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.75,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_45",
+        "connectivity_net286",
+        "source_port_45_0",
+        "source_trace_27",
+        "source_port_45",
+        "source_port_84",
+        "pcb_smtpad_45",
+        "pcb_port_45",
+        "pcb_smtpad_84",
+        "pcb_port_84"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.25,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_46",
+        "connectivity_net287",
+        "source_port_46_0",
+        "source_trace_26",
+        "source_port_46",
+        "source_port_82",
+        "pcb_smtpad_46",
+        "pcb_port_46",
+        "pcb_smtpad_82",
+        "pcb_port_82"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.75,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_47",
+        "connectivity_net300",
+        "source_port_47_0",
+        "source_trace_13",
+        "source_port_47",
+        "source_port_69",
+        "pcb_smtpad_47",
+        "pcb_port_47",
+        "pcb_smtpad_69",
+        "pcb_port_69"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.25,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_48",
+        "connectivity_net301",
+        "source_port_48_0",
+        "source_trace_12",
+        "source_port_48",
+        "source_port_68",
+        "pcb_smtpad_48",
+        "pcb_port_48",
+        "pcb_smtpad_68",
+        "pcb_port_68"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.25,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_49",
+        "connectivity_net307",
+        "source_port_49_0",
+        "source_trace_6",
+        "source_port_49",
+        "source_port_62",
+        "pcb_smtpad_49",
+        "pcb_port_49",
+        "pcb_smtpad_62",
+        "pcb_port_62"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.75,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_50",
+        "connectivity_net278",
+        "source_port_50",
+        "pcb_smtpad_50",
+        "pcb_port_50"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.25,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_51",
+        "connectivity_net279",
+        "source_port_51",
+        "pcb_smtpad_51",
+        "pcb_port_51"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.75,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_52",
+        "connectivity_net280",
+        "source_port_52",
+        "pcb_smtpad_52",
+        "pcb_port_52"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -2.25,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_53",
+        "connectivity_net281",
+        "source_port_53",
+        "pcb_smtpad_53",
+        "pcb_port_53"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -2.75,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_54",
+        "connectivity_net282",
+        "source_port_54",
+        "pcb_smtpad_54",
+        "pcb_port_54"
+      ]
+    },
+    {
+      "componentId": "pcb_component_0",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.25,
+        "y": 3.9625
+      },
+      "width": 0.25,
+      "height": 0.875,
+      "connectedTo": [
+        "pcb_smtpad_55",
+        "connectivity_net283",
+        "source_port_55",
+        "pcb_smtpad_55",
+        "pcb_port_55"
+      ]
+    },
+    {
+      "componentId": "pcb_component_1",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.71,
+        "y": 3.2
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_56",
+        "connectivity_net313",
+        "source_trace_0_0",
+        "source_trace_0",
+        "source_port_9",
+        "source_port_56",
+        "pcb_smtpad_9",
+        "pcb_port_9",
+        "pcb_smtpad_56",
+        "pcb_port_56"
+      ]
+    },
+    {
+      "componentId": "pcb_component_1",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.69,
+        "y": 3.2
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_57",
+        "connectivity_net312",
+        "source_trace_1_0",
+        "source_trace_1",
+        "source_port_30",
+        "source_port_57",
+        "pcb_smtpad_30",
+        "pcb_port_30",
+        "pcb_smtpad_57",
+        "pcb_port_57"
+      ]
+    },
+    {
+      "componentId": "pcb_component_2",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.71,
+        "y": -3.2
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_58",
+        "connectivity_net311",
+        "source_trace_2_0",
+        "source_trace_2",
+        "source_port_18",
+        "source_port_58",
+        "pcb_smtpad_18",
+        "pcb_port_18",
+        "pcb_smtpad_58",
+        "pcb_port_58"
+      ]
+    },
+    {
+      "componentId": "pcb_component_2",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.69,
+        "y": -3.2
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_59",
+        "connectivity_net310",
+        "source_trace_3_0",
+        "source_trace_3",
+        "source_port_33",
+        "source_port_59",
+        "pcb_smtpad_33",
+        "pcb_port_33",
+        "pcb_smtpad_59",
+        "pcb_port_59"
+      ]
+    },
+    {
+      "componentId": "pcb_component_3",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -20.51,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_60",
+        "connectivity_net309",
+        "source_port_22_0",
+        "source_trace_4",
+        "source_port_22",
+        "source_port_60",
+        "pcb_smtpad_22",
+        "pcb_port_22",
+        "pcb_smtpad_60",
+        "pcb_port_60"
+      ]
+    },
+    {
+      "componentId": "pcb_component_3",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -19.49,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_61",
+        "connectivity_net308",
+        "source_port_44_0",
+        "source_trace_5",
+        "source_port_44",
+        "source_port_61",
+        "pcb_smtpad_44",
+        "pcb_port_44",
+        "pcb_smtpad_61",
+        "pcb_port_61"
+      ]
+    },
+    {
+      "componentId": "pcb_component_4",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -16.51,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_62",
+        "connectivity_net307",
+        "source_port_49_0",
+        "source_trace_6",
+        "source_port_49",
+        "source_port_62",
+        "pcb_smtpad_49",
+        "pcb_port_49",
+        "pcb_smtpad_62",
+        "pcb_port_62"
+      ]
+    },
+    {
+      "componentId": "pcb_component_4",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -15.49,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_63",
+        "connectivity_net306",
+        "source_port_43_0",
+        "source_trace_7",
+        "source_port_43",
+        "source_port_63",
+        "pcb_smtpad_43",
+        "pcb_port_43",
+        "pcb_smtpad_63",
+        "pcb_port_63"
+      ]
+    },
+    {
+      "componentId": "pcb_component_5",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -14.51,
+        "y": 10
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_64",
+        "connectivity_net305",
+        "source_port_21_0",
+        "source_trace_8",
+        "source_port_21",
+        "source_port_64",
+        "pcb_smtpad_21",
+        "pcb_port_21",
+        "pcb_smtpad_64",
+        "pcb_port_64"
+      ]
+    },
+    {
+      "componentId": "pcb_component_5",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -13.49,
+        "y": 10
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_65",
+        "connectivity_net304",
+        "source_port_32_0",
+        "source_trace_9",
+        "source_port_32",
+        "source_port_65",
+        "pcb_smtpad_32",
+        "pcb_port_32",
+        "pcb_smtpad_65",
+        "pcb_port_65"
+      ]
+    },
+    {
+      "componentId": "pcb_component_6",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.49,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_66",
+        "connectivity_net303",
+        "source_port_0_0",
+        "source_trace_10",
+        "source_port_0",
+        "source_port_66",
+        "pcb_smtpad_0",
+        "pcb_port_0",
+        "pcb_smtpad_66",
+        "pcb_port_66"
+      ]
+    },
+    {
+      "componentId": "pcb_component_6",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.51,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_67",
+        "connectivity_net302",
+        "source_port_41_0",
+        "source_trace_11",
+        "source_port_41",
+        "source_port_67",
+        "pcb_smtpad_41",
+        "pcb_port_41",
+        "pcb_smtpad_67",
+        "pcb_port_67"
+      ]
+    },
+    {
+      "componentId": "pcb_component_7",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 7.49,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_68",
+        "connectivity_net301",
+        "source_port_48_0",
+        "source_trace_12",
+        "source_port_48",
+        "source_port_68",
+        "pcb_smtpad_48",
+        "pcb_port_48",
+        "pcb_smtpad_68",
+        "pcb_port_68"
+      ]
+    },
+    {
+      "componentId": "pcb_component_7",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 8.51,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_69",
+        "connectivity_net300",
+        "source_port_47_0",
+        "source_trace_13",
+        "source_port_47",
+        "source_port_69",
+        "pcb_smtpad_47",
+        "pcb_port_47",
+        "pcb_smtpad_69",
+        "pcb_port_69"
+      ]
+    },
+    {
+      "componentId": "pcb_component_8",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 11.49,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_70",
+        "connectivity_net299",
+        "source_port_42_0",
+        "source_trace_14",
+        "source_port_42",
+        "source_port_70",
+        "pcb_smtpad_42",
+        "pcb_port_42",
+        "pcb_smtpad_70",
+        "pcb_port_70"
+      ]
+    },
+    {
+      "componentId": "pcb_component_8",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 12.51,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_71",
+        "connectivity_net298",
+        "source_port_40_0",
+        "source_trace_15",
+        "source_port_40",
+        "source_port_71",
+        "pcb_smtpad_40",
+        "pcb_port_40",
+        "pcb_smtpad_71",
+        "pcb_port_71"
+      ]
+    },
+    {
+      "componentId": "pcb_component_9",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 15.49,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_72",
+        "connectivity_net297",
+        "source_port_34_0",
+        "source_trace_16",
+        "source_port_34",
+        "source_port_72",
+        "pcb_smtpad_34",
+        "pcb_port_34",
+        "pcb_smtpad_72",
+        "pcb_port_72"
+      ]
+    },
+    {
+      "componentId": "pcb_component_9",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 16.51,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_73",
+        "connectivity_net296",
+        "source_port_35_0",
+        "source_trace_17",
+        "source_port_35",
+        "source_port_73",
+        "pcb_smtpad_35",
+        "pcb_port_35",
+        "pcb_smtpad_73",
+        "pcb_port_73"
+      ]
+    },
+    {
+      "componentId": "pcb_component_10",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 19.49,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_74",
+        "connectivity_net295",
+        "source_port_36_0",
+        "source_trace_18",
+        "source_port_36",
+        "source_port_74",
+        "pcb_smtpad_36",
+        "pcb_port_36",
+        "pcb_smtpad_74",
+        "pcb_port_74"
+      ]
+    },
+    {
+      "componentId": "pcb_component_10",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 20.51,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_75",
+        "connectivity_net294",
+        "source_port_37_0",
+        "source_trace_19",
+        "source_port_37",
+        "source_port_75",
+        "pcb_smtpad_37",
+        "pcb_port_37",
+        "pcb_smtpad_75",
+        "pcb_port_75"
+      ]
+    },
+    {
+      "componentId": "pcb_component_11",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 23.49,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_76",
+        "connectivity_net293",
+        "source_port_38_0",
+        "source_trace_20",
+        "source_port_38",
+        "source_port_76",
+        "pcb_smtpad_38",
+        "pcb_port_38",
+        "pcb_smtpad_76",
+        "pcb_port_76"
+      ]
+    },
+    {
+      "componentId": "pcb_component_11",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 24.51,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_77",
+        "connectivity_net292",
+        "source_port_39_0",
+        "source_trace_21",
+        "source_port_39",
+        "source_port_77",
+        "pcb_smtpad_39",
+        "pcb_port_39",
+        "pcb_smtpad_77",
+        "pcb_port_77"
+      ]
+    },
+    {
+      "componentId": "pcb_component_12",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 27.49,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_78",
+        "connectivity_net291",
+        "source_port_1_0",
+        "source_trace_22",
+        "source_port_1",
+        "source_port_78",
+        "pcb_smtpad_1",
+        "pcb_port_1",
+        "pcb_smtpad_78",
+        "pcb_port_78"
+      ]
+    },
+    {
+      "componentId": "pcb_component_12",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 28.51,
+        "y": 14
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_79",
+        "connectivity_net290",
+        "source_port_2_0",
+        "source_trace_23",
+        "source_port_2",
+        "source_port_79",
+        "pcb_smtpad_2",
+        "pcb_port_2",
+        "pcb_smtpad_79",
+        "pcb_port_79"
+      ]
+    },
+    {
+      "componentId": "pcb_component_13",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 7.49,
+        "y": 10
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_80",
+        "connectivity_net289",
+        "source_port_3_0",
+        "source_trace_24",
+        "source_port_3",
+        "source_port_80",
+        "pcb_smtpad_3",
+        "pcb_port_3",
+        "pcb_smtpad_80",
+        "pcb_port_80"
+      ]
+    },
+    {
+      "componentId": "pcb_component_13",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 8.51,
+        "y": 10
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_81",
+        "connectivity_net288",
+        "source_port_4_0",
+        "source_trace_25",
+        "source_port_4",
+        "source_port_81",
+        "pcb_smtpad_4",
+        "pcb_port_4",
+        "pcb_smtpad_81",
+        "pcb_port_81"
+      ]
+    },
+    {
+      "componentId": "pcb_component_14",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 19.49,
+        "y": 5
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_82",
+        "connectivity_net287",
+        "source_port_46_0",
+        "source_trace_26",
+        "source_port_46",
+        "source_port_82",
+        "pcb_smtpad_46",
+        "pcb_port_46",
+        "pcb_smtpad_82",
+        "pcb_port_82"
+      ]
+    },
+    {
+      "componentId": "pcb_component_14",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 20.51,
+        "y": 5
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_83",
+        "connectivity_net284",
+        "source_port_83",
+        "pcb_smtpad_83",
+        "pcb_port_83"
+      ]
+    },
+    {
+      "componentId": "pcb_component_15",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 19.49,
+        "y": 3
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_84",
+        "connectivity_net286",
+        "source_port_45_0",
+        "source_trace_27",
+        "source_port_45",
+        "source_port_84",
+        "pcb_smtpad_45",
+        "pcb_port_45",
+        "pcb_smtpad_84",
+        "pcb_port_84"
+      ]
+    },
+    {
+      "componentId": "pcb_component_15",
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 20.51,
+        "y": 3
+      },
+      "width": 0.54,
+      "height": 0.64,
+      "connectedTo": [
+        "pcb_smtpad_85",
+        "connectivity_net285",
+        "source_port_85",
+        "pcb_smtpad_85",
+        "pcb_port_85"
+      ]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.75,
+        "y": 4.289896855771623
+      },
+      "width": 0.1,
+      "height": 0.6537937115432451,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.8723672102490068,
+        "y": 4.7391609217922515
+      },
+      "width": 0.34610673664781055,
+      "height": 0.1,
+      "ccwRotationDegrees": 45.00000000000003,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.9947344204980133,
+        "y": 4.878862121983563
+      },
+      "width": 0.1,
+      "height": 0.0346679798846079,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.0336925930492114,
+        "y": 4.890221138248663
+      },
+      "width": 0.07882739419699751,
+      "height": 0.1,
+      "ccwRotationDegrees": -8.71945027217008,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.0726507656004096,
+        "y": 4.884246164571459
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.0726507656004096,
+        "y": 4.884246164571459
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 2.0726507656004096,
+        "y": 4.884246164571459
+      },
+      "connectedTo": ["source_trace_27"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.9688249075726212,
+        "y": 4.819141381658824
+      },
+      "width": 0.2450995026784651,
+      "height": 0.1,
+      "ccwRotationDegrees": -147.9099231915287,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.6170048638232497,
+        "y": 4.75391950248961
+      },
+      "width": 0.49598842673290044,
+      "height": 0.1,
+      "ccwRotationDegrees": -179.97294645928613,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.3484921670588084,
+        "y": 4.760132834110804
+      },
+      "width": 0.04294571515444052,
+      "height": 0.1,
+      "ccwRotationDegrees": 162.8538143595822,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.24294233301656964,
+        "y": 5.851494584987959
+      },
+      "width": 3.0689320251706937,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.8420889899828112,
+        "y": 6.9708074489850755
+      },
+      "width": 0.1,
+      "height": 0.06856308199547101,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.8705444949914056,
+        "y": 7.033544494991405
+      },
+      "width": 0.08048432221465977,
+      "height": 0.1,
+      "ccwRotationDegrees": 134.99999999999977,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.899,
+        "y": 7.062
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.899,
+        "y": 7.062
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": -0.899,
+        "y": 7.062
+      },
+      "connectedTo": ["source_trace_27"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.899,
+        "y": 7.2215
+      },
+      "width": 0.1,
+      "height": 0.31899999999999906,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.8895,
+        "y": 7.390499999999999
+      },
+      "width": 0.02687005768508891,
+      "height": 0.1,
+      "ccwRotationDegrees": 45.00000000000017,
+      "connectedTo": ["source_trace_27"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.25,
+        "y": 4.325869264890101
+      },
+      "width": 0.1,
+      "height": 0.7257385297802017,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.4353217298083636,
+        "y": 4.874060259588566
+      },
+      "width": 0.5241690073948603,
+      "height": 0.1,
+      "ccwRotationDegrees": 44.999999999999986,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.6206434596167274,
+        "y": 5.060781878792902
+      },
+      "width": 0.1,
+      "height": 0.0027997787919460393,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.6144262566790255,
+        "y": 5.077778775275145
+      },
+      "width": 0.033580961416714704,
+      "height": 0.1,
+      "ccwRotationDegrees": 111.73297385356696,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.6082090537413238,
+        "y": 5.093375782361415
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.6082090537413238,
+        "y": 5.093375782361415
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 1.6082090537413238,
+        "y": 5.093375782361415
+      },
+      "connectedTo": ["source_trace_26"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.6005795557065419,
+        "y": 5.096983565002036
+      },
+      "width": 0.01687902080628065,
+      "height": 0.1,
+      "ccwRotationDegrees": 154.6918033123562,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.3538012574197817,
+        "y": 5.339740147894636
+      },
+      "width": 0.6764149534832035,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.1146524571678036,
+        "y": 5.591618245489405
+      },
+      "width": 0.1,
+      "height": 0.025458594685582092,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.0331196904605813,
+        "y": 5.685490598991054
+      },
+      "width": 0.23005901512206636,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.13725903791158,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.9515869237533587,
+        "y": 5.766633655149911
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.9515869237533587,
+        "y": 5.766633655149911
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": 0.9515869237533587,
+        "y": 5.766633655149911
+      },
+      "connectedTo": ["source_trace_26"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.0657353970858758,
+        "y": 5.867849454671803
+      },
+      "width": 0.3051197275628057,
+      "height": 0.1,
+      "ccwRotationDegrees": 41.56350208433851,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.1829673168487298,
+        "y": 6.567782107673898
+      },
+      "width": 1.1974495868856,
+      "height": 0.1,
+      "ccwRotationDegrees": 89.70492411586696,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.1860507632790669,
+        "y": 7.266274862216584
+      },
+      "width": 0.1,
+      "height": 0.19955180212496515,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.2030253816395335,
+        "y": 7.383025381639532
+      },
+      "width": 0.048011471002958425,
+      "height": 0.1,
+      "ccwRotationDegrees": 45.00000000000019,
+      "connectedTo": ["source_trace_26"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.485950000000001,
+        "y": -6
+      },
+      "width": 1.8279000000000014,
+      "height": 0.1,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.892633055170558,
+        "y": -5.320633055170558
+      },
+      "width": 1.9215398944115427,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.210133055170558,
+        "y": -4.638133055170558
+      },
+      "width": 0.008861618227732413,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.207,
+        "y": -4.635
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.207,
+        "y": -4.635
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 4.207,
+        "y": -4.635
+      },
+      "connectedTo": ["source_trace_25"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.207,
+        "y": -4.4719999999999995
+      },
+      "width": 0.1,
+      "height": 0.3259999999999996,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 2.7375504886778055,
+        "y": -2.839550488677806
+      },
+      "width": 4.156230856268728,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.2325505090751725,
+        "y": -1.3338172087570923
+      },
+      "width": 0.10159424508640953,
+      "height": 0.1,
+      "ccwRotationDegrees": 134.41513189496183,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.1970000407947334,
+        "y": -1.2975334401585734
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.1970000407947334,
+        "y": -1.2975334401585734
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": 1.1970000407947334,
+        "y": -1.2975334401585734
+      },
+      "connectedTo": ["source_trace_25"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.1331163293983082,
+        "y": -1.2982667200792868
+      },
+      "width": 2.1277679282046473,
+      "height": 0.1,
+      "ccwRotationDegrees": -179.96050899402312,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -2.199869907299314,
+        "y": -0.029897474698802995
+      },
+      "width": 3.5895640066457934,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.7100887416014525,
+        "y": 1.239205050602394
+      },
+      "width": 0.4822326180018832,
+      "height": 0.1,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.9566025253011974,
+        "y": 1.244602525301197
+      },
+      "width": 0.015266363843225758,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_25"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -4.31607221426953,
+        "y": 1.75
+      },
+      "width": 0.7081444285390597,
+      "height": 0.1,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.215147471201192,
+        "y": 1.204996957337868
+      },
+      "width": 1.541501388934779,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.47557221426953,
+        "y": 0.6599939146757361
+      },
+      "width": 1.430843400812412,
+      "height": 0.1,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -7.215064183831977,
+        "y": 0.684064183831978
+      },
+      "width": 0.06808100218145598,
+      "height": 0.1,
+      "ccwRotationDegrees": 134.99999999999986,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -7.24306722649411,
+        "y": 0.7120672264941099
+      },
+      "width": 0.01112356325954291,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000000162,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -7.247,
+        "y": 0.716
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -7.247,
+        "y": 0.716
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": -7.247,
+        "y": 0.716
+      },
+      "connectedTo": ["source_trace_24"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -7.247,
+        "y": 1.4500218572950794
+      },
+      "width": 0.1,
+      "height": 1.468043714590159,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -7.346194511370346,
+        "y": 2.2832382259605044
+      },
+      "width": 0.28056444658582935,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -7.445389022740691,
+        "y": 2.4269108800357704
+      },
+      "width": 0.1,
+      "height": 0.08895628540984113,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -7.485694511370346,
+        "y": 2.5116945113703455
+      },
+      "width": 0.11400113731626407,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -7.526,
+        "y": 2.552
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -7.526,
+        "y": 2.552
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": -7.526,
+        "y": 2.552
+      },
+      "connectedTo": ["source_trace_24"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -8.129000000000001,
+        "y": 2.552
+      },
+      "width": 1.2060000000000013,
+      "height": 0.1,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -9.356000000000002,
+        "y": 3.176
+      },
+      "width": 1.764938525841622,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_24"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -4.305818136503204,
+        "y": 2.25
+      },
+      "width": 0.6876362730064076,
+      "height": 0.1,
+      "connectedTo": ["source_trace_23"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.201978836970268,
+        "y": 1.69765743603614
+      },
+      "width": 1.5622606900672389,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_23"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.889818136503204,
+        "y": 1.1453148720722803
+      },
+      "width": 2.270993471138153,
+      "height": 0.1,
+      "connectedTo": ["source_trace_23"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -9.002657436036142,
+        "y": 2.1226574360361403
+      },
+      "width": 2.7643422180843693,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_23"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.377450000000001,
+        "y": -6.7
+      },
+      "width": 2.044900000000001,
+      "height": 0.1,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.400574785946182,
+        "y": -5.745574785946182
+      },
+      "width": 2.6995221639715083,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.446074785946182,
+        "y": -4.791074785946182
+      },
+      "width": 0.00021152659873015787,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000008507,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.446,
+        "y": -4.791
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.446,
+        "y": -4.791
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 3.446,
+        "y": -4.791
+      },
+      "connectedTo": ["source_trace_22"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 3.446,
+        "y": -4.519359766915388
+      },
+      "width": 0.1,
+      "height": 0.5432804661692252,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.6055293266216164,
+        "y": -2.407248860452391
+      },
+      "width": 5.205637174883306,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.2350815798413801,
+        "y": -0.5667781870740072
+      },
+      "width": 0.0002804661692254462,
+      "height": 0.1,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.30911090646299644,
+        "y": -0.4928890935370036
+      },
+      "width": 0.20898991638296938,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.383,
+        "y": -0.419
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.383,
+        "y": -0.419
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": -0.383,
+        "y": -0.419
+      },
+      "connectedTo": ["source_trace_22"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.9675,
+        "y": 1.1655
+      },
+      "width": 4.481642779160339,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.757,
+        "y": 2.75
+      },
+      "width": 0.41000000000000014,
+      "height": 0.1,
+      "connectedTo": ["source_trace_22"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.734774370035258,
+        "y": 0.3000000000000007
+      },
+      "width": 1.3302512599294865,
+      "height": 0.1,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 5.921345819530937,
+        "y": 0.15169707946042282
+      },
+      "width": 0.41946400313322124,
+      "height": 0.1,
+      "ccwRotationDegrees": -135.00000000000003,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 5.770824370035257,
+        "y": 0.0033941589208449285
+      },
+      "width": 0.0044370579122041676,
+      "height": 0.1,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 5.746802920539578,
+        "y": 0.025197079460422465
+      },
+      "width": 0.061667971852826964,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000000003,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 5.725,
+        "y": 0.047
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 5.725,
+        "y": 0.047
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 5.725,
+        "y": 0.047
+      },
+      "connectedTo": ["source_trace_21"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 5.2655245157365815,
+        "y": 0.5064754842634186
+      },
+      "width": 1.2995929228465444,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.8060490314731625,
+        "y": 1.5519509685268373
+      },
+      "width": 0.1,
+      "height": 1.1720000000000002,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.767024515736582,
+        "y": 2.176975484263419
+      },
+      "width": 0.11037799883943135,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.728,
+        "y": 2.216
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.728,
+        "y": 2.216
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": 4.728,
+        "y": 2.216
+      },
+      "connectedTo": ["source_trace_21"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.3625,
+        "y": 2.216
+      },
+      "width": 0.7309999999999999,
+      "height": 0.1,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.98,
+        "y": 2.233
+      },
+      "width": 0.04808326112068496,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_21"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.901613082562294,
+        "y": 1.0000000000000007
+      },
+      "width": 0.9965738348754147,
+      "height": 0.1,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.313762012428849,
+        "y": 0.9104358473042626
+      },
+      "width": 0.25332567888953506,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.129163082562293,
+        "y": 0.8208716946085246
+      },
+      "width": 0.19006955434163508,
+      "height": 0.1,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.033064152695738,
+        "y": 0.8219358473042623
+      },
+      "width": 0.003009878349496375,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000000298,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.032,
+        "y": 0.823
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.032,
+        "y": 0.823
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 6.032,
+        "y": 0.823
+      },
+      "connectedTo": ["source_trace_20"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 6.032,
+        "y": 1.3320000000000003
+      },
+      "width": 0.1,
+      "height": 1.0180000000000007,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 5.773977982003315,
+        "y": 2.0990220179966865
+      },
+      "width": 0.729796474483576,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 5.492477982003314,
+        "y": 2.380522017996686
+      },
+      "width": 0.06640576113247582,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000000028,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 5.469,
+        "y": 2.404
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 5.469,
+        "y": 2.404
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": 5.469,
+        "y": 2.404
+      },
+      "connectedTo": ["source_trace_20"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 5.142,
+        "y": 2.077
+      },
+      "width": 0.924895669792004,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.389,
+        "y": 1.75
+      },
+      "width": 0.8520000000000003,
+      "height": 0.1,
+      "connectedTo": ["source_trace_20"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.6172944970505405,
+        "y": 3.1160196670157907
+      },
+      "width": 2.2135426325178913,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_19"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 5.834688994101079,
+        "y": 2.190239916981644
+      },
+      "width": 0.1,
+      "height": 0.2863484941693706,
+      "connectedTo": ["source_trace_19"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 5.436156159152599,
+        "y": 1.6485328349484794
+      },
+      "width": 1.1272210804702756,
+      "height": 0.1,
+      "ccwRotationDegrees": -135.00000000000003,
+      "connectedTo": ["source_trace_19"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.50031166210206,
+        "y": 1.25
+      },
+      "width": 1.0746233242041194,
+      "height": 0.1,
+      "connectedTo": ["source_trace_19"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.701426318961502,
+        "y": 1.7000000000000006
+      },
+      "width": 1.3969473620769994,
+      "height": 0.1,
+      "connectedTo": ["source_trace_18"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 5.6130000594325065,
+        "y": 1.3100474215095044
+      },
+      "width": 1.102952450367237,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_18"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.678071161980509,
+        "y": 0.9200948430190081
+      },
+      "width": 1.0899526379230018,
+      "height": 0.1,
+      "connectedTo": ["source_trace_18"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.048047421509504,
+        "y": 0.8350474215095041
+      },
+      "width": 0.24055043388720387,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_18"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 7.304950000000002,
+        "y": 3.1000000000000005
+      },
+      "width": 0.18990000000000062,
+      "height": 0.1,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 7.012092191403289,
+        "y": 2.9020921914032884
+      },
+      "width": 0.5597678140340174,
+      "height": 0.1,
+      "ccwRotationDegrees": -135.00000000000003,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.767092191403288,
+        "y": 2.6570921914032883
+      },
+      "width": 0.13319683152880044,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.72,
+        "y": 2.61
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.72,
+        "y": 2.61
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 6.72,
+        "y": 2.61
+      },
+      "connectedTo": ["source_trace_17"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 6.546845517315401,
+        "y": 2.4368455173154016
+      },
+      "width": 0.4897548355965124,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 6.373691034630803,
+        "y": 0.8841145010278912
+      },
+      "width": 0.1,
+      "height": 2.759153067205824,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 5.809159441358698,
+        "y": -0.49546203257502075
+      },
+      "width": 1.1290631865442107,
+      "height": 0.1,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 5.044027650811845,
+        "y": -0.2948618353002741
+      },
+      "width": 0.5673830392013305,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000000003,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.843427453537099,
+        "y": -0.0749170922442143
+      },
+      "width": 0.1,
+      "height": 0.0386890915626263,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.896238290169443,
+        "y": -0.0015733057594748828
+      },
+      "width": 0.15106160944931946,
+      "height": 0.1,
+      "ccwRotationDegrees": 45.63746539442409,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.949049126801786,
+        "y": 0.05242593494395138
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.949049126801786,
+        "y": 0.05242593494395138
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": 4.949049126801786,
+        "y": 0.05242593494395138
+      },
+      "connectedTo": ["source_trace_17"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.556080202379556,
+        "y": 0.06146068779503845
+      },
+      "width": 0.7861455395043463,
+      "height": 0.1,
+      "ccwRotationDegrees": 178.68294413150466,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.063055638978662,
+        "y": 0.16024772032306275
+      },
+      "width": 0.26882412539528994,
+      "height": 0.1,
+      "ccwRotationDegrees": 138.10714214941083,
+      "connectedTo": ["source_trace_17"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 7.308254080123492,
+        "y": 2.4000000000000004
+      },
+      "width": 0.18329183975302055,
+      "height": 0.1,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 7.106280048799239,
+        "y": 2.2896718885522587
+      },
+      "width": 0.31205502304081323,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.995951937351498,
+        "y": 2.1561478572280075
+      },
+      "width": 0.1,
+      "height": 0.046391839753019415,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.987475968675749,
+        "y": 2.124475968675749
+      },
+      "width": 0.023973659710986767,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.979,
+        "y": 2.116
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.979,
+        "y": 2.116
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 6.979,
+        "y": 2.116
+      },
+      "connectedTo": ["source_trace_16"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 6.979,
+        "y": 0.9067398882107618
+      },
+      "width": 0.1,
+      "height": 2.4185202235784766,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 6.950623662248106,
+        "y": -0.33089656133037026
+      },
+      "width": 0.08026040339841559,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 6.922247324496213,
+        "y": -0.3815127872930256
+      },
+      "width": 0.1,
+      "height": 0.04447977642152329,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 6.893123662248106,
+        "y": -0.43287633775189366
+      },
+      "width": 0.08237415627449064,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 6.864,
+        "y": -0.462
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 6.864,
+        "y": -0.462
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": 6.864,
+        "y": -0.462
+      },
+      "connectedTo": ["source_trace_16"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 5.692665012672631,
+        "y": -0.462
+      },
+      "width": 2.342669974654738,
+      "height": 0.1,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.468581173428061,
+        "y": -0.40925114808279917
+      },
+      "width": 0.1491962835618312,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.0000000000001,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.242667308838229,
+        "y": -0.3565022961655983
+      },
+      "width": 0.34633002534526103,
+      "height": 0.1,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.0162511480828,
+        "y": -0.3032511480827992
+      },
+      "width": 0.1506169916612654,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000000009,
+      "connectedTo": ["source_trace_16"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 6.174900000000001,
+        "y": 3.9750000000000005
+      },
+      "width": 3.4648232278140845,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_15"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.45645,
+        "y": 2.75
+      },
+      "width": 0.9869000000000003,
+      "height": 0.1,
+      "connectedTo": ["source_trace_15"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.660958904109589,
+        "y": 5.988941095890412
+      },
+      "width": 3.9907944362857197,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_14"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.25,
+        "y": 4.270491095890412
+      },
+      "width": 0.1,
+      "height": 0.6149821917808227,
+      "connectedTo": ["source_trace_14"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.9199999999999995,
+        "y": 7.35595
+      },
+      "width": 0.1,
+      "height": 0.08790000000000031,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.9402913178274745,
+        "y": 7.2805
+      },
+      "width": 0.07493964449276835,
+      "height": 0.1,
+      "ccwRotationDegrees": -57.21162820420502,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.9605826356549496,
+        "y": 7.249
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.9605826356549496,
+        "y": 7.249
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 1.9605826356549496,
+        "y": 7.249
+      },
+      "connectedTo": ["source_trace_13"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.9717913178274749,
+        "y": 6.668222787849194
+      },
+      "width": 1.1617707255903913,
+      "height": 0.1,
+      "ccwRotationDegrees": -88.89436008793575,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.9519765280814403,
+        "y": 6.05642210377983
+      },
+      "width": 0.08774762947825597,
+      "height": 0.1,
+      "ccwRotationDegrees": -135.0000000000002,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.9209530561628805,
+        "y": 5.964222787849195
+      },
+      "width": 0.1,
+      "height": 0.12235168802415064,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.9115929826447906,
+        "y": 5.883576177084228
+      },
+      "width": 0.04320748704609192,
+      "height": 0.1,
+      "ccwRotationDegrees": -115.67473131299833,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.902232909126701,
+        "y": 5.864105410331336
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.902232909126701,
+        "y": 5.864105410331336
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": 1.902232909126701,
+        "y": 5.864105410331336
+      },
+      "connectedTo": ["source_trace_13"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.3147149257986992,
+        "y": 5.275442445859454
+      },
+      "width": 1.6633718363308019,
+      "height": 0.1,
+      "ccwRotationDegrees": -134.9442240868071,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.7385984712353487,
+        "y": 4.324889740693786
+      },
+      "width": 0.7241386035216937,
+      "height": 0.1,
+      "ccwRotationDegrees": -88.19546289395933,
+      "connectedTo": ["source_trace_13"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.7294520547945207,
+        "y": 7.118384162947636
+      },
+      "width": 0.1,
+      "height": 0.5630316741047299,
+      "connectedTo": ["source_trace_12"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.582972007980299,
+        "y": 6.674787108544363
+      },
+      "width": 0.4369289421983788,
+      "height": 0.1,
+      "ccwRotationDegrees": -132.10553207304972,
+      "connectedTo": ["source_trace_12"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.282500058394813,
+        "y": 6.521959714172702
+      },
+      "width": 0.3085393936523872,
+      "height": 0.1,
+      "ccwRotationDegrees": 176.5610648830759,
+      "connectedTo": ["source_trace_12"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.8665961199419048,
+        "y": 6.29097163254422
+      },
+      "width": 0.7108138635801952,
+      "height": 0.1,
+      "ccwRotationDegrees": -137.4710294291031,
+      "connectedTo": ["source_trace_12"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.6022485648258529,
+        "y": 6.033316323546424
+      },
+      "width": 0.035165801988150114,
+      "height": 0.1,
+      "ccwRotationDegrees": -97.96200345460656,
+      "connectedTo": ["source_trace_12"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.4479605736149876,
+        "y": 5.840903465999654
+      },
+      "width": 0.4633960802154672,
+      "height": 0.1,
+      "ccwRotationDegrees": -130.94919349386228,
+      "connectedTo": ["source_trace_12"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.291259204457989,
+        "y": 5.6441900136267025
+      },
+      "width": 0.04449762095978859,
+      "height": 0.1,
+      "ccwRotationDegrees": -102.58804593645056,
+      "connectedTo": ["source_trace_12"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.7978234321995533,
+        "y": 5.13271743165647
+      },
+      "width": 1.3835904071424303,
+      "height": 0.1,
+      "ccwRotationDegrees": -134.93138018529066,
+      "connectedTo": ["source_trace_12"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.3129975153927187,
+        "y": 4.336358661183132
+      },
+      "width": 0.613246508070465,
+      "height": 0.1,
+      "ccwRotationDegrees": -89.29720781057058,
+      "connectedTo": ["source_trace_12"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.2833792367318895,
+        "y": 3.9963792367318898
+      },
+      "width": 0.09441073857580087,
+      "height": 0.1,
+      "ccwRotationDegrees": -134.9999999999998,
+      "connectedTo": ["source_trace_12"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.173860465116279,
+        "y": 7.2873167647711945
+      },
+      "width": 0.1,
+      "height": 0.2251664704576113,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.182614333540663,
+        "y": 7.165979661118005
+      },
+      "width": 0.024759678897986817,
+      "height": 0.1,
+      "ccwRotationDegrees": -45,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.2010712046357135,
+        "y": 7.157225792693621
+      },
+      "width": 0.019406005341331856,
+      "height": 0.1,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.222887103653189,
+        "y": 7.145112896346811
+      },
+      "width": 0.03426044458655835,
+      "height": 0.1,
+      "ccwRotationDegrees": -45,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.235,
+        "y": 7.133
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.235,
+        "y": 7.133
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 4.235,
+        "y": 7.133
+      },
+      "connectedTo": ["source_trace_11"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.235,
+        "y": 6.024182772806293
+      },
+      "width": 0.1,
+      "height": 2.2176344543874125,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.24600952983546,
+        "y": 4.904356015777129
+      },
+      "width": 0.031139652817315004,
+      "height": 0.1,
+      "ccwRotationDegrees": -45,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.2570190596709185,
+        "y": 4.846163713135375
+      },
+      "width": 0.1,
+      "height": 0.09436554561258781,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.25750952983546,
+        "y": 4.798490470164541
+      },
+      "width": 0.0013872591172657419,
+      "height": 0.1,
+      "ccwRotationDegrees": -45,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.258,
+        "y": 4.798
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 4.258,
+        "y": 4.798
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": 4.258,
+        "y": 4.798
+      },
+      "connectedTo": ["source_trace_11"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.258,
+        "y": 4.17175
+      },
+      "width": 0.1,
+      "height": 1.2525,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 4.11025,
+        "y": 3.3977500000000003
+      },
+      "width": 0.41790010768124974,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_11"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.6800000000000006,
+        "y": 5.4662
+      },
+      "width": 0.1,
+      "height": 3.8674000000000013,
+      "connectedTo": ["source_trace_10"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.82125,
+        "y": 3.3912499999999994
+      },
+      "width": 0.39951533137039835,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_10"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.713,
+        "y": -1.25
+      },
+      "width": 0.5,
+      "height": 0.1,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.406,
+        "y": -1.25
+      },
+      "width": 0.11399999999999988,
+      "height": 0.1,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.3095,
+        "y": -1.2105000000000001
+      },
+      "width": 0.11172287142747461,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000000009,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.27,
+        "y": -1.171
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.27,
+        "y": -1.171
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 3.27,
+        "y": -1.171
+      },
+      "connectedTo": ["source_trace_9"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.2705386864876638,
+        "y": 0.8284613135123361
+      },
+      "width": 5.655330614018938,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.2757505158631544,
+        "y": 2.8279226270246722
+      },
+      "width": 1.0936557776769635,
+      "height": 0.1,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -3.7767505158631547,
+        "y": 2.8279226270246727
+      },
+      "width": 3.908344222323038,
+      "height": 0.1,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -6.557610313161604,
+        "y": 3.6546103131616032
+      },
+      "width": 2.3382258751633582,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -7.3881489996492675,
+        "y": 4.485148999649267
+      },
+      "width": 0.010892273849421069,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -7.392,
+        "y": 4.489
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -7.392,
+        "y": 4.489
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": -7.392,
+        "y": 4.489
+      },
+      "connectedTo": ["source_trace_9"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -7.392,
+        "y": 4.911999999999999
+      },
+      "width": 0.1,
+      "height": 0.8459999999999992,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -8.4245,
+        "y": 6.3675
+      },
+      "width": 2.9203510063004416,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_9"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.25,
+        "y": -3.597449363985949
+      },
+      "width": 0.1,
+      "height": 0.7291012720281027,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.06586706301454148,
+        "y": -3.048765790986439
+      },
+      "width": 0.5208065935288518,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.11826587397091703,
+        "y": -2.8551834900150315
+      },
+      "width": 0.1,
+      "height": 0.01889872797189751,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.16013293698545852,
+        "y": -2.8038670630145415
+      },
+      "width": 0.1184179366637871,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000000003,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.202,
+        "y": -2.762
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.202,
+        "y": -2.762
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": -0.202,
+        "y": -2.762
+      },
+      "connectedTo": ["source_trace_8"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.202,
+        "y": -1.9324977059386377
+      },
+      "width": 0.1,
+      "height": 1.6590045881227247,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.49890672114431656,
+        "y": -0.8060886907329587
+      },
+      "width": 0.8397790236040382,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.7958134422886332,
+        "y": -0.22147812120019789
+      },
+      "width": 0.1,
+      "height": 0.5754076967768885,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.6464092282940135,
+        "y": 0.21562994118286608
+      },
+      "width": 0.4225789314137667,
+      "height": 0.1,
+      "ccwRotationDegrees": 45,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.49700501429939375,
+        "y": 0.376014570439046
+      },
+      "width": 0.1,
+      "height": 0.021960830523120478,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.4755025071496969,
+        "y": 0.4084974928503031
+      },
+      "width": 0.060818274472251514,
+      "height": 0.1,
+      "ccwRotationDegrees": 45,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.454,
+        "y": 0.43
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.454,
+        "y": 0.43
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": -0.454,
+        "y": 0.43
+      },
+      "connectedTo": ["source_trace_8"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.454,
+        "y": 1.1968689593715396
+      },
+      "width": 0.1,
+      "height": 1.5337379187430793,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.9715463882368361,
+        "y": 2.4812843069799153
+      },
+      "width": 1.46384224280349,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.4890927764736723,
+        "y": 3.029461735845212
+      },
+      "width": 0.1,
+      "height": 0.06126208125692045,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.551546388236836,
+        "y": 3.1225463882368363
+      },
+      "width": 0.17664548954930062,
+      "height": 0.1,
+      "ccwRotationDegrees": 134.99999999999994,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.614,
+        "y": 3.185
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.614,
+        "y": 3.185
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": -1.614,
+        "y": 3.185
+      },
+      "connectedTo": ["source_trace_8"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.614,
+        "y": 4.7683773897101105
+      },
+      "width": 0.1,
+      "height": 3.1667547794202213,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.9187508173408414,
+        "y": 6.656505596761063
+      },
+      "width": 0.8619654780554076,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -2.223501634681683,
+        "y": 7.007879024391794
+      },
+      "width": 0.1,
+      "height": 0.09324522057977891,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -2.2642508173408418,
+        "y": 7.095250817340842
+      },
+      "width": 0.11525609354440099,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000000017,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -2.305,
+        "y": 7.136
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -2.305,
+        "y": 7.136
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": -2.305,
+        "y": 7.136
+      },
+      "connectedTo": ["source_trace_8"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -2.305,
+        "y": 7.2555
+      },
+      "width": 0.1,
+      "height": 0.238999999999999,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -2.2925,
+        "y": 7.387499999999999
+      },
+      "width": 0.03535533905932788,
+      "height": 0.1,
+      "ccwRotationDegrees": 45,
+      "connectedTo": ["source_trace_8"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.75,
+        "y": 4.566219974938557
+      },
+      "width": 0.1,
+      "height": 1.2064399498771126,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.734642987388243,
+        "y": 5.1847969624888695
+      },
+      "width": 0.04343619102616262,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.0000000000004,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.719285974776486,
+        "y": 5.27593400016207
+      },
+      "width": 0.1,
+      "height": 0.1515600501228871,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.732994253613257,
+        "y": 5.353901396041122
+      },
+      "width": 0.02776339314712133,
+      "height": 0.1,
+      "ccwRotationDegrees": 9.066011654518926,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.746702532450029,
+        "y": 5.356088766858732
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.746702532450029,
+        "y": 5.356088766858732
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 2.746702532450029,
+        "y": 5.356088766858732
+      },
+      "connectedTo": ["source_trace_7"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 2.341022672564387,
+        "y": 5.350298293286799
+      },
+      "width": 0.8114423659164496,
+      "height": 0.1,
+      "ccwRotationDegrees": -179.18224392728106,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.3412550919566146,
+        "y": 5.946860129201863
+      },
+      "width": 1.6920620847440975,
+      "height": 0.1,
+      "ccwRotationDegrees": 134.6042271134641,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.748795979748529,
+        "y": 6.779421783191246
+      },
+      "width": 0.4604302103985371,
+      "height": 0.1,
+      "ccwRotationDegrees": 89.59466963480597,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.750424588262574,
+        "y": 7.009027857978103
+      },
+      "width": 0.1,
+      "height": 0.0012065394310578625,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.722212294131287,
+        "y": 6.980212294131287
+      },
+      "width": 0.07979641797225023,
+      "height": 0.1,
+      "ccwRotationDegrees": -134.99999999999977,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.694,
+        "y": 6.952
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.694,
+        "y": 6.952
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": 0.694,
+        "y": 6.952
+      },
+      "connectedTo": ["source_trace_7"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.694,
+        "y": 7.0889999999999995
+      },
+      "width": 0.1,
+      "height": 0.27399999999999913,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.607,
+        "y": 7.312999999999999
+      },
+      "width": 0.24607315985291875,
+      "height": 0.1,
+      "ccwRotationDegrees": 134.99999999999991,
+      "connectedTo": ["source_trace_7"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.25,
+        "y": 4.196324917389777
+      },
+      "width": 0.1,
+      "height": 0.46664983477955513,
+      "connectedTo": ["source_trace_6"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.6117648487336,
+        "y": 5.791414683513155
+      },
+      "width": 3.8516526356840073,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_6"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -2.9735296974672,
+        "y": 7.273354614856977
+      },
+      "width": 0.1,
+      "height": 0.24035016522044383,
+      "connectedTo": ["source_trace_6"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -2.9767648487336,
+        "y": 7.3967648487336
+      },
+      "width": 0.009150389594542604,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_6"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.3339909326323838,
+        "y": 4.022675857124974
+      },
+      "width": 0.20606488966398817,
+      "height": 0.1,
+      "ccwRotationDegrees": 35.39392964704668,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.4111243748066764,
+        "y": 4.872985305543946
+      },
+      "width": 1.5813266593058195,
+      "height": 0.1,
+      "ccwRotationDegrees": 90.49693741016044,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.386738995799588,
+        "y": 5.775203894793676
+      },
+      "width": 0.22590651735412312,
+      "height": 0.1,
+      "ccwRotationDegrees": 98.92713407281235,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.3908689518534336,
+        "y": 5.915002676859302
+      },
+      "width": 0.07113592191405298,
+      "height": 0.1,
+      "ccwRotationDegrees": 52.48894963024269,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.4125267964562767,
+        "y": 5.943216460969196
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.4125267964562767,
+        "y": 5.943216460969196
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 2.4125267964562767,
+        "y": 5.943216460969196
+      },
+      "connectedTo": ["source_trace_5"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 2.3697633982281383,
+        "y": 6.382093851071206
+      },
+      "width": 0.881911722953652,
+      "height": 0.1,
+      "ccwRotationDegrees": 95.56522632916175,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 2.2914928102933034,
+        "y": 6.8564784308799105
+      },
+      "width": 0.10042949848992824,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000000017,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 2.304910811066662,
+        "y": 6.908506927644975
+      },
+      "width": 0.1032788042228704,
+      "height": 0.1,
+      "ccwRotationDegrees": 18.65905835136178,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 2.3538360015467163,
+        "y": 6.925028234703343
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 2.3538360015467163,
+        "y": 6.925028234703343
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": 2.3538360015467163,
+        "y": 6.925028234703343
+      },
+      "connectedTo": ["source_trace_5"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.2917636386622187,
+        "y": 6.895359755240532
+      },
+      "width": 0.13759646663631978,
+      "height": 0.1,
+      "ccwRotationDegrees": -154.45378581028885,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 2.0424808498067,
+        "y": 6.8656912757777215
+      },
+      "width": 0.37442085194204267,
+      "height": 0.1,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.810526694137884,
+        "y": 6.8656912757777215
+      },
+      "width": 0.08948745939558989,
+      "height": 0.1,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.7099127130728453,
+        "y": 6.921561527144965
+      },
+      "width": 0.15802493443349958,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.6088053415966965,
+        "y": 6.977431778512209
+      },
+      "width": 0.09047424021781025,
+      "height": 0.1,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.5432741643064762,
+        "y": 6.979829809434289
+      },
+      "width": 0.04087049347300578,
+      "height": 0.1,
+      "ccwRotationDegrees": 173.26093975177295,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.5229801071251607,
+        "y": 6.982227840356369
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.5229801071251607,
+        "y": 6.982227840356369
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": 1.5229801071251607,
+        "y": 6.982227840356369
+      },
+      "connectedTo": ["source_trace_5"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 1.3542775592656873,
+        "y": 7.1688264144750775
+      },
+      "width": 0.5031086463872915,
+      "height": 0.1,
+      "ccwRotationDegrees": 132.11652761225062,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.6825209718897807,
+        "y": 7.355424988593787
+      },
+      "width": 1.0061080790328658,
+      "height": 0.1,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.094250459374619,
+        "y": 7.3045841389607835
+      },
+      "width": 0.19846046721449284,
+      "height": 0.1,
+      "ccwRotationDegrees": -149.17934978301173,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.005888637851835405,
+        "y": 7.2537432893277805
+      },
+      "width": 0.0062906970481096496,
+      "height": 0.1,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.00862835533610971,
+        "y": 7.242371644663891
+      },
+      "width": 0.03216386822032257,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.02,
+        "y": 7.231
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -0.02,
+        "y": 7.231
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": -0.02,
+        "y": 7.231
+      },
+      "connectedTo": ["source_trace_5"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.02,
+        "y": 7.2355
+      },
+      "width": 0.1,
+      "height": 0.008999999999999453,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.09999999999999999,
+        "y": 7.319999999999999
+      },
+      "width": 0.2262741699796953,
+      "height": 0.1,
+      "ccwRotationDegrees": 134.99999999999997,
+      "connectedTo": ["source_trace_5"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.780000000000001,
+        "y": 7.28947315154633
+      },
+      "width": 0.1,
+      "height": 0.22085369690734158,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.790278456613914,
+        "y": 7.1687678464787465
+      },
+      "width": 0.0290718654873169,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.822033761681496,
+        "y": 7.158489389864834
+      },
+      "width": 0.042953696907339634,
+      "height": 0.1,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.854755305067583,
+        "y": 7.147244694932417
+      },
+      "width": 0.0318048001563442,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.866,
+        "y": 7.136
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.866,
+        "y": 7.136
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": -5.866,
+        "y": 7.136
+      },
+      "connectedTo": ["source_trace_4"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -6.807299032079061,
+        "y": 6.194700967920939
+      },
+      "width": 2.6623957148297506,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -7.748598064158122,
+        "y": 4.710114592312099
+      },
+      "width": 0.1,
+      "height": 1.0865746870595574,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -6.805559419166984,
+        "y": 3.2219152629624146
+      },
+      "width": 2.669966701584751,
+      "height": 0.1,
+      "ccwRotationDegrees": -45.05685238061829,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -5.862839665405424,
+        "y": 1.933965445005407
+      },
+      "width": 0.6860759607184583,
+      "height": 0.1,
+      "ccwRotationDegrees": -90.05326268593036,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -4.632676965121193,
+        "y": 0.3626381947736781
+      },
+      "width": 3.4772286905854153,
+      "height": 0.1,
+      "ccwRotationDegrees": -44.948916653438445,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -2.7654753255954603,
+        "y": -0.8656512233209489
+      },
+      "width": 1.2734400960238492,
+      "height": 0.1,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -2.1287552775835357,
+        "y": -0.8782306518717476
+      },
+      "width": 0.1,
+      "height": 0.025158857101597265,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.6075979366882827,
+        "y": -1.4119674213177995
+      },
+      "width": 1.4740555592487308,
+      "height": 0.1,
+      "ccwRotationDegrees": -45,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.0864405957930294,
+        "y": -1.9603420832100116
+      },
+      "width": 0.1,
+      "height": 0.0544346419939179,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.0557202978965146,
+        "y": -2.0182797021034853
+      },
+      "width": 0.08689012385078568,
+      "height": 0.1,
+      "ccwRotationDegrees": -45,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.025,
+        "y": -2.049
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.025,
+        "y": -2.049
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": -1.025,
+        "y": -2.049
+      },
+      "connectedTo": ["source_trace_4"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.7264766096526367,
+        "y": -2.049
+      },
+      "width": 0.5970467806947265,
+      "height": 0.1,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.14625081929918593,
+        "y": -2.6232040386044595
+      },
+      "width": 1.6240942779276613,
+      "height": 0.1,
+      "ccwRotationDegrees": -45,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.7204548579036453,
+        "y": -3.564931467556282
+      },
+      "width": 0.1,
+      "height": 0.7350467806947267,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 0.7352274289518226,
+        "y": -3.9472274289518228
+      },
+      "width": 0.04178314065490519,
+      "height": 0.1,
+      "ccwRotationDegrees": -45.00000000000011,
+      "connectedTo": ["source_trace_4"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.69,
+        "y": -3.437204798554977
+      },
+      "width": 0.1,
+      "height": 0.47440959710995356,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.699020722404058,
+        "y": -3.6834303195140117
+      },
+      "width": 0.025514455932443125,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.708041444808116,
+        "y": -3.7127462433630933
+      },
+      "width": 0.1,
+      "height": 0.040590402890047006,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.714020722404058,
+        "y": -3.7390207224040584
+      },
+      "width": 0.016911950938748824,
+      "height": 0.1,
+      "ccwRotationDegrees": -135,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.72,
+        "y": -3.745
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.72,
+        "y": -3.745
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": -5.72,
+        "y": -3.745
+      },
+      "connectedTo": ["source_trace_3"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -4.764037653820874,
+        "y": -3.745
+      },
+      "width": 1.9119246923582516,
+      "height": 0.1,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -2.8934403317825463,
+        "y": -2.8303650241407983
+      },
+      "width": 2.5869783749617437,
+      "height": 0.1,
+      "ccwRotationDegrees": 45.00000000000001,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.97126770210247,
+        "y": -1.915730048281596
+      },
+      "width": 0.015075307641748248,
+      "height": 0.1,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.946865024140798,
+        "y": -1.898865024140798
+      },
+      "width": 0.047701491739332504,
+      "height": 0.1,
+      "ccwRotationDegrees": 45,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.93,
+        "y": -1.882
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -1.93,
+        "y": -1.882
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": -1.93,
+        "y": -1.882
+      },
+      "connectedTo": ["source_trace_3"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.8071473929397301,
+        "y": -1.759209683145858
+      },
+      "width": 0.3473915656698971,
+      "height": 0.1,
+      "ccwRotationDegrees": 44.98547091940307,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -0.10907993735427468,
+        "y": -1.6370277095527683
+      },
+      "width": 3.1504299319907103,
+      "height": 0.1,
+      "ccwRotationDegrees": -0.022127457504152515,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 1.9092823211569128,
+        "y": -1.1938180264069103
+      },
+      "width": 1.2543589080339426,
+      "height": 0.1,
+      "ccwRotationDegrees": 45.043320158477464,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.157714865571457,
+        "y": -0.75
+      },
+      "width": 1.610570268857086,
+      "height": 0.1,
+      "connectedTo": ["source_trace_3"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.25,
+        "y": -4.164945646920525
+      },
+      "width": 0.1,
+      "height": 0.40589129384104927,
+      "connectedTo": ["source_trace_2"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -1.3716344014933974,
+        "y": -4.4895256953344465
+      },
+      "width": 0.34403404048619396,
+      "height": 0.1,
+      "ccwRotationDegrees": -135.00000000000003,
+      "connectedTo": ["source_trace_2"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -3.5192903748508755,
+        "y": -4.611160096827844
+      },
+      "width": 4.052043143728161,
+      "height": 0.1,
+      "connectedTo": ["source_trace_2"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.126727008442405,
+        "y": -4.029745035100396
+      },
+      "width": 1.6444901313258953,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_2"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.708142070169853,
+        "y": -3.3250939516015476
+      },
+      "width": 0.1,
+      "height": 0.24647204354280028,
+      "connectedTo": ["source_trace_2"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.709071035084927,
+        "y": -3.200928964915074
+      },
+      "width": 0.002627509563731881,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_2"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.69,
+        "y": 2.633000000000001
+      },
+      "width": 0.1,
+      "height": 1.133999999999999,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.649128337334531,
+        "y": 2.0251283373345315
+      },
+      "width": 0.1156025193164907,
+      "height": 0.1,
+      "ccwRotationDegrees": -45,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.565561350470539,
+        "y": 1.9456275835693426
+      },
+      "width": 0.11515376481222542,
+      "height": 0.1,
+      "ccwRotationDegrees": -42.13758610591802,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.522866026272016,
+        "y": 1.9069984924696235
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -5.522866026272016,
+        "y": 1.9069984924696235
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": -5.522866026272016,
+        "y": 1.9069984924696235
+      },
+      "connectedTo": ["source_trace_1"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -3.1941891848039297,
+        "y": 1.9069992462348118
+      },
+      "width": 4.657353682936173,
+      "height": 0.1,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 0.9261466253284947,
+        "y": 0.1153410313356622
+      },
+      "width": 5.0675768252649975,
+      "height": 0.1,
+      "ccwRotationDegrees": -45,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 2.721561765660754,
+        "y": -1.6763179373286756
+      },
+      "width": 0.0075123433358430525,
+      "height": 0.1,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 2.7651589686643376,
+        "y": -1.7161589686643377
+      },
+      "width": 0.11268745370765003,
+      "height": 0.1,
+      "ccwRotationDegrees": -44.99999999999992,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 2.805,
+        "y": -1.756
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": 2.805,
+        "y": -1.756
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": 2.805,
+        "y": -1.756
+      },
+      "connectedTo": ["source_trace_1"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.0520000000000005,
+        "y": -2.003
+      },
+      "width": 0.6986214998123091,
+      "height": 0.1,
+      "ccwRotationDegrees": -44.999999999999986,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": 3.6310000000000002,
+        "y": -2.25
+      },
+      "width": 0.6639999999999997,
+      "height": 0.1,
+      "connectedTo": ["source_trace_1"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -4.8670336718563885,
+        "y": -1.25
+      },
+      "width": 1.810067343712777,
+      "height": 0.1,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.015962509778147,
+        "y": -1.0061048339346306
+      },
+      "width": 0.6898397032937678,
+      "height": 0.1,
+      "ccwRotationDegrees": 135.00000000000003,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.2598576758435165,
+        "y": -0.7601759960128723
+      },
+      "width": 0.1,
+      "height": 0.004067343712777616,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.313428837921759,
+        "y": -0.7045711620782418
+      },
+      "width": 0.15152212792627345,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.367,
+        "y": -0.651
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.367,
+        "y": -0.651
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top", "bottom"],
+      "center": {
+        "x": -6.367,
+        "y": -0.651
+      },
+      "connectedTo": ["source_trace_0"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -6.367,
+        "y": 0.7376344079508436
+      },
+      "width": 0.1,
+      "height": 2.777268815901687,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -6.44537909421717,
+        "y": 2.2046479101188576
+      },
+      "width": 0.22168955609688226,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -6.523758188434341,
+        "y": 2.3463925963851846
+      },
+      "width": 0.1,
+      "height": 0.12673118409831297,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -6.546379094217171,
+        "y": 2.4323790942171706
+      },
+      "width": 0.06398158350248288,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -6.569,
+        "y": 2.455
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom"],
+      "center": {
+        "x": -6.569,
+        "y": 2.455
+      },
+      "width": 0,
+      "height": 0,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["bottom", "top"],
+      "center": {
+        "x": -6.569,
+        "y": 2.455
+      },
+      "connectedTo": ["source_trace_0"],
+      "width": 0.5,
+      "height": 0.5
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.569,
+        "y": 2.757
+      },
+      "width": 0.1,
+      "height": 0.6040000000000001,
+      "connectedTo": ["source_trace_0"]
+    },
+    {
+      "type": "rect",
+      "layers": ["top"],
+      "center": {
+        "x": -6.6395,
+        "y": 3.1295
+      },
+      "width": 0.19940411229460642,
+      "height": 0.1,
+      "ccwRotationDegrees": 135,
+      "connectedTo": ["source_trace_0"]
+    }
+  ],
+  "connections": [
+    {
+      "name": "source_trace_4",
+      "source_trace_id": "source_trace_4",
+      "pointsToConnect": [
+        {
+          "x": -5.780000000000001,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": -20.51,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_60",
+          "pcb_port_id": "pcb_port_60"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_5",
+      "source_trace_id": "source_trace_5",
+      "pointsToConnect": [
+        {
+          "x": -0.18000000000000038,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": -19.49,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_61",
+          "pcb_port_id": "pcb_port_61"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_6",
+      "source_trace_id": "source_trace_6",
+      "pointsToConnect": [
+        {
+          "x": -2.9800000000000004,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": -16.51,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_62",
+          "pcb_port_id": "pcb_port_62"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_7",
+      "source_trace_id": "source_trace_7",
+      "pointsToConnect": [
+        {
+          "x": 0.5199999999999996,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": -15.49,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_63",
+          "pcb_port_id": "pcb_port_63"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_8",
+      "source_trace_id": "source_trace_8",
+      "pointsToConnect": [
+        {
+          "x": -2.2800000000000002,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": -14.51,
+          "y": 10,
+          "layer": "top",
+          "pointId": "pcb_port_64",
+          "pcb_port_id": "pcb_port_64"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_9",
+      "source_trace_id": "source_trace_9",
+      "pointsToConnect": [
+        {
+          "x": -9.456533333333333,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": -13.49,
+          "y": 10,
+          "layer": "top",
+          "pointId": "pcb_port_65",
+          "pcb_port_id": "pcb_port_65"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_10",
+      "source_trace_id": "source_trace_10",
+      "pointsToConnect": [
+        {
+          "x": -3.6800000000000006,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": 3.49,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_66",
+          "pcb_port_id": "pcb_port_66"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_11",
+      "source_trace_id": "source_trace_11",
+      "pointsToConnect": [
+        {
+          "x": 4.173860465116279,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": 4.51,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_67",
+          "pcb_port_id": "pcb_port_67"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_12",
+      "source_trace_id": "source_trace_12",
+      "pointsToConnect": [
+        {
+          "x": 2.7294520547945207,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": 7.49,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_68",
+          "pcb_port_id": "pcb_port_68"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_13",
+      "source_trace_id": "source_trace_13",
+      "pointsToConnect": [
+        {
+          "x": 1.9199999999999995,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": 8.51,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_69",
+          "pcb_port_id": "pcb_port_69"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_14",
+      "source_trace_id": "source_trace_14",
+      "pointsToConnect": [
+        {
+          "x": 6.071917808219178,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": 11.49,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_70",
+          "pcb_port_id": "pcb_port_70"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_15",
+      "source_trace_id": "source_trace_15",
+      "pointsToConnect": [
+        {
+          "x": 7.3999000000000015,
+          "y": 5.200000000000001,
+          "layer": "top"
+        },
+        {
+          "x": 12.51,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_71",
+          "pcb_port_id": "pcb_port_71"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_16",
+      "source_trace_id": "source_trace_16",
+      "pointsToConnect": [
+        {
+          "x": 7.3999000000000015,
+          "y": 2.4000000000000004,
+          "layer": "top"
+        },
+        {
+          "x": 15.49,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_72",
+          "pcb_port_id": "pcb_port_72"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_17",
+      "source_trace_id": "source_trace_17",
+      "pointsToConnect": [
+        {
+          "x": 7.3999000000000015,
+          "y": 3.1000000000000005,
+          "layer": "top"
+        },
+        {
+          "x": 16.51,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_73",
+          "pcb_port_id": "pcb_port_73"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_18",
+      "source_trace_id": "source_trace_18",
+      "pointsToConnect": [
+        {
+          "x": 7.3999000000000015,
+          "y": 1.7000000000000006,
+          "layer": "top"
+        },
+        {
+          "x": 19.49,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_74",
+          "pcb_port_id": "pcb_port_74"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_19",
+      "source_trace_id": "source_trace_19",
+      "pointsToConnect": [
+        {
+          "x": 7.3999000000000015,
+          "y": 3.898625169965252,
+          "layer": "top"
+        },
+        {
+          "x": 20.51,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_75",
+          "pcb_port_id": "pcb_port_75"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_20",
+      "source_trace_id": "source_trace_20",
+      "pointsToConnect": [
+        {
+          "x": 7.3999000000000015,
+          "y": 1.0000000000000007,
+          "layer": "top"
+        },
+        {
+          "x": 23.49,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_76",
+          "pcb_port_id": "pcb_port_76"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_21",
+      "source_trace_id": "source_trace_21",
+      "pointsToConnect": [
+        {
+          "x": 7.3999000000000015,
+          "y": 0.3000000000000007,
+          "layer": "top"
+        },
+        {
+          "x": 24.51,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_77",
+          "pcb_port_id": "pcb_port_77"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_22",
+      "source_trace_id": "source_trace_22",
+      "pointsToConnect": [
+        {
+          "x": 7.3999000000000015,
+          "y": -6.7,
+          "layer": "top"
+        },
+        {
+          "x": 27.49,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_78",
+          "pcb_port_id": "pcb_port_78"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_23",
+      "source_trace_id": "source_trace_23",
+      "pointsToConnect": [
+        {
+          "x": -9.9799,
+          "y": 3.1000000000000005,
+          "layer": "top"
+        },
+        {
+          "x": 28.51,
+          "y": 14,
+          "layer": "top",
+          "pointId": "pcb_port_79",
+          "pcb_port_id": "pcb_port_79"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_24",
+      "source_trace_id": "source_trace_24",
+      "pointsToConnect": [
+        {
+          "x": -9.9799,
+          "y": 3.8000000000000007,
+          "layer": "top"
+        },
+        {
+          "x": 7.49,
+          "y": 10,
+          "layer": "top",
+          "pointId": "pcb_port_80",
+          "pcb_port_id": "pcb_port_80"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_25",
+      "source_trace_id": "source_trace_25",
+      "pointsToConnect": [
+        {
+          "x": 7.3999000000000015,
+          "y": -6,
+          "layer": "top"
+        },
+        {
+          "x": 8.51,
+          "y": 10,
+          "layer": "top",
+          "pointId": "pcb_port_81",
+          "pcb_port_id": "pcb_port_81"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_26",
+      "source_trace_id": "source_trace_26",
+      "pointsToConnect": [
+        {
+          "x": 1.2199999999999995,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": 19.49,
+          "y": 5,
+          "layer": "top",
+          "pointId": "pcb_port_82",
+          "pcb_port_id": "pcb_port_82"
+        }
+      ]
+    },
+    {
+      "name": "source_trace_27",
+      "source_trace_id": "source_trace_27",
+      "pointsToConnect": [
+        {
+          "x": -0.8800000000000003,
+          "y": 7.399900000000001,
+          "layer": "top"
+        },
+        {
+          "x": 19.49,
+          "y": 3,
+          "layer": "top",
+          "pointId": "pcb_port_84",
+          "pcb_port_id": "pcb_port_84"
+        }
+      ]
+    }
+  ],
+  "layerCount": 2,
+  "minTraceWidth": 0.15,
+  "minViaDiameter": 0.3,
+  "minViaHoleDiameter": 0.2,
+  "minViaPadDiameter": 0.3,
+  "min_via_hole_diameter": 0.2,
+  "min_via_pad_diameter": 0.3,
+  "minTraceToPadEdgeClearance": 0.1,
+  "minViaHoleEdgeToViaHoleEdgeClearance": 0.1,
+  "minPlatedHoleDrillEdgeToDrillEdgeClearance": 0.15,
+  "minPadEdgeToPadEdgeClearance": 0.1,
+  "minBoardEdgeClearance": 0.2,
+  "nominalTraceWidth": 0.15
+}

@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test"
+import * as fs from "node:fs"
+import * as path from "node:path"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -62,7 +64,7 @@ const rp2040PinLabels = {
   pin56: "QSPI_SS",
 } as const
 
-test.skip("breakout routes rp2040 pins to nearby capacitors and resistors", async () => {
+test("breakout routes rp2040 pins to nearby capacitors and resistors", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
@@ -255,24 +257,49 @@ test.skip("breakout routes rp2040 pins to nearby capacitors and resistors", asyn
   expect(directBreakoutSimpleRouteJson.bounds).toEqual(expectedBreakoutBounds)
   expect(circuit.db.pcb_breakout_point.list().length).toBe(24)
   expect(autoroutingPhaseIoStack.length).toBeGreaterThanOrEqual(2)
-  expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(21)
-  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  // expect(circuit.db.pcb_trace.list().length).toBeGreaterThanOrEqual(21)
+  // expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
 
   const drcErrors = circuit.db.pcb_trace_error.list()
 
-  expect(drcErrors).toHaveLength(0)
-  expect(
-    drcErrors.filter((error) => error.message.includes("overlaps with")),
-  ).toHaveLength(0)
-  expect(
-    drcErrors.filter((error) => error.message.includes("too close")),
-  ).toHaveLength(0)
-  expect(
-    drcErrors.filter((error) =>
-      error.message.includes("disconnected endpoint"),
-    ),
-  ).toHaveLength(0)
-  expect(
-    drcErrors.filter((error) => error.message.includes("missing a connection")),
-  ).toHaveLength(0)
+  // expect(drcErrors).toHaveLength(0)
+  // expect(
+  //   drcErrors.filter((error) => error.message.includes("overlaps with")),
+  // ).toHaveLength(0)
+  // expect(
+  //   drcErrors.filter((error) => error.message.includes("too close")),
+  // ).toHaveLength(0)
+  // expect(
+  //   drcErrors.filter((error) =>
+  //     error.message.includes("disconnected endpoint"),
+  //   ),
+  // ).toHaveLength(0)
+  // expect(
+  //   drcErrors.filter((error) => error.message.includes("missing a connection")),
+  // ).toHaveLength(0)
+
+  // Dump the parent (board) SRJ as a standalone repro asset for the autorouter.
+  // Feeding this SRJ to AutoroutingPipelineSolver4 reproduces the throw below
+  // without rendering the whole circuit: the descendant breakout handoff copper
+  // is modeled as same-net obstacles (obstacle.connectedTo), yet the autorouter
+  // still can't resolve the breakout-point terminal that sits on that copper.
+  const boardPhase = autoroutingPhaseIoStack.find((phase) =>
+    phase.componentDisplayName?.includes("<board"),
+  )
+  expect(boardPhase?.startSimpleRouteJson).toBeDefined()
+  const assetsDir = path.join(import.meta.dir, "assets")
+  fs.mkdirSync(assetsDir, { recursive: true })
+  fs.writeFileSync(
+    path.join(assetsDir, "breakout-rp2040-with-passives-srj.json"),
+    `${JSON.stringify(boardPhase!.startSimpleRouteJson, null, 2)}\n`,
+  )
+
+  // Repro: the parent autorouter throws because region resolution is geometric
+  // and net-agnostic — the same-net handoff copper occupies the terminal's
+  // layer, so there's no node on that layer for the terminal to resolve into.
+  const autoroutingErrors = circuit.db.pcb_autorouting_error.list()
+  expect(autoroutingErrors).toHaveLength(1)
+  expect(autoroutingErrors[0].message).toContain(
+    "Could not find start region for connection",
+  )
 }, 60_000)
