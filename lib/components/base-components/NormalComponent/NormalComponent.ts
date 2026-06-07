@@ -666,8 +666,12 @@ export class NormalComponent<
     const { schematicSymbolName } = this.config
     const { _parsedProps: props } = this
 
-    // Check if there's a custom symbol JSX prop
-    if (props.symbol && isReactElement(props.symbol)) {
+    const hasSymbolChild = this.children.some(
+      (c) => c.componentName === "Symbol",
+    )
+
+    // Check if there's a custom symbol JSX prop or an inflated symbol child
+    if ((props.symbol && isReactElement(props.symbol)) || hasSymbolChild) {
       this._doInitialSchematicComponentRenderWithReactSymbol(props.symbol)
     } else if (schematicSymbolName) {
       this._doInitialSchematicComponentRenderWithSymbol()

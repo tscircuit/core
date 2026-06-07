@@ -17,12 +17,19 @@ import { PcbNoteText } from "lib/components/primitive-components/PcbNoteText"
 import { PcbTrace } from "lib/components/primitive-components/PcbTrace"
 import { PcbVia } from "lib/components/primitive-components/PcbVia"
 import { PlatedHole } from "lib/components/primitive-components/PlatedHole"
+import { SchematicArc } from "lib/components/primitive-components/SchematicArc"
+import { SchematicCircle } from "lib/components/primitive-components/SchematicCircle"
+import { SchematicLine } from "lib/components/primitive-components/SchematicLine"
+import { SchematicPath } from "lib/components/primitive-components/SchematicPath"
+import { SchematicRect } from "lib/components/primitive-components/SchematicRect"
+import { SchematicText } from "lib/components/primitive-components/SchematicText"
 import { SilkscreenCircle } from "lib/components/primitive-components/SilkscreenCircle"
 import { SilkscreenLine } from "lib/components/primitive-components/SilkscreenLine"
 import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
 import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRect"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
+import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
 
@@ -43,6 +50,9 @@ const calculateCcwRotation = (
   return normalizedRotation
 }
 
+const optional = <T>(value: T | null | undefined): T | undefined =>
+  value ?? undefined
+
 export const createComponentsFromCircuitJson = (
   {
     componentName,
@@ -60,6 +70,35 @@ export const createComponentsFromCircuitJson = (
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
   const components: PrimitiveComponent[] = []
+  const schematicSymbolsByImportedId = new Map<string, SymbolComponent>()
+
+  for (const elm of circuitJson) {
+    if (elm.type !== "schematic_symbol") continue
+
+    const schematicSymbol = new SymbolComponent({
+      name: elm.name,
+    })
+    schematicSymbolsByImportedId.set(elm.schematic_symbol_id, schematicSymbol)
+    components.push(schematicSymbol)
+  }
+
+  const addSchematicPrimitive = (
+    elm: AnyCircuitElement,
+    primitive: PrimitiveComponent,
+  ) => {
+    const schematicSymbolId = (elm as any).schematic_symbol_id
+    const parentSymbol =
+      typeof schematicSymbolId === "string"
+        ? schematicSymbolsByImportedId.get(schematicSymbolId)
+        : undefined
+
+    if (parentSymbol) {
+      parentSymbol.add(primitive)
+    } else {
+      components.push(primitive)
+    }
+  }
+
   for (const elm of circuitJson) {
     if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
       components.push(
@@ -498,6 +537,88 @@ export const createComponentsFromCircuitJson = (
         new CourtyardOutline({
           outline: elm.outline,
           layer: elm.layer,
+        }),
+      )
+    } else if (elm.type === "schematic_line") {
+      addSchematicPrimitive(
+        elm,
+        new SchematicLine({
+          x1: elm.x1,
+          y1: elm.y1,
+          x2: elm.x2,
+          y2: elm.y2,
+          strokeWidth: optional(elm.stroke_width),
+          color: elm.color,
+          isDashed: elm.is_dashed,
+        }),
+      )
+    } else if (elm.type === "schematic_rect") {
+      addSchematicPrimitive(
+        elm,
+        new SchematicRect({
+          schX: elm.center.x,
+          schY: elm.center.y,
+          width: elm.width,
+          height: elm.height,
+          rotation: elm.rotation,
+          strokeWidth: optional(elm.stroke_width),
+          color: elm.color,
+          isFilled: elm.is_filled,
+          fillColor: elm.fill_color,
+          isDashed: elm.is_dashed,
+        }),
+      )
+    } else if (elm.type === "schematic_circle") {
+      addSchematicPrimitive(
+        elm,
+        new SchematicCircle({
+          center: elm.center,
+          radius: elm.radius,
+          strokeWidth: optional(elm.stroke_width),
+          color: elm.color,
+          isFilled: elm.is_filled,
+          fillColor: elm.fill_color,
+          isDashed: elm.is_dashed,
+        }),
+      )
+    } else if (elm.type === "schematic_arc") {
+      addSchematicPrimitive(
+        elm,
+        new SchematicArc({
+          center: elm.center,
+          radius: elm.radius,
+          startAngleDegrees: elm.start_angle_degrees,
+          endAngleDegrees: elm.end_angle_degrees,
+          direction: elm.direction,
+          strokeWidth: optional(elm.stroke_width),
+          color: elm.color,
+          isDashed: elm.is_dashed,
+        }),
+      )
+    } else if (elm.type === "schematic_text") {
+      addSchematicPrimitive(
+        elm,
+        new SchematicText({
+          schX: elm.position.x,
+          schY: elm.position.y,
+          text: elm.text,
+          fontSize: elm.font_size,
+          anchor: elm.anchor,
+          color: elm.color,
+          schRotation: elm.rotation,
+        }),
+      )
+    } else if (elm.type === "schematic_path") {
+      addSchematicPrimitive(
+        elm,
+        new SchematicPath({
+          points: elm.points,
+          strokeWidth: optional(elm.stroke_width),
+          strokeColor: elm.stroke_color,
+          dashLength: elm.dash_length,
+          dashGap: elm.dash_gap,
+          isFilled: elm.is_filled,
+          fillColor: elm.fill_color,
         }),
       )
     }
