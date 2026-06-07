@@ -1,12 +1,11 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { holeProps } from "@tscircuit/props"
-import { distance } from "circuit-json"
 import type {
-  PCBHole,
   PcbHolePill,
   PcbHoleRotatedPill,
   PcbHoleRect,
   PcbHoleCircle,
+  PcbHoleOval,
 } from "circuit-json"
 
 export class Hole extends PrimitiveComponent<typeof holeProps> {
@@ -22,15 +21,12 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
 
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
-    const isPill = props.shape === "pill"
-    const isRect = props.shape === "rect"
 
-    if (isPill) {
-      return {
-        width: props.width,
-        height: props.height,
-      }
-    } else if (isRect) {
+    if (
+      props.shape === "pill" ||
+      props.shape === "oval" ||
+      props.shape === "rect"
+    ) {
       return {
         width: props.width,
         height: props.height,
@@ -91,6 +87,21 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         } as PcbHolePill)
         this.pcb_hole_id = inserted_hole.pcb_hole_id!
       }
+    } else if (props.shape === "oval") {
+      const inserted_hole = db.pcb_hole.insert({
+        pcb_component_id,
+        type: "pcb_hole",
+        hole_shape: "oval",
+        hole_width: props.width,
+        hole_height: props.height,
+        x: position.x,
+        y: position.y,
+        soldermask_margin: soldermaskMargin,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
+      } as PcbHoleOval)
+      this.pcb_hole_id = inserted_hole.pcb_hole_id!
     } else if (props.shape === "rect") {
       // Rect shape
       const inserted_hole = db.pcb_hole.insert({
