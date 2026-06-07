@@ -28,6 +28,7 @@ import {
   type Matrix,
   applyToPoint,
   compose,
+  decomposeTSR,
   flipY,
   identity,
   rotate,
@@ -504,12 +505,14 @@ export abstract class PrimitiveComponent<
       this.props.pcbY === undefined
     ) {
       const rotation = this._getPcbRotationBeforeLayout() ?? 0
+      const parentGlobalTransform =
+        this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity()
+      const decomposed = decomposeTSR(parentGlobalTransform)
+      const parentRotation = (decomposed.rotation.angle * 180) / Math.PI
+
       return compose(
-        this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-        compose(
-          translate(manualPlacement.x, manualPlacement.y),
-          rotate((rotation * Math.PI) / 180),
-        ),
+        translate(manualPlacement.x, manualPlacement.y),
+        rotate(((parentRotation + rotation) * Math.PI) / 180),
       )
     }
 
