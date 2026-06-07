@@ -57,6 +57,7 @@ export function insertInnerSymbolInSchematicBox(
         schematic_component_id: connector.schematic_component_id,
         points,
         is_filled: primitive.fill ?? false,
+        is_dashed: false,
         fill_color: primitive.fill
           ? SCHEMATIC_COMPONENT_OUTLINE_COLOR
           : undefined,
