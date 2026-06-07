@@ -309,6 +309,16 @@ export const createComponentsFromCircuitJson = (
           height: elm.hole_height,
         }),
       )
+    } else if (elm.type === "pcb_hole" && elm.hole_shape === "oval") {
+      components.push(
+        new Hole({
+          pcbX: elm.x,
+          pcbY: elm.y,
+          shape: "oval",
+          width: elm.hole_width,
+          height: elm.hole_height,
+        }),
+      )
     } else if (elm.type === "pcb_hole" && elm.hole_shape === "rotated_pill") {
       components.push(
         new Hole({
