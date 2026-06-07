@@ -23,9 +23,10 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
     const isPill = props.shape === "pill"
+    const isOval = props.shape === "oval"
     const isRect = props.shape === "rect"
 
-    if (isPill) {
+    if (isPill || isOval) {
       return {
         width: props.width,
         height: props.height,
@@ -91,6 +92,21 @@ export class Hole extends PrimitiveComponent<typeof holeProps> {
         } as PcbHolePill)
         this.pcb_hole_id = inserted_hole.pcb_hole_id!
       }
+    } else if (props.shape === "oval") {
+      const inserted_hole = db.pcb_hole.insert({
+        pcb_component_id,
+        type: "pcb_hole",
+        hole_shape: "oval",
+        hole_width: props.width,
+        hole_height: props.height,
+        x: position.x,
+        y: position.y,
+        soldermask_margin: soldermaskMargin,
+        is_covered_with_solder_mask: isCoveredWithSolderMask,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: subcircuit?.getGroup()?.pcb_group_id ?? undefined,
+      } as PCBHole)
+      this.pcb_hole_id = inserted_hole.pcb_hole_id!
     } else if (props.shape === "rect") {
       // Rect shape
       const inserted_hole = db.pcb_hole.insert({
