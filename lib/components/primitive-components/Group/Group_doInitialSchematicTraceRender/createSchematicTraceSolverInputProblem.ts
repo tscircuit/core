@@ -181,11 +181,7 @@ export function createSchematicTraceSolverInputProblem(
   }> = []
   const connectedPairKeys = new Set<string>()
   const connKeysWithExplicitPortNetTraces = new Set<string>()
-  for (const trace of traces as any[]) {
-    if (trace.parent !== group) continue
-    const sourceTraceId = trace.source_trace_id
-    if (!sourceTraceId) continue
-    const sourceTrace = db.source_trace.get(sourceTraceId)
+  for (const sourceTrace of tracesInScope) {
     if (
       sourceTrace?.subcircuit_connectivity_map_key &&
       (sourceTrace.connected_source_port_ids?.length ?? 0) > 0 &&
