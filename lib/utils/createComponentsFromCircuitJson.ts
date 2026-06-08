@@ -1,4 +1,5 @@
 import type { PinLabelsProp } from "@tscircuit/props"
+import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import type { AnyCircuitElement } from "circuit-json"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
 import { CourtyardOutline } from "lib/components/primitive-components/CourtyardOutline"
@@ -53,6 +54,19 @@ const calculateCcwRotation = (
 const optional = <T>(value: T | null | undefined): T | undefined =>
   value ?? undefined
 
+const getFacingDirectionFromSide = (side: string) => {
+  switch (side) {
+    case "left":
+    case "right":
+      return side
+    case "top":
+      return "up"
+    case "bottom":
+      return "down"
+  }
+  return null
+}
+
 export const createComponentsFromCircuitJson = (
   {
     componentName,
@@ -71,6 +85,7 @@ export const createComponentsFromCircuitJson = (
 ): PrimitiveComponent[] => {
   const components: PrimitiveComponent[] = []
   const schematicSymbolsByImportedId = new Map<string, SymbolComponent>()
+  const schematicComponentsByImportedId = new Map<string, any>()
 
   for (const elm of circuitJson) {
     if (elm.type !== "schematic_symbol") continue
@@ -80,6 +95,11 @@ export const createComponentsFromCircuitJson = (
     })
     schematicSymbolsByImportedId.set(elm.schematic_symbol_id, schematicSymbol)
     components.push(schematicSymbol)
+  }
+
+  for (const elm of circuitJson) {
+    if (elm.type !== "schematic_component") continue
+    schematicComponentsByImportedId.set(elm.schematic_component_id, elm)
   }
 
   const addSchematicPrimitive = (
@@ -631,6 +651,46 @@ export const createComponentsFromCircuitJson = (
           fillColor: elm.fill_color,
         }),
       )
+    } else if (elm.type === "schematic_port") {
+      const schematicComponentId = elm.schematic_component_id
+      if (typeof schematicComponentId !== "string") continue
+
+      const schematicComponent =
+        schematicComponentsByImportedId.get(schematicComponentId)
+      const schematicSymbolId = schematicComponent?.schematic_symbol_id
+      const parentSymbol =
+        typeof schematicSymbolId === "string"
+          ? schematicSymbolsByImportedId.get(schematicSymbolId)
+          : undefined
+
+      if (
+        parentSymbol &&
+        schematicComponent?.is_box_with_pins === true &&
+        elm.center &&
+        elm.side_of_component
+      ) {
+        const distance = elm.distance_from_component_edge!
+        const facingDirection = getFacingDirectionFromSide(
+          elm.side_of_component,
+        )
+        if (!facingDirection) continue
+
+        const directionVector = getUnitVectorFromDirection(facingDirection)
+        const portCenter = {
+          x: elm.center.x + directionVector.x * distance,
+          y: elm.center.y + directionVector.y * distance,
+        }
+
+        parentSymbol.add(
+          new SchematicLine({
+            x1: elm.center.x,
+            y1: elm.center.y,
+            x2: portCenter.x,
+            y2: portCenter.y,
+            isDashed: false,
+          }),
+        )
+      }
     }
   }
   return components
