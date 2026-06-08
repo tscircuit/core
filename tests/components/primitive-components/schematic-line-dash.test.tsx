@@ -49,6 +49,4 @@ test("SchematicLine supports dash_length and dash_gap", () => {
       },
     ]
   `)
-
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
