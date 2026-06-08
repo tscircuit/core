@@ -676,9 +676,10 @@ export const createComponentsFromCircuitJson = (
         if (!facingDirection) continue
 
         const directionVector = getUnitVectorFromDirection(facingDirection)
+        const stemDirection = elm.facing_direction === facingDirection ? 1 : -1
         const portCenter = {
-          x: elm.center.x + directionVector.x * distance,
-          y: elm.center.y + directionVector.y * distance,
+          x: elm.center.x + directionVector.x * distance * stemDirection,
+          y: elm.center.y + directionVector.y * distance * stemDirection,
         }
 
         parentSymbol.add(
