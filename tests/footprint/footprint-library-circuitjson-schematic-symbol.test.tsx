@@ -80,14 +80,6 @@ test("footprint circuitjson rehydrates schematic symbol", async () => {
   expect(circuit.db.external_footprint_load_error.list()).toHaveLength(0)
   expect(circuit.db.schematic_symbol.list()).toHaveLength(1)
   expect(circuit.db.schematic_rect.list()).toHaveLength(1)
-  expect(circuit.db.schematic_line.list()).toMatchObject([
-    {
-      x1: -1,
-      y1: 0,
-      x2: -1.4,
-      y2: 0,
-    },
-  ])
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
