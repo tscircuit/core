@@ -47,9 +47,13 @@ export class SchematicPath extends PrimitiveComponent<
             y: point.y + globalPos.y,
           })),
           is_filled: props.isFilled,
+          is_dashed:
+            props.dashLength !== undefined || props.dashGap !== undefined,
           fill_color: props.fillColor as any,
           stroke_color: props.strokeColor,
           stroke_width: props.strokeWidth,
+          dash_length: props.dashLength,
+          dash_gap: props.dashGap,
           subcircuit_id,
         })
         this.schematic_path_ids.push(schematic_path.schematic_path_id)
@@ -64,9 +68,13 @@ export class SchematicPath extends PrimitiveComponent<
           y: point.y + globalPos.y,
         })),
         is_filled: props.isFilled,
+        is_dashed:
+          props.dashLength !== undefined || props.dashGap !== undefined,
         fill_color: props.fillColor as any,
         stroke_color: props.strokeColor,
         stroke_width: props.strokeWidth,
+        dash_length: props.dashLength,
+        dash_gap: props.dashGap,
         subcircuit_id,
       })
       this.schematic_path_ids.push(schematic_path.schematic_path_id)

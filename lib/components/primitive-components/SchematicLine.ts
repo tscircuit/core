@@ -43,7 +43,12 @@ export class SchematicLine extends PrimitiveComponent<
       stroke_width:
         props.strokeWidth ?? SCHEMATIC_COMPONENT_OUTLINE_STROKE_WIDTH,
       color: props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR,
-      is_dashed: false,
+      is_dashed:
+        props.isDashed ||
+        props.dashLength !== undefined ||
+        props.dashGap !== undefined,
+      dash_length: props.dashLength,
+      dash_gap: props.dashGap,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
     })
 
