@@ -1,6 +1,6 @@
 import type { PinLabelsProp } from "@tscircuit/props"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
-import type { AnyCircuitElement } from "circuit-json"
+import type { AnyCircuitElement, SchematicComponent } from "circuit-json"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
 import { CourtyardOutline } from "lib/components/primitive-components/CourtyardOutline"
 import { CourtyardRect } from "lib/components/primitive-components/CourtyardRect"
@@ -33,6 +33,11 @@ import { SmtPad } from "lib/components/primitive-components/SmtPad"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
+
+type SchematicPrimitiveWithStrokeWidth = Extract<
+  AnyCircuitElement,
+  { type: (typeof schematicPrimitiveTypesWithStrokeWidth)[number] }
+>
 
 const calculateCcwRotation = (
   componentRotationStr: string | undefined | null,
@@ -67,6 +72,28 @@ const getFacingDirectionFromSide = (side: string) => {
   return null
 }
 
+const schematicPrimitiveTypesWithStrokeWidth = [
+  "schematic_line",
+  "schematic_rect",
+  "schematic_circle",
+  "schematic_arc",
+  "schematic_path",
+] as const
+
+const isSchematicPrimitiveWithStrokeWidth = (
+  elm: AnyCircuitElement,
+): elm is SchematicPrimitiveWithStrokeWidth =>
+  schematicPrimitiveTypesWithStrokeWidth.includes(
+    elm.type as (typeof schematicPrimitiveTypesWithStrokeWidth)[number],
+  )
+
+const getSchematicSymbolId = (elm: AnyCircuitElement): string | undefined => {
+  if (!("schematic_symbol_id" in elm)) return undefined
+  return typeof elm.schematic_symbol_id === "string"
+    ? elm.schematic_symbol_id
+    : undefined
+}
+
 export const createComponentsFromCircuitJson = (
   {
     componentName,
@@ -85,7 +112,8 @@ export const createComponentsFromCircuitJson = (
 ): PrimitiveComponent[] => {
   const components: PrimitiveComponent[] = []
   const schematicSymbolsByImportedId = new Map<string, SymbolComponent>()
-  const schematicComponentsByImportedId = new Map<string, any>()
+  const schematicComponentsByImportedId = new Map<string, SchematicComponent>()
+  const schematicStrokeWidthBySymbolId = new Map<string, number>()
 
   for (const elm of circuitJson) {
     if (elm.type !== "schematic_symbol") continue
@@ -98,6 +126,23 @@ export const createComponentsFromCircuitJson = (
   }
 
   for (const elm of circuitJson) {
+    if (!isSchematicPrimitiveWithStrokeWidth(elm)) continue
+
+    const schematicSymbolId = getSchematicSymbolId(elm)
+    const strokeWidth = elm.stroke_width
+    if (
+      !schematicSymbolId ||
+      typeof strokeWidth !== "number" ||
+      !Number.isFinite(strokeWidth) ||
+      schematicStrokeWidthBySymbolId.has(schematicSymbolId)
+    ) {
+      continue
+    }
+
+    schematicStrokeWidthBySymbolId.set(schematicSymbolId, strokeWidth)
+  }
+
+  for (const elm of circuitJson) {
     if (elm.type !== "schematic_component") continue
     schematicComponentsByImportedId.set(elm.schematic_component_id, elm)
   }
@@ -106,11 +151,10 @@ export const createComponentsFromCircuitJson = (
     elm: AnyCircuitElement,
     primitive: PrimitiveComponent,
   ) => {
-    const schematicSymbolId = (elm as any).schematic_symbol_id
-    const parentSymbol =
-      typeof schematicSymbolId === "string"
-        ? schematicSymbolsByImportedId.get(schematicSymbolId)
-        : undefined
+    const schematicSymbolId = getSchematicSymbolId(elm)
+    const parentSymbol = schematicSymbolId
+      ? schematicSymbolsByImportedId.get(schematicSymbolId)
+      : undefined
 
     if (parentSymbol) {
       parentSymbol.add(primitive)
@@ -688,6 +732,12 @@ export const createComponentsFromCircuitJson = (
             y1: elm.center.y,
             x2: portCenter.x,
             y2: portCenter.y,
+            strokeWidth:
+              typeof schematicSymbolId === "string"
+                ? optional(
+                    schematicStrokeWidthBySymbolId.get(schematicSymbolId),
+                  )
+                : undefined,
             isDashed: false,
           }),
         )
