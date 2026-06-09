@@ -751,10 +751,15 @@ export const createComponentsFromCircuitJson = (
           ),
         )
 
+        const fallbackPortName = elm.pin_number
+          ? `pin${elm.pin_number}`
+          : elm.schematic_port_id
+        const portName = aliases[0] ?? elm.source_port_id ?? fallbackPortName
+
         parentSymbol.add(
           new Port({
             pinNumber: elm.pin_number,
-            name: aliases[0],
+            name: portName,
             aliases,
             schX: elm.center.x,
             schY: elm.center.y,
