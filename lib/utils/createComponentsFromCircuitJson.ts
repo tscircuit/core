@@ -30,6 +30,7 @@ import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPa
 import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRect"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
+import { Port } from "lib/components/primitive-components/Port/Port"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
@@ -113,7 +114,17 @@ export const createComponentsFromCircuitJson = (
   const components: PrimitiveComponent[] = []
   const schematicSymbolsByImportedId = new Map<string, SymbolComponent>()
   const schematicComponentsByImportedId = new Map<string, SchematicComponent>()
+  const sourcePortsByImportedId = new Map<
+    string,
+    Extract<AnyCircuitElement, { type: "source_port" }>
+  >()
   const schematicStrokeWidthBySymbolId = new Map<string, number>()
+
+  for (const elm of circuitJson) {
+    if (elm.type === "source_port") {
+      sourcePortsByImportedId.set(elm.source_port_id, elm)
+    }
+  }
 
   for (const elm of circuitJson) {
     if (elm.type !== "schematic_symbol") continue
@@ -725,6 +736,36 @@ export const createComponentsFromCircuitJson = (
           x: elm.center.x + directionVector.x * distance * stemDirection,
           y: elm.center.y + directionVector.y * distance * stemDirection,
         }
+
+        const sourcePort = sourcePortsByImportedId.get(elm.source_port_id)
+        const aliases = Array.from(
+          new Set(
+            [
+              elm.display_pin_label,
+              sourcePort?.name,
+              ...(sourcePort?.port_hints ?? []),
+            ].filter(
+              (alias): alias is string =>
+                typeof alias === "string" && alias.length > 0,
+            ),
+          ),
+        )
+
+        const fallbackPortName = elm.pin_number
+          ? `pin${elm.pin_number}`
+          : elm.schematic_port_id
+        const portName = aliases[0] ?? elm.source_port_id ?? fallbackPortName
+
+        parentSymbol.add(
+          new Port({
+            pinNumber: elm.pin_number,
+            name: portName,
+            aliases,
+            schX: elm.center.x,
+            schY: elm.center.y,
+            direction: facingDirection,
+          }),
+        )
 
         parentSymbol.add(
           new SchematicLine({

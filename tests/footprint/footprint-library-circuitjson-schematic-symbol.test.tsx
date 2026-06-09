@@ -45,6 +45,7 @@ test("footprint circuitjson rehydrates schematic symbol", async () => {
       side_of_component: "left",
       distance_from_component_edge: 0.4,
       pin_number: 1,
+      display_pin_label: "IN+",
       is_connected: false,
     },
     {
@@ -80,6 +81,10 @@ test("footprint circuitjson rehydrates schematic symbol", async () => {
   expect(circuit.db.external_footprint_load_error.list()).toHaveLength(0)
   expect(circuit.db.schematic_symbol.list()).toHaveLength(1)
   expect(circuit.db.schematic_rect.list()).toHaveLength(1)
+
+  const schematicPorts = circuit.db.schematic_port.list()
+  expect(schematicPorts).toHaveLength(1)
+  expect(schematicPorts[0]?.display_pin_label).toBe("IN+")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
