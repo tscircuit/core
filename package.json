@@ -45,7 +45,6 @@
     "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#e08af159db01a37db007e33f0a7268d0e4a279a5",
     "@tscircuit/krt-wasm": "^0.1.1",
     "@tscircuit/log-soup": "^1.0.2",
-    "@tscircuit/matchpack": "",
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/ngspice-spice-engine": "^0.0.8",
@@ -113,6 +112,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
+    "@tscircuit/matchpack": "file:.yalc/@tscircuit/matchpack",
     "calculate-cell-boundaries": "^0.0.13",
     "calculate-packing": "0.0.73",
     "css-select": "5.1.0",
