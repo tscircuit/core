@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(25.0993516001,0,0,-25.0993516001,608.031792512,0.250993516)" data-software-used-string="@tscircuit/core@0.0.1303"><style>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(25.0993516001,0,0,-25.0993516001,608.031792512,0.250993516)" data-software-used-string="@tscircuit/core@0.0.1307"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -599,6 +599,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 924.1102241164725,102.28097845645543
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.501987032002px"/><text class="net-label-text" x="923.2066474588689" y="104.99170842926623" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="4.517883288018px" transform="">PWR_LED_K</text><path class="net-label" d="
+    M 327.48379000188226,476.8044264801252
+    L 328.83915498828765,474.0936965073144
+    L 340.2275674543064,474.0936965073144
+    L 340.2275674543064,479.51515645293597
+    L 328.83915498828765,479.51515645293597
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.501987032002px"/><text class="net-label-text" x="329.74273164589124" y="476.8044264801252" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="4.517883288018px" transform="">CC1</text><path class="net-label" d="
     M 312.2986822838218,481.82429680014525
     L 313.6540472702272,479.11356682733447
     L 325.0424597362459,479.11356682733447

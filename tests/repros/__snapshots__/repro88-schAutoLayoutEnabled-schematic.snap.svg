@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(167.0037668627,0,0,-167.0037668627,373.709895901,122.0037084114)" data-software-used-string="@tscircuit/core@0.0.1303"><style>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(167.0037668627,0,0,-167.0037668627,373.709895901,122.0037084114)" data-software-used-string="@tscircuit/core@0.0.1307"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -34,4 +34,11 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="undefined"], g.trace-o
     L 153.64346551379145,406.988179844407
     L 239.4388673433892,406.988179844407
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.340075337254px"/><text class="net-label-text" x="233.426731736332" y="425.0245866655786" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="30.060678035285996px" transform="">PWR</text><rect class="component-overlay" x="944.0277597371205" y="425.0245866655786" width="40.08090404704808" height="30.060678035286003" fill="transparent"/><path d="M 944.0277597371205 455.08526470086457 L 984.1086637841686 455.0852647008646" stroke="rgb(132, 0, 0)" fill="none" stroke-width="3.340075337254px" stroke-linecap="round"/><path d="M 964.0682117606445 455.08526470086457 L 964.0682117606445 425.0245866655786" stroke="rgb(132, 0, 0)" fill="none" stroke-width="3.340075337254px" stroke-linecap="round"/><text x="964.0682117606445" y="463.4354530439996" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="hanging" font-size="30.060678035285996px">GND</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.340075337254px"/><text class="net-label-text" x="233.426731736332" y="425.0245866655786" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="30.060678035285996px" transform="">PWR</text><path class="net-label" d="
+    M 558.0820545174207,475.12571672438855
+    L 549.0638511068349,493.1621235455601
+    L 394.1288897960794,493.1621235455601
+    L 394.1288897960794,457.08930990321693
+    L 549.0638511068349,457.089309903217
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.340075337254px"/><text class="net-label-text" x="543.0517154997777" y="475.12571672438855" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="30.060678035285996px" transform="">BAT_FILT</text><rect class="component-overlay" x="944.0277597371205" y="425.0245866655786" width="40.08090404704808" height="30.060678035286003" fill="transparent"/><path d="M 944.0277597371205 455.08526470086457 L 984.1086637841686 455.0852647008646" stroke="rgb(132, 0, 0)" fill="none" stroke-width="3.340075337254px" stroke-linecap="round"/><path d="M 964.0682117606445 455.08526470086457 L 964.0682117606445 425.0245866655786" stroke="rgb(132, 0, 0)" fill="none" stroke-width="3.340075337254px" stroke-linecap="round"/><text x="964.0682117606445" y="463.4354530439996" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="hanging" font-size="30.060678035285996px">GND</text></svg>
