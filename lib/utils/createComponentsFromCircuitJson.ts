@@ -25,6 +25,7 @@ import { SchematicPath } from "lib/components/primitive-components/SchematicPath
 import { SchematicRect } from "lib/components/primitive-components/SchematicRect"
 import { SchematicText } from "lib/components/primitive-components/SchematicText"
 import { SilkscreenCircle } from "lib/components/primitive-components/SilkscreenCircle"
+import { SilkscreenGraphic } from "lib/components/primitive-components/SilkscreenGraphic"
 import { SilkscreenLine } from "lib/components/primitive-components/SilkscreenLine"
 import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPath"
 import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRect"
@@ -227,6 +228,14 @@ export const createComponentsFromCircuitJson = (
           layer: elm.layer,
           route: elm.route,
           strokeWidth: elm.stroke_width,
+        }),
+      )
+    } else if (elm.type === "pcb_silkscreen_graphic" && elm.shape === "brep") {
+      components.push(
+        new SilkscreenGraphic({
+          layer: elm.layer,
+          brepShape: elm.brep_shape,
+          imageAsset: optional(elm.image_asset),
         }),
       )
     } else if (elm.type === "pcb_copper_text") {
