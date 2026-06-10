@@ -6,6 +6,7 @@ import {
   AutoroutingPipelineSolver3_HgPortPointPathing,
   AutoroutingPipelineSolver4,
   AutoroutingPipelineSolver5,
+  AutoroutingPipelineSolver7_MultiGraph,
   AutoroutingPipelineSolver8,
 } from "@tscircuit/capacity-autorouter"
 import { AutorouterError } from "lib/errors/AutorouterError"
@@ -26,7 +27,7 @@ export interface AutorouterOptions {
   useAssignableSolver?: boolean
   useAutoJumperSolver?: boolean
   useLaserPrefabSolver?: boolean
-  autorouterVersion?: "v1" | "v2" | "v3" | "v4" | "v5" | "latest"
+  autorouterVersion?: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "latest"
   effort?: number
   onSolverStarted?: (details: {
     solverName: string
@@ -45,6 +46,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     | AutoroutingPipelineSolver3_HgPortPointPathing
     | AutoroutingPipelineSolver4
     | AutoroutingPipelineSolver5
+    | AutoroutingPipelineSolver7_MultiGraph
     | AutoroutingPipelineSolver8
   private eventHandlers: {
     complete: Array<(ev: AutorouterCompleteEvent) => void>
@@ -83,6 +85,8 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipelineSolver4"
     } else if (autorouterVersion === "v5") {
       solverName = "AutoroutingPipelineSolver5"
+    } else if (autorouterVersion === "v6") {
+      solverName = "AutoroutingPipelineSolver7_MultiGraph"
     } else if (useLaserPrefabSolver) {
       solverName = "AutoroutingPipelineSolver8"
     } else if (useAutoJumperSolver) {
