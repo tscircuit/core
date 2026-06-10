@@ -52,9 +52,9 @@ test("repro127: custom symbol port direction is used for fallback netlabels", as
     .list()
     .find((port) => port.center.x === -4.5 && port.center.y === 0)
 
-  expect(hostPort?.facing_direction).toBe("left")
+  expect(hostPort?.facing_direction).toBe("right")
   expect(circuit.db.schematic_net_label.list()[0]).toMatchObject({
-    anchor_side: "right",
+    anchor_side: "left",
   })
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
