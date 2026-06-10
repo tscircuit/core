@@ -663,8 +663,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       } as any) // TODO issue with discriminated union
     }
 
+    const isExplicitCustomSymbolPort =
+      schX !== undefined && schY !== undefined && !!this._getSymbolAncestor()
+
     if (!localPortInfo?.side) {
       this.facingDirection = getRelativeDirection(containerCenter, portCenter)
+      if (isExplicitCustomSymbolPort && props.direction) {
+        this.facingDirection = props.direction
+      }
     } else {
       this.facingDirection = {
         left: "left",
