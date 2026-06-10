@@ -311,13 +311,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
   const routedTraceIds = new Set(
-    db.pcb_trace
-      .list()
-      .filter((t) => !subcircuit_id || t.subcircuit_id === subcircuit_id)
-      .map((t) => t.source_trace_id)
-      .filter((id): id is string => Boolean(id)),
+    subcircuit_id
+      ? db.pcb_trace
+          .list()
+          .filter((t) => t.subcircuit_id === subcircuit_id)
+          .map((t) => t.source_trace_id)
+          .filter((id): id is string => Boolean(id))
+      : [],
   )
-
   // Build a map of source_port_id → breakout point for adding breakout
   // waypoints to cross-boundary trace connections.
   const sourcePortIdToBreakoutPoint = new Map<
@@ -329,9 +330,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     if (spId) sourcePortIdToBreakoutPoint.set(spId, bp)
   }
 
-  // Create connections from traces. Only include traces that belong to
-  // this subcircuit — traces from descendant subcircuits (e.g. inside a
-  // breakout) are already routed by the descendant's autorouter.
+  // Create connections from source traces in this subcircuit. Existing
+  // top-level pcb_traces are ignored here so SRJ represents routing intent,
+  // not already-routed board state.
   // For cross-boundary traces, add breakout points as additional
   // waypoints so the autorouter routes through the boundary.
   const directTraceConnections = db.source_trace
@@ -459,25 +460,31 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       )
     }
 
-    connectionsFromNets.push({
-      name: net.source_net_id ?? connMap.getNetConnectedToId(net.source_net_id),
-      nominalTraceWidth: nominalTraceWidthFromConnectedTraces,
-      width: nominalTraceWidthFromConnectedTraces,
-      pointsToConnect: connectedSourceTraces.flatMap((st) => {
-        const pcb_ports = db.pcb_port
-          .list()
-          .filter((p) =>
-            st.connected_source_port_ids.includes(p.source_port_id),
-          )
+    const pointsToConnect: SimpleRouteConnection["pointsToConnect"] = []
+    const addedPointIds = new Set<string>()
+    for (const st of connectedSourceTraces) {
+      const pcb_ports = db.pcb_port
+        .list()
+        .filter((p) => st.connected_source_port_ids.includes(p.source_port_id))
 
-        return pcb_ports.map((p) => ({
+      for (const p of pcb_ports) {
+        if (addedPointIds.has(p.pcb_port_id)) continue
+        addedPointIds.add(p.pcb_port_id)
+        pointsToConnect.push({
           x: p.x!,
           y: p.y!,
           layer: (p.layers?.[0] as any) ?? "top",
           pointId: p.pcb_port_id,
           pcb_port_id: p.pcb_port_id,
-        }))
-      }),
+        })
+      }
+    }
+
+    connectionsFromNets.push({
+      name: net.source_net_id ?? connMap.getNetConnectedToId(net.source_net_id),
+      nominalTraceWidth: nominalTraceWidthFromConnectedTraces,
+      width: nominalTraceWidthFromConnectedTraces,
+      pointsToConnect,
     })
   }
 
@@ -546,39 +553,37 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...connectionsFromBreakoutPoints,
   ]
 
-  // ----- 2. Map every pointId -> its parent connection
-  const pointIdToConn = new Map<string, SimpleRouteConnection>()
-  for (const conn of allConns) {
-    for (const pt of conn.pointsToConnect) {
-      if (pt.pointId) pointIdToConn.set(pt.pointId, conn)
+  if (subcircuit_id) {
+    const pointIdToConn = new Map<string, SimpleRouteConnection>()
+    for (const conn of allConns) {
+      for (const pt of conn.pointsToConnect) {
+        if (pt.pointId) pointIdToConn.set(pt.pointId, conn)
+      }
     }
-  }
 
-  // ----- 3. Walk existing pcb_traces to find already-connected port groups
-  const existingTraces = db.pcb_trace
-    .list()
-    .filter(
-      (t) => !subcircuit_id || relevantSubcircuitIds?.has(t.subcircuit_id!),
-    )
+    const existingTraces = db.pcb_trace.list().filter((t) => {
+      return relevantSubcircuitIds?.has(t.subcircuit_id!)
+    })
 
-  for (const tr of existingTraces) {
-    const tracePortIds = new Set<string>()
-    for (const seg of tr.route as any[]) {
-      if (seg.start_pcb_port_id) tracePortIds.add(seg.start_pcb_port_id)
-      if (seg.end_pcb_port_id) tracePortIds.add(seg.end_pcb_port_id)
+    for (const tr of existingTraces) {
+      const tracePortIds = new Set<string>()
+      for (const seg of tr.route as any[]) {
+        if (seg.start_pcb_port_id) tracePortIds.add(seg.start_pcb_port_id)
+        if (seg.end_pcb_port_id) tracePortIds.add(seg.end_pcb_port_id)
+      }
+      if (tracePortIds.size < 2) continue
+
+      const firstId = tracePortIds.values().next().value
+      if (!firstId) continue
+      const conn = pointIdToConn.get(firstId)
+      if (!conn) continue
+      if (![...tracePortIds].every((pid) => pointIdToConn.get(pid) === conn)) {
+        continue
+      }
+
+      conn.externallyConnectedPointIds ??= []
+      conn.externallyConnectedPointIds.push([...tracePortIds])
     }
-    if (tracePortIds.size < 2) continue
-
-    const firstId = tracePortIds.values().next().value
-    if (!firstId) continue
-    const conn = pointIdToConn.get(firstId)
-    if (!conn) continue
-    // ensure every port on the trace belongs to the same connection
-    if (![...tracePortIds].every((pid) => pointIdToConn.get(pid) === conn))
-      continue
-
-    conn.externallyConnectedPointIds ??= []
-    conn.externallyConnectedPointIds.push([...tracePortIds])
   }
 
   const resolvedMinViaHoleDiameter =
