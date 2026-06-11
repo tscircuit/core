@@ -441,9 +441,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const source_nets = db.source_net
     .list()
-    .filter(
-      (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
-    )
+    .filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id)
 
   const connectionsFromNets: SimpleRouteConnection[] = []
   for (const net of source_nets) {
