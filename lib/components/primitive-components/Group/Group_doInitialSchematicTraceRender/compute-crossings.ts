@@ -1,7 +1,12 @@
 import type { SchematicTrace } from "circuit-json"
+import { segmentIntersection } from "./segment-intersection"
 
 type Edge = SchematicTrace["edges"][number]
-type TraceEdges = { source_trace_id: string; edges: Edge[] }
+type TraceEdges = {
+  source_trace_id: string
+  edges: Edge[]
+  connectivity_key?: string
+}
 
 const TOL = 1e-6
 
@@ -39,40 +44,6 @@ function paramAlong(
     ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) /
     ((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y))
   return Math.max(0, Math.min(1, t)) * L
-}
-
-function cross(ax: number, ay: number, bx: number, by: number) {
-  return ax * by - ay * bx
-}
-
-function segmentIntersection(
-  p1: { x: number; y: number },
-  p2: { x: number; y: number },
-  q1: { x: number; y: number },
-  q2: { x: number; y: number },
-): { x: number; y: number } | null {
-  const r = { x: p2.x - p1.x, y: p2.y - p1.y }
-  const s = { x: q2.x - q1.x, y: q2.y - q1.y }
-  const rxs = cross(r.x, r.y, s.x, s.y)
-  const q_p = { x: q1.x - p1.x, y: q1.y - p1.y }
-  const q_pxr = cross(q_p.x, q_p.y, r.x, r.y)
-
-  if (Math.abs(rxs) < TOL && Math.abs(q_pxr) < TOL) {
-    // Colinear - ignore as crossing (we don't generate crossings for overlap)
-    return null
-  }
-  if (Math.abs(rxs) < TOL && Math.abs(q_pxr) >= TOL) {
-    // Parallel non-intersecting
-    return null
-  }
-
-  const t = cross(q_p.x, q_p.y, s.x, s.y) / rxs
-  const u = cross(q_p.x, q_p.y, r.x, r.y) / rxs
-
-  if (t < -TOL || t > 1 + TOL || u < -TOL || u > 1 + TOL) return null
-
-  const pt = { x: p1.x + t * r.x, y: p1.y + t * r.y }
-  return pt
 }
 
 function mergeIntervals(
@@ -178,7 +149,14 @@ export function computeCrossings(
         for (let ej = tj === ti ? ei + 1 : 0; ej < B.edges.length; ej++) {
           const eB = B.edges[ej]
 
-          const P = segmentIntersection(eA.from, eA.to, eB.from, eB.to)
+          if (
+            A.connectivity_key !== undefined &&
+            A.connectivity_key === B.connectivity_key
+          ) {
+            continue
+          }
+
+          const P = segmentIntersection(eA.from, eA.to, eB.from, eB.to, tol)
           if (!P) continue
 
           const LA = length(eA.from, eA.to)
@@ -232,6 +210,7 @@ export function computeCrossings(
   // Build new traces with crossings inserted
   const out: TraceEdges[] = traces.map((t) => ({
     source_trace_id: t.source_trace_id,
+    connectivity_key: t.connectivity_key,
     edges: [],
   }))
 
