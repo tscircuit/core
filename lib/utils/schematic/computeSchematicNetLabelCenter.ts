@@ -5,10 +5,12 @@ export const getSchematicNetLabelTextWidth = ({
   text: string
   font_size?: number
 }) => {
+  // Linear fit of the rendered net label box (text + arrow ends + padding):
+  // the ends are a constant cost, only ~0.08 per character grows with text
   const fontScale = font_size / 0.18
-  const charWidth = 0.12 * fontScale
-  const horizontalPadding = 0.12 * fontScale
-  return text.length * charWidth + horizontalPadding
+  const charWidth = 0.08 * fontScale
+  const endPadding = 0.3 * fontScale
+  return text.length * charWidth + endPadding
 }
 
 export const computeSchematicNetLabelCenter = ({

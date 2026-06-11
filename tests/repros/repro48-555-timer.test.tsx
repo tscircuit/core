@@ -105,6 +105,9 @@ test(
         return dx * dx + dy * dy < 0.5 * 0.5
       })
     expect(gndLabelsNearU1Gnd).toHaveLength(1)
+    // expect(gndLabelsNearU1Gnd[0]!.anchor_position).toEqual(
+    //   u1GndSchematicPort!.center,
+    // )
 
     expect(circuit).toMatchSchematicSnapshot(import.meta.path)
     expect(circuit).toMatchPcbSnapshot(import.meta.path)

@@ -227,17 +227,39 @@ export function createSchematicTraceSolverInputProblem(
           group._parsedProps.schMaxTraceDistance ??
           DEFAULT_MAX_MSP_PAIR_DISTANCE
         let netLabelWidth: number | undefined
-        if (
-          st.display_name &&
-          !st.display_name.startsWith(".") &&
-          portDistance > maxMspDist
-        ) {
-          netLabelWidth = Number(
-            getSchematicNetLabelTextWidth({
-              text: String(st.display_name),
-              font_size: 0.14,
-            }).toFixed(2),
-          )
+        if (portDistance > maxMspDist) {
+          // Estimate the text the net label will render with. User-provided
+          // display names are used directly; auto-generated names (selector
+          // paths starting with ".") render as pin-pair labels like
+          // "R1_pin2/U1_pin2" (see getNetNameFromPorts).
+          let labelText: string | undefined
+          if (st.display_name && !st.display_name.startsWith(".")) {
+            labelText = String(st.display_name)
+          } else {
+            const portLabelParts: string[] = []
+            for (const schPortId of [a, b]) {
+              const srcPortId = schPortIdToSourcePortId.get(schPortId!)
+              const srcPort = srcPortId ? db.source_port.get(srcPortId) : null
+              if (!srcPort) continue
+              const srcComponent = srcPort.source_component_id
+                ? db.source_component.get(srcPort.source_component_id)
+                : null
+              const portName =
+                srcPort.name ??
+                (srcPort.pin_number != null ? `pin${srcPort.pin_number}` : "")
+              if (srcComponent?.name && portName) {
+                portLabelParts.push(`${srcComponent.name}_${portName}`)
+              }
+            }
+            if (portLabelParts.length > 0) {
+              labelText = portLabelParts.join("/")
+            }
+          }
+          if (labelText) {
+            netLabelWidth = Number(
+              getSchematicNetLabelTextWidth({ text: labelText }).toFixed(2),
+            )
+          }
         }
         directConnections.push({
           pinIds: [a, b].map((id) => schematicPortIdToPinId.get(id)!) as [

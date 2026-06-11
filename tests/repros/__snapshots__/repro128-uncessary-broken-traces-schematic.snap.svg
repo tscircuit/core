@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(74.8005319149,0,0,-74.8005319149,510.7704454787,330.8876329787)" data-software-used-string="@tscircuit/core@0.0.1321"><style>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(74.8005319149,0,0,-74.8005319149,510.7704454787,330.8876329787)" data-software-used-string="@tscircuit/core@0.0.1322"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -61,10 +61,10 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 797.1816821808521,279.1256648935892
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.496010638298px"/><text class="net-label-text" x="799.8745013297886" y="271.04720744678" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.464095744682px" transform="">BOUT</text><path class="net-label" d="
-    M 619.231216755305,345.84773936168
-    L 627.3096742021143,349.8869680850846
-    L 627.3096742021143,394.6077127659395
-    L 611.1527593084958,394.6077127659395
-    L 611.1527593084958,349.8869680850846
+    M 630.45129654254,345.84773936168
+    L 634.4905252659446,337.7692819148708
+    L 679.2112699467996,337.7692819148708
+    L 679.2112699467996,353.9261968084892
+    L 634.4905252659446,353.9261968084892
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.496010638298px"/><text class="net-label-text" x="619.231216755305" y="352.579787234021" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.464095744682px" transform="rotate(90 619.231216755305 352.579787234021)">BOUT</text><rect class="component-overlay" x="501.794381648912" y="55.62167553186801" width="17.952127659576036" height="13.464095744681998" fill="transparent"/><path d="M 519.746509308488 55.62167553186801 L 501.794381648912 55.62167553186801" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.496010638298px" stroke-linecap="round"/><path d="M 510.7704454787 55.62167553186801 L 510.7704454787 69.08577127655" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.496010638298px" stroke-linecap="round"/><text x="510.7704454787" y="51.88164893612301" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="ideographic" font-size="13.464095744682px">VM</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.496010638298px"/><text class="net-label-text" x="637.183344414881" y="345.84773936168" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.464095744682px" transform="">BOUT</text><rect class="component-overlay" x="501.794381648912" y="55.62167553186801" width="17.952127659576036" height="13.464095744681998" fill="transparent"/><path d="M 519.746509308488 55.62167553186801 L 501.794381648912 55.62167553186801" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.496010638298px" stroke-linecap="round"/><path d="M 510.7704454787 55.62167553186801 L 510.7704454787 69.08577127655" stroke="rgb(132, 0, 0)" fill="none" stroke-width="1.496010638298px" stroke-linecap="round"/><text x="510.7704454787" y="51.88164893612301" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="ideographic" font-size="13.464095744682px">VM</text></svg>
