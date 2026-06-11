@@ -15,7 +15,7 @@ const pinLabels = {
   pin10: ["VIN"],
 } as const
 
-export const TPS63802DLAR = (props: ChipProps<typeof pinLabels>) => {
+const TPS63802DLAR = (props: ChipProps<typeof pinLabels>) => {
   return (
     <chip
       pinLabels={pinLabels}
