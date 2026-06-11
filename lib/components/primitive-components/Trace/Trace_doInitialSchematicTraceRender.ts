@@ -137,10 +137,15 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         edges.push({ from: anchorPos, to: { x: labelPos.x, y: anchorPos.y } })
         edges.push({ from: { x: labelPos.x, y: anchorPos.y }, to: labelPos })
       }
+      const junctions = createSchematicTraceJunctions({
+        edges,
+        db,
+        source_trace_id: trace.source_trace_id!,
+      })
       const dbTrace = db.schematic_trace.insert({
         source_trace_id: trace.source_trace_id!,
         edges,
-        junctions: [],
+        junctions,
         subcircuit_connectivity_map_key:
           trace.subcircuit_connectivity_map_key ?? undefined,
       })
