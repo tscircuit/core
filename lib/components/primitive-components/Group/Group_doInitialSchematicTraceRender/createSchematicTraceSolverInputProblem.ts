@@ -2,13 +2,23 @@ import type { SourceNet } from "circuit-json"
 import { Group } from "../Group"
 import {
   type InputChip,
+  type InputObstacle,
   type InputPin,
   type InputProblem,
 } from "@tscircuit/schematic-trace-solver"
+import { getObstaclesForComponentText } from "./getObstaclesForComponentText"
 import type { AxisDirection } from "./getSide"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
+
+/**
+ * Rail-style net labels (power/ground) draw a small bar with horizontal text
+ * above/below it. Measured from the rail_up/rail_down schematic-symbols:
+ * bar 0.24×0.18 anchored at its port, text (0.18 font) 0.05 below the bar.
+ */
+const RAIL_LABEL_VERTICAL_EXTENT = 0.45
+const RAIL_LABEL_SYMBOL_WIDTH = 0.24
 export type SolverInputContext = {
   inputProblem: InputProblem
   pinIdToSchematicPortId: Map<string, string>
@@ -81,6 +91,7 @@ export function createSchematicTraceSolverInputProblem(
 
   // Build chips and pinId maps
   const chips: InputChip[] = []
+  const obstacles: InputObstacle[] = []
   const pinIdToSchematicPortId = new Map<string, string>()
   const schematicPortIdToPinId = new Map<string, string>()
 
@@ -124,6 +135,15 @@ export function createSchematicTraceSolverInputProblem(
       pins,
       sectionId,
     })
+
+    // Rendered name/value texts are keep-out zones for rail (power/ground)
+    // net labels
+    obstacles.push(
+      ...getObstaclesForComponentText({
+        schematicComponent,
+        sourceComponent,
+      }),
+    )
   }
 
   // Maps for ports within this scope
@@ -287,9 +307,23 @@ export function createSchematicTraceSolverInputProblem(
       )
       userNetIdToConnKey.set(userNetId, connKey)
 
-      const netLabelWidth = Number(
+      const textWidth = Number(
         getSchematicNetLabelTextWidth({ text: String(userNetId) }).toFixed(2),
       )
+
+      let netLabelWidth = textWidth
+      let netLabelHeight: number | undefined
+
+      // Power/ground nets render as rail symbols (rail_up/rail_down): a short
+      // bar with HORIZONTAL text above/below — the box does not rotate. These
+      // nets are restricted to y+/y- orientations (see
+      // availableNetLabelOrientations below) and the solver swaps width/height
+      // for those orientations, so pre-swap here: after the solver's swap the
+      // placed box comes out textWidth wide × RAIL_LABEL_VERTICAL_EXTENT tall.
+      if (sourceNet.is_ground || sourceNet.is_power) {
+        netLabelWidth = RAIL_LABEL_VERTICAL_EXTENT
+        netLabelHeight = Math.max(textWidth, RAIL_LABEL_SYMBOL_WIDTH)
+      }
 
       netConnections.push({
         netId: userNetId,
@@ -297,6 +331,7 @@ export function createSchematicTraceSolverInputProblem(
           (portId) => schematicPortIdToPinId.get(portId)!,
         ),
         netLabelWidth,
+        ...(netLabelHeight !== undefined ? { netLabelHeight } : {}),
       })
     }
   }
@@ -326,6 +361,7 @@ export function createSchematicTraceSolverInputProblem(
 
   const inputProblem: InputProblem = {
     chips,
+    obstacles,
     directConnections,
     netConnections,
     availableNetLabelOrientations,
