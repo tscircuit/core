@@ -1,4 +1,8 @@
 import {
+  type SilkscreenGraphicProps as PublicSilkscreenGraphicProps,
+  silkscreenGraphicProps as publicSilkscreenGraphicProps,
+} from "@tscircuit/props"
+import {
   asset,
   brep_shape,
   type BRepShape,
@@ -8,12 +12,33 @@ import {
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { applyToPoint } from "transformation-matrix"
 import { z } from "zod"
+import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
+import { svgToBrepShapes } from "lib/utils/svg/svg-to-brep-shapes"
 
-const silkscreenGraphicProps = z.object({
+const internalImportedSilkscreenGraphicProps = z.object({
   layer: visible_layer.optional(),
   brepShape: brep_shape,
   imageAsset: asset.optional(),
 })
+
+const silkscreenGraphicProps = z.union([
+  publicSilkscreenGraphicProps,
+  internalImportedSilkscreenGraphicProps,
+])
+
+type ParsedSilkscreenGraphicProps = z.infer<typeof silkscreenGraphicProps>
+
+const isImageSilkscreenGraphicProps = (
+  props: ParsedSilkscreenGraphicProps,
+): props is Extract<ParsedSilkscreenGraphicProps, { imageUrl: string }> =>
+  "imageUrl" in props && typeof props.imageUrl === "string"
+
+const isImportedBrepSilkscreenGraphicProps = (
+  props: ParsedSilkscreenGraphicProps,
+): props is z.infer<typeof internalImportedSilkscreenGraphicProps> =>
+  "brepShape" in props &&
+  Boolean(props.brepShape) &&
+  !("imageUrl" in props && typeof props.imageUrl === "string")
 
 const transformRing = (
   ring: Ring,
@@ -28,6 +53,31 @@ const transformRing = (
     }
   }),
 })
+
+const getBoundsFromVertices = (
+  vertices: Array<{ x: number; y: number }>,
+  transform: Parameters<typeof applyToPoint>[0],
+) => {
+  if (vertices.length === 0) return { width: 0, height: 0 }
+
+  let minX = Infinity
+  let maxX = -Infinity
+  let minY = Infinity
+  let maxY = -Infinity
+
+  for (const vertex of vertices) {
+    const transformed = applyToPoint(transform, vertex)
+    minX = Math.min(minX, transformed.x)
+    maxX = Math.max(maxX, transformed.x)
+    minY = Math.min(minY, transformed.y)
+    maxY = Math.max(maxY, transformed.y)
+  }
+
+  return {
+    width: maxX - minX,
+    height: maxY - minY,
+  }
+}
 
 const translateBrepShape = (
   brepShape: BRepShape,
@@ -75,8 +125,9 @@ const getBrepCenter = (brepShape: BRepShape) => {
 export class SilkscreenGraphic extends PrimitiveComponent<
   typeof silkscreenGraphicProps
 > {
-  pcb_silkscreen_graphic_id: string | null = null
+  pcb_silkscreen_graphic_ids: string[] = []
   isPcbPrimitive = true
+  _hasStartedImageLoad = false
 
   get config() {
     return {
@@ -87,17 +138,9 @@ export class SilkscreenGraphic extends PrimitiveComponent<
 
   doInitialPcbPrimitiveRender(): void {
     if (this.root?.pcbDisabled) return
-    const { db } = this.root!
     const { _parsedProps: props } = this
     const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
     const layer = maybeFlipLayer(props.layer ?? "top") as "top" | "bottom"
-    const transform = this._computePcbGlobalTransformBeforeLayout()
-    const subcircuit = this.getSubcircuit()
-    const group = this.getGroup()
-
-    const pcb_component_id =
-      this.parent?.pcb_component_id ??
-      this.getPrimitiveContainer()?.pcb_component_id!
 
     if (layer !== "top" && layer !== "bottom") {
       throw new Error(
@@ -105,42 +148,121 @@ export class SilkscreenGraphic extends PrimitiveComponent<
       )
     }
 
-    const pcbSilkscreenGraphic = db.pcb_silkscreen_graphic.insert({
-      pcb_component_id,
-      pcb_group_id: group?.pcb_group_id ?? undefined,
-      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-      layer,
-      shape: "brep",
-      image_asset: props.imageAsset,
-      brep_shape: {
-        outer_ring: transformRing(props.brepShape.outer_ring, transform),
-        inner_rings: props.brepShape.inner_rings.map((ring) =>
-          transformRing(ring, transform),
-        ),
-      },
-    })
+    if (isImportedBrepSilkscreenGraphicProps(props)) {
+      if (this.pcb_silkscreen_graphic_ids.length > 0) return
+      this._insertBrepShapes([props.brepShape], layer, props.imageAsset)
+      return
+    }
 
-    this.pcb_silkscreen_graphic_id =
-      pcbSilkscreenGraphic.pcb_silkscreen_graphic_id
+    if (!isImageSilkscreenGraphicProps(props)) {
+      throw new Error(
+        "SilkscreenGraphic must receive either imageUrl/width/height or an internal brepShape",
+      )
+    }
+
+    if (this._hasStartedImageLoad) return
+    this._hasStartedImageLoad = true
+
+    this._queueAsyncEffect("load-silkscreen-graphic-image", async () => {
+      const resolvedUrl = await resolveStaticFileImport(
+        props.imageUrl,
+        this.root?.platform,
+      )
+
+      const response = await fetch(resolvedUrl)
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch silkscreen graphic "${resolvedUrl}": ${response.status}`,
+        )
+      }
+
+      const svgContent = await response.text()
+      const brepShapes = svgToBrepShapes(svgContent, {
+        width: props.width,
+        height: props.height,
+      })
+
+      this._insertBrepShapes(brepShapes, layer, {
+        project_relative_path: props.imageUrl,
+        url: resolvedUrl,
+        mimetype:
+          response.headers.get("content-type") ||
+          (resolvedUrl.toLowerCase().endsWith(".svg")
+            ? "image/svg+xml"
+            : "application/octet-stream"),
+      })
+    })
+  }
+
+  private _insertBrepShapes(
+    brepShapes: BRepShape[],
+    layer: "top" | "bottom",
+    imageAsset: z.infer<typeof asset> | undefined,
+  ) {
+    if (brepShapes.length === 0) {
+      throw new Error("SilkscreenGraphic requires at least one BRep shape")
+    }
+
+    const { db } = this.root!
+    const transform = this._computePcbGlobalTransformBeforeLayout()
+    const subcircuit = this.getSubcircuit()
+    const group = this.getGroup()
+    const pcb_component_id =
+      this.parent?.pcb_component_id ??
+      this.getPrimitiveContainer()?.pcb_component_id!
+
+    for (const brepShape of brepShapes) {
+      const pcbSilkscreenGraphic = db.pcb_silkscreen_graphic.insert({
+        pcb_component_id,
+        pcb_group_id: group?.pcb_group_id ?? undefined,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        layer,
+        shape: "brep",
+        image_asset: imageAsset,
+        brep_shape: {
+          outer_ring: transformRing(brepShape.outer_ring, transform),
+          inner_rings: brepShape.inner_rings.map((ring) =>
+            transformRing(ring, transform),
+          ),
+        },
+      })
+
+      this.pcb_silkscreen_graphic_ids.push(
+        pcbSilkscreenGraphic.pcb_silkscreen_graphic_id,
+      )
+    }
   }
 
   _setPositionFromLayout(newCenter: { x: number; y: number }) {
     const { db } = this.root!
-    if (!this.pcb_silkscreen_graphic_id) return
+    if (this.pcb_silkscreen_graphic_ids.length === 0) return
 
-    const currentGraphic = db.pcb_silkscreen_graphic.get(
-      this.pcb_silkscreen_graphic_id,
-    )
-    if (!currentGraphic) return
+    const currentShapes = this.pcb_silkscreen_graphic_ids
+      .map((id) => db.pcb_silkscreen_graphic.get(id))
+      .filter(Boolean)
 
-    const currentCenter = getBrepCenter(currentGraphic.brep_shape)
-    db.pcb_silkscreen_graphic.update(this.pcb_silkscreen_graphic_id, {
-      brep_shape: translateBrepShape(
-        currentGraphic.brep_shape,
-        newCenter.x - currentCenter.x,
-        newCenter.y - currentCenter.y,
+    if (currentShapes.length === 0) return
+
+    const currentCenter = getBrepCenter({
+      outer_ring: {
+        vertices: currentShapes.flatMap(
+          (shape) => shape!.brep_shape.outer_ring.vertices,
+        ),
+      },
+      inner_rings: currentShapes.flatMap(
+        (shape) => shape!.brep_shape.inner_rings,
       ),
     })
+
+    for (const graphic of currentShapes) {
+      db.pcb_silkscreen_graphic.update(graphic!.pcb_silkscreen_graphic_id, {
+        brep_shape: translateBrepShape(
+          graphic!.brep_shape,
+          newCenter.x - currentCenter.x,
+          newCenter.y - currentCenter.y,
+        ),
+      })
+    }
   }
 
   _moveCircuitJsonElements({
@@ -149,39 +271,36 @@ export class SilkscreenGraphic extends PrimitiveComponent<
   }: { deltaX: number; deltaY: number }) {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
-    if (!this.pcb_silkscreen_graphic_id) return
+    for (const id of this.pcb_silkscreen_graphic_ids) {
+      const graphic = db.pcb_silkscreen_graphic.get(id)
+      if (!graphic) continue
 
-    const graphic = db.pcb_silkscreen_graphic.get(
-      this.pcb_silkscreen_graphic_id,
-    )
-    if (!graphic) return
-
-    db.pcb_silkscreen_graphic.update(this.pcb_silkscreen_graphic_id, {
-      brep_shape: translateBrepShape(graphic.brep_shape, deltaX, deltaY),
-    })
+      db.pcb_silkscreen_graphic.update(id, {
+        brep_shape: translateBrepShape(graphic.brep_shape, deltaX, deltaY),
+      })
+    }
   }
 
   getPcbSize(): { width: number; height: number } {
-    const vertices = getBrepVertices(this._parsedProps.brepShape)
-    if (vertices.length === 0) {
-      return { width: 0, height: 0 }
+    const transform = this._computePcbGlobalTransformBeforeLayout()
+
+    if (isImageSilkscreenGraphicProps(this._parsedProps)) {
+      const halfWidth = this._parsedProps.width / 2
+      const halfHeight = this._parsedProps.height / 2
+      return getBoundsFromVertices(
+        [
+          { x: -halfWidth, y: -halfHeight },
+          { x: halfWidth, y: -halfHeight },
+          { x: halfWidth, y: halfHeight },
+          { x: -halfWidth, y: halfHeight },
+        ],
+        transform,
+      )
     }
 
-    let minX = Infinity
-    let maxX = -Infinity
-    let minY = Infinity
-    let maxY = -Infinity
-
-    for (const vertex of vertices) {
-      minX = Math.min(minX, vertex.x)
-      maxX = Math.max(maxX, vertex.x)
-      minY = Math.min(minY, vertex.y)
-      maxY = Math.max(maxY, vertex.y)
-    }
-
-    return {
-      width: maxX - minX,
-      height: maxY - minY,
-    }
+    return getBoundsFromVertices(
+      getBrepVertices(this._parsedProps.brepShape),
+      transform,
+    )
   }
 }

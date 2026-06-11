@@ -1,14 +1,22 @@
 import { expect, test } from "bun:test"
+import type { AnyCircuitElement } from "circuit-json"
+import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("silkscreengraphic renders in PCB snapshots", async () => {
-  const { circuit } = getTestFixture()
-
-  circuit.add(
-    <board width="20mm" height="12mm">
-      <silkscreengraphic
-        layer="top"
-        brepShape={{
+test("createComponentsFromCircuitJson renders pcb_silkscreen_graphic elements in PCB snapshots", async () => {
+  const components = createComponentsFromCircuitJson(
+    {
+      componentName: "imported_silkscreen_graphic",
+      componentRotation: "0",
+    },
+    [
+      {
+        type: "pcb_silkscreen_graphic",
+        pcb_silkscreen_graphic_id: "pcb_silkscreen_graphic_0",
+        pcb_component_id: "pcb_component_0",
+        layer: "top",
+        shape: "brep",
+        brep_shape: {
           outer_ring: {
             vertices: [
               { x: -7, y: -2 },
@@ -27,11 +35,15 @@ test("silkscreengraphic renders in PCB snapshots", async () => {
               ],
             },
           ],
-        }}
-      />
-      <silkscreengraphic
-        layer="bottom"
-        brepShape={{
+        },
+      },
+      {
+        type: "pcb_silkscreen_graphic",
+        pcb_silkscreen_graphic_id: "pcb_silkscreen_graphic_1",
+        pcb_component_id: "pcb_component_0",
+        layer: "bottom",
+        shape: "brep",
+        brep_shape: {
           outer_ring: {
             vertices: [
               { x: 3, y: 0 },
@@ -41,10 +53,19 @@ test("silkscreengraphic renders in PCB snapshots", async () => {
             ],
           },
           inner_rings: [],
-        }}
-      />
-    </board>,
+        },
+      },
+    ] as AnyCircuitElement[],
   )
+
+  const { circuit } = getTestFixture()
+  circuit.add(<board width="20mm" height="12mm" />)
+
+  const board = circuit.children[0]!
+
+  for (const component of components) {
+    board.add(component)
+  }
 
   await circuit.renderUntilSettled()
 
@@ -53,6 +74,7 @@ test("silkscreengraphic renders in PCB snapshots", async () => {
     (elm) => elm.type === "pcb_silkscreen_graphic",
   )
 
+  expect(components).toHaveLength(2)
   expect(silkscreenGraphics).toHaveLength(2)
   await expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
 })

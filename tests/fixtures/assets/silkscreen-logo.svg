@@ -1,0 +1,12 @@
+<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(2 0)">
+    <path
+      d="M 10 10 H 40 V 50 H 10 Z M 18 18 H 32 V 42 H 18 Z"
+      fill="#000000"
+      fill-rule="evenodd"
+    />
+  </g>
+  <g transform="translate(-2 0)">
+    <polygon points="60,15 88,40 60,65" fill="#000000" />
+  </g>
+</svg>
