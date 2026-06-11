@@ -42,6 +42,32 @@ const getSourcePortNetLabelText = (
   return `${sourceComponent.name}_${sourcePort.name}`
 }
 
+const getDirectCrossSubcircuitConnectionLabelText = (
+  db: NonNullable<Group<any>["root"]>["db"],
+  sourcePortId: string,
+) => {
+  const sourcePort = db.source_port.get(sourcePortId)
+  if (!sourcePort) return undefined
+
+  for (const sourceTrace of db.source_trace.list()) {
+    const connectedSourcePortIds = sourceTrace.connected_source_port_ids ?? []
+    if (connectedSourcePortIds.length !== 2) continue
+    if ((sourceTrace.connected_source_net_ids ?? []).length > 0) continue
+    if (!connectedSourcePortIds.includes(sourcePortId)) continue
+
+    const otherSourcePortId = connectedSourcePortIds.find(
+      (portId) => portId !== sourcePortId,
+    )
+    if (!otherSourcePortId) continue
+
+    const otherSourcePort = db.source_port.get(otherSourcePortId)
+    if (!otherSourcePort) continue
+    if (otherSourcePort.subcircuit_id === sourcePort.subcircuit_id) continue
+
+    return getSourcePortNetLabelText(db, otherSourcePortId)
+  }
+}
+
 export const insertNetLabelsForPortsMissingTrace = ({
   allSourceAndSchematicPortIdsInScope,
   group,
@@ -87,9 +113,13 @@ export const insertNetLabelsForPortsMissingTrace = ({
       .filter((label): label is string => Boolean(label))
       .join("/")
 
+    const directCrossSubcircuitConnectionLabelText =
+      getDirectCrossSubcircuitConnectionLabelText(db, srcPortId)
+
     const text =
       sourceNet?.name ||
       sourceNet?.source_net_id ||
+      directCrossSubcircuitConnectionLabelText ||
       implicitPortLabelText ||
       connKey
 

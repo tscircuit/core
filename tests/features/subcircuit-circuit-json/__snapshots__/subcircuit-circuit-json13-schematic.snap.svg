@@ -30,4 +30,4 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="S1_connectivity_net0"]
     L 575.4849258687328,175.2373457845301
     L 709.1017039318443,175.23734578453013
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.4996536946859997px"/><text class="net-label-text" x="702.8023272814095" y="194.13547573583452" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="31.496883252173998px" transform="">R2_pin1</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="3.4996536946859997px"/><text class="net-label-text" x="702.8023272814095" y="194.13547573583452" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="31.496883252173998px" transform="">R1_pin1</text></svg>
