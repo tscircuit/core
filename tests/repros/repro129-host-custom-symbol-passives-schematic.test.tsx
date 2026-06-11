@@ -70,5 +70,20 @@ test("repro129: host custom symbol connected to passives schematic", async () =>
 
   await circuit.renderUntilSettled()
 
+  const { inputProblem } = createSchematicTraceSolverInputProblem(
+    circuit.children[0] as any,
+  )
+  expect(inputProblem.directConnections.map((conn) => conn.pinIds)).toEqual([
+    ["HOST.pin1", "C1.1"],
+    ["HOST.pin2", "R1.1"],
+    ["HOST.pin3", "C1.2"],
+    ["HOST.pin4", "R1.2"],
+  ])
+  expect(
+    circuit.db.schematic_net_label
+      .list()
+      .every((netLabel) => !netLabel.text?.includes("undefined")),
+  ).toBe(true)
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

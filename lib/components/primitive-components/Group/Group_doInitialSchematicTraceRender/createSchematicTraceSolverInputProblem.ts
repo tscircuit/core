@@ -97,7 +97,18 @@ export function createSchematicTraceSolverInputProblem(
     })
 
     for (const schematicPort of schematicPorts) {
-      const pinId = `${sourceComponent?.name ?? schematicComponent.schematic_component_id}.${schematicPort.pin_number}`
+      const sourcePort = schematicPort.source_port_id
+        ? db.source_port.get(schematicPort.source_port_id)
+        : undefined
+      const pinIdentifier =
+        schematicPort.pin_number !== undefined
+          ? String(schematicPort.pin_number)
+          : sourcePort?.name
+      if (pinIdentifier === undefined) continue
+
+      const componentIdentifier =
+        sourceComponent?.name ?? schematicComponent.schematic_component_id
+      const pinId = `${componentIdentifier}.${pinIdentifier}`
       pinIdToSchematicPortId.set(pinId, schematicPort.schematic_port_id)
       schematicPortIdToPinId.set(schematicPort.schematic_port_id, pinId)
     }

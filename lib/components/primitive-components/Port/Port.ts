@@ -811,6 +811,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * port, but appears at the port it connects to.
    */
   _getNetLabelText(): string | undefined {
-    return `${this.parent?.props.name}_${this.props.name}`
+    const componentName =
+      this.getParentNormalComponent()?.props.name ?? this.parent?.props.name
+
+    return componentName
+      ? `${componentName}_${this.props.name}`
+      : this.props.name
   }
 }
