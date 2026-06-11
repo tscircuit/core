@@ -23,11 +23,16 @@ export function applyTracesFromSolverOutput(args: {
   } = args
   const { db } = group.root!
 
-  // Use the overlap-corrected traces from the pipeline
+  // Use the overlap-corrected traces from the pipeline. If the pipeline
+  // failed partway, fall back to the most-processed stage that completed —
+  // traceOverlapShiftSolver already contains overlap-corrected and
+  // long-distance traces, so prefer it over the raw line solver output.
+  const correctedTraceMap = solver.traceOverlapShiftSolver?.correctedTraceMap
   const traces =
     solver.netLabelTraceCollisionSolver?.getOutput().traces ??
     solver.traceCleanupSolver?.getOutput().traces ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
+    (correctedTraceMap ? Object.values(correctedTraceMap) : undefined) ??
     solver.schematicTraceLinesSolver?.solvedTracePaths
   const pendingTraces: Array<{
     source_trace_id: string
@@ -115,7 +120,20 @@ export function applyTracesFromSolverOutput(args: {
       edges: t.edges,
     })),
   )
-  const junctionsById = computeJunctions(withCrossings)
+  const connKeyBySourceTraceId = new Map(
+    pendingTraces.map((t) => [
+      t.source_trace_id,
+      t.subcircuit_connectivity_map_key,
+    ]),
+  )
+  const junctionsById = computeJunctions(
+    withCrossings.map((t) => ({
+      ...t,
+      subcircuit_connectivity_map_key: connKeyBySourceTraceId.get(
+        t.source_trace_id,
+      ),
+    })),
+  )
 
   for (const t of withCrossings) {
     db.schematic_trace.insert({
