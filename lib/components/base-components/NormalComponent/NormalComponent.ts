@@ -891,10 +891,13 @@ export class NormalComponent<
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
       do_not_place: props.doNotPlace ?? false,
       obstructs_within_bounds: props.obstructsWithinBounds ?? true,
+      ...(props.shouldBeOnEdgeOfBoard
+        ? { should_be_on_edge_of_board: props.shouldBeOnEdgeOfBoard }
+        : {}),
       metadata: props.kicadFootprintMetadata
         ? { kicad_footprint: props.kicadFootprintMetadata }
         : undefined,
-    })
+    } as any)
 
     const footprint = this.resolveFootprint()
 

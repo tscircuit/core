@@ -113,7 +113,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
 
   // Keep all circuit elements; static components will remain fixed during packing
-  const filteredCircuitJson = db.toArray()
+  const filteredCircuitJson = db.toArray() as any
 
   // Calculate bounds if width and height are specified
   let bounds:
