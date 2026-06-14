@@ -1,12 +1,12 @@
-import type { SourceNet } from "circuit-json"
-import { Group } from "../Group"
 import {
   type InputChip,
   type InputPin,
   type InputProblem,
 } from "@tscircuit/schematic-trace-solver"
-import type { AxisDirection } from "./getSide"
+import type { SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { Group } from "../Group"
+import type { AxisDirection } from "./getSide"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 export type SolverInputContext = {
@@ -51,6 +51,11 @@ export type SolverInputContext = {
 
 export function createSchematicTraceSolverInputProblem(
   group: Group<any>,
+  {
+    schTraceAutoLabelEnabled = true,
+  }: {
+    schTraceAutoLabelEnabled?: boolean
+  } = {},
 ): SolverInputContext {
   const { db } = group.root!
 
@@ -228,6 +233,7 @@ export function createSchematicTraceSolverInputProblem(
           DEFAULT_MAX_MSP_PAIR_DISTANCE
         let netLabelWidth: number | undefined
         if (
+          schTraceAutoLabelEnabled &&
           st.display_name &&
           !st.display_name.startsWith(".") &&
           portDistance > maxMspDist
@@ -287,9 +293,13 @@ export function createSchematicTraceSolverInputProblem(
       )
       userNetIdToConnKey.set(userNetId, connKey)
 
-      const netLabelWidth = Number(
-        getSchematicNetLabelTextWidth({ text: String(userNetId) }).toFixed(2),
-      )
+      const netLabelWidth = schTraceAutoLabelEnabled
+        ? Number(
+            getSchematicNetLabelTextWidth({ text: String(userNetId) }).toFixed(
+              2,
+            ),
+          )
+        : undefined
 
       netConnections.push({
         netId: userNetId,
