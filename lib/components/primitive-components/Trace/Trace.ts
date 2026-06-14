@@ -2,13 +2,10 @@ import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { traceProps } from "@tscircuit/props"
 import {
   type LayerRef,
-  type PcbTrace,
   type PcbTraceRoutePoint,
-  type PcbVia,
   type RouteHintPoint,
   type SchematicNetLabel,
   type SchematicTrace,
-  type SourceTrace,
 } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
@@ -45,6 +42,7 @@ import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
 import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualTraceRender"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
+import { getImportedTracePayload } from "./imported-trace-payload-registry"
 import { TraceConnectionError } from "../../../errors"
 
 export class Trace
@@ -54,9 +52,6 @@ export class Trace
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
   schematic_trace_id: string | null = null
-  _inflatedSourceTrace?: SourceTrace
-  _inflatedPcbTraces?: PcbTrace[]
-  _inflatedPcbVias?: PcbVia[]
   _portsRoutedOnPcb: Port[]
   subcircuit_connectivity_map_key: string | null = null
   _traceConnectionHash: string | null = null
@@ -264,6 +259,7 @@ export class Trace
 
     this._traceConnectionHash = this._computeTraceConnectionHash()
     const nets = this._findConnectedNets().nets
+    const importedTracePayload = getImportedTracePayload(this)
 
     const existingTraces = db.source_trace.list()
     const existingTrace = existingTraces.find(
@@ -284,15 +280,16 @@ export class Trace
       connected_source_net_ids: nets.map((n) => n.source_net_id!),
       subcircuit_id: subcircuit?.subcircuit_id!,
       max_length:
-        this._inflatedSourceTrace?.max_length ??
+        importedTracePayload?.importedSourceTrace?.max_length ??
         getMaxLengthFromConnectedCapacitors(
           ports.map((p) => p.port),
           { db },
         ) ??
         props.maxLength,
-      display_name: this._inflatedSourceTrace?.display_name ?? displayName,
+      display_name:
+        importedTracePayload?.importedSourceTrace?.display_name ?? displayName,
       min_trace_thickness:
-        this._inflatedSourceTrace?.min_trace_thickness ??
+        importedTracePayload?.importedSourceTrace?.min_trace_thickness ??
         this._getExplicitTraceThickness(),
     })
 

@@ -1,5 +1,6 @@
 import type { PcbTrace, PcbVia, SourceTrace } from "circuit-json"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { setImportedTracePayload } from "lib/components/primitive-components/Trace/imported-trace-payload-registry"
 import type { InflatorContext } from "../InflatorFn"
 
 const getSelectorPath = (
@@ -133,9 +134,11 @@ export function inflateSourceTrace(
   }
 
   const trace = new Trace(traceProps)
-  trace._inflatedSourceTrace = sourceTrace
-  trace._inflatedPcbTraces = pcbTraces.length > 0 ? pcbTraces : undefined
-  trace._inflatedPcbVias = inflatedPcbVias
+  setImportedTracePayload(trace, {
+    importedPcbTraces: pcbTraces.length > 0 ? pcbTraces : undefined,
+    importedPcbVias: inflatedPcbVias,
+    importedSourceTrace: sourceTrace,
+  })
 
   subcircuit.add(trace)
 }

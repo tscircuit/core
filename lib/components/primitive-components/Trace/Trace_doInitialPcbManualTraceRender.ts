@@ -1,4 +1,4 @@
-import type { LayerRef, PcbTraceRoutePoint, PcbVia } from "circuit-json"
+import type { LayerRef, PcbTraceRoutePoint } from "circuit-json"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
@@ -9,34 +9,8 @@ import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
-
-const findInflatedPcbViaForPoint = (
-  vias: PcbVia[] | undefined,
-  point: PcbTraceRoutePoint,
-): PcbVia | undefined => {
-  if (point.route_type !== "via") return undefined
-  return vias?.find(
-    (via) =>
-      Math.abs(via.x - point.x) < 0.0001 &&
-      Math.abs(via.y - point.y) < 0.0001 &&
-      (!via.from_layer || via.from_layer === point.from_layer) &&
-      (!via.to_layer || via.to_layer === point.to_layer),
-  )
-}
-
-const getViaDiameterFromRoutePoint = (point: PcbTraceRoutePoint) => {
-  const viaPoint = point as PcbTraceRoutePoint & {
-    hole_diameter?: number
-    outer_diameter?: number
-    via_hole_diameter?: number
-    via_diameter?: number
-  }
-
-  return {
-    holeDiameter: viaPoint.hole_diameter ?? viaPoint.via_hole_diameter,
-    outerDiameter: viaPoint.outer_diameter ?? viaPoint.via_diameter,
-  }
-}
+import { getImportedTracePayload } from "./imported-trace-payload-registry"
+import { Trace_renderImportedPcbTraces } from "./Trace_renderImportedPcbTraces"
 
 export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -46,9 +20,15 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
 
   const hasPcbPath = props.pcbPath !== undefined
   const wantsStraightLine = Boolean(props.pcbStraightLine)
-  const inflatedPcbTraces = trace._inflatedPcbTraces
+  const importedTracePayload = getImportedTracePayload(trace)
 
-  if (!hasPcbPath && !wantsStraightLine && !inflatedPcbTraces?.length) return
+  if (
+    !hasPcbPath &&
+    !wantsStraightLine &&
+    !importedTracePayload?.importedPcbTraces?.length
+  ) {
+    return
+  }
 
   let allPortsFound: boolean
   let ports: Port[]
@@ -118,111 +98,14 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     trace.getSubcircuit()._parsedProps.minTraceWidth ??
     jlcMinTolerances.min_trace_width!
 
-  if (inflatedPcbTraces?.length) {
-    const { maybeFlipLayer } = trace._getPcbPrimitiveFlippedHelpers()
-    const transform = trace._computePcbGlobalTransformBeforeLayout()
-    const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
-    const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
-    let firstPcbTraceId: string | null = null
-
-    for (const inflatedPcbTrace of inflatedPcbTraces) {
-      const transformedRoute = inflatedPcbTrace.route.map((point) => {
-        if (point.route_type === "wire") {
-          const { x, y, ...restOfPoint } = point
-          const transformedPoint = applyToPoint(transform, { x, y })
-          return {
-            ...restOfPoint,
-            ...transformedPoint,
-            layer: maybeFlipLayer(point.layer),
-          } as PcbTraceRoutePoint
-        }
-
-        if (point.route_type === "via") {
-          const { x, y, ...restOfPoint } = point
-          const transformedPoint = applyToPoint(transform, { x, y })
-          return {
-            ...restOfPoint,
-            ...transformedPoint,
-            from_layer: maybeFlipLayer(point.from_layer),
-            to_layer: maybeFlipLayer(point.to_layer),
-          } as PcbTraceRoutePoint
-        }
-
-        return {
-          ...point,
-          start: applyToPoint(transform, point.start),
-          end: applyToPoint(transform, point.end),
-          start_layer: maybeFlipLayer(point.start_layer),
-          end_layer: maybeFlipLayer(point.end_layer),
-        } as PcbTraceRoutePoint
-      })
-
-      const pcb_trace = db.pcb_trace.insert({
-        ...inflatedPcbTrace,
-        route: transformedRoute,
-        source_trace_id: trace.source_trace_id!,
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
-      })
-
-      firstPcbTraceId ??= pcb_trace.pcb_trace_id
-      trace.pcb_trace_id = pcb_trace.pcb_trace_id
-
-      for (let index = 0; index < transformedRoute.length; index++) {
-        const point = transformedRoute[index]
-        if (point.route_type !== "via") continue
-
-        const originalPoint = inflatedPcbTrace.route[index]
-        const inflatedPcbVia = findInflatedPcbViaForPoint(
-          trace._inflatedPcbVias?.filter(
-            (via) => via.pcb_trace_id === inflatedPcbTrace.pcb_trace_id,
-          ),
-          originalPoint,
-        )
-        const routePointViaDiameter = getViaDiameterFromRoutePoint(point)
-        const fromLayer = maybeFlipLayer(
-          (inflatedPcbVia?.from_layer ?? point.from_layer) as LayerRef,
-        )
-        const toLayer = maybeFlipLayer(
-          (inflatedPcbVia?.to_layer ?? point.to_layer) as LayerRef,
-        )
-        const layers = (
-          inflatedPcbVia?.layers ?? [
-            point.from_layer as LayerRef,
-            point.to_layer,
-          ]
-        ).map((layer) => maybeFlipLayer(layer as LayerRef))
-
-        db.pcb_via.insert({
-          pcb_trace_id: pcb_trace.pcb_trace_id,
-          x: point.x,
-          y: point.y,
-          hole_diameter:
-            inflatedPcbVia?.hole_diameter ??
-            routePointViaDiameter.holeDiameter ??
-            holeDiameter,
-          outer_diameter:
-            inflatedPcbVia?.outer_diameter ??
-            routePointViaDiameter.outerDiameter ??
-            padDiameter,
-          layers,
-          from_layer: fromLayer,
-          to_layer: toLayer,
-          subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-          pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
-          subcircuit_connectivity_map_key:
-            inflatedPcbVia?.subcircuit_connectivity_map_key,
-          net_is_assignable: inflatedPcbVia?.net_is_assignable,
-          net_assigned: inflatedPcbVia?.net_assigned,
-          is_tented: inflatedPcbVia?.is_tented,
-        })
-      }
-
-      trace._insertErrorIfTraceIsOutsideBoard(pcb_trace.route, ports)
-    }
-
-    trace._portsRoutedOnPcb = ports
-    trace.pcb_trace_id = firstPcbTraceId
+  if (
+    importedTracePayload &&
+    Trace_renderImportedPcbTraces({
+      importedTracePayload,
+      ports,
+      trace,
+    })
+  ) {
     return
   }
 

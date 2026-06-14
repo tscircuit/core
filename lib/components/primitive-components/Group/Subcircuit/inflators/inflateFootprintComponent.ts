@@ -1,7 +1,6 @@
 import type { PcbComponent } from "circuit-json"
-import { Footprint } from "lib/components/primitive-components/Footprint"
-import { extractPcbPrimitivesFromCircuitJson } from "lib/utils/extractPcbPrimitivesFromCircuitJson"
 import type { InflatorContext } from "../InflatorFn"
+import { inflatePcbComponentPrimitives } from "./inflatePcbComponentPrimitives"
 
 /**
  * Inflates a Footprint component from circuit JSON by extracting all PCB primitives
@@ -14,20 +13,11 @@ import type { InflatorContext } from "../InflatorFn"
 export const inflateFootprintComponent = (
   pcbElm: PcbComponent,
   inflatorContext: InflatorContext,
-): Footprint | null => {
-  const { injectionDb, normalComponent } = inflatorContext
+ ) => {
+  const { normalComponent } = inflatorContext
   if (!normalComponent) return null
-
-  const primitives = extractPcbPrimitivesFromCircuitJson({
-    pcbComponent: pcbElm,
-    db: injectionDb,
+  return inflatePcbComponentPrimitives(pcbElm, {
     componentName: normalComponent.name,
+    inflatorContext,
   })
-
-  if (primitives.length === 0) return null
-
-  const footprint = new Footprint({ originalLayer: pcbElm.layer })
-  footprint.addAll(primitives)
-
-  return footprint
 }

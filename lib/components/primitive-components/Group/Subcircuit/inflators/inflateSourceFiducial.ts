@@ -1,11 +1,7 @@
-import type {
-  CadComponent,
-  PcbComponent,
-  SourceSimpleFiducial,
-} from "circuit-json"
-import { Chip } from "lib/components/normal-components/Chip"
+import type { PcbComponent, SourceSimpleFiducial } from "circuit-json"
+import { ImportedPcbComponent } from "lib/components/primitive-components/ImportedPcbComponent"
 import type { InflatorContext } from "../InflatorFn"
-import { inflateFootprintComponent } from "./inflateFootprintComponent"
+import { inflatePcbComponentPrimitives } from "./inflatePcbComponentPrimitives"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourceFiducial(
@@ -18,31 +14,28 @@ export function inflateSourceFiducial(
     source_component_id: sourceElm.source_component_id,
   }) as PcbComponent | null
 
-  const cadElm = injectionDb.cad_component.getWhere({
-    source_component_id: sourceElm.source_component_id,
-  }) as CadComponent | null
-
   const { pcbX, pcbY } = getInflatedPcbPlacement({
     pcbComponent: pcbElm,
     sourceGroupId: sourceElm.source_group_id,
     inflatorContext,
   })
 
-  const fiducial = new Chip({
+  const fiducial = new ImportedPcbComponent({
+    height: pcbElm?.height,
     name: sourceElm.name,
     layer: pcbElm?.layer,
+    obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
     pcbX,
     pcbY,
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
-    obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
-    noSchematicRepresentation: true,
+    width: pcbElm?.width,
   })
 
   if (pcbElm) {
-    const footprint = inflateFootprintComponent(pcbElm, {
-      ...inflatorContext,
-      normalComponent: fiducial,
+    const footprint = inflatePcbComponentPrimitives(pcbElm, {
+      componentName: sourceElm.name,
+      inflatorContext,
     })
 
     if (footprint) {
