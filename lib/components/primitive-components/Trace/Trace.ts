@@ -53,8 +53,9 @@ export class Trace
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
   schematic_trace_id: string | null = null
-  _inflatedPcbTrace?: PcbTrace
+  _inflatedPcbTraces?: PcbTrace[]
   _inflatedPcbVias?: PcbVia[]
+  _isInflatedFromSourceTrace = false
   _portsRoutedOnPcb: Port[]
   subcircuit_connectivity_map_key: string | null = null
   _traceConnectionHash: string | null = null
@@ -232,9 +233,14 @@ export class Trace
   doInitialSourceTraceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props, parent } = this
+    const subcircuit = this.getSubcircuit()
 
     if (!parent) {
       this.renderError("Trace has no parent")
+      return
+    }
+
+    if (this._isInflatedFromSourceTrace && this.source_trace_id) {
       return
     }
 
@@ -279,7 +285,7 @@ export class Trace
     const trace = db.source_trace.insert({
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
       connected_source_net_ids: nets.map((n) => n.source_net_id!),
-      subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
+      subcircuit_id: subcircuit?.subcircuit_id!,
       max_length:
         getMaxLengthFromConnectedCapacitors(
           ports.map((p) => p.port),

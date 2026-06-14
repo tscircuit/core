@@ -1,8 +1,4 @@
-import type {
-  CadComponent,
-  PcbComponent,
-  SourceSimpleLed,
-} from "circuit-json"
+import type { CadComponent, PcbComponent, SourceSimpleLed } from "circuit-json"
 import { Led } from "lib/components/normal-components/Led"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"

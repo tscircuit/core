@@ -1,14 +1,5 @@
-import type {
-  LayerRef,
-  PcbTrace,
-  PcbTraceRoutePoint,
-  SourceTrace,
-} from "circuit-json"
+import type { PcbTrace, PcbVia, SourceTrace } from "circuit-json"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
-import {
-  type ManualPcbPathPoint,
-  pcbTraceRouteToPcbPath,
-} from "lib/utils/pcbTraceRouteToPcbPath"
 import type { InflatorContext } from "../InflatorFn"
 
 const getSelectorPath = (
@@ -90,28 +81,37 @@ export function inflateSourceTrace(
     return
   }
 
-  const pcbTrace = injectionDb.pcb_trace.getWhere({
-    source_trace_id: sourceTrace.source_trace_id,
-  })
+  const pcbTraces = injectionDb.pcb_trace
+    .list()
+    .filter(
+      (pcbTrace) => pcbTrace.source_trace_id === sourceTrace.source_trace_id,
+    )
 
-  let pcbPath: ManualPcbPathPoint[] | undefined
-  if (pcbTrace) {
-    pcbPath = pcbTraceRouteToPcbPath(pcbTrace.route)
-  }
+  const inflatedPcbVias: PcbVia[] | undefined =
+    pcbTraces.length > 0
+      ? injectionDb.pcb_via
+          .list()
+          .filter((via) =>
+            pcbTraces.some(
+              (pcbTrace) => pcbTrace.pcb_trace_id === via.pcb_trace_id,
+            ),
+          )
+      : undefined
 
-  // Extract trace width from source_trace or pcb_trace route points
+  // Extract trace width from source_trace or the first imported pcb_trace route
   let traceWidth: number | undefined = sourceTrace.min_trace_thickness
-  if (!traceWidth && pcbTrace?.route) {
-    // Try to get width from the first wire point in the route
-    const wirePoint = pcbTrace.route.find((pt) => pt.route_type === "wire")
-    if (wirePoint && wirePoint.route_type === "wire") {
-      traceWidth = wirePoint.width
+  if (!traceWidth) {
+    for (const pcbTrace of pcbTraces) {
+      const wirePoint = pcbTrace.route.find((pt) => pt.route_type === "wire")
+      if (wirePoint && wirePoint.route_type === "wire") {
+        traceWidth = wirePoint.width
+        break
+      }
     }
   }
 
   const traceProps: {
     path: string[]
-    pcbPath?: ManualPcbPathPoint[]
     pcbStraightLine?: boolean
     thickness?: number
   } = {
@@ -122,12 +122,8 @@ export function inflateSourceTrace(
     traceProps.thickness = traceWidth
   }
 
-  // If pcbPath has intermediate points, use manual routing
-  // Otherwise, use straight-line routing (simple 2-point traces)
-  if (pcbPath && pcbPath.length > 0) {
-    traceProps.pcbPath = pcbPath
-  } else if (
-    !pcbTrace &&
+  if (
+    pcbTraces.length === 0 &&
     sourceTrace.connected_source_port_ids.length === 2 &&
     sourceTrace.connected_source_net_ids.length === 0
   ) {
@@ -137,12 +133,10 @@ export function inflateSourceTrace(
   }
 
   const trace = new Trace(traceProps)
-  trace._inflatedPcbTrace = pcbTrace ?? undefined
-  trace._inflatedPcbVias = pcbTrace
-    ? injectionDb.pcb_via
-        .list()
-        .filter((via) => via.pcb_trace_id === pcbTrace.pcb_trace_id)
-    : undefined
+  trace.source_trace_id = sourceTrace.source_trace_id
+  trace._isInflatedFromSourceTrace = true
+  trace._inflatedPcbTraces = pcbTraces.length > 0 ? pcbTraces : undefined
+  trace._inflatedPcbVias = inflatedPcbVias
 
   subcircuit.add(trace)
 }

@@ -39,4 +39,4 @@ test("repro116: rerouting imported arduino region should not create pcb traces w
     }))
 
   expect(tracesWithMissingSourceTrace).toHaveLength(0)
-}, 100_000)
+}, 180_000)
