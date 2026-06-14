@@ -8,6 +8,7 @@ import {
   type RouteHintPoint,
   type SchematicNetLabel,
   type SchematicTrace,
+  type SourceTrace,
 } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
@@ -53,9 +54,9 @@ export class Trace
   source_trace_id: string | null = null
   pcb_trace_id: string | null = null
   schematic_trace_id: string | null = null
+  _inflatedSourceTrace?: SourceTrace
   _inflatedPcbTraces?: PcbTrace[]
   _inflatedPcbVias?: PcbVia[]
-  _isInflatedFromSourceTrace = false
   _portsRoutedOnPcb: Port[]
   subcircuit_connectivity_map_key: string | null = null
   _traceConnectionHash: string | null = null
@@ -240,10 +241,6 @@ export class Trace
       return
     }
 
-    if (this._isInflatedFromSourceTrace && this.source_trace_id) {
-      return
-    }
-
     let allPortsFound: boolean
     let ports: Array<{ selector: string; port: Port }>
 
@@ -266,6 +263,7 @@ export class Trace
     if (!allPortsFound) return
 
     this._traceConnectionHash = this._computeTraceConnectionHash()
+    const nets = this._findConnectedNets().nets
 
     const existingTraces = db.source_trace.list()
     const existingTrace = existingTraces.find(
@@ -280,19 +278,22 @@ export class Trace
       return
     }
 
-    const nets = this._findConnectedNets().nets
     const displayName = getTraceDisplayName({ ports: ports, nets: nets })
     const trace = db.source_trace.insert({
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
       connected_source_net_ids: nets.map((n) => n.source_net_id!),
       subcircuit_id: subcircuit?.subcircuit_id!,
       max_length:
+        this._inflatedSourceTrace?.max_length ??
         getMaxLengthFromConnectedCapacitors(
           ports.map((p) => p.port),
           { db },
-        ) ?? props.maxLength,
-      display_name: displayName,
-      min_trace_thickness: this._getExplicitTraceThickness(),
+        ) ??
+        props.maxLength,
+      display_name: this._inflatedSourceTrace?.display_name ?? displayName,
+      min_trace_thickness:
+        this._inflatedSourceTrace?.min_trace_thickness ??
+        this._getExplicitTraceThickness(),
     })
 
     this.source_trace_id = trace.source_trace_id

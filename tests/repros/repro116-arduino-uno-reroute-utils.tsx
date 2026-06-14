@@ -242,15 +242,14 @@ export async function expectArduinoUnoRerouteRegion({
   const resolvedDataTestId = dataTestId ?? `${snapshotName}-stack`
   const {
     afterRerouteCircuit,
-    arduinoUnoCircuitJson,
     beforeRerouteCircuit,
     phaseInputs,
   } = await renderArduinoUnoRerouteRegion({ label, rerouteRegion })
 
   const originalRouteSignaturesBySourceTraceId = new Map<string, string[]>()
   const originalTraceWidthBySourceTraceId = new Map<string, number>()
-  for (const element of arduinoUnoCircuitJson) {
-    if (element.type !== "pcb_trace" || !element.source_trace_id) continue
+  for (const element of beforeRerouteCircuit.db.pcb_trace.list()) {
+    if (!element.source_trace_id) continue
     const firstWirePoint = element.route.find(
       (point) => point.route_type === "wire",
     )
@@ -263,13 +262,15 @@ export async function expectArduinoUnoRerouteRegion({
         firstWirePoint.width,
       )
     }
-    const routeSignatures =
-      originalRouteSignaturesBySourceTraceId.get(element.source_trace_id) ?? []
-    routeSignatures.push(routeSignature(element.route))
-    originalRouteSignaturesBySourceTraceId.set(
-      element.source_trace_id,
-      routeSignatures,
-    )
+    if (routeTouchesRegion(element.route, rerouteRegion)) {
+      const routeSignatures =
+        originalRouteSignaturesBySourceTraceId.get(element.source_trace_id) ?? []
+      routeSignatures.push(routeSignature(element.route))
+      originalRouteSignaturesBySourceTraceId.set(
+        element.source_trace_id,
+        routeSignatures,
+      )
+    }
   }
 
   expect(afterRerouteCircuit.db.pcb_autorouting_error.list()).toHaveLength(0)

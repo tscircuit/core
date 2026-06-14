@@ -133,8 +133,7 @@ export function inflateSourceTrace(
   }
 
   const trace = new Trace(traceProps)
-  trace.source_trace_id = sourceTrace.source_trace_id
-  trace._isInflatedFromSourceTrace = true
+  trace._inflatedSourceTrace = sourceTrace
   trace._inflatedPcbTraces = pcbTraces.length > 0 ? pcbTraces : undefined
   trace._inflatedPcbVias = inflatedPcbVias
 
