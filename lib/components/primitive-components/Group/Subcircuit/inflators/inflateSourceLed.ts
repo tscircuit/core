@@ -1,0 +1,52 @@
+import type { PcbComponent, SourceSimpleLed } from "circuit-json"
+import { Led } from "lib/components/normal-components/Led"
+import type { InflatorContext } from "../InflatorFn"
+import { inflateFootprintComponent } from "./inflateFootprintComponent"
+import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+
+export function inflateSourceLed(
+  sourceElm: SourceSimpleLed,
+  inflatorContext: InflatorContext,
+) {
+  const { injectionDb, subcircuit, groupsMap } = inflatorContext
+
+  const pcbElm = injectionDb.pcb_component.getWhere({
+    source_component_id: sourceElm.source_component_id,
+  }) as PcbComponent | null
+
+  const { pcbX, pcbY } = getInflatedPcbPlacement({
+    pcbComponent: pcbElm,
+    sourceGroupId: sourceElm.source_group_id,
+    inflatorContext,
+  })
+
+  const led = new Led({
+    name: sourceElm.name,
+    color: sourceElm.color,
+    wavelength: sourceElm.wavelength,
+    layer: pcbElm?.layer,
+    pcbX,
+    pcbY,
+    pcbRotation: pcbElm?.rotation,
+    doNotPlace: pcbElm?.do_not_place,
+    obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
+  })
+
+  if (pcbElm) {
+    const footprint = inflateFootprintComponent(pcbElm, {
+      ...inflatorContext,
+      normalComponent: led,
+    })
+
+    if (footprint) {
+      led.add(footprint)
+    }
+  }
+
+  if (sourceElm.source_group_id && groupsMap?.has(sourceElm.source_group_id)) {
+    const group = groupsMap.get(sourceElm.source_group_id)!
+    group.add(led)
+  } else {
+    subcircuit.add(led)
+  }
+}
