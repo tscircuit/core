@@ -240,11 +240,8 @@ export async function expectArduinoUnoRerouteRegion({
   snapshotName: string
 }) {
   const resolvedDataTestId = dataTestId ?? `${snapshotName}-stack`
-  const {
-    afterRerouteCircuit,
-    beforeRerouteCircuit,
-    phaseInputs,
-  } = await renderArduinoUnoRerouteRegion({ label, rerouteRegion })
+  const { afterRerouteCircuit, beforeRerouteCircuit, phaseInputs } =
+    await renderArduinoUnoRerouteRegion({ label, rerouteRegion })
 
   const originalRouteSignaturesBySourceTraceId = new Map<string, string[]>()
   const originalTraceWidthBySourceTraceId = new Map<string, number>()
@@ -264,7 +261,8 @@ export async function expectArduinoUnoRerouteRegion({
     }
     if (routeTouchesRegion(element.route, rerouteRegion)) {
       const routeSignatures =
-        originalRouteSignaturesBySourceTraceId.get(element.source_trace_id) ?? []
+        originalRouteSignaturesBySourceTraceId.get(element.source_trace_id) ??
+        []
       routeSignatures.push(routeSignature(element.route))
       originalRouteSignaturesBySourceTraceId.set(
         element.source_trace_id,
