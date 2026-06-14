@@ -52,9 +52,9 @@ import {
   getAllDimensionsForSchematicBox,
   isExplicitPinMappingArrangement,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFromPinLabelsKey"
+import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
 import {
   type ReactElement,
@@ -2156,13 +2156,26 @@ export class NormalComponent<
               componentHeight / 2
             : undefined)
 
+    const positionMode =
+      props.pcbPositionMode === "relative_to_board_anchor"
+        ? "relative_to_board_anchor"
+        : "relative_to_group_anchor"
+    const positionedRelativeToPcbGroupId =
+      positionMode === "relative_to_group_anchor"
+        ? positionedRelativeToGroupId
+        : undefined
+    const positionedRelativeToPcbBoardId =
+      positionMode === "relative_to_board_anchor"
+        ? (this._getBoard()?.pcb_board_id ?? positionedRelativeToBoardId)
+        : positionedRelativeToBoardId
+
     db.pcb_component.update(this.pcb_component_id, {
-      position_mode: "relative_to_group_anchor",
-      positioned_relative_to_pcb_group_id: positionedRelativeToGroupId,
-      positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
+      position_mode: positionMode,
+      positioned_relative_to_pcb_group_id: positionedRelativeToPcbGroupId,
+      positioned_relative_to_pcb_board_id: positionedRelativeToPcbBoardId,
       display_offset_x: resolvedPcbX as any,
       display_offset_y: resolvedPcbY as any,
-    })
+    } as any)
   }
 
   /**
@@ -2199,7 +2212,10 @@ export class NormalComponent<
       rawProps.pcbLeftEdgeX !== undefined ||
       rawProps.pcbRightEdgeX !== undefined ||
       rawProps.pcbTopEdgeY !== undefined ||
-      rawProps.pcbBottomEdgeY !== undefined
+      rawProps.pcbBottomEdgeY !== undefined ||
+      this._parsedProps.pcbPositionMode === "relative_to_board_anchor" ||
+      this._parsedProps.pcbPositionMode === "relative_to_group_anchor" ||
+      this._parsedProps.pcbPositionMode === "relative_to_component_anchor"
     )
   }
 }
