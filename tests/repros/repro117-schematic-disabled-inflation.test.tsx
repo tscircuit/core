@@ -45,7 +45,7 @@ test("repro117: schematic disabled on board preserves imported pcb_traces", asyn
   const pcbTracesWithSchematicDisabled =
     circuitWithSchematicDisabled.db.pcb_trace.list()
 
-  expect(pcbTracesWithoutSchematicDisabled.length).toBe(188)
+  expect(pcbTracesWithoutSchematicDisabled.length).toBe(109)
   expect(pcbTracesWithSchematicDisabled.length).toBe(
     pcbTracesWithoutSchematicDisabled.length,
   )

@@ -1,4 +1,8 @@
-import type { PcbComponent, PcbSmtPadCircle, SourceSimpleFiducial } from "circuit-json"
+import type {
+  PcbComponent,
+  PcbSmtPadCircle,
+  SourceSimpleFiducial,
+} from "circuit-json"
 import { Fiducial } from "lib/components/primitive-components/Fiducial"
 import type { InflatorContext } from "../InflatorFn"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
