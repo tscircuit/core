@@ -29,6 +29,9 @@ const getPcbTraceRouteViaPoints = (
       : [],
   )
 
+const getPcbTraceCount = (circuitJson: CircuitJson) =>
+  circuitJson.filter((element) => element.type === "pcb_trace").length
+
 const viasMatch = (a: PcbVia, b: PcbVia) =>
   Math.abs(a.x - b.x) < 1e-6 &&
   Math.abs(a.y - b.y) < 1e-6 &&
@@ -70,7 +73,7 @@ test("repro116: arduino uno trace and via inflation", async () => {
   await circuit.renderUntilSettled()
 
   const pcbTraces = circuit.db.pcb_trace.list()
-  expect(pcbTraces.length).toBeGreaterThan(1)
+  expect(pcbTraces.length).toBe(getPcbTraceCount(arduinoUnoCircuitJson))
 
   const rawVias = getPcbVias(arduinoUnoCircuitJson)
   const inflatedVias = circuit.db.pcb_via.list()

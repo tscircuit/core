@@ -90,59 +90,67 @@ export function inflateSourceTrace(
     return
   }
 
-  const pcbTrace = injectionDb.pcb_trace.getWhere({
-    source_trace_id: sourceTrace.source_trace_id,
-  })
+  const pcbTraces = injectionDb.pcb_trace
+    .list()
+    .filter((pcbTrace) => pcbTrace.source_trace_id === sourceTrace.source_trace_id)
 
-  let pcbPath: ManualPcbPathPoint[] | undefined
-  if (pcbTrace) {
-    pcbPath = pcbTraceRouteToPcbPath(pcbTrace.route)
-  }
-
-  // Extract trace width from source_trace or pcb_trace route points
-  let traceWidth: number | undefined = sourceTrace.min_trace_thickness
-  if (!traceWidth && pcbTrace?.route) {
-    // Try to get width from the first wire point in the route
-    const wirePoint = pcbTrace.route.find((pt) => pt.route_type === "wire")
-    if (wirePoint && wirePoint.route_type === "wire") {
-      traceWidth = wirePoint.width
+  const addTrace = (pcbTrace?: PcbTrace) => {
+    let pcbPath: ManualPcbPathPoint[] | undefined
+    if (pcbTrace) {
+      pcbPath = pcbTraceRouteToPcbPath(pcbTrace.route)
     }
+
+    // Extract trace width from source_trace or pcb_trace route points
+    let traceWidth: number | undefined = sourceTrace.min_trace_thickness
+    if (!traceWidth && pcbTrace?.route) {
+      const wirePoint = pcbTrace.route.find((pt) => pt.route_type === "wire")
+      if (wirePoint && wirePoint.route_type === "wire") {
+        traceWidth = wirePoint.width
+      }
+    }
+
+    const traceProps: {
+      path: string[]
+      pcbPath?: ManualPcbPathPoint[]
+      pcbStraightLine?: boolean
+      thickness?: number
+    } = {
+      path: connectedSelectors,
+    }
+
+    if (traceWidth !== undefined) {
+      traceProps.thickness = traceWidth
+    }
+
+    if (pcbPath && pcbPath.length > 0) {
+      traceProps.pcbPath = pcbPath
+    } else if (
+      !pcbTrace &&
+      sourceTrace.connected_source_port_ids.length === 2 &&
+      sourceTrace.connected_source_net_ids.length === 0
+    ) {
+      // If the injected JSON has no routed pcb_trace, preserve the logical
+      // connection by letting the manual trace phase create a direct PCB trace.
+      traceProps.pcbStraightLine = true
+    }
+
+    const trace = new Trace(traceProps)
+    trace._inflatedPcbTrace = pcbTrace ?? undefined
+    trace._inflatedPcbVias = pcbTrace
+      ? injectionDb.pcb_via
+          .list()
+          .filter((via) => via.pcb_trace_id === pcbTrace.pcb_trace_id)
+      : undefined
+
+    subcircuit.add(trace)
   }
 
-  const traceProps: {
-    path: string[]
-    pcbPath?: ManualPcbPathPoint[]
-    pcbStraightLine?: boolean
-    thickness?: number
-  } = {
-    path: connectedSelectors,
+  if (pcbTraces.length === 0) {
+    addTrace()
+    return
   }
 
-  if (traceWidth !== undefined) {
-    traceProps.thickness = traceWidth
+  for (const pcbTrace of pcbTraces) {
+    addTrace(pcbTrace)
   }
-
-  // If pcbPath has intermediate points, use manual routing
-  // Otherwise, use straight-line routing (simple 2-point traces)
-  if (pcbPath && pcbPath.length > 0) {
-    traceProps.pcbPath = pcbPath
-  } else if (
-    !pcbTrace &&
-    sourceTrace.connected_source_port_ids.length === 2 &&
-    sourceTrace.connected_source_net_ids.length === 0
-  ) {
-    // If the injected JSON has no routed pcb_trace, preserve the logical
-    // connection by letting the manual trace phase create a direct PCB trace.
-    traceProps.pcbStraightLine = true
-  }
-
-  const trace = new Trace(traceProps)
-  trace._inflatedPcbTrace = pcbTrace ?? undefined
-  trace._inflatedPcbVias = pcbTrace
-    ? injectionDb.pcb_via
-        .list()
-        .filter((via) => via.pcb_trace_id === pcbTrace.pcb_trace_id)
-    : undefined
-
-  subcircuit.add(trace)
 }
