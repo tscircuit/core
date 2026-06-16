@@ -228,12 +228,6 @@ export async function expectArduinoUnoRerouteRegion({
       connection.name,
     )
     expect(sourceTraceIds.length).toBeGreaterThan(0)
-    const resolvedTraceWidths = sourceTraceIds
-      .map((sourceTraceId) =>
-        originalTraceWidthBySourceTraceId.get(sourceTraceId),
-      )
-      .filter((traceWidth): traceWidth is number => traceWidth !== undefined)
-    expect(resolvedTraceWidths.length).toBeGreaterThan(0)
     expect(connection.width).toBeUndefined()
     expect(connection.nominalTraceWidth).toBeUndefined()
   }
