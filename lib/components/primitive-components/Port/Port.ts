@@ -1,5 +1,6 @@
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
 import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
+import { formatConnectionNetLabelText } from "lib/utils/schematic/formatConnectionNetLabelText"
 import type {
   SchematicBoxDimensions,
   SchematicBoxPortPositionWithMetadata,
@@ -811,6 +812,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * port, but appears at the port it connects to.
    */
   _getNetLabelText(): string | undefined {
-    return `${this.parent?.props.name}_${this.props.name}`
+    return formatConnectionNetLabelText({
+      componentName: this.parent?.props.name,
+      portName: this.props.name,
+    })
   }
 }

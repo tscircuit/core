@@ -1,5 +1,6 @@
 import type { Group } from "lib/components"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { formatConnectionNetLabelText } from "lib/utils/schematic/formatConnectionNetLabelText"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import type { SourceNet } from "circuit-json"
 
@@ -39,7 +40,10 @@ const getSourcePortNetLabelText = (
 
   if (!sourceComponent?.name || !sourcePort.name) return undefined
 
-  return `${sourceComponent.name}_${sourcePort.name}`
+  return formatConnectionNetLabelText({
+    componentName: sourceComponent.name,
+    portName: sourcePort.name,
+  })
 }
 
 const getDirectCrossSubcircuitConnectionLabelText = (
