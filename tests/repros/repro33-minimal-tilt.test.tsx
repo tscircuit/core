@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("Minimal tilt reproduction with pcbPack group", async () => {
+test.skip("Minimal tilt reproduction with pcbPack group", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

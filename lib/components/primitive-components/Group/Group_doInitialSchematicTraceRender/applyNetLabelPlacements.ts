@@ -34,6 +34,7 @@ export function applyNetLabelPlacements(args: {
 
   // Place net labels suggested by the solver
   const netLabelPlacements =
+    solver.netLabelNetLabelCollisionSolver?.getOutput().netLabelPlacements ??
     solver.netLabelTraceCollisionSolver?.getOutput().netLabelPlacements ??
     solver.netLabelPlacementSolver?.netLabelPlacements ??
     solver.traceLabelOverlapAvoidanceSolver?.getOutput().netLabelPlacements ??

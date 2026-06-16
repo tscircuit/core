@@ -96,6 +96,21 @@ export function applyTracesFromSolverOutput(args: {
         String(solvedTracePath.userNetId),
       )
     }
+    if (!subcircuit_connectivity_map_key) {
+      const sourcePortConnKeys = solvedTraceSchematicPortIds
+        .map((schematicPortId) => {
+          const schematicPort = db.schematic_port.get(schematicPortId)
+          const sourcePortId = schematicPort?.source_port_id
+          if (!sourcePortId) return undefined
+          return db.source_port.get(sourcePortId)
+            ?.subcircuit_connectivity_map_key
+        })
+        .filter((key): key is string => Boolean(key))
+      const uniqueSourcePortConnKeys = new Set(sourcePortConnKeys)
+      if (uniqueSourcePortConnKeys.size === 1) {
+        subcircuit_connectivity_map_key = sourcePortConnKeys[0]
+      }
+    }
 
     pendingTraces.push({
       source_trace_id,
@@ -113,9 +128,29 @@ export function applyTracesFromSolverOutput(args: {
     pendingTraces.map((t) => ({
       source_trace_id: t.source_trace_id,
       edges: t.edges,
+      connectivity_key: t.subcircuit_connectivity_map_key,
     })),
   )
-  const junctionsById = computeJunctions(withCrossings)
+  const existingTracesForJunctions: Array<{
+    source_trace_id: string
+    edges: SchematicTrace["edges"]
+    connectivity_key?: string
+  }> = []
+  for (const t of db.schematic_trace.list()) {
+    if (!t.source_trace_id || t.edges.length === 0) continue
+    const sourceTrace = db.source_trace.get(t.source_trace_id)
+    existingTracesForJunctions.push({
+      source_trace_id: t.source_trace_id,
+      edges: t.edges,
+      connectivity_key:
+        t.subcircuit_connectivity_map_key ??
+        sourceTrace?.subcircuit_connectivity_map_key,
+    })
+  }
+  const junctionsById = computeJunctions([
+    ...withCrossings,
+    ...existingTracesForJunctions,
+  ])
 
   for (const t of withCrossings) {
     db.schematic_trace.insert({

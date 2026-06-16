@@ -1,7 +1,12 @@
 import type { SchematicTrace } from "circuit-json"
+import { segmentIntersection } from "./segment-intersection"
 
 type Edge = SchematicTrace["edges"][number]
-type TraceEdges = { source_trace_id: string; edges: Edge[] }
+type TraceEdges = {
+  source_trace_id: string
+  edges: Edge[]
+  connectivity_key?: string
+}
 
 const TOL = 1e-6
 
@@ -46,6 +51,10 @@ function dedupePoints(points: Array<{ x: number; y: number }>, tol = TOL) {
 
 function edgeVec(e: Edge) {
   return { x: e.to.x - e.from.x, y: e.to.y - e.from.y }
+}
+
+function isEndpointOfEdge(p: { x: number; y: number }, e: Edge, tol = TOL) {
+  return pointEq(p, e.from, tol) || pointEq(p, e.to, tol)
 }
 
 function isParallel(e1: Edge, e2: Edge, tol = TOL) {
@@ -128,10 +137,11 @@ function getCornerOrientationAtPoint(
  * geometrically, without relying on database lookups.
  *
  * Junctions are created when:
+ * - Same-net trace edges intersect away from endpoints
  * - An endpoint of one trace lies on another trace's edge (including its endpoints)
  * - Two trace endpoints coincide
  *
- * Crossings (middle-to-middle intersections) are handled by computeCrossings()
+ * Different-net middle-to-middle intersections are handled by computeCrossings()
  * and are not included as junctions here.
  */
 export function computeJunctions(
@@ -157,6 +167,25 @@ export function computeJunctions(
     for (let j = i + 1; j < traces.length; j++) {
       const B = traces[j]
       const BEnds = endpointsByTrace[j]
+      const isSameNet =
+        A.connectivity_key !== undefined &&
+        A.connectivity_key === B.connectivity_key
+
+      if (isSameNet) {
+        for (const eA of A.edges) {
+          for (const eB of B.edges) {
+            const p = segmentIntersection(eA.from, eA.to, eB.from, eB.to, tol)
+            if (!p) continue
+            if (isEndpointOfEdge(p, eA, tol) || isEndpointOfEdge(p, eB, tol)) {
+              continue
+            }
+            result[A.source_trace_id]!.push(p)
+            if (A.source_trace_id !== B.source_trace_id) {
+              result[B.source_trace_id]!.push(p)
+            }
+          }
+        }
+      }
 
       // Endpoint-to-endpoint junctions (only when forming a corner)
       for (const pa of AEnds) {
