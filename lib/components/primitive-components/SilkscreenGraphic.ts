@@ -13,7 +13,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { applyToPoint } from "transformation-matrix"
 import { z } from "zod"
 import { resolveStaticFileImport } from "lib/utils/resolveStaticFileImport"
-import { svgToBrepShapes } from "lib/utils/svg/svg-to-brep-shapes"
+import { imageToBrepShapes } from "lib/utils/image/silkscreen-graphics"
 
 const internalImportedSilkscreenGraphicProps = z.object({
   layer: visible_layer.optional(),
@@ -176,8 +176,11 @@ export class SilkscreenGraphic extends PrimitiveComponent<
         )
       }
 
-      const svgContent = await response.text()
-      const brepShapes = svgToBrepShapes(svgContent, {
+      const imageData = await response.arrayBuffer()
+      const brepShapes = await imageToBrepShapes({
+        importedImageBytes: imageData,
+        contentType: response.headers.get("content-type") ?? undefined,
+        sourceName: resolvedUrl,
         width: props.width,
         height: props.height,
       })

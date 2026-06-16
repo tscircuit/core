@@ -31,7 +31,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
-    "@resvg/resvg-js": "^2.6.2",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/breakout-point-solver": "github:tscircuit/breakout-point-solver#bac9629",
     "@tscircuit/capacity-autorouter": "^0.0.583",
@@ -111,12 +110,14 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
     "calculate-cell-boundaries": "^0.0.13",
     "calculate-packing": "0.0.73",
     "css-select": "5.1.0",
     "fast-xml-parser": "^5.3.1",
+    "fast-png": "^8.0.0",
     "format-si-unit": "^0.0.3",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
