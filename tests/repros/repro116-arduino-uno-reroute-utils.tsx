@@ -320,7 +320,9 @@ export async function expectArduinoUnoRerouteRegion({
       trace.source_trace_id ?? trace.pcb_trace_id,
     )
     const originalTraceWidths = sourceTraceIds
-      .map((sourceTraceId) => originalTraceWidthBySourceTraceId.get(sourceTraceId))
+      .map((sourceTraceId) =>
+        originalTraceWidthBySourceTraceId.get(sourceTraceId),
+      )
       .filter((traceWidth): traceWidth is number => traceWidth !== undefined)
     const firstWirePoint = trace.route.find(
       (point) => point.route_type === "wire",
