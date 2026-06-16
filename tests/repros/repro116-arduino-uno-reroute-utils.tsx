@@ -276,17 +276,20 @@ export async function expectArduinoUnoRerouteRegion({
   expect(phaseInputs).toHaveLength(1)
   expect(phaseInputs[0]!.connections.length).toBeGreaterThan(0)
   for (const connection of phaseInputs[0]!.connections) {
-    const sourceTraceId = getSourceTraceIdFromRerouteConnectionName(
+    const sourceTraceIds = getSourceTraceIdsFromRerouteConnectionName(
       connection.name,
     )
-    expect(originalTraceWidthBySourceTraceId.get(sourceTraceId)).toBeDefined()
+    expect(sourceTraceIds.length).toBeGreaterThan(0)
+    for (const sourceTraceId of sourceTraceIds) {
+      expect(originalTraceWidthBySourceTraceId.get(sourceTraceId)).toBeDefined()
+    }
     expect(connection.width).toBeUndefined()
     expect(connection.nominalTraceWidth).toBeUndefined()
   }
 
   const reroutedSourceTraceIds = new Set(
-    phaseInputs[0]!.connections.map((connection) =>
-      getSourceTraceIdFromRerouteConnectionName(connection.name),
+    phaseInputs[0]!.connections.flatMap((connection) =>
+      getSourceTraceIdsFromRerouteConnectionName(connection.name),
     ),
   )
   const finalRouteSignatures = new Set(
@@ -313,18 +316,22 @@ export async function expectArduinoUnoRerouteRegion({
     phaseInputs[0]!.connections.length,
   )
   for (const trace of reroutedRegionTraces) {
-    const sourceTraceId = getSourceTraceIdFromRerouteConnectionName(
+    const sourceTraceIds = getSourceTraceIdsFromRerouteConnectionName(
       trace.source_trace_id ?? trace.pcb_trace_id,
     )
-    const originalTraceWidth =
-      originalTraceWidthBySourceTraceId.get(sourceTraceId)
+    const originalTraceWidths = sourceTraceIds
+      .map((sourceTraceId) => originalTraceWidthBySourceTraceId.get(sourceTraceId))
+      .filter((traceWidth): traceWidth is number => traceWidth !== undefined)
     const firstWirePoint = trace.route.find(
       (point) => point.route_type === "wire",
     )
-    if (originalTraceWidth !== undefined && firstWirePoint) {
+    if (originalTraceWidths.length > 0 && firstWirePoint) {
       expect(
-        Math.abs(firstWirePoint.width - originalTraceWidth),
-      ).toBeGreaterThan(0.005)
+        originalTraceWidths.some(
+          (originalTraceWidth) =>
+            Math.abs(firstWirePoint.width - originalTraceWidth) > 0.005,
+        ),
+      ).toBe(true)
     }
   }
 
