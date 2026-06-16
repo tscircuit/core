@@ -92,7 +92,9 @@ export function inflateSourceTrace(
 
   const pcbTraces = injectionDb.pcb_trace
     .list()
-    .filter((pcbTrace) => pcbTrace.source_trace_id === sourceTrace.source_trace_id)
+    .filter(
+      (pcbTrace) => pcbTrace.source_trace_id === sourceTrace.source_trace_id,
+    )
 
   const addTrace = (pcbTrace?: PcbTrace) => {
     let pcbPath: ManualPcbPathPoint[] | undefined
