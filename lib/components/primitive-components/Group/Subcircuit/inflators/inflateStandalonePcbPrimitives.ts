@@ -48,10 +48,7 @@ export function inflateStandalonePcbPrimitives(
       return !isHandledByInflatedTrace
     }
     // Treat null, undefined, or empty string as "no component" (standalone)
-    return (
-      "pcb_component_id" in elm &&
-      !elm.pcb_component_id
-    )
+    return "pcb_component_id" in elm && !elm.pcb_component_id
   })
 
   if (standalonePrimitives.length === 0) return
