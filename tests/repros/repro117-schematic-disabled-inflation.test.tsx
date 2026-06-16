@@ -4,6 +4,9 @@ import { KicadToCircuitJsonConverter } from "kicad-to-circuit-json"
 import fs from "node:fs"
 import type { CircuitJson } from "circuit-json"
 
+const getPcbTraceCount = (circuitJson: CircuitJson) =>
+  circuitJson.filter((element) => element.type === "pcb_trace").length
+
 const getArduinoUnoCircuitJson = () => {
   const converter = new KicadToCircuitJsonConverter()
   converter.addFile(
@@ -33,6 +36,7 @@ const renderImportedArduinoUno = async (opts: {
 }
 
 test("repro117: schematic disabled on board preserves imported pcb_traces", async () => {
+  const arduinoUnoCircuitJson = getArduinoUnoCircuitJson()
   const circuitWithoutSchematicDisabled = await renderImportedArduinoUno({
     schematicDisabled: false,
   })
@@ -45,7 +49,9 @@ test("repro117: schematic disabled on board preserves imported pcb_traces", asyn
   const pcbTracesWithSchematicDisabled =
     circuitWithSchematicDisabled.db.pcb_trace.list()
 
-  expect(pcbTracesWithoutSchematicDisabled.length).toBe(109)
+  expect(pcbTracesWithoutSchematicDisabled.length).toBe(
+    getPcbTraceCount(arduinoUnoCircuitJson),
+  )
   expect(pcbTracesWithSchematicDisabled.length).toBe(
     pcbTracesWithoutSchematicDisabled.length,
   )
