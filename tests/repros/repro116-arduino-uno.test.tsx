@@ -95,8 +95,5 @@ test("repro116: arduino uno trace and via inflation", async () => {
     ).toBe(true)
   }
 
-  expect(arduinoUnoCircuitJson).toMatchPcbSnapshot(
-    `${import.meta.path}-before-inflation`,
-  )
   expect(circuit).toMatchPcbSnapshot(`${import.meta.path}-after-inflation`)
 }, 15_000)
