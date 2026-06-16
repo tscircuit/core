@@ -17,6 +17,7 @@ export function inflateStandalonePcbPrimitives(
     "pcb_silkscreen_line",
     "pcb_silkscreen_path",
     "pcb_silkscreen_text",
+    "pcb_copper_text",
     "pcb_fabrication_note_text",
     "pcb_fabrication_note_path",
     "pcb_fabrication_note_rect",
@@ -46,10 +47,10 @@ export function inflateStandalonePcbPrimitives(
 
       return !isHandledByInflatedTrace
     }
-    // Check for null or undefined pcb_component_id
+    // Treat null, undefined, or empty string as "no component" (standalone)
     return (
       "pcb_component_id" in elm &&
-      (elm.pcb_component_id === null || elm.pcb_component_id === undefined)
+      !elm.pcb_component_id
     )
   })
 
