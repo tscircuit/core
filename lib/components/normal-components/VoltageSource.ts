@@ -81,6 +81,11 @@ export class VoltageSource extends NormalComponent<
       wave_shape: props.waveShape,
       phase: props.phase,
       duty_cycle: props.dutyCycle,
+      pulse_delay: props.pulseDelay,
+      rise_time: props.riseTime,
+      fall_time: props.fallTime,
+      pulse_width: props.pulseWidth,
+      period: props.period,
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: true,
       display_name: props.displayName,
@@ -105,6 +110,11 @@ export class VoltageSource extends NormalComponent<
       wave_shape: props.waveShape,
       phase: props.phase,
       duty_cycle: props.dutyCycle,
+      pulse_delay: props.pulseDelay,
+      rise_time: props.riseTime,
+      fall_time: props.fallTime,
+      pulse_width: props.pulseWidth,
+      period: props.period,
     } as SimulationAcVoltageSource)
   }
 
