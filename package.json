@@ -73,6 +73,7 @@
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.0",
     "debug": "^4.3.6",
+    "@tscircuit/eecircuit-engine": "https://jscdn.tscircuit.com/@tscircuit/eecircuit-engine/1.7.4.tgz",
     "flatbush": "^4.5.0",
     "graphics-debug": "^0.0.95",
     "howfat": "^0.3.8",
