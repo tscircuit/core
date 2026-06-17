@@ -1,4 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import type { Bounds } from "@tscircuit/math-utils"
 import type { SchematicComponent, SourceComponentBase } from "circuit-json"
 import { symbols } from "schematic-symbols"
 import { getSchematicNetLabelTextWidth } from "./computeSchematicNetLabelCenter"
@@ -8,13 +9,6 @@ export interface TextMargins {
   right: number
   top: number
   bottom: number
-}
-
-interface Bounds {
-  minX: number
-  maxX: number
-  minY: number
-  maxY: number
 }
 
 const ZERO_MARGINS: TextMargins = { left: 0, right: 0, top: 0, bottom: 0 }
@@ -71,10 +65,13 @@ function getTextBounds({
   }
 }
 
-function getSymbolTextBounds(
-  schematicComponent: SchematicComponent,
-  sourceComponent: SourceComponentBase | undefined,
-): Bounds[] {
+function getSymbolTextBounds({
+  schematicComponent,
+  sourceComponent,
+}: {
+  schematicComponent: SchematicComponent
+  sourceComponent: SourceComponentBase | undefined
+}): Bounds[] {
   if (!schematicComponent.symbol_name) return []
   const symbol = (symbols as any)[schematicComponent.symbol_name]
   if (!symbol?.primitives || !symbol.center) return []
@@ -123,7 +120,10 @@ export function getSchematicComponentTextMargins(
     return { ...ZERO_MARGINS }
   }
 
-  const textBounds = getSymbolTextBounds(schematicComponent, sourceComponent)
+  const textBounds = getSymbolTextBounds({
+    schematicComponent,
+    sourceComponent,
+  })
   if (textBounds.length === 0) return { ...ZERO_MARGINS }
 
   const halfWidth = schematicComponent.size.width / 2

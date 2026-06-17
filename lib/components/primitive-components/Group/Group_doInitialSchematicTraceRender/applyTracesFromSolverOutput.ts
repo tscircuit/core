@@ -11,13 +11,15 @@ const debug = Debug("Group_doInitialSchematicTraceRender")
 
 const MAX_PIN_SNAP_GAP = 1.5
 
-function completeTraceEndpointsToPins(args: {
-  points: Array<{ x: number; y: number }>
-  schematicPortIds: string[]
-  eligiblePortIds: Set<string>
-  db: CircuitJsonUtilObjects
-}): Array<{ x: number; y: number }> {
-  const { points, schematicPortIds, eligiblePortIds, db } = args
+function completeTraceEndpointsToPins(
+  params: {
+    points: Array<{ x: number; y: number }>
+    schematicPortIds: string[]
+    eligiblePortIds: Set<string>
+  },
+  db: CircuitJsonUtilObjects,
+): Array<{ x: number; y: number }> {
+  const { points, schematicPortIds, eligiblePortIds } = params
   const centers = schematicPortIds
     .filter((id) => eligiblePortIds.has(id))
     .map((id) => db.schematic_port.get(id)?.center)
@@ -128,29 +130,31 @@ export function applyTracesFromSolverOutput(args: {
       continue
     }
 
-    const rawPoints = solvedTracePath?.tracePath as Array<{
+    const points = solvedTracePath?.tracePath as Array<{
       x: number
       y: number
     }>
-    if (!Array.isArray(rawPoints) || rawPoints.length < 2) {
+    if (!Array.isArray(points) || points.length < 2) {
       debug(
         `Skipping trace ${solvedTracePath?.pinIds.join(",")} because it has less than 2 points`,
       )
       continue
     }
 
-    const points = completeTraceEndpointsToPins({
-      points: rawPoints,
-      schematicPortIds: solvedTraceSchematicPortIds,
-      eligiblePortIds,
+    const snappedPoints = completeTraceEndpointsToPins(
+      {
+        points,
+        schematicPortIds: solvedTraceSchematicPortIds,
+        eligiblePortIds,
+      },
       db,
-    })
+    )
 
     const edges: SchematicTrace["edges"] = []
-    for (let i = 0; i < points.length - 1; i++) {
+    for (let i = 0; i < snappedPoints.length - 1; i++) {
       edges.push({
-        from: { x: points[i]!.x, y: points[i]!.y },
-        to: { x: points[i + 1]!.x, y: points[i + 1]!.y },
+        from: { x: snappedPoints[i]!.x, y: snappedPoints[i]!.y },
+        to: { x: snappedPoints[i + 1]!.x, y: snappedPoints[i + 1]!.y },
       })
     }
 
