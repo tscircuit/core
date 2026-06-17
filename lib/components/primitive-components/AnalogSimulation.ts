@@ -3,7 +3,6 @@ import {
   analogSimulationProps as baseAnalogSimulationProps,
 } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { z } from "zod"
 
 export class AnalogSimulation extends PrimitiveComponent<
   typeof analogSimulationProps
@@ -17,7 +16,8 @@ export class AnalogSimulation extends PrimitiveComponent<
 
   doInitialSimulationRender(): void {
     const { db } = this.root!
-    const { duration, timePerStep } = this._parsedProps
+    const { duration, startTime, timePerStep, spiceOptions } =
+      this._parsedProps
 
     const durationMs = duration || 10 // ms
     const timePerStepMs = timePerStep || 0.01 // ms
@@ -26,7 +26,9 @@ export class AnalogSimulation extends PrimitiveComponent<
       name: "spice_transient_analysis",
       experiment_type: "spice_transient_analysis" as const,
       end_time_ms: durationMs,
+      start_time_ms: startTime,
       time_per_step: timePerStepMs,
+      spice_options: spiceOptions,
     })
   }
 }
