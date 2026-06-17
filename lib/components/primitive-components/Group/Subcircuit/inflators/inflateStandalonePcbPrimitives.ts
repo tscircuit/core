@@ -25,6 +25,7 @@ export function inflateStandalonePcbPrimitives(
     "pcb_note_path",
     "pcb_note_line",
     "pcb_via",
+    "pcb_smtpad",
   ]
 
   const standalonePrimitives = injectionDb.toArray().filter((elm) => {
