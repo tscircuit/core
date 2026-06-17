@@ -90,9 +90,10 @@ export function inflateSourceTrace(
     return
   }
 
-  const pcbTrace = injectionDb.pcb_trace.getWhere({
-    source_trace_id: sourceTrace.source_trace_id,
-  })
+  const pcbTraces = injectionDb.pcb_trace
+    .list()
+    .filter((trace) => trace.source_trace_id === sourceTrace.source_trace_id)
+  const pcbTrace = pcbTraces[0]
 
   let pcbPath: ManualPcbPathPoint[] | undefined
   if (pcbTrace) {
@@ -137,11 +138,13 @@ export function inflateSourceTrace(
   }
 
   const trace = new Trace(traceProps)
-  trace._inflatedPcbTrace = pcbTrace ?? undefined
+  trace._inflatedPcbTraces = pcbTraces.length > 0 ? pcbTraces : undefined
   trace._inflatedPcbVias = pcbTrace
     ? injectionDb.pcb_via
         .list()
-        .filter((via) => via.pcb_trace_id === pcbTrace.pcb_trace_id)
+        .filter((via) =>
+          pcbTraces.some((trace) => via.pcb_trace_id === trace.pcb_trace_id),
+        )
     : undefined
 
   subcircuit.add(trace)
