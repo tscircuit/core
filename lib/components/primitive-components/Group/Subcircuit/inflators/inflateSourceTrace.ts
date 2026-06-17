@@ -138,7 +138,6 @@ export function inflateSourceTrace(
   }
 
   const trace = new Trace(traceProps)
-  trace._inflatedPcbTrace = pcbTrace ?? undefined
   trace._inflatedPcbTraces = pcbTraces.length > 0 ? pcbTraces : undefined
   trace._inflatedPcbVias = pcbTrace
     ? injectionDb.pcb_via

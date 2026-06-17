@@ -46,9 +46,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
 
   const hasPcbPath = props.pcbPath !== undefined
   const wantsStraightLine = Boolean(props.pcbStraightLine)
-  const inflatedPcbTrace = trace._inflatedPcbTrace
-  const inflatedPcbTraces =
-    trace._inflatedPcbTraces ?? (inflatedPcbTrace ? [inflatedPcbTrace] : [])
+  const inflatedPcbTraces = trace._inflatedPcbTraces ?? []
 
   if (!hasPcbPath && !wantsStraightLine && inflatedPcbTraces.length === 0)
     return
