@@ -22,7 +22,7 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
 
   doInitialSimulationRender() {
     const { db } = this.root!
-    const { connectsTo, name, referenceTo, color } = this._parsedProps
+    const { connectsTo, name, referenceTo, color, display } = this._parsedProps
 
     const subcircuit = this.getSubcircuit()
     if (!subcircuit) {
@@ -124,6 +124,14 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
       reference_input_source_net_id: referenceNet?.source_net_id ?? undefined,
       subcircuit_id: subcircuit.subcircuit_id || undefined,
       color: this.color,
+      display_options: display
+        ? {
+            label: display.label,
+            center: display.center,
+            offset_divs: display.offsetDivs,
+            units_per_div: display.unitsPerDiv,
+          }
+        : undefined,
     })
 
     this.simulation_voltage_probe_id = simulation_voltage_probe_id
