@@ -7,7 +7,8 @@ import Debug from "debug"
 import type { z } from "zod"
 import type { Group } from "./Group"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
-import { getSchematicComponentBoxTextPadding } from "lib/utils/schematic/getSchematicComponentTextPadding"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { getBoundFromCenteredRect } from "@tscircuit/math-utils"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchpack")
 
@@ -162,27 +163,47 @@ function convertTreeToMatchPackInputProblem(
         availableRotations = [0]
       }
 
-      const textPad = getSchematicComponentBoxTextPadding(
+      const componentWithTextBounds = getSchematicComponentWithTextBounds(
         db,
         schematicComponent,
       )
+      let textPadLeft = 0
+      let textPadRight = 0
+      let textPadTop = 0
+      let textPadBottom = 0
+      if (componentWithTextBounds && schematicComponent.center) {
+        const halfWidth = (schematicComponent.size?.width ?? 0) / 2
+        const halfHeight = (schematicComponent.size?.height ?? 0) / 2
+        textPadLeft =
+          schematicComponent.center.x - halfWidth - componentWithTextBounds.minX
+        textPadRight =
+          componentWithTextBounds.maxX -
+          (schematicComponent.center.x + halfWidth)
+        textPadTop =
+          componentWithTextBounds.maxY -
+          (schematicComponent.center.y + halfHeight)
+        textPadBottom =
+          schematicComponent.center.y -
+          halfHeight -
+          componentWithTextBounds.minY
+      }
 
       const marginLeft =
         (component?._parsedProps?.schMarginLeft ??
           component?._parsedProps?.schMarginX ??
-          0) + textPad.left
+          0) + textPadLeft
       const marginRight =
         (component?._parsedProps?.schMarginRight ??
           component?._parsedProps?.schMarginX ??
-          0) + textPad.right
+          0) + textPadRight
       let marginTop =
         (component?._parsedProps?.schMarginTop ??
           component?._parsedProps?.schMarginY ??
-          0) + textPad.top
+          0) + textPadTop
       let marginBottom =
         (component?._parsedProps?.schMarginBottom ??
           component?._parsedProps?.schMarginY ??
-          0) + textPad.bottom
+          0) + textPadBottom
 
       if (component?.config.shouldRenderAsSchematicBox) {
         marginTop += 0.4
@@ -275,13 +296,17 @@ function convertTreeToMatchPackInputProblem(
         for (const comp of groupComponents) {
           if (comp.center && comp.size) {
             hasValidBounds = true
-            const compPad = getSchematicComponentBoxTextPadding(db, comp)
-            const halfWidth = comp.size.width / 2
-            const halfHeight = comp.size.height / 2
-            minX = Math.min(minX, comp.center.x - halfWidth - compPad.left)
-            maxX = Math.max(maxX, comp.center.x + halfWidth + compPad.right)
-            minY = Math.min(minY, comp.center.y - halfHeight - compPad.bottom)
-            maxY = Math.max(maxY, comp.center.y + halfHeight + compPad.top)
+            const compBounds =
+              getSchematicComponentWithTextBounds(db, comp) ??
+              getBoundFromCenteredRect({
+                center: comp.center,
+                width: comp.size.width,
+                height: comp.size.height,
+              })
+            minX = Math.min(minX, compBounds.minX)
+            maxX = Math.max(maxX, compBounds.maxX)
+            minY = Math.min(minY, compBounds.minY)
+            maxY = Math.max(maxY, compBounds.maxY)
           }
         }
 

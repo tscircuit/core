@@ -1,17 +1,9 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { Bounds } from "@tscircuit/math-utils"
+import { getBoundFromCenteredRect } from "@tscircuit/math-utils"
 import type { SchematicComponent, SourceComponentBase } from "circuit-json"
 import { symbols } from "schematic-symbols"
 import { getSchematicNetLabelTextWidth } from "./computeSchematicNetLabelCenter"
-
-export interface TextMargins {
-  left: number
-  right: number
-  top: number
-  bottom: number
-}
-
-const ZERO_MARGINS: TextMargins = { left: 0, right: 0, top: 0, bottom: 0 }
 
 const SYMBOL_TEXT_FONT_SIZE = 0.18
 
@@ -76,7 +68,7 @@ function getSymbolTextBounds({
   const symbol = (symbols as any)[schematicComponent.symbol_name]
   if (!symbol?.primitives || !symbol.center) return []
 
-  const bounds: Bounds[] = []
+  const textBounds: Bounds[] = []
   for (const primitive of symbol.primitives) {
     if (primitive.type !== "text") continue
 
@@ -90,7 +82,7 @@ function getSymbolTextBounds({
     }
     if (!value) continue
 
-    bounds.push(
+    textBounds.push(
       getTextBounds({
         text: value,
         position: {
@@ -102,68 +94,95 @@ function getSymbolTextBounds({
       }),
     )
   }
-  return bounds
+  return textBounds
 }
 
-export function getSchematicComponentTextMargins(
+function getSymbolBoxBounds(schematicComponent: SchematicComponent): Bounds {
+  return getBoundFromCenteredRect({
+    center: schematicComponent.center,
+    width: schematicComponent.size.width,
+    height: schematicComponent.size.height,
+  })
+}
+
+/**
+ * Bounding box of a schematic component including its rendered {REF}/{VAL}
+ * text. Returns null when the component has no text extending past its symbol
+ * box (e.g. non-resistor components or text that fits within the symbol).
+ */
+function getSchematicComponentTextInclusiveBounds(
   db: CircuitJsonUtilObjects,
   schematicComponent: SchematicComponent,
-): TextMargins {
-  if (!schematicComponent.center || !schematicComponent.size) {
-    return { ...ZERO_MARGINS }
-  }
+): Bounds | null {
+  if (!schematicComponent.center || !schematicComponent.size) return null
 
   const sourceComponent = schematicComponent.source_component_id
     ? db.source_component.get(schematicComponent.source_component_id)
     : undefined
   if (!sourceComponent || !TEXT_BOX_ENABLED_FTYPES.has(sourceComponent.ftype)) {
-    return { ...ZERO_MARGINS }
+    return null
   }
 
   const textBounds = getSymbolTextBounds({
     schematicComponent,
     sourceComponent,
   })
-  if (textBounds.length === 0) return { ...ZERO_MARGINS }
+  if (textBounds.length === 0) return null
 
-  const halfWidth = schematicComponent.size.width / 2
-  const halfHeight = schematicComponent.size.height / 2
-  const compMinX = schematicComponent.center.x - halfWidth
-  const compMaxX = schematicComponent.center.x + halfWidth
-  const compMinY = schematicComponent.center.y - halfHeight
-  const compMaxY = schematicComponent.center.y + halfHeight
-
-  const margins: TextMargins = { ...ZERO_MARGINS }
-  for (const bounds of textBounds) {
-    margins.left = Math.max(margins.left, compMinX - bounds.minX)
-    margins.right = Math.max(margins.right, bounds.maxX - compMaxX)
-    margins.top = Math.max(margins.top, bounds.maxY - compMaxY)
-    margins.bottom = Math.max(margins.bottom, compMinY - bounds.minY)
+  const boxBounds = getSymbolBoxBounds(schematicComponent)
+  const bounds: Bounds = { ...boxBounds }
+  for (const textBound of textBounds) {
+    bounds.minX = Math.min(bounds.minX, textBound.minX)
+    bounds.maxX = Math.max(bounds.maxX, textBound.maxX)
+    bounds.minY = Math.min(bounds.minY, textBound.minY)
+    bounds.maxY = Math.max(bounds.maxY, textBound.maxY)
   }
 
-  margins.left = Math.max(0, margins.left)
-  margins.right = Math.max(0, margins.right)
-  margins.top = Math.max(0, margins.top)
-  margins.bottom = Math.max(0, margins.bottom)
+  if (
+    bounds.minX === boxBounds.minX &&
+    bounds.maxX === boxBounds.maxX &&
+    bounds.minY === boxBounds.minY &&
+    bounds.maxY === boxBounds.maxY
+  ) {
+    return null
+  }
 
-  return margins
+  return bounds
 }
 
-export function getSchematicComponentBoxTextPadding(
+/**
+ * Text-inclusive bounding box used for schematic layout/packing. Horizontal
+ * components are expanded symmetrically about their center so they stay
+ * centered in their packing cell; vertical components keep the raw
+ * text-inclusive bounds. Returns null when there is no text past the symbol.
+ */
+export function getSchematicComponentWithTextBounds(
   db: CircuitJsonUtilObjects,
   schematicComponent: SchematicComponent,
-): TextMargins {
-  const margins = getSchematicComponentTextMargins(db, schematicComponent)
+): Bounds | null {
+  const textBounds = getSchematicComponentTextInclusiveBounds(
+    db,
+    schematicComponent,
+  )
+  if (!textBounds) return null
+
+  const boxBounds = getSymbolBoxBounds(schematicComponent)
 
   const isVertical =
-    (schematicComponent.size?.height ?? 0) >
-    (schematicComponent.size?.width ?? 0)
+    schematicComponent.size.height > schematicComponent.size.width
+  if (isVertical) return textBounds
 
-  if (isVertical) {
-    return margins
-  }
-
-  const padX = Math.max(margins.left, margins.right)
-  const padY = Math.max(margins.top, margins.bottom)
-  return { left: padX, right: padX, top: padY, bottom: padY }
+  const padX = Math.max(
+    boxBounds.minX - textBounds.minX,
+    textBounds.maxX - boxBounds.maxX,
+  )
+  const padY = Math.max(
+    textBounds.maxY - boxBounds.maxY,
+    boxBounds.minY - textBounds.minY,
+  )
+  return getBoundFromCenteredRect({
+    center: schematicComponent.center,
+    width: schematicComponent.size.width + 2 * padX,
+    height: schematicComponent.size.height + 2 * padY,
+  })
 }

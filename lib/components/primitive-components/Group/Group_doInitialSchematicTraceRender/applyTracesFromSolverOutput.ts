@@ -4,7 +4,7 @@ import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
-import { getSchematicComponentTextMargins } from "lib/utils/schematic/getSchematicComponentTextPadding"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
@@ -82,13 +82,7 @@ export function applyTracesFromSolverOutput(args: {
 
   const eligiblePortIds = new Set<string>()
   for (const schematicComponent of db.schematic_component.list()) {
-    const margins = getSchematicComponentTextMargins(db, schematicComponent)
-    if (
-      margins.left === 0 &&
-      margins.right === 0 &&
-      margins.top === 0 &&
-      margins.bottom === 0
-    ) {
+    if (!getSchematicComponentWithTextBounds(db, schematicComponent)) {
       continue
     }
     for (const port of db.schematic_port.list({
