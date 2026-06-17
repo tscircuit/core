@@ -16,8 +16,7 @@ export class AnalogSimulation extends PrimitiveComponent<
 
   doInitialSimulationRender(): void {
     const { db } = this.root!
-    const { duration, startTime, timePerStep, spiceOptions } =
-      this._parsedProps
+    const { duration, startTime, timePerStep, spiceOptions } = this._parsedProps
 
     const durationMs = duration || 10 // ms
     const timePerStepMs = timePerStep || 0.01 // ms
