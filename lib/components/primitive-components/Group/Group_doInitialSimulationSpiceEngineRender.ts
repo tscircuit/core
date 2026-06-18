@@ -57,6 +57,11 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
       .filter((probe) => probe.simulation_voltage_probe_id)
       .map((probe) => [probe.simulation_voltage_probe_id!, probe] as const),
   )
+  const currentProbesById = new Map(
+    root.db.simulation_current_probe
+      .list()
+      .map((probe) => [probe.simulation_current_probe_id, probe] as const),
+  )
   const orderedSimulationProbes = root.db.simulation_voltage_probe
     .list()
     .filter((probe) => voltageProbesById.has(probe.simulation_voltage_probe_id))
@@ -128,6 +133,11 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
           if (element.type === "simulation_transient_current_graph") {
             element.simulation_experiment_id =
               simulationExperiment.simulation_experiment_id
+
+            const probeMatch = element.source_probe_id
+              ? currentProbesById.get(element.source_probe_id)
+              : undefined
+            if (probeMatch) element.color = probeMatch.color
           }
 
           // Insert the simulation result into the database
