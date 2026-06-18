@@ -78,6 +78,15 @@ export class SilkscreenText extends PrimitiveComponent<
       component: this,
     })
 
+    const resolvedPcbSxVisibility = resolvePcbProperty({
+      propertyName: "visibility",
+      resolvedPcbSx: this.getResolvedPcbSx(),
+      pathFromAmpersand: "silkscreentext",
+      component: this,
+    }) as "hidden" | "visible" | "inherit" | undefined
+
+    if (resolvedPcbSxVisibility === "hidden") return
+
     const fontSize =
       props.fontSize ??
       resolvedPcbSxFontSize ??

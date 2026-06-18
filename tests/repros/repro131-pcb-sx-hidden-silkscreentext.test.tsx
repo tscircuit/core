@@ -22,5 +22,6 @@ test("repro131 pcbSx hidden silkscreentext", () => {
   circuit.add(<Repro />)
   circuit.render()
 
+  expect(circuit.db.pcb_silkscreen_text.list()).toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
