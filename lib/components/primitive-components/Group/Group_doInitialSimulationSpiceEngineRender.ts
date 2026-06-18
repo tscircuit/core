@@ -125,6 +125,11 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
             if (probeMatch) element.color = probeMatch.color
           }
 
+          if (element.type === "simulation_transient_current_graph") {
+            element.simulation_experiment_id =
+              simulationExperiment.simulation_experiment_id
+          }
+
           // Insert the simulation result into the database
           const elementType = element.type
           if (elementType && (root.db as any)[elementType]) {
