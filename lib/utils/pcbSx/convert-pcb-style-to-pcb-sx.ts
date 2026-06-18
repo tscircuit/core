@@ -14,19 +14,18 @@ export function convertPcbStyleToPcbSx(
   if (!pcbStyle) return undefined
 
   const sx: PcbSx = {}
+  const silkscreenTextSx: NonNullable<PcbSx["& silkscreentext"]> = {}
 
-  if (
-    pcbStyle.silkscreenFontSize !== undefined ||
-    pcbStyle.silkscreenTextVisibility !== undefined
-  ) {
-    sx["& silkscreentext"] = {
-      ...(pcbStyle.silkscreenFontSize !== undefined
-        ? { fontSize: pcbStyle.silkscreenFontSize }
-        : {}),
-      ...(pcbStyle.silkscreenTextVisibility !== undefined
-        ? { visibility: pcbStyle.silkscreenTextVisibility }
-        : {}),
-    }
+  if (pcbStyle.silkscreenFontSize !== undefined) {
+    silkscreenTextSx.fontSize = pcbStyle.silkscreenFontSize
+  }
+
+  if (pcbStyle.silkscreenTextVisibility !== undefined) {
+    silkscreenTextSx.visibility = pcbStyle.silkscreenTextVisibility
+  }
+
+  if (Object.keys(silkscreenTextSx).length > 0) {
+    sx["& silkscreentext"] = silkscreenTextSx
   }
 
   if (Object.keys(sx).length === 0) return undefined
