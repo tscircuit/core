@@ -7,7 +7,10 @@ import { getSchematicNetLabelTextWidth } from "./computeSchematicNetLabelCenter"
 
 const SYMBOL_TEXT_FONT_SIZE = 0.18
 
-const TEXT_BOX_ENABLED_FTYPES = new Set(["simple_resistor"])
+const TEXT_BOX_ENABLED_FTYPES = new Set([
+  "simple_resistor",
+  "simple_capacitor",
+])
 
 function getTextBounds({
   text,
