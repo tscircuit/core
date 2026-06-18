@@ -88,6 +88,7 @@ export interface TscircuitElements {
   testpoint: Props.TestpointProps
   voltagesource: Props.VoltageSourceProps
   currentsource: Props.CurrentSourceProps
+  ammeter: Props.AmmeterProps
   voltageprobe: Props.VoltageProbeProps
   copperpour: Props.CopperPourProps
   analogsimulation: Props.AnalogSimulationProps
