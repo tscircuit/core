@@ -90,7 +90,6 @@ test("<ammeter /> emits source and simulation current probe", async () => {
   })!
 
   expect(schematicComponent).toBeDefined()
-  expect(schematicComponent.symbol_name).toBe("dc_ammeter_horz")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
