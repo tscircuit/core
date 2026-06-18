@@ -5,7 +5,8 @@ import type { PcbStyle, PcbSx } from "@tscircuit/props"
  * resolved through the same code path.
  *
  * Mapping:
- *   silkscreenFontSize  ->  "& silkscreentext": { fontSize }
+ *   silkscreenFontSize        -> "& silkscreentext": { fontSize }
+ *   silkscreenTextVisibility  -> "& silkscreentext": { visibility }
  */
 export function convertPcbStyleToPcbSx(
   pcbStyle: PcbStyle | undefined,
@@ -13,11 +14,18 @@ export function convertPcbStyleToPcbSx(
   if (!pcbStyle) return undefined
 
   const sx: PcbSx = {}
+  const silkscreenTextSx: NonNullable<PcbSx["& silkscreentext"]> = {}
 
   if (pcbStyle.silkscreenFontSize !== undefined) {
-    sx["& silkscreentext"] = {
-      fontSize: pcbStyle.silkscreenFontSize,
-    }
+    silkscreenTextSx.fontSize = pcbStyle.silkscreenFontSize
+  }
+
+  if (pcbStyle.silkscreenTextVisibility !== undefined) {
+    silkscreenTextSx.visibility = pcbStyle.silkscreenTextVisibility
+  }
+
+  if (Object.keys(silkscreenTextSx).length > 0) {
+    sx["& silkscreentext"] = silkscreenTextSx
   }
 
   if (Object.keys(sx).length === 0) return undefined
