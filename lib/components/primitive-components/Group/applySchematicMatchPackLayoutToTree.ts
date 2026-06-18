@@ -6,13 +6,25 @@ import { type InputProblem, LayoutPipelineSolver } from "@tscircuit/matchpack"
 import Debug from "debug"
 import type { z } from "zod"
 import type { Group } from "./Group"
+import type { AxisDirection } from "./Group_doInitialSchematicTraceRender/getSide"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchpack")
 
+const DEFAULT_AVAILABLE_ROTATIONS = [0, 90, 180, 270] as const
+type MatchpackRotation = (typeof DEFAULT_AVAILABLE_ROTATIONS)[number]
+
+const ROTATION_TO_PLACE_SIDE_ON_TOP: Record<AxisDirection, MatchpackRotation> =
+  {
+    "y+": 0,
+    "x+": 90,
+    "y-": 180,
+    "x-": 270,
+  }
+
 function facingDirectionToSide(
   facingDirection: string | undefined,
-): "x-" | "x+" | "y-" | "y+" {
+): AxisDirection {
   switch (facingDirection) {
     case "up":
       return "y+"
@@ -24,6 +36,36 @@ function facingDirectionToSide(
       return "x+"
     default:
       return "y+"
+  }
+}
+
+function applyPowerGroundRotationConstraints(problem: InputProblem): void {
+  for (const chip of Object.values(problem.chipMap)) {
+    if (chip.pins.length !== 2) continue
+    if (chip.availableRotations?.length !== DEFAULT_AVAILABLE_ROTATIONS.length)
+      continue
+
+    const powerGroundRotations = new Set<MatchpackRotation>()
+
+    for (const pinId of chip.pins) {
+      const pin = problem.chipPinMap[pinId]
+      if (!pin) continue
+
+      for (const [netId, net] of Object.entries(problem.netMap)) {
+        if (!problem.netConnMap[`${pinId}-${netId}`]) continue
+        if (net.isPositiveVoltageSource === net.isGround) continue
+
+        const rotationToPlacePinOnTop = ROTATION_TO_PLACE_SIDE_ON_TOP[pin.side]
+        const rotation = net.isPositiveVoltageSource
+          ? rotationToPlacePinOnTop
+          : (((rotationToPlacePinOnTop + 180) % 360) as MatchpackRotation)
+        powerGroundRotations.add(rotation)
+      }
+    }
+
+    if (powerGroundRotations.size === 1) {
+      chip.availableRotations = [powerGroundRotations.values().next().value!]
+    }
   }
 }
 
@@ -143,7 +185,9 @@ function convertTreeToMatchPackInputProblem(
           child.sourceComponent?.source_component_id,
       )
 
-      let availableRotations: (0 | 90 | 180 | 270)[] = [0, 90, 180, 270]
+      let availableRotations: MatchpackRotation[] = [
+        ...DEFAULT_AVAILABLE_ROTATIONS,
+      ]
 
       if (component?._parsedProps?.schOrientation) {
         availableRotations = [0]
@@ -443,30 +487,30 @@ function convertTreeToMatchPackInputProblem(
   )
 
   for (const [connectivityKey, pins] of connectivityGroups) {
+    const tracesWithThisKey = db.source_trace
+      .list()
+      .filter(
+        (trace: any) =>
+          trace.subcircuit_connectivity_map_key === connectivityKey,
+      )
+
+    const hasNetConnections = tracesWithThisKey.some(
+      (trace: any) =>
+        trace.connected_source_net_ids &&
+        trace.connected_source_net_ids.length > 0,
+    )
+
+    const hasDirectConnections = tracesWithThisKey.some(
+      (trace: any) =>
+        trace.connected_source_port_ids &&
+        trace.connected_source_port_ids.length >= 2,
+    )
+
+    debug(
+      `[${group.name}] Connectivity ${connectivityKey}: hasNetConnections=${hasNetConnections}, hasDirectConnections=${hasDirectConnections}`,
+    )
+
     if (pins.length >= 2) {
-      const tracesWithThisKey = db.source_trace
-        .list()
-        .filter(
-          (trace: any) =>
-            trace.subcircuit_connectivity_map_key === connectivityKey,
-        )
-
-      const hasNetConnections = tracesWithThisKey.some(
-        (trace: any) =>
-          trace.connected_source_net_ids &&
-          trace.connected_source_net_ids.length > 0,
-      )
-
-      const hasDirectConnections = tracesWithThisKey.some(
-        (trace: any) =>
-          trace.connected_source_port_ids &&
-          trace.connected_source_port_ids.length >= 2,
-      )
-
-      debug(
-        `[${group.name}] Connectivity ${connectivityKey}: hasNetConnections=${hasNetConnections}, hasDirectConnections=${hasDirectConnections}`,
-      )
-
       if (hasDirectConnections) {
         for (const trace of tracesWithThisKey) {
           if (
@@ -527,32 +571,36 @@ function convertTreeToMatchPackInputProblem(
           }
         }
       }
+    }
 
-      if (hasNetConnections) {
-        const source_net = db.source_net.getWhere({
-          subcircuit_connectivity_map_key: connectivityKey,
-        })
+    if (hasNetConnections) {
+      const source_net = db.source_net.getWhere({
+        subcircuit_connectivity_map_key: connectivityKey,
+      })
 
-        const isGround = source_net?.is_ground ?? false
-        const isPositiveVoltageSource = source_net?.is_power ?? false
+      const isGround = source_net?.is_ground ?? false
+      const isPositiveVoltageSource =
+        source_net?.is_power === true ||
+        source_net?.is_positive_voltage_source === true
 
-        problem.netMap[connectivityKey] = {
-          netId: connectivityKey,
-          isGround,
-          isPositiveVoltageSource,
-        }
-
-        for (const pinId of pins) {
-          problem.netConnMap[`${pinId}-${connectivityKey}`] = true
-        }
-
-        debug(
-          `[${group.name}] Created net ${connectivityKey} with ${pins.length} pins:`,
-          pins,
-        )
+      problem.netMap[connectivityKey] = {
+        netId: connectivityKey,
+        isGround,
+        isPositiveVoltageSource,
       }
+
+      for (const pinId of pins) {
+        problem.netConnMap[`${pinId}-${connectivityKey}`] = true
+      }
+
+      debug(
+        `[${group.name}] Created net ${connectivityKey} with ${pins.length} pins:`,
+        pins,
+      )
     }
   }
+
+  applyPowerGroundRotationConstraints(problem)
 
   return problem
 }
