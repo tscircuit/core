@@ -7,6 +7,11 @@ import {
 } from "@tscircuit/schematic-trace-solver"
 import type { AxisDirection } from "./getSide"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import {
+  getBoundFromCenteredRect,
+  getBoundsCenter,
+} from "@tscircuit/math-utils"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 export type SolverInputContext = {
@@ -116,11 +121,19 @@ export function createSchematicTraceSolverInputProblem(
       sectionId = componentNameToSectionId.get(sourceComponent.name)
     }
 
+    const layoutBounds =
+      getSchematicComponentWithTextBounds(db, schematicComponent) ??
+      getBoundFromCenteredRect({
+        center: schematicComponent.center,
+        width: schematicComponent.size.width,
+        height: schematicComponent.size.height,
+      })
+
     chips.push({
       chipId,
-      center: schematicComponent.center,
-      width: schematicComponent.size.width,
-      height: schematicComponent.size.height,
+      center: getBoundsCenter(layoutBounds),
+      width: layoutBounds.maxX - layoutBounds.minX,
+      height: layoutBounds.maxY - layoutBounds.minY,
       pins,
       sectionId,
     })
