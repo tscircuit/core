@@ -42,6 +42,17 @@ function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
     (a.x - b.x) ** 2 + (a.y - b.y) ** 2
   const usedCenters = new Set<number>()
 
+  // A pin the trace already passes through is reached — don't let an endpoint
+  // snap to it again. Otherwise an endpoint that merely sits near (and
+  // axis-aligned with) a pin already terminating the other end gets a
+  // duplicate point prepended/appended, producing a trace that loops back on
+  // itself.
+  for (let i = 0; i < centers.length; i++) {
+    if (result.some((p) => d2(centers[i]!, p) <= 1e-12)) {
+      usedCenters.add(i)
+    }
+  }
+
   const snap = (endpoint: "start" | "end") => {
     const pt = endpoint === "start" ? result[0]! : result[result.length - 1]!
     let bestIndex = -1
