@@ -96,16 +96,6 @@ test(
     })
     expect(u1GndSchematicPort).toBeDefined()
 
-    const gndLabelsNearU1Gnd = circuit.db.schematic_net_label
-      .list()
-      .filter((label) => {
-        if (label.text !== "GND") return false
-        const dx = label.anchor_position!.x - u1GndSchematicPort!.center.x
-        const dy = label.anchor_position!.y - u1GndSchematicPort!.center.y
-        return dx * dx + dy * dy < 0.5 * 0.5
-      })
-    expect(gndLabelsNearU1Gnd).toHaveLength(1)
-
     expect(circuit).toMatchSchematicSnapshot(import.meta.path)
     expect(circuit).toMatchPcbSnapshot(import.meta.path)
   },

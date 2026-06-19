@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("schematic text bounding box at all rotations", async () => {
+test("resistor schematic text bounding box at all rotations", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

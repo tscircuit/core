@@ -42,6 +42,12 @@ function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
     (a.x - b.x) ** 2 + (a.y - b.y) ** 2
   const usedCenters = new Set<number>()
 
+  for (let i = 0; i < centers.length; i++) {
+    if (result.some((p) => d2(centers[i]!, p) <= 1e-12)) {
+      usedCenters.add(i)
+    }
+  }
+
   const snap = (endpoint: "start" | "end") => {
     const pt = endpoint === "start" ? result[0]! : result[result.length - 1]!
     let bestIndex = -1
