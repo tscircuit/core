@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(22.7617602428,0,0,-22.7617602428,624.0136570561,328.9074355083)" data-software-used-string="@tscircuit/core@0.0.1336"><style>
+<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(22.7617602428,0,0,-22.7617602428,624.0136570561,328.9074355083)" data-software-used-string="@tscircuit/core@0.0.1342"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -373,13 +373,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 308.5015174505278,126.14567526543759
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.45523520485600005px"/><text class="net-label-text sch-net-label-text" x="307.68209408178694" y="128.60394537166" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="4.097116843704px" transform="">XOUT</text><path class="net-label sch-net-label" d="
-    M 624.0136570561,163.884673748
-    L 622.7845220029888,166.3429438542224
-    L 609.1760242791601,166.3429438542224
-    L 609.1760242791601,161.4264036417776
-    L 622.7845220029888,161.42640364177763
+    M 651.3277693474599,159.33232169943997
+    L 652.5569044005712,156.8740515932176
+    L 666.1654021243999,156.8740515932176
+    L 666.1654021243999,161.79059180566236
+    L 652.5569044005712,161.79059180566236
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.45523520485600005px"/><text class="net-label-text sch-net-label-text" x="621.965098634248" y="163.884673748" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="4.097116843704px" transform="">XOUT</text><rect class="component-overlay sch-component-overlay sch-net-label-overlay" x="297.87177541714016" y="105.13657056133317" width="5.462822458271944" height="4.097116843703986" fill="transparent"/><path class="sch-net-label-symbol-path" d="M 303.3345978754121 105.13657056133317 L 297.87177541714016 105.13657056133317" stroke="rgb(132, 0, 0)" fill="none" stroke-width="0.45523520485600005px" stroke-linecap="round"/><path class="sch-net-label-symbol-path" d="M 300.60318664627613 105.13657056133317 L 300.60318664627613 109.23368740503716" stroke="rgb(132, 0, 0)" fill="none" stroke-width="0.45523520485600005px" stroke-linecap="round"/><text class="sch-net-label-symbol-text" x="300.60318664627613" y="103.99848254919317" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="ideographic" font-size="4.097116843704px">V1V2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.45523520485600005px"/><text class="net-label-text sch-net-label-text" x="653.376327769312" y="159.33232169943997" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="4.097116843704px" transform="">XOUT</text><rect class="component-overlay sch-component-overlay sch-net-label-overlay" x="297.87177541714016" y="105.13657056133317" width="5.462822458271944" height="4.097116843703986" fill="transparent"/><path class="sch-net-label-symbol-path" d="M 303.3345978754121 105.13657056133317 L 297.87177541714016 105.13657056133317" stroke="rgb(132, 0, 0)" fill="none" stroke-width="0.45523520485600005px" stroke-linecap="round"/><path class="sch-net-label-symbol-path" d="M 300.60318664627613 105.13657056133317 L 300.60318664627613 109.23368740503716" stroke="rgb(132, 0, 0)" fill="none" stroke-width="0.45523520485600005px" stroke-linecap="round"/><text class="sch-net-label-symbol-text" x="300.60318664627613" y="103.99848254919317" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="ideographic" font-size="4.097116843704px">V1V2</text><path class="net-label sch-net-label" d="
     M 309.73065250363896,196.88922610006003
     L 308.5015174505278,199.34749620628241
     L 291.91578148694083,199.34749620628241
