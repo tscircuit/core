@@ -10,6 +10,8 @@ import {
   convertCircuitJsonToSchematicSvg,
 } from "circuit-to-svg"
 import { RootCircuit } from "lib/RootCircuit"
+import { cju } from "@tscircuit/circuit-json-util"
+import { getSchematicComponentTextBoundingBoxRects } from "tests/fixtures/getSchematicComponentTextBoundingBoxRects"
 import looksSame from "looks-same"
 
 async function saveSvgSnapshotOfCircuitJson({
@@ -161,6 +163,44 @@ expect.extend({
         Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS),
     })
   },
+  async toMatchSchematicSnapshotWithBoundingBoxes(
+    this: any,
+    received: unknown,
+    ...args: any[]
+  ): Promise<MatcherResult> {
+    let circuitJson: AnyCircuitElement[]
+    let db: ReturnType<typeof cju>
+    if (received instanceof RootCircuit) {
+      await received.renderUntilSettled()
+      circuitJson = await received.getCircuitJson()
+      db = received.db as unknown as ReturnType<typeof cju>
+    } else {
+      circuitJson = received as AnyCircuitElement[]
+      db = cju(circuitJson)
+    }
+
+    const boxes = getSchematicComponentTextBoundingBoxRects(db)
+
+    return saveSvgSnapshotOfCircuitJson({
+      soup: [...circuitJson, ...boxes],
+      testPath: args[0],
+      mode: "schematic",
+      options: args[1] ?? {
+        grid: {
+          cellSize: 1,
+          labelCells: true,
+        },
+      },
+      updateSnapshot:
+        process.argv.includes("--update-snapshots") ||
+        process.argv.includes("-u") ||
+        Boolean(process.env.BUN_UPDATE_SNAPSHOTS),
+      forceUpdateSnapshot:
+        process.argv.includes("--force-update-snapshots") ||
+        process.argv.includes("-f") ||
+        Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS),
+    })
+  },
   async toMatchPinoutSnapshot(
     this: any,
     received: unknown,
@@ -198,6 +238,10 @@ declare module "bun:test" {
       options?: Parameters<typeof convertCircuitJsonToPcbSvg>[1],
     ): Promise<MatcherResult>
     toMatchSchematicSnapshot(
+      testPath: string,
+      options?: Parameters<typeof convertCircuitJsonToSchematicSvg>[1],
+    ): Promise<MatcherResult>
+    toMatchSchematicSnapshotWithBoundingBoxes(
       testPath: string,
       options?: Parameters<typeof convertCircuitJsonToSchematicSvg>[1],
     ): Promise<MatcherResult>

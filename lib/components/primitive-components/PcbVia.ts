@@ -1,9 +1,10 @@
 import { type ViaProps, viaProps } from "@tscircuit/props"
 import {
-  layer_ref,
-  type LayerRef,
   type PcbVia as CircuitJsonPcbVia,
+  type LayerRef,
+  layer_ref,
 } from "circuit-json"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
@@ -38,8 +39,16 @@ export class PcbVia extends PrimitiveComponent<typeof pcbViaProps> {
   private _getLayers(): LayerRef[] {
     const { layers, fromLayer = "top", toLayer = "bottom" } = this._parsedProps
     if (layers && layers.length > 0) return layers as LayerRef[]
-    if (fromLayer === toLayer) return [fromLayer as LayerRef]
-    return [fromLayer as LayerRef, toLayer as LayerRef]
+    // Before the via is attached to the tree the board layer count is
+    // unknown — fall back to 2, which yields [fromLayer, toLayer].
+    const layerCount = this.parent
+      ? this.getSubcircuit()._getSubcircuitLayerCount()
+      : 2
+    return getViaSpanLayers({
+      fromLayer: fromLayer as LayerRef,
+      toLayer: toLayer as LayerRef,
+      layerCount,
+    })
   }
 
   getAvailablePcbLayers(): string[] {
