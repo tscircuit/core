@@ -312,7 +312,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   let currentLayer = layer as LayerRef
 
   const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout()
-  const otherPos = otherPort._getGlobalPcbPositionAfterLayout()
+  const otherPos = otherPort?._getGlobalPcbPositionAfterLayout()
 
   const route: PcbTraceRoutePoint[] = []
   route.push({
@@ -403,14 +403,16 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       })
     }
   }
-  route.push({
-    route_type: "wire",
-    x: otherPos.x,
-    y: otherPos.y,
-    width,
-    layer: currentLayer,
-    end_pcb_port_id: otherPort.pcb_port_id!,
-  })
+  if (otherPort && otherPos) {
+    route.push({
+      route_type: "wire",
+      x: otherPos.x,
+      y: otherPos.y,
+      width,
+      layer: currentLayer,
+      end_pcb_port_id: otherPort.pcb_port_id!,
+    })
+  }
 
   const traceLength = getTraceLength(route)
   const pcb_trace = db.pcb_trace.insert({
