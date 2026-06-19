@@ -1123,6 +1123,20 @@ export abstract class PrimitiveComponent<
     }
   }
 
+  /**
+   * The selector caches memoize results assuming the component tree is stable.
+   * When the tree changes after the cache is first built (e.g. a connector adds
+   * its ports asynchronously once a parts-engine fetch resolves), this phase is
+   * re-marked dirty via _markDirty and re-runs as an update. Drop the stale
+   * memoized results so later queries see the current tree, then re-warm the
+   * subcircuit cache.
+   */
+  updateOptimizeSelectorCache() {
+    this._cachedSelectAllQueries.clear()
+    this._cachedSelectOneQueries.clear()
+    this.doInitialOptimizeSelectorCache()
+  }
+
   _cachedSelectAllQueries: Map<string, PrimitiveComponent[]> = new Map()
   selectAll<T extends PrimitiveComponent = PrimitiveComponent>(
     selectorRaw: string,
