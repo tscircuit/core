@@ -15,6 +15,9 @@ it("should have base, emitter, and collector port mappings", async () => {
   expect(transistorInstance.base).toBeDefined()
   expect(transistorInstance.emitter).toBeDefined()
   expect(transistorInstance.collector).toBeDefined()
+  expect(transistorInstance.emitter).toBe(transistorInstance.portMap.pin1)
+  expect(transistorInstance.collector).toBe(transistorInstance.portMap.pin2)
+  expect(transistorInstance.base).toBe(transistorInstance.portMap.pin3)
 })
 
 it("should initialize base, emitter, and collector ports correctly for an NPN transistor", async () => {

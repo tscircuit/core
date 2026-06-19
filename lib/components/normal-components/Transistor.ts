@@ -28,8 +28,8 @@ export class Transistor extends NormalComponent<
 
   initPorts() {
     const pinAliases = {
-      pin1: ["collector", "c"],
-      pin2: ["emitter", "e"],
+      pin1: ["emitter", "e"],
+      pin2: ["collector", "c"],
       pin3: ["base", "b"],
     }
 
