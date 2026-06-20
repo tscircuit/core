@@ -42,15 +42,15 @@ test("createComponentsFromCircuitJson renders imported rotated_rect smtpads", ()
 
   circuit.render()
 
-  // const rotatedPads = circuit.db.pcb_smtpad
-  //   .list()
-  //   .filter(
-  //     (element): element is PcbSmtPadRotatedRect =>
-  //       element.type === "pcb_smtpad" && element.shape === "rotated_rect",
-  //   )
+  const rotatedPads = circuit.db.pcb_smtpad
+    .list()
+    .filter(
+      (element): element is PcbSmtPadRotatedRect =>
+        element.type === "pcb_smtpad" && element.shape === "rotated_rect",
+    )
 
-  // expect(rotatedPads).toHaveLength(1)
-  // expect(rotatedPads[0].ccw_rotation).toBe(45)
+  expect(rotatedPads).toHaveLength(1)
+  expect(rotatedPads[0].ccw_rotation).toBe(45)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -1,4 +1,4 @@
-import { silkscreenTextProps } from "@tscircuit/props"
+import { silkscreenTextProps, type PcbStyle } from "@tscircuit/props"
 import type { LayerRef } from "circuit-json"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 import { resolvePcbProperty } from "lib/utils/pcbSx/resolve-pcb-property"
@@ -77,6 +77,15 @@ export class SilkscreenText extends PrimitiveComponent<
       pathFromAmpersand: "silkscreentext",
       component: this,
     })
+
+    const resolvedPcbSxVisibility = resolvePcbProperty({
+      propertyName: "visibility",
+      resolvedPcbSx: this.getResolvedPcbSx(),
+      pathFromAmpersand: "silkscreentext",
+      component: this,
+    }) as PcbStyle["silkscreenTextVisibility"]
+
+    if (resolvedPcbSxVisibility === "hidden") return
 
     const fontSize =
       props.fontSize ??

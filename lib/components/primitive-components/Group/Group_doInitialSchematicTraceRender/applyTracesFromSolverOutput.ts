@@ -1,11 +1,85 @@
 import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
+
+const MAX_PIN_SNAP_GAP = 1.5
+
+/**
+ * Extends a trace's start/end to land on a pin center.
+ *
+ * When a schematic component's bounding box is expanded to fit large text,
+ * the box can grow large enough that the component's pins end up *inside* the
+ * box. The trace solver routes up to the edge of the bounding box, so the
+ * trace stops short of the pin and never visually connects. This walks each
+ * endpoint to the nearest eligible pin center (within MAX_PIN_SNAP_GAP, and
+ * only if axis-aligned), prepending/appending a point so the trace reaches
+ * the pin.
+ */
+function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
+  params: {
+    points: Array<{ x: number; y: number }>
+    schematicPortIds: string[]
+    eligiblePortIds: Set<string>
+  },
+  db: CircuitJsonUtilObjects,
+): Array<{ x: number; y: number }> {
+  const { points, schematicPortIds, eligiblePortIds } = params
+  const centers = schematicPortIds
+    .filter((id) => eligiblePortIds.has(id))
+    .map((id) => db.schematic_port.get(id)?.center)
+    .filter((c): c is { x: number; y: number } => Boolean(c))
+  if (centers.length === 0) return points
+
+  const result = points.map((p) => ({ x: p.x, y: p.y }))
+  const d2 = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+    (a.x - b.x) ** 2 + (a.y - b.y) ** 2
+  const usedCenters = new Set<number>()
+
+  for (let i = 0; i < centers.length; i++) {
+    if (result.some((p) => d2(centers[i]!, p) <= 1e-12)) {
+      usedCenters.add(i)
+    }
+  }
+
+  const snap = (endpoint: "start" | "end") => {
+    const pt = endpoint === "start" ? result[0]! : result[result.length - 1]!
+    let bestIndex = -1
+    let bestDist = Number.POSITIVE_INFINITY
+    for (let i = 0; i < centers.length; i++) {
+      if (usedCenters.has(i)) continue
+      const dist = d2(centers[i]!, pt)
+      if (dist < bestDist) {
+        bestDist = dist
+        bestIndex = i
+      }
+    }
+    if (bestIndex < 0) return
+    if (bestDist <= 1e-12) {
+      usedCenters.add(bestIndex)
+      return
+    }
+    if (bestDist > MAX_PIN_SNAP_GAP ** 2) return
+    const c = centers[bestIndex]!
+    const ALIGN_EPS = 1e-3
+    if (Math.abs(c.x - pt.x) > ALIGN_EPS && Math.abs(c.y - pt.y) > ALIGN_EPS) {
+      return
+    }
+    usedCenters.add(bestIndex)
+    if (endpoint === "start") result.unshift({ x: c.x, y: c.y })
+    else result.push({ x: c.x, y: c.y })
+  }
+
+  snap("start")
+  snap("end")
+  return result
+}
 
 export function applyTracesFromSolverOutput(args: {
   group: Group<any>
@@ -22,6 +96,18 @@ export function applyTracesFromSolverOutput(args: {
     schematicPortIdsWithPreExistingNetLabels,
   } = args
   const { db } = group.root!
+
+  const eligiblePortIds = new Set<string>()
+  for (const schematicComponent of db.schematic_component.list()) {
+    if (!getSchematicComponentWithTextBounds(db, schematicComponent)) {
+      continue
+    }
+    for (const port of db.schematic_port.list({
+      schematic_component_id: schematicComponent.schematic_component_id,
+    })) {
+      eligiblePortIds.add(port.schematic_port_id)
+    }
+  }
 
   // Use the overlap-corrected traces from the pipeline
   const traces =
@@ -55,7 +141,10 @@ export function applyTracesFromSolverOutput(args: {
       continue
     }
 
-    const points = solvedTracePath?.tracePath as Array<{ x: number; y: number }>
+    const points = solvedTracePath?.tracePath as Array<{
+      x: number
+      y: number
+    }>
     if (!Array.isArray(points) || points.length < 2) {
       debug(
         `Skipping trace ${solvedTracePath?.pinIds.join(",")} because it has less than 2 points`,
@@ -63,11 +152,21 @@ export function applyTracesFromSolverOutput(args: {
       continue
     }
 
+    const snappedPoints =
+      extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
+        {
+          points,
+          schematicPortIds: solvedTraceSchematicPortIds,
+          eligiblePortIds,
+        },
+        db,
+      )
+
     const edges: SchematicTrace["edges"] = []
-    for (let i = 0; i < points.length - 1; i++) {
+    for (let i = 0; i < snappedPoints.length - 1; i++) {
       edges.push({
-        from: { x: points[i]!.x, y: points[i]!.y },
-        to: { x: points[i + 1]!.x, y: points[i + 1]!.y },
+        from: { x: snappedPoints[i]!.x, y: snappedPoints[i]!.y },
+        to: { x: snappedPoints[i + 1]!.x, y: snappedPoints[i + 1]!.y },
       })
     }
 

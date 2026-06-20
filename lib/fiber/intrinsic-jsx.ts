@@ -55,6 +55,7 @@ export interface TscircuitElements {
   crystal: Props.CrystalProps
   footprint: Props.FootprintProps & { name?: string }
   silkscreentext: Props.SilkscreenTextProps
+  silkscreengraphic: Props.SilkscreenGraphicProps
   coppertext: Props.CopperTextProps
   cutout: Props.CutoutProps
   silkscreenpath: Props.SilkscreenPathProps

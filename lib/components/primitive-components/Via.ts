@@ -1,5 +1,6 @@
 import { type PcbStyle, viaProps } from "@tscircuit/props"
 import type { LayerRef, PcbVia } from "circuit-json"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaultsWithOverrides } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
@@ -81,9 +82,12 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
   }
   _getLayers(): LayerRef[] {
     const { fromLayer = "top", toLayer = "bottom" } = this._parsedProps
-    if (fromLayer === toLayer) return [fromLayer]
-    // TODO calculate layers inbetween top and bottom using layer count
-    return [fromLayer, toLayer]
+    // Before the via is attached to the tree (constructor/port init) the board
+    // layer count is unknown — fall back to 2, which yields [fromLayer, toLayer].
+    const layerCount = this.parent
+      ? this.getSubcircuit()._getSubcircuitLayerCount()
+      : 2
+    return getViaSpanLayers({ fromLayer, toLayer, layerCount })
   }
 
   initPorts() {
