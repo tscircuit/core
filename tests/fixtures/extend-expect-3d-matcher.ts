@@ -123,10 +123,7 @@ async function save3dSnapshotOfCircuitJson({
     ? gltfOrGlb
     : Buffer.from(gltfOrGlb as any)
   const resolvedRenderOpts = await resolvePoppyglOptions(soup, options)
-  const png = await renderGLTFToPNGFromGLB(
-    glbBuffer,
-    resolvedRenderOpts,
-  )
+  const png = await renderGLTFToPNGFromGLB(glbBuffer, resolvedRenderOpts)
   const content = png
 
   if (!fs.existsSync(snapshotDir)) {
