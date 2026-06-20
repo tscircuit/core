@@ -33,9 +33,15 @@ export function inflateSourceFiducial(
     sourceGroupId: sourceElm.source_group_id,
     inflatorContext,
   })
+  const pcbSmtPad = injectionDb.pcb_smtpad
+    .list({ pcb_component_id: pcbElm?.pcb_component_id })
+    .find((elm) => elm.shape === "circle")
+  const padDiameter =
+    pcbSmtPad && "radius" in pcbSmtPad ? pcbSmtPad.radius * 2 : "1mm"
 
   const fiducial = new InflatedFiducial({
     name: sourceElm.name,
+    padDiameter,
     layer: pcbElm?.layer,
     pcbX,
     pcbY,
