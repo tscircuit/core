@@ -505,11 +505,8 @@ export abstract class PrimitiveComponent<
     ) {
       const rotation = this._getPcbRotationBeforeLayout() ?? 0
       return compose(
-        this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-        compose(
-          translate(manualPlacement.x, manualPlacement.y),
-          rotate((rotation * Math.PI) / 180),
-        ),
+        translate(manualPlacement.x, manualPlacement.y),
+        rotate((rotation * Math.PI) / 180),
       )
     }
 
