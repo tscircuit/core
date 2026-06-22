@@ -1,11 +1,14 @@
 import { commonComponentProps, voltageProbeProps } from "@tscircuit/props"
-import type { SchematicVoltageProbe } from "circuit-json"
+import type {
+  SchematicVoltageProbe,
+  SimulationOscilloscopeTraceInput,
+} from "circuit-json"
+import { selectBestLabelAlignment } from "lib/utils/schematic/selectBestLabelAlignment"
+import { getSimulationColorForId } from "lib/utils/simulation/getSimulationColorForId"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Net } from "./Net"
 import type { Port } from "./Port"
-import { getSimulationColorForId } from "lib/utils/simulation/getSimulationColorForId"
-import { selectBestLabelAlignment } from "lib/utils/schematic/selectBestLabelAlignment"
 
 export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
   simulation_voltage_probe_id: string | null = null
@@ -60,7 +63,7 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
 
     const connectedId = port?.source_port_id ?? net?.source_net_id
     if (!connectedId) {
-      this.renderError(`Could not identify connected source for VoltageProbe`)
+      this.renderError("Could not identify connected source for VoltageProbe")
       return
     }
 
@@ -124,17 +127,20 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
       reference_input_source_net_id: referenceNet?.source_net_id ?? undefined,
       subcircuit_id: subcircuit.subcircuit_id || undefined,
       color: this.color,
-      display_options: display
-        ? {
-            label: display.label,
-            center: display.center,
-            offset_divs: display.offsetDivs,
-            units_per_div: display.unitsPerDiv,
-          }
-        : undefined,
     })
 
     this.simulation_voltage_probe_id = simulation_voltage_probe_id
+
+    if (display) {
+      db.simulation_oscilloscope_trace.insert({
+        simulation_voltage_probe_id,
+        display_name: display.label,
+        color: color ?? undefined,
+        display_center_value: display.center,
+        display_center_offset_divs: display.offsetDivs,
+        volts_per_div: display.unitsPerDiv,
+      } as SimulationOscilloscopeTraceInput)
+    }
   }
 
   doInitialSchematicReplaceNetLabelsWithSymbols() {

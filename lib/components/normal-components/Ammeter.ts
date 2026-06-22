@@ -1,6 +1,7 @@
 import { ammeterProps } from "@tscircuit/props"
 import type {
   SimulationCurrentProbeInput,
+  SimulationOscilloscopeTraceInput,
   SourceSimpleAmmeterInput,
 } from "circuit-json"
 import type { RenderPhase } from "lib/components/base-components/Renderable"
@@ -61,40 +62,43 @@ export class Ammeter extends NormalComponent<
 
   doInitialSourceRender() {
     const { db } = this.root!
-    const { _parsedProps: props } = this
+    const { supplierPartNumbers, displayName, color, display } =
+      this._parsedProps
     const source_component = db.source_component.insert({
       ftype: "simple_ammeter",
       name: this.name,
-      supplier_part_numbers: props.supplierPartNumbers,
-      display_name: props.displayName,
+      supplier_part_numbers: supplierPartNumbers,
+      display_name: displayName,
     } as SourceSimpleAmmeterInput)
     this.source_component_id = source_component.source_component_id
   }
 
   doInitialSimulationRender() {
     const { db } = this.root!
-    const { _parsedProps: props } = this
+    const { color, display } = this._parsedProps
     const posPort = this.portMap.pos
     const negPort = this.portMap.neg
-    const displayOptions = props.display
 
-    db.simulation_current_probe.insert({
+    const { simulation_current_probe_id } = db.simulation_current_probe.insert({
       type: "simulation_current_probe",
       name: this.name,
       source_component_id: this.source_component_id!,
       positive_source_port_id: posPort.source_port_id!,
       negative_source_port_id: negPort.source_port_id!,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-      color: props.color,
-      display_options: displayOptions
-        ? {
-            label: displayOptions.label,
-            center: displayOptions.center,
-            offset_divs: displayOptions.offsetDivs,
-            units_per_div: displayOptions.unitsPerDiv,
-          }
-        : undefined,
+      color: color,
     } as SimulationCurrentProbeInput)
+
+    if (display) {
+      db.simulation_oscilloscope_trace.insert({
+        simulation_current_probe_id,
+        display_name: display.label,
+        color: color,
+        display_center_value: display.center,
+        display_center_offset_divs: display.offsetDivs,
+        amps_per_div: display.unitsPerDiv,
+      } as SimulationOscilloscopeTraceInput)
+    }
   }
 
   pos = this.portMap.pos
