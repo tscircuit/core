@@ -1,17 +1,17 @@
-import type { Group } from "../Group"
 import {
+  type PackInput,
+  type PackOutput,
   PackSolver2,
   convertCircuitJsonToPackOutput,
   convertPackOutputToPackInput,
   getGraphicsFromPackOutput,
-  type PackInput,
-  type PackOutput,
 } from "calculate-packing"
 import { type PcbComponent, length } from "circuit-json"
 import Debug from "debug"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent"
+import type { Group } from "../Group"
 import { applyComponentConstraintClusters } from "./applyComponentConstraintClusters"
 import { applyPackOutput } from "./applyPackOutput"
-import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 
 const DEFAULT_MIN_GAP = "1mm"
 const debug = Debug("Group_doInitialPcbLayoutPack")
@@ -45,6 +45,7 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   // Collect pcb_component_ids that should be treated as static by the packer
   // Only collect from DIRECT children, not all descendants
   const staticPcbComponentIds = new Set<string>()
+  const edgePcbComponentIds = new Set<string>()
 
   // Recursively collect margins from all descendants
   const collectMargins = (comp: any) => {
@@ -58,6 +59,9 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
       )
       if (left || right || top || bottom) {
         chipMarginsMap[comp.pcb_component_id] = { left, right, top, bottom }
+      }
+      if (props.shouldBeOnEdgeOfBoard === true) {
+        edgePcbComponentIds.add(comp.pcb_component_id)
       }
     }
     if (comp?.children) comp.children.forEach(collectMargins)
@@ -151,6 +155,14 @@ export const Group_doInitialPcbLayoutPack = (group: Group) => {
   }
 
   const clusterMap = applyComponentConstraintClusters(group, packInput)
+
+  if (edgePcbComponentIds.size > 0) {
+    for (const component of packInput.components) {
+      if (edgePcbComponentIds.has(component.componentId)) {
+        ;(component as any).mustBeOnBoundary = true
+      }
+    }
+  }
 
   if (debug.enabled) {
     group.root?.emit("debug:logOutput", {
