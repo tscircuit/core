@@ -4,7 +4,7 @@ import { Footprint } from "lib/components/primitive-components/Footprint"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: createComponentsFromCircuitJson imported pcb_courtyard_rect rotation", () => {
+test("createComponentsFromCircuitJson preserves imported pcb_courtyard_rect rotation", () => {
   const { circuit } = getTestFixture()
   const footprint = new Footprint({})
 
@@ -41,6 +41,7 @@ test("repro: createComponentsFromCircuitJson imported pcb_courtyard_rect rotatio
   const pcbCourtyardRects = circuit.db.pcb_courtyard_rect.list()
 
   expect(pcbCourtyardRects).toHaveLength(1)
+  expect(pcbCourtyardRects[0]?.ccw_rotation).toBe(45)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, { showCourtyards: true })
 })
