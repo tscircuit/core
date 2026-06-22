@@ -20,11 +20,14 @@ function nearlyEqual(a: number, b: number, tol = TOL) {
   return Math.abs(a - b) <= tol
 }
 
-function length(a: { x: number; y: number }, b: { x: number; y: number }) {
+export function length(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+) {
   return Math.hypot(b.x - a.x, b.y - a.y)
 }
 
-function pointAt(
+export function pointAt(
   a: { x: number; y: number },
   b: { x: number; y: number },
   t: number,
@@ -32,7 +35,7 @@ function pointAt(
   return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
 }
 
-function paramAlong(
+export function paramAlong(
   a: { x: number; y: number },
   b: { x: number; y: number },
   p: { x: number; y: number },
@@ -46,7 +49,7 @@ function paramAlong(
   return Math.max(0, Math.min(1, t)) * L
 }
 
-function mergeIntervals(
+export function mergeIntervals(
   intervals: Array<{ start: number; end: number }>,
   tol = TOL,
 ) {
