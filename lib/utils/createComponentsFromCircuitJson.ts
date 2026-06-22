@@ -619,6 +619,7 @@ export const createComponentsFromCircuitJson = (
           pcbY: elm.center.y,
           width: elm.width,
           height: elm.height,
+          pcbRotation: elm.ccw_rotation,
           layer: elm.layer,
         }),
       )
