@@ -1,12 +1,12 @@
-import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import Debug from "debug"
-import { createSchematicTraceSolverInputProblem } from "./createSchematicTraceSolverInputProblem"
-import { applyTracesFromSolverOutput } from "./applyTracesFromSolverOutput"
+import { Group } from "../Group"
 import { applyNetLabelPlacements } from "./applyNetLabelPlacements"
-import { insertNetLabelsForPortsMissingTrace } from "./insertNetLabelsForPortsMissingTrace"
+import { applyTracesFromSolverOutput } from "./applyTracesFromSolverOutput"
+import { createSchematicTraceSolverInputProblem } from "./createSchematicTraceSolverInputProblem"
 import { getSchematicPortIdsWithAssignedNetLabels } from "./getSchematicPortIdsWithAssignedNetLabels"
 import { getSchematicPortIdsWithRoutedTraces } from "./getSchematicPortIdsWithRoutedTraces"
+import { insertNetLabelsForPortsMissingTrace } from "./insertNetLabelsForPortsMissingTrace"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -37,14 +37,18 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   const hasRouteableSchematicConnections =
     inputProblem.directConnections.length > 0 ||
     inputProblem.netConnections.length > 0
+  const shouldCreateAutoNetLabels =
+    group._parsedProps.schTraceAutoLabelEnabled !== false
 
   if (!hasRouteableSchematicConnections) {
-    insertNetLabelsForPortsMissingTrace({
-      group,
-      allSourceAndSchematicPortIdsInScope,
-      schPortIdToSourcePortId,
-      connKeyToSourceNet,
-    })
+    if (shouldCreateAutoNetLabels) {
+      insertNetLabelsForPortsMissingTrace({
+        group,
+        allSourceAndSchematicPortIdsInScope,
+        schPortIdToSourcePortId,
+        connKeyToSourceNet,
+      })
+    }
     return
   }
 
@@ -75,22 +79,24 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     schematicPortIdsWithPreExistingNetLabels,
   })
 
-  // Apply net labels (from solver placements and net-only ports)
-  applyNetLabelPlacements({
-    group,
-    solver,
-    connKeyToSourceNet,
-    pinIdToSchematicPortId,
-    userNetIdToConnKey,
-    connKeysWithExplicitPortNetTraces,
-    schematicPortIdsWithPreExistingNetLabels,
-    schematicPortIdsWithRoutedTraces,
-  })
+  if (shouldCreateAutoNetLabels) {
+    // Apply net labels (from solver placements and net-only ports)
+    applyNetLabelPlacements({
+      group,
+      solver,
+      connKeyToSourceNet,
+      pinIdToSchematicPortId,
+      userNetIdToConnKey,
+      connKeysWithExplicitPortNetTraces,
+      schematicPortIdsWithPreExistingNetLabels,
+      schematicPortIdsWithRoutedTraces,
+    })
 
-  insertNetLabelsForPortsMissingTrace({
-    group,
-    allSourceAndSchematicPortIdsInScope,
-    schPortIdToSourcePortId,
-    connKeyToSourceNet,
-  })
+    insertNetLabelsForPortsMissingTrace({
+      group,
+      allSourceAndSchematicPortIdsInScope,
+      schPortIdToSourcePortId,
+      connKeyToSourceNet,
+    })
+  }
 }
