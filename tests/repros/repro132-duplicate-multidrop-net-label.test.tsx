@@ -6,22 +6,10 @@ test("repro132: duplicate labels on a multidrop named net", async () => {
 
   circuit.add(
     <board>
-      <resistor
-        name="R8_BAT_TOP"
-        resistance="200k"
-        footprint="0402"
-      />
-      <resistor
-        name="R9_BAT_BOTTOM"
-        resistance="100k"
-        footprint="0402"
-      />
+      <resistor name="R8_BAT_TOP" resistance="200k" footprint="0402" />
+      <resistor name="R9_BAT_BOTTOM" resistance="100k" footprint="0402" />
 
-      <capacitor
-        name="C2_BAT"
-        capacitance="10uF"
-        footprint="0603"
-      />
+      <capacitor name="C2_BAT" capacitance="10uF" footprint="0603" />
 
       <chip
         name="J2_BATTERY"
