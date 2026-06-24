@@ -1,7 +1,4 @@
-import {
-  analogSimulationProps,
-  analogSimulationProps as baseAnalogSimulationProps,
-} from "@tscircuit/props"
+import { analogSimulationProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class AnalogSimulation extends PrimitiveComponent<
@@ -16,13 +13,14 @@ export class AnalogSimulation extends PrimitiveComponent<
 
   doInitialSimulationRender(): void {
     const { db } = this.root!
-    const { duration, startTime, timePerStep, spiceOptions } = this._parsedProps
+    const { duration, name, startTime, timePerStep, spiceOptions } =
+      this._parsedProps
 
     const durationMs = duration || 10 // ms
     const timePerStepMs = timePerStep || 0.01 // ms
 
     db.simulation_experiment.insert({
-      name: "spice_transient_analysis",
+      name: name ?? "spice_transient_analysis",
       experiment_type: "spice_transient_analysis" as const,
       end_time_ms: durationMs,
       start_time_ms: startTime,

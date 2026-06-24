@@ -4,6 +4,7 @@ import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
+import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import Debug from "debug"
 
@@ -231,27 +232,51 @@ export function applyTracesFromSolverOutput(args: {
     })),
   )
   const existingTracesForJunctions: Array<{
+    schematic_trace_id: string
     source_trace_id: string
     edges: SchematicTrace["edges"]
     connectivity_key?: string
   }> = []
   for (const t of db.schematic_trace.list()) {
-    if (!t.source_trace_id || t.edges.length === 0) continue
-    const sourceTrace = db.source_trace.get(t.source_trace_id)
+    if (t.edges.length === 0) continue
+    const sourceTrace = t.source_trace_id
+      ? db.source_trace.get(t.source_trace_id)
+      : undefined
     existingTracesForJunctions.push({
-      source_trace_id: t.source_trace_id,
+      schematic_trace_id: t.schematic_trace_id,
+      source_trace_id: t.source_trace_id ?? t.schematic_trace_id,
       edges: t.edges,
       connectivity_key:
         t.subcircuit_connectivity_map_key ??
         sourceTrace?.subcircuit_connectivity_map_key,
     })
   }
+  const tracesWithTrimmedCrossingOverlaps =
+    removeOverlappingSameNetCrossingSegments([
+      ...withCrossings,
+      ...existingTracesForJunctions,
+    ])
+  const visibleTraces = tracesWithTrimmedCrossingOverlaps.slice(
+    0,
+    withCrossings.length,
+  )
+  const visibleExistingTraces = tracesWithTrimmedCrossingOverlaps.slice(
+    withCrossings.length,
+  )
+
+  for (const trace of visibleExistingTraces) {
+    if (!trace.schematic_trace_id) continue
+    db.schematic_trace.update(trace.schematic_trace_id, {
+      edges: trace.edges,
+    })
+  }
+
   const junctionsById = computeJunctions([
-    ...withCrossings,
-    ...existingTracesForJunctions,
+    ...visibleTraces,
+    ...visibleExistingTraces,
   ])
 
-  for (const t of withCrossings) {
+  for (const t of visibleTraces) {
     db.schematic_trace.insert({
       source_trace_id: t.source_trace_id,
       edges: t.edges,

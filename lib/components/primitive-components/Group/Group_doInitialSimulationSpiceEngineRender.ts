@@ -1,11 +1,11 @@
-import type { Group } from "./Group"
-import { circuitJsonToSpice, SpiceNetlist } from "circuit-json-to-spice"
+import { SpiceNetlist, circuitJsonToSpice } from "circuit-json-to-spice"
 import Debug from "debug"
+import { getTransientVoltageGraphNamesFromSpiceNetlist } from "lib/utils/simulation/get-transient-voltage-graph-names-from-spice-netlist"
+import { resetSimulationColorState } from "lib/utils/simulation/getSimulationColorForId"
 import { getSpiceyEngine } from "../../../spice/get-spicey-engine"
 import type { AnalogSimulation } from "../AnalogSimulation"
-import { resetSimulationColorState } from "lib/utils/simulation/getSimulationColorForId"
-import { getTransientVoltageGraphNamesFromSpiceNetlist } from "lib/utils/simulation/get-transient-voltage-graph-names-from-spice-netlist"
 import type { VoltageProbe } from "../VoltageProbe"
+import type { Group } from "./Group"
 
 const debug = Debug("tscircuit:core:Group_doInitialSimulationSpiceEngineRender")
 
@@ -61,6 +61,12 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     root.db.simulation_current_probe
       .list()
       .map((probe) => [probe.simulation_current_probe_id, probe] as const),
+  )
+  const currentProbesByName = new Map(
+    root.db.simulation_current_probe
+      .list()
+      .filter((probe) => probe.name)
+      .map((probe) => [probe.name!, probe] as const),
   )
   const orderedSimulationProbes = root.db.simulation_voltage_probe
     .list()
@@ -127,17 +133,25 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
             const probeMatch = element.name
               ? graphNameToProbe.get(element.name)
               : undefined
-            if (probeMatch) element.color = probeMatch.color
+            if (probeMatch) {
+              element.color = probeMatch.color
+              element.source_probe_id = probeMatch.simulation_voltage_probe_id
+            }
           }
 
           if (element.type === "simulation_transient_current_graph") {
             element.simulation_experiment_id =
               simulationExperiment.simulation_experiment_id
 
-            const probeMatch = element.source_probe_id
-              ? currentProbesById.get(element.source_probe_id)
-              : undefined
-            if (probeMatch) element.color = probeMatch.color
+            const probeMatch =
+              (element.source_probe_id
+                ? currentProbesById.get(element.source_probe_id)
+                : undefined) ??
+              (element.name ? currentProbesByName.get(element.name) : undefined)
+            if (probeMatch) {
+              element.color = probeMatch.color
+              element.source_probe_id = probeMatch.simulation_current_probe_id
+            }
           }
 
           // Insert the simulation result into the database

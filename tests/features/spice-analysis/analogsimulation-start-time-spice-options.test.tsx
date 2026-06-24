@@ -22,6 +22,7 @@ test("analogsimulation emits start time and spice options", async () => {
       />
       <voltageprobe name="VOUT_PROBE" connectsTo=".R_LOAD > .pin1" />
       <analogsimulation
+        name="tran1"
         duration="715.56us"
         startTime="697.58us"
         timePerStep="5ns"
@@ -39,6 +40,7 @@ test("analogsimulation emits start time and spice options", async () => {
   await circuit.renderUntilSettled()
 
   const simulationExperiment = circuit.db.simulation_experiment.list()[0]
+  expect(simulationExperiment.name).toBe("tran1")
   expect(simulationExperiment.end_time_ms).toBeCloseTo(0.71556)
   expect(simulationExperiment.start_time_ms).toBeCloseTo(0.69758)
   expect(simulationExperiment.time_per_step).toBeCloseTo(0.000005)

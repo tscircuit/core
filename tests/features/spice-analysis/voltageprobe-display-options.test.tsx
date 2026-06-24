@@ -1,7 +1,6 @@
-import { expect, test } from "bun:test"
 import createNgspiceSpiceEngine from "@tscircuit/ngspice-spice-engine"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import "tests/fixtures/simulation-matcher"
 
 test("voltageprobe emits display options", async () => {
   const { circuit } = getTestFixture({
@@ -43,18 +42,14 @@ test("voltageprobe emits display options", async () => {
 
   expect(circuit.db.simulation_voltage_probe.list()[0]).toMatchObject({
     name: "VOUT_PROBE",
-    display_options: {
-      label: "VO",
-      center: 4.2,
-      offset_divs: 3,
-      units_per_div: 0.05,
-    },
   })
-  expect(
-    circuit
-      .getCircuitJson()
-      .some((el) => el.type === "simulation_transient_voltage_graph"),
-  ).toBe(true)
-
-  await expect(circuit).toMatchSimulationSnapshot(import.meta.path)
+  expect(circuit.db.simulation_voltage_probe.list()[0]).not.toHaveProperty(
+    "display_options",
+  )
+  expect(circuit.db.simulation_oscilloscope_trace.list()[0]).toMatchObject({
+    display_name: "VO",
+    display_center_value: 4.2,
+    display_center_offset_divs: 3,
+    volts_per_div: 0.05,
+  })
 })

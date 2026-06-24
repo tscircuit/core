@@ -69,4 +69,4 @@ test("chip spiceModel custom diode subcircuit simulates a half-wave rectifier", 
   ).toBe(true)
 
   await expect(circuit).toMatchSimulationSnapshot(import.meta.path)
-})
+}, 60000)

@@ -76,14 +76,18 @@ test("<ammeter /> emits source and simulation current probe", async () => {
     positive_source_port_id: am1PosPort.source_port_id,
     negative_source_port_id: am1NegPort.source_port_id,
     color: "#ff0000",
-    display_options: {
-      label: "I_AM1",
-      center: 0,
-      offset_divs: 1,
-      units_per_div: 0.01,
-    },
   })
   expect(currentProbe.subcircuit_id).toBeDefined()
+  expect(currentProbe).not.toHaveProperty("display_options")
+
+  expect(circuit.db.simulation_oscilloscope_trace.list()[0]).toMatchObject({
+    simulation_current_probe_id: currentProbe.simulation_current_probe_id,
+    display_name: "I_AM1",
+    color: "#ff0000",
+    display_center_value: 0,
+    display_center_offset_divs: 1,
+    amps_per_div: 0.01,
+  })
 
   const schematicComponent = circuit.db.schematic_component.getWhere({
     source_component_id: am1.source_component_id,
