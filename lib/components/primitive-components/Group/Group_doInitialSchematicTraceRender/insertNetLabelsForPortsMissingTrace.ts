@@ -180,6 +180,38 @@ export const insertNetLabelsForPortsMissingTrace = ({
     }
 
     if (existingNetLabelForCurrentSourceConnection) {
+      const deleteNearbyDuplicateLabels = () => {
+        for (const nl of db.schematic_net_label.list()) {
+          if (
+            nl.schematic_net_label_id ===
+            existingNetLabelForCurrentSourceConnection.schematic_net_label_id
+          ) {
+            continue
+          }
+          if (!nl.anchor_position) continue
+          const dx = nl.anchor_position.x - schPort.center.x
+          const dy = nl.anchor_position.y - schPort.center.y
+          if (
+            dx * dx + dy * dy >=
+            NEAR_EXISTING_NET_LABEL_DISTANCE *
+              NEAR_EXISTING_NET_LABEL_DISTANCE
+          ) {
+            continue
+          }
+          if (
+            !doesSchematicNetLabelRepresentCurrentSourceConnection({
+              nl,
+              connKey,
+              sourceNet,
+              text,
+            })
+          ) {
+            continue
+          }
+          db.schematic_net_label.delete(nl.schematic_net_label_id)
+        }
+      }
+
       const dx =
         existingNetLabelForCurrentSourceConnection.anchor_position!.x -
         schPort.center.x
@@ -191,11 +223,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
         NEAR_EXISTING_NET_LABEL_DISTANCE * NEAR_EXISTING_NET_LABEL_DISTANCE
 
       if (labelIsNearPort) {
-        if (
-          isGndNet ||
-          (!isPowerNet &&
-            existingNetLabelForCurrentSourceConnection.text === text)
-        ) {
+        if (isGndNet) {
           db.schematic_net_label.update(
             existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
             {
@@ -205,6 +233,27 @@ export const insertNetLabelsForPortsMissingTrace = ({
               anchor_side: side,
             },
           )
+          deleteNearbyDuplicateLabels()
+        } else if (
+          !isPowerNet &&
+          existingNetLabelForCurrentSourceConnection.text === text
+        ) {
+          const anchor_side =
+            existingNetLabelForCurrentSourceConnection.anchor_side ?? side
+          db.schematic_net_label.update(
+            existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
+            {
+              text,
+              anchor_position: schPort.center,
+              center: computeSchematicNetLabelCenter({
+                anchor_position: schPort.center,
+                anchor_side,
+                text,
+              }),
+              anchor_side,
+            },
+          )
+          deleteNearbyDuplicateLabels()
         }
         continue
       }
