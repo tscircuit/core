@@ -190,16 +190,37 @@ export const insertNetLabelsForPortsMissingTrace = ({
         dx * dx + dy * dy <
         NEAR_EXISTING_NET_LABEL_DISTANCE * NEAR_EXISTING_NET_LABEL_DISTANCE
 
-      if (labelIsNearPort && isGndNet) {
-        db.schematic_net_label.update(
-          existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
-          {
-            text,
-            anchor_position: schPort.center,
-            center,
-            anchor_side: side,
-          },
-        )
+      if (labelIsNearPort) {
+        if (isGndNet) {
+          db.schematic_net_label.update(
+            existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
+            {
+              text,
+              anchor_position: schPort.center,
+              center,
+              anchor_side: side,
+            },
+          )
+        } else if (
+          !isPowerNet &&
+          existingNetLabelForCurrentSourceConnection.text === text
+        ) {
+          const anchor_side =
+            existingNetLabelForCurrentSourceConnection.anchor_side ?? side
+          db.schematic_net_label.update(
+            existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
+            {
+              text,
+              anchor_position: schPort.center,
+              center: computeSchematicNetLabelCenter({
+                anchor_position: schPort.center,
+                anchor_side,
+                text,
+              }),
+              anchor_side,
+            },
+          )
+        }
         continue
       }
 

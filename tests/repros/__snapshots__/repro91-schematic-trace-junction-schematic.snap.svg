@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(44.791495588,0,0,-44.791495588,591.0417008824,247.8164145901)" data-software-used-string="@tscircuit/core@0.0.1343"><style>
+<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(44.791495588,0,0,-44.791495588,591.0417008824,247.8164145901)" data-software-used-string="@tscircuit/core@0.0.1353"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -57,13 +57,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 606.539558355848,282.843364139916
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.8958299117599999px"/><text class="net-label-text sch-net-label-text" x="604.9270645146801" y="287.68084566342" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="8.06246920584px" transform="">U1_CPO/C12_pin2</text><path class="net-label sch-net-label" d="
-    M 557.4480791914,146.4586917039706
-    L 562.285560714904,148.8774324657226
-    L 562.285560714904,234.0887736723338
-    L 552.610597667896,234.0887736723338
-    L 552.610597667896,148.8774324657226
+    M 557.4480791914,146.3297488467212
+    L 562.285560714904,148.7484896084732
+    L 562.285560714904,233.9598308150844
+    L 552.610597667896,233.9598308150844
+    L 552.610597667896,148.7484896084732
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.8958299117599999px"/><text class="net-label-text sch-net-label-text" x="557.4480791914" y="150.4899263068906" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="8.06246920584px" transform="rotate(90 557.4480791914 150.4899263068906)">U1_MS1_AD0/J1_pin2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.8958299117599999px"/><text class="net-label-text sch-net-label-text" x="557.4480791914" y="150.3609834496412" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="8.06246920584px" transform="rotate(90 557.4480791914 150.3609834496412)">U1_MS1_AD0/J1_pin2</text><path class="net-label sch-net-label" d="
     M 608.9582991176001,224.97275184021998
     L 606.539558355848,229.810233363724
     L 521.3282171492368,229.81023336372397
