@@ -62,8 +62,7 @@ export class Ammeter extends NormalComponent<
 
   doInitialSourceRender() {
     const { db } = this.root!
-    const { supplierPartNumbers, displayName, color, display } =
-      this._parsedProps
+    const { supplierPartNumbers, displayName } = this._parsedProps
     const source_component = db.source_component.insert({
       ftype: "simple_ammeter",
       name: this.name,
@@ -75,7 +74,13 @@ export class Ammeter extends NormalComponent<
 
   doInitialSimulationRender() {
     const { db } = this.root!
-    const { color, display } = this._parsedProps
+    const {
+      color,
+      graphDisplayName,
+      graphCenter,
+      graphOffsetDivs,
+      graphUnitsPerDiv,
+    } = this._parsedProps
     const posPort = this.portMap.pos
     const negPort = this.portMap.neg
 
@@ -89,14 +94,20 @@ export class Ammeter extends NormalComponent<
       color: color,
     } as SimulationCurrentProbeInput)
 
-    if (display) {
+    const hasGraphDisplayProps =
+      graphDisplayName !== undefined ||
+      graphCenter !== undefined ||
+      graphOffsetDivs !== undefined ||
+      graphUnitsPerDiv !== undefined
+
+    if (hasGraphDisplayProps) {
       db.simulation_oscilloscope_trace.insert({
         simulation_current_probe_id,
-        display_name: display.label,
+        display_name: graphDisplayName,
         color: color,
-        display_center_value: display.center,
-        display_center_offset_divs: display.offsetDivs,
-        amps_per_div: display.unitsPerDiv,
+        display_center_value: graphCenter,
+        display_center_offset_divs: graphOffsetDivs,
+        amps_per_div: graphUnitsPerDiv,
       } as SimulationOscilloscopeTraceInput)
     }
   }

@@ -4,7 +4,7 @@ import { convertCircuitJsonToSimulationGraphSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import "tests/fixtures/simulation-matcher"
 
-test("simulation graph renders multiple scope channels with display options", async () => {
+test("simulation graph renders multiple scope channels with graph display props", async () => {
   const { circuit } = getTestFixture({
     platform: {
       spiceEngineMap: {
@@ -19,12 +19,10 @@ test("simulation graph renders multiple scope channels with display options", as
       <ammeter
         name="IIN"
         color="#e05a00"
-        display={{
-          label: "IIN",
-          center: 0.018,
-          offsetDivs: 1,
-          unitsPerDiv: 0.002,
-        }}
+        graphDisplayName="IIN"
+        graphCenter={0.018}
+        graphOffsetDivs={1}
+        graphUnitsPerDiv={0.002}
         connections={{
           pos: ".V1 > .pin1",
           neg: ".R_LOAD > .pin1",
@@ -34,12 +32,10 @@ test("simulation graph renders multiple scope channels with display options", as
       <ammeter
         name="ILOAD"
         color="#8a35d7"
-        display={{
-          label: "ILOAD",
-          center: 0.002,
-          offsetDivs: -2,
-          unitsPerDiv: 0.0005,
-        }}
+        graphDisplayName="ILOAD"
+        graphCenter={0.002}
+        graphOffsetDivs={-2}
+        graphUnitsPerDiv={0.0005}
         connections={{
           pos: ".R_LOAD > .pin2",
           neg: ".V1 > .pin2",
@@ -50,24 +46,20 @@ test("simulation graph renders multiple scope channels with display options", as
         color="#315cff"
         connectsTo=".IIN > .pos"
         referenceTo=".V1 > .pin2"
-        display={{
-          label: "VIN",
-          center: 5,
-          offsetDivs: 2,
-          unitsPerDiv: 0.1,
-        }}
+        graphDisplayName="VIN"
+        graphCenter={5}
+        graphOffsetDivs={2}
+        graphUnitsPerDiv={0.1}
       />
       <voltageprobe
         name="VOUT"
         color="#0a8f3c"
         connectsTo=".R_LOAD > .pin2"
         referenceTo=".V1 > .pin2"
-        display={{
-          label: "VOUT",
-          center: 3.3,
-          offsetDivs: -1,
-          unitsPerDiv: 0.05,
-        }}
+        graphDisplayName="VOUT"
+        graphCenter={3.3}
+        graphOffsetDivs={-1}
+        graphUnitsPerDiv={0.05}
       />
       <analogsimulation
         name="multi channel scope"
