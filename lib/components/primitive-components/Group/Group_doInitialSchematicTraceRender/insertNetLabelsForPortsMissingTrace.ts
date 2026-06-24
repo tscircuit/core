@@ -190,7 +190,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
         dx * dx + dy * dy <
         NEAR_EXISTING_NET_LABEL_DISTANCE * NEAR_EXISTING_NET_LABEL_DISTANCE
 
-      if (labelIsNearPort && isGndNet) {
+      if (labelIsNearPort) {
         db.schematic_net_label.update(
           existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
           {
