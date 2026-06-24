@@ -7,7 +7,15 @@ import { getSchematicNetLabelTextWidth } from "./computeSchematicNetLabelCenter"
 
 const SYMBOL_TEXT_FONT_SIZE = 0.18
 
-const TEXT_BOX_ENABLED_FTYPES = new Set(["simple_resistor", "simple_capacitor"])
+const TEXT_BOX_ENABLED_FTYPES = new Set([
+  "simple_resistor",
+  "simple_capacitor",
+  "simple_inductor",
+  "simple_crystal",
+  "simple_resonator",
+  "simple_potentiometer",
+  "simple_fuse",
+])
 
 function getTextBounds({
   text,
@@ -172,17 +180,29 @@ export function getSchematicComponentWithTextBounds(
     schematicComponent.size.height > schematicComponent.size.width
   if (isVertical) return textBounds
 
-  const padX = Math.max(
-    boxBounds.minX - textBounds.minX,
-    textBounds.maxX - boxBounds.maxX,
-  )
-  const padY = Math.max(
-    textBounds.maxY - boxBounds.maxY,
-    boxBounds.minY - textBounds.minY,
-  )
-  return getBoundFromCenteredRect({
-    center: schematicComponent.center,
-    width: schematicComponent.size.width + 2 * padX,
-    height: schematicComponent.size.height + 2 * padY,
-  })
+  const padLeft = Math.max(0, boxBounds.minX - textBounds.minX)
+  const padRight = Math.max(0, textBounds.maxX - boxBounds.maxX)
+  const padTop = Math.max(0, textBounds.maxY - boxBounds.maxY)
+  const padBottom = Math.max(0, boxBounds.minY - textBounds.minY)
+
+  let left = padLeft
+  let right = padRight
+  if (padLeft > 0 && padRight > 0) {
+    left = Math.max(padLeft, padRight)
+    right = left
+  }
+
+  let top = padTop
+  let bottom = padBottom
+  if (padTop > 0 && padBottom > 0) {
+    top = Math.max(padTop, padBottom)
+    bottom = top
+  }
+
+  return {
+    minX: boxBounds.minX - left,
+    maxX: boxBounds.maxX + right,
+    minY: boxBounds.minY - bottom,
+    maxY: boxBounds.maxY + top,
+  }
 }
