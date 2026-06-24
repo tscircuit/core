@@ -78,6 +78,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 549.7246327296964,207.6938845235618
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="550.831568158462" y="204.373078237265" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW1_pin1/D1_pin2</text><path class="net-label sch-net-label" d="
+    M 553.5989067303759,205.910488554995
+    L 551.9385035872275,209.2312948412918
+    L 501.69183464296384,209.2312948412918
+    L 501.69183464296384,202.5896822686982
+    L 551.9385035872275,202.5896822686982
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="550.8315681584619" y="205.910488554995" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW1_pin1/D1_pin2</text><path class="net-label sch-net-label" d="
     M 655.6829518276479,325.828493337935
     L 657.3433549707963,322.50768705163824
     L 707.59002391506,322.50768705163824
@@ -85,6 +92,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 657.3433549707963,329.1492996242318
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="658.4502903995619" y="325.828493337935" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW2_pin1/D2_pin2</text><path class="net-label sch-net-label" d="
+    M 661.217628971476,327.36590365566497
+    L 659.5572258283275,330.68670994196174
+    L 609.3105568840639,330.68670994196174
+    L 609.3105568840639,324.04509736936814
+    L 659.5572258283275,324.0450973693682
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="658.4502903995619" y="327.36590365566497" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW2_pin1/D2_pin2</text><path class="net-label sch-net-label" d="
     M 597.36385377509,23.67611889339895
     L 599.0242569182384,20.35531260710215
     L 649.270925862502,20.35531260710215
@@ -92,6 +106,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 599.0242569182384,26.99692517969575
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="600.131192347004" y="23.67611889339895" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW3_pin1/D3_pin2</text><path class="net-label sch-net-label" d="
+    M 602.8985309189179,25.213529211129014
+    L 601.2381277757695,28.534335497425815
+    L 550.9914588315058,28.534335497425808
+    L 550.9914588315058,21.892722924832206
+    L 601.2381277757695,21.892722924832213
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="600.1311923470039" y="25.213529211129014" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW3_pin1/D3_pin2</text><path class="net-label sch-net-label" d="
     M 617.2476938843979,222.617014007661
     L 618.9080970275463,219.2962077213642
     L 669.15476597181,219.2962077213642
@@ -99,6 +120,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 618.9080970275463,225.9378202939578
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="620.0150324563119" y="222.617014007661" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW4_pin1/D4_pin2</text><path class="net-label sch-net-label" d="
+    M 622.782371028226,224.154424325391
+    L 621.1219678850775,227.4752306116878
+    L 570.8752989408139,227.4752306116878
+    L 570.8752989408139,220.8336180390942
+    L 621.1219678850775,220.8336180390942
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="620.0150324563119" y="224.154424325391" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW4_pin1/D4_pin2</text><path class="net-label sch-net-label" d="
     M 602.7960368977359,159.01947386423
     L 604.4564400408843,155.6986675779332
     L 654.703108985148,155.6986675779332
@@ -106,6 +134,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 604.4564400408843,162.3402801505268
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="605.5633754696499" y="159.01947386423" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW5_pin1/D5_pin2</text><path class="net-label sch-net-label" d="
+    M 608.330714041564,160.55688418196
+    L 606.6703108984156,163.8776904682568
+    L 556.4236419541519,163.8776904682568
+    L 556.4236419541519,157.2360778956632
+    L 606.6703108984156,157.2360778956632
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="605.5633754696499" y="160.55688418196" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW5_pin1/D5_pin2</text><path class="net-label sch-net-label" d="
     M 543.913221728677,249.72668261029997
     L 545.5736248718254,246.40587632400317
     L 595.820293816089,246.40587632400317
@@ -113,6 +148,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 545.5736248718254,253.04748889659678
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="546.680560300591" y="249.72668261029997" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW6_pin1/D6_pin2</text><path class="net-label sch-net-label" d="
+    M 549.447898872505,251.26409292802998
+    L 547.7874957293566,254.58489921432678
+    L 497.5408267850929,254.58489921432678
+    L 497.5408267850929,247.94328664173318
+    L 547.7874957293566,247.94328664173318
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="546.680560300591" y="251.26409292802998" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW6_pin1/D6_pin2</text><path class="net-label sch-net-label" d="
     M 653.2230953192799,442.92791253837
     L 654.8834984624283,439.6071062520732
     L 705.130167406692,439.6071062520732
@@ -120,6 +162,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 654.8834984624283,446.24871882466675
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="655.9904338911939" y="442.92791253837" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW7_pin1/D7_pin2</text><path class="net-label sch-net-label" d="
+    M 658.7577724631079,444.4653228561
+    L 657.0973693199595,447.78612914239676
+    L 606.8507003756959,447.78612914239676
+    L 606.8507003756959,441.14451656980316
+    L 657.0973693199595,441.1445165698032
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="655.9904338911939" y="444.4653228561" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW7_pin1/D7_pin2</text><path class="net-label sch-net-label" d="
     M 590.6504953876689,522.822002049739
     L 592.3108985308173,519.5011957634422
     L 642.557567475081,519.5011957634422
@@ -127,10 +176,24 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 592.3108985308173,526.1428083360358
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="593.4178339595829" y="522.822002049739" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW8_pin1/D8_pin2</text><path class="net-label sch-net-label" d="
+    M 596.1851725314968,524.3594123674691
+    L 594.5247693883484,527.6802186537659
+    L 544.2781004440848,527.6802186537659
+    L 544.2781004440848,521.0386060811722
+    L 594.5247693883484,521.0386060811722
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="593.4178339595828" y="524.3594123674691" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW8_pin1/D8_pin2</text><path class="net-label sch-net-label" d="
     M 635.6966176971579,576.3238811067431
     L 637.3570208403063,573.0030748204463
     L 687.60368978457,573.0030748204463
     L 687.60368978457,579.6446873930399
     L 637.3570208403063,579.6446873930399
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="638.4639562690719" y="576.3238811067431" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW9_pin1/D9_pin2</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="638.4639562690719" y="576.3238811067431" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW9_pin1/D9_pin2</text><path class="net-label sch-net-label" d="
+    M 641.2312948409859,577.861291424473
+    L 639.5708916978375,581.1820977107699
+    L 589.3242227535738,581.1820977107699
+    L 589.3242227535738,574.5404851381762
+    L 639.5708916978375,574.5404851381762
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.614964127092px"/><text class="net-label-text sch-net-label-text" x="638.4639562690719" y="577.861291424473" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.534677143828px" transform="">SW9_pin1/D9_pin2</text></svg>
