@@ -6,11 +6,6 @@ import type { SourceNet } from "circuit-json"
 const NEAR_EXISTING_NET_LABEL_DISTANCE = 0.5
 const SAME_ANCHOR_POSITION_DISTANCE = 0.1
 
-const getNetLabelAxis = (anchorSide?: string | null) => {
-  if (anchorSide === "top" || anchorSide === "bottom") return "vertical"
-  if (anchorSide === "left" || anchorSide === "right") return "horizontal"
-}
-
 const doesSchematicNetLabelRepresentCurrentSourceConnection = (args: {
   nl: { source_net_id?: string | null; text?: string }
   connKey: string
@@ -185,47 +180,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
     }
 
     if (existingNetLabelForCurrentSourceConnection) {
-      const deleteNearbyLabelsOnDifferentAxis = (
-        anchorSideToKeep: "top" | "bottom" | "left" | "right",
-      ) => {
-        const axisToKeep = getNetLabelAxis(anchorSideToKeep)
-
-        for (const nl of db.schematic_net_label.list()) {
-          if (
-            nl.schematic_net_label_id ===
-            existingNetLabelForCurrentSourceConnection.schematic_net_label_id
-          ) {
-            continue
-          }
-          if (!nl.anchor_position) continue
-
-          const dx = nl.anchor_position.x - schPort.center.x
-          const dy = nl.anchor_position.y - schPort.center.y
-          const isNearPort =
-            dx * dx + dy * dy <
-            NEAR_EXISTING_NET_LABEL_DISTANCE * NEAR_EXISTING_NET_LABEL_DISTANCE
-          if (!isNearPort) continue
-
-          if (
-            !doesSchematicNetLabelRepresentCurrentSourceConnection({
-              nl,
-              connKey,
-              sourceNet,
-              text,
-            })
-          ) {
-            continue
-          }
-
-          // Keep separated same-axis stubs, but remove true orientation clashes.
-          const duplicateAxis = getNetLabelAxis(nl.anchor_side)
-          if (!duplicateAxis) continue
-          if (duplicateAxis === axisToKeep) continue
-
-          db.schematic_net_label.delete(nl.schematic_net_label_id)
-        }
-      }
-
       const dx =
         existingNetLabelForCurrentSourceConnection.anchor_position!.x -
         schPort.center.x
@@ -247,7 +201,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
               anchor_side: side,
             },
           )
-          deleteNearbyLabelsOnDifferentAxis(side)
         } else if (
           !isPowerNet &&
           existingNetLabelForCurrentSourceConnection.text === text
@@ -267,7 +220,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
               anchor_side,
             },
           )
-          deleteNearbyLabelsOnDifferentAxis(anchor_side)
         }
         continue
       }
