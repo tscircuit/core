@@ -193,7 +193,8 @@ export const insertNetLabelsForPortsMissingTrace = ({
       if (labelIsNearPort) {
         if (
           isGndNet ||
-          (!isPowerNet && existingNetLabelForCurrentSourceConnection.text === text)
+          (!isPowerNet &&
+            existingNetLabelForCurrentSourceConnection.text === text)
         ) {
           db.schematic_net_label.update(
             existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
