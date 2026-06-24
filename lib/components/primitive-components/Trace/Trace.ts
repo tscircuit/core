@@ -72,6 +72,14 @@ export class Trace
     return this._parsedProps.thickness ?? this._parsedProps.width
   }
 
+  _getSchematicNetLabelText(): string | undefined {
+    return (
+      this._parsedProps.name ??
+      this._parsedProps.displayName ??
+      this._parsedProps.schDisplayLabel
+    )
+  }
+
   get config() {
     return {
       zodProps: traceProps,
@@ -280,12 +288,13 @@ export class Trace
       connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
       connected_source_net_ids: nets.map((n) => n.source_net_id!),
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
+      name: props.name,
       max_length:
         getMaxLengthFromConnectedCapacitors(
           ports.map((p) => p.port),
           { db },
         ) ?? props.maxLength,
-      display_name: displayName,
+      display_name: props.displayName ?? displayName,
       min_trace_thickness: this._getExplicitTraceThickness(),
     })
 

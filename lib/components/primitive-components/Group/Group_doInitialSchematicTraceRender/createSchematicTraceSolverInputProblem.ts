@@ -223,7 +223,8 @@ export function createSchematicTraceSolverInputProblem(
       const pairKey = [a, b].sort().join("::")
       if (!connectedPairKeys.has(pairKey)) {
         connectedPairKeys.add(pairKey)
-        const userNetId = st.display_name ?? st.source_trace_id
+        const traceLabel = st.name ?? st.display_name
+        const userNetId = traceLabel ?? st.source_trace_id
         if (st.subcircuit_connectivity_map_key) {
           userNetIdToConnKey.set(userNetId, st.subcircuit_connectivity_map_key)
         }
@@ -241,13 +242,13 @@ export function createSchematicTraceSolverInputProblem(
           DEFAULT_MAX_MSP_PAIR_DISTANCE
         let netLabelWidth: number | undefined
         if (
-          st.display_name &&
-          !st.display_name.startsWith(".") &&
+          traceLabel &&
+          !traceLabel.startsWith(".") &&
           portDistance > maxMspDist
         ) {
           netLabelWidth = Number(
             getSchematicNetLabelTextWidth({
-              text: String(st.display_name),
+              text: String(traceLabel),
               font_size: 0.14,
             }).toFixed(2),
           )

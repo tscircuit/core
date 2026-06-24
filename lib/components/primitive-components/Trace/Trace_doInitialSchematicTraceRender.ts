@@ -34,6 +34,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   // if (trace.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
   const { db } = trace.root!
   const { _parsedProps: props, parent } = trace
+  const schematicNetLabelText = trace._getSchematicNetLabelText()
 
   if (!parent) throw new Error("Trace has no parent")
 
@@ -153,17 +154,17 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
       return
     }
 
-    if (trace.props.schDisplayLabel) {
+    if (schematicNetLabelText) {
       const side =
         getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
       db.schematic_net_label.insert({
-        text: trace.props.schDisplayLabel,
+        text: schematicNetLabelText,
         source_net_id: net.source_net_id!,
         anchor_position: anchorPos,
         center: computeSchematicNetLabelCenter({
           anchor_position: anchorPos,
           anchor_side: side,
-          text: trace.props.schDisplayLabel,
+          text: schematicNetLabelText,
         }),
         anchor_side: side,
       })
@@ -187,7 +188,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     return
   }
 
-  if (trace.props.schDisplayLabel) {
+  if (schematicNetLabelText) {
     if (
       ("from" in trace.props && "to" in trace.props) ||
       "path" in trace.props

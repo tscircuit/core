@@ -12,7 +12,7 @@ export const getNetNameFromPorts = (
     const traces = port._getDirectlyConnectedTraces()
 
     for (const trace of traces) {
-      const displayLabel = trace._parsedProps.schDisplayLabel
+      const displayLabel = trace._getSchematicNetLabelText()
       if (displayLabel) {
         return { name: displayLabel, wasAssignedDisplayLabel: true }
       }
