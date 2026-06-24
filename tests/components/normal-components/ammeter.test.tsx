@@ -11,12 +11,10 @@ test("<ammeter /> emits source and simulation current probe", async () => {
       <ammeter
         name="AM1"
         color="#ff0000"
-        display={{
-          label: "I_AM1",
-          center: 0,
-          offsetDivs: 1,
-          unitsPerDiv: 0.01,
-        }}
+        graphDisplayName="I_AM1"
+        graphCenter={0}
+        graphOffsetDivs={1}
+        graphUnitsPerDiv={0.01}
         connections={{
           pos: ".R1 > .pin2",
           neg: ".R2 > .pin1",
