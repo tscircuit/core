@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("trace name takes precedence for schematic net label text", async () => {
+test("trace name is used as schematic net label fallback", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -14,27 +14,21 @@ test("trace name takes precedence for schematic net label text", async () => {
         schX={3}
         schY={0}
       />
-      <trace
-        from=".R1 > .pin1"
-        to=".C1 > .pin1"
-        name="NAME_LABEL"
-        displayName="DISPLAY_LABEL"
-        schDisplayLabel="SCH_LABEL"
-      />
+      <trace from=".R1 > .pin1" to=".C1 > .pin1" name="NAME_LABEL" />
     </board>,
   )
 
   await circuit.renderUntilSettled()
 
-  const sourceTrace = circuit.db.source_trace.getWhere({ name: "NAME_LABEL" })
-  expect(sourceTrace?.display_name).toBe("DISPLAY_LABEL")
+  const sourceTrace = circuit.db.source_trace.getWhere({
+    display_name: ".R1 > .pin1 to .C1 > .pin1",
+  })
+  expect(sourceTrace?.name).toBe("NAME_LABEL")
 
   const netLabelTexts = circuit.db.schematic_net_label
     .list()
     .map((label) => label.text)
   expect(netLabelTexts).toContain("NAME_LABEL")
-  expect(netLabelTexts).not.toContain("DISPLAY_LABEL")
-  expect(netLabelTexts).not.toContain("SCH_LABEL")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

@@ -74,9 +74,9 @@ export class Trace
 
   _getSchematicNetLabelText(): string | undefined {
     return (
-      this._parsedProps.name ??
+      this._parsedProps.schDisplayLabel ??
       this._parsedProps.displayName ??
-      this._parsedProps.schDisplayLabel
+      this._parsedProps.name
     )
   }
 

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("trace displayName takes precedence over schDisplayLabel for schematic net label text", async () => {
+test("trace displayName takes precedence over name for schematic net label text", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -17,8 +17,8 @@ test("trace displayName takes precedence over schDisplayLabel for schematic net 
       <trace
         from=".R1 > .pin1"
         to=".C1 > .pin1"
+        name="NAME_LABEL"
         displayName="DISPLAY_LABEL"
-        schDisplayLabel="SCH_LABEL"
       />
     </board>,
   )
@@ -28,13 +28,13 @@ test("trace displayName takes precedence over schDisplayLabel for schematic net 
   const sourceTrace = circuit.db.source_trace.getWhere({
     display_name: "DISPLAY_LABEL",
   })
-  expect(sourceTrace?.name).toBeUndefined()
+  expect(sourceTrace?.name).toBe("NAME_LABEL")
 
   const netLabelTexts = circuit.db.schematic_net_label
     .list()
     .map((label) => label.text)
   expect(netLabelTexts).toContain("DISPLAY_LABEL")
-  expect(netLabelTexts).not.toContain("SCH_LABEL")
+  expect(netLabelTexts).not.toContain("NAME_LABEL")
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
