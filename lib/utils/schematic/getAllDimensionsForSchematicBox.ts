@@ -613,13 +613,16 @@ export const getAllDimensionsForSchematicBox = (
       return { width: resolvedSchWidth, height: schHeight }
     },
     getSizeIncludingPins(): { width: number; height: number } {
+      const horizontalPinLength =
+        (sidePinCounts.leftSize ? portDistanceFromEdge : 0) +
+        (sidePinCounts.rightSize ? portDistanceFromEdge : 0)
+      const verticalPinLength =
+        (sidePinCounts.topSize ? portDistanceFromEdge : 0) +
+        (sidePinCounts.bottomSize ? portDistanceFromEdge : 0)
+
       return {
-        width:
-          resolvedSchWidth +
-          (sidePinCounts.leftSize || sidePinCounts.rightSize ? 0.4 : 0),
-        height:
-          schHeight +
-          (sidePinCounts.topSize || sidePinCounts.bottomSize ? 0.4 : 0),
+        width: resolvedSchWidth + horizontalPinLength,
+        height: schHeight + verticalPinLength,
       }
     },
     pinCount,

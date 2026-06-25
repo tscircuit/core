@@ -1,4 +1,4 @@
-import { expect, test, describe } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import { getAllDimensionsForSchematicBox } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getSchematicBoxSvg } from "./getSchematicBoxSvg"
 import "tests/fixtures/extend-expect-any-svg"
@@ -61,4 +61,29 @@ test("getAllDimensionsForSchematicBox 3 (4 sided with margins)", () => {
     import.meta.path,
     "schematicbox3",
   )
+})
+
+test("getAllDimensionsForSchematicBox respects portDistanceFromEdge", () => {
+  const dimensions = getAllDimensionsForSchematicBox({
+    schWidth: 2,
+    schHeight: 2,
+    schPinSpacing: 0.2,
+    portDistanceFromEdge: 1,
+    pinCount: 2,
+  })
+
+  expect(dimensions.getPortPositionByPinNumber(1)).toMatchObject({
+    side: "left",
+    x: -2,
+    y: 0,
+  })
+  expect(dimensions.getPortPositionByPinNumber(2)).toMatchObject({
+    side: "right",
+    x: 2,
+    y: 0,
+  })
+  expect(dimensions.getSizeIncludingPins()).toEqual({
+    width: 4,
+    height: 2,
+  })
 })

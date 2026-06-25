@@ -1,20 +1,21 @@
-import { getRelativeDirection } from "lib/utils/get-relative-direction"
+import { type PinAttributeMap, portProps } from "@tscircuit/props"
+import type { LayerRef, SchematicPort } from "circuit-json"
+import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
 import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
+import { getRelativeDirection } from "lib/utils/get-relative-direction"
 import type {
   SchematicBoxDimensions,
   SchematicBoxPortPositionWithMetadata,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { getSchematicPinLength } from "lib/utils/schematic/getSchematicPinLength"
 import { type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Trace } from "../Trace/Trace"
-import type { LayerRef, SchematicPort } from "circuit-json"
+import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
 import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
-import { type PinAttributeMap, portProps } from "@tscircuit/props"
-import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
-import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
 
 export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
@@ -618,7 +619,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     if (showPinAliases && labelHints.length > 0) {
       return labelHints.join("/")
-    } else if (labelHints.length > 0) {
+    }
+    if (labelHints.length > 0) {
       return labelHints[0]
     }
 
@@ -682,6 +684,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const bestDisplayPinLabel = this._getBestDisplayPinLabel()
     const parentNormalComponent = this.getParentNormalComponent()
+    const parentSchPinLength = getSchematicPinLength(
+      parentNormalComponent?._parsedProps,
+      parentNormalComponent?.props,
+    )
 
     // Derive side_of_component from direction prop for custom symbols
     const sideOfComponent =
@@ -698,7 +704,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,
-      distance_from_component_edge: props.schStemLength ?? 0.4,
+      distance_from_component_edge:
+        props.schStemLength ?? parentSchPinLength ?? 0.4,
       side_of_component: sideOfComponent,
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
