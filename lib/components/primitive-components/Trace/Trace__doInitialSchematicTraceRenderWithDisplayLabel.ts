@@ -73,7 +73,7 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
     ? `${firstPort?.parent?.props.name}_${firstPort?.props.name}`
     : `${secondPort?.parent?.props.name}_${secondPort?.props.name}`
 
-  const netLabelText = trace.props.schDisplayLabel ?? pinFullName
+  const netLabelText = trace._getSchematicNetLabelText() ?? pinFullName
 
   if (existingFromNetLabel && existingFromNetLabel.text !== netLabelText) {
     existingFromNetLabel.text = `${netLabelText} / ${existingFromNetLabel.text}`
@@ -87,13 +87,13 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
     const toSide =
       getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom"
     db.schematic_net_label.insert({
-      text: trace.props.schDisplayLabel! ?? pinFullName,
+      text: netLabelText,
       source_net_id: toPort.source_port_id!,
       anchor_position: toAnchorPos,
       center: computeSchematicNetLabelCenter({
         anchor_position: toAnchorPos,
         anchor_side: toSide,
-        text: trace.props.schDisplayLabel! ?? pinFullName,
+        text: netLabelText,
       }),
       anchor_side: toSide,
     })
@@ -102,13 +102,13 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
     const fromSide =
       getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom"
     db.schematic_net_label.insert({
-      text: trace.props.schDisplayLabel! ?? pinFullName,
+      text: netLabelText,
       source_net_id: fromPort.source_port_id!,
       anchor_position: fromAnchorPos,
       center: computeSchematicNetLabelCenter({
         anchor_position: fromAnchorPos,
         anchor_side: fromSide,
-        text: trace.props.schDisplayLabel! ?? pinFullName,
+        text: netLabelText,
       }),
       anchor_side: fromSide,
     })
