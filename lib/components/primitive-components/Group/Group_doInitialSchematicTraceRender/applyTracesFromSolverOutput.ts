@@ -49,36 +49,42 @@ function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
     }
   }
 
-  const snap = (endpoint: "start" | "end") => {
-    const pt = endpoint === "start" ? result[0]! : result[result.length - 1]!
-    let bestIndex = -1
-    let bestDist = Number.POSITIVE_INFINITY
+  const ALIGN_EPS = 1e-3
+  const endpoints: Array<"start" | "end"> = ["start", "end"]
+  const candidates: Array<{
+    endpoint: "start" | "end"
+    centerIndex: number
+    dist: number
+  }> = []
+  for (const endpoint of endpoints) {
+    const endpointPoint =
+      endpoint === "start" ? result[0]! : result[result.length - 1]!
     for (let i = 0; i < centers.length; i++) {
       if (usedCenters.has(i)) continue
-      const dist = d2(centers[i]!, pt)
-      if (dist < bestDist) {
-        bestDist = dist
-        bestIndex = i
+      const center = centers[i]!
+      const dist = d2(center, endpointPoint)
+      if (dist > MAX_PIN_SNAP_GAP ** 2) continue
+      if (
+        Math.abs(center.x - endpointPoint.x) > ALIGN_EPS &&
+        Math.abs(center.y - endpointPoint.y) > ALIGN_EPS
+      ) {
+        continue
       }
+      candidates.push({ endpoint, centerIndex: i, dist })
     }
-    if (bestIndex < 0) return
-    if (bestDist <= 1e-12) {
-      usedCenters.add(bestIndex)
-      return
-    }
-    if (bestDist > MAX_PIN_SNAP_GAP ** 2) return
-    const c = centers[bestIndex]!
-    const ALIGN_EPS = 1e-3
-    if (Math.abs(c.x - pt.x) > ALIGN_EPS && Math.abs(c.y - pt.y) > ALIGN_EPS) {
-      return
-    }
-    usedCenters.add(bestIndex)
-    if (endpoint === "start") result.unshift({ x: c.x, y: c.y })
-    else result.push({ x: c.x, y: c.y })
   }
+  candidates.sort((a, b) => a.dist - b.dist)
 
-  snap("start")
-  snap("end")
+  const usedEndpoints = new Set<"start" | "end">()
+  for (const { endpoint, centerIndex, dist } of candidates) {
+    if (usedEndpoints.has(endpoint) || usedCenters.has(centerIndex)) continue
+    usedCenters.add(centerIndex)
+    usedEndpoints.add(endpoint)
+    if (dist <= 1e-12) continue
+    const center = centers[centerIndex]!
+    if (endpoint === "start") result.unshift({ x: center.x, y: center.y })
+    else result.push({ x: center.x, y: center.y })
+  }
   return result
 }
 
