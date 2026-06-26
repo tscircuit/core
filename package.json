@@ -46,7 +46,7 @@
     "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#e08af159db01a37db007e33f0a7268d0e4a279a5",
     "@tscircuit/krt-wasm": "^0.1.1",
     "@tscircuit/log-soup": "^1.0.2",
-    "@tscircuit/matchpack": "",
+    "@tscircuit/matchpack": "^0.0.29",
     "@tscircuit/math-utils": "^0.0.36",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/props": "^0.0.555",
