@@ -15,6 +15,11 @@ const TEXT_BOX_ENABLED_FTYPES = new Set([
   "simple_resonator",
   "simple_potentiometer",
   "simple_fuse",
+  "simple_diode",
+  "simple_led",
+  "simple_transistor",
+  "simple_mosfet",
+  "simple_op_amp",
 ])
 
 function getTextBounds({
