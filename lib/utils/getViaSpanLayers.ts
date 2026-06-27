@@ -36,3 +36,12 @@ export const getViaSpanLayers = ({
     ? stack.slice(fromIndex, toIndex + 1)
     : stack.slice(toIndex, fromIndex + 1).reverse()
 }
+
+export const getViaBoardLayers = (layerCount: number): LayerRef[] => {
+  if (layerCount <= 1) return ["top"]
+  return getViaSpanLayers({
+    fromLayer: "top",
+    toLayer: "bottom",
+    layerCount,
+  })
+}
