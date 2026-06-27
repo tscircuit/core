@@ -32,6 +32,7 @@ export const orderedRenderPhases = [
   "PortMatching",
   "OptimizeSelectorCache",
   "SourceTraceRender",
+  "ConnectExposedSubcircuitNets",
   "SourceAddConnectivityMapKey",
   "SourceDesignRuleChecks",
   "SimulationRender",
@@ -142,6 +143,10 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   ],
   ValidatePcbCoordinates: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SourceTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  ConnectExposedSubcircuitNets: [
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+  ],
 }
 
 export type RenderPhaseFn<K extends RenderPhase = RenderPhase> =

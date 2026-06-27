@@ -1,6 +1,11 @@
 import { subcircuitProps } from "@tscircuit/props"
 import type { z } from "zod"
 import { inflateCircuitJson } from "../../../../utils/circuit-json/inflate-circuit-json"
+import { Net } from "../../Net"
+import {
+  ConnectExposedSubcircuitNets,
+  normalizeExposedNetName,
+} from "../ConnectExposedSubcircuitNets"
 import { Group } from "../Group"
 import type { SubcircuitI } from "./SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "./Subcircuit_doInitialRenderIsolatedSubcircuits"
@@ -34,6 +39,42 @@ export class Subcircuit
    */
   doInitialRenderIsolatedSubcircuits(): void {
     Subcircuit_doInitialRenderIsolatedSubcircuits(this)
+  }
+
+  doInitialCreateNetsFromProps(): void {
+    super.doInitialCreateNetsFromProps()
+    this._createExposedNetConnectors()
+  }
+
+  private _createExposedNetConnectors(): void {
+    const exposedNets = this._parsedProps.exposedNets
+    if (!exposedNets?.length) return
+
+    const parentSubcircuit = this.parent?.getSubcircuit?.()
+    if (!parentSubcircuit) return
+
+    for (const exposedNetName of exposedNets) {
+      const netName = normalizeExposedNetName(exposedNetName)
+      const parentNetSelector = `net.${netName}`
+
+      if (!parentSubcircuit.selectOne(parentNetSelector, { type: "net" })) {
+        parentSubcircuit.add(new Net({ name: netName }))
+      }
+
+      const existingConnector = this.children.find(
+        (child) =>
+          child instanceof ConnectExposedSubcircuitNets &&
+          child._parsedProps.netName === netName,
+      )
+      if (existingConnector) continue
+
+      this.add(
+        new ConnectExposedSubcircuitNets({
+          netName,
+          childSubcircuit: this,
+        }),
+      )
+    }
   }
 
   /**
