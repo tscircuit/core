@@ -289,14 +289,8 @@ function convertTreeToMatchPackInputProblem(
         problem.chipPinMap[pinId] = {
           pinId,
           offset: {
-            x:
-              (port.center?.x || 0) -
-              (schematicComponent.center.x || 0) +
-              marginXShift,
-            y:
-              (port.center?.y || 0) -
-              (schematicComponent.center.y || 0) +
-              marginYShift,
+            x: (port.center?.x || 0) - (schematicComponent.center.x || 0),
+            y: (port.center?.y || 0) - (schematicComponent.center.y || 0),
           },
           side,
         }
