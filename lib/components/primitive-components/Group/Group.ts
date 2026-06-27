@@ -60,6 +60,7 @@ import {
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
+import { Group_doInitialSourceTraceRender } from "./Group_doInitialSourceTraceRender"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import {
@@ -578,6 +579,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSourceAddConnectivityMapKey(): void {
     Group_doInitialSourceAddConnectivityMapKey(this)
+  }
+
+  doInitialSourceTraceRender(): void {
+    Group_doInitialSourceTraceRender(this)
   }
 
   _areChildSubcircuitsRouted(): boolean {
