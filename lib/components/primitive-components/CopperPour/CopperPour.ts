@@ -48,6 +48,7 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
       const clearance = props.clearance ?? 0.2
       const inputProblem = convertCircuitJsonToInputProblem(circuitJson, {
         layer: props.layer,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         source_net_id: net.source_net_id,
         pad_margin: props.padMargin ?? clearance,
         trace_margin: props.traceMargin ?? clearance,
