@@ -55,5 +55,14 @@ test("unbroken inner-layer copper pours participate in autorouting", async () =>
   expect(copperPourLayers.has("inner1")).toBe(true)
   expect(copperPourLayers.has("inner2")).toBe(true)
 
+  const topToInner2Vias = circuit.db.pcb_via
+    .list()
+    .filter((via) => via.from_layer === "top" && via.to_layer === "inner2")
+
+  expect(topToInner2Vias.length).toBeGreaterThan(0)
+  expect(topToInner2Vias.every((via) => via.layers.includes("inner1"))).toBe(
+    true,
+  )
+
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

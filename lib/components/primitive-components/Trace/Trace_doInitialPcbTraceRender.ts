@@ -16,6 +16,7 @@ import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefault
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -426,15 +427,21 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
 
   for (const point of mergedRoute) {
     if (point.route_type === "via") {
+      const fromLayer = point.from_layer as LayerRef
+      const toLayer = point.to_layer as LayerRef
       db.pcb_via.insert({
         pcb_trace_id: pcb_trace.pcb_trace_id,
         x: point.x,
         y: point.y,
         hole_diameter: holeDiameter,
         outer_diameter: padDiameter,
-        layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
-        from_layer: point.from_layer as LayerRef,
-        to_layer: point.to_layer as LayerRef,
+        layers: getViaSpanLayers({
+          fromLayer,
+          toLayer,
+          layerCount: subcircuit._getSubcircuitLayerCount(),
+        }),
+        from_layer: fromLayer,
+        to_layer: toLayer,
       })
     }
   }

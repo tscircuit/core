@@ -9,6 +9,7 @@ import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
 import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -181,10 +182,12 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
             (inflatedPcbVia?.to_layer ?? point.to_layer) as LayerRef,
           )
           const layers = (
-            inflatedPcbVia?.layers ?? [
-              point.from_layer as LayerRef,
-              point.to_layer,
-            ]
+            inflatedPcbVia?.layers ??
+            getViaSpanLayers({
+              fromLayer: point.from_layer as LayerRef,
+              toLayer: point.to_layer as LayerRef,
+              layerCount: subcircuit._getSubcircuitLayerCount(),
+            })
           ).map((layer) => maybeFlipLayer(layer as LayerRef))
 
           db.pcb_via.insert({
@@ -426,15 +429,21 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
   for (const point of route) {
     if (point.route_type === "via") {
+      const fromLayer = point.from_layer as LayerRef
+      const toLayer = point.to_layer as LayerRef
       db.pcb_via.insert({
         pcb_trace_id: pcb_trace.pcb_trace_id,
         x: point.x,
         y: point.y,
         hole_diameter: holeDiameter,
         outer_diameter: padDiameter,
-        layers: [point.from_layer as LayerRef, point.to_layer as LayerRef],
-        from_layer: point.from_layer as LayerRef,
-        to_layer: point.to_layer as LayerRef,
+        layers: getViaSpanLayers({
+          fromLayer,
+          toLayer,
+          layerCount: subcircuit._getSubcircuitLayerCount(),
+        }),
+        from_layer: fromLayer,
+        to_layer: toLayer,
       })
     }
   }

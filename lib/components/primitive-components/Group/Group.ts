@@ -36,6 +36,7 @@ import {
   type NormalizedAutorouterConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
@@ -1395,6 +1396,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               outer_diameter?: number
               hole_diameter?: number
             }
+            const fromLayer = point.from_layer as LayerRef
+            const toLayer = point.to_layer as LayerRef
             db.pcb_via.insert({
               pcb_trace_id: pcb_trace.pcb_trace_id,
               x: point.x,
@@ -1407,12 +1410,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 routedViaPoint.via_diameter ??
                 routedViaPoint.outer_diameter ??
                 routedViaPadDiameter,
-              layers: [
-                point.from_layer as LayerRef,
-                point.to_layer as LayerRef,
-              ],
-              from_layer: point.from_layer as LayerRef,
-              to_layer: point.to_layer as LayerRef,
+              layers: getViaSpanLayers({
+                fromLayer,
+                toLayer,
+                layerCount: this._getSubcircuitLayerCount(),
+              }),
+              from_layer: fromLayer,
+              to_layer: toLayer,
             })
           }
         }
