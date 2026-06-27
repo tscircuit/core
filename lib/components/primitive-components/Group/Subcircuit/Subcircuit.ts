@@ -2,10 +2,7 @@ import { subcircuitProps } from "@tscircuit/props"
 import type { z } from "zod"
 import { inflateCircuitJson } from "../../../../utils/circuit-json/inflate-circuit-json"
 import { Net } from "../../Net"
-import {
-  ConnectExposedSubcircuitNets,
-  normalizeExposedNetName,
-} from "../ConnectExposedSubcircuitNets"
+import { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
 import type { SubcircuitI } from "./SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "./Subcircuit_doInitialRenderIsolatedSubcircuits"
@@ -43,35 +40,39 @@ export class Subcircuit
 
   doInitialCreateNetsFromProps(): void {
     super.doInitialCreateNetsFromProps()
-    this._createExposedNetConnectors()
+    this._createTracesForExposedNets()
   }
 
-  private _createExposedNetConnectors(): void {
+  private _createTracesForExposedNets(): void {
     const exposedNets = this._parsedProps.exposedNets
     if (!exposedNets?.length) return
 
     const parentSubcircuit = this.parent?.getSubcircuit?.()
     if (!parentSubcircuit) return
+    if (!this.name) return
 
     for (const exposedNetName of exposedNets) {
       const netName = normalizeExposedNetName(exposedNetName)
       const parentNetSelector = `net.${netName}`
+      const childNetSelector = `.${this.name} > net.${netName}`
+      const traceName = `exposed_net.${netName}`
 
       if (!parentSubcircuit.selectOne(parentNetSelector, { type: "net" })) {
         parentSubcircuit.add(new Net({ name: netName }))
       }
 
-      const existingConnector = this.children.find(
+      const existingTrace = parentSubcircuit.children.find(
         (child) =>
-          child instanceof ConnectExposedSubcircuitNets &&
-          child._parsedProps.netName === netName,
+          child instanceof Trace && child._parsedProps.name === traceName,
       )
-      if (existingConnector) continue
+      if (existingTrace) continue
 
-      this.add(
-        new ConnectExposedSubcircuitNets({
-          netName,
-          childSubcircuit: this,
+      parentSubcircuit.add(
+        new Trace({
+          name: traceName,
+          from: childNetSelector,
+          to: parentNetSelector,
+          displayName: netName,
         }),
       )
     }
@@ -106,3 +107,6 @@ export class Subcircuit
     inflateCircuitJson(this, circuitJson, children)
   }
 }
+
+const normalizeExposedNetName = (netName: string) =>
+  netName.startsWith("net.") ? netName.slice("net.".length) : netName
