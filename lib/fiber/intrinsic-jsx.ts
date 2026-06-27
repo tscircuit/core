@@ -30,6 +30,7 @@ export interface TscircuitElements {
   schematiccircle: Props.SchematicCircleProps
   schematicpath: Props.SchematicPathProps
   schematictext: Props.SchematicTextProps
+  schematicsheet: Props.SchematicSheetProps
   schematictable: Props.SchematicTableProps
   schematicrow: Props.SchematicRowProps
   schematiccell: Props.SchematicCellProps
