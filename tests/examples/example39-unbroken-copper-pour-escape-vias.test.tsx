@@ -4,6 +4,13 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("unbroken inner-layer copper pours participate in autorouting", async () => {
   const { circuit } = getTestFixture()
+  const copperPourInputs: any[] = []
+
+  circuit.on("solver:started", (event) => {
+    if (event.solverName === "CopperPourPipelineSolver") {
+      copperPourInputs.push(event.solverParams)
+    }
+  })
 
   circuit.add(
     <board width="20mm" height="10mm" layers={4}>
@@ -60,9 +67,38 @@ test("unbroken inner-layer copper pours participate in autorouting", async () =>
     .filter((via) => via.from_layer === "top" && via.to_layer === "inner2")
 
   expect(topToInner2Vias.length).toBeGreaterThan(0)
+  expect(
+    circuit.db.pcb_via
+      .list()
+      .every((via) => via.subcircuit_connectivity_map_key),
+  ).toBe(true)
   expect(topToInner2Vias.every((via) => via.layers.includes("inner1"))).toBe(
     true,
   )
+  expect(topToInner2Vias.every((via) => via.layers.includes("bottom"))).toBe(
+    true,
+  )
+  expect(topToInner2Vias.every((via) => via.layers.length === 4)).toBe(true)
+
+  const vccNet = circuit.db.source_net.list().find((net) => net.name === "VCC")
+  expect(vccNet?.subcircuit_connectivity_map_key).toBeDefined()
+  expect(
+    topToInner2Vias.every(
+      (via) =>
+        via.subcircuit_connectivity_map_key ===
+        vccNet?.subcircuit_connectivity_map_key,
+    ),
+  ).toBe(true)
+
+  const viaSolverPads = copperPourInputs.flatMap((input) =>
+    input.pads.filter((pad: any) => pad.padId.startsWith("pcb_via_")),
+  )
+  expect(viaSolverPads.length).toBeGreaterThan(0)
+  expect(
+    viaSolverPads.every(
+      (pad: any) => !pad.connectivityKey.startsWith("unconnected-via:"),
+    ),
+  ).toBe(true)
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

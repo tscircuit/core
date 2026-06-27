@@ -422,6 +422,9 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     subcircuit_id: trace.getSubcircuit()?.subcircuit_id!,
     trace_length: traceLength,
   })
+  const subcircuitConnectivityMapKey =
+    trace.subcircuit_connectivity_map_key ??
+    db.source_trace.get(trace.source_trace_id!)?.subcircuit_connectivity_map_key
   trace._portsRoutedOnPcb = ports
   trace.pcb_trace_id = pcb_trace.pcb_trace_id
 
@@ -442,6 +445,9 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
         }),
         from_layer: fromLayer,
         to_layer: toLayer,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+        subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,
       })
     }
   }

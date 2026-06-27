@@ -124,6 +124,10 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     const { maybeFlipLayer } = trace._getPcbPrimitiveFlippedHelpers()
     const transform = trace._computePcbGlobalTransformBeforeLayout()
     const insertedRoutes: PcbTraceRoutePoint[][] = []
+    const subcircuitConnectivityMapKey =
+      trace.subcircuit_connectivity_map_key ??
+      db.source_trace.get(trace.source_trace_id!)
+        ?.subcircuit_connectivity_map_key
 
     for (const inflatedPcbTrace of inflatedPcbTraces) {
       const transformedRoute = inflatedPcbTrace.route.map((point) => {
@@ -208,7 +212,8 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
             subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
             pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
             subcircuit_connectivity_map_key:
-              inflatedPcbVia?.subcircuit_connectivity_map_key,
+              inflatedPcbVia?.subcircuit_connectivity_map_key ??
+              subcircuitConnectivityMapKey,
             net_is_assignable: inflatedPcbVia?.net_is_assignable,
             net_assigned: inflatedPcbVia?.net_assigned,
             is_tented: inflatedPcbVia?.is_tented,
@@ -425,6 +430,9 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
     trace_length: traceLength,
   })
+  const subcircuitConnectivityMapKey =
+    trace.subcircuit_connectivity_map_key ??
+    db.source_trace.get(trace.source_trace_id!)?.subcircuit_connectivity_map_key
   const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
   const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
   for (const point of route) {
@@ -444,6 +452,9 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         }),
         from_layer: fromLayer,
         to_layer: toLayer,
+        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+        pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+        subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,
       })
     }
   }

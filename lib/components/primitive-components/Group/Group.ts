@@ -36,7 +36,7 @@ import {
   type NormalizedAutorouterConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
@@ -1388,6 +1388,28 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         continue
       }
       if (pcb_trace.type === "pcb_trace") {
+        const sourceTraceId = getSourceTraceIdForRoutedTrace({
+          db,
+          trace: pcb_trace,
+          subcircuit_id: this.subcircuit_id,
+        })
+        // NOTE: inputConnectionName isn't really robust- this is from the
+        // SRJ we provided to the autorouter- use with caution!
+        const { connection_name: inputConnectionName } = pcb_trace as any
+
+        let subcircuitConnectivityMapKey: string | undefined
+        if (sourceTraceId) {
+          subcircuitConnectivityMapKey =
+            db.source_trace.get(sourceTraceId)?.subcircuit_connectivity_map_key
+        }
+        if (!subcircuitConnectivityMapKey && inputConnectionName) {
+          const sourceNet = db.source_net.get(inputConnectionName)
+          if (sourceNet) {
+            subcircuitConnectivityMapKey =
+              sourceNet.subcircuit_connectivity_map_key
+          }
+        }
+
         for (const point of pcb_trace.route) {
           if (point.route_type === "via") {
             const routedViaPoint = point as typeof point & {
@@ -1410,13 +1432,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 routedViaPoint.via_diameter ??
                 routedViaPoint.outer_diameter ??
                 routedViaPadDiameter,
-              layers: getViaSpanLayers({
-                fromLayer,
-                toLayer,
-                layerCount: this._getSubcircuitLayerCount(),
-              }),
+              layers: getViaBoardLayers(this._getSubcircuitLayerCount()),
               from_layer: fromLayer,
               to_layer: toLayer,
+              subcircuit_id: this.subcircuit_id!,
+              pcb_group_id: this.pcb_group_id ?? undefined,
+              subcircuit_connectivity_map_key: subcircuitConnectivityMapKey,
             })
           }
         }
