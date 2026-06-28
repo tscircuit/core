@@ -58,8 +58,7 @@ export class Subcircuit
       const traceName = `exposed_net.${netName}`
 
       const parentHasDirectNet = parentSubcircuit.children.some(
-        (child) =>
-          child instanceof Net && child._parsedProps.name === netName,
+        (child) => child instanceof Net && child._parsedProps.name === netName,
       )
       if (!parentHasDirectNet) {
         parentSubcircuit.add(new Net({ name: netName }))
