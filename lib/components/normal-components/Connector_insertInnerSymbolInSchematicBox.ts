@@ -63,9 +63,7 @@ export function insertInnerSymbolInSchematicBox(
           : undefined,
         stroke_width: 0.02,
         subcircuit_id,
-        ...(connector._resolveSchematicSheetId()
-          ? { schematic_sheet_id: connector._resolveSchematicSheetId() }
-          : {}),
+        schematic_sheet_id: connector._resolveSchematicSheetId(),
       })
     } else if (primitive.type === "circle") {
       db.schematic_circle.insert({
@@ -80,9 +78,7 @@ export function insertInnerSymbolInSchematicBox(
           : undefined,
         is_dashed: false,
         subcircuit_id,
-        ...(connector._resolveSchematicSheetId()
-          ? { schematic_sheet_id: connector._resolveSchematicSheetId() }
-          : {}),
+        schematic_sheet_id: connector._resolveSchematicSheetId(),
       })
     } else if (primitive.type === "box") {
       const topLeft = transformPoint({ x: primitive.x, y: primitive.y })
@@ -104,9 +100,7 @@ export function insertInnerSymbolInSchematicBox(
         is_dashed: false,
         rotation: 0,
         subcircuit_id,
-        ...(connector._resolveSchematicSheetId()
-          ? { schematic_sheet_id: connector._resolveSchematicSheetId() }
-          : {}),
+        schematic_sheet_id: connector._resolveSchematicSheetId(),
       })
     }
   }

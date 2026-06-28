@@ -148,9 +148,7 @@ export function applyNetLabelPlacements(args: {
         anchor_position,
         center,
         anchor_side,
-        ...(group._resolveSchematicSheetId()
-          ? { schematic_sheet_id: group._resolveSchematicSheetId() }
-          : {}),
+        schematic_sheet_id: group._resolveSchematicSheetId(),
       }
       db.schematic_net_label.insert(netLabel)
       continue
@@ -194,9 +192,7 @@ export function applyNetLabelPlacements(args: {
       anchor_position,
       center,
       anchor_side,
-      ...(group._resolveSchematicSheetId()
-        ? { schematic_sheet_id: group._resolveSchematicSheetId() }
-        : {}),
+      schematic_sheet_id: group._resolveSchematicSheetId(),
     }
     db.schematic_net_label.insert(netLabel)
   }
