@@ -39,7 +39,7 @@ export interface TscircuitElements {
   keepout: Props.PcbKeepoutProps
   hole: Props.HoleProps
   port: Props.PortProps
-  group: Props.GroupProps & { schSheetName?: string }
+  group: Props.GroupProps
   netlabel: Props.NetLabelProps
   opamp: Props.OpAmpProps
   cadmodel: Props.CadModelProps
@@ -83,7 +83,7 @@ export interface TscircuitElements {
   connector: Props.ConnectorProps
   pinheader: Props.PinHeaderProps
   resonator: Props.ResonatorProps
-  subcircuit: Props.SubcircuitGroupProps & { schSheetName?: string }
+  subcircuit: Props.SubcircuitGroupProps
   transistor: Props.TransistorProps
   switch: Props.SwitchProps
   mosfet: Props.MosfetProps
