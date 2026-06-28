@@ -47,7 +47,9 @@ export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
       color: props.color ?? SCHEMATIC_COMPONENT_OUTLINE_COLOR,
       is_dashed: props.isDashed,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
-      ...this.getSchematicSheetIdObject(),
+      ...(this._resolveSchematicSheetId()
+        ? { schematic_sheet_id: this._resolveSchematicSheetId() }
+        : {}),
     })
 
     this.schematic_arc_id = schematic_arc.schematic_arc_id

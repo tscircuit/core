@@ -1074,7 +1074,7 @@ export abstract class PrimitiveComponent<
     return this.parent?.getGroup?.() ?? null
   }
 
-  getSchematicSheetId(): string | undefined {
+  _resolveSchematicSheetId(): string | undefined {
     const schSheetName =
       this._parsedProps?.schSheetName ?? this.props.schSheetName
     if (schSheetName) {
@@ -1088,12 +1088,7 @@ export abstract class PrimitiveComponent<
       if (matchingSheet) return matchingSheet.schematic_sheet_id
     }
     if (this.schematic_sheet_id) return this.schematic_sheet_id
-    return this.parent?.getSchematicSheetId?.()
-  }
-
-  getSchematicSheetIdObject(): Record<string, string> {
-    const schematicSheetId = this.getSchematicSheetId()
-    return schematicSheetId ? { schematic_sheet_id: schematicSheetId } : {}
+    return this.parent?._resolveSchematicSheetId?.()
   }
 
   doInitialAssignNameToUnnamedComponents() {

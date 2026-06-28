@@ -135,7 +135,9 @@ export class SchematicSection extends PrimitiveComponent<
         stroke_width: STROKE_WIDTH,
         color: "#000000",
         is_dashed: false,
-        ...this.getSchematicSheetIdObject(),
+        ...(this._resolveSchematicSheetId()
+          ? { schematic_sheet_id: this._resolveSchematicSheetId() }
+          : {}),
       })
     }
 
@@ -175,7 +177,9 @@ export class SchematicSection extends PrimitiveComponent<
           y: topBoundary - LABEL_PADDING,
         },
         rotation: 0,
-        ...this.getSchematicSheetIdObject(),
+        ...(this._resolveSchematicSheetId()
+          ? { schematic_sheet_id: this._resolveSchematicSheetId() }
+          : {}),
       })
     }
   }

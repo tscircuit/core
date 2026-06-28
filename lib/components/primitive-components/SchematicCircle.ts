@@ -48,7 +48,9 @@ export class SchematicCircle extends PrimitiveComponent<
       fill_color: props.fillColor,
       is_dashed: props.isDashed,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
-      ...this.getSchematicSheetIdObject(),
+      ...(this._resolveSchematicSheetId()
+        ? { schematic_sheet_id: this._resolveSchematicSheetId() }
+        : {}),
     })
 
     this.schematic_circle_id = schematic_circle.schematic_circle_id

@@ -96,7 +96,9 @@ export class SchematicTable extends PrimitiveComponent<
       anchor: props.anchor,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id || "",
       schematic_component_id: this.parent?.schematic_component_id || "",
-      ...this.getSchematicSheetIdObject(),
+      ...(this._resolveSchematicSheetId()
+        ? { schematic_sheet_id: this._resolveSchematicSheetId() }
+        : {}),
     })
     this.schematic_table_id = table.schematic_table_id
 

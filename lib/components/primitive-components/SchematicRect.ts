@@ -49,7 +49,9 @@ export class SchematicRect extends PrimitiveComponent<
       is_dashed: props.isDashed,
       rotation: props.rotation ?? 0,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
-      ...this.getSchematicSheetIdObject(),
+      ...(this._resolveSchematicSheetId()
+        ? { schematic_sheet_id: this._resolveSchematicSheetId() }
+        : {}),
     })
 
     this.schematic_rect_id = schematic_rect.schematic_rect_id
