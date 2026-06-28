@@ -44,7 +44,7 @@ export class Subcircuit
   }
 
   private _createTracesForExposedNets(): void {
-    const exposedNets = this._parsedProps.exposedNets
+    const exposedNets = this._getNetNamesToExpose()
     if (!exposedNets?.length) return
 
     const parentSubcircuit = this.parent?.getSubcircuit?.()
@@ -53,11 +53,14 @@ export class Subcircuit
 
     for (const exposedNetName of exposedNets) {
       const netName = normalizeExposedNetName(exposedNetName)
-      const parentNetSelector = `net.${netName}`
+      const parentNetSelector = `> net.${netName}`
       const childNetSelector = `.${this.name} > net.${netName}`
       const traceName = `exposed_net.${netName}`
 
-      if (!parentSubcircuit.selectOne(parentNetSelector, { type: "net" })) {
+      const parentHasDirectNet = parentSubcircuit.children.some(
+        (child) => child instanceof Net && child._parsedProps.name === netName,
+      )
+      if (!parentHasDirectNet) {
         parentSubcircuit.add(new Net({ name: netName }))
       }
 
@@ -76,6 +79,17 @@ export class Subcircuit
         }),
       )
     }
+  }
+
+  private _getNetNamesToExpose(): string[] {
+    const explicitExposedNets = this._parsedProps.exposedNets ?? []
+    if (!this._parsedProps.exposeNets) return explicitExposedNets
+
+    const childNetNames = (this.selectAll("net") as Net[])
+      .filter((net) => net instanceof Net && net.getSubcircuit() === this)
+      .map((net) => net._parsedProps.name)
+
+    return Array.from(new Set([...explicitExposedNets, ...childNetNames]))
   }
 
   /**
