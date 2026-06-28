@@ -704,6 +704,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       true_ccw_index: localPortInfo?.trueIndex,
       display_pin_label: bestDisplayPinLabel,
       is_connected: false,
+      ...this.getSchematicSheetIdObject(),
     }
 
     for (const attributes of this._getMatchingPinAttributes()) {
@@ -740,6 +741,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         stroke_width: 0.02,
         color: SCHEMATIC_COMPONENT_OUTLINE_COLOR,
         is_dashed: false,
+        ...this.getSchematicSheetIdObject(),
       })
       this.schematic_stem_line_id = stemLine.schematic_line_id
     }

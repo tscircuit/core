@@ -55,6 +55,7 @@ export class SchematicPath extends PrimitiveComponent<
           dash_length: props.dashLength,
           dash_gap: props.dashGap,
           subcircuit_id,
+          ...this.getSchematicSheetIdObject(),
         })
         this.schematic_path_ids.push(schematic_path.schematic_path_id)
       }
@@ -76,6 +77,7 @@ export class SchematicPath extends PrimitiveComponent<
         dash_length: props.dashLength,
         dash_gap: props.dashGap,
         subcircuit_id,
+        ...this.getSchematicSheetIdObject(),
       })
       this.schematic_path_ids.push(schematic_path.schematic_path_id)
     }

@@ -148,6 +148,7 @@ export function applyNetLabelPlacements(args: {
         anchor_position,
         center,
         anchor_side,
+        ...group.getSchematicSheetIdObject(),
       }
       db.schematic_net_label.insert(netLabel)
       continue
@@ -191,6 +192,7 @@ export function applyNetLabelPlacements(args: {
       anchor_position,
       center,
       anchor_side,
+      ...group.getSchematicSheetIdObject(),
     }
     db.schematic_net_label.insert(netLabel)
   }

@@ -135,6 +135,7 @@ export class SchematicSection extends PrimitiveComponent<
         stroke_width: STROKE_WIDTH,
         color: "#000000",
         is_dashed: false,
+        ...this.getSchematicSheetIdObject(),
       })
     }
 
@@ -174,6 +175,7 @@ export class SchematicSection extends PrimitiveComponent<
           y: topBoundary - LABEL_PADDING,
         },
         rotation: 0,
+        ...this.getSchematicSheetIdObject(),
       })
     }
   }

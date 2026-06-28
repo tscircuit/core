@@ -746,6 +746,7 @@ export class NormalComponent<
         source_component_id: this.source_component_id!,
         is_box_with_pins: true,
         symbol_name,
+        ...this.getSchematicSheetIdObject(),
 
         symbol_display_value: this._getSchematicSymbolDisplayValue(),
       })
@@ -768,6 +769,7 @@ export class NormalComponent<
       source_component_id: this.source_component_id!,
       symbol_display_value: this._getSchematicSymbolDisplayValue(),
       is_box_with_pins: false,
+      ...this.getSchematicSheetIdObject(),
     })
     this.schematic_component_id = schematic_component.schematic_component_id
   }
@@ -809,6 +811,7 @@ export class NormalComponent<
       port_labels: primaryPortLabels,
 
       source_component_id: this.source_component_id!,
+      ...this.getSchematicSheetIdObject(),
     })
     const hasTopOrBottomPins =
       schPortArrangement?.topSide !== undefined ||
@@ -830,6 +833,7 @@ export class NormalComponent<
       },
       color: "#006464",
       font_size: 0.18,
+      ...this.getSchematicSheetIdObject(),
     })
     const component_name_text = db.schematic_text.insert({
       text: props.displayName ?? props.name ?? "",
@@ -846,6 +850,7 @@ export class NormalComponent<
       },
       color: "#006464",
       font_size: 0.18,
+      ...this.getSchematicSheetIdObject(),
     })
     this.schematic_component_id = schematic_component.schematic_component_id
   }
