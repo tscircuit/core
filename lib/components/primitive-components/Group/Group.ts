@@ -1381,10 +1381,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Create vias for layer transitions (this shouldn't be necessary, but
     // the Circuit JSON spec is ambiguous as to whether a via should have a
     // separate element from the route)
+    const viaPositionEpsilon = 1e-6
     for (const pcb_trace of output_pcb_traces) {
       if (pcb_trace.type === "pcb_via") {
-        // TODO handling here- may need to handle if redundant with pcb_trace
-        // below (i.e. don't insert via if one already exists at that location)
+        const explicitVia = pcb_trace as PcbVia
+        const existingVia = db.pcb_via
+          .list()
+          .find(
+            (via) =>
+              via.pcb_via_id === explicitVia.pcb_via_id ||
+              (via.pcb_trace_id === explicitVia.pcb_trace_id &&
+                Math.abs(via.x - explicitVia.x) <= viaPositionEpsilon &&
+                Math.abs(via.y - explicitVia.y) <= viaPositionEpsilon),
+          )
+        if (!existingVia) {
+          db.pcb_via.insert({
+            ...explicitVia,
+            subcircuit_id: explicitVia.subcircuit_id ?? this.subcircuit_id!,
+            pcb_group_id:
+              explicitVia.pcb_group_id ?? this.pcb_group_id ?? undefined,
+          })
+        }
         continue
       }
       if (pcb_trace.type === "pcb_trace") {
