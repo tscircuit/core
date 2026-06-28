@@ -146,11 +146,37 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const nets = trace._findConnectedNets().netsWithSelectors
 
   if (ports.length === 0 && nets.length === 2) {
-    // Find the two optimal points to connect the two nets
-    trace.renderError(
-      `Trace connects two nets, we haven't implemented a way to route this yet`,
-    )
-    return
+    const [netA, netB] = nets.map(({ net }) => net)
+    const netAPorts = netA.getAllConnectedPorts()
+    const netBPorts = netB.getAllConnectedPorts()
+
+    if (netAPorts.length === 0 || netBPorts.length === 0) {
+      console.log(
+        "Nothing to connect this net to, one of the nets is empty. TODO should emit a warning!",
+      )
+      return
+    }
+
+    let closestPortPair: [Port, Port] = [netAPorts[0], netBPorts[0]]
+    let closestDistance = Infinity
+
+    for (const netAPort of netAPorts) {
+      const closestNetBPort = getClosest(netAPort, netBPorts)
+      const netAPortPosition = netAPort._getGlobalPcbPositionBeforeLayout()
+      const netBPortPosition =
+        closestNetBPort._getGlobalPcbPositionBeforeLayout()
+      const distance = Math.sqrt(
+        (netAPortPosition.x - netBPortPosition.x) ** 2 +
+          (netAPortPosition.y - netBPortPosition.y) ** 2,
+      )
+
+      if (distance < closestDistance) {
+        closestDistance = distance
+        closestPortPair = [netAPort, closestNetBPort]
+      }
+    }
+
+    ports.push(...closestPortPair)
     // biome-ignore lint/style/noUselessElse: <explanation>
   } else if (ports.length === 1 && nets.length === 1) {
     // Add a port from the net that is closest to the port
