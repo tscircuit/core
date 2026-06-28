@@ -1075,6 +1075,18 @@ export abstract class PrimitiveComponent<
   }
 
   getSchematicSheetId(): string | undefined {
+    const schSheetName =
+      this._parsedProps?.schSheetName ?? this.props.schSheetName
+    if (schSheetName) {
+      const matchingSheet = this.root?.db.schematic_sheet
+        .list()
+        .find(
+          (sheet) =>
+            sheet.name === schSheetName ||
+            sheet.schematic_sheet_id === schSheetName,
+        )
+      if (matchingSheet) return matchingSheet.schematic_sheet_id
+    }
     if (this.schematic_sheet_id) return this.schematic_sheet_id
     return this.parent?.getSchematicSheetId?.()
   }

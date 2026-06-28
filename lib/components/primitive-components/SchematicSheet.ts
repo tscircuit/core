@@ -1,16 +1,6 @@
-import { z } from "zod"
+import { schematicSheetProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-
-export const schematicSheetProps = z
-  .object({
-    name: z.string().optional(),
-    schematicSheetId: z.string().optional(),
-    sheetIndex: z.number().optional(),
-    sheet_index: z.number().optional(),
-  })
-  .passthrough()
-
-export type SchematicSheetProps = z.input<typeof schematicSheetProps>
+import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 
 export class SchematicSheet extends PrimitiveComponent<
   typeof schematicSheetProps
@@ -30,14 +20,51 @@ export class SchematicSheet extends PrimitiveComponent<
     const { _parsedProps: props } = this
 
     const schematicSheet = db.schematic_sheet.insert({
-      ...(props.schematicSheetId
-        ? { schematic_sheet_id: props.schematicSheetId }
-        : {}),
       name: props.name,
+      display_name: props.displayName,
+      sheet_index: props.sheetIndex,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
-      sheet_index: props.sheetIndex ?? props.sheet_index,
     } as any)
 
     this.schematic_sheet_id = schematicSheet.schematic_sheet_id
+  }
+
+  doInitialSchematicSheetRender(): void {
+    if (this.root?.schematicDisabled) return
+    if (!this.schematic_sheet_id) return
+
+    const { db } = this.root!
+    const schematicElements = [
+      ...db.schematic_component.list(),
+      ...db.schematic_port.list(),
+      ...db.schematic_text.list(),
+      ...db.schematic_line.list(),
+      ...db.schematic_rect.list(),
+      ...db.schematic_circle.list(),
+      ...db.schematic_arc.list(),
+      ...db.schematic_path.list(),
+    ].filter(
+      (element) =>
+        (element as any).schematic_sheet_id === this.schematic_sheet_id,
+    )
+
+    if (schematicElements.length === 0) return
+
+    const bounds = getBoundsForSchematic(schematicElements)
+    if (
+      !Number.isFinite(bounds.minX) ||
+      !Number.isFinite(bounds.maxX) ||
+      !Number.isFinite(bounds.minY) ||
+      !Number.isFinite(bounds.maxY)
+    ) {
+      return
+    }
+
+    db.schematic_sheet.update(this.schematic_sheet_id, {
+      center: {
+        x: (bounds.minX + bounds.maxX) / 2,
+        y: (bounds.minY + bounds.maxY) / 2,
+      },
+    } as any)
   }
 }

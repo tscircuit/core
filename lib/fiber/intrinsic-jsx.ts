@@ -1,5 +1,4 @@
 import type * as Props from "@tscircuit/props"
-import type { SchematicSheetProps } from "lib/components/primitive-components/SchematicSheet"
 
 export interface TscircuitElements {
   resistor: Props.ResistorProps
@@ -23,7 +22,7 @@ export interface TscircuitElements {
   pinout: Props.PinoutProps
   powersource: Props.PowerSourceProps
   schematicsection: Props.SchematicSectionProps
-  schematicsheet: SchematicSheetProps
+  schematicsheet: Props.SchematicSheetProps
   via: Props.ViaProps
   schematicbox: Props.SchematicBoxProps
   schematicline: Props.SchematicLineProps
@@ -40,7 +39,7 @@ export interface TscircuitElements {
   keepout: Props.PcbKeepoutProps
   hole: Props.HoleProps
   port: Props.PortProps
-  group: Props.GroupProps
+  group: Props.GroupProps & { schSheetName?: string }
   netlabel: Props.NetLabelProps
   opamp: Props.OpAmpProps
   cadmodel: Props.CadModelProps
@@ -84,7 +83,7 @@ export interface TscircuitElements {
   connector: Props.ConnectorProps
   pinheader: Props.PinHeaderProps
   resonator: Props.ResonatorProps
-  subcircuit: Props.SubcircuitGroupProps
+  subcircuit: Props.SubcircuitGroupProps & { schSheetName?: string }
   transistor: Props.TransistorProps
   switch: Props.SwitchProps
   mosfet: Props.MosfetProps
