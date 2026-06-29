@@ -706,6 +706,30 @@ export class NormalComponent<
       db.schematic_manual_edit_conflict_warning.insert(warning)
     }
 
+    // Warn when schSheetName references a sheet that does not exist, so the
+    // user gets feedback that their schSheetName was ignored.
+    const schSheetName =
+      this._parsedProps?.schSheetName ?? this.props.schSheetName
+    if (schSheetName && this.source_component_id) {
+      const referencedSheet = db.schematic_sheet
+        .list()
+        .find(
+          (sheet) =>
+            sheet.name === schSheetName ||
+            sheet.schematic_sheet_id === schSheetName,
+        )
+      if (!referencedSheet) {
+        db.schematic_sheet_missing_warning.insert({
+          warning_type: "schematic_sheet_missing_warning",
+          source_component_id: this.source_component_id,
+          schematic_component_id: this.schematic_component_id ?? undefined,
+          subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+          sheet_name: schSheetName,
+          message: `${this.getString()} references schSheetName "${schSheetName}" but no matching schematic sheet was found.`,
+        })
+      }
+    }
+
     // No schematic symbol or dimensions defined, this could be a board, group
     // or other NormalComponent that doesn't have a schematic representation
   }

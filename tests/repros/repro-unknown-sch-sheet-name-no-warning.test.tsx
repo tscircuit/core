@@ -1,20 +1,15 @@
 import { expect, test } from "bun:test"
-import type { AnyCircuitElement } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 /**
- * REPRO (test.failing): an unknown `schSheetName` should emit a warning.
+ * An unknown `schSheetName` emits a `schematic_sheet_missing_warning`.
  *
  * The board declares a single sheet named "Sheet A", but `U1` references
- * "Sheet B" (e.g. a typo). `_resolveSchematicSheetId` silently fails to find a
- * matching sheet and falls back to the parent's sheet, so the chip renders with
- * no feedback that its `schSheetName` was ignored.
- *
- * When unknown-sheet warnings are implemented, a warning referencing "Sheet B"
- * should be present and this test should pass; flip it back to `test` at that
- * point.
+ * "Sheet B" (e.g. a typo). The chip's `schSheetName` cannot be resolved to any
+ * sheet, so core emits a warning naming the sheet that could not be found
+ * instead of silently ignoring it.
  */
-test.failing("unknown schSheetName emits a warning", async () => {
+test("unknown schSheetName emits a schematic_sheet_missing_warning", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -26,13 +21,14 @@ test.failing("unknown schSheetName emits a warning", async () => {
 
   await circuit.renderUntilSettled()
 
-  // A warning should tell the user that "Sheet B" could not be found.
-  const circuitJson = circuit.getCircuitJson()
-  const warnings = circuitJson.filter((elm: AnyCircuitElement) =>
-    elm.type.endsWith("_warning"),
-  )
-  const mentionsMissingSheet = warnings.some((w) =>
-    JSON.stringify(w).includes("Sheet B"),
-  )
-  expect(mentionsMissingSheet).toBe(true)
+  const sourceComponent = circuit.db.source_component.getWhere({ name: "U1" })!
+  const warnings = circuit.db.schematic_sheet_missing_warning.list()
+
+  expect(warnings).toHaveLength(1)
+  expect(warnings[0]).toMatchObject({
+    type: "schematic_sheet_missing_warning",
+    sheet_name: "Sheet B",
+    source_component_id: sourceComponent.source_component_id,
+  })
+  expect(warnings[0]!.message).toContain("Sheet B")
 })
