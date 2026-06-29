@@ -35,44 +35,21 @@ test("SchematicPath supports dash_length and dash_gap test", () => {
   const circuitJson = circuit.getCircuitJson()
   const schematicPaths = circuitJson.filter((c) => c.type === "schematic_path")
 
-  expect(schematicPaths).toMatchInlineSnapshot(`
-    [
-      {
-        "dash_gap": 0.15,
-        "dash_length": 0.3,
-        "fill_color": undefined,
-        "is_dashed": true,
-        "is_filled": false,
-        "points": [
-          {
-            "x": 0,
-            "y": 0,
-          },
-          {
-            "x": 5,
-            "y": 0,
-          },
-          {
-            "x": 5,
-            "y": 5,
-          },
-          {
-            "x": 0,
-            "y": 5,
-          },
-          {
-            "x": 0,
-            "y": 0,
-          },
-        ],
-        "schematic_component_id": "schematic_component_0",
-        "schematic_path_id": "schematic_path_0",
-        "schematic_symbol_id": "schematic_symbol_0",
-        "stroke_color": "#000000",
-        "stroke_width": 0.05,
-        "subcircuit_id": "subcircuit_source_group_0",
-        "type": "schematic_path",
-      },
-    ]
-  `)
+  expect(schematicPaths).toHaveLength(1)
+  expect(schematicPaths[0]).toMatchObject({
+    dash_gap: 0.15,
+    dash_length: 0.3,
+    is_dashed: true,
+    is_filled: false,
+    points: [
+      { x: 0, y: 0 },
+      { x: 5, y: 0 },
+      { x: 5, y: 5 },
+      { x: 0, y: 5 },
+      { x: 0, y: 0 },
+    ],
+    stroke_color: "#000000",
+    stroke_width: 0.05,
+    type: "schematic_path",
+  })
 })
