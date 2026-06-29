@@ -6,6 +6,7 @@ import type {
 } from "circuit-json"
 import type { RenderPhase } from "lib/components/base-components/Renderable"
 import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
+import { parseSimulationGraphValue } from "lib/utils/simulation/parseSimulationGraphValue"
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 
@@ -13,6 +14,8 @@ export class Ammeter extends NormalComponent<
   typeof ammeterProps,
   "pos" | "neg"
 > {
+  simulation_current_probe_id: string | null = null
+
   get config() {
     return {
       componentName: "Ammeter",
@@ -74,7 +77,13 @@ export class Ammeter extends NormalComponent<
 
   doInitialSimulationRender() {
     const { db } = this.root!
-    const { color, graphDisplayName } = this._parsedProps
+    const {
+      color,
+      graphDisplayName,
+      graphCenter,
+      graphVerticalOffset,
+      graphCurrentPerDiv,
+    } = this._parsedProps
     const posPort = this.portMap.pos
     const negPort = this.portMap.neg
 
@@ -88,11 +97,32 @@ export class Ammeter extends NormalComponent<
       color: color,
     } as SimulationCurrentProbeInput)
 
-    if (graphDisplayName !== undefined) {
+    this.simulation_current_probe_id = simulation_current_probe_id
+
+    const hasGraphDisplayProps =
+      graphDisplayName !== undefined ||
+      graphCenter !== undefined ||
+      graphVerticalOffset !== undefined ||
+      graphCurrentPerDiv !== undefined
+
+    if (hasGraphDisplayProps) {
+      const graphCurrentPerDivValue =
+        parseSimulationGraphValue(graphCurrentPerDiv)
+      const graphVerticalOffsetValue =
+        parseSimulationGraphValue(graphVerticalOffset)
+
       db.simulation_oscilloscope_trace.insert({
         simulation_current_probe_id,
         display_name: graphDisplayName,
         color: color,
+        display_center_value: graphCenter,
+        amps_per_div: graphCurrentPerDivValue,
+        display_center_offset_divs:
+          graphVerticalOffsetValue !== undefined &&
+          graphCurrentPerDivValue !== undefined &&
+          graphCurrentPerDivValue !== 0
+            ? graphVerticalOffsetValue / graphCurrentPerDivValue
+            : undefined,
       } as SimulationOscilloscopeTraceInput)
     }
   }

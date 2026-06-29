@@ -4,8 +4,14 @@ import Debug from "debug"
 import { getTransientVoltageGraphNamesFromSpiceNetlist } from "lib/utils/simulation/get-transient-voltage-graph-names-from-spice-netlist"
 import { resetSimulationColorState } from "lib/utils/simulation/getSimulationColorForId"
 import { getSpiceyEngine } from "../../../spice/get-spicey-engine"
+import type { Ammeter } from "../../normal-components/Ammeter"
 import type { AnalogSimulation } from "../AnalogSimulation"
 import type { VoltageProbe } from "../VoltageProbe"
+import type { GraphDisplayOverrides } from "./GraphDisplayOverrides"
+import {
+  getAmmeterGraphDisplayOverrides,
+  getVoltageProbeGraphDisplayOverrides,
+} from "./getGraphDisplayOverrides"
 import type { InsertedSimulationGraph } from "./InsertedSimulationGraph"
 import type { Group } from "./Group"
 import { insertIndependentAxisScopeTraces } from "./insertIndependentAxisScopeTraces"
@@ -27,6 +33,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   if (analogSims.length === 0) return
 
   const voltageProbes = group.selectAll<VoltageProbe>("voltageprobe")
+  const ammeters = group.selectAll<Ammeter>("ammeter")
 
   resetSimulationColorState()
 
@@ -59,9 +66,26 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   }
 
   const voltageProbesById = new Map<string, VoltageProbe>()
+  const graphDisplayOverridesByProbeId = new Map<
+    string,
+    GraphDisplayOverrides
+  >()
   for (const probe of voltageProbes) {
     if (probe.simulation_voltage_probe_id) {
       voltageProbesById.set(probe.simulation_voltage_probe_id, probe)
+      graphDisplayOverridesByProbeId.set(
+        probe.simulation_voltage_probe_id,
+        getVoltageProbeGraphDisplayOverrides(probe),
+      )
+    }
+  }
+
+  for (const ammeter of ammeters) {
+    if (ammeter.simulation_current_probe_id) {
+      graphDisplayOverridesByProbeId.set(
+        ammeter.simulation_current_probe_id,
+        getAmmeterGraphDisplayOverrides(ammeter),
+      )
     }
   }
 
@@ -190,6 +214,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
           insertIndependentAxisScopeTraces({
             db: root.db,
             graphs: [...insertedVoltageGraphs, ...insertedCurrentGraphs],
+            graphDisplayOverridesByProbeId,
           })
         }
 

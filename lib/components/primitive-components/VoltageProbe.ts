@@ -5,6 +5,7 @@ import type {
 } from "circuit-json"
 import { selectBestLabelAlignment } from "lib/utils/schematic/selectBestLabelAlignment"
 import { getSimulationColorForId } from "lib/utils/simulation/getSimulationColorForId"
+import { parseSimulationGraphValue } from "lib/utils/simulation/parseSimulationGraphValue"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Net } from "./Net"
@@ -25,8 +26,16 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
 
   doInitialSimulationRender() {
     const { db } = this.root!
-    const { connectsTo, name, referenceTo, color, graphDisplayName } =
-      this._parsedProps
+    const {
+      connectsTo,
+      name,
+      referenceTo,
+      color,
+      graphDisplayName,
+      graphCenter,
+      graphVerticalOffset,
+      graphVoltagePerDiv,
+    } = this._parsedProps
 
     const subcircuit = this.getSubcircuit()
     if (!subcircuit) {
@@ -132,11 +141,30 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
 
     this.simulation_voltage_probe_id = simulation_voltage_probe_id
 
-    if (graphDisplayName !== undefined) {
+    const hasGraphDisplayProps =
+      graphDisplayName !== undefined ||
+      graphCenter !== undefined ||
+      graphVerticalOffset !== undefined ||
+      graphVoltagePerDiv !== undefined
+
+    if (hasGraphDisplayProps) {
+      const graphVoltagePerDivValue =
+        parseSimulationGraphValue(graphVoltagePerDiv)
+      const graphVerticalOffsetValue =
+        parseSimulationGraphValue(graphVerticalOffset)
+
       db.simulation_oscilloscope_trace.insert({
         simulation_voltage_probe_id,
         display_name: graphDisplayName,
         color: color ?? undefined,
+        display_center_value: graphCenter,
+        volts_per_div: graphVoltagePerDivValue,
+        display_center_offset_divs:
+          graphVerticalOffsetValue !== undefined &&
+          graphVoltagePerDivValue !== undefined &&
+          graphVoltagePerDivValue !== 0
+            ? graphVerticalOffsetValue / graphVoltagePerDivValue
+            : undefined,
       } as SimulationOscilloscopeTraceInput)
     }
   }

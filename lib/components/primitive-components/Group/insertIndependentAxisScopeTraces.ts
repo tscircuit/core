@@ -1,5 +1,6 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SimulationOscilloscopeTrace } from "circuit-json"
+import type { GraphDisplayOverrides } from "./GraphDisplayOverrides"
 import type { InsertedSimulationGraph } from "./InsertedSimulationGraph"
 import { getAutoDisplayScale } from "./getAutoDisplayScale"
 
@@ -33,9 +34,11 @@ const getTraceByCurrentProbeId = (traces: SimulationOscilloscopeTrace[]) => {
 export const insertIndependentAxisScopeTraces = ({
   db,
   graphs,
+  graphDisplayOverridesByProbeId,
 }: {
   db: CircuitJsonUtilObjects
   graphs: InsertedSimulationGraph[]
+  graphDisplayOverridesByProbeId?: Map<string, GraphDisplayOverrides>
 }) => {
   if (graphs.length === 0) return
 
@@ -72,23 +75,35 @@ export const insertIndependentAxisScopeTraces = ({
         : type === "voltage"
           ? traceByVoltageProbeId.get(sourceProbeId)
           : traceByCurrentProbeId.get(sourceProbeId)
+    const overrides =
+      sourceProbeId === undefined
+        ? undefined
+        : graphDisplayOverridesByProbeId?.get(sourceProbeId)
+
+    const valuePerDiv = overrides?.valuePerDiv ?? scale.value_per_div
+    const displayCenter = overrides?.center ?? scale.display_center_value
+    const displayCenterOffsetDivs =
+      overrides?.verticalOffset !== undefined && valuePerDiv !== 0
+        ? overrides.verticalOffset / valuePerDiv
+        : (probeTrace?.display_center_offset_divs ??
+          scale.display_center_offset_divs)
 
     db.simulation_oscilloscope_trace.insert({
       ...(type === "voltage"
         ? {
             simulation_transient_voltage_graph_id:
               graph.simulation_transient_voltage_graph_id,
-            volts_per_div: scale.value_per_div,
+            volts_per_div: valuePerDiv,
           }
         : {
             simulation_transient_current_graph_id:
               graph.simulation_transient_current_graph_id,
-            amps_per_div: scale.value_per_div,
+            amps_per_div: valuePerDiv,
           }),
-      display_name: probeTrace?.display_name,
-      color: probeTrace?.color ?? graph.color,
-      display_center_value: scale.display_center_value,
-      display_center_offset_divs: scale.display_center_offset_divs,
+      display_name: overrides?.displayName ?? probeTrace?.display_name,
+      color: overrides?.color ?? probeTrace?.color ?? graph.color,
+      display_center_value: displayCenter,
+      display_center_offset_divs: displayCenterOffsetDivs,
     })
   }
 }
