@@ -2,19 +2,17 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 /**
- * Schematic sheets with multiple components each are laid out independently.
+ * Schematic sheets with multiple components each are laid out independently, and
+ * traces / net labels render on their own sheet.
  *
  * Sheet A holds U1 + RA1 + CA1, Sheet B holds U2 + RB1 + CB1 (each cluster is
- * wired within its own sheet). matchpack runs once per sheet, so:
- *  - within a sheet the components are packed into a cluster (not stacked at the
- *    origin), and
- *  - the two sheets are laid out independently around the same origin - Sheet B
- *    does not get pushed into a separate region by Sheet A. Because both sheets
- *    have the same contents, their layouts come out identical and overlap, and
- *    the two sheet centers coincide.
- *
- * (If both sheets were laid out together, all six components would be packed
- * into one shared coordinate space and the two clusters would not coincide.)
+ * wired within its own sheet), and RB1.pin2 is tied to GND so Sheet B also gets
+ * a GND net label. matchpack runs once per sheet, so each sheet's components are
+ * packed into a cluster around the origin, independently of the other sheet -
+ * adding the GND net to Sheet B perturbs only Sheet B's RB1, not Sheet A. The
+ * GND net label and the wires are assigned to the sheet of the components they
+ * belong to, so they render on the correct sheet (they were invisible when
+ * traces/labels had no sheet).
  */
 test("multiple components on different sheets are laid out independently", async () => {
   const { circuit } = getTestFixture()
@@ -46,6 +44,9 @@ test("multiple components on different sheets are laid out independently", async
         resistance="1k"
         footprint="0402"
         schSheetName="Sheet B"
+        connections={{
+          pin2: "net.GND"
+        }}
       />
       <capacitor
         name="CB1"
@@ -94,21 +95,36 @@ test("multiple components on different sheets are laid out independently", async
   expect(Math.abs(ra1.center.y - u1.center.y)).toBeGreaterThan(1)
   expect(Math.abs(ca1.center.x - u1.center.x)).toBeGreaterThan(1)
 
-  // Independent per-sheet layout: each Sheet B component coincides with its
-  // Sheet A counterpart (the sheets are laid out identically around the same
-  // origin), not packed into a separate region of one shared layout.
+  // Independent per-sheet layout: components without extra connections land in
+  // the same place on both sheets, so Sheet B is not pushed into a separate
+  // region by Sheet A. Tying RB1.pin2 to GND perturbs only Sheet B (RB1), not
+  // Sheet A.
   expect(u2.center.x).toBeCloseTo(u1.center.x, 1)
   expect(u2.center.y).toBeCloseTo(u1.center.y, 1)
-  expect(rb1.center.x).toBeCloseTo(ra1.center.x, 1)
-  expect(rb1.center.y).toBeCloseTo(ra1.center.y, 1)
   expect(cb1.center.x).toBeCloseTo(ca1.center.x, 1)
   expect(cb1.center.y).toBeCloseTo(ca1.center.y, 1)
 
-  // The two sheet centers coincide.
-  expect((sheetB as any).center.x).toBeCloseTo((sheetA as any).center.x, 1)
-  expect((sheetB as any).center.y).toBeCloseTo((sheetA as any).center.y, 1)
+  // Both sheets are laid out around the origin, not tiled into separate regions.
+  expect(Math.abs((sheetA as any).center.x)).toBeLessThan(2)
+  expect(Math.abs((sheetB as any).center.x)).toBeLessThan(2)
 
-  // Both sheets stacked: each shows its own component cluster centered in its
-  // frame.
+  // The GND net on Sheet B's RB1 produces a net label assigned to Sheet B...
+  const gndLabel = circuit.db.schematic_net_label.getWhere({ text: "GND" })
+  expect((gndLabel as any)?.schematic_sheet_id).toBe(sheetB.schematic_sheet_id)
+
+  // ...and each trace is assigned to the sheet of the components it connects, so
+  // wires and net labels render on the correct sheet.
+  const traceSheetIds = circuit.db.schematic_trace
+    .list()
+    .map((t) => (t as any).schematic_sheet_id)
+  expect(
+    traceSheetIds.filter((id) => id === sheetA.schematic_sheet_id).length,
+  ).toBeGreaterThan(0)
+  expect(
+    traceSheetIds.filter((id) => id === sheetB.schematic_sheet_id).length,
+  ).toBeGreaterThan(0)
+
+  // Both sheets stacked: each shows its own component cluster, and Sheet B shows
+  // its GND net label, on its own frame.
   await expect(circuit).toMatchStackedSchematicSnapshot(import.meta.path)
 })
