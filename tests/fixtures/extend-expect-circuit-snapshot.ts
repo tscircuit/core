@@ -184,7 +184,12 @@ expect.extend({
       soup: circuitJson,
       testPath: args[0],
       mode: "schematic_stacked",
-      options: args[1],
+      options: args[1] ?? {
+        grid: {
+          cellSize: 1,
+          labelCells: true,
+        },
+      },
       updateSnapshot:
         process.argv.includes("--update-snapshots") ||
         process.argv.includes("-u") ||
