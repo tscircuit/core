@@ -13,15 +13,6 @@ import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 
-const removeUndefinedSchematicSheetId = <T extends Record<string, unknown>>(
-  obj: T,
-): T => {
-  if (obj.schematic_sheet_id !== undefined) return obj
-  if (!("schematic_sheet_id" in obj)) return obj
-  delete obj.schematic_sheet_id
-  return obj
-}
-
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null
   children: PrimitiveComponent[]
@@ -201,7 +192,6 @@ export class IsolatedCircuit {
     if (!firstChild) throw new Error("IsolatedCircuit has no root component")
     firstChild.parent = this as any
     firstChild.runRenderCycle()
-    this._removeUndefinedSchematicSheetIds()
     this._hasUnrenderedUpdatesFromAsyncEffects = false
     this._hasRenderedAtleastOnce = true
   }
@@ -235,12 +225,6 @@ export class IsolatedCircuit {
     return this.children.some((child) => child._hasIncompleteAsyncEffects())
   }
 
-  _removeUndefinedSchematicSheetIds() {
-    for (const element of this.db.toArray()) {
-      removeUndefinedSchematicSheetId(element)
-    }
-  }
-
   _hasIncompleteAsyncEffectsForPhase(phase: RenderPhase): boolean {
     return (this._asyncEffectIdsByPhase.get(phase)?.size ?? 0) > 0
   }
@@ -257,9 +241,7 @@ export class IsolatedCircuit {
 
   getCircuitJson(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
-    return this.db
-      .toArray()
-      .map((element) => removeUndefinedSchematicSheetId(element))
+    return this.db.toArray()
   }
 
   toJson(): AnyCircuitElement[] {
