@@ -13,6 +13,15 @@ import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
 import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
 
+const omitUndefinedSchematicSheetId = <T extends Record<string, unknown>>(
+  obj: T,
+): T => {
+  if (obj.schematic_sheet_id !== undefined) return obj
+  if (!("schematic_sheet_id" in obj)) return obj
+  const { schematic_sheet_id, ...rest } = obj
+  return rest as T
+}
+
 export class IsolatedCircuit {
   firstChild: PrimitiveComponent | null = null
   children: PrimitiveComponent[]
@@ -241,7 +250,9 @@ export class IsolatedCircuit {
 
   getCircuitJson(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
-    return this.db.toArray()
+    return this.db
+      .toArray()
+      .map((element) => omitUndefinedSchematicSheetId(element))
   }
 
   toJson(): AnyCircuitElement[] {
