@@ -25,16 +25,8 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
 
   doInitialSimulationRender() {
     const { db } = this.root!
-    const {
-      connectsTo,
-      name,
-      referenceTo,
-      color,
-      graphDisplayName,
-      graphCenter,
-      graphOffsetDivs,
-      graphUnitsPerDiv,
-    } = this._parsedProps
+    const { connectsTo, name, referenceTo, color, graphDisplayName } =
+      this._parsedProps
 
     const subcircuit = this.getSubcircuit()
     if (!subcircuit) {
@@ -140,20 +132,11 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
 
     this.simulation_voltage_probe_id = simulation_voltage_probe_id
 
-    const hasGraphDisplayProps =
-      graphDisplayName !== undefined ||
-      graphCenter !== undefined ||
-      graphOffsetDivs !== undefined ||
-      graphUnitsPerDiv !== undefined
-
-    if (hasGraphDisplayProps) {
+    if (graphDisplayName !== undefined) {
       db.simulation_oscilloscope_trace.insert({
         simulation_voltage_probe_id,
         display_name: graphDisplayName,
         color: color ?? undefined,
-        display_center_value: graphCenter,
-        display_center_offset_divs: graphOffsetDivs,
-        volts_per_div: graphUnitsPerDiv,
       } as SimulationOscilloscopeTraceInput)
     }
   }

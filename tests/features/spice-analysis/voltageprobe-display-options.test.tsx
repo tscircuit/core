@@ -2,7 +2,7 @@ import createNgspiceSpiceEngine from "@tscircuit/ngspice-spice-engine"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("voltageprobe emits graph display props", async () => {
+test("voltageprobe emits graph display name", async () => {
   const { circuit } = getTestFixture({
     platform: {
       spiceEngineMap: {
@@ -24,9 +24,6 @@ test("voltageprobe emits graph display props", async () => {
         connectsTo=".R1 > .pin1"
         referenceTo=".R1 > .pin2"
         graphDisplayName="VO"
-        graphCenter={4.2}
-        graphOffsetDivs={3}
-        graphUnitsPerDiv={0.05}
       />
       <analogsimulation
         duration="1ms"
@@ -46,8 +43,5 @@ test("voltageprobe emits graph display props", async () => {
   )
   expect(circuit.db.simulation_oscilloscope_trace.list()[0]).toMatchObject({
     display_name: "VO",
-    display_center_value: 4.2,
-    display_center_offset_divs: 3,
-    volts_per_div: 0.05,
   })
 }, 60000)

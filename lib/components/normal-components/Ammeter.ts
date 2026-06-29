@@ -74,13 +74,7 @@ export class Ammeter extends NormalComponent<
 
   doInitialSimulationRender() {
     const { db } = this.root!
-    const {
-      color,
-      graphDisplayName,
-      graphCenter,
-      graphOffsetDivs,
-      graphUnitsPerDiv,
-    } = this._parsedProps
+    const { color, graphDisplayName } = this._parsedProps
     const posPort = this.portMap.pos
     const negPort = this.portMap.neg
 
@@ -94,20 +88,11 @@ export class Ammeter extends NormalComponent<
       color: color,
     } as SimulationCurrentProbeInput)
 
-    const hasGraphDisplayProps =
-      graphDisplayName !== undefined ||
-      graphCenter !== undefined ||
-      graphOffsetDivs !== undefined ||
-      graphUnitsPerDiv !== undefined
-
-    if (hasGraphDisplayProps) {
+    if (graphDisplayName !== undefined) {
       db.simulation_oscilloscope_trace.insert({
         simulation_current_probe_id,
         display_name: graphDisplayName,
         color: color,
-        display_center_value: graphCenter,
-        display_center_offset_divs: graphOffsetDivs,
-        amps_per_div: graphUnitsPerDiv,
       } as SimulationOscilloscopeTraceInput)
     }
   }
