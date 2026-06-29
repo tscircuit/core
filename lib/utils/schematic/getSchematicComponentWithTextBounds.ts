@@ -20,6 +20,8 @@ const TEXT_BOX_ENABLED_FTYPES = new Set([
   "simple_transistor",
   "simple_mosfet",
   "simple_op_amp",
+  "simple_switch",
+  "simple_push_button",
 ])
 
 function getTextBounds({
