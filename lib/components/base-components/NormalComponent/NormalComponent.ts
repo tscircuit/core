@@ -719,13 +719,12 @@ export class NormalComponent<
             sheet.schematic_sheet_id === schSheetName,
         )
       if (!referencedSheet) {
-        db.schematic_sheet_missing_warning.insert({
-          warning_type: "schematic_sheet_missing_warning",
+        db.source_property_ignored_warning.insert({
           source_component_id: this.source_component_id,
-          schematic_component_id: this.schematic_component_id ?? undefined,
+          property_name: "schSheetName",
+          error_type: "source_property_ignored_warning",
           subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-          sheet_name: schSheetName,
-          message: `${this.getString()} references schSheetName "${schSheetName}" but no matching schematic sheet was found.`,
+          message: `${this.getString()} references schSheetName "${schSheetName}", which does not match any schematic sheet and will be ignored.`,
         })
       }
     }
