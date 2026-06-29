@@ -173,8 +173,16 @@ export class NormalComponent<
   }
 
   constructor(props: z.input<ZodProps>) {
-    const filteredProps = { ...props }
+    const filteredProps = { ...props } as any
     let invalidPinLabelsMessages: string[] = []
+
+    if (
+      filteredProps.internallyConnectedPorts &&
+      !filteredProps.internallyConnectedPins
+    ) {
+      filteredProps.internallyConnectedPins =
+        filteredProps.internallyConnectedPorts
+    }
 
     // Apply invalid pin label filtering for object-based pinLabels only
     // Array-based pinLabels (used by PinHeader) are left unfiltered

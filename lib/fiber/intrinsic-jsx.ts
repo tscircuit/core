@@ -1,5 +1,11 @@
 import type * as Props from "@tscircuit/props"
 
+type WithInternallyConnectedPortsAlias<
+  T extends { internallyConnectedPins?: any },
+> = T & {
+  internallyConnectedPorts?: T["internallyConnectedPins"]
+}
+
 export interface TscircuitElements {
   resistor: Props.ResistorProps
   capacitor: Props.CapacitorProps
@@ -18,7 +24,7 @@ export interface TscircuitElements {
   solderjumper: Props.SolderJumperProps
   bug: Props.ChipProps
   potentiometer: Props.PotentiometerProps
-  chip: Props.ChipProps
+  chip: WithInternallyConnectedPortsAlias<Props.ChipProps>
   pinout: Props.PinoutProps
   powersource: Props.PowerSourceProps
   schematicsection: Props.SchematicSectionProps
