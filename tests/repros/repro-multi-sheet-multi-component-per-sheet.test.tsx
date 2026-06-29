@@ -45,7 +45,7 @@ test("multiple components on different sheets are laid out independently", async
         footprint="0402"
         schSheetName="Sheet B"
         connections={{
-          pin2: "net.GND"
+          pin2: "net.GND",
         }}
       />
       <capacitor
