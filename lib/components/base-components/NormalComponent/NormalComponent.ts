@@ -23,7 +23,6 @@ import {
   pcb_manual_edit_conflict_warning,
   point3,
   rotation,
-  schematic_manual_edit_conflict_warning,
   unknown_error_finding_part,
 } from "circuit-json"
 import Debug from "debug"
@@ -78,6 +77,7 @@ import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalCompo
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
+import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
 import { inferInternallyConnectedPinNamesFromPorts } from "./utils/inferInternallyConnectedPinNamesFromPorts"
@@ -146,7 +146,7 @@ export class NormalComponent<
   _hasStartedSupplierFootprintMismatchWarningCheck = false
   private _invalidFootprintPropMessages: string[] = []
 
-  private _invalidPinLabelMessages: string[] = []
+  _invalidPinLabelMessages: string[] = []
 
   /**
    * Set to true to enable automatic silkscreen text adjustment when it overlaps with other components
@@ -628,109 +628,7 @@ export class NormalComponent<
    * You can override this method to do more complicated things.
    */
   doInitialSchematicComponentRender() {
-    if (this.root?.schematicDisabled) return
-    if (this.getCollapsedSchematicBoxAncestor()) return
-    const { db } = this.root!
-
-    // Insert warnings for invalid pin labels
-    if (this._invalidPinLabelMessages?.length && this.root?.db) {
-      for (const message of this._invalidPinLabelMessages) {
-        let property_name = "pinLabels"
-        const match = message.match(
-          /^Invalid pin label:\s*([^=]+)=\s*'([^']+)'/,
-        )
-        if (match) {
-          const label = match[2]
-          property_name = `pinLabels['${label}']`
-        }
-        this.root.db.source_property_ignored_warning.insert({
-          source_component_id: this.source_component_id!,
-          property_name,
-          message,
-          error_type: "source_property_ignored_warning",
-        })
-      }
-    }
-
-    // Warn when the deprecated schPinSpacing prop is passed
-    if (this._parsedProps.schPinSpacing !== undefined && this.root?.db) {
-      this.root.db.source_property_ignored_warning.insert({
-        source_component_id: this.source_component_id!,
-        property_name: "schPinSpacing",
-        error_type: "source_property_ignored_warning",
-        message:
-          "schPinSpacing is deprecated and will be ignored. Pin spacing is always 0.2.",
-      })
-    }
-
-    const { schematicSymbolName } = this.config
-    const { _parsedProps: props } = this
-
-    const hasSymbolChild = this.children.some(
-      (c) => c.componentName === "Symbol",
-    )
-
-    // Check if there's a custom symbol JSX prop or an inflated symbol child
-    if ((props.symbol && isReactElement(props.symbol)) || hasSymbolChild) {
-      this._doInitialSchematicComponentRenderWithReactSymbol(props.symbol)
-    } else if (schematicSymbolName) {
-      this._doInitialSchematicComponentRenderWithSymbol()
-    } else {
-      const dimensions = this._getSchematicBoxDimensions()
-      if (dimensions) {
-        this._doInitialSchematicComponentRenderWithSchematicBoxDimensions()
-      }
-    }
-
-    const manualPlacement =
-      this.getSubcircuit()?._getSchematicManualPlacementForComponent(this)
-
-    if (
-      this.schematic_component_id &&
-      (this.props.schX !== undefined || this.props.schY !== undefined) &&
-      !!manualPlacement
-    ) {
-      if (!this.schematic_component_id) {
-        return
-      }
-
-      const warning = schematic_manual_edit_conflict_warning.parse({
-        type: "schematic_manual_edit_conflict_warning",
-        schematic_manual_edit_conflict_warning_id: `schematic_manual_edit_conflict_${this.source_component_id}`,
-        message: `${this.getString()} has both manual placement and prop coordinates. schX and schY will be used. Remove schX/schY or clear the manual placement.`,
-        schematic_component_id: this.schematic_component_id!,
-        source_component_id: this.source_component_id!,
-        subcircuit_id: this.getSubcircuit()?.subcircuit_id,
-      })
-
-      db.schematic_manual_edit_conflict_warning.insert(warning)
-    }
-
-    // Warn when schSheetName references a sheet that does not exist, so the
-    // user gets feedback that their schSheetName was ignored.
-    const schSheetName =
-      this._parsedProps?.schSheetName ?? this.props.schSheetName
-    if (schSheetName && this.source_component_id) {
-      const referencedSheet = db.schematic_sheet
-        .list()
-        .find(
-          (sheet) =>
-            sheet.name === schSheetName ||
-            sheet.schematic_sheet_id === schSheetName,
-        )
-      if (!referencedSheet) {
-        db.source_property_ignored_warning.insert({
-          source_component_id: this.source_component_id,
-          property_name: "schSheetName",
-          error_type: "source_property_ignored_warning",
-          subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-          message: `${this.getString()} references schSheetName "${schSheetName}", which does not match any schematic sheet and will be ignored.`,
-        })
-      }
-    }
-
-    // No schematic symbol or dimensions defined, this could be a board, group
-    // or other NormalComponent that doesn't have a schematic representation
+    NormalComponent_doInitialSchematicComponentRender(this)
   }
 
   _getSchematicSymbolDisplayValue(): string | undefined {
