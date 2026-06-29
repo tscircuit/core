@@ -1,6 +1,7 @@
 import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getSchematicSheetIdForPorts } from "lib/utils/schematic/getSchematicSheetIdForPorts"
 import type { AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
 import { Port } from "../../Port"
@@ -148,7 +149,9 @@ export function applyNetLabelPlacements(args: {
         anchor_position,
         center,
         anchor_side,
-        schematic_sheet_id: group._resolveSchematicSheetId(),
+        schematic_sheet_id:
+          getSchematicSheetIdForPorts(schPortIds, db) ??
+          group._resolveSchematicSheetId(),
       }
       db.schematic_net_label.insert(netLabel)
       continue
@@ -192,7 +195,9 @@ export function applyNetLabelPlacements(args: {
       anchor_position,
       center,
       anchor_side,
-      schematic_sheet_id: group._resolveSchematicSheetId(),
+      schematic_sheet_id:
+        getSchematicSheetIdForPorts(schPortIds, db) ??
+        group._resolveSchematicSheetId(),
     }
     db.schematic_net_label.insert(netLabel)
   }

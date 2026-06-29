@@ -6,6 +6,7 @@ import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { getSchematicSheetIdForPorts } from "lib/utils/schematic/getSchematicSheetIdForPorts"
 import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
@@ -126,6 +127,7 @@ export function applyTracesFromSolverOutput(args: {
     source_trace_id: string
     edges: SchematicTrace["edges"]
     subcircuit_connectivity_map_key?: string
+    schematic_sheet_id?: string
   }> = []
 
   debug(`Traces inside SchematicTraceSolver output: ${(traces ?? []).length}`)
@@ -218,10 +220,18 @@ export function applyTracesFromSolverOutput(args: {
       }
     }
 
+    // A trace belongs to the sheet of the components it connects, not the
+    // board it is rendered under. Fall back to the group's sheet when the
+    // endpoints don't resolve to a single sheet.
+    const schematic_sheet_id =
+      getSchematicSheetIdForPorts(solvedTraceSchematicPortIds, db) ??
+      group._resolveSchematicSheetId()
+
     pendingTraces.push({
       source_trace_id,
       edges,
       subcircuit_connectivity_map_key,
+      schematic_sheet_id,
     })
   }
 
@@ -283,14 +293,17 @@ export function applyTracesFromSolverOutput(args: {
   ])
 
   for (const t of visibleTraces) {
+    const pendingTrace = pendingTraces.find(
+      (p) => p.source_trace_id === t.source_trace_id,
+    )
     db.schematic_trace.insert({
       source_trace_id: t.source_trace_id,
       edges: t.edges,
       junctions: junctionsById[t.source_trace_id] ?? [],
-      subcircuit_connectivity_map_key: pendingTraces.find(
-        (p) => p.source_trace_id === t.source_trace_id,
-      )?.subcircuit_connectivity_map_key,
-      schematic_sheet_id: group._resolveSchematicSheetId(),
+      subcircuit_connectivity_map_key:
+        pendingTrace?.subcircuit_connectivity_map_key,
+      schematic_sheet_id:
+        pendingTrace?.schematic_sheet_id ?? group._resolveSchematicSheetId(),
     })
   }
 }

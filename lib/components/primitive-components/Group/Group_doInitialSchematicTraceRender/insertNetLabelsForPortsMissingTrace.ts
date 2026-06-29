@@ -1,6 +1,7 @@
 import type { Group } from "lib/components"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
+import { getSchematicSheetIdForPorts } from "lib/utils/schematic/getSchematicSheetIdForPorts"
 import type { SourceNet } from "circuit-json"
 
 const NEAR_EXISTING_NET_LABEL_DISTANCE = 0.5
@@ -281,7 +282,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
       anchor_position: schPort.center,
       center,
       anchor_side: side,
-      schematic_sheet_id: group._resolveSchematicSheetId(),
+      schematic_sheet_id:
+        getSchematicSheetIdForPorts([schPort.schematic_port_id], db) ??
+        group._resolveSchematicSheetId(),
     }
     db.schematic_net_label.insert(netLabel)
   }
