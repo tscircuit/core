@@ -152,9 +152,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
       text,
     })
 
-    const existingNetLabelForCurrentSourceConnection = db.schematic_net_label
+    const existingNetLabelsForCurrentSourceConnection = db.schematic_net_label
       .list()
-      .find((nl) => {
+      .filter((nl) => {
         return doesSchematicNetLabelRepresentCurrentSourceConnection({
           nl,
           connKey,
@@ -162,6 +162,27 @@ export const insertNetLabelsForPortsMissingTrace = ({
           text,
         })
       })
+
+    const existingNetLabelForCurrentSourceConnection =
+      existingNetLabelsForCurrentSourceConnection.reduce(
+        (nearest, nl) => {
+          if (!nl.anchor_position) return nearest
+          if (!nearest?.anchor_position) return nl
+
+          const nearestDx = nearest.anchor_position.x - schPort.center.x
+          const nearestDy = nearest.anchor_position.y - schPort.center.y
+          const dx = nl.anchor_position.x - schPort.center.x
+          const dy = nl.anchor_position.y - schPort.center.y
+
+          return dx * dx + dy * dy <
+            nearestDx * nearestDx + nearestDy * nearestDy
+            ? nl
+            : nearest
+        },
+        undefined as
+          | (typeof existingNetLabelsForCurrentSourceConnection)[number]
+          | undefined,
+      )
 
     if (
       existingNetLabelForCurrentSourceConnection &&
@@ -191,36 +212,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
         NEAR_EXISTING_NET_LABEL_DISTANCE * NEAR_EXISTING_NET_LABEL_DISTANCE
 
       if (labelIsNearPort) {
-        if (isGndNet) {
-          db.schematic_net_label.update(
-            existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
-            {
-              text,
-              anchor_position: schPort.center,
-              center,
-              anchor_side: side,
-            },
-          )
-        } else if (
-          !isPowerNet &&
-          existingNetLabelForCurrentSourceConnection.text === text
-        ) {
-          const anchor_side =
-            existingNetLabelForCurrentSourceConnection.anchor_side ?? side
-          db.schematic_net_label.update(
-            existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
-            {
-              text,
-              anchor_position: schPort.center,
-              center: computeSchematicNetLabelCenter({
-                anchor_position: schPort.center,
-                anchor_side,
-                text,
-              }),
-              anchor_side,
-            },
-          )
-        }
         continue
       }
 
