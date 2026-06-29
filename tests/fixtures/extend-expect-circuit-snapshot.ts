@@ -1,6 +1,7 @@
 import { type MatcherResult, expect } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
+import { cju } from "@tscircuit/circuit-json-util"
 import type { AnyCircuitElement } from "circuit-json"
 import {
   circuitJsonToPcbSvg,
@@ -8,11 +9,11 @@ import {
   convertCircuitJsonToPcbSvg,
   convertCircuitJsonToPinoutSvg,
   convertCircuitJsonToSchematicSvg,
+  convertCircuitJsonToStackedSchematicSheetsSvg,
 } from "circuit-to-svg"
 import { RootCircuit } from "lib/RootCircuit"
-import { cju } from "@tscircuit/circuit-json-util"
-import { getSchematicComponentTextBoundingBoxRects } from "tests/fixtures/getSchematicComponentTextBoundingBoxRects"
 import looksSame from "looks-same"
+import { getSchematicComponentTextBoundingBoxRects } from "tests/fixtures/getSchematicComponentTextBoundingBoxRects"
 
 async function saveSvgSnapshotOfCircuitJson({
   soup,
@@ -24,7 +25,7 @@ async function saveSvgSnapshotOfCircuitJson({
 }: {
   soup: AnyCircuitElement[]
   testPath: string
-  mode: "pcb" | "schematic" | "pinout"
+  mode: "pcb" | "schematic" | "schematic_stacked" | "pinout"
   updateSnapshot: boolean
   forceUpdateSnapshot: boolean
   options?: any
@@ -41,6 +42,9 @@ async function saveSvgSnapshotOfCircuitJson({
       break
     case "schematic":
       content = convertCircuitJsonToSchematicSvg(soup, options)
+      break
+    case "schematic_stacked":
+      content = convertCircuitJsonToStackedSchematicSheetsSvg(soup, options)
       break
     case "pinout":
       content = convertCircuitJsonToPinoutSvg(soup, options)
@@ -163,6 +167,39 @@ expect.extend({
         Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS),
     })
   },
+  async toMatchStackedSchematicSnapshot(
+    this: any,
+    received: unknown,
+    ...args: any[]
+  ): Promise<MatcherResult> {
+    let circuitJson: AnyCircuitElement[]
+    if (received instanceof RootCircuit) {
+      await received.renderUntilSettled()
+      circuitJson = await received.getCircuitJson()
+    } else {
+      circuitJson = received as AnyCircuitElement[]
+    }
+
+    return saveSvgSnapshotOfCircuitJson({
+      soup: circuitJson,
+      testPath: args[0],
+      mode: "schematic_stacked",
+      options: args[1] ?? {
+        grid: {
+          cellSize: 1,
+          labelCells: true,
+        },
+      },
+      updateSnapshot:
+        process.argv.includes("--update-snapshots") ||
+        process.argv.includes("-u") ||
+        Boolean(process.env.BUN_UPDATE_SNAPSHOTS),
+      forceUpdateSnapshot:
+        process.argv.includes("--force-update-snapshots") ||
+        process.argv.includes("-f") ||
+        Boolean(process.env.BUN_FORCE_UPDATE_SNAPSHOTS),
+    })
+  },
   async toMatchSchematicSnapshotWithBoundingBoxes(
     this: any,
     received: unknown,
@@ -240,6 +277,12 @@ declare module "bun:test" {
     toMatchSchematicSnapshot(
       testPath: string,
       options?: Parameters<typeof convertCircuitJsonToSchematicSvg>[1],
+    ): Promise<MatcherResult>
+    toMatchStackedSchematicSnapshot(
+      testPath: string,
+      options?: Parameters<
+        typeof convertCircuitJsonToStackedSchematicSheetsSvg
+      >[1],
     ): Promise<MatcherResult>
     toMatchSchematicSnapshotWithBoundingBoxes(
       testPath: string,

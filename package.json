@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.1366",
+  "version": "0.0.1367",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -70,7 +70,7 @@
     "circuit-json-to-gltf": "^0.0.105",
     "circuit-json-to-simple-3d": "^0.0.9",
     "circuit-json-to-spice": "^0.0.40",
-    "circuit-to-svg": "^0.0.364",
+    "circuit-to-svg": "^0.0.367",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.0",
     "debug": "^4.3.6",
