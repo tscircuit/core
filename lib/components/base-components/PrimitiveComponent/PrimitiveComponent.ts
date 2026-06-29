@@ -162,6 +162,7 @@ export abstract class PrimitiveComponent<
   source_group_id: string | null = null
   source_component_id: string | null = null
   schematic_component_id: string | null = null
+  schematic_sheet_id?: string | null = null
   pcb_component_id: string | null = null
   cad_component_id: string | null = null
   _reportedInvalidPcbCalcWarnings = new Set<string>()
@@ -1071,6 +1072,23 @@ export abstract class PrimitiveComponent<
   getGroup(): IGroup | null {
     if (this.isGroup) return this as unknown as IGroup
     return this.parent?.getGroup?.() ?? null
+  }
+
+  _resolveSchematicSheetId(): string | undefined {
+    const schSheetName =
+      this._parsedProps?.schSheetName ?? this.props.schSheetName
+    if (schSheetName) {
+      const matchingSheet = this.root?.db.schematic_sheet
+        .list()
+        .find(
+          (sheet) =>
+            sheet.name === schSheetName ||
+            sheet.schematic_sheet_id === schSheetName,
+        )
+      if (matchingSheet) return matchingSheet.schematic_sheet_id
+    }
+    if (this.schematic_sheet_id) return this.schematic_sheet_id
+    return this.parent?._resolveSchematicSheetId?.()
   }
 
   doInitialAssignNameToUnnamedComponents() {

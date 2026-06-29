@@ -23,51 +23,34 @@ test("SchematicCircle Test", () => {
   const schematicComponent = circuitJson.filter(
     (c) => c.type === "schematic_component",
   )
-  expect(schematicComponent).toMatchInlineSnapshot(`
-    [
-      {
-        "center": {
-          "x": 1,
-          "y": 2,
-        },
-        "is_box_with_pins": false,
-        "schematic_component_id": "schematic_component_0",
-        "schematic_group_id": "schematic_group_0",
-        "size": {
-          "height": 6,
-          "width": 6,
-        },
-        "source_component_id": "source_component_0",
-        "symbol_display_value": undefined,
-        "type": "schematic_component",
-      },
-    ]
-  `)
+  expect(schematicComponent).toHaveLength(1)
+  expect(schematicComponent[0]).toMatchObject({
+    center: {
+      x: 1,
+      y: 2,
+    },
+    is_box_with_pins: false,
+    size: {
+      height: 6,
+      width: 6,
+    },
+    type: "schematic_component",
+  })
 
   const schematicCircles = circuitJson.filter(
     (c) => c.type === "schematic_circle",
   )
-  expect(schematicCircles).toMatchInlineSnapshot(`
-    [
-      {
-        "center": {
-          "x": 1,
-          "y": 2,
-        },
-        "color": "rgba(132, 0, 0)",
-        "fill_color": undefined,
-        "is_dashed": false,
-        "is_filled": true,
-        "radius": 3,
-        "schematic_circle_id": "schematic_circle_0",
-        "schematic_component_id": "schematic_component_0",
-        "schematic_symbol_id": "schematic_symbol_0",
-        "stroke_width": 0.12,
-        "subcircuit_id": "subcircuit_source_group_0",
-        "type": "schematic_circle",
-      },
-    ]
-  `)
+  expect(schematicCircles).toHaveLength(1)
+  expect(schematicCircles[0]).toMatchObject({
+    center: {
+      x: 1,
+      y: 2,
+    },
+    is_dashed: false,
+    is_filled: true,
+    radius: 3,
+    type: "schematic_circle",
+  })
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

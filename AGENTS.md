@@ -65,6 +65,8 @@ expect(circuit).toMatchPcbSnapshot(import.meta.path)
 - Special categories: examples, features, repros, subcircuits
 - `BUN_UPDATE_SNAPSHOTS=1 bun test path/to/file.test.ts` to update snapshots
 - Only one test per file, otherwise split into multiple enumerated files e.g. `fn1.test.ts`, `fn2.test.ts`, etc.
+- Almost all tests should have a visual snapshot with clear text (e.g pinLabels) or <pcbnotetext /> such that looking at JUST the svg is enough to understand what is being tested or the expected output
+- Don't add trivial `expect` or assertions, the visual snapshots methods e.g. `toMatchSchematicSnapshot`, `toMatchPcbSnapshot` etc. are the most important part of the test
 
 ## Component Development
 

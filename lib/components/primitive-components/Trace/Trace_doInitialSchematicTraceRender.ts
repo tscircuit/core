@@ -149,6 +149,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         junctions,
         subcircuit_connectivity_map_key:
           trace.subcircuit_connectivity_map_key ?? undefined,
+        schematic_sheet_id: trace._resolveSchematicSheetId(),
       })
       trace.schematic_trace_id = dbTrace.schematic_trace_id
       return
@@ -167,6 +168,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
           text: schematicNetLabelText,
         }),
         anchor_side: side,
+        schematic_sheet_id: trace._resolveSchematicSheetId(),
       })
 
       return
@@ -183,6 +185,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         text: net._parsedProps.name,
       }),
       anchor_side: side,
+      schematic_sheet_id: trace._resolveSchematicSheetId(),
     })
 
     return
@@ -455,6 +458,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     junctions,
     subcircuit_connectivity_map_key:
       trace.subcircuit_connectivity_map_key ?? undefined,
+    schematic_sheet_id: trace._resolveSchematicSheetId(),
   })
   trace.schematic_trace_id = dbTrace.schematic_trace_id
 

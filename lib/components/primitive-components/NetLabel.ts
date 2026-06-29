@@ -129,6 +129,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       anchor_position: anchorPos,
       center,
       anchor_side: anchorSide,
+      schematic_sheet_id: this._resolveSchematicSheetId(),
     })
 
     this.source_net_label_id = netLabel.source_net_id
@@ -284,6 +285,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
         edges,
         junctions: [],
         subcircuit_connectivity_map_key,
+        schematic_sheet_id: this._resolveSchematicSheetId(),
       })
 
       // Mark the schematic port as connected

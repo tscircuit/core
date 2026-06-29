@@ -165,6 +165,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
           y: titleY,
         },
         rotation: 0,
+        schematic_sheet_id: this._resolveSchematicSheetId(),
       })
     }
   }

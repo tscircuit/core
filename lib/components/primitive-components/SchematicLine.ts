@@ -50,6 +50,7 @@ export class SchematicLine extends PrimitiveComponent<
       dash_length: props.dashLength,
       dash_gap: props.dashGap,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+      schematic_sheet_id: this._resolveSchematicSheetId(),
     })
 
     this.schematic_line_id = schematic_line.schematic_line_id

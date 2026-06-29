@@ -96,6 +96,7 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
         text: netLabelText,
       }),
       anchor_side: toSide,
+      schematic_sheet_id: trace._resolveSchematicSheetId(),
     })
   }
   if (!existingFromNetLabel) {
@@ -111,6 +112,7 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
         text: netLabelText,
       }),
       anchor_side: fromSide,
+      schematic_sheet_id: trace._resolveSchematicSheetId(),
     })
   }
 }

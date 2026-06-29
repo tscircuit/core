@@ -111,6 +111,7 @@ export const Group_doInitialSchematicBoxComponentRender = (
       portLabels,
     ) as SchematicComponent["pin_styles"],
     port_labels: portLabels,
+    schematic_sheet_id: group._resolveSchematicSheetId(),
   })
 
   group.schematic_component_id = schematicComponent.schematic_component_id
@@ -137,6 +138,7 @@ export const Group_doInitialSchematicBoxComponentRender = (
       },
       color: "#006464",
       font_size: 0.18,
+      schematic_sheet_id: group._resolveSchematicSheetId(),
     })
   }
 }

@@ -290,6 +290,7 @@ export function applyTracesFromSolverOutput(args: {
       subcircuit_connectivity_map_key: pendingTraces.find(
         (p) => p.source_trace_id === t.source_trace_id,
       )?.subcircuit_connectivity_map_key,
+      schematic_sheet_id: group._resolveSchematicSheetId(),
     })
   }
 }

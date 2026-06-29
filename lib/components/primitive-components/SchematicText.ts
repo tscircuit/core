@@ -40,6 +40,7 @@ export class SchematicText extends PrimitiveComponent<
         y: globalPos.y,
       },
       rotation: props.schRotation ?? 0,
+      schematic_sheet_id: this._resolveSchematicSheetId(),
     })
 
     this.schematic_text_id = schematic_text.schematic_text_id

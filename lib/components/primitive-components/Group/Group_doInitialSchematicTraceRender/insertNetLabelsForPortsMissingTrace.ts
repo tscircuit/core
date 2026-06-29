@@ -281,6 +281,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
       anchor_position: schPort.center,
       center,
       anchor_side: side,
+      schematic_sheet_id: group._resolveSchematicSheetId(),
     }
     db.schematic_net_label.insert(netLabel)
   }
