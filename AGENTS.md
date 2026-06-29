@@ -98,6 +98,14 @@ circuit.selectOne("resistor") // Find first resistor
 - Biome for formatting/linting
 - External services: @tscircuit/footprinter, @tscircuit/capacity-autorouter
 
+## Code Conventions
+
+- **Enum / discriminant values use underscores, not hyphens.** Any string-literal
+  union or enum-like value (e.g. snapshot modes, circuit-json `type` fields,
+  warning names) must be `snake_case`: use `schematic_stacked`, not
+  `schematic-stacked`. This keeps values consistent with the circuit-json
+  ecosystem (`schematic_component`, `source_property_ignored_warning`, etc.).
+
 ## Build Configuration
 
 - ESM output with TypeScript declarations
