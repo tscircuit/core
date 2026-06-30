@@ -287,9 +287,6 @@ export function applyNetLabelPlacements(args: {
 
       const text = sourceNet.name
       if (typeof text !== "string") {
-        debug(
-          `skipping net label placement for "${placement.netId!}" REASON:source net has no name`,
-        )
         continue
       }
 
@@ -312,9 +309,6 @@ export function applyNetLabelPlacements(args: {
           explicitNetLabels,
         })
         if (explicitIds.length > 0) {
-          debug(
-            `deleting explicit net label for "${placement.netId!}" REASON:overlaps solver placement for same source net`,
-          )
           for (const schematic_net_label_id of explicitIds) {
             db.schematic_net_label.delete(schematic_net_label_id)
           }
