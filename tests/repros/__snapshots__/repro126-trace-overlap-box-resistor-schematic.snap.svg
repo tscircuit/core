@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(64.7938834574,0,0,-64.7938834574,665.3813480007,321.533167269)" data-software-used-string="@tscircuit/core@0.0.1371"><style>
+<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(64.7938834574,0,0,-64.7938834574,665.3813480007,321.533167269)" data-software-used-string="@tscircuit/core@0.0.1372"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -61,13 +61,6 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="TPS63802_3V3_BuckBoost
     L 797.1073130695942,339.09230968595534
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.295877669148px"/><text class="net-label-text sch-net-label-text" x="790.1095736561949" y="336.75972988148897" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.662899022331999px" transform="rotate(-90 790.1095736561949 336.75972988148897)">FB</text><path class="net-label sch-net-label" d="
-    M 765.81186735967,305.33469640465
-    L 772.8096067730693,308.8335661113496
-    L 772.8096067730693,332.3494262141553
-    L 758.8141279462708,332.3494262141553
-    L 758.8141279462708,308.8335661113496
-    Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.295877669148px"/><text class="net-label-text sch-net-label-text" x="765.81186735967" y="311.166145915816" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.662899022331999px" transform="rotate(90 765.81186735967 311.166145915816)">PG</text><path class="net-label sch-net-label" d="
     M 782.01033822402,258.359130898035
     L 785.5092079307195,251.36139148463582
     L 824.2473110537837,251.36139148463582
