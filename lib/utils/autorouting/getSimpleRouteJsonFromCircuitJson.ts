@@ -444,10 +444,44 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     .filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id)
 
   const connectionsFromNets: SimpleRouteConnection[] = []
+  const connectionFromNetId = new Map<string, SimpleRouteConnection>()
+  const handledNetConnectivityKeys = new Set<string>()
+  const sourceTraces = db.source_trace.list()
   for (const net of source_nets) {
-    const connectedSourceTraces = db.source_trace
-      .list()
-      .filter((st) => st.connected_source_net_ids?.includes(net.source_net_id))
+    const connectedNetId = net.source_net_id
+      ? connMap.getNetConnectedToId(net.source_net_id)
+      : null
+    const netConnectivityKey = connectedNetId ?? net.source_net_id
+    if (
+      !netConnectivityKey ||
+      handledNetConnectivityKeys.has(netConnectivityKey)
+    ) {
+      continue
+    }
+    handledNetConnectivityKeys.add(netConnectivityKey)
+
+    const connectedSourceNetIds = source_nets
+      .filter((sourceNet) => {
+        if (!connectedNetId)
+          return sourceNet.source_net_id === net.source_net_id
+        return (
+          connMap.getNetConnectedToId(sourceNet.source_net_id) ===
+          connectedNetId
+        )
+      })
+      .map((sourceNet) => sourceNet.source_net_id)
+    const connectedSourceNetIdSet = new Set(connectedSourceNetIds)
+    const connectedSourceTraces = sourceTraces.filter((st) => {
+      if (
+        st.connected_source_net_ids?.some((sourceNetId) =>
+          connectedSourceNetIdSet.has(sourceNetId),
+        )
+      ) {
+        return true
+      }
+      if (!connectedNetId || !st.source_trace_id) return false
+      return connMap.getNetConnectedToId(st.source_trace_id) === connectedNetId
+    })
 
     let nominalTraceWidthFromConnectedTraces: number | undefined
     for (const sourceTrace of connectedSourceTraces) {
@@ -478,12 +512,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       }
     }
 
-    connectionsFromNets.push({
+    const connection: SimpleRouteConnection = {
       name: net.source_net_id ?? connMap.getNetConnectedToId(net.source_net_id),
       nominalTraceWidth: nominalTraceWidthFromConnectedTraces,
       width: nominalTraceWidthFromConnectedTraces,
       pointsToConnect,
-    })
+    }
+    connectionsFromNets.push(connection)
+    for (const sourceNetId of connectedSourceNetIds) {
+      connectionFromNetId.set(sourceNetId, connection)
+    }
   }
 
   const connectionsFromBreakoutPoints: SimpleRouteConnection[] = []
@@ -532,7 +570,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
     // Net-based breakout points
     if (bp.source_net_id) {
-      const conn = connectionsFromNets.find((c) => c.name === bp.source_net_id)
+      const conn = connectionFromNetId.get(bp.source_net_id)
       if (conn) {
         conn.pointsToConnect.push(pt)
       } else {
