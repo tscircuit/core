@@ -462,7 +462,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     const connectedSourceNetIds = source_nets
       .filter(
         (sourceNet) =>
-          getSourceConnectivityKey(sourceNet.source_net_id) === netConnectivityKey,
+          getSourceConnectivityKey(sourceNet.source_net_id) ===
+          netConnectivityKey,
       )
       .map((sourceNet) => sourceNet.source_net_id)
     const connectedSourceTraces = sourceTraces.filter((st) =>
