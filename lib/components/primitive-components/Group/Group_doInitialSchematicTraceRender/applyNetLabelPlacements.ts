@@ -1,9 +1,13 @@
 import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
-import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import {
+  computeSchematicNetLabelCenter,
+  getSchematicNetLabelTextWidth,
+} from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import type { AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
 import { Port } from "../../Port"
+import type { NetLabel } from "../../NetLabel"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import Debug from "debug"
 import type { SourceNet } from "circuit-json"
@@ -11,8 +15,73 @@ import {
   getPortIdsInsideExpandedTextBounds,
   snapPointToPinInsideExpandedBoundingBox,
 } from "./snap-to-pins-inside-expanded-bounding-box"
+import { doBoundsOverlap, type Bounds, type Point } from "@tscircuit/math-utils"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
+
+const NET_LABEL_TEXT_HEIGHT = 0.18
+type SchematicPortId = string
+type SchematicNetLabelId = string
+type NetLabelText = string
+
+// "Explicit" net labels are user-authored (placed directly via a <netlabel/> in
+// the source), as opposed to labels the trace solver places automatically.
+interface ExplicitNetLabel {
+  schematic_net_label_id: SchematicNetLabelId
+  text: NetLabelText
+  source_net_id?: string | null
+  center?: Point
+  schematicPortIds: SchematicPortId[]
+}
+
+const getNetLabelTextBounds = ({
+  center,
+  text,
+}: {
+  center: Point
+  text: NetLabelText
+}): Bounds => {
+  const width = getSchematicNetLabelTextWidth({ text })
+  const halfWidth = width / 2
+  const halfHeight = NET_LABEL_TEXT_HEIGHT / 2
+  return {
+    minX: center.x - halfWidth,
+    maxX: center.x + halfWidth,
+    minY: center.y - halfHeight,
+    maxY: center.y + halfHeight,
+  }
+}
+
+const isSameNet = (label: ExplicitNetLabel, sourceNet: SourceNet) =>
+  label.source_net_id != null && label.source_net_id === sourceNet.source_net_id
+
+// An explicit label is redundant with a solver placement when it labels the same
+// net and either shares one of the placement's ports or visually overlaps it.
+const isExplicitNetLabelRedundantWithPlacement = (
+  label: ExplicitNetLabel,
+  solverPlacement: {
+    sourceNet: SourceNet
+    text: NetLabelText
+    schematicPortIds: Set<SchematicPortId>
+    bounds: Bounds
+  },
+) => {
+  if (!isSameNet(label, solverPlacement.sourceNet)) {
+    return false
+  }
+  if (
+    label.schematicPortIds.some((id) =>
+      solverPlacement.schematicPortIds.has(id),
+    )
+  ) {
+    return true
+  }
+  if (!label.center) return false
+  return doBoundsOverlap(
+    getNetLabelTextBounds({ center: label.center, text: label.text }),
+    solverPlacement.bounds,
+  )
+}
 
 export function applyNetLabelPlacements(args: {
   group: Group<any>
@@ -81,6 +150,23 @@ export function applyNetLabelPlacements(args: {
     }
   }
   const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
+  const explicitNetLabels: ExplicitNetLabel[] = (
+    group.selectAll("netlabel") as NetLabel[]
+  )
+    .filter((label) => label.schematic_net_label_id)
+    .map((label) => {
+      const dbLabel = db.schematic_net_label.get(label.schematic_net_label_id!)
+      return {
+        schematic_net_label_id: label.schematic_net_label_id!,
+        text: label._getNetName(),
+        source_net_id: label.source_net_label_id,
+        center: dbLabel?.center,
+        schematicPortIds: label
+          ._getConnectedPorts()
+          .map((port) => port.schematic_port_id)
+          .filter((id): id is string => Boolean(id)),
+      }
+    })
 
   for (const placement of dedupedNetLabelPlacements) {
     debug(`processing placement: ${placement.netId}`)
@@ -159,6 +245,22 @@ export function applyNetLabelPlacements(args: {
         anchor_side,
         text,
       })
+
+      if (!isPowerOrGroundNet) {
+        const solverPlacement = {
+          sourceNet,
+          text,
+          schematicPortIds: new Set(schPortIds),
+          bounds: getNetLabelTextBounds({ center, text }),
+        }
+        if (
+          explicitNetLabels.some((label) =>
+            isExplicitNetLabelRedundantWithPlacement(label, solverPlacement),
+          )
+        ) {
+          continue
+        }
+      }
 
       const netLabel: Parameters<typeof db.schematic_net_label.insert>[0] = {
         text,
