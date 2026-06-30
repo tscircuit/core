@@ -9,6 +9,7 @@ import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
 import { parseSimulationGraphValue } from "lib/utils/simulation/parseSimulationGraphValue"
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { Ammeter_doInitialSchematicLayout } from "./Ammeter_doInitialSchematicLayout"
 
 export class Ammeter extends NormalComponent<
   typeof ammeterProps,
@@ -125,6 +126,10 @@ export class Ammeter extends NormalComponent<
             : undefined,
       } as SimulationOscilloscopeTraceInput)
     }
+  }
+
+  doInitialSchematicLayout() {
+    Ammeter_doInitialSchematicLayout(this)
   }
 
   pos = this.portMap.pos
