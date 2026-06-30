@@ -7,6 +7,10 @@ import { Port } from "../../Port"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import Debug from "debug"
 import type { SourceNet } from "circuit-json"
+import {
+  getPortIdsInsideExpandedTextBounds,
+  snapPointToPinInsideExpandedBoundingBox,
+} from "./snap-to-pins-inside-expanded-bounding-box"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -30,7 +34,8 @@ export function applyNetLabelPlacements(args: {
     schematicPortIdsWithPreExistingNetLabels,
     schematicPortIdsWithRoutedTraces,
   } = args
-  const { db } = group.root!
+  const root = group.root!
+  const { db } = root
 
   // Place net labels suggested by the solver
   const netLabelPlacements =
@@ -85,7 +90,7 @@ export function applyNetLabelPlacements(args: {
       .find((id) => userNetIdToConnKey.get(id))
     const placementConnKey = userNetIdToConnKey.get(placementUserNetId!)
 
-    const anchor_position = placement.anchorPoint
+    let anchor_position = placement.anchorPoint
 
     const orientation = placement.orientation as AxisDirection
     const anchor_side = oppositeSide(orientation)
@@ -135,6 +140,19 @@ export function applyNetLabelPlacements(args: {
       }
 
       const text = sourceNet.name
+
+      const eligiblePortIds = getPortIdsInsideExpandedTextBounds(root)
+
+      if (!hasRoutedTraceForPlacementPort) {
+        anchor_position = snapPointToPinInsideExpandedBoundingBox(
+          {
+            point: anchor_position,
+            schematicPortIds: schPortIds,
+            eligiblePortIds,
+          },
+          root,
+        )
+      }
 
       const center = computeSchematicNetLabelCenter({
         anchor_position,

@@ -590,20 +590,20 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 408.0842185127778,508.5432473444776
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.45523520485600005px"/><text class="net-label-text sch-net-label-text" x="407.26479514403695" y="511.0015174507" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="4.097116843704px" transform="">RAW</text><path class="net-label sch-net-label" d="
-    M 452.503793626602,326.63125948402
-    L 453.73292867971315,324.1729893777976
-    L 480.25493171462375,324.1729893777976
-    L 480.25493171462375,329.0895295902424
-    L 453.73292867971315,329.0895295902424
+    M 451.934749620532,326.63125948402
+    L 453.16388467364317,324.1729893777976
+    L 479.68588770855376,324.1729893777976
+    L 479.68588770855376,329.0895295902424
+    L 453.16388467364317,329.0895295902424
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.45523520485600005px"/><text class="net-label-text sch-net-label-text" x="454.552352048454" y="326.63125948402" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="4.097116843704px" transform="">PWR_LED_K</text><path class="net-label sch-net-label" d="
-    M 427.12443095588,360.77389984822
-    L 425.8952959027688,363.23216995444244
-    L 399.3732928678582,363.23216995444244
-    L 399.3732928678582,358.3156297419976
-    L 425.8952959027688,358.3156297419976
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.45523520485600005px"/><text class="net-label-text sch-net-label-text" x="453.983308042384" y="326.63125948402" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="4.097116843704px" transform="">PWR_LED_K</text><path class="net-label sch-net-label" d="
+    M 427.12443095588003,360.77389984822
+    L 425.89529590276885,363.23216995444244
+    L 399.37329286785825,363.23216995444244
+    L 399.37329286785825,358.3156297419976
+    L 425.89529590276885,358.3156297419976
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.45523520485600005px"/><text class="net-label-text sch-net-label-text" x="425.07587253402795" y="360.77389984822" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="4.097116843704px" transform="">PWR_LED_K</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.45523520485600005px"/><text class="net-label-text sch-net-label-text" x="425.075872534028" y="360.77389984822" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="4.097116843704px" transform="">PWR_LED_K</text><path class="net-label sch-net-label" d="
     M 683.421851289808,326.63125948402
     L 684.6509863429193,324.1729893777976
     L 694.978755690419,324.1729893777976
