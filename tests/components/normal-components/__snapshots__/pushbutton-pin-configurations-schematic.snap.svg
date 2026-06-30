@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(98.7654320988,0,0,-98.7654320988,600,355.5555555556)" data-software-used-string="@tscircuit/core@0.0.1353"><style>
+<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(98.7654320988,0,0,-98.7654320988,600,355.5555555556)" data-software-used-string="@tscircuit/core@0.0.1371"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -43,13 +43,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 841.5802469136648,201.67901234566958
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="838.024691358108" y="212.34567901233999" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN1</text><path class="net-label sch-net-label" d="
-    M 257.283950617164,212.34567901233999
-    L 251.95061728382882,223.0123456790104
-    L 202.12016460891425,223.01234567901037
-    L 202.12016460891425,201.67901234566958
-    L 251.95061728382882,201.67901234566958
+    M 254.3209876542,212.34567901233999
+    L 248.9876543208648,223.0123456790104
+    L 199.15720164595024,223.01234567901037
+    L 199.15720164595024,201.67901234566958
+    L 248.9876543208648,201.67901234566958
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="248.395061728272" y="212.34567901233999" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="245.43209876530798" y="212.34567901233999" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN2</text><path class="net-label sch-net-label" d="
     M 234.56790123443994,508.64197530874003
     L 229.23456790110475,519.3086419754104
     L 179.40411522619019,519.3086419754104
@@ -57,13 +57,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 229.23456790110475,497.97530864206965
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="225.67901234554793" y="508.64197530874003" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN2</text><path class="net-label sch-net-label" d="
-    M 646.419753086436,212.34567901233999
-    L 651.7530864197712,201.67901234566958
-    L 701.5835390946858,201.67901234566958
-    L 701.5835390946858,223.0123456790104
-    L 651.7530864197712,223.0123456790104
+    M 649.3827160494,212.34567901233999
+    L 654.7160493827352,201.67901234566958
+    L 704.5465020576497,201.67901234566958
+    L 704.5465020576497,223.0123456790104
+    L 654.7160493827352,223.0123456790104
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="655.308641975328" y="212.34567901233999" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN3</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="658.271604938292" y="212.34567901233999" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN3</text><path class="net-label sch-net-label" d="
     M 353.086419753,508.64197530874003
     L 358.41975308633516,497.97530864206965
     L 408.25020576124973,497.97530864206965
