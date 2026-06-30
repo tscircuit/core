@@ -12,9 +12,6 @@ test("<ammeter /> emits source and simulation current probe", async () => {
         name="AM1"
         color="#ff0000"
         graphDisplayName="I_AM1"
-        graphCenter={0}
-        graphOffsetDivs={1}
-        graphUnitsPerDiv={0.01}
         connections={{
           pos: ".R1 > .pin2",
           neg: ".R2 > .pin1",
@@ -82,9 +79,6 @@ test("<ammeter /> emits source and simulation current probe", async () => {
     simulation_current_probe_id: currentProbe.simulation_current_probe_id,
     display_name: "I_AM1",
     color: "#ff0000",
-    display_center_value: 0,
-    display_center_offset_divs: 1,
-    amps_per_div: 0.01,
   })
 
   const schematicComponent = circuit.db.schematic_component.getWhere({

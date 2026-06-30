@@ -5,6 +5,7 @@ import type {
 } from "circuit-json"
 import { selectBestLabelAlignment } from "lib/utils/schematic/selectBestLabelAlignment"
 import { getSimulationColorForId } from "lib/utils/simulation/getSimulationColorForId"
+import { parseSimulationGraphValue } from "lib/utils/simulation/parseSimulationGraphValue"
 import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { Net } from "./Net"
@@ -32,8 +33,8 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
       color,
       graphDisplayName,
       graphCenter,
-      graphOffsetDivs,
-      graphUnitsPerDiv,
+      graphVerticalOffset,
+      graphVoltagePerDiv,
     } = this._parsedProps
 
     const subcircuit = this.getSubcircuit()
@@ -143,17 +144,27 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
     const hasGraphDisplayProps =
       graphDisplayName !== undefined ||
       graphCenter !== undefined ||
-      graphOffsetDivs !== undefined ||
-      graphUnitsPerDiv !== undefined
+      graphVerticalOffset !== undefined ||
+      graphVoltagePerDiv !== undefined
 
     if (hasGraphDisplayProps) {
+      const graphVoltagePerDivValue =
+        parseSimulationGraphValue(graphVoltagePerDiv)
+      const graphVerticalOffsetValue =
+        parseSimulationGraphValue(graphVerticalOffset)
+
       db.simulation_oscilloscope_trace.insert({
         simulation_voltage_probe_id,
         display_name: graphDisplayName,
         color: color ?? undefined,
         display_center_value: graphCenter,
-        display_center_offset_divs: graphOffsetDivs,
-        volts_per_div: graphUnitsPerDiv,
+        volts_per_div: graphVoltagePerDivValue,
+        display_center_offset_divs:
+          graphVerticalOffsetValue !== undefined &&
+          graphVoltagePerDivValue !== undefined &&
+          graphVoltagePerDivValue !== 0
+            ? graphVerticalOffsetValue / graphVoltagePerDivValue
+            : undefined,
       } as SimulationOscilloscopeTraceInput)
     }
   }

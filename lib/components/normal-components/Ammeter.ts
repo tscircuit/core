@@ -6,13 +6,17 @@ import type {
 } from "circuit-json"
 import type { RenderPhase } from "lib/components/base-components/Renderable"
 import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
+import { parseSimulationGraphValue } from "lib/utils/simulation/parseSimulationGraphValue"
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { Ammeter_doInitialSchematicLayout } from "./Ammeter_doInitialSchematicLayout"
 
 export class Ammeter extends NormalComponent<
   typeof ammeterProps,
   "pos" | "neg"
 > {
+  simulation_current_probe_id: string | null = null
+
   get config() {
     return {
       componentName: "Ammeter",
@@ -78,8 +82,8 @@ export class Ammeter extends NormalComponent<
       color,
       graphDisplayName,
       graphCenter,
-      graphOffsetDivs,
-      graphUnitsPerDiv,
+      graphVerticalOffset,
+      graphCurrentPerDiv,
     } = this._parsedProps
     const posPort = this.portMap.pos
     const negPort = this.portMap.neg
@@ -94,22 +98,38 @@ export class Ammeter extends NormalComponent<
       color: color,
     } as SimulationCurrentProbeInput)
 
+    this.simulation_current_probe_id = simulation_current_probe_id
+
     const hasGraphDisplayProps =
       graphDisplayName !== undefined ||
       graphCenter !== undefined ||
-      graphOffsetDivs !== undefined ||
-      graphUnitsPerDiv !== undefined
+      graphVerticalOffset !== undefined ||
+      graphCurrentPerDiv !== undefined
 
     if (hasGraphDisplayProps) {
+      const graphCurrentPerDivValue =
+        parseSimulationGraphValue(graphCurrentPerDiv)
+      const graphVerticalOffsetValue =
+        parseSimulationGraphValue(graphVerticalOffset)
+
       db.simulation_oscilloscope_trace.insert({
         simulation_current_probe_id,
         display_name: graphDisplayName,
         color: color,
         display_center_value: graphCenter,
-        display_center_offset_divs: graphOffsetDivs,
-        amps_per_div: graphUnitsPerDiv,
+        amps_per_div: graphCurrentPerDivValue,
+        display_center_offset_divs:
+          graphVerticalOffsetValue !== undefined &&
+          graphCurrentPerDivValue !== undefined &&
+          graphCurrentPerDivValue !== 0
+            ? graphVerticalOffsetValue / graphCurrentPerDivValue
+            : undefined,
       } as SimulationOscilloscopeTraceInput)
     }
+  }
+
+  doInitialSchematicLayout() {
+    Ammeter_doInitialSchematicLayout(this)
   }
 
   pos = this.portMap.pos
