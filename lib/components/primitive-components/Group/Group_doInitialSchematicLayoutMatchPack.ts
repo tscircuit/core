@@ -1,7 +1,4 @@
-import {
-  type CircuitJsonTreeNode,
-  getCircuitJsonTree,
-} from "@tscircuit/circuit-json-util"
+import { getCircuitJsonTree } from "@tscircuit/circuit-json-util"
 import type { z } from "zod"
 import type { Group } from "./Group"
 import { applySchematicMatchPackLayoutToTree } from "./applySchematicMatchPackLayoutToTree"
@@ -13,48 +10,41 @@ export function Group_doInitialSchematicLayoutMatchPack<
 >(group: Group<Props>): void {
   const { db } = group.root!
 
-  const tree = getCircuitJsonTree(db.toArray(), {
-    source_group_id: group.source_group_id!,
-  })
-
-  // Resolve the schematic sheet each layout child belongs to, indexed by source
-  // id, using the same resolution the rest of the schematic render uses.
-  const sheetIdBySourceId = new Map<string, string | undefined>()
+  // Collect the distinct schematic sheets used by this group's layout children,
+  // using the same resolution the rest of the schematic render uses.
+  const sheetIds = new Set<string | undefined>()
   for (const child of group.children) {
-    const sourceId = child.source_component_id ?? child.source_group_id
-    if (!sourceId) continue
-    sheetIdBySourceId.set(sourceId, child._resolveSchematicSheetId())
-  }
-
-  // Partition the tree's children by the sheet they belong to in a single pass.
-  const childNodesBySheetId = new Map<
-    string | undefined,
-    CircuitJsonTreeNode[]
-  >()
-  for (const childNode of tree.childNodes) {
-    const sourceId =
-      childNode.sourceComponent?.source_component_id ??
-      childNode.sourceGroup?.source_group_id
-    let sheetId: string | undefined
-    if (sourceId) sheetId = sheetIdBySourceId.get(sourceId)
-
-    const childNodesForSheet = childNodesBySheetId.get(sheetId)
-    if (childNodesForSheet) {
-      childNodesForSheet.push(childNode)
-    } else {
-      childNodesBySheetId.set(sheetId, [childNode])
-    }
+    if (!child.source_component_id && !child.source_group_id) continue
+    sheetIds.add(child._resolveSchematicSheetId())
   }
 
   // A single sheet (or none) lays the whole group out together, as before.
-  if (childNodesBySheetId.size <= 1) {
+  if (sheetIds.size <= 1) {
+    const tree = getCircuitJsonTree(db.toArray(), {
+      source_group_id: group.source_group_id!,
+    })
     applySchematicMatchPackLayoutToTree(group, tree)
     return
   }
 
-  // Otherwise lay out each sheet on its own tree, so matchpack only ever
-  // receives the components of one sheet at a time.
-  for (const childNodes of childNodesBySheetId.values()) {
-    applySchematicMatchPackLayoutToTree(group, { ...tree, childNodes })
+  // Otherwise lay out each sheet independently, so matchpack only ever receives
+  // the components of one sheet at a time. This mirrors how sections are laid
+  // out in Group_doInitialSchematicLayoutSections: compute a tree per sheet and
+  // narrow it to that sheet's children.
+  for (const sheetId of sheetIds) {
+    const sheetTree = getCircuitJsonTree(db.toArray(), {
+      source_group_id: group.source_group_id!,
+    })
+    sheetTree.childNodes = sheetTree.childNodes.filter((childNode) => {
+      const sourceId =
+        childNode.sourceComponent?.source_component_id ??
+        childNode.sourceGroup?.source_group_id
+      const childInstance = group.children.find(
+        (c) =>
+          c.source_component_id === sourceId || c.source_group_id === sourceId,
+      )
+      return childInstance?._resolveSchematicSheetId() === sheetId
+    })
+    applySchematicMatchPackLayoutToTree(group, sheetTree)
   }
 }
