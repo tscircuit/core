@@ -47,29 +47,32 @@ const SubcircuitExample2 = (props: any) => {
   )
 }
 
-test.failing("subcircuit-circuit-json14 - subcircuit name prop being passed to the chip should connect chip of the other subcircuit", async () => {
-  const { circuit } = getTestFixture()
-  circuit.add(
-    <board>
-      <SubcircuitExample1 name="Sub1" exposedNets={["SDA", "SCL"]} />
-      <SubcircuitExample2 name="Sub2" exposedNets={["SDA", "SCL"]} />
+test.failing(
+  "subcircuit-circuit-json14 - subcircuit name prop being passed to the chip should connect chip of the other subcircuit",
+  async () => {
+    const { circuit } = getTestFixture()
+    circuit.add(
+      <board>
+        <SubcircuitExample1 name="Sub1" exposedNets={["SDA", "SCL"]} />
+        <SubcircuitExample2 name="Sub2" exposedNets={["SDA", "SCL"]} />
 
-      <net name="I2C_SDA" />
-      <net name="I2C_SCL" />
+        <net name="I2C_SDA" />
+        <net name="I2C_SCL" />
 
-      <trace from=".Sub1 > net.SDA" to="net.I2C_SDA" />
-      <trace from=".Sub2 > net.SDA" to="net.I2C_SDA" />
+        <trace from=".Sub1 > net.SDA" to="net.I2C_SDA" />
+        <trace from=".Sub2 > net.SDA" to="net.I2C_SDA" />
 
-      <trace from=".Sub1 > net.SCL" to="net.I2C_SCL" />
-      <trace from=".Sub2 > net.SCL" to="net.I2C_SCL" />
-    </board>,
-  )
+        <trace from=".Sub1 > net.SCL" to="net.I2C_SCL" />
+        <trace from=".Sub2 > net.SCL" to="net.I2C_SCL" />
+      </board>,
+    )
 
-  await circuit.renderUntilSettled()
+    await circuit.renderUntilSettled()
 
-  const pcbTrace = circuit.db.pcb_trace.list()
-  expect(pcbTrace).toHaveLength(2)
+    const pcbTrace = circuit.db.pcb_trace.list()
+    expect(pcbTrace).toHaveLength(2)
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+    expect(circuit).toMatchPcbSnapshot(import.meta.path)
+    expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  },
+)
