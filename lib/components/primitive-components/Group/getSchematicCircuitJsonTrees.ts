@@ -97,8 +97,9 @@ function getCircuitJsonScopedToSchematicSheet({
  */
 export function getSchematicCircuitJsonTrees(
   circuitJson: AnyCircuitElement[],
-  { source_group_id }: { source_group_id: string },
+  opts: { source_group_id: string },
 ): CircuitJsonTreeNode[] {
+  const { source_group_id } = opts
   const sheetIdBySourceComponentId = new Map<string, string>()
   for (const element of circuitJson) {
     if (element.type !== "schematic_component") continue
