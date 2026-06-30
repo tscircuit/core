@@ -447,11 +447,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const connectionFromNetId = new Map<string, SimpleRouteConnection>()
   const handledNetConnectivityKeys = new Set<string>()
   const sourceTraces = db.source_trace.list()
+  const getConnectivityKey = (id?: string | null) =>
+    id ? (connMap.getNetConnectedToId(id) ?? id) : null
   for (const net of source_nets) {
-    const connectedNetId = net.source_net_id
-      ? connMap.getNetConnectedToId(net.source_net_id)
-      : null
-    const netConnectivityKey = connectedNetId ?? net.source_net_id
+    const netConnectivityKey = getConnectivityKey(net.source_net_id)
     if (
       !netConnectivityKey ||
       handledNetConnectivityKeys.has(netConnectivityKey)
@@ -461,27 +460,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     handledNetConnectivityKeys.add(netConnectivityKey)
 
     const connectedSourceNetIds = source_nets
-      .filter((sourceNet) => {
-        if (!connectedNetId)
-          return sourceNet.source_net_id === net.source_net_id
-        return (
-          connMap.getNetConnectedToId(sourceNet.source_net_id) ===
-          connectedNetId
-        )
-      })
+      .filter(
+        (sourceNet) =>
+          getConnectivityKey(sourceNet.source_net_id) === netConnectivityKey,
+      )
       .map((sourceNet) => sourceNet.source_net_id)
-    const connectedSourceNetIdSet = new Set(connectedSourceNetIds)
-    const connectedSourceTraces = sourceTraces.filter((st) => {
-      if (
-        st.connected_source_net_ids?.some((sourceNetId) =>
-          connectedSourceNetIdSet.has(sourceNetId),
-        )
-      ) {
-        return true
-      }
-      if (!connectedNetId || !st.source_trace_id) return false
-      return connMap.getNetConnectedToId(st.source_trace_id) === connectedNetId
-    })
+    const connectedSourceTraces = sourceTraces.filter((st) =>
+      [st.source_trace_id, ...(st.connected_source_net_ids ?? [])].some(
+        (id) => getConnectivityKey(id) === netConnectivityKey,
+      ),
+    )
 
     let nominalTraceWidthFromConnectedTraces: number | undefined
     for (const sourceTrace of connectedSourceTraces) {
