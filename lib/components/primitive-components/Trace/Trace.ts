@@ -299,6 +299,15 @@ export class Trace
     })
 
     this.source_trace_id = trace.source_trace_id
+
+    if (!props.name) {
+      db.source_unnamed_trace_warning.insert({
+        message: `${this.getString()} is missing a name. Add a name prop to make the trace easier to identify.`,
+        source_trace_id: trace.source_trace_id,
+        subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+        warning_type: "source_unnamed_trace_warning",
+      })
+    }
   }
   _insertErrorIfTraceIsOutsideBoard(
     mergedRoute: PcbTraceRoutePoint[],
