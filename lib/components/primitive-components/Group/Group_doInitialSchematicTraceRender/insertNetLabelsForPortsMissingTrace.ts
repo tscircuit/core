@@ -174,10 +174,13 @@ export const insertNetLabelsForPortsMissingTrace = ({
           const dx = nl.anchor_position.x - schPort.center.x
           const dy = nl.anchor_position.y - schPort.center.y
 
-          return dx * dx + dy * dy <
+          if (
+            dx * dx + dy * dy <
             nearestDx * nearestDx + nearestDy * nearestDy
-            ? nl
-            : nearest
+          ) {
+            return nl
+          }
+          return nearest
         },
         undefined as
           | (typeof existingNetLabelsForCurrentSourceConnection)[number]

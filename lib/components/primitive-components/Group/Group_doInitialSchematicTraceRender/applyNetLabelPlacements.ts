@@ -42,11 +42,62 @@ const getNetLabelTextBounds = ({
 const netLabelTextBoundsOverlap = (
   a: ReturnType<typeof getNetLabelTextBounds>,
   b: ReturnType<typeof getNetLabelTextBounds>,
-) =>
-  a.minX < b.maxX &&
-  a.maxX > b.minX &&
-  a.minY < b.maxY &&
-  a.maxY > b.minY
+) => a.minX < b.maxX && a.maxX > b.minX && a.minY < b.maxY && a.maxY > b.minY
+
+const hasExplicitNetLabelForPlacementPort = ({
+  text,
+  schPortIds,
+  explicitNetLabelTextsByPortId,
+}: {
+  text: string
+  schPortIds: string[]
+  explicitNetLabelTextsByPortId: Map<string, Set<string>>
+}) =>
+  schPortIds.some((schPortId) =>
+    explicitNetLabelTextsByPortId.get(schPortId)?.has(text),
+  )
+
+const getOverlappingExplicitNetLabelIdsForSameSourceNet = ({
+  text,
+  sourceNet,
+  solverLabelCenter,
+  explicitNetLabels,
+}: {
+  text: string
+  sourceNet: SourceNet
+  solverLabelCenter: Point
+  explicitNetLabels: Map<
+    string,
+    {
+      text: string
+      source_net_id?: string | null
+      center?: Point
+    }
+  >
+}) =>
+  Array.from(explicitNetLabels.entries()).flatMap(
+    ([schematicNetLabelId, explicitNetLabel]) => {
+      if (explicitNetLabel.text !== text) return []
+      if (explicitNetLabel.source_net_id !== sourceNet.source_net_id) {
+        return []
+      }
+      if (!explicitNetLabel.center) return []
+
+      const explicitBounds = getNetLabelTextBounds({
+        center: explicitNetLabel.center,
+        text,
+      })
+      const solverBounds = getNetLabelTextBounds({
+        center: solverLabelCenter,
+        text,
+      })
+
+      if (netLabelTextBoundsOverlap(explicitBounds, solverBounds)) {
+        return [schematicNetLabelId]
+      }
+      return []
+    },
+  )
 
 export function applyNetLabelPlacements(args: {
   group: Group<any>
@@ -71,9 +122,6 @@ export function applyNetLabelPlacements(args: {
   const { db } = group.root!
   const eligiblePortIds = getPortIdsInsideExpandedTextBounds(db)
   const explicitNetLabelTextsByPortId = new Map<string, Set<string>>()
-  // schematic_net_label_ids of explicit <netlabel> JSX components, keyed by
-  // connected schematic port and net text. This prevents a solver placement for
-  // one port from deleting explicit labels elsewhere on the same named net.
   const explicitNetLabelIdsByPortIdAndText = new Map<string, Set<string>>()
   const explicitNetLabels = new Map<
     string,
@@ -187,44 +235,12 @@ export function applyNetLabelPlacements(args: {
       schematicPortIdsWithRoutedTraces.has(id),
     )
 
-    const portsForConnKey = placementConnKey
-      ? group
-          .selectAll<Port>("port")
-          .filter((p) => p._getSubcircuitConnectivityKey() === placementConnKey)
-      : []
-
-    const hasExplicitNetLabelForPlacementPort = (text: string) =>
-      schPortIds.some((schPortId) =>
-        explicitNetLabelTextsByPortId.get(schPortId)?.has(text),
-      )
-
-    const getOverlappingExplicitNetLabelIdsForSameSourceNet = (
-      text: string,
-      sourceNet: SourceNet,
-      solverLabelCenter: Point,
-    ) =>
-      Array.from(explicitNetLabels.entries()).flatMap(
-        ([schematicNetLabelId, explicitNetLabel]) => {
-          if (explicitNetLabel.text !== text) return []
-          if (explicitNetLabel.source_net_id !== sourceNet.source_net_id) {
-            return []
-          }
-          if (!explicitNetLabel.center) return []
-
-          const explicitBounds = getNetLabelTextBounds({
-            center: explicitNetLabel.center,
-            text,
-          })
-          const solverBounds = getNetLabelTextBounds({
-            center: solverLabelCenter,
-            text,
-          })
-
-          return netLabelTextBoundsOverlap(explicitBounds, solverBounds)
-            ? [schematicNetLabelId]
-            : []
-        },
-      )
+    let portsForConnKey: Port[] = []
+    if (placementConnKey) {
+      portsForConnKey = group
+        .selectAll<Port>("port")
+        .filter((p) => p._getSubcircuitConnectivityKey() === placementConnKey)
+    }
 
     if (
       schPortIds.some((schPortId) =>
@@ -278,21 +294,23 @@ export function applyNetLabelPlacements(args: {
       }
 
       const hasExplicitNetLabelForPlacement =
-        hasExplicitNetLabelForPlacementPort(text)
+        hasExplicitNetLabelForPlacementPort({
+          text,
+          schPortIds,
+          explicitNetLabelTextsByPortId,
+        })
       const center = computeSchematicNetLabelCenter({
         anchor_position,
         anchor_side,
         text,
       })
-      if (
-        !isPowerOrGroundNet &&
-        !hasExplicitNetLabelForPlacement
-      ) {
-        const explicitIds = getOverlappingExplicitNetLabelIdsForSameSourceNet(
+      if (!isPowerOrGroundNet && !hasExplicitNetLabelForPlacement) {
+        const explicitIds = getOverlappingExplicitNetLabelIdsForSameSourceNet({
           text,
           sourceNet,
-          center,
-        )
+          solverLabelCenter: center,
+          explicitNetLabels,
+        })
         if (explicitIds.length > 0) {
           debug(
             `deleting explicit net label for "${placement.netId!}" REASON:overlaps solver placement for same source net`,
@@ -303,12 +321,7 @@ export function applyNetLabelPlacements(args: {
         }
       }
 
-      if (
-        !isPowerOrGroundNet &&
-        hasExplicitNetLabelForPlacement
-      ) {
-        // The explicit <netlabel> is attached to this placement's port; let the
-        // solver label win so trace and label placement stay consistent.
+      if (!isPowerOrGroundNet && hasExplicitNetLabelForPlacement) {
         for (const schPortId of schPortIds) {
           const explicitIds = explicitNetLabelIdsByPortIdAndText.get(
             `${schPortId}::${text}`,

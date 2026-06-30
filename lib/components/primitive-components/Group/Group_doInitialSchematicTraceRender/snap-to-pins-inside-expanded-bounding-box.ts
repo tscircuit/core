@@ -61,16 +61,6 @@ export const snapPointToPinInsideExpandedBoundingBox = (
   return { x: nearestCenter.x, y: nearestCenter.y }
 }
 
-/**
- * Extends a trace's start/end to land on a pin center.
- *
- * When a schematic component's bounding box is expanded to fit large text,
- * the box can grow large enough that the component's pins end up *inside* the
- * box. The trace solver routes up to the edge of the bounding box, so the
- * trace stops short of the pin and never visually connects. This walks each
- * endpoint to the nearest eligible pin center, prepending/appending a point so
- * the trace reaches the pin.
- */
 export function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
   params: {
     points: Point[]
@@ -98,8 +88,10 @@ export function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
     dist: number
   }> = []
   for (const endpoint of endpoints) {
-    const endpointPoint =
-      endpoint === "start" ? result[0]! : result[result.length - 1]!
+    let endpointPoint = result[result.length - 1]!
+    if (endpoint === "start") {
+      endpointPoint = result[0]!
+    }
     for (let i = 0; i < centers.length; i++) {
       if (usedCenters.has(i)) continue
       const center = centers[i]!
