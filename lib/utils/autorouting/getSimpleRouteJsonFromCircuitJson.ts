@@ -447,10 +447,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const connectionFromNetId = new Map<string, SimpleRouteConnection>()
   const handledNetConnectivityKeys = new Set<string>()
   const sourceTraces = db.source_trace.list()
-  const getConnectivityKey = (id?: string | null) =>
+  const getSourceConnectivityKey = (id?: string | null) =>
     id ? (connMap.getNetConnectedToId(id) ?? id) : null
   for (const net of source_nets) {
-    const netConnectivityKey = getConnectivityKey(net.source_net_id)
+    const netConnectivityKey = getSourceConnectivityKey(net.source_net_id)
     if (
       !netConnectivityKey ||
       handledNetConnectivityKeys.has(netConnectivityKey)
@@ -462,12 +462,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     const connectedSourceNetIds = source_nets
       .filter(
         (sourceNet) =>
-          getConnectivityKey(sourceNet.source_net_id) === netConnectivityKey,
+          getSourceConnectivityKey(sourceNet.source_net_id) === netConnectivityKey,
       )
       .map((sourceNet) => sourceNet.source_net_id)
     const connectedSourceTraces = sourceTraces.filter((st) =>
       [st.source_trace_id, ...(st.connected_source_net_ids ?? [])].some(
-        (id) => getConnectivityKey(id) === netConnectivityKey,
+        (id) => getSourceConnectivityKey(id) === netConnectivityKey,
       ),
     )
 
