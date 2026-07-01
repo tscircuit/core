@@ -7,7 +7,7 @@ import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-s
 import {
   extendTraceEndpointsToReachPinsInsideExpandedBoundingBox,
   getPortIdsInsideExpandedTextBounds,
-} from "./snap-to-pins-inside-expanded-bounding-box"
+} from "./extendTraceEndpointsToReachPinsInsideExpandedBoundingBox"
 import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
