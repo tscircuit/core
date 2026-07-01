@@ -17,6 +17,7 @@ import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdg
 
 export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   source_net_label_id?: string
+  schematic_net_label_id?: string
 
   get config() {
     return {
@@ -133,6 +134,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     })
 
     this.source_net_label_id = netLabel.source_net_id
+    this.schematic_net_label_id = netLabel.schematic_net_label_id
   }
 
   _resolveConnectsTo(): string[] | undefined {
