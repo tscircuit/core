@@ -81,11 +81,11 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       solverName = "AutoroutingPipeline1_OriginalUnravel"
     } else if (autorouterVersion === "v3") {
       solverName = "AutoroutingPipelineSolver3_HgPortPointPathing"
-    } else if (autorouterVersion === "v4" || autorouterVersion === "latest") {
+    } else if (autorouterVersion === "v4") {
       solverName = "AutoroutingPipelineSolver4"
     } else if (autorouterVersion === "v5") {
       solverName = "AutoroutingPipelineSolver5"
-    } else if (autorouterVersion === "v6") {
+    } else if (autorouterVersion === "v6" || autorouterVersion === "latest") {
       solverName = "AutoroutingPipelineSolver7_MultiGraph"
     } else if (useLaserPrefabSolver) {
       solverName = "AutoroutingPipelineSolver8"
@@ -94,7 +94,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     } else if (useAssignableSolver) {
       solverName = "AssignableAutoroutingPipeline2"
     } else {
-      solverName = "AutoroutingPipelineSolver4"
+      solverName = "AutoroutingPipelineSolver7_MultiGraph"
     }
     const SolverClass = SOLVERS[solverName]
 
