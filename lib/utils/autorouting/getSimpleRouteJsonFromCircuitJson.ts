@@ -446,7 +446,50 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const connectionsFromNets: SimpleRouteConnection[] = []
   const connectionFromNetId = new Map<string, SimpleRouteConnection>()
   const handledNetConnectivityKeys = new Set<string>()
-  const sourceTraces = db.source_trace.list()
+  const sourceNetIds = new Set(source_nets.map((net) => net.source_net_id))
+  const currentSubcircuitSourceTraces = db.source_trace
+    .list()
+    .filter(
+      (st) =>
+        !subcircuit_id || (st as any).subcircuit_id === subcircuit_id,
+    )
+  const exposedDescendantSourceNetIds = new Set<string>()
+  for (const st of currentSubcircuitSourceTraces) {
+    if (!st.name?.startsWith("exposed_net.")) continue
+    for (const sourceNetId of st.connected_source_net_ids ?? []) {
+      if (!sourceNetIds.has(sourceNetId)) {
+        exposedDescendantSourceNetIds.add(sourceNetId)
+      }
+    }
+  }
+  const routedDescendantTraceIds = new Set(
+    subcircuit_id
+      ? db.pcb_trace
+          .list()
+          .filter(
+            (t) =>
+              t.subcircuit_id &&
+              t.subcircuit_id !== subcircuit_id &&
+              relevantSubcircuitIds?.has(t.subcircuit_id),
+          )
+          .map((t) => t.source_trace_id)
+          .filter((id): id is string => Boolean(id))
+      : [],
+  )
+  const sourceTraces = db.source_trace
+    .list()
+    .filter(
+      (st) =>
+        !subcircuit_id ||
+        st.subcircuit_id === subcircuit_id ||
+        (st.connected_source_net_ids?.some((id) => sourceNetIds.has(id)) ??
+          false) ||
+        ((st.connected_source_net_ids?.some((id) =>
+          exposedDescendantSourceNetIds.has(id),
+        ) ??
+          false) &&
+          !routedDescendantTraceIds.has(st.source_trace_id)),
+    )
   const getSourceConnectivityKey = (id?: string | null) =>
     id ? (connMap.getNetConnectedToId(id) ?? id) : null
   for (const net of source_nets) {
