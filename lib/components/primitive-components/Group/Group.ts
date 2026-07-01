@@ -42,7 +42,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
-import { Trace } from "../Trace/Trace"
+import type { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
 import { Group_doInitialPcbCalcPlacementResolution } from "./Group_doInitialPcbCalcPlacementResolution"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
@@ -1874,7 +1874,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       for (const child of this.children) {
         // Skip if child is itself a subcircuit
         if ((child as any).isSubcircuit) continue
-        if (child instanceof Trace) continue
 
         if (child._parsedProps.name) {
           const components =

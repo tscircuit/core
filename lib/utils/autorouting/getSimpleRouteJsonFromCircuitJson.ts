@@ -444,33 +444,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     .filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id)
 
   const connectionsFromNets: SimpleRouteConnection[] = []
-  const connectionFromNetId = new Map<string, SimpleRouteConnection>()
-  const handledNetConnectivityKeys = new Set<string>()
-  const sourceTraces = db.source_trace.list()
-  const getSourceConnectivityKey = (id?: string | null) =>
-    id ? (connMap.getNetConnectedToId(id) ?? id) : null
   for (const net of source_nets) {
-    const netConnectivityKey = getSourceConnectivityKey(net.source_net_id)
-    if (
-      !netConnectivityKey ||
-      handledNetConnectivityKeys.has(netConnectivityKey)
-    ) {
-      continue
-    }
-    handledNetConnectivityKeys.add(netConnectivityKey)
-
-    const connectedSourceNetIds = source_nets
-      .filter(
-        (sourceNet) =>
-          getSourceConnectivityKey(sourceNet.source_net_id) ===
-          netConnectivityKey,
-      )
-      .map((sourceNet) => sourceNet.source_net_id)
-    const connectedSourceTraces = sourceTraces.filter((st) =>
-      [st.source_trace_id, ...(st.connected_source_net_ids ?? [])].some(
-        (id) => getSourceConnectivityKey(id) === netConnectivityKey,
-      ),
-    )
+    const connectedSourceTraces = db.source_trace
+      .list()
+      .filter((st) => st.connected_source_net_ids?.includes(net.source_net_id))
 
     let nominalTraceWidthFromConnectedTraces: number | undefined
     for (const sourceTrace of connectedSourceTraces) {
@@ -501,16 +478,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       }
     }
 
-    const connection: SimpleRouteConnection = {
+    connectionsFromNets.push({
       name: net.source_net_id ?? connMap.getNetConnectedToId(net.source_net_id),
       nominalTraceWidth: nominalTraceWidthFromConnectedTraces,
       width: nominalTraceWidthFromConnectedTraces,
       pointsToConnect,
-    }
-    connectionsFromNets.push(connection)
-    for (const sourceNetId of connectedSourceNetIds) {
-      connectionFromNetId.set(sourceNetId, connection)
-    }
+    })
   }
 
   const connectionsFromBreakoutPoints: SimpleRouteConnection[] = []
@@ -559,7 +532,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
     // Net-based breakout points
     if (bp.source_net_id) {
-      const conn = connectionFromNetId.get(bp.source_net_id)
+      const conn = connectionsFromNets.find((c) => c.name === bp.source_net_id)
       if (conn) {
         conn.pointsToConnect.push(pt)
       } else {

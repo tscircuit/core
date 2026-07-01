@@ -56,23 +56,18 @@ export class Subcircuit
       const parentNetSelector = `> net.${netName}`
       const childNetSelector = `.${this.name} > net.${netName}`
       const traceName = `exposed_net.${netName}`
-      const parentNet = parentSubcircuit.children.find(
+
+      const parentHasDirectNet = parentSubcircuit.children.some(
         (child) => child instanceof Net && child._parsedProps.name === netName,
       )
-
-      if (!parentNet) {
+      if (!parentHasDirectNet) {
         parentSubcircuit.add(new Net({ name: netName }))
       }
 
-      const existingTrace = parentSubcircuit.children.find((child) => {
-        if (!(child instanceof Trace)) return false
-        const childProps = child._parsedProps as Record<string, unknown>
-        return (
-          childProps.name === traceName &&
-          childProps.from === childNetSelector &&
-          childProps.to === parentNetSelector
-        )
-      })
+      const existingTrace = parentSubcircuit.children.find(
+        (child) =>
+          child instanceof Trace && child._parsedProps.name === traceName,
+      )
       if (existingTrace) continue
 
       parentSubcircuit.add(
