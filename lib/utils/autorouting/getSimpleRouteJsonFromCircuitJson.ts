@@ -450,8 +450,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const currentSubcircuitSourceTraces = db.source_trace
     .list()
     .filter(
-      (st) =>
-        !subcircuit_id || (st as any).subcircuit_id === subcircuit_id,
+      (st) => !subcircuit_id || (st as any).subcircuit_id === subcircuit_id,
     )
   const exposedDescendantSourceNetIds = new Set<string>()
   for (const st of currentSubcircuitSourceTraces) {
