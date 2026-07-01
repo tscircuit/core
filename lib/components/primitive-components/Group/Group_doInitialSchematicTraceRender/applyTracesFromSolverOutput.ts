@@ -4,10 +4,8 @@ import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
-import {
-  extendTraceEndpointsToReachPinsInsideExpandedBoundingBox,
-  getPortIdsInsideExpandedTextBounds,
-} from "./extendTraceEndpointsToReachPinsInsideExpandedBoundingBox"
+import { extendTraceEndpointsToReachPinsInsideExpandedBoundingBox } from "./extendTraceEndpointsToReachPinsInsideExpandedBoundingBox"
+import { getPortIdsInsideExpandedTextBounds } from "./getPortIdsInsideExpandedTextBounds"
 import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")

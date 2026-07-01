@@ -1,6 +1,5 @@
 import { distSq, type Point } from "@tscircuit/math-utils"
 import type { IsolatedCircuit } from "lib/IsolatedCircuit"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 
 type SchematicPortId = string
 
@@ -10,22 +9,6 @@ const ALIGN_EPS = 1e-3
 const isAxisAlignedWithinSnapGap = (a: Point, b: Point) => {
   if (distSq(a, b) > MAX_PIN_SNAP_GAP ** 2) return false
   return Math.abs(a.x - b.x) <= ALIGN_EPS || Math.abs(a.y - b.y) <= ALIGN_EPS
-}
-
-export const getPortIdsInsideExpandedTextBounds = (ctx: IsolatedCircuit) => {
-  const { db } = ctx
-  const eligiblePortIds = new Set<SchematicPortId>()
-  for (const schematicComponent of db.schematic_component.list()) {
-    if (!getSchematicComponentWithTextBounds(db, schematicComponent)) {
-      continue
-    }
-    for (const port of db.schematic_port.list({
-      schematic_component_id: schematicComponent.schematic_component_id,
-    })) {
-      eligiblePortIds.add(port.schematic_port_id)
-    }
-  }
-  return eligiblePortIds
 }
 
 const getEligiblePortCenters = (
@@ -40,23 +23,6 @@ const getEligiblePortCenters = (
     .filter((id) => eligiblePortIds.has(id))
     .map((id) => ctx.db.schematic_port.get(id)?.center)
     .filter((center): center is Point => Boolean(center))
-}
-
-export const snapPointToPinInsideExpandedBoundingBox = (
-  params: {
-    point: Point
-    schematicPortIds: SchematicPortId[]
-    eligiblePortIds: Set<SchematicPortId>
-  },
-  ctx: IsolatedCircuit,
-): Point => {
-  const centers = getEligiblePortCenters(params, ctx)
-  const nearestCenter = centers
-    .filter((center) => isAxisAlignedWithinSnapGap(center, params.point))
-    .sort((a, b) => distSq(a, params.point) - distSq(b, params.point))[0]
-
-  if (!nearestCenter) return params.point
-  return { x: nearestCenter.x, y: nearestCenter.y }
 }
 
 export function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
