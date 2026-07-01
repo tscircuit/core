@@ -97,7 +97,7 @@ test("copper pour connects to exposed net across subcircuit boundary", async () 
   expect(boardGndNet).toBeDefined()
 
   const exposedNetTrace = sourceTraces.find((trace) => {
-    if (trace.name !== "exposed_net.GND") return false
+    if (trace.name !== "exposed_net.SubcircuitChild.GND") return false
     const connectedNetIds = new Set(trace.connected_source_net_ids)
     return (
       trace.connected_source_port_ids.length === 0 &&

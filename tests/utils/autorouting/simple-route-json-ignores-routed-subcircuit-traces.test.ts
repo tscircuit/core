@@ -3,7 +3,7 @@ import type { AnyCircuitElement } from "circuit-json"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
 test("board simple route json ignores source traces already routed by child subcircuits", () => {
-  const subcircuit_id = "subcircuit_source_group_0"
+  const childSubcircuitId = "subcircuit_source_group_0"
   const circuitJson: AnyCircuitElement[] = [
     {
       type: "pcb_board",
@@ -17,25 +17,25 @@ test("board simple route json ignores source traces already routed by child subc
       type: "source_net",
       source_net_id: "source_net_child",
       name: "CHILD_NET",
-      subcircuit_id,
+      subcircuit_id: childSubcircuitId,
     } as any,
     {
       type: "source_port",
       source_port_id: "source_port_child_a",
       name: "A",
-      subcircuit_id,
+      subcircuit_id: childSubcircuitId,
     } as any,
     {
       type: "source_port",
       source_port_id: "source_port_child_b",
       name: "B",
-      subcircuit_id,
+      subcircuit_id: childSubcircuitId,
     } as any,
     {
       type: "source_port",
       source_port_id: "source_port_child_c",
       name: "C",
-      subcircuit_id,
+      subcircuit_id: childSubcircuitId,
     } as any,
     {
       type: "source_port",
@@ -49,7 +49,7 @@ test("board simple route json ignores source traces already routed by child subc
       x: -2,
       y: 0,
       layers: ["top"],
-      subcircuit_id,
+      subcircuit_id: childSubcircuitId,
     } as any,
     {
       type: "pcb_port",
@@ -58,7 +58,7 @@ test("board simple route json ignores source traces already routed by child subc
       x: 0,
       y: 0,
       layers: ["top"],
-      subcircuit_id,
+      subcircuit_id: childSubcircuitId,
     } as any,
     {
       type: "pcb_port",
@@ -67,7 +67,7 @@ test("board simple route json ignores source traces already routed by child subc
       x: 1,
       y: 0,
       layers: ["top"],
-      subcircuit_id,
+      subcircuit_id: childSubcircuitId,
     } as any,
     {
       type: "pcb_port",
@@ -78,13 +78,17 @@ test("board simple route json ignores source traces already routed by child subc
       layers: ["top"],
     } as any,
     {
+      // Already-routed child-internal intent. Board SRJ should preserve the
+      // matching pcb_trace below and must not emit this as a new connection.
       type: "source_trace",
       source_trace_id: "source_trace_child_internal",
       connected_source_port_ids: ["source_port_child_a", "source_port_child_b"],
       connected_source_net_ids: ["source_net_child"],
-      subcircuit_id,
+      subcircuit_id: childSubcircuitId,
     } as any,
     {
+      // Parent-level work. This crosses from the child subcircuit to a board
+      // port, so board SRJ should keep it as a connection to be routed.
       type: "source_trace",
       source_trace_id: "source_trace_board_cross_boundary",
       connected_source_port_ids: ["source_port_child_c", "source_port_board"],
@@ -94,7 +98,7 @@ test("board simple route json ignores source traces already routed by child subc
       type: "pcb_trace",
       pcb_trace_id: "pcb_trace_child_internal",
       source_trace_id: "source_trace_child_internal",
-      subcircuit_id,
+      subcircuit_id: childSubcircuitId,
       route: [
         {
           route_type: "wire",
@@ -120,21 +124,27 @@ test("board simple route json ignores source traces already routed by child subc
     circuitJson,
   })
 
+  // Child-internal routing is already represented by `pcb_trace_child_internal`,
+  // so board SRJ should preserve it in `traces` instead of re-routing the
+  // source_trace as a board-level connection.
   expect(
     simpleRouteJson.connections.some(
       (connection) =>
         connection.source_trace_id === "source_trace_child_internal",
     ),
   ).toBe(false)
+  expect(simpleRouteJson.traces?.map((trace) => trace.pcb_trace_id)).toEqual([
+    "pcb_trace_child_internal",
+  ])
+
+  // The cross-boundary trace is still board-level routing intent, so it should
+  // remain in `connections`.
   expect(
     simpleRouteJson.connections.some(
       (connection) =>
         connection.source_trace_id === "source_trace_board_cross_boundary",
     ),
   ).toBe(true)
-  expect(simpleRouteJson.traces?.map((trace) => trace.pcb_trace_id)).toEqual([
-    "pcb_trace_child_internal",
-  ])
 
   const routedPointIds = simpleRouteJson.connections
     .flatMap((connection) => connection.pointsToConnect)

@@ -42,7 +42,6 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
-import { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
 import { Group_doInitialPcbCalcPlacementResolution } from "./Group_doInitialPcbCalcPlacementResolution"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
@@ -1869,22 +1868,23 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { db } = this.root!
 
     if (this.isSubcircuit) {
-      const subcircuitComponentsByName = new Map<string, PrimitiveComponent[]>()
+      const immediateChildrenByName = new Map<string, PrimitiveComponent[]>()
 
       for (const child of this.children) {
-        // Skip if child is itself a subcircuit
+        // Nested subcircuits are scoped independently. All other immediate
+        // children, including generated traces, must have unique names within
+        // this subcircuit.
         if ((child as any).isSubcircuit) continue
-        if (child instanceof Trace) continue
 
         if (child._parsedProps.name) {
           const components =
-            subcircuitComponentsByName.get(child._parsedProps.name) || []
+            immediateChildrenByName.get(child._parsedProps.name) || []
           components.push(child)
-          subcircuitComponentsByName.set(child._parsedProps.name, components)
+          immediateChildrenByName.set(child._parsedProps.name, components)
         }
       }
 
-      for (const [name, components] of subcircuitComponentsByName.entries()) {
+      for (const [name, components] of immediateChildrenByName.entries()) {
         if (components.length > 1) {
           db.pcb_trace_error.insert({
             error_type: "pcb_trace_error",

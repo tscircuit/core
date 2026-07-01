@@ -55,7 +55,7 @@ export class Subcircuit
       const netName = normalizeExposedNetName(exposedNetName)
       const parentNetSelector = `> net.${netName}`
       const childNetSelector = `.${this.name} > net.${netName}`
-      const traceName = `exposed_net.${netName}`
+      const traceName = `exposed_net.${this.name}.${netName}`
 
       const parentNet = parentSubcircuit.children.find(
         (child) => child instanceof Net && child._parsedProps.name === netName,
@@ -65,6 +65,10 @@ export class Subcircuit
         parentSubcircuit.add(new Net({ name: netName }))
       }
 
+      // Include the child subcircuit name so generated exposed-net traces are
+      // unique immediate children of the parent subcircuit. The endpoint check
+      // keeps this idempotent when the same subcircuit render phase runs more
+      // than once.
       const existingTrace = parentSubcircuit.children.find((child) => {
         if (!(child instanceof Trace)) return false
         const childProps = child._parsedProps as Record<string, unknown>

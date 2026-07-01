@@ -133,11 +133,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }),
   )
 
-  // Collect pcb_traces from descendant subcircuits (already routed by
-  // inner autorouters). Included in the SRJ traces field so the
-  // autorouter can avoid collisions and they appear in debug
-  // visualizations. Keep source-trace metadata so parent routes can
-  // recognize child fanout copper that belongs to the same connected net.
+  // SRJ uses two separate fields for routing state:
+  // - connections: copper the current autorouter still needs to create.
+  // - traces: copper that already exists and must be preserved.
+  //
+  // Child subcircuits can be autorouted before their parent board. Those
+  // child routes belong in `traces`, not `connections`; otherwise the parent
+  // autorouter receives the same child-internal source_trace as new work and
+  // may route it a second time.
+  //
+  // Keep source-trace metadata so parent routes can recognize child fanout
+  // copper that belongs to the same connected net.
   //
   // The inner autorouter routes each cross-boundary pin up to its breakout
   // point and stops, so this descendant "handoff" copper ends exactly on the
@@ -162,7 +168,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     (minTraceToPadEdgeClearance ??
       board?.min_trace_to_pad_edge_clearance ??
       0.1)
-  const routedSubcircuitTraces: SimplifiedPcbTrace[] = db.pcb_trace
+  const preservedRoutedSubcircuitTraces: SimplifiedPcbTrace[] = db.pcb_trace
     .list()
     .filter((t) => {
       if (!t.subcircuit_id) return false
@@ -312,12 +318,20 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       maxY: Math.max(bounds.maxY, groupBounds.maxY),
     }
   }
-  const routedTraceIds = new Set(
+  const sourceTraceIdsAlreadyPreservedAsSrjTraces = new Set(
     db.pcb_trace
       .list()
       .filter((t) => {
         if (!t.source_trace_id) return false
+
+        // While routing one subcircuit, skip source_traces already routed in
+        // that same subcircuit. Descendant routed traces are still preserved as
+        // fixed SRJ traces above.
         if (subcircuit_id) return t.subcircuit_id === subcircuit_id
+
+        // While routing the board, only skip a source_trace when the existing
+        // pcb_trace is the child subcircuit's own routed copy. Cross-boundary
+        // or board-owned source_traces must remain routable board connections.
         if (!t.subcircuit_id) return false
 
         const sourceTrace = db.source_trace.get(t.source_trace_id)
@@ -337,14 +351,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     if (spId) sourcePortIdToBreakoutPoint.set(spId, bp)
   }
 
-  // Create connections from source traces in this subcircuit. Existing
-  // top-level pcb_traces are ignored here so SRJ represents routing intent,
-  // not already-routed board state.
+  // Create connections from source traces in this routing scope. Any
+  // source_trace represented by `preservedRoutedSubcircuitTraces` is excluded
+  // here so it is preserved as fixed copper instead of re-routed.
   // For cross-boundary traces, add breakout points as additional
   // waypoints so the autorouter routes through the boundary.
   const directTraceConnections = db.source_trace
     .list()
-    .filter((trace) => !routedTraceIds.has(trace.source_trace_id))
+    .filter(
+      (trace) =>
+        !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id),
+    )
     .filter(
       (trace) =>
         !subcircuit_id || (trace as any).subcircuit_id === subcircuit_id,
@@ -453,9 +470,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const connectionsFromNets: SimpleRouteConnection[] = []
   const connectionFromNetId = new Map<string, SimpleRouteConnection>()
   const handledNetConnectivityKeys = new Set<string>()
-  const sourceTraces = db.source_trace
+  const sourceTracesEligibleForNetConnections = db.source_trace
     .list()
-    .filter((st) => subcircuit_id || !routedTraceIds.has(st.source_trace_id))
+    .filter(
+      (st) =>
+        subcircuit_id ||
+        !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(st.source_trace_id),
+    )
   const getSourceConnectivityKey = (id?: string | null) =>
     id ? (connMap.getNetConnectedToId(id) ?? id) : null
   for (const net of source_nets) {
@@ -475,10 +496,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           netConnectivityKey,
       )
       .map((sourceNet) => sourceNet.source_net_id)
-    const connectedSourceTraces = sourceTraces.filter((st) =>
-      [st.source_trace_id, ...(st.connected_source_net_ids ?? [])].some(
-        (id) => getSourceConnectivityKey(id) === netConnectivityKey,
-      ),
+    const connectedSourceTraces = sourceTracesEligibleForNetConnections.filter(
+      (st) =>
+        [st.source_trace_id, ...(st.connected_source_net_ids ?? [])].some(
+          (id) => getSourceConnectivityKey(id) === netConnectivityKey,
+        ),
     )
 
     let nominalTraceWidthFromConnectedTraces: number | undefined
@@ -645,7 +667,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       obstacles,
       connections: allConns,
       traces:
-        routedSubcircuitTraces.length > 0 ? routedSubcircuitTraces : undefined,
+        preservedRoutedSubcircuitTraces.length > 0
+          ? preservedRoutedSubcircuitTraces
+          : undefined,
       layerCount: board?.num_layers ?? 2,
       minTraceWidth: minTraceWidth ?? board?.min_trace_width ?? 0.1,
       minViaDiameter: resolvedMinViaPadDiameter,
