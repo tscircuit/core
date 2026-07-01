@@ -162,29 +162,31 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     (minTraceToPadEdgeClearance ??
       board?.min_trace_to_pad_edge_clearance ??
       0.1)
-  const descendantTraces: SimplifiedPcbTrace[] = subcircuit_id
-    ? db.pcb_trace
-        .list()
-        .filter(
-          (t) =>
-            t.subcircuit_id &&
-            t.subcircuit_id !== subcircuit_id &&
-            relevantSubcircuitIds!.has(t.subcircuit_id),
-        )
-        .map((t) => ({
-          type: "pcb_trace" as const,
-          pcb_trace_id: t.pcb_trace_id,
-          source_trace_id: t.source_trace_id,
-          connection_name:
-            t.source_trace_id ?? (t as any).connection_name ?? t.pcb_trace_id,
-          route: trimRouteEndsAtBreakoutPoints({
-            route: t.route as SimplifiedPcbTrace["route"],
-            breakoutPointPositions,
-            trimMm: breakoutHandoffTrimMm,
-          }),
-        }))
-        .filter((t) => t.route.length >= 2)
-    : []
+  const routedSubcircuitTraces: SimplifiedPcbTrace[] = db.pcb_trace
+    .list()
+    .filter((t) => {
+      if (!t.subcircuit_id) return false
+
+      if (!subcircuit_id) return true
+
+      return (
+        t.subcircuit_id !== subcircuit_id &&
+        relevantSubcircuitIds!.has(t.subcircuit_id)
+      )
+    })
+    .map((t) => ({
+      type: "pcb_trace" as const,
+      pcb_trace_id: t.pcb_trace_id,
+      source_trace_id: t.source_trace_id,
+      connection_name:
+        t.source_trace_id ?? (t as any).connection_name ?? t.pcb_trace_id,
+      route: trimRouteEndsAtBreakoutPoints({
+        route: t.route as SimplifiedPcbTrace["route"],
+        breakoutPointPositions,
+        trimMm: breakoutHandoffTrimMm,
+      }),
+    }))
+    .filter((t) => t.route.length >= 2)
 
   // Add everything in the connMap to the connectedTo array of each obstacle
   for (const obstacle of obstacles) {
@@ -311,13 +313,18 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
   const routedTraceIds = new Set(
-    subcircuit_id
-      ? db.pcb_trace
-          .list()
-          .filter((t) => t.subcircuit_id === subcircuit_id)
-          .map((t) => t.source_trace_id)
-          .filter((id): id is string => Boolean(id))
-      : [],
+    db.pcb_trace
+      .list()
+      .filter((t) => {
+        if (!t.source_trace_id) return false
+        if (subcircuit_id) return t.subcircuit_id === subcircuit_id
+        if (!t.subcircuit_id) return false
+
+        const sourceTrace = db.source_trace.get(t.source_trace_id)
+        return sourceTrace?.subcircuit_id === t.subcircuit_id
+      })
+      .map((t) => t.source_trace_id)
+      .filter((id): id is string => Boolean(id)),
   )
   // Build a map of source_port_id → breakout point for adding breakout
   // waypoints to cross-boundary trace connections.
@@ -444,10 +451,35 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     .filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id)
 
   const connectionsFromNets: SimpleRouteConnection[] = []
+  const connectionFromNetId = new Map<string, SimpleRouteConnection>()
+  const handledNetConnectivityKeys = new Set<string>()
+  const sourceTraces = db.source_trace
+    .list()
+    .filter((st) => subcircuit_id || !routedTraceIds.has(st.source_trace_id))
+  const getSourceConnectivityKey = (id?: string | null) =>
+    id ? (connMap.getNetConnectedToId(id) ?? id) : null
   for (const net of source_nets) {
-    const connectedSourceTraces = db.source_trace
-      .list()
-      .filter((st) => st.connected_source_net_ids?.includes(net.source_net_id))
+    const netConnectivityKey = getSourceConnectivityKey(net.source_net_id)
+    if (
+      !netConnectivityKey ||
+      handledNetConnectivityKeys.has(netConnectivityKey)
+    ) {
+      continue
+    }
+    handledNetConnectivityKeys.add(netConnectivityKey)
+
+    const connectedSourceNetIds = source_nets
+      .filter(
+        (sourceNet) =>
+          getSourceConnectivityKey(sourceNet.source_net_id) ===
+          netConnectivityKey,
+      )
+      .map((sourceNet) => sourceNet.source_net_id)
+    const connectedSourceTraces = sourceTraces.filter((st) =>
+      [st.source_trace_id, ...(st.connected_source_net_ids ?? [])].some(
+        (id) => getSourceConnectivityKey(id) === netConnectivityKey,
+      ),
+    )
 
     let nominalTraceWidthFromConnectedTraces: number | undefined
     for (const sourceTrace of connectedSourceTraces) {
@@ -478,12 +510,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       }
     }
 
-    connectionsFromNets.push({
+    const connection: SimpleRouteConnection = {
       name: net.source_net_id ?? connMap.getNetConnectedToId(net.source_net_id),
       nominalTraceWidth: nominalTraceWidthFromConnectedTraces,
       width: nominalTraceWidthFromConnectedTraces,
       pointsToConnect,
-    })
+    }
+    connectionsFromNets.push(connection)
+    for (const sourceNetId of connectedSourceNetIds) {
+      connectionFromNetId.set(sourceNetId, connection)
+    }
   }
 
   const connectionsFromBreakoutPoints: SimpleRouteConnection[] = []
@@ -532,7 +568,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
     // Net-based breakout points
     if (bp.source_net_id) {
-      const conn = connectionsFromNets.find((c) => c.name === bp.source_net_id)
+      const conn = connectionFromNetId.get(bp.source_net_id)
       if (conn) {
         conn.pointsToConnect.push(pt)
       } else {
@@ -608,7 +644,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       bounds,
       obstacles,
       connections: allConns,
-      traces: descendantTraces.length > 0 ? descendantTraces : undefined,
+      traces:
+        routedSubcircuitTraces.length > 0 ? routedSubcircuitTraces : undefined,
       layerCount: board?.num_layers ?? 2,
       minTraceWidth: minTraceWidth ?? board?.min_trace_width ?? 0.1,
       minViaDiameter: resolvedMinViaPadDiameter,
