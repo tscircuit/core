@@ -61,74 +61,75 @@ const PicoSubcircuit = (props: SubcircuitProps) => (
   </subcircuit>
 )
 
-test.failing(
-  "cross-boundary subcircuit traces use trace name instead of selector fallback labels",
-  async () => {
-    const { circuit } = getTestFixture()
+test("cross-boundary subcircuit traces use trace name instead of selector fallback labels", async () => {
+  const { circuit } = getTestFixture()
 
-    circuit.add(
-      <board width="30mm" height="18mm" routingDisabled>
-        <schematicsection name={schSections.controls} displayName="Controls" />
-        <schematicsection name={schSections.display} displayName="Display" />
-        <schematicsection name={schSections.headers} displayName="Headers" />
-        <schematicsection name={schSections.rp2040} displayName="RP2040" />
+  circuit.add(
+    <board width="30mm" height="18mm" routingDisabled>
+      <schematicsection name={schSections.controls} displayName="Controls" />
+      <schematicsection name={schSections.display} displayName="Display" />
+      <schematicsection name={schSections.headers} displayName="Headers" />
+      <schematicsection name={schSections.rp2040} displayName="RP2040" />
 
-        <PicoSubcircuit />
-        <pinheader
-          name="J_LCD"
-          pinCount={4}
-          pinLabels={["VCC", "GND", "CS", "SCK"]}
-          schSectionName={schSections.display}
-          schX={-6}
-          schY={3.5}
-        />
+      <PicoSubcircuit />
+      <pinheader
+        name="J_LCD"
+        pinCount={4}
+        pinLabels={["VCC", "GND", "CS", "SCK"]}
+        schSectionName={schSections.display}
+        schX={-6}
+        schY={3.5}
+      />
 
-        <pinheader
-          name="SW_UP"
-          pinCount={2}
-          pinLabels={["pin1", "pin4"]}
-          schSectionName={schSections.controls}
-          schX={-6.8}
-          schY={-3}
-        />
-        <pinheader
-          name="SW_DOWN"
-          pinCount={2}
-          pinLabels={["pin1", "pin4"]}
-          schSectionName={schSections.controls}
-          schX={-4.8}
-          schY={-4.8}
-        />
+      <pinheader
+        name="SW_UP"
+        pinCount={2}
+        pinLabels={["pin1", "pin4"]}
+        schSectionName={schSections.controls}
+        schX={-6.8}
+        schY={-3}
+      />
+      <pinheader
+        name="SW_DOWN"
+        pinCount={2}
+        pinLabels={["pin1", "pin4"]}
+        schSectionName={schSections.controls}
+        schX={-4.8}
+        schY={-4.8}
+      />
 
-        <trace name="UP" from=".SW_UP > .pin1" to=".PICO .J_LEFT > .GP2" />
-        <trace name="DN" from=".SW_DOWN > .pin1" to=".PICO .J_LEFT > .GP3" />
-        <trace name="LCD_CS" from=".J_LCD > .CS" to=".PICO .J_RIGHT > .GP17" />
-        <trace name="LCD_GND" from=".J_LCD > .GND" to="net.GND" />
-      </board>,
+      <trace name="UP" from=".SW_UP > .pin1" to=".PICO .J_LEFT > .GP2" />
+      <trace name="DN" from=".SW_DOWN > .pin1" to=".PICO .J_LEFT > .GP3" />
+      <trace name="LCD_CS" from=".J_LCD > .CS" to=".PICO .J_RIGHT > .GP17" />
+      <trace name="LCD_GND" from=".J_LCD > .GND" to="net.GND" />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  const netLabelTexts = circuit.db.schematic_net_label
+    .list()
+    .map((label) => label.text)
+  const sectionTitlePositions = circuit.db.schematic_text
+    .list()
+    .filter((text) =>
+      ["Controls", "Display", "Headers", "RP2040"].includes(text.text),
     )
+    .map((text) => `${text.position.x},${text.position.y}`)
 
-    await circuit.renderUntilSettled()
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 
-    const netLabelTexts = circuit.db.schematic_net_label
-      .list()
-      .map((label) => label.text)
-    const sectionTitlePositions = circuit.db.schematic_text
-      .list()
-      .filter((text) =>
-        ["Controls", "Display", "Headers", "RP2040"].includes(text.text),
-      )
-      .map((text) => `${text.position.x},${text.position.y}`)
+  expect(new Set(sectionTitlePositions).size).toBe(4)
+  expect(circuit.db.schematic_line.list().length).toBeGreaterThan(0)
 
-    expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-
-    expect(new Set(sectionTitlePositions).size).toBe(4)
-    expect(circuit.db.schematic_line.list().length).toBeGreaterThan(0)
-
-    expect(netLabelTexts).toContain("UP")
-    expect(netLabelTexts).toContain("DN")
-    expect(netLabelTexts).toContain("LCD_CS")
-    expect(netLabelTexts).not.toContain("J_LEFT_GP2")
-    expect(netLabelTexts).not.toContain("J_LEFT_GP3")
-    expect(netLabelTexts).not.toContain("J_RIGHT_GP17")
-  },
-)
+  expect(netLabelTexts).toContain("UP")
+  expect(netLabelTexts).toContain("DN")
+  expect(netLabelTexts).toContain("LCD_CS")
+  expect(netLabelTexts).not.toContain("J_LEFT_GP2")
+  expect(netLabelTexts).not.toContain("J_LEFT_GP3")
+  expect(netLabelTexts).not.toContain("J_RIGHT_GP17")
+  expect(netLabelTexts).not.toContain("U1_GPIO2")
+  expect(netLabelTexts).not.toContain("U1_GPIO3")
+  expect(netLabelTexts).not.toContain("U1_GPIO17")
+  expect(netLabelTexts).not.toContain("U1_GPIO18")
+})

@@ -2,6 +2,8 @@ import type { Group } from "lib/components"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import type { SourceNet } from "circuit-json"
+import type { Port } from "../../Port"
+import { getNetNameFromPorts } from "./getNetNameFromPorts"
 
 const NEAR_EXISTING_NET_LABEL_DISTANCE = 0.5
 const SAME_ANCHOR_POSITION_DISTANCE = 0.1
@@ -108,17 +110,26 @@ export const insertNetLabelsForPortsMissingTrace = ({
         )
       })
 
+    const connectedPortsForKey = group
+      .selectAll<Port>("port")
+      .filter((port) => port._getSubcircuitConnectivityKey() === connKey)
+    const { name: resolvedPortNetLabelText, wasAssignedDisplayLabel } =
+      getNetNameFromPorts(connectedPortsForKey)
+    let assignedPortNetLabelText: string | undefined
+    if (wasAssignedDisplayLabel) {
+      assignedPortNetLabelText = resolvedPortNetLabelText
+    }
     const implicitPortLabelText = connectedSourcePortIdsForKey
       .map((sourcePortId) => getSourcePortNetLabelText(db, sourcePortId))
       .filter((label): label is string => Boolean(label))
       .join("/")
-
     const directCrossSubcircuitConnectionLabelText =
       getDirectCrossSubcircuitConnectionLabelText(db, srcPortId)
 
     const text =
       sourceNet?.name ||
       sourceNet?.source_net_id ||
+      assignedPortNetLabelText ||
       directCrossSubcircuitConnectionLabelText ||
       implicitPortLabelText ||
       connKey
