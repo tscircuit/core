@@ -8,22 +8,16 @@ import type { NetLabel } from "../../NetLabel"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
 import Debug from "debug"
-import type { SourceNet } from "circuit-json"
-import { doBoundsOverlap, type Bounds, type Point } from "@tscircuit/math-utils"
+import type { SchematicNetLabel, SourceNet } from "circuit-json"
+import { doBoundsOverlap, type Bounds } from "@tscircuit/math-utils"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
 type SchematicPortId = string
-type SchematicNetLabelId = string
-type NetLabelText = string
 
 // User-defined net labels are placed directly via a <netlabel/> in the source,
 // as opposed to labels the trace solver places automatically.
-interface UserDefinedNetLabel {
-  schematic_net_label_id: SchematicNetLabelId
-  text: NetLabelText
-  source_net_id?: string | null
-  center?: Point
+interface UserDefinedNetLabel extends SchematicNetLabel {
   schematicPortIds: SchematicPortId[]
 }
 
@@ -36,7 +30,7 @@ const isUserDefinedNetLabelRedundantWithPlacement = (
   label: UserDefinedNetLabel,
   solverPlacement: {
     sourceNet: SourceNet
-    text: NetLabelText
+    text: string
     schematicPortIds: Set<SchematicPortId>
     bounds: Bounds
   },
@@ -127,20 +121,19 @@ export function applyNetLabelPlacements(args: {
   const userDefinedNetLabels: UserDefinedNetLabel[] = (
     group.selectAll("netlabel") as NetLabel[]
   )
-    .filter((label) => label.schematic_net_label_id)
     .map((label) => {
-      const dbLabel = db.schematic_net_label.get(label.schematic_net_label_id!)
+      if (!label.schematic_net_label_id) return null
+      const dbLabel = db.schematic_net_label.get(label.schematic_net_label_id)
+      if (!dbLabel) return null
       return {
-        schematic_net_label_id: label.schematic_net_label_id!,
-        text: label._getNetName(),
-        source_net_id: label.source_net_label_id,
-        center: dbLabel?.center,
+        ...dbLabel,
         schematicPortIds: label
           ._getConnectedPorts()
           .map((port) => port.schematic_port_id)
           .filter((id): id is string => Boolean(id)),
       }
     })
+    .filter((label): label is UserDefinedNetLabel => label !== null)
 
   for (const placement of dedupedNetLabelPlacements) {
     debug(`processing placement: ${placement.netId}`)
