@@ -39,8 +39,8 @@ export class Transistor extends NormalComponent<
     })
   }
 
-  emitter = this.portMap.pin1
-  collector = this.portMap.pin2
+  collector = this.portMap.pin1
+  emitter = this.portMap.pin2
   base = this.portMap.pin3
 
   doInitialCreateNetsFromProps() {
