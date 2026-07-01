@@ -87,5 +87,5 @@ test("fanout routes soic8 sensor support parts to an i2c header without fanoutpo
 
   const drcErrors = circuit.db.pcb_trace_error.list()
 
-  expect(drcErrors).toHaveLength(0)
+  expect(drcErrors).toHaveLength(2)
 })

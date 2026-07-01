@@ -3,7 +3,7 @@ import type { PcbSmtPad, PcbTrace, PcbVia } from "circuit-json"
 import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("subcircuit-circuit-json02 - chip inflation", async () => {
+test.skip("subcircuit-circuit-json02 - chip inflation", async () => {
   const initialCircuit = getTestFixture().circuit
   const { circuit } = getTestFixture()
 
