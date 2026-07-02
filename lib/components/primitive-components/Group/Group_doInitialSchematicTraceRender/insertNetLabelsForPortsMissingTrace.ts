@@ -98,6 +98,16 @@ export const insertNetLabelsForPortsMissingTrace = ({
     if (!connKey) continue
     const sourceNet = connKeyToSourceNet.get(connKey)
 
+    // The schematic sheet this port lives on. A connectivity net that spans
+    // multiple sheets needs its own label on each sheet, so labels are created
+    // on - and de-duplicated within - this port's sheet rather than the rendering
+    // group's sheet. Falls back to the group's sheet for single-sheet circuits.
+    const schComponent = schPort.schematic_component_id
+      ? db.schematic_component.get(schPort.schematic_component_id)
+      : undefined
+    const portSchematicSheetId =
+      schComponent?.schematic_sheet_id ?? group._resolveSchematicSheetId()
+
     const connectedSourcePortIdsForKey = Array.from(
       allSourceAndSchematicPortIdsInScope,
     )
@@ -166,6 +176,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
     const existingNetLabelForCurrentSourceConnection = db.schematic_net_label
       .list()
       .find((nl) => {
+        if (nl.schematic_sheet_id !== portSchematicSheetId) return false
         return doesSchematicNetLabelRepresentCurrentSourceConnection({
           nl,
           connKey,
@@ -236,6 +247,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
       }
 
       const existingAtPort = db.schematic_net_label.list().some((nl) => {
+        if (nl.schematic_sheet_id !== portSchematicSheetId) return false
         const dx = nl.anchor_position!.x - schPort.center.x
         const dy = nl.anchor_position!.y - schPort.center.y
         if (
@@ -257,6 +269,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
     if (!sourceNet) {
       for (const nl of db.schematic_net_label.list()) {
         if (nl.source_net_id !== connKey) continue
+        if (nl.schematic_sheet_id !== portSchematicSheetId) continue
 
         const isAttachedToConnectedPort = connectedSourcePortIdsForKey.some(
           (sourcePortId) => {
@@ -292,7 +305,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
       anchor_position: schPort.center,
       center,
       anchor_side: side,
-      schematic_sheet_id: group._resolveSchematicSheetId(),
+      schematic_sheet_id: portSchematicSheetId,
     }
     db.schematic_net_label.insert(netLabel)
   }
