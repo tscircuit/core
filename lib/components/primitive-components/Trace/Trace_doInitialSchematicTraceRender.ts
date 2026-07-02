@@ -35,6 +35,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   const { db } = trace.root!
   const { _parsedProps: props, parent } = trace
   const schematicNetLabelText = trace._getSchematicNetLabelText()
+  const schematicSheetId = trace._resolveSchematicSheetId()
 
   if (!parent) throw new Error("Trace has no parent")
 
@@ -142,6 +143,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         edges,
         db,
         source_trace_id: trace.source_trace_id!,
+        schematic_sheet_id: schematicSheetId,
       })
       const dbTrace = db.schematic_trace.insert({
         source_trace_id: trace.source_trace_id!,
@@ -149,7 +151,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         junctions,
         subcircuit_connectivity_map_key:
           trace.subcircuit_connectivity_map_key ?? undefined,
-        schematic_sheet_id: trace._resolveSchematicSheetId(),
+        schematic_sheet_id: schematicSheetId,
       })
       trace.schematic_trace_id = dbTrace.schematic_trace_id
       return
@@ -386,7 +388,12 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   if (!skipOtherTraceInteraction) {
     // Check if these edges run along any other schematic traces, if they do
     // push them out of the way
-    pushEdgesOfSchematicTraceToPreventOverlap({ edges, db, source_trace_id })
+    pushEdgesOfSchematicTraceToPreventOverlap({
+      edges,
+      db,
+      source_trace_id,
+      schematic_sheet_id: schematicSheetId,
+    })
 
     // Find all intersections between myEdges and all otherEdges and create a
     // segment representing the crossing. Wherever there's a crossing, we create
@@ -394,6 +401,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
       db,
       source_trace_id,
+      schematic_sheet_id: schematicSheetId,
       differentNetOnly: true,
     }).flatMap((t: SchematicTrace) => t.edges)
     edges = createSchematicTraceCrossingSegments({ edges, otherEdges })
@@ -405,6 +413,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
       edges,
       db,
       source_trace_id: trace.source_trace_id!,
+      schematic_sheet_id: schematicSheetId,
     })
   }
 
@@ -458,7 +467,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     junctions,
     subcircuit_connectivity_map_key:
       trace.subcircuit_connectivity_map_key ?? undefined,
-    schematic_sheet_id: trace._resolveSchematicSheetId(),
+    schematic_sheet_id: schematicSheetId,
   })
   trace.schematic_trace_id = dbTrace.schematic_trace_id
 

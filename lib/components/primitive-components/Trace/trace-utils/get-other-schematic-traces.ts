@@ -4,11 +4,13 @@ import type { SchematicTrace } from "circuit-json"
 export const getOtherSchematicTraces = ({
   db,
   source_trace_id,
+  schematic_sheet_id,
   sameNetOnly,
   differentNetOnly,
 }: {
   db: CircuitJsonUtilObjects
   source_trace_id: string
+  schematic_sheet_id?: string | null
   sameNetOnly?: boolean
   differentNetOnly?: boolean
 }): SchematicTrace[] => {
@@ -19,6 +21,12 @@ export const getOtherSchematicTraces = ({
   const traces: SchematicTrace[] = []
   for (const otherSchematicTrace of db.schematic_trace.list()) {
     if (otherSchematicTrace.source_trace_id === source_trace_id) continue
+    if (
+      schematic_sheet_id !== undefined &&
+      otherSchematicTrace.schematic_sheet_id !== schematic_sheet_id
+    ) {
+      continue
+    }
     // Check if these traces are connected to the same connectivity map key
     const otherSourceTrace = db.source_trace.get(
       otherSchematicTrace.source_trace_id!,

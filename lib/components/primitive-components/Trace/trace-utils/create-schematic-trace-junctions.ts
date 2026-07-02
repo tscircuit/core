@@ -106,14 +106,17 @@ export const createSchematicTraceJunctions = ({
   edges: myEdges,
   db,
   source_trace_id,
+  schematic_sheet_id,
 }: {
   edges: SchematicTrace["edges"]
   db: CircuitJsonUtilObjects
   source_trace_id: string
+  schematic_sheet_id?: string | null
 }): Array<{ x: number; y: number }> => {
   const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
     db,
     source_trace_id,
+    schematic_sheet_id,
     sameNetOnly: true,
   }).flatMap((t: SchematicTrace) => t.edges)
 

@@ -243,8 +243,10 @@ export function applyTracesFromSolverOutput(args: {
     edges: SchematicTrace["edges"]
     connectivity_key?: string
   }> = []
+  const schematicSheetId = group._resolveSchematicSheetId()
   for (const t of db.schematic_trace.list()) {
     if (t.edges.length === 0) continue
+    if (t.schematic_sheet_id !== schematicSheetId) continue
     const sourceTrace = t.source_trace_id
       ? db.source_trace.get(t.source_trace_id)
       : undefined
@@ -290,7 +292,7 @@ export function applyTracesFromSolverOutput(args: {
       subcircuit_connectivity_map_key: pendingTraces.find(
         (p) => p.source_trace_id === t.source_trace_id,
       )?.subcircuit_connectivity_map_key,
-      schematic_sheet_id: group._resolveSchematicSheetId(),
+      schematic_sheet_id: schematicSheetId,
     })
   }
 }
