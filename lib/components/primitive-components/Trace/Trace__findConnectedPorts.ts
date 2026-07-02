@@ -50,7 +50,10 @@ export function Trace__findConnectedPorts(trace: Trace):
       let portToken: string
       const dotIndex = selector.lastIndexOf(".")
       if (dotIndex !== -1 && dotIndex > selector.lastIndexOf(" ")) {
-        parentSelector = selector.slice(0, dotIndex)
+        // Strip any trailing combinator (e.g. the "> " in ".U2 > .VIN+") so the
+        // parent selector resolves to the actual component instead of an empty
+        // or unrelated match, keeping the validation message accurate.
+        parentSelector = selector.slice(0, dotIndex).replace(/[\s>]+$/, "")
         portToken = selector.slice(dotIndex + 1)
       } else {
         const match = selector.match(/^(.*[ >])?([^ >]+)$/)

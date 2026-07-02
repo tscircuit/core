@@ -31,16 +31,25 @@ export const preprocessSelector = (
       `Net name "${netName}" cannot start with a number, try using a prefix like "VBUS1"`,
     )
   }
-  return selector
-    .replace(/ pin(?=[\d.])/g, " port")
-    .replace(/ subcircuit\./g, " group[isSubcircuit=true]")
-    .replace(/([^ ])\>([^ ])/g, "$1 > $2")
-    .replace(
-      /(^|[ >])(?!pin\.)(?!port\.)(?!net\.)([A-Z][A-Za-z0-9_-]*)\.([A-Za-z0-9_-]+)/g,
-      (_, sep, name, pin) => {
-        const pinPart = /^\d+$/.test(pin) ? `pin${pin}` : pin
-        return `${sep}.${name} > .${pinPart}`
-      },
-    )
-    .trim()
+  return (
+    selector
+      .replace(/ pin(?=[\d.])/g, " port")
+      .replace(/ subcircuit\./g, " group[isSubcircuit=true]")
+      .replace(/([^ ])\>([^ ])/g, "$1 > $2")
+      .replace(
+        /(^|[ >])(?!pin\.)(?!port\.)(?!net\.)([A-Z][A-Za-z0-9_-]*)\.([A-Za-z0-9_+-]+)/g,
+        (_, sep, name, pin) => {
+          const pinPart = /^\d+$/.test(pin) ? `pin${pin}` : pin
+          return `${sep}.${name} > .${pinPart}`
+        },
+      )
+      // Escape "+" inside class/pin identifiers (e.g. a pin labelled "PUL+").
+      // css-select otherwise treats "+" as an adjacent-sibling combinator, so
+      // ".PUL+" would parse as ".PUL" followed by a combinator and never match a
+      // port literally named "PUL+". A leading "+" (e.g. ".+INA") already parses
+      // as part of the identifier, so we only escape "+" that follows an
+      // identifier character. Net names containing "+" are rejected above.
+      .replace(/(?<=[A-Za-z0-9_])\+/g, "\\+")
+      .trim()
+  )
 }
