@@ -57,7 +57,10 @@ const hostConfig: HostConfig<
 > = {
   supportsMutation: true,
   createInstance(type: string, props: any) {
-    const target = catalogue[type]
+    // Fall back to a lowercased lookup so casing typos (e.g. "powerSource"
+    // or "PowerSource" instead of the "powersource" intrinsic element) still
+    // resolve to the registered component instead of throwing.
+    const target = catalogue[type] ?? catalogue[type.toLowerCase()]
 
     if (!target) {
       if (Object.keys(catalogue).length === 0) {
