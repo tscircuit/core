@@ -4,4 +4,5 @@ import type { PrimitiveComponent } from "lib/components/base-components/Primitiv
 export interface TraceI extends PrimitiveComponent<typeof traceProps> {
   source_trace_id: string | null
   subcircuit_connectivity_map_key: string | null
+  _exposesSubcircuitConnection: boolean
 }

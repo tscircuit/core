@@ -7,13 +7,81 @@ import {
 } from "circuit-json-to-connectivity-map"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
-import { trimRouteEndsAtBreakoutPoints } from "./trimRouteEndsAtBreakoutPoints"
 import type {
   SimpleRouteConnection,
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
+
+type PreservedTraceRoutePoint = {
+  route_type?: string
+  start_pcb_port_id?: string
+  end_pcb_port_id?: string
+}
+
+type PreservedTrace = {
+  pcb_trace_id: string
+  source_trace_id?: string
+  connection_name?: string
+  route?: PreservedTraceRoutePoint[]
+}
+
+const getPreservedTraceConnectionName = (trace: PreservedTrace) =>
+  trace.source_trace_id ?? trace.connection_name ?? trace.pcb_trace_id
+
+const getConnectedToIdsForPreservedTrace = ({
+  trace,
+  connectionName,
+  db,
+  connMap,
+}: {
+  trace: PreservedTrace
+  connectionName: string
+  db: CircuitJsonUtilObjects
+  connMap: ConnectivityMap
+}) => {
+  const connectedToIds = new Set<string>()
+  const addConnectedId = (id?: string | null) => {
+    if (!id) return
+    connectedToIds.add(id)
+    const connectivityNetId = connMap.getNetConnectedToId(id)
+    if (!connectivityNetId) return
+    connectedToIds.add(connectivityNetId)
+    for (const connectedId of connMap.getIdsConnectedToNet(connectivityNetId)) {
+      connectedToIds.add(connectedId)
+    }
+  }
+
+  addConnectedId(connectionName)
+  addConnectedId(trace.source_trace_id)
+
+  const sourceTrace = trace.source_trace_id
+    ? db.source_trace.get(trace.source_trace_id)
+    : null
+  if (sourceTrace) {
+    for (const id of sourceTrace.connected_source_net_ids ?? []) {
+      addConnectedId(id)
+    }
+    for (const id of sourceTrace.connected_source_port_ids ?? []) {
+      addConnectedId(id)
+    }
+  }
+
+  for (const routePoint of trace.route ?? []) {
+    if (routePoint.route_type !== "wire") continue
+    for (const pcbPortId of [
+      routePoint.start_pcb_port_id,
+      routePoint.end_pcb_port_id,
+    ]) {
+      addConnectedId(pcbPortId)
+      const pcbPort = pcbPortId ? db.pcb_port.get(pcbPortId) : null
+      addConnectedId(pcbPort?.source_port_id)
+    }
+  }
+
+  return Array.from(connectedToIds)
+}
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -137,37 +205,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // - connections: copper the current autorouter still needs to create.
   // - traces: copper that already exists and must be preserved.
   //
-  // Child subcircuits can be autorouted before their parent board. Those
+  // Child subcircuits are autorouted before their parent board. Those
   // child routes belong in `traces`, not `connections`; otherwise the parent
   // autorouter receives the same child-internal source_trace as new work and
   // may route it a second time.
   //
-  // Keep source-trace metadata so parent routes can recognize child fanout
-  // copper that belongs to the same connected net.
-  //
-  // The inner autorouter routes each cross-boundary pin up to its breakout
-  // point and stops, so this descendant "handoff" copper ends exactly on the
-  // breakout point. Since the breakout point is also the parent route's
-  // terminal, the copper would otherwise bury that terminal and leave the
-  // parent autorouter no free cell to start/end the route. We trim the
-  // copper back a short distance from each breakout point so the terminal
-  // stays routable while the rest of the copper still blocks other nets. (Only
-  // the obstacle copy is trimmed; the real pcb_trace still reaches the
-  // breakout point, and the parent route meets it there on the same net.)
-  const breakoutPointPositions = breakoutPoints.map((bp) => ({
-    x: bp.x,
-    y: bp.y,
-  }))
-  // Derive the trim distance from the board's design rules instead of a fixed
-  // value, so it scales with a user-specified trace width. The trimmed-back
-  // region has to free a cell big enough for the escape route to enter and
-  // drop a via: a via pad plus a trace and clearance.
-  const breakoutHandoffTrimMm =
-    (minViaPadDiameter ?? board?.min_via_pad_diameter ?? 0.3) +
-    2 * (minTraceWidth ?? board?.min_trace_width ?? 0.15) +
-    (minTraceToPadEdgeClearance ??
-      board?.min_trace_to_pad_edge_clearance ??
-      0.1)
+  // Keep connectivity metadata on preserved traces so parent routes can
+  // legally touch child fanout copper that belongs to the same connected net.
   const preservedRoutedSubcircuitTraces: SimplifiedPcbTrace[] = db.pcb_trace
     .list()
     .filter((t) => {
@@ -180,18 +224,23 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         relevantSubcircuitIds!.has(t.subcircuit_id)
       )
     })
-    .map((t) => ({
-      type: "pcb_trace" as const,
-      pcb_trace_id: t.pcb_trace_id,
-      source_trace_id: t.source_trace_id,
-      connection_name:
-        t.source_trace_id ?? (t as any).connection_name ?? t.pcb_trace_id,
-      route: trimRouteEndsAtBreakoutPoints({
+    .map((t) => {
+      const trace = t as PreservedTrace
+      const connectionName = getPreservedTraceConnectionName(trace)
+      return {
+        type: "pcb_trace" as const,
+        pcb_trace_id: t.pcb_trace_id,
+        source_trace_id: t.source_trace_id,
+        connection_name: connectionName,
+        connectedTo: getConnectedToIdsForPreservedTrace({
+          trace,
+          connectionName,
+          db,
+          connMap,
+        }),
         route: t.route as SimplifiedPcbTrace["route"],
-        breakoutPointPositions,
-        trimMm: breakoutHandoffTrimMm,
-      }),
-    }))
+      }
+    })
     .filter((t) => t.route.length >= 2)
 
   // Add everything in the connMap to the connectedTo array of each obstacle

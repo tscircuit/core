@@ -1,10 +1,11 @@
 import {
+  type SimpleRouteJson as AutorouterSimpleRouteJson,
+  type RerouteRectRegion,
   convertSrjToGraphicsObject,
   getRerouteSimpleRouteJson,
   reconnectReroutedSimpleRouteJsonRegion,
-  type RerouteRectRegion,
-  type SimpleRouteJson as AutorouterSimpleRouteJson,
 } from "@tscircuit/capacity-autorouter"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   type AutorouterConfig,
@@ -32,35 +33,41 @@ import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting/createSourceTracesFromOffboardConnections"
 import {
-  getPresetAutoroutingConfig,
   type NormalizedAutorouterConfig,
+  getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
+import {
+  GROUND_NET_REGEX,
+  POWER_NET_REGEX,
+} from "lib/utils/gnd-power-net-regex"
+import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
+import { Port } from "../Port/Port"
 import { TraceHint } from "../TraceHint"
+import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
 import { Group_doInitialPcbCalcPlacementResolution } from "./Group_doInitialPcbCalcPlacementResolution"
 import { Group_doInitialPcbComponentAnchorAlignment } from "./Group_doInitialPcbComponentAnchorAlignment"
 import { Group_doInitialPcbLayoutFlex } from "./Group_doInitialPcbLayoutFlex"
 import { Group_doInitialPcbLayoutGrid } from "./Group_doInitialPcbLayoutGrid"
 import { Group_doInitialPcbLayoutPack } from "./Group_doInitialPcbLayoutPack/Group_doInitialPcbLayoutPack"
+import {
+  Group_doInitialSchematicBoxComponentRender,
+  getGroupSchematicBoxPinLabels,
+} from "./Group_doInitialSchematicBoxComponentRender"
 import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
 import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
 import { Group_doInitialSchematicLayoutSections } from "./Group_doInitialSchematicLayoutSections"
-import {
-  getGroupSchematicBoxPinLabels,
-  Group_doInitialSchematicBoxComponentRender,
-} from "./Group_doInitialSchematicBoxComponentRender"
 import { Group_doInitialSchematicTraceRender } from "./Group_doInitialSchematicTraceRender/Group_doInitialSchematicTraceRender"
 import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSimulationSpiceEngineRender"
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
-import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import {
   Group_applyDrcTolerancesToSimpleRouteJson,
@@ -69,6 +76,7 @@ import {
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
 } from "./Group_phasedAutoroutingUtils"
+import { Group_shouldAllowDuplicateChildName } from "./Group_shouldAllowDuplicateChildName"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
@@ -81,11 +89,64 @@ import {
 } from "./region-replacement"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
-import { Port } from "../Port/Port"
-import {
-  GROUND_NET_REGEX,
-  POWER_NET_REGEX,
-} from "lib/utils/gnd-power-net-regex"
+
+const getDistanceToPoint = (
+  routePoint: PcbTrace["route"][number],
+  targetPoint: { x: number; y: number },
+) => {
+  const position = getRoutePointPosition(routePoint)
+  return Math.hypot(position.x - targetPoint.x, position.y - targetPoint.y)
+}
+
+const reversePcbTraceRoute = (route: PcbTrace["route"]): PcbTrace["route"] =>
+  route
+    .slice()
+    .reverse()
+    .map((point) => {
+      if (point.route_type === "via") {
+        return { ...point }
+      }
+
+      if (point.route_type === "through_pad") {
+        return {
+          ...point,
+          start: point.end,
+          end: point.start,
+          start_layer: point.end_layer,
+          end_layer: point.start_layer,
+        }
+      }
+
+      return { ...point }
+    })
+
+const ensureRouteStartsAtSourceTraceStart = ({
+  db,
+  route,
+  sourceTraceId,
+}: {
+  db: CircuitJsonUtilObjects
+  route: PcbTrace["route"]
+  sourceTraceId?: string
+}) => {
+  if (!sourceTraceId || route.length < 2) return route
+
+  const sourceTrace = db.source_trace.get(sourceTraceId)
+  const firstSourcePortId = sourceTrace?.connected_source_port_ids[0]
+  if (!firstSourcePortId) return route
+
+  const firstPcbPort = db.pcb_port
+    .list()
+    .find((port) => port.source_port_id === firstSourcePortId)
+  if (!firstPcbPort) return route
+
+  const firstPoint = route[0]
+  const lastPoint = route[route.length - 1]
+  return getDistanceToPoint(lastPoint, firstPcbPort) <
+    getDistanceToPoint(firstPoint, firstPcbPort)
+    ? reversePcbTraceRoute(route)
+    : route
+}
 
 export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   extends NormalComponent<Props>
@@ -1334,7 +1395,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       pcb_trace.subcircuit_id ??= this.subcircuit_id!
 
-      const cjRoute = pcb_trace.route.map((point: any) => {
+      let cjRoute = pcb_trace.route.map((point: any) => {
         if (point.route_type !== "through_obstacle") return point
         return {
           route_type: "through_pad",
@@ -1345,6 +1406,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           width: point.width,
         }
       })
+      const routeSourceTraceId = getSourceTraceIdForRoutedTrace({
+        db,
+        trace: {
+          ...pcb_trace,
+          route: cjRoute,
+        },
+        subcircuit_id: this.subcircuit_id,
+      })
+      cjRoute = ensureRouteStartsAtSourceTraceStart({
+        db,
+        route: cjRoute as PcbTrace["route"],
+        sourceTraceId: routeSourceTraceId,
+      })
+      pcb_trace.route = cjRoute as typeof pcb_trace.route
 
       // Split traces at jumper locations (based on explicit jumper route markers)
       let segments = splitPcbTracesOnJumperSegments(cjRoute)
@@ -1872,8 +1947,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       for (const child of this.children) {
         // Nested subcircuits are scoped independently. All other immediate
-        // children, including generated traces, must have unique names within
-        // this subcircuit.
+        // children must have unique names unless same-named traces resolve to
+        // the same underlying connectivity key.
         if ((child as any).isSubcircuit) continue
 
         if (child._parsedProps.name) {
@@ -1885,10 +1960,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       for (const [name, components] of immediateChildrenByName.entries()) {
-        if (components.length > 1) {
+        if (!Group_shouldAllowDuplicateChildName(components)) {
           db.pcb_trace_error.insert({
             error_type: "pcb_trace_error",
-            message: `Multiple components found with name "${name}" in subcircuit "${this.name || "unnamed"}". Component names must be unique within a subcircuit.`,
+            message: `Multiple immediate children found with name "${name}" in subcircuit "${this.name || "unnamed"}". Names must be unique unless every duplicate is a trace with the same subcircuit connectivity map key.`,
             source_trace_id: "",
             pcb_trace_id: "",
             pcb_component_ids: components

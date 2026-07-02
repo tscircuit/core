@@ -89,9 +89,7 @@ test("copper pour does not connect to child net without exposedNets", async () =
 
   const sourceTraces = circuit.db.source_trace.list()
   expect(
-    sourceTraces.some(
-      (trace) => trace.name === "exposed_net.SubcircuitChild.GND",
-    ),
+    sourceTraces.some((trace) => trace.name?.startsWith("exposed_net.")),
   ).toBe(false)
   expect(
     sourceTraces.some((trace) => {

@@ -2,6 +2,9 @@ import type { AnyCircuitElement } from "circuit-json"
 import { IsolatedCircuit } from "lib/IsolatedCircuit"
 import type { ISubcircuit } from "./ISubcircuit"
 
+const cloneCircuitJson = (circuitJson: AnyCircuitElement[]) =>
+  JSON.parse(JSON.stringify(circuitJson)) as AnyCircuitElement[]
+
 /**
  * Renders the subcircuit's children in isolation and extracts the circuit JSON.
  * If a cached result exists for the same prop hash, uses that instead.
@@ -34,7 +37,7 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
   // Check cache first (synchronous - before async effect)
   const cached = cachedSubcircuits?.get(propHash)
   if (cached) {
-    subcircuit._isolatedCircuitJson = cached
+    subcircuit._isolatedCircuitJson = cloneCircuitJson(cached)
     subcircuit.children = []
     subcircuit._normalComponentNameMap = null
     return
@@ -53,7 +56,7 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
     // Check cache again (might have been populated while waiting to execute)
     const cachedResult = cachedSubcircuits?.get(propHash)
     if (cachedResult) {
-      subcircuit._isolatedCircuitJson = cachedResult
+      subcircuit._isolatedCircuitJson = cloneCircuitJson(cachedResult)
       return
     }
 
@@ -62,7 +65,9 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
     const pendingRenderPromise = pendingSubcircuitRenders?.get(propHash)
     if (pendingRenderPromise) {
       // Another subcircuit is already rendering - wait for it
-      subcircuit._isolatedCircuitJson = await pendingRenderPromise
+      subcircuit._isolatedCircuitJson = cloneCircuitJson(
+        await pendingRenderPromise,
+      )
       return
     }
 
@@ -95,12 +100,12 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
       // Render until all async effects complete (including nested isolated subcircuits)
       await isolatedCircuit.renderUntilSettled()
 
-      const circuitJson = isolatedCircuit.getCircuitJson()
+      const circuitJson = cloneCircuitJson(isolatedCircuit.getCircuitJson())
 
       // Store in cache for reuse by identical subcircuits
-      cachedSubcircuits?.set(propHash, circuitJson)
+      cachedSubcircuits?.set(propHash, cloneCircuitJson(circuitJson))
 
-      subcircuit._isolatedCircuitJson = circuitJson
+      subcircuit._isolatedCircuitJson = cloneCircuitJson(circuitJson)
 
       // Resolve the promise so waiting subcircuits can use the result
       resolveRender(circuitJson)

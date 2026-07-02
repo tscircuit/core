@@ -1,22 +1,23 @@
-import type { Trace } from "./Trace"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
+import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import { TraceConnectionError } from "lib/errors"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { getClosest } from "lib/utils/getClosest"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { pairs } from "lib/utils/pairs"
+import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
+import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { tryNow } from "lib/utils/try-now"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
-import { getTraceLength } from "./trace-utils/compute-trace-length"
-import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
-import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
-import { TraceConnectionError } from "lib/errors"
+import type { Trace } from "./Trace"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
-import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getTraceLength } from "./trace-utils/compute-trace-length"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -37,6 +38,50 @@ const portToObjective = (port: Port): PcbRouteObjective => {
 }
 
 const SHOULD_USE_SINGLE_LAYER_ROUTING = false
+
+const getDistanceToRouteObjective = (
+  point: PcbTrace["route"][number],
+  objective: PcbRouteObjective,
+) => {
+  const position = getRoutePointPosition(point)
+  return Math.hypot(position.x - objective.x, position.y - objective.y)
+}
+
+const reverseRouteDirection = (route: PcbTrace["route"]): PcbTrace["route"] =>
+  route
+    .slice()
+    .reverse()
+    .map((point) => {
+      if (point.route_type === "via") {
+        return { ...point }
+      }
+
+      if (point.route_type === "through_pad") {
+        return {
+          ...point,
+          start: point.end,
+          end: point.start,
+          start_layer: point.end_layer,
+          end_layer: point.start_layer,
+        }
+      }
+
+      return { ...point }
+    })
+
+const ensureRouteStartsAtObjective = (
+  route: PcbTrace["route"],
+  objective: PcbRouteObjective,
+) => {
+  if (route.length < 2) return route
+
+  const firstPoint = route[0]
+  const lastPoint = route[route.length - 1]
+  return getDistanceToRouteObjective(lastPoint, objective) <
+    getDistanceToRouteObjective(firstPoint, objective)
+    ? reverseRouteDirection(route)
+    : route
+}
 
 export function Trace_doInitialPcbTraceRender(trace: Trace) {
   if (trace.root?.pcbDisabled) return
@@ -177,7 +222,6 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     }
 
     ports.push(...closestPortPair)
-    // biome-ignore lint/style/noUselessElse: <explanation>
   } else if (ports.length === 1 && nets.length === 1) {
     // Add a port from the net that is closest to the port
     const port = ports[0]
@@ -415,6 +459,10 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       return
     }
     const [autoroutedTrace] = traces as PcbTrace[]
+    autoroutedTrace.route = ensureRouteStartsAtObjective(
+      autoroutedTrace.route,
+      a,
+    )
 
     // If the autorouter didn't specify a layer, use the dominant layer
     // Some of the single-layer autorouters don't add the layer property

@@ -22,29 +22,29 @@ import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getClosest } from "lib/utils/getClosest"
+import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
+import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { pairs } from "lib/utils/pairs"
+import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { getStubEdges } from "lib/utils/schematic/getStubEdges"
 import { tryNow } from "lib/utils/try-now"
 import { z } from "zod"
+import { TraceConnectionError } from "../../../errors"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { Net } from "../Net"
 import type { NetLabel } from "../NetLabel"
 import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
 import type { TraceI } from "./TraceI"
-import { getMaxLengthFromConnectedCapacitors } from "./trace-utils/get-max-length-from-connected-capacitors"
-import { getTraceDisplayName } from "./trace-utils/get-trace-display-name"
-import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
-import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
-import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
-import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
-import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualTraceRender"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
-import { TraceConnectionError } from "../../../errors"
+import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualTraceRender"
+import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
+import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
+import { getMaxLengthFromConnectedCapacitors } from "./trace-utils/get-max-length-from-connected-capacitors"
+import { getTraceDisplayName } from "./trace-utils/get-trace-display-name"
 
 export class Trace
   extends PrimitiveComponent<typeof traceProps>
@@ -57,6 +57,7 @@ export class Trace
   _inflatedPcbVias?: PcbVia[]
   _portsRoutedOnPcb: Port[]
   subcircuit_connectivity_map_key: string | null = null
+  _exposesSubcircuitConnection = false
   _traceConnectionHash: string | null = null
   _couldNotFindPort?: boolean
 
@@ -274,7 +275,7 @@ export class Trace
       (t) =>
         t.subcircuit_connectivity_map_key ===
           this.subcircuit_connectivity_map_key &&
-        t.connected_source_port_ids.sort().join(",") ===
+        [...t.connected_source_port_ids].sort().join(",") ===
           this._traceConnectionHash,
     )
     if (existingTrace) {

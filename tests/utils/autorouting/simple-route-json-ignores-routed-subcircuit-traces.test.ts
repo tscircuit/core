@@ -95,6 +95,21 @@ test("board simple route json ignores source traces already routed by child subc
       connected_source_net_ids: [],
     } as any,
     {
+      type: "source_trace",
+      source_trace_id: "source_trace_peer_same_net",
+      connected_source_port_ids: [],
+      connected_source_net_ids: ["source_net_child"],
+    } as any,
+    {
+      type: "pcb_breakout_point",
+      pcb_breakout_point_id: "pcb_breakout_point_child_b",
+      source_port_id: "source_port_child_b",
+      source_trace_id: "source_trace_child_internal",
+      subcircuit_id: childSubcircuitId,
+      x: 0,
+      y: 0,
+    } as any,
+    {
       type: "pcb_trace",
       pcb_trace_id: "pcb_trace_child_internal",
       source_trace_id: "source_trace_child_internal",
@@ -136,6 +151,20 @@ test("board simple route json ignores source traces already routed by child subc
   expect(simpleRouteJson.traces?.map((trace) => trace.pcb_trace_id)).toEqual([
     "pcb_trace_child_internal",
   ])
+
+  const preservedTrace = simpleRouteJson.traces?.[0]
+  expect(preservedTrace?.connectedTo).toEqual(
+    expect.arrayContaining([
+      "source_trace_child_internal",
+      "source_net_child",
+      "source_port_child_a",
+      "source_port_child_b",
+      "source_trace_peer_same_net",
+      "pcb_port_child_a",
+      "pcb_port_child_b",
+    ]),
+  )
+  expect(preservedTrace?.route.at(-1)).toMatchObject({ x: 0, y: 0 })
 
   // The cross-boundary trace is still board-level routing intent, so it should
   // remain in `connections`.
