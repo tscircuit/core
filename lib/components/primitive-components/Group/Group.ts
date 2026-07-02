@@ -76,7 +76,10 @@ import {
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
 } from "./Group_phasedAutoroutingUtils"
-import { Group_shouldAllowDuplicateChildName } from "./Group_shouldAllowDuplicateChildName"
+import {
+  Group_getDuplicateChildNameErrorMessage,
+  Group_shouldAllowDuplicateChildName,
+} from "./Group_shouldAllowDuplicateChildName"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
@@ -1961,9 +1964,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       for (const [name, components] of immediateChildrenByName.entries()) {
         if (!Group_shouldAllowDuplicateChildName(components)) {
+          const message = Group_getDuplicateChildNameErrorMessage({
+            name,
+            subcircuitName: this.name,
+            childrenWithSameName: components,
+          })
           db.pcb_trace_error.insert({
             error_type: "pcb_trace_error",
-            message: `Multiple immediate children found with name "${name}" in subcircuit "${this.name || "unnamed"}". Names must be unique unless every duplicate is a trace with the same subcircuit connectivity map key.`,
+            message: message!,
             source_trace_id: "",
             pcb_trace_id: "",
             pcb_component_ids: components
