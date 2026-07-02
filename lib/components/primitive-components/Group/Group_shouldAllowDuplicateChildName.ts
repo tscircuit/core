@@ -38,27 +38,3 @@ export function Group_getDuplicateChildNameViolationKind(
     ? null
     : "duplicate_trace_name_without_shared_connectivity"
 }
-
-export function Group_getDuplicateChildNameErrorMessage({
-  name,
-  subcircuitName,
-  childrenWithSameName,
-}: {
-  name: string
-  subcircuitName?: string
-  childrenWithSameName: PrimitiveComponent[]
-}) {
-  const violationKind =
-    Group_getDuplicateChildNameViolationKind(childrenWithSameName)
-  const displaySubcircuitName = subcircuitName || "unnamed"
-
-  if (violationKind === "duplicate_trace_name_without_shared_connectivity") {
-    return `Trace "${name}" in subcircuit "${displaySubcircuitName}" shares a name with another trace, but the traces are not mutually connected. Same-named traces must have the same subcircuit connectivity map key.`
-  }
-
-  if (violationKind === "duplicate_child_name") {
-    return `Multiple immediate children found with name "${name}" in subcircuit "${displaySubcircuitName}". Names must be unique.`
-  }
-
-  return null
-}

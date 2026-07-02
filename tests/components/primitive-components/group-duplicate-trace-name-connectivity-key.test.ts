@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import {
-  Group_getDuplicateChildNameErrorMessage,
+  Group_getDuplicateChildNameViolationKind,
   Group_shouldAllowDuplicateChildName,
 } from "lib/components/primitive-components/Group/Group_shouldAllowDuplicateChildName"
 import { Net } from "lib/components/primitive-components/Net"
@@ -46,28 +46,23 @@ test("duplicate trace names are allowed only with the same connectivity key", ()
   ).toBe(false)
 
   expect(
-    Group_getDuplicateChildNameErrorMessage({
-      name: "shared_trace_name",
-      subcircuitName: "S1",
-      childrenWithSameName: [
-        makeTrace("parent_connectivity_net0"),
-        makeTrace("parent_connectivity_net1"),
-      ],
-    }),
-  ).toBe(
-    'Trace "shared_trace_name" in subcircuit "S1" shares a name with another trace, but the traces are not mutually connected. Same-named traces must have the same subcircuit connectivity map key.',
-  )
+    Group_getDuplicateChildNameViolationKind([
+      makeTrace("parent_connectivity_net0"),
+      makeTrace("parent_connectivity_net1"),
+    ]),
+  ).toBe("duplicate_trace_name_without_shared_connectivity")
 
   expect(
-    Group_getDuplicateChildNameErrorMessage({
-      name: "shared_trace_name",
-      subcircuitName: "S1",
-      childrenWithSameName: [
-        makeTrace("parent_connectivity_net0"),
-        new Net({ name: "shared_trace_name" }),
-      ],
-    }),
-  ).toBe(
-    'Multiple immediate children found with name "shared_trace_name" in subcircuit "S1". Names must be unique.',
-  )
+    Group_getDuplicateChildNameViolationKind([
+      makeTrace("parent_connectivity_net0"),
+      new Net({ name: "shared_trace_name" }),
+    ]),
+  ).toBe("duplicate_child_name")
+
+  expect(
+    Group_getDuplicateChildNameViolationKind([
+      makeTrace("parent_connectivity_net0"),
+      makeTrace("parent_connectivity_net0"),
+    ]),
+  ).toBe(null)
 })
