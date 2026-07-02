@@ -49,6 +49,7 @@ import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFr
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import { Port } from "../Port/Port"
+import { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
 import { Group_doInitialPcbCalcPlacementResolution } from "./Group_doInitialPcbCalcPlacementResolution"
@@ -76,7 +77,6 @@ import {
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
 } from "./Group_phasedAutoroutingUtils"
-import { Group_getDuplicateChildNameViolationKind } from "./Group_shouldAllowDuplicateChildName"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { addPortIdsToTracesAtJumperPads } from "./add-port-ids-to-traces-at-jumper-pads"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
@@ -1960,14 +1960,29 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       }
 
       for (const [name, components] of immediateChildrenByName.entries()) {
-        const violationKind =
-          Group_getDuplicateChildNameViolationKind(components)
-        if (violationKind) {
+        if (components.length <= 1) continue
+
+        const sameNamedTraces = components.filter(
+          (child): child is Trace => child instanceof Trace,
+        )
+        const duplicateNameIsOnlyTraces =
+          sameNamedTraces.length === components.length
+        const mutuallyConnectedTraceKeys = sameNamedTraces.map(
+          (trace) => trace.subcircuit_connectivity_map_key,
+        )
+        const sameNamedTracesAreMutuallyConnected =
+          duplicateNameIsOnlyTraces &&
+          mutuallyConnectedTraceKeys.every(Boolean) &&
+          new Set(mutuallyConnectedTraceKeys).size === 1
+
+        if (
+          !duplicateNameIsOnlyTraces ||
+          !sameNamedTracesAreMutuallyConnected
+        ) {
           const displaySubcircuitName = this.name || "unnamed"
-          const message =
-            violationKind === "duplicate_trace_name_without_shared_connectivity"
-              ? `Trace "${name}" in subcircuit "${displaySubcircuitName}" shares a name with another trace, but the traces are not mutually connected. Same-named traces must have the same subcircuit connectivity map key.`
-              : `Multiple immediate children found with name "${name}" in subcircuit "${displaySubcircuitName}". Names must be unique.`
+          const message = duplicateNameIsOnlyTraces
+            ? `Trace "${name}" in subcircuit "${displaySubcircuitName}" shares a name with another trace, but the traces are not mutually connected. Same-named traces must have the same subcircuit connectivity map key.`
+            : `Multiple immediate children found with name "${name}" in subcircuit "${displaySubcircuitName}". Names must be unique.`
 
           db.pcb_trace_error.insert({
             error_type: "pcb_trace_error",

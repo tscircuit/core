@@ -1,8 +1,5 @@
 import { expect, test } from "bun:test"
-import {
-  Group_getDuplicateChildNameViolationKind,
-  Group_shouldAllowDuplicateChildName,
-} from "lib/components/primitive-components/Group/Group_shouldAllowDuplicateChildName"
+import { Group_shouldAllowDuplicateChildName } from "lib/components/primitive-components/Group/Group_shouldAllowDuplicateChildName"
 import { Net } from "lib/components/primitive-components/Net"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 
@@ -46,23 +43,23 @@ test("duplicate trace names are allowed only with the same connectivity key", ()
   ).toBe(false)
 
   expect(
-    Group_getDuplicateChildNameViolationKind([
+    Group_shouldAllowDuplicateChildName([
       makeTrace("parent_connectivity_net0"),
       makeTrace("parent_connectivity_net1"),
     ]),
-  ).toBe("duplicate_trace_name_without_shared_connectivity")
+  ).toBe(false)
 
   expect(
-    Group_getDuplicateChildNameViolationKind([
+    Group_shouldAllowDuplicateChildName([
       makeTrace("parent_connectivity_net0"),
       new Net({ name: "shared_trace_name" }),
     ]),
-  ).toBe("duplicate_child_name")
+  ).toBe(false)
 
   expect(
-    Group_getDuplicateChildNameViolationKind([
+    Group_shouldAllowDuplicateChildName([
       makeTrace("parent_connectivity_net0"),
       makeTrace("parent_connectivity_net0"),
     ]),
-  ).toBe(null)
+  ).toBe(true)
 })
