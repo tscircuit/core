@@ -185,75 +185,77 @@ export function computeJunctions(
             }
           }
         }
-      }
 
-      // Endpoint-to-endpoint junctions (only when forming a corner)
-      for (const pa of AEnds) {
+        // Endpoint junctions only apply within the same net. Different-net
+        // crossings are handled by computeCrossings(), not junction dots.
+        // Endpoint-to-endpoint junctions (only when forming a corner)
+        for (const pa of AEnds) {
+          for (const pb of BEnds) {
+            if (pointEq(pa, pb, tol)) {
+              const aEdgesAtP = incidentEdgesAtPoint(A, pa, tol)
+              const bEdgesAtP = incidentEdgesAtPoint(B, pb, tol)
+              const hasCorner = aEdgesAtP.some((eA) =>
+                bEdgesAtP.some((eB) => !isParallel(eA, eB, tol)),
+              )
+
+              // If both traces have a corner at this point and the corner orientation
+              // is the same (e.g. both are "up-right"), do NOT create a junction.
+              const aCorner = getCornerOrientationAtPoint(A, pa, tol)
+              const bCorner = getCornerOrientationAtPoint(B, pb, tol)
+              const sameCornerOrientation =
+                aCorner !== null && bCorner !== null && aCorner === bCorner
+
+              if (hasCorner && !sameCornerOrientation) {
+                result[A.source_trace_id]!.push(pa)
+                if (A.source_trace_id !== B.source_trace_id)
+                  result[B.source_trace_id]!.push(pb)
+              }
+            }
+          }
+        }
+
+        // Endpoint of A touching interior of B (only when forming a corner)
+        for (const pa of AEnds) {
+          for (const eB of B.edges) {
+            if (onSegment(pa, eB.from, eB.to, tol)) {
+              const aEdgesAtP = incidentEdgesAtPoint(A, pa, tol)
+              const hasCorner = aEdgesAtP.some((eA) => !isParallel(eA, eB, tol))
+              const aCorner = getCornerOrientationAtPoint(A, pa, tol)
+              // If B has a corner very close to this point with the same orientation, skip junction
+              const bEndpointNearPa = nearestEndpointOnTrace(B, pa, tol * 1000)
+              const bCorner = bEndpointNearPa
+                ? getCornerOrientationAtPoint(B, bEndpointNearPa, tol)
+                : null
+              const sameCornerOrientation =
+                aCorner !== null && bCorner !== null && aCorner === bCorner
+              if (hasCorner && !sameCornerOrientation) {
+                result[A.source_trace_id]!.push(pa)
+                if (A.source_trace_id !== B.source_trace_id)
+                  result[B.source_trace_id]!.push(pa)
+              }
+            }
+          }
+        }
+
+        // Endpoint of B touching interior of A (only when forming a corner)
         for (const pb of BEnds) {
-          if (pointEq(pa, pb, tol)) {
-            const aEdgesAtP = incidentEdgesAtPoint(A, pa, tol)
-            const bEdgesAtP = incidentEdgesAtPoint(B, pb, tol)
-            const hasCorner = aEdgesAtP.some((eA) =>
-              bEdgesAtP.some((eB) => !isParallel(eA, eB, tol)),
-            )
-
-            // If both traces have a corner at this point and the corner orientation
-            // is the same (e.g. both are "up-right"), do NOT create a junction.
-            const aCorner = getCornerOrientationAtPoint(A, pa, tol)
-            const bCorner = getCornerOrientationAtPoint(B, pb, tol)
-            const sameCornerOrientation =
-              aCorner !== null && bCorner !== null && aCorner === bCorner
-
-            if (hasCorner && !sameCornerOrientation) {
-              result[A.source_trace_id]!.push(pa)
-              if (A.source_trace_id !== B.source_trace_id)
+          for (const eA of A.edges) {
+            if (onSegment(pb, eA.from, eA.to, tol)) {
+              const bEdgesAtP = incidentEdgesAtPoint(B, pb, tol)
+              const hasCorner = bEdgesAtP.some((eB) => !isParallel(eA, eB, tol))
+              const bCorner = getCornerOrientationAtPoint(B, pb, tol)
+              // If A has a corner very close to this point with the same orientation, skip junction
+              const aEndpointNearPb = nearestEndpointOnTrace(A, pb, tol * 1000)
+              const aCorner = aEndpointNearPb
+                ? getCornerOrientationAtPoint(A, aEndpointNearPb, tol)
+                : null
+              const sameCornerOrientation =
+                aCorner !== null && bCorner !== null && aCorner === bCorner
+              if (hasCorner && !sameCornerOrientation) {
                 result[B.source_trace_id]!.push(pb)
-            }
-          }
-        }
-      }
-
-      // Endpoint of A touching interior of B (only when forming a corner)
-      for (const pa of AEnds) {
-        for (const eB of B.edges) {
-          if (onSegment(pa, eB.from, eB.to, tol)) {
-            const aEdgesAtP = incidentEdgesAtPoint(A, pa, tol)
-            const hasCorner = aEdgesAtP.some((eA) => !isParallel(eA, eB, tol))
-            const aCorner = getCornerOrientationAtPoint(A, pa, tol)
-            // If B has a corner very close to this point with the same orientation, skip junction
-            const bEndpointNearPa = nearestEndpointOnTrace(B, pa, tol * 1000)
-            const bCorner = bEndpointNearPa
-              ? getCornerOrientationAtPoint(B, bEndpointNearPa, tol)
-              : null
-            const sameCornerOrientation =
-              aCorner !== null && bCorner !== null && aCorner === bCorner
-            if (hasCorner && !sameCornerOrientation) {
-              result[A.source_trace_id]!.push(pa)
-              if (A.source_trace_id !== B.source_trace_id)
-                result[B.source_trace_id]!.push(pa)
-            }
-          }
-        }
-      }
-
-      // Endpoint of B touching interior of A (only when forming a corner)
-      for (const pb of BEnds) {
-        for (const eA of A.edges) {
-          if (onSegment(pb, eA.from, eA.to, tol)) {
-            const bEdgesAtP = incidentEdgesAtPoint(B, pb, tol)
-            const hasCorner = bEdgesAtP.some((eB) => !isParallel(eA, eB, tol))
-            const bCorner = getCornerOrientationAtPoint(B, pb, tol)
-            // If A has a corner very close to this point with the same orientation, skip junction
-            const aEndpointNearPb = nearestEndpointOnTrace(A, pb, tol * 1000)
-            const aCorner = aEndpointNearPb
-              ? getCornerOrientationAtPoint(A, aEndpointNearPb, tol)
-              : null
-            const sameCornerOrientation =
-              aCorner !== null && bCorner !== null && aCorner === bCorner
-            if (hasCorner && !sameCornerOrientation) {
-              result[B.source_trace_id]!.push(pb)
-              if (A.source_trace_id !== B.source_trace_id)
-                result[A.source_trace_id]!.push(pb)
+                if (A.source_trace_id !== B.source_trace_id)
+                  result[A.source_trace_id]!.push(pb)
+              }
             }
           }
         }
