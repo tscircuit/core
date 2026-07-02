@@ -1,5 +1,7 @@
 import external0402Footprint from "tests/fixtures/assets/external-0402-footprint.json"
-import { getTestFootprintServer } from "tests/fixtures/get-test-footprint-server"
+
+const cloneFootprintCircuitJson = () =>
+  JSON.parse(JSON.stringify(external0402Footprint))
 
 /**
  * A subcircuit with KiCad footprint and traces that takes time to render.
@@ -50,16 +52,10 @@ export function KicadSubcircuit({
 }
 
 export function getSubcircuitCachingPlatformConfig() {
-  const { url: footprintServerUrl } = getTestFootprintServer(
-    external0402Footprint,
-  )
-
   return {
     footprintLibraryMap: {
-      kicad: async (footprintName: string) => {
-        const url = `${footprintServerUrl}/${footprintName}.circuit.json`
-        const res = await fetch(url)
-        return { footprintCircuitJson: await res.json() }
+      kicad: async () => {
+        return { footprintCircuitJson: cloneFootprintCircuitJson() }
       },
     },
   }
@@ -77,12 +73,16 @@ export function addCachedSubcircuitPanel(circuit: any) {
   const boardWidth = 15
   const boardHeight = 8
   const numBoards = 20
+  const boardIds = Array.from(
+    { length: numBoards },
+    (_, i) => `cached-board-${i}`,
+  )
 
   circuit.add(
     <panel width={100} height={100} layoutMode="grid">
-      {Array.from({ length: numBoards }, (_, i) => (
+      {boardIds.map((boardId, i) => (
         <board
-          key={`board-${i}`}
+          key={boardId}
           width={`${boardWidth}mm`}
           height={`${boardHeight}mm`}
         >

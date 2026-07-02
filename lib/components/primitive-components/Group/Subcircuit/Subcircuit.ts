@@ -40,10 +40,10 @@ export class Subcircuit
 
   doInitialCreateNetsFromProps(): void {
     super.doInitialCreateNetsFromProps()
-    this._createTracesForExposedNets()
+    this._createTracesForExposedConnections()
   }
 
-  private _createTracesForExposedNets(): void {
+  private _createTracesForExposedConnections(): void {
     const exposedNets = this._getNetNamesToExpose()
     if (!exposedNets?.length) return
 
@@ -55,29 +55,37 @@ export class Subcircuit
       const netName = normalizeExposedNetName(exposedNetName)
       const parentNetSelector = `> net.${netName}`
       const childNetSelector = `.${this.name} > net.${netName}`
-      const traceName = `exposed_net.${netName}`
 
-      const parentHasDirectNet = parentSubcircuit.children.some(
+      const parentNet = parentSubcircuit.children.find(
         (child) => child instanceof Net && child._parsedProps.name === netName,
       )
-      if (!parentHasDirectNet) {
+
+      if (!parentNet) {
         parentSubcircuit.add(new Net({ name: netName }))
       }
 
-      const existingTrace = parentSubcircuit.children.find(
-        (child) =>
-          child instanceof Trace && child._parsedProps.name === traceName,
-      )
+      // Exposed-net helper traces are generated routing intent, not user-named
+      // objects. Leave `name` unset so duplicate-name DRC remains about user
+      // identity; use from/to to keep this idempotent when the same subcircuit
+      // render phase runs more than once.
+      const existingTrace = parentSubcircuit.children.find((child) => {
+        if (!(child instanceof Trace)) return false
+        if (!child._exposesSubcircuitConnection) return false
+        const childProps = child._parsedProps as Record<string, unknown>
+        return (
+          childProps.from === childNetSelector &&
+          childProps.to === parentNetSelector
+        )
+      })
       if (existingTrace) continue
 
-      parentSubcircuit.add(
-        new Trace({
-          name: traceName,
-          from: childNetSelector,
-          to: parentNetSelector,
-          displayName: netName,
-        }),
-      )
+      const trace = new Trace({
+        from: childNetSelector,
+        to: parentNetSelector,
+        displayName: netName,
+      })
+      trace._exposesSubcircuitConnection = true
+      parentSubcircuit.add(trace)
     }
   }
 
