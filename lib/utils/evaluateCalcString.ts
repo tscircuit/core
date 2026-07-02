@@ -122,6 +122,21 @@ function tokenize(expr: string, units: Record<string, number>): Token[] {
         }
       }
 
+      // Optional exponent for scientific notation (e.g. "1.13e-13")
+      if (i < expr.length && (expr[i] === "e" || expr[i] === "E")) {
+        let j = i + 1
+        if (j < expr.length && (expr[j] === "+" || expr[j] === "-")) {
+          j++
+        }
+        if (j < expr.length && isDigit(expr[j])) {
+          j++
+          while (j < expr.length && isDigit(expr[j])) {
+            j++
+          }
+          i = j
+        }
+      }
+
       const numberText = expr.slice(start, i)
       let num = Number(numberText)
       if (Number.isNaN(num)) {
