@@ -6,82 +6,10 @@ import {
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
-import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
-import type {
-  SimpleRouteConnection,
-  SimpleRouteJson,
-  SimplifiedPcbTrace,
-} from "./SimpleRouteJson"
+import type { SimpleRouteConnection, SimpleRouteJson } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
-
-type PreservedTraceRoutePoint = {
-  route_type?: string
-  start_pcb_port_id?: string
-  end_pcb_port_id?: string
-}
-
-type PreservedTrace = {
-  pcb_trace_id: string
-  source_trace_id?: string
-  connection_name?: string
-  route?: PreservedTraceRoutePoint[]
-}
-
-const getPreservedTraceConnectionName = (trace: PreservedTrace) =>
-  trace.source_trace_id ?? trace.connection_name ?? trace.pcb_trace_id
-
-const getConnectedToIdsForPreservedTrace = ({
-  trace,
-  connectionName,
-  db,
-  connMap,
-}: {
-  trace: PreservedTrace
-  connectionName: string
-  db: CircuitJsonUtilObjects
-  connMap: ConnectivityMap
-}) => {
-  const connectedToIds = new Set<string>()
-  const addConnectedId = (id?: string | null) => {
-    if (!id) return
-    connectedToIds.add(id)
-    const connectivityNetId = connMap.getNetConnectedToId(id)
-    if (!connectivityNetId) return
-    connectedToIds.add(connectivityNetId)
-    for (const connectedId of connMap.getIdsConnectedToNet(connectivityNetId)) {
-      connectedToIds.add(connectedId)
-    }
-  }
-
-  addConnectedId(connectionName)
-  addConnectedId(trace.source_trace_id)
-
-  const sourceTrace = trace.source_trace_id
-    ? db.source_trace.get(trace.source_trace_id)
-    : null
-  if (sourceTrace) {
-    for (const id of sourceTrace.connected_source_net_ids ?? []) {
-      addConnectedId(id)
-    }
-    for (const id of sourceTrace.connected_source_port_ids ?? []) {
-      addConnectedId(id)
-    }
-  }
-
-  for (const routePoint of trace.route ?? []) {
-    if (routePoint.route_type !== "wire") continue
-    for (const pcbPortId of [
-      routePoint.start_pcb_port_id,
-      routePoint.end_pcb_port_id,
-    ]) {
-      addConnectedId(pcbPortId)
-      const pcbPort = pcbPortId ? db.pcb_port.get(pcbPortId) : null
-      addConnectedId(pcbPort?.source_port_id)
-    }
-  }
-
-  return Array.from(connectedToIds)
-}
+import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
+import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -170,7 +98,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ? db.pcb_group.getWhere({ subcircuit_id })
     : undefined
 
-  const connMap = getFullConnectivityMapFromCircuitJson(subcircuitElements)
+  const sharedConnMap =
+    getFullConnectivityMapFromCircuitJson(subcircuitElements)
 
   const breakoutPoints = db.pcb_breakout_point
     .list()
@@ -190,11 +119,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ].filter(
       (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
-    connMap,
+    sharedConnMap,
   )
   obstacles.push(
     ...getUnbrokenCopperPourObstacles({
-      connMap,
+      connMap: sharedConnMap,
       subcircuitComponent,
       board,
       group: pcbGroup,
@@ -212,41 +141,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   //
   // Keep connectivity metadata on preserved traces so parent routes can
   // legally touch child fanout copper that belongs to the same connected net.
-  const preservedRoutedSubcircuitTraces: SimplifiedPcbTrace[] = db.pcb_trace
-    .list()
-    .filter((t) => {
-      if (!t.subcircuit_id) return false
+  const preservedRoutedSubcircuitTraces = getPreservedRoutedSubcircuitTraces({
+    scopedDb: db,
+    currentSubcircuitId: subcircuit_id,
+    relevantSubcircuitIds,
+    sharedConnMap,
+  })
 
-      if (!subcircuit_id) return true
-
-      return (
-        t.subcircuit_id !== subcircuit_id &&
-        relevantSubcircuitIds!.has(t.subcircuit_id)
-      )
-    })
-    .map((t) => {
-      const trace = t as PreservedTrace
-      const connectionName = getPreservedTraceConnectionName(trace)
-      return {
-        type: "pcb_trace" as const,
-        pcb_trace_id: t.pcb_trace_id,
-        source_trace_id: t.source_trace_id,
-        connection_name: connectionName,
-        connectedTo: getConnectedToIdsForPreservedTrace({
-          trace,
-          connectionName,
-          db,
-          connMap,
-        }),
-        route: t.route as SimplifiedPcbTrace["route"],
-      }
-    })
-    .filter((t) => t.route.length >= 2)
-
-  // Add everything in the connMap to the connectedTo array of each obstacle
+  // Add every equivalent ID from the shared connectivity map to each obstacle.
   for (const obstacle of obstacles) {
     const additionalIds = obstacle.connectedTo.flatMap((id) =>
-      connMap.getIdsConnectedToNet(id),
+      sharedConnMap.getIdsConnectedToNet(id),
     )
     obstacle.connectedTo.push(...additionalIds)
   }
@@ -490,7 +395,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       return {
         name:
           trace.source_trace_id ??
-          connMap.getNetConnectedToId(trace.source_trace_id) ??
+          sharedConnMap.getNetConnectedToId(trace.source_trace_id) ??
           "",
         source_trace_id: trace.source_trace_id,
         nominalTraceWidth: trace.min_trace_thickness,
@@ -527,7 +432,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(st.source_trace_id),
     )
   const getSourceConnectivityKey = (id?: string | null) =>
-    id ? (connMap.getNetConnectedToId(id) ?? id) : null
+    id ? (sharedConnMap.getNetConnectedToId(id) ?? id) : null
   for (const net of source_nets) {
     const netConnectivityKey = getSourceConnectivityKey(net.source_net_id)
     if (
@@ -582,7 +487,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
 
     const connection: SimpleRouteConnection = {
-      name: net.source_net_id ?? connMap.getNetConnectedToId(net.source_net_id),
+      name:
+        net.source_net_id ??
+        sharedConnMap.getNetConnectedToId(net.source_net_id),
       nominalTraceWidth: nominalTraceWidthFromConnectedTraces,
       width: nominalTraceWidthFromConnectedTraces,
       pointsToConnect,
@@ -737,6 +644,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       nominalTraceWidth,
       outline: board?.outline?.map((point) => ({ ...point })),
     },
-    connMap,
+    connMap: sharedConnMap,
   }
 }
