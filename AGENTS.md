@@ -87,7 +87,8 @@ circuit.selectOne("resistor") // Find first resistor
 
 **Breaking up class files:**
 
-- If a class function is too long, create a file `ClassName_fnName.ts` and call the function from the class file
+- If a class INSTANCE FUNCTION is too long, create a file `ClassName_fnName.ts` and call the function from the class file
+- - Do not use this pattern for non-instance methods
 
 ## Technology Stack
 
