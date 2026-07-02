@@ -11,15 +11,17 @@ export const pushEdgesOfSchematicTraceToPreventOverlap = ({
   edges,
   db,
   source_trace_id,
+  schematic_sheet_id,
 }: {
   edges: SchematicTrace["edges"]
   db: CircuitJsonUtilObjects
   source_trace_id: string
+  schematic_sheet_id?: string | null
 }) => {
-  const mySourceTrace = db.source_trace.get(source_trace_id)!
   const otherEdges: SchematicTrace["edges"] = getOtherSchematicTraces({
     db,
     source_trace_id,
+    schematic_sheet_id,
     differentNetOnly: true,
   }).flatMap((t) => t.edges)
 
