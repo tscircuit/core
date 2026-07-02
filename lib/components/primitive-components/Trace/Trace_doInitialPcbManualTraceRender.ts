@@ -235,7 +235,14 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
 
   if (wantsStraightLine && !hasPcbPath) {
     if (!ports || ports.length < 2) {
-      trace.renderError("pcbStraightLine requires exactly two connected ports")
+      db.pcb_trace_error.insert({
+        error_type: "pcb_trace_error",
+        source_trace_id: trace.source_trace_id!,
+        message: "pcbStraightLine requires exactly two connected ports",
+        pcb_trace_id: trace.pcb_trace_id!,
+        pcb_component_ids: [],
+        pcb_port_ids: ports.map((p) => p.pcb_port_id!).filter(Boolean),
+      })
       return
     }
 
