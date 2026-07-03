@@ -7,14 +7,10 @@ import {
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { Port } from "../primitive-components/Port"
 
-const polarityAliases = new Set(["anode", "pos", "cathode", "neg"])
-
 export class Diode extends NormalComponent<
   typeof diodeProps,
   PolarizedPassivePorts
 > {
-  _importedPinAliases?: Record<number, string[]>
-
   get config() {
     const symbolMap: Record<string, BaseSymbolName> = {
       schottky: "schottky_diode",
@@ -44,36 +40,17 @@ export class Diode extends NormalComponent<
   }
 
   initPorts() {
+    const pinLabels = (this.props as { pinLabels?: unknown }).pinLabels
+    if (pinLabels) {
+      Object.assign(this._parsedProps as any, { pinLabels })
+    }
+
     super.initPorts({
       additionalAliases: {
-        pin1: ["anode", "pos", "left"],
-        pin2: ["cathode", "neg", "right"],
+        pin1: pinLabels ? ["left"] : ["anode", "pos", "left"],
+        pin2: pinLabels ? ["right"] : ["cathode", "neg", "right"],
       },
     })
-
-    if (!this._importedPinAliases) return
-    for (const [pinNumberString, aliases] of Object.entries(
-      this._importedPinAliases,
-    )) {
-      const pinNumber = Number(pinNumberString)
-      const port = this.children.find(
-        (child): child is Port =>
-          child.componentName === "Port" &&
-          (child as Port)._parsedProps.pinNumber === pinNumber,
-      )
-      if (!port) continue
-
-      const keep = (alias: string) => !polarityAliases.has(alias)
-      port.props.aliases = port.props.aliases?.filter(keep) ?? []
-      port._parsedProps.aliases = port._parsedProps.aliases?.filter(keep) ?? []
-      port.externallyAddedAliases = port.externallyAddedAliases.filter(keep)
-
-      for (const alias of aliases) {
-        if (!port.getNameAndAliases().includes(alias)) {
-          port.externallyAddedAliases.push(alias)
-        }
-      }
-    }
   }
 
   doInitialSourceRender() {

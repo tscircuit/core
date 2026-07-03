@@ -9,17 +9,17 @@
     "type": "source_port",
     "source_port_id": "source_port_d1_k",
     "source_component_id": "source_component_d1",
-    "name": "K",
+    "name": "cathode",
     "pin_number": 1,
-    "port_hints": ["K", "cathode"]
+    "port_hints": ["K", "cathode", "neg"]
   },
   {
     "type": "source_port",
     "source_port_id": "source_port_d1_a",
     "source_component_id": "source_component_d1",
-    "name": "A",
+    "name": "anode",
     "pin_number": 2,
-    "port_hints": ["A", "anode"]
+    "port_hints": ["A", "anode", "pos"]
   },
   {
     "type": "pcb_component",

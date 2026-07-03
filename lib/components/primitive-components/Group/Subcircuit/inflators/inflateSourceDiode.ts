@@ -14,36 +14,27 @@ const getLabels = (sourcePort: SourcePort | undefined) =>
     ),
   )
 
-const hasLabel = (labels: string[], matches: string[]) =>
-  labels.some((label) => matches.includes(label.trim().toLowerCase()))
-
-const getImportedDiodePinAliases = (
+const getImportedDiodePinLabels = (
   sourceElm: SourceSimpleDiode,
   inflatorContext: InflatorContext,
-): Record<number, string[]> | undefined => {
+): Record<string, string[]> | undefined => {
   const sourcePorts = inflatorContext.injectionDb.source_port
     .list()
     .filter(
       (port) => port.source_component_id === sourceElm.source_component_id,
     ) as SourcePort[]
 
-  const pin1Labels = getLabels(
-    sourcePorts.find((port) => port.pin_number === 1),
-  )
-  const pin2Labels = getLabels(
-    sourcePorts.find((port) => port.pin_number === 2),
-  )
-  if (
-    !hasLabel(pin1Labels, ["k", "c", "cathode", "neg", "-"]) &&
-    !hasLabel(pin2Labels, ["a", "anode", "pos", "+"])
-  ) {
-    return undefined
+  const pinLabels: Record<string, string[]> = {}
+  for (const sourcePort of sourcePorts) {
+    if (sourcePort.pin_number === undefined || sourcePort.pin_number === null) {
+      continue
+    }
+    const labels = getLabels(sourcePort)
+    if (labels.length === 0) continue
+    pinLabels[`pin${sourcePort.pin_number}`] = labels
   }
 
-  return {
-    1: [...pin1Labels, "cathode", "neg"],
-    2: [...pin2Labels, "anode", "pos"],
-  }
+  return Object.keys(pinLabels).length > 0 ? pinLabels : undefined
 }
 
 export function inflateSourceDiode(
@@ -66,17 +57,14 @@ export function inflateSourceDiode(
     name: sourceElm.name,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
     supplierPartNumbers: sourceElm.supplier_part_numbers ?? undefined,
+    pinLabels: getImportedDiodePinLabels(sourceElm, inflatorContext),
     layer: pcbElm?.layer,
     pcbX,
     pcbY,
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
-  })
-  diode._importedPinAliases = getImportedDiodePinAliases(
-    sourceElm,
-    inflatorContext,
-  )
+  } as any)
 
   // Create a Footprint component from the PCB primitives in the circuit JSON
   if (pcbElm) {
