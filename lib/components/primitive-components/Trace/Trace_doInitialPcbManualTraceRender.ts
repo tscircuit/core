@@ -10,6 +10,10 @@ import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import {
+  computeCombWaypoints,
+  type CombOrientation,
+} from "lib/utils/computeCombWaypoints"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -47,9 +51,16 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
 
   const hasPcbPath = props.pcbPath !== undefined
   const wantsStraightLine = Boolean(props.pcbStraightLine)
+  const combOrientation = (props as any).pcbComb as CombOrientation | undefined
+  const wantsComb = Boolean(combOrientation)
   const inflatedPcbTraces = trace._inflatedPcbTraces ?? []
 
-  if (!hasPcbPath && !wantsStraightLine && inflatedPcbTraces.length === 0)
+  if (
+    !hasPcbPath &&
+    !wantsStraightLine &&
+    !wantsComb &&
+    inflatedPcbTraces.length === 0
+  )
     return
 
   let allPortsFound: boolean
@@ -283,6 +294,63 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         end_pcb_port_id: endPort.pcb_port_id!,
       },
     ]
+
+    const traceLength = getTraceLength(route)
+    const pcb_trace = db.pcb_trace.insert({
+      route,
+      source_trace_id: trace.source_trace_id!,
+      subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
+      pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
+      trace_length: traceLength,
+    })
+    trace._portsRoutedOnPcb = ports
+    trace.pcb_trace_id = pcb_trace.pcb_trace_id
+    trace._insertErrorIfTraceIsOutsideBoard(route, ports)
+    return
+  }
+
+  if (wantsComb && !hasPcbPath) {
+    if (!ports || ports.length < 2) {
+      trace.renderError("pcbComb requires exactly two connected ports")
+      return
+    }
+
+    const [startPort, endPort] = ports
+    const startLayers = startPort.getAvailablePcbLayers()
+    const endLayers = endPort.getAvailablePcbLayers()
+    const sharedLayer = startLayers.find((layer) => endLayers.includes(layer))
+    const layer = (sharedLayer ??
+      startLayers[0] ??
+      endLayers[0] ??
+      "top") as LayerRef
+
+    // The two pads are the route endpoints; the comb is computed in global coordinates
+    // (both positions are known by this phase), so no per-component transform is needed.
+    const startPos = startPort._getGlobalPcbPositionAfterLayout()
+    const endPos = endPort._getGlobalPcbPositionAfterLayout()
+    const bends = computeCombWaypoints(startPos, endPos, combOrientation!)
+
+    // A comb whose fixed shape would overshoot (offset exceeds gap) is left unrouted so the
+    // autorouter handles it, rather than drawing backtracking copper.
+    if (!bends) {
+      console.warn(
+        `[pcbComb] ${trace} (${combOrientation}): fixed comb doesn't fit — leaving for the autorouter`,
+      )
+      return
+    }
+
+    const routePoints = [startPos, ...bends, endPos]
+    const route: PcbTraceRoutePoint[] = routePoints.map((p, index) => ({
+      route_type: "wire",
+      x: p.x,
+      y: p.y,
+      width,
+      layer,
+      ...(index === 0 ? { start_pcb_port_id: startPort.pcb_port_id! } : {}),
+      ...(index === routePoints.length - 1
+        ? { end_pcb_port_id: endPort.pcb_port_id! }
+        : {}),
+    }))
 
     const traceLength = getTraceLength(route)
     const pcb_trace = db.pcb_trace.insert({
