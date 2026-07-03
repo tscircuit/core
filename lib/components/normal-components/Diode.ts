@@ -1,29 +1,25 @@
-import { diodeProps, type InferredDiodeProps } from "@tscircuit/props"
+import { diodeProps, pinLabelsProp } from "@tscircuit/props"
 import type { SourceSimpleDiodeInput } from "circuit-json"
 import {
   type BaseSymbolName,
   type Ftype,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
+import { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { Port } from "../primitive-components/Port"
 
-type ImportedDiodePinLabels = Record<string, string | string[]>
-
-export type DiodeConstructorProps = InferredDiodeProps & {
-  pinLabels?: ImportedDiodePinLabels
-}
+const diodePropsWithPinLabels = z.intersection(
+  diodeProps,
+  z.object({
+    pinLabels: pinLabelsProp.optional(),
+  }),
+)
 
 export class Diode extends NormalComponent<
-  typeof diodeProps,
+  typeof diodePropsWithPinLabels,
   PolarizedPassivePorts
 > {
-  declare props: DiodeConstructorProps
-
-  constructor(props: DiodeConstructorProps) {
-    super(props)
-  }
-
   get config() {
     const symbolMap: Record<string, BaseSymbolName> = {
       schottky: "schottky_diode",
@@ -47,13 +43,13 @@ export class Diode extends NormalComponent<
         ? symbolMap[variantSymbol]
         : (this.props.symbolName ?? ("diode" as BaseSymbolName)),
       componentName: "Diode",
-      zodProps: diodeProps,
+      zodProps: diodePropsWithPinLabels,
       sourceFtype: "simple_diode" as Ftype,
     }
   }
 
   initPorts() {
-    const { pinLabels } = this.props
+    const pinLabels = this._resolvePinLabels()
 
     super.initPorts({
       pinLabels,

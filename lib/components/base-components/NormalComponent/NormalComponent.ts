@@ -274,8 +274,7 @@ export class NormalComponent<
     this._inferredInternallyConnectedPinNames = []
     const { config } = this
     const portsToCreate: Port[] = []
-    const pinLabels: Record<string, string | string[]> | undefined =
-      opts.pinLabels ?? this._parsedProps.pinLabels
+    const pinLabels = this._resolvePinLabels(opts)
 
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement()
@@ -495,6 +494,12 @@ export class NormalComponent<
     if (portsToCreate.length > 0) {
       this.addAll(portsToCreate)
     }
+  }
+
+  _resolvePinLabels(opts?: {
+    pinLabels?: Record<string, string | string[]>
+  }): Record<string, string | string[]> | undefined {
+    return opts?.pinLabels ?? this._parsedProps.pinLabels
   }
 
   _getImpliedFootprintString(): string | null {
