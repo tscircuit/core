@@ -40,12 +40,14 @@ export class Diode extends NormalComponent<
   }
 
   initPorts() {
-    const pinLabels = (this.props as { pinLabels?: unknown }).pinLabels
-    if (pinLabels) {
-      Object.assign(this._parsedProps as any, { pinLabels })
-    }
+    const pinLabels = (
+      this.props as {
+        pinLabels?: Record<string, string | string[]>
+      }
+    ).pinLabels
 
     super.initPorts({
+      pinLabels,
       additionalAliases: {
         pin1: pinLabels ? ["left"] : ["anode", "pos", "left"],
         pin2: pinLabels ? ["right"] : ["cathode", "neg", "right"],

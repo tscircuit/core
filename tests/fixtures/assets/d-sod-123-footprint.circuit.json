@@ -121,6 +121,62 @@
   },
   {
     "type": "pcb_fabrication_note_path",
+    "pcb_fabrication_note_path_id": "pcb_fabrication_note_path_d1_symbol_left_lead",
+    "pcb_component_id": "pcb_component_d1",
+    "layer": "top",
+    "route": [{ "x": -0.75, "y": 0 }, { "x": -0.35, "y": 0 }],
+    "stroke_width": 0.1
+  },
+  {
+    "type": "pcb_fabrication_note_path",
+    "pcb_fabrication_note_path_id": "pcb_fabrication_note_path_d1_symbol_bar_top",
+    "pcb_component_id": "pcb_component_d1",
+    "layer": "top",
+    "route": [{ "x": -0.35, "y": 0 }, { "x": -0.35, "y": 0.55 }],
+    "stroke_width": 0.1
+  },
+  {
+    "type": "pcb_fabrication_note_path",
+    "pcb_fabrication_note_path_id": "pcb_fabrication_note_path_d1_symbol_bar_bottom",
+    "pcb_component_id": "pcb_component_d1",
+    "layer": "top",
+    "route": [{ "x": -0.35, "y": 0 }, { "x": -0.35, "y": -0.55 }],
+    "stroke_width": 0.1
+  },
+  {
+    "type": "pcb_fabrication_note_path",
+    "pcb_fabrication_note_path_id": "pcb_fabrication_note_path_d1_symbol_triangle_top",
+    "pcb_component_id": "pcb_component_d1",
+    "layer": "top",
+    "route": [{ "x": -0.35, "y": 0 }, { "x": 0.25, "y": 0.4 }],
+    "stroke_width": 0.1
+  },
+  {
+    "type": "pcb_fabrication_note_path",
+    "pcb_fabrication_note_path_id": "pcb_fabrication_note_path_d1_symbol_anode",
+    "pcb_component_id": "pcb_component_d1",
+    "layer": "top",
+    "route": [{ "x": 0.25, "y": 0.4 }, { "x": 0.25, "y": -0.4 }],
+    "stroke_width": 0.1
+  },
+  {
+    "type": "pcb_fabrication_note_path",
+    "pcb_fabrication_note_path_id": "pcb_fabrication_note_path_d1_symbol_right_lead",
+    "pcb_component_id": "pcb_component_d1",
+    "layer": "top",
+    "route": [{ "x": 0.25, "y": 0 }, { "x": 0.75, "y": 0 }],
+    "stroke_width": 0.1
+  },
+  {
+    "type": "pcb_fabrication_note_path",
+    "pcb_fabrication_note_path_id": "pcb_fabrication_note_path_d1_symbol_triangle_bottom",
+    "pcb_component_id": "pcb_component_d1",
+    "layer": "top",
+    "route": [{ "x": 0.25, "y": -0.4 }, { "x": -0.35, "y": 0 }],
+    "stroke_width": 0.1
+  },
+  {
+    "type": "pcb_fabrication_note_path",
     "pcb_fabrication_note_path_id": "pcb_fabrication_note_path_d1_body_right",
     "pcb_component_id": "pcb_component_d1",
     "layer": "top",

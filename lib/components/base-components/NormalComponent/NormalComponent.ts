@@ -266,6 +266,7 @@ export class NormalComponent<
   initPorts(
     opts: {
       additionalAliases?: Record<`pin${number}`, string[]>
+      pinLabels?: Record<string, string | string[]>
       pinCount?: number
       ignoreSymbolPorts?: boolean
     } = {},
@@ -273,17 +274,19 @@ export class NormalComponent<
     this._inferredInternallyConnectedPinNames = []
     const { config } = this
     const portsToCreate: Port[] = []
+    const pinLabels: Record<string, string | string[]> | undefined =
+      opts.pinLabels ?? this._parsedProps.pinLabels
 
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement()
-    if (schPortArrangement && !this._parsedProps.pinLabels) {
+    if (schPortArrangement && !pinLabels) {
       for (const side in schPortArrangement) {
         const pins = (schPortArrangement as any)[side].pins
         if (Array.isArray(pins)) {
           for (const pinNumberOrLabel of pins) {
             const pinNumber = parsePinNumberFromLabelsOrThrow(
               pinNumberOrLabel,
-              this._parsedProps.pinLabels,
+              pinLabels,
             )
 
             portsToCreate.push(
@@ -322,8 +325,6 @@ export class NormalComponent<
       }
     }
 
-    const pinLabels: Record<string, string | string[]> | undefined =
-      this._parsedProps.pinLabels
     if (pinLabels) {
       for (const [pinKey, label] of Object.entries(pinLabels)) {
         const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
@@ -445,7 +446,7 @@ export class NormalComponent<
       }
       let explicitlyListedPinNumbersInSchPortArrangement =
         getPinsFromPortArrangement(schPortArrangement).map((pn) =>
-          parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
+          parsePinNumberFromLabelsOrThrow(pn, pinLabels),
         )
 
       if (
