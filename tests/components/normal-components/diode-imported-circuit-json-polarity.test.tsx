@@ -1,91 +1,54 @@
 import { expect, test } from "bun:test"
-import type { AnyCircuitElement } from "circuit-json"
+import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
+import { stackSvgsVertically } from "stack-svgs"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import importedDiodeCircuitJson from "tests/fixtures/assets/d-sod-123-footprint.circuit.json"
+import "tests/fixtures/extend-expect-any-svg"
 
-const importedDiodeCircuitJson = [
-  {
-    type: "source_component",
-    ftype: "simple_diode",
-    source_component_id: "source_component_d1",
-    name: "D1",
-  },
-  {
-    type: "source_port",
-    source_port_id: "source_port_d1_k",
-    source_component_id: "source_component_d1",
-    name: "K",
-    pin_number: 1,
-    port_hints: ["K", "cathode"],
-  },
-  {
-    type: "source_port",
-    source_port_id: "source_port_d1_a",
-    source_component_id: "source_component_d1",
-    name: "A",
-    pin_number: 2,
-    port_hints: ["A", "anode"],
-  },
-  {
-    type: "pcb_component",
-    pcb_component_id: "pcb_component_d1",
-    source_component_id: "source_component_d1",
-    center: { x: 0, y: 0 },
-    width: 4,
-    height: 2,
-    layer: "top",
-    rotation: 0,
-  },
-  {
-    type: "pcb_smtpad",
-    pcb_smtpad_id: "pcb_smtpad_d1_k",
-    pcb_component_id: "pcb_component_d1",
-    shape: "rect",
-    x: -1,
-    y: 0,
-    width: 1,
-    height: 1,
-    layer: "top",
-    port_hints: ["pin1"],
-  },
-  {
-    type: "pcb_smtpad",
-    pcb_smtpad_id: "pcb_smtpad_d1_a",
-    pcb_component_id: "pcb_component_d1",
-    shape: "rect",
-    x: 1,
-    y: 0,
-    width: 1,
-    height: 1,
-    layer: "top",
-    port_hints: ["pin2"],
-  },
-  {
-    type: "pcb_note_text",
-    pcb_note_text_id: "pcb_note_text_diode_import_polarity",
-    pcb_component_id: null,
-    text: "Imported diode: pin1=K/cathode, pin2=A/anode",
-    anchor_position: { x: 0, y: 2 },
-    anchor_alignment: "center",
-    font_size: 0.35,
-    color: "#444",
-  },
-] as AnyCircuitElement[]
+const panelLabelSvg = (label: string) => `<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="800"
+  height="34"
+  viewBox="0 0 800 34"
+>
+  <rect x="0" y="0" width="800" height="34" fill="#151515" />
+  <text
+    x="400"
+    y="22"
+    fill="#f4f4f4"
+    font-family="Arial, sans-serif"
+    font-size="17"
+    font-weight="700"
+    text-anchor="middle"
+  >${label}</text>
+</svg>`
 
-test("imported diode circuit json maps A/K source ports to anode/cathode selectors", () => {
-  const { circuit } = getTestFixture()
-
-  circuit.add(
-    <board width="10mm" height="10mm" circuitJson={importedDiodeCircuitJson} />,
+test("regular and imported SOD-123 diode footprints stack vertically", () => {
+  const { circuit: regularCircuit } = getTestFixture()
+  regularCircuit.add(
+    <board width="8mm" height="6mm">
+      <diode name="D1" footprint="sod123" />
+    </board>,
   )
-  circuit.render()
+  regularCircuit.render()
 
-  const diode = circuit.selectOne(".D1") as any
+  const { circuit: importedCircuit } = getTestFixture()
+  importedCircuit.add(
+    <board
+      width="8mm"
+      height="6mm"
+      circuitJson={importedDiodeCircuitJson as any}
+    />,
+  )
+  importedCircuit.render()
+
+  const diode = importedCircuit.selectOne(".D1") as any
   expect(diode.cathode.props.pinNumber).toBe(1)
   expect(diode.neg.props.pinNumber).toBe(1)
   expect(diode.anode.props.pinNumber).toBe(2)
   expect(diode.pos.props.pinNumber).toBe(2)
 
-  const sourcePorts = circuit.db.source_port
+  const sourcePorts = importedCircuit.db.source_port
     .list()
     .filter((port) => port.source_component_id === diode.source_component_id)
   const pin1 = sourcePorts.find((port) => port.pin_number === 1)
@@ -103,6 +66,18 @@ test("imported diode circuit json maps A/K source ports to anode/cathode selecto
   expect(pin2?.port_hints).not.toContain("cathode")
   expect(pin2?.port_hints).not.toContain("neg")
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  const stackedSvg = stackSvgsVertically(
+    [
+      panelLabelSvg("regular sod123 footprint"),
+      convertCircuitJsonToPcbSvg(regularCircuit.getCircuitJson()),
+      panelLabelSvg("kicad-imported SOD-123 footprint circuit json"),
+      convertCircuitJsonToPcbSvg(importedCircuit.getCircuitJson()),
+    ],
+    { gap: 8, normalizeSize: false },
+  )
+
+  expect(stackedSvg).toMatchSvgSnapshot(
+    import.meta.path,
+    "diode-sod123-regular-vs-imported",
+  )
 })
