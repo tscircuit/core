@@ -1,23 +1,15 @@
-import { diodeProps, pinLabelsProp } from "@tscircuit/props"
+import { diodeProps } from "@tscircuit/props"
 import type { SourceSimpleDiodeInput } from "circuit-json"
 import {
   type BaseSymbolName,
   type Ftype,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
-import { z } from "zod"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { Port } from "../primitive-components/Port"
 
-const diodePropsWithPinLabels = z.intersection(
-  diodeProps,
-  z.object({
-    pinLabels: pinLabelsProp.optional(),
-  }),
-)
-
 export class Diode extends NormalComponent<
-  typeof diodePropsWithPinLabels,
+  typeof diodeProps,
   PolarizedPassivePorts
 > {
   get config() {
@@ -43,7 +35,7 @@ export class Diode extends NormalComponent<
         ? symbolMap[variantSymbol]
         : (this.props.symbolName ?? ("diode" as BaseSymbolName)),
       componentName: "Diode",
-      zodProps: diodePropsWithPinLabels,
+      zodProps: diodeProps,
       sourceFtype: "simple_diode" as Ftype,
     }
   }
@@ -52,7 +44,6 @@ export class Diode extends NormalComponent<
     const pinLabels = this._resolvePinLabels()
 
     super.initPorts({
-      pinLabels,
       additionalAliases: {
         pin1: pinLabels ? ["left"] : ["anode", "pos", "left"],
         pin2: pinLabels ? ["right"] : ["cathode", "neg", "right"],

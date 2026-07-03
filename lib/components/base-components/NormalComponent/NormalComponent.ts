@@ -74,6 +74,7 @@ import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent_
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
+import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComponent_doInitialResolveFootprintPinLabels"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
@@ -147,6 +148,7 @@ export class NormalComponent<
   private _invalidFootprintPropMessages: string[] = []
 
   _invalidPinLabelMessages: string[] = []
+  _impliedFootprintPinLabels?: Record<string, string | string[]>
 
   /**
    * Set to true to enable automatic silkscreen text adjustment when it overlaps with other components
@@ -266,7 +268,6 @@ export class NormalComponent<
   initPorts(
     opts: {
       additionalAliases?: Record<`pin${number}`, string[]>
-      pinLabels?: Record<string, string | string[]>
       pinCount?: number
       ignoreSymbolPorts?: boolean
     } = {},
@@ -274,7 +275,7 @@ export class NormalComponent<
     this._inferredInternallyConnectedPinNames = []
     const { config } = this
     const portsToCreate: Port[] = []
-    const pinLabels = this._resolvePinLabels(opts)
+    const pinLabels = this._resolvePinLabels()
 
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement()
@@ -496,10 +497,15 @@ export class NormalComponent<
     }
   }
 
-  _resolvePinLabels(opts?: {
-    pinLabels?: Record<string, string | string[]>
-  }): Record<string, string | string[]> | undefined {
-    return opts?.pinLabels ?? this._parsedProps.pinLabels
+  _resolvePinLabels(): Record<string, string | string[]> | undefined {
+    const pinLabels = this._parsedProps.pinLabels
+    const parsedPinLabels =
+      pinLabels && !Array.isArray(pinLabels) ? pinLabels : undefined
+    if (!this._impliedFootprintPinLabels && !parsedPinLabels) return undefined
+    return {
+      ...(this._impliedFootprintPinLabels ?? {}),
+      ...(parsedPinLabels ?? {}),
+    }
   }
 
   _getImpliedFootprintString(): string | null {
@@ -516,7 +522,8 @@ export class NormalComponent<
   }
 
   _addChildrenFromStringFootprint() {
-    const { pcbRotation, pinLabels, pcbPinLabels } = this.props
+    const { pcbRotation, pcbPinLabels } = this.props
+    const pinLabels = this._resolvePinLabels()
     const footprint = this.resolveFootprint()
     if (!footprint) return
 
@@ -1006,6 +1013,14 @@ export class NormalComponent<
 
   updatePcbComponentAnchorAlignment(): void {
     this.doInitialPcbComponentAnchorAlignment()
+  }
+
+  doInitialResolveFootprintPinLabels(): void {
+    NormalComponent_doInitialResolveFootprintPinLabels(this)
+  }
+
+  updateResolveFootprintPinLabels(): void {
+    this.doInitialResolveFootprintPinLabels()
   }
 
   _renderReactSubtree(element: ReactElement): ReactSubtree {

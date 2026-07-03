@@ -31,7 +31,8 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
 
   if (!footprint) return
 
-  const { pcbRotation, pinLabels, pcbPinLabels } = component.props
+  const { pcbRotation, pcbPinLabels } = component.props
+  const pinLabels = component._resolvePinLabels()
   const fileExtension = getFileExtension(String(footprint))
   const footprintParser = fileExtension
     ? component.root?.platform?.footprintFileParserMap?.[fileExtension]
@@ -60,6 +61,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           result.footprintCircuitJson,
         )
         component.addAll(fpComponents)
+        component._markDirty("ResolveFootprintPinLabels")
         component._markDirty("InitializePortsFromChildren")
       } catch (err) {
         const db = component.root?.db
@@ -106,6 +108,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           soup as any,
         )
         component.addAll(fpComponents)
+        component._markDirty("ResolveFootprintPinLabels")
         component._markDirty("InitializePortsFromChildren")
       } catch (err) {
         const db = component.root?.db
@@ -197,6 +200,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
             child._markDirty?.("PcbPortRender")
           }
         }
+        component._markDirty("ResolveFootprintPinLabels")
         component._markDirty("InitializePortsFromChildren")
       } catch (err) {
         const db = component.root?.db
