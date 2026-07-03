@@ -64,7 +64,7 @@ export function inflateSourceDiode(
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
-  } as any)
+  })
 
   // Create a Footprint component from the PCB primitives in the circuit JSON
   if (pcbElm) {

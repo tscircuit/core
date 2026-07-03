@@ -1,4 +1,5 @@
-import { diodeProps } from "@tscircuit/props"
+import { diodeProps, type InferredDiodeProps } from "@tscircuit/props"
+import type { SourceSimpleDiodeInput } from "circuit-json"
 import {
   type BaseSymbolName,
   type Ftype,
@@ -7,10 +8,22 @@ import {
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { Port } from "../primitive-components/Port"
 
+type ImportedDiodePinLabels = Record<string, string | string[]>
+
+export type DiodeConstructorProps = InferredDiodeProps & {
+  pinLabels?: ImportedDiodePinLabels
+}
+
 export class Diode extends NormalComponent<
   typeof diodeProps,
   PolarizedPassivePorts
 > {
+  declare props: DiodeConstructorProps
+
+  constructor(props: DiodeConstructorProps) {
+    super(props)
+  }
+
   get config() {
     const symbolMap: Record<string, BaseSymbolName> = {
       schottky: "schottky_diode",
@@ -40,11 +53,7 @@ export class Diode extends NormalComponent<
   }
 
   initPorts() {
-    const pinLabels = (
-      this.props as {
-        pinLabels?: Record<string, string | string[]>
-      }
-    ).pinLabels
+    const { pinLabels } = this.props
 
     super.initPorts({
       pinLabels,
@@ -65,7 +74,7 @@ export class Diode extends NormalComponent<
       supplier_part_numbers: props.supplierPartNumbers,
       are_pins_interchangeable: false,
       display_name: props.displayName,
-    } as any)
+    } satisfies Omit<SourceSimpleDiodeInput, "type" | "source_component_id">)
     this.source_component_id = source_component.source_component_id
   }
 
