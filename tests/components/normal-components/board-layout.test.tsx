@@ -60,3 +60,47 @@ test("board with manual layout edits", () => {
 
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
+
+test("manual layout edits inside positioned group use absolute manual center", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board
+      width="40mm"
+      height="20mm"
+      manualEdits={{
+        pcb_placements: [
+          {
+            selector: ".C1",
+            center: { x: 11.4, y: 4.3 },
+            relative_to: "group_center",
+          },
+        ],
+      }}
+    >
+      <group name="region" pcbX={16} pcbY={0}>
+        <chip
+          name="U1"
+          footprint="soic8"
+          pinLabels={{ pin1: "VCC", pin8: "GND" }}
+        />
+        <capacitor
+          name="C1"
+          capacitance="100nF"
+          footprint="0402"
+          connections={{ pin1: "U1.VCC", pin2: "U1.GND" }}
+        />
+      </group>
+    </board>,
+  )
+
+  circuit.render()
+
+  const capacitor = circuit.selectOne(".C1")
+  expect(capacitor).not.toBeNull()
+
+  const capacitorPosition = capacitor!._getGlobalPcbPositionBeforeLayout()
+
+  expect(capacitorPosition.x).toBeCloseTo(11.4, 1)
+  expect(capacitorPosition.y).toBeCloseTo(4.3, 1)
+})
