@@ -10,6 +10,32 @@ import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
+/**
+ * Supplier part numbers in circuit JSON are expected to be arrays of strings
+ * (e.g. `{ jlcpcb: ["C7484"] }`), but some producers emit a bare string
+ * (`{ jlcpcb: "C7484" }`). Passing that straight into the Chip props schema
+ * throws "Expected array, received string", which surfaces as a broken
+ * `Could not create chip` render. Coerce any string value into a
+ * single-element array so the render degrades gracefully.
+ */
+const normalizeSupplierPartNumbers = (
+  supplierPartNumbers: SourceSimpleChip["supplier_part_numbers"],
+): SourceSimpleChip["supplier_part_numbers"] | undefined => {
+  if (!supplierPartNumbers) return undefined
+
+  const normalized: Record<string, string[]> = {}
+  for (const [supplierName, partNumbers] of Object.entries(
+    supplierPartNumbers,
+  )) {
+    if (partNumbers == null) continue
+    normalized[supplierName] = Array.isArray(partNumbers)
+      ? partNumbers
+      : [partNumbers]
+  }
+
+  return normalized as SourceSimpleChip["supplier_part_numbers"]
+}
+
 const mapInternallyConnectedSourcePortIdsToPinLabels = (
   sourcePortIds: string[][] | undefined,
   inflatorContext: InflatorContext,
@@ -74,7 +100,9 @@ export const inflateSourceChip = (
   const chip = new Chip({
     name: sourceElm.name,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
-    supplierPartNumbers: sourceElm.supplier_part_numbers ?? undefined,
+    supplierPartNumbers: normalizeSupplierPartNumbers(
+      sourceElm.supplier_part_numbers,
+    ),
     pinLabels: schematicElm?.port_labels ?? undefined,
     schWidth: schematicElm?.size?.width,
     schHeight: schematicElm?.size?.height,
