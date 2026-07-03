@@ -25,6 +25,7 @@ test("parts engine processes valid responses and special cases correctly", async
   })
   const errors1 = circuit1.db.unknown_error_finding_part.list()
   expect(errors1.length).toBe(0)
+  expect(circuit1.db.source_part_not_found_warning.list()).toHaveLength(0)
 
   // Test 2: "Not found" response (valid, converts to empty object)
   const { circuit: circuit2 } = getTestFixture()
@@ -43,4 +44,7 @@ test("parts engine processes valid responses and special cases correctly", async
   expect(sc2.supplier_part_numbers).toEqual({})
   const errors2 = circuit2.db.unknown_error_finding_part.list()
   expect(errors2.length).toBe(0)
+  const warnings2 = circuit2.db.source_part_not_found_warning.list()
+  expect(warnings2).toHaveLength(1)
+  expect(warnings2[0].message).toContain("Part not found")
 })

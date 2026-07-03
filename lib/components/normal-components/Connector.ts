@@ -7,7 +7,7 @@ import {
   type SchematicPortArrangement,
 } from "@tscircuit/props"
 import type { AnyCircuitElement, SourceSimpleConnector } from "circuit-json"
-import { unknown_error_finding_part } from "circuit-json"
+import { source_part_not_found_warning } from "circuit-json"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { convertCircuitJsonToUsbCStandardCircuitJson } from "lib/utils/connectors/convertCircuitJsonToUsbCStandardCircuitJson"
 import {
@@ -95,13 +95,18 @@ export class Connector<
     message: string,
   ): void {
     const { db } = this.root!
-    const errorObj = unknown_error_finding_part.parse({
-      type: "unknown_error_finding_part",
+    const warning = source_part_not_found_warning.parse({
+      type: "source_part_not_found_warning",
       message: `Failed to fetch circuit JSON for ${this.getString()} (standard="${standard}"): ${message}`,
       source_component_id: this.source_component_id ?? undefined,
       subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+      manufacturer_part_number:
+        this._getConnectorProps().manufacturerPartNumber ??
+        this._getConnectorProps().mfn ??
+        undefined,
+      part_name: this.name,
     })
-    db.unknown_error_finding_part.insert(errorObj)
+    db.source_part_not_found_warning.insert(warning)
   }
 
   private _getSupplierPartNumbersToTry(
@@ -382,10 +387,21 @@ export class Connector<
           supplierPartNumbers,
           sourceComponentForQuery.manufacturer_part_number,
         )
-        if (!circuitJson) return
+        if (!circuitJson) {
+          this._insertStandardConnectorCircuitJsonError(
+            standard,
+            "part circuit JSON was not found",
+          )
+          return
+        }
 
         this._addConnectorFootprintFromCircuitJson(standard, circuitJson)
       } catch (error: any) {
+        if (this.source_component_id) {
+          db.source_component.update(this.source_component_id, {
+            supplier_part_numbers: {},
+          })
+        }
         this._insertStandardConnectorCircuitJsonError(standard, error.message)
       }
     })

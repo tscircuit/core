@@ -2,7 +2,7 @@ import { test, expect } from "bun:test"
 import type { PartsEngine } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("connector usb_c without footprint emits error when partsEngine.fetchPartCircuitJson is missing", async () => {
+test("connector usb_c without footprint emits warning when partsEngine.fetchPartCircuitJson is missing", async () => {
   const { circuit } = getTestFixture()
 
   const mockPartsEngine: PartsEngine = {
@@ -17,8 +17,11 @@ test("connector usb_c without footprint emits error when partsEngine.fetchPartCi
 
   await circuit.renderUntilSettled()
 
-  const errors = circuit.db.unknown_error_finding_part.list()
-  expect(errors.length).toBe(1)
-  expect(errors[0].message).toContain("fetchPartCircuitJson is not configured")
+  expect(circuit.db.unknown_error_finding_part.list()).toHaveLength(0)
+  const warnings = circuit.db.source_part_not_found_warning.list()
+  expect(warnings.length).toBe(1)
+  expect(warnings[0].message).toContain(
+    "fetchPartCircuitJson is not configured",
+  )
   expect(circuit.db.pcb_smtpad.list().length).toBe(0)
 })
