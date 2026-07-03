@@ -1,12 +1,45 @@
 import type {
   CadComponent,
   PcbComponent,
+  SourcePort,
   SourceSimpleDiode,
 } from "circuit-json"
 import { Diode } from "lib/components/normal-components/Diode"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
+
+const getImportedDiodePinLabels = (
+  sourceElm: SourceSimpleDiode,
+  inflatorContext: InflatorContext,
+): Record<string, string[]> | undefined => {
+  const sourcePorts = inflatorContext.injectionDb.source_port
+    .list()
+    .filter(
+      (port) => port.source_component_id === sourceElm.source_component_id,
+    ) as SourcePort[]
+
+  const pinLabels: Record<string, string[]> = {}
+  for (const sourcePort of sourcePorts) {
+    if (sourcePort.pin_number === undefined || sourcePort.pin_number === null) {
+      continue
+    }
+
+    const labels = Array.from(
+      new Set(
+        [sourcePort.name, ...(sourcePort.port_hints ?? [])].filter(
+          (label): label is string =>
+            typeof label === "string" && label.length > 0,
+        ),
+      ),
+    )
+    if (labels.length === 0) continue
+
+    pinLabels[`pin${sourcePort.pin_number}`] = labels
+  }
+
+  return Object.keys(pinLabels).length > 0 ? pinLabels : undefined
+}
 
 export function inflateSourceDiode(
   sourceElm: SourceSimpleDiode,
@@ -30,13 +63,16 @@ export function inflateSourceDiode(
 
   const diode = new Diode({
     name: sourceElm.name,
+    manufacturerPartNumber: sourceElm.manufacturer_part_number,
+    supplierPartNumbers: sourceElm.supplier_part_numbers ?? undefined,
+    pinLabels: getImportedDiodePinLabels(sourceElm, inflatorContext),
     layer: pcbElm?.layer,
     pcbX,
     pcbY,
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
-  })
+  } as any)
 
   // Create a Footprint component from the PCB primitives in the circuit JSON
   if (pcbElm) {
