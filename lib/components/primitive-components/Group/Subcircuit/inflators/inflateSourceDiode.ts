@@ -1,44 +1,49 @@
-import type {
-  CadComponent,
-  PcbComponent,
-  SourcePort,
-  SourceSimpleDiode,
-} from "circuit-json"
+import type { PcbComponent, SourcePort, SourceSimpleDiode } from "circuit-json"
 import { Diode } from "lib/components/normal-components/Diode"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
-const getImportedDiodePinLabels = (
+const getLabels = (sourcePort: SourcePort | undefined) =>
+  Array.from(
+    new Set(
+      [sourcePort?.name, ...(sourcePort?.port_hints ?? [])].filter(
+        (label): label is string =>
+          typeof label === "string" && label.length > 0,
+      ),
+    ),
+  )
+
+const hasLabel = (labels: string[], matches: string[]) =>
+  labels.some((label) => matches.includes(label.trim().toLowerCase()))
+
+const getImportedDiodePinAliases = (
   sourceElm: SourceSimpleDiode,
   inflatorContext: InflatorContext,
-): Record<string, string[]> | undefined => {
+): Record<number, string[]> | undefined => {
   const sourcePorts = inflatorContext.injectionDb.source_port
     .list()
     .filter(
       (port) => port.source_component_id === sourceElm.source_component_id,
     ) as SourcePort[]
 
-  const pinLabels: Record<string, string[]> = {}
-  for (const sourcePort of sourcePorts) {
-    if (sourcePort.pin_number === undefined || sourcePort.pin_number === null) {
-      continue
-    }
-
-    const labels = Array.from(
-      new Set(
-        [sourcePort.name, ...(sourcePort.port_hints ?? [])].filter(
-          (label): label is string =>
-            typeof label === "string" && label.length > 0,
-        ),
-      ),
-    )
-    if (labels.length === 0) continue
-
-    pinLabels[`pin${sourcePort.pin_number}`] = labels
+  const pin1Labels = getLabels(
+    sourcePorts.find((port) => port.pin_number === 1),
+  )
+  const pin2Labels = getLabels(
+    sourcePorts.find((port) => port.pin_number === 2),
+  )
+  if (
+    !hasLabel(pin1Labels, ["k", "c", "cathode", "neg", "-"]) &&
+    !hasLabel(pin2Labels, ["a", "anode", "pos", "+"])
+  ) {
+    return undefined
   }
 
-  return Object.keys(pinLabels).length > 0 ? pinLabels : undefined
+  return {
+    1: [...pin1Labels, "cathode", "neg"],
+    2: [...pin2Labels, "anode", "pos"],
+  }
 }
 
 export function inflateSourceDiode(
@@ -51,10 +56,6 @@ export function inflateSourceDiode(
     source_component_id: sourceElm.source_component_id,
   }) as PcbComponent | null
 
-  const cadElm = injectionDb.cad_component.getWhere({
-    source_component_id: sourceElm.source_component_id,
-  }) as CadComponent | null
-
   const { pcbX, pcbY } = getInflatedPcbPlacement({
     pcbComponent: pcbElm,
     sourceGroupId: sourceElm.source_group_id,
@@ -65,14 +66,17 @@ export function inflateSourceDiode(
     name: sourceElm.name,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
     supplierPartNumbers: sourceElm.supplier_part_numbers ?? undefined,
-    pinLabels: getImportedDiodePinLabels(sourceElm, inflatorContext),
     layer: pcbElm?.layer,
     pcbX,
     pcbY,
     pcbRotation: pcbElm?.rotation,
     doNotPlace: pcbElm?.do_not_place,
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
-  } as any)
+  })
+  diode._importedPinAliases = getImportedDiodePinAliases(
+    sourceElm,
+    inflatorContext,
+  )
 
   // Create a Footprint component from the PCB primitives in the circuit JSON
   if (pcbElm) {
