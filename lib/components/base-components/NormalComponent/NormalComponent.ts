@@ -375,6 +375,18 @@ export class NormalComponent<
       }
     }
 
+    if (opts.pinCount) {
+      for (let pn = 1; pn <= opts.pinCount; pn++) {
+        if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
+        portsToCreate.push(
+          new Port({
+            pinNumber: pn,
+            aliases: opts.additionalAliases?.[`pin${pn}`] ?? [],
+          }),
+        )
+      }
+    }
+
     if (config.schematicSymbolName && !opts.ignoreSymbolPorts) {
       const sym = symbols[this._getSchematicSymbolNameOrThrow()]
       if (!sym) return

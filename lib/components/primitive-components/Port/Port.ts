@@ -26,7 +26,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   matchedComponents: PrimitiveComponent[]
   _isPrimaryPort = true
   _primaryPinNumber: number | null = null
-  externallyExcludedAliases = new Set<string>()
   facingDirection: "up" | "down" | "left" | "right" | null = null
 
   originDescription: string | null = null
@@ -280,7 +279,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           : []),
         ...(this.externallyAddedAliases ?? []),
       ]),
-    ).filter((alias) => !this.externallyExcludedAliases.has(alias)) as string[]
+    ) as string[]
   }
 
   private _getMatchingPinAttributes(): PinAttributeMap[] {

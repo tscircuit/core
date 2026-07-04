@@ -6,7 +6,6 @@ import {
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
 import type { Port } from "../primitive-components/Port"
 
 export class Diode extends NormalComponent<
@@ -42,19 +41,7 @@ export class Diode extends NormalComponent<
   }
 
   initPorts() {
-    const hasFootprintChild = this.children.some(
-      (child) => child.componentName === "Footprint",
-    )
-    const footprint = this.resolveFootprint()
-    const shouldAddDefaultAliases =
-      !hasFootprintChild || isFootprinterString(footprint)
-
-    super.initPorts({
-      additionalAliases: {
-        pin1: shouldAddDefaultAliases ? ["anode", "pos", "left"] : [],
-        pin2: shouldAddDefaultAliases ? ["cathode", "neg", "right"] : [],
-      },
-    })
+    super.initPorts({ pinCount: 2 })
   }
 
   doInitialSourceRender() {

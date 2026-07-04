@@ -2,14 +2,6 @@ import { Port } from "lib/components/primitive-components/Port"
 import { isFootprinterString } from "./utils/isFootprinterString"
 import type { NormalComponent } from "./NormalComponent"
 
-const diodeDefaultAliasesByPin: Record<string, string[]> = {
-  pin1: ["anode", "pos", "left"],
-  pin2: ["cathode", "neg", "right"],
-}
-const diodeDefaultAliases = new Set(
-  Object.values(diodeDefaultAliasesByPin).flat(),
-)
-
 export function NormalComponent_doInitialResolveFootprintPinLabels(
   component: NormalComponent<any, any>,
 ) {
@@ -29,35 +21,31 @@ export function NormalComponent_doInitialResolveFootprintPinLabels(
     }
   }
 
-  component._impliedFootprintPinLabels = {
-    ...pinLabels,
-    ...pinLabelsBeforeFootprint,
+  const impliedFootprintPinLabels: Record<string, string[]> = { ...pinLabels }
+  for (const [pinKey, labels] of Object.entries(pinLabelsBeforeFootprint)) {
+    impliedFootprintPinLabels[pinKey] = Array.isArray(labels)
+      ? labels
+      : [labels]
   }
-
-  const shouldSuppressDiodeDefaultAliases =
-    component.componentName === "Diode" &&
-    portsFromFootprint.length > 0 &&
-    !isFootprinterString(component.resolveFootprint())
 
   if (
-    Object.keys(component._impliedFootprintPinLabels).length === 0 &&
-    !shouldSuppressDiodeDefaultAliases
+    component.componentName === "Diode" &&
+    Object.keys(impliedFootprintPinLabels).length === 0
   ) {
-    return
+    const footprint = component.resolveFootprint()
+    const shouldAddDefaultAliases = !footprint || isFootprinterString(footprint)
+    impliedFootprintPinLabels.pin1 = shouldAddDefaultAliases
+      ? ["anode", "pos", "left"]
+      : ["anode", "pos"]
+    impliedFootprintPinLabels.pin2 = shouldAddDefaultAliases
+      ? ["cathode", "neg", "right"]
+      : ["cathode", "neg"]
   }
 
-  const aliasesClaimedByPin = new Map<string, string>()
-  if (shouldSuppressDiodeDefaultAliases) {
-    for (const [pinKey, labels] of Object.entries(
-      component._impliedFootprintPinLabels,
-    )) {
-      const labelList = Array.isArray(labels) ? labels : [labels]
-      for (const label of labelList) {
-        if (diodeDefaultAliases.has(label)) {
-          aliasesClaimedByPin.set(label, pinKey)
-        }
-      }
-    }
+  component._impliedFootprintPinLabels = impliedFootprintPinLabels
+
+  if (Object.keys(component._impliedFootprintPinLabels).length === 0) {
+    return
   }
 
   for (const child of component.children) {
@@ -67,15 +55,6 @@ export function NormalComponent_doInitialResolveFootprintPinLabels(
     if (pinNumber === undefined) continue
 
     const pinKey = `pin${pinNumber}`
-    if (shouldSuppressDiodeDefaultAliases) {
-      for (const alias of diodeDefaultAliases) {
-        const claimedPin = aliasesClaimedByPin.get(alias)
-        if (!claimedPin || claimedPin !== pinKey) {
-          port.externallyExcludedAliases.add(alias)
-        }
-      }
-    }
-
     const labels = component._impliedFootprintPinLabels[pinKey]
     if (!labels) continue
     const labelList = Array.isArray(labels) ? labels : [labels]
