@@ -276,6 +276,11 @@ export class NormalComponent<
     const { config } = this
     const portsToCreate: Port[] = []
     const pinLabels = this._resolvePinLabels()
+    const propsPinLabels = this._parsedProps.pinLabels
+    const pinLabelsFromProps =
+      propsPinLabels && !Array.isArray(propsPinLabels)
+        ? propsPinLabels
+        : undefined
 
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement()
@@ -336,8 +341,15 @@ export class NormalComponent<
         let existingPort = portsToCreate.find(
           (p) => p._parsedProps.pinNumber === pinNumber,
         )
-        const primaryLabel = Array.isArray(label) ? label[0] : label
-        const otherLabels = Array.isArray(label) ? label.slice(1) : []
+        const labelList = Array.isArray(label) ? label : [label]
+        const propLabel = pinLabelsFromProps?.[pinKey]
+        const hasPropLabel = propLabel !== undefined
+        const primaryLabel = hasPropLabel
+          ? labelList[0]
+          : `pin${pinNumber}`
+        const otherLabels = hasPropLabel
+          ? labelList.slice(1)
+          : labelList
 
         if (!existingPort) {
           existingPort = new Port(
@@ -345,8 +357,13 @@ export class NormalComponent<
               pinNumber,
               name: primaryLabel,
               aliases: [
+                ...(hasPropLabel
+                  ? []
+                  : (opts.additionalAliases?.[`pin${pinNumber}`] ?? [])),
                 ...otherLabels,
-                ...(opts.additionalAliases?.[`pin${pinNumber}`] ?? []),
+                ...(hasPropLabel
+                  ? (opts.additionalAliases?.[`pin${pinNumber}`] ?? [])
+                  : []),
               ],
             },
             {
@@ -356,7 +373,9 @@ export class NormalComponent<
           portsToCreate.push(existingPort)
         } else {
           existingPort.externallyAddedAliases.push(primaryLabel, ...otherLabels)
-          existingPort.props.name = primaryLabel
+          if (hasPropLabel) {
+            existingPort.props.name = primaryLabel
+          }
         }
       }
     }
