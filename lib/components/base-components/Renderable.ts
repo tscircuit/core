@@ -17,6 +17,7 @@ export const orderedRenderPhases = [
   "SourceNameDuplicateComponentRemoval",
   "PcbFootprintStringRender",
   "FetchPartFootprint",
+  "ResolveFootprintPinLabels",
   "InitializePortsFromChildren",
   "CreateNetsFromProps",
   "AssignFallbackProps",
@@ -84,6 +85,7 @@ export const renderPhaseIndexMap = new Map<RenderPhase, number>(
 // current component's subtree.
 const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   InflateSubcircuitCircuitJson: ["RenderIsolatedSubcircuits"],
+  ResolveFootprintPinLabels: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SchematicComponentRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SchematicPortRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SymbolContainerRender: ["PcbFootprintStringRender", "FetchPartFootprint"],

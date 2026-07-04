@@ -74,6 +74,7 @@ import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent_
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
+import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComponent_doInitialResolveFootprintPinLabels"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
@@ -147,6 +148,7 @@ export class NormalComponent<
   private _invalidFootprintPropMessages: string[] = []
 
   _invalidPinLabelMessages: string[] = []
+  _impliedFootprintPinLabels?: Record<string, string | string[]>
 
   /**
    * Set to true to enable automatic silkscreen text adjustment when it overlaps with other components
@@ -273,17 +275,25 @@ export class NormalComponent<
     this._inferredInternallyConnectedPinNames = []
     const { config } = this
     const portsToCreate: Port[] = []
+    const pinLabels = this._resolvePinLabels()
+    const propsPinLabels = this._parsedProps.pinLabels
+    const pinLabelsFromProps =
+      propsPinLabels && Array.isArray(propsPinLabels)
+        ? Object.fromEntries(
+            propsPinLabels.map((label, index) => [`pin${index + 1}`, label]),
+          )
+        : propsPinLabels
 
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement()
-    if (schPortArrangement && !this._parsedProps.pinLabels) {
+    if (schPortArrangement && !pinLabels) {
       for (const side in schPortArrangement) {
         const pins = (schPortArrangement as any)[side].pins
         if (Array.isArray(pins)) {
           for (const pinNumberOrLabel of pins) {
             const pinNumber = parsePinNumberFromLabelsOrThrow(
               pinNumberOrLabel,
-              this._parsedProps.pinLabels,
+              pinLabels,
             )
 
             portsToCreate.push(
@@ -322,8 +332,6 @@ export class NormalComponent<
       }
     }
 
-    const pinLabels: Record<string, string | string[]> | undefined =
-      this._parsedProps.pinLabels
     if (pinLabels) {
       for (const [pinKey, label] of Object.entries(pinLabels)) {
         const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
@@ -335,8 +343,11 @@ export class NormalComponent<
         let existingPort = portsToCreate.find(
           (p) => p._parsedProps.pinNumber === pinNumber,
         )
-        const primaryLabel = Array.isArray(label) ? label[0] : label
-        const otherLabels = Array.isArray(label) ? label.slice(1) : []
+        const labelList = Array.isArray(label) ? label : [label]
+        const propLabel = pinLabelsFromProps?.[pinKey]
+        const hasPropLabel = propLabel !== undefined
+        const primaryLabel = hasPropLabel ? labelList[0] : `pin${pinNumber}`
+        const otherLabels = hasPropLabel ? labelList.slice(1) : labelList
 
         if (!existingPort) {
           existingPort = new Port(
@@ -344,8 +355,13 @@ export class NormalComponent<
               pinNumber,
               name: primaryLabel,
               aliases: [
+                ...(hasPropLabel
+                  ? []
+                  : (opts.additionalAliases?.[`pin${pinNumber}`] ?? [])),
                 ...otherLabels,
-                ...(opts.additionalAliases?.[`pin${pinNumber}`] ?? []),
+                ...(hasPropLabel
+                  ? (opts.additionalAliases?.[`pin${pinNumber}`] ?? [])
+                  : []),
               ],
             },
             {
@@ -355,7 +371,6 @@ export class NormalComponent<
           portsToCreate.push(existingPort)
         } else {
           existingPort.externallyAddedAliases.push(primaryLabel, ...otherLabels)
-          existingPort.props.name = primaryLabel
         }
       }
     }
@@ -401,6 +416,7 @@ export class NormalComponent<
       } else {
         const portsFromFootprint = this.getPortsFromFootprint({
           ...opts,
+          allowImplicitPinNumbers: !pinLabelsFromProps,
           collectInferredInternallyConnectedPins: true,
         })
         const existingPorts = this._getAllPortsFromChildren()
@@ -445,7 +461,7 @@ export class NormalComponent<
       }
       let explicitlyListedPinNumbersInSchPortArrangement =
         getPinsFromPortArrangement(schPortArrangement).map((pn) =>
-          parsePinNumberFromLabelsOrThrow(pn, this._parsedProps.pinLabels),
+          parsePinNumberFromLabelsOrThrow(pn, pinLabels),
         )
 
       if (
@@ -496,6 +512,22 @@ export class NormalComponent<
     }
   }
 
+  _resolvePinLabels(): Record<string, string | string[]> | undefined {
+    const pinLabels = this._parsedProps.pinLabels
+    const parsedPinLabels =
+      pinLabels && Array.isArray(pinLabels)
+        ? Object.fromEntries(
+            pinLabels.map((label, index) => [`pin${index + 1}`, label]),
+          )
+        : pinLabels
+    const resolvedPinLabels = {
+      ...(this._impliedFootprintPinLabels ?? {}),
+      ...(parsedPinLabels ?? {}),
+    }
+    if (Object.keys(resolvedPinLabels).length === 0) return undefined
+    return resolvedPinLabels
+  }
+
   _getImpliedFootprintString(): string | null {
     return null
   }
@@ -510,7 +542,8 @@ export class NormalComponent<
   }
 
   _addChildrenFromStringFootprint() {
-    const { pcbRotation, pinLabels, pcbPinLabels } = this.props
+    const { pcbRotation, pcbPinLabels } = this.props
+    const pinLabels = this._resolvePinLabels()
     const footprint = this.resolveFootprint()
     if (!footprint) return
 
@@ -1002,6 +1035,14 @@ export class NormalComponent<
     this.doInitialPcbComponentAnchorAlignment()
   }
 
+  doInitialResolveFootprintPinLabels(): void {
+    NormalComponent_doInitialResolveFootprintPinLabels(this)
+  }
+
+  updateResolveFootprintPinLabels(): void {
+    this.doInitialResolveFootprintPinLabels()
+  }
+
   _renderReactSubtree(element: ReactElement): ReactSubtree {
     const component = createInstanceFromReactElement(element)
     return {
@@ -1227,6 +1268,7 @@ export class NormalComponent<
 
   getPortsFromFootprint(opts?: {
     additionalAliases?: Record<string, string[]>
+    allowImplicitPinNumbers?: boolean
     collectInferredInternallyConnectedPins?: boolean
   }): Port[] {
     let inferredInternallyConnectedPinNames: string[][] | undefined = undefined
@@ -1235,9 +1277,32 @@ export class NormalComponent<
         this._inferredInternallyConnectedPinNames
     }
 
+    const implicitPinNumberByHint = new Map<string, number>()
+    const explicitPinLabels =
+      this._parsedProps?.pinLabels ?? this.props.pinLabels
+    if (explicitPinLabels) {
+      const pinLabelEntries = Array.isArray(explicitPinLabels)
+        ? explicitPinLabels.map((label, index) => [`pin${index + 1}`, label])
+        : Object.entries(explicitPinLabels)
+
+      for (const [pinKey, labelOrLabels] of pinLabelEntries) {
+        const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
+        if (pinNumber === null) continue
+        const labels = Array.isArray(labelOrLabels)
+          ? labelOrLabels
+          : [labelOrLabels]
+        for (const label of labels) {
+          if (typeof label === "string" && label.length > 0) {
+            implicitPinNumberByHint.set(label, pinNumber)
+          }
+        }
+      }
+    }
+
     const primaryPortOpts = {
       ...opts,
       inferredInternallyConnectedPinNames,
+      implicitPinNumberByHint,
     }
     let { footprint } = this.props
     if (

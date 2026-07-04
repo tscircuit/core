@@ -60,6 +60,17 @@ const calculateCcwRotation = (
 const optional = <T>(value: T | null | undefined): T | undefined =>
   value ?? undefined
 
+const getPinNumberFromPortHints = (
+  portHints: string[] | undefined,
+): number | undefined => {
+  for (const hint of portHints ?? []) {
+    if (/^\d+$/.test(hint)) return Number(hint)
+
+    const pinNameMatch = /^pin(\d+)$/i.exec(hint)
+    if (pinNameMatch) return Number(pinNameMatch[1])
+  }
+}
+
 const getFacingDirectionFromSide = (side: string) => {
   switch (side) {
     case "left":
@@ -114,16 +125,81 @@ export const createComponentsFromCircuitJson = (
   const components: PrimitiveComponent[] = []
   const schematicSymbolsByImportedId = new Map<string, SymbolComponent>()
   const schematicComponentsByImportedId = new Map<string, SchematicComponent>()
+  const sourceComponentIdByPcbComponentId = new Map<string, string>()
   const sourcePortsByImportedId = new Map<
     string,
     Extract<AnyCircuitElement, { type: "source_port" }>
   >()
+  const sourcePortsByComponentAndPinNumber = new Map<
+    string,
+    Map<number, Extract<AnyCircuitElement, { type: "source_port" }>>
+  >()
   const schematicStrokeWidthBySymbolId = new Map<string, number>()
 
   for (const elm of circuitJson) {
+    if (
+      elm.type === "pcb_component" &&
+      typeof elm.source_component_id === "string"
+    ) {
+      sourceComponentIdByPcbComponentId.set(
+        elm.pcb_component_id,
+        elm.source_component_id,
+      )
+    }
+
     if (elm.type === "source_port") {
       sourcePortsByImportedId.set(elm.source_port_id, elm)
+      if (
+        typeof elm.pin_number === "number" &&
+        typeof elm.source_component_id === "string"
+      ) {
+        let sourcePortsByPinNumber = sourcePortsByComponentAndPinNumber.get(
+          elm.source_component_id,
+        )
+        if (!sourcePortsByPinNumber) {
+          sourcePortsByPinNumber = new Map()
+          sourcePortsByComponentAndPinNumber.set(
+            elm.source_component_id,
+            sourcePortsByPinNumber,
+          )
+        }
+        sourcePortsByPinNumber.set(elm.pin_number, elm)
+      }
     }
+  }
+
+  const getPortHintsWithSourcePortAliases = (
+    portHints: string[] | undefined,
+    pcbComponentId: string | undefined,
+  ) => {
+    const pinNumber = getPinNumberFromPortHints(portHints)
+    const sourceComponentId =
+      typeof pcbComponentId === "string"
+        ? sourceComponentIdByPcbComponentId.get(pcbComponentId)
+        : undefined
+    const sourcePort =
+      typeof pinNumber === "number" && sourceComponentId
+        ? sourcePortsByComponentAndPinNumber
+            .get(sourceComponentId)
+            ?.get(pinNumber)
+        : undefined
+
+    if (!sourcePort) return portHints
+
+    const mergedPortHints = Array.from(
+      new Set(
+        [
+          ...(portHints ?? []),
+          ...(sourcePort.port_hints ?? []),
+          sourcePort.name,
+        ].filter(
+          (alias): alias is string =>
+            typeof alias === "string" && alias.length > 0,
+        ),
+      ),
+    )
+
+    return mergedPortHints.length > 0 ? mergedPortHints : portHints
   }
 
   for (const elm of circuitJson) {
@@ -175,6 +251,14 @@ export const createComponentsFromCircuitJson = (
   }
 
   for (const elm of circuitJson) {
+    const resolvedPortHints =
+      "port_hints" in elm
+        ? getPortHintsWithSourcePortAliases(
+            elm.port_hints,
+            "pcb_component_id" in elm ? elm.pcb_component_id : undefined,
+          )
+        : undefined
+
     if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
       components.push(
         new SmtPad({
@@ -184,7 +268,7 @@ export const createComponentsFromCircuitJson = (
           shape: "rect",
           height: elm.height,
           width: elm.width,
-          portHints: elm.port_hints,
+          portHints: resolvedPortHints,
           rectBorderRadius: elm.rect_border_radius,
         }),
       )
@@ -196,7 +280,7 @@ export const createComponentsFromCircuitJson = (
           layer: elm.layer,
           shape: "circle",
           radius: elm.radius,
-          portHints: elm.port_hints,
+          portHints: resolvedPortHints,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "pill") {
@@ -206,7 +290,7 @@ export const createComponentsFromCircuitJson = (
           height: elm.height,
           width: elm.width,
           radius: elm.radius,
-          portHints: elm.port_hints,
+          portHints: resolvedPortHints,
           pcbX: elm.x,
           pcbY: elm.y,
           layer: elm.layer,
@@ -223,7 +307,7 @@ export const createComponentsFromCircuitJson = (
           width: elm.width,
           ccwRotation: elm.ccw_rotation,
           cornerRadius: elm.corner_radius,
-          portHints: elm.port_hints,
+          portHints: resolvedPortHints,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "polygon") {
@@ -231,7 +315,7 @@ export const createComponentsFromCircuitJson = (
         new SmtPad({
           shape: "polygon",
           points: elm.points,
-          portHints: elm.port_hints,
+          portHints: resolvedPortHints,
           layer: elm.layer,
         }),
       )
@@ -266,7 +350,7 @@ export const createComponentsFromCircuitJson = (
             shape: "circle",
             holeDiameter: elm.hole_diameter,
             outerDiameter: elm.outer_diameter,
-            portHints: elm.port_hints,
+            portHints: resolvedPortHints,
           }),
         )
       } else if (elm.shape === "circular_hole_with_rect_pad") {
@@ -278,7 +362,7 @@ export const createComponentsFromCircuitJson = (
             holeDiameter: elm.hole_diameter,
             rectPadHeight: elm.rect_pad_height,
             rectPadWidth: elm.rect_pad_width,
-            portHints: elm.port_hints,
+            portHints: resolvedPortHints,
             rectBorderRadius: elm.rect_border_radius,
             holeOffsetX: elm.hole_offset_x,
             holeOffsetY: elm.hole_offset_y,
@@ -294,7 +378,7 @@ export const createComponentsFromCircuitJson = (
             holeHeight: elm.hole_height,
             outerWidth: elm.outer_width,
             outerHeight: elm.outer_height,
-            portHints: elm.port_hints,
+            portHints: resolvedPortHints,
           }),
         )
       } else if (elm.shape === "pill_hole_with_rect_pad") {
@@ -310,7 +394,7 @@ export const createComponentsFromCircuitJson = (
             rectPadWidth: elm.rect_pad_width,
             rectPadHeight: elm.rect_pad_height,
             rectBorderRadius: elm.rect_border_radius,
-            portHints: elm.port_hints,
+            portHints: resolvedPortHints,
             holeOffsetX: elm.hole_offset_x,
             holeOffsetY: elm.hole_offset_y,
           }),
@@ -328,7 +412,7 @@ export const createComponentsFromCircuitJson = (
             rectPadWidth: elm.rect_pad_width,
             rectPadHeight: elm.rect_pad_height,
             rectBorderRadius: elm.rect_border_radius,
-            portHints: elm.port_hints,
+            portHints: resolvedPortHints,
             holeOffsetX: elm.hole_offset_x,
             holeOffsetY: elm.hole_offset_y,
             pcbRotation: elm.hole_ccw_rotation,
@@ -347,7 +431,7 @@ export const createComponentsFromCircuitJson = (
             padOutline: elm.pad_outline || [],
             holeOffsetX: elm.hole_offset_x,
             holeOffsetY: elm.hole_offset_y,
-            portHints: elm.port_hints,
+            portHints: resolvedPortHints,
           }),
         )
       }

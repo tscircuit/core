@@ -27,6 +27,8 @@ export function getPrimaryPortsFromPortHintGroups(
   opts?: {
     additionalAliases?: Record<string, string[]>
     inferredInternallyConnectedPinNames?: string[][]
+    allowImplicitPinNumbers?: boolean
+    implicitPinNumberByHint?: Map<string, number>
   },
 ): Port[] {
   let implicitPinNumber = 1
@@ -48,7 +50,17 @@ export function getPrimaryPortsFromPortHintGroups(
     )
 
     if (!hasPinIdentifier) {
-      portHintsList = [...portHintsList, `pin${implicitPinNumber}`]
+      const explicitPinNumber = portHintsList
+        .map((hint) => opts?.implicitPinNumberByHint?.get(hint))
+        .find((pinNumber): pinNumber is number => pinNumber !== undefined)
+
+      if (explicitPinNumber !== undefined) {
+        portHintsList = [...portHintsList, `pin${explicitPinNumber}`]
+      } else if (opts?.allowImplicitPinNumbers === false) {
+        continue
+      } else {
+        portHintsList = [...portHintsList, `pin${implicitPinNumber}`]
+      }
     }
     implicitPinNumber++
 
