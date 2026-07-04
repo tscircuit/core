@@ -520,11 +520,12 @@ export class NormalComponent<
             pinLabels.map((label, index) => [`pin${index + 1}`, label]),
           )
         : pinLabels
-    if (!this._impliedFootprintPinLabels && !parsedPinLabels) return undefined
-    return {
+    const resolvedPinLabels = {
       ...(this._impliedFootprintPinLabels ?? {}),
       ...(parsedPinLabels ?? {}),
     }
+    if (Object.keys(resolvedPinLabels).length === 0) return undefined
+    return resolvedPinLabels
   }
 
   _getImpliedFootprintString(): string | null {
@@ -1277,7 +1278,8 @@ export class NormalComponent<
     }
 
     const implicitPinNumberByHint = new Map<string, number>()
-    const explicitPinLabels = this._parsedProps.pinLabels
+    const explicitPinLabels =
+      this._parsedProps?.pinLabels ?? this.props.pinLabels
     if (explicitPinLabels) {
       const pinLabelEntries = Array.isArray(explicitPinLabels)
         ? explicitPinLabels.map((label, index) => [`pin${index + 1}`, label])
