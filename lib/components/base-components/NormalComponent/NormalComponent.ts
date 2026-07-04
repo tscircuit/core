@@ -77,6 +77,7 @@ import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalCompo
 import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComponent_doInitialResolveFootprintPinLabels"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
+import { NormalComponent_doInitialSourceRefdesConventionWarning } from "./NormalComponent_doInitialSourceRefdesConventionWarning"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
@@ -617,6 +618,10 @@ export class NormalComponent<
       display_name: props.displayName,
     })
     this.source_component_id = source_component.source_component_id
+  }
+
+  doInitialSourceRefdesConventionWarning(): void {
+    NormalComponent_doInitialSourceRefdesConventionWarning(this)
   }
 
   /**
