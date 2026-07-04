@@ -53,10 +53,16 @@ export function inflateSourceDiode(
     inflatorContext,
   })
 
+  const importedPinLabels = getImportedDiodePinLabels(
+    sourceElm,
+    inflatorContext,
+  )
+
   const diodeProps = {
     name: sourceElm.name,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
     supplierPartNumbers: sourceElm.supplier_part_numbers ?? undefined,
+    pinLabels: importedPinLabels,
     layer: pcbElm?.layer,
     pcbX,
     pcbY,
@@ -66,16 +72,6 @@ export function inflateSourceDiode(
   }
 
   const diode = new Diode(diodeProps)
-  const importedPinLabels = getImportedDiodePinLabels(
-    sourceElm,
-    inflatorContext,
-  )
-  if (importedPinLabels) {
-    diode._impliedFootprintPinLabels = {
-      ...(diode._impliedFootprintPinLabels ?? {}),
-      ...importedPinLabels,
-    }
-  }
 
   // Create a Footprint component from the PCB primitives in the circuit JSON
   if (pcbElm) {
