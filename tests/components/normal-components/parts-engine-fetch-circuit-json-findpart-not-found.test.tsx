@@ -31,6 +31,9 @@ test("connector with standard='usb_c' handles findPart returning 'Not found' wit
   expect(fetchCalls).toBe(0)
   expect(circuit.db.pcb_smtpad.list().length).toBe(0)
   expect(circuit.db.unknown_error_finding_part.list().length).toBe(0)
+  const partNotFoundWarnings = circuit.db.source_part_not_found_warning.list()
+  expect(partNotFoundWarnings).toHaveLength(1)
+  expect(partNotFoundWarnings[0].message).toContain("Part not found")
 
   const missingMfnWarnings = circuit
     .getCircuitJson()

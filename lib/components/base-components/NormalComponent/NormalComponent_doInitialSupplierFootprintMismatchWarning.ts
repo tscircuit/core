@@ -7,8 +7,8 @@ import {
 } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
+  source_part_not_found_warning,
   supplier_footprint_mismatch_warning,
-  unknown_error_finding_part,
 } from "circuit-json"
 import type { NormalComponent } from "./NormalComponent"
 import type { Bounds } from "@tscircuit/math-utils"
@@ -174,13 +174,15 @@ export function NormalComponent_doInitialSupplierFootprintMismatchWarning(
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error)
-        const errorObj = unknown_error_finding_part.parse({
-          type: "unknown_error_finding_part",
+        const warning = source_part_not_found_warning.parse({
+          type: "source_part_not_found_warning",
           message: `Failed to fetch supplier footprint for ${component.getString()} (${supplierName}:${supplierPartNumber}): ${errorMessage}`,
-          source_component_id: component.source_component_id,
-          subcircuit_id: component.getSubcircuit()?.subcircuit_id,
+          source_component_id: component.source_component_id ?? undefined,
+          subcircuit_id: component.getSubcircuit()?.subcircuit_id ?? undefined,
+          supplier_name: supplierName,
+          supplier_part_number: supplierPartNumber,
         })
-        db.unknown_error_finding_part.insert(errorObj)
+        db.source_part_not_found_warning.insert(warning)
         return
       }
     }

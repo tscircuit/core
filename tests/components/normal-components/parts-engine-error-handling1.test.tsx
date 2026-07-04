@@ -18,10 +18,13 @@ test("parts engine handles errors gracefully and logs them to Circuit JSON", asy
 
   const sc1 = circuit1.db.source_component.list()[0]
   expect(sc1.supplier_part_numbers).toEqual({})
-  const errors1 = circuit1.db.unknown_error_finding_part.list()
-  expect(errors1.length).toBeGreaterThan(0)
-  expect(errors1[0].message).toContain("Failed to fetch supplier part numbers")
-  expect(errors1[0].message).toContain("<!DOCTYPE")
+  expect(circuit1.db.unknown_error_finding_part.list()).toHaveLength(0)
+  const warnings1 = circuit1.db.source_part_not_found_warning.list()
+  expect(warnings1.length).toBeGreaterThan(0)
+  expect(warnings1[0].message).toContain(
+    "Failed to fetch supplier part numbers",
+  )
+  expect(warnings1[0].message).toContain("<!DOCTYPE")
 
   // Test 2: Network failure
   const { circuit: circuit2 } = getTestFixture()
@@ -40,9 +43,10 @@ test("parts engine handles errors gracefully and logs them to Circuit JSON", asy
 
   const sc2 = circuit2.db.source_component.list()[0]
   expect(sc2.supplier_part_numbers).toEqual({})
-  const errors2 = circuit2.db.unknown_error_finding_part.list()
-  expect(errors2.length).toBeGreaterThan(0)
-  expect(errors2[0].message).toContain("Network request failed")
+  expect(circuit2.db.unknown_error_finding_part.list()).toHaveLength(0)
+  const warnings2 = circuit2.db.source_part_not_found_warning.list()
+  expect(warnings2.length).toBeGreaterThan(0)
+  expect(warnings2[0].message).toContain("Network request failed")
 
   // Test 3: Invalid format (array instead of object)
   const { circuit: circuit3 } = getTestFixture()
@@ -59,7 +63,8 @@ test("parts engine handles errors gracefully and logs them to Circuit JSON", asy
 
   const sc3 = circuit3.db.source_component.list()[0]
   expect(sc3.supplier_part_numbers).toEqual({})
-  const errors3 = circuit3.db.unknown_error_finding_part.list()
-  expect(errors3.length).toBeGreaterThan(0)
-  expect(errors3[0].message).toContain("Invalid supplier part numbers format")
+  expect(circuit3.db.unknown_error_finding_part.list()).toHaveLength(0)
+  const warnings3 = circuit3.db.source_part_not_found_warning.list()
+  expect(warnings3.length).toBeGreaterThan(0)
+  expect(warnings3[0].message).toContain("Invalid supplier part numbers format")
 })

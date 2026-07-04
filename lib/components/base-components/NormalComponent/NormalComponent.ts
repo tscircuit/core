@@ -23,7 +23,7 @@ import {
   pcb_manual_edit_conflict_warning,
   point3,
   rotation,
-  unknown_error_finding_part,
+  source_part_not_found_warning,
 } from "circuit-json"
 import Debug from "debug"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
@@ -1862,9 +1862,10 @@ export class NormalComponent<
           `Failed to fetch supplier part numbers: Received HTML response instead of JSON. Response starts with: ${result.substring(0, 100)}`,
         )
       }
-      // Convert "Not found" to empty object
       if (result === "Not found") {
-        return {}
+        throw new Error(
+          `Part not found for ${this.getString()}${footprinterString ? ` with footprint "${footprinterString}"` : ""}`,
+        )
       }
       throw new Error(
         `Invalid supplier part numbers format: Expected object but got string: "${result}"`,
@@ -1929,15 +1930,17 @@ export class NormalComponent<
           this._markDirty("PartsEngineRender")
         })
         .catch((error: Error) => {
-          // Log structured error to Circuit JSON
           this._asyncSupplierPartNumbers = {}
-          const errorObj = unknown_error_finding_part.parse({
-            type: "unknown_error_finding_part",
+          const warning = source_part_not_found_warning.parse({
+            type: "source_part_not_found_warning",
             message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error.message}`,
-            source_component_id: this.source_component_id,
-            subcircuit_id: this.getSubcircuit()?.subcircuit_id,
+            source_component_id: this.source_component_id ?? undefined,
+            subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+            manufacturer_part_number:
+              source_component.manufacturer_part_number ?? undefined,
+            part_name: source_component.name ?? undefined,
           })
-          db.unknown_error_finding_part.insert(errorObj)
+          db.source_part_not_found_warning.insert(warning)
           this._markDirty("PartsEngineRender")
         })
     })
