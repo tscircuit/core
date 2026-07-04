@@ -269,6 +269,7 @@ export class NormalComponent<
     opts: {
       additionalAliases?: Record<`pin${number}`, string[]>
       pinCount?: number
+      preCreatePinCountPorts?: boolean
       ignoreSymbolPorts?: boolean
     } = {},
   ) {
@@ -375,7 +376,7 @@ export class NormalComponent<
       }
     }
 
-    if (opts.pinCount) {
+    if (opts.preCreatePinCountPorts && opts.pinCount) {
       for (let pn = 1; pn <= opts.pinCount; pn++) {
         if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
         portsToCreate.push(

@@ -41,7 +41,7 @@ export class Diode extends NormalComponent<
   }
 
   initPorts() {
-    super.initPorts({ pinCount: 2 })
+    super.initPorts({ pinCount: 2, preCreatePinCountPorts: true })
   }
 
   doInitialSourceRender() {
