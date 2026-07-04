@@ -1,6 +1,6 @@
 import type { NormalComponent } from "./NormalComponent"
 
-const expectedPrefixesByFtype: Record<string, string[]> = {
+const defaultExpectedPrefixesByFtype: Record<string, string[]> = {
   simple_ammeter: ["A"],
   simple_battery: ["B", "BT"],
   simple_capacitor: ["C"],
@@ -29,10 +29,17 @@ const expectedPrefixesByFtype: Record<string, string[]> = {
   simple_voltage_source: ["V", "VS"],
 }
 
-const getRefdesPrefix = (refdes: string): string | undefined =>
-  refdes.match(/^[A-Za-z]+/)?.[0]?.toUpperCase()
+export const getDefaultExpectedRefDesPrefixesForFtype = (
+  ftype: string | null | undefined,
+): string[] | undefined => {
+  if (!ftype) return undefined
+  return defaultExpectedPrefixesByFtype[ftype]
+}
 
-export const NormalComponent_doInitialSourceRefdesConventionWarning = (
+const getRefDesPrefix = (refDes: string): string | undefined =>
+  refDes.match(/^[A-Za-z]+/)?.[0]?.toUpperCase()
+
+export const NormalComponent_doInitialCheckRefDesConvention = (
   component: NormalComponent,
 ) => {
   const { db } = component.root!
@@ -41,10 +48,10 @@ export const NormalComponent_doInitialSourceRefdesConventionWarning = (
   const sourceComponent = db.source_component.get(component.source_component_id)
   if (!sourceComponent?.name || !sourceComponent.ftype) return
 
-  const expectedPrefixes = expectedPrefixesByFtype[sourceComponent.ftype]
-  if (!expectedPrefixes) return
+  const expectedPrefixes = component.getRefDesPrefixes()
+  if (!expectedPrefixes || expectedPrefixes.length === 0) return
 
-  const actualPrefix = getRefdesPrefix(sourceComponent.name)
+  const actualPrefix = getRefDesPrefix(sourceComponent.name)
   if (actualPrefix && expectedPrefixes.includes(actualPrefix)) return
 
   const expectedPrefixMessage =

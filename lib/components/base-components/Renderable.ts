@@ -28,7 +28,7 @@ export const orderedRenderPhases = [
   "SourceGroupRender",
   "AssignNameToUnnamedComponents",
   "SourceRender",
-  "SourceRefdesConventionWarning",
+  "CheckRefDesConvention",
   "SourceComponentPropertyValidation",
   "SourceParentAttachment",
   "PortMatching",

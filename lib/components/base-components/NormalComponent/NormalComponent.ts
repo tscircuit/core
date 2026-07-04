@@ -70,6 +70,10 @@ import { Footprint } from "../../primitive-components/Footprint"
 import { Port } from "../../primitive-components/Port"
 import { PrimitiveComponent } from "../PrimitiveComponent"
 import type { INormalComponent } from "./INormalComponent"
+import {
+  NormalComponent_doInitialCheckRefDesConvention,
+  getDefaultExpectedRefDesPrefixesForFtype,
+} from "./NormalComponent_doInitialCheckRefDesConvention"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
@@ -77,7 +81,6 @@ import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalCompo
 import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComponent_doInitialResolveFootprintPinLabels"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
-import { NormalComponent_doInitialSourceRefdesConventionWarning } from "./NormalComponent_doInitialSourceRefdesConventionWarning"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
@@ -620,8 +623,12 @@ export class NormalComponent<
     this.source_component_id = source_component.source_component_id
   }
 
-  doInitialSourceRefdesConventionWarning(): void {
-    NormalComponent_doInitialSourceRefdesConventionWarning(this)
+  getRefDesPrefixes(): string[] | undefined {
+    return getDefaultExpectedRefDesPrefixesForFtype(this.config.sourceFtype)
+  }
+
+  doInitialCheckRefDesConvention(): void {
+    NormalComponent_doInitialCheckRefDesConvention(this)
   }
 
   /**

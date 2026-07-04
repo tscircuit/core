@@ -76,6 +76,10 @@ export class Diode extends NormalComponent<
     this.source_component_id = source_component.source_component_id
   }
 
+  getRefDesPrefixes(): string[] {
+    return ["D"]
+  }
+
   get pos(): Port {
     return this.portMap.pos
   }
