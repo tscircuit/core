@@ -278,9 +278,11 @@ export class NormalComponent<
     const pinLabels = this._resolvePinLabels()
     const propsPinLabels = this._parsedProps.pinLabels
     const pinLabelsFromProps =
-      propsPinLabels && !Array.isArray(propsPinLabels)
-        ? propsPinLabels
-        : undefined
+      propsPinLabels && Array.isArray(propsPinLabels)
+        ? Object.fromEntries(
+            propsPinLabels.map((label, index) => [`pin${index + 1}`, label]),
+          )
+        : propsPinLabels
 
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement()
@@ -370,7 +372,7 @@ export class NormalComponent<
         } else {
           existingPort.externallyAddedAliases.push(primaryLabel, ...otherLabels)
           if (hasPropLabel) {
-            existingPort.props.name = primaryLabel
+            existingPort.setProps({ name: primaryLabel })
           }
         }
       }
@@ -515,7 +517,11 @@ export class NormalComponent<
   _resolvePinLabels(): Record<string, string | string[]> | undefined {
     const pinLabels = this._parsedProps.pinLabels
     const parsedPinLabels =
-      pinLabels && !Array.isArray(pinLabels) ? pinLabels : undefined
+      pinLabels && Array.isArray(pinLabels)
+        ? Object.fromEntries(
+            pinLabels.map((label, index) => [`pin${index + 1}`, label]),
+          )
+        : pinLabels
     if (!this._impliedFootprintPinLabels && !parsedPinLabels) return undefined
     return {
       ...(this._impliedFootprintPinLabels ?? {}),
