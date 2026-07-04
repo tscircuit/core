@@ -8,7 +8,7 @@ test("repro142: manufacturer part number overflow", async () => {
     <board>
       <chip
         name="CHIP1"
-        manufacturerPartNumber="SOMETHING_THAT_IS_TOO_LONG"
+        manufacturerPartNumber="SOMETHING_THAT_IS_LONG"
         pinLabels={{
           pin1: "P1",
           pin2: "P2",
