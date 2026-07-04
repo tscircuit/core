@@ -344,12 +344,8 @@ export class NormalComponent<
         const labelList = Array.isArray(label) ? label : [label]
         const propLabel = pinLabelsFromProps?.[pinKey]
         const hasPropLabel = propLabel !== undefined
-        const primaryLabel = hasPropLabel
-          ? labelList[0]
-          : `pin${pinNumber}`
-        const otherLabels = hasPropLabel
-          ? labelList.slice(1)
-          : labelList
+        const primaryLabel = hasPropLabel ? labelList[0] : `pin${pinNumber}`
+        const otherLabels = hasPropLabel ? labelList.slice(1) : labelList
 
         if (!existingPort) {
           existingPort = new Port(
