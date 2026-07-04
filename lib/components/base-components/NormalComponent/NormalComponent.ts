@@ -416,6 +416,7 @@ export class NormalComponent<
       } else {
         const portsFromFootprint = this.getPortsFromFootprint({
           ...opts,
+          allowImplicitPinNumbers: !pinLabelsFromProps,
           collectInferredInternallyConnectedPins: true,
         })
         const existingPorts = this._getAllPortsFromChildren()
@@ -1266,6 +1267,7 @@ export class NormalComponent<
 
   getPortsFromFootprint(opts?: {
     additionalAliases?: Record<string, string[]>
+    allowImplicitPinNumbers?: boolean
     collectInferredInternallyConnectedPins?: boolean
   }): Port[] {
     let inferredInternallyConnectedPinNames: string[][] | undefined = undefined
@@ -1274,9 +1276,31 @@ export class NormalComponent<
         this._inferredInternallyConnectedPinNames
     }
 
+    const implicitPinNumberByHint = new Map<string, number>()
+    const explicitPinLabels = this._parsedProps.pinLabels
+    if (explicitPinLabels) {
+      const pinLabelEntries = Array.isArray(explicitPinLabels)
+        ? explicitPinLabels.map((label, index) => [`pin${index + 1}`, label])
+        : Object.entries(explicitPinLabels)
+
+      for (const [pinKey, labelOrLabels] of pinLabelEntries) {
+        const pinNumber = getPinNumberFromPinLabelsKey(pinKey)
+        if (pinNumber === null) continue
+        const labels = Array.isArray(labelOrLabels)
+          ? labelOrLabels
+          : [labelOrLabels]
+        for (const label of labels) {
+          if (typeof label === "string" && label.length > 0) {
+            implicitPinNumberByHint.set(label, pinNumber)
+          }
+        }
+      }
+    }
+
     const primaryPortOpts = {
       ...opts,
       inferredInternallyConnectedPinNames,
+      implicitPinNumberByHint,
     }
     let { footprint } = this.props
     if (

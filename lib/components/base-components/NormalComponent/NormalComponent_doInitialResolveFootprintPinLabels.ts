@@ -6,7 +6,9 @@ export function NormalComponent_doInitialResolveFootprintPinLabels(
 ) {
   const pinLabelsBeforeFootprint = component._impliedFootprintPinLabels ?? {}
   const pinLabels: Record<string, string[]> = {}
-  const portsFromFootprint = component.getPortsFromFootprint()
+  const portsFromFootprint = component.getPortsFromFootprint({
+    allowImplicitPinNumbers: !component._parsedProps.pinLabels,
+  })
   for (const port of portsFromFootprint) {
     const pinNumber = port._parsedProps.pinNumber
     if (pinNumber === undefined) continue
