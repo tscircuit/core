@@ -112,3 +112,8 @@ circuit.selectOne("resistor") // Find first resistor
 - ESM output with TypeScript declarations
 - Path mapping for `lib/*` imports
 - Biome enforces kebab-case file naming, space indentation, double quotes for JSX
+
+## IMPORTANT REVIEW RULES
+
+- Do not assign/change to _parsedProps or props
+- Do not add a ton of instance methods to classes, especially large classes like NormalComponent
