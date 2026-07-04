@@ -216,7 +216,7 @@ export abstract class PrimitiveComponent<
     }) as z.infer<ZodProps>
     const oldProps = this.props
     this.props = newProps
-    this._parsedProps = newProps
+    this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>
     this.onPropsChange({
       oldProps,
       newProps,

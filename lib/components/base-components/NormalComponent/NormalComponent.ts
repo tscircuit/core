@@ -371,9 +371,6 @@ export class NormalComponent<
           portsToCreate.push(existingPort)
         } else {
           existingPort.externallyAddedAliases.push(primaryLabel, ...otherLabels)
-          if (hasPropLabel) {
-            existingPort.setProps({ name: primaryLabel })
-          }
         }
       }
     }
