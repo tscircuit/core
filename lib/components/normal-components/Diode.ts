@@ -54,6 +54,7 @@ export class Diode extends NormalComponent<
 
     super.initPorts({
       pinCount: 2,
+      ignoreSymbolPorts: !hasPinLabels && !shouldAddDefaultAliases,
       additionalAliases: {
         pin1: shouldAddDefaultAliases ? ["anode", "pos", "left"] : [],
         pin2: shouldAddDefaultAliases ? ["cathode", "neg", "right"] : [],

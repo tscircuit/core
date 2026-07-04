@@ -60,6 +60,17 @@ const calculateCcwRotation = (
 const optional = <T>(value: T | null | undefined): T | undefined =>
   value ?? undefined
 
+const getPinNumberFromPortHints = (
+  portHints: string[] | undefined,
+): number | undefined => {
+  for (const hint of portHints ?? []) {
+    if (/^\d+$/.test(hint)) return Number(hint)
+
+    const pinNameMatch = /^pin(\d+)$/i.exec(hint)
+    if (pinNameMatch) return Number(pinNameMatch[1])
+  }
+}
+
 const getFacingDirectionFromSide = (side: string) => {
   switch (side) {
     case "left":
@@ -118,12 +129,46 @@ export const createComponentsFromCircuitJson = (
     string,
     Extract<AnyCircuitElement, { type: "source_port" }>
   >()
+  const sourcePortsByPinNumber = new Map<
+    number,
+    Extract<AnyCircuitElement, { type: "source_port" }>
+  >()
   const schematicStrokeWidthBySymbolId = new Map<string, number>()
 
   for (const elm of circuitJson) {
     if (elm.type === "source_port") {
       sourcePortsByImportedId.set(elm.source_port_id, elm)
+      if (typeof elm.pin_number === "number") {
+        sourcePortsByPinNumber.set(elm.pin_number, elm)
+      }
     }
+  }
+
+  const getPortHintsWithSourcePortAliases = (
+    portHints: string[] | undefined,
+  ) => {
+    const pinNumber = getPinNumberFromPortHints(portHints)
+    const sourcePort =
+      typeof pinNumber === "number"
+        ? sourcePortsByPinNumber.get(pinNumber)
+        : undefined
+
+    if (!sourcePort) return portHints
+
+    const mergedPortHints = Array.from(
+      new Set(
+        [
+          ...(portHints ?? []),
+          ...(sourcePort.port_hints ?? []),
+          sourcePort.name,
+        ].filter(
+          (alias): alias is string =>
+            typeof alias === "string" && alias.length > 0,
+        ),
+      ),
+    )
+
+    return mergedPortHints.length > 0 ? mergedPortHints : portHints
   }
 
   for (const elm of circuitJson) {
@@ -184,7 +229,7 @@ export const createComponentsFromCircuitJson = (
           shape: "rect",
           height: elm.height,
           width: elm.width,
-          portHints: elm.port_hints,
+          portHints: getPortHintsWithSourcePortAliases(elm.port_hints),
           rectBorderRadius: elm.rect_border_radius,
         }),
       )
@@ -196,7 +241,7 @@ export const createComponentsFromCircuitJson = (
           layer: elm.layer,
           shape: "circle",
           radius: elm.radius,
-          portHints: elm.port_hints,
+          portHints: getPortHintsWithSourcePortAliases(elm.port_hints),
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "pill") {
@@ -206,7 +251,7 @@ export const createComponentsFromCircuitJson = (
           height: elm.height,
           width: elm.width,
           radius: elm.radius,
-          portHints: elm.port_hints,
+          portHints: getPortHintsWithSourcePortAliases(elm.port_hints),
           pcbX: elm.x,
           pcbY: elm.y,
           layer: elm.layer,
@@ -223,7 +268,7 @@ export const createComponentsFromCircuitJson = (
           width: elm.width,
           ccwRotation: elm.ccw_rotation,
           cornerRadius: elm.corner_radius,
-          portHints: elm.port_hints,
+          portHints: getPortHintsWithSourcePortAliases(elm.port_hints),
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "polygon") {
@@ -231,7 +276,7 @@ export const createComponentsFromCircuitJson = (
         new SmtPad({
           shape: "polygon",
           points: elm.points,
-          portHints: elm.port_hints,
+          portHints: getPortHintsWithSourcePortAliases(elm.port_hints),
           layer: elm.layer,
         }),
       )
@@ -266,7 +311,7 @@ export const createComponentsFromCircuitJson = (
             shape: "circle",
             holeDiameter: elm.hole_diameter,
             outerDiameter: elm.outer_diameter,
-            portHints: elm.port_hints,
+            portHints: getPortHintsWithSourcePortAliases(elm.port_hints),
           }),
         )
       } else if (elm.shape === "circular_hole_with_rect_pad") {
@@ -278,7 +323,7 @@ export const createComponentsFromCircuitJson = (
             holeDiameter: elm.hole_diameter,
             rectPadHeight: elm.rect_pad_height,
             rectPadWidth: elm.rect_pad_width,
-            portHints: elm.port_hints,
+            portHints: getPortHintsWithSourcePortAliases(elm.port_hints),
             rectBorderRadius: elm.rect_border_radius,
             holeOffsetX: elm.hole_offset_x,
             holeOffsetY: elm.hole_offset_y,
@@ -294,7 +339,7 @@ export const createComponentsFromCircuitJson = (
             holeHeight: elm.hole_height,
             outerWidth: elm.outer_width,
             outerHeight: elm.outer_height,
-            portHints: elm.port_hints,
+            portHints: getPortHintsWithSourcePortAliases(elm.port_hints),
           }),
         )
       } else if (elm.shape === "pill_hole_with_rect_pad") {
@@ -310,7 +355,7 @@ export const createComponentsFromCircuitJson = (
             rectPadWidth: elm.rect_pad_width,
             rectPadHeight: elm.rect_pad_height,
             rectBorderRadius: elm.rect_border_radius,
-            portHints: elm.port_hints,
+            portHints: getPortHintsWithSourcePortAliases(elm.port_hints),
             holeOffsetX: elm.hole_offset_x,
             holeOffsetY: elm.hole_offset_y,
           }),
@@ -328,7 +373,7 @@ export const createComponentsFromCircuitJson = (
             rectPadWidth: elm.rect_pad_width,
             rectPadHeight: elm.rect_pad_height,
             rectBorderRadius: elm.rect_border_radius,
-            portHints: elm.port_hints,
+            portHints: getPortHintsWithSourcePortAliases(elm.port_hints),
             holeOffsetX: elm.hole_offset_x,
             holeOffsetY: elm.hole_offset_y,
             pcbRotation: elm.hole_ccw_rotation,
@@ -347,7 +392,7 @@ export const createComponentsFromCircuitJson = (
             padOutline: elm.pad_outline || [],
             holeOffsetX: elm.hole_offset_x,
             holeOffsetY: elm.hole_offset_y,
-            portHints: elm.port_hints,
+            portHints: getPortHintsWithSourcePortAliases(elm.port_hints),
           }),
         )
       }
