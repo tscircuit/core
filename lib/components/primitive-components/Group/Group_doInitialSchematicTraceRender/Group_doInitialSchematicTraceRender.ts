@@ -59,6 +59,12 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
 
   // Solve routing
   const solver = new SchematicTracePipelineSolver(inputProblem)
+  group.root?.emit("solver:started", {
+    type: "solver:started",
+    solverName: "SchematicTracePipelineSolver",
+    solverParams: solver.getConstructorParams(),
+    componentName: group.getString(),
+  })
   solver.solve()
 
   const schematicPortIdsWithRoutedTraces = getSchematicPortIdsWithRoutedTraces({

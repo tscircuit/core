@@ -525,6 +525,12 @@ export class Board
         y: point.y + (props.outlineOffsetY ?? 0) + outlineTranslation.y,
       })),
       material: props.material,
+      ...(props.solderMaskColor !== undefined && {
+        solder_mask_color: props.solderMaskColor,
+      }),
+      ...(props.silkscreenColor !== undefined && {
+        silkscreen_color: props.silkscreenColor,
+      }),
 
       min_trace_width:
         subcircuitProps.minTraceWidth ?? jlcMinTolerances.min_trace_width,

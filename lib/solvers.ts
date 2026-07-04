@@ -11,6 +11,7 @@ import {
   AutoroutingPipelineSolver8,
 } from "@tscircuit/capacity-autorouter"
 import { CopperPourPipelineSolver } from "@tscircuit/copper-pour-solver"
+import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 
 export const SOLVERS = {
   PackSolver2,
@@ -24,6 +25,7 @@ export const SOLVERS = {
   AutoroutingPipelineSolver7_MultiGraph,
   AutoroutingPipelineSolver8,
   CopperPourPipelineSolver,
+  SchematicTracePipelineSolver,
 }
 
 export type SolverName = keyof typeof SOLVERS

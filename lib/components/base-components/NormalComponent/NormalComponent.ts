@@ -70,6 +70,10 @@ import { Footprint } from "../../primitive-components/Footprint"
 import { Port } from "../../primitive-components/Port"
 import { PrimitiveComponent } from "../PrimitiveComponent"
 import type { INormalComponent } from "./INormalComponent"
+import {
+  NormalComponent_doInitialCheckRefDesConvention,
+  getDefaultExpectedRefDesPrefixesForFtype,
+} from "./NormalComponent_doInitialCheckRefDesConvention"
 import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
 import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
@@ -617,6 +621,14 @@ export class NormalComponent<
       display_name: props.displayName,
     })
     this.source_component_id = source_component.source_component_id
+  }
+
+  getRefDesPrefixes(): string[] | undefined {
+    return getDefaultExpectedRefDesPrefixesForFtype(this.config.sourceFtype)
+  }
+
+  doInitialCheckRefDesConvention(): void {
+    NormalComponent_doInitialCheckRefDesConvention(this)
   }
 
   /**
