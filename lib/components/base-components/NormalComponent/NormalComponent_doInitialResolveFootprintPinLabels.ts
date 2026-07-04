@@ -1,5 +1,4 @@
 import { Port } from "lib/components/primitive-components/Port"
-import { isFootprinterString } from "./utils/isFootprinterString"
 import type { NormalComponent } from "./NormalComponent"
 
 export function NormalComponent_doInitialResolveFootprintPinLabels(
@@ -26,20 +25,6 @@ export function NormalComponent_doInitialResolveFootprintPinLabels(
     impliedFootprintPinLabels[pinKey] = Array.isArray(labels)
       ? labels
       : [labels]
-  }
-
-  if (
-    component.componentName === "Diode" &&
-    Object.keys(impliedFootprintPinLabels).length === 0
-  ) {
-    const footprint = component.resolveFootprint()
-    const shouldAddDefaultAliases = !footprint || isFootprinterString(footprint)
-    impliedFootprintPinLabels.pin1 = shouldAddDefaultAliases
-      ? ["anode", "pos", "left"]
-      : ["anode", "pos"]
-    impliedFootprintPinLabels.pin2 = shouldAddDefaultAliases
-      ? ["cathode", "neg", "right"]
-      : ["cathode", "neg"]
   }
 
   component._impliedFootprintPinLabels = impliedFootprintPinLabels

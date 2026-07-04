@@ -7,6 +7,7 @@ import {
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { Port } from "../primitive-components/Port"
+import { Diode_doInitialResolveFootprintPinLabels } from "./Diode_doInitialResolveFootprintPinLabels"
 
 export class Diode extends NormalComponent<
   typeof diodeProps,
@@ -42,6 +43,10 @@ export class Diode extends NormalComponent<
 
   initPorts() {
     super.initPorts({ pinCount: 2, preCreatePinCountPorts: true })
+  }
+
+  doInitialResolveFootprintPinLabels(): void {
+    Diode_doInitialResolveFootprintPinLabels(this)
   }
 
   doInitialSourceRender() {
