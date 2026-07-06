@@ -1,5 +1,3 @@
-const SCHEMATIC_TEXT_WIDTH_FACTOR = 0.6
-
 export function getSchematicTextWidth({
   text,
   fontSize,
@@ -7,5 +5,7 @@ export function getSchematicTextWidth({
   text: string
   fontSize: number
 }) {
-  return text.length * fontSize * SCHEMATIC_TEXT_WIDTH_FACTOR
+  const fontScale = fontSize / 0.18
+  const charWidth = 0.12 * fontScale
+  return text.length * charWidth
 }
