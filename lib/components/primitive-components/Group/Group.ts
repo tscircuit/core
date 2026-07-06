@@ -760,6 +760,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 db,
                 minTraceWidth: Number(props.minTraceWidth ?? 0.15),
                 nominalTraceWidth: this.props.nominalTraceWidth,
+                defaultObstacleMargin:
+                  this.props.autorouter?.traceClearance != null
+                    ? distance.parse(this.props.autorouter.traceClearance)
+                    : undefined,
                 subcircuit_id: this.subcircuit_id,
                 subcircuitComponent: this,
               }).simpleRouteJson,
@@ -893,6 +897,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         db,
         minTraceWidth,
         nominalTraceWidth,
+        defaultObstacleMargin:
+          autorouterConfig.traceClearance != null
+            ? distance.parse(autorouterConfig.traceClearance)
+            : undefined,
         subcircuit_id: this.subcircuit_id,
         subcircuitComponent: this,
       })

@@ -27,6 +27,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minBoardEdgeClearance,
   minViaHoleDiameter,
   minViaPadDiameter,
+  defaultObstacleMargin,
   nominalTraceWidth,
   subcircuitComponent,
 }: {
@@ -43,6 +44,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minBoardEdgeClearance?: number
   minViaHoleDiameter?: number
   minViaPadDiameter?: number
+  /** trace-to-obstacle clearance for the capacity autorouter (mm) */
+  defaultObstacleMargin?: number
   subcircuitComponent?: {
     selectAll(selector: string): unknown[]
   }
@@ -628,6 +631,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           : undefined,
       layerCount: board?.num_layers ?? 2,
       minTraceWidth: minTraceWidth ?? board?.min_trace_width ?? 0.1,
+      defaultObstacleMargin,
       minViaDiameter: resolvedMinViaPadDiameter,
       minViaHoleDiameter: resolvedMinViaHoleDiameter,
       minViaPadDiameter: resolvedMinViaPadDiameter,
