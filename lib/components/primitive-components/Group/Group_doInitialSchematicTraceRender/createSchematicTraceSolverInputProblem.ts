@@ -4,10 +4,12 @@ import {
   type InputChip,
   type InputPin,
   type InputProblem,
+  type TextBoxes,
 } from "@tscircuit/schematic-trace-solver"
 import type { AxisDirection } from "./getSide"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { getSchematicTextBounds } from "lib/utils/schematic/getSchematicTextBounds"
 import {
   getBoundFromCenteredRect,
   getBoundsCenter,
@@ -86,6 +88,7 @@ export function createSchematicTraceSolverInputProblem(
 
   // Build chips and pinId maps
   const chips: InputChip[] = []
+  const textBoxes: TextBoxes[] = []
   const pinIdToSchematicPortId = new Map<string, string>()
   const schematicPortIdToPinId = new Map<string, string>()
 
@@ -137,6 +140,30 @@ export function createSchematicTraceSolverInputProblem(
       pins,
       sectionId,
     })
+
+    const referenceDesignatorTexts = new Set(
+      [sourceComponent?.display_name, sourceComponent?.name].filter(
+        (text): text is string => Boolean(text),
+      ),
+    )
+    if (referenceDesignatorTexts.size > 0) {
+      for (const schematicText of db.schematic_text.list({
+        schematic_component_id: schematicComponent.schematic_component_id,
+      })) {
+        if (!referenceDesignatorTexts.has(schematicText.text)) continue
+
+        const bounds = getSchematicTextBounds(schematicText)
+        if (!bounds) continue
+
+        textBoxes.push({
+          chipId,
+          center: getBoundsCenter(bounds),
+          width: bounds.maxX - bounds.minX,
+          height: bounds.maxY - bounds.minY,
+          text: schematicText.text,
+        })
+      }
+    }
   }
 
   // Maps for ports within this scope
@@ -342,6 +369,7 @@ export function createSchematicTraceSolverInputProblem(
     chips,
     directConnections,
     netConnections,
+    textBoxes,
     availableNetLabelOrientations,
     maxMspPairDistance:
       group._parsedProps.schMaxTraceDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE,
