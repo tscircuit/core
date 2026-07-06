@@ -19,6 +19,7 @@ test("board with local group autorouter (capacity mesh)", async () => {
         local: true,
         groupMode: "subcircuit",
       }}
+      autorouterVersion="v4"
     >
       <resistor
         name="R1"
