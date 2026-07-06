@@ -16,6 +16,38 @@ import {
 } from "@tscircuit/math-utils"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
+
+type Bounds = {
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
+}
+
+function extendTextBoundsToTouchComponent({
+  textBounds,
+  componentBounds,
+}: {
+  textBounds: Bounds
+  componentBounds: Bounds
+}): Bounds {
+  const bounds = { ...textBounds }
+
+  if (textBounds.minY >= componentBounds.maxY) {
+    bounds.minY = componentBounds.maxY
+  } else if (textBounds.maxY <= componentBounds.minY) {
+    bounds.maxY = componentBounds.minY
+  }
+
+  if (textBounds.minX >= componentBounds.maxX) {
+    bounds.minX = componentBounds.maxX
+  } else if (textBounds.maxX <= componentBounds.minX) {
+    bounds.maxX = componentBounds.minX
+  }
+
+  return bounds
+}
+
 export type SolverInputContext = {
   inputProblem: InputProblem
   pinIdToSchematicPortId: Map<string, string>
@@ -124,13 +156,14 @@ export function createSchematicTraceSolverInputProblem(
       sectionId = componentNameToSectionId.get(sourceComponent.name)
     }
 
+    const componentBounds = getBoundFromCenteredRect({
+      center: schematicComponent.center,
+      width: schematicComponent.size.width,
+      height: schematicComponent.size.height,
+    })
     const layoutBounds =
       getSchematicComponentWithTextBounds(db, schematicComponent) ??
-      getBoundFromCenteredRect({
-        center: schematicComponent.center,
-        width: schematicComponent.size.width,
-        height: schematicComponent.size.height,
-      })
+      componentBounds
 
     chips.push({
       chipId,
@@ -152,8 +185,13 @@ export function createSchematicTraceSolverInputProblem(
       })) {
         if (!referenceDesignatorTexts.has(schematicText.text)) continue
 
-        const bounds = getSchematicTextBounds(schematicText)
-        if (!bounds) continue
+        const textBounds = getSchematicTextBounds(schematicText)
+        if (!textBounds) continue
+
+        const bounds = extendTextBoundsToTouchComponent({
+          textBounds,
+          componentBounds,
+        })
 
         textBoxes.push({
           chipId,

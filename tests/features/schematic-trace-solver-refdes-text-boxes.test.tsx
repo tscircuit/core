@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
-test("schematic trace solver receives chip reference designator text boxes", async () => {
+test("schematic trace solver receives chip reference designator text boxes touching chip bodies", async () => {
   const { circuit } = getTestFixture()
   const solverStartedEvents: any[] = []
 
@@ -24,11 +24,26 @@ test("schematic trace solver receives chip reference designator text boxes", asy
     (event) => event.solverName === "SchematicTracePipelineSolver",
   )
 
-  expect(schematicTraceSolverEvent?.solverParams.textBoxes).toEqual(
+  const solverParams = schematicTraceSolverEvent?.solverParams
+  expect(solverParams).toBeDefined()
+  expect(solverParams.textBoxes).toEqual(
     expect.arrayContaining([
       expect.objectContaining({ text: "U1" }),
       expect.objectContaining({ text: "U2" }),
     ]),
   )
+
+  for (const textBox of solverParams.textBoxes) {
+    if (textBox.text !== "U1" && textBox.text !== "U2") continue
+
+    const chip = solverParams.chips.find(
+      (chip: any) => chip.chipId === textBox.chipId,
+    )
+    expect(chip).toBeDefined()
+    expect(textBox.center.y - textBox.height / 2).toBeCloseTo(
+      chip.center.y + chip.height / 2,
+    )
+  }
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
