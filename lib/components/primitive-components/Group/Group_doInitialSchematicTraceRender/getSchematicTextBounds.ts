@@ -1,12 +1,14 @@
 import type { SchematicText } from "circuit-json"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
-import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getSchematicTextWidth } from "lib/utils/schematic/getSchematicTextWidth"
+
+const DEFAULT_SCHEMATIC_TEXT_FONT_SIZE = 0.18
 
 export function getSchematicTextBounds(text: SchematicText) {
-  const fontSize = text.font_size ?? 0.18
-  const width = getSchematicNetLabelTextWidth({
+  const fontSize = text.font_size ?? DEFAULT_SCHEMATIC_TEXT_FONT_SIZE
+  const width = getSchematicTextWidth({
     text: text.text ?? "",
-    font_size: fontSize,
+    fontSize,
   })
   const height = fontSize
   const anchor = text.anchor ?? "center"

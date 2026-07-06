@@ -16,6 +16,7 @@ import {
 } from "@tscircuit/math-utils"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
+const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
 
 export type SolverInputContext = {
   inputProblem: InputProblem
@@ -285,6 +286,7 @@ export function createSchematicTraceSolverInputProblem(
     netId: string
     pinIds: string[]
     netLabelWidth?: number
+    netLabelHeight?: number
   }> = []
   for (const net of db.source_net
     .list()
@@ -319,6 +321,10 @@ export function createSchematicTraceSolverInputProblem(
       const netLabelWidth = Number(
         getSchematicNetLabelTextWidth({ text: String(userNetId) }).toFixed(2),
       )
+      const netLabelHeight =
+        sourceNet.is_ground || sourceNet.is_power
+          ? SCHEMATIC_RAIL_NET_LABEL_HEIGHT
+          : undefined
 
       netConnections.push({
         netId: userNetId,
@@ -326,6 +332,7 @@ export function createSchematicTraceSolverInputProblem(
           (portId) => schematicPortIdToPinId.get(portId)!,
         ),
         netLabelWidth,
+        netLabelHeight,
       })
     }
   }
