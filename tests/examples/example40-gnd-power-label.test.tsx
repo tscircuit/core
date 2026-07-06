@@ -60,6 +60,17 @@ test("gnd power label detection test", async () => {
       />
       <trace from=".R6 > .pin1" to="net.V3_3" />
       <trace from=".R6 > .pin2" to="net.GND" />
+
+      {/* Prefixed numeric voltage N3V3 */}
+      <resistor
+        name="R7"
+        resistance="10k"
+        footprint="0402"
+        pcbX={10}
+        pcbY={0}
+      />
+      <trace from=".R7 > .pin1" to="net.N3V3" />
+      <trace from=".R7 > .pin2" to="net.GND" />
     </board>,
   )
 
