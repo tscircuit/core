@@ -1,19 +1,19 @@
-import type { SourceNet } from "circuit-json"
-import { Group } from "../Group"
+import {
+  getBoundFromCenteredRect,
+  getBoundsCenter,
+} from "@tscircuit/math-utils"
 import {
   type InputChip,
   type InputPin,
   type InputProblem,
   type TextBoxes,
 } from "@tscircuit/schematic-trace-solver"
-import type { AxisDirection } from "./getSide"
+import type { SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { Group } from "../Group"
+import type { AxisDirection } from "./getSide"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
-import {
-  getBoundFromCenteredRect,
-  getBoundsCenter,
-} from "@tscircuit/math-utils"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
@@ -80,6 +80,12 @@ export function createSchematicTraceSolverInputProblem(
   const schematicComponentIds = new Set(
     schematicComponents.map((component) => component.schematic_component_id),
   )
+  const schematicComponentsById = new Map(
+    schematicComponents.map((component) => [
+      component.schematic_component_id,
+      component,
+    ]),
+  )
   const textBoxes = db.schematic_text
     .list()
     .filter(
@@ -87,7 +93,20 @@ export function createSchematicTraceSolverInputProblem(
         text.schematic_component_id &&
         schematicComponentIds.has(text.schematic_component_id),
     )
-    .map(schematicTextToTextBox)
+    .map((text) => {
+      const schematicComponent = schematicComponentsById.get(
+        text.schematic_component_id!,
+      )
+      if (!schematicComponent) return
+      const sourceComponent = db.source_component.get(
+        schematicComponent.source_component_id!,
+      )
+
+      return schematicTextToTextBox(text, {
+        schematicComponent,
+        sourceComponent,
+      })
+    })
     .filter((textBox): textBox is TextBoxes => Boolean(textBox))
 
   const componentNameToSectionId = new Map<string, string>()
