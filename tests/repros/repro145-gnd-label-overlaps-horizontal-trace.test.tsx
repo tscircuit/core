@@ -30,7 +30,7 @@ test("repro145: GND label overlaps horizontal trace", async () => {
       />
 
       <trace from="R_RUN.pin2" to="R_BOOT.pin2" />
-      <trace from="R_RUN.pin1" to="net.VCC" />
+      <trace from="R_RUN.pin2" to="net.VCC" />
 
       <netlabel
         net="GND"
