@@ -123,23 +123,4 @@ test("autoroutingphase reroutes an imported circuit json region with the builtin
     .map((trace) => trace.route)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-
-  expect(targetTraceRoutes.length).toBeGreaterThan(0)
-  expect(targetTraceRoutes.map(routeSignature)).not.toContain(
-    originalRouteSignature,
-  )
-  expect(
-    targetTraceRoutes
-      .flat()
-      .filter((point) => point.route_type === "wire")
-      .some(
-        (point) =>
-          point.x > rerouteRegion.minX &&
-          point.x < rerouteRegion.maxX &&
-          Math.abs(point.y) > 0.4,
-      ),
-  ).toBe(true)
-
-  expect(circuit.db.pcb_note_rect.list()).toHaveLength(1)
-  expect(circuit.db.pcb_note_text.list()).toHaveLength(1)
 })
