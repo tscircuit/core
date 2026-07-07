@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(64.9341279347,0,0,-64.9341279347,665.5228640279,320.9304339043)" data-software-used-string="@tscircuit/core@0.0.1394"><style>
+<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(64.9341279347,0,0,-64.9341279347,665.5228640279,320.9304339043)" data-software-used-string="@tscircuit/core@0.0.1397"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -75,13 +75,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="TPS63802_3V3_BuckBoost
     L 708.2495202089326,118.07621823629718
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.298682558694px"/><text class="net-label-text sch-net-label-text" x="701.236634391985" y="115.73858963064798" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.688143028246px" transform="rotate(-90 701.236634391985 115.73858963064798)">U1_L2/L1_pin2</text><path class="net-label sch-net-label" d="
-    M 703.184658230026,121.58266114477098
-    L 706.6911011384998,114.56977532782338
-    L 791.6509141282613,114.56977532782338
-    L 791.6509141282613,128.59554696171858
-    L 706.6911011384998,128.59554696171858
+    M 701.236634391985,121.58266114477098
+    L 704.7430773004588,114.56977532782338
+    L 789.7028902902204,114.56977532782338
+    L 789.7028902902204,128.59554696171858
+    L 704.7430773004588,128.59554696171858
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.298682558694px"/><text class="net-label-text sch-net-label-text" x="709.028729744149" y="121.58266114477098" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.688143028246px" transform="">U1_L2/L1_pin2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.298682558694px"/><text class="net-label-text sch-net-label-text" x="707.080705906108" y="121.58266114477098" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.688143028246px" transform="">U1_L2/L1_pin2</text><path class="net-label sch-net-label" d="
     M 629.809093663815,120.93331986542398
     L 622.7962078468674,117.42687695695018
     L 622.7962078468674,32.46706396718871
@@ -89,10 +89,10 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="TPS63802_3V3_BuckBoost
     L 636.8219794807626,117.42687695695018
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.298682558694px"/><text class="net-label-text sch-net-label-text" x="629.809093663815" y="115.08924835130098" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.688143028246px" transform="rotate(-90 629.809093663815 115.08924835130098)">U1_L1/L1_pin1</text><path class="net-label sch-net-label" d="
-    M 627.861069825774,120.93331986542398
-    L 624.3546269173003,127.94620568237158
-    L 539.3948139275387,127.94620568237157
-    L 539.3948139275387,113.92043404847637
-    L 624.3546269173003,113.92043404847638
+    M 629.809093663815,120.93331986542398
+    L 626.3026507553412,127.94620568237158
+    L 541.3428377655797,127.94620568237157
+    L 541.3428377655797,113.92043404847637
+    L 626.3026507553412,113.92043404847638
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.298682558694px"/><text class="net-label-text sch-net-label-text" x="622.016998311651" y="120.93331986542398" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.688143028246px" transform="">U1_L1/L1_pin1</text><text class="sch-text" x="275.9180964197" y="207.295710018575" fill="#000000" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="11.688143028246px" transform="rotate(0, 275.9180964197, 207.295710018575)">VIN 1.3V-5.5V</text><text class="sch-text" x="912.2725501797601" y="207.295710018575" fill="#000000" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="11.688143028246px" transform="rotate(0, 912.2725501797601, 207.295710018575)">VOUT = 3.3V</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.298682558694px"/><text class="net-label-text sch-net-label-text" x="623.965022149692" y="120.93331986542398" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="11.688143028246px" transform="">U1_L1/L1_pin1</text><text class="sch-text" x="275.9180964197" y="207.295710018575" fill="#000000" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="11.688143028246px" transform="rotate(0, 275.9180964197, 207.295710018575)">VIN 1.3V-5.5V</text><text class="sch-text" x="912.2725501797601" y="207.295710018575" fill="#000000" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="11.688143028246px" transform="rotate(0, 912.2725501797601, 207.295710018575)">VOUT = 3.3V</text></svg>

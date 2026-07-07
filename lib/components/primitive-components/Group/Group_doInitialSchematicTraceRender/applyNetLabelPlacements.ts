@@ -143,8 +143,6 @@ export function applyNetLabelPlacements(args: {
       .find((id) => userNetIdToConnKey.get(id))
     const placementConnKey = userNetIdToConnKey.get(placementUserNetId!)
 
-    const anchor_position = placement.anchorPoint
-
     const orientation = placement.orientation as AxisDirection
     const anchor_side = oppositeSide(orientation)
 
@@ -156,6 +154,27 @@ export function applyNetLabelPlacements(args: {
     const schPortIds = placement.pinIds.map(
       (pinId) => pinIdToSchematicPortId.get(pinId)!,
     )
+
+    // createSchematicTraceSolverInputProblem hands the solver each pin at its
+    // real schematic_port.center, but also a chip box expanded to fit the
+    // component's text (getSchematicComponentWithTextBounds). That box can extend
+    // past the pin, so the solver anchors the pin's net label at the box edge -
+    // slightly off the pin. When the pin's connection is already drawn (a routed
+    // trace / power symbol), that gap is bridged and fine. When it isn't, the
+    // label floats AND insertNetLabelsForPortsMissingTrace adds a second,
+    // pin-anchored label for the same port (a duplicate). Snap the anchor back
+    // onto the pin - the same correction applyTracesFromSolverOutput already does
+    // for trace endpoints - so the label connects and lands exactly where that
+    // pass anchors, letting its position-based dedupe drop the duplicate. Guarded
+    // on !is_connected (the same signal that pass uses) so already-drawn
+    // connections keep the solver's intentional edge placement.
+    let anchor_position = placement.anchorPoint
+    if (schPortIds.length === 1 && schPortIds[0]) {
+      const anchorSchPort = db.schematic_port.get(schPortIds[0])
+      if (anchorSchPort?.center && !anchorSchPort.is_connected) {
+        anchor_position = anchorSchPort.center
+      }
+    }
 
     if (
       schPortIds.some((schPortId) =>
