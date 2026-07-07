@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(30.1003344482,0,0,-30.1003344482,522.6702341137,331.856187291)" data-software-used-string="@tscircuit/core@0.0.1359"><style>
+<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(30.1003344482,0,0,-30.1003344482,522.6702341137,331.856187291)" data-software-used-string="@tscircuit/core@0.0.1396"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -43,13 +43,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 567.9411371237928,326.07692307694566
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="569.024749163928" y="322.82608695654005" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">ROW1</text><path class="net-label sch-net-label" d="
-    M 589.041471571981,328.84615384618
-    L 590.6668896321838,325.5953177257744
-    L 609.6662207358876,325.5953177257744
-    L 609.6662207358876,332.0969899665856
-    L 590.6668896321838,332.0969899665856
+    M 581.3658862876899,328.84615384618
+    L 584.6167224080955,330.4715719063828
+    L 584.6167224080955,349.47090301008666
+    L 578.1150501672844,349.47090301008666
+    L 578.1150501672844,330.4715719063828
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="591.750501672319" y="328.84615384618" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">ROW2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="581.3658862876899" y="331.555183946518" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="rotate(90 581.3658862876899 331.555183946518)">ROW2</text><path class="net-label sch-net-label" d="
     M 557.28561872913,334.86622073582004
     L 558.9110367893328,331.6153846154144
     L 575.9036789298233,331.6153846154144
