@@ -252,6 +252,9 @@ jobs:
               echo "No relevant failed test files found; falling back to the full snapshot update."
             fi
             full_exit_code=0
+            results_dir="/tmp/update-snapshots-test-plan-results"
+            rm -rf "$results_dir"
+            mkdir -p "$results_dir"
             for node in 1 2 3 4; do
               if [ ! -f ".github/test-plans/node${node}-testplan.txt" ]; then
                 echo "ERROR: No test plan found for node ${node}"
@@ -265,36 +268,54 @@ jobs:
                 full_exit_code=1
                 break
               fi
+            done
 
-              echo "Running ${#test_files[@]} test files for node ${node}"
-              attempt=1
-              while [ $attempt -le 4 ]; do
-                bun test ${test_files[@]} --timeout 120_000
-                code=$?
+            if [ "$full_exit_code" -eq 0 ]; then
+              for node in 1 2 3 4; do
+                (
+                  mapfile -t test_files < ".github/test-plans/node${node}-testplan.txt"
+                  echo "Running ${#test_files[@]} test files for node ${node}"
+                  attempt=1
+                  node_exit_code=0
+                  while [ $attempt -le 4 ]; do
+                    bun test ${test_files[@]} --timeout 120_000
+                    node_exit_code=$?
 
-                if [ $code -eq 0 ]; then
-                  break
-                fi
+                    if [ $node_exit_code -eq 0 ]; then
+                      break
+                    fi
 
-                if [ $code -ne 139 ] && [ $code -ne 132 ]; then
-                  full_exit_code=$code
-                  break
-                fi
+                    if [ $node_exit_code -ne 139 ] && [ $node_exit_code -ne 132 ]; then
+                      break
+                    fi
 
-                if [ $attempt -eq 4 ]; then
-                  echo "Segmentation fault or illegal instruction detected after $attempt attempts (exit=$code)."
-                  full_exit_code=$code
-                  break
-                fi
+                    if [ $attempt -eq 4 ]; then
+                      echo "Segmentation fault or illegal instruction detected after $attempt attempts (exit=$node_exit_code)."
+                      break
+                    fi
 
-                attempt=$((attempt + 1))
-                echo "Segfault (139) or illegal instruction (132) detected, retrying ($attempt/4)..."
+                    attempt=$((attempt + 1))
+                    echo "Segfault (139) or illegal instruction (132) detected, retrying ($attempt/4)..."
+                  done
+                  echo "$node_exit_code" > "$results_dir/node${node}.exit"
+                ) &
               done
 
-              if [ "$full_exit_code" -ne 0 ]; then
-                break
-              fi
-            done
+              wait
+
+              for node in 1 2 3 4; do
+                if [ ! -f "$results_dir/node${node}.exit" ]; then
+                  echo "ERROR: No exit code was recorded for node ${node}"
+                  full_exit_code=1
+                  break
+                fi
+                node_exit_code="$(cat "$results_dir/node${node}.exit")"
+                if [ "$node_exit_code" -ne 0 ]; then
+                  full_exit_code=$node_exit_code
+                  break
+                fi
+              done
+            fi
             code=$full_exit_code
           fi
           exit_code=$code
