@@ -5,7 +5,6 @@ import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
@@ -15,25 +14,21 @@ const MAX_PIN_SNAP_GAP = 1.5
 /**
  * Extends a trace's start/end to land on a pin center.
  *
- * When a schematic component's bounding box is expanded to fit large text,
- * the box can grow large enough that the component's pins end up *inside* the
- * box. The trace solver routes up to the edge of the bounding box, so the
- * trace stops short of the pin and never visually connects. This walks each
- * endpoint to the nearest eligible pin center (within MAX_PIN_SNAP_GAP, and
- * only if axis-aligned), prepending/appending a point so the trace reaches
- * the pin.
+ * The trace solver routes up to a component obstacle edge. For symbols whose
+ * rendered/packed bounds place a pin just inside that edge, the trace can stop
+ * short of the visible terminal. This walks each endpoint to the nearest
+ * connected pin center (within MAX_PIN_SNAP_GAP, and only if axis-aligned),
+ * prepending/appending a point so the trace reaches the pin.
  */
 function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
   params: {
     points: Array<{ x: number; y: number }>
     schematicPortIds: string[]
-    eligiblePortIds: Set<string>
   },
   db: CircuitJsonUtilObjects,
 ): Array<{ x: number; y: number }> {
-  const { points, schematicPortIds, eligiblePortIds } = params
+  const { points, schematicPortIds } = params
   const centers = schematicPortIds
-    .filter((id) => eligiblePortIds.has(id))
     .map((id) => db.schematic_port.get(id)?.center)
     .filter((c): c is { x: number; y: number } => Boolean(c))
   if (centers.length === 0) return points
@@ -104,18 +99,6 @@ export function applyTracesFromSolverOutput(args: {
   } = args
   const { db } = group.root!
 
-  const eligiblePortIds = new Set<string>()
-  for (const schematicComponent of db.schematic_component.list()) {
-    if (!getSchematicComponentWithTextBounds(db, schematicComponent)) {
-      continue
-    }
-    for (const port of db.schematic_port.list({
-      schematic_component_id: schematicComponent.schematic_component_id,
-    })) {
-      eligiblePortIds.add(port.schematic_port_id)
-    }
-  }
-
   // Use the overlap-corrected traces from the pipeline
   const traces =
     solver.netLabelTraceCollisionSolver?.getOutput().traces ??
@@ -164,7 +147,7 @@ export function applyTracesFromSolverOutput(args: {
         {
           points,
           schematicPortIds: solvedTraceSchematicPortIds,
-          eligiblePortIds,
+          
         },
         db,
       )
