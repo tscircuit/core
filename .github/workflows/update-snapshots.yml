@@ -1,0 +1,448 @@
+name: Update Snapshots
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  actions: read
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  update-snapshots:
+    name: Update snapshots
+    if: |
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request &&
+      github.event.comment.user.type != 'Bot' &&
+      (
+        startsWith(github.event.comment.body, '/update-snapshots') ||
+        startsWith(github.event.comment.body, '/usf') ||
+        startsWith(github.event.comment.body, '/us')
+      ) &&
+      (
+        github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.author_association == 'COLLABORATOR'
+      )
+    runs-on: blacksmith-32vcpu-ubuntu-2404-arm
+    timeout-minutes: 60
+
+    steps:
+      - name: Parse command and create status comment
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            })
+
+            const command = (context.payload.comment.body || '').trim().split(/\s+/)[0] || ''
+            const focused = command === '/usf'
+            const isSameRepo = pr.data.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`
+            const title = focused ? '## 📸 Update Snapshots (focused)' : '## 📸 Update Snapshots'
+            const statusLine = focused
+              ? `⏳ Finding recent failed test files and updating relevant snapshots on \`${pr.data.head.sha.slice(0, 7)}\`...`
+              : `⏳ Running snapshot update on \`${pr.data.head.sha.slice(0, 7)}\`...`
+
+            const statusComment = await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                title,
+                '',
+                statusLine,
+                '',
+                `🔗 Workflow: [View run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`,
+              ].join('\n'),
+            })
+
+            core.setOutput('head_sha', pr.data.head.sha)
+            core.setOutput('head_ref', pr.data.head.ref)
+            core.setOutput('can_push', isSameRepo ? 'true' : 'false')
+            core.setOutput('focused', focused ? 'true' : 'false')
+            core.setOutput('status_comment_id', String(statusComment.data.id))
+
+      - name: Checkout PR branch
+        if: steps.parse.outputs.can_push == 'true'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+          ref: ${{ steps.parse.outputs.head_ref }}
+
+      - name: Setup bun
+        if: steps.parse.outputs.can_push == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        if: steps.parse.outputs.can_push == 'true'
+        run: bun install
+
+      - name: Generate test plans
+        if: steps.parse.outputs.can_push == 'true'
+        run: bun run scripts/generate-test-plan.ts
+
+      - name: Find failed test files
+        if: steps.parse.outputs.can_push == 'true' && steps.parse.outputs.focused == 'true'
+        id: failed_tests
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs')
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+            const headSha = '${{ steps.parse.outputs.head_sha }}'
+            const headRef = '${{ steps.parse.outputs.head_ref }}'
+            const failedConclusions = new Set(['failure', 'timed_out'])
+
+            const stripAnsi = (value) =>
+              value.replace(/\u001b\[[0-9;]*m/g, '')
+
+            const normalizeFile = (value) => value.replace(/^\.\//, '')
+            const testFilePattern = /\b(?:\.\/)?tests\/[A-Za-z0-9_./-]+\.test\.(?:ts|tsx|js|jsx)\b/g
+            const stackFilePattern = /\b(?:\.\/)?(tests\/[^\s:)]+\.test\.(?:ts|tsx|js|jsx)):\d+:\d+/g
+            const fileHeaderPattern = /\b(?:\.\/)?(tests\/[^\s:]+\.test\.(?:ts|tsx|js|jsx)):\s*$/
+
+            const collectPathsFromLine = (line, files) => {
+              testFilePattern.lastIndex = 0
+              let match
+              while ((match = testFilePattern.exec(line)) !== null) {
+                files.add(normalizeFile(match[0]))
+              }
+            }
+
+            const extractFailedTestFiles = (rawLogs) => {
+              const files = new Set()
+              const lines = stripAnsi(rawLogs).split('\n')
+              let currentFile = ''
+
+              for (const line of lines) {
+                if (line.includes('##[endgroup]')) {
+                  currentFile = ''
+                  continue
+                }
+
+                const headerMatch = line.match(fileHeaderPattern)
+                if (headerMatch) {
+                  currentFile = normalizeFile(headerMatch[1])
+                }
+
+                stackFilePattern.lastIndex = 0
+                let stackMatch
+                while ((stackMatch = stackFilePattern.exec(line)) !== null) {
+                  files.add(normalizeFile(stackMatch[1]))
+                }
+
+                if (line.includes('(fail)')) {
+                  if (currentFile) files.add(currentFile)
+                  collectPathsFromLine(line, files)
+                }
+              }
+
+              if (files.size === 0) {
+                for (let i = 0; i < lines.length; i++) {
+                  if (!lines[i].includes('(fail)') && !/failed/i.test(lines[i])) continue
+                  for (let j = Math.max(0, i - 6); j <= Math.min(lines.length - 1, i + 6); j++) {
+                    collectPathsFromLine(lines[j], files)
+                  }
+                }
+              }
+
+              return files
+            }
+
+            const downloadJobLogs = async (job) => {
+              const response = await github.request('GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs', {
+                owner,
+                repo,
+                job_id: job.id,
+              })
+              const data = response.data
+              if (typeof data === 'string') return data
+              if (data instanceof ArrayBuffer) return Buffer.from(data).toString('utf8')
+              if (ArrayBuffer.isView(data)) return Buffer.from(data).toString('utf8')
+              return String(data)
+            }
+
+            const runs = await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
+              owner,
+              repo,
+              branch: headRef,
+              status: 'completed',
+              per_page: 50,
+            })
+
+            const dateValue = (value) => value.updated_at || value.completed_at || value.started_at || 0
+            const byDateDesc = (a, b) => new Date(dateValue(b)) - new Date(dateValue(a))
+            const exactShaRuns = runs
+              .filter((run) => run.head_sha === headSha)
+              .filter((run) => failedConclusions.has(run.conclusion))
+              .filter((run) => String(run.id) !== String(context.runId))
+              .sort(byDateDesc)
+            const fallbackBranchRuns = runs
+              .filter((run) => run.head_sha !== headSha)
+              .filter((run) => failedConclusions.has(run.conclusion))
+              .sort(byDateDesc)
+            const candidateRuns = [...exactShaRuns, ...fallbackBranchRuns].slice(0, 10)
+
+            for (const run of candidateRuns) {
+              const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+                owner,
+                repo,
+                run_id: run.id,
+                per_page: 100,
+              })
+              const failedJobs = jobs
+                .filter((job) => failedConclusions.has(job.conclusion))
+                .sort(byDateDesc)
+              const files = new Set()
+
+              for (const job of failedJobs) {
+                try {
+                  const logs = await downloadJobLogs(job)
+                  for (const file of extractFailedTestFiles(logs)) {
+                    files.add(file)
+                  }
+                } catch (error) {
+                  core.warning(`Unable to read logs for job ${job.id}: ${error.message}`)
+                }
+              }
+
+              if (files.size > 0) {
+                const relevantFiles = Array.from(files).filter((file) => fs.existsSync(file)).sort()
+                if (relevantFiles.length === 0) continue
+                core.setOutput('relevant_files', relevantFiles.join(' '))
+                core.setOutput('source_run_url', run.html_url)
+                core.info(`Focused snapshot update will run: ${relevantFiles.join(' ')}`)
+                return
+              }
+            }
+
+            core.warning('No failed test files were found in recent failed workflow logs; falling back to the full snapshot update.')
+            core.setOutput('relevant_files', '')
+            core.setOutput('source_run_url', '')
+
+      - name: Update snapshots
+        if: steps.parse.outputs.can_push == 'true'
+        id: update_snapshots
+        env:
+          BUN_UPDATE_SNAPSHOTS: "1"
+          FOCUSED: ${{ steps.parse.outputs.focused }}
+          RELEVANT_FILES: ${{ steps.failed_tests.outputs.relevant_files }}
+        run: |
+          set +e
+          relevant_files="${RELEVANT_FILES}"
+          if [ "$FOCUSED" = "true" ] && [ -n "$relevant_files" ]; then
+            echo "Running focused snapshot update: bun test --timeout 120_000 $relevant_files"
+            bun test --timeout 120_000 $relevant_files
+            code=$?
+          else
+            if [ "$FOCUSED" = "true" ]; then
+              echo "No relevant failed test files found; falling back to the full snapshot update."
+            fi
+            full_exit_code=0
+            for node in 1 2 3 4; do
+              if [ ! -f ".github/test-plans/node${node}-testplan.txt" ]; then
+                echo "ERROR: No test plan found for node ${node}"
+                full_exit_code=1
+                break
+              fi
+
+              mapfile -t test_files < .github/test-plans/node${node}-testplan.txt
+              if [ ${#test_files[@]} -eq 0 ]; then
+                echo "ERROR: No test files in plan for node ${node}"
+                full_exit_code=1
+                break
+              fi
+
+              echo "Running ${#test_files[@]} test files for node ${node}"
+              attempt=1
+              while [ $attempt -le 4 ]; do
+                bun test ${test_files[@]} --timeout 120_000
+                code=$?
+
+                if [ $code -eq 0 ]; then
+                  break
+                fi
+
+                if [ $code -ne 139 ] && [ $code -ne 132 ]; then
+                  full_exit_code=$code
+                  break
+                fi
+
+                if [ $attempt -eq 4 ]; then
+                  echo "Segmentation fault or illegal instruction detected after $attempt attempts (exit=$code)."
+                  full_exit_code=$code
+                  break
+                fi
+
+                attempt=$((attempt + 1))
+                echo "Segfault (139) or illegal instruction (132) detected, retrying ($attempt/4)..."
+              done
+
+              if [ "$full_exit_code" -ne 0 ]; then
+                break
+              fi
+            done
+            code=$full_exit_code
+          fi
+          exit_code=$code
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          {
+            echo "relevant_files<<EOF"
+            printf '%s\n' "$relevant_files"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          if [ "$exit_code" -ne 0 ]; then
+            echo "bun test exited with code $exit_code; continuing so snapshot updates can still be committed."
+          fi
+          exit 0
+
+      - name: Verify focused tests
+        if: steps.parse.outputs.can_push == 'true' && steps.parse.outputs.focused == 'true' && steps.failed_tests.outputs.relevant_files != ''
+        id: verify_focused
+        env:
+          RELEVANT_FILES: ${{ steps.failed_tests.outputs.relevant_files }}
+        run: |
+          set +e
+          bun test $RELEVANT_FILES
+          exit_code=$?
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          if [ "$exit_code" -ne 0 ]; then
+            echo "Focused verification exited with code $exit_code; continuing so snapshot updates can still be committed."
+          fi
+          exit 0
+
+      - name: Commit and push snapshot updates
+        if: steps.parse.outputs.can_push == 'true' && always()
+        id: commit
+        env:
+          BRANCH_NAME: ${{ steps.parse.outputs.head_ref }}
+        run: |
+          git config user.name "tscircuit-bot"
+          git config user.email "actions@github.com"
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "commit_sha=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git add -A
+          git commit -m "Update test snapshots"
+          git push origin "$BRANCH_NAME"
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Mark workflow failed when bun test fails
+        if: |
+          steps.parse.outputs.can_push == 'true' &&
+          always() &&
+          (
+            steps.update_snapshots.outputs.exit_code != '0' ||
+            (
+              steps.parse.outputs.focused == 'true' &&
+              steps.failed_tests.outputs.relevant_files != '' &&
+              steps.verify_focused.outputs.exit_code != '0'
+            )
+          )
+        run: exit 1
+
+      - name: Update status comment
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          CAN_PUSH: ${{ steps.parse.outputs.can_push }}
+          CHANGED: ${{ steps.commit.outputs.changed }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_sha }}
+          FOCUSED: ${{ steps.parse.outputs.focused }}
+          RELEVANT_FILES: ${{ steps.failed_tests.outputs.relevant_files }}
+          SOURCE_RUN_URL: ${{ steps.failed_tests.outputs.source_run_url }}
+          TEST_EXIT_CODE: ${{ steps.update_snapshots.outputs.exit_code }}
+          VERIFY_EXIT_CODE: ${{ steps.verify_focused.outputs.exit_code }}
+        with:
+          github-token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+          script: |
+            const runUrl = `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+            const focused = process.env.FOCUSED === 'true'
+            const relevantFiles = (process.env.RELEVANT_FILES || '').trim().split(/\s+/).filter(Boolean)
+            const title = focused ? '## 📸 Update Snapshots (focused)' : '## 📸 Update Snapshots'
+            const focusedDetails = () => {
+              if (!focused) return []
+              if (relevantFiles.length === 0) {
+                return ['', 'Focused mode did not find recent failed test files; ran the full snapshot update.']
+              }
+
+              const shownFiles = relevantFiles.slice(0, 20).map((file) => `- \`${file}\``)
+              const hiddenCount = relevantFiles.length - shownFiles.length
+              return [
+                '',
+                'Focused test files:',
+                ...shownFiles,
+                ...(hiddenCount > 0 ? [`- ...and ${hiddenCount} more`] : []),
+                ...(process.env.SOURCE_RUN_URL ? [``, `Source failure run: ${process.env.SOURCE_RUN_URL}`] : []),
+              ]
+            }
+            const makeBody = (messageLines) => [
+              title,
+              '',
+              ...messageLines,
+              ...focusedDetails(),
+              '',
+              `🔗 Workflow: [View run](${runUrl})`,
+            ].join('\n')
+            const testFailed = process.env.TEST_EXIT_CODE && process.env.TEST_EXIT_CODE !== '0'
+            const verifyFailed = process.env.VERIFY_EXIT_CODE && process.env.VERIFY_EXIT_CODE !== '0'
+            let body = ''
+
+            if (process.env.CAN_PUSH !== 'true') {
+              body = makeBody([
+                '⚠️ This command only supports PR branches from this repository (not forks).',
+              ])
+            } else if ((testFailed || verifyFailed) && process.env.CHANGED === 'true') {
+              const failureLines = [
+                ...(testFailed ? [`Snapshot update test exited with code ${process.env.TEST_EXIT_CODE}.`] : []),
+                ...(verifyFailed ? [`Focused verification exited with code ${process.env.VERIFY_EXIT_CODE}.`] : []),
+              ]
+              body = makeBody([
+                `⚠️ Snapshot updates were committed to \`${(process.env.COMMIT_SHA || '').slice(0, 7)}\`, but not all tests passed.`,
+                ...failureLines,
+              ])
+            } else if (testFailed || verifyFailed) {
+              body = makeBody([
+                '❌ Snapshot update failed.',
+                ...(testFailed ? [`Snapshot update test exited with code ${process.env.TEST_EXIT_CODE}.`] : []),
+                ...(verifyFailed ? [`Focused verification exited with code ${process.env.VERIFY_EXIT_CODE}.`] : []),
+              ])
+            } else if ('${{ job.status }}' !== 'success') {
+              body = makeBody([
+                '❌ Snapshot update failed. Please inspect workflow logs.',
+              ])
+            } else if (process.env.CHANGED === 'true') {
+              body = makeBody([
+                `✅ Snapshot updates committed to \`${(process.env.COMMIT_SHA || '').slice(0, 7)}\`.`,
+              ])
+            } else {
+              body = makeBody([
+                '✅ No snapshot changes were produced; nothing to commit.',
+              ])
+            }
+
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: Number('${{ steps.parse.outputs.status_comment_id }}'),
+              body,
+            })
