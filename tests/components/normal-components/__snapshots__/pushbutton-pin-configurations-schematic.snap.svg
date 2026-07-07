@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(98.7654320988,0,0,-98.7654320988,600,355.5555555556)" data-software-used-string="@tscircuit/core@0.0.1353"><style>
+<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(98.7654320988,0,0,-98.7654320988,600,355.5555555556)" data-software-used-string="@tscircuit/core@0.0.1397"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -36,13 +36,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 229.23456790110475,221.43209876542957
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="225.67901234554793" y="232.09876543209998" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN1</text><path class="net-label sch-net-label" d="
-    M 846.913580247,212.34567901233999
-    L 841.5802469136648,223.0123456790104
-    L 791.7497942387503,223.01234567901037
-    L 791.7497942387503,201.67901234566958
-    L 841.5802469136648,201.67901234566958
+    M 849.876543209964,212.34567901233999
+    L 844.5432098766288,223.0123456790104
+    L 794.7127572017142,223.01234567901037
+    L 794.7127572017142,201.67901234566958
+    L 844.5432098766288,201.67901234566958
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="838.024691358108" y="212.34567901233999" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN1</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="840.987654321072" y="212.34567901233999" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN1</text><path class="net-label sch-net-label" d="
     M 257.283950617164,212.34567901233999
     L 251.95061728382882,223.0123456790104
     L 202.12016460891425,223.01234567901037
@@ -64,20 +64,20 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 651.7530864197712,223.0123456790104
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="655.308641975328" y="212.34567901233999" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN3</text><path class="net-label sch-net-label" d="
-    M 353.086419753,508.64197530874003
-    L 358.41975308633516,497.97530864206965
-    L 408.25020576124973,497.97530864206965
-    L 408.25020576124973,519.3086419754104
-    L 358.41975308633516,519.3086419754104
+    M 350.12345679003596,508.64197530874003
+    L 355.45679012337115,497.97530864206965
+    L 405.2872427982857,497.97530864206965
+    L 405.2872427982857,519.3086419754104
+    L 355.45679012337115,519.3086419754104
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="361.97530864189196" y="508.64197530874003" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN3</text><path class="net-label sch-net-label" d="
-    M 945.6790123458,508.64197530874003
-    L 951.0123456791351,497.97530864206965
-    L 1000.8427983540497,497.97530864206965
-    L 1000.8427983540497,519.3086419754104
-    L 951.0123456791351,519.3086419754104
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="359.01234567892794" y="508.64197530874003" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN3</text><path class="net-label sch-net-label" d="
+    M 942.716049382836,508.64197530874003
+    L 948.0493827161712,497.97530864206965
+    L 997.8798353910857,497.97530864206965
+    L 997.8798353910857,519.3086419754104
+    L 948.0493827161712,519.3086419754104
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="954.5679012346919" y="508.64197530874003" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN3</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="951.604938271728" y="508.64197530874003" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN3</text><path class="net-label sch-net-label" d="
     M 965.4320987655601,212.34567901233999
     L 970.7654320988953,201.67901234566958
     L 1020.5958847738099,201.67901234566958
@@ -85,10 +85,10 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 970.7654320988953,223.0123456790104
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="974.3209876544521" y="212.34567901233999" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN4</text><path class="net-label sch-net-label" d="
-    M 649.3827160494,508.64197530874003
-    L 654.7160493827352,497.97530864206965
-    L 704.5465020576497,497.97530864206965
-    L 704.5465020576497,519.3086419754104
-    L 654.7160493827352,519.3086419754104
+    M 646.419753086436,508.64197530874003
+    L 651.7530864197712,497.97530864206965
+    L 701.5835390946858,497.97530864206965
+    L 701.5835390946858,519.3086419754104
+    L 651.7530864197712,519.3086419754104
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="658.271604938292" y="508.64197530874003" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN4</text><text class="sch-text" x="600" y="59.25925925920001" fill="#000000" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="19.753086419760002px" transform="rotate(0, 600, 59.25925925920001)">INTERNALLY CONNECTED PINS: 1,2 and 3,4</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.9753086419760002px"/><text class="net-label-text sch-net-label-text" x="655.308641975328" y="508.64197530874003" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="17.777777777784px" transform="">PIN4</text><text class="sch-text" x="600" y="59.25925925920001" fill="#000000" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="19.753086419760002px" transform="rotate(0, 600, 59.25925925920001)">INTERNALLY CONNECTED PINS: 1,2 and 3,4</text></svg>
