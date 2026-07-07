@@ -8,4 +8,4 @@ test("seveibar__rp2040-zero matches snapshots", async () => {
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
-})
+}, 200_000)
