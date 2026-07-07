@@ -149,11 +149,19 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   })
 
   // Add every equivalent ID from the shared connectivity map to each obstacle.
+  // Dedupe the result: getIdsConnectedToNet returns heavily overlapping sets,
+  // so pushing them raw makes connectedTo explode. A GND copper pour on a real
+  // board produced 21,171 entries with only 191 unique (each id repeated ~110x)
+  // per pour rect; across a few hundred pour obstacles that ballooned the
+  // SimpleRouteJson to ~78 MB and stalled the autorouter. Deduping keeps it small
+  // (that same board dropped to <1 MB) with identical connectivity.
   for (const obstacle of obstacles) {
     const additionalIds = obstacle.connectedTo.flatMap((id) =>
       sharedConnMap.getIdsConnectedToNet(id),
     )
-    obstacle.connectedTo.push(...additionalIds)
+    obstacle.connectedTo = [
+      ...new Set([...obstacle.connectedTo, ...additionalIds]),
+    ]
   }
 
   // Build mapping from source_port_id to internal connection ID for interconnects
