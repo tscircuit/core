@@ -14,11 +14,46 @@ test("obstacle connectedTo is deduped for a GND copper pour", async () => {
   circuit.add(
     <board width="20mm" height="20mm">
       <copperpour unbroken connectsTo="net.GND" layer="bottom" />
-      <resistor name="R1" resistance="1k" footprint="0402" pcbX={-6} pcbY={0} connections={{ pin2: "net.GND" }} />
-      <resistor name="R2" resistance="1k" footprint="0402" pcbX={0} pcbY={0} connections={{ pin2: "net.GND" }} />
-      <resistor name="R3" resistance="1k" footprint="0402" pcbX={6} pcbY={0} connections={{ pin2: "net.GND" }} />
-      <capacitor name="C1" capacitance="100nF" footprint="0402" pcbX={-6} pcbY={6} connections={{ pin2: "net.GND" }} />
-      <capacitor name="C2" capacitance="100nF" footprint="0402" pcbX={6} pcbY={6} connections={{ pin2: "net.GND" }} />
+      <resistor
+        name="R1"
+        resistance="1k"
+        footprint="0402"
+        pcbX={-6}
+        pcbY={0}
+        connections={{ pin2: "net.GND" }}
+      />
+      <resistor
+        name="R2"
+        resistance="1k"
+        footprint="0402"
+        pcbX={0}
+        pcbY={0}
+        connections={{ pin2: "net.GND" }}
+      />
+      <resistor
+        name="R3"
+        resistance="1k"
+        footprint="0402"
+        pcbX={6}
+        pcbY={0}
+        connections={{ pin2: "net.GND" }}
+      />
+      <capacitor
+        name="C1"
+        capacitance="100nF"
+        footprint="0402"
+        pcbX={-6}
+        pcbY={6}
+        connections={{ pin2: "net.GND" }}
+      />
+      <capacitor
+        name="C2"
+        capacitance="100nF"
+        footprint="0402"
+        pcbX={6}
+        pcbY={6}
+        connections={{ pin2: "net.GND" }}
+      />
     </board>,
   )
 
@@ -32,8 +67,6 @@ test("obstacle connectedTo is deduped for a GND copper pour", async () => {
   })
 
   for (const obstacle of simpleRouteJson.obstacles) {
-    expect(obstacle.connectedTo.length).toBe(
-      new Set(obstacle.connectedTo).size,
-    )
+    expect(obstacle.connectedTo.length).toBe(new Set(obstacle.connectedTo).size)
   }
 })
