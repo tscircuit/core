@@ -3,7 +3,7 @@ import type { Bounds } from "@tscircuit/math-utils"
 import { getBoundFromCenteredRect } from "@tscircuit/math-utils"
 import type { SchematicComponent, SourceComponentBase } from "circuit-json"
 import { symbols } from "schematic-symbols"
-import { getSchematicNetLabelTextWidth } from "./computeSchematicNetLabelCenter"
+import { getSchematicTextWidth } from "./getSchematicTextWidth"
 
 const SYMBOL_TEXT_FONT_SIZE = 0.18
 
@@ -33,7 +33,7 @@ function getTextBounds({
   anchor: string
   fontSize: number
 }): Bounds {
-  const width = getSchematicNetLabelTextWidth({ text, font_size: fontSize })
+  const width = getSchematicTextWidth({ text, fontSize })
   const height = fontSize
 
   let relMinX: number

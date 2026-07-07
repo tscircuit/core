@@ -1,19 +1,23 @@
-import type { SourceNet } from "circuit-json"
-import { Group } from "../Group"
-import {
-  type InputChip,
-  type InputPin,
-  type InputProblem,
-} from "@tscircuit/schematic-trace-solver"
-import type { AxisDirection } from "./getSide"
-import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import {
   getBoundFromCenteredRect,
   getBoundsCenter,
 } from "@tscircuit/math-utils"
+import {
+  type InputChip,
+  type InputPin,
+  type InputProblem,
+  type TextBoxes,
+} from "@tscircuit/schematic-trace-solver"
+import type { SourceNet } from "circuit-json"
+import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { Group } from "../Group"
+import type { AxisDirection } from "./getSide"
+import { schematicTextToTextBox } from "./schematicTextToTextBounds"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
+const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
+
 export type SolverInputContext = {
   inputProblem: InputProblem
   pinIdToSchematicPortId: Map<string, string>
@@ -73,6 +77,37 @@ export function createSchematicTraceSolverInputProblem(
   const schematicComponents = db.schematic_component
     .list()
     .filter((a) => allSchematicGroupIds.includes(a.schematic_group_id!))
+  const schematicComponentIds = new Set(
+    schematicComponents.map((component) => component.schematic_component_id),
+  )
+  const schematicComponentsById = new Map(
+    schematicComponents.map((component) => [
+      component.schematic_component_id,
+      component,
+    ]),
+  )
+  const textBoxes = db.schematic_text
+    .list()
+    .filter(
+      (text) =>
+        text.schematic_component_id &&
+        schematicComponentIds.has(text.schematic_component_id),
+    )
+    .map((text) => {
+      const schematicComponent = schematicComponentsById.get(
+        text.schematic_component_id!,
+      )
+      if (!schematicComponent) return
+      const sourceComponent = db.source_component.get(
+        schematicComponent.source_component_id!,
+      )
+
+      return schematicTextToTextBox(text, {
+        schematicComponent,
+        sourceComponent,
+      })
+    })
+    .filter((textBox): textBox is TextBoxes => Boolean(textBox))
 
   const componentNameToSectionId = new Map<string, string>()
   for (const component of group.getDescendants() as any[]) {
@@ -270,6 +305,7 @@ export function createSchematicTraceSolverInputProblem(
     netId: string
     pinIds: string[]
     netLabelWidth?: number
+    netLabelHeight?: number
   }> = []
   for (const net of db.source_net
     .list()
@@ -304,6 +340,10 @@ export function createSchematicTraceSolverInputProblem(
       const netLabelWidth = Number(
         getSchematicNetLabelTextWidth({ text: String(userNetId) }).toFixed(2),
       )
+      const netLabelHeight =
+        sourceNet.is_ground || sourceNet.is_power
+          ? SCHEMATIC_RAIL_NET_LABEL_HEIGHT
+          : undefined
 
       netConnections.push({
         netId: userNetId,
@@ -311,6 +351,7 @@ export function createSchematicTraceSolverInputProblem(
           (portId) => schematicPortIdToPinId.get(portId)!,
         ),
         netLabelWidth,
+        netLabelHeight,
       })
     }
   }
@@ -342,6 +383,7 @@ export function createSchematicTraceSolverInputProblem(
     chips,
     directConnections,
     netConnections,
+    textBoxes,
     availableNetLabelOrientations,
     maxMspPairDistance:
       group._parsedProps.schMaxTraceDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE,
