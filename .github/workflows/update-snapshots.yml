@@ -1,0 +1,214 @@
+name: Update Snapshots
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to test and update"
+        required: true
+        default: "main"
+        type: string
+      test_pattern:
+        description: "Optional test file pattern (example: tests/examples/**/*.test.tsx)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  update-snapshots:
+    name: Update snapshots
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request &&
+        github.event.comment.user.type != 'Bot' &&
+        (
+          github.event.comment.body == '/update-snapshots' ||
+          github.event.comment.body == '/us'
+        ) &&
+        (
+          github.event.comment.author_association == 'OWNER' ||
+          github.event.comment.author_association == 'MEMBER' ||
+          github.event.comment.author_association == 'COLLABORATOR'
+        )
+      )
+    runs-on: blacksmith-32vcpu-ubuntu-2404-arm
+    timeout-minutes: 60
+    concurrency:
+      group: update-snapshots-${{ github.event.issue.number || inputs.branch || github.run_id }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Parse command
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+          script: |
+            if (context.eventName === 'workflow_dispatch') {
+              const branch = context.payload.inputs?.branch || 'main'
+              core.setOutput('head_ref', branch)
+              core.setOutput('head_sha', '')
+              core.setOutput('can_push', 'true')
+              core.setOutput('status_comment_id', '')
+              core.setOutput('test_pattern', context.payload.inputs?.test_pattern || '')
+              return
+            }
+
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            })
+
+            const isSameRepo = pr.data.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`
+            const statusComment = await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                '## Update Snapshots',
+                '',
+                `Running snapshot update on \`${pr.data.head.sha.slice(0, 7)}\`...`,
+                '',
+                `Workflow: [View run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`,
+              ].join('\n'),
+            })
+
+            core.setOutput('head_sha', pr.data.head.sha)
+            core.setOutput('head_ref', pr.data.head.ref)
+            core.setOutput('can_push', isSameRepo ? 'true' : 'false')
+            core.setOutput('status_comment_id', String(statusComment.data.id))
+            core.setOutput('test_pattern', '')
+
+      - name: Checkout target branch
+        if: steps.parse.outputs.can_push == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.parse.outputs.head_sha || steps.parse.outputs.head_ref }}
+          persist-credentials: false
+
+      - name: Setup bun
+        if: steps.parse.outputs.can_push == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        if: steps.parse.outputs.can_push == 'true'
+        run: bun install
+
+      - name: Update snapshots
+        if: steps.parse.outputs.can_push == 'true'
+        id: update_snapshots
+        env:
+          TEST_PATTERN: ${{ steps.parse.outputs.test_pattern }}
+        run: |
+          set +e
+          ./scripts/update-snapshots.sh
+          exit_code=$?
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          if [ "$exit_code" -ne 0 ]; then
+            echo "Snapshot update exited with code $exit_code; continuing so snapshot updates can still be committed."
+          fi
+          exit 0
+
+      - name: Commit and push snapshot updates
+        if: steps.parse.outputs.can_push == 'true' && always()
+        id: commit
+        env:
+          BRANCH_NAME: ${{ steps.parse.outputs.head_ref }}
+          BOT_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+        run: |
+          git config user.name "tscircuit-bot"
+          git config user.email "actions@github.com"
+
+          if [ -z "$(git status --porcelain -- ':(glob)tests/**/__snapshots__/**')" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "commit_sha=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git add -A -- ':(glob)tests/**/__snapshots__/**'
+          git commit -m "Update test snapshots"
+          git push "https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${BRANCH_NAME}"
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Mark workflow failed when tests fail
+        if: |
+          steps.parse.outputs.can_push == 'true' &&
+          always() &&
+          steps.update_snapshots.outputs.exit_code != '0'
+        run: exit 1
+
+      - name: Update status comment
+        if: github.event_name == 'issue_comment' && always()
+        uses: actions/github-script@v7
+        env:
+          CAN_PUSH: ${{ steps.parse.outputs.can_push }}
+          CHANGED: ${{ steps.commit.outputs.changed }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_sha }}
+          TEST_EXIT_CODE: ${{ steps.update_snapshots.outputs.exit_code }}
+        with:
+          github-token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+          script: |
+            const runUrl = `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+            const makeBody = (messageLines) => [
+              '## Update Snapshots',
+              '',
+              ...messageLines,
+              '',
+              `Workflow: [View run](${runUrl})`,
+            ].join('\n')
+            const testFailed = process.env.TEST_EXIT_CODE && process.env.TEST_EXIT_CODE !== '0'
+            let body = ''
+
+            if (process.env.CAN_PUSH !== 'true') {
+              body = makeBody([
+                'This command only supports PR branches from this repository, not forks.',
+              ])
+            } else if (testFailed && process.env.CHANGED === 'true') {
+              body = makeBody([
+                `Snapshot updates were committed to \`${(process.env.COMMIT_SHA || '').slice(0, 7)}\`, but not all tests passed.`,
+                `Snapshot update exited with code ${process.env.TEST_EXIT_CODE}.`,
+              ])
+            } else if (testFailed) {
+              body = makeBody([
+                'Snapshot update failed.',
+                `Snapshot update exited with code ${process.env.TEST_EXIT_CODE}.`,
+              ])
+            } else if ('${{ job.status }}' !== 'success') {
+              body = makeBody([
+                'Snapshot update failed. Please inspect workflow logs.',
+              ])
+            } else if (process.env.CHANGED === 'true') {
+              body = makeBody([
+                `Snapshot updates committed to \`${(process.env.COMMIT_SHA || '').slice(0, 7)}\`.`,
+              ])
+            } else {
+              body = makeBody([
+                'No snapshot changes were produced; nothing to commit.',
+              ])
+            }
+
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: Number('${{ steps.parse.outputs.status_comment_id }}'),
+              body,
+            })
+
+      - name: Fail unsupported PR branch
+        if: steps.parse.outputs.can_push != 'true'
+        run: exit 1
