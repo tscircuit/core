@@ -353,8 +353,6 @@ export function createSchematicTraceSolverInputProblem(
           netToAllowedOrientations[net.name] = ["y-"]
         } else if (net.is_power) {
           netToAllowedOrientations[net.name] = ["y+"]
-        } else {
-          netToAllowedOrientations[net.name] = ["x-", "x+"]
         }
       }
       return netToAllowedOrientations
