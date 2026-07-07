@@ -15,6 +15,9 @@ type SchematicTextToTextBoxOptions = {
   sourceComponent?: SourceComponentBase | null
 }
 
+const REFDES_TEXT_BOX_CHIP_OVERLAP = 0.01
+const REFDES_TEXT_BOX_CLEARANCE = 0.06
+
 function isReferenceDesignatorText(
   text: SchematicText,
   sourceComponent?: SourceComponentBase | null,
@@ -45,8 +48,11 @@ export function schematicTextToTextBox(
     })
     const textHeight = bounds.maxY - bounds.minY
     if (bounds.minY > componentBounds.maxY) {
-      bounds.minY = componentBounds.maxY
-      bounds.maxY = componentBounds.maxY + textHeight
+      bounds.minX -= REFDES_TEXT_BOX_CLEARANCE
+      bounds.maxX += REFDES_TEXT_BOX_CLEARANCE
+      bounds.minY = componentBounds.maxY - REFDES_TEXT_BOX_CHIP_OVERLAP
+      bounds.maxY =
+        componentBounds.maxY + textHeight + REFDES_TEXT_BOX_CLEARANCE
     }
   }
 
