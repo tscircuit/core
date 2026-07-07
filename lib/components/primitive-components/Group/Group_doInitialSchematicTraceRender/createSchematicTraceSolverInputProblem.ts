@@ -337,13 +337,25 @@ export function createSchematicTraceSolverInputProblem(
       )
       userNetIdToConnKey.set(userNetId, connKey)
 
-      const netLabelWidth = Number(
+      const netLabelTextWidth = Number(
         getSchematicNetLabelTextWidth({ text: String(userNetId) }).toFixed(2),
       )
-      const netLabelHeight =
-        sourceNet.is_ground || sourceNet.is_power
-          ? SCHEMATIC_RAIL_NET_LABEL_HEIGHT
-          : undefined
+
+      // Signal nets: the label is horizontal, so the net-name text width is its
+      // horizontal extent (netLabelWidth); the solver picks the height.
+      let netLabelWidth = netLabelTextWidth
+      let netLabelHeight: number | undefined
+
+      // Power/ground nets render as vertical rail symbols (orientation y+/y-).
+      // The solver rotates the label box for vertical labels, treating
+      // netLabelHeight as the horizontal extent and netLabelWidth as the
+      // vertical extent. So the horizontally-drawn net-name text (what traces
+      // route through) is passed as netLabelHeight, and the fixed rail height
+      // as netLabelWidth.
+      if (sourceNet.is_ground || sourceNet.is_power) {
+        netLabelWidth = SCHEMATIC_RAIL_NET_LABEL_HEIGHT
+        netLabelHeight = netLabelTextWidth
+      }
 
       netConnections.push({
         netId: userNetId,
