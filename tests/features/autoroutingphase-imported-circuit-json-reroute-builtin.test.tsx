@@ -122,6 +122,8 @@ test("autoroutingphase reroutes an imported circuit json region with the builtin
     .filter((trace) => trace.source_trace_id === sourceTraceId)
     .map((trace) => trace.route)
 
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+
   expect(targetTraceRoutes.length).toBeGreaterThan(0)
   expect(targetTraceRoutes.map(routeSignature)).not.toContain(
     originalRouteSignature,
@@ -140,5 +142,4 @@ test("autoroutingphase reroutes an imported circuit json region with the builtin
 
   expect(circuit.db.pcb_note_rect.list()).toHaveLength(1)
   expect(circuit.db.pcb_note_text.list()).toHaveLength(1)
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
