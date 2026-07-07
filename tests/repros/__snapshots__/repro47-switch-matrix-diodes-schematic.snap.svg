@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(30.1003344482,0,0,-30.1003344482,522.6702341137,331.856187291)" data-software-used-string="@tscircuit/core@0.0.1359"><style>
+<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="600" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(30.1003344482,0,0,-30.1003344482,522.6702341137,331.856187291)" data-software-used-string="@tscircuit/core@0.0.1397"><style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -78,13 +78,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 550.7839464883187,203.31772575236994
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="551.867558528454" y="200.06688963196433" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW1_pin1/D1_pin2</text><path class="net-label sch-net-label" d="
-    M 554.576588628792,201.57190635437436
-    L 552.9511705685892,204.82274247477997
-    L 503.763210702304,204.82274247477994
-    L 503.763210702304,198.32107023396875
-    L 552.9511705685892,198.32107023396875
+    M 555.479598662238,201.57190635437436
+    L 553.8541806020352,204.82274247477997
+    L 504.66622073574996,204.82274247477994
+    L 504.66622073574996,198.32107023396875
+    L 553.8541806020352,198.32107023396875
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="551.867558528454" y="201.57190635437436" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW1_pin1/D1_pin2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="552.7705685619" y="201.57190635437436" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW1_pin1/D1_pin2</text><path class="net-label sch-net-label" d="
     M 654.5096989968159,323.17725752510233
     L 656.1351170570188,319.9264214046967
     L 705.3230769233039,319.9264214046967
@@ -92,13 +92,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 656.1351170570188,326.42809364550794
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="657.218729097154" y="323.17725752510233" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW2_pin1/D2_pin2</text><path class="net-label sch-net-label" d="
-    M 659.9277591974919,324.68227424751234
-    L 658.3023411372891,327.93311036791795
-    L 609.1143812710039,327.93311036791795
-    L 609.1143812710039,321.43143812710673
-    L 658.3023411372891,321.43143812710673
+    M 660.8307692309379,324.68227424751234
+    L 659.2053511707351,327.93311036791795
+    L 610.0173913044499,327.93311036791795
+    L 610.0173913044499,321.43143812710673
+    L 659.2053511707351,321.43143812710673
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="657.2187290971539" y="324.68227424751234" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW2_pin1/D2_pin2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="658.1217391305998" y="324.68227424751234" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW2_pin1/D2_pin2</text><path class="net-label sch-net-label" d="
     M 597.4193979933966,23.177257524708978
     L 599.0448160535994,19.926421404303376
     L 648.2327759198846,19.926421404303376
@@ -106,13 +106,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 599.0448160535994,26.42809364511458
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="600.1284280937347" y="23.177257524708978" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW3_pin1/D3_pin2</text><path class="net-label sch-net-label" d="
-    M 602.8374581940726,24.682274247118983
-    L 601.2120401338698,27.933110367524584
-    L 552.0240802675846,27.933110367524577
-    L 552.0240802675846,21.431438126713378
-    L 601.2120401338698,21.43143812671338
+    M 603.7404682275187,24.682274247118983
+    L 602.1150501673159,27.933110367524584
+    L 552.9270903010307,27.933110367524577
+    L 552.9270903010307,21.431438126713378
+    L 602.1150501673159,21.43143812671338
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="600.1284280937346" y="24.682274247118983" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW3_pin1/D3_pin2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="601.0314381271806" y="24.682274247118983" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW3_pin1/D3_pin2</text><path class="net-label sch-net-label" d="
     M 616.884280936566,213.71237458181503
     L 618.5096989967689,210.46153846140942
     L 667.697658863054,210.46153846140942
@@ -120,13 +120,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 618.5096989967689,216.96321070222064
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="619.5933110369041" y="213.71237458181503" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW4_pin1/D4_pin2</text><path class="net-label sch-net-label" d="
-    M 622.302341137242,215.21739130422503
-    L 620.6769230770392,218.46822742463064
-    L 571.488963210754,218.4682274246306
-    L 571.488963210754,211.96655518381942
-    L 620.6769230770392,211.96655518381942
+    M 623.205351170688,215.21739130422503
+    L 621.5799331104852,218.46822742463064
+    L 572.3919732442,218.4682274246306
+    L 572.3919732442,211.96655518381942
+    L 621.5799331104852,211.96655518381942
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="619.593311036904" y="215.21739130422503" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW4_pin1/D4_pin2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="620.49632107035" y="215.21739130422503" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW4_pin1/D4_pin2</text><path class="net-label sch-net-label" d="
     M 602.737123745912,153.56187290949535
     L 604.3625418061148,150.31103678908974
     L 653.5505016724,150.31103678908974
@@ -134,13 +134,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 604.3625418061148,156.81270902990096
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="605.44615384625" y="153.56187290949535" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW5_pin1/D5_pin2</text><path class="net-label sch-net-label" d="
-    M 608.155183946588,155.06688963190535
-    L 606.5297658863851,158.31772575231096
-    L 557.3418060201,158.31772575231093
-    L 557.3418060201,151.81605351149975
-    L 606.5297658863851,151.81605351149975
+    M 609.0581939800339,155.06688963190535
+    L 607.4327759198311,158.31772575231096
+    L 558.244816053546,158.31772575231093
+    L 558.244816053546,151.81605351149975
+    L 607.4327759198311,151.81605351149975
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="605.4461538462499" y="155.06688963190535" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW5_pin1/D5_pin2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="606.3491638796959" y="155.06688963190535" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW5_pin1/D5_pin2</text><path class="net-label sch-net-label" d="
     M 545.094983277609,246.57190635443334
     L 546.7204013378118,243.32107023402773
     L 595.908361204097,243.32107023402773
@@ -148,13 +148,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 546.7204013378118,249.82274247483895
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="547.8040133779471" y="246.57190635443334" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW6_pin1/D6_pin2</text><path class="net-label sch-net-label" d="
-    M 550.513043478285,248.07692307684334
-    L 548.8876254180822,251.32775919724895
-    L 499.69966555179695,251.32775919724892
-    L 499.69966555179695,244.82608695643773
-    L 548.8876254180822,244.82608695643773
+    M 551.416053511731,248.07692307684334
+    L 549.7906354515281,251.32775919724895
+    L 500.60267558524293,251.32775919724892
+    L 500.60267558524293,244.82608695643773
+    L 549.7906354515281,244.82608695643773
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="547.804013377947" y="248.07692307684334" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW6_pin1/D6_pin2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="548.7070234113929" y="248.07692307684334" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW6_pin1/D6_pin2</text><path class="net-label sch-net-label" d="
     M 652.1016722409599,439.91638796003804
     L 653.7270903011628,436.6655518396324
     L 702.9150501674479,436.6655518396324
@@ -162,13 +162,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 653.7270903011628,443.16722408044365
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="654.810702341298" y="439.91638796003804" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW7_pin1/D7_pin2</text><path class="net-label sch-net-label" d="
-    M 657.5197324416359,441.42140468244804
-    L 655.8943143814331,444.67224080285365
-    L 606.706354515148,444.67224080285365
-    L 606.706354515148,438.17056856204243
-    L 655.8943143814331,438.17056856204243
+    M 658.422742475082,441.42140468244804
+    L 656.7973244148792,444.67224080285365
+    L 607.609364548594,444.67224080285365
+    L 607.609364548594,438.17056856204243
+    L 656.7973244148792,438.17056856204243
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="654.8107023412979" y="441.42140468244804" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW7_pin1/D7_pin2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="655.713712374744" y="441.42140468244804" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW7_pin1/D7_pin2</text><path class="net-label sch-net-label" d="
     M 590.847491638873,520.2341137126517
     L 592.4729096990758,516.9832775922462
     L 641.6608695653609,516.9832775922462
@@ -176,13 +176,13 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 592.4729096990758,523.4849498330573
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="593.556521739211" y="520.2341137126517" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW8_pin1/D8_pin2</text><path class="net-label sch-net-label" d="
-    M 596.265551839549,521.7391304350617
-    L 594.6401337793461,524.9899665554673
-    L 545.452173913061,524.9899665554673
-    L 545.452173913061,518.4882943146562
-    L 594.6401337793461,518.4882943146562
+    M 597.1685618729949,521.7391304350617
+    L 595.5431438127921,524.9899665554673
+    L 546.3551839465069,524.9899665554673
+    L 546.3551839465069,518.4882943146562
+    L 595.5431438127921,518.4882943146562
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="593.5565217392109" y="521.7391304350617" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW8_pin1/D8_pin2</text><path class="net-label sch-net-label" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="594.4595317726569" y="521.7391304350617" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW8_pin1/D8_pin2</text><path class="net-label sch-net-label" d="
     M 634.944481605486,576.8227424752677
     L 636.5698996656888,573.5719063548621
     L 685.757859531974,573.5719063548621
@@ -190,10 +190,10 @@ svg:has(:is(g.trace[data-subcircuit-connectivity-map-key="unnamedsubcircuitsubci
     L 636.5698996656888,580.0735785956732
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="637.653511705824" y="576.8227424752677" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW9_pin1/D9_pin2</text><path class="net-label sch-net-label" d="
-    M 640.362541806162,578.3277591976777
-    L 638.7371237459591,581.5785953180832
-    L 589.549163879674,581.5785953180832
-    L 589.549163879674,575.0769230772721
-    L 638.7371237459591,575.0769230772721
+    M 641.265551839608,578.3277591976777
+    L 639.6401337794051,581.5785953180832
+    L 590.45217391312,581.5785953180832
+    L 590.45217391312,575.0769230772721
+    L 639.6401337794051,575.0769230772721
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="637.6535117058239" y="578.3277591976777" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW9_pin1/D9_pin2</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.602006688964px"/><text class="net-label-text sch-net-label-text" x="638.5565217392699" y="578.3277591976777" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="5.418060200676px" transform="">SW9_pin1/D9_pin2</text></svg>
