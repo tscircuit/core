@@ -26,13 +26,13 @@ export default test("repro46: automatic schematic snapshot", async () => {
           pin4: "DATA",
         }}
         connections={{
+          pin1: sel.net.GND,
           pin2: sel.C2.pin2,
           pin3: sel.net.SCL,
           pin4: sel.net.SDA,
         }}
         manufacturerPartNumber="SI7021"
       />
-      <netlabel net="GND" anchorSide="top" connection="U1.pin1" />
 
       <capacitor
         name="C2"
