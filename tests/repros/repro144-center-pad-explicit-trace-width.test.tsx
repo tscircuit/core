@@ -19,27 +19,78 @@ const CenterPadChip = () => (
     }}
     footprint={
       <footprint>
-        {[
-          ["A1", 0.4, 0.4],
-          ["B1", 0, 0.4],
-          ["C1", -0.4, 0.4],
-          ["A2", 0.4, 0],
-          ["B2", 0, 0],
-          ["C2", -0.4, 0],
-          ["A3", 0.4, -0.4],
-          ["B3", 0, -0.4],
-          ["C3", -0.4, -0.4],
-        ].map(([pinName, pcbX, pcbY]) => (
-          <smtpad
-            key={pinName}
-            portHints={[pinName as string]}
-            pcbX={`${pcbX}mm`}
-            pcbY={`${pcbY}mm`}
-            width="0.25mm"
-            height="0.25mm"
-            shape="rect"
-          />
-        ))}
+        <smtpad
+          portHints={["A1"]}
+          pcbX="0.4mm"
+          pcbY="0.4mm"
+          width="0.25mm"
+          height="0.25mm"
+          shape="rect"
+        />
+        <smtpad
+          portHints={["B1"]}
+          pcbX="0mm"
+          pcbY="0.4mm"
+          width="0.25mm"
+          height="0.25mm"
+          shape="rect"
+        />
+        <smtpad
+          portHints={["C1"]}
+          pcbX="-0.4mm"
+          pcbY="0.4mm"
+          width="0.25mm"
+          height="0.25mm"
+          shape="rect"
+        />
+        <smtpad
+          portHints={["A2"]}
+          pcbX="0.4mm"
+          pcbY="0mm"
+          width="0.25mm"
+          height="0.25mm"
+          shape="rect"
+        />
+        <smtpad
+          portHints={["B2"]}
+          pcbX="0mm"
+          pcbY="0mm"
+          width="0.25mm"
+          height="0.25mm"
+          shape="rect"
+        />
+        <smtpad
+          portHints={["C2"]}
+          pcbX="-0.4mm"
+          pcbY="0mm"
+          width="0.25mm"
+          height="0.25mm"
+          shape="rect"
+        />
+        <smtpad
+          portHints={["A3"]}
+          pcbX="0.4mm"
+          pcbY="-0.4mm"
+          width="0.25mm"
+          height="0.25mm"
+          shape="rect"
+        />
+        <smtpad
+          portHints={["B3"]}
+          pcbX="0mm"
+          pcbY="-0.4mm"
+          width="0.25mm"
+          height="0.25mm"
+          shape="rect"
+        />
+        <smtpad
+          portHints={["C3"]}
+          pcbX="-0.4mm"
+          pcbY="-0.4mm"
+          width="0.25mm"
+          height="0.25mm"
+          shape="rect"
+        />
       </footprint>
     }
   />
