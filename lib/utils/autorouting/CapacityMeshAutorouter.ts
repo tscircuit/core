@@ -18,7 +18,20 @@ import type {
   AutorouterEvent,
   GenericLocalAutorouter,
 } from "./GenericLocalAutorouter"
-import { SOLVERS } from "lib/solvers"
+import { SOLVERS, type SolverName } from "lib/solvers"
+
+export interface SolverStartedDetails {
+  solverName: SolverName
+  solverParams: {
+    input: SimpleRouteJson
+    options: {
+      capacityDepth?: number
+      targetMinCapacity?: number
+      cacheProvider: null
+      effort?: number
+    }
+  }
+}
 
 export interface AutorouterOptions {
   capacityDepth?: number
@@ -29,10 +42,7 @@ export interface AutorouterOptions {
   useLaserPrefabSolver?: boolean
   autorouterVersion?: "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "latest"
   effort?: number
-  onSolverStarted?: (details: {
-    solverName: string
-    solverParams: unknown
-  }) => void
+  onSolverStarted?: (details: SolverStartedDetails) => void
 }
 
 export class TscircuitAutorouter implements GenericLocalAutorouter {

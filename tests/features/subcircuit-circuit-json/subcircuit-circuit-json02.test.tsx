@@ -8,7 +8,7 @@ test("subcircuit-circuit-json02 - chip inflation", async () => {
   const { circuit } = getTestFixture()
 
   initialCircuit.add(
-    <group name="G1" autorouterVersion="v4">
+    <group name="G1" autorouterVersion={"v4" as const}>
       <chip
         name="U1"
         manufacturerPartNumber="MPN123"
