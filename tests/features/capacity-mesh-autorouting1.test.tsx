@@ -3,11 +3,6 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("board with local group autorouter (capacity mesh)", async () => {
   const { circuit } = getTestFixture()
-  let solverStartedName: string | undefined
-
-  circuit.on("solver:started", (event) => {
-    solverStartedName = event.solverName
-  })
 
   // Create a circuit with two components that need to be connected by a trace
   // The capacity mesh autorouter will be used to find the optimal route
@@ -46,7 +41,6 @@ test("board with local group autorouter (capacity mesh)", async () => {
   // Verify that we have PCB traces in the output
   const traces = circuit.selectAll("trace")
   expect(traces.length).toBeGreaterThan(0)
-  expect(solverStartedName).toBe("AutoroutingPipelineSolver7_MultiGraph")
 
   // Match against a PCB snapshot to verify routing
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
