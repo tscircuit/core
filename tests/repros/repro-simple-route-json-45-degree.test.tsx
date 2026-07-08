@@ -68,7 +68,6 @@ test("45 degree rects bug", () => {
             "pcb_smtpad_0",
             "connectivity_net2",
             "source_port_0",
-            "pcb_smtpad_0",
             "pcb_port_0",
           ],
           "height": 0.9,
