@@ -169,6 +169,12 @@ export const getObstaclesFromCircuitJson = (
         })
       }
     } else if (element.type === "pcb_cutout") {
+      // A cutout becomes a board edge (Edge.Cuts), so routed copper must keep
+      // the copper-to-edge clearance from it, not merely avoid overlapping it.
+      // The autorouter routes flush against obstacle boundaries, so emit the
+      // obstacle inflated by that clearance on every side - otherwise traces
+      // hug the slot and fail edge-clearance DRC at any fab.
+      const CUTOUT_EDGE_CLEARANCE = 0.3
       if (element.shape === "rect") {
         obstacles.push({
           componentId: pcbComponentId,
@@ -178,15 +184,15 @@ export const getObstaclesFromCircuitJson = (
             x: element.center.x,
             y: element.center.y,
           },
-          width: element.width,
-          height: element.height,
+          width: element.width + 2 * CUTOUT_EDGE_CLEARANCE,
+          height: element.height + 2 * CUTOUT_EDGE_CLEARANCE,
           connectedTo: [],
         })
       } else if (element.shape === "circle") {
         const approximatingRects = fillCircleWithRects(
           {
             center: element.center,
-            radius: element.radius,
+            radius: element.radius + CUTOUT_EDGE_CLEARANCE,
           },
           { rectHeight: 0.6 },
         )
@@ -213,8 +219,8 @@ export const getObstaclesFromCircuitJson = (
             type: "rect",
             layers: EVERY_LAYER,
             center: rect.center,
-            width: rect.width,
-            height: rect.height,
+            width: rect.width + 2 * CUTOUT_EDGE_CLEARANCE,
+            height: rect.height + 2 * CUTOUT_EDGE_CLEARANCE,
             connectedTo: [],
           })
         }
