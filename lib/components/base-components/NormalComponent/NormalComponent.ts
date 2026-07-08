@@ -456,6 +456,7 @@ export class NormalComponent<
     for (let pn = 1; pn <= requiredPinCount; pn++) {
       if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
       if (
+        !schPortArrangement &&
         pinLabelsFromProps &&
         !Array.isArray(propsPinLabels) &&
         !pinLabelsFromProps[`pin${pn}`]
