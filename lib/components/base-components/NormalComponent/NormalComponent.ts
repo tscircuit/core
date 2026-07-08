@@ -387,9 +387,13 @@ export class NormalComponent<
         const pinNumber = getPinNumberFromLabels(symPort.labels)
         if (!pinNumber) continue
 
-        const existingPort = portsToCreate.find(
-          (p) => p._parsedProps.pinNumber === Number(pinNumber),
-        )
+        const existingPort =
+          this._getAllPortsFromChildren().find(
+            (p) => p._parsedProps.pinNumber === Number(pinNumber),
+          ) ??
+          portsToCreate.find(
+            (p) => p._parsedProps.pinNumber === Number(pinNumber),
+          )
 
         if (existingPort) {
           existingPort.schematicSymbolPortDef = symPort
