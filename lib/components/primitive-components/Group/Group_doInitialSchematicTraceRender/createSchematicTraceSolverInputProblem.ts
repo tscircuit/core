@@ -11,6 +11,7 @@ import {
 import type { SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { Group } from "../Group"
 import type { AxisDirection } from "./getSide"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
@@ -148,6 +149,15 @@ export function createSchematicTraceSolverInputProblem(
         pinId,
         x: schematicPort.center.x,
         y: schematicPort.center.y,
+        // Pass the port's true facing direction (known from the schematic
+        // symbol). The chip box handed to the solver is text-inclusive, so for
+        // small parts with a large reference designator the pins sit inside the
+        // box. The solver snaps such pins to the box edge along this facing
+        // direction (rather than guessing from geometry, which would pick the
+        // wrong edge for a resistor whose ref text widened the box).
+        _facingDirection: convertFacingDirectionToElbowDirection(
+          schematicPort.facing_direction ?? null,
+        ),
       })
     }
 
