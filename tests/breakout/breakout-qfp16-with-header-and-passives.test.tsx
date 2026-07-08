@@ -7,7 +7,7 @@ test("breakout routes qfp16 controller pins to header and passives without break
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(
-    <board width="20mm" height="16mm">
+    <board width="20mm" height="16mm" autorouterVersion="v4">
       <breakout name="MCU_BREAKOUT" padding="1mm">
         <chip
           footprint="qfp16"
