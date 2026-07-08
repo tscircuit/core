@@ -1,5 +1,3 @@
-import { chipProps } from "@tscircuit/props"
-
 /**
  * Filters out invalid pin labels while preserving valid ones.
  * This allows components to render even if some pin labels are invalid.
@@ -55,21 +53,10 @@ export function filterPinLabels(
 }
 
 /**
- * Checks if a pin label is valid using the actual chipProps zod schema.
- * This ensures we use the same validation logic as the component itself.
+ * Checks if a pin label has valid label syntax. Pin existence is validated
+ * later against explicit ports/footprints, because sparse physical numbering
+ * such as pin1..pin6,pin8 is valid.
  */
 function isValidPinLabel(pin: string, label: string): boolean {
-  try {
-    // HACK: This is a hack to check if a pin label is valid using the actual chipProps zod schema.
-    const testProps = {
-      name: "test",
-      footprint: "test",
-      pinLabels: { [pin]: label },
-    }
-
-    const result = chipProps.safeParse(testProps)
-    return result.success
-  } catch (error) {
-    return false
-  }
+  return /^pin\d+$/.test(pin) && /^[A-Za-z0-9_]+$/.test(label)
 }

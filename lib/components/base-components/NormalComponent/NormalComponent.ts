@@ -47,6 +47,7 @@ import {
   transformFootprintInsertionDirection,
 } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import {
+  type PortArrangement,
   type SchematicBoxDimensions,
   getAllDimensionsForSchematicBox,
   isExplicitPinMappingArrangement,
@@ -454,6 +455,13 @@ export class NormalComponent<
     const requiredPinCount = opts.pinCount ?? this._getPrimaryPinCount() ?? 0
     for (let pn = 1; pn <= requiredPinCount; pn++) {
       if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
+      if (
+        pinLabelsFromProps &&
+        !Array.isArray(propsPinLabels) &&
+        !pinLabelsFromProps[`pin${pn}`]
+      ) {
+        continue
+      }
       if (!schPortArrangement) {
         portsToCreate.push(
           new Port({
@@ -1601,6 +1609,33 @@ export class NormalComponent<
     return pinLabels
   }
 
+  _getImplicitSparseSchematicPortArrangement(
+    pinCount: number,
+  ): PortArrangement | undefined {
+    const pinNumbers = Array.from(
+      new Set(
+        this._getAllPortsFromChildren()
+          .filter((port) => port._isPrimaryPort)
+          .map((port) => port._parsedProps.pinNumber)
+          .filter((pinNumber): pinNumber is number => pinNumber !== undefined),
+      ),
+    ).sort((a, b) => a - b)
+
+    if (pinNumbers.length !== pinCount) return undefined
+    const hasSparsePinNumbers = pinNumbers.some(
+      (pinNumber, index) => pinNumber !== index + 1,
+    )
+    if (!hasSparsePinNumbers) return undefined
+
+    const rightSize = Math.floor(pinCount / 2)
+    const leftSize = pinCount - rightSize
+
+    return {
+      leftSide: { pins: pinNumbers.slice(0, leftSize) },
+      rightSide: { pins: pinNumbers.slice(leftSize) },
+    }
+  }
+
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     // Only valid if we don't have a schematic symbol
     if (this.getSchematicSymbol()) return null
@@ -1623,6 +1658,9 @@ export class NormalComponent<
       ...pinLabelsFromPorts,
       ...props.pinLabels,
     }
+    const schPortArrangement =
+      this._getSchematicPortArrangement() ??
+      this._getImplicitSparseSchematicPortArrangement(pinCount)
 
     const dimensions = getAllDimensionsForSchematicBox({
       schWidth: props.schWidth,
@@ -1635,7 +1673,7 @@ export class NormalComponent<
 
       pinCount,
 
-      schPortArrangement: this._getSchematicPortArrangement()!,
+      schPortArrangement,
       pinLabels: allPinLabels,
     })
 
