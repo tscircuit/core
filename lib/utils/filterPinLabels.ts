@@ -58,5 +58,5 @@ export function filterPinLabels(
  * such as pin1..pin6,pin8 is valid.
  */
 function isValidPinLabel(pin: string, label: string): boolean {
-  return /^pin\d+$/.test(pin) && /^[A-Za-z0-9_]+$/.test(label)
+  return /^(?:pin)?\d+$/.test(pin) && /^[A-Za-z0-9_]+$/.test(label)
 }
