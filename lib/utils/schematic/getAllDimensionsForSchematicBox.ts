@@ -219,7 +219,7 @@ export const getAllDimensionsForSchematicBox = (
     }
 
     orderedTruePorts.push({
-      trueIndex: truePinIndex,
+      trueIndex: pinNumber - 1,
       pinNumber,
       side: "left",
       distanceFromOrthogonalEdge: currentDistanceFromEdge,
@@ -256,7 +256,7 @@ export const getAllDimensionsForSchematicBox = (
     }
 
     orderedTruePorts.push({
-      trueIndex: truePinIndex,
+      trueIndex: pinNumber - 1,
       pinNumber,
       side: "bottom",
       distanceFromOrthogonalEdge: currentDistanceFromEdge,
@@ -293,7 +293,7 @@ export const getAllDimensionsForSchematicBox = (
     }
 
     orderedTruePorts.push({
-      trueIndex: truePinIndex,
+      trueIndex: pinNumber - 1,
       pinNumber,
       side: "right",
       distanceFromOrthogonalEdge: currentDistanceFromEdge,
@@ -330,7 +330,7 @@ export const getAllDimensionsForSchematicBox = (
     }
 
     orderedTruePorts.push({
-      trueIndex: truePinIndex,
+      trueIndex: pinNumber - 1,
       pinNumber,
       side: "top",
       distanceFromOrthogonalEdge: currentDistanceFromEdge,
