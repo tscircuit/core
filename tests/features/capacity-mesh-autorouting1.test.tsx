@@ -1,11 +1,12 @@
 import { test, expect } from "bun:test"
+import type { SolverStartedEvent } from "lib/events"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("board with local group autorouter (capacity mesh)", async () => {
   const { circuit } = getTestFixture()
-  let solverStartedName: string | undefined
+  let solverStartedName: SolverStartedEvent["solverName"] | undefined
 
-  circuit.on("solver:started", (event) => {
+  circuit.on("solver:started", (event: SolverStartedEvent) => {
     solverStartedName = event.solverName
   })
 
@@ -46,7 +47,7 @@ test("board with local group autorouter (capacity mesh)", async () => {
   // Verify that we have PCB traces in the output
   const traces = circuit.selectAll("trace")
   expect(traces.length).toBeGreaterThan(0)
-  expect(solverStartedName).toBe("AutoroutingPipelineSolver4")
+  expect(solverStartedName).toBe("AutoroutingPipelineSolver7_MultiGraph")
 
   // Match against a PCB snapshot to verify routing
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

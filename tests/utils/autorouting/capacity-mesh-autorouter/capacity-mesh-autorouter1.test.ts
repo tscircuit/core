@@ -1,5 +1,8 @@
 import { test, expect } from "bun:test"
-import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import {
+  TscircuitAutorouter,
+  type SolverStartedDetails,
+} from "lib/utils/autorouting/CapacityMeshAutorouter"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
 // Create a simple route test fixture
@@ -58,7 +61,7 @@ test("CapacityMeshAutorouter should solve a simple routing problem", () => {
 
 test("CapacityMeshAutorouter invokes onSolverStarted callback", () => {
   const simpleRouteJson = createTestSimpleRouteJson()
-  let solverDetails: any
+  let solverDetails: SolverStartedDetails | undefined
 
   new TscircuitAutorouter(simpleRouteJson, {
     onSolverStarted: (details) => {
