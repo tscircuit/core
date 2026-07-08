@@ -121,14 +121,31 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ),
     sharedConnMap,
   )
-  obstacles.push(
-    ...getUnbrokenCopperPourObstacles({
-      connMap: sharedConnMap,
-      subcircuitComponent,
-      board,
-      group: pcbGroup,
-    }),
-  )
+  // Unbroken copper pours come in two routing roles, split by layer:
+  //
+  // - OUTER-layer pours (top/bottom) are conforming ground fills: the pour is
+  //   filled AFTER routing and flows around the routed traces (see CopperPour's
+  //   get-trace-obstacles / generate-and-insert-brep). They do not exist as
+  //   copper at routing time, so they must NOT be emitted as hard routing
+  //   obstacles - a 2-layer board with a full GND pour otherwise becomes
+  //   unroutable (every other-net trace over the pour area is blocked). The
+  //   pour itself provides the net's connectivity, so its nets are also
+  //   skipped as routing connections (see pouredNetConnectivityKeys below).
+  //
+  // - INNER-layer pours are solid planes reached by escape vias. They keep the
+  //   existing behavior: emitted as obstacles (the escape-via machinery uses
+  //   them as targets) and their nets still route, producing the vias.
+  const unbrokenCopperPourObstacles = getUnbrokenCopperPourObstacles({
+    connMap: sharedConnMap,
+    subcircuitComponent,
+    board,
+    group: pcbGroup,
+  })
+  const isOuterPour = (o: { layers?: string[] }) =>
+    (o.layers ?? []).some((l) => l === "top" || l === "bottom")
+  const outerCopperPourObstacles =
+    unbrokenCopperPourObstacles.filter(isOuterPour)
+  obstacles.push(...unbrokenCopperPourObstacles.filter((o) => !isOuterPour(o)))
 
   // SRJ uses two separate fields for routing state:
   // - connections: copper the current autorouter still needs to create.
@@ -424,6 +441,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const connectionsFromNets: SimpleRouteConnection[] = []
   const connectionFromNetId = new Map<string, SimpleRouteConnection>()
   const handledNetConnectivityKeys = new Set<string>()
+  // Nets fully connected by an unbroken copper pour need no routing - the pour
+  // fill provides their connectivity. Handing such a net (e.g. GND) to the
+  // autorouter makes it trace-route every pad pair, wasting channel capacity and
+  // dragging copper across mounting holes and board edges. Only OUTER-layer
+  // pours qualify (an inner plane still needs escape vias, so its nets route).
+  const pouredNetConnectivityKeys = new Set<string>(
+    outerCopperPourObstacles
+      .flatMap((o) => o.connectedTo)
+      .map((id) => (id ? (sharedConnMap.getNetConnectedToId(id) ?? id) : null))
+      .filter((k): k is string => k != null),
+  )
   const sourceTracesEligibleForNetConnections = db.source_trace
     .list()
     .filter(
@@ -435,6 +463,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     id ? (sharedConnMap.getNetConnectedToId(id) ?? id) : null
   for (const net of source_nets) {
     const netConnectivityKey = getSourceConnectivityKey(net.source_net_id)
+    if (
+      netConnectivityKey &&
+      pouredNetConnectivityKeys.has(netConnectivityKey)
+    ) {
+      continue
+    }
     if (
       !netConnectivityKey ||
       handledNetConnectivityKeys.has(netConnectivityKey)

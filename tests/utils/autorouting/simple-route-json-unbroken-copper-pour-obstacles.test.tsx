@@ -3,11 +3,23 @@ import "lib/register-catalogue"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("simple route json only includes unbroken copper pours as copper-pour obstacles", async () => {
+// Unbroken copper pours have two routing roles, split by layer:
+//
+// - OUTER-layer pours (top/bottom) are conforming ground fills: filled AFTER
+//   routing, flowing around the routed traces (see CopperPour's
+//   get-trace-obstacles / generate-and-insert-brep). They do not exist as copper
+//   at routing time, so they must NOT become hard routing obstacles - a 2-layer
+//   board fully covered by a GND pour would otherwise be unroutable.
+//
+// - INNER-layer pours are solid planes reached by escape vias and keep the
+//   pre-existing behavior: emitted as obstacles so the escape-via machinery can
+//   target them, with their nets still routed.
+test("outer-layer copper pours are not routing obstacles, inner-layer pours are", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board width="20mm" height="10mm" layers={4}>
+      <copperpour layer="top" connectsTo="net.GND" unbroken />
       <copperpour layer="inner1" connectsTo="net.GND" unbroken />
       <copperpour layer="inner2" connectsTo="net.VCC" />
       <chip
@@ -34,23 +46,13 @@ test("simple route json only includes unbroken copper pours as copper-pour obsta
   const copperPourObstacles = simpleRouteJson.obstacles.filter(
     (obstacle) => obstacle.isCopperPour,
   )
-  const obstacleLayers = new Set(
-    copperPourObstacles.flatMap((obstacle) => obstacle.layers),
+  const outerPourObstacles = copperPourObstacles.filter((o) =>
+    o.layers.some((l) => l === "top" || l === "bottom"),
   )
-  const gndNet = circuit.db.source_net.list().find((net) => net.name === "GND")
+  const innerPourObstacles = copperPourObstacles.filter(
+    (o) => !o.layers.some((l) => l === "top" || l === "bottom"),
+  )
 
-  expect(copperPourObstacles.length).toBeGreaterThan(0)
-  expect(obstacleLayers.has("inner1")).toBe(true)
-  expect(obstacleLayers.has("inner2")).toBe(false)
-  expect(gndNet?.source_net_id).toBeDefined()
-  expect(
-    copperPourObstacles.some((obstacle) =>
-      obstacle.connectedTo.includes(gndNet!.source_net_id),
-    ),
-  ).toBe(true)
-  expect(
-    copperPourObstacles.some((obstacle) =>
-      obstacle.connectedTo.includes(gndNet!.subcircuit_connectivity_map_key!),
-    ),
-  ).toBe(true)
+  expect(outerPourObstacles.length).toBe(0)
+  expect(innerPourObstacles.length).toBeGreaterThan(0)
 })
