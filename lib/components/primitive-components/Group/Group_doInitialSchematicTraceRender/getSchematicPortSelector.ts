@@ -1,6 +1,6 @@
 import type { SchematicPort, SourcePort } from "circuit-json"
 
-export const getSchematicPortPinId = ({
+export const getSchematicPortSelector = ({
   componentName,
   schematicPort,
   sourcePort,
