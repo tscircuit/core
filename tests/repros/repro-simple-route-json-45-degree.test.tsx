@@ -42,6 +42,7 @@ test("45 degree rects bug", () => {
         "minY": -2.45,
       },
       "connections": [],
+      "defaultObstacleMargin": undefined,
       "layerCount": 2,
       "minBoardEdgeClearance": 0.2,
       "minPadEdgeToPadEdgeClearance": 0.1,
