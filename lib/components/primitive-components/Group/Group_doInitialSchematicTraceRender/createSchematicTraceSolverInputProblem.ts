@@ -15,6 +15,7 @@ import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/conv
 import { Group } from "../Group"
 import type { AxisDirection } from "./getSide"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
+import { getSchematicPortSelector } from "./getSchematicPortSelector"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
@@ -138,9 +139,15 @@ export function createSchematicTraceSolverInputProblem(
     })
 
     for (const schematicPort of schematicPorts) {
-      const pinId = `${sourceComponent?.name ?? schematicComponent.schematic_component_id}.${schematicPort.pin_number}`
-      pinIdToSchematicPortId.set(pinId, schematicPort.schematic_port_id)
-      schematicPortIdToPinId.set(schematicPort.schematic_port_id, pinId)
+      const sourcePort = db.source_port.get(schematicPort.source_port_id)!
+      const selector = getSchematicPortSelector({
+        componentName:
+          sourceComponent?.name ?? schematicComponent.schematic_component_id,
+        schematicPort,
+        sourcePort,
+      })
+      pinIdToSchematicPortId.set(selector, schematicPort.schematic_port_id)
+      schematicPortIdToPinId.set(schematicPort.schematic_port_id, selector)
     }
 
     for (const schematicPort of schematicPorts) {
