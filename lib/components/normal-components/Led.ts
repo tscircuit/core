@@ -5,6 +5,8 @@ import type {
   PolarizedPassivePorts,
 } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
+import type { Port } from "../primitive-components/Port"
 
 export class Led extends NormalComponent<
   typeof ledProps,
@@ -28,10 +30,22 @@ export class Led extends NormalComponent<
   }
 
   initPorts() {
+    const hasFootprintChild = this.children.some(
+      (child) => child.componentName === "Footprint",
+    )
+    const footprint = this.resolveFootprint()
+    const hasPinLabels = Boolean(this._resolvePinLabels())
+    const shouldAddDefaultAliases =
+      !hasPinLabels &&
+      !hasFootprintChild &&
+      (!footprint || isFootprinterString(footprint))
+
     super.initPorts({
+      pinCount: 2,
+      ignoreSymbolPorts: !hasPinLabels && !shouldAddDefaultAliases,
       additionalAliases: {
-        pin1: ["anode", "pos", "left"],
-        pin2: ["cathode", "neg", "right"],
+        pin1: shouldAddDefaultAliases ? ["anode", "pos", "left"] : [],
+        pin2: shouldAddDefaultAliases ? ["cathode", "neg", "right"] : [],
       },
     })
   }
@@ -67,8 +81,19 @@ export class Led extends NormalComponent<
     this.source_component_id = source_component.source_component_id
   }
 
-  pos = this.portMap.pin1
-  anode = this.portMap.pin1
-  neg = this.portMap.pin2
-  cathode = this.portMap.pin2
+  get pos(): Port {
+    return this.portMap.pos
+  }
+
+  get anode(): Port {
+    return this.portMap.anode
+  }
+
+  get neg(): Port {
+    return this.portMap.neg
+  }
+
+  get cathode(): Port {
+    return this.portMap.cathode
+  }
 }
