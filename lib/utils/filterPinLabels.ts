@@ -53,10 +53,9 @@ export function filterPinLabels(
 }
 
 /**
- * Checks if a pin label has valid label syntax. Pin existence is validated
- * later against explicit ports/footprints, because sparse physical numbering
- * such as pin1..pin6,pin8 is valid.
+ * Checks if a pin label has valid label syntax. Pin key validity is checked
+ * later so invalid keys still produce a clear InvalidProps error.
  */
-function isValidPinLabel(pin: string, label: string): boolean {
-  return /^(?:pin)?\d+$/.test(pin) && /^[A-Za-z0-9_]+$/.test(label)
+function isValidPinLabel(_pin: string, label: string): boolean {
+  return /^[A-Za-z0-9_]+$/.test(label)
 }
