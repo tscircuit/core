@@ -14,24 +14,10 @@ import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSche
 import { Group } from "../Group"
 import type { AxisDirection } from "./getSide"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
-import type { SchematicPort, SourcePort } from "circuit-json"
+import { getSchematicPortPinId } from "./getSchematicPortPinId"
+
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
-
-const getSchematicPortPinId = ({
-  componentName,
-  schematicPort,
-  sourcePort,
-}: {
-  componentName: string
-  schematicPort: SchematicPort
-  sourcePort?: SourcePort
-}) => {
-  const pinIdentifier =
-    schematicPort.pin_number ?? sourcePort?.name ?? sourcePort?.port_hints?.[0]
-
-  return `${componentName}.${pinIdentifier ?? schematicPort.schematic_port_id}`
-}
 
 export type SolverInputContext = {
   inputProblem: InputProblem
