@@ -43,13 +43,7 @@ test("repro: board defaultTraceWidth is ignored by autorouted traces", async () 
         ),
       }}
     >
-      <resistor
-        name="R1"
-        resistance="1k"
-        footprint="0402"
-        pcbX={-5}
-        pcbY={0}
-      />
+      <resistor name="R1" resistance="1k" footprint="0402" pcbX={-5} pcbY={0} />
       <resistor name="R2" resistance="1k" footprint="0402" pcbX={5} pcbY={0} />
       <trace from=".R1 > .pin2" to=".R2 > .pin1" />
     </board>,
