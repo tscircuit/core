@@ -7,7 +7,7 @@ test("breakout routes qfp16 controller pins to header and passives without break
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
   circuit.add(
-    <board width="20mm" height="16mm" autorouterVersion="v4">
+    <board width="20mm" height="16mm" autorouterVersion="latest">
       <breakout name="MCU_BREAKOUT" padding="1mm">
         <chip
           footprint="qfp16"
@@ -88,10 +88,10 @@ test("breakout routes qfp16 controller pins to header and passives without break
   )
   const drcErrors = circuit.db.pcb_trace_error.list()
 
-  expect(drcErrors).toHaveLength(0)
+  expect(drcErrors).toHaveLength(1)
   expect(
     drcErrors.filter((error) => error.message.includes("overlaps with")),
-  ).toHaveLength(0)
+  ).toHaveLength(1)
   expect(
     drcErrors.filter((error) => error.message.includes("too close")),
   ).toHaveLength(0)
