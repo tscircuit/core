@@ -57,6 +57,8 @@ export function getPresetAutoroutingConfig(
   }
 
   switch (normalizedPreset) {
+    case "default":
+    case "auto":
     case "auto-local":
       return {
         local: true,
