@@ -264,6 +264,7 @@ function convertTreeToMatchPackInputProblem(
           x: (schematicComponent.size?.width || 1) + marginLeft + marginRight,
           y: (schematicComponent.size?.height || 1) + marginTop + marginBottom,
         },
+        isCapacitor: child.sourceComponent.ftype === "simple_capacitor",
         availableRotations,
         ...(explicitlyPositioned && {
           fixedPosition: {
