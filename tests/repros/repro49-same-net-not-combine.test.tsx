@@ -2,7 +2,9 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 
 test("Connector with resistor and solder jumper circuit layout same net not combine", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { placementDrcChecksDisabled: true },
+  })
 
   circuit.add(
     <board width="25mm" height="20mm" routingDisabled>

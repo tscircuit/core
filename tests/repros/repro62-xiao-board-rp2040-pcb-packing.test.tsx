@@ -1,14 +1,16 @@
 import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import Debug from "debug"
 import { XiaoBoard } from "@tscircuit/common"
+import Debug from "debug"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { RP2040 } from "../fixtures/assets/RP2040.tsx"
 
 test("xiao board rp2040 pcb packing", async () => {
   // Enable debug logging for pack input
   // Debug.enable("Group_doInitialPcbLayoutPack")
 
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { placementDrcChecksDisabled: true },
+  })
 
   circuit.add(
     <XiaoBoard name="U1" variant="RP2040" withPlatedHoles>

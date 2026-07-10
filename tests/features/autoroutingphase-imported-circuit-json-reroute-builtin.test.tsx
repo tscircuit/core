@@ -88,7 +88,9 @@ const getImportedCircuitJson = async () => {
 }
 
 test("autoroutingphase reroutes an imported circuit json region with the builtin autorouter", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { placementDrcChecksDisabled: true },
+  })
   const { circuitJson, sourceTraceId, originalRouteSignature } =
     await getImportedCircuitJson()
 

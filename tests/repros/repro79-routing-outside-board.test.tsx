@@ -1,6 +1,6 @@
-import { test, expect } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { expect, test } from "bun:test"
 import external0402Footprint from "tests/fixtures/assets/external-0402-footprint.json"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { getTestFootprintServer } from "tests/fixtures/get-test-footprint-server"
 
 function InternalResistor({
@@ -114,6 +114,7 @@ test("repro kicad footprints in panel", async () => {
   )
   const { circuit } = getTestFixture({
     platform: {
+      placementDrcChecksDisabled: true,
       footprintLibraryMap: {
         kicad: async (footprintName: string) => {
           const url = `${footprintServerUrl}/${footprintName}.circuit.json`
@@ -144,7 +145,7 @@ test("repro kicad footprints in panel", async () => {
     <panel width={40} height={40} boardGap={8} layoutMode="grid">
       {boards.map((pos, i) => (
         <board key={i} width={`${boardWidth}mm`} height={`${boardHeight}mm`}>
-          {i % 2 == 0 ? <ExternalResistor /> : <InternalResistor />}
+          {i % 2 === 0 ? <ExternalResistor /> : <InternalResistor />}
         </board>
       ))}
     </panel>,

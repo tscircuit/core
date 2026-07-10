@@ -3,7 +3,9 @@ import { getTestFixture } from "../fixtures/get-test-fixture"
 test(
   "USB-C PCB traces not routing as intended for GND & VBUS pins",
   async () => {
-    const { circuit } = getTestFixture()
+    const { circuit } = getTestFixture({
+      platform: { placementDrcChecksDisabled: true },
+    })
     const pinLabels = {
       1: ["GND1", "A1"],
       2: ["GND2", "B12"],

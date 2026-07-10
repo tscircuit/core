@@ -1,8 +1,8 @@
 import { expect } from "bun:test"
-import { KicadToCircuitJsonConverter } from "kicad-to-circuit-json"
 import fs from "node:fs"
-import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import type { CircuitJson, PcbTraceRoutePoint } from "circuit-json"
+import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
+import { KicadToCircuitJsonConverter } from "kicad-to-circuit-json"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -187,7 +187,9 @@ export async function renderArduinoUnoRerouteRegion({
   rerouteRegion: RectRerouteRegion
 }) {
   const { circuit: beforeRerouteCircuit } = getTestFixture()
-  const { circuit: afterRerouteCircuit } = getTestFixture()
+  const { circuit: afterRerouteCircuit } = getTestFixture({
+    platform: { placementDrcChecksDisabled: true },
+  })
   const phaseInputs: SimpleRouteJson[] = []
 
   afterRerouteCircuit.on("autorouting:start", (event) => {

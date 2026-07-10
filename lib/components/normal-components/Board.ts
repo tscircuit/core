@@ -4,6 +4,7 @@ import {
   runAllPlacementChecks,
   runAllRoutingChecks,
 } from "@tscircuit/checks"
+import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
@@ -13,13 +14,13 @@ import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-fr
 import { inflateCircuitJson } from "../../utils/circuit-json/inflate-circuit-json"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { RenderPhase } from "../base-components/Renderable"
-import { Group } from "../primitive-components/Group/Group"
 import { DrcCheck } from "../primitive-components/DrcCheck"
+import { Group } from "../primitive-components/Group/Group"
 import type { SubcircuitI } from "../primitive-components/Group/Subcircuit/SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "../primitive-components/Group/Subcircuit/Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../primitive-components/Group/Subcircuit_getSubcircuitPropHash"
 import type { BoardI } from "./BoardI"
-import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
+import { Board_doInitialPcbPlacementDesignRuleChecks } from "./Board_doInitialPcbPlacementDesignRuleChecks"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 
@@ -580,6 +581,10 @@ export class Board
     this.updatePcbDesignRuleChecks()
   }
 
+  doInitialPcbPlacementDesignRuleChecks() {
+    Board_doInitialPcbPlacementDesignRuleChecks(this)
+  }
+
   updatePcbDesignRuleChecks() {
     const { db } = this.root!
 
@@ -648,8 +653,19 @@ export class Board
       }
 
       if (shouldRunPlacementChecks) {
+        const existingPlacementDiagnostics = db.toArray()
         checksToRun.push(
-          runAllPlacementChecks(circuitJson) as Promise<AnyCircuitElement[]>,
+          runAllPlacementChecks(circuitJson).then((results) =>
+            results.filter(
+              (result) =>
+                !existingPlacementDiagnostics.some(
+                  (existing) =>
+                    existing.type === result.type &&
+                    "message" in existing &&
+                    existing.message === result.message,
+                ),
+            ),
+          ) as Promise<AnyCircuitElement[]>,
         )
       }
 

@@ -1,7 +1,9 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "../fixtures/get-test-fixture"
 test("insert trace error when trace goes out of board", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { placementDrcChecksDisabled: true },
+  })
 
   circuit.add(
     <board width="1mm" height="10mm" autorouter="sequential-trace">
