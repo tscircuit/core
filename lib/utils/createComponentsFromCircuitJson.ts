@@ -238,10 +238,17 @@ export const createComponentsFromCircuitJson = (
     elm: AnyCircuitElement,
     primitive: PrimitiveComponent,
   ) => {
-    const schematicSymbolId = getSchematicSymbolId(elm)
-    const parentSymbol = schematicSymbolId
-      ? schematicSymbolsByImportedId.get(schematicSymbolId)
-      : undefined
+    const schematicSymbolId =
+      getSchematicSymbolId(elm) ??
+      ("schematic_component_id" in elm &&
+      typeof elm.schematic_component_id === "string"
+        ? schematicComponentsByImportedId.get(elm.schematic_component_id)
+            ?.schematic_symbol_id
+        : undefined)
+    const parentSymbol =
+      typeof schematicSymbolId === "string"
+        ? schematicSymbolsByImportedId.get(schematicSymbolId)
+        : undefined
 
     if (parentSymbol) {
       parentSymbol.add(primitive)

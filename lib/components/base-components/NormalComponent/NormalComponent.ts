@@ -52,10 +52,12 @@ import {
   getAllDimensionsForSchematicBox,
   isExplicitPinMappingArrangement,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFromPinLabelsKey"
+import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
+import { isCircuitJsonSymbol } from "lib/utils/schematic/isCircuitJsonSymbol"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
+import { selectSymbolCircuitJson } from "lib/utils/schematic/selectSymbolCircuitJson"
 import {
   type ReactElement,
   isValidElement as isReactElement,
@@ -69,21 +71,22 @@ import { CadAssembly } from "../../primitive-components/CadAssembly"
 import { CadModel } from "../../primitive-components/CadModel"
 import { Footprint } from "../../primitive-components/Footprint"
 import { Port } from "../../primitive-components/Port"
+import { SymbolComponent } from "../../primitive-components/Symbol"
 import { PrimitiveComponent } from "../PrimitiveComponent"
 import type { INormalComponent } from "./INormalComponent"
+import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
+import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import {
   NormalComponent_doInitialCheckRefDesConvention,
   getDefaultExpectedRefDesPrefixesForFtype,
 } from "./NormalComponent_doInitialCheckRefDesConvention"
-import { NormalComponent__getMinimumFlexContainerSize } from "./NormalComponent__getMinimumFlexContainerSize"
-import { NormalComponent__repositionOnPcb } from "./NormalComponent__repositionOnPcb"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
 import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComponent_doInitialResolveFootprintPinLabels"
+import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
-import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
 import { inferInternallyConnectedPinNamesFromPorts } from "./utils/inferInternallyConnectedPinNamesFromPorts"
@@ -213,6 +216,7 @@ export class NormalComponent<
 
     this._invalidPinLabelMessages = invalidPinLabelsMessages
     this._addChildrenFromStringFootprint()
+    this._addChildrenFromCircuitJsonSymbol()
     this.initPorts()
   }
 
@@ -288,6 +292,10 @@ export class NormalComponent<
             propsPinLabels.map((label, index) => [`pin${index + 1}`, label]),
           )
         : propsPinLabels
+    const existingChildPorts = this._getAllPortsFromChildren()
+    const hasExistingOrQueuedPortWithPinNumber = (pinNumber: number) =>
+      existingChildPorts.some((p) => p._parsedProps.pinNumber === pinNumber) ||
+      portsToCreate.some((p) => p._parsedProps.pinNumber === pinNumber)
 
     // Handle schPortArrangement
     const schPortArrangement = this._getSchematicPortArrangement()
@@ -300,6 +308,8 @@ export class NormalComponent<
               pinNumberOrLabel,
               pinLabels,
             )
+
+            if (hasExistingOrQueuedPortWithPinNumber(pinNumber)) continue
 
             portsToCreate.push(
               new Port(
@@ -322,11 +332,14 @@ export class NormalComponent<
       for (const side of sides) {
         const size = (schPortArrangement as any)[`${side}Size`]
         for (let i = 0; i < size; i++) {
+          const nextPinNumber = pinNum++
+          if (hasExistingOrQueuedPortWithPinNumber(nextPinNumber)) continue
+
           portsToCreate.push(
             new Port(
               {
-                pinNumber: pinNum++,
-                aliases: opts.additionalAliases?.[`pin${pinNum}`] ?? [],
+                pinNumber: nextPinNumber,
+                aliases: opts.additionalAliases?.[`pin${nextPinNumber}`] ?? [],
               },
               {
                 originDescription: `schPortArrangement:${side}`,
@@ -345,9 +358,10 @@ export class NormalComponent<
             `Invalid pinLabels key "${pinKey}". Expected "pin\${number}" (e.g. pin1, pin2).`,
           )
         }
-        let existingPort = portsToCreate.find(
-          (p) => p._parsedProps.pinNumber === pinNumber,
-        )
+        let existingPort =
+          existingChildPorts.find(
+            (p) => p._parsedProps.pinNumber === pinNumber,
+          ) ?? portsToCreate.find((p) => p._parsedProps.pinNumber === pinNumber)
         const labelList = Array.isArray(label) ? label : [label]
         const propLabel = pinLabelsFromProps?.[pinKey]
         const hasPropLabel = propLabel !== undefined
@@ -418,10 +432,8 @@ export class NormalComponent<
 
     if (!this._getSchematicPortArrangement()) {
       const hasReactSymbol = isValidElement(this.props.symbol)
-      const symbolAlreadyAdded = this.children.some(
-        (c) => c.componentName === "Symbol",
-      )
-      if (hasReactSymbol && !symbolAlreadyAdded) {
+      const hasCircuitJsonSymbolProp = isCircuitJsonSymbol(this.props.symbol)
+      if (hasReactSymbol || hasCircuitJsonSymbolProp) {
       } else {
         const portsFromFootprint = this.getPortsFromFootprint({
           ...opts,
@@ -458,7 +470,7 @@ export class NormalComponent<
     // schPortArrangement
     const requiredPinCount = opts.pinCount ?? this._getPrimaryPinCount() ?? 0
     for (let pn = 1; pn <= requiredPinCount; pn++) {
-      if (portsToCreate.find((p) => p._parsedProps.pinNumber === pn)) continue
+      if (hasExistingOrQueuedPortWithPinNumber(pn)) continue
       if (
         !schPortArrangement &&
         pinLabelsFromProps &&
@@ -587,6 +599,39 @@ export class NormalComponent<
       )
       this.addAll(fpComponents)
     }
+  }
+
+  _addChildrenFromCircuitJsonSymbol() {
+    const symbol = this._parsedProps.symbol
+    if (!isCircuitJsonSymbol(symbol)) return
+
+    const symbolCircuitJson = selectSymbolCircuitJson(symbol)
+    if (symbolCircuitJson.length === 0) return
+
+    const importedSymbolComponents = createComponentsFromCircuitJson(
+      {
+        componentName: this.name ?? this.componentName,
+        componentRotation: "0",
+      },
+      symbolCircuitJson,
+    )
+
+    if (importedSymbolComponents.length === 0) return
+
+    const hasImportedSymbolContainer = importedSymbolComponents.some(
+      (component) => component.componentName === "Symbol",
+    )
+
+    if (!hasImportedSymbolContainer) {
+      const symbolComponent = new SymbolComponent({
+        name: this.name ?? this.componentName,
+      })
+      symbolComponent.addAll(importedSymbolComponents)
+      this.add(symbolComponent)
+      return
+    }
+
+    this.addAll(importedSymbolComponents)
   }
 
   get portMap(): PortMap<PortNames> {
