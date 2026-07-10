@@ -43,6 +43,7 @@ import {
   POWER_NET_REGEX,
 } from "lib/utils/gnd-power-net-regex"
 import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
+import { getInheritedTraceWidths } from "lib/utils/pcb/get-inherited-trace-widths"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
@@ -751,6 +752,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (serverMode === "solve-endpoint") {
       // Legacy solve endpoint mode
       if (this.props.autorouter?.inputFormat === "simplified") {
+        const { minTraceWidth, nominalTraceWidth } = getInheritedTraceWidths(
+          this,
+          0.15,
+        )
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
@@ -758,8 +763,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             body: JSON.stringify({
               input_simple_route_json: getSimpleRouteJsonFromCircuitJson({
                 db,
-                minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-                nominalTraceWidth: this.props.nominalTraceWidth,
+                minTraceWidth,
+                nominalTraceWidth,
                 subcircuit_id: this.subcircuit_id,
                 subcircuitComponent: this,
               }).simpleRouteJson,
@@ -885,8 +890,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const isAutoJumperPreset = this._isAutoJumperAutorouter(autorouterConfig)
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
-    const minTraceWidth = Number(props.minTraceWidth ?? 0.15)
-    const nominalTraceWidth = Number(props.nominalTraceWidth ?? 0.15)
+    const { minTraceWidth, nominalTraceWidth } = getInheritedTraceWidths(
+      this,
+      0.15,
+    )
 
     const { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
