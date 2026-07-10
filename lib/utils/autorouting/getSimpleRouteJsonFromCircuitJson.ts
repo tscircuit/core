@@ -29,6 +29,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minViaPadDiameter,
   nominalTraceWidth,
   subcircuitComponent,
+  ignoreExistingTopLevelPcbRouteState = false,
 }: {
   db?: CircuitJsonUtilObjects
   circuitJson?: AnyCircuitElement[]
@@ -46,6 +47,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   subcircuitComponent?: {
     selectAll(selector: string): unknown[]
   }
+  /**
+   * Excludes existing root-level PCB route state from a fresh routing problem.
+   * Routed child-subcircuit traces and vias remain fixed routing geometry.
+   */
+  ignoreExistingTopLevelPcbRouteState?: boolean
 }): { simpleRouteJson: SimpleRouteJson; connMap: ConnectivityMap } => {
   if (!db && circuitJson) {
     db = su(circuitJson)
@@ -113,7 +119,12 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_smtpad.list(),
       ...db.pcb_plated_hole.list(),
       ...db.pcb_hole.list(),
-      ...db.pcb_via.list(),
+      ...db.pcb_via
+        .list()
+        .filter(
+          (via) =>
+            !ignoreExistingTopLevelPcbRouteState || Boolean(via.subcircuit_id),
+        ),
       ...db.pcb_keepout.list(),
       ...db.pcb_cutout.list(),
     ].filter(
