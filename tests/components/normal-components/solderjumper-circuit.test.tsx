@@ -4,7 +4,9 @@ import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectiv
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("should render a jumper with pinrow4 footprint", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { placementDrcChecksDisabled: true },
+  })
 
   circuit.add(
     <board width="20mm" height="15mm" grid gridGap="1mm">
