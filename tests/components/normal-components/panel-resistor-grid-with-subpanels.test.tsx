@@ -2,7 +2,9 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("panel with a grid of resistors on boards with subpanels", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { placementDrcChecksDisabled: true },
+  })
 
   const boardWidth = 10
   const boardHeight = 5

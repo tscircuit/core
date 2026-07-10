@@ -6,6 +6,7 @@ import { TraceConnectionError } from "lib/errors"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
+import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { getClosest } from "lib/utils/getClosest"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
@@ -124,6 +125,14 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   if (!subcircuit._shouldUseTraceByTraceRouting()) {
     return
   }
+
+  if (
+    shouldSkipAutoroutingBecauseOfPlacementErrors({
+      component: trace,
+      subcircuit,
+    })
+  )
+    return
 
   let allPortsFound: boolean
   let ports: Port[]

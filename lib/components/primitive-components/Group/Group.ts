@@ -36,6 +36,7 @@ import {
   type NormalizedAutorouterConfig,
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import {
@@ -157,6 +158,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   subcircuit_id: string | null = null
 
   _hasStartedAsyncAutorouting = false
+
+  _pcbPlacementDrcErrorCount: number | null = null
 
   _isInflatedFromCircuitJson = false
 
@@ -1248,6 +1251,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       `[${this.getString()}] no child subcircuits to wait for, initiating async routing`,
     )
     if (!this._hasTracesToRoute()) return
+    if (
+      shouldSkipAutoroutingBecauseOfPlacementErrors({
+        component: this,
+        subcircuit: this,
+      })
+    )
+      return
     this._startAsyncAutorouting()
   }
 
@@ -1267,6 +1277,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       !this._hasStartedAsyncAutorouting
     ) {
       if (this._areChildSubcircuitsRouted()) {
+        if (
+          shouldSkipAutoroutingBecauseOfPlacementErrors({
+            component: this,
+            subcircuit: this,
+          })
+        )
+          return
         debug(
           `[${this.getString()}] child subcircuits are now routed, starting async autorouting`,
         )

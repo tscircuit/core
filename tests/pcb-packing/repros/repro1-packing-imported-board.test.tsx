@@ -4,7 +4,9 @@ import { MicroModBoard } from "../fixtures/MicroModBoard"
 import GreenpillBoard from "../fixtures/greenpill"
 
 test("repro1-packing-imported-board", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { placementDrcChecksDisabled: true },
+  })
   circuit.add(
     <MicroModBoard name="MicroMod">
       <GreenpillBoard name="Greenpill" />

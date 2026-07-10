@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
+import { createKiCadRoutingToolsAutorouter } from "@tscircuit/krt-wasm"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { renderToCircuitJson } from "tests/fixtures/renderToCircuitJson"
-import { createKiCadRoutingToolsAutorouter } from "@tscircuit/krt-wasm"
 
 const subcircuitCircuitJson = await renderToCircuitJson(
   <board>
@@ -19,7 +19,9 @@ const subcircuitCircuitJson = await renderToCircuitJson(
 )
 
 test("autoroutingphase reroutes a subcircuit using krt-wasm", async () => {
-  const { circuit } = getTestFixture()
+  const { circuit } = getTestFixture({
+    platform: { placementDrcChecksDisabled: true },
+  })
 
   circuit.add(
     <board width="18mm" height="12mm">
