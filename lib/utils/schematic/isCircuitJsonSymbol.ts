@@ -1,5 +1,4 @@
 import type { AnyCircuitElement } from "circuit-json"
-import { selectSymbolCircuitJson } from "./selectSymbolCircuitJson"
 
 const isSymbolElementType = (
   elementType: AnyCircuitElement["type"],
@@ -24,9 +23,9 @@ const isSymbolElementType = (
 export const isCircuitJsonSymbol = (
   circuitJson: readonly AnyCircuitElement[] | null | undefined,
 ): circuitJson is readonly AnyCircuitElement[] => {
-  if (!circuitJson || circuitJson.length === 0) return false
-
-  return selectSymbolCircuitJson(circuitJson).some((elm) =>
-    isSymbolElementType(elm.type),
+  return (
+    Array.isArray(circuitJson) &&
+    circuitJson.length > 0 &&
+    circuitJson.some((element) => isSymbolElementType(element.type))
   )
 }

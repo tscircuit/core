@@ -56,6 +56,7 @@ import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle
 import { getPinNumberFromPinLabelsKey } from "lib/utils/schematic/getPinNumberFromPinLabelsKey"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { isCircuitJsonSymbol } from "lib/utils/schematic/isCircuitJsonSymbol"
+import { normalizeSchematicSymbolCircuitJson } from "lib/utils/schematic/normalizeSchematicSymbolCircuitJson"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
 import { selectSymbolCircuitJson } from "lib/utils/schematic/selectSymbolCircuitJson"
 import {
@@ -153,6 +154,7 @@ export class NormalComponent<
   pcb_missing_footprint_error_id?: string
   _hasStartedFootprintUrlLoad = false
   _hasStartedSupplierFootprintMismatchWarningCheck = false
+  _hasInflatedCircuitJsonSymbol = false
   private _invalidFootprintPropMessages: string[] = []
 
   _invalidPinLabelMessages: string[] = []
@@ -602,21 +604,34 @@ export class NormalComponent<
   }
 
   _addChildrenFromCircuitJsonSymbol() {
+    if (this._hasInflatedCircuitJsonSymbol) return
+
     const symbol = this._parsedProps.symbol
     if (!isCircuitJsonSymbol(symbol)) return
+    if (
+      this.children.some((component) => component.componentName === "Symbol")
+    ) {
+      this._hasInflatedCircuitJsonSymbol = true
+      return
+    }
 
-    const symbolCircuitJson = selectSymbolCircuitJson(symbol)
-    if (symbolCircuitJson.length === 0) return
+    const selectedSymbolCircuitJson = selectSymbolCircuitJson(symbol)
+    if (selectedSymbolCircuitJson.length === 0) return
+
+    const symbolCircuitJson = normalizeSchematicSymbolCircuitJson(
+      selectedSymbolCircuitJson,
+    )
 
     const importedSymbolComponents = createComponentsFromCircuitJson(
       {
         componentName: this.name ?? this.componentName,
-        componentRotation: "0",
+        componentRotation: String(this.props.schRotation ?? 0),
       },
       symbolCircuitJson,
     )
 
     if (importedSymbolComponents.length === 0) return
+    this._hasInflatedCircuitJsonSymbol = true
 
     const hasImportedSymbolContainer = importedSymbolComponents.some(
       (component) => component.componentName === "Symbol",
