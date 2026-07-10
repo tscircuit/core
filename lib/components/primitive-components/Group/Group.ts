@@ -35,6 +35,7 @@ import { createSourceTracesFromOffboardConnections } from "lib/utils/autorouting
 import {
   type NormalizedAutorouterConfig,
   getPresetAutoroutingConfig,
+  isSequentialTraceAutorouter,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
@@ -401,6 +402,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     for (const child of this.children) {
       db.source_component.update(child.source_component_id!, {
         source_group_id: this.source_group_id!,
+      })
+    }
+
+    if (isSequentialTraceAutorouter(this._parsedProps.autorouter)) {
+      db.source_property_ignored_warning.insert({
+        source_component_id: this.source_component_id ?? "",
+        property_name: "autorouter",
+        subcircuit_id: this.subcircuit_id ?? undefined,
+        error_type: "source_property_ignored_warning",
+        message:
+          'The sequential_trace autorouter is deprecated. Use autorouter="auto_local" instead.',
       })
     }
   }

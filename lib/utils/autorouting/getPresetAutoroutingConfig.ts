@@ -9,6 +9,23 @@ export type NormalizedAutorouterConfig = AutorouterConfig & {
   targetMinCapacity?: number
 }
 
+const normalizeAutorouterName = (value?: string) => value?.replace(/-/g, "_")
+
+export function isSequentialTraceAutorouter(
+  autorouterConfig: AutorouterProp | undefined,
+): boolean {
+  if (!autorouterConfig) return false
+
+  if (typeof autorouterConfig === "string") {
+    return normalizeAutorouterName(autorouterConfig) === "sequential_trace"
+  }
+
+  return (
+    normalizeAutorouterName(autorouterConfig.preset) === "sequential_trace" ||
+    normalizeAutorouterName(autorouterConfig.groupMode) === "sequential_trace"
+  )
+}
+
 export function getPresetAutoroutingConfig(
   autorouterConfig: AutorouterProp | undefined,
   platformConfig?: PlatformConfig,
