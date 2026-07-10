@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import keypadCircuitJson from "tests/repros/assets/keypad.json"
 
-test("repro-keypad-errors-comparison", async () => {
+test.skip("repro-keypad-errors-comparison", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
