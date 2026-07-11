@@ -43,7 +43,7 @@ import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
 import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualTraceRender"
 import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
 import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
-import { getMaxLengthFromConnectedCapacitors } from "./trace-utils/get-max-length-from-connected-capacitors"
+import { getMaxLengthFromConnectedComponents } from "./trace-utils/get-max-length-from-connected-components"
 import { getTraceDisplayName } from "./trace-utils/get-trace-display-name"
 
 export class Trace
@@ -291,7 +291,7 @@ export class Trace
       subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
       name: props.name,
       max_length:
-        getMaxLengthFromConnectedCapacitors(
+        getMaxLengthFromConnectedComponents(
           ports.map((p) => p.port),
           { db },
         ) ?? props.maxLength,
