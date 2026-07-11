@@ -39,6 +39,19 @@ export const getDefaultExpectedRefDesPrefixesForFtype = (
 const getRefDesPrefix = (refDes: string): string | undefined =>
   refDes.match(/^[A-Za-z]+/)?.[0]?.toUpperCase()
 
+const refDesPrefixesReservedForNonChipComponents = [
+  "J",
+  "Q",
+  "C",
+  "R",
+  "L",
+  "Y",
+  "X",
+  "F",
+  "S",
+  "TP",
+]
+
 export const NormalComponent_doInitialCheckRefDesConvention = (
   component: NormalComponent,
 ) => {
@@ -48,10 +61,22 @@ export const NormalComponent_doInitialCheckRefDesConvention = (
   const sourceComponent = db.source_component.get(component.source_component_id)
   if (!sourceComponent?.name || !sourceComponent.ftype) return
 
-  const expectedPrefixes = component.getRefDesPrefixes()
+  const actualPrefix = getRefDesPrefix(sourceComponent.name)
+  const isChipUsingReservedPrefix =
+    component.componentName === "Chip" &&
+    sourceComponent.ftype === "simple_chip" &&
+    actualPrefix !== undefined &&
+    refDesPrefixesReservedForNonChipComponents.some((prefix) =>
+      actualPrefix.startsWith(prefix),
+    )
+
+  const expectedPrefixes =
+    component.getRefDesPrefixes() ??
+    (isChipUsingReservedPrefix
+      ? getDefaultExpectedRefDesPrefixesForFtype("simple_chip")
+      : undefined)
   if (!expectedPrefixes || expectedPrefixes.length === 0) return
 
-  const actualPrefix = getRefDesPrefix(sourceComponent.name)
   if (actualPrefix && expectedPrefixes.includes(actualPrefix)) return
 
   const expectedPrefixMessage =
