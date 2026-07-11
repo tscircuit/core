@@ -762,9 +762,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
                 db,
                 minTraceWidth: Number(props.minTraceWidth ?? 0.15),
                 nominalTraceWidth:
-                  nominalTraceWidth === undefined
-                    ? undefined
-                    : Number(nominalTraceWidth),
+                  nominalTraceWidth != null
+                    ? Number(nominalTraceWidth)
+                    : undefined,
                 subcircuit_id: this.subcircuit_id,
                 subcircuitComponent: this,
               }).simpleRouteJson,
