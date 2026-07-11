@@ -752,7 +752,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Legacy solve endpoint mode
       if (this.props.autorouter?.inputFormat === "simplified") {
         const nominalTraceWidth =
-          props.nominalTraceWidth ?? props.defaultTraceWidth
+          props.nominalTraceWidth ??
+          props.defaultTraceWidth ??
+          props.minTraceWidth
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
@@ -892,7 +894,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const minTraceWidth = Number(props.minTraceWidth ?? 0.15)
     const nominalTraceWidth = Number(
-      props.nominalTraceWidth ?? props.defaultTraceWidth ?? 0.15,
+      props.nominalTraceWidth ??
+        props.defaultTraceWidth ??
+        props.minTraceWidth ??
+        0.15,
     )
 
     const { simpleRouteJson: baseSimpleRouteJson } =
