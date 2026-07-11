@@ -30,6 +30,18 @@ test("source_refdes_convention_warning is emitted when a chip uses a refdes rese
   expect(warnings.map((warning: any) => warning.refdes).sort()).toEqual(
     ["J1", "Q1", "C1", "R1", "L1", "Y1", "X1", "F1", "S1", "TP1"].sort(),
   )
+  const expectedMessagesByRefDes: Record<string, string> = {
+    J1: 'The "J" prefix is being used with a <chip />, try using it with a <connector /> or <jumper />',
+    Q1: 'The "Q" prefix is being used with a <chip />, try using it with a <transistor />',
+    C1: 'The "C" prefix is being used with a <chip />, try using it with a <capacitor />',
+    R1: 'The "R" prefix is being used with a <chip />, try using it with a <resistor />',
+    L1: 'The "L" prefix is being used with a <chip />, try using it with an <inductor />',
+    Y1: 'The "Y" prefix is being used with a <chip />, try using it with a <crystal />',
+    X1: 'The "X" prefix is being used with a <chip />, try using it with a <crystal />',
+    F1: 'The "F" prefix is being used with a <chip />, try using it with a <fuse />',
+    S1: 'The "S" prefix is being used with a <chip />, try using it with a <switch /> or <pushbutton />',
+    TP1: 'The "TP" prefix is being used with a <chip />, try using it with a <testpoint />',
+  }
   expect(warnings).toEqual(
     expect.arrayContaining([
       expect.objectContaining({ actual_prefix: "J" }),
@@ -50,6 +62,7 @@ test("source_refdes_convention_warning is emitted when a chip uses a refdes rese
       warning_type: "source_refdes_convention_warning",
       source_component_ftype: "simple_chip",
       expected_prefixes: ["U", "IC"],
+      message: expectedMessagesByRefDes[warning.refdes],
     })
   }
 })
