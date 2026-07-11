@@ -21,6 +21,7 @@ import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPo
 import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
+import { getInvalidNetNameError } from "lib/utils/nets/getInvalidNetNameError"
 import { getClosest } from "lib/utils/getClosest"
 import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
@@ -164,12 +165,17 @@ export class Trace
     nets: Net[]
     netsWithSelectors: Array<{ selector: string; net: Net }>
   } {
-    const netsWithSelectors = this.getTracePathNetSelectors().map(
-      (selector) => ({
+    const netsWithSelectors = this.getTracePathNetSelectors()
+      // Skip net selectors with invalid names (e.g. starting with a digit).
+      // These are already surfaced as recoverable errors during net creation /
+      // selector preprocessing, and cannot be resolved to a selectable net, so
+      // trying to resolve them here would only produce a spurious
+      // "Could not find net" error.
+      .filter((selector) => !getInvalidNetNameError(selector))
+      .map((selector) => ({
         selector,
         net: this._resolveNet(selector) as Net,
-      }),
-    )
+      }))
 
     const undefinedNets = netsWithSelectors.filter((n) => !n.net)
     if (undefinedNets.length > 0) {

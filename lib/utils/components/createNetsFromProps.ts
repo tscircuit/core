@@ -1,5 +1,7 @@
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { Net } from "lib/components/primitive-components/Net"
+import { getInvalidNetNameError } from "lib/utils/nets/getInvalidNetNameError"
+import { reportInvalidNetName } from "lib/utils/nets/reportInvalidNetName"
 
 export const createNetsFromProps = (
   component: PrimitiveComponent,
@@ -7,23 +9,16 @@ export const createNetsFromProps = (
 ) => {
   for (const prop of props) {
     if (typeof prop === "string" && prop.startsWith("net.")) {
-      if (/net\.[^\s>]*\./.test(prop)) {
-        throw new Error(
-          'Net names cannot contain a period, try using "sel.net..." to autocomplete with conventional net names, e.g. V3_3',
-        )
-      }
-      if (/net\.[^\s>]*[+-]/.test(prop)) {
-        const netName = prop.split("net.")[1]
-        const message =
-          `Net names cannot contain "+" or "-" (component "${component.componentName}" received "${netName}" via "${prop}"). ` +
-          `Try using underscores instead, e.g. VCC_P`
-        throw new Error(message)
-      }
-      if (/net\.[0-9]/.test(prop)) {
-        const netName = prop.split("net.")[1]
-        throw new Error(
-          `Net name "${netName}" cannot start with a number, try using a prefix like "VBUS1"`,
-        )
+      const invalidNetNameError = getInvalidNetNameError(
+        prop,
+        () => component.componentName,
+      )
+      if (invalidNetNameError) {
+        // Surface the bad net name as a recoverable error instead of throwing
+        // (which would abort the entire render). We still skip creating the net
+        // because its name cannot be represented as a valid selector.
+        reportInvalidNetName(component, prop, invalidNetNameError)
+        continue
       }
       const subcircuit = component.getSubcircuit()
       if (!subcircuit.selectOne(prop)) {
