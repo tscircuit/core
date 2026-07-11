@@ -82,7 +82,7 @@
     "looks-same": "^9.0.1",
     "minicssgrid": "^0.0.9",
     "pkg-pr-new": "^0.0.37",
-    "poppygl": "^0.0.24",
+    "poppygl": "^0.0.25",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "schematic-symbols": "^0.0.231",
