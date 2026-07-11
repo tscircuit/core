@@ -11,7 +11,6 @@ import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { pairs } from "lib/utils/pairs"
 import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
-import { getInheritedTraceWidthForUnspecifiedTrace } from "lib/utils/pcb/get-inherited-trace-widths"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { tryNow } from "lib/utils/try-now"
 import type { Port } from "../Port"
@@ -397,21 +396,19 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
     const pcbPortA = "pcb_port_id" in a ? a.pcb_port_id : null
     const pcbPortB = "pcb_port_id" in b ? b.pcb_port_id : null
 
-    const traceWidth =
+    const minTraceWidth =
       trace._getExplicitTraceThickness() ??
-      getInheritedTraceWidthForUnspecifiedTrace(
-        trace,
-        jlcMinTolerances.min_trace_width!,
-      )
+      trace.getSubcircuit()._parsedProps.minTraceWidth ??
+      jlcMinTolerances.min_trace_width!
 
     const ijump = new MultilayerIjump({
-      OBSTACLE_MARGIN: traceWidth * 2,
+      OBSTACLE_MARGIN: minTraceWidth * 2,
       isRemovePathLoopsEnabled: true,
       optimizeWithGoalBoxes: Boolean(pcbPortA && pcbPortB),
       connMap,
       input: {
         obstacles,
-        minTraceWidth: traceWidth,
+        minTraceWidth,
         connections: [
           {
             name: trace.source_trace_id!,

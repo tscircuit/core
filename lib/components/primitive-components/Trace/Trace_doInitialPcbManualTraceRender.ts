@@ -10,7 +10,6 @@ import { TraceConnectionError } from "lib/errors"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
-import { getInheritedTraceWidthForUnspecifiedTrace } from "lib/utils/pcb/get-inherited-trace-widths"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -118,10 +117,8 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
 
   const width =
     trace._getExplicitTraceThickness() ??
-    getInheritedTraceWidthForUnspecifiedTrace(
-      trace,
-      jlcMinTolerances.min_trace_width!,
-    )
+    trace.getSubcircuit()._parsedProps.minTraceWidth ??
+    jlcMinTolerances.min_trace_width!
 
   if (inflatedPcbTraces.length > 0) {
     const { maybeFlipLayer } = trace._getPcbPrimitiveFlippedHelpers()
