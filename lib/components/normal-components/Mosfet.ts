@@ -1,17 +1,14 @@
-import { mosfetProps, transistorProps } from "@tscircuit/props"
+import { mosfetProps } from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
+import { getMosfetSchematicSymbolName } from "./get-mosfet-schematic-symbol-name"
 
 export class Mosfet extends NormalComponent<typeof mosfetProps> {
   get config() {
-    const mosfetMode = this.props.mosfetMode === "depletion" ? "d" : "e"
-    const channelType = this.props.channelType
-    const baseSymbolName: BaseSymbolName = `${channelType}_channel_${mosfetMode}_mosfet_transistor`
-
     return {
       componentName: "Mosfet",
       schematicSymbolName: (this.props.symbolName ??
-        baseSymbolName) as BaseSymbolName,
+        getMosfetSchematicSymbolName(this.props)) as BaseSymbolName,
       zodProps: mosfetProps,
       shouldRenderAsSchematicBox: false,
     }
