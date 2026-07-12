@@ -72,6 +72,11 @@ import { Group_doInitialSimulationSpiceEngineRender } from "./Group_doInitialSim
 import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSourceAddConnectivityMapKey"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import {
+  cacheLocalAutoroutingPhaseResult,
+  getCachedLocalAutoroutingPhaseResult,
+  getLocalAutoroutingCacheKey,
+} from "./Group_localAutoroutingCache"
+import {
   Group_applyDrcTolerancesToSimpleRouteJson,
   Group_filterSimpleRouteJsonForPhase,
   Group_getObstaclesFromRoutedTraces,
@@ -1056,69 +1061,94 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
       })
 
-      // Create the autorouter instance
-      let autorouter: GenericLocalAutorouter
-      if (phaseAutorouterConfig.algorithmFn) {
-        autorouter = await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
-      } else {
-        const autorouterVersion = this.props.autorouterVersion
-        const effortLevel = this.props.autorouterEffortLevel
-        const effort = effortLevel
-          ? Number.parseInt(effortLevel.replace("x", ""), 10)
-          : undefined
-        autorouter = new TscircuitAutorouter(simpleRouteJson, {
-          // Optional configuration parameters
-          capacityDepth: phaseAutorouterConfig.capacityDepth,
-          targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
-          useAssignableSolver: phaseIsLaserPrefabPreset || isSingleLayerBoard,
-          useAutoJumperSolver: phaseIsAutoJumperPreset,
-          useLaserPrefabSolver: phaseIsLaserPrefabPreset,
-          autorouterVersion,
-          effort,
-          onSolverStarted: ({ solverName, solverParams }) =>
-            this.root?.emit("solver:started", {
-              type: "solver:started",
-              solverName,
-              solverParams,
-              componentName: this.getString(),
-            }),
-        })
-      }
-
-      // Create a promise that will resolve when autorouting is complete
-      const routingPromise = new Promise<SimplifiedPcbTrace[]>(
-        (resolve, reject) => {
-          autorouter.on("complete", (event) => {
-            debug(`[${this.getString()}] local autorouting complete`)
-            resolve(event.traces)
-          })
-
-          autorouter.on("error", (event) => {
-            debug(
-              `[${this.getString()}] local autorouting error: ${event.error.message}`,
-            )
-            reject(event.error)
-          })
-        },
-      )
-
-      autorouter.on("progress", (event) => {
-        this.root?.emit("autorouting:progress", {
-          subcircuit_id: this.subcircuit_id,
-          componentDisplayName: this.getString(),
-          ...event,
-        })
-      })
-
-      // Start the autorouting process
-      autorouter.start()
+      const cacheEngine = phaseAutorouterConfig.algorithmFn
+        ? undefined
+        : this.root?.platform?.localCacheEngine
+      const cacheKey = cacheEngine
+        ? getLocalAutoroutingCacheKey(simpleRouteJson)
+        : undefined
+      const cachedResult = cacheKey
+        ? await getCachedLocalAutoroutingPhaseResult({ cacheEngine, cacheKey })
+        : null
+      let autorouter: GenericLocalAutorouter | undefined
 
       try {
-        // Wait for the autorouting to complete
-        const traces = await routingPromise
+        let traces: SimplifiedPcbTrace[]
+        if (cachedResult) {
+          debug(`[${this.getString()}] using cached local autorouting result`)
+          traces = cachedResult.traces
+        } else {
+          if (phaseAutorouterConfig.algorithmFn) {
+            autorouter =
+              await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
+          } else {
+            const autorouterVersion = this.props.autorouterVersion
+            const effortLevel = this.props.autorouterEffortLevel
+            const effort = effortLevel
+              ? Number.parseInt(effortLevel.replace("x", ""), 10)
+              : undefined
+            autorouter = new TscircuitAutorouter(simpleRouteJson, {
+              capacityDepth: phaseAutorouterConfig.capacityDepth,
+              targetMinCapacity: phaseAutorouterConfig.targetMinCapacity,
+              useAssignableSolver:
+                phaseIsLaserPrefabPreset || isSingleLayerBoard,
+              useAutoJumperSolver: phaseIsAutoJumperPreset,
+              useLaserPrefabSolver: phaseIsLaserPrefabPreset,
+              autorouterVersion,
+              effort,
+              onSolverStarted: ({ solverName, solverParams }) =>
+                this.root?.emit("solver:started", {
+                  type: "solver:started",
+                  solverName,
+                  solverParams,
+                  componentName: this.getString(),
+                }),
+            })
+          }
+
+          if (!autorouter) {
+            throw new Error("Failed to create local autorouter")
+          }
+          const activeAutorouter = autorouter
+          const routingPromise = new Promise<SimplifiedPcbTrace[]>(
+            (resolve, reject) => {
+              activeAutorouter.on("complete", (event) => {
+                debug(`[${this.getString()}] local autorouting complete`)
+                resolve(event.traces)
+              })
+
+              activeAutorouter.on("error", (event) => {
+                debug(
+                  `[${this.getString()}] local autorouting error: ${event.error.message}`,
+                )
+                reject(event.error)
+              })
+            },
+          )
+
+          activeAutorouter.on("progress", (event) => {
+            this.root?.emit("autorouting:progress", {
+              subcircuit_id: this.subcircuit_id,
+              componentDisplayName: this.getString(),
+              ...event,
+            })
+          })
+
+          activeAutorouter.start()
+          traces = await routingPromise
+        }
+
         const outputSimpleRouteJson = {
           ...simpleRouteJson,
           traces,
+        }
+
+        if (!cachedResult && cacheKey) {
+          await cacheLocalAutoroutingPhaseResult({
+            cacheEngine,
+            cacheKey,
+            result: outputSimpleRouteJson,
+          })
         }
 
         this.root?.emit("autorouting:end", {
@@ -1131,7 +1161,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Create source_traces for interconnect ports that were connected via
         // off-board paths during routing. This allows DRC to understand that
         // these ports are intentionally connected.
-        if (autorouter.getConnectedOffboardObstacles) {
+        if (autorouter?.getConnectedOffboardObstacles) {
           const connectedOffboardObstacles =
             autorouter.getConnectedOffboardObstacles()
           createSourceTracesFromOffboardConnections({
@@ -1143,7 +1173,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
 
         // Get jumper output from solver
-        const solver = (autorouter as any).solver
+        const solver = (autorouter as any)?.solver
         if (solver?.getOutputJumpers) {
           outputJumpers.push(...(solver.getOutputJumpers() || []))
         }
@@ -1199,7 +1229,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         throw error
       } finally {
         // Ensure the autorouter is stopped
-        autorouter.stop()
+        autorouter?.stop()
       }
     }
 
