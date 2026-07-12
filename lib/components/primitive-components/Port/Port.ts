@@ -99,8 +99,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const matchedPcbElm = this.matchedComponents.find((c) => c.isPcbPrimitive)
     const parentComponent = this.parent
 
-    // First check if parent component has a footprint
-    if (parentComponent && !parentComponent.props.footprint) {
+    // First check if parent component has a footprint. Use the resolved
+    // footprint (which accounts for implied footprints, e.g. TestPoint's
+    // default through-hole/pad footprint) rather than the literal
+    // `props.footprint` so components with a valid implied footprint aren't
+    // incorrectly reported as missing one.
+    const resolvedFootprint =
+      (parentComponent as any)?.resolveFootprint?.() ??
+      parentComponent?.props.footprint
+    if (parentComponent && !resolvedFootprint) {
       throw new Error(
         `${parentComponent.componentName} "${parentComponent.props.name}" does not have a footprint. Add a footprint prop, e.g. <${parentComponent.componentName.toLowerCase()} footprint="..." />`,
       )
