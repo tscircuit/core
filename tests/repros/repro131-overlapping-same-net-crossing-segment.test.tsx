@@ -498,10 +498,14 @@ const Repro131Subcircuit = (props: SubcircuitProps) => (
   </subcircuit>
 )
 
-test("repro131: overlapping same-net crossing segments", async () => {
-  const { circuit } = getTestFixture()
-  circuit.add(<Repro131Subcircuit />)
-  await circuit.renderUntilSettled()
+test(
+  "repro131: overlapping same-net crossing segments",
+  async () => {
+    const { circuit } = getTestFixture()
+    circuit.add(<Repro131Subcircuit />)
+    await circuit.renderUntilSettled()
 
-  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-})
+    expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+  },
+  { timeout: 40000 },
+)

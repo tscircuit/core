@@ -1,9 +1,10 @@
-import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
-import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import type { AnyCircuitElement } from "circuit-json"
-import { type RotatedRect } from "./generateApproximatingRects"
-import { fillPolygonWithRects } from "./fillPolygonWithRects"
+import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { fillCircleWithRects } from "./fillCircleWithRects"
+import { fillPolygonWithRects } from "./fillPolygonWithRects"
+import { type RotatedRect } from "./generateApproximatingRects"
+import { getAxisAlignedRectFromPolygon } from "./getAxisAlignedRectFromPolygon"
+import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
 import type { Obstacle } from "./types"
 
 const EVERY_LAYER = ["top", "inner1", "inner2", "bottom"]
@@ -99,7 +100,9 @@ export const getObstaclesFromCircuitJson = (
           center: rect.center,
           width: rect.width,
           height: rect.height,
-          ccwRotationDegrees: element.ccw_rotation,
+          ccwRotationDegrees: axisAlignedRect
+            ? undefined
+            : element.ccw_rotation,
           connectedTo: withNetId([element.pcb_smtpad_id]),
         })
       } else if (element.shape === "pill" || element.shape === "rotated_pill") {
@@ -119,25 +122,33 @@ export const getObstaclesFromCircuitJson = (
           connectedTo: withNetId([element.pcb_smtpad_id]),
         })
       } else if (element.shape === "polygon") {
-        const xs = element.points.map((point) => point.x)
-        const ys = element.points.map((point) => point.y)
-        const minX = Math.min(...xs)
-        const maxX = Math.max(...xs)
-        const minY = Math.min(...ys)
-        const maxY = Math.max(...ys)
+        const axisAlignedRect = getAxisAlignedRectFromPolygon(element.points)
+        if (axisAlignedRect) {
+          obstacles.push({
+            componentId: pcbComponentId,
+            type: "rect",
+            layers: [element.layer],
+            ...axisAlignedRect,
+            connectedTo: withNetId([element.pcb_smtpad_id]),
+          })
+          continue
+        }
 
-        obstacles.push({
-          componentId: pcbComponentId,
-          type: "rect",
-          layers: [element.layer],
-          center: {
-            x: (minX + maxX) / 2,
-            y: (minY + maxY) / 2,
-          },
-          width: maxX - minX,
-          height: maxY - minY,
-          connectedTo: withNetId([element.pcb_smtpad_id]),
+        const approximatingRects = fillPolygonWithRects(element.points, {
+          rectHeight: 0.1,
         })
+
+        for (const rect of approximatingRects) {
+          obstacles.push({
+            componentId: pcbComponentId,
+            type: "rect",
+            layers: [element.layer],
+            center: rect.center,
+            width: rect.width,
+            height: rect.height,
+            connectedTo: withNetId([element.pcb_smtpad_id]),
+          })
+        }
       }
     } else if (element.type === "pcb_keepout") {
       if (element.shape === "circle") {

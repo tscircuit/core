@@ -91,5 +91,6 @@ test("axis-aligned rotated_rect pads become single simple-route obstacles", asyn
     expect(obstacle.center.y).toBeCloseTo(pad.y, 6)
     expect(obstacle.width).toBeCloseTo(isVertical ? pad.height : pad.width, 6)
     expect(obstacle.height).toBeCloseTo(isVertical ? pad.width : pad.height, 6)
+    expect(obstacle.ccwRotationDegrees).toBeUndefined()
   }
 })
