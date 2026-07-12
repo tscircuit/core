@@ -1,5 +1,6 @@
 import type { MosfetProps } from "@tscircuit/props"
-import { symbols, type SchSymbol, type TextPrimitive } from "schematic-symbols"
+import { transformSchematicSymbol } from "lib/utils/schematic/transform-schematic-symbol"
+import { symbols, type SchSymbol } from "schematic-symbols"
 
 type SymbolSide = "left" | "right" | "top" | "bottom"
 
@@ -87,36 +88,6 @@ const getRequestedOrientation = (props: MosfetProps): MosfetSymbolSides => {
   })[0]
 }
 
-const transformAnchor = (
-  anchor: TextPrimitive["anchor"],
-  transformVector: (point: { x: number; y: number }) => {
-    x: number
-    y: number
-  },
-): TextPrimitive["anchor"] => {
-  const [vertical, horizontal] = anchor.split("_")
-  const anchorVector = {
-    x: horizontal === "left" ? -1 : horizontal === "right" ? 1 : 0,
-    y: vertical === "top" ? 1 : vertical === "bottom" ? -1 : 0,
-  }
-  const transformed = transformVector(anchorVector)
-  const transformedHorizontal =
-    transformed.x < 0 ? "left" : transformed.x > 0 ? "right" : "middle"
-  const transformedVertical =
-    transformed.y > 0 ? "top" : transformed.y < 0 ? "bottom" : "middle"
-
-  if (transformedHorizontal === "middle" && transformedVertical === "middle") {
-    return "center"
-  }
-  if (transformedHorizontal === "middle") {
-    return `middle_${transformedVertical}` as TextPrimitive["anchor"]
-  }
-  if (transformedVertical === "middle") {
-    return `middle_${transformedHorizontal}` as TextPrimitive["anchor"]
-  }
-  return `${transformedVertical}_${transformedHorizontal}` as TextPrimitive["anchor"]
-}
-
 export const getTransformedMosfetSymbol = (
   props: MosfetProps,
 ): SchSymbol | null => {
@@ -134,61 +105,22 @@ export const getTransformedMosfetSymbol = (
   if (!baseSymbol) return null
 
   const orientation = getRequestedOrientation(props)
-  const gateVector = sideVectors[orientation.gate]
-  const drainVector = sideVectors[orientation.drain]
-  const transformVector = (point: { x: number; y: number }) => ({
-    x: -gateVector.x * point.x + drainVector.x * point.y,
-    y: -gateVector.y * point.x + drainVector.y * point.y,
+  const rotationByGateSide: Record<SymbolSide, number> = {
+    left: 0,
+    top: 90,
+    right: 180,
+    bottom: 270,
+  }
+  const unflippedDrainSideByGateSide: Record<SymbolSide, SymbolSide> = {
+    left: "top",
+    top: "right",
+    right: "bottom",
+    bottom: "left",
+  }
+
+  return transformSchematicSymbol(baseSymbol, {
+    rotation: rotationByGateSide[orientation.gate],
+    flipVertical:
+      orientation.drain !== unflippedDrainSideByGateSide[orientation.gate],
   })
-  const transformPoint = (point: { x: number; y: number }) => {
-    const centeredPoint = {
-      x: point.x - baseSymbol.center.x,
-      y: point.y - baseSymbol.center.y,
-    }
-    const transformedPoint = transformVector(centeredPoint)
-    return {
-      x: transformedPoint.x + baseSymbol.center.x,
-      y: transformedPoint.y + baseSymbol.center.y,
-    }
-  }
-  const swapsAxes = drainVector.x !== 0
-
-  return {
-    center: { ...baseSymbol.center },
-    size: swapsAxes
-      ? { width: baseSymbol.size.height, height: baseSymbol.size.width }
-      : { ...baseSymbol.size },
-    ports: baseSymbol.ports.map((port) => ({
-      ...port,
-      ...transformPoint(port),
-      labels: [...port.labels],
-    })),
-    primitives: baseSymbol.primitives.map((primitive) => {
-      if (primitive.type === "path") {
-        return {
-          ...primitive,
-          points: primitive.points.map(transformPoint),
-        }
-      }
-      if (primitive.type === "circle") {
-        return { ...primitive, ...transformPoint(primitive) }
-      }
-      if (primitive.type === "text") {
-        return {
-          ...primitive,
-          ...transformPoint(primitive),
-          anchor: transformAnchor(primitive.anchor, transformVector),
-        }
-      }
-
-      const topLeft = transformPoint({ x: primitive.x, y: primitive.y })
-      return {
-        ...primitive,
-        x: topLeft.x,
-        y: topLeft.y,
-        width: swapsAxes ? primitive.height : primitive.width,
-        height: swapsAxes ? primitive.width : primitive.height,
-      }
-    }),
-  }
 }
