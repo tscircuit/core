@@ -565,7 +565,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...connectionsFromBreakoutPoints,
   ]
   const resolvedMinTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
-  // The default route width can be wider than the board's minimum allowed width.
   const resolvedNominalTraceWidth = nominalTraceWidth ?? resolvedMinTraceWidth
   for (const conn of allConns) {
     conn.nominalTraceWidth ??= resolvedNominalTraceWidth

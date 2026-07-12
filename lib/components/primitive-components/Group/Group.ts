@@ -752,9 +752,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       // Legacy solve endpoint mode
       if (this.props.autorouter?.inputFormat === "simplified") {
         const nominalTraceWidth =
-          props.nominalTraceWidth ??
-          props.defaultTraceWidth ??
-          props.minTraceWidth
+          props.nominalTraceWidth ?? props.defaultTraceWidth
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
@@ -893,21 +891,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
     const minTraceWidth = Number(props.minTraceWidth ?? 0.15)
-    const nominalTraceWidth = Number(
-      props.nominalTraceWidth ??
-        props.defaultTraceWidth ??
-        props.minTraceWidth ??
-        0.15,
-    )
+    const nominalTraceWidth = props.nominalTraceWidth ?? props.defaultTraceWidth
 
     const { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
         db,
         minTraceWidth,
-        nominalTraceWidth,
+        nominalTraceWidth:
+          nominalTraceWidth != null ? Number(nominalTraceWidth) : undefined,
         subcircuit_id: this.subcircuit_id,
         subcircuitComponent: this,
       })
+    baseSimpleRouteJson.nominalTraceWidth ??= 0.15
     const routingPhasePlans = this._getRoutingPhasePlans()
     const hasPhasedAutorouting = Group_hasPhasedAutorouting(routingPhasePlans)
     const outputTraces: SimplifiedPcbTrace[] = []
