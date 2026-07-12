@@ -8,19 +8,19 @@ test("MOSFET symbol port sides control symbol orientation", () => {
     <board width="20mm" height="10mm" schAutoLayoutEnabled grid gridGap="1mm">
       <mosfet name="normal" channelType="n" mosfetMode="enhancement" />
       <mosfet
-        name="right"
+        name="gateRight"
         channelType="n"
         mosfetMode="enhancement"
         symbolGateSide="right"
       />
       <mosfet
-        name="source_top"
+        name="sourceTop"
         channelType="n"
         mosfetMode="enhancement"
         symbolSourceSide="top"
       />
       <mosfet
-        name="both"
+        name="gateRightDrainBottom"
         channelType="n"
         mosfetMode="enhancement"
         symbolGateSide="right"
