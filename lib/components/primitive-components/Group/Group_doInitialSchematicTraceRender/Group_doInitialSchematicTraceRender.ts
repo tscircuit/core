@@ -62,7 +62,9 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   group.root?.emit("solver:started", {
     type: "solver:started",
     solverName: "SchematicTracePipelineSolver",
-    solverParams: solver.getConstructorParams(),
+    // getConstructorParams() now returns the full constructor tuple
+    // [inputProblem, opts?]; the event exposes the input problem itself.
+    solverParams: solver.getConstructorParams()[0],
     componentName: group.getString(),
   })
   solver.solve()
