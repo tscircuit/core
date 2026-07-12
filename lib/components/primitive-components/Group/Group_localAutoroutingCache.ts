@@ -15,7 +15,7 @@ type CachedAutoroutingPhaseResult = SimpleRouteJson & {
 export const getLocalAutoroutingCacheKey = (
   simpleRouteJson: SimpleRouteJson,
 ): string =>
-  `core@${pkgJson.version}:srj:${getMd5Hash(JSON.stringify(simpleRouteJson))}`
+  `routes:core@${pkgJson.version}:srj:${getMd5Hash(JSON.stringify(simpleRouteJson))}`
 
 export const getCachedLocalAutoroutingPhaseResult = async ({
   cacheEngine,
