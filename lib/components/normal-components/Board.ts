@@ -373,14 +373,30 @@ export class Board
   }
 
   doInitialSourceRender() {
-    // Check for nested boards (boards inside this board at any depth)
-    const nestedBoard = this.getDescendants().find(
+    // Check for nested boards (boards inside this board at any depth). Nesting
+    // boards is not supported, but a user mistake shouldn't crash the whole
+    // render - record it as a source error (the way the rest of the codebase
+    // surfaces creation failures) and remove the nested board so the render can
+    // continue and the error can be shown gracefully.
+    const nestedBoards = this.getDescendants().filter(
       (d) => d.lowercaseComponentName === "board",
     )
-    if (nestedBoard) {
-      throw new Error(
-        `Nested boards are not supported: found board "${nestedBoard.name}" inside board "${this.name}"`,
-      )
+    if (nestedBoards.length > 0) {
+      for (const nestedBoard of nestedBoards) {
+        // Use the full path selectors to disambiguate boards - default names
+        // (e.g. "unnamed_board1") are per-parent and would otherwise collide.
+        this.root!.db.source_failed_to_create_component_error.insert({
+          component_name: nestedBoard.name,
+          error_type: "source_failed_to_create_component_error",
+          message: `Nested boards are not supported: found board "${nestedBoard.getFullPathSelector()}" inside board "${this.getFullPathSelector()}". Use a <group> or <subcircuit> to organize components within a board.`,
+          pcb_center: nestedBoard._getGlobalPcbPositionBeforeLayout(),
+          schematic_center:
+            nestedBoard._getGlobalSchematicPositionBeforeLayout(),
+        })
+        // Mark the nested board (and its subtree) for removal so it doesn't
+        // render as a second board and produce confusing duplicate output.
+        nestedBoard.shouldBeRemoved = true
+      }
     }
 
     super.doInitialSourceRender()
