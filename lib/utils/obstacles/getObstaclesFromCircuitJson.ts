@@ -134,9 +134,6 @@ export const getObstaclesFromCircuitJson = (
           continue
         }
 
-        // A polygon pad may be concave (for example, the curved FAKRA pads
-        // in gmsl-serializer). Its bounding box would block the pad's empty
-        // interior, so approximate its actual copper area with scanlines.
         const approximatingRects = fillPolygonWithRects(element.points, {
           rectHeight: 0.1,
         })
