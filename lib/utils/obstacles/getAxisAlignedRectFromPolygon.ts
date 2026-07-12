@@ -5,25 +5,52 @@ export const getAxisAlignedRectFromPolygon = (
   width: number
   height: number
 } | null => {
-  if (points.length !== 4) return null
+  const tolerance = 1e-3
+  const isCloseTo = (a: number, b: number) => Math.abs(a - b) <= tolerance
+  const normalizedPoints = points.filter(
+    (point, index) =>
+      index === 0 ||
+      !isCloseTo(point.x, points[index - 1].x) ||
+      !isCloseTo(point.y, points[index - 1].y),
+  )
 
-  const xs = [...new Set(points.map((point) => point.x))]
-  const ys = [...new Set(points.map((point) => point.y))]
-  if (xs.length !== 2 || ys.length !== 2) return null
+  if (
+    normalizedPoints.length > 1 &&
+    isCloseTo(normalizedPoints[0].x, normalizedPoints.at(-1)!.x) &&
+    isCloseTo(normalizedPoints[0].y, normalizedPoints.at(-1)!.y)
+  ) {
+    normalizedPoints.pop()
+  }
 
-  const minX = Math.min(...xs)
-  const maxX = Math.max(...xs)
-  const minY = Math.min(...ys)
-  const maxY = Math.max(...ys)
-  const corners = new Set(points.map((point) => `${point.x},${point.y}`))
+  if (normalizedPoints.length < 4) return null
+
+  const minX = Math.min(...normalizedPoints.map((point) => point.x))
+  const maxX = Math.max(...normalizedPoints.map((point) => point.x))
+  const minY = Math.min(...normalizedPoints.map((point) => point.y))
+  const maxY = Math.max(...normalizedPoints.map((point) => point.y))
   const expectedCorners = [
-    `${minX},${minY}`,
-    `${minX},${maxY}`,
-    `${maxX},${minY}`,
-    `${maxX},${maxY}`,
+    { x: minX, y: minY },
+    { x: minX, y: maxY },
+    { x: maxX, y: minY },
+    { x: maxX, y: maxY },
   ]
 
-  if (!expectedCorners.every((corner) => corners.has(corner))) return null
+  if (
+    !normalizedPoints.every(
+      (point) =>
+        isCloseTo(point.x, minX) ||
+        isCloseTo(point.x, maxX) ||
+        isCloseTo(point.y, minY) ||
+        isCloseTo(point.y, maxY),
+    ) ||
+    !expectedCorners.every((corner) =>
+      normalizedPoints.some(
+        (point) => isCloseTo(point.x, corner.x) && isCloseTo(point.y, corner.y),
+      ),
+    )
+  ) {
+    return null
+  }
 
   return {
     center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
