@@ -1,3 +1,5 @@
+const AXIS_ALIGNED_RECT_TOLERANCE_MM = 1e-3
+
 export const getAxisAlignedRectFromPolygon = (
   points: Array<{ x: number; y: number }>,
 ): {
@@ -5,8 +7,8 @@ export const getAxisAlignedRectFromPolygon = (
   width: number
   height: number
 } | null => {
-  const tolerance = 1e-3
-  const isCloseTo = (a: number, b: number) => Math.abs(a - b) <= tolerance
+  const isCloseTo = (a: number, b: number) =>
+    Math.abs(a - b) <= AXIS_ALIGNED_RECT_TOLERANCE_MM
   const normalizedPoints = points.filter(
     (point, index) =>
       index === 0 ||
