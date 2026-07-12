@@ -116,6 +116,7 @@
     "calculate-packing": "0.0.75",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.7",
+    "js-md5": "^0.8.3",
     "nanoid": "^5.0.7",
     "performance-now": "^2.1.0",
     "react-reconciler": "^0.32.0",
