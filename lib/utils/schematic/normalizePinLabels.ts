@@ -46,6 +46,9 @@ export const normalizePinLabels = (inputPinLabels: string[][]): string[][] => {
    */
   let highestPinNumber = 0
   const alreadyAcceptedDesiredNumbers: Set<number> = new Set()
+  // Number of "_alt" labels already handed out for each desired number, so the
+  // suffixes stay unique when three or more pins request the same number.
+  const altCountByDesiredNumber: Record<number, number> = {}
   for (let i = 0; i < desiredNumbers.length; i++) {
     const desiredNumber = desiredNumbers[i]
 
@@ -60,14 +63,10 @@ export const normalizePinLabels = (inputPinLabels: string[][]): string[][] => {
       continue
     }
 
-    let existingAltsForPin = 0
-    for (const label of result[i]) {
-      if (label.startsWith(`pin${desiredNumber}_alt`)) {
-        existingAltsForPin++
-      }
-    }
+    const altIndex = (altCountByDesiredNumber[desiredNumber] ?? 0) + 1
+    altCountByDesiredNumber[desiredNumber] = altIndex
 
-    result[i].push(`pin${desiredNumber}_alt${existingAltsForPin + 1}`)
+    result[i].push(`pin${desiredNumber}_alt${altIndex}`)
   }
 
   // Assign pin numbers to alternate labels

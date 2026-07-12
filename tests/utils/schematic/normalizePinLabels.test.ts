@@ -52,4 +52,18 @@ describe("normalizePinLabels", () => {
       ["pin3"],
     ])
   })
+
+  test("keeps alt labels unique when 3+ pins share a number", () => {
+    const result = normalizePinLabels([["3"], ["3"], ["3"], ["3"]])
+
+    expect(result).toEqual([
+      ["pin3"],
+      ["pin4", "pin3_alt1"],
+      ["pin5", "pin3_alt2"],
+      ["pin6", "pin3_alt3"],
+    ])
+
+    const allLabels = result.flat()
+    expect(new Set(allLabels).size).toBe(allLabels.length)
+  })
 })
