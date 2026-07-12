@@ -3,10 +3,25 @@ import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
-import md5 from "js-md5"
 import pkgJson from "../../../../package.json"
 
-const getMd5Hash = md5 as unknown as (message: string) => string
+const getFnv1aHash = (value: string): number => {
+  let hash = 2166136261
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+  return hash >>> 0
+}
+
+const getSrjHash = (simpleRouteJson: SimpleRouteJson): string => {
+  const serializedSrj = JSON.stringify(simpleRouteJson)
+  const hash1 = getFnv1aHash(serializedSrj)
+  const hash2 = getFnv1aHash(`${serializedSrj}${hash1}`)
+  return `${hash1.toString(16).padStart(8, "0")}${hash2
+    .toString(16)
+    .padStart(8, "0")}`
+}
 
 type CachedAutoroutingPhaseResult = SimpleRouteJson & {
   traces: SimplifiedPcbTrace[]
@@ -14,8 +29,7 @@ type CachedAutoroutingPhaseResult = SimpleRouteJson & {
 
 export const getLocalAutoroutingCacheKey = (
   simpleRouteJson: SimpleRouteJson,
-): string =>
-  `routes:core@${pkgJson.version}:srj:${getMd5Hash(JSON.stringify(simpleRouteJson))}`
+): string => `routes:core@${pkgJson.version}:srj:${getSrjHash(simpleRouteJson)}`
 
 export const getCachedLocalAutoroutingPhaseResult = async ({
   cacheEngine,
