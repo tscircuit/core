@@ -1061,12 +1061,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
       })
 
-      const cacheEngine = this.root?.platform?.localCacheEngine
-      const cacheKey = getLocalAutoroutingCacheKey(simpleRouteJson)
-      const cachedResult = await getCachedLocalAutoroutingPhaseResult({
-        cacheEngine,
-        cacheKey,
-      })
+      const cacheEngine = phaseAutorouterConfig.algorithmFn
+        ? undefined
+        : this.root?.platform?.localCacheEngine
+      const cacheKey = cacheEngine
+        ? getLocalAutoroutingCacheKey(simpleRouteJson)
+        : undefined
+      const cachedResult = cacheKey
+        ? await getCachedLocalAutoroutingPhaseResult({ cacheEngine, cacheKey })
+        : null
       let autorouter: GenericLocalAutorouter | undefined
 
       try {
@@ -1140,7 +1143,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           traces,
         }
 
-        if (!cachedResult) {
+        if (!cachedResult && cacheKey) {
           await cacheLocalAutoroutingPhaseResult({
             cacheEngine,
             cacheKey,
