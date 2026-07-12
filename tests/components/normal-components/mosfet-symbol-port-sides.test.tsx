@@ -31,6 +31,15 @@ test("MOSFET symbol port sides control symbol orientation", () => {
 
   circuit.render()
 
+  expect(
+    circuit.db.schematic_component.list().map(({ symbol_name }) => symbol_name),
+  ).toEqual([
+    "n_channel_e_mosfet_transistor_horz",
+    "n_channel_e_mosfet_transistor_gate_right_drain_top",
+    "n_channel_e_mosfet_transistor_gate_left_drain_bottom",
+    "n_channel_e_mosfet_transistor_gate_right_drain_bottom",
+  ])
+
   expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     drawPorts: true,
     grid: { cellSize: 0.5, labelCells: true },

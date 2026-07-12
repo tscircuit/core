@@ -1,6 +1,5 @@
 import type { MosfetProps } from "@tscircuit/props"
-import { transformSchematicSymbol } from "lib/utils/schematic/transform-schematic-symbol"
-import { symbols, type SchSymbol } from "schematic-symbols"
+import type { BaseSymbolName } from "lib/utils/constants"
 
 type SymbolSide = "left" | "right" | "top" | "bottom"
 
@@ -10,31 +9,16 @@ interface MosfetSymbolSides {
   gate: SymbolSide
 }
 
-const sideVectors: Record<SymbolSide, { x: number; y: number }> = {
-  left: { x: -1, y: 0 },
-  right: { x: 1, y: 0 },
-  top: { x: 0, y: 1 },
-  bottom: { x: 0, y: -1 },
-}
-
-const oppositeSide: Record<SymbolSide, SymbolSide> = {
-  left: "right",
-  right: "left",
-  top: "bottom",
-  bottom: "top",
-}
-
-const possibleOrientations: MosfetSymbolSides[] = (
-  Object.keys(sideVectors) as SymbolSide[]
-).flatMap((gate) =>
-  (Object.keys(sideVectors) as SymbolSide[])
-    .filter((drain) => {
-      const gateVector = sideVectors[gate]
-      const drainVector = sideVectors[drain]
-      return gateVector.x * drainVector.x + gateVector.y * drainVector.y === 0
-    })
-    .map((drain) => ({ gate, drain, source: oppositeSide[drain] })),
-)
+const possibleOrientations: MosfetSymbolSides[] = [
+  { gate: "left", drain: "top", source: "bottom" },
+  { gate: "left", drain: "bottom", source: "top" },
+  { gate: "right", drain: "top", source: "bottom" },
+  { gate: "right", drain: "bottom", source: "top" },
+  { gate: "top", drain: "left", source: "right" },
+  { gate: "top", drain: "right", source: "left" },
+  { gate: "bottom", drain: "left", source: "right" },
+  { gate: "bottom", drain: "right", source: "left" },
+]
 
 const getBaselineOrientation = (rotation: number): MosfetSymbolSides => {
   const normalizedRotation = ((rotation % 360) + 360) % 360
@@ -88,39 +72,18 @@ const getRequestedOrientation = (props: MosfetProps): MosfetSymbolSides => {
   })[0]
 }
 
-export const getTransformedMosfetSymbol = (
+export const getMosfetSchematicSymbolName = (
   props: MosfetProps,
-): SchSymbol | null => {
+): BaseSymbolName => {
+  const mosfetMode = props.mosfetMode === "depletion" ? "d" : "e"
+  const baseSymbolName = `${props.channelType}_channel_${mosfetMode}_mosfet_transistor`
   const hasSymbolSideProps =
     props.symbolDrainSide !== undefined ||
     props.symbolSourceSide !== undefined ||
     props.symbolGateSide !== undefined
 
-  if (!hasSymbolSideProps || props.symbolName || props.symbol) return null
+  if (!hasSymbolSideProps) return baseSymbolName as BaseSymbolName
 
-  const mosfetMode = props.mosfetMode === "depletion" ? "d" : "e"
-  const baseSymbolName =
-    `${props.channelType}_channel_${mosfetMode}_mosfet_transistor_horz` as keyof typeof symbols
-  const baseSymbol = symbols[baseSymbolName]
-  if (!baseSymbol) return null
-
-  const orientation = getRequestedOrientation(props)
-  const rotationByGateSide: Record<SymbolSide, number> = {
-    left: 0,
-    top: 90,
-    right: 180,
-    bottom: 270,
-  }
-  const unflippedDrainSideByGateSide: Record<SymbolSide, SymbolSide> = {
-    left: "top",
-    top: "right",
-    right: "bottom",
-    bottom: "left",
-  }
-
-  return transformSchematicSymbol(baseSymbol, {
-    rotation: rotationByGateSide[orientation.gate],
-    flipVertical:
-      orientation.drain !== unflippedDrainSideByGateSide[orientation.gate],
-  })
+  const { gate, drain } = getRequestedOrientation(props)
+  return `${baseSymbolName}_gate_${gate}_drain_${drain}` as BaseSymbolName
 }
