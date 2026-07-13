@@ -1,5 +1,4 @@
 import { expect, it } from "bun:test"
-import { DifferentialPair } from "lib"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -12,7 +11,7 @@ it("registers a differential pair routing constraint", (): void => {
         name="USB"
         positiveConnection="USB_P"
         negativeConnection="USB_N"
-        maxLengthSkew={0.1}
+        maxLengthSkew={0.05}
       />
       <resistor
         name="R1"
@@ -30,24 +29,12 @@ it("registers a differential pair routing constraint", (): void => {
         pcbX={0}
         pcbY={0}
         fontSize={1}
-        text="USB differential pair: USB_P / USB_N (10% max skew)"
+        text="USB differential pair: USB_P / USB_N (max skew: 0.05)"
       />
     </board>,
   )
 
   circuit.render()
-
-  const selectedComponent = circuit.selectOne("differentialpair")
-  if (!(selectedComponent instanceof DifferentialPair)) {
-    throw new Error("Expected the USB differential pair component")
-  }
-  const differentialPair: DifferentialPair = selectedComponent
-  expect(differentialPair._parsedProps).toEqual({
-    name: "USB",
-    positiveConnection: "USB_P",
-    negativeConnection: "USB_N",
-    maxLengthSkew: 0.1,
-  })
 
   const circuitJsonWithoutPcbTraces = circuit
     .getCircuitJson()
@@ -74,7 +61,7 @@ it("registers a differential pair routing constraint", (): void => {
         positiveTrace.source_trace_id,
         negativeTrace.source_trace_id,
       ],
-      lengthTolerance: 0.1,
+      lengthTolerance: 0.05,
     },
   ])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)

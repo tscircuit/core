@@ -1,5 +1,8 @@
 import { differentialPairProps } from "@tscircuit/props"
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import {
+  type BaseComponentConfig,
+  PrimitiveComponent,
+} from "../base-components/PrimitiveComponent"
 
 /**
  * Declares the routing constraints for a positive and negative trace pair.
@@ -7,7 +10,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 export class DifferentialPair extends PrimitiveComponent<
   typeof differentialPairProps
 > {
-  get config() {
+  override get config(): BaseComponentConfig {
     return {
       componentName: "DifferentialPair",
       zodProps: differentialPairProps,

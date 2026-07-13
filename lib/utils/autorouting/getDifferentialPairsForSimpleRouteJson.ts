@@ -6,10 +6,7 @@ type SrjDifferentialPair = NonNullable<
   SimpleRouteJson["differentialPairs"]
 >[number]
 
-type SourceTraceIndex = {
-  byName: Map<string, SourceTrace>
-  bySourcePortId: Map<string, SourceTrace[]>
-}
+type SourceTraceIndex = Map<string, Set<SourceTrace>>
 
 type SourceTraceIndexesBySubcircuitId = Map<
   string | null | undefined,
@@ -37,20 +34,24 @@ const getRequiredConnectionName = ({
   pairName,
   sourceTraceIndex,
 }: GetRequiredConnectionNameParams): string => {
-  const sourceTraceByName: SourceTrace | undefined =
-    sourceTraceIndex.byName.get(connectionReference)
-  const sourceTracesByPinId: SourceTrace[] =
-    sourceTraceIndex.bySourcePortId.get(connectionReference) ?? []
-  if (!sourceTraceByName && sourceTracesByPinId.length > 1) {
-    throw new Error(
-      `Pin "${connectionReference}" belongs to multiple source traces for differential pair "${pairName}"`,
-    )
-  }
-  const sourceTrace: SourceTrace | undefined =
-    sourceTraceByName ?? sourceTracesByPinId[0]
-  if (!sourceTrace) {
+  const matchingSourceTraces: Set<SourceTrace> | undefined =
+    sourceTraceIndex.get(connectionReference)
+  if (!matchingSourceTraces) {
     throw new Error(
       `Could not find source trace or pin "${connectionReference}" for differential pair "${pairName}"`,
+    )
+  }
+  if (matchingSourceTraces.size > 1) {
+    throw new Error(
+      `Connection reference "${connectionReference}" matches multiple source traces for differential pair "${pairName}"`,
+    )
+  }
+
+  const sourceTrace: SourceTrace | undefined =
+    matchingSourceTraces.values().next().value
+  if (!sourceTrace) {
+    throw new Error(
+      `Source trace index is empty for connection reference "${connectionReference}" in differential pair "${pairName}"`,
     )
   }
 
@@ -86,18 +87,18 @@ export const getDifferentialPairsForSimpleRouteJson = ({
     new Map()
   for (const sourceTrace of sourceTraces) {
     const sourceTraceIndex: SourceTraceIndex =
-      sourceTraceIndexesBySubcircuitId.get(sourceTrace.subcircuit_id) ?? {
-        byName: new Map(),
-        bySourcePortId: new Map(),
-      }
-    if (sourceTrace.name) {
-      sourceTraceIndex.byName.set(sourceTrace.name, sourceTrace)
-    }
-    for (const sourcePortId of sourceTrace.connected_source_port_ids) {
-      const sourceTracesForPort: SourceTrace[] =
-        sourceTraceIndex.bySourcePortId.get(sourcePortId) ?? []
-      sourceTracesForPort.push(sourceTrace)
-      sourceTraceIndex.bySourcePortId.set(sourcePortId, sourceTracesForPort)
+      sourceTraceIndexesBySubcircuitId.get(sourceTrace.subcircuit_id) ??
+      new Map()
+    const connectionReferences: string[] = [
+      ...sourceTrace.connected_source_port_ids,
+    ]
+    if (sourceTrace.name) connectionReferences.push(sourceTrace.name)
+
+    for (const connectionReference of connectionReferences) {
+      const matchingSourceTraces: Set<SourceTrace> =
+        sourceTraceIndex.get(connectionReference) ?? new Set()
+      matchingSourceTraces.add(sourceTrace)
+      sourceTraceIndex.set(connectionReference, matchingSourceTraces)
     }
     sourceTraceIndexesBySubcircuitId.set(
       sourceTrace.subcircuit_id,
@@ -122,6 +123,8 @@ export const getDifferentialPairsForSimpleRouteJson = ({
       component._parsedProps.positiveConnection
     const negativeConnectionReference: string =
       component._parsedProps.negativeConnection
+    // Note: SRJ names this value lengthTolerance, but it carries
+    // maxLengthSkew unchanged.
     const lengthTolerance: number = component._parsedProps.maxLengthSkew ?? 0.1
     const differentialPair: SrjDifferentialPair = {
       connectionNames: [

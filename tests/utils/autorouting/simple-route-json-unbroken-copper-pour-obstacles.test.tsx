@@ -51,7 +51,7 @@ test("simple route json only includes unbroken copper pours as copper-pour obsta
   expect(copperPourObstacles.length).toBeGreaterThan(0)
   expect(obstacleLayers.has("inner1")).toBe(true)
   expect(obstacleLayers.has("inner2")).toBe(false)
-  expect(gndNet?.source_net_id).toBeDefined()
+  expect(gndNet.source_net_id).toBeDefined()
   expect(
     copperPourObstacles.some((obstacle) =>
       obstacle.connectedTo.includes(gndNet.source_net_id),

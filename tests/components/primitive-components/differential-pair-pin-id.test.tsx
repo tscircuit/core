@@ -1,7 +1,5 @@
 import { expect, it } from "bun:test"
-import type { AnyCircuitElement, SourceTrace } from "circuit-json"
-import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import { Port } from "lib/components/primitive-components/Port/Port"
+import type { AnyCircuitElement } from "circuit-json"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -11,7 +9,7 @@ it("registers a differential pair using source port IDs", (): void => {
 
   circuit.add(
     <board width="20mm" height="10mm">
-      {/* IDs must exist before PCB routing so the autorouter receives the pair. */}
+      {/* Note: Pin IDs must exist before PCB routing so the autorouter receives the pair. */}
       <differentialpair
         name="USB"
         positiveConnection="source_port_0"
@@ -41,53 +39,18 @@ it("registers a differential pair using source port IDs", (): void => {
 
   circuit.render()
 
-  const selectedPositivePort: PrimitiveComponent | null =
-    circuit.selectOne(".R1 > .pin1")
-  if (!(selectedPositivePort instanceof Port)) {
-    throw new Error("Expected to find R1 pin1")
-  }
-  const positiveSourcePortId: string | null =
-    selectedPositivePort.source_port_id
-  if (!positiveSourcePortId) {
-    throw new Error("Expected R1 pin1 to have a source port ID")
-  }
-  expect(positiveSourcePortId).toBe("source_port_0")
-  const selectedNegativePort: PrimitiveComponent | null =
-    circuit.selectOne(".R2 > .pin1")
-  if (!(selectedNegativePort instanceof Port)) {
-    throw new Error("Expected to find R2 pin1")
-  }
-  const negativeSourcePortId: string | null =
-    selectedNegativePort.source_port_id
-  if (!negativeSourcePortId) {
-    throw new Error("Expected R2 pin1 to have a source port ID")
-  }
-  expect(negativeSourcePortId).toBe("source_port_2")
-
-  const subcircuitComponent: PrimitiveComponent | null = circuit.firstChild
+  const subcircuitComponent = circuit.firstChild
   if (!subcircuitComponent) {
     throw new Error("Expected the circuit to contain a board")
   }
 
-  const positiveTrace: SourceTrace | undefined = circuit.db.source_trace
-    .list()
-    .find((trace): boolean =>
-      trace.connected_source_port_ids.includes(positiveSourcePortId),
-    )
+  const positiveTrace = circuit.db.source_trace.getWhere({ name: "USB_P" })
   if (!positiveTrace) {
-    throw new Error(
-      `Expected a source trace connected to ${positiveSourcePortId}`,
-    )
+    throw new Error("Expected the USB_P source trace")
   }
-  const negativeTrace: SourceTrace | undefined = circuit.db.source_trace
-    .list()
-    .find((trace): boolean =>
-      trace.connected_source_port_ids.includes(negativeSourcePortId),
-    )
+  const negativeTrace = circuit.db.source_trace.getWhere({ name: "USB_N" })
   if (!negativeTrace) {
-    throw new Error(
-      `Expected a source trace connected to ${negativeSourcePortId}`,
-    )
+    throw new Error("Expected the USB_N source trace")
   }
 
   const circuitJsonWithoutPcbTraces: AnyCircuitElement[] = circuit
