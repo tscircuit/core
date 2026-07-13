@@ -44,7 +44,7 @@ const getSourcePortNetLabelText = (
   return `${sourceComponent.name}_${sourcePort.name}`
 }
 
-const getDirectCrossSubcircuitConnectionLabelText = (
+const getDirectCrossSubcircuitConnectedSourcePortId = (
   db: NonNullable<Group<any>["root"]>["db"],
   sourcePortId: string,
 ) => {
@@ -66,8 +66,20 @@ const getDirectCrossSubcircuitConnectionLabelText = (
     if (!otherSourcePort) continue
     if (otherSourcePort.subcircuit_id === sourcePort.subcircuit_id) continue
 
-    return getSourcePortNetLabelText(db, otherSourcePortId)
+    return otherSourcePortId
   }
+}
+
+const getDirectCrossSubcircuitConnectionLabelText = (
+  db: NonNullable<Group<any>["root"]>["db"],
+  sourcePortId: string,
+) => {
+  const otherSourcePortId = getDirectCrossSubcircuitConnectedSourcePortId(
+    db,
+    sourcePortId,
+  )
+  if (!otherSourcePortId) return undefined
+  return getSourcePortNetLabelText(db, otherSourcePortId)
 }
 
 export const insertNetLabelsForPortsMissingTrace = ({
@@ -94,6 +106,18 @@ export const insertNetLabelsForPortsMissingTrace = ({
     if (!srcPortId) continue
 
     const sourcePort = db.source_port.get(srcPortId)
+    // The parent subcircuit owns schematic routing for a direct connection to
+    // one of this subcircuit's box ports. The child pass cannot see the parent
+    // component and previously inserted a misleading fallback net label before
+    // the parent pass rendered the actual trace.
+    if (
+      group._parsedProps.showAsSchematicBox &&
+      sourcePort?.subcircuit_id === group.subcircuit_id &&
+      !sourcePort.source_component_id &&
+      getDirectCrossSubcircuitConnectedSourcePortId(db, srcPortId)
+    ) {
+      continue
+    }
     const connKey = sourcePort?.subcircuit_connectivity_map_key
     if (!connKey) continue
     const sourceNet = connKeyToSourceNet.get(connKey)
