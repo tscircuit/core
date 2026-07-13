@@ -160,9 +160,10 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
 
   doInitialCreateNetsFromProps(): void {
     const { _parsedProps: props } = this
-    if (props.net) {
-      createNetsFromProps(this, [`net.${props.net}`])
-    }
+    createNetsFromProps(this, [
+      props.net ? `net.${props.net}` : undefined,
+      ...(this._resolveConnectsTo() ?? []),
+    ])
   }
 
   doInitialCreateTracesFromNetLabels(): void {
