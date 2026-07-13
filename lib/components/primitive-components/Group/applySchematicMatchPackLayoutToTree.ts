@@ -4,8 +4,12 @@ import {
 } from "@tscircuit/circuit-json-util"
 import { type InputProblem, LayoutPipelineSolver } from "@tscircuit/matchpack"
 import { getBoundFromCenteredRect } from "@tscircuit/math-utils"
-import type { SchematicComponent, SchematicPort } from "circuit-json"
-import type { Point } from "circuit-json"
+import type {
+  Point,
+  SchematicComponent,
+  SchematicGroup,
+  SchematicPort,
+} from "circuit-json"
 import Debug from "debug"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import {
@@ -24,6 +28,11 @@ const debug = Debug("Group_doInitialSchematicLayoutMatchpack")
 
 const DEFAULT_AVAILABLE_ROTATIONS = [0, 90, 180, 270] as const
 type MatchpackRotation = (typeof DEFAULT_AVAILABLE_ROTATIONS)[number]
+
+type NestedGroupMatchpackProxy = {
+  center: Point
+  size: Point
+}
 
 const ROTATION_TO_PLACE_SIDE_ON_TOP: Record<AxisDirection, MatchpackRotation> =
   {
@@ -225,6 +234,81 @@ function getReservedChipSize({
   return growsPastGap ? rotatedSize : unrotatedSize
 }
 
+/**
+ * A nested group is represented in matchpack by a center-anchored rectangular
+ * chip. Keep that proxy's center together with its size so pin offsets and the
+ * eventual layout translation use the exact same coordinate frame.
+ */
+function getNestedGroupMatchpackProxy({
+  db,
+  schematicGroup,
+  groupComponents,
+  groupInstance,
+}: {
+  db: CircuitJsonUtilObjects
+  schematicGroup: SchematicGroup
+  groupComponents: SchematicComponent[]
+  groupInstance: PrimitiveComponent | undefined
+}): NestedGroupMatchpackProxy {
+  let minX = Infinity
+  let maxX = -Infinity
+  let minY = Infinity
+  let maxY = -Infinity
+  let hasValidBounds = false
+
+  for (const component of groupComponents) {
+    if (!component.center || !component.size) continue
+
+    hasValidBounds = true
+    const componentBounds =
+      getSchematicComponentWithTextBounds({
+        db,
+        schematicComponent: component,
+      }) ??
+      getBoundFromCenteredRect({
+        center: component.center,
+        width: component.size.width,
+        height: component.size.height,
+      })
+    minX = Math.min(minX, componentBounds.minX)
+    maxX = Math.max(maxX, componentBounds.maxX)
+    minY = Math.min(minY, componentBounds.minY)
+    maxY = Math.max(maxY, componentBounds.maxY)
+  }
+
+  const marginLeft =
+    groupInstance?._parsedProps?.schMarginLeft ??
+    groupInstance?._parsedProps?.schMarginX ??
+    0
+  const marginRight =
+    groupInstance?._parsedProps?.schMarginRight ??
+    groupInstance?._parsedProps?.schMarginX ??
+    0
+  const marginTop =
+    groupInstance?._parsedProps?.schMarginTop ??
+    groupInstance?._parsedProps?.schMarginY ??
+    0
+  const marginBottom =
+    groupInstance?._parsedProps?.schMarginBottom ??
+    groupInstance?._parsedProps?.schMarginY ??
+    0
+
+  const contentCenter = hasValidBounds
+    ? { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }
+    : (schematicGroup.center ?? { x: 0, y: 0 })
+
+  return {
+    center: {
+      x: contentCenter.x + (marginRight - marginLeft) / 2,
+      y: contentCenter.y + (marginTop - marginBottom) / 2,
+    },
+    size: {
+      x: (hasValidBounds ? maxX - minX : 2) + marginLeft + marginRight,
+      y: (hasValidBounds ? maxY - minY : 2) + marginTop + marginBottom,
+    },
+  }
+}
+
 function isTreeChildExplicitlyPositioned(
   treeChild: CircuitJsonTreeNode,
   group: Group,
@@ -272,7 +356,10 @@ function convertTreeToMatchPackInputProblem(
   tree: CircuitJsonTreeNode,
   db: CircuitJsonUtilObjects,
   group: Group<any>,
-): InputProblem {
+): {
+  inputProblem: InputProblem
+  nestedGroupMatchpackProxyMap: Record<string, NestedGroupMatchpackProxy>
+} {
   const problem: InputProblem = {
     chipMap: {},
     chipPinMap: {},
@@ -283,6 +370,10 @@ function convertTreeToMatchPackInputProblem(
     decouplingCapsGap: 0.4,
     partitionGap: 1.2,
   }
+  const nestedGroupMatchpackProxyMap: Record<
+    string,
+    NestedGroupMatchpackProxy
+  > = {}
 
   const groupOffset = group._getGlobalSchematicPositionBeforeLayout()
 
@@ -405,9 +496,9 @@ function convertTreeToMatchPackInputProblem(
       })
 
       const groupInstance = group.children.find(
-        (groupChild: any) =>
+        (groupChild) =>
           groupChild.source_group_id === child.sourceGroup?.source_group_id,
-      ) as any
+      )
 
       debug(
         `[${group.name}] Found schematic_group for ${groupId}:`,
@@ -426,59 +517,16 @@ function convertTreeToMatchPackInputProblem(
           groupComponents.map((c: any) => c.source_component_id),
         )
 
-        let minX = Infinity
-        let maxX = -Infinity
-        let minY = Infinity
-        let maxY = -Infinity
-        let hasValidBounds = false
-
-        for (const comp of groupComponents) {
-          if (comp.center && comp.size) {
-            hasValidBounds = true
-            const compBounds =
-              getSchematicComponentWithTextBounds({
-                db,
-                schematicComponent: comp,
-              }) ??
-              getBoundFromCenteredRect({
-                center: comp.center,
-                width: comp.size.width,
-                height: comp.size.height,
-              })
-            minX = Math.min(minX, compBounds.minX)
-            maxX = Math.max(maxX, compBounds.maxX)
-            minY = Math.min(minY, compBounds.minY)
-            maxY = Math.max(maxY, compBounds.maxY)
-          }
-        }
-
-        const marginLeft =
-          groupInstance?._parsedProps?.schMarginLeft ??
-          groupInstance?._parsedProps?.schMarginX ??
-          0
-        const marginRight =
-          groupInstance?._parsedProps?.schMarginRight ??
-          groupInstance?._parsedProps?.schMarginX ??
-          0
-        const marginTop =
-          groupInstance?._parsedProps?.schMarginTop ??
-          groupInstance?._parsedProps?.schMarginY ??
-          0
-        const marginBottom =
-          groupInstance?._parsedProps?.schMarginBottom ??
-          groupInstance?._parsedProps?.schMarginY ??
-          0
-
-        const marginXShift = (marginRight - marginLeft) / 2
-        const marginYShift = (marginTop - marginBottom) / 2
-
-        const groupWidth =
-          (hasValidBounds ? maxX - minX : 2) + marginLeft + marginRight
-        const groupHeight =
-          (hasValidBounds ? maxY - minY : 2) + marginTop + marginBottom
+        const matchpackProxy = getNestedGroupMatchpackProxy({
+          db,
+          schematicGroup,
+          groupComponents,
+          groupInstance,
+        })
+        nestedGroupMatchpackProxyMap[groupId] = matchpackProxy
 
         debug(
-          `[${group.name}] Group ${groupId} computed size: ${groupWidth} x ${groupHeight}`,
+          `[${group.name}] Group ${groupId} computed proxy: ${matchpackProxy.size.x} x ${matchpackProxy.size.y} centered at (${matchpackProxy.center.x}, ${matchpackProxy.center.y})`,
         )
 
         const groupPins: string[] = []
@@ -494,14 +542,13 @@ function convertTreeToMatchPackInputProblem(
             const pinId = `${groupId}.${sourcePort.pin_number || sourcePort.name || port.schematic_port_id}`
             groupPins.push(pinId)
 
-            const groupCenter = schematicGroup.center || { x: 0, y: 0 }
             const side = facingDirectionToSide(port.facing_direction)
 
             problem.chipPinMap[pinId] = {
               pinId,
               offset: {
-                x: (port.center?.x || 0) - groupCenter.x + marginXShift,
-                y: (port.center?.y || 0) - groupCenter.y + marginYShift,
+                x: (port.center?.x || 0) - matchpackProxy.center.x,
+                y: (port.center?.y || 0) - matchpackProxy.center.y,
               },
               side,
             }
@@ -516,10 +563,7 @@ function convertTreeToMatchPackInputProblem(
         problem.chipMap[groupId] = {
           chipId: groupId,
           pins: groupPins,
-          size: {
-            x: groupWidth,
-            y: groupHeight,
-          },
+          size: matchpackProxy.size,
         }
 
         debug(`[${group.name}] Added group ${groupId} to chipMap`)
@@ -730,7 +774,7 @@ function convertTreeToMatchPackInputProblem(
     }
   }
 
-  return problem
+  return { inputProblem: problem, nestedGroupMatchpackProxyMap }
 }
 
 export function applySchematicMatchPackLayoutToTree<
@@ -751,7 +795,8 @@ export function applySchematicMatchPackLayoutToTree<
   }
 
   debug("Converting circuit tree to InputProblem...")
-  const inputProblem = convertTreeToMatchPackInputProblem(tree, db, group)
+  const { inputProblem, nestedGroupMatchpackProxyMap } =
+    convertTreeToMatchPackInputProblem(tree, db, group)
 
   if (debug.enabled) {
     group.root?.emit("debug:logOutput", {
@@ -987,7 +1032,9 @@ export function applySchematicMatchPackLayoutToTree<
           `Group ${chipId} has ${groupComponents.length} components to move`,
         )
 
-        const oldCenter = schematicGroup.center || { x: 0, y: 0 }
+        const matchpackProxy = nestedGroupMatchpackProxyMap[chipId]
+        const oldCenter = matchpackProxy?.center ??
+          schematicGroup.center ?? { x: 0, y: 0 }
         const positionDelta = {
           x: newCenter.x - oldCenter.x,
           y: newCenter.y - oldCenter.y,
@@ -1027,10 +1074,21 @@ export function applySchematicMatchPackLayoutToTree<
                 text.position.y += positionDelta.y
               }
             }
+
+            updateSchematicPrimitivesForLayoutShift({
+              db,
+              schematicComponentId: component.schematic_component_id,
+              deltaX: positionDelta.x,
+              deltaY: positionDelta.y,
+            })
           }
         }
 
         schematicGroup.center = newCenter
+        if (matchpackProxy) {
+          schematicGroup.width = matchpackProxy.size.x
+          schematicGroup.height = matchpackProxy.size.y
+        }
         debug(
           `Updated group ${chipId} center to (${newCenter.x}, ${newCenter.y})`,
         )
