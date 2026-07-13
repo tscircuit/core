@@ -971,8 +971,26 @@ export abstract class PrimitiveComponent<
         return
       }
       // Otherwise this is likely accidental text in the JSX tree.
+      const parentName = (this._parsedProps as any)?.name
+      const parentDescriptor = parentName
+        ? `<${this.componentName} name="${parentName}">`
+        : `<${this.componentName}>`
+
+      // A very common mistake is interpolating a numeric value that evaluated
+      // to NaN together with a unit suffix, e.g. `${someNaN}p` renders the bare
+      // text "NaNp". Surface a more actionable hint in that case.
+      const isNaNValuedText = /^NaN/.test(textContent.trim())
+      const nanHint = isNaNValuedText
+        ? ` This looks like a numeric expression that evaluated to NaN (e.g. \`\${value}${textContent
+            .trim()
+            .replace(
+              /^NaN/,
+              "",
+            )}\` where \`value\` is NaN) — check the computation that produces this value.`
+        : ""
+
       throw new Error(
-        `Invalid JSX Element: Expected a React component but received text "${textContent}"`,
+        `Invalid JSX Element: ${parentDescriptor} received stray text "${textContent}" as a child, but it cannot hold text children. Remove the text or wrap it in an appropriate component.${nanHint}`,
       )
     }
     if (Object.keys(component).length === 0) {
