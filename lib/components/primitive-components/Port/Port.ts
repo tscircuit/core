@@ -15,6 +15,8 @@ import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
 import { type PinAttributeMap, portProps } from "@tscircuit/props"
 import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
 import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
+import { Port_doInitialCreateTracesFromProps } from "./Port_doInitialCreateTracesFromProps"
+import { Port_tryRenderGroupPcbPort } from "./Port_tryRenderGroupPcbPort"
 
 export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
@@ -347,6 +349,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     return connectedTraces
   }
 
+  doInitialCreateTracesFromProps(): void {
+    Port_doInitialCreateTracesFromProps(this)
+  }
+
   doInitialSourceRender(): void {
     const { db } = this.root!
     const { _parsedProps: props } = this
@@ -420,33 +426,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // Handle group ports separately
     if (this.isGroupPort()) {
-      const connectedPorts = this._getConnectedPortsFromConnectsTo()
-      if (connectedPorts.length === 0) {
-        // Group port needs connectsTo to resolve position
-        return
-      }
-
-      // Get position from the first connected port
-      const connectedPort = connectedPorts[0]
-      if (!connectedPort.pcb_port_id) {
-        // Connected port hasn't been rendered yet, skip for now
-        return
-      }
-
-      const connectedPcbPort = db.pcb_port.get(connectedPort.pcb_port_id)!
-      const matchCenter = { x: connectedPcbPort.x, y: connectedPcbPort.y }
-
-      const subcircuit = this.getSubcircuit()
-      const pcb_port = db.pcb_port.insert({
-        pcb_component_id: undefined as any,
-        layers: connectedPort.getAvailablePcbLayers(),
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        ...matchCenter,
-        source_port_id: this.source_port_id!,
-        is_board_pinout: false,
-      })
-      this.pcb_port_id = pcb_port.pcb_port_id
+      Port_tryRenderGroupPcbPort(this)
       return
     }
 
@@ -532,26 +512,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // Handle group ports separately
     if (this.isGroupPort()) {
-      const connectedPorts = this._getConnectedPortsFromConnectsTo()
-      if (connectedPorts.length === 0) return
-
-      const connectedPort = connectedPorts[0]
-      if (!connectedPort.pcb_port_id) return
-
-      const connectedPcbPort = db.pcb_port.get(connectedPort.pcb_port_id)!
-      const matchCenter = { x: connectedPcbPort.x, y: connectedPcbPort.y }
-
-      const subcircuit = this.getSubcircuit()
-      const pcb_port = db.pcb_port.insert({
-        pcb_component_id: undefined as any,
-        layers: connectedPort.getAvailablePcbLayers(),
-        subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
-        pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        ...matchCenter,
-        source_port_id: this.source_port_id!,
-        is_board_pinout: false,
-      })
-      this.pcb_port_id = pcb_port.pcb_port_id
+      Port_tryRenderGroupPcbPort(this)
       return
     }
 
@@ -591,6 +552,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       is_board_pinout: this._isBoardPinoutFromAttributes(),
     })
     this.pcb_port_id = pcb_port.pcb_port_id
+  }
+
+  doInitialPcbPortAttachment(): void {
+    if (!this.isGroupPort() || this.pcb_port_id) return
+    Port_tryRenderGroupPcbPort(this)
   }
 
   /**
