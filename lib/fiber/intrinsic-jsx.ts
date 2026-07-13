@@ -46,6 +46,7 @@ export interface TscircuitElements {
   cadassembly: Props.CadAssemblyProps
   net: Props.NetProps
   trace: Props.TraceProps
+  differentialpair: Props.DifferentialPairProps
   breakout: Props.BreakoutProps
   breakoutpoint: Props.BreakoutPointProps
   fanout: Props.BreakoutProps

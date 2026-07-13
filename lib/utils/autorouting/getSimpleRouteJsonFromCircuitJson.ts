@@ -8,6 +8,7 @@ import {
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import type { SimpleRouteConnection, SimpleRouteJson } from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
+import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
 
@@ -581,6 +582,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     conn.width ??= defaultTraceWidth
   }
 
+  const differentialPairs = getDifferentialPairsForSimpleRouteJson({
+    connections: allConns,
+    differentialPairComponents:
+      subcircuitComponent?.selectAll("differentialpair") ?? [],
+    sourceTraces: db.source_trace.list(),
+    subcircuitId: subcircuit_id,
+  })
+
   if (subcircuit_id) {
     const pointIdToConn = new Map<string, SimpleRouteConnection>()
     for (const conn of allConns) {
@@ -638,6 +647,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       bounds,
       obstacles,
       connections: allConns,
+      differentialPairs,
       traces:
         preservedRoutedSubcircuitTraces.length > 0
           ? preservedRoutedSubcircuitTraces

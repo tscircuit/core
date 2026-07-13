@@ -98,6 +98,7 @@ export type SimpleRouteJson = Omit<
   | "outline"
   | "allowJumpers"
   | "availableJumperTypes"
+  | "differentialPairs"
 > & {
   layerCount: number
   minTraceWidth: number
@@ -132,6 +133,10 @@ export type SimpleRouteJson = Omit<
   // Enable jumper-based routing for single-layer boards
   allowJumpers?: boolean
   availableJumperTypes?: Array<"1206x4" | "0603">
+  differentialPairs?: Array<{
+    connectionNames: [string, string]
+    lengthTolerance: number
+  }>
 }
 
 // declare module "autorouting-dataset" {
