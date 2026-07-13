@@ -309,6 +309,7 @@ export class NormalComponent<
             const pinNumber = parsePinNumberFromLabelsOrThrow(
               pinNumberOrLabel,
               pinLabels,
+              { componentName: this.name ?? this.componentName },
             )
 
             if (hasExistingOrQueuedPortWithPinNumber(pinNumber)) continue
@@ -492,7 +493,9 @@ export class NormalComponent<
       }
       let explicitlyListedPinNumbersInSchPortArrangement =
         getPinsFromPortArrangement(schPortArrangement).map((pn) =>
-          parsePinNumberFromLabelsOrThrow(pn, pinLabels),
+          parsePinNumberFromLabelsOrThrow(pn, pinLabels, {
+            componentName: this.name ?? this.componentName,
+          }),
         )
 
       if (
@@ -1598,7 +1601,9 @@ export class NormalComponent<
       if (pinLabels) {
         maxPinNumber = Math.max(
           maxPinNumber,
-          parsePinNumberFromLabelsOrThrow(pin, pinLabels),
+          parsePinNumberFromLabelsOrThrow(pin, pinLabels, {
+            componentName: this.name ?? this.componentName,
+          }),
         )
       }
     }

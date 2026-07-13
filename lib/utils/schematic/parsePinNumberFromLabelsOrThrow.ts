@@ -3,7 +3,11 @@ import { getPinNumberFromPinLabelsKey } from "./getPinNumberFromPinLabelsKey"
 export const parsePinNumberFromLabelsOrThrow = (
   pinNumberOrLabel: string | number,
   pinLabels?: Record<string, string[] | string> | null,
+  opts?: { componentName?: string },
 ): number => {
+  const componentContext = opts?.componentName
+    ? ` for component "${opts.componentName}"`
+    : ""
   if (typeof pinNumberOrLabel === "number") {
     return pinNumberOrLabel
   }
@@ -21,7 +25,7 @@ export const parsePinNumberFromLabelsOrThrow = (
 
   if (!pinLabels) {
     throw new Error(
-      `No pin labels provided and pin number or label is not a number: "${pinNumberOrLabel}"`,
+      `No pin labels provided${componentContext} and pin number or label is not a number: "${pinNumberOrLabel}"`,
     )
   }
 
@@ -41,7 +45,16 @@ export const parsePinNumberFromLabelsOrThrow = (
     }
   }
 
+  const definedLabels = Object.values(pinLabels)
+    .flatMap((aliases) => (Array.isArray(aliases) ? aliases : [aliases]))
+    .filter((label): label is string => typeof label === "string")
+
   throw new Error(
-    `No pin labels provided and pin number or label is not a number: "${pinNumberOrLabel}"`,
+    `Pin label "${pinNumberOrLabel}"${componentContext} is not defined in pinLabels. ` +
+      `Defined pin labels are: ${
+        definedLabels.length > 0
+          ? definedLabels.map((label) => `"${label}"`).join(", ")
+          : "(none)"
+      }`,
   )
 }
