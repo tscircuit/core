@@ -40,8 +40,9 @@ const getRequiredConnectionName = ({
     )
   }
 
-  const connectionName: string | undefined =
-    connectionNameBySourceTraceId.get(sourceTrace.source_trace_id)
+  const connectionName: string | undefined = connectionNameBySourceTraceId.get(
+    sourceTrace.source_trace_id,
+  )
   if (!connectionName) {
     throw new Error(
       `Could not find an SRJ connection for source trace "${traceName}" in differential pair "${pairName}"`,
@@ -58,8 +59,7 @@ export const getDifferentialPairsForSimpleRouteJson = ({
   sourceTraces,
   subcircuitId,
 }: GetDifferentialPairsParams): SrjDifferentialPair[] | undefined => {
-  const connectionNameBySourceTraceId: ConnectionNameBySourceTraceId =
-    new Map()
+  const connectionNameBySourceTraceId: ConnectionNameBySourceTraceId = new Map()
   for (const connection of connections) {
     if (!connection.source_trace_id) continue
     connectionNameBySourceTraceId.set(
@@ -90,10 +90,8 @@ export const getDifferentialPairsForSimpleRouteJson = ({
         `Could not find source traces for differential pair "${component.name}"`,
       )
     }
-    const positiveTraceName: string =
-      component._parsedProps.positiveConnection
-    const negativeTraceName: string =
-      component._parsedProps.negativeConnection
+    const positiveTraceName: string = component._parsedProps.positiveConnection
+    const negativeTraceName: string = component._parsedProps.negativeConnection
     const lengthTolerance: number = component._parsedProps.maxLengthSkew ?? 0.1
     const differentialPair: SrjDifferentialPair = {
       connectionNames: [
