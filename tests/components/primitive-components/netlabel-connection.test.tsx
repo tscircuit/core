@@ -35,13 +35,13 @@ test("netlabel connection traces", () => {
         schY={-1}
         anchorSide="top"
         net="GND"
-        connection="U1.GND"
+        connectsTo="U1.GND"
       />
       <netlabel
         schX={-2}
         schY={0.8}
         net="VCC"
-        connection="U1.VCC"
+        connectsTo="U1.VCC"
         anchorSide="bottom"
       />
     </board>,

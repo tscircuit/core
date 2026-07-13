@@ -132,7 +132,7 @@ test("chip with jumper and netlabel connectsTo", async () => {
       <netlabel
         net="DE"
         anchorSide="left"
-        connection="JP2.pin7"
+        connectsTo="JP2.pin7"
         schX={3}
         schY={0.8}
       />

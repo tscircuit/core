@@ -273,7 +273,7 @@ export const TPS63802 = () => (
 
     <netlabel
       net="VIN"
-      connection="U1.VIN"
+      connectsTo="U1.VIN"
       schX={-5.9}
       schY={1.25}
       anchorSide="right"
@@ -287,7 +287,7 @@ export const TPS63802 = () => (
     />
     <netlabel
       net="VOUT"
-      connection="C2.pin1"
+      connectsTo="C2.pin1"
       schX={4.5}
       schY={1.25}
       anchorSide="left"
@@ -301,7 +301,7 @@ export const TPS63802 = () => (
     />
     <netlabel
       net="GND"
-      connection="U1.GND"
+      connectsTo="U1.GND"
       schX={0}
       schY={-3.25}
       anchorSide="top"
@@ -309,7 +309,7 @@ export const TPS63802 = () => (
 
     <netlabel
       net="PG"
-      connection="U1.PG"
+      connectsTo="U1.PG"
       schX={1.15}
       schY={0.25}
       anchorSide="left"

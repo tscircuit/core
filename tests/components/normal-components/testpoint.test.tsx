@@ -36,21 +36,21 @@ test("<testpoint /> component with netlabel test", async () => {
         schY={0.9}
         net="VCC"
         anchorSide="bottom"
-        connection="TP1.pin1"
+        connectsTo="TP1.pin1"
       />
       <netlabel
         schX={0.8}
         schY={0}
         net="COPI"
         anchorSide="left"
-        connection="TP2.pin1"
+        connectsTo="TP2.pin1"
       />
       <netlabel
         schX={0.8}
         schY={-0.9}
         net="GND"
         anchorSide="top"
-        connection="TP3.pin1"
+        connectsTo="TP3.pin1"
       />
     </board>,
   )

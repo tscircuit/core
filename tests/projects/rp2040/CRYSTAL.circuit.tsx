@@ -50,14 +50,14 @@ export const CrystalCircuit = () => (
       schX={CRYSTAL_X - 1.2}
       schY={CRYSTAL_Y + 1.8}
       net="XIN"
-      connection="C23.pin1"
+      connectsTo="C23.pin1"
       anchorSide="bottom"
     />
     <netlabel
       schX={CRYSTAL_X + 1.4}
       schY={CRYSTAL_Y + 1.8}
       net="XOUT"
-      connection="R11.pin1"
+      connectsTo="R11.pin1"
       anchorSide="bottom"
     />
 

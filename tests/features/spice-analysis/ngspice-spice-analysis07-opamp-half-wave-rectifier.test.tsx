@@ -51,8 +51,8 @@ test(
 
         {/* D2: clamp diode, anode at inverting input, cathode at opamp output */}
         <diode name="D2" schX={-0.5} schY={-2} schRotation={180} />
-        <netlabel net="GND" anchorSide="top" connection="V1.pin2" />
-        {/* <netlabel net="GND" anchorSide="top" connection="U1.pin1" /> */}
+        <netlabel net="GND" anchorSide="top" connectsTo="V1.pin2" />
+        {/* <netlabel net="GND" anchorSide="top" connectsTo="U1.pin1" /> */}
 
         {/* Input wiring: V1 through R1 to inverting input */}
         <trace from=".V1 > .pin1" to=".R1 > .pin1" />

@@ -20,16 +20,16 @@ test("schematic trace net jumping", async () => {
         footprint="cap0603"
         schRotation={90}
       />
-      <netlabel net="GND" anchorSide="top" connection={sel.C1.pin1} />
+      <netlabel net="GND" anchorSide="top" connectsTo={sel.C1.pin1} />
       <netlabel
         net="VCC"
         anchorSide="bottom"
-        connection={sel.C1.pin2}
+        connectsTo={sel.C1.pin2}
         schX={2}
         schY={0.55}
       />
-      <netlabel net="GND" anchorSide="top" connection={sel.C2.pin1} />
-      <netlabel net="VCC" anchorSide="bottom" connection={sel.C2.pin2} />
+      <netlabel net="GND" anchorSide="top" connectsTo={sel.C2.pin1} />
+      <netlabel net="VCC" anchorSide="bottom" connectsTo={sel.C2.pin2} />
     </board>,
   )
 

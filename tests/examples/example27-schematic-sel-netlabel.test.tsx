@@ -41,7 +41,7 @@ test("example27 schematic sel netlabel", async () => {
       <netlabel
         net="PAD"
         anchorSide="left"
-        connection="R1.pin2"
+        connectsTo="R1.pin2"
         schX={4.4}
         schY={1.3}
       />
@@ -77,14 +77,14 @@ test("example27 schematic sel netlabel", async () => {
       <netlabel
         net="VCC"
         anchorSide="bottom"
-        connection="JP8.pin3"
+        connectsTo="JP8.pin3"
         schX={1.1}
         schY={-0.94}
       />
       <netlabel
         net="GND"
         anchorSide="top"
-        connection="JP8.pin1"
+        connectsTo="JP8.pin1"
         schX={2.8}
         schY={-1.6}
       />

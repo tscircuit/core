@@ -15,7 +15,7 @@ test("netlabel defaults anchor to connected port position", () => {
       schLayout={{ layoutMode: "none" }}
     >
       <resistor name="R1" resistance="1k" footprint="0402" />
-      <netlabel net="A" connection="R1.pin1" />
+      <netlabel net="A" connectsTo="R1.pin1" />
     </board>,
   )
 

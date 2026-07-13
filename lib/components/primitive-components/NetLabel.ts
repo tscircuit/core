@@ -15,15 +15,24 @@ import { calculateElbow } from "calculate-elbow"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 
-export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
+const netLabelComponentProps = netLabelProps.refine(
+  (props) => props.net === undefined || props.connection === undefined,
+  {
+    message: "net and connection cannot be provided together",
+    path: ["connection"],
+  },
+)
+
+export class NetLabel extends PrimitiveComponent<
+  typeof netLabelComponentProps
+> {
   source_net_label_id?: string
   schematic_net_label_id?: string
-  private _invalidNetConnections: string[] = []
 
   get config() {
     return {
       componentName: "NetLabel",
-      zodProps: netLabelProps,
+      zodProps: netLabelComponentProps,
     }
   }
 
@@ -161,11 +170,6 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
 
   doInitialCreateNetsFromProps(): void {
     const { _parsedProps: props } = this
-    this._invalidNetConnections = (this._resolveConnectsTo() ?? []).filter(
-      (connection) => connection.startsWith("net."),
-    )
-    if (this._invalidNetConnections.length > 0) return
-
     if (props.net) {
       createNetsFromProps(this, [`net.${props.net}`])
     }
@@ -173,7 +177,6 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
 
   doInitialCreateTracesFromNetLabels(): void {
     if (this.root?.schematicDisabled) return
-    if (this._invalidNetConnections.length > 0) return
     const connectsTo = this._resolveConnectsTo()
     if (!connectsTo) return
 
@@ -188,24 +191,6 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
         }),
       )
     }
-  }
-
-  doInitialSourceComponentPropertyValidation(): void {
-    if (this._invalidNetConnections.length === 0) return
-
-    const netName = this._getNetName()
-    const invalidSelectors = this._invalidNetConnections
-      .map((selector) => `"${selector}"`)
-      .join(", ")
-
-    this.root!.db.source_failed_to_create_component_error.insert({
-      component_name: netName,
-      error_type: "source_failed_to_create_component_error",
-      message: `Cannot create netlabel "${netName}": connection must reference a port, not net selector ${invalidSelectors}`,
-      schematic_center: this._getGlobalSchematicPositionBeforeLayout(),
-      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
-    })
-    this.shouldBeRemoved = true
   }
 
   doInitialSchematicTraceRender(): void {

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("netlabel cannot connect two nets", async () => {
+test("netlabel fails component creation when net and connection are provided", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -16,15 +16,13 @@ test("netlabel cannot connect two nets", async () => {
   expect(circuit.db.source_trace.list()).toHaveLength(0)
   expect(circuit.db.source_net.list()).toHaveLength(0)
   expect(circuit.db.schematic_net_label.list()).toHaveLength(0)
-  expect(
-    circuit.db.source_failed_to_create_component_error.list(),
-  ).toMatchObject([
-    {
-      component_name: "DC_IN",
-      error_type: "source_failed_to_create_component_error",
-      message:
-        'Cannot create netlabel "DC_IN": connection must reference a port, not net selector "net.A"',
-    },
-  ])
+  const errors = circuit.db.source_failed_to_create_component_error.list()
+  expect(errors).toHaveLength(1)
+  expect(errors[0]).toMatchObject({
+    error_type: "source_failed_to_create_component_error",
+  })
+  expect(errors[0].message).toContain(
+    "net and connection cannot be provided together",
+  )
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 }, 2_000)

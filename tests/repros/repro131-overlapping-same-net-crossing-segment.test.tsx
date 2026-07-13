@@ -395,35 +395,35 @@ const Repro131Subcircuit = (props: SubcircuitProps) => (
 
     <netlabel
       net="SDA"
-      connection="U1.SDA"
+      connectsTo="U1.SDA"
       schX={-9.55}
       schY={2.28}
       anchorSide="right"
     />
     <netlabel
       net="SCL"
-      connection="U1.SCL"
+      connectsTo="U1.SCL"
       schX={-9.55}
       schY={1.46}
       anchorSide="right"
     />
     <netlabel
       net="GPOUT"
-      connection="U1.GPOUT"
+      connectsTo="U1.GPOUT"
       schX={9.65}
       schY={2.28}
       anchorSide="left"
     />
     <netlabel
       net="BIN"
-      connection="U1.BIN"
+      connectsTo="U1.BIN"
       schX={9.65}
       schY={0.66}
       anchorSide="left"
     />
     <netlabel
       net="VSYS"
-      connection="R1.pin2"
+      connectsTo="R1.pin2"
       schX={9.65}
       schY={-4.8}
       anchorSide="left"
@@ -431,14 +431,14 @@ const Repro131Subcircuit = (props: SubcircuitProps) => (
 
     <netlabel
       net="PGND"
-      connection="U1.VSS"
+      connectsTo="U1.VSS"
       schX={-4.6}
       schY={0.2}
       anchorSide="top"
     />
     <netlabel
       net="PGND"
-      connection="U1.EP"
+      connectsTo="U1.EP"
       schX={0}
       schY={-2.85}
       anchorSide="top"

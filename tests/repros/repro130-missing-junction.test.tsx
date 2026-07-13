@@ -379,12 +379,12 @@ const INA237Subcircuit = () => (
       }}
     />
 
-    <netlabel net="VS" connection="U1.VS" schX={-3.15} schY={2.95} />
-    <netlabel net="GND" connection="U1.GND" schX={-2.55} schY={-2.15} />
-    {/* <netlabel net="GND" connection="U1.A0" schX={2.65} schY={1.45} />
-    <netlabel net="GND" connection="U1.A1" schX={2.65} schY={0.75} /> */}
-    <netlabel net="GND" connection="B1.pin1" schX={-8.75} schY={-4.05} />
-    <netlabel net="VS" connection="R2.pin1" schX={5.0} schY={3.55} />
+    <netlabel net="VS" connectsTo="U1.VS" schX={-3.15} schY={2.95} />
+    <netlabel net="GND" connectsTo="U1.GND" schX={-2.55} schY={-2.15} />
+    {/* <netlabel net="GND" connectsTo="U1.A0" schX={2.65} schY={1.45} />
+    <netlabel net="GND" connectsTo="U1.A1" schX={2.65} schY={0.75} /> */}
+    <netlabel net="GND" connectsTo="B1.pin1" schX={-8.75} schY={-4.05} />
+    <netlabel net="VS" connectsTo="R2.pin1" schX={5.0} schY={3.55} />
 
     <schematictext
       text="VS = 2.7V - 5.5V"

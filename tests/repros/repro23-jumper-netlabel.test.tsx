@@ -88,28 +88,28 @@ test("Jumper and netlabel connections repro", async () => {
         net="GND"
         schX={8.8}
         schY={-6.5}
-        connection="J2.pin1"
+        connectsTo="J2.pin1"
         anchorSide="top"
       />
       <netlabel
         net="V3_3"
         schX={8.8}
         schY={-5}
-        connection="J2.pin2"
+        connectsTo="J2.pin2"
         anchorSide="bottom"
       />
       <netlabel
         net="SDA"
         schX={9.2}
         schY={-5.9}
-        connection="J2.pin3"
+        connectsTo="J2.pin3"
         anchorSide="left"
       />
       <netlabel
         net="SCL"
         schX={9.2}
         schY={-5.7}
-        connection="J2.pin4"
+        connectsTo="J2.pin4"
         anchorSide="left"
       />
     </board>,
