@@ -1,9 +1,9 @@
 import { expect, it } from "bun:test"
-import type { DifferentialPair } from "lib"
+import { DifferentialPair } from "lib"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-it("registers a differential pair routing constraint", () => {
+it("registers a differential pair routing constraint", (): void => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -37,9 +37,11 @@ it("registers a differential pair routing constraint", () => {
 
   circuit.render()
 
-  const differentialPair = circuit.selectOne(
-    "differentialpair",
-  ) as DifferentialPair
+  const selectedComponent = circuit.selectOne("differentialpair")
+  if (!(selectedComponent instanceof DifferentialPair)) {
+    throw new Error("Expected the USB differential pair component")
+  }
+  const differentialPair: DifferentialPair = selectedComponent
   expect(differentialPair._parsedProps).toEqual({
     name: "USB",
     positiveConnection: "USB_P",
@@ -50,12 +52,22 @@ it("registers a differential pair routing constraint", () => {
   const circuitJsonWithoutPcbTraces = circuit
     .getCircuitJson()
     .filter((element) => element.type !== "pcb_trace")
+  const subcircuitComponent = circuit.firstChild
+  if (!subcircuitComponent) {
+    throw new Error("Expected the circuit to contain a board")
+  }
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     circuitJson: circuitJsonWithoutPcbTraces,
-    subcircuitComponent: circuit.firstChild!,
+    subcircuitComponent,
   })
-  const positiveTrace = circuit.db.source_trace.getWhere({ name: "USB_P" })!
-  const negativeTrace = circuit.db.source_trace.getWhere({ name: "USB_N" })!
+  const positiveTrace = circuit.db.source_trace.getWhere({ name: "USB_P" })
+  if (!positiveTrace) {
+    throw new Error("Expected the USB_P source trace")
+  }
+  const negativeTrace = circuit.db.source_trace.getWhere({ name: "USB_N" })
+  if (!negativeTrace) {
+    throw new Error("Expected the USB_N source trace")
+  }
   expect(simpleRouteJson.differentialPairs).toEqual([
     {
       connectionNames: [
