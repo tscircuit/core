@@ -15,7 +15,7 @@ export function getSchematicComponentTextBoundingBoxRects(
     if (!schematicComponent.center || !schematicComponent.size) continue
 
     const bounds =
-      getSchematicComponentWithTextBounds(db, schematicComponent) ??
+      getSchematicComponentWithTextBounds({ db, schematicComponent }) ??
       getBoundFromCenteredRect({
         center: schematicComponent.center,
         width: schematicComponent.size.width,

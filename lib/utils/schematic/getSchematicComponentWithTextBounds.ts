@@ -3,6 +3,7 @@ import type { Bounds } from "@tscircuit/math-utils"
 import { getBoundFromCenteredRect } from "@tscircuit/math-utils"
 import type { SchematicComponent, SourceComponentBase } from "circuit-json"
 import { symbols } from "schematic-symbols"
+import { getRotatedSize, getRotatedSymbolName } from "./getRotatedSymbolName"
 import { getSchematicTextWidth } from "./getSchematicTextWidth"
 
 const SYMBOL_TEXT_FONT_SIZE = 0.18
@@ -20,6 +21,7 @@ const TEXT_BOX_ENABLED_FTYPES = new Set([
   "simple_transistor",
   "simple_mosfet",
   "simple_op_amp",
+  "simple_voltage_source",
 ])
 
 function getTextBounds({
@@ -164,25 +166,64 @@ function getSchematicComponentTextInclusiveBounds(
 }
 
 /**
+ * Return a view of the schematic component as it will render after being
+ * rotated counter-clockwise by `ccwRotationDegrees`. The symbol name is swapped
+ * to the matching directional/orientation variant and the size is transposed on
+ * quarter turns; `center` is unchanged. The component's {REF}/{VAL} text always
+ * renders horizontally, so the rotated symbol variant is what determines which
+ * side the text extends towards. A rotation of 0 leaves every field unchanged.
+ */
+function getOrientedSchematicComponent(
+  schematicComponent: SchematicComponent,
+  ccwRotationDegrees: number,
+): SchematicComponent {
+  let size = schematicComponent.size
+  if (size) size = getRotatedSize(size, ccwRotationDegrees)
+
+  return {
+    ...schematicComponent,
+    symbol_name: getRotatedSymbolName(
+      schematicComponent.symbol_name,
+      ccwRotationDegrees,
+    ),
+    size,
+  }
+}
+
+/**
  * Text-inclusive bounding box used for schematic layout/packing. Horizontal
  * components are expanded symmetrically about their center so they stay
  * centered in their packing cell; vertical components keep the raw
  * text-inclusive bounds. Returns null when there is no text past the symbol.
+ *
+ * When `ccwRotationDegrees` is non-zero the bounds are computed for the
+ * component's rotated orientation, so the label footprint is reserved on the
+ * axis the text will actually occupy after rotation.
  */
-export function getSchematicComponentWithTextBounds(
-  db: CircuitJsonUtilObjects,
-  schematicComponent: SchematicComponent,
-): Bounds | null {
+export function getSchematicComponentWithTextBounds({
+  db,
+  schematicComponent,
+  ccwRotationDegrees = 0,
+}: {
+  db: CircuitJsonUtilObjects
+  schematicComponent: SchematicComponent
+  ccwRotationDegrees?: number
+}): Bounds | null {
+  const orientedComponent = getOrientedSchematicComponent(
+    schematicComponent,
+    ccwRotationDegrees,
+  )
+
   const textBounds = getSchematicComponentTextInclusiveBounds(
     db,
-    schematicComponent,
+    orientedComponent,
   )
   if (!textBounds) return null
 
-  const boxBounds = getSymbolBoxBounds(schematicComponent)
+  const boxBounds = getSymbolBoxBounds(orientedComponent)
 
   const isVertical =
-    schematicComponent.size.height > schematicComponent.size.width
+    orientedComponent.size.height > orientedComponent.size.width
   if (isVertical) return textBounds
 
   const padLeft = Math.max(0, boxBounds.minX - textBounds.minX)
