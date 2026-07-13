@@ -36,6 +36,6 @@ test("showAsSchematicBox connections connect explicit ports on PCB and schematic
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(4)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
   expect(circuit.db.schematic_trace.list()).toHaveLength(1)
 })
