@@ -47,8 +47,9 @@ const getRequiredConnectionName = ({
     )
   }
 
-  const sourceTrace: SourceTrace | undefined =
-    matchingSourceTraces.values().next().value
+  const sourceTrace: SourceTrace | undefined = matchingSourceTraces
+    .values()
+    .next().value
   if (!sourceTrace) {
     throw new Error(
       `Source trace index is empty for connection reference "${connectionReference}" in differential pair "${pairName}"`,

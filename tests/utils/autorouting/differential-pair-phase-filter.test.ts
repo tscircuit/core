@@ -1,7 +1,5 @@
 import { expect, test } from "bun:test"
-import {
-  Group_filterSimpleRouteJsonForPhase,
-} from "lib/components/primitive-components/Group/Group_phasedAutoroutingUtils"
+import { Group_filterSimpleRouteJsonForPhase } from "lib/components/primitive-components/Group/Group_phasedAutoroutingUtils"
 import type { RoutingPhasePlan } from "lib/components/primitive-components/Group/GroupRoutingPhasePlan"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -51,10 +49,7 @@ test("phased autorouting keeps differential pairs together", (): void => {
     ],
     differentialPairs: [
       {
-        connectionNames: [
-          "source_trace_positive",
-          "source_trace_negative",
-        ],
+        connectionNames: ["source_trace_positive", "source_trace_negative"],
         lengthTolerance: 0.05,
       },
     ],
@@ -77,8 +72,10 @@ test("phased autorouting keeps differential pairs together", (): void => {
     traces: [unrelatedTrace],
     nets: [],
   }
-  const unrelatedInput: SimpleRouteJson =
-    Group_filterSimpleRouteJsonForPhase(simpleRouteJson, unrelatedPhase)
+  const unrelatedInput: SimpleRouteJson = Group_filterSimpleRouteJsonForPhase(
+    simpleRouteJson,
+    unrelatedPhase,
+  )
   expect(unrelatedInput.differentialPairs).toBeUndefined()
 
   const splitPairPhase: RoutingPhasePlan = {
