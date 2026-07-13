@@ -19,4 +19,5 @@ test("netlabel connected to another net finishes rendering", async () => {
       .map((net) => net.name)
       .sort(),
   ).toEqual(["A", "DC_IN"])
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 }, 2_000)
