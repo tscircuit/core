@@ -38,4 +38,30 @@ test("showAsSchematicBox connections connect explicit ports on PCB and schematic
   expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
   expect(circuit.db.pcb_trace.list()).toHaveLength(2)
   expect(circuit.db.schematic_trace.list()).toHaveLength(1)
+
+  const ioSourcePort = circuit.db.source_port
+    .list()
+    .find((port) => port.name === "IO" && !port.source_component_id)!
+  const r1SourceComponent = circuit.db.source_component.getWhere({
+    name: "R1",
+  })!
+  const r1Pin1SourcePort = circuit.db.source_port
+    .list({ source_component_id: r1SourceComponent.source_component_id })
+    .find((port) => port.name === "pin1")!
+  const ioPcbPort = circuit.db.pcb_port.getWhere({
+    source_port_id: ioSourcePort.source_port_id,
+  })!
+  const r1Pin1PcbPort = circuit.db.pcb_port.getWhere({
+    source_port_id: r1Pin1SourcePort.source_port_id,
+  })!
+  expect({ x: ioPcbPort.x, y: ioPcbPort.y, layers: ioPcbPort.layers }).toEqual({
+    x: r1Pin1PcbPort.x,
+    y: r1Pin1PcbPort.y,
+    layers: r1Pin1PcbPort.layers,
+  })
+
+  expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    showPcbGroups: true,
+  })
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

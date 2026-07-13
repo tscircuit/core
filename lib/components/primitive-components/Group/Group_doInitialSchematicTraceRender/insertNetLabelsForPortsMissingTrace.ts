@@ -136,6 +136,19 @@ export const insertNetLabelsForPortsMissingTrace = ({
     const directCrossSubcircuitConnectionLabelText =
       getDirectCrossSubcircuitConnectionLabelText(db, srcPortId)
 
+    if (
+      schComponent?.is_box_with_pins &&
+      Boolean(schComponent.source_group_id) &&
+      !sourceNet &&
+      !assignedPortNetLabelText &&
+      !directCrossSubcircuitConnectionLabelText &&
+      !implicitPortLabelText
+    ) {
+      continue
+    }
+
+    const connectedPortCountForKey = connectedSourcePortIdsForKey.length
+
     const text =
       sourceNet?.name ||
       sourceNet?.source_net_id ||
@@ -144,16 +157,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
       implicitPortLabelText ||
       connKey
 
-    const connectedPortCountForKey = Array.from(
-      allSourceAndSchematicPortIdsInScope,
-    ).filter((portId) => {
-      const sourcePortId = schPortIdToSourcePortId.get(portId)
-      if (!sourcePortId) return false
-      return (
-        db.source_port.get(sourcePortId)?.subcircuit_connectivity_map_key ===
-        connKey
-      )
-    }).length
     const isGndNet = sourceNet?.is_ground ?? false
     const isPowerNet = !isGndNet && (sourceNet?.is_power ?? false)
     let side: "top" | "bottom" | "left" | "right"

@@ -15,6 +15,7 @@ import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { tryNow } from "lib/utils/try-now"
 import type { Port } from "../Port"
+import { resolvePcbRoutingPort } from "../Port/resolve-pcb-routing-port"
 import type { TraceHint } from "../TraceHint"
 import type { Trace } from "./Trace"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
@@ -141,8 +142,13 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   try {
     const connectedPorts = trace._findConnectedPorts()
     allPortsFound = connectedPorts.allPortsFound
-    ports = connectedPorts.ports ?? []
-    portsWithSelectors = connectedPorts.portsWithSelectors ?? []
+    portsWithSelectors = (connectedPorts.portsWithSelectors ?? []).map(
+      ({ selector, port }) => ({
+        selector,
+        port: resolvePcbRoutingPort(port),
+      }),
+    )
+    ports = portsWithSelectors.map(({ port }) => port)
   } catch (error) {
     if (error instanceof TraceConnectionError) {
       db.source_trace_not_connected_error.insert({
@@ -158,6 +164,11 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   const portsConnectedOnPcbViaNet: Port[] = []
 
   if (!allPortsFound) return
+
+  if (ports.length === 2 && ports[0] === ports[1]) {
+    trace._portsRoutedOnPcb = [ports[0]]
+    return
+  }
 
   const pcbSelectorError = portsWithSelectors
     .map(({ selector, port }) =>

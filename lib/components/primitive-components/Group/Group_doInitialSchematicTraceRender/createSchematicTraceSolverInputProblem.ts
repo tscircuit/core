@@ -67,8 +67,6 @@ export function createSchematicTraceSolverInputProblem(
 
   const connKeyToSourceNet = new Map<string, SourceNet>()
 
-  const traces = group.selectAll("trace")
-
   // Gather all schematic components in scope (this group and child groups)
   const childGroups = group.selectAll("group") as Group<any>[]
   const allSchematicGroupIds = [
@@ -76,9 +74,35 @@ export function createSchematicTraceSolverInputProblem(
     ...childGroups.map((a) => a.schematic_group_id),
   ]
 
+  const sourcePortIdsReferencedByGroupTraces = new Set(
+    db.source_trace
+      .list()
+      .filter((trace) => trace.subcircuit_id === group.subcircuit_id)
+      .flatMap((trace) => trace.connected_source_port_ids),
+  )
+  const schematicComponentIdsReferencedByGroupTraces = new Set(
+    db.schematic_port
+      .list()
+      .filter(
+        (port) =>
+          port.source_port_id &&
+          sourcePortIdsReferencedByGroupTraces.has(port.source_port_id),
+      )
+      .map((port) => port.schematic_component_id),
+  )
+
   const schematicComponents = db.schematic_component
     .list()
-    .filter((a) => allSchematicGroupIds.includes(a.schematic_group_id!))
+    .filter(
+      (component) =>
+        allSchematicGroupIds.includes(component.schematic_group_id!) ||
+        (schematicComponentIdsReferencedByGroupTraces.has(
+          component.schematic_component_id,
+        ) &&
+          component.is_box_with_pins &&
+          Boolean(component.source_group_id) &&
+          component.schematic_sheet_id === group._resolveSchematicSheetId()),
+    )
   const schematicComponentIds = new Set(
     schematicComponents.map((component) => component.schematic_component_id),
   )

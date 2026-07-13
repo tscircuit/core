@@ -327,16 +327,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   private _ensureSchematicBoxPortsFromConnections() {
+    const directPorts = this.children.filter(
+      (child): child is Port => child.componentName === "Port",
+    )
+
     if (!this._parsedProps?.showAsSchematicBox) return
     if (!this._parsedProps?.connections) return
 
     for (const [pinName, target] of Object.entries(
       this._parsedProps.connections,
     )) {
-      const existingPort = this.children.find(
-        (child) =>
-          child.componentName === "Port" &&
-          (child as Port).isMatchingAnyOf([pinName]),
+      const existingPort = directPorts.find((port) =>
+        port.isMatchingAnyOf([pinName]),
       )
       if (existingPort) continue
 
