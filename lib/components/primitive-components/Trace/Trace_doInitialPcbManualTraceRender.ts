@@ -1,6 +1,7 @@
 import type { LayerRef, PcbTraceRoutePoint, PcbVia } from "circuit-json"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 import type { Port } from "../Port"
+import { resolvePcbRoutingPort } from "../Port/resolve-pcb-routing-port"
 import type { Trace } from "./Trace"
 import { applyToPoint, identity } from "transformation-matrix"
 import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
@@ -59,8 +60,13 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   try {
     const connectedPorts = trace._findConnectedPorts()
     allPortsFound = connectedPorts.allPortsFound
-    ports = connectedPorts.ports ?? []
-    portsWithSelectors = connectedPorts.portsWithSelectors ?? []
+    portsWithSelectors = (connectedPorts.portsWithSelectors ?? []).map(
+      ({ selector, port }) => ({
+        selector,
+        port: resolvePcbRoutingPort(port),
+      }),
+    )
+    ports = portsWithSelectors.map(({ port }) => port)
   } catch (error) {
     if (error instanceof TraceConnectionError) {
       db.source_trace_not_connected_error.insert({
@@ -306,9 +312,14 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       (p) => p.selector === props.pcbPathRelativeTo,
     )?.port
     if (!anchorPort) {
-      anchorPort = trace.getSubcircuit().selectOne(props.pcbPathRelativeTo) as
+      const selectedAnchorPort = trace
+        .getSubcircuit()
+        .selectOne(props.pcbPathRelativeTo, { type: "port" }) as
         | Port
         | undefined
+      anchorPort = selectedAnchorPort
+        ? resolvePcbRoutingPort(selectedAnchorPort)
+        : undefined
     }
   }
   if (!anchorPort) {
@@ -345,10 +356,10 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     // Check if pt is a string selector
     if (typeof pt === "string") {
       // Resolve the selector to a Port (preprocessSelector handles format conversion)
-      const resolvedPort = trace.getSubcircuit().selectOne(pt, {
+      const selectedPort = trace.getSubcircuit().selectOne(pt, {
         type: "port",
       }) as Port | undefined
-      if (!resolvedPort) {
+      if (!selectedPort) {
         db.pcb_trace_error.insert({
           error_type: "pcb_trace_error",
           source_trace_id: trace.source_trace_id!,
@@ -359,6 +370,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
         })
         continue
       }
+      const resolvedPort = resolvePcbRoutingPort(selectedPort)
 
       const pcbTargetError = getPcbSelectorErrorForTracePort(pt, resolvedPort)
       if (pcbTargetError) {

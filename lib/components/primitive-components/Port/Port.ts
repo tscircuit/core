@@ -15,6 +15,7 @@ import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
 import { type PinAttributeMap, portProps } from "@tscircuit/props"
 import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
 import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
+import { resolvePcbRoutingPort } from "./resolve-pcb-routing-port"
 
 export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
@@ -63,7 +64,20 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   _getConnectedPortsFromConnectsTo(): Port[] {
     const { _parsedProps: props } = this
-    const connectsTo = props.connectsTo
+    let connectsTo = props.connectsTo
+
+    if (this.isGroupPort()) {
+      const groupConnections = (
+        this.parent?._parsedProps as {
+          connections?: Record<string, typeof connectsTo>
+        }
+      )?.connections
+      const parentConnection = Object.entries(groupConnections ?? {}).find(
+        ([portName]) => this.isMatchingAnyOf([portName]),
+      )?.[1]
+      connectsTo = parentConnection ?? connectsTo
+    }
+
     if (!connectsTo) return []
 
     const connectedPorts: Port[] = []
@@ -75,7 +89,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       const port = this.getSubcircuit().selectOne(connection, {
         type: "port",
       }) as Port | null
-      if (port) {
+      if (port?.componentName === "Port") {
         connectedPorts.push(port)
       }
     }
@@ -420,14 +434,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // Handle group ports separately
     if (this.isGroupPort()) {
-      const connectedPorts = this._getConnectedPortsFromConnectsTo()
-      if (connectedPorts.length === 0) {
-        // Group port needs connectsTo to resolve position
-        return
-      }
-
-      // Get position from the first connected port
-      const connectedPort = connectedPorts[0]
+      const connectedPort = resolvePcbRoutingPort(this)
+      if (connectedPort === this) return
       if (!connectedPort.pcb_port_id) {
         // Connected port hasn't been rendered yet, skip for now
         return
@@ -527,19 +535,22 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
 
-    // If pcb_port already exists, nothing to do
-    if (this.pcb_port_id) return
-
     // Handle group ports separately
     if (this.isGroupPort()) {
-      const connectedPorts = this._getConnectedPortsFromConnectsTo()
-      if (connectedPorts.length === 0) return
-
-      const connectedPort = connectedPorts[0]
+      const connectedPort = resolvePcbRoutingPort(this)
+      if (connectedPort === this) return
       if (!connectedPort.pcb_port_id) return
 
       const connectedPcbPort = db.pcb_port.get(connectedPort.pcb_port_id)!
       const matchCenter = { x: connectedPcbPort.x, y: connectedPcbPort.y }
+
+      if (this.pcb_port_id) {
+        db.pcb_port.update(this.pcb_port_id, {
+          ...matchCenter,
+          layers: connectedPort.getAvailablePcbLayers(),
+        })
+        return
+      }
 
       const subcircuit = this.getSubcircuit()
       const pcb_port = db.pcb_port.insert({
@@ -554,6 +565,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       this.pcb_port_id = pcb_port.pcb_port_id
       return
     }
+
+    // If pcb_port already exists, nothing to do
+    if (this.pcb_port_id) return
 
     // Try again if we now have matched PCB primitives
     const pcbMatches = this.matchedComponents.filter((c) => c.isPcbPrimitive)
@@ -591,6 +605,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       is_board_pinout: this._isBoardPinoutFromAttributes(),
     })
     this.pcb_port_id = pcb_port.pcb_port_id
+  }
+
+  doInitialPcbPortFinalization(): void {
+    if (this.isGroupPort()) this.updatePcbPortRender()
+  }
+
+  updatePcbPortFinalization(): void {
+    this.doInitialPcbPortFinalization()
   }
 
   /**
