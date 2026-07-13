@@ -642,37 +642,39 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const resolvedMinBoardEdgeClearance =
     minBoardEdgeClearance ?? board?.min_board_edge_clearance
 
+  const simpleRouteJson: SimpleRouteJson = {
+    bounds,
+    obstacles,
+    connections: allConns,
+    differentialPairs,
+    traces:
+      preservedRoutedSubcircuitTraces.length > 0
+        ? preservedRoutedSubcircuitTraces
+        : undefined,
+    layerCount: board?.num_layers ?? 2,
+    minTraceWidth: Math.min(
+      defaultTraceWidth,
+      ...allConns.map((c) => c.width!),
+    ),
+    minViaDiameter: resolvedMinViaPadDiameter,
+    minViaHoleDiameter: resolvedMinViaHoleDiameter,
+    minViaPadDiameter: resolvedMinViaPadDiameter,
+    min_via_hole_diameter: resolvedMinViaHoleDiameter,
+    min_via_pad_diameter: resolvedMinViaPadDiameter,
+    minTraceToPadEdgeClearance: resolvedMinTraceToPadEdgeClearance,
+    minViaEdgeToPadEdgeClearance: resolvedMinViaEdgeToPadEdgeClearance,
+    minViaHoleEdgeToViaHoleEdgeClearance:
+      resolvedMinViaHoleEdgeToViaHoleEdgeClearance,
+    minPlatedHoleDrillEdgeToDrillEdgeClearance:
+      resolvedMinPlatedHoleDrillEdgeToDrillEdgeClearance,
+    minPadEdgeToPadEdgeClearance: resolvedMinPadEdgeToPadEdgeClearance,
+    minBoardEdgeClearance: resolvedMinBoardEdgeClearance,
+    nominalTraceWidth,
+    outline: board?.outline?.map((point) => ({ ...point })),
+  }
+
   return {
-    simpleRouteJson: {
-      bounds,
-      obstacles,
-      connections: allConns,
-      differentialPairs,
-      traces:
-        preservedRoutedSubcircuitTraces.length > 0
-          ? preservedRoutedSubcircuitTraces
-          : undefined,
-      layerCount: board?.num_layers ?? 2,
-      minTraceWidth: Math.min(
-        defaultTraceWidth,
-        ...allConns.map((c) => c.width!),
-      ),
-      minViaDiameter: resolvedMinViaPadDiameter,
-      minViaHoleDiameter: resolvedMinViaHoleDiameter,
-      minViaPadDiameter: resolvedMinViaPadDiameter,
-      min_via_hole_diameter: resolvedMinViaHoleDiameter,
-      min_via_pad_diameter: resolvedMinViaPadDiameter,
-      minTraceToPadEdgeClearance: resolvedMinTraceToPadEdgeClearance,
-      minViaEdgeToPadEdgeClearance: resolvedMinViaEdgeToPadEdgeClearance,
-      minViaHoleEdgeToViaHoleEdgeClearance:
-        resolvedMinViaHoleEdgeToViaHoleEdgeClearance,
-      minPlatedHoleDrillEdgeToDrillEdgeClearance:
-        resolvedMinPlatedHoleDrillEdgeToDrillEdgeClearance,
-      minPadEdgeToPadEdgeClearance: resolvedMinPadEdgeToPadEdgeClearance,
-      minBoardEdgeClearance: resolvedMinBoardEdgeClearance,
-      nominalTraceWidth,
-      outline: board?.outline?.map((point) => ({ ...point })),
-    },
+    simpleRouteJson,
     connMap: sharedConnMap,
   }
 }
