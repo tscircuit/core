@@ -106,7 +106,7 @@ export function applyTracesFromSolverOutput(args: {
 
   const eligiblePortIds = new Set<string>()
   for (const schematicComponent of db.schematic_component.list()) {
-    if (!getSchematicComponentWithTextBounds(db, schematicComponent)) {
+    if (!getSchematicComponentWithTextBounds({ db, schematicComponent })) {
       continue
     }
     for (const port of db.schematic_port.list({

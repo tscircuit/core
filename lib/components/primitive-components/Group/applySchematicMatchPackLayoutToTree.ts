@@ -3,13 +3,22 @@ import {
   type CircuitJsonUtilObjects,
 } from "@tscircuit/circuit-json-util"
 import { type InputProblem, LayoutPipelineSolver } from "@tscircuit/matchpack"
+import { getBoundFromCenteredRect } from "@tscircuit/math-utils"
+import type { SchematicComponent, SchematicPort } from "circuit-json"
+import type { Point } from "circuit-json"
 import Debug from "debug"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import {
+  getRotatedSize,
+  getRotatedSymbolName,
+  rotateDirection,
+  shouldSwapOrientation,
+} from "lib/utils/schematic/getRotatedSymbolName"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { z } from "zod"
 import type { Group } from "./Group"
 import type { AxisDirection } from "./Group_doInitialSchematicTraceRender/getSide"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
-import { getBoundFromCenteredRect } from "@tscircuit/math-utils"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchpack")
 
@@ -41,53 +50,179 @@ function facingDirectionToSide(
   }
 }
 
-function applyPowerGroundRotationConstraints(problem: InputProblem): void {
-  for (const chip of Object.values(problem.chipMap)) {
-    if (chip.pins.length !== 2) continue
-    if (chip.availableRotations?.length !== DEFAULT_AVAILABLE_ROTATIONS.length)
-      continue
+/**
+ * A 2-pin part with exactly one pin on a power/ground rail is locked to the
+ * single rotation that places that pin on the correct side of the rail (power
+ * up, ground down). Returns that rotation, or null if the part isn't a 2-pin
+ * power/ground part (or its two pins disagree on which rotation to use).
+ */
+function getPowerGroundForcedRotation(
+  db: CircuitJsonUtilObjects,
+  ports: SchematicPort[],
+): MatchpackRotation | null {
+  if (ports.length !== 2) return null
 
-    const powerGroundRotations = new Set<MatchpackRotation>()
+  const powerGroundRotations = new Set<MatchpackRotation>()
 
-    for (const pinId of chip.pins) {
-      const pin = problem.chipPinMap[pinId]
-      if (!pin) continue
+  for (const port of ports) {
+    const sourcePort = db.source_port.get(port.source_port_id)
+    const connectivityKey = sourcePort?.subcircuit_connectivity_map_key
+    if (!connectivityKey) continue
 
-      for (const [netId, net] of Object.entries(problem.netMap)) {
-        if (!problem.netConnMap[`${pinId}-${netId}`]) continue
-        if (net.isPositiveVoltageSource === net.isGround) continue
+    const net = db.source_net.getWhere({
+      subcircuit_connectivity_map_key: connectivityKey,
+    })
+    if (!net) continue
 
-        const rotationToPlacePinOnTop = ROTATION_TO_PLACE_SIDE_ON_TOP[pin.side]
-        const rotation = net.isPositiveVoltageSource
-          ? rotationToPlacePinOnTop
-          : (((rotationToPlacePinOnTop + 180) % 360) as MatchpackRotation)
-        powerGroundRotations.add(rotation)
-      }
-    }
+    const isGround = net.is_ground ?? false
+    const isPositiveVoltageSource =
+      net.is_power === true || net.is_positive_voltage_source === true
+    if (isPositiveVoltageSource === isGround) continue
 
-    if (powerGroundRotations.size === 1) {
-      chip.availableRotations = [powerGroundRotations.values().next().value!]
-    }
+    const rotationToPlacePinOnTop =
+      ROTATION_TO_PLACE_SIDE_ON_TOP[
+        facingDirectionToSide(port.facing_direction)
+      ]
+    const rotation = isPositiveVoltageSource
+      ? rotationToPlacePinOnTop
+      : (((rotationToPlacePinOnTop + 180) % 360) as MatchpackRotation)
+    powerGroundRotations.add(rotation)
   }
+
+  return powerGroundRotations.size === 1
+    ? powerGroundRotations.values().next().value!
+    : null
 }
 
-function rotateDirection(
-  direction: string,
-  degrees: number,
-): "up" | "right" | "down" | "left" {
-  const directions: ("up" | "right" | "down" | "left")[] = [
-    "right",
-    "up",
-    "left",
-    "down",
-  ]
-  const currentIndex = directions.indexOf(direction as any)
-  if (currentIndex === -1) return direction as "up" | "right" | "down" | "left"
+/**
+ * Compute the size a component's chip should occupy in the matchpack input
+ * problem. The reserved size includes the component's {REF}/{VAL} text, its
+ * `schMargin*` props, and extra padding for components rendered as schematic
+ * boxes.
+ *
+ * `ccwRotationDegrees` is the rotation matchpack will apply to the chip. Because
+ * the text always renders horizontally, a rotated symbol variant places its
+ * text on a different side, so the footprint is measured in that final
+ * orientation and then transposed back into the unrotated frame matchpack
+ * expects (matchpack re-applies the rotation itself, swapping width/height on
+ * quarter turns).
+ */
+function getChipSize({
+  db,
+  schematicComponent,
+  component,
+  ccwRotationDegrees,
+}: {
+  db: CircuitJsonUtilObjects
+  schematicComponent: SchematicComponent
+  component: PrimitiveComponent | undefined
+  ccwRotationDegrees: number
+}): Point {
+  // Measure the symbol and its text in the orientation matchpack will rotate
+  // the chip into.
+  let orientedSymbolSize = schematicComponent.size
+  if (orientedSymbolSize) {
+    orientedSymbolSize = getRotatedSize(orientedSymbolSize, ccwRotationDegrees)
+  }
 
-  const steps = Math.round(degrees / 90)
-  const newIndex = (currentIndex + steps) % 4
+  const componentWithTextBounds = getSchematicComponentWithTextBounds({
+    db,
+    schematicComponent,
+    ccwRotationDegrees,
+  })
+  let textPadLeft = 0
+  let textPadRight = 0
+  let textPadTop = 0
+  let textPadBottom = 0
+  if (componentWithTextBounds && schematicComponent.center) {
+    const halfWidth = (orientedSymbolSize?.width ?? 0) / 2
+    const halfHeight = (orientedSymbolSize?.height ?? 0) / 2
+    textPadLeft =
+      schematicComponent.center.x - halfWidth - componentWithTextBounds.minX
+    textPadRight =
+      componentWithTextBounds.maxX - (schematicComponent.center.x + halfWidth)
+    textPadTop =
+      componentWithTextBounds.maxY - (schematicComponent.center.y + halfHeight)
+    textPadBottom =
+      schematicComponent.center.y - halfHeight - componentWithTextBounds.minY
+  }
 
-  return directions[newIndex < 0 ? newIndex + 4 : newIndex]
+  const marginLeft =
+    (component?._parsedProps?.schMarginLeft ??
+      component?._parsedProps?.schMarginX ??
+      0) + textPadLeft
+  const marginRight =
+    (component?._parsedProps?.schMarginRight ??
+      component?._parsedProps?.schMarginX ??
+      0) + textPadRight
+  let marginTop =
+    (component?._parsedProps?.schMarginTop ??
+      component?._parsedProps?.schMarginY ??
+      0) + textPadTop
+  let marginBottom =
+    (component?._parsedProps?.schMarginBottom ??
+      component?._parsedProps?.schMarginY ??
+      0) + textPadBottom
+
+  if (component?.config.shouldRenderAsSchematicBox) {
+    marginTop += 0.4
+    marginBottom += 0.4
+  }
+
+  const orientedFootprint = {
+    width: (orientedSymbolSize?.width || 1) + marginLeft + marginRight,
+    height: (orientedSymbolSize?.height || 1) + marginTop + marginBottom,
+  }
+
+  // matchpack re-applies the rotation itself, so hand back the footprint in the
+  // unrotated frame (getRotatedSize is its own inverse on a quarter turn).
+  const chipSize = getRotatedSize(orientedFootprint, ccwRotationDegrees)
+  return { x: chipSize.width, y: chipSize.height }
+}
+
+/**
+ * The size a chip reserves in the matchpack problem, accounting for the
+ * orientation it will render in.
+ *
+ * A quarter-turn-rotated part renders its horizontal {REF}/{VAL} text on a
+ * different side than the unrotated symbol, so it can need a different
+ * footprint. That rotated footprint is only used when it grows past the
+ * unrotated one by more than `chipGap` — matchpack keeps at least that gap
+ * between chips, so a smaller difference is absorbed by the gap and can never
+ * overlap a neighbor. Reserving it anyway would only destabilize the packing,
+ * so below the gap we keep the (smaller, gap-safe) unrotated footprint.
+ */
+function getReservedChipSize({
+  db,
+  schematicComponent,
+  component,
+  ccwRotationDegrees,
+  chipGap,
+}: {
+  db: CircuitJsonUtilObjects
+  schematicComponent: SchematicComponent
+  component: PrimitiveComponent | undefined
+  ccwRotationDegrees: number
+  chipGap: number
+}): Point {
+  const unrotatedSize = getChipSize({
+    db,
+    schematicComponent,
+    component,
+    ccwRotationDegrees: 0,
+  })
+  if (!shouldSwapOrientation(ccwRotationDegrees)) return unrotatedSize
+
+  const rotatedSize = getChipSize({
+    db,
+    schematicComponent,
+    component,
+    ccwRotationDegrees,
+  })
+  const growsPastGap =
+    rotatedSize.x - unrotatedSize.x >= chipGap ||
+    rotatedSize.y - unrotatedSize.y >= chipGap
+  return growsPastGap ? rotatedSize : unrotatedSize
 }
 
 function isTreeChildExplicitlyPositioned(
@@ -182,10 +317,14 @@ function convertTreeToMatchPackInputProblem(
       if (!schematicComponent) return
 
       const component = group.children.find(
-        (groupChild: any) =>
+        (groupChild) =>
           groupChild.source_component_id ===
           child.sourceComponent?.source_component_id,
       )
+
+      const ports = db.schematic_port.list({
+        schematic_component_id: schematicComponent.schematic_component_id,
+      })
 
       let availableRotations: MatchpackRotation[] = [
         ...DEFAULT_AVAILABLE_ROTATIONS,
@@ -207,63 +346,28 @@ function convertTreeToMatchPackInputProblem(
         availableRotations = [0]
       }
 
-      const componentWithTextBounds = getSchematicComponentWithTextBounds(
-        db,
-        schematicComponent,
-      )
-      let textPadLeft = 0
-      let textPadRight = 0
-      let textPadTop = 0
-      let textPadBottom = 0
-      if (componentWithTextBounds && schematicComponent.center) {
-        const halfWidth = (schematicComponent.size?.width ?? 0) / 2
-        const halfHeight = (schematicComponent.size?.height ?? 0) / 2
-        textPadLeft =
-          schematicComponent.center.x - halfWidth - componentWithTextBounds.minX
-        textPadRight =
-          componentWithTextBounds.maxX -
-          (schematicComponent.center.x + halfWidth)
-        textPadTop =
-          componentWithTextBounds.maxY -
-          (schematicComponent.center.y + halfHeight)
-        textPadBottom =
-          schematicComponent.center.y -
-          halfHeight -
-          componentWithTextBounds.minY
+      // A power/ground 2-pin part is locked to the single rotation that places
+      // its rail pin on the correct side (power up, ground down).
+      if (availableRotations.length === DEFAULT_AVAILABLE_ROTATIONS.length) {
+        const forcedRotation = getPowerGroundForcedRotation(db, ports)
+        if (forcedRotation !== null) availableRotations = [forcedRotation]
       }
 
-      const marginLeft =
-        (component?._parsedProps?.schMarginLeft ??
-          component?._parsedProps?.schMarginX ??
-          0) + textPadLeft
-      const marginRight =
-        (component?._parsedProps?.schMarginRight ??
-          component?._parsedProps?.schMarginX ??
-          0) + textPadRight
-      let marginTop =
-        (component?._parsedProps?.schMarginTop ??
-          component?._parsedProps?.schMarginY ??
-          0) + textPadTop
-      let marginBottom =
-        (component?._parsedProps?.schMarginBottom ??
-          component?._parsedProps?.schMarginY ??
-          0) + textPadBottom
-
-      if (component?.config.shouldRenderAsSchematicBox) {
-        marginTop += 0.4
-        marginBottom += 0.4
-      }
-
-      const marginXShift = (marginRight - marginLeft) / 2
-      const marginYShift = (marginTop - marginBottom) / 2
+      // With the rotation known, reserve the chip's size once in its final
+      // orientation.
+      const ccwRotationDegrees =
+        availableRotations.length === 1 ? availableRotations[0] : 0
 
       problem.chipMap[chipId] = {
         chipId,
         pins: [],
-        size: {
-          x: (schematicComponent.size?.width || 1) + marginLeft + marginRight,
-          y: (schematicComponent.size?.height || 1) + marginTop + marginBottom,
-        },
+        size: getReservedChipSize({
+          db,
+          schematicComponent,
+          component,
+          ccwRotationDegrees,
+          chipGap: problem.chipGap,
+        }),
         isCapacitor: child.sourceComponent.ftype === "simple_capacitor",
         availableRotations,
         ...(explicitlyPositioned && {
@@ -273,10 +377,6 @@ function convertTreeToMatchPackInputProblem(
           },
         }),
       }
-
-      const ports = db.schematic_port.list({
-        schematic_component_id: schematicComponent.schematic_component_id,
-      })
 
       for (const port of ports) {
         const sourcePort = db.source_port.get(port.source_port_id)
@@ -336,7 +436,10 @@ function convertTreeToMatchPackInputProblem(
           if (comp.center && comp.size) {
             hasValidBounds = true
             const compBounds =
-              getSchematicComponentWithTextBounds(db, comp) ??
+              getSchematicComponentWithTextBounds({
+                db,
+                schematicComponent: comp,
+              }) ??
               getBoundFromCenteredRect({
                 center: comp.center,
                 width: comp.size.width,
@@ -627,8 +730,6 @@ function convertTreeToMatchPackInputProblem(
     }
   }
 
-  applyPowerGroundRotationConstraints(problem)
-
   return problem
 }
 
@@ -861,34 +962,10 @@ export function applySchematicMatchPackLayoutToTree<
           }
 
           if (schematicComponent.symbol_name) {
-            const schematicSymbolDirection =
-              schematicComponent.symbol_name.match(/_(right|left|up|down)$/)
-            if (schematicSymbolDirection) {
-              schematicComponent.symbol_name =
-                schematicComponent.symbol_name.replace(
-                  schematicSymbolDirection[0],
-                  `_${rotateDirection(schematicSymbolDirection[1], placement.ccwRotationDegrees)}`,
-                )
-            }
-
-            const schematicSymbolOrientation =
-              schematicComponent.symbol_name.match(/_(horz|vert)$/)
-            if (schematicSymbolOrientation) {
-              const normalizedRot =
-                ((placement.ccwRotationDegrees % 360) + 360) % 360
-              const shouldSwapOrientation =
-                normalizedRot === 90 || normalizedRot === 270
-
-              if (shouldSwapOrientation) {
-                schematicComponent.symbol_name =
-                  schematicComponent.symbol_name.replace(
-                    schematicSymbolOrientation[0],
-                    schematicSymbolOrientation[1] === "horz"
-                      ? "_vert"
-                      : "_horz",
-                  )
-              }
-            }
+            schematicComponent.symbol_name = getRotatedSymbolName(
+              schematicComponent.symbol_name,
+              placement.ccwRotationDegrees,
+            )
           }
         }
       }

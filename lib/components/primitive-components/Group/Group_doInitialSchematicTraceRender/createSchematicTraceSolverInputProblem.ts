@@ -174,7 +174,7 @@ export function createSchematicTraceSolverInputProblem(
     }
 
     const layoutBounds =
-      getSchematicComponentWithTextBounds(db, schematicComponent) ??
+      getSchematicComponentWithTextBounds({ db, schematicComponent }) ??
       getBoundFromCenteredRect({
         center: schematicComponent.center,
         width: schematicComponent.size.width,
