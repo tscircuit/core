@@ -136,6 +136,14 @@ export const insertNetLabelsForPortsMissingTrace = ({
     const directCrossSubcircuitConnectionLabelText =
       getDirectCrossSubcircuitConnectionLabelText(db, srcPortId)
 
+    if (
+      schComponent?.is_box_with_pins &&
+      !sourceNet &&
+      !directCrossSubcircuitConnectionLabelText
+    ) {
+      continue
+    }
+
     const text =
       sourceNet?.name ||
       sourceNet?.source_net_id ||

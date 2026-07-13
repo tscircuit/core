@@ -1801,6 +1801,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     } else if (pcbLayoutMode === "flex") {
       this._doInitialPcbLayoutFlex()
     }
+
+    for (const child of this.children) {
+      if (child.componentName === "Port") {
+        const port = child as Port
+        port.updatePcbPortRender()
+      }
+    }
   }
 
   _doInitialPcbLayoutGrid(): void {

@@ -63,7 +63,20 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   _getConnectedPortsFromConnectsTo(): Port[] {
     const { _parsedProps: props } = this
-    const connectsTo = props.connectsTo
+    let connectsTo = props.connectsTo
+
+    if (!connectsTo && this.isGroupPort()) {
+      const groupConnections = (
+        this.parent?._parsedProps as {
+          connections?: Record<string, typeof connectsTo>
+        }
+      )?.connections
+      const matchingConnection = Object.entries(groupConnections ?? {}).find(
+        ([portName]) => this.isMatchingAnyOf([portName]),
+      )
+      connectsTo = matchingConnection?.[1] as typeof connectsTo
+    }
+
     if (!connectsTo) return []
 
     const connectedPorts: Port[] = []
@@ -428,10 +441,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
       // Get position from the first connected port
       const connectedPort = connectedPorts[0]
-      if (!connectedPort.pcb_port_id) {
-        // Connected port hasn't been rendered yet, skip for now
-        return
-      }
+      if (!connectedPort.pcb_port_id) return
 
       const connectedPcbPort = db.pcb_port.get(connectedPort.pcb_port_id)!
       const matchCenter = { x: connectedPcbPort.x, y: connectedPcbPort.y }
@@ -527,9 +537,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
 
-    // If pcb_port already exists, nothing to do
-    if (this.pcb_port_id) return
-
     // Handle group ports separately
     if (this.isGroupPort()) {
       const connectedPorts = this._getConnectedPortsFromConnectsTo()
@@ -540,6 +547,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
       const connectedPcbPort = db.pcb_port.get(connectedPort.pcb_port_id)!
       const matchCenter = { x: connectedPcbPort.x, y: connectedPcbPort.y }
+
+      if (this.pcb_port_id) {
+        db.pcb_port.update(this.pcb_port_id, {
+          ...matchCenter,
+          layers: connectedPort.getAvailablePcbLayers(),
+        })
+        return
+      }
 
       const subcircuit = this.getSubcircuit()
       const pcb_port = db.pcb_port.insert({
@@ -554,6 +569,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       this.pcb_port_id = pcb_port.pcb_port_id
       return
     }
+
+    // If pcb_port already exists, nothing to do
+    if (this.pcb_port_id) return
 
     // Try again if we now have matched PCB primitives
     const pcbMatches = this.matchedComponents.filter((c) => c.isPcbPrimitive)

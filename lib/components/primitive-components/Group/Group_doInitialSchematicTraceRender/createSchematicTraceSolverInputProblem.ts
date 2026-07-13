@@ -71,6 +71,15 @@ export function createSchematicTraceSolverInputProblem(
 
   // Gather all schematic components in scope (this group and child groups)
   const childGroups = group.selectAll("group") as Group<any>[]
+  for (const descendant of group.getDescendants()) {
+    if (
+      descendant instanceof Group &&
+      descendant._parsedProps.showAsSchematicBox &&
+      !childGroups.includes(descendant)
+    ) {
+      childGroups.push(descendant)
+    }
+  }
   const allSchematicGroupIds = [
     group.schematic_group_id,
     ...childGroups.map((a) => a.schematic_group_id),

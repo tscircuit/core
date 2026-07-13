@@ -18,6 +18,7 @@ import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
 import type { Trace } from "./Trace"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
+import { insertPcbTraceForCoincidentPorts } from "./insert-pcb-trace-for-coincident-ports"
 import { getTraceLength } from "./trace-utils/compute-trace-length"
 
 type PcbRouteObjective =
@@ -121,6 +122,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   if (props.pcbStraightLine) {
     return
   }
+
+  if (insertPcbTraceForCoincidentPorts(trace)) return
 
   if (!subcircuit._shouldUseTraceByTraceRouting()) {
     return
