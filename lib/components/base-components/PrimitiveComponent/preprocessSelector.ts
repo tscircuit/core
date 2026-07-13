@@ -31,16 +31,24 @@ export const preprocessSelector = (
       `Net name "${netName}" cannot start with a number, try using a prefix like "VBUS1"`,
     )
   }
-  return selector
-    .replace(/ pin(?=[\d.])/g, " port")
-    .replace(/ subcircuit\./g, " group[isSubcircuit=true]")
-    .replace(/([^ ])\>([^ ])/g, "$1 > $2")
-    .replace(
-      /(^|[ >])(?!pin\.)(?!port\.)(?!net\.)([A-Z][A-Za-z0-9_-]*)\.([A-Za-z0-9_-]+)/g,
-      (_, sep, name, pin) => {
-        const pinPart = /^\d+$/.test(pin) ? `pin${pin}` : pin
-        return `${sep}.${name} > .${pinPart}`
-      },
-    )
-    .trim()
+  return (
+    selector
+      .replace(/ pin(?=[\d.])/g, " port")
+      .replace(/ subcircuit\./g, " group[isSubcircuit=true]")
+      .replace(/([^ ])\>([^ ])/g, "$1 > $2")
+      .replace(
+        /(^|[ >])(?!pin\.)(?!port\.)(?!net\.)([A-Z][A-Za-z0-9_-]*)\.([A-Za-z0-9_-]+)/g,
+        (_, sep, name, pin) => {
+          const pinPart = /^\d+$/.test(pin) ? `pin${pin}` : pin
+          return `${sep}.${name} > .${pinPart}`
+        },
+      )
+      // Escape "!" so active-low pin/net names (e.g. "!OE") survive the
+      // css-select/css-what parser. Left unescaped, a "!" produces tokens the
+      // parser rejects (e.g. "!.OE"), throwing "Unmatched selector" and
+      // crashing the whole render. css-what unescapes "\!" back to "!" when
+      // matching, so escaped selectors still match the real "!OE" name.
+      .replace(/(?<!\\)!/g, "\\!")
+      .trim()
+  )
 }

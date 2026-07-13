@@ -1,6 +1,10 @@
 import type { PcbSx } from "@tscircuit/props"
 import type { AnySourceComponent, LayerRef } from "circuit-json"
-import { type Options, selectAll, selectOne } from "css-select"
+import {
+  type Options,
+  selectAll as cssSelectAll,
+  selectOne as cssSelectOne,
+} from "css-select"
 import Debug from "debug"
 import type { IsolatedCircuit } from "lib/IsolatedCircuit"
 import type { RootCircuit } from "lib/RootCircuit"
@@ -48,6 +52,60 @@ const cssSelectOptionsInsideSubcircuit: Options<
 > = {
   adapter: cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
   cacheResults: true,
+}
+
+/**
+ * css-select delegates selector parsing to css-what, which throws for selectors
+ * it can't parse — e.g. active-low pin/net names like "!OE" (producing tokens
+ * such as "!.OE") or un-interpolated template strings like "${ts}.pin1". A
+ * malformed selector should degrade gracefully rather than crash the whole
+ * render pipeline, so we recognise css-what parse errors and treat them as
+ * "matched nothing". Callers (e.g. Trace__findConnectedPorts) then surface a
+ * friendly "could not find port" error instead of an uncaught crash.
+ */
+const CSS_SELECT_PARSE_ERROR_PATTERNS = [
+  "Unmatched selector",
+  "Empty sub-selector",
+  "Expected name",
+  "Expected `=`",
+  "Attribute selector didn't terminate",
+  "Attribute value didn't end",
+  "Parenthesis not matched",
+  "closing parenthesis",
+  "Did not expect successive traversals",
+  "cannot be quoted",
+]
+
+const isSelectorParseError = (error: unknown): boolean =>
+  error instanceof Error &&
+  CSS_SELECT_PARSE_ERROR_PATTERNS.some((pattern) =>
+    error.message.includes(pattern),
+  )
+
+const selectAll = (
+  ...args: Parameters<
+    typeof cssSelectAll<PrimitiveComponent, PrimitiveComponent>
+  >
+): PrimitiveComponent[] => {
+  try {
+    return cssSelectAll(...args)
+  } catch (error) {
+    if (isSelectorParseError(error)) return []
+    throw error
+  }
+}
+
+const selectOne = (
+  ...args: Parameters<
+    typeof cssSelectOne<PrimitiveComponent, PrimitiveComponent>
+  >
+): PrimitiveComponent | null => {
+  try {
+    return cssSelectOne(...args)
+  } catch (error) {
+    if (isSelectorParseError(error)) return null
+    throw error
+  }
 }
 
 export interface BaseComponentConfig {
