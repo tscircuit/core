@@ -1,7 +1,6 @@
 import { expect, it } from "bun:test"
 import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
-import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import { Port } from "lib/components/primitive-components/Port/Port"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
@@ -12,6 +11,13 @@ it("registers a differential pair using source port IDs", (): void => {
 
   circuit.add(
     <board width="20mm" height="10mm">
+      {/* IDs must exist before PCB routing so the autorouter receives the pair. */}
+      <differentialpair
+        name="USB"
+        positiveConnection="source_port_0"
+        negativeConnection="source_port_2"
+        maxLengthSkew={0.1}
+      />
       <resistor
         name="R1"
         resistance="1k"
@@ -45,6 +51,7 @@ it("registers a differential pair using source port IDs", (): void => {
   if (!positiveSourcePortId) {
     throw new Error("Expected R1 pin1 to have a source port ID")
   }
+  expect(positiveSourcePortId).toBe("source_port_0")
   const selectedNegativePort: PrimitiveComponent | null =
     circuit.selectOne(".R2 > .pin1")
   if (!(selectedNegativePort instanceof Port)) {
@@ -55,18 +62,12 @@ it("registers a differential pair using source port IDs", (): void => {
   if (!negativeSourcePortId) {
     throw new Error("Expected R2 pin1 to have a source port ID")
   }
+  expect(negativeSourcePortId).toBe("source_port_2")
 
   const subcircuitComponent: PrimitiveComponent | null = circuit.firstChild
   if (!subcircuitComponent) {
     throw new Error("Expected the circuit to contain a board")
   }
-  const differentialPair: DifferentialPair = new DifferentialPair({
-    name: "USB",
-    positiveConnection: positiveSourcePortId,
-    negativeConnection: negativeSourcePortId,
-    maxLengthSkew: 0.1,
-  })
-  subcircuitComponent.add(differentialPair)
 
   const positiveTrace: SourceTrace | undefined = circuit.db.source_trace
     .list()
