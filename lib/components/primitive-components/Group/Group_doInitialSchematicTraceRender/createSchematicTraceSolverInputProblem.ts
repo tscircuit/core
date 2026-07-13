@@ -67,10 +67,22 @@ export function createSchematicTraceSolverInputProblem(
 
   const connKeyToSourceNet = new Map<string, SourceNet>()
 
-  const traces = group.selectAll("trace")
-
   // Gather all schematic components in scope (this group and child groups)
-  const childGroups = group.selectAll("group") as Group<any>[]
+  const childGroups: Group<any>[] = []
+  const componentsToVisit = [...group.children].reverse()
+  while (componentsToVisit.length > 0) {
+    const child = componentsToVisit.pop()!
+    if (child instanceof Group) {
+      if (child.isSubcircuit) {
+        if (child._parsedProps.showAsSchematicBox) childGroups.push(child)
+        continue
+      }
+
+      childGroups.push(child)
+    }
+
+    componentsToVisit.push(...[...child.children].reverse())
+  }
   const allSchematicGroupIds = [
     group.schematic_group_id,
     ...childGroups.map((a) => a.schematic_group_id),
@@ -174,7 +186,7 @@ export function createSchematicTraceSolverInputProblem(
     }
 
     const layoutBounds =
-      getSchematicComponentWithTextBounds({ db, schematicComponent }) ??
+      getSchematicComponentWithTextBounds(db, schematicComponent) ??
       getBoundFromCenteredRect({
         center: schematicComponent.center,
         width: schematicComponent.size.width,
