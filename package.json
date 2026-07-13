@@ -34,7 +34,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/breakout-point-solver": "github:tscircuit/breakout-point-solver#bac9629",
-    "@tscircuit/capacity-autorouter": "^0.0.665",
+    "@tscircuit/capacity-autorouter": "^0.0.670",
     "@tscircuit/checks": "0.0.142",
     "@tscircuit/circuit-json-util": "^0.0.97",
     "@tscircuit/common": "^0.0.20",
