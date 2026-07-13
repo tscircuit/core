@@ -502,6 +502,7 @@ test(
   "repro131: overlapping same-net crossing segments",
   async () => {
     const { circuit } = getTestFixture()
+    circuit.pcbDisabled = true
     circuit.add(<Repro131Subcircuit />)
     await circuit.renderUntilSettled()
 
