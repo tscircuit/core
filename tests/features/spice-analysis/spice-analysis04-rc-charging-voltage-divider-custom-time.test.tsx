@@ -1,7 +1,7 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import type { SimulationTransientVoltageGraph } from "circuit-json"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { sel } from "lib/sel"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test(
   "spice-analysis04-rc-charging-voltage-divider-custom-time",
@@ -12,6 +12,7 @@ test(
       <board width={16} height={16} schMaxTraceDistance={5}>
         <chip
           name="V1"
+          simulationBoundary
           footprint="sot23"
           pinLabels={{
             pin1: "VOUT",

@@ -1,5 +1,5 @@
-import { SpiceNetlist, circuitJsonToSpice } from "circuit-json-to-spice"
 import type { AnyCircuitElement, SimulationCurrentProbe } from "circuit-json"
+import { SpiceNetlist, circuitJsonToSpice } from "circuit-json-to-spice"
 import Debug from "debug"
 import { getTransientVoltageGraphNamesFromSpiceNetlist } from "lib/utils/simulation/get-transient-voltage-graph-names-from-spice-netlist"
 import { resetSimulationColorState } from "lib/utils/simulation/getSimulationColorForId"
@@ -8,13 +8,16 @@ import type { Ammeter } from "../../normal-components/Ammeter"
 import type { AnalogSimulation } from "../AnalogSimulation"
 import type { VoltageProbe } from "../VoltageProbe"
 import type { GraphDisplayOverrides } from "./GraphDisplayOverrides"
+import type { Group } from "./Group"
+import type { InsertedSimulationGraph } from "./InsertedSimulationGraph"
 import {
   getAmmeterGraphDisplayOverrides,
   getVoltageProbeGraphDisplayOverrides,
 } from "./getGraphDisplayOverrides"
-import type { InsertedSimulationGraph } from "./InsertedSimulationGraph"
-import type { Group } from "./Group"
+import { insertSimulationExperimentError } from "./insert-simulation-experiment-error"
 import { insertIndependentAxisScopeTraces } from "./insertIndependentAxisScopeTraces"
+import { isOperatingPointCurrent } from "./is-operating-point-current"
+import { isOperatingPointVoltage } from "./is-operating-point-voltage"
 import { isCircuitElementInput } from "./isCircuitElementInput"
 import { isCurrentGraph } from "./isCurrentGraph"
 import { isVoltageGraph } from "./isVoltageGraph"
@@ -64,7 +67,10 @@ const getCircuitJsonForAnalogSimulation = ({
     if (
       element.type === "simulation_transient_voltage_graph" ||
       element.type === "simulation_transient_current_graph" ||
-      element.type === "simulation_unknown_experiment_error"
+      element.type === "simulation_operating_point_voltage" ||
+      element.type === "simulation_operating_point_current" ||
+      element.type === "simulation_unknown_experiment_error" ||
+      element.type === "simulation_experiment_error"
     ) {
       return false
     }
@@ -125,10 +131,10 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
       debug(`Generated SPICE string:\n${spiceString}`)
     } catch (error) {
       debug(`Failed to convert circuit JSON to SPICE: ${error}`)
-      root.db.simulation_unknown_experiment_error.insert({
-        simulation_experiment_id: simulationExperimentId,
-        error_type: "simulation_unknown_experiment_error",
-        message: error instanceof Error ? error.message : String(error),
+      insertSimulationExperimentError({
+        db: root.db,
+        simulationExperimentId,
+        error,
       })
       continue
     }
@@ -210,11 +216,32 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     const spiceEngine = spiceEngineMap[engineName]
 
     if (!spiceEngine) {
-      throw new Error(
-        `SPICE engine "${engineName}" not found in platform config. Available engines: ${JSON.stringify(
-          Object.keys(spiceEngineMap).filter((k) => k !== "spicey"),
-        )}`,
-      )
+      insertSimulationExperimentError({
+        db: root.db,
+        simulationExperimentId,
+        error: new Error(
+          `SPICE engine "${engineName}" not found in platform config. Available engines: ${JSON.stringify(
+            Object.keys(spiceEngineMap).filter((k) => k !== "spicey"),
+          )}`,
+        ),
+      })
+      continue
+    }
+
+    if (
+      engineName === "spicey" &&
+      simulationExperiment.experiment_type === "spice_dc_operating_point"
+    ) {
+      insertSimulationExperimentError({
+        db: root.db,
+        simulationExperimentId,
+        error: {
+          code: "unsupported_analysis",
+          message:
+            'The built-in "spicey" engine does not support DC operating-point analysis; configure an ngspice engine and set spiceEngine="ngspice".',
+        },
+      })
+      continue
     }
 
     const effectId = `spice-simulation-${engineName}-${simulationExperimentId}`
@@ -226,7 +253,9 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     group._queueAsyncEffect(effectId, async () => {
       try {
         debug(`Running simulation with engine: ${engineName}`)
-        const result = await spiceEngine.simulate(spiceString)
+        const result = await spiceEngine.simulate(spiceString, {
+          timeoutMs: analogSim._parsedProps.timeout,
+        })
 
         debug(
           `Simulation completed, received ${result.simulationResultCircuitJson.length} elements`,
@@ -273,6 +302,38 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
             }
           }
 
+          if (isOperatingPointVoltage(element)) {
+            element.simulation_experiment_id =
+              simulationExperiment.simulation_experiment_id
+
+            const probeMatch =
+              (element.simulation_voltage_probe_id
+                ? voltageProbesById.get(element.simulation_voltage_probe_id)
+                : undefined) ??
+              (element.name ? graphNameToProbe.get(element.name) : undefined)
+            if (probeMatch) {
+              element.color = probeMatch.color ?? undefined
+              element.simulation_voltage_probe_id =
+                probeMatch.simulation_voltage_probe_id ?? undefined
+            }
+          }
+
+          if (isOperatingPointCurrent(element)) {
+            element.simulation_experiment_id =
+              simulationExperiment.simulation_experiment_id
+
+            const probeMatch =
+              (element.simulation_current_probe_id
+                ? currentProbesById.get(element.simulation_current_probe_id)
+                : undefined) ??
+              (element.name ? currentProbesByName.get(element.name) : undefined)
+            if (probeMatch) {
+              element.color = probeMatch.color
+              element.simulation_current_probe_id =
+                probeMatch.simulation_current_probe_id
+            }
+          }
+
           const insertedElement = root.db.insert(element)
           if (isVoltageGraph(insertedElement)) {
             insertedVoltageGraphs.push({
@@ -301,10 +362,10 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
         group._markDirty("SimulationSpiceEngineRender")
       } catch (error) {
         debug(`Simulation failed for engine ${engineName}: ${error}`)
-        root.db.simulation_unknown_experiment_error.insert({
-          simulation_experiment_id: simulationExperimentId,
-          error_type: "simulation_unknown_experiment_error",
-          message: error instanceof Error ? error.message : String(error),
+        insertSimulationExperimentError({
+          db: root.db,
+          simulationExperimentId,
+          error,
         })
         // Don't throw - allow other engines to continue
       }

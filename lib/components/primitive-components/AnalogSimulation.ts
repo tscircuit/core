@@ -15,18 +15,27 @@ export class AnalogSimulation extends PrimitiveComponent<
 
   doInitialSimulationRender(): void {
     const { db } = this.root!
-    const { duration, name, startTime, timePerStep, spiceOptions } =
-      this._parsedProps
+    const {
+      duration,
+      name,
+      simulationType,
+      startTime,
+      timePerStep,
+      timeout,
+      spiceOptions,
+    } = this._parsedProps
 
-    const durationMs = duration || 10 // ms
-    const timePerStepMs = timePerStep || 0.01 // ms
+    const isTransient = simulationType === "spice_transient_analysis"
+    const durationMs = isTransient ? duration || 10 : undefined
+    const timePerStepMs = isTransient ? timePerStep || 0.01 : undefined
 
     const simulationExperiment = db.simulation_experiment.insert({
-      name: name ?? "spice_transient_analysis",
-      experiment_type: "spice_transient_analysis" as const,
+      name: name ?? simulationType,
+      experiment_type: simulationType,
       end_time_ms: durationMs,
-      start_time_ms: startTime,
+      start_time_ms: isTransient ? startTime : undefined,
       time_per_step: timePerStepMs,
+      timeout_ms: timeout,
       spice_options: spiceOptions,
     })
 

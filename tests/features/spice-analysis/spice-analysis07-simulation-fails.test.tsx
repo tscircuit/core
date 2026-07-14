@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test(
-  "a failing simulation should produce a simulation_unknown_experiment_error",
+  "a singular simulation should produce a classified non-convergent error",
   async () => {
     const { circuit } = getTestFixture()
 
@@ -17,19 +17,16 @@ test(
 
     await circuit.renderUntilSettled()
 
-    const circuitJson = circuit.getCircuitJson()
-
-    expect(
-      circuitJson.some(
-        (el) => el.type === "simulation_unknown_experiment_error",
-      ),
-    ).toBe(true)
-
-    const errorEl = circuitJson.find(
-      (el) => el.type === "simulation_unknown_experiment_error",
+    expect(circuit.db.simulation_experiment_error.list()).toEqual([
+      expect.objectContaining({
+        error_code: "non_convergent",
+        message: "Singular matrix (real)",
+        is_fatal: true,
+      }),
+    ])
+    expect(circuit.db.simulation_unknown_experiment_error.list()).toHaveLength(
+      0,
     )
-
-    expect(errorEl).toBeDefined()
   },
   { timeout: 20000 },
 )

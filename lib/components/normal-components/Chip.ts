@@ -1,20 +1,15 @@
 import { chipProps } from "@tscircuit/props"
 import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
-import type { z } from "zod"
+import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
   typeof chipProps,
   PinLabels
 > {
   schematicBoxDimensions: SchematicBoxDimensions | null = null
-
-  constructor(props: z.input<typeof chipProps>) {
-    super(props)
-  }
 
   get config() {
     return {
@@ -85,13 +80,15 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const source_component = db.source_component.insert({
-      ftype: "simple_chip",
+    const sourceComponentInput = {
+      ftype: "simple_chip" as const,
       name: this.name,
       manufacturer_part_number: props.manufacturerPartNumber,
       supplier_part_numbers: props.supplierPartNumbers,
       display_name: props.displayName,
-    })
+      is_simulation_boundary: props.simulationBoundary,
+    }
+    const source_component = db.source_component.insert(sourceComponentInput)
 
     this.source_component_id = source_component.source_component_id!
   }

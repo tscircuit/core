@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test(
@@ -26,9 +26,16 @@ test(
       </board>,
     )
 
-    expect(circuit.renderUntilSettled()).rejects.toThrow(
-      'SPICE engine "ngspice" not found in platform config. Available engines: []',
-    )
+    await circuit.renderUntilSettled()
+
+    expect(circuit.db.simulation_experiment_error.list()).toEqual([
+      expect.objectContaining({
+        error_code: "engine_error",
+        message:
+          'SPICE engine "ngspice" not found in platform config. Available engines: []',
+        is_fatal: true,
+      }),
+    ])
   },
   { timeout: 20000 },
 )
