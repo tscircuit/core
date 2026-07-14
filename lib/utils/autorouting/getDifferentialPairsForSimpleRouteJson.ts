@@ -4,44 +4,43 @@ import type { Port } from "lib/components/primitive-components/Port/Port"
 import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
+  SrjConnectionName,
 } from "./SimpleRouteJson"
 
+type SourceTraceId = SourceTrace["source_trace_id"]
+type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>
+type SubcircuitConnectivityMapKey = NonNullable<
+  SourceTrace["subcircuit_connectivity_map_key"]
+>
+
 type GetDifferentialPairsParams = {
-  connections: SimpleRouteConnection[]
+  srjConnections: SimpleRouteConnection[]
   differentialPairs: DifferentialPair[]
   sourceTraces: SourceTrace[]
-  subcircuitId?: string | null
+  subcircuitId?: SubcircuitId | null
 }
 
-type GetSubcircuitConnectivityMapKeyParams = {
+type GetDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrowParams = {
   differentialPair: DifferentialPair
+  differentialPairSourceTraces: SourceTrace[]
   traceNameOrPortSelector: string
-  sourceTraces: SourceTrace[]
 }
 
-type GetRequiredSrjConnectionNameParams = {
-  connections: SimpleRouteConnection[]
+type GetDifferentialPairSrjConnectionNameOrThrowParams = {
+  srjConnections: SimpleRouteConnection[]
   differentialPairName: string
-  differentialPairSubcircuitId: string | null | undefined
-  sourceTraces: SourceTrace[]
-  subcircuitConnectivityMapKey: string
+  differentialPairSourceTraces: SourceTrace[]
+  traceSubcircuitConnectivityMapKey: SubcircuitConnectivityMapKey
   traceNameOrPortSelector: string
 }
 
-const getSubcircuitConnectivityMapKey = ({
+const getDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrow = ({
   differentialPair,
+  differentialPairSourceTraces,
   traceNameOrPortSelector,
-  sourceTraces,
-}: GetSubcircuitConnectivityMapKeyParams): string => {
+}: GetDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrowParams): SubcircuitConnectivityMapKey => {
   const differentialPairSubcircuit = differentialPair.getSubcircuit()
-  const differentialPairSubcircuitId = differentialPairSubcircuit.subcircuit_id
-  const sourceTracesInSubcircuit: SourceTrace[] = []
-  for (const sourceTrace of sourceTraces) {
-    if (sourceTrace.subcircuit_id !== differentialPairSubcircuitId) continue
-    sourceTracesInSubcircuit.push(sourceTrace)
-  }
-
-  const sourceTracesWithMatchingName = sourceTracesInSubcircuit.filter(
+  const sourceTracesWithMatchingName = differentialPairSourceTraces.filter(
     (sourceTrace) => sourceTrace.name === traceNameOrPortSelector,
   )
   const selectedPort =
@@ -52,7 +51,7 @@ const getSubcircuitConnectivityMapKey = ({
       : null
   const selectedSourcePortId = selectedPort?.source_port_id
   const matchingSourceTraces = selectedSourcePortId
-    ? sourceTracesInSubcircuit.filter((sourceTrace) =>
+    ? differentialPairSourceTraces.filter((sourceTrace) =>
         sourceTrace.connected_source_port_ids.includes(selectedSourcePortId),
       )
     : sourceTracesWithMatchingName
@@ -68,14 +67,14 @@ const getSubcircuitConnectivityMapKey = ({
     )
   }
 
-  const sourceTrace: SourceTrace | undefined = matchingSourceTraces[0]
+  const sourceTrace = matchingSourceTraces[0]
   if (!sourceTrace) {
     throw new Error(
       `Expected one source trace for trace name or port selector "${traceNameOrPortSelector}" in differential pair "${differentialPair.name}"`,
     )
   }
 
-  const subcircuitConnectivityMapKey: string | undefined =
+  const subcircuitConnectivityMapKey =
     sourceTrace.subcircuit_connectivity_map_key
   if (!subcircuitConnectivityMapKey) {
     throw new Error(
@@ -86,32 +85,30 @@ const getSubcircuitConnectivityMapKey = ({
   return subcircuitConnectivityMapKey
 }
 
-const getRequiredSrjConnectionName = ({
-  connections,
+const getDifferentialPairSrjConnectionNameOrThrow = ({
+  srjConnections,
   differentialPairName,
-  differentialPairSubcircuitId,
-  sourceTraces,
-  subcircuitConnectivityMapKey,
+  differentialPairSourceTraces,
+  traceSubcircuitConnectivityMapKey,
   traceNameOrPortSelector,
-}: GetRequiredSrjConnectionNameParams): string => {
-  const sourceTraceIds: string[] = []
-  for (const sourceTrace of sourceTraces) {
-    if (sourceTrace.subcircuit_id !== differentialPairSubcircuitId) continue
+}: GetDifferentialPairSrjConnectionNameOrThrowParams): SrjConnectionName => {
+  const differentialPairSourceTraceIds: SourceTraceId[] = []
+  for (const sourceTrace of differentialPairSourceTraces) {
     if (
       sourceTrace.subcircuit_connectivity_map_key ===
-      subcircuitConnectivityMapKey
+      traceSubcircuitConnectivityMapKey
     ) {
-      sourceTraceIds.push(sourceTrace.source_trace_id)
+      differentialPairSourceTraceIds.push(sourceTrace.source_trace_id)
     }
   }
 
   const matchingSrjConnections: SimpleRouteConnection[] = []
-  for (const connection of connections) {
+  for (const srjConnection of srjConnections) {
     if (
-      connection.source_trace_id &&
-      sourceTraceIds.includes(connection.source_trace_id)
+      srjConnection.source_trace_id &&
+      differentialPairSourceTraceIds.includes(srjConnection.source_trace_id)
     ) {
-      matchingSrjConnections.push(connection)
+      matchingSrjConnections.push(srjConnection)
     }
   }
 
@@ -122,15 +119,14 @@ const getRequiredSrjConnectionName = ({
   }
   if (matchingSrjConnections.length > 1) {
     throw new Error(
-      `Subcircuit connectivity map key "${subcircuitConnectivityMapKey}" matches multiple SRJ connections for differential pair "${differentialPairName}"`,
+      `Subcircuit connectivity map key "${traceSubcircuitConnectivityMapKey}" matches multiple SRJ connections for differential pair "${differentialPairName}"`,
     )
   }
 
-  const srjConnection: SimpleRouteConnection | undefined =
-    matchingSrjConnections[0]
+  const srjConnection = matchingSrjConnections[0]
   if (!srjConnection) {
     throw new Error(
-      `Expected one SRJ connection for subcircuit connectivity map key "${subcircuitConnectivityMapKey}"`,
+      `Expected one SRJ connection for subcircuit connectivity map key "${traceSubcircuitConnectivityMapKey}"`,
     )
   }
 
@@ -139,52 +135,56 @@ const getRequiredSrjConnectionName = ({
 
 /** Converts differential-pair trace names or port selectors into SRJ constraints. */
 export const getDifferentialPairsForSimpleRouteJson = ({
-  connections,
+  srjConnections,
   differentialPairs,
   sourceTraces,
   subcircuitId,
 }: GetDifferentialPairsParams): SimpleRouteDifferentialPair[] | undefined => {
   const srjDifferentialPairs: SimpleRouteDifferentialPair[] = []
   for (const differentialPair of differentialPairs) {
-    const differentialPairSubcircuitId: string | null | undefined =
+    const differentialPairSubcircuitId =
       differentialPair.getSubcircuit().subcircuit_id
     if (subcircuitId && differentialPairSubcircuitId !== subcircuitId) {
       continue
     }
 
-    const positiveTraceNameOrPortSelector: string =
+    const differentialPairSourceTraces = sourceTraces.filter(
+      (sourceTrace) =>
+        sourceTrace.subcircuit_id === differentialPairSubcircuitId,
+    )
+    const positiveTraceNameOrPortSelector =
       differentialPair._parsedProps.positiveConnection
-    const negativeTraceNameOrPortSelector: string =
+    const negativeTraceNameOrPortSelector =
       differentialPair._parsedProps.negativeConnection
-    const positiveSubcircuitConnectivityMapKey: string =
-      getSubcircuitConnectivityMapKey({
+    const positiveSubcircuitConnectivityMapKey =
+      getDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrow({
         differentialPair,
+        differentialPairSourceTraces,
         traceNameOrPortSelector: positiveTraceNameOrPortSelector,
-        sourceTraces,
       })
-    const negativeSubcircuitConnectivityMapKey: string =
-      getSubcircuitConnectivityMapKey({
+    const negativeSubcircuitConnectivityMapKey =
+      getDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrow({
         differentialPair,
+        differentialPairSourceTraces,
         traceNameOrPortSelector: negativeTraceNameOrPortSelector,
-        sourceTraces,
       })
 
-    const positiveSrjConnectionName: string = getRequiredSrjConnectionName({
-      connections,
-      differentialPairName: differentialPair.name,
-      differentialPairSubcircuitId,
-      sourceTraces,
-      subcircuitConnectivityMapKey: positiveSubcircuitConnectivityMapKey,
-      traceNameOrPortSelector: positiveTraceNameOrPortSelector,
-    })
-    const negativeSrjConnectionName: string = getRequiredSrjConnectionName({
-      connections,
-      differentialPairName: differentialPair.name,
-      differentialPairSubcircuitId,
-      sourceTraces,
-      subcircuitConnectivityMapKey: negativeSubcircuitConnectivityMapKey,
-      traceNameOrPortSelector: negativeTraceNameOrPortSelector,
-    })
+    const positiveSrjConnectionName =
+      getDifferentialPairSrjConnectionNameOrThrow({
+        srjConnections,
+        differentialPairName: differentialPair.name,
+        differentialPairSourceTraces,
+        traceSubcircuitConnectivityMapKey: positiveSubcircuitConnectivityMapKey,
+        traceNameOrPortSelector: positiveTraceNameOrPortSelector,
+      })
+    const negativeSrjConnectionName =
+      getDifferentialPairSrjConnectionNameOrThrow({
+        srjConnections,
+        differentialPairName: differentialPair.name,
+        differentialPairSourceTraces,
+        traceSubcircuitConnectivityMapKey: negativeSubcircuitConnectivityMapKey,
+        traceNameOrPortSelector: negativeTraceNameOrPortSelector,
+      })
 
     // Note: SRJ names this value lengthTolerance, but it carries
     // maxLengthSkew unchanged.

@@ -118,14 +118,28 @@ circuit.selectOne("resistor") // Find first resistor
 - Do not use raw `Map<string, ...>` types for domain identifiers. Use an existing
   named or branded key type, such as `Map<SourceTraceId, ...>`, and name mapping
   variables to make both key and value meanings clear.
+- Do not widen domain identifiers or keys to `string` in parameters, return
+  types, collections, or intermediate values. Use or export the canonical named
+  or branded type, such as `SourceTraceId` or `SubcircuitConnectivityMapKey`.
+- Prefer inferred local types when the initializer already has the correct
+  domain type. Avoid redundant primitive annotations such as `: string` or
+  `: number`; they can erase more specific types.
 - Prefer canonical exported domain types over reconstructing equivalent types
-  with `Omit`, `NonNullable`, indexed access, or ad hoc aliases. If the
-  canonical type is not exported, export it from the module that owns it.
+  with `Omit`, `NonNullable`, indexed access, or ad hoc aliases. If an external
+  dependency does not export the identifier type, define one named boundary
+  alias from its canonical interface instead of repeating inline derivations.
 - Reuse an existing domain interface when a function needs part of its behavior.
   Use `Pick<ExistingInterface, "method">` for a deliberately narrow dependency
   instead of creating a duplicate structural interface.
-- Name loop variables, parameters, and intermediate values after their precise
-  domain role so they cannot be confused with nearby concepts.
+- Name loop variables, parameters, collections, and intermediate values after
+  their precise domain role and representation, such as `srjConnections`. When
+  nearby values share a type, distinguish their roles in their names, such as
+  `positiveSubcircuitConnectivityMapKey` and
+  `negativeSubcircuitConnectivityMapKey`.
+- Name helpers after their full domain operation, including a representation
+  qualifier such as `Srj` when it identifies the boundary being handled. Do not
+  use `Required` to signal throwing; when throwing must be explicit in the name,
+  use an `OrThrow` suffix.
 - Do not add runtime type guards after a trusted typed API. Parse or refine once
   at an untrusted boundary; redundant internal guards add noise and hide broken
   type contracts.

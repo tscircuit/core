@@ -63,8 +63,11 @@ export type Obstacle = {
   offBoardConnectsTo?: string[]
 }
 
+/** A connection identifier in Simple Route JSON. */
+export type SrjConnectionName = string
+
 export type SimpleRouteConnection = {
-  name: string
+  name: SrjConnectionName
   source_trace_id?: string
   rootConnectionName?: string
   mergedConnectionNames?: string[]
@@ -91,7 +94,7 @@ export type SimpleRouteConnection = {
 
 /** Length-matching constraints for two connections in Simple Route JSON. */
 export type SimpleRouteDifferentialPair = {
-  connectionNames: [string, string]
+  connectionNames: [SrjConnectionName, SrjConnectionName]
   lengthTolerance: number
 }
 

@@ -591,7 +591,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const srjDifferentialPairs: SimpleRouteDifferentialPair[] | undefined =
     getDifferentialPairsForSimpleRouteJson({
-      connections: allConns,
+      srjConnections: allConns,
       differentialPairs,
       sourceTraces: db.source_trace.list(),
       subcircuitId: subcircuit_id,
