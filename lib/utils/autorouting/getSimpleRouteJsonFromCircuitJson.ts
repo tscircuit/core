@@ -5,18 +5,18 @@ import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
-import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
+import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
-import type { SimpleRouteConnection, SimpleRouteJson } from "./SimpleRouteJson"
+import type {
+  SimpleRouteConnection,
+  SimpleRouteDifferentialPair,
+  SimpleRouteJson,
+} from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
-
-type SubcircuitComponent = {
-  selectAll(selector: string): PrimitiveComponent[]
-}
 
 /**
  * This function can only be called in the PcbTraceRender phase or later
@@ -51,7 +51,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minBoardEdgeClearance?: number
   minViaHoleDiameter?: number
   minViaPadDiameter?: number
-  subcircuitComponent?: SubcircuitComponent
+  subcircuitComponent?: Pick<ISubcircuit, "selectAll">
   /**
    * Excludes existing root-level PCB route state from a fresh routing problem.
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
@@ -586,22 +586,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     conn.width ??= defaultTraceWidth
   }
 
-  const differentialPairComponents: DifferentialPair[] = []
-  const selectedDifferentialPairComponents: PrimitiveComponent[] =
-    subcircuitComponent?.selectAll("differentialpair") ?? []
-  for (const component of selectedDifferentialPairComponents) {
-    if (!(component instanceof DifferentialPair)) {
-      throw new Error(
-        `Expected differentialpair selector to return DifferentialPair, received ${component.componentName}`,
-      )
-    }
-    differentialPairComponents.push(component)
-  }
+  const differentialPairs: DifferentialPair[] =
+    subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
 
-  const differentialPairs: SimpleRouteJson["differentialPairs"] =
+  const srjDifferentialPairs: SimpleRouteDifferentialPair[] | undefined =
     getDifferentialPairsForSimpleRouteJson({
       connections: allConns,
-      differentialPairComponents,
+      differentialPairs,
       sourceTraces: db.source_trace.list(),
       subcircuitId: subcircuit_id,
     })
@@ -662,7 +653,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     bounds,
     obstacles,
     connections: allConns,
-    differentialPairs,
+    differentialPairs: srjDifferentialPairs,
     traces:
       preservedRoutedSubcircuitTraces.length > 0
         ? preservedRoutedSubcircuitTraces

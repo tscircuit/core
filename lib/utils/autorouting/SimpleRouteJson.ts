@@ -89,6 +89,12 @@ export type SimpleRouteConnection = {
   externallyConnectedPointIds?: string[][]
 }
 
+/** Length-matching constraints for two connections in Simple Route JSON. */
+export type SimpleRouteDifferentialPair = {
+  connectionNames: [string, string]
+  lengthTolerance: number
+}
+
 export type SimpleRouteJson = Omit<
   AutorouterSimpleRouteJson,
   | "connections"
@@ -133,10 +139,7 @@ export type SimpleRouteJson = Omit<
   // Enable jumper-based routing for single-layer boards
   allowJumpers?: boolean
   availableJumperTypes?: Array<"1206x4" | "0603">
-  differentialPairs?: Array<{
-    connectionNames: [string, string]
-    lengthTolerance: number
-  }>
+  differentialPairs?: SimpleRouteDifferentialPair[]
 }
 
 // declare module "autorouting-dataset" {

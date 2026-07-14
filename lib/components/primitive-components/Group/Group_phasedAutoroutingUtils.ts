@@ -1,5 +1,6 @@
 import type {
   Obstacle,
+  SimpleRouteDifferentialPair,
   SimpleRouteConnection,
   SimpleRouteJson,
   SimplifiedPcbTrace,
@@ -10,9 +11,6 @@ import type {
 } from "./GroupRoutingPhasePlan"
 
 type RoutePoint = SimplifiedPcbTrace["route"][number]
-type DifferentialPair = NonNullable<
-  SimpleRouteJson["differentialPairs"]
->[number]
 
 function isWirePoint(
   point: RoutePoint,
@@ -207,7 +205,7 @@ export function Group_filterSimpleRouteJsonForPhase(
     includedConnectionNames.add(connection.name)
   }
 
-  const differentialPairs: DifferentialPair[] = []
+  const differentialPairs: SimpleRouteDifferentialPair[] = []
   for (const differentialPair of simpleRouteJson.differentialPairs ?? []) {
     const positiveConnectionIncluded: boolean = includedConnectionNames.has(
       differentialPair.connectionNames[0],
