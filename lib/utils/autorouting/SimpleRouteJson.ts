@@ -63,8 +63,11 @@ export type Obstacle = {
   offBoardConnectsTo?: string[]
 }
 
+/** A connection identifier in Simple Route JSON. */
+export type SrjConnectionName = string
+
 export type SimpleRouteConnection = {
-  name: string
+  name: SrjConnectionName
   source_trace_id?: string
   rootConnectionName?: string
   mergedConnectionNames?: string[]
@@ -89,6 +92,12 @@ export type SimpleRouteConnection = {
   externallyConnectedPointIds?: string[][]
 }
 
+/** Length-matching constraints for two connections in Simple Route JSON. */
+export type SimpleRouteDifferentialPair = {
+  connectionNames: [SrjConnectionName, SrjConnectionName]
+  lengthTolerance: number
+}
+
 export type SimpleRouteJson = Omit<
   AutorouterSimpleRouteJson,
   | "connections"
@@ -98,6 +107,7 @@ export type SimpleRouteJson = Omit<
   | "outline"
   | "allowJumpers"
   | "availableJumperTypes"
+  | "differentialPairs"
 > & {
   layerCount: number
   minTraceWidth: number
@@ -132,6 +142,7 @@ export type SimpleRouteJson = Omit<
   // Enable jumper-based routing for single-layer boards
   allowJumpers?: boolean
   availableJumperTypes?: Array<"1206x4" | "0603">
+  differentialPairs?: SimpleRouteDifferentialPair[]
 }
 
 // declare module "autorouting-dataset" {

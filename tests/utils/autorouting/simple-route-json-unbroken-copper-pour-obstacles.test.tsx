@@ -3,7 +3,7 @@ import "lib/register-catalogue"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("simple route json only includes unbroken copper pours as copper-pour obstacles", async () => {
+test("simple route json only includes unbroken copper pours as copper-pour obstacles", async (): Promise<void> => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -23,12 +23,13 @@ test("simple route json only includes unbroken copper pours as copper-pour obsta
 
   await circuit.renderUntilSettled()
 
-  const board = circuit.firstChild as {
-    selectAll(selector: string): unknown[]
+  const subcircuitComponent = circuit.firstChild
+  if (!subcircuitComponent) {
+    throw new Error("Expected the circuit to contain a board")
   }
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     db: circuit.db,
-    subcircuitComponent: board,
+    subcircuitComponent,
   })
 
   const copperPourObstacles = simpleRouteJson.obstacles.filter(
@@ -38,19 +39,27 @@ test("simple route json only includes unbroken copper pours as copper-pour obsta
     copperPourObstacles.flatMap((obstacle) => obstacle.layers),
   )
   const gndNet = circuit.db.source_net.list().find((net) => net.name === "GND")
+  if (!gndNet) {
+    throw new Error("Expected the GND source net")
+  }
+  const gndConnectivityMapKey: string | undefined =
+    gndNet.subcircuit_connectivity_map_key
+  if (!gndConnectivityMapKey) {
+    throw new Error("Expected the GND subcircuit connectivity map key")
+  }
 
   expect(copperPourObstacles.length).toBeGreaterThan(0)
   expect(obstacleLayers.has("inner1")).toBe(true)
   expect(obstacleLayers.has("inner2")).toBe(false)
-  expect(gndNet?.source_net_id).toBeDefined()
+  expect(gndNet.source_net_id).toBeDefined()
   expect(
     copperPourObstacles.some((obstacle) =>
-      obstacle.connectedTo.includes(gndNet!.source_net_id),
+      obstacle.connectedTo.includes(gndNet.source_net_id),
     ),
   ).toBe(true)
   expect(
     copperPourObstacles.some((obstacle) =>
-      obstacle.connectedTo.includes(gndNet!.subcircuit_connectivity_map_key!),
+      obstacle.connectedTo.includes(gndConnectivityMapKey),
     ),
   ).toBe(true)
 })

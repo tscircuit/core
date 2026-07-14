@@ -5,9 +5,16 @@ import {
   ConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
 } from "circuit-json-to-connectivity-map"
+import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
+import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
-import type { SimpleRouteConnection, SimpleRouteJson } from "./SimpleRouteJson"
+import type {
+  SimpleRouteConnection,
+  SimpleRouteDifferentialPair,
+  SimpleRouteJson,
+} from "./SimpleRouteJson"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
+import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
 
@@ -44,9 +51,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   minBoardEdgeClearance?: number
   minViaHoleDiameter?: number
   minViaPadDiameter?: number
-  subcircuitComponent?: {
-    selectAll(selector: string): unknown[]
-  }
+  subcircuitComponent?: Pick<ISubcircuit, "selectAll">
   /**
    * Excludes existing root-level PCB route state from a fresh routing problem.
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
@@ -581,6 +586,17 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     conn.width ??= defaultTraceWidth
   }
 
+  const differentialPairs: DifferentialPair[] =
+    subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
+
+  const srjDifferentialPairs: SimpleRouteDifferentialPair[] | undefined =
+    getDifferentialPairsForSimpleRouteJson({
+      srjConnections: allConns,
+      differentialPairs,
+      sourceTraces: db.source_trace.list(),
+      subcircuitId: subcircuit_id,
+    })
+
   if (subcircuit_id) {
     const pointIdToConn = new Map<string, SimpleRouteConnection>()
     for (const conn of allConns) {
@@ -638,6 +654,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       bounds,
       obstacles,
       connections: allConns,
+      differentialPairs: srjDifferentialPairs,
       traces:
         preservedRoutedSubcircuitTraces.length > 0
           ? preservedRoutedSubcircuitTraces

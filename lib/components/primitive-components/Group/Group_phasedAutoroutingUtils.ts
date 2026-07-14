@@ -1,5 +1,6 @@
 import type {
   Obstacle,
+  SimpleRouteDifferentialPair,
   SimpleRouteConnection,
   SimpleRouteJson,
   SimplifiedPcbTrace,
@@ -199,9 +200,32 @@ export function Group_filterSimpleRouteJsonForPhase(
     }
   }
 
+  const includedConnectionNames: Set<string> = new Set()
+  for (const connection of connections) {
+    includedConnectionNames.add(connection.name)
+  }
+
+  const differentialPairs: SimpleRouteDifferentialPair[] = []
+  for (const differentialPair of simpleRouteJson.differentialPairs ?? []) {
+    const positiveConnectionIncluded: boolean = includedConnectionNames.has(
+      differentialPair.connectionNames[0],
+    )
+    const negativeConnectionIncluded: boolean = includedConnectionNames.has(
+      differentialPair.connectionNames[1],
+    )
+    if (positiveConnectionIncluded !== negativeConnectionIncluded) {
+      throw new Error(
+        `Differential pair "${differentialPair.connectionNames.join("/")}" cannot be split across autorouting phases`,
+      )
+    }
+    if (positiveConnectionIncluded) differentialPairs.push(differentialPair)
+  }
+
   return {
     ...simpleRouteJson,
     connections,
+    differentialPairs:
+      differentialPairs.length > 0 ? differentialPairs : undefined,
   }
 }
 
