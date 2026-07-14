@@ -488,7 +488,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     .list()
     .filter(
       (trace) =>
-        !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id),
+        // Existing copper contributes external connectivity only to the scope
+        // that owns it. A board or parent scope must preserve already-routed
+        // child copper without adding its endpoints to new routing work.
+        !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id) ||
+        (subcircuit_id != null && trace.subcircuit_id === subcircuit_id),
     )
     .filter(
       (trace) =>
