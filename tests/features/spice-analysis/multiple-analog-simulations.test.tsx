@@ -1,30 +1,26 @@
 import { expect, test } from "bun:test"
-import type { SpiceEngine } from "@tscircuit/props"
+import createNgspiceSpiceEngine from "@tscircuit/ngspice-spice-engine"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("multiple analog simulations keep separate experiments and group probe scopes", async () => {
   const spiceStrings: string[] = []
-  const mockSpiceEngine: SpiceEngine = {
-    async simulate(spiceString) {
+  const ngspiceEngine = await createNgspiceSpiceEngine()
+  let nextSimulation = Promise.resolve()
+  const capturingNgspiceEngine = {
+    async simulate(spiceString: string) {
       spiceStrings.push(spiceString)
-      return {
-        simulationResultCircuitJson: [
-          {
-            type: "simulation_transient_voltage_graph",
-            simulation_transient_voltage_graph_id: "mock_graph",
-            simulation_experiment_id: "mock_experiment",
-            voltage_levels: [0, 1],
-            time_per_step: 1,
-            start_time_ms: 0,
-            end_time_ms: 1,
-            name: "mock_graph",
-          },
-        ],
-      }
+      const simulation = nextSimulation.then(() =>
+        ngspiceEngine.simulate(spiceString),
+      )
+      nextSimulation = simulation.then(
+        () => undefined,
+        () => undefined,
+      )
+      return simulation
     },
   }
   const { circuit } = getTestFixture({
-    platform: { spiceEngineMap: { mock: mockSpiceEngine } },
+    platform: { spiceEngineMap: { ngspice: capturingNgspiceEngine } },
   })
 
   circuit.add(
@@ -43,13 +39,13 @@ test("multiple analog simulations keep separate experiments and group probe scop
         name="root-fast"
         duration="1ms"
         timePerStep="100us"
-        spiceEngine="mock"
+        spiceEngine="ngspice"
       />
       <analogsimulation
         name="root-slow"
         duration="2ms"
         timePerStep="200us"
-        spiceEngine="mock"
+        spiceEngine="ngspice"
       />
 
       <group name="first-stage">
@@ -58,7 +54,7 @@ test("multiple analog simulations keep separate experiments and group probe scop
           name="first-stage-sim"
           duration="3ms"
           timePerStep="300us"
-          spiceEngine="mock"
+          spiceEngine="ngspice"
         />
       </group>
       <group name="second-stage">
@@ -67,7 +63,7 @@ test("multiple analog simulations keep separate experiments and group probe scop
           name="second-stage-sim"
           duration="4ms"
           timePerStep="400us"
-          spiceEngine="mock"
+          spiceEngine="ngspice"
         />
       </group>
     </board>,
@@ -83,15 +79,59 @@ test("multiple analog simulations keep separate experiments and group probe scop
     "first-stage-sim",
     "second-stage-sim",
   ])
-  expect(voltageGraphs).toHaveLength(4)
+  expect(circuit.db.simulation_unknown_experiment_error.list()).toHaveLength(0)
+  expect(voltageGraphs).toHaveLength(8)
+
+  const expectedGraphsByExperiment: Record<
+    string,
+    { names: string[]; endTimeMs: number }
+  > = {
+    "root-fast": {
+      names: ["FIRST_STAGE_PROBE", "ROOT_PROBE", "SECOND_STAGE_PROBE"],
+      endTimeMs: 1,
+    },
+    "root-slow": {
+      names: ["FIRST_STAGE_PROBE", "ROOT_PROBE", "SECOND_STAGE_PROBE"],
+      endTimeMs: 2,
+    },
+    "first-stage-sim": {
+      names: ["FIRST_STAGE_PROBE"],
+      endTimeMs: 3,
+    },
+    "second-stage-sim": {
+      names: ["SECOND_STAGE_PROBE"],
+      endTimeMs: 4,
+    },
+  }
+  const expectedVoltageByProbe: Record<string, number> = {
+    ROOT_PROBE: 5,
+    FIRST_STAGE_PROBE: 5 * (5 / 6),
+    SECOND_STAGE_PROBE: 5 * (3 / 6),
+  }
+
   for (const experiment of experiments) {
-    expect(
-      voltageGraphs.filter(
-        (graph) =>
-          graph.simulation_experiment_id ===
-          experiment.simulation_experiment_id,
-      ),
-    ).toHaveLength(1)
+    const expected = expectedGraphsByExperiment[experiment.name]
+    if (!expected) throw new Error(`Unexpected experiment: ${experiment.name}`)
+    const experimentGraphs = voltageGraphs.filter(
+      (graph) =>
+        graph.simulation_experiment_id === experiment.simulation_experiment_id,
+    )
+    expect(experimentGraphs.map((graph) => graph.name).sort()).toEqual(
+      expected.names,
+    )
+    for (const graph of experimentGraphs) {
+      expect(graph.end_time_ms).toBeCloseTo(expected.endTimeMs)
+      expect(graph.voltage_levels.length).toBeGreaterThan(1)
+      expect(graph.timestamps_ms).toHaveLength(graph.voltage_levels.length)
+      expect(graph.voltage_levels.every(Number.isFinite)).toBe(true)
+      const expectedVoltage = graph.name
+        ? expectedVoltageByProbe[graph.name]
+        : undefined
+      if (expectedVoltage === undefined) {
+        throw new Error(`Unexpected voltage graph: ${graph.name}`)
+      }
+      expect(graph.voltage_levels.at(-1)).toBeCloseTo(expectedVoltage, 2)
+    }
   }
 
   expect(spiceStrings).toHaveLength(4)
@@ -109,4 +149,4 @@ test("multiple analog simulations keep separate experiments and group probe scop
     ".tran 0.0003 0.003 UIC",
     ".tran 0.0004 0.004 UIC",
   ])
-})
+}, 120000)
