@@ -11,7 +11,7 @@ it("registers a differential pair using port selectors", (): void => {
     <board width="20mm" height="10mm">
       <differentialpair
         name="USB"
-        positiveConnection="TP1"
+        positiveConnection=".TP1 > .pin1"
         negativeConnection=".R2 > .pin1"
         maxLengthSkew={0.1}
       />
@@ -19,13 +19,13 @@ it("registers a differential pair using port selectors", (): void => {
       <resistor name="R2" resistance="1k" footprint="0402" pcbX={-4} pcbY={2} />
       <led name="LED1" footprint="0402" pcbX={6} pcbY={-2} />
       <led name="LED2" footprint="0402" pcbX={6} pcbY={2} />
-      <trace name="USB_P" from="TP1" to=".LED1 > .anode" />
+      <trace name="USB_P" from=".TP1 > .pin1" to=".LED1 > .anode" />
       <trace name="USB_N" from=".R2 > .pin1" to=".LED2 > .anode" />
       <pcbnotetext
         pcbX={0}
         pcbY={0}
         fontSize={0.8}
-        text="Differential pair ports: TP1 / R2.pin1"
+        text="Differential pair ports: TP1.pin1 / R2.pin1"
       />
     </board>,
   )

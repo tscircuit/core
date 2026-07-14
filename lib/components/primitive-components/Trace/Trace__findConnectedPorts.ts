@@ -1,7 +1,6 @@
-import { TraceConnectionError } from "../../../errors"
 import type { Port } from "../Port/Port"
-import { resolvePortSelector } from "../Port/resolve-port-selector"
 import type { Trace } from "./Trace"
+import { TraceConnectionError } from "../../../errors"
 
 export function Trace__findConnectedPorts(trace: Trace):
   | {
@@ -20,9 +19,29 @@ export function Trace__findConnectedPorts(trace: Trace):
 
   const portSelectors = trace.getTracePortPathSelectors()
 
+  const resolveImplicitSinglePort = (selector: string): Port | null => {
+    const hasExplicitPortToken =
+      selector.lastIndexOf(".") > selector.lastIndexOf(" ")
+    if (hasExplicitPortToken) return null
+
+    let targetComponent = trace.getSubcircuit().selectOne(selector)
+    if (!targetComponent && !/[.#\[]/.test(selector)) {
+      targetComponent = trace.getSubcircuit().selectOne(`.${selector}`)
+    }
+    if (!targetComponent) return null
+
+    const ports = targetComponent.children.filter(
+      (c) => c.componentName === "Port",
+    ) as Port[]
+
+    return ports.length === 1 ? ports[0] : null
+  }
+
   const portsWithSelectors = portSelectors.map((selector) => ({
     selector,
-    port: resolvePortSelector(trace.getSubcircuit(), selector),
+    port:
+      (trace.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
+      resolveImplicitSinglePort(selector),
   }))
 
   for (const { selector, port } of portsWithSelectors) {
@@ -98,17 +117,13 @@ export function Trace__findConnectedPorts(trace: Trace):
     }
   }
 
-  const resolvedPortsWithSelectors = portsWithSelectors.filter(
-    (portWithSelector): portWithSelector is { selector: string; port: Port } =>
-      portWithSelector.port !== null,
-  )
-  if (resolvedPortsWithSelectors.length !== portsWithSelectors.length) {
+  if (portsWithSelectors.some((p) => !p.port)) {
     return { allPortsFound: false }
   }
 
   return {
     allPortsFound: true,
-    portsWithSelectors: resolvedPortsWithSelectors,
-    ports: resolvedPortsWithSelectors.map(({ port }) => port),
+    portsWithSelectors,
+    ports: portsWithSelectors.map(({ port }) => port),
   }
 }

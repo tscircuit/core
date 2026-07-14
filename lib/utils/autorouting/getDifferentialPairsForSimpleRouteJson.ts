@@ -1,6 +1,6 @@
 import type { SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
-import { resolvePortSelector } from "lib/components/primitive-components/Port/resolve-port-selector"
+import type { Port } from "lib/components/primitive-components/Port/Port"
 import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
@@ -46,7 +46,9 @@ const getSubcircuitConnectivityMapKey = ({
   )
   const selectedPort =
     sourceTracesWithMatchingName.length === 0
-      ? resolvePortSelector(differentialPairSubcircuit, traceNameOrPortSelector)
+      ? differentialPairSubcircuit.selectOne<Port>(traceNameOrPortSelector, {
+          type: "port",
+        })
       : null
   const selectedSourcePortId = selectedPort?.source_port_id
   const matchingSourceTraces = selectedSourcePortId
