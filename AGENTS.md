@@ -107,6 +107,29 @@ circuit.selectOne("resistor") // Find first resistor
   `schematic-stacked`. This keeps values consistent with the circuit-json
   ecosystem (`schematic_component`, `source_property_ignored_warning`, etc.).
 
+### Domain Types and Naming
+
+- Use the most concrete domain term available. Avoid vague names such as
+  `component`, `item`, `reference`, or `index` when the value has a more precise
+  role.
+- Do not introduce transport, protocol, or serialization vocabulary into the
+  internal domain model. Translate domain identifiers into boundary-specific
+  fields only at the serialization or adapter boundary.
+- Do not use raw `Map<string, ...>` types for domain identifiers. Use an existing
+  named or branded key type, such as `Map<SourceTraceId, ...>`, and name mapping
+  variables to make both key and value meanings clear.
+- Prefer canonical exported domain types over reconstructing equivalent types
+  with `Omit`, `NonNullable`, indexed access, or ad hoc aliases. If the
+  canonical type is not exported, export it from the module that owns it.
+- Reuse an existing domain interface when a function needs part of its behavior.
+  Use `Pick<ExistingInterface, "method">` for a deliberately narrow dependency
+  instead of creating a duplicate structural interface.
+- Name loop variables, parameters, and intermediate values after their precise
+  domain role so they cannot be confused with nearby concepts.
+- Do not add runtime type guards after a trusted typed API. Parse or refine once
+  at an untrusted boundary; redundant internal guards add noise and hide broken
+  type contracts.
+
 ## Build Configuration
 
 - ESM output with TypeScript declarations
