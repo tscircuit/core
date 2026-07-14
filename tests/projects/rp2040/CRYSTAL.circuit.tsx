@@ -1,4 +1,4 @@
-import { sel } from "tscircuit"
+import { sel } from "lib/sel"
 
 export const CRYSTAL_SECTION = "crystal"
 

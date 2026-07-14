@@ -1,4 +1,4 @@
-import { sel } from "tscircuit"
+import { sel } from "lib/sel"
 
 export const W25Q128JVS_SECTION = "qspi"
 
