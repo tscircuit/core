@@ -4,6 +4,8 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 export class AnalogSimulation extends PrimitiveComponent<
   typeof analogSimulationProps
 > {
+  simulation_experiment_id: string | null = null
+
   get config() {
     return {
       componentName: "AnalogSimulation",
@@ -19,7 +21,7 @@ export class AnalogSimulation extends PrimitiveComponent<
     const durationMs = duration || 10 // ms
     const timePerStepMs = timePerStep || 0.01 // ms
 
-    db.simulation_experiment.insert({
+    const simulationExperiment = db.simulation_experiment.insert({
       name: name ?? "spice_transient_analysis",
       experiment_type: "spice_transient_analysis" as const,
       end_time_ms: durationMs,
@@ -27,5 +29,8 @@ export class AnalogSimulation extends PrimitiveComponent<
       time_per_step: timePerStepMs,
       spice_options: spiceOptions,
     })
+
+    this.simulation_experiment_id =
+      simulationExperiment.simulation_experiment_id
   }
 }

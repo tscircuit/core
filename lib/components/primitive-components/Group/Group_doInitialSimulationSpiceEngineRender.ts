@@ -1,5 +1,5 @@
 import { SpiceNetlist, circuitJsonToSpice } from "circuit-json-to-spice"
-import type { SimulationCurrentProbe } from "circuit-json"
+import type { AnyCircuitElement, SimulationCurrentProbe } from "circuit-json"
 import Debug from "debug"
 import { getTransientVoltageGraphNamesFromSpiceNetlist } from "lib/utils/simulation/get-transient-voltage-graph-names-from-spice-netlist"
 import { resetSimulationColorState } from "lib/utils/simulation/getSimulationColorForId"
@@ -21,6 +21,57 @@ import { isVoltageGraph } from "./isVoltageGraph"
 
 const debug = Debug("tscircuit:core:Group_doInitialSimulationSpiceEngineRender")
 
+const getCircuitJsonForAnalogSimulation = ({
+  circuitJson,
+  simulationExperimentId,
+  voltageProbes,
+  ammeters,
+}: {
+  circuitJson: AnyCircuitElement[]
+  simulationExperimentId: string
+  voltageProbes: VoltageProbe[]
+  ammeters: Ammeter[]
+}) => {
+  const voltageProbeIds = new Set(
+    voltageProbes
+      .map((probe) => probe.simulation_voltage_probe_id)
+      .filter((id): id is string => Boolean(id)),
+  )
+  const currentProbeIds = new Set(
+    ammeters
+      .map((ammeter) => ammeter.simulation_current_probe_id)
+      .filter((id): id is string => Boolean(id)),
+  )
+
+  return circuitJson.filter((element) => {
+    if (element.type === "simulation_experiment") {
+      return element.simulation_experiment_id === simulationExperimentId
+    }
+    if (element.type === "simulation_voltage_probe") {
+      return voltageProbeIds.has(element.simulation_voltage_probe_id)
+    }
+    if (element.type === "simulation_current_probe") {
+      return currentProbeIds.has(element.simulation_current_probe_id)
+    }
+    if (element.type === "simulation_oscilloscope_trace") {
+      if (element.simulation_voltage_probe_id) {
+        return voltageProbeIds.has(element.simulation_voltage_probe_id)
+      }
+      if (element.simulation_current_probe_id) {
+        return currentProbeIds.has(element.simulation_current_probe_id)
+      }
+    }
+    if (
+      element.type === "simulation_transient_voltage_graph" ||
+      element.type === "simulation_transient_current_graph" ||
+      element.type === "simulation_unknown_experiment_error"
+    ) {
+      return false
+    }
+    return true
+  })
+}
+
 export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
   // Only run spice simulation for subcircuits
   if (!group.isSubcircuit) return
@@ -32,9 +83,6 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
 
   if (analogSims.length === 0) return
 
-  const voltageProbes = group.selectAll<VoltageProbe>("voltageprobe")
-  const ammeters = group.selectAll<Ammeter>("ammeter")
-
   resetSimulationColorState()
 
   // Check if there are any spice engines configured, or use default
@@ -43,84 +91,121 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
     spiceEngineMap.spicey = getSpiceyEngine()
   }
 
-  // Get circuit JSON for this subcircuit
-  const circuitJson = root.db.toArray()
-
-  // Convert circuit JSON to SPICE string
-  let spiceString: string
-  let spiceNetlist: SpiceNetlist
-  try {
-    spiceNetlist = circuitJsonToSpice(circuitJson)
-    spiceString = spiceNetlist.toSpiceString()
-    debug(`Generated SPICE string:\n${spiceString}`)
-  } catch (error) {
-    debug(`Failed to convert circuit JSON to SPICE: ${error}`)
-    return
-  }
-
-  const graphNameToProbe = new Map<string, VoltageProbe>()
-  for (const probe of voltageProbes) {
-    if (probe.finalProbeName) {
-      graphNameToProbe.set(probe.finalProbeName, probe)
-    }
-  }
-
-  const voltageProbesById = new Map<string, VoltageProbe>()
-  const graphDisplayOverridesByProbeId = new Map<
-    string,
-    GraphDisplayOverrides
-  >()
-  for (const probe of voltageProbes) {
-    if (probe.simulation_voltage_probe_id) {
-      voltageProbesById.set(probe.simulation_voltage_probe_id, probe)
-      graphDisplayOverridesByProbeId.set(
-        probe.simulation_voltage_probe_id,
-        getVoltageProbeGraphDisplayOverrides(probe),
-      )
-    }
-  }
-
-  for (const ammeter of ammeters) {
-    if (ammeter.simulation_current_probe_id) {
-      graphDisplayOverridesByProbeId.set(
-        ammeter.simulation_current_probe_id,
-        getAmmeterGraphDisplayOverrides(ammeter),
-      )
-    }
-  }
-
-  const currentProbesById = new Map<string, SimulationCurrentProbe>()
-  const currentProbesByName = new Map<string, SimulationCurrentProbe>()
-  for (const probe of root.db.simulation_current_probe.list()) {
-    currentProbesById.set(probe.simulation_current_probe_id, probe)
-    if (probe.name !== undefined) {
-      currentProbesByName.set(probe.name, probe)
-    }
-  }
-  const orderedSimulationProbes = root.db.simulation_voltage_probe
-    .list()
-    .filter((probe) => voltageProbesById.has(probe.simulation_voltage_probe_id))
-  const graphNamesFromNetlist =
-    getTransientVoltageGraphNamesFromSpiceNetlist(spiceNetlist)
-
-  if (graphNamesFromNetlist.length === orderedSimulationProbes.length) {
-    for (const [index, simulationProbe] of orderedSimulationProbes.entries()) {
-      const probe = voltageProbesById.get(
-        simulationProbe.simulation_voltage_probe_id,
-      )
-      const graphName = graphNamesFromNetlist[index]
-      if (probe && graphName) {
-        graphNameToProbe.set(graphName, probe)
-      }
-    }
-  } else {
-    debug(
-      `Skipping probe-to-graph order mapping because counts differ: probes=${orderedSimulationProbes.length} graphNames=${graphNamesFromNetlist.length}`,
-    )
-  }
-
   // Run simulation for each analogsimulation component
   for (const analogSim of analogSims) {
+    const simulationExperimentId = analogSim.simulation_experiment_id
+    if (!simulationExperimentId) {
+      debug("No simulation experiment id found, skipping simulation")
+      continue
+    }
+    const simulationExperiment = root.db.simulation_experiment.get(
+      simulationExperimentId,
+    )
+    if (!simulationExperiment) {
+      debug("No simulation experiment found, skipping simulation")
+      continue
+    }
+
+    const simulationScope = analogSim.getGroup() ?? group
+    const voltageProbes =
+      simulationScope.selectAll<VoltageProbe>("voltageprobe")
+    const ammeters = simulationScope.selectAll<Ammeter>("ammeter")
+    const circuitJson = getCircuitJsonForAnalogSimulation({
+      circuitJson: root.db.toArray(),
+      simulationExperimentId,
+      voltageProbes,
+      ammeters,
+    })
+
+    let spiceString: string
+    let spiceNetlist: SpiceNetlist
+    try {
+      spiceNetlist = circuitJsonToSpice(circuitJson)
+      spiceString = spiceNetlist.toSpiceString()
+      debug(`Generated SPICE string:\n${spiceString}`)
+    } catch (error) {
+      debug(`Failed to convert circuit JSON to SPICE: ${error}`)
+      root.db.simulation_unknown_experiment_error.insert({
+        simulation_experiment_id: simulationExperimentId,
+        error_type: "simulation_unknown_experiment_error",
+        message: error instanceof Error ? error.message : String(error),
+      })
+      continue
+    }
+
+    const graphNameToProbe = new Map<string, VoltageProbe>()
+    const voltageProbesById = new Map<string, VoltageProbe>()
+    const graphDisplayOverridesByProbeId = new Map<
+      string,
+      GraphDisplayOverrides
+    >()
+    for (const probe of voltageProbes) {
+      if (probe.finalProbeName) {
+        graphNameToProbe.set(probe.finalProbeName, probe)
+      }
+      if (probe.simulation_voltage_probe_id) {
+        voltageProbesById.set(probe.simulation_voltage_probe_id, probe)
+        graphDisplayOverridesByProbeId.set(
+          probe.simulation_voltage_probe_id,
+          getVoltageProbeGraphDisplayOverrides(probe),
+        )
+      }
+    }
+
+    for (const ammeter of ammeters) {
+      if (ammeter.simulation_current_probe_id) {
+        graphDisplayOverridesByProbeId.set(
+          ammeter.simulation_current_probe_id,
+          getAmmeterGraphDisplayOverrides(ammeter),
+        )
+      }
+    }
+
+    const scopedCurrentProbeIds = new Set(
+      ammeters
+        .map((ammeter) => ammeter.simulation_current_probe_id)
+        .filter((id): id is string => Boolean(id)),
+    )
+    const currentProbesById = new Map<string, SimulationCurrentProbe>()
+    const currentProbesByName = new Map<string, SimulationCurrentProbe>()
+    for (const probe of root.db.simulation_current_probe
+      .list()
+      .filter((probe) =>
+        scopedCurrentProbeIds.has(probe.simulation_current_probe_id),
+      )) {
+      currentProbesById.set(probe.simulation_current_probe_id, probe)
+      if (probe.name !== undefined) {
+        currentProbesByName.set(probe.name, probe)
+      }
+    }
+
+    const orderedSimulationProbes = root.db.simulation_voltage_probe
+      .list()
+      .filter((probe) =>
+        voltageProbesById.has(probe.simulation_voltage_probe_id),
+      )
+    const graphNamesFromNetlist =
+      getTransientVoltageGraphNamesFromSpiceNetlist(spiceNetlist)
+
+    if (graphNamesFromNetlist.length === orderedSimulationProbes.length) {
+      for (const [
+        index,
+        simulationProbe,
+      ] of orderedSimulationProbes.entries()) {
+        const probe = voltageProbesById.get(
+          simulationProbe.simulation_voltage_probe_id,
+        )
+        const graphName = graphNamesFromNetlist[index]
+        if (probe && graphName) {
+          graphNameToProbe.set(graphName, probe)
+        }
+      }
+    } else {
+      debug(
+        `Skipping probe-to-graph order mapping because counts differ: probes=${orderedSimulationProbes.length} graphNames=${graphNamesFromNetlist.length}`,
+      )
+    }
+
     const engineName = analogSim._parsedProps.spiceEngine ?? "spicey"
     const spiceEngine = spiceEngineMap[engineName]
 
@@ -132,7 +217,7 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
       )
     }
 
-    const effectId = `spice-simulation-${engineName}-${analogSim.source_component_id}`
+    const effectId = `spice-simulation-${engineName}-${simulationExperimentId}`
 
     debug(
       `Queueing simulation for spice engine: ${engineName} (id: ${effectId})`,
@@ -146,12 +231,6 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
         debug(
           `Simulation completed, received ${result.simulationResultCircuitJson.length} elements`,
         )
-
-        const simulationExperiment = root.db.simulation_experiment.list()[0]
-        if (!simulationExperiment) {
-          debug("No simulation experiment found, skipping result insertion")
-          return
-        }
 
         // Add simulation results to the database
         const insertedVoltageGraphs: InsertedSimulationGraph[] = []
@@ -222,10 +301,8 @@ export function Group_doInitialSimulationSpiceEngineRender(group: Group<any>) {
         group._markDirty("SimulationSpiceEngineRender")
       } catch (error) {
         debug(`Simulation failed for engine ${engineName}: ${error}`)
-        const simulationExperiment = root.db.simulation_experiment.list()[0]
         root.db.simulation_unknown_experiment_error.insert({
-          simulation_experiment_id:
-            simulationExperiment?.simulation_experiment_id,
+          simulation_experiment_id: simulationExperimentId,
           error_type: "simulation_unknown_experiment_error",
           message: error instanceof Error ? error.message : String(error),
         })
