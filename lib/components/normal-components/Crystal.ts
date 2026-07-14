@@ -1,19 +1,14 @@
-import { crystalProps } from "@tscircuit/props"
-import {
-  type BaseSymbolName,
-  type Ftype,
-  type PolarizedPassivePorts,
-} from "lib/utils/constants"
+import { type CrystalPinLabels, crystalProps } from "@tscircuit/props"
+import { type BaseSymbolName, type Ftype } from "lib/utils/constants"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import type {
-  SourceSimpleCrystal,
-  SourceSimpleCrystalInput,
-} from "circuit-json"
+import type { SourceSimpleCrystalInput } from "circuit-json"
 import { formatSiUnit } from "format-si-unit"
+
+type CrystalPorts = CrystalPinLabels
 
 export class Crystal extends NormalComponent<
   typeof crystalProps,
-  PolarizedPassivePorts
+  CrystalPorts
 > {
   get config() {
     const symbolName =
