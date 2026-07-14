@@ -12,6 +12,7 @@ test("abse__gameboy matches pcb snapshot", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
+  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
 
   const svg = convertCircuitJsonToPcbSvg(circuit.getCircuitJson())
   const testPath = import.meta.path.replace(/\.test\.tsx?$/, "")
