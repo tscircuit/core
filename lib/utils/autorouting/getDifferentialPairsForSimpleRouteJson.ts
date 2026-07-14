@@ -1,5 +1,6 @@
 import type { SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
+import { resolvePortSelector } from "lib/components/primitive-components/Port/resolve-port-selector"
 import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
@@ -13,10 +14,9 @@ type GetDifferentialPairsParams = {
 }
 
 type GetSubcircuitConnectivityMapKeyParams = {
-  differentialPairName: string
-  differentialPairSubcircuitId: string | null | undefined
+  differentialPair: DifferentialPair
+  traceNameOrPortSelector: string
   sourceTraces: SourceTrace[]
-  traceNameOrSourcePortId: string
 }
 
 type GetRequiredSrjConnectionNameParams = {
@@ -25,43 +25,51 @@ type GetRequiredSrjConnectionNameParams = {
   differentialPairSubcircuitId: string | null | undefined
   sourceTraces: SourceTrace[]
   subcircuitConnectivityMapKey: string
-  traceNameOrSourcePortId: string
+  traceNameOrPortSelector: string
 }
 
 const getSubcircuitConnectivityMapKey = ({
-  differentialPairName,
-  differentialPairSubcircuitId,
+  differentialPair,
+  traceNameOrPortSelector,
   sourceTraces,
-  traceNameOrSourcePortId,
 }: GetSubcircuitConnectivityMapKeyParams): string => {
-  const matchingSourceTraces: SourceTrace[] = []
+  const differentialPairSubcircuit = differentialPair.getSubcircuit()
+  const differentialPairSubcircuitId = differentialPairSubcircuit.subcircuit_id
+  const sourceTracesInSubcircuit: SourceTrace[] = []
   for (const sourceTrace of sourceTraces) {
     if (sourceTrace.subcircuit_id !== differentialPairSubcircuitId) continue
-
-    const matchesTraceName: boolean =
-      sourceTrace.name === traceNameOrSourcePortId
-    const matchesSourcePortId: boolean =
-      sourceTrace.connected_source_port_ids.includes(traceNameOrSourcePortId)
-    if (matchesTraceName || matchesSourcePortId) {
-      matchingSourceTraces.push(sourceTrace)
-    }
+    sourceTracesInSubcircuit.push(sourceTrace)
   }
+
+  const sourceTracesWithMatchingName = sourceTracesInSubcircuit.filter(
+    (sourceTrace) => sourceTrace.name === traceNameOrPortSelector,
+  )
+  const selectedPort =
+    sourceTracesWithMatchingName.length === 0
+      ? resolvePortSelector(differentialPairSubcircuit, traceNameOrPortSelector)
+      : null
+  const selectedSourcePortId = selectedPort?.source_port_id
+  const matchingSourceTraces = selectedSourcePortId
+    ? sourceTracesInSubcircuit.filter((sourceTrace) =>
+        sourceTrace.connected_source_port_ids.includes(selectedSourcePortId),
+      )
+    : sourceTracesWithMatchingName
 
   if (matchingSourceTraces.length === 0) {
     throw new Error(
-      `Could not find source trace or pin "${traceNameOrSourcePortId}" for differential pair "${differentialPairName}"`,
+      `Could not find source trace for trace name or port selector "${traceNameOrPortSelector}" in differential pair "${differentialPair.name}"`,
     )
   }
   if (matchingSourceTraces.length > 1) {
     throw new Error(
-      `Trace name or source port ID "${traceNameOrSourcePortId}" matches multiple source traces for differential pair "${differentialPairName}"`,
+      `Trace name or port selector "${traceNameOrPortSelector}" matches multiple source traces for differential pair "${differentialPair.name}"`,
     )
   }
 
   const sourceTrace: SourceTrace | undefined = matchingSourceTraces[0]
   if (!sourceTrace) {
     throw new Error(
-      `Expected one source trace for "${traceNameOrSourcePortId}" in differential pair "${differentialPairName}"`,
+      `Expected one source trace for trace name or port selector "${traceNameOrPortSelector}" in differential pair "${differentialPair.name}"`,
     )
   }
 
@@ -69,7 +77,7 @@ const getSubcircuitConnectivityMapKey = ({
     sourceTrace.subcircuit_connectivity_map_key
   if (!subcircuitConnectivityMapKey) {
     throw new Error(
-      `Source trace "${sourceTrace.source_trace_id}" does not have a subcircuit connectivity map key for differential pair "${differentialPairName}"`,
+      `Source trace "${sourceTrace.source_trace_id}" does not have a subcircuit connectivity map key for differential pair "${differentialPair.name}"`,
     )
   }
 
@@ -82,7 +90,7 @@ const getRequiredSrjConnectionName = ({
   differentialPairSubcircuitId,
   sourceTraces,
   subcircuitConnectivityMapKey,
-  traceNameOrSourcePortId,
+  traceNameOrPortSelector,
 }: GetRequiredSrjConnectionNameParams): string => {
   const sourceTraceIds: string[] = []
   for (const sourceTrace of sourceTraces) {
@@ -107,7 +115,7 @@ const getRequiredSrjConnectionName = ({
 
   if (matchingSrjConnections.length === 0) {
     throw new Error(
-      `Could not find an SRJ connection for "${traceNameOrSourcePortId}" in differential pair "${differentialPairName}"`,
+      `Could not find an SRJ connection for trace name or port selector "${traceNameOrPortSelector}" in differential pair "${differentialPairName}"`,
     )
   }
   if (matchingSrjConnections.length > 1) {
@@ -127,7 +135,7 @@ const getRequiredSrjConnectionName = ({
   return srjConnection.name
 }
 
-/** Converts differential-pair trace or pin references into SRJ constraints. */
+/** Converts differential-pair trace names or port selectors into SRJ constraints. */
 export const getDifferentialPairsForSimpleRouteJson = ({
   connections,
   differentialPairs,
@@ -142,23 +150,21 @@ export const getDifferentialPairsForSimpleRouteJson = ({
       continue
     }
 
-    const positiveTraceNameOrSourcePortId: string =
+    const positiveTraceNameOrPortSelector: string =
       differentialPair._parsedProps.positiveConnection
-    const negativeTraceNameOrSourcePortId: string =
+    const negativeTraceNameOrPortSelector: string =
       differentialPair._parsedProps.negativeConnection
     const positiveSubcircuitConnectivityMapKey: string =
       getSubcircuitConnectivityMapKey({
-        differentialPairName: differentialPair.name,
-        differentialPairSubcircuitId,
+        differentialPair,
+        traceNameOrPortSelector: positiveTraceNameOrPortSelector,
         sourceTraces,
-        traceNameOrSourcePortId: positiveTraceNameOrSourcePortId,
       })
     const negativeSubcircuitConnectivityMapKey: string =
       getSubcircuitConnectivityMapKey({
-        differentialPairName: differentialPair.name,
-        differentialPairSubcircuitId,
+        differentialPair,
+        traceNameOrPortSelector: negativeTraceNameOrPortSelector,
         sourceTraces,
-        traceNameOrSourcePortId: negativeTraceNameOrSourcePortId,
       })
 
     const positiveSrjConnectionName: string = getRequiredSrjConnectionName({
@@ -167,7 +173,7 @@ export const getDifferentialPairsForSimpleRouteJson = ({
       differentialPairSubcircuitId,
       sourceTraces,
       subcircuitConnectivityMapKey: positiveSubcircuitConnectivityMapKey,
-      traceNameOrSourcePortId: positiveTraceNameOrSourcePortId,
+      traceNameOrPortSelector: positiveTraceNameOrPortSelector,
     })
     const negativeSrjConnectionName: string = getRequiredSrjConnectionName({
       connections,
@@ -175,7 +181,7 @@ export const getDifferentialPairsForSimpleRouteJson = ({
       differentialPairSubcircuitId,
       sourceTraces,
       subcircuitConnectivityMapKey: negativeSubcircuitConnectivityMapKey,
-      traceNameOrSourcePortId: negativeTraceNameOrSourcePortId,
+      traceNameOrPortSelector: negativeTraceNameOrPortSelector,
     })
 
     // Note: SRJ names this value lengthTolerance, but it carries
