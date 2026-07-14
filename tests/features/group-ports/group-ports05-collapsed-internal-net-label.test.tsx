@@ -37,9 +37,9 @@ test("collapsed group port exposes its internal connectivity key", async () => {
 
   expect(publicPortNames).toEqual(["ROW1"])
 
-  const leakedLabels = circuit.db.schematic_net_label.list().filter((label) =>
-    /unnamed|connectivity_net/.test(label.text),
-  )
+  const leakedLabels = circuit.db.schematic_net_label
+    .list()
+    .filter((label) => /unnamed|connectivity_net/.test(label.text))
 
   expect(leakedLabels).toHaveLength(1)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
