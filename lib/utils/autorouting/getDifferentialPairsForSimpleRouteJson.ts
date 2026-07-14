@@ -1,4 +1,4 @@
-import type { SourceTrace } from "circuit-json"
+import type { SourcePort, SourceTrace } from "circuit-json"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { Port } from "lib/components/primitive-components/Port/Port"
 import type {
@@ -8,6 +8,7 @@ import type {
 } from "./SimpleRouteJson"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
+type SourcePortId = NonNullable<SourcePort["source_port_id"]>
 type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>
 type SubcircuitConnectivityMapKey = NonNullable<
   SourceTrace["subcircuit_connectivity_map_key"]
@@ -34,25 +35,45 @@ type GetDifferentialPairSrjConnectionNameOrThrowParams = {
   traceNameOrPortSelector: string
 }
 
+const getDifferentialPairSourceTracesByTraceName = (
+  differentialPairSourceTraces: SourceTrace[],
+  traceName: string,
+): SourceTrace[] =>
+  differentialPairSourceTraces.filter(
+    (sourceTrace) => sourceTrace.name === traceName,
+  )
+
+const getDifferentialPairSourceTracesByPortId = (
+  differentialPairSourceTraces: SourceTrace[],
+  sourcePortId: SourcePortId,
+): SourceTrace[] =>
+  differentialPairSourceTraces.filter((sourceTrace) =>
+    sourceTrace.connected_source_port_ids.includes(sourcePortId),
+  )
+
 const getDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrow = ({
   differentialPair,
   differentialPairSourceTraces,
   traceNameOrPortSelector,
 }: GetDifferentialPairTraceSubcircuitConnectivityMapKeyOrThrowParams): SubcircuitConnectivityMapKey => {
   const differentialPairSubcircuit = differentialPair.getSubcircuit()
-  const sourceTracesWithMatchingName = differentialPairSourceTraces.filter(
-    (sourceTrace) => sourceTrace.name === traceNameOrPortSelector,
-  )
+  const sourceTracesWithMatchingName =
+    getDifferentialPairSourceTracesByTraceName(
+      differentialPairSourceTraces,
+      traceNameOrPortSelector,
+    )
   const selectedPort =
     sourceTracesWithMatchingName.length === 0
       ? differentialPairSubcircuit.selectOne<Port>(traceNameOrPortSelector, {
           type: "port",
         })
       : null
-  const selectedSourcePortId = selectedPort?.source_port_id
+  const selectedSourcePortId: SourcePortId | undefined =
+    selectedPort?.source_port_id ?? undefined
   const matchingSourceTraces = selectedSourcePortId
-    ? differentialPairSourceTraces.filter((sourceTrace) =>
-        sourceTrace.connected_source_port_ids.includes(selectedSourcePortId),
+    ? getDifferentialPairSourceTracesByPortId(
+        differentialPairSourceTraces,
+        selectedSourcePortId,
       )
     : sourceTracesWithMatchingName
 
