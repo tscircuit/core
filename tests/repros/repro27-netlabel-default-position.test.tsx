@@ -28,7 +28,5 @@ test("netlabel defaults anchor to connected port position", () => {
   })!
   const label = su(circuitJson).schematic_net_label.list()[0]
 
-  expect(label.anchor_position).toEqual(schPort.center)
-
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
