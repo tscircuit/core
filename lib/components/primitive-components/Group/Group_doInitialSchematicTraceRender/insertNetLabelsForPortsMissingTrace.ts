@@ -1,7 +1,7 @@
+import type { SourceNet } from "circuit-json"
 import type { Group } from "lib/components"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
-import type { SourceNet } from "circuit-json"
 import type { Port } from "../../Port"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
 
@@ -159,6 +159,12 @@ export const insertNetLabelsForPortsMissingTrace = ({
       .join("/")
     const directCrossSubcircuitConnectionLabelText =
       getDirectCrossSubcircuitConnectionLabelText(db, srcPortId)
+    const isConnectivityKeyFallback =
+      !sourceNet?.name &&
+      !sourceNet?.source_net_id &&
+      !assignedPortNetLabelText &&
+      !directCrossSubcircuitConnectionLabelText &&
+      !implicitPortLabelText
 
     const text =
       sourceNet?.name ||
@@ -167,6 +173,51 @@ export const insertNetLabelsForPortsMissingTrace = ({
       directCrossSubcircuitConnectionLabelText ||
       implicitPortLabelText ||
       connKey
+
+    if (isConnectivityKeyFallback) {
+      const sourcePortComponent = connectedPortsForKey.find(
+        (port) => port.source_port_id === srcPortId,
+      )
+      const collapsedGroup = sourcePortComponent?.parent
+      if (
+        sourcePortComponent?.isGroupPort() &&
+        collapsedGroup?._parsedProps?.showAsSchematicBox
+      ) {
+        const sourceTracesConnectedToPort = db.source_trace
+          .list()
+          .filter((trace) =>
+            trace.connected_source_port_ids?.includes(srcPortId),
+          )
+        const isPortInsideCollapsedGroup = (port: Port) => {
+          let parent = port.parent
+          while (parent) {
+            if (parent === collapsedGroup) return true
+            parent = parent.parent
+          }
+          return false
+        }
+        const allConnectionsAreInternal =
+          sourceTracesConnectedToPort.length > 0 &&
+          sourceTracesConnectedToPort.every(
+            (trace) =>
+              (trace.connected_source_net_ids?.length ?? 0) === 0 &&
+              trace.connected_source_port_ids
+                .filter((sourcePortId) => sourcePortId !== srcPortId)
+                .every((sourcePortId) => {
+                  const connectedPort = connectedPortsForKey.find(
+                    (port) => port.source_port_id === sourcePortId,
+                  )
+                  return connectedPort
+                    ? isPortInsideCollapsedGroup(connectedPort)
+                    : false
+                }),
+          )
+
+        // Keep implementation-only connectivity behind a collapsed box. A
+        // public pin without a parent-visible connection remains visually open.
+        if (allConnectionsAreInternal) continue
+      }
+    }
 
     const connectedPortCountForKey = Array.from(
       allSourceAndSchematicPortIdsInScope,
