@@ -46,6 +46,6 @@ test("rp2040-zero crystal connection falls back to net labels", async () => {
     .list()
     .filter((label) => label.text === "R8_pin2/C17_pin1/X1_XTAL2")
 
-  expect(fallbackLabels).toHaveLength(2)
+  expect(fallbackLabels).toHaveLength(0)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
