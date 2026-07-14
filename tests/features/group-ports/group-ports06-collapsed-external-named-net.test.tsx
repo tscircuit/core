@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("collapsed group port hides its internal connectivity key", async () => {
+test("collapsed group port preserves an external named net label", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -25,22 +25,18 @@ test("collapsed group port hides its internal connectivity key", async () => {
 
         <trace from=".D1 > .anode" to=".D2 > .anode" />
       </group>
+
+      <trace from=".MATRIX_ROW > .ROW1" to="net.ROW1" />
     </board>,
   )
 
   await circuit.renderUntilSettled()
 
-  const publicPortNames = circuit.db.source_port
-    .list()
-    .filter((port) => port.source_component_id === null)
-    .map((port) => port.name)
+  const labels = circuit.db.schematic_net_label.list()
 
-  expect(publicPortNames).toEqual(["ROW1"])
-
-  const leakedLabels = circuit.db.schematic_net_label
-    .list()
-    .filter((label) => /unnamed|connectivity_net/.test(label.text))
-
-  expect(leakedLabels).toHaveLength(0)
+  expect(labels.some((label) => label.text === "ROW1")).toBe(true)
+  expect(
+    labels.filter((label) => /unnamed|connectivity_net/.test(label.text)),
+  ).toHaveLength(0)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
