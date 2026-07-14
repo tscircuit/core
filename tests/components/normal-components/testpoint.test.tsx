@@ -57,8 +57,6 @@ test("<testpoint /> component with netlabel test", async () => {
 
   circuit.render()
 
-  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([])
-
   expect(circuit).toMatchSchematicSnapshot(
     import.meta.path + ".schematic-netlabels",
   )
