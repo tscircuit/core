@@ -7,6 +7,7 @@ import { Trace } from "../Trace/Trace"
 import type { Port } from "../Port"
 import type { z } from "zod"
 import { createBreakoutPointSolverInput } from "./createBreakoutPointSolverInput"
+import { TraceConnectionError } from "../../../errors"
 
 export class Breakout extends Group<typeof breakoutProps> {
   constructor(props: z.input<typeof breakoutProps>) {
@@ -51,7 +52,17 @@ export class Breakout extends Group<typeof breakoutProps> {
     const autoPlacedPorts = new Set<Port>()
 
     for (const trace of allTraces) {
-      const result = trace._findConnectedPorts()
+      // A trace with an unresolvable/ambiguous selector (e.g. a bare refdes
+      // ".R1" on a multi-pin component) throws a TraceConnectionError here.
+      // This phase runs before source trace rendering records the error, so
+      // swallow it and skip the trace rather than crashing the whole render.
+      let result: ReturnType<Trace["_findConnectedPorts"]>
+      try {
+        result = trace._findConnectedPorts()
+      } catch (error) {
+        if (error instanceof TraceConnectionError) continue
+        throw error
+      }
       if (!result.allPortsFound || !result.ports) continue
 
       for (const port of result.ports) {

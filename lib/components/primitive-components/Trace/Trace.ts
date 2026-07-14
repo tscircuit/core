@@ -130,6 +130,14 @@ export class Trace
         ports?: undefined
         portsWithSelectors?: undefined
       } {
+    // If we already determined during source rendering that this trace has an
+    // unresolvable/ambiguous selector, don't re-throw the TraceConnectionError
+    // on subsequent calls (e.g. during autorouting or breakout point
+    // placement). doInitialSourceTraceRender already recorded a
+    // source_trace_not_connected_error for it.
+    if (this._couldNotFindPort) {
+      return { allPortsFound: false }
+    }
     return Trace__findConnectedPorts(this)
   }
 
@@ -189,11 +197,16 @@ export class Trace
   _getAllTracesConnectedToSameNet(): Trace[] {
     const traces = this.getSubcircuit().selectAll("trace") as Trace[]
 
+    if (this._couldNotFindPort) return []
+
     const myNets = this._findConnectedNets().nets
     const myPorts = this._findConnectedPorts().ports ?? []
 
     return traces.filter((t) => {
       if (t === this) return false
+      // Skip traces with unresolvable selectors so a single bad selector
+      // doesn't throw a TraceConnectionError and crash the whole render.
+      if (t._couldNotFindPort) return false
       const tNets = t._findConnectedNets().nets
       const tPorts = t._findConnectedPorts().ports ?? []
       return (
