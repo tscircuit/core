@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 /** Ensure TestPoint renders correctly */
@@ -57,7 +57,9 @@ test("<testpoint /> component with netlabel test", async () => {
 
   circuit.render()
 
+  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([])
+
   expect(circuit).toMatchSchematicSnapshot(
-    import.meta.path + ".schematic-netlabels",
+    `${import.meta.path}.schematic-netlabels`,
   )
 })
