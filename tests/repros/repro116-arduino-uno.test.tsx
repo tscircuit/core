@@ -62,7 +62,7 @@ test("repro116: arduino uno trace and via inflation", async () => {
   const arduinoUnoCircuitJson = converter.getOutput() as CircuitJson
 
   circuit.add(
-    <board>
+    <board schematicDisabled>
       <subcircuit circuitJson={arduinoUnoCircuitJson} />
     </board>,
   )
