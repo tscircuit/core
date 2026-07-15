@@ -458,10 +458,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   )
   const exposedDescendantSourceNetIds = new Set<string>()
   for (const trace of currentSubcircuitSourceTraces) {
-    if (
-      !exposedBridgeSourceTraceIds.has(trace.source_trace_id) &&
-      !trace.name?.startsWith("exposed_net.")
-    ) {
+    // Exposed-net bridge traces are identified by the explicit runtime marker
+    // set when Subcircuit creates them. Their generated display name is not
+    // part of the routing contract.
+    if (!exposedBridgeSourceTraceIds.has(trace.source_trace_id)) {
       continue
     }
     for (const sourceNetId of trace.connected_source_net_ids ?? []) {
