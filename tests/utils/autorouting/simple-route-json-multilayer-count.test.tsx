@@ -2,10 +2,11 @@ import { expect, test } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("simple route json preserves multilayer board layerCount", async () => {
+test("simple route json preserves a ten-layer board layerCount", async () => {
   const { circuit } = getTestFixture()
 
-  circuit.add(<board width="10mm" height="10mm" layers={8} />)
+  // Remove this cast once @tscircuit/props includes 10-layer boards.
+  circuit.add(<board width="10mm" height="10mm" layers={10 as 8} />)
 
   await circuit.renderUntilSettled()
 
@@ -14,6 +15,6 @@ test("simple route json preserves multilayer board layerCount", async () => {
     db: circuit.db,
   })
 
-  expect(pcbBoard?.num_layers).toBe(8)
-  expect(simpleRouteJson.layerCount).toBe(8)
+  expect(pcbBoard?.num_layers).toBe(10)
+  expect(simpleRouteJson.layerCount).toBe(10)
 })
