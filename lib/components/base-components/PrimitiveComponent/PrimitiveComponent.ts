@@ -139,7 +139,7 @@ export abstract class PrimitiveComponent<
   }
 
   get isGroup() {
-    return this.lowercaseComponentName === "group"
+    return this.lowercaseComponentName === "group" || this._isShell
   }
 
   get name() {
@@ -157,6 +157,9 @@ export abstract class PrimitiveComponent<
    *
    */
   isPrimitiveContainer = false
+  _isNormalComponent = false
+  /** True for the logical package container used by multi-unit components. */
+  _isShell = false
   canHaveTextChildren = false
 
   source_group_id: string | null = null
@@ -197,7 +200,14 @@ export abstract class PrimitiveComponent<
             name: true,
           })
         : this.config.zodProps
-    const parsePropsResult = zodProps.safeParse(props ?? {})
+    // ZodEffects schemas cannot be made partial above. Shell units derive their
+    // name from their parent later, so provide a parse-only name for schemas
+    // that still require the common component name field.
+    const propsForParsing =
+      props && !props.name && props.unitId
+        ? { ...props, name: props.refdesOverride ?? props.unitId }
+        : (props ?? {})
+    const parsePropsResult = zodProps.safeParse(propsForParsing)
     if (parsePropsResult.success) {
       this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
     } else {

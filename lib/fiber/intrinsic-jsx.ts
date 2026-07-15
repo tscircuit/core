@@ -1,26 +1,36 @@
 import type * as Props from "@tscircuit/props"
 
+type ShellUnitCompatible<ComponentProps> = Omit<ComponentProps, "name"> &
+  (
+    | { name: string }
+    | {
+        name?: string
+        unitId: string
+        pinMapping: Record<string, string>
+      }
+  )
+
 export interface TscircuitElements {
-  resistor: Props.ResistorProps
-  capacitor: Props.CapacitorProps
-  inductor: Props.InductorProps
-  pushbutton: Props.PushButtonProps
-  diode: Props.DiodeProps
-  fuse: Props.FuseProps
-  led: Props.LedProps
+  resistor: ShellUnitCompatible<Props.ResistorProps>
+  capacitor: ShellUnitCompatible<Props.CapacitorProps>
+  inductor: ShellUnitCompatible<Props.InductorProps>
+  pushbutton: ShellUnitCompatible<Props.PushButtonProps>
+  diode: ShellUnitCompatible<Props.DiodeProps>
+  fuse: ShellUnitCompatible<Props.FuseProps>
+  led: ShellUnitCompatible<Props.LedProps>
   board: Props.BoardProps
   drccheck: Props.DrcCheckProps
   mountedboard: Props.MountedBoardProps
   panel: Props.PanelProps
   subpanel: Props.SubpanelProps
-  jumper: Props.JumperProps
-  interconnect: Props.InterconnectProps
-  solderjumper: Props.SolderJumperProps
-  bug: Props.ChipProps
-  potentiometer: Props.PotentiometerProps
-  chip: Props.ChipProps
-  pinout: Props.PinoutProps
-  powersource: Props.PowerSourceProps
+  jumper: ShellUnitCompatible<Props.JumperProps>
+  interconnect: ShellUnitCompatible<Props.InterconnectProps>
+  solderjumper: ShellUnitCompatible<Props.SolderJumperProps>
+  bug: ShellUnitCompatible<Props.ChipProps>
+  potentiometer: ShellUnitCompatible<Props.PotentiometerProps>
+  chip: ShellUnitCompatible<Props.ChipProps>
+  pinout: ShellUnitCompatible<Props.PinoutProps>
+  powersource: ShellUnitCompatible<Props.PowerSourceProps>
   schematicsection: Props.SchematicSectionProps
   schematicsheet: Props.SchematicSheetProps
   via: Props.ViaProps
@@ -40,8 +50,9 @@ export interface TscircuitElements {
   hole: Props.HoleProps
   port: Props.PortProps
   group: Props.GroupProps
+  shell: Props.ShellProps
   netlabel: Props.NetLabelProps
-  opamp: Props.OpAmpProps
+  opamp: ShellUnitCompatible<Props.OpAmpProps>
   cadmodel: Props.CadModelProps
   cadassembly: Props.CadAssemblyProps
   net: Props.NetProps
@@ -54,7 +65,7 @@ export interface TscircuitElements {
   autoroutingphase: Props.AutoroutingPhaseProps
   custom: any
   component: Props.ComponentProps
-  crystal: Props.CrystalProps
+  crystal: ShellUnitCompatible<Props.CrystalProps>
   footprint: Props.FootprintProps & { name?: string }
   silkscreentext: Props.SilkscreenTextProps
   silkscreengraphic: Props.SilkscreenGraphicProps
@@ -80,18 +91,18 @@ export interface TscircuitElements {
   fabricationnotedimension: Props.FabricationNoteDimensionProps
   constraint: Props.ConstraintProps
   constrainedlayout: Props.ConstrainedLayoutProps
-  battery: Props.BatteryProps
-  connector: Props.ConnectorProps
-  pinheader: Props.PinHeaderProps
-  resonator: Props.ResonatorProps
+  battery: ShellUnitCompatible<Props.BatteryProps>
+  connector: ShellUnitCompatible<Props.ConnectorProps>
+  pinheader: ShellUnitCompatible<Props.PinHeaderProps>
+  resonator: ShellUnitCompatible<Props.ResonatorProps>
   subcircuit: Props.SubcircuitGroupProps
-  transistor: Props.TransistorProps
-  switch: Props.SwitchProps
-  mosfet: Props.MosfetProps
-  testpoint: Props.TestpointProps
-  voltagesource: Props.VoltageSourceProps
-  currentsource: Props.CurrentSourceProps
-  ammeter: Props.AmmeterProps
+  transistor: ShellUnitCompatible<Props.TransistorProps>
+  switch: ShellUnitCompatible<Props.SwitchProps>
+  mosfet: ShellUnitCompatible<Props.MosfetProps>
+  testpoint: ShellUnitCompatible<Props.TestpointProps>
+  voltagesource: ShellUnitCompatible<Props.VoltageSourceProps>
+  currentsource: ShellUnitCompatible<Props.CurrentSourceProps>
+  ammeter: ShellUnitCompatible<Props.AmmeterProps>
   voltageprobe: Props.VoltageProbeProps
   copperpour: Props.CopperPourProps
   analogsimulation: Props.AnalogSimulationProps

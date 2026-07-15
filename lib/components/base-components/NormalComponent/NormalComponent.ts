@@ -140,6 +140,25 @@ export class NormalComponent<
   isPrimitiveContainer = true
   _isNormalComponent = true
 
+  override get name(): string {
+    const unitId = this._parsedProps?.unitId
+    if (unitId && this.parent?._isShell) {
+      return (
+        this._parsedProps.refdesOverride ?? `${this.parent.name ?? ""}${unitId}`
+      )
+    }
+    return super.name
+  }
+
+  override getNameAndAliases(): string[] {
+    const names = super.getNameAndAliases()
+    const unitId = this._parsedProps?.unitId
+    if (!unitId || !this.parent?._isShell) return names
+
+    const logicalUnitName = `${this.parent.name ?? ""}${unitId}`
+    return names.includes(logicalUnitName) ? names : [...names, logicalUnitName]
+  }
+
   // Mapping from camelCase attribute names to their lowercase equivalents
   // This is used by the CSS selector adapter for fast attribute lookups
   // Reverse mapping from lowercase to camelCase for O(1) lookups
@@ -2122,6 +2141,22 @@ export class NormalComponent<
   }
 
   doInitialSourceComponentPropertyValidation(): void {
+    const { unitId, pinMapping, refdesOverride } = this._parsedProps
+    if (unitId && !this.parent?._isShell) {
+      throw new Error(
+        `<${this.lowercaseComponentName}> unitId="${unitId}" must be a direct child of a <shell> (received parent <${this.parent?.lowercaseComponentName ?? "none"}>)`,
+      )
+    }
+    if (unitId && (!pinMapping || Object.keys(pinMapping).length === 0)) {
+      throw new Error(
+        `<${this.lowercaseComponentName}> unitId="${unitId}" must define a non-empty pinMapping`,
+      )
+    }
+    if (!unitId && (pinMapping || refdesOverride)) {
+      throw new Error(
+        `<${this.lowercaseComponentName}> must define unitId when using pinMapping or refdesOverride`,
+      )
+    }
     this._insertInvalidFootprintPropErrors()
   }
 
