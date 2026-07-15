@@ -1,4 +1,5 @@
 import {
+  dedupePcbDrcErrors,
   runAllNetlistChecks,
   runAllPinSpecificationChecks,
   runAllPlacementChecks,
@@ -645,6 +646,9 @@ export class Board
 
     const runDrcChecks = async (circuitJson: AnyCircuitElement[]) => {
       const checksToRun: Promise<AnyCircuitElement[]>[] = []
+      const existingDrcErrors = db
+        .toArray()
+        .filter((element) => element.type.endsWith("_error"))
 
       if (shouldRunRoutingChecks) {
         checksToRun.push(
@@ -653,12 +657,11 @@ export class Board
       }
 
       if (shouldRunPlacementChecks) {
-        const existingPlacementDiagnostics = db.toArray()
         checksToRun.push(
           runAllPlacementChecks(circuitJson).then((results) =>
             results.filter(
               (result) =>
-                !existingPlacementDiagnostics.some(
+                !existingDrcErrors.some(
                   (existing) =>
                     existing.type === result.type &&
                     "message" in existing &&
@@ -690,7 +693,16 @@ export class Board
       }
 
       const checkResults = await Promise.all(checksToRun)
-      db.insertAll(checkResults.flat())
+      const newResults = checkResults.flat()
+      const newResultSet = new Set(newResults)
+
+      // Initial placement DRC may already contain the typed error. Include it
+      // when choosing canonical reports, but only insert this pass's results.
+      db.insertAll(
+        dedupePcbDrcErrors([...existingDrcErrors, ...newResults]).filter(
+          (result) => newResultSet.has(result),
+        ),
+      )
     }
 
     const subcircuit = db.subtree({ subcircuit_id: this.subcircuit_id })
