@@ -388,7 +388,7 @@ export abstract class Renderable implements IRenderable {
 
     if (
       (phase.startsWith("Schematic") || phase === "SymbolContainerRender") &&
-      this._getRootCircuit()?.schematicDisabled
+      (this as any).root?.schematicDisabled
     ) {
       return
     }
@@ -450,7 +450,7 @@ export abstract class Renderable implements IRenderable {
   runRenderPhaseForChildren(phase: RenderPhase): void {
     if (
       (phase.startsWith("Schematic") || phase === "SymbolContainerRender") &&
-      this._getRootCircuit()?.schematicDisabled
+      (this as any).root?.schematicDisabled
     ) {
       return
     }

@@ -1,5 +1,3 @@
 import type { IIsolatedCircuit } from "./IIsolatedCircuit"
 
-export interface IRootCircuit extends IIsolatedCircuit {
-  schematicDisabled: boolean
-}
+export interface IRootCircuit extends IIsolatedCircuit {}
