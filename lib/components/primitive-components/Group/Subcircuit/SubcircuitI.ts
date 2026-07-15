@@ -4,6 +4,7 @@ import type { IGroup } from "../IGroup"
 
 export interface SubcircuitI {
   subcircuit_id: string | null
+  _hasImportedSchematicElements: boolean
   add(component: PrimitiveComponent): void
   root: IsolatedCircuit | null
   getGroup(): IGroup | null
