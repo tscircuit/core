@@ -186,14 +186,9 @@ export async function renderArduinoUnoRerouteRegion({
   label?: string
   rerouteRegion: RectRerouteRegion
 }) {
-  const { circuit: beforeRerouteCircuit } = getTestFixture({
-    platform: { schematicDisabled: true },
-  })
+  const { circuit: beforeRerouteCircuit } = getTestFixture()
   const { circuit: afterRerouteCircuit } = getTestFixture({
-    platform: {
-      placementDrcChecksDisabled: true,
-      schematicDisabled: true,
-    },
+    platform: { placementDrcChecksDisabled: true },
   })
   const phaseInputs: SimpleRouteJson[] = []
 

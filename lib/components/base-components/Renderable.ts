@@ -82,6 +82,21 @@ export const renderPhaseIndexMap = new Map<RenderPhase, number>(
   orderedRenderPhases.map((phase, index) => [phase, index]),
 )
 
+const firstSchematicRenderPhaseIndex = renderPhaseIndexMap.get(
+  "SchematicComponentRender",
+)!
+const lastSchematicRenderPhaseIndex = renderPhaseIndexMap.get(
+  "SchematicReplaceNetLabelsWithSymbols",
+)!
+
+export const isSchematicRenderPhase = (phase: RenderPhase) => {
+  const phaseIndex = renderPhaseIndexMap.get(phase)!
+  return (
+    phaseIndex >= firstSchematicRenderPhaseIndex &&
+    phaseIndex <= lastSchematicRenderPhaseIndex
+  )
+}
+
 // Declare async dependencies between phases where later phases should wait for
 // async effects originating in specific earlier phases to complete within the
 // current component's subtree.
@@ -377,6 +392,14 @@ export abstract class Renderable implements IRenderable {
   }
 
   /**
+   * Returns whether this component and its subtree participate in a render
+   * phase. Overrides must be stable by the time the phase is first reached.
+   */
+  protected _isRenderPhaseEnabled(_phase: RenderPhase): boolean {
+    return true
+  }
+
+  /**
    * This runs all the render methods for a given phase, calling one of:
    * - doInitial*
    * - update*
@@ -386,6 +409,13 @@ export abstract class Renderable implements IRenderable {
   runRenderPhase(phase: RenderPhase) {
     this._currentRenderPhase = phase
     const phaseState = this.renderPhaseStates[phase]
+
+    if (!this._isRenderPhaseEnabled(phase)) {
+      phaseState.initialized = true
+      phaseState.dirty = false
+      return
+    }
+
     const isInitialized = phaseState.initialized
     const isDirty = phaseState.dirty
 
@@ -440,6 +470,8 @@ export abstract class Renderable implements IRenderable {
   }
 
   runRenderPhaseForChildren(phase: RenderPhase): void {
+    if (!this._isRenderPhaseEnabled(phase)) return
+
     for (const child of this.children) {
       // For isolated subcircuits, skip children during RenderIsolatedSubcircuits.
       // The children will be rendered in isolation and then inflated back.

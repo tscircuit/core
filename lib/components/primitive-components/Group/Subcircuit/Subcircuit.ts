@@ -1,17 +1,27 @@
 import { subcircuitProps } from "@tscircuit/props"
 import type { z } from "zod"
 import { inflateCircuitJson } from "../../../../utils/circuit-json/inflate-circuit-json"
+import {
+  type RenderPhase,
+  isSchematicRenderPhase,
+} from "../../../base-components/Renderable"
 import { Net } from "../../Net"
 import { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
+import { Subcircuit_getSubcircuitPropHash } from "../Subcircuit_getSubcircuitPropHash"
 import type { SubcircuitI } from "./SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "./Subcircuit_doInitialRenderIsolatedSubcircuits"
-import { Subcircuit_getSubcircuitPropHash } from "../Subcircuit_getSubcircuitPropHash"
+import {
+  type CircuitJsonRenderDomains,
+  getCircuitJsonRenderDomains,
+} from "./get-circuit-json-render-domains"
 
 export class Subcircuit
   extends Group<typeof subcircuitProps>
   implements SubcircuitI
 {
+  private _circuitJsonRenderDomains: CircuitJsonRenderDomains | null = null
+
   constructor(props: z.input<typeof subcircuitProps>) {
     super({
       ...props,
@@ -41,6 +51,16 @@ export class Subcircuit
   doInitialCreateNetsFromProps(): void {
     super.doInitialCreateNetsFromProps()
     this._createTracesForExposedConnections()
+  }
+
+  protected override _isRenderPhaseEnabled(phase: RenderPhase): boolean {
+    if (!super._isRenderPhaseEnabled(phase)) return false
+    if (!isSchematicRenderPhase(phase)) return true
+
+    const renderDomains = this._circuitJsonRenderDomains
+    if (!renderDomains) return true
+
+    return !renderDomains.pcb || renderDomains.schematic
   }
 
   private _createTracesForExposedConnections(): void {
@@ -117,6 +137,7 @@ export class Subcircuit
     const isolatedJson = this._isolatedCircuitJson
     if (isolatedJson) {
       this._isInflatedFromCircuitJson = true
+      this._circuitJsonRenderDomains = getCircuitJsonRenderDomains(isolatedJson)
       this._isolatedCircuitJson = null
       inflateCircuitJson(this, isolatedJson, [])
       return
@@ -125,6 +146,7 @@ export class Subcircuit
     const { circuitJson, children } = this._parsedProps
     if (circuitJson) {
       this._isInflatedFromCircuitJson = true
+      this._circuitJsonRenderDomains = getCircuitJsonRenderDomains(circuitJson)
     }
     inflateCircuitJson(this, circuitJson, children)
   }
