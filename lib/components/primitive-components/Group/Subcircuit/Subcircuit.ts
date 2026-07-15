@@ -4,9 +4,9 @@ import { inflateCircuitJson } from "../../../../utils/circuit-json/inflate-circu
 import { Net } from "../../Net"
 import { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
+import { Subcircuit_getSubcircuitPropHash } from "../Subcircuit_getSubcircuitPropHash"
 import type { SubcircuitI } from "./SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "./Subcircuit_doInitialRenderIsolatedSubcircuits"
-import { Subcircuit_getSubcircuitPropHash } from "../Subcircuit_getSubcircuitPropHash"
 
 export class Subcircuit
   extends Group<typeof subcircuitProps>
@@ -117,6 +117,9 @@ export class Subcircuit
     const isolatedJson = this._isolatedCircuitJson
     if (isolatedJson) {
       this._isInflatedFromCircuitJson = true
+      this._hasImportedSchematicElements = isolatedJson.some((element) =>
+        element.type.startsWith("schematic_"),
+      )
       this._isolatedCircuitJson = null
       inflateCircuitJson(this, isolatedJson, [])
       return
@@ -125,6 +128,9 @@ export class Subcircuit
     const { circuitJson, children } = this._parsedProps
     if (circuitJson) {
       this._isInflatedFromCircuitJson = true
+      this._hasImportedSchematicElements = circuitJson.some((element) =>
+        element.type.startsWith("schematic_"),
+      )
     }
     inflateCircuitJson(this, circuitJson, children)
   }

@@ -1,12 +1,12 @@
-import { Group } from "../Group"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import Debug from "debug"
-import { createSchematicTraceSolverInputProblem } from "./createSchematicTraceSolverInputProblem"
-import { applyTracesFromSolverOutput } from "./applyTracesFromSolverOutput"
+import { Group } from "../Group"
 import { applyNetLabelPlacements } from "./applyNetLabelPlacements"
-import { insertNetLabelsForPortsMissingTrace } from "./insertNetLabelsForPortsMissingTrace"
+import { applyTracesFromSolverOutput } from "./applyTracesFromSolverOutput"
+import { createSchematicTraceSolverInputProblem } from "./createSchematicTraceSolverInputProblem"
 import { getSchematicPortIdsWithAssignedNetLabels } from "./getSchematicPortIdsWithAssignedNetLabels"
 import { getSchematicPortIdsWithRoutedTraces } from "./getSchematicPortIdsWithRoutedTraces"
+import { insertNetLabelsForPortsMissingTrace } from "./insertNetLabelsForPortsMissingTrace"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -17,6 +17,8 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   if (!group.root?._featureMspSchematicTraceRouting) return
   if (!group.isSubcircuit) return
   if (group.root?.schematicDisabled) return
+  if (group._isInflatedFromCircuitJson && !group._hasImportedSchematicElements)
+    return
 
   // Prepare the solver input and context
   const {
