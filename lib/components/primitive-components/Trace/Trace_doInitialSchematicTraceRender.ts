@@ -1,35 +1,34 @@
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
-import { type Point, doesLineIntersectLine } from "@tscircuit/math-utils"
-import { calculateElbow } from "calculate-elbow"
 import { type SchematicNetLabel, type SchematicTrace } from "circuit-json"
+import { calculateElbow } from "calculate-elbow"
+import { doesLineIntersectLine, type Point } from "@tscircuit/math-utils"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
 import type {
-  Obstacle,
   SimpleRouteConnection,
   SimpleRouteJson,
   SimplifiedPcbTrace,
+  Obstacle,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBounds"
 import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
-import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { getStubEdges } from "lib/utils/schematic/getStubEdges"
-import { TraceConnectionError } from "../../../errors"
 import type { NetLabel } from "../NetLabel"
 import type { Port } from "../Port"
-import { Trace } from "./Trace"
 import { createSchematicTraceCrossingSegments } from "./trace-utils/create-schematic-trace-crossing-segments"
 import { createSchematicTraceJunctions } from "./trace-utils/create-schematic-trace-junctions"
 import { getSchematicObstaclesForTrace } from "./trace-utils/get-obstacles-for-trace"
 import { getOtherSchematicTraces } from "./trace-utils/get-other-schematic-traces"
 import { pushEdgesOfSchematicTraceToPreventOverlap } from "./trace-utils/push-edges-of-schematic-trace-to-prevent-overlap"
+import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { Trace } from "./Trace"
+import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
+import { TraceConnectionError } from "../../../errors"
 
 export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   if (trace.root?._featureMspSchematicTraceRouting) return
   if (trace._couldNotFindPort) return
-  if (trace._isInflatedWithoutSchematicTrace) return
   if (trace.root?.schematicDisabled) return
   if (trace.getCollapsedSchematicBoxAncestor()) return
   // if (trace.getGroup()?._getSchematicLayoutMode() === "match-adapt") return

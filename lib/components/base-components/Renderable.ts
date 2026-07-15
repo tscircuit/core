@@ -78,6 +78,20 @@ export const orderedRenderPhases = [
 
 export type RenderPhase = (typeof orderedRenderPhases)[number]
 
+const schematicRenderPhases = new Set<RenderPhase>([
+  "SchematicComponentRender",
+  "SchematicPortRender",
+  "SymbolContainerRender",
+  "SchematicPrimitiveRender",
+  "SchematicSymbolResize",
+  "SchematicComponentSizeCalculation",
+  "SchematicLayout",
+  "SchematicSectionRender",
+  "SchematicTraceRender",
+  "SchematicSheetRender",
+  "SchematicReplaceNetLabelsWithSymbols",
+])
+
 export const renderPhaseIndexMap = new Map<RenderPhase, number>(
   orderedRenderPhases.map((phase, index) => [phase, index]),
 )
@@ -385,6 +399,14 @@ export abstract class Renderable implements IRenderable {
    */
   runRenderPhase(phase: RenderPhase) {
     this._currentRenderPhase = phase
+
+    if (
+      this._getRootCircuit()?.schematicDisabled &&
+      schematicRenderPhases.has(phase)
+    ) {
+      return
+    }
+
     const phaseState = this.renderPhaseStates[phase]
     const isInitialized = phaseState.initialized
     const isDirty = phaseState.dirty
@@ -440,6 +462,13 @@ export abstract class Renderable implements IRenderable {
   }
 
   runRenderPhaseForChildren(phase: RenderPhase): void {
+    if (
+      this._getRootCircuit()?.schematicDisabled &&
+      schematicRenderPhases.has(phase)
+    ) {
+      return
+    }
+
     for (const child of this.children) {
       // For isolated subcircuits, skip children during RenderIsolatedSubcircuits.
       // The children will be rendered in isolation and then inflated back.

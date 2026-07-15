@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { KicadToCircuitJsonConverter } from "kicad-to-circuit-json"
 import fs from "node:fs"
 import type { CircuitJson } from "circuit-json"
+import { KicadToCircuitJsonConverter } from "kicad-to-circuit-json"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const getArduinoUnoCircuitJson = () => {
   const converter = new KicadToCircuitJsonConverter()
@@ -14,39 +14,27 @@ const getArduinoUnoCircuitJson = () => {
   return converter.getOutput() as CircuitJson
 }
 
-const renderImportedArduinoUno = async (opts: {
-  schematicDisabled: boolean
-}) => {
+const renderImportedArduinoUno = async () => {
   const { circuit } = getTestFixture()
   const arduinoUnoCircuitJson = getArduinoUnoCircuitJson()
-
-  const boardProps = opts.schematicDisabled ? { schematicDisabled: true } : {}
+  const importedPcbTraceCount = arduinoUnoCircuitJson.filter(
+    (element) => element.type === "pcb_trace",
+  ).length
 
   circuit.add(
-    <board {...boardProps}>
+    <board schematicDisabled>
       <subcircuit circuitJson={arduinoUnoCircuitJson} />
     </board>,
   )
 
   await circuit.renderUntilSettled()
-  return circuit
+  return { circuit, importedPcbTraceCount }
 }
 
 test("repro117: schematic disabled on board preserves imported pcb_traces", async () => {
-  const circuitWithoutSchematicDisabled = await renderImportedArduinoUno({
-    schematicDisabled: false,
-  })
-  const circuitWithSchematicDisabled = await renderImportedArduinoUno({
-    schematicDisabled: true,
-  })
+  const { circuit, importedPcbTraceCount } = await renderImportedArduinoUno()
+  const renderedPcbTraces = circuit.db.pcb_trace.list()
 
-  const pcbTracesWithoutSchematicDisabled =
-    circuitWithoutSchematicDisabled.db.pcb_trace.list()
-  const pcbTracesWithSchematicDisabled =
-    circuitWithSchematicDisabled.db.pcb_trace.list()
-
-  expect(pcbTracesWithoutSchematicDisabled.length).toBe(188)
-  expect(pcbTracesWithSchematicDisabled.length).toBe(
-    pcbTracesWithoutSchematicDisabled.length,
-  )
+  expect(importedPcbTraceCount).toBe(188)
+  expect(renderedPcbTraces.length).toBe(importedPcbTraceCount)
 }, 15_000)

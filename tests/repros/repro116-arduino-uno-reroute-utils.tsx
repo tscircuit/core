@@ -107,7 +107,7 @@ const addArduinoUnoBoard = ({
   rerouteRegion: RectRerouteRegion
 }) => {
   circuit.add(
-    <board>
+    <board schematicDisabled>
       <subcircuit circuitJson={structuredClone(arduinoUnoCircuitJson)} />
       {renderRerouteRegionNote({ label, rerouteRegion })}
       {includeReroutePhase && (

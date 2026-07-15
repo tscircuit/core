@@ -1,7 +1,7 @@
-import type { GroupProps, SubcircuitGroupProps } from "@tscircuit/props"
 import type { PcbGroup, SourceGroup } from "circuit-json"
-import { Group } from "lib/components/primitive-components/Group/Group"
 import type { InflatorContext } from "../InflatorFn"
+import { Group } from "lib/components/primitive-components/Group/Group"
+import type { GroupProps, SubcircuitGroupProps } from "@tscircuit/props"
 
 export function inflateSourceGroup(
   sourceGroup: SourceGroup,
@@ -44,7 +44,6 @@ export function inflateSourceGroup(
   // Create a Group instance
   const group = new Group(groupProps)
   group._isInflatedFromCircuitJson = true
-  group._hasImportedSchematicElements = subcircuit._hasImportedSchematicElements
 
   // Set the source_group_id so the group can be found
   group.source_group_id = sourceGroup.source_group_id

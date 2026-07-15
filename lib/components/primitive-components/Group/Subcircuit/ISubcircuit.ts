@@ -1,8 +1,8 @@
-import type { AutorouterConfig, subcircuitGroupProps } from "@tscircuit/props"
-import type { AnyCircuitElement } from "circuit-json"
-import type { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import type { NormalComponent } from "lib/components/base-components/NormalComponent/NormalComponent"
+import type { AutorouterConfig, subcircuitGroupProps } from "@tscircuit/props"
 import { z } from "zod"
+import type { AnyCircuitElement } from "circuit-json"
 import type { RoutingPhasePlan } from "../GroupRoutingPhasePlan"
 
 export interface ISubcircuit extends PrimitiveComponent {
@@ -16,7 +16,6 @@ export interface ISubcircuit extends PrimitiveComponent {
   subcircuit_id: string | null
   getNormalComponentNameMap?: () => Map<string, NormalComponent[]>
   _isInflatedFromCircuitJson: boolean
-  _hasImportedSchematicElements: boolean
   _isIsolatedSubcircuit: boolean
   _isolatedCircuitJson: AnyCircuitElement[] | null
   _normalComponentNameMap: Map<string, NormalComponent[]> | null

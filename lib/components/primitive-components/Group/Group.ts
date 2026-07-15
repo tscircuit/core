@@ -169,8 +169,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _isInflatedFromCircuitJson = false
 
-  _hasImportedSchematicElements = false
-
   _isolatedCircuitJson: AnyCircuitElement[] | null = null
 
   get _isIsolatedSubcircuit(): boolean {
@@ -1601,7 +1599,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "relative" {
-    if (this._isInflatedFromCircuitJson) return "relative"
     const props = this._parsedProps as SubcircuitGroupProps
     const schAutoLayoutEnabled = props.schAutoLayoutEnabled ?? false
     if (props.schLayout?.layoutMode === "none") return "relative"

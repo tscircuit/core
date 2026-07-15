@@ -138,12 +138,6 @@ export function inflateSourceTrace(
   }
 
   const trace = new Trace(traceProps)
-  trace._isInflatedWithoutSchematicTrace = !injectionDb.schematic_trace
-    .list()
-    .some(
-      (schematicTrace) =>
-        schematicTrace.source_trace_id === sourceTrace.source_trace_id,
-    )
   trace._inflatedPcbTraces = pcbTraces.length > 0 ? pcbTraces : undefined
   trace._inflatedPcbVias = pcbTrace
     ? injectionDb.pcb_via

@@ -55,7 +55,6 @@ export class Trace
   schematic_trace_id: string | null = null
   _inflatedPcbTraces?: PcbTrace[]
   _inflatedPcbVias?: PcbVia[]
-  _isInflatedWithoutSchematicTrace?: boolean
   _portsRoutedOnPcb: Port[]
   subcircuit_connectivity_map_key: string | null = null
   _exposesSubcircuitConnection = false
