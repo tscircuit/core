@@ -1,4 +1,5 @@
 import {
+  dedupePcbDrcErrors,
   runAllNetlistChecks,
   runAllPinSpecificationChecks,
   runAllPlacementChecks,
@@ -690,7 +691,7 @@ export class Board
       }
 
       const checkResults = await Promise.all(checksToRun)
-      db.insertAll(checkResults.flat())
+      db.insertAll(dedupePcbDrcErrors(checkResults.flat()))
     }
 
     const subcircuit = db.subtree({ subcircuit_id: this.subcircuit_id })
