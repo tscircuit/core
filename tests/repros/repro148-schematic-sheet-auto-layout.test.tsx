@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// biome-ignore lint/suspicious/noExportsInTest: Exported for placement diagnostics.
-export const SchematicSheetAutoLayoutRepro = () => (
+const SchematicSheetAutoLayoutRepro = () => (
   <board routingDisabled>
     <schematicsheet name="Main" displayName="Main" sheetIndex={0}>
       <chip
