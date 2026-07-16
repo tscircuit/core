@@ -1,12 +1,12 @@
-import { Group } from "../Group"
-import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
+import Debug from "debug"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
-import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -126,6 +126,7 @@ export function applyTracesFromSolverOutput(args: {
     source_trace_id: string
     edges: SchematicTrace["edges"]
     subcircuit_connectivity_map_key?: string
+    schematic_sheet_id?: string
   }> = []
 
   debug(`Traces inside SchematicTraceSolver output: ${(traces ?? []).length}`)
@@ -218,10 +219,26 @@ export function applyTracesFromSolverOutput(args: {
       }
     }
 
+    const endpointSchematicSheetIds = new Set(
+      solvedTraceSchematicPortIds
+        .map(
+          (schematicPortId) =>
+            db.schematic_port.get(schematicPortId)?.schematic_sheet_id,
+        )
+        .filter((sheetId): sheetId is string => Boolean(sheetId)),
+    )
+    const schematicSheetId =
+      endpointSchematicSheetIds.size === 1
+        ? endpointSchematicSheetIds.values().next().value
+        : endpointSchematicSheetIds.size === 0
+          ? group._resolveSchematicSheetId()
+          : undefined
+
     pendingTraces.push({
       source_trace_id,
       edges,
       subcircuit_connectivity_map_key,
+      schematic_sheet_id: schematicSheetId,
     })
   }
 
@@ -285,14 +302,16 @@ export function applyTracesFromSolverOutput(args: {
   ])
 
   for (const t of visibleTraces) {
+    const pendingTrace = pendingTraces.find(
+      (pendingTrace) => pendingTrace.source_trace_id === t.source_trace_id,
+    )
     db.schematic_trace.insert({
       source_trace_id: t.source_trace_id,
       edges: t.edges,
       junctions: junctionsById[t.source_trace_id] ?? [],
-      subcircuit_connectivity_map_key: pendingTraces.find(
-        (p) => p.source_trace_id === t.source_trace_id,
-      )?.subcircuit_connectivity_map_key,
-      schematic_sheet_id: schematicSheetId,
+      subcircuit_connectivity_map_key:
+        pendingTrace?.subcircuit_connectivity_map_key,
+      schematic_sheet_id: pendingTrace?.schematic_sheet_id ?? schematicSheetId,
     })
   }
 }

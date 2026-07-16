@@ -3,7 +3,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // biome-ignore lint/suspicious/noExportsInTest: Exported for placement diagnostics.
 export const SchematicSheetAutoLayoutRepro = () => (
-  <board routingDisabled>
+  <board routingDisabled schMaxTraceDistance={10}>
     <schematicsheet name="Main" displayName="Main" sheetIndex={0}>
       <chip
         name="U1"
@@ -21,7 +21,6 @@ export const SchematicSheetAutoLayoutRepro = () => (
         pinLabels={{ pin1: "IN", pin2: "GND" }}
         connections={{
           pin1: "U1.pin1",
-          pin2: "U1.pin2",
         }}
       />
 
@@ -31,7 +30,6 @@ export const SchematicSheetAutoLayoutRepro = () => (
         footprint="0402"
         connections={{
           pin1: "U1.pin3",
-          pin2: "U1.pin2",
         }}
       />
     </schematicsheet>
