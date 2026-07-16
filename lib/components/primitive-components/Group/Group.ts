@@ -407,7 +407,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   doInitialSourceRender() {
     const { db } = this.root!
 
-    for (const child of this.children) {
+    for (const child of this.getDescendants()) {
+      if (child.getGroup()?.source_group_id !== this.source_group_id) continue
       db.source_component.update(child.source_component_id!, {
         source_group_id: this.source_group_id!,
       })
@@ -1588,7 +1589,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       Group_doInitialSchematicBoxComponentRender(this)
     }
 
-    for (const child of this.children) {
+    for (const child of this.getDescendants()) {
+      if (child.getGroup()?.source_group_id !== this.source_group_id) continue
       if ((child as any)._parsedProps?.showAsSchematicBox) continue
       if (child.schematic_component_id) {
         db.schematic_component.update(child.schematic_component_id, {
