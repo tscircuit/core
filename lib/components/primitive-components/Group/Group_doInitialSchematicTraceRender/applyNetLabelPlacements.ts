@@ -1,15 +1,15 @@
-import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
-import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
-import type { SchematicNetLabel, SourceNet } from "circuit-json"
-import Debug from "debug"
-import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import type { NetLabel } from "../../NetLabel"
-import { Port } from "../../Port"
 import { Group } from "../Group"
-import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
-import { getNetNameFromPorts } from "./getNetNameFromPorts"
+import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import type { AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
+import { Port } from "../../Port"
+import type { NetLabel } from "../../NetLabel"
+import { getNetNameFromPorts } from "./getNetNameFromPorts"
+import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
+import Debug from "debug"
+import type { SchematicNetLabel, SourceNet } from "circuit-json"
+import { doBoundsOverlap, type Bounds } from "@tscircuit/math-utils"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -154,20 +154,9 @@ export function applyNetLabelPlacements(args: {
     const schPortIds = placement.pinIds.map(
       (pinId) => pinIdToSchematicPortId.get(pinId)!,
     )
-    const placementSchematicSheetIds = new Set(
-      schPortIds
-        .map(
-          (schematicPortId) =>
-            db.schematic_port.get(schematicPortId)?.schematic_sheet_id,
-        )
-        .filter((sheetId): sheetId is string => Boolean(sheetId)),
-    )
     const schematicSheetId =
-      placementSchematicSheetIds.size === 1
-        ? placementSchematicSheetIds.values().next().value
-        : placementSchematicSheetIds.size === 0
-          ? group._resolveSchematicSheetId()
-          : undefined
+      db.schematic_port.get(schPortIds[0])?.schematic_sheet_id ??
+      group._resolveSchematicSheetId()
 
     // createSchematicTraceSolverInputProblem hands the solver each pin at its
     // real schematic_port.center, but also a chip box expanded to fit the
