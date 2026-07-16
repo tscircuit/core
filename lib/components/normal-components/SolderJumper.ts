@@ -240,7 +240,7 @@ export class SolderJumper<
     this.pcb_component_id = pcb_component.pcb_component_id
   }
 
-  doInitialPcbTraceRender() {
+  doInitialPcbPortAttachment() {
     const { db } = this.root!
     const pcb_ports = db.pcb_port.list({
       pcb_component_id: this.pcb_component_id,

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing("bridged solderjumper does not prevent autorouting", async () => {
+test("bridged solderjumper does not prevent autorouting", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
