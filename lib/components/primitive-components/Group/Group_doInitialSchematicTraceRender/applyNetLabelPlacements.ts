@@ -154,9 +154,12 @@ export function applyNetLabelPlacements(args: {
     const schPortIds = placement.pinIds.map(
       (pinId) => pinIdToSchematicPortId.get(pinId)!,
     )
-    const schematicSheetId =
-      db.schematic_port.get(schPortIds[0])?.schematic_sheet_id ??
-      group._resolveSchematicSheetId()
+    // Solver labels belong to the same sheet as their connected port.
+    let schematicSheetId = group._resolveSchematicSheetId()
+    const schematicPort = db.schematic_port.get(schPortIds[0])
+    if (schematicPort?.schematic_sheet_id) {
+      schematicSheetId = schematicPort.schematic_sheet_id
+    }
 
     // createSchematicTraceSolverInputProblem hands the solver each pin at its
     // real schematic_port.center, but also a chip box expanded to fit the

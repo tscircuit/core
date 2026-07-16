@@ -1,12 +1,12 @@
-import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
-import type { SchematicTrace } from "circuit-json"
-import Debug from "debug"
-import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { Group } from "../Group"
+import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import type { SchematicTrace } from "circuit-json"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
+import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import Debug from "debug"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -219,6 +219,7 @@ export function applyTracesFromSolverOutput(args: {
       }
     }
 
+    // Solver traces belong to the sheet shared by their endpoint ports.
     const endpointSchematicSheetIds = new Set(
       solvedTraceSchematicPortIds
         .map(
@@ -227,12 +228,12 @@ export function applyTracesFromSolverOutput(args: {
         )
         .filter((sheetId): sheetId is string => Boolean(sheetId)),
     )
-    const schematicSheetId =
-      endpointSchematicSheetIds.size === 1
-        ? endpointSchematicSheetIds.values().next().value
-        : endpointSchematicSheetIds.size === 0
-          ? group._resolveSchematicSheetId()
-          : undefined
+    let schematicSheetId: string | undefined
+    if (endpointSchematicSheetIds.size === 1) {
+      schematicSheetId = endpointSchematicSheetIds.values().next().value
+    } else if (endpointSchematicSheetIds.size === 0) {
+      schematicSheetId = group._resolveSchematicSheetId()
+    }
 
     pendingTraces.push({
       source_trace_id,
@@ -305,13 +306,17 @@ export function applyTracesFromSolverOutput(args: {
     const pendingTrace = pendingTraces.find(
       (pendingTrace) => pendingTrace.source_trace_id === t.source_trace_id,
     )
+    let traceSchematicSheetId = schematicSheetId
+    if (pendingTrace?.schematic_sheet_id) {
+      traceSchematicSheetId = pendingTrace.schematic_sheet_id
+    }
     db.schematic_trace.insert({
       source_trace_id: t.source_trace_id,
       edges: t.edges,
       junctions: junctionsById[t.source_trace_id] ?? [],
       subcircuit_connectivity_map_key:
         pendingTrace?.subcircuit_connectivity_map_key,
-      schematic_sheet_id: pendingTrace?.schematic_sheet_id ?? schematicSheetId,
+      schematic_sheet_id: traceSchematicSheetId,
     })
   }
 }
