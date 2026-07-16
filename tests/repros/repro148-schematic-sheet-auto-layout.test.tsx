@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const SchematicSheetAutoLayoutRepro = () => (
+export const SchematicSheetAutoLayoutRepro = () => (
   <board routingDisabled>
     <schematicsheet name="Main" displayName="Main" sheetIndex={0}>
       <chip
@@ -37,7 +37,7 @@ const SchematicSheetAutoLayoutRepro = () => (
   </board>
 )
 
-test("repro148: schematic sheet children are auto laid out", async () => {
+test("repro148: schematic sheet children are not auto laid out", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(<SchematicSheetAutoLayoutRepro />)
