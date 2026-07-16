@@ -4,6 +4,7 @@ interface PointWithLayer {
   x: number
   y: number
   layer: string
+  width?: number
 }
 
 const isCloseTo = (a: number, b: number) => Math.abs(a - b) < 0.0001
@@ -20,6 +21,7 @@ export const getObstaclesFromRoute = (
 
     const isHorz = isCloseTo(start.y, end.y)
     const isVert = isCloseTo(start.x, end.x)
+    const traceWidth = Math.max(start.width ?? 0.1, end.width ?? 0.1)
 
     if (!isHorz && !isVert) {
       throw new Error(
@@ -34,8 +36,8 @@ export const getObstaclesFromRoute = (
         x: (start.x + end.x) / 2,
         y: (start.y + end.y) / 2,
       },
-      width: isHorz ? Math.abs(start.x - end.x) : 0.1, // TODO use route width
-      height: isVert ? Math.abs(start.y - end.y) : 0.1, // TODO use route width
+      width: isHorz ? Math.abs(start.x - end.x) : traceWidth,
+      height: isVert ? Math.abs(start.y - end.y) : traceWidth,
       connectedTo: [source_trace_id],
     }
 

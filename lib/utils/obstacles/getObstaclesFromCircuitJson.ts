@@ -403,11 +403,13 @@ export const getObstaclesFromCircuitJson = (
                 x: rp.start.x,
                 y: rp.start.y,
                 layer: rp.start_layer,
+                width: rp.width,
               },
               {
                 x: rp.end.x,
                 y: rp.end.y,
                 layer: rp.end_layer,
+                width: rp.width,
               },
             ]
           }
@@ -417,10 +419,11 @@ export const getObstaclesFromCircuitJson = (
               x: rp.x,
               y: rp.y,
               layer: rp.route_type === "wire" ? rp.layer : rp.from_layer,
+              width: rp.route_type === "wire" ? rp.width : undefined,
             },
           ]
         }),
-        element.source_trace_id!,
+        element.source_trace_id ?? element.pcb_trace_id,
       )
       obstacles.push(
         ...traceObstacles.map((obstacle) => ({
