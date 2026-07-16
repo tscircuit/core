@@ -92,7 +92,7 @@ test("repro44 - pcbPack and schematic", async () => {
       {
         "center": {
           "x": 1.77,
-          "y": -6.11,
+          "y": -6.053,
         },
         "height": 4.05,
         "layer": "top",
@@ -103,27 +103,27 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       {
         "center": {
-          "x": 4.85,
-          "y": -5.895,
+          "x": -2.04,
+          "y": -4.723,
         },
-        "height": 2.85,
+        "height": 1.4,
         "layer": "top",
         "name": "C2",
         "positionMode": "packed",
-        "rotation": -90,
-        "width": 1.4,
+        "rotation": 180,
+        "width": 2.85,
       },
       {
         "center": {
-          "x": 8.625,
-          "y": 5.545,
+          "x": 7.54,
+          "y": -7.135,
         },
-        "height": 2.45,
+        "height": 0.95,
         "layer": "top",
         "name": "D1",
         "positionMode": "packed",
-        "rotation": 90,
-        "width": 0.95,
+        "rotation": 0,
+        "width": 2.45,
       },
       {
         "center": {
@@ -139,26 +139,26 @@ test("repro44 - pcbPack and schematic", async () => {
       },
       {
         "center": {
-          "x": 5.58,
-          "y": -2.265,
+          "x": 4.85,
+          "y": -2.995,
         },
-        "height": 1.4,
+        "height": 2.85,
         "layer": "top",
         "name": "R2",
         "positionMode": "packed",
-        "rotation": 180,
-        "width": 2.85,
+        "rotation": -90,
+        "width": 1.4,
       },
       {
         "center": {
-          "x": 5.325,
-          "y": 4.265,
+          "x": 7.75,
+          "y": -2.995,
         },
         "height": 2.85,
         "layer": "top",
         "name": "R3",
         "positionMode": "packed",
-        "rotation": 90,
+        "rotation": -90,
         "width": 1.4,
       },
       {

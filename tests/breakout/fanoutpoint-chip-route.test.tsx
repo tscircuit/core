@@ -70,21 +70,23 @@ test("fanout routes a chip pin through a fanoutpoint", async () => {
 
   expect(traceThroughFanoutPoint).toBeDefined()
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  const drcErrors = circuit.db.pcb_trace_error.list()
+  const traceErrors = circuit.db.pcb_trace_error.list()
+  const clearanceErrors = circuit.db.pcb_pad_trace_clearance_error.list()
 
-  expect(drcErrors).toHaveLength(2)
+  expect(traceErrors).toHaveLength(1)
   expect(
-    drcErrors.filter((error) => error.message.includes("overlaps with")),
-  ).toHaveLength(1)
-  expect(
-    drcErrors.filter((error) => error.message.includes("too close")),
+    traceErrors.filter((error) => error.message.includes("overlaps with")),
   ).toHaveLength(0)
   expect(
-    drcErrors.filter((error) =>
+    traceErrors.filter((error) =>
       error.message.includes("disconnected endpoint"),
     ),
   ).toHaveLength(1)
   expect(
-    drcErrors.filter((error) => error.message.includes("missing a connection")),
+    traceErrors.filter((error) =>
+      error.message.includes("missing a connection"),
+    ),
   ).toHaveLength(0)
+  expect(clearanceErrors).toHaveLength(1)
+  expect(clearanceErrors[0]?.message).toInclude("too close")
 })
