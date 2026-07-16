@@ -126,6 +126,7 @@ export function applyTracesFromSolverOutput(args: {
     source_trace_id: string
     edges: SchematicTrace["edges"]
     subcircuit_connectivity_map_key?: string
+    schematic_sheet_id?: string
   }> = []
 
   debug(`Traces inside SchematicTraceSolver output: ${(traces ?? []).length}`)
@@ -218,10 +219,27 @@ export function applyTracesFromSolverOutput(args: {
       }
     }
 
+    // Solver traces belong to the sheet shared by their endpoint ports.
+    const endpointSchematicSheetIds = new Set(
+      solvedTraceSchematicPortIds
+        .map(
+          (schematicPortId) =>
+            db.schematic_port.get(schematicPortId)?.schematic_sheet_id,
+        )
+        .filter((sheetId): sheetId is string => Boolean(sheetId)),
+    )
+    let schematicSheetId: string | undefined
+    if (endpointSchematicSheetIds.size === 1) {
+      schematicSheetId = endpointSchematicSheetIds.values().next().value
+    } else if (endpointSchematicSheetIds.size === 0) {
+      schematicSheetId = group._resolveSchematicSheetId()
+    }
+
     pendingTraces.push({
       source_trace_id,
       edges,
       subcircuit_connectivity_map_key,
+      schematic_sheet_id: schematicSheetId,
     })
   }
 
@@ -285,14 +303,20 @@ export function applyTracesFromSolverOutput(args: {
   ])
 
   for (const t of visibleTraces) {
+    const pendingTrace = pendingTraces.find(
+      (pendingTrace) => pendingTrace.source_trace_id === t.source_trace_id,
+    )
+    let traceSchematicSheetId = schematicSheetId
+    if (pendingTrace?.schematic_sheet_id) {
+      traceSchematicSheetId = pendingTrace.schematic_sheet_id
+    }
     db.schematic_trace.insert({
       source_trace_id: t.source_trace_id,
       edges: t.edges,
       junctions: junctionsById[t.source_trace_id] ?? [],
-      subcircuit_connectivity_map_key: pendingTraces.find(
-        (p) => p.source_trace_id === t.source_trace_id,
-      )?.subcircuit_connectivity_map_key,
-      schematic_sheet_id: schematicSheetId,
+      subcircuit_connectivity_map_key:
+        pendingTrace?.subcircuit_connectivity_map_key,
+      schematic_sheet_id: traceSchematicSheetId,
     })
   }
 }

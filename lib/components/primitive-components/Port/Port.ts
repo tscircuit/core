@@ -592,6 +592,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   doInitialSchematicPortRender(): void {
+    if (this.root?.schematicDisabled) return
+
     const collapsedAncestor = this.getCollapsedSchematicBoxAncestor()
     if (collapsedAncestor && this.parent !== collapsedAncestor) return
 

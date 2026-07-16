@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
-import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { KicadToCircuitJsonConverter } from "kicad-to-circuit-json"
 import fs from "node:fs"
 import type { CircuitJson } from "circuit-json"
+import { KicadToCircuitJsonConverter } from "kicad-to-circuit-json"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const getArduinoUnoCircuitJson = () => {
   const converter = new KicadToCircuitJsonConverter()
@@ -14,16 +14,14 @@ const getArduinoUnoCircuitJson = () => {
   return converter.getOutput() as CircuitJson
 }
 
-const renderImportedArduinoUno = async (opts: {
-  schematicDisabled: boolean
-}) => {
-  const { circuit } = getTestFixture()
+const renderImportedArduinoUnoWithSchematicDisabled = async () => {
+  const { circuit } = getTestFixture({
+    platform: { schematicDisabled: true },
+  })
   const arduinoUnoCircuitJson = getArduinoUnoCircuitJson()
 
-  const boardProps = opts.schematicDisabled ? { schematicDisabled: true } : {}
-
   circuit.add(
-    <board {...boardProps}>
+    <board>
       <subcircuit circuitJson={arduinoUnoCircuitJson} />
     </board>,
   )
@@ -32,21 +30,13 @@ const renderImportedArduinoUno = async (opts: {
   return circuit
 }
 
-test("repro117: schematic disabled on board preserves imported pcb_traces", async () => {
-  const circuitWithoutSchematicDisabled = await renderImportedArduinoUno({
-    schematicDisabled: false,
-  })
-  const circuitWithSchematicDisabled = await renderImportedArduinoUno({
-    schematicDisabled: true,
-  })
+test("repro117: platform schematicDisabled disables the schematic and preserves imported pcb_traces", async () => {
+  const circuit = await renderImportedArduinoUnoWithSchematicDisabled()
 
-  const pcbTracesWithoutSchematicDisabled =
-    circuitWithoutSchematicDisabled.db.pcb_trace.list()
-  const pcbTracesWithSchematicDisabled =
-    circuitWithSchematicDisabled.db.pcb_trace.list()
+  const schematicElements = circuit
+    .getCircuitJson()
+    .filter((element) => element.type.startsWith("schematic_"))
 
-  expect(pcbTracesWithoutSchematicDisabled.length).toBe(188)
-  expect(pcbTracesWithSchematicDisabled.length).toBe(
-    pcbTracesWithoutSchematicDisabled.length,
-  )
+  expect(schematicElements).toHaveLength(0)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(188)
 }, 15_000)
