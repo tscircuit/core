@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { PcbPadTraceClearanceError, PcbTraceError } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("deduplicates generic PCB trace errors reported by separate DRC checks", async () => {
+test("preserves distinct PCB DRC errors returned by custom checks", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -50,10 +50,9 @@ test("deduplicates generic PCB trace errors reported by separate DRC checks", as
       ["pcb_trace_error", "pcb_pad_trace_clearance_error"].includes(elm.type),
     )
 
-  expect(errors).toHaveLength(1)
-  expect(errors[0]).toMatchObject({
-    type: "pcb_pad_trace_clearance_error",
-    pcb_trace_id: "trace1",
-    pcb_pad_id: "pad1",
-  })
+  expect(errors).toHaveLength(2)
+  expect(errors.map((error) => error.type)).toEqual([
+    "pcb_trace_error",
+    "pcb_pad_trace_clearance_error",
+  ])
 })
