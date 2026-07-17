@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
+import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("subcircuit exposedNets creates a source trace to the parent net", async () => {
@@ -51,6 +52,16 @@ test("subcircuit exposedNets creates a source trace to the parent net", async ()
   })
 
   expect(exposedNetTrace).toBeDefined()
+
+  const exposedBridgeComponent = circuit
+    .selectAll("trace")
+    .find(
+      (trace): trace is Trace =>
+        trace instanceof Trace && trace._exposesSubcircuitConnection,
+    )
+  expect(exposedBridgeComponent?.source_trace_id).toBe(
+    exposedNetTrace?.source_trace_id,
+  )
 
   const localNet = sourceNets.find((net) => net.name === "LOCAL")
   expect(

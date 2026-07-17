@@ -120,6 +120,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const obstacles = getObstaclesFromCircuitJson(
     [
+      ...(board ? [board] : []),
       ...db.pcb_component.list(),
       ...db.pcb_smtpad.list(),
       ...db.pcb_plated_hole.list(),
@@ -133,7 +134,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_keepout.list(),
       ...db.pcb_cutout.list(),
     ].filter(
-      (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
+      (e) =>
+        e.type === "pcb_board" ||
+        !subcircuit_id ||
+        relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
     sharedConnMap,
   )
@@ -440,12 +444,76 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const connectionsFromNets: SimpleRouteConnection[] = []
   const connectionFromNetId = new Map<string, SimpleRouteConnection>()
   const handledNetConnectivityKeys = new Set<string>()
+
+  // The scoped DB includes descendants so their routed copper can be preserved
+  // as fixed geometry. That must not make every descendant source trace new
+  // routing intent for the current subcircuit. Descendant endpoints are only
+  // eligible through an explicit current-scope net reference or exposed-net
+  // contract.
+  const sourceNetIds = new Set(source_nets.map((net) => net.source_net_id))
+  const currentSubcircuitSourceTraces = db.source_trace
+    .list()
+    .filter((trace) => !subcircuit_id || trace.subcircuit_id === subcircuit_id)
+  const exposedBridgeSourceTraceIds = new Set(
+    (subcircuitComponent?.selectAll("trace") ?? []).flatMap((trace) => {
+      const candidate = trace as {
+        source_trace_id?: string | null
+        _exposesSubcircuitConnection?: boolean
+      }
+      return candidate._exposesSubcircuitConnection && candidate.source_trace_id
+        ? [candidate.source_trace_id]
+        : []
+    }),
+  )
+  const exposedDescendantSourceNetIds = new Set<string>()
+  for (const trace of currentSubcircuitSourceTraces) {
+    // Subcircuit creates exposed-net bridge traces with this explicit marker.
+    // A trace display name is user-facing and must not determine routing scope.
+    if (!exposedBridgeSourceTraceIds.has(trace.source_trace_id)) {
+      continue
+    }
+    for (const sourceNetId of trace.connected_source_net_ids ?? []) {
+      if (!sourceNetIds.has(sourceNetId)) {
+        exposedDescendantSourceNetIds.add(sourceNetId)
+      }
+    }
+  }
+  const routedDescendantSourceTraceIds = new Set(
+    subcircuit_id
+      ? db.pcb_trace
+          .list()
+          .filter(
+            (trace) =>
+              trace.subcircuit_id &&
+              trace.subcircuit_id !== subcircuit_id &&
+              relevantSubcircuitIds?.has(trace.subcircuit_id),
+          )
+          .map((trace) => trace.source_trace_id)
+          .filter((id): id is string => Boolean(id))
+      : [],
+  )
   const sourceTracesEligibleForNetConnections = db.source_trace
     .list()
     .filter(
-      (st) =>
-        subcircuit_id ||
-        !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(st.source_trace_id),
+      (trace) =>
+        // Existing copper must still contribute endpoint connectivity when it
+        // belongs to the scope currently being routed. Descendant copper is
+        // preserved as static geometry only, preventing it from being routed
+        // a second time by its parent.
+        !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id) ||
+        (subcircuit_id != null && trace.subcircuit_id === subcircuit_id),
+    )
+    .filter(
+      (trace) =>
+        !subcircuit_id ||
+        trace.subcircuit_id === subcircuit_id ||
+        (trace.connected_source_net_ids?.some((id) => sourceNetIds.has(id)) ??
+          false) ||
+        ((trace.connected_source_net_ids?.some((id) =>
+          exposedDescendantSourceNetIds.has(id),
+        ) ??
+          false) &&
+          !routedDescendantSourceTraceIds.has(trace.source_trace_id)),
     )
   const getSourceConnectivityKey = (id?: string | null) =>
     id ? (sharedConnMap.getNetConnectedToId(id) ?? id) : null

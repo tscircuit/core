@@ -3,6 +3,7 @@ import { platedHoleProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
 import type { Port } from "./Port"
 import type {
+  LayerRef,
   PCBPlatedHoleInput,
   PcbPlatedHoleOval,
   PcbHoleCircularWithRectPad,
@@ -25,9 +26,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     }
   }
 
-  getAvailablePcbLayers(): string[] {
-    // TODO use project layerCount
-    return ["top", "inner1", "inner2", "bottom"]
+  getAvailablePcbLayers(): LayerRef[] {
+    return [...(this.root?._getBoard()?.allLayers ?? ["top", "bottom"])]
   }
 
   getPcbSize(): { width: number; height: number } {
@@ -129,6 +129,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
     const subcircuit = this.getSubcircuit()
+    const platedHoleLayers = this.getAvailablePcbLayers()
     const soldermaskMargin = props.solderMaskMargin
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
 
@@ -152,7 +153,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
-        layers: ["top", "bottom"],
+        layers: platedHoleLayers,
         soldermask_margin: soldermaskMargin,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -194,7 +195,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         pcb_plated_hole_id: this.pcb_plated_hole_id,
         x: position.x,
         y: position.y,
-        layers: ["top", "bottom"],
+        layers: platedHoleLayers,
         soldermask_margin: soldermaskMargin,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -224,7 +225,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
-        layers: ["top", "bottom"],
+        layers: platedHoleLayers,
         soldermask_margin: soldermaskMargin,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -267,7 +268,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
-        layers: ["top", "bottom"],
+        layers: platedHoleLayers,
         soldermask_margin: soldermaskMargin,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -299,7 +300,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           port_hints: this.getNameAndAliases(),
           x: position.x,
           y: position.y,
-          layers: ["top", "bottom"],
+          layers: platedHoleLayers,
           soldermask_margin: soldermaskMargin,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -321,7 +322,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           port_hints: this.getNameAndAliases(),
           x: position.x,
           y: position.y,
-          layers: ["top", "bottom"],
+          layers: platedHoleLayers,
           soldermask_margin: soldermaskMargin,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -362,7 +363,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         port_hints: this.getNameAndAliases(),
         x: position.x,
         y: position.y,
-        layers: ["top", "bottom"],
+        layers: platedHoleLayers,
         soldermask_margin: soldermaskMargin,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
