@@ -425,7 +425,7 @@ export const getObstaclesFromCircuitJson = (
             },
           ]
         }),
-        element.source_trace_id!,
+        element.source_trace_id ?? element.pcb_trace_id,
       )
       obstacles.push(
         ...traceObstacles.map((obstacle) => ({

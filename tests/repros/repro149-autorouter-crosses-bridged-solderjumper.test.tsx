@@ -22,11 +22,7 @@ test("repro: autorouter crosses a closed solderjumper bridge", async () => {
 
   await circuit.renderUntilSettled()
 
-  const traceErrors = circuit.db.pcb_trace_error.list()
-
-  expect(traceErrors).toHaveLength(1)
-  expect(traceErrors[0]?.message).toContain(
-    "overlaps with trace[.R1 > port.cathode, .R2 > port.anode] (accidental contact)",
-  )
+  expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
+  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
