@@ -125,6 +125,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ...db.pcb_smtpad.list(),
       ...db.pcb_plated_hole.list(),
       ...db.pcb_hole.list(),
+      // Footprint copper primitives such as solder-jumper bridges are fixed.
+      ...db.pcb_trace.list().filter((trace) => !trace.source_trace_id),
       ...db.pcb_via
         .list()
         .filter(
