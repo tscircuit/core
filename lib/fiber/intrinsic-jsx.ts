@@ -19,6 +19,7 @@ export interface TscircuitElements {
   bug: Props.ChipProps
   potentiometer: Props.PotentiometerProps
   chip: Props.ChipProps
+  internalcircuit: Props.InternalCircuitProps
   pinout: Props.PinoutProps
   powersource: Props.PowerSourceProps
   schematicsection: Props.SchematicSectionProps

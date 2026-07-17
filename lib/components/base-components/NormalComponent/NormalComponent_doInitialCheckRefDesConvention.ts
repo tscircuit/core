@@ -55,6 +55,12 @@ const chipRefDesRecommendations = [
 export const NormalComponent_doInitialCheckRefDesConvention = (
   component: NormalComponent,
 ) => {
+  if (
+    component.getInternalCircuitAncestor() ||
+    component.hasInternalCircuitChild()
+  )
+    return
+
   const { db } = component.root!
   if (!component.source_component_id) return
 

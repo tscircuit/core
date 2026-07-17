@@ -597,6 +597,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const collapsedAncestor = this.getCollapsedSchematicBoxAncestor()
     if (collapsedAncestor && this.parent !== collapsedAncestor) return
 
+    const parentNormalComponent = this.getParentNormalComponent()
+    if (parentNormalComponent?.hasInternalCircuitChild()) return
+
     const { db } = this.root!
     const { _parsedProps: props } = this
 
@@ -649,8 +652,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     const bestDisplayPinLabel = this._getBestDisplayPinLabel()
-    const parentNormalComponent = this.getParentNormalComponent()
-
     // Derive side_of_component from direction prop for custom symbols
     const sideOfComponent =
       localPortInfo?.side ??

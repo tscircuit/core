@@ -160,6 +160,27 @@ export class NormalComponent<
   _invalidPinLabelMessages: string[] = []
   _impliedFootprintPinLabels?: Record<string, string | string[]>
 
+  override get name() {
+    const localName = super.name
+    const internalCircuit = this.getInternalCircuitAncestor()
+    const packageName = internalCircuit?.parent?.name
+
+    if (!localName || !packageName) return localName
+    return `${packageName}${localName}`
+  }
+
+  override getNameAndAliases(): string[] {
+    const aliases = super.getNameAndAliases()
+    const localName =
+      (this._parsedProps as { name?: string }).name ??
+      this.fallbackUnassignedName
+
+    if (!this.getInternalCircuitAncestor() || !localName) return aliases
+    return Array.from(new Set([this.name, localName, ...aliases])).filter(
+      (name): name is string => Boolean(name),
+    )
+  }
+
   /**
    * Set to true to enable automatic silkscreen text adjustment when it overlaps with other components
    */
@@ -229,7 +250,10 @@ export class NormalComponent<
     const root = this.root!
 
     const nameMap = this.getSubcircuit().getNormalComponentNameMap?.()
-    const componentsWithSameName = nameMap?.get(this.props.name) ?? []
+    const nameForConflictCheck = this.getInternalCircuitAncestor()
+      ? this.name
+      : this.props.name
+    const componentsWithSameName = nameMap?.get(nameForConflictCheck) ?? []
 
     // Check if any of these components have already been processed (initialized this phase)
     const conflictingComponents = componentsWithSameName.filter(
@@ -1223,6 +1247,16 @@ export class NormalComponent<
   }
 
   doInitialReactSubtreesRender(): void {
+    const internalCircuitElm = (
+      this.props as { internalCircuit?: ReactElement }
+    ).internalCircuit
+    if (isValidElement(internalCircuitElm)) {
+      const hasInternalCircuitChild = this.hasInternalCircuitChild()
+      if (!hasInternalCircuitChild) {
+        this.add(internalCircuitElm)
+      }
+    }
+
     // Add React-based footprint subtree if provided
     const fpElm = this.props.footprint
     if (isValidElement(fpElm)) {

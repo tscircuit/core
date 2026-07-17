@@ -1,6 +1,7 @@
+import { TraceConnectionError } from "../../../errors"
+import type { InternalCircuit } from "../InternalCircuit"
 import type { Port } from "../Port/Port"
 import type { Trace } from "./Trace"
-import { TraceConnectionError } from "../../../errors"
 
 export function Trace__findConnectedPorts(trace: Trace):
   | {
@@ -18,15 +19,26 @@ export function Trace__findConnectedPorts(trace: Trace):
   if (!parent) throw new Error("Trace has no parent")
 
   const portSelectors = trace.getTracePortPathSelectors()
+  const internalCircuit =
+    trace.getInternalCircuitAncestor() as InternalCircuit | null
+
+  const resolvePort = (selector: string): Port | null =>
+    internalCircuit?.getPackagePort(selector) ??
+    (internalCircuit?.selectOne(selector, { type: "port" }) as Port | null) ??
+    (trace.getSubcircuit().selectOne(selector, { type: "port" }) as Port | null)
 
   const resolveImplicitSinglePort = (selector: string): Port | null => {
     const hasExplicitPortToken =
       selector.lastIndexOf(".") > selector.lastIndexOf(" ")
     if (hasExplicitPortToken) return null
 
-    let targetComponent = trace.getSubcircuit().selectOne(selector)
+    let targetComponent =
+      internalCircuit?.selectOne(selector) ??
+      trace.getSubcircuit().selectOne(selector)
     if (!targetComponent && !/[.#\[]/.test(selector)) {
-      targetComponent = trace.getSubcircuit().selectOne(`.${selector}`)
+      targetComponent =
+        internalCircuit?.selectOne(`.${selector}`) ??
+        trace.getSubcircuit().selectOne(`.${selector}`)
     }
     if (!targetComponent) return null
 
@@ -39,9 +51,7 @@ export function Trace__findConnectedPorts(trace: Trace):
 
   const portsWithSelectors = portSelectors.map((selector) => ({
     selector,
-    port:
-      (trace.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
-      resolveImplicitSinglePort(selector),
+    port: resolvePort(selector) ?? resolveImplicitSinglePort(selector),
   }))
 
   for (const { selector, port } of portsWithSelectors) {
@@ -58,14 +68,17 @@ export function Trace__findConnectedPorts(trace: Trace):
         portToken = match?.[2] ?? selector
       }
       let targetComponent = parentSelector
-        ? trace.getSubcircuit().selectOne(parentSelector)
+        ? (internalCircuit?.selectOne(parentSelector) ??
+          trace.getSubcircuit().selectOne(parentSelector))
         : null
       if (
         !targetComponent &&
         parentSelector &&
         !/[.#\[]/.test(parentSelector)
       ) {
-        targetComponent = trace.getSubcircuit().selectOne(`.${parentSelector}`)
+        targetComponent =
+          internalCircuit?.selectOne(`.${parentSelector}`) ??
+          trace.getSubcircuit().selectOne(`.${parentSelector}`)
       }
       if (!targetComponent) {
         const errorMessage = parentSelector
@@ -121,9 +134,13 @@ export function Trace__findConnectedPorts(trace: Trace):
     return { allPortsFound: false }
   }
 
+  const connectedPortsWithSelectors = portsWithSelectors.filter(
+    (entry): entry is { selector: string; port: Port } => entry.port !== null,
+  )
+
   return {
     allPortsFound: true,
-    portsWithSelectors,
-    ports: portsWithSelectors.map(({ port }) => port),
+    portsWithSelectors: connectedPortsWithSelectors,
+    ports: connectedPortsWithSelectors.map(({ port }) => port),
   }
 }

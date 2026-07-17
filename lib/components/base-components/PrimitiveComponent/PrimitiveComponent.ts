@@ -562,6 +562,21 @@ export abstract class PrimitiveComponent<
     return null
   }
 
+  getInternalCircuitAncestor(): PrimitiveComponent | null {
+    let current = this.parent
+    while (current) {
+      if (current.componentName === "InternalCircuit") return current
+      current = current.parent
+    }
+    return null
+  }
+
+  hasInternalCircuitChild(): boolean {
+    return this.children.some(
+      (child) => child.componentName === "InternalCircuit",
+    )
+  }
+
   /**
    * Walk up the component hierarchy to find the nearest NormalComponent ancestor.
    * This is useful for primitive components that need access to component IDs
