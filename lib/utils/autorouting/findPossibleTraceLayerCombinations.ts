@@ -4,7 +4,7 @@ interface Hint {
   layers?: Array<string>
 }
 
-const LAYER_SELECTION_PREFERENCE = ["top", "bottom", "inner1", "inner2"]
+const DEFAULT_LAYER_SELECTION_PREFERENCE = ["top", "bottom", "inner1", "inner2"]
 
 /**
  * ORDERING OF CANDIDATES: Example:
@@ -35,16 +35,21 @@ export interface CandidateTraceLayerCombination {
  *   bottom -> bottom -> top-> bottom -> bottom
  *   bottom -> bottom -> inner-1 -> inner-1 -> bottom
  */
-export const findPossibleTraceLayerCombinations = (
+const findPossibleTraceLayerCombinationsRecursive = (
   hints: Hint[],
-  layer_path: string[] = [],
+  layerSelectionPreference: string[],
+  layer_path: string[],
 ): CandidateTraceLayerCombination[] => {
   const candidates: CandidateTraceLayerCombination[] = []
   if (layer_path.length === 0) {
     const starting_layers = hints[0].layers!
     for (const layer of starting_layers) {
       candidates.push(
-        ...findPossibleTraceLayerCombinations(hints.slice(1), [layer]),
+        ...findPossibleTraceLayerCombinationsRecursive(
+          hints.slice(1),
+          layerSelectionPreference,
+          [layer],
+        ),
       )
     }
     return candidates
@@ -75,24 +80,26 @@ export const findPossibleTraceLayerCombinations = (
       }
     }
 
-    return findPossibleTraceLayerCombinations(
+    return findPossibleTraceLayerCombinationsRecursive(
       hints.slice(1),
+      layerSelectionPreference,
       layer_path.concat([last_layer]),
     )
   }
 
   const candidate_next_layers = (
     current_hint.optional_via
-      ? LAYER_SELECTION_PREFERENCE
-      : LAYER_SELECTION_PREFERENCE.filter((layer) => layer !== last_layer)
+      ? layerSelectionPreference
+      : layerSelectionPreference.filter((layer) => layer !== last_layer)
   ).filter(
     (layer) => !current_hint.layers || current_hint.layers?.includes(layer),
   )
 
   for (const candidate_next_layer of candidate_next_layers) {
     candidates.push(
-      ...findPossibleTraceLayerCombinations(
+      ...findPossibleTraceLayerCombinationsRecursive(
         hints.slice(1),
+        layerSelectionPreference,
         layer_path.concat(candidate_next_layer),
       ),
     )
@@ -100,3 +107,13 @@ export const findPossibleTraceLayerCombinations = (
 
   return candidates
 }
+
+export const findPossibleTraceLayerCombinations = (
+  hints: Hint[],
+  options: { layerSelectionPreference?: string[] } = {},
+): CandidateTraceLayerCombination[] =>
+  findPossibleTraceLayerCombinationsRecursive(
+    hints,
+    options.layerSelectionPreference ?? DEFAULT_LAYER_SELECTION_PREFERENCE,
+    [],
+  )

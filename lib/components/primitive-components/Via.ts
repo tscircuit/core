@@ -27,9 +27,8 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
     }
   }
 
-  getAvailablePcbLayers(): string[] {
-    // TODO use project layerCount
-    return ["top", "inner1", "inner2", "bottom"]
+  getAvailablePcbLayers(): LayerRef[] {
+    return this._getLayers()
   }
 
   private _getResolvedViaDiameters(pcbStyle?: PcbStyle) {
