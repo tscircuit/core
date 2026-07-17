@@ -9,6 +9,7 @@ import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import { boardProps } from "@tscircuit/props"
 import type { AnyCircuitElement, LayerRef, PcbBoard } from "circuit-json"
+import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 import { type Matrix, compose, translate } from "transformation-matrix"
 import { getDescendantSubcircuitIds } from "../../utils/autorouting/getAncestorSubcircuitIds"
 import { getBoardCenterFromAnchor } from "../../utils/boards/get-board-center-from-anchor"
@@ -126,17 +127,7 @@ export class Board
    * Get all available layers for the board
    */
   get allLayers(): ReadonlyArray<LayerRef> {
-    const layerCount = this._parsedProps.layers ?? 2
-    if (layerCount === 1) {
-      return ["top"]
-    }
-
-    const innerLayers = Array.from(
-      { length: layerCount - 2 },
-      (_, index) => `inner${index + 1}` as LayerRef,
-    )
-
-    return ["top", "bottom", ...innerLayers]
+    return getBoardAvailableLayers(this._parsedProps.layers ?? 2)
   }
 
   _getSubcircuitLayerCount(): number {

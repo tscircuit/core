@@ -45,3 +45,18 @@ export const getViaBoardLayers = (layerCount: number): LayerRef[] => {
     layerCount,
   })
 }
+
+/**
+ * Copper layers ordered by routing preference. Outer layers retain their
+ * historical priority, followed by inner layers from top to bottom.
+ */
+export const getBoardAvailableLayers = (layerCount: number): LayerRef[] => {
+  const physicalLayerStack = getViaBoardLayers(layerCount)
+  if (physicalLayerStack.length <= 1) return physicalLayerStack
+
+  return [
+    physicalLayerStack[0],
+    physicalLayerStack[physicalLayerStack.length - 1],
+    ...physicalLayerStack.slice(1, -1),
+  ]
+}

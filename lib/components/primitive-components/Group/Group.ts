@@ -1000,6 +1000,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             outputTraces.filter(
               (trace) => !traceMatchesRoutingPhase(trace, routingPhasePlan),
             ),
+            baseSimpleRouteJson.layerCount,
           ),
         ]
       } else if (hasPhasedAutorouting) {
@@ -1009,7 +1010,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         )
         simpleRouteJson.obstacles = [
           ...simpleRouteJson.obstacles,
-          ...Group_getObstaclesFromRoutedTraces(outputTraces),
+          ...Group_getObstaclesFromRoutedTraces(
+            outputTraces,
+            baseSimpleRouteJson.layerCount,
+          ),
         ]
       }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
