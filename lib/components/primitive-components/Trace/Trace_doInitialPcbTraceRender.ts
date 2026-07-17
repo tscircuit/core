@@ -8,7 +8,10 @@ import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPo
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { getClosest } from "lib/utils/getClosest"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import {
+  getBoardAvailableLayers,
+  getViaSpanLayers,
+} from "lib/utils/getViaSpanLayers"
 import { getObstaclesFromCircuitJson } from "lib/utils/obstacles/getObstaclesFromCircuitJson"
 import { pairs } from "lib/utils/pairs"
 import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
@@ -315,6 +318,11 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   // to go to each hint and still route to the start and end points
   const candidateLayerCombinations = findPossibleTraceLayerCombinations(
     orderedRouteObjectives,
+    {
+      layerSelectionPreference: getBoardAvailableLayers(
+        subcircuit._getSubcircuitLayerCount(),
+      ),
+    },
   )
 
   if (

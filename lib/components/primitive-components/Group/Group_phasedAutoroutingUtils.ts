@@ -5,6 +5,7 @@ import type {
   SimpleRouteJson,
   SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
@@ -120,11 +121,12 @@ function createViaObstacle(
   point: Extract<RoutePoint, { route_type: "via" }>,
   connectedTo: string,
   obstacleIndex: number,
+  layerCount: number,
 ): Obstacle {
   return {
     obstacleId: `${connectedTo}_phase_via_obstacle_${obstacleIndex}`,
     type: "rect",
-    layers: [point.from_layer, point.to_layer],
+    layers: getViaBoardLayers(layerCount),
     center: { x: point.x, y: point.y },
     width: 0.6,
     height: 0.6,
@@ -135,13 +137,16 @@ function createViaObstacle(
 function addTraceObstacles(
   obstacles: Obstacle[],
   trace: SimplifiedPcbTrace,
+  layerCount: number,
 ): void {
   const connectedTo = getTraceConnectionName(trace)
 
   for (let routeIndex = 0; routeIndex < trace.route.length; routeIndex++) {
     const routePoint = trace.route[routeIndex]
     if (isViaPoint(routePoint)) {
-      obstacles.push(createViaObstacle(routePoint, connectedTo, routeIndex))
+      obstacles.push(
+        createViaObstacle(routePoint, connectedTo, routeIndex, layerCount),
+      )
     } else if (isJumperPoint(routePoint)) {
       obstacles.push(createJumperObstacle(routePoint, connectedTo, routeIndex))
     }
@@ -305,10 +310,11 @@ export function Group_applyDrcTolerancesToSimpleRouteJson(
 
 export function Group_getObstaclesFromRoutedTraces(
   traces: SimplifiedPcbTrace[],
+  layerCount: number,
 ): Obstacle[] {
   const obstacles: Obstacle[] = []
   for (const trace of traces) {
-    addTraceObstacles(obstacles, trace)
+    addTraceObstacles(obstacles, trace, layerCount)
   }
   return obstacles
 }

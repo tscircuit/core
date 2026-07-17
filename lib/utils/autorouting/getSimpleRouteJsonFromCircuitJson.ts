@@ -120,6 +120,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const obstacles = getObstaclesFromCircuitJson(
     [
+      ...(board ? [board] : []),
       ...db.pcb_component.list(),
       ...db.pcb_smtpad.list(),
       ...db.pcb_plated_hole.list(),
@@ -136,7 +137,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         .list()
         .filter((pcbTrace) => Boolean(pcbTrace.pcb_component_id)),
     ].filter(
-      (e) => !subcircuit_id || relevantSubcircuitIds?.has(e.subcircuit_id!),
+      (e) =>
+        e.type === "pcb_board" ||
+        !subcircuit_id ||
+        relevantSubcircuitIds?.has(e.subcircuit_id!),
     ),
     sharedConnMap,
   )

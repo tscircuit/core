@@ -1,5 +1,6 @@
-import type { AnyCircuitElement } from "circuit-json"
+import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import { fillCircleWithRects } from "./fillCircleWithRects"
 import { fillPolygonWithRects } from "./fillPolygonWithRects"
 import { type RotatedRect } from "./generateApproximatingRects"
@@ -7,7 +8,6 @@ import { getAxisAlignedRectFromPolygon } from "./getAxisAlignedRectFromPolygon"
 import { getObstaclesFromRoute } from "./getObstaclesFromRoute"
 import type { Obstacle } from "./types"
 
-const EVERY_LAYER = ["top", "inner1", "inner2", "bottom"]
 const QUARTER_TURN_TOLERANCE_DEGREES = 0.01
 
 const getAxisAlignedRectFromRotatedRect = (
@@ -44,6 +44,10 @@ export const getObstaclesFromCircuitJson = (
   circuitJson: AnyCircuitElement[],
   connMap?: ConnectivityMap,
 ) => {
+  const board = circuitJson.find((element) => element.type === "pcb_board") as
+    | PcbBoard
+    | undefined
+  const everyLayer = getViaBoardLayers(board?.num_layers ?? 4)
   const withNetId = (idList: string[]) =>
     connMap
       ? idList.concat(
@@ -184,7 +188,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           type: "rect",
-          layers: EVERY_LAYER,
+          layers: everyLayer,
           center: {
             x: element.center.x,
             y: element.center.y,
@@ -206,7 +210,7 @@ export const getObstaclesFromCircuitJson = (
           obstacles.push({
             componentId: pcbComponentId,
             type: "rect",
-            layers: EVERY_LAYER,
+            layers: everyLayer,
             center: rect.center,
             width: rect.width,
             height: rect.height,
@@ -222,7 +226,7 @@ export const getObstaclesFromCircuitJson = (
           obstacles.push({
             componentId: pcbComponentId,
             type: "rect",
-            layers: EVERY_LAYER,
+            layers: everyLayer,
             center: rect.center,
             width: rect.width,
             height: rect.height,
@@ -236,6 +240,7 @@ export const getObstaclesFromCircuitJson = (
           componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
+          layers: everyLayer,
           center: {
             x: element.x,
             y: element.y,
@@ -251,7 +256,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           type: "rect",
-          layers: EVERY_LAYER,
+          layers: everyLayer,
           center: {
             x: element.x,
             y: element.y,
@@ -267,7 +272,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           type: "rect",
-          layers: EVERY_LAYER,
+          layers: everyLayer,
           center: {
             x: element.x,
             y: element.y,
@@ -280,7 +285,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           type: "rect",
-          layers: EVERY_LAYER,
+          layers: everyLayer,
           center: {
             x: element.x,
             y: element.y,
@@ -297,7 +302,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           type: "rect",
-          layers: EVERY_LAYER,
+          layers: everyLayer,
           center: {
             x: element.x,
             y: element.y,
@@ -313,7 +318,7 @@ export const getObstaclesFromCircuitJson = (
           componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
-          layers: EVERY_LAYER,
+          layers: everyLayer,
           center: {
             x: element.x,
             y: element.y,
@@ -327,7 +332,7 @@ export const getObstaclesFromCircuitJson = (
           componentId: pcbComponentId,
           // @ts-ignore
           type: "rect",
-          layers: EVERY_LAYER,
+          layers: everyLayer,
           center: {
             x: element.x,
             y: element.y,
@@ -341,7 +346,7 @@ export const getObstaclesFromCircuitJson = (
           componentId: pcbComponentId,
           // @ts-ignore
           type: "oval",
-          layers: EVERY_LAYER,
+          layers: everyLayer,
           center: {
             x: element.x,
             y: element.y,
@@ -354,7 +359,7 @@ export const getObstaclesFromCircuitJson = (
         obstacles.push({
           componentId: pcbComponentId,
           type: "rect",
-          layers: EVERY_LAYER,
+          layers: everyLayer,
           center: {
             x: element.x,
             y: element.y,
@@ -383,7 +388,7 @@ export const getObstaclesFromCircuitJson = (
             componentId: pcbComponentId,
             // @ts-ignore
             type: "rect",
-            layers: EVERY_LAYER,
+            layers: everyLayer,
             center: {
               x: centerX,
               y: centerY,
