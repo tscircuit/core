@@ -26,11 +26,12 @@ export function Port_doInitialCreateTracesFromProps(port: Port): void {
   )
   if (connectionIsCreatedByParent) return
 
-  const parentName = parent.name
   const portName = port.name
-  if (!parentName || !portName) return
+  if (!portName) return
 
-  const from = `.${parentName} > .${portName}`
+  const from = parent.name
+    ? `.${parent.name} > .${portName}`
+    : `${parent.getSubcircuitSelector()} > port.${portName}`
   for (const target of getConnectionTargets(connectsTo)) {
     const traceAlreadyExists = parent.children.some((child) => {
       if (!(child instanceof Trace)) return false
@@ -43,6 +44,14 @@ export function Port_doInitialCreateTracesFromProps(port: Port): void {
     })
     if (traceAlreadyExists) continue
 
-    parent.add(new Trace({ from, to: target }))
+    parent.add(
+      new Trace({
+        from,
+        to: target,
+        displayName: parent._parsedProps.showAsSchematicBox
+          ? undefined
+          : portName,
+      }),
+    )
   }
 }
