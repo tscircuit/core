@@ -142,8 +142,16 @@ export abstract class PrimitiveComponent<
     return this.lowercaseComponentName === "group"
   }
 
-  get name() {
-    return (this._parsedProps as any).name ?? this.fallbackUnassignedName
+  resolveName(): string {
+    return (
+      (this._parsedProps as { name?: string }).name ??
+      this.fallbackUnassignedName ??
+      ""
+    )
+  }
+
+  get name(): string {
+    return this.resolveName()
   }
 
   /**

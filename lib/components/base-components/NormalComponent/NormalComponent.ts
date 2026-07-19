@@ -160,20 +160,18 @@ export class NormalComponent<
   _invalidPinLabelMessages: string[] = []
   _impliedFootprintPinLabels?: Record<string, string | string[]>
 
-  override get name() {
-    const localName = super.name
+  override resolveName(): string {
+    const localName = (this._parsedProps as { name?: string }).name
     const internalCircuit = this.getInternalCircuitAncestor()
-    const packageName = internalCircuit?.parent?.name
+    const parentName = internalCircuit?.parent?.name
 
-    if (!localName || !packageName) return localName
-    return `${packageName}${localName}`
+    if (!localName || !parentName) return super.resolveName()
+    return `${parentName}${localName}`
   }
 
   override getNameAndAliases(): string[] {
     const aliases = super.getNameAndAliases()
-    const localName =
-      (this._parsedProps as { name?: string }).name ??
-      this.fallbackUnassignedName
+    const localName = (this._parsedProps as { name?: string }).name
 
     if (!this.getInternalCircuitAncestor() || !localName) return aliases
     return Array.from(new Set([this.name, localName, ...aliases])).filter(
@@ -250,10 +248,7 @@ export class NormalComponent<
     const root = this.root!
 
     const nameMap = this.getSubcircuit().getNormalComponentNameMap?.()
-    const nameForConflictCheck = this.getInternalCircuitAncestor()
-      ? this.name
-      : this.props.name
-    const componentsWithSameName = nameMap?.get(nameForConflictCheck) ?? []
+    const componentsWithSameName = nameMap?.get(this.name) ?? []
 
     // Check if any of these components have already been processed (initialized this phase)
     const conflictingComponents = componentsWithSameName.filter(
