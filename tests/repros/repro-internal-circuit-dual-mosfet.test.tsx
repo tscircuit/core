@@ -5,7 +5,7 @@ test("internalCircuit renders a dual MOSFET as two schematic units and one PCB p
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="24mm" height="18mm" routingDisabled>
+    <board width="28mm" height="18mm" routingDisabled>
       <chip
         name="Q1"
         footprint="soic8"
@@ -55,6 +55,23 @@ test("internalCircuit renders a dual MOSFET as two schematic units and one PCB p
             />
           </internalcircuit>
         }
+      />
+      <schematicbox
+        width={5.5}
+        height={4.5}
+        schX={0}
+        schY={-1.25}
+        strokeStyle="dashed"
+        title="Q1 INTERNAL CIRCUIT: Q1A + Q1B"
+        titleAlignment="top_center"
+        titleInside={false}
+        titleFontSize={0.25}
+      />
+      <pcbnotetext
+        text="Q1: ONE PHYSICAL PACKAGE FOR Q1A + Q1B"
+        fontSize={0.6}
+        pcbX={0}
+        pcbY={-6}
       />
     </board>,
   )

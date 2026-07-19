@@ -27,7 +27,7 @@ test("internalCircuit resolves local component selectors within each package", a
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="24mm" height="14mm" routingDisabled>
+    <board width="28mm" height="16mm" routingDisabled>
       <chip
         name="U1"
         footprint="sot23"
@@ -47,6 +47,46 @@ test("internalCircuit resolves local component selectors within each package", a
         schX={4}
         connections={{ IN: "net.IN_2", OUT: "net.OUT_2" }}
         internalCircuit={createInternalCircuit()}
+      />
+      <schematicbox
+        overlay={[
+          ".U1A > port.pin1",
+          ".U1A > port.pin2",
+          ".U1B > port.pin1",
+          ".U1B > port.pin2",
+        ]}
+        padding={0.5}
+        strokeStyle="dashed"
+        title="U1 INTERNAL CIRCUIT: U1A -> U1B"
+        titleAlignment="top_center"
+        titleInside={false}
+        titleFontSize={0.25}
+      />
+      <schematicbox
+        overlay={[
+          ".U2A > port.pin1",
+          ".U2A > port.pin2",
+          ".U2B > port.pin1",
+          ".U2B > port.pin2",
+        ]}
+        padding={0.5}
+        strokeStyle="dashed"
+        title="U2 INTERNAL CIRCUIT: U2A -> U2B"
+        titleAlignment="top_center"
+        titleInside={false}
+        titleFontSize={0.25}
+      />
+      <pcbnotetext
+        text="U1 = ONE PACKAGE"
+        fontSize={0.6}
+        pcbX={-6}
+        pcbY={-5.5}
+      />
+      <pcbnotetext
+        text="U2 = ONE PACKAGE"
+        fontSize={0.6}
+        pcbX={6}
+        pcbY={-5.5}
       />
     </board>,
   )
