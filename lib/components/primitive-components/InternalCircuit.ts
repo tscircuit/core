@@ -1,23 +1,7 @@
 import { internalCircuitProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { RenderPhase } from "../base-components/Renderable"
-import type { Port } from "./Port"
-
-const nonPcbPhysicalChildRenderPhases: ReadonlySet<RenderPhase> = new Set([
-  // Isolated rendering uses a separate root and would lose this container's
-  // physical-phase boundary. Descendants render normally in later phases.
-  "RenderIsolatedSubcircuits",
-  "FetchPartFootprint",
-  "CreateTraceHintsFromProps",
-  "CreateAutoplacedBreakoutPoints",
-  "PanelBoardLayout",
-  "ValidatePcbCoordinates",
-  "PanelLayout",
-  "SilkscreenOverlapAdjustment",
-  "CadModelRender",
-  "PartsEngineRender",
-  "SupplierFootprintMismatchWarning",
-])
+import { Chip } from "../normal-components/Chip"
 
 export class InternalCircuit extends PrimitiveComponent<
   typeof internalCircuitProps
@@ -32,7 +16,7 @@ export class InternalCircuit extends PrimitiveComponent<
   }
 
   override onAddToParent(parent: PrimitiveComponent): void {
-    if (parent.componentName !== "Chip") {
+    if (!(parent instanceof Chip)) {
       throw new Error(
         "<internalcircuit> must be provided through a <chip internalCircuit={...}> prop",
       )
@@ -40,29 +24,13 @@ export class InternalCircuit extends PrimitiveComponent<
     super.onAddToParent(parent)
   }
 
-  getPackagePort(selector: string): Port | null {
-    const packagePinMatch = selector.trim().match(/^pin\.([^\s>]+)$/)
-    if (!packagePinMatch) return null
-
-    const packagePinName = packagePinMatch[1]
-    const packageComponent = this.parent
-    if (!packageComponent) return null
-
-    return (
-      (packageComponent.children.find(
-        (child) =>
-          child.componentName === "Port" &&
-          (child as Port).isMatchingNameOrAlias(packagePinName),
-      ) as Port | undefined) ?? null
-    )
-  }
-
   override runRenderPhaseForChildren(phase: RenderPhase): void {
-    // The owning chip is the only physical component. Internal children still
-    // run source, schematic, connectivity, and simulation phases, but all PCB,
-    // CAD, footprint-fetching, and parts-engine work stops at this boundary.
-    if (phase.startsWith("Pcb") || nonPcbPhysicalChildRenderPhases.has(phase))
+    if (phase.startsWith("Pcb")) {
       return
-    super.runRenderPhaseForChildren(phase)
+    }
+    for (const child of this.children) {
+      child.runRenderPhaseForChildren(phase)
+      child.runRenderPhase(phase)
+    }
   }
 }

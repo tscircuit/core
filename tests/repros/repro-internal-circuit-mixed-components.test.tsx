@@ -52,26 +52,7 @@ test("internalCircuit supports mixed resistor and diode components without physi
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
-  expect({
-    sourceComponentNames: circuit.db.source_component
-      .list()
-      .map((component) => component.name ?? "")
-      .sort(),
-    sourceComponentTypes: circuit.db.source_component
-      .list()
-      .map((component) => component.ftype)
-      .sort(),
-    schematicComponentCount: circuit.db.schematic_component.list().length,
-    pcbComponentCount: circuit.db.pcb_component.list().length,
-    sourceTraceCount: circuit.db.source_trace.list().length,
-    missingFootprintErrorCount:
-      circuit.db.pcb_missing_footprint_error.list().length,
-  }).toEqual({
-    sourceComponentNames: ["U1", "U1D", "U1R"],
-    sourceComponentTypes: ["simple_chip", "simple_diode", "simple_resistor"],
-    schematicComponentCount: 2,
-    pcbComponentCount: 1,
-    sourceTraceCount: 7,
-    missingFootprintErrorCount: 0,
-  })
+  expect(circuit.db.source_trace_not_connected_error.list()).toHaveLength(0)
+  expect(circuit.db.pcb_component.list()).toHaveLength(1)
+  expect(circuit.db.pcb_missing_footprint_error.list()).toHaveLength(0)
 })

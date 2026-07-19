@@ -1,5 +1,4 @@
 import { TraceConnectionError } from "../../../errors"
-import type { InternalCircuit } from "../InternalCircuit"
 import type { Port } from "../Port/Port"
 import type { Trace } from "./Trace"
 
@@ -19,13 +18,13 @@ export function Trace__findConnectedPorts(trace: Trace):
   if (!parent) throw new Error("Trace has no parent")
 
   const portSelectors = trace.getTracePortPathSelectors()
-  const internalCircuit =
-    trace.getInternalCircuitAncestor() as InternalCircuit | null
+  const internalCircuit = trace.getInternalCircuitAncestor()
+  const parentComponent = internalCircuit?.parent
 
   const resolvePort = (selector: string): Port | null =>
-    internalCircuit?.getPackagePort(selector) ??
-    (internalCircuit?.selectOne(selector, { type: "port" }) as Port | null) ??
-    (trace.getSubcircuit().selectOne(selector, { type: "port" }) as Port | null)
+    parentComponent?.selectOne<Port>(`:scope > ${selector}`, { port: true }) ??
+    internalCircuit?.selectOne<Port>(selector, { port: true }) ??
+    trace.getSubcircuit().selectOne<Port>(selector, { port: true })
 
   const resolveImplicitSinglePort = (selector: string): Port | null => {
     const hasExplicitPortToken =
