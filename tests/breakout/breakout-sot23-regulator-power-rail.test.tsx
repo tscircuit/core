@@ -94,13 +94,13 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
   const clearanceErrors = circuit.db.pcb_pad_trace_clearance_error.list()
 
   expect(traceErrors).toHaveLength(0)
-  expect(clearanceErrors).toHaveLength(2)
+  expect(clearanceErrors).toHaveLength(1)
   expect(
     clearanceErrors.filter((error) => error.message.includes("overlaps with")),
   ).toHaveLength(0)
   expect(
     clearanceErrors.filter((error) => error.message.includes("too close")),
-  ).toHaveLength(2)
+  ).toHaveLength(1)
   expect(
     clearanceErrors.filter((error) =>
       error.message.includes("disconnected endpoint"),

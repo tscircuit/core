@@ -5,12 +5,12 @@ import type {
 
 export type SimplifiedPcbTrace = Omit<
   AutorouterSimplifiedPcbTrace,
-  "connection_name" | "connectedTo" | "route"
+  "connection_name" | "route"
 > & {
   type: "pcb_trace"
   pcb_trace_id: string
   connection_name?: string
-  connectedTo?: string[]
+  connectsTo?: string[]
   route: Array<
     | {
         route_type: "wire"

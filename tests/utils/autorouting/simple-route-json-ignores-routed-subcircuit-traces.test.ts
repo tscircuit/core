@@ -153,17 +153,10 @@ test("board simple route json ignores source traces already routed by child subc
   ])
 
   const preservedTrace = simpleRouteJson.traces?.[0]
-  expect(preservedTrace?.connectedTo).toEqual(
-    expect.arrayContaining([
-      "source_trace_child_internal",
-      "source_net_child",
-      "source_port_child_a",
-      "source_port_child_b",
-      "source_trace_peer_same_net",
-      "pcb_port_child_a",
-      "pcb_port_child_b",
-    ]),
-  )
+  expect(preservedTrace?.connectsTo).toEqual([
+    "pcb_port_child_a",
+    "pcb_port_child_b",
+  ])
   expect(preservedTrace?.route.at(-1)).toMatchObject({ x: 0, y: 0 })
 
   // The cross-boundary trace is still board-level routing intent, so it should

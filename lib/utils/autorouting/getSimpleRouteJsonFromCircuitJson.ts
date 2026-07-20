@@ -167,7 +167,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     scopedDb: db,
     currentSubcircuitId: subcircuit_id,
     relevantSubcircuitIds,
-    sharedConnMap,
   })
 
   // Add every equivalent ID from the shared connectivity map to each obstacle.
