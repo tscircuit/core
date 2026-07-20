@@ -6,7 +6,7 @@ test("internalCircuit renders a dual MOSFET as two schematic units and one PCB p
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="24mm" height="18mm" routingDisabled>
+    <board width="24mm" height="18mm">
       <chip
         name="Q1"
         footprint="soic8"
@@ -72,4 +72,5 @@ test("internalCircuit renders a dual MOSFET as two schematic units and one PCB p
   expect(
     mosfets.every((mosfet) => mosfet instanceof InternalCircuitMosfet),
   ).toBe(true)
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
 })
