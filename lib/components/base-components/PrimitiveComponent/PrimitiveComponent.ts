@@ -505,12 +505,12 @@ export abstract class PrimitiveComponent<
       this.props.pcbY === undefined
     ) {
       const rotation = this._getPcbRotationBeforeLayout() ?? 0
+      // manualPlacement is already in board-absolute coordinates (computed via
+      // the subcircuit's own global transform), so do NOT compose with the
+      // parent transform again — that would double-count group anchors.
       return compose(
-        this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-        compose(
-          translate(manualPlacement.x, manualPlacement.y),
-          rotate((rotation * Math.PI) / 180),
-        ),
+        translate(manualPlacement.x, manualPlacement.y),
+        rotate((rotation * Math.PI) / 180),
       )
     }
 
