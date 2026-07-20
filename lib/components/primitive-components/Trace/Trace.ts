@@ -46,6 +46,13 @@ import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicT
 import { getMaxLengthFromConnectedComponents } from "./trace-utils/get-max-length-from-connected-components"
 import { getTraceDisplayName } from "./trace-utils/get-trace-display-name"
 
+export type TraceSelectorOptions = {
+  type?: string
+  port?: boolean
+  pcbPrimitive?: boolean
+  schematicPrimitive?: boolean
+}
+
 export class Trace
   extends PrimitiveComponent<typeof traceProps>
   implements TraceI
@@ -131,6 +138,13 @@ export class Trace
         portsWithSelectors?: undefined
       } {
     return Trace__findConnectedPorts(this)
+  }
+
+  _selectOneForConnectedPort<T = PrimitiveComponent>(
+    selector: string,
+    options?: TraceSelectorOptions,
+  ): T | null {
+    return this.getSubcircuit().selectOne<T>(selector, options)
   }
 
   _resolveNet(selector: string): Net | null {

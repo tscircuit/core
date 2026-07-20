@@ -24,6 +24,10 @@ export type ReactSubtree = {
   component: NormalComponent
 }
 
+type TscircuitHostContext = {
+  isInsideInternalCircuit: boolean
+}
+
 // biome-ignore lint/suspicious/noEmptyInterface: TODO when we have local state
 interface LocalState {}
 
@@ -56,8 +60,16 @@ const hostConfig: HostConfig<
   any
 > = {
   supportsMutation: true,
-  createInstance(type: string, props: any) {
-    const target = catalogue[type]
+  createInstance(
+    type: string,
+    props: any,
+    _rootContainer: unknown,
+    hostContext: TscircuitHostContext,
+  ) {
+    const catalogueName = hostContext.isInsideInternalCircuit
+      ? `internalcircuit${type}`
+      : type
+    const target = catalogue[catalogueName]
 
     if (!target) {
       if (Object.keys(catalogue).length === 0) {
@@ -66,9 +78,7 @@ const hostConfig: HostConfig<
         )
       }
       throw new Error(
-        `Unsupported component type "${type}". No element with this name is registered in the @tscircuit/core catalogue. ` +
-          `Check for typos or see https://docs.tscircuit.com/category/built-in-elements for a list of valid components. ` +
-          `To add your own component, see docs/CREATING_NEW_COMPONENTS.md`,
+        `Unsupported component type "${type}"${hostContext.isInsideInternalCircuit ? " inside <internalcircuit>" : ""}. No element with this name is registered in the @tscircuit/core catalogue. Check for typos or see https://docs.tscircuit.com/category/built-in-elements for a list of valid components. To add your own component, see docs/CREATING_NEW_COMPONENTS.md`,
       )
     }
 
@@ -109,10 +119,13 @@ const hostConfig: HostConfig<
     return false
   },
   getRootHostContext() {
-    return {}
+    return { isInsideInternalCircuit: false }
   },
-  getChildHostContext() {
-    return {}
+  getChildHostContext(parentHostContext: TscircuitHostContext, type: string) {
+    if (parentHostContext.isInsideInternalCircuit) return parentHostContext
+    return {
+      isInsideInternalCircuit: type.toLowerCase() === "internalcircuit",
+    }
   },
   prepareForCommit() {
     return null

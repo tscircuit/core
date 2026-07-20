@@ -1,9 +1,10 @@
 import { chipProps } from "@tscircuit/props"
 import { pcb_component_invalid_layer_error } from "circuit-json"
 import { NormalComponent } from "lib/components/base-components/NormalComponent"
-import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { Trace } from "lib/components/primitive-components/Trace/Trace"
 import { Port } from "lib/components/primitive-components/Port"
+import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { type SchematicBoxDimensions } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
+import { isValidElement } from "react"
 import type { z } from "zod"
 
 export class Chip<PinLabels extends string = never> extends NormalComponent<
@@ -72,10 +73,35 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
     }
   }
 
+  hasInternalCircuitChild(): boolean {
+    return this.children.some(
+      (child) => child.componentName === "InternalCircuit",
+    )
+  }
+
+  override doInitialReactSubtreesRender(): void {
+    const internalCircuitElement = this.props.internalCircuit
+    if (
+      isValidElement(internalCircuitElement) &&
+      !this.hasInternalCircuitChild()
+    ) {
+      this.add(internalCircuitElement)
+    }
+    super.doInitialReactSubtreesRender()
+  }
+
+  override shouldRenderSchematicPorts(): boolean {
+    return !this.hasInternalCircuitChild()
+  }
+
   doInitialSchematicComponentRender(): void {
     const { _parsedProps: props } = this
     // Early return if noSchematicRepresentation is true
-    if (props?.noSchematicRepresentation === true) return
+    if (
+      props?.noSchematicRepresentation === true ||
+      this.hasInternalCircuitChild()
+    )
+      return
 
     // Continue with normal schematic rendering
     super.doInitialSchematicComponentRender()

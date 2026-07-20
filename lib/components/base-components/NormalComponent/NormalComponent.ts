@@ -224,12 +224,13 @@ export class NormalComponent<
 
   doInitialSourceNameDuplicateComponentRemoval(): void {
     // Early return if component has no explicit name (auto-assigned names don't conflict)
-    if (!this.name) return
+    const nameForDuplicateCheck = this.getNameForDuplicateCheck()
+    if (!nameForDuplicateCheck) return
 
     const root = this.root!
 
     const nameMap = this.getSubcircuit().getNormalComponentNameMap?.()
-    const componentsWithSameName = nameMap?.get(this.props.name) ?? []
+    const componentsWithSameName = nameMap?.get(nameForDuplicateCheck) ?? []
 
     // Check if any of these components have already been processed (initialized this phase)
     const conflictingComponents = componentsWithSameName.filter(
@@ -245,9 +246,9 @@ export class NormalComponent<
       const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
 
       root.db.source_failed_to_create_component_error.insert({
-        component_name: this.name,
+        component_name: nameForDuplicateCheck,
         error_type: "source_failed_to_create_component_error",
-        message: `Cannot create component "${this.name}": A component with the same name already exists`,
+        message: `Cannot create component "${nameForDuplicateCheck}": A component with the same name already exists`,
         pcb_center: pcbPosition,
         schematic_center: schematicPosition,
       })
@@ -260,6 +261,14 @@ export class NormalComponent<
         this.remove(child)
       }
     }
+  }
+
+  getNameForDuplicateCheck(): string | undefined {
+    return this.name
+  }
+
+  shouldRenderSchematicPorts(): boolean {
+    return true
   }
 
   /**

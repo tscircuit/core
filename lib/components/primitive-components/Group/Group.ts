@@ -188,12 +188,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     const nameMap = new Map<string, NormalComponent[]>()
     const collectNamedComponents = (component: PrimitiveComponent) => {
-      if ((component as NormalComponent)._isNormalComponent && component.name) {
-        const componentsWithSameName = nameMap.get(component.name)
-        if (componentsWithSameName) {
-          componentsWithSameName.push(component as NormalComponent)
-        } else {
-          nameMap.set(component.name, [component as NormalComponent])
+      if ((component as NormalComponent)._isNormalComponent) {
+        const nameForDuplicateCheck = (
+          component as NormalComponent
+        ).getNameForDuplicateCheck()
+        if (nameForDuplicateCheck) {
+          const componentsWithSameName = nameMap.get(nameForDuplicateCheck)
+          if (componentsWithSameName) {
+            componentsWithSameName.push(component as NormalComponent)
+          } else {
+            nameMap.set(nameForDuplicateCheck, [component as NormalComponent])
+          }
         }
       }
       for (const child of component.children) {

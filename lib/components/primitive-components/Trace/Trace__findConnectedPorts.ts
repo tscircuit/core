@@ -1,6 +1,6 @@
+import { TraceConnectionError } from "../../../errors"
 import type { Port } from "../Port/Port"
 import type { Trace } from "./Trace"
-import { TraceConnectionError } from "../../../errors"
 
 export function Trace__findConnectedPorts(trace: Trace):
   | {
@@ -24,9 +24,9 @@ export function Trace__findConnectedPorts(trace: Trace):
       selector.lastIndexOf(".") > selector.lastIndexOf(" ")
     if (hasExplicitPortToken) return null
 
-    let targetComponent = trace.getSubcircuit().selectOne(selector)
+    let targetComponent = trace._selectOneForConnectedPort(selector)
     if (!targetComponent && !/[.#\[]/.test(selector)) {
-      targetComponent = trace.getSubcircuit().selectOne(`.${selector}`)
+      targetComponent = trace._selectOneForConnectedPort(`.${selector}`)
     }
     if (!targetComponent) return null
 
@@ -40,7 +40,7 @@ export function Trace__findConnectedPorts(trace: Trace):
   const portsWithSelectors = portSelectors.map((selector) => ({
     selector,
     port:
-      (trace.getSubcircuit().selectOne(selector, { type: "port" }) as Port) ??
+      (trace._selectOneForConnectedPort(selector, { type: "port" }) as Port) ??
       resolveImplicitSinglePort(selector),
   }))
 
@@ -58,14 +58,14 @@ export function Trace__findConnectedPorts(trace: Trace):
         portToken = match?.[2] ?? selector
       }
       let targetComponent = parentSelector
-        ? trace.getSubcircuit().selectOne(parentSelector)
+        ? trace._selectOneForConnectedPort(parentSelector)
         : null
       if (
         !targetComponent &&
         parentSelector &&
         !/[.#\[]/.test(parentSelector)
       ) {
-        targetComponent = trace.getSubcircuit().selectOne(`.${parentSelector}`)
+        targetComponent = trace._selectOneForConnectedPort(`.${parentSelector}`)
       }
       if (!targetComponent) {
         const errorMessage = parentSelector
