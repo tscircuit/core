@@ -421,7 +421,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   doInitialPcbPortRender(): void {
     if (this.root?.pcbDisabled) return
-    if (this.getParentNormalComponent()?._isSchematicOnly) return
     const { db } = this.root!
     const { matchedComponents } = this
 
@@ -430,6 +429,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       Port_tryRenderGroupPcbPort(this)
       return
     }
+
+    const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
+
+    // A port without a matched PCB primitive has no PCB representation.
+    if (pcbMatches.length === 0) return
 
     const parentNormalComponent = this.getParentNormalComponent()
     const parentWithPcbComponentId = this.parent?.pcb_component_id
@@ -441,10 +445,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         `${this.getString()} has no parent pcb component, cannot render pcb_port (parent: ${this.parent?.getString()}, parentNormalComponent: ${parentNormalComponent?.getString()})`,
       )
     }
-
-    const pcbMatches = matchedComponents.filter((c) => c.isPcbPrimitive)
-
-    if (pcbMatches.length === 0) return
 
     let matchCenter: { x: number; y: number } | null = null
 
@@ -506,7 +506,6 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   updatePcbPortRender(): void {
     if (this.root?.pcbDisabled) return
-    if (this.getParentNormalComponent()?._isSchematicOnly) return
     const { db } = this.root!
 
     // If pcb_port already exists, nothing to do

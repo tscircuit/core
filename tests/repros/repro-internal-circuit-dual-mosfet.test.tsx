@@ -38,9 +38,9 @@ test("internalCircuit renders a dual MOSFET as two schematic units and one PCB p
               schX={-3}
               schY={0}
               connections={{
-                gate: "pin.G1",
-                source: "pin.S1",
-                drain: "pin.D1",
+                gate: "Q1.pin1",
+                source: "Q1.pin2",
+                drain: "Q1.pin7",
               }}
             />
             <mosfet
@@ -50,9 +50,9 @@ test("internalCircuit renders a dual MOSFET as two schematic units and one PCB p
               schX={3}
               schY={0}
               connections={{
-                gate: "pin.G2",
-                source: "pin.S2",
-                drain: "pin.D2",
+                gate: "Q1.pin3",
+                source: "Q1.pin4",
+                drain: "Q1.pin5",
               }}
             />
           </internalcircuit>
@@ -68,6 +68,7 @@ test("internalCircuit renders a dual MOSFET as two schematic units and one PCB p
 
   const mosfets = circuit.selectAll("mosfet")
   expect(mosfets).toHaveLength(2)
+  expect(mosfets.map((mosfet) => mosfet.name).sort()).toEqual(["A", "B"])
   expect(
     mosfets.every((mosfet) => mosfet instanceof InternalCircuitMosfet),
   ).toBe(true)

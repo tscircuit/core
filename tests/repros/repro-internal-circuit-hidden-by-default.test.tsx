@@ -21,9 +21,9 @@ test("internalCircuit is hidden behind the chip schematic box by default", async
               channelType="n"
               mosfetMode="enhancement"
               connections={{
-                gate: "pin.GATE",
-                source: "pin.SOURCE",
-                drain: "pin.DRAIN",
+                gate: "Q1.pin1",
+                source: "Q1.pin2",
+                drain: "Q1.pin3",
               }}
             />
           </internalcircuit>
