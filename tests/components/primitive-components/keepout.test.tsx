@@ -16,6 +16,27 @@ test("Keepout component rendering", () => {
   expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
 })
 
+test("Keepout without explicit layers defaults to all board copper layers", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="30mm" height="20mm">
+      <keepout shape="rect" width="5mm" height="3mm" pcbX="0mm" pcbY="0mm" />
+    </board>,
+  )
+
+  circuit.render()
+
+  const keepouts = circuit
+    .getCircuitJson()
+    .filter((elm) => elm.type === "pcb_keepout")
+
+  expect(keepouts).toHaveLength(1)
+  // A 2-layer board should default to both copper layers, not just "top"
+  expect((keepouts[0] as any).layers).toContain("top")
+  expect((keepouts[0] as any).layers).toContain("bottom")
+})
+
 test("Keepout supports layer and layers props", () => {
   const { circuit } = getTestFixture()
 

@@ -3,6 +3,7 @@ import { pcbKeepoutProps } from "@tscircuit/props"
 import type { RenderPhaseFn } from "../base-components/Renderable"
 import type { PCBKeepout } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
+import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 
 export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
   pcb_keepout_id: string | null = null
@@ -32,7 +33,8 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
       layers = [props.layer]
     }
     if (!layers) {
-      layers = ["top"]
+      const layerCount = this.getSubcircuit()._getSubcircuitLayerCount()
+      layers = getBoardAvailableLayers(layerCount) as string[]
     }
 
     let pcb_keepout: PCBKeepout | null = null
