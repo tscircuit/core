@@ -38,13 +38,21 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     inputProblem.directConnections.length > 0 ||
     inputProblem.netConnections.length > 0
 
+  // When the user explicitly disables auto-labels, skip all automatic net
+  // label emission. Wires for direct connections still appear via
+  // applyTracesFromSolverOutput; named-net connections become wire-only.
+  const autoLabelEnabled =
+    group._parsedProps.schTraceAutoLabelEnabled !== false
+
   if (!hasRouteableSchematicConnections) {
-    insertNetLabelsForPortsMissingTrace({
-      group,
-      allSourceAndSchematicPortIdsInScope,
-      schPortIdToSourcePortId,
-      connKeyToSourceNet,
-    })
+    if (autoLabelEnabled) {
+      insertNetLabelsForPortsMissingTrace({
+        group,
+        allSourceAndSchematicPortIdsInScope,
+        schPortIdToSourcePortId,
+        connKeyToSourceNet,
+      })
+    }
     return
   }
 
@@ -84,21 +92,23 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
   })
 
   // Apply net labels (from solver placements and net-only ports)
-  applyNetLabelPlacements({
-    group,
-    solver,
-    connKeyToSourceNet,
-    pinIdToSchematicPortId,
-    userNetIdToConnKey,
-    connKeysWithExplicitPortNetTraces,
-    schematicPortIdsWithPreExistingNetLabels,
-    schematicPortIdsWithRoutedTraces,
-  })
+  if (autoLabelEnabled) {
+    applyNetLabelPlacements({
+      group,
+      solver,
+      connKeyToSourceNet,
+      pinIdToSchematicPortId,
+      userNetIdToConnKey,
+      connKeysWithExplicitPortNetTraces,
+      schematicPortIdsWithPreExistingNetLabels,
+      schematicPortIdsWithRoutedTraces,
+    })
 
-  insertNetLabelsForPortsMissingTrace({
-    group,
-    allSourceAndSchematicPortIdsInScope,
-    schPortIdToSourcePortId,
-    connKeyToSourceNet,
-  })
+    insertNetLabelsForPortsMissingTrace({
+      group,
+      allSourceAndSchematicPortIdsInScope,
+      schPortIdToSourcePortId,
+      connKeyToSourceNet,
+    })
+  }
 }
