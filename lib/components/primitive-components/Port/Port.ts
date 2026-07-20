@@ -421,6 +421,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   doInitialPcbPortRender(): void {
     if (this.root?.pcbDisabled) return
+    if (this.getParentNormalComponent()?._isSchematicOnly) return
     const { db } = this.root!
     const { matchedComponents } = this
 
@@ -505,6 +506,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
   updatePcbPortRender(): void {
     if (this.root?.pcbDisabled) return
+    if (this.getParentNormalComponent()?._isSchematicOnly) return
     const { db } = this.root!
 
     // If pcb_port already exists, nothing to do

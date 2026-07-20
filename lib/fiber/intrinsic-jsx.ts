@@ -88,6 +88,7 @@ export interface TscircuitElements {
   transistor: Props.TransistorProps
   switch: Props.SwitchProps
   mosfet: Props.MosfetProps
+  internalcircuit: Props.InternalCircuitProps
   testpoint: Props.TestpointProps
   voltagesource: Props.VoltageSourceProps
   currentsource: Props.CurrentSourceProps

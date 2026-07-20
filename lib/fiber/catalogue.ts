@@ -13,10 +13,19 @@ export interface Catalogue {
 }
 
 export const catalogue: Catalogue = {}
+export const internalCircuitCatalogue: Catalogue = {}
 export const extendCatalogue = (objects: object): void => {
   const altKeys = Object.fromEntries(
     Object.entries(objects).map(([key, v]) => [key.toLowerCase(), v]),
   )
   Object.assign(catalogue, objects)
   Object.assign(catalogue, altKeys)
+}
+
+export const extendInternalCircuitCatalogue = (objects: object): void => {
+  const altKeys = Object.fromEntries(
+    Object.entries(objects).map(([key, value]) => [key.toLowerCase(), value]),
+  )
+  Object.assign(internalCircuitCatalogue, objects)
+  Object.assign(internalCircuitCatalogue, altKeys)
 }
