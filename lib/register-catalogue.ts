@@ -1,5 +1,8 @@
 import * as Components from "./components"
-import { extendCatalogue } from "./fiber/catalogue"
+import {
+  extendCatalogue,
+  extendInternalCircuitCatalogue,
+} from "./fiber/catalogue"
 
 // Register all components, generally you don't need to manually
 // register a component, as long as it's exported from lib/components
@@ -11,4 +14,8 @@ extendCatalogue({
   Bug: Components.Chip,
   Fanout: Components.Breakout,
   FanoutPoint: Components.BreakoutPoint,
+})
+
+extendInternalCircuitCatalogue({
+  Mosfet: Components.InternalCircuitMosfet,
 })

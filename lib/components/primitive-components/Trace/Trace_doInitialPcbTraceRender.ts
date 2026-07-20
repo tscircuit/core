@@ -162,6 +162,14 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
 
   if (!allPortsFound) return
 
+  const hasEndpointWithoutPcbRepresentation = ports.some((port) => {
+    const parentComponent = port.getParentNormalComponent()
+    return Boolean(
+      parentComponent?.source_component_id && !parentComponent.pcb_component_id,
+    )
+  })
+  if (hasEndpointWithoutPcbRepresentation) return
+
   const pcbSelectorError = portsWithSelectors
     .map(({ selector, port }) =>
       getPcbSelectorErrorForTracePort(selector, port),
