@@ -514,6 +514,16 @@ export abstract class PrimitiveComponent<
       )
     }
 
+    // When pcbPositionMode is relative_to_board_anchor, the declared pcbX/pcbY
+    // are board-absolute coordinates — don't compose with parent transform.
+    const pcbPositionMode = (this._parsedProps as any)?.pcbPositionMode
+    if (pcbPositionMode === "relative_to_board_anchor") {
+      const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
+      if (pcbX !== undefined || pcbY !== undefined) {
+        return this.computePcbPropsTransform()
+      }
+    }
+
     // If this is a primitive, and the parent primitive container is flipped,
     // we flip it's position
     if (this.isPcbPrimitive) {
