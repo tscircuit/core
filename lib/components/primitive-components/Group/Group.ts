@@ -897,7 +897,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
     const minTraceWidth = Number(props.minTraceWidth ?? 0.15)
-    const nominalTraceWidth = Number(props.nominalTraceWidth ?? 0.15)
+    const nominalTraceWidth = Number(
+      props.defaultTraceWidth ?? props.nominalTraceWidth ?? 0.15,
+    )
 
     const { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
