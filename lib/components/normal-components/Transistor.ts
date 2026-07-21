@@ -29,8 +29,8 @@ export class Transistor extends NormalComponent<
   initPorts() {
     const pinAliases = {
       pin1: ["collector", "c"],
-      pin2: ["emitter", "e"],
-      pin3: ["base", "b"],
+      pin2: ["base", "b"],
+      pin3: ["emitter", "e"],
     }
 
     super.initPorts({
@@ -39,9 +39,9 @@ export class Transistor extends NormalComponent<
     })
   }
 
-  emitter = this.portMap.pin1
-  collector = this.portMap.pin2
-  base = this.portMap.pin3
+  collector = this.portMap.pin1
+  base = this.portMap.pin2
+  emitter = this.portMap.pin3
 
   doInitialCreateNetsFromProps() {
     this._createNetsFromProps([...this._getNetsFromConnectionsProp()])
