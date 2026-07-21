@@ -12,10 +12,11 @@ import type { SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
+import { getSchematicPortSelector } from "lib/utils/schematic/getSchematicPortSelector"
+import { getSchematicPortSolverEndpoints } from "lib/utils/schematic/getSchematicPortSolverEndpoints"
 import { Group } from "../Group"
 import type { AxisDirection } from "./getSide"
 import { schematicTextToTextBox } from "./schematicTextToTextBounds"
-import { getSchematicPortSelector } from "./getSchematicPortSelector"
 
 const DEFAULT_MAX_MSP_PAIR_DISTANCE = 2.4
 const SCHEMATIC_RAIL_NET_LABEL_HEIGHT = 0.42
@@ -55,6 +56,12 @@ export type SolverInputContext = {
    * e.g. <trace from=".D1 > .pin1" to="net.VCC" />.
    */
   connKeysWithExplicitPortNetTraces: Set<string>
+
+  /**
+   * Ports connected by a source trace whose schematic endpoints coincide.
+   * No routed schematic trace is needed, but both ports are connected.
+   */
+  schematicPortIdsConnectedAtSamePosition: Set<string>
 
   allSourceAndSchematicPortIdsInScope: Set<string>
   schPortIdToSourcePortId: Map<string, string>
@@ -152,9 +159,14 @@ export function createSchematicTraceSolverInputProblem(
 
     for (const schematicPort of schematicPorts) {
       const sourcePort = db.source_port.get(schematicPort.source_port_id)!
+      const sourcePortOwner = sourcePort.source_component_id
+        ? db.source_component.get(sourcePort.source_component_id)
+        : undefined
       const selector = getSchematicPortSelector({
         componentName:
-          sourceComponent?.name ?? schematicComponent.schematic_component_id,
+          sourcePortOwner?.name ??
+          sourceComponent?.name ??
+          schematicComponent.schematic_component_id,
         schematicPort,
         sourcePort,
       })
@@ -257,6 +269,7 @@ export function createSchematicTraceSolverInputProblem(
     netLabelWidth?: number
   }> = []
   const connectedPairKeys = new Set<string>()
+  const schematicPortIdsConnectedAtSamePosition = new Set<string>()
   const connKeysWithExplicitPortNetTraces = new Set<string>()
   for (const sourceTrace of tracesInScope) {
     if (
@@ -300,6 +313,11 @@ export function createSchematicTraceSolverInputProblem(
             (portA.center.x - portB.center.x) ** 2 +
               (portA.center.y - portB.center.y) ** 2,
           )
+          if (portDistance === 0) {
+            schematicPortIdsConnectedAtSamePosition.add(a)
+            schematicPortIdsConnectedAtSamePosition.add(b)
+            continue
+          }
         }
         const maxMspDist =
           group._parsedProps.schMaxTraceDistance ??
@@ -361,6 +379,13 @@ export function createSchematicTraceSolverInputProblem(
   for (const [connKey, schematicPortIds] of connKeyToPinIds) {
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet && schematicPortIds.length >= 1) {
+      const schematicNetEndpoints = getSchematicPortSolverEndpoints({
+        db,
+        schematicPorts: schematicPortIds.flatMap((schematicPortId) => {
+          const schematicPort = db.schematic_port.get(schematicPortId)
+          return schematicPort ? [schematicPort] : []
+        }),
+      })
       const userNetId = String(
         sourceNet.name || sourceNet.source_net_id || connKey,
       )
@@ -388,8 +413,9 @@ export function createSchematicTraceSolverInputProblem(
 
       netConnections.push({
         netId: userNetId,
-        pinIds: schematicPortIds.map(
-          (portId) => schematicPortIdToPinId.get(portId)!,
+        pinIds: schematicNetEndpoints.map(
+          (schematicPort) =>
+            schematicPortIdToPinId.get(schematicPort.schematic_port_id)!,
         ),
         netLabelWidth,
         netLabelHeight,
@@ -436,6 +462,7 @@ export function createSchematicTraceSolverInputProblem(
     connKeyToSourceNet,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
+    schematicPortIdsConnectedAtSamePosition,
     allSourceAndSchematicPortIdsInScope,
     schPortIdToSourcePortId,
   }

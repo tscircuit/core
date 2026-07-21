@@ -79,6 +79,46 @@ export class Chip<PinLabels extends string = never> extends NormalComponent<
 
     // Continue with normal schematic rendering
     super.doInitialSchematicComponentRender()
+    this._assignChipPortSchematicGeometryAnchors()
+  }
+
+  private _assignChipPortSchematicGeometryAnchors(): void {
+    if (!this._parsedProps.schShowInternalCircuit) return
+
+    const internalCircuit = this.children.find(
+      (child) => child.componentName === "InternalCircuit",
+    )
+    if (!internalCircuit) return
+
+    const internalCircuitPorts = internalCircuit
+      .getDescendants()
+      .filter((descendant): descendant is Port => descendant instanceof Port)
+    const sourceTraces = this.root!.db.source_trace.list()
+
+    for (const chipPort of this.children.filter(
+      (child): child is Port => child instanceof Port,
+    )) {
+      if (!chipPort.source_port_id) continue
+
+      const directlyConnectedSourcePortIds = new Set(
+        sourceTraces
+          .filter((sourceTrace) =>
+            sourceTrace.connected_source_port_ids.includes(
+              chipPort.source_port_id!,
+            ),
+          )
+          .flatMap((sourceTrace) => sourceTrace.connected_source_port_ids),
+      )
+
+      // A package pin has one schematic location. Additional internal ports
+      // connected to it retain their own ports and fan out with normal traces.
+      chipPort.schematicPortGeometryAnchor =
+        internalCircuitPorts.find(
+          (internalPort) =>
+            internalPort.source_port_id &&
+            directlyConnectedSourcePortIds.has(internalPort.source_port_id),
+        ) ?? null
+    }
   }
 
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {

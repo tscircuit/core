@@ -27,7 +27,14 @@ export const Group_doInitialSchematicTraceRender = (group: Group<any>) => {
     schPortIdToSourcePortId,
     userNetIdToConnKey,
     connKeysWithExplicitPortNetTraces,
+    schematicPortIdsConnectedAtSamePosition,
   } = createSchematicTraceSolverInputProblem(group)
+
+  for (const schematicPortId of schematicPortIdsConnectedAtSamePosition) {
+    group.root.db.schematic_port.update(schematicPortId, {
+      is_connected: true,
+    })
+  }
 
   if (inputProblem.chips.length === 0) return
 

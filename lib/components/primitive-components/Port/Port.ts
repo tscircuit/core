@@ -25,6 +25,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   schematic_stem_line_id: string | null = null
 
   schematicSymbolPortDef: SchSymbol["ports"][number] | null = null
+  /**
+   * A different port whose symbol terminal supplies this port's schematic
+   * geometry. This port retains its own source and schematic port identity.
+   */
+  schematicPortGeometryAnchor: Port | null = null
   matchedComponents: PrimitiveComponent[]
   _isPrimaryPort = true
   _primaryPinNumber: number | null = null
@@ -160,10 +165,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * internallyConnectedPorts or externallyConnectedPorts to ensure the things
    * are rendered properly.
    */
-  _hasSchematicPort() {
+  _hasSchematicPort(): boolean {
     const { schX, schY } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
       return true
+    }
+
+    if (this.schematicPortGeometryAnchor) {
+      return this.schematicPortGeometryAnchor._hasSchematicPort()
     }
 
     const parentNormalComponent = this.getParentNormalComponent()
@@ -199,6 +208,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       // For ports with explicit coordinates in custom React symbols,
       // use them as absolute coordinates (not relative to the parent)
       return { x: schX, y: schY }
+    }
+
+    if (this.schematicPortGeometryAnchor) {
+      return this.schematicPortGeometryAnchor._getGlobalSchematicPositionBeforeLayout()
     }
 
     const parentNormalComponent = this.getParentNormalComponent()
@@ -601,22 +614,27 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const { schX, schY } = props
+    const schematicPortGeometryAnchor = this.schematicPortGeometryAnchor ?? this
+    const geometryAnchorProps = schematicPortGeometryAnchor._parsedProps
+    const { schX, schY } = geometryAnchorProps
     const container =
       schX !== undefined && schY !== undefined
-        ? this.getParentNormalComponent()
-        : this.getPrimitiveContainer()
+        ? schematicPortGeometryAnchor.getParentNormalComponent()
+        : schematicPortGeometryAnchor.getPrimitiveContainer()
 
     if (!container) return
-    if (!this._hasSchematicPort()) return
+    if (!schematicPortGeometryAnchor._hasSchematicPort()) return
 
     const containerCenter = container._getGlobalSchematicPositionBeforeLayout()
-    const portCenter = this._getGlobalSchematicPositionBeforeLayout()
+    const portCenter =
+      schematicPortGeometryAnchor._getGlobalSchematicPositionBeforeLayout()
 
     let localPortInfo: SchematicBoxPortPositionWithMetadata | null = null
     const containerDims = container._getSchematicBoxDimensions()
-    if (containerDims && props.pinNumber !== undefined) {
-      localPortInfo = containerDims.getPortPositionByPinNumber(props.pinNumber)
+    if (containerDims && geometryAnchorProps.pinNumber !== undefined) {
+      localPortInfo = containerDims.getPortPositionByPinNumber(
+        geometryAnchorProps.pinNumber,
+      )
     }
 
     // For each obstacle, create a schematic_debug_object
@@ -633,12 +651,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     const isExplicitCustomSymbolPort =
-      schX !== undefined && schY !== undefined && !!this._getSymbolAncestor()
+      schX !== undefined &&
+      schY !== undefined &&
+      !!schematicPortGeometryAnchor._getSymbolAncestor()
 
     if (!localPortInfo?.side) {
       this.facingDirection = getRelativeDirection(containerCenter, portCenter)
-      if (isExplicitCustomSymbolPort && props.direction) {
-        this.facingDirection = props.direction
+      if (isExplicitCustomSymbolPort && geometryAnchorProps.direction) {
+        this.facingDirection = geometryAnchorProps.direction
       }
     } else {
       this.facingDirection = {
@@ -650,16 +670,17 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     const bestDisplayPinLabel = this._getBestDisplayPinLabel()
-    const parentNormalComponent = this.getParentNormalComponent()
+    const parentNormalComponent =
+      schematicPortGeometryAnchor.getParentNormalComponent()
 
     // Derive side_of_component from direction prop for custom symbols
     const sideOfComponent =
       localPortInfo?.side ??
-      (props.direction === "up"
+      (geometryAnchorProps.direction === "up"
         ? "top"
-        : props.direction === "down"
+        : geometryAnchorProps.direction === "down"
           ? "bottom"
-          : props.direction)
+          : geometryAnchorProps.direction)
 
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
@@ -667,13 +688,14 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,
-      distance_from_component_edge: props.schStemLength ?? 0.4,
+      distance_from_component_edge: geometryAnchorProps.schStemLength ?? 0.4,
       side_of_component: sideOfComponent,
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
       display_pin_label: bestDisplayPinLabel,
       is_connected: false,
-      schematic_sheet_id: this._resolveSchematicSheetId(),
+      schematic_sheet_id:
+        schematicPortGeometryAnchor._resolveSchematicSheetId(),
     }
 
     for (const attributes of this._getMatchingPinAttributes()) {
@@ -690,8 +712,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     this.schematic_port_id = schematic_port.schematic_port_id
 
     // Create schematic_line for port stem when schStemLength is specified
-    if (props.schStemLength !== undefined && props.schStemLength !== 0) {
-      const { schStemLength, direction } = props
+    if (
+      !this.schematicPortGeometryAnchor &&
+      geometryAnchorProps.schStemLength !== undefined &&
+      geometryAnchorProps.schStemLength !== 0
+    ) {
+      const { schStemLength, direction } = geometryAnchorProps
       let x2 = portCenter.x
       let y2 = portCenter.y
 
@@ -710,7 +736,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         stroke_width: 0.02,
         color: SCHEMATIC_COMPONENT_OUTLINE_COLOR,
         is_dashed: false,
-        schematic_sheet_id: this._resolveSchematicSheetId(),
+        schematic_sheet_id:
+          schematicPortGeometryAnchor._resolveSchematicSheetId(),
       })
       this.schematic_stem_line_id = stemLine.schematic_line_id
     }
@@ -720,7 +747,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (this.root?.schematicDisabled) return
     if (!this.schematic_port_id) return
 
-    const symbol = this._getSymbolAncestor()
+    const symbol = (
+      this.schematicPortGeometryAnchor ?? this
+    )._getSymbolAncestor()
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 
