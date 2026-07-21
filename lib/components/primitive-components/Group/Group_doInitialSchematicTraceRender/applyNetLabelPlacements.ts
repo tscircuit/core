@@ -1,15 +1,16 @@
-import { Group } from "../Group"
+import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import type { SchematicNetLabel, SourceNet } from "circuit-json"
+import Debug from "debug"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { getNetNameFromSourcePorts } from "lib/utils/schematic/getSourcePortNetLabelText"
+import type { NetLabel } from "../../NetLabel"
+import { Port } from "../../Port"
+import { Group } from "../Group"
+import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
+import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import type { AxisDirection } from "./getSide"
 import { oppositeSide } from "./oppositeSide"
-import { Port } from "../../Port"
-import type { NetLabel } from "../../NetLabel"
-import { getNetNameFromPorts } from "./getNetNameFromPorts"
-import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
-import Debug from "debug"
-import type { SchematicNetLabel, SourceNet } from "circuit-json"
-import { doBoundsOverlap, type Bounds } from "@tscircuit/math-utils"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -257,7 +258,21 @@ export function applyNetLabelPlacements(args: {
       .selectAll<Port>("port")
       .filter((p) => p._getSubcircuitConnectivityKey() === placementConnKey)
 
-    const { name: text, wasAssignedDisplayLabel } = getNetNameFromPorts(ports)
+    const { name: portInstanceText, wasAssignedDisplayLabel } =
+      getNetNameFromPorts(ports)
+    const sourcePortIdsForConnection = placementConnKey
+      ? db.source_port
+          .list()
+          .filter(
+            (sourcePort) =>
+              sourcePort.subcircuit_connectivity_map_key === placementConnKey,
+          )
+          .map((sourcePort) => sourcePort.source_port_id)
+      : []
+    const text =
+      portInstanceText ||
+      getNetNameFromSourcePorts(db, sourcePortIdsForConnection) ||
+      ""
     const isRoutedPairPlacement = (placement.pinIds?.length ?? 0) > 1
     const shouldKeepRoutedPairLabel =
       isRoutedPairPlacement &&

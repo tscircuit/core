@@ -1,5 +1,5 @@
-import type { SubcircuitProps } from "@tscircuit/props"
 import { expect, test } from "bun:test"
+import type { SubcircuitProps } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const Sensor = (props: SubcircuitProps) => (
@@ -29,15 +29,15 @@ test("internal subcircuit connection does not become an external label", async (
         anchor="center"
       />
       <schematictext
-        text={'BUG: generated "sensor_connectivity_net0" is visible'}
+        text="EXPECTED: STATUS remains open and unlabeled"
         schX={0}
         schY={-0.9}
         fontSize={0.3}
         anchor="center"
-        color="red"
+        color="blue"
       />
       <schematictext
-        text="EXPECTED: open STATUS port with no net label"
+        text="No generated connectivity name is rendered"
         schX={0}
         schY={-1.35}
         fontSize={0.28}

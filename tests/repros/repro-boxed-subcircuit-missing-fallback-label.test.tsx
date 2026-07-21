@@ -1,5 +1,5 @@
-import type { SubcircuitProps } from "@tscircuit/props"
 import { expect, test } from "bun:test"
+import type { SubcircuitProps } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const Power = (props: SubcircuitProps) => (
@@ -48,15 +48,15 @@ test("missing fallback label for a cross-subcircuit trace", async () => {
         color="blue"
       />
       <schematictext
-        text="BUG: TRACE 2 disappears"
+        text="EXPECTED: TRACE 2 falls back to matching net labels"
         schX={0}
         schY={-1}
         fontSize={0.3}
         anchor="center"
-        color="red"
+        color="blue"
       />
       <schematictext
-        text={'EXPECTED: wire or "power_GND/mcu_GND" label at BOTH GND ports'}
+        text={'BOTH GND ports show "power_GND/mcu_GND"'}
         schX={0}
         schY={-1.45}
         fontSize={0.26}

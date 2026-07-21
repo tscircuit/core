@@ -1,5 +1,5 @@
-import type { SubcircuitProps } from "@tscircuit/props"
 import { expect, test } from "bun:test"
+import type { SubcircuitProps } from "@tscircuit/props"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const Power = (props: SubcircuitProps) => (
@@ -32,7 +32,7 @@ const Load = (props: SubcircuitProps) => (
   </subcircuit>
 )
 
-test("boxed subcircuits leak generated net names and omit the ground link", async () => {
+test("boxed subcircuits hide generated names and label an unrouted ground link", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
