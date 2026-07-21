@@ -1,0 +1,78 @@
+import type { SubcircuitProps } from "@tscircuit/props"
+import { expect, test } from "bun:test"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+const Power = (props: SubcircuitProps) => (
+  <subcircuit {...props}>
+    <port name="3V3" direction="right" connectsTo={["U1.3V3"]} />
+    <port name="GND" direction="right" connectsTo={["U1.GND"]} />
+    <chip
+      name="U1"
+      footprint="soic8"
+      pinLabels={{ pin1: "3V3", pin2: "GND" }}
+    />
+  </subcircuit>
+)
+
+const Mcu = (props: SubcircuitProps) => (
+  <subcircuit {...props}>
+    <port name="GND" direction="left" connectsTo={["U1.GND"]} />
+    <port name="3V3" direction="left" connectsTo={["U1.3V3"]} />
+    <chip
+      name="U1"
+      footprint="soic8"
+      pinLabels={{ pin1: "GND", pin2: "3V3" }}
+    />
+  </subcircuit>
+)
+
+test("missing fallback label for a cross-subcircuit trace", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board routingDisabled>
+      <schematictext
+        text="TRACE 1: power.3V3 -> mcu.3V3"
+        schX={0}
+        schY={1.6}
+        fontSize={0.28}
+        anchor="center"
+        color="green"
+      />
+      <schematictext
+        text="TRACE 2: power.GND -> mcu.GND"
+        schX={0}
+        schY={1.15}
+        fontSize={0.28}
+        anchor="center"
+        color="blue"
+      />
+      <schematictext
+        text="BUG: TRACE 2 disappears"
+        schX={0}
+        schY={-1}
+        fontSize={0.3}
+        anchor="center"
+        color="red"
+      />
+      <schematictext
+        text={'EXPECTED: wire or "power_GND/mcu_GND" label at BOTH GND ports'}
+        schX={0}
+        schY={-1.45}
+        fontSize={0.26}
+        anchor="center"
+        color="blue"
+      />
+
+      <Power name="power" showAsSchematicBox schX={-5} />
+      <Mcu name="mcu" showAsSchematicBox schX={5} />
+
+      <trace path={[".power > .3V3", ".mcu > .3V3"]} />
+      <trace path={[".power > .GND", ".mcu > .GND"]} />
+    </board>,
+  )
+
+  await circuit.renderUntilSettled()
+
+  expect(circuit).toMatchSchematicSnapshot(import.meta.path)
+})
