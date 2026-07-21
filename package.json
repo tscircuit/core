@@ -113,7 +113,7 @@
     "@flatten-js/core": "^1.6.2",
     "@lume/kiwi": "^0.4.3",
     "calculate-cell-boundaries": "^0.0.13",
-    "calculate-packing": "^0.0.78",
+    "calculate-packing": "^0.0.79",
     "css-select": "5.1.0",
     "format-si-unit": "^0.0.7",
     "nanoid": "^5.0.7",
