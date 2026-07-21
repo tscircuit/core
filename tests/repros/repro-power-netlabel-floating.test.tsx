@@ -53,6 +53,10 @@ test("power netlabel connects to specified net connection instead of floating at
   expect(netLabel).toBeDefined()
   expect(r3Pin1Port).toBeDefined()
   // Ensure the power label anchor is at R3's pin position (not floating at origin 0,0)
-  expect(Math.abs(netLabel.anchor_position.x - r3Pin1Port!.center.x)).toBeLessThan(0.5)
-  expect(Math.abs(netLabel.anchor_position.y - r3Pin1Port!.center.y)).toBeLessThan(0.5)
+  expect(
+    Math.abs(netLabel.anchor_position!.x - r3Pin1Port!.center.x),
+  ).toBeLessThan(0.5)
+  expect(
+    Math.abs(netLabel.anchor_position!.y - r3Pin1Port!.center.y),
+  ).toBeLessThan(0.5)
 })

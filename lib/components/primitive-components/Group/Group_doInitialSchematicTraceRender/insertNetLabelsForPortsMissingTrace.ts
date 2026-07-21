@@ -247,9 +247,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
               anchor_side: side,
             },
           )
-        } else if (
-          existingNetLabelForCurrentSourceConnection.text === text
-        ) {
+        } else if (existingNetLabelForCurrentSourceConnection.text === text) {
           const anchor_side =
             existingNetLabelForCurrentSourceConnection.anchor_side ?? side
           db.schematic_net_label.update(
