@@ -180,21 +180,31 @@ export const insertNetLabelsForPortsMissingTrace = ({
       )
       const collapsedGroup = sourcePortComponent?.parent
       if (
-        sourcePortComponent?.isGroupPort() &&
-        collapsedGroup?._parsedProps?.showAsSchematicBox
+        (sourcePortComponent?.isGroupPort() &&
+          collapsedGroup?._parsedProps?.showAsSchematicBox) ||
+        (schComponent?.is_box_with_pins && !sourcePort?.source_component_id)
       ) {
         const sourceTracesConnectedToPort = db.source_trace
           .list()
           .filter((trace) =>
             trace.connected_source_port_ids?.includes(srcPortId),
           )
-        const isPortInsideCollapsedGroup = (port: Port) => {
-          let parent = port.parent
-          while (parent) {
-            if (parent === collapsedGroup) return true
-            parent = parent.parent
+        const isPortInsideCollapsedGroup = (sourcePortId: string) => {
+          const connectedPort = connectedPortsForKey.find(
+            (port) => port.source_port_id === sourcePortId,
+          )
+          if (connectedPort && collapsedGroup) {
+            let parent = connectedPort.parent
+            while (parent) {
+              if (parent === collapsedGroup) return true
+              parent = parent.parent
+            }
           }
-          return false
+
+          return (
+            db.source_port.get(sourcePortId)?.subcircuit_id ===
+            sourcePort?.subcircuit_id
+          )
         }
         const allConnectionsAreInternal =
           sourceTracesConnectedToPort.length > 0 &&
@@ -203,14 +213,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
               (trace.connected_source_net_ids?.length ?? 0) === 0 &&
               trace.connected_source_port_ids
                 .filter((sourcePortId) => sourcePortId !== srcPortId)
-                .every((sourcePortId) => {
-                  const connectedPort = connectedPortsForKey.find(
-                    (port) => port.source_port_id === sourcePortId,
-                  )
-                  return connectedPort
-                    ? isPortInsideCollapsedGroup(connectedPort)
-                    : false
-                }),
+                .every(isPortInsideCollapsedGroup),
           )
 
         // Keep implementation-only connectivity behind a collapsed box. A
