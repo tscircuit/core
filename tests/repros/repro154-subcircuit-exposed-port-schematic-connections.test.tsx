@@ -2,50 +2,62 @@ import type { SubcircuitProps } from "@tscircuit/props"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-const Power = (props: SubcircuitProps) => (
+const SourceBox = (props: SubcircuitProps) => (
   <subcircuit {...props}>
-    <port name="STATUS" direction="right" connectsTo={["U1.STATUS"]} />
-    <port name="VOUT_3V3" direction="right" connectsTo={["U1.VOUT_3V3"]} />
-    <port name="SEC_GND" direction="right" connectsTo={["U1.SEC_GND"]} />
+    <port
+      name="UNCONNECTED"
+      direction="right"
+      connectsTo={["U1.UNCONNECTED"]}
+    />
+    <port name="ROUTED" direction="right" connectsTo={["U1.ROUTED"]} />
+    <port name="FALLBACK" direction="right" connectsTo={["U1.FALLBACK"]} />
     <chip
       name="U1"
       footprint="soic8"
       pinLabels={{
-        pin1: "STATUS",
-        pin2: "VOUT_3V3",
-        pin3: "SEC_GND",
+        pin1: "UNCONNECTED",
+        pin2: "ROUTED",
+        pin3: "FALLBACK",
       }}
     />
   </subcircuit>
 )
 
-const Load = (props: SubcircuitProps) => (
+const DestinationBox = (props: SubcircuitProps) => (
   <subcircuit {...props}>
-    <port name="ENABLE" direction="left" connectsTo={["U1.ENABLE"]} />
-    <port name="GND" direction="left" connectsTo={["U1.GND"]} />
-    <port name="3V3" direction="left" connectsTo={["U1.3V3"]} />
+    <port name="UNCONNECTED" direction="left" connectsTo={["U1.UNCONNECTED"]} />
+    <port name="FALLBACK" direction="left" connectsTo={["U1.FALLBACK"]} />
+    <port name="ROUTED" direction="left" connectsTo={["U1.ROUTED"]} />
     <chip
       name="U1"
       footprint="soic8"
-      pinLabels={{ pin1: "ENABLE", pin2: "GND", pin3: "3V3" }}
+      pinLabels={{ pin1: "UNCONNECTED", pin2: "FALLBACK", pin3: "ROUTED" }}
     />
   </subcircuit>
 )
 
-test("boxed subcircuits do not leak generated connectivity names", async () => {
+test("unrouted boxed subcircuit ports get a readable fallback label", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
     <board routingDisabled>
-      <Power name="power" showAsSchematicBox schX={-4} />
-      <Load name="load" showAsSchematicBox schX={4} />
+      <SourceBox name="source" showAsSchematicBox schX={-4} />
+      <DestinationBox name="destination" showAsSchematicBox schX={4} />
 
-      <trace path={[".power > .VOUT_3V3", ".load > .3V3"]} />
-      <trace path={[".power > .SEC_GND", ".load > .GND"]} />
+      {/* This connection is routed normally. */}
+      <trace path={[".source > .ROUTED", ".destination > .ROUTED"]} />
+      {/* Both FALLBACK ports should get the same label when this cannot route. */}
+      <trace path={[".source > .FALLBACK", ".destination > .FALLBACK"]} />
     </board>,
   )
 
   await circuit.renderUntilSettled()
 
+  expect(circuit.db.schematic_net_label.list().map(({ text }) => text)).toEqual(
+    [
+      "source_FALLBACK/destination_FALLBACK",
+      "source_FALLBACK/destination_FALLBACK",
+    ],
+  )
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
