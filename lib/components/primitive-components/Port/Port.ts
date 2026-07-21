@@ -688,7 +688,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const isMappedInternalCircuitPort =
       internalCircuitPortRole?.type === "internal_circuit_port" &&
-      internalCircuitPortRole.overlappingChipPorts.length > 0
+      internalCircuitPortRole.hasOverlappingChipPort
 
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",

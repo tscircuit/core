@@ -4,8 +4,7 @@ import type { Port } from "./Port"
 type InternalCircuitPortSchematicRole =
   | {
       type: "internal_circuit_port"
-      internalCircuitPort: Port
-      overlappingChipPorts: Port[]
+      hasOverlappingChipPort: boolean
     }
   | {
       type: "overlapping_chip_port"
@@ -103,8 +102,8 @@ export const getInternalCircuitPortSchematicRole = (
   if (getInternalCircuitAncestor(port)) {
     return {
       type: "internal_circuit_port",
-      internalCircuitPort: port,
-      overlappingChipPorts: getChipPortsMappedToInternalCircuitPort(port),
+      hasOverlappingChipPort:
+        getChipPortsMappedToInternalCircuitPort(port).length > 0,
     }
   }
 
