@@ -1940,9 +1940,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   ): number | undefined {
     const rawNominalTraceWidth =
       props.defaultTraceWidth ?? props.nominalTraceWidth
-    return rawNominalTraceWidth !== undefined
-      ? Number(rawNominalTraceWidth)
-      : undefined
+    if (rawNominalTraceWidth === undefined) return undefined
+    return Number(rawNominalTraceWidth)
   }
 
   _getAutorouterConfig(): AutorouterConfig {
