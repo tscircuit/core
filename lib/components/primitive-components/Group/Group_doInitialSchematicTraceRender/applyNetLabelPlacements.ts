@@ -254,7 +254,8 @@ export function applyNetLabelPlacements(args: {
     }
 
     const ports = group
-      .selectAll<Port>("port")
+      .getDescendants()
+      .filter((component): component is Port => component instanceof Port)
       .filter((p) => p._getSubcircuitConnectivityKey() === placementConnKey)
 
     const { name: text, wasAssignedDisplayLabel } = getNetNameFromPorts(ports)
