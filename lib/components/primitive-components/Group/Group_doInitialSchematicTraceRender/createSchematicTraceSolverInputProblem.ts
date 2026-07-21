@@ -10,7 +10,6 @@ import {
 } from "@tscircuit/schematic-trace-solver"
 import type { SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
-import { isInternalCircuitPortMapping } from "lib/utils/schematic/isInternalCircuitPortMapping"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { Group } from "../Group"
@@ -307,7 +306,16 @@ export function createSchematicTraceSolverInputProblem(
         }
         const portA = db.schematic_port.get(a)
         const portB = db.schematic_port.get(b)
-        if (portA && portB && isInternalCircuitPortMapping(portA, portB)) {
+        const portAIsInternalAndPortBOverlaps =
+          portA?.is_internal_circuit_port &&
+          portB?.is_overlapping_internal_circuit_port
+        const portBIsInternalAndPortAOverlaps =
+          portB?.is_internal_circuit_port &&
+          portA?.is_overlapping_internal_circuit_port
+        const isInternalCircuitPortMapping =
+          portAIsInternalAndPortBOverlaps || portBIsInternalAndPortAOverlaps
+
+        if (portA && portB && isInternalCircuitPortMapping) {
           const internalCircuitPort = portA.is_internal_circuit_port
             ? portA
             : portB

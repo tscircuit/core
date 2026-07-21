@@ -18,7 +18,6 @@ import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection
 import { countComplexElements } from "lib/utils/schematic/countComplexElements"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { getStubEdges } from "lib/utils/schematic/getStubEdges"
-import { isInternalCircuitPortMapping } from "lib/utils/schematic/isInternalCircuitPortMapping"
 import type { NetLabel } from "../NetLabel"
 import type { Port } from "../Port"
 import { createSchematicTraceCrossingSegments } from "./trace-utils/create-schematic-trace-crossing-segments"
@@ -101,13 +100,18 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   const connectedSchematicPorts = portsWithPosition
     .map(({ schematic_port_id }) => db.schematic_port.get(schematic_port_id))
     .filter((port): port is SchematicPort => Boolean(port))
-  if (
+  const [firstSchematicPort, secondSchematicPort] = connectedSchematicPorts
+  const firstIsInternalAndSecondOverlaps =
+    firstSchematicPort?.is_internal_circuit_port &&
+    secondSchematicPort?.is_overlapping_internal_circuit_port
+  const secondIsInternalAndFirstOverlaps =
+    secondSchematicPort?.is_internal_circuit_port &&
+    firstSchematicPort?.is_overlapping_internal_circuit_port
+  const isInternalCircuitPortMapping =
     connectedSchematicPorts.length === 2 &&
-    isInternalCircuitPortMapping(
-      connectedSchematicPorts[0],
-      connectedSchematicPorts[1],
-    )
-  ) {
+    (firstIsInternalAndSecondOverlaps || secondIsInternalAndFirstOverlaps)
+
+  if (isInternalCircuitPortMapping) {
     return
   }
   const portPairKey = portIds.join(",")
