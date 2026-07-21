@@ -25,6 +25,10 @@ test("external resistor connects through an internal circuit chip pin", async ()
           pin2: "SOURCE",
           pin3: "DRAIN",
         }}
+        connections={{
+          SOURCE: "net.SOURCE",
+          DRAIN: "net.DRAIN",
+        }}
         schShowInternalCircuit
         internalCircuit={
           <internalcircuit>
