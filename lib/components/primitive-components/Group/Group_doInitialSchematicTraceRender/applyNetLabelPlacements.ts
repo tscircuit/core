@@ -226,20 +226,35 @@ export function applyNetLabelPlacements(args: {
         text,
       })
 
-      if (!isPowerOrGroundNet) {
-        const solverPlacement = {
-          sourceNet,
-          text,
-          schematicPortIds: new Set(schPortIds),
-          bounds: getNetLabelTextBounds({ center, text }),
-        }
-        if (
-          userDefinedNetLabels.some((label) =>
-            isUserDefinedNetLabelRedundantWithPlacement(label, solverPlacement),
-          )
-        ) {
-          continue
-        }
+      const solverPlacement = {
+        sourceNet,
+        text,
+        schematicPortIds: new Set(schPortIds),
+        bounds: getNetLabelTextBounds({ center, text }),
+      }
+      if (
+        userDefinedNetLabels.some((label) =>
+          isUserDefinedNetLabelRedundantWithPlacement(label, solverPlacement),
+        )
+      ) {
+        continue
+      }
+
+      const existingUserLabel = userDefinedNetLabels.find((label) =>
+        isSameNet(label, sourceNet),
+      )
+      if (existingUserLabel) {
+        db.schematic_net_label.update(
+          existingUserLabel.schematic_net_label_id,
+          {
+            text,
+            anchor_position,
+            center,
+            anchor_side,
+            schematic_sheet_id: schematicSheetId,
+          },
+        )
+        continue
       }
 
       const netLabel: Parameters<typeof db.schematic_net_label.insert>[0] = {

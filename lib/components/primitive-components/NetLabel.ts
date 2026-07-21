@@ -77,9 +77,27 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
 
     const connectedPorts: Port[] = []
     for (const connection of connectsTo) {
-      const port = this.getSubcircuit().selectOne(connection) as Port
-      if (port) {
-        connectedPorts.push(port)
+      let selected: any = null
+      try {
+        selected = this.getSubcircuit().selectOne(connection)
+        if (
+          !selected &&
+          !connection.startsWith(".") &&
+          !connection.startsWith("#")
+        ) {
+          selected = this.getSubcircuit().selectOne(
+            connection.startsWith("net.") ? connection : `net.${connection}`,
+            { type: "net" },
+          )
+        }
+      } catch {
+        selected = null
+      }
+      if (selected && "isPort" in selected && selected.isPort) {
+        connectedPorts.push(selected as Port)
+      } else if (selected && "isNet" in selected && selected.isNet) {
+        const netPorts = (selected as any).getAllConnectedPorts()
+        connectedPorts.push(...netPorts)
       }
     }
 
