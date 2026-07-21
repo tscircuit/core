@@ -1,16 +1,6 @@
 import type { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Port } from "./Port"
 
-type InternalCircuitPortSchematicRole =
-  | {
-      type: "internal_circuit_port"
-      hasOverlappingChipPort: boolean
-    }
-  | {
-      type: "overlapping_chip_port"
-      internalCircuitPort: Port
-    }
-
 const getInternalCircuitAncestor = (port: Port): PrimitiveComponent | null => {
   let ancestor = port.parent
   while (ancestor) {
@@ -19,6 +9,9 @@ const getInternalCircuitAncestor = (port: Port): PrimitiveComponent | null => {
   }
   return null
 }
+
+export const isInternalCircuitPort = (port: Port): boolean =>
+  getInternalCircuitAncestor(port) !== null
 
 const getConnectionTargets = (
   target: string | string[] | readonly string[] | undefined,
@@ -59,20 +52,19 @@ const getChipPortsMappedToInternalCircuitPort = (
   return mappedChipPorts
 }
 
-const getInternalCircuitChild = (
-  component: PrimitiveComponent,
-): PrimitiveComponent | null =>
-  component.children.find(
-    (child) => child.componentName === "InternalCircuit",
-  ) ?? null
+export const isInternalCircuitPortMappedToChipPort = (port: Port): boolean =>
+  getChipPortsMappedToInternalCircuitPort(port).length > 0
 
-const getInternalCircuitPortMappedToChipPort = (
+export const getInternalCircuitPortMappedToChipPort = (
   chipPort: Port,
 ): Port | null => {
-  const chipComponent = chipPort.getParentNormalComponent()
+  const chipComponent =
+    chipPort.getParentNormalComponent() as PrimitiveComponent | null
   if (!chipComponent) return null
 
-  const internalCircuit = getInternalCircuitChild(chipComponent)
+  const internalCircuit = chipComponent.children.find(
+    (child) => child.componentName === "InternalCircuit",
+  )
   if (!internalCircuit) return null
 
   const mappedInternalCircuitPorts = internalCircuit
@@ -94,24 +86,4 @@ const getInternalCircuitPortMappedToChipPort = (
   }
 
   return mappedInternalCircuitPorts[0] ?? null
-}
-
-export const getInternalCircuitPortSchematicRole = (
-  port: Port,
-): InternalCircuitPortSchematicRole | null => {
-  if (getInternalCircuitAncestor(port)) {
-    return {
-      type: "internal_circuit_port",
-      hasOverlappingChipPort:
-        getChipPortsMappedToInternalCircuitPort(port).length > 0,
-    }
-  }
-
-  const internalCircuitPort = getInternalCircuitPortMappedToChipPort(port)
-  if (!internalCircuitPort) return null
-
-  return {
-    type: "overlapping_chip_port",
-    internalCircuitPort,
-  }
 }

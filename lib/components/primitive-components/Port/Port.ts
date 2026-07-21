@@ -18,7 +18,11 @@ import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source
 import { Port_doInitialCreateTracesFromProps } from "./Port_doInitialCreateTracesFromProps"
 import { Port_tryRenderGroupPcbPort } from "./Port_tryRenderGroupPcbPort"
 import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
-import { getInternalCircuitPortSchematicRole } from "./getInternalCircuitPortSchematicRole"
+import {
+  getInternalCircuitPortMappedToChipPort,
+  isInternalCircuitPort,
+  isInternalCircuitPortMappedToChipPort,
+} from "./internalCircuitPortMapping"
 
 export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
@@ -163,9 +167,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * are rendered properly.
    */
   _hasSchematicPort(): boolean {
-    const internalCircuitPortRole = getInternalCircuitPortSchematicRole(this)
-    if (internalCircuitPortRole?.type === "overlapping_chip_port") {
-      return internalCircuitPortRole.internalCircuitPort._hasSchematicPort()
+    const mappedInternalPort = getInternalCircuitPortMappedToChipPort(this)
+    if (mappedInternalPort) {
+      return mappedInternalPort._hasSchematicPort()
     }
 
     const { schX, schY } = this._parsedProps
@@ -201,9 +205,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
-    const internalCircuitPortRole = getInternalCircuitPortSchematicRole(this)
-    if (internalCircuitPortRole?.type === "overlapping_chip_port") {
-      return internalCircuitPortRole.internalCircuitPort._getGlobalSchematicPositionBeforeLayout()
+    const mappedInternalPort = getInternalCircuitPortMappedToChipPort(this)
+    if (mappedInternalPort) {
+      return mappedInternalPort._getGlobalSchematicPositionBeforeLayout()
     }
 
     const { schX, schY } = this._parsedProps
@@ -613,11 +617,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { db } = this.root!
     const { _parsedProps: props } = this
 
-    const internalCircuitPortRole = getInternalCircuitPortSchematicRole(this)
-    const schematicPlacementPort =
-      internalCircuitPortRole?.type === "overlapping_chip_port"
-        ? internalCircuitPortRole.internalCircuitPort
-        : this
+    const mappedInternalPort = getInternalCircuitPortMappedToChipPort(this)
+    const schematicPlacementPort = mappedInternalPort ?? this
     const schematicPlacementProps = schematicPlacementPort._parsedProps
 
     const { schX, schY } = schematicPlacementProps
@@ -686,9 +687,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           ? "bottom"
           : schematicPlacementProps.direction)
 
-    const isMappedInternalCircuitPort =
-      internalCircuitPortRole?.type === "internal_circuit_port" &&
-      internalCircuitPortRole.hasOverlappingChipPort
+    const isInternalPort = isInternalCircuitPort(this)
+    const isMappedInternalPort =
+      isInternalPort && isInternalCircuitPortMappedToChipPort(this)
 
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
       type: "schematic_port",
@@ -702,17 +703,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
       display_pin_label: bestDisplayPinLabel,
-      is_connected:
-        internalCircuitPortRole?.type === "overlapping_chip_port" ||
-        isMappedInternalCircuitPort,
-      is_internal_circuit_port:
-        internalCircuitPortRole?.type === "internal_circuit_port"
-          ? true
-          : undefined,
+      is_connected: mappedInternalPort !== null || isMappedInternalPort,
+      is_internal_circuit_port: isInternalPort ? true : undefined,
       is_overlapping_internal_circuit_port:
-        internalCircuitPortRole?.type === "overlapping_chip_port"
-          ? true
-          : undefined,
+        mappedInternalPort !== null ? true : undefined,
       schematic_sheet_id: this._resolveSchematicSheetId(),
     }
 
@@ -731,7 +725,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // Create schematic_line for port stem when schStemLength is specified
     if (
-      internalCircuitPortRole?.type !== "overlapping_chip_port" &&
+      !mappedInternalPort &&
       schematicPlacementProps.schStemLength !== undefined &&
       schematicPlacementProps.schStemLength !== 0
     ) {
@@ -764,11 +758,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (this.root?.schematicDisabled) return
     if (!this.schematic_port_id) return
 
-    const internalCircuitPortRole = getInternalCircuitPortSchematicRole(this)
-    const schematicPlacementPort =
-      internalCircuitPortRole?.type === "overlapping_chip_port"
-        ? internalCircuitPortRole.internalCircuitPort
-        : this
+    const mappedInternalPort = getInternalCircuitPortMappedToChipPort(this)
+    const schematicPlacementPort = mappedInternalPort ?? this
     const symbol = schematicPlacementPort._getSymbolAncestor()
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
