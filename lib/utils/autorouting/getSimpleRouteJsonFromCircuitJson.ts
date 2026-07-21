@@ -748,7 +748,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         resolvedMinPlatedHoleDrillEdgeToDrillEdgeClearance,
       minPadEdgeToPadEdgeClearance: resolvedMinPadEdgeToPadEdgeClearance,
       minBoardEdgeClearance: resolvedMinBoardEdgeClearance,
-      nominalTraceWidth,
+      nominalTraceWidth: defaultTraceWidth,
       outline: board?.outline?.map((point) => ({ ...point })),
     },
     connMap: sharedConnMap,
