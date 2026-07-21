@@ -166,7 +166,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
       !directCrossSubcircuitConnectionLabelText &&
       !implicitPortLabelText
 
-    const text =
+    let text =
       sourceNet?.name ||
       sourceNet?.source_net_id ||
       assignedPortNetLabelText ||
@@ -216,9 +216,11 @@ export const insertNetLabelsForPortsMissingTrace = ({
                 .every(isPortInsideCollapsedGroup),
           )
 
-        // Keep implementation-only connectivity behind a collapsed box. A
-        // public pin without a parent-visible connection remains visually open.
-        if (allConnectionsAreInternal) continue
+        // A collapsed box port keeps its declared name. Never expose the
+        // implementation-only connectivity key or prefix the port name.
+        if (allConnectionsAreInternal && sourcePort?.name) {
+          text = sourcePort.name
+        }
       }
     }
 
