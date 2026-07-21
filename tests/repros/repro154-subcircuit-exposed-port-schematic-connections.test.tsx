@@ -32,7 +32,7 @@ const Load = (props: SubcircuitProps) => (
   </subcircuit>
 )
 
-test("boxed subcircuits use declared port names for fallback labels", async () => {
+test("boxed subcircuits do not leak generated connectivity names", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

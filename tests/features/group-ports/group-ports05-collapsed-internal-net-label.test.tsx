@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("collapsed group port uses its declared name for the net label", async () => {
+test("collapsed group port hides its internal connectivity key", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
