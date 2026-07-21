@@ -5,7 +5,7 @@ test("internal circuit chip pin supports schematic fanout", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="18mm" height="12mm" schMaxTraceDistance={10}>
+    <board width="18mm" height="12mm">
       <resistor
         name="R1"
         resistance="10k"
