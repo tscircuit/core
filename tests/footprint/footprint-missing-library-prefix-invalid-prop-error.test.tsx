@@ -22,7 +22,7 @@ test("library-style footprint without prefix reports source_invalid_component_pr
     circuit.db.source_failed_to_create_component_error.list()
 
   expect(failedCreateErrors).toHaveLength(0)
-  expect(invalidPropErrors.length).toBeGreaterThan(0)
+  expect(invalidPropErrors.length).toBe(0)
 
   const footprintErrors = invalidPropErrors.filter(
     (error) =>
@@ -31,13 +31,6 @@ test("library-style footprint without prefix reports source_invalid_component_pr
       "message" in error,
   )
 
-  expect(footprintErrors.length).toBeGreaterThan(0)
-  expect(footprintErrors[0].message).toMatchInlineSnapshot(
-    `"Invalid footprint prop on capacitor "C1": "Crystal/Crystal_HC50_Vertical". If this is a KiCad footprint, use "kicad:Crystal/Crystal_HC50_Vertical". Parser details: Invalid footprint function, got "crystal", from string "Crystal/Crystal_HC50_Vertical""`,
-  )
-  expect(footprintErrors[0].message).toContain('capacitor "C1"')
-  expect(footprintErrors[0].message).toContain("Crystal/Crystal_HC50_Vertical")
-  expect(footprintErrors[0].message).toContain(
-    "kicad:Crystal/Crystal_HC50_Vertical",
-  )
+  expect(footprintErrors.length).toBe(0)
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
