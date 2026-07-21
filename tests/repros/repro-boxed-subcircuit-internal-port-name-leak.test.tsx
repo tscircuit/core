@@ -1,5 +1,5 @@
-import { expect, test } from "bun:test"
 import type { SubcircuitProps } from "@tscircuit/props"
+import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const Sensor = (props: SubcircuitProps) => (

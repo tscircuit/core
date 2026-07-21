@@ -1,23 +1,23 @@
-import { type PinAttributeMap, portProps } from "@tscircuit/props"
-import type { LayerRef, SchematicPort } from "circuit-json"
-import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
-import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
+import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
 import type {
   SchematicBoxDimensions,
   SchematicBoxPortPositionWithMetadata,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
-import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
 import { type SchSymbol } from "schematic-symbols"
 import { applyToPoint, compose, translate } from "transformation-matrix"
 import { z } from "zod"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Trace } from "../Trace/Trace"
-import { Port_doInitialCreateTracesFromProps } from "./Port_doInitialCreateTracesFromProps"
-import { Port_tryRenderGroupPcbPort } from "./Port_tryRenderGroupPcbPort"
-import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
+import type { LayerRef, SchematicPort } from "circuit-json"
 import { areAllPcbPrimitivesOverlapping } from "./areAllPcbPrimitivesOverlapping"
 import { getCenterOfPcbPrimitives } from "./getCenterOfPcbPrimitives"
+import { type PinAttributeMap, portProps } from "@tscircuit/props"
+import type { INormalComponent } from "lib/components/base-components/NormalComponent/INormalComponent"
+import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
+import { Port_doInitialCreateTracesFromProps } from "./Port_doInitialCreateTracesFromProps"
+import { Port_tryRenderGroupPcbPort } from "./Port_tryRenderGroupPcbPort"
+import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
 
 export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
