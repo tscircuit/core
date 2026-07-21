@@ -614,30 +614,30 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { _parsedProps: props } = this
 
     const internalCircuitPortRole = getInternalCircuitPortSchematicRole(this)
-    const portProvidingSchematicGeometry =
+    const schematicPlacementPort =
       internalCircuitPortRole?.type === "overlapping_chip_port"
         ? internalCircuitPortRole.internalCircuitPort
         : this
-    const schematicGeometryProps = portProvidingSchematicGeometry._parsedProps
+    const schematicPlacementProps = schematicPlacementPort._parsedProps
 
-    const { schX, schY } = schematicGeometryProps
+    const { schX, schY } = schematicPlacementProps
     const container =
       schX !== undefined && schY !== undefined
-        ? portProvidingSchematicGeometry.getParentNormalComponent()
-        : portProvidingSchematicGeometry.getPrimitiveContainer()
+        ? schematicPlacementPort.getParentNormalComponent()
+        : schematicPlacementPort.getPrimitiveContainer()
 
     if (!container) return
     if (!this._hasSchematicPort()) return
 
     const containerCenter = container._getGlobalSchematicPositionBeforeLayout()
     const portCenter =
-      portProvidingSchematicGeometry._getGlobalSchematicPositionBeforeLayout()
+      schematicPlacementPort._getGlobalSchematicPositionBeforeLayout()
 
     let localPortInfo: SchematicBoxPortPositionWithMetadata | null = null
     const containerDims = container._getSchematicBoxDimensions()
-    if (containerDims && schematicGeometryProps.pinNumber !== undefined) {
+    if (containerDims && schematicPlacementProps.pinNumber !== undefined) {
       localPortInfo = containerDims.getPortPositionByPinNumber(
-        schematicGeometryProps.pinNumber,
+        schematicPlacementProps.pinNumber,
       )
     }
 
@@ -657,12 +657,12 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const isExplicitCustomSymbolPort =
       schX !== undefined &&
       schY !== undefined &&
-      !!portProvidingSchematicGeometry._getSymbolAncestor()
+      !!schematicPlacementPort._getSymbolAncestor()
 
     if (!localPortInfo?.side) {
       this.facingDirection = getRelativeDirection(containerCenter, portCenter)
-      if (isExplicitCustomSymbolPort && schematicGeometryProps.direction) {
-        this.facingDirection = schematicGeometryProps.direction
+      if (isExplicitCustomSymbolPort && schematicPlacementProps.direction) {
+        this.facingDirection = schematicPlacementProps.direction
       }
     } else {
       this.facingDirection = {
@@ -675,16 +675,16 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     const bestDisplayPinLabel = this._getBestDisplayPinLabel()
     const parentNormalComponent =
-      portProvidingSchematicGeometry.getParentNormalComponent()
+      schematicPlacementPort.getParentNormalComponent()
 
     // Derive side_of_component from direction prop for custom symbols
     const sideOfComponent =
       localPortInfo?.side ??
-      (schematicGeometryProps.direction === "up"
+      (schematicPlacementProps.direction === "up"
         ? "top"
-        : schematicGeometryProps.direction === "down"
+        : schematicPlacementProps.direction === "down"
           ? "bottom"
-          : schematicGeometryProps.direction)
+          : schematicPlacementProps.direction)
 
     const isMappedInternalCircuitPort =
       internalCircuitPortRole?.type === "internal_circuit_port" &&
@@ -696,7 +696,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,
-      distance_from_component_edge: schematicGeometryProps.schStemLength ?? 0.4,
+      distance_from_component_edge: schematicPlacementProps.schStemLength ?? 0.4,
       side_of_component: sideOfComponent,
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
@@ -731,10 +731,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // Create schematic_line for port stem when schStemLength is specified
     if (
       internalCircuitPortRole?.type !== "overlapping_chip_port" &&
-      schematicGeometryProps.schStemLength !== undefined &&
-      schematicGeometryProps.schStemLength !== 0
+      schematicPlacementProps.schStemLength !== undefined &&
+      schematicPlacementProps.schStemLength !== 0
     ) {
-      const { schStemLength, direction } = schematicGeometryProps
+      const { schStemLength, direction } = schematicPlacementProps
       let x2 = portCenter.x
       let y2 = portCenter.y
 
@@ -764,11 +764,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (!this.schematic_port_id) return
 
     const internalCircuitPortRole = getInternalCircuitPortSchematicRole(this)
-    const portProvidingSchematicGeometry =
+    const schematicPlacementPort =
       internalCircuitPortRole?.type === "overlapping_chip_port"
         ? internalCircuitPortRole.internalCircuitPort
         : this
-    const symbol = portProvidingSchematicGeometry._getSymbolAncestor()
+    const symbol = schematicPlacementPort._getSymbolAncestor()
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 
