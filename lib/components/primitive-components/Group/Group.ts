@@ -762,6 +762,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (serverMode === "solve-endpoint") {
       // Legacy solve endpoint mode
       if (this.props.autorouter?.inputFormat === "simplified") {
+        const preferredTraceWidth =
+          props.defaultTraceWidth ?? props.nominalTraceWidth
         const { autorouting_result } = await fetchWithDebug(
           `${serverUrl}/autorouting/solve`,
           {
@@ -770,7 +772,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               input_simple_route_json: getSimpleRouteJsonFromCircuitJson({
                 db,
                 minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-                nominalTraceWidth: this.props.nominalTraceWidth,
+                nominalTraceWidth:
+                  preferredTraceWidth != null
+                    ? Number(preferredTraceWidth)
+                    : undefined,
                 subcircuit_id: this.subcircuit_id,
                 subcircuitComponent: this,
               }).simpleRouteJson,
@@ -897,7 +902,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const isSingleLayerBoard = this._getSubcircuitLayerCount() === 1
 
     const minTraceWidth = Number(props.minTraceWidth ?? 0.15)
-    const nominalTraceWidth = Number(props.nominalTraceWidth ?? 0.15)
+    const nominalTraceWidth = Number(
+      props.defaultTraceWidth ?? props.nominalTraceWidth ?? minTraceWidth,
+    )
 
     const { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
