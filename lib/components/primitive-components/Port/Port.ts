@@ -17,6 +17,7 @@ import type { INormalComponent } from "lib/components/base-components/NormalComp
 import { applyPinAttributesToSourcePort } from "./apply-pin-attributes-to-source-port"
 import { Port_doInitialCreateTracesFromProps } from "./Port_doInitialCreateTracesFromProps"
 import { Port_tryRenderGroupPcbPort } from "./Port_tryRenderGroupPcbPort"
+import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
 
 export class Port extends PrimitiveComponent<typeof portProps> {
   source_port_id: string | null = null
@@ -782,6 +783,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
    * port, but appears at the port it connects to.
    */
   _getNetLabelText(): string | undefined {
-    return `${this.parent?.props.name}_${this.props.name}`
+    if (!this.root || !this.source_port_id) return undefined
+    return getSourcePortNetLabelText(this.root.db, this.source_port_id)
   }
 }

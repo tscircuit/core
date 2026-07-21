@@ -32,7 +32,7 @@ const Load = (props: SubcircuitProps) => (
   </subcircuit>
 )
 
-test("boxed subcircuits leak generated net names and omit the ground link", async () => {
+test("boxed subcircuits hide generated names and label an unrouted ground link", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(

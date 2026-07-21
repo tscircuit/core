@@ -4,6 +4,7 @@ import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchem
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import type { Port } from "../../Port"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
+import { getSourcePortNetLabelText } from "lib/utils/schematic/getSourcePortNetLabelText"
 
 const NEAR_EXISTING_NET_LABEL_DISTANCE = 0.5
 const SAME_ANCHOR_POSITION_DISTANCE = 0.1
@@ -25,23 +26,6 @@ const doesSchematicNetLabelRepresentCurrentSourceConnection = (args: {
   }
 
   return nl.text === text
-}
-
-const getSourcePortNetLabelText = (
-  db: NonNullable<Group<any>["root"]>["db"],
-  sourcePortId: string,
-) => {
-  const sourcePort = db.source_port.get(sourcePortId)
-  if (!sourcePort) return undefined
-
-  let sourceComponent: ReturnType<typeof db.source_component.get> | undefined
-  if (sourcePort.source_component_id) {
-    sourceComponent = db.source_component.get(sourcePort.source_component_id)
-  }
-
-  if (!sourceComponent?.name || !sourcePort.name) return undefined
-
-  return `${sourceComponent.name}_${sourcePort.name}`
 }
 
 const getDirectCrossSubcircuitConnectedSourcePortId = (
@@ -159,13 +143,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
       .join("/")
     const directCrossSubcircuitConnectionLabelText =
       getDirectCrossSubcircuitConnectionLabelText(db, srcPortId)
-    const isConnectivityKeyFallback =
-      !sourceNet?.name &&
-      !sourceNet?.source_net_id &&
-      !assignedPortNetLabelText &&
-      !directCrossSubcircuitConnectionLabelText &&
-      !implicitPortLabelText
-
     const text =
       sourceNet?.name ||
       sourceNet?.source_net_id ||
@@ -174,50 +151,22 @@ export const insertNetLabelsForPortsMissingTrace = ({
       implicitPortLabelText ||
       connKey
 
-    if (isConnectivityKeyFallback) {
-      const sourcePortComponent = connectedPortsForKey.find(
-        (port) => port.source_port_id === srcPortId,
+    const isCollapsedBoxPort =
+      schComponent?.is_box_with_pins &&
+      sourcePort &&
+      !sourcePort.source_component_id
+    const hasExternalTrace = db.source_trace
+      .list()
+      .some(
+        (trace) =>
+          trace.connected_source_port_ids.includes(srcPortId) &&
+          trace.subcircuit_id !== sourcePort?.subcircuit_id,
       )
-      const collapsedGroup = sourcePortComponent?.parent
-      if (
-        sourcePortComponent?.isGroupPort() &&
-        collapsedGroup?._parsedProps?.showAsSchematicBox
-      ) {
-        const sourceTracesConnectedToPort = db.source_trace
-          .list()
-          .filter((trace) =>
-            trace.connected_source_port_ids?.includes(srcPortId),
-          )
-        const isPortInsideCollapsedGroup = (port: Port) => {
-          let parent = port.parent
-          while (parent) {
-            if (parent === collapsedGroup) return true
-            parent = parent.parent
-          }
-          return false
-        }
-        const allConnectionsAreInternal =
-          sourceTracesConnectedToPort.length > 0 &&
-          sourceTracesConnectedToPort.every(
-            (trace) =>
-              (trace.connected_source_net_ids?.length ?? 0) === 0 &&
-              trace.connected_source_port_ids
-                .filter((sourcePortId) => sourcePortId !== srcPortId)
-                .every((sourcePortId) => {
-                  const connectedPort = connectedPortsForKey.find(
-                    (port) => port.source_port_id === sourcePortId,
-                  )
-                  return connectedPort
-                    ? isPortInsideCollapsedGroup(connectedPort)
-                    : false
-                }),
-          )
+    const hasExplicitLabel = Boolean(sourceNet || assignedPortNetLabelText)
 
-        // Keep implementation-only connectivity behind a collapsed box. A
-        // public pin without a parent-visible connection remains visually open.
-        if (allConnectionsAreInternal) continue
-      }
-    }
+    // A public pin without a trace leaving the collapsed subcircuit remains
+    // visually open. Preserve labels only when the user explicitly named one.
+    if (isCollapsedBoxPort && !hasExternalTrace && !hasExplicitLabel) continue
 
     const connectedPortCountForKey = Array.from(
       allSourceAndSchematicPortIdsInScope,

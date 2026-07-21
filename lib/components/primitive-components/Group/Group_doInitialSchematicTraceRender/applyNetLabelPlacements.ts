@@ -10,6 +10,7 @@ import { getNetLabelTextBounds } from "./getNetLabelTextBounds"
 import Debug from "debug"
 import type { SchematicNetLabel, SourceNet } from "circuit-json"
 import { doBoundsOverlap, type Bounds } from "@tscircuit/math-utils"
+import { getNetNameFromSourcePorts } from "lib/utils/schematic/getSourcePortNetLabelText"
 
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
@@ -257,7 +258,21 @@ export function applyNetLabelPlacements(args: {
       .selectAll<Port>("port")
       .filter((p) => p._getSubcircuitConnectivityKey() === placementConnKey)
 
-    const { name: text, wasAssignedDisplayLabel } = getNetNameFromPorts(ports)
+    const { name: portInstanceText, wasAssignedDisplayLabel } =
+      getNetNameFromPorts(ports)
+    const sourcePortIdsForConnection = placementConnKey
+      ? db.source_port
+          .list()
+          .filter(
+            (sourcePort) =>
+              sourcePort.subcircuit_connectivity_map_key === placementConnKey,
+          )
+          .map((sourcePort) => sourcePort.source_port_id)
+      : []
+    const text =
+      portInstanceText ||
+      getNetNameFromSourcePorts(db, sourcePortIdsForConnection) ||
+      ""
     const isRoutedPairPlacement = (placement.pinIds?.length ?? 0) > 1
     const shouldKeepRoutedPairLabel =
       isRoutedPairPlacement &&
