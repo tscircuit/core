@@ -650,7 +650,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...connectionsFromNets,
     ...connectionsFromBreakoutPoints,
   ]
-  const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
+  const resolvedMinTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
+  const defaultTraceWidth = nominalTraceWidth ?? resolvedMinTraceWidth
   for (const conn of allConns) {
     conn.nominalTraceWidth ??= defaultTraceWidth
     conn.width ??= defaultTraceWidth
@@ -731,7 +732,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           : undefined,
       layerCount: board?.num_layers ?? 2,
       minTraceWidth: Math.min(
-        defaultTraceWidth,
+        resolvedMinTraceWidth,
         ...allConns.map((c) => c.width!),
       ),
       minViaDiameter: resolvedMinViaPadDiameter,
