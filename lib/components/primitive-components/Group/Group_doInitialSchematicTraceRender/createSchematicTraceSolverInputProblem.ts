@@ -10,6 +10,7 @@ import {
 } from "@tscircuit/schematic-trace-solver"
 import type { SourceNet } from "circuit-json"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
+import { isInternalCircuitPortMapping } from "lib/utils/schematic/isInternalCircuitPortMapping"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { Group } from "../Group"
@@ -158,9 +159,14 @@ export function createSchematicTraceSolverInputProblem(
 
     for (const schematicPort of schematicPorts) {
       const sourcePort = db.source_port.get(schematicPort.source_port_id)!
+      const portSourceComponent = sourcePort?.source_component_id
+        ? db.source_component.get(sourcePort.source_component_id)
+        : undefined
       const selector = getSchematicPortSelector({
         componentName:
-          sourceComponent?.name ?? schematicComponent.schematic_component_id,
+          portSourceComponent?.name ??
+          sourceComponent?.name ??
+          schematicComponent.schematic_component_id,
         schematicPort,
         sourcePort,
       })
@@ -263,6 +269,7 @@ export function createSchematicTraceSolverInputProblem(
     netLabelWidth?: number
   }> = []
   const connectedPairKeys = new Set<string>()
+  const internalCircuitPortIdsRepresentedByChipPorts = new Set<string>()
   const connKeysWithExplicitPortNetTraces = new Set<string>()
   for (const sourceTrace of tracesInScope) {
     if (
@@ -300,6 +307,15 @@ export function createSchematicTraceSolverInputProblem(
         }
         const portA = db.schematic_port.get(a)
         const portB = db.schematic_port.get(b)
+        if (portA && portB && isInternalCircuitPortMapping(portA, portB)) {
+          const internalCircuitPort = portA.is_internal_circuit_port
+            ? portA
+            : portB
+          internalCircuitPortIdsRepresentedByChipPorts.add(
+            internalCircuitPort.schematic_port_id,
+          )
+          continue
+        }
         let portDistance = 0
         if (portA && portB) {
           portDistance = Math.sqrt(
@@ -357,6 +373,7 @@ export function createSchematicTraceSolverInputProblem(
    */
   const connKeyToPinIds = new Map<string, string[]>()
   for (const [schId, srcPortId] of schPortIdToSourcePortId) {
+    if (internalCircuitPortIdsRepresentedByChipPorts.has(schId)) continue
     const sp = db.source_port.get(srcPortId)
     if (!sp?.subcircuit_connectivity_map_key) continue
     const connKey = sp.subcircuit_connectivity_map_key
