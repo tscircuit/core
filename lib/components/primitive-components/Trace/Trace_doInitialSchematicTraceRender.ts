@@ -1,5 +1,9 @@
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
-import { type SchematicNetLabel, type SchematicTrace } from "circuit-json"
+import {
+  type SchematicNetLabel,
+  type SchematicPort,
+  type SchematicTrace,
+} from "circuit-json"
 import { calculateElbow } from "calculate-elbow"
 import { doesLineIntersectLine, type Point } from "@tscircuit/math-utils"
 import { DirectLineRouter } from "lib/utils/autorouting/DirectLineRouter"
@@ -93,6 +97,23 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     ({ port, schematic_port_id }) =>
       port.schematic_port_id !== schematic_port_id,
   )
+  const connectedSchematicPorts = portsWithPosition
+    .map(({ schematic_port_id }) => db.schematic_port.get(schematic_port_id))
+    .filter((port): port is SchematicPort => Boolean(port))
+  const [firstSchematicPort, secondSchematicPort] = connectedSchematicPorts
+  const firstIsInternalAndSecondOverlaps =
+    firstSchematicPort?.is_internal_circuit_port &&
+    secondSchematicPort?.is_overlapping_internal_circuit_port
+  const secondIsInternalAndFirstOverlaps =
+    secondSchematicPort?.is_internal_circuit_port &&
+    firstSchematicPort?.is_overlapping_internal_circuit_port
+  const isInternalCircuitPortMapping =
+    connectedSchematicPorts.length === 2 &&
+    (firstIsInternalAndSecondOverlaps || secondIsInternalAndFirstOverlaps)
+
+  if (isInternalCircuitPortMapping) {
+    return
+  }
   const portPairKey = portIds.join(",")
   const board = trace.root?._getBoard()
   if (board?._connectedSchematicPortPairs)

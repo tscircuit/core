@@ -437,9 +437,11 @@ function convertTreeToMatchPackInputProblem(
           child.sourceComponent?.source_component_id,
       )
 
-      const ports = db.schematic_port.list({
-        schematic_component_id: schematicComponent.schematic_component_id,
-      })
+      const portsDefiningLayout = db.schematic_port
+        .list({
+          schematic_component_id: schematicComponent.schematic_component_id,
+        })
+        .filter((port) => !port.is_overlapping_internal_circuit_port)
 
       let availableRotations: MatchpackRotation[] = [
         ...DEFAULT_AVAILABLE_ROTATIONS,
@@ -464,7 +466,10 @@ function convertTreeToMatchPackInputProblem(
       // A power/ground 2-pin part is locked to the single rotation that places
       // its rail pin on the correct side (power up, ground down).
       if (availableRotations.length === DEFAULT_AVAILABLE_ROTATIONS.length) {
-        const forcedRotation = getPowerGroundForcedRotation(db, ports)
+        const forcedRotation = getPowerGroundForcedRotation(
+          db,
+          portsDefiningLayout,
+        )
         if (forcedRotation !== null) availableRotations = [forcedRotation]
       }
 
@@ -493,7 +498,7 @@ function convertTreeToMatchPackInputProblem(
         }),
       }
 
-      for (const port of ports) {
+      for (const port of portsDefiningLayout) {
         const sourcePort = db.source_port.get(port.source_port_id)
         if (!sourcePort) continue
 
@@ -555,11 +560,13 @@ function convertTreeToMatchPackInputProblem(
 
         const groupPins: string[] = []
         for (const comp of groupComponents) {
-          const ports = db.schematic_port.list({
-            schematic_component_id: comp.schematic_component_id,
-          })
+          const portsDefiningLayout = db.schematic_port
+            .list({
+              schematic_component_id: comp.schematic_component_id,
+            })
+            .filter((port) => !port.is_overlapping_internal_circuit_port)
 
-          for (const port of ports) {
+          for (const port of portsDefiningLayout) {
             const sourcePort = db.source_port.get(port.source_port_id)
             if (!sourcePort) continue
 
